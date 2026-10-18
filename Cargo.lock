@@ -2427,6 +2427,11 @@ dependencies = [
 [[package]]
 name = "l2-protocol-game"
 version = "0.1.0"
+dependencies = [
+ "hex",
+ "l2-net",
+ "serde_json",
+]
 
 [[package]]
 name = "l2-protocol-login"

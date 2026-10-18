@@ -1,6 +1,6 @@
 [package]
 name = "l2-protocol-game"
-description = "Game client/server protocol: opcode tables (generated), packet structs (later)"
+description = "Game client/server protocol: opcode tables (generated), packet structs, opcode dispatcher"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -8,6 +8,11 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+l2-net.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+hex.workspace = true
 
 [lints]
 workspace = true
