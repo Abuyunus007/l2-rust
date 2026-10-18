@@ -175,7 +175,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-PLAYERS-01](M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | planned |
 | [M3-ADMIN-01](M3/M3-ADMIN-01.md) | Core admin commands | haiku | spot | TALK-01 | planned |
 | [M3-E2E-01](M3/M3-E2E-01.md) | Two fake clients end to end | sonnet | spot | PLAYERS-01, TALK-01, M2-E2E-01 | planned |
-| [M3-GEO-03](M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | in-progress |
+| [M3-GEO-03](M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | merged |
 | [M3-CFG-02](M3/M3-CFG-02.md) | Datapack options from the game config | haiku | spot | DATA-05, DATA-06, DATA-08 | in-progress |
 | [M3-PROXY-02](M3/M3-PROXY-02.md) | Proxy field decoders for the M2/M3 server packets | haiku | spot | GPROTO-05, GPROTO-06, M2-ENTER-01 | in-progress |
 | [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | planned |
