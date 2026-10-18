@@ -30,9 +30,7 @@ use crate::runtime::{OutboxMessage, WorldRuntime};
 use crate::world_data::{AccessLevels, BaseStatBonus, DatapackData, PassiveSkills, StatLimits};
 use l2_config::GameConfig;
 use l2_util::WorldRng;
-use l2_world::{
-    IdFactory, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData,
-};
+use l2_world::{IdFactory, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 
 const ACCOUNT: &str = "acc";
 const KEY: SessionKey = SessionKey {
@@ -100,10 +98,13 @@ impl PlayerLoader for FakeLoader {
         account: &'a str,
         char_id: i32,
     ) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
-        let result = match ["Older", "Recent", "Middle"].get(usize::try_from(char_id - 0x1000_0000).unwrap_or(9)) {
-            Some(name) if account == ACCOUNT => Ok(test_player(char_id, name)),
-            _ => Err(LoadError::NotFound(char_id)),
-        };
+        let result =
+            match ["Older", "Recent", "Middle"].get(usize::try_from(char_id - 0x1000_0000).unwrap_or(9)) {
+                // "Older" cannot be loaded (a database error, say).
+                Some(&"Older") => Err(LoadError::Database("boom".into())),
+                Some(name) if account == ACCOUNT => Ok(test_player(char_id, name)),
+                _ => Err(LoadError::NotFound(char_id)),
+            };
         Box::pin(async move { result })
     }
 }
@@ -1018,21 +1019,36 @@ async fn enter_world_sends_the_java_sequence_and_tells_the_login_server() {
     client.send(RequestKeyMapping.to_bytes()).await;
     assert_eq!(
         client.recv().await.unwrap(),
-        ExUiSetting { ui_key_mapping: vec![] }.to_bytes()
+        ExUiSetting {
+            ui_key_mapping: vec![]
+        }
+        .to_bytes()
     );
 
     let names = enter_world(&mut client).await;
     assert_eq!(names, ENTER_SEQUENCE[..ENTER_SEQUENCE.len() - 1]);
 
     // The registry knows the character is in the world; the selection is not undone on leave.
-    assert!(h.ctx.registry.get(ACCOUNT).unwrap().in_world.load(Ordering::Acquire));
+    assert!(
+        h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
     assert!(outbox_has(&h, |m| matches!(
         m,
         OutboxMessage::Ls(LsEvent::PlayerInGame { account }) if account == ACCOUNT
     )));
     drop(client);
     // The world stores the character, not the screen's online reset.
-    wait_for(|| outbox_has(&h, |m| matches!(m, OutboxMessage::Persist(PersistCommand::PlayerLeft { .. })))).await;
+    wait_for(|| {
+        outbox_has(&h, |m| {
+            matches!(m, OutboxMessage::Persist(PersistCommand::PlayerLeft { .. }))
+        })
+    })
+    .await;
     assert_eq!(h.store.online.lock().unwrap().as_slice(), [(0x1000_0001, 1)]);
 }
 
@@ -1118,7 +1134,9 @@ async fn unknown_in_game_packets_are_ignored_and_the_net_ping_is_answered() {
     let h = start(true).await;
     let mut client = in_world(&h).await;
     // `Attack` is a valid IN_GAME packet without a handler yet; it must not disconnect.
-    client.send(vec![l2_protocol_game::ClientOpcode::Attack.id(), 0, 0, 0, 0]).await;
+    client
+        .send(vec![l2_protocol_game::ClientOpcode::Attack.id(), 0, 0, 0, 0])
+        .await;
     // An opcode the table does not know at all.
     client.send(vec![0x02, 1, 2, 3]).await;
     client.send(RequestNetPing.to_bytes()).await;
@@ -1140,7 +1158,9 @@ async fn logout_stores_the_character_says_goodbye_and_closes() {
     let messages = h.outbox.lock().unwrap().clone();
     let stored = messages
         .iter()
-        .position(|m| matches!(m, OutboxMessage::Persist(PersistCommand::StorePlayer(p)) if p.name == "Recent"))
+        .position(
+            |m| matches!(m, OutboxMessage::Persist(PersistCommand::StorePlayer(p)) if p.name == "Recent"),
+        )
         .expect("the final store");
     let left = messages
         .iter()
@@ -1163,7 +1183,10 @@ async fn closing_the_connection_in_the_world_stores_the_character() {
     drop(client);
     wait_for(|| {
         outbox_has(&h, |m| {
-            matches!(m, OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. }))
+            matches!(
+                m,
+                OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. })
+            )
         })
     })
     .await;
@@ -1187,13 +1210,27 @@ async fn restart_returns_to_the_character_screen_and_the_character_can_enter_aga
         m,
         OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: false, .. })
     )));
-    assert!(!h.ctx.registry.get(ACCOUNT).unwrap().in_world.load(Ordering::Acquire));
+    assert!(
+        !h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
     assert!(h.gate.logouts.lock().unwrap().is_empty());
 
     // Back in AUTHENTICATED: select and enter again, then leave for good.
-    select(&mut client, 0).await;
+    select(&mut client, 1).await;
     assert_eq!(enter_world(&mut client).await.len(), ENTER_SEQUENCE.len() - 1);
-    assert!(h.ctx.registry.get(ACCOUNT).unwrap().in_world.load(Ordering::Acquire));
+    assert!(
+        h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
     client.send(Logout.to_bytes()).await;
     assert_eq!(client.recv().await.unwrap(), LeaveWorld.to_bytes());
     client.expect_closed().await;
@@ -1222,10 +1259,24 @@ async fn a_kick_of_a_character_in_the_world_goes_through_the_world() {
     client.expect_closed().await;
     wait_for(|| {
         outbox_has(&h, |m| {
-            matches!(m, OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. }))
+            matches!(
+                m,
+                OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. })
+            )
         })
     })
     .await;
+}
+
+#[tokio::test]
+async fn a_character_that_cannot_be_loaded_is_not_selected() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    // Java: `client.load` returns null, the packet ends, nothing is sent and nothing is marked.
+    client.send(select_packet(0).to_bytes()).await;
+    client.send(RequestGotoLobby.to_bytes()).await;
+    decode_char_list(&client.recv().await.unwrap());
+    assert!(h.store.online.lock().unwrap().is_empty());
 }
 
 #[tokio::test]

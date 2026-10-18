@@ -232,7 +232,10 @@ impl AccessLevels {
         match std::fs::read(&path) {
             Ok(bytes) => Self::from_xml(&String::from_utf8_lossy(&bytes)),
             Err(e) => {
-                warn!("Cannot read {}: {e}; every access level is a plain user.", path.display());
+                warn!(
+                    "Cannot read {}: {e}; every access level is a plain user.",
+                    path.display()
+                );
                 Self::default()
             }
         }
@@ -244,7 +247,8 @@ impl AccessLevels {
         loop {
             match reader.read_event() {
                 Ok(Event::Empty(e) | Event::Start(e)) if e.name().as_ref() == "access" => {
-                    let Some(level) = attribute(&e, "level").and_then(|v| v.trim().parse::<i32>().ok()) else {
+                    let Some(level) = attribute(&e, "level").and_then(|v| v.trim().parse::<i32>().ok())
+                    else {
                         continue;
                     };
                     // Java: `Integer.decode("0x" + set.getString("nameColor", "FFFFFF"))`
@@ -378,7 +382,10 @@ impl StaticData for DatapackData {
 
     fn derive_stats(&self, player: &PlayerData) -> DerivedStats {
         let Some(t) = self.datapack.player_templates.get_by_id(player.class_id) else {
-            warn!("No class template for class {}: using default stats.", player.class_id);
+            warn!(
+                "No class template for class {}: using default stats.",
+                player.class_id
+            );
             return DerivedStats::default();
         };
         let b = &self.bonus;
@@ -434,7 +441,11 @@ impl StaticData for DatapackData {
         let move_multiplier = dex_b;
         let speed = |base: f64| (base * dex_b / move_multiplier).round() as i32;
         let female = player.sex != 0;
-        let collision = if female { t.collision_female } else { t.collision_male };
+        let collision = if female {
+            t.collision_female
+        } else {
+            t.collision_male
+        };
 
         // Creature.getMaxLoad: floor(CON bonus * 69000 * AltWeightLimit)
         let max_load = (con_b * WEIGHT_BASE * l.alt_weight_limit).floor() as i32;
@@ -523,4 +534,229 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         }
     }
     settings
+}
+
+#[cfg(test)]
+mod tests {
+    use std::path::PathBuf;
+
+    use super::*;
+
+    fn test_player() -> PlayerData {
+        PlayerData {
+            object_id: l2_world::ObjectId(1),
+            account: "acc".into(),
+            name: "Test".into(),
+            title: String::new(),
+            class_id: 0,
+            base_class: 0,
+            race: 0,
+            sex: 0,
+            face: 0,
+            hair_style: 0,
+            hair_color: 0,
+            level: 1,
+            exp: 0,
+            sp: 0,
+            karma: 0,
+            pvp_kills: 0,
+            pk_kills: 0,
+            access_level: 0,
+            x: 0,
+            y: 0,
+            z: 0,
+            heading: 0,
+            cur_hp: 1.0,
+            max_hp: 1.0,
+            cur_mp: 1.0,
+            max_mp: 1.0,
+            cur_cp: 1.0,
+            max_cp: 1.0,
+            online_time: 0,
+            items: Vec::new(),
+            skills: Vec::new(),
+            shortcuts: Vec::new(),
+            profile: l2_world::PlayerProfile::default(),
+        }
+    }
+
+    const LIMITS: StatLimits = StatLimits {
+        max_patk: 99_999,
+        max_matk: 99_999,
+        max_pcrit_rate: 500,
+        max_evasion: 250,
+        max_patk_speed: 1_500,
+        max_matk_speed: 1_999,
+        max_run_speed: 250,
+        alt_weight_limit: 1.0,
+    };
+
+    #[test]
+    fn stat_bonus_reads_every_section_by_name() {
+        let table = BaseStatBonus::from_xml(
+            r#"<list>
+	<STR><stat value="40" bonus="1.2" /></STR>
+	<INT><stat value="2" bonus="0.5" /></INT>
+	<CON><stat value="24" bonus="0.9" /><stat value="x" bonus="1" /></CON>
+	<MEN><stat value="3" bonus="2" /></MEN>
+	<DEX><stat value="24" bonus="1.04" /><stat value="100" bonus="9" /></DEX>
+	<WIT><stat value="23" bonus="1.26" /></WIT>
+</list>"#,
+        );
+        assert_eq!(BaseStatBonus::at(&table.str, 40), 1.2);
+        assert_eq!(BaseStatBonus::at(&table.int, 2), 0.5);
+        assert_eq!(BaseStatBonus::at(&table.con, 24), 0.9);
+        assert_eq!(BaseStatBonus::at(&table.men, 3), 2.0);
+        assert_eq!(BaseStatBonus::at(&table.dex, 24), 1.04);
+        assert_eq!(BaseStatBonus::at(&table.wit, 23), 1.26);
+        // Unlisted, out of range and negative values are 0 (Java's arrays start at 0).
+        assert_eq!(BaseStatBonus::at(&table.str, 41), 0.0);
+        assert_eq!(BaseStatBonus::at(&table.dex, 100), 0.0);
+        assert_eq!(BaseStatBonus::at(&table.dex, -1), 0.0);
+    }
+
+    #[test]
+    fn passive_skills_are_found_by_operate_type() {
+        let mut table = PassiveSkills::default();
+        table.add_xml(
+            r#"<list>
+	<skill id="141" levels="3" name="Weapon Mastery">
+		<!-- <operateType>P</operateType> in a comment is not a skill -->
+		<operateType>P</operateType>
+	</skill>
+	<skill id="1177" levels="2" name="Wind Strike"><operateType>A1</operateType></skill>
+	<skill id="5" levels="1" name="Empty"/>
+	<skill id="7" levels="1" name="Late"><effects/><operateType> P </operateType></skill>
+</list>"#,
+        );
+        assert!(table.contains(141));
+        assert!(table.contains(7));
+        assert!(!table.contains(1177));
+        assert!(!table.contains(5));
+        assert_eq!(table.len(), 2);
+    }
+
+    #[test]
+    fn access_levels_use_the_hex_colors_and_the_java_default() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" nameColor="FFFFFF" titleColor="ECF9A2" isGM="false" />
+	<access level="0" name="User" nameColor="FFFFFF" titleColor="ECF9A2" isGM="false" />
+	<access level="100" name="Master" nameColor="00CCFF" titleColor="0FF000" isGM="true" />
+</list>"#,
+        );
+        assert_eq!(levels.get(0), AccessLevelStatic::USER);
+        let master = levels.get(100);
+        assert_eq!(
+            (master.name_color, master.title_color, master.is_gm),
+            (0x00CCFF, 0x0FF000, true)
+        );
+        // Below zero is the banned level; a level the file lacks is Java's default AccessLevel.
+        assert_eq!(levels.get(-5), levels.get(-1));
+        assert_eq!(levels.get(55), AccessLevelStatic::UNREGISTERED);
+        assert!(!levels.get(55).is_gm);
+    }
+
+    #[test]
+    fn stats_follow_the_base_formulas() {
+        let (_dir, datapack) = crate::client::testdata::datapack();
+        let mut bonus = BaseStatBonus::default();
+        bonus.str[40] = 1.2;
+        bonus.int[21] = 1.0;
+        bonus.dex[30] = 1.5;
+        bonus.wit[11] = 0.5;
+        bonus.con[43] = 1.5;
+        bonus.men[25] = 1.28;
+        let data = DatapackData::new(
+            datapack,
+            bonus,
+            PassiveSkills::default(),
+            AccessLevels::default(),
+            LIMITS,
+        );
+        let mut player = test_player();
+        // Human fighter of the test datapack: STR 40 CON 43 DEX 30 INT 21 WIT 11 MEN 25, P. Atk. 4.
+        player.class_id = 0;
+        player.level = 11;
+        let s = data.derive_stats(&player);
+        assert_eq!(
+            (s.str, s.dex, s.con, s.int, s.wit, s.men),
+            (40, 30, 43, 21, 11, 25)
+        );
+        // (4 * 1.2 * levelMod 1.0) truncated
+        assert_eq!(s.p_atk, 4);
+        // weight limit: floor(1.5 * 69000)
+        assert_eq!(s.max_load, 103_500);
+        // sqrt(30) * 6 + level 11 = 43.86
+        assert_eq!(s.evasion, 44);
+        assert_eq!(s.accuracy, 44);
+        assert_eq!(s.collision_radius, 9.0);
+        player.sex = 1;
+        assert_eq!(data.derive_stats(&player).collision_radius, 8.0);
+        // Above level 69/77 the accuracy and evasion get their extra points.
+        player.level = 80;
+        let s = data.derive_stats(&player);
+        // accuracy: sqrt(30)*6 + 80 + (80-76) + (80-69) = 127.86; evasion: + (80-69)*1.2 = 126.06
+        assert_eq!((s.accuracy, s.evasion), (128, 126));
+    }
+
+    /// The numbers of the recorded level 1 Elven Mystic (STR 21 DEX 24 CON 25 INT 37 WIT 23 MEN 40)
+    /// against the real datapack. Skipped without the reference folder.
+    #[test]
+    fn the_real_datapack_gives_the_stats_of_the_recorded_character() {
+        let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        if !root.join("data/stats/statBonus.xml").is_file() {
+            eprintln!("skipped: {} has no datapack", root.display());
+            return;
+        }
+        let datapack = Arc::new(Datapack::load(&root).unwrap());
+        let data = DatapackData::new(
+            Arc::clone(&datapack),
+            BaseStatBonus::load(&root),
+            PassiveSkills::load(&root),
+            AccessLevels::from_xml(&std::fs::read_to_string(root.join("config/AccessLevels.xml")).unwrap()),
+            LIMITS,
+        );
+
+        // The passive flags against the SKILL_LIST Java sent (194, 163, 118, 214 are passive).
+        for (id, passive) in [
+            (194, true),
+            (163, true),
+            (118, true),
+            (214, true),
+            (1216, false),
+            (1177, false),
+            (1322, false),
+        ] {
+            assert_eq!(data.skill_is_passive(id), passive, "skill {id}");
+        }
+
+        let mut player = test_player();
+        player.class_id = 25;
+        player.base_class = 25;
+        player.level = 1;
+        let s = data.derive_stats(&player);
+        assert_eq!(
+            (s.str, s.dex, s.con, s.int, s.wit, s.men),
+            (21, 24, 25, 37, 23, 40)
+        );
+        // Values of the recording that no equipment or skill touches.
+        assert_eq!(
+            (s.run_speed, s.walk_speed, s.swim_run_speed, s.swim_walk_speed),
+            (122, 85, 50, 50)
+        );
+        assert_eq!(s.move_multiplier, 1.04);
+        assert_eq!(s.max_load, 64_170);
+        assert_eq!(s.evasion, 30);
+        assert_eq!((s.collision_radius, s.collision_height), (7.5, 24.0));
+        assert_eq!(s.critical, 42);
+        // The exp bar of level 1 with no exp.
+        assert_eq!(data.exp_percent(0, 1), 0.0);
+        // Items: the Apprentice's Wand (6) is a weapon, the Tutorial Guide (5588) is no quest item.
+        let wand = data.item(6).unwrap();
+        assert!(wand.weapon && wand.type2 == 0);
+        assert_eq!(wand.body_part, 0x0080);
+    }
 }

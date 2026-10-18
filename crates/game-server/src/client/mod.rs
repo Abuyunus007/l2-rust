@@ -237,4 +237,4 @@ mod newchar_tests;
 #[cfg(test)]
 mod session_tests;
 #[cfg(test)]
-mod testdata;
+pub(crate) mod testdata;

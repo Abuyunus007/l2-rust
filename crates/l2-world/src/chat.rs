@@ -105,11 +105,19 @@ impl World {
         };
         let units: Vec<u16> = text.encode_utf16().collect();
         let mark = u16::from(ITEM_LINK_MARK as u8);
-        let find_mark = |from: usize| units.get(from..).and_then(|s| s.iter().position(|&u| u == mark)).map(|p| p + from);
+        let find_mark = |from: usize| {
+            units
+                .get(from..)
+                .and_then(|s| s.iter().position(|&u| u == mark))
+                .map(|p| p + from)
+        };
         let find_id = |from: usize| {
             units
                 .get(from..)
-                .and_then(|s| s.windows(3).position(|w| w == [b'I'.into(), b'D'.into(), b'='.into()]))
+                .and_then(|s| {
+                    s.windows(3)
+                        .position(|w| w == [b'I'.into(), b'D'.into(), b'='.into()])
+                })
                 .map(|p| p + from)
         };
         let mut from = 0;
@@ -168,7 +176,9 @@ impl World {
     }
 
     fn broadcast_say(&self, packet: &CreatureSay) {
-        let ids: Vec<ObjectId> = self.players.keys().copied().collect();
+        // In object id order, so the same input gives the same output (D-13).
+        let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
+        ids.sort_unstable();
         for to in ids {
             self.send(to, packet);
         }
@@ -205,7 +215,10 @@ impl World {
         if player.core.level < self.settings.minimum_chat_level && !is_gm {
             self.send_message(
                 id,
-                &format!("Players can Shout after Lv. {}.", self.settings.minimum_chat_level),
+                &format!(
+                    "Players can Shout after Lv. {}.",
+                    self.settings.minimum_chat_level
+                ),
             );
             return;
         }
@@ -259,7 +272,8 @@ impl World {
         match receiver {
             Some(receiver) => {
                 let to_receiver = self.say_packet(id, ChatType::Whisper, &player.data.name, text);
-                let to_sender = self.say_packet(id, ChatType::Whisper, &format!("->{}", receiver.data.name), text);
+                let to_sender =
+                    self.say_packet(id, ChatType::Whisper, &format!("->{}", receiver.data.name), text);
                 self.send(receiver.core.object_id, &to_receiver);
                 self.send(id, &to_sender);
             }

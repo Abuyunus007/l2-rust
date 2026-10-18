@@ -660,8 +660,8 @@ impl ClientSession {
         }
     }
 
-    /// Java `CharacterSelect.runImpl` as far as the character screen goes: the player is loaded by
-    /// the enter-world card (M2-ENTER-01).
+    /// Java `CharacterSelect.runImpl`: the player is loaded (see [`super::enter`]) and the client
+    /// is told; the world takes the character over at `EnterWorld`.
     pub(super) async fn on_character_select(&mut self, packet: CharacterSelect, ctl: &mut Control<'_>) {
         if !self.can_select_character() {
             return;
@@ -678,7 +678,7 @@ impl ClientSession {
         };
         // NOTE: not ported yet because their systems do not exist: SecondaryAuth, a character that
         // is already in the world (offline traders), PunishmentManager bans, dual-box limits and the
-        // faction balance. The restored RESTORE_LOCATION variable is up to M2-ENTER-01.
+        // faction balance. The RESTORE_LOCATION variable is applied by the loader.
         if info.access_level < 0 {
             // "Selected character is banned (compatibility with previous versions)."
             ctl.send_and_close(ServerClose.to_bytes());

@@ -10,7 +10,6 @@
 // character, every in-game packet becomes a `WorldCommand::Input`, and everything the world wants
 // to say comes back through [`ConnectionSink`] as plain bytes.
 
-use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
@@ -65,7 +64,11 @@ impl From<l2_db::DbError> for LoadError {
 /// fake in tests.
 pub trait PlayerLoader: Send + Sync + 'static {
     /// Java `Player.load(objectId)`: the character with its items, skills, shortcuts and macros.
-    fn load_player<'a>(&'a self, account: &'a str, char_id: i32) -> BoxFuture<'a, Result<PlayerData, LoadError>>;
+    fn load_player<'a>(
+        &'a self,
+        account: &'a str,
+        char_id: i32,
+    ) -> BoxFuture<'a, Result<PlayerData, LoadError>>;
 }
 
 /// [`PlayerLoader`] on the game database. Only reads (D-39).
@@ -208,7 +211,11 @@ impl DbPlayerLoader {
 }
 
 impl PlayerLoader for DbPlayerLoader {
-    fn load_player<'a>(&'a self, account: &'a str, char_id: i32) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
+    fn load_player<'a>(
+        &'a self,
+        account: &'a str,
+        char_id: i32,
+    ) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
         Box::pin(self.load(account, char_id))
     }
 }
@@ -258,7 +265,8 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             // Java: `rset.getInt("nobless") == 1`
             noble: row.nobless == 1,
             title_color: i32::try_from(row.title_color).unwrap_or(l2_world::DEFAULT_TITLE_COLOR),
-            vitality_points: i32::from(row.vitality_points),
+            // Java `setVitalityPoints`: `clamp(value, MIN_VITALITY_POINTS, MAX_VITALITY_POINTS)`
+            vitality_points: i32::from(row.vitality_points).clamp(1, 20_000),
             bookmark_slot: i32::from(row.bookmarkslot),
             death_penalty_level: i32::from(row.death_penalty_level),
             ..PlayerProfile::default()
@@ -330,10 +338,7 @@ pub struct ConnectionSink {
 }
 
 impl ConnectionSink {
-    pub fn new(
-        handle: l2_net::ConnectionHandle,
-        in_world: Arc<AtomicBool>,
-    ) -> (Self, SinkEvents) {
+    pub fn new(handle: l2_net::ConnectionHandle, in_world: Arc<AtomicBool>) -> (Self, SinkEvents) {
         let (events, receiver) = unbounded_channel();
         (
             Self {
@@ -380,7 +385,10 @@ impl ClientSession {
         self.state = ConnectionState::InGame;
         // NOTE: Java sends the five trace route addresses to the login server
         // (`sendClientTracert`); the link has no such message yet.
-        debug!("EnterWorld of {} from {}: tracert {:?}", player.name, self.ip, packet.tracert);
+        debug!(
+            "EnterWorld of {} from {}: tracert {:?}",
+            player.name, self.ip, packet.tracert
+        );
 
         let (sink, events) = ConnectionSink::new(ctl.handle().clone(), Arc::clone(&self.in_world));
         let sent = self.ctx.world.send(WorldCommand::EnterWorld {
@@ -488,10 +496,153 @@ impl ClientSession {
     }
 }
 
-/// `CharacterSelect` helper: the map of variables as the loader returns it.
-pub type Variables = BTreeMap<String, String>;
-
 /// Logs a failed load like Java (`Could not restore in slot: n`).
 pub fn log_load_failure(char_id: i32, error: &LoadError) {
     error!("Could not restore character {char_id}: {error}");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn row() -> CharacterRow {
+        CharacterRow {
+            account_name: Some("acc".into()),
+            char_id: 0x6000_0001,
+            char_name: "Hero".into(),
+            level: Some(40),
+            max_hp: Some(1_000),
+            cur_hp: Some(900),
+            max_cp: Some(500),
+            cur_cp: Some(400),
+            max_mp: Some(300),
+            cur_mp: Some(200),
+            face: Some(1),
+            hair_style: Some(2),
+            hair_color: Some(3),
+            sex: Some(1),
+            heading: Some(555),
+            x: Some(-1),
+            y: Some(-2),
+            z: Some(-3),
+            exp: Some(123_456_789_012),
+            exp_before_death: Some(0),
+            sp: 4_000_000_000,
+            karma: Some(7),
+            fame: 99,
+            pvpkills: Some(5),
+            pkkills: Some(6),
+            clanid: Some(0),
+            race: Some(2),
+            classid: Some(20),
+            base_class: 18,
+            transform_id: 0,
+            deletetime: 0,
+            cancraft: Some(0),
+            title: None,
+            title_color: 0x0012_3456,
+            accesslevel: Some(0),
+            online: Some(0),
+            onlinetime: Some(3_600),
+            char_slot: Some(0),
+            newbie: Some(0),
+            last_access: 0,
+            clan_privs: Some(0),
+            wantspeace: Some(0),
+            isin7sdungeon: 0,
+            power_grade: Some(0),
+            nobless: 1,
+            subpledge: 0,
+            lvl_joined_academy: 0,
+            apprentice: 0,
+            sponsor: 0,
+            clan_join_expiry_time: 0,
+            clan_create_expiry_time: 0,
+            death_penalty_level: 3,
+            bookmarkslot: 9,
+            vitality_points: 15_000,
+            language: None,
+            faction: 0,
+            pccafe_points: 0,
+        }
+    }
+
+    #[test]
+    fn a_characters_row_becomes_player_data() {
+        let p = player_from_row(&row());
+        assert_eq!(
+            (p.object_id, p.account.as_str(), p.name.as_str()),
+            (ObjectId(0x6000_0001), "acc", "Hero")
+        );
+        // A NULL title is an empty title.
+        assert_eq!(p.title, "");
+        assert_eq!((p.class_id, p.base_class, p.race, p.sex), (20, 18, 2, 1));
+        assert_eq!((p.level, p.exp, p.sp), (40, 123_456_789_012, 4_000_000_000));
+        assert_eq!((p.karma, p.pvp_kills, p.pk_kills), (7, 5, 6));
+        assert_eq!((p.x, p.y, p.z, p.heading), (-1, -2, -3, 555));
+        assert_eq!(
+            (p.cur_hp, p.max_hp, p.cur_mp, p.max_mp, p.cur_cp, p.max_cp),
+            (900.0, 1000.0, 200.0, 300.0, 400.0, 500.0)
+        );
+        assert_eq!(p.online_time, 3_600);
+        assert!(p.items.is_empty() && p.skills.is_empty() && p.shortcuts.is_empty());
+        let profile = &p.profile;
+        assert_eq!(
+            (profile.fame, profile.noble, profile.title_color),
+            (99, true, 0x0012_3456)
+        );
+        assert_eq!(
+            (
+                profile.vitality_points,
+                profile.bookmark_slot,
+                profile.death_penalty_level
+            ),
+            (15_000, 9, 3)
+        );
+    }
+
+    #[test]
+    fn macro_commands_follow_macro_list_restore_me() {
+        let commands = parse_macro_commands("1,1177,0,;3,0,0,/say hi;5,57,1;bad;2,x,0;7,1");
+        assert_eq!(
+            commands,
+            [
+                MacroCmdData {
+                    kind: 1,
+                    d1: 1177,
+                    d2: 0,
+                    cmd: String::new()
+                },
+                MacroCmdData {
+                    kind: 3,
+                    d1: 0,
+                    d2: 0,
+                    cmd: "/say hi".into()
+                },
+                MacroCmdData {
+                    kind: 5,
+                    d1: 57,
+                    d2: 1,
+                    cmd: String::new()
+                },
+            ]
+        );
+        assert!(parse_macro_commands("").is_empty());
+    }
+
+    #[test]
+    fn the_restore_location_variable_moves_the_character() {
+        let mut p = player_from_row(&row());
+        apply_restore_location(&mut p);
+        assert_eq!((p.x, p.y, p.z), (-1, -2, -3));
+        p.profile
+            .variables
+            .insert(RESTORE_LOCATION.into(), "83597;147915;-3405".into());
+        apply_restore_location(&mut p);
+        assert_eq!((p.x, p.y, p.z), (83_597, 147_915, -3_405));
+        // A broken value is ignored.
+        p.profile.variables.insert(RESTORE_LOCATION.into(), "1;2".into());
+        apply_restore_location(&mut p);
+        assert_eq!((p.x, p.y, p.z), (83_597, 147_915, -3_405));
+    }
 }

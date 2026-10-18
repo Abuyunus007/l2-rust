@@ -77,10 +77,7 @@ fn inventory_items(data: &PlayerData) -> impl Iterator<Item = &ItemData> {
 pub fn paperdoll_items(data: &PlayerData) -> [Option<&ItemData>; paperdoll::TOTAL_SLOTS] {
     let mut slots = [None; paperdoll::TOTAL_SLOTS];
     for item in data.items.iter().filter(|i| i.loc == LOC_PAPERDOLL) {
-        if let Some(slot) = usize::try_from(item.loc_data)
-            .ok()
-            .and_then(|s| slots.get_mut(s))
-        {
+        if let Some(slot) = usize::try_from(item.loc_data).ok().and_then(|s| slots.get_mut(s)) {
             *slot = Some(item);
         }
     }
@@ -409,10 +406,10 @@ impl World {
     /// The packets of Java's `EnterWorld.runImpl`, in its order (see the module comment for what
     /// is left out).
     pub(crate) fn on_entered(&mut self, id: ObjectId) {
-        let now_ms = crate::world::unix_ms_now();
-        let Some(player) = self.players.get(&id) else {
+        if !self.players.contains_key(&id) {
             return;
-        };
+        }
+        let now_ms = crate::world::unix_ms_now();
 
         // player.sendPacket(new UserInfo(player)), without ExBrExtraUserInfo. The
         // recommendations are not loaded yet (`checkRecoBonusTask` below), so this one shows 0,
@@ -426,94 +423,26 @@ impl World {
         // NOTE(java-quirk): Java also stores them again (`REPLACE INTO character_reco_bonus`).
         // That write is not made here: it would write back what was just read.
         if self.settings.nevit_enabled {
-            let profile = &player.data.profile;
-            let (have, left, hourglass) = (profile.recom_have, profile.recom_left, profile.recom_time_left_ms);
-            if let Some(p) = self.players.get_mut(&id) {
-                p.recom_have = have;
-                p.recom_left = left;
-                p.hourglass_ms = hourglass;
-            }
-            if let Some(p) = self.players.get(&id) {
-                self.send(id, &vote_system_info(p));
-            }
+            self.load_recommendations(id);
+            self.send_vote_system_info(id);
         }
 
-        let Some(player) = self.players.get(&id) else {
-            return;
-        };
-        let data = &player.data;
-        let st = &*self.data;
-        let is_gm = st.access_level(data.access_level).is_gm;
-        let mut packets: Vec<Vec<u8>> = Vec::new();
-        {
-            use l2_net::Encode;
-            // player.getMacros().sendUpdate()
-            for list in macro_lists(&data.profile.macros) {
-                packets.push(list.to_bytes());
-            }
-            // player.sendPacket(new ItemList(player, false)), then ItemList.runImpl: ExQuestItemList
-            packets.push(item_list(data, st, now_ms).to_bytes());
-            packets.push(quest_item_list(data, st, now_ms).to_bytes());
-            // ExGetBookMarkInfoPacket. NOTE: the bookmarks (`character_tpbookmark`) are not loaded.
-            packets.push(
-                ExGetBookMarkInfoPacket {
-                    slot: data.profile.bookmark_slot,
-                    bookmarks: Vec::new(),
-                }
-                .to_bytes(),
-            );
-            packets.push(shortcut_init(data, st).to_bytes());
-            packets.push(ExBasicActionList::default_list().to_bytes());
-            // HennaInfo, QuestList: not loaded (no henna and no quest system yet).
-            packets.push(HennaInfo::default().to_bytes());
-            packets.push(QuestList::default().to_bytes());
-            // spawnMe(): M3. Then ExRotation.
-            packets.push(
-                ExRotation {
-                    char_id: id.0,
-                    heading: player.core.heading,
-                }
-                .to_bytes(),
-            );
-            // EtcStatusUpdate (the weight penalty comes from refreshOverloaded)
-            let load = current_load(data, st);
-            packets.push(
-                EtcStatusUpdate {
-                    weight_penalty: weight_penalty(load, player.stats.max_load),
-                    death_penalty_level: data.profile.death_penalty_level,
-                    ..EtcStatusUpdate::default()
-                }
-                .to_bytes(),
-            );
-            packets.push(storage_max_count(data, is_gm, &self.settings).to_bytes());
-            // FriendList: not loaded.
-            packets.push(FriendList::default().to_bytes());
-            packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
-            // Seven Signs period message, announcements, server news: not ported.
-            // player.sendSkillList() is queued by Java; see below.
-            // SkillCoolTime: the reuse timers are not restored.
-            packets.push(SkillCoolTime::default().to_bytes());
-        }
-        let nevit = self.settings.nevit_enabled;
-        let vote = self.players.get(&id).map(vote_system_info);
-        for bytes in packets {
+        // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
+        // storage limits, friends, the welcome message and the skill cool times.
+        for bytes in self.enter_packets(id, now_ms) {
             self.send_bytes(id, bytes);
         }
-        if nevit && let Some(vote) = vote {
-            self.send(id, &vote);
+
+        if self.settings.nevit_enabled {
+            // `player.sendPacket(new ExVoteSystemInfo(player))`
+            self.send_vote_system_info(id);
         }
         // ExShowContactList: the contacts are not loaded.
         self.send(id, &ExShowContactList::default());
-        if nevit {
+        if self.settings.nevit_enabled {
             // Nevit.onPlayerLogin: the hunting points and time are player variables.
-            let variable = |name: &str| -> i32 {
-                self.players
-                    .get(&id)
-                    .and_then(|p| p.data.profile.variables.get(name))
-                    .and_then(|v| v.parse::<i32>().ok())
-                    .unwrap_or(0)
-            };
-            let (points, time) = (variable("hunting_points"), variable("hunting_time"));
+            let points = self.player_variable(id, "hunting_points");
+            let time = self.player_variable(id, "hunting_time");
             self.send(id, &ExNevitAdventPointInfo { points });
             self.send(id, &ExNevitAdventTimeChange::new(time, true));
         }
@@ -525,24 +454,107 @@ impl World {
             p.entered_world = true;
         }
         self.send_user_info(id);
-        if let Some(p) = self.players.get(&id) {
-            // "Prevent relogin in game gfx."
-            self.send(
-                id,
-                &ValidateLocation {
-                    object_id: id.0,
-                    x: p.core.x,
-                    y: p.core.y,
-                    z: p.core.z,
-                    heading: p.core.heading,
-                },
-            );
-            // "Unstuck players that had client open when server crashed."
-            self.send(id, &ActionFailed);
-            // The queued `sendSkillList()` of EnterWorld reaches the client after the rest.
-            self.send(id, &skill_list(&p.data, &*self.data));
-        }
+        let Some(p) = self.players.get(&id) else {
+            return;
+        };
+        // "Prevent relogin in game gfx."
+        self.send(
+            id,
+            &ValidateLocation {
+                object_id: id.0,
+                x: p.core.x,
+                y: p.core.y,
+                z: p.core.z,
+                heading: p.core.heading,
+            },
+        );
+        // "Unstuck players that had client open when server crashed."
+        self.send(id, &ActionFailed);
+        // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
+        self.send(id, &skill_list(&p.data, &*self.data));
         debug!("enter-world packets sent to {id}");
+    }
+
+    /// Java `Player.loadRecommendations` (the database part is the session's job).
+    fn load_recommendations(&mut self, id: ObjectId) {
+        if let Some(p) = self.players.get_mut(&id) {
+            p.recom_have = p.data.profile.recom_have;
+            p.recom_left = p.data.profile.recom_left;
+            p.hourglass_ms = p.data.profile.recom_time_left_ms;
+        }
+    }
+
+    fn send_vote_system_info(&self, id: ObjectId) {
+        if let Some(p) = self.players.get(&id) {
+            self.send(id, &vote_system_info(p));
+        }
+    }
+
+    /// An integer player variable; 0 when it is missing or not a number (`getInt(name, 0)`).
+    fn player_variable(&self, id: ObjectId, name: &str) -> i32 {
+        self.players
+            .get(&id)
+            .and_then(|p| p.data.profile.variables.get(name))
+            .and_then(|v| v.parse::<i32>().ok())
+            .unwrap_or(0)
+    }
+
+    /// The encoded packets from the macro list to `SkillCoolTime`.
+    fn enter_packets(&self, id: ObjectId, now_ms: i64) -> Vec<Vec<u8>> {
+        use l2_net::Encode;
+
+        let Some(player) = self.players.get(&id) else {
+            return Vec::new();
+        };
+        let data = &player.data;
+        let st = &*self.data;
+        let is_gm = st.access_level(data.access_level).is_gm;
+        let mut packets: Vec<Vec<u8>> = Vec::new();
+        // player.getMacros().sendUpdate()
+        for list in macro_lists(&data.profile.macros) {
+            packets.push(list.to_bytes());
+        }
+        // player.sendPacket(new ItemList(player, false)), then ItemList.runImpl: ExQuestItemList
+        packets.push(item_list(data, st, now_ms).to_bytes());
+        packets.push(quest_item_list(data, st, now_ms).to_bytes());
+        // ExGetBookMarkInfoPacket. NOTE: the bookmarks (`character_tpbookmark`) are not loaded.
+        packets.push(
+            ExGetBookMarkInfoPacket {
+                slot: data.profile.bookmark_slot,
+                bookmarks: Vec::new(),
+            }
+            .to_bytes(),
+        );
+        packets.push(shortcut_init(data, st).to_bytes());
+        packets.push(ExBasicActionList::default_list().to_bytes());
+        // HennaInfo, QuestList: not loaded (no henna and no quest system yet).
+        packets.push(HennaInfo::default().to_bytes());
+        packets.push(QuestList::default().to_bytes());
+        // spawnMe(): M3. Then ExRotation.
+        packets.push(
+            ExRotation {
+                char_id: id.0,
+                heading: player.core.heading,
+            }
+            .to_bytes(),
+        );
+        // EtcStatusUpdate (the weight penalty comes from refreshOverloaded)
+        packets.push(
+            EtcStatusUpdate {
+                weight_penalty: weight_penalty(current_load(data, st), player.stats.max_load),
+                death_penalty_level: data.profile.death_penalty_level,
+                ..EtcStatusUpdate::default()
+            }
+            .to_bytes(),
+        );
+        packets.push(storage_max_count(data, is_gm, &self.settings).to_bytes());
+        // FriendList: not loaded.
+        packets.push(FriendList::default().to_bytes());
+        packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
+        // Seven Signs period message, announcements, server news: not ported.
+        // SkillCoolTime: the reuse timers are not restored.
+        packets.push(SkillCoolTime::default().to_bytes());
+        packets
     }
 }
 
@@ -633,7 +645,10 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         mount_type: 0,
         private_store_type: 0,
         // `getSkillLevel(CommonSkill.CREATE_DWARVEN) >= 1`
-        has_dwarven_craft: data.skills.iter().any(|s| s.skill_id == 172 && s.skill_level >= 1),
+        has_dwarven_craft: data
+            .skills
+            .iter()
+            .any(|s| s.skill_id == 172 && s.skill_level >= 1),
         pk_kills: data.pk_kills,
         pvp_kills: data.pvp_kills,
         cubics: Vec::new(),
