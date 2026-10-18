@@ -12,6 +12,7 @@ pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod loader;
 pub mod player_template;
+pub mod skill_tree;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -24,6 +25,7 @@ pub use initial_shortcuts::{
 };
 pub use loader::DataError;
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
+pub use skill_tree::{SkillLearn, SkillTrees};
 
 /// Everything loaded from a datapack folder.
 #[derive(Debug, Clone)]
@@ -40,6 +42,8 @@ pub struct Datapack {
     pub initial_shortcuts: Arc<InitialShortcuts>,
     /// `data/stats/players/templates/**`.
     pub player_templates: Arc<PlayerTemplates>,
+    /// `data/stats/players/skillTrees/**`.
+    pub skill_trees: Arc<SkillTrees>,
 }
 
 impl Datapack {
@@ -61,6 +65,8 @@ impl Datapack {
             initial_equipment: Arc::new(InitialEquipments::load(root)),
             initial_shortcuts: Arc::new(InitialShortcuts::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
+            player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
+            skill_trees: Arc::new(SkillTrees::load(root)),
         })
     }
 }
