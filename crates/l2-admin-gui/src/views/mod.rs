@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod connection;
+pub mod servers;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -48,14 +49,13 @@ impl ViewId {
 
     /// Placeholders (`false`) are shown greyed out and cannot be selected.
     pub fn is_available(self) -> bool {
-        matches!(self, ViewId::Connection)
+        matches!(self, ViewId::Connection | ViewId::Servers)
     }
 
     /// Which card adds the view; shown in the placeholder's tooltip.
     pub fn planned_in(self) -> &'static str {
         match self {
-            ViewId::Connection => "",
-            ViewId::Servers => "M1-GUI-02",
+            ViewId::Connection | ViewId::Servers => "",
             ViewId::Logs => "M1-GUI-03",
             ViewId::Packets => "M1-GUI-04",
         }
@@ -66,6 +66,7 @@ impl ViewId {
 #[derive(Default)]
 pub struct Views {
     pub connection: connection::ConnectionView,
+    pub servers: servers::ServersView,
 }
 
 impl Views {
@@ -73,12 +74,14 @@ impl Views {
     pub fn get_mut(&mut self, id: ViewId) -> Option<&mut dyn View> {
         match id {
             ViewId::Connection => Some(&mut self.connection),
-            ViewId::Servers | ViewId::Logs | ViewId::Packets => None,
+            ViewId::Servers => Some(&mut self.servers),
+            ViewId::Logs | ViewId::Packets => None,
         }
     }
 
     pub fn dispatch(&mut self, event: &BridgeEvent) {
         self.connection.on_event(event);
+        self.servers.on_event(event);
     }
 }
 
