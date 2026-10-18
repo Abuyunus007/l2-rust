@@ -26,6 +26,7 @@
 
 pub mod capture;
 mod game;
+mod game_fields;
 mod login;
 pub mod rewrite;
 

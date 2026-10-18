@@ -379,14 +379,21 @@ fn check_capture(records: &[Record], text: &str, encryption: bool) {
         records.iter().all(|r| r.conn == records[0].conn),
         "one connection"
     );
-    assert!(
-        records
-            .iter()
-            .all(|r| r.fields.is_none() || r.name == "AUTH_LOGIN")
-    );
+    // Packets with a struct in l2-protocol-game are decoded; the others have no fields.
+    let find = |name: &str| records.iter().find(|r| r.name == name).unwrap();
+    for name in [
+        "PROTOCOL_VERSION",
+        "VERSION_CHECK",
+        "CHARACTER_SELECT",
+        "ENTER_WORLD",
+    ] {
+        assert!(find(name).fields.is_some(), "{name} is decoded");
+    }
+    for name in ["EX_SAY2_FAIL", "EX_BOOKMARK_PACKET"] {
+        assert!(find(name).fields.is_none(), "{name} has no decoder");
+    }
 
     // The raw plaintext payloads, decrypted.
-    let find = |name: &str| records.iter().find(|r| r.name == name).unwrap();
     assert_eq!(find("PROTOCOL_VERSION").raw, "0e21c60000");
     assert_eq!(find("VERSION_CHECK").raw_bytes().unwrap(), key_packet(encryption));
     assert_eq!(find("EX_SAY2_FAIL").raw, "fee800aabb");

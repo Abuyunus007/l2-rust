@@ -35,13 +35,13 @@ use std::time::Duration;
 use l2_crypto::{GameCipher, game_key_from_random};
 use l2_net::CancellationToken;
 use l2_protocol_game::{ClientOpcode, ConnectionState, ExClientOpcode, ServerOpcode};
-use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::net::{TcpListener, TcpStream};
 use tokio::sync::mpsc::UnboundedSender;
 
-use crate::capture::{Channel, Dir, REDACTED, Record};
+use crate::capture::{Channel, Dir, Record};
+use crate::game_fields;
 
 /// How long connecting to the real game server may take.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -480,7 +480,14 @@ async fn pump(
                 packet.name,
                 packet.state.name()
             );
-            let fields = packet.redacted.then(|| json!({ "credentials": REDACTED }));
+            // Decoded from the copy in `packet.raw`; a body that does not decode gets no fields.
+            let fields = game_fields::describe(
+                packet.dir,
+                packet.state,
+                packet.ex_opcode,
+                &packet.raw,
+                packet.redacted,
+            );
             let mut record = Record::new(
                 conn,
                 packet.dir,
