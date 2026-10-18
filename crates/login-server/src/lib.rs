@@ -28,6 +28,7 @@ use std::time::Duration;
 
 use l2_config::{ConfigError, LoginConfig, LoginConfigSet};
 use l2_db::{DbError, LoginRepository, Pool};
+use l2_net::CancellationToken;
 use l2_util::WorldRng;
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
@@ -89,8 +90,10 @@ pub enum StartupError {
 pub struct Server {
     state: Arc<LoginState>,
     shutdown_requests: mpsc::UnboundedReceiver<ExitReason>,
-    /// Background tasks (restart timer, purge). Listener tasks join them in later cards.
+    /// Background and listener tasks. All are stopped on shutdown.
     tasks: JoinSet<()>,
+    /// Cancelled on shutdown; listeners and their connections watch it (child tokens).
+    cancel: CancellationToken,
 }
 
 impl Server {
@@ -142,12 +145,37 @@ impl Server {
             spawn_restart_timer(&mut tasks, delay, shutdown);
         }
 
-        info!("Login server is ready (no listeners yet).");
-        Ok(Self {
+        let mut server = Self {
             state,
             shutdown_requests,
             tasks,
-        })
+            cancel: CancellationToken::new(),
+        };
+        // Listeners. Each card adds one line here:
+        // - client listener on LoginserverPort (M1-LS-02)
+        // - game server listener on LoginPort (M1-LS-04)
+        server.start_listeners().await?;
+        info!("Login server is ready.");
+        Ok(server)
+    }
+
+    /// Starts the network listeners (see the list in `start_with`).
+    async fn start_listeners(&mut self) -> Result<(), StartupError> {
+        Ok(())
+    }
+
+    /// Runs `task` until shutdown. Listener cards use this.
+    pub fn spawn<F>(&mut self, task: F)
+    where
+        F: Future<Output = ()> + Send + 'static,
+    {
+        self.tasks.spawn(task);
+    }
+
+    /// A token that is cancelled when the server shuts down (for `l2_net::listen` and
+    /// connections).
+    pub fn cancel_token(&self) -> CancellationToken {
+        self.cancel.child_token()
     }
 
     pub fn state(&self) -> &Arc<LoginState> {
@@ -190,7 +218,9 @@ impl Server {
                 ""
             }
         );
-        // Aborts the background tasks and waits for them, so nothing touches the pool later.
+        // Stop listeners and connections first, then abort the remaining tasks and wait for
+        // them, so nothing touches the pool later.
+        self.cancel.cancel();
         self.tasks.shutdown().await;
         self.state.pool.close().await;
         info!("Login server stopped, exit code {}.", reason.code());
@@ -325,6 +355,7 @@ mod tests {
             state: Arc::clone(&state),
             shutdown_requests: requests,
             tasks: JoinSet::new(),
+            cancel: CancellationToken::new(),
         };
         state.request_shutdown(true);
         let reason = server.run_until(std::future::pending::<()>()).await;
@@ -341,6 +372,7 @@ mod tests {
             state,
             shutdown_requests: requests,
             tasks,
+            cancel: CancellationToken::new(),
         };
         let reason = server.run_until(std::future::ready(())).await;
         assert_eq!(reason, ExitReason::Shutdown);

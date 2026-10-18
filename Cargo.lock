@@ -2567,6 +2567,7 @@ dependencies = [
  "l2-config",
  "l2-crypto",
  "l2-db",
+ "l2-net",
  "l2-util",
  "quick-xml 0.42.0",
  "rand 0.10.3",

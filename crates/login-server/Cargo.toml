@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+l2-net.workspace = true
 l2-config.workspace = true
 l2-crypto.workspace = true
 l2-db.workspace = true
