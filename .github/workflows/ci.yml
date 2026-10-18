@@ -74,8 +74,8 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: l2-db tests (unit + integration)
-        run: cargo test -p l2-db -- --nocapture
+      - name: l2-db and login-server tests (unit + integration)
+        run: cargo test -p l2-db -p login-server -- --nocapture
 
   hygiene:
     name: Repo hygiene
