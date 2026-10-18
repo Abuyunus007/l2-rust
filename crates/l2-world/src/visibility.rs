@@ -9,8 +9,7 @@
 // What Java does on top that is not here yet, with its card:
 // - AI hooks (`describeStateToPlayer`, `setIntentionActive`, `notifyActionForgetObject`,
 //   `switchAI`): M4.
-// - What NPCs send when they come into view (`sendInfo`): M3-NPC-01. Doors, fences and static
-//   objects are in `door.rs`.
+// - Doors, fences and static objects are in `door.rs`; NPCs in `npc.rs`.
 
 use l2_net::Encode;
 use l2_protocol_game::server::DeleteObject;
@@ -406,8 +405,7 @@ impl World {
         };
         match kind {
             ObjectKind::Player => self.send_player_info(subject, viewer),
-            // M3-NPC-01: NpcInfo (Npc.sendInfo).
-            ObjectKind::Npc => {}
+            ObjectKind::Npc => self.send_npc_info(subject, viewer),
             ObjectKind::Door => self.send_door_info(subject, viewer),
             ObjectKind::Fence => self.send_fence_info(subject, viewer),
             ObjectKind::StaticObject => self.send_static_object_info(subject, viewer),

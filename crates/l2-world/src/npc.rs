@@ -1,0 +1,1044 @@
+//! NPCs in the world: spawning what the spawn files describe, `NpcInfo` for the players who see
+//! them, and taking them out again. No AI, no respawn, no combat (M4).
+// Java: org/l2jmobius/gameserver/data/xml/SpawnData.java (the startup part: counts, logs)
+// Java: org/l2jmobius/gameserver/entity/spawns/{Spawn,SpawnGroup,SpawnGroupEntry}.java
+// Java: org/l2jmobius/gameserver/managers/DayNightSpawnManager.java
+// Java: org/l2jmobius/gameserver/entity/actor/holders/npc/MinionList.java (first spawn only)
+// Java: org/l2jmobius/gameserver/entity/actor/Npc.java (constructor, sendInfo, deleteMe)
+// Java: org/l2jmobius/gameserver/network/serverpackets/AbstractNpcInfo.java (NpcInfo)
+//
+// What is read where: the spawn *description* (`SpawnData`: fixed spawns, groups, territories)
+// and the NPC templates come from `l2-data` and are handed over with `World::set_npc_data`;
+// the loader already did Java's file parsing. This module does what Java does when the loaded
+// spawns are started: roll the groups, pick territory points with the world RNG, correct Z with
+// the geodata, create the NPCs and put them into the regions.
+//
+// Not done here, with the reason:
+// - respawn after death, `Spawn.decreaseCount`, group replacement rolls, `RespawnTaskManager`:
+//   M4 (nothing dies yet).
+// - AI, walking routes (`WalkingManager`), `NpcPersonalAIData` (spawn `AIData`), champions
+//   (`ChampionMonstersConfig`, off by default): M4.
+// - Raid and grand bosses: Java's `RaidBossSpawnManager` / `GrandBossManager` spawn them from
+//   their own tables, the spawn files skip them (`SpawnData.checkTemplate`).
+// - the day/night switch while the server runs (`GameTimeTaskManager` -> `set_night`): needs the
+//   game clock service; only the start state is applied.
+// - castle owner crests in `NpcInfo`: castles are not loaded, so nobody owns one.
+
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+
+use l2_data::spawn::{NpcSpawn, PeriodOfDay, SpawnSelection};
+use l2_data::{NpcTemplate, NpcTemplates, SpawnData};
+use l2_net::Encode;
+use l2_protocol_game::server::NpcInfo;
+use l2_util::ObjectId;
+use tracing::{debug, info, warn};
+
+use crate::data::{BaseStat, StaticData};
+use crate::ids::IdFactory;
+use crate::objects::{Npc, ObjectKind};
+use crate::player::CreatureCore;
+use crate::world::{World, game_time_minutes, unix_ms_now};
+
+/// Which `entity/actor/instance/*` class a template type names, as far as it changes what the
+/// world does with the NPC (D-17: a kind enum instead of the class tree).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NpcClass {
+    /// Folk, merchants, teachers, guards, gatekeepers...: not attackable by a player.
+    Npc,
+    /// `Monster` and the subclasses that add nothing visible: `Chest`, `EventMonster`,
+    /// `FeedableBeast`, `RiftInvader`, `FestivalMonster`. Also what every minion is.
+    Monster,
+    /// `RaidBoss` (`isRaid()`).
+    RaidBoss,
+    /// `GrandBoss` (`isRaid()`).
+    GrandBoss,
+    /// `Block` (Block Checker): attackable only for players inside an arena.
+    Block,
+    /// `FriendlyMob`: attackable only for players with karma.
+    FriendlyMob,
+}
+
+impl NpcClass {
+    /// The class Java instantiates for a template type (`Class.forName("...instance." + type)`
+    /// then `getConstructor(NpcTemplate.class)`). `None` when Java's `Spawn` constructor throws:
+    /// there is no such class, or its constructor takes more than the template (pets,
+    /// servitors, decoys, traps, effect points, tamed beasts, UC towers).
+    // NOTE(java-quirk): that makes `Spawn.doSpawn`'s own Pet/Decoy/Trap check dead code; such
+    // spawns are never created or registered, and never counted.
+    pub fn from_type(npc_type: &str) -> Option<Self> {
+        Some(match npc_type {
+            "Monster" | "Chest" | "EventMonster" | "FeedableBeast" | "RiftInvader" | "FestivalMonster" => {
+                Self::Monster
+            }
+            "RaidBoss" => Self::RaidBoss,
+            "GrandBoss" => Self::GrandBoss,
+            "Block" => Self::Block,
+            "FriendlyMob" => Self::FriendlyMob,
+            "Adventurer"
+            | "Artefact"
+            | "Auctioneer"
+            | "BroadcastingTower"
+            | "CastleDoorman"
+            | "ClanHallDoorman"
+            | "ClanHallManager"
+            | "ControlTower"
+            | "DawnPriest"
+            | "Defender"
+            | "Doorman"
+            | "DungeonGatekeeper"
+            | "DuskPriest"
+            | "FestivalGuide"
+            | "Fisherman"
+            | "FlameTower"
+            | "FlyTerrainObject"
+            | "Folk"
+            | "FortCommander"
+            | "FortDoorman"
+            | "FortLogistics"
+            | "FortManager"
+            | "Guard"
+            | "KrateisCubeManager"
+            | "KrateisMatchManager"
+            | "Merchant"
+            | "OlympiadManager"
+            | "PetManager"
+            | "QuestGuard"
+            | "RaceManager"
+            | "SchemeBuffer"
+            | "SignsPriest"
+            | "Teleporter"
+            | "TerrainObject"
+            | "TerritoryWard"
+            | "Trainer"
+            | "UCHelper"
+            | "UCManager"
+            | "VillageMaster"
+            | "VillageMasterDElf"
+            | "VillageMasterDwarf"
+            | "VillageMasterFighter"
+            | "VillageMasterKamael"
+            | "VillageMasterMystic"
+            | "VillageMasterOrc"
+            | "VillageMasterPriest"
+            | "Warehouse" => Self::Npc,
+            _ => return None,
+        })
+    }
+
+    /// Java `isMonster()`.
+    pub fn is_monster(self) -> bool {
+        matches!(
+            self,
+            Self::Monster | Self::RaidBoss | Self::GrandBoss | Self::Block
+        )
+    }
+
+    /// Java `isRaid()`.
+    pub fn is_raid(self) -> bool {
+        matches!(self, Self::RaidBoss | Self::GrandBoss)
+    }
+
+    /// Java `isAutoAttackable(player)` for a player outside any siege, arena or faction war.
+    // Siege NPCs (`Defender`, `FortCommander`, `TerritoryWard`) are only attackable while a siege
+    // runs, `Guard` only with the faction system on: all false here until sieges exist.
+    fn auto_attackable_by(self, viewer_karma: i32) -> bool {
+        match self {
+            Self::Monster | Self::RaidBoss | Self::GrandBoss => true,
+            Self::FriendlyMob => viewer_karma > 0,
+            Self::Block | Self::Npc => false,
+        }
+    }
+}
+
+/// The configuration values spawning and `NpcInfo` read (Java `NpcConfig`,
+/// `RandomSpawnsConfig`). `Default` is the Java default of each key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NpcSettings {
+    /// `NpcConfig.SHOW_NPC_LEVEL` (`ShowNpcLevel`).
+    pub show_npc_level: bool,
+    /// `NpcConfig.SHOW_NPC_AGGRESSION` (`ShowNpcAggression`).
+    pub show_npc_aggression: bool,
+    /// `NpcConfig.ENABLE_RANDOM_ENCHANT_EFFECT` (`EnableRandomEnchantEffect`).
+    pub enable_random_enchant_effect: bool,
+    /// `RandomSpawnsConfig.ENABLE_RANDOM_MONSTER_SPAWNS` (`EnableRandomMonsterSpawns`).
+    pub random_monster_spawns: bool,
+    /// `RandomSpawnsConfig.MOB_MAX_SPAWN_RANGE` (`MaxSpawnMobRange`); the minimum is its negative.
+    pub mob_max_spawn_range: i32,
+    /// `RandomSpawnsConfig.MOBS_LIST_NOT_RANDOM` (`MobsSpawnNotRandom`).
+    pub mobs_not_random: HashSet<i32>,
+}
+
+impl Default for NpcSettings {
+    fn default() -> Self {
+        Self {
+            show_npc_level: false,
+            show_npc_aggression: false,
+            enable_random_enchant_effect: false,
+            random_monster_spawns: false,
+            mob_max_spawn_range: 150,
+            mobs_not_random: HashSet::new(),
+        }
+    }
+}
+
+/// `ZoneManager.getZone(x, y, z, WaterZone.class) != null`. The world has no zones yet (M3 zone
+/// work), so the game server hands it this over the datapack's zones.
+pub type WaterCheck = Arc<dyn Fn(i32, i32, i32) -> bool + Send + Sync>;
+
+/// Everything the NPC code keeps in the world besides the NPCs themselves.
+#[derive(Default)]
+pub(crate) struct NpcWorld {
+    templates: Option<Arc<NpcTemplates>>,
+    spawns: Option<Arc<SpawnData>>,
+    settings: NpcSettings,
+    water: Option<WaterCheck>,
+    ids: Option<Arc<IdFactory>>,
+    /// Java `DayNightSpawnManager._dayCreatures` / `_nightCreatures`: indices into the spawns.
+    day: Vec<usize>,
+    night: Vec<usize>,
+    /// Java `Spawn.getLastSpawn()` of the day and night spawns.
+    last_spawned: HashMap<usize, ObjectId>,
+}
+
+/// What [`World::spawn_all_npcs`] did.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SpawnReport {
+    /// Java `SpawnData._spawnCount`: the number in "N spawns have been initialized!". Fixed
+    /// spawns that were created, units of groups that were created, and one for every day or
+    /// night spawn (created or not).
+    pub spawn_count: usize,
+    /// Fixed spawns created at once (not day/night).
+    pub fixed: usize,
+    /// Units created by spawn groups.
+    pub grouped: usize,
+    /// Day and night spawns declared.
+    pub day_night: usize,
+    /// Day or night NPCs created by the start state.
+    pub day_night_created: usize,
+    /// NPC objects in the world afterwards, minions included.
+    pub npcs: usize,
+    /// Minions created for master monsters.
+    pub minions: usize,
+    /// Spawns Java would have dropped because the template type has no usable class.
+    pub skipped_type: usize,
+    /// Spawns that could not be placed (no location, territory without a shape, out of ids).
+    pub failed: usize,
+}
+
+impl World {
+    /// Hands the world the NPC templates and the spawn list. Call before [`Self::spawn_all_npcs`].
+    pub fn set_npc_data(&mut self, templates: Arc<NpcTemplates>, spawns: Arc<SpawnData>) {
+        self.npc_world.templates = Some(templates);
+        self.npc_world.spawns = Some(spawns);
+    }
+
+    /// Installs the configuration values NPCs read.
+    pub fn set_npc_settings(&mut self, settings: NpcSettings) {
+        self.npc_world.settings = settings;
+    }
+
+    /// Installs the water zone lookup (NPCs in water use swim speeds and spawn without Z
+    /// correction). Without it nothing is in water.
+    pub fn set_water_check(&mut self, check: WaterCheck) {
+        self.npc_world.water = Some(check);
+    }
+
+    /// The id factory the NPCs take their object ids from (the game server's `state.ids`).
+    pub fn set_id_factory(&mut self, ids: Arc<IdFactory>) {
+        self.npc_world.ids = Some(ids);
+    }
+
+    /// An NPC by object id.
+    pub fn npc(&self, id: ObjectId) -> Option<&Npc> {
+        self.npcs.get(&id)
+    }
+
+    /// The object ids of all NPCs, in ascending order.
+    pub fn npc_ids(&self) -> Vec<ObjectId> {
+        let mut ids: Vec<ObjectId> = self.npcs.keys().copied().collect();
+        ids.sort_unstable_by_key(|id| id.0);
+        ids
+    }
+
+    /// Number of NPCs in the world.
+    pub fn npc_count(&self) -> usize {
+        self.npcs.len()
+    }
+
+    /// Java `SpawnData.load()` after the files are parsed: starts every fixed spawn, rolls and
+    /// spawns the groups, registers the day and night spawns and applies the current period
+    /// (`DayNightSpawnManager.notifyChangeMode()` from `GameServer`). `night` is
+    /// `GameTimeTaskManager.isNight()`.
+    ///
+    /// Logs Java's "N spawns have been initialized!" line. Does nothing without
+    /// [`Self::set_npc_data`] (`NoSpawns`).
+    pub fn spawn_all_npcs(&mut self, night: bool) -> SpawnReport {
+        let mut report = SpawnReport::default();
+        let (Some(spawns), Some(_)) = (self.npc_world.spawns.clone(), self.npc_world.templates.clone())
+        else {
+            return report;
+        };
+
+        // Fixed spawns are started while Java parses the files, in file order...
+        for (index, spawn) in spawns.spawns().iter().enumerate() {
+            if spawn.group.is_some() {
+                continue;
+            }
+            if !self.spawn_is_creatable(spawn, &mut report) {
+                continue;
+            }
+            match spawn.period_of_day {
+                None => {
+                    // Spawn.init(): `while (_currentCount < _maximumCount) doSpawn()`.
+                    let mut current = 0;
+                    while current < spawn.amount {
+                        if self.do_spawn(index, &mut report).is_none() {
+                            break;
+                        }
+                        current += 1;
+                        report.fixed += 1;
+                        report.spawn_count += 1;
+                    }
+                }
+                Some(period) => {
+                    match period {
+                        PeriodOfDay::Day => self.npc_world.day.push(index),
+                        PeriodOfDay::Night => self.npc_world.night.push(index),
+                    }
+                    report.day_night += 1;
+                    report.spawn_count += 1;
+                }
+            }
+        }
+
+        // ...the groups once all files are in.
+        for group in 0..spawns.groups().len() {
+            let spawned = self.spawn_group_initially(group, &mut report);
+            report.grouped += spawned;
+            report.spawn_count += spawned;
+        }
+
+        if report.skipped_type > 0 {
+            warn!(
+                "SpawnData: {} spawn(s) skipped: the template type has no class that Spawn can build from a template (Pet, Servitor, Decoy, ...).",
+                report.skipped_type
+            );
+        }
+        if report.failed > 0 {
+            warn!("SpawnData: {} spawn(s) could not be placed.", report.failed);
+        }
+        info!("SpawnData: {} spawns have been initialized!", report.spawn_count);
+
+        // GameServer: DayNightSpawnManager.getInstance().trim().notifyChangeMode()
+        report.day_night_created = self.apply_day_night(night, &mut report);
+        report.npcs = self.npcs.len();
+        report
+    }
+
+    /// `DayNightSpawnManager.notifyChangeMode()`: the day (or night) spawns appear, the others go.
+    /// Returns how many NPCs were created. The game clock calls this when the period changes.
+    pub fn set_night(&mut self, night: bool) -> usize {
+        self.apply_day_night(night, &mut SpawnReport::default())
+    }
+
+    /// Whether it is night now: Java `GameTimeTaskManager._isNight`, game hours 0 to 5.
+    // NOTE: the game clock counts from UTC midnight here (see `game_time_minutes`).
+    pub fn is_night_now() -> bool {
+        game_time_minutes(unix_ms_now()) < 6 * 60
+    }
+
+    fn apply_day_night(&mut self, night: bool, report: &mut SpawnReport) -> usize {
+        if self.npc_world.day.is_empty() && self.npc_world.night.is_empty() {
+            return 0;
+        }
+        let (unspawn, spawn, unspawn_name, spawn_name) = if night {
+            (
+                self.npc_world.day.clone(),
+                self.npc_world.night.clone(),
+                "day",
+                "night",
+            )
+        } else {
+            (
+                self.npc_world.night.clone(),
+                self.npc_world.day.clone(),
+                "night",
+                "day",
+            )
+        };
+        if !unspawn.is_empty() {
+            let mut removed = 0;
+            for index in unspawn {
+                if let Some(last) = self.npc_world.last_spawned.remove(&index) {
+                    self.delete_npc(last);
+                    removed += 1;
+                }
+            }
+            info!("DayNightSpawnManager: Removed {removed} {unspawn_name} creatures");
+        }
+        let mut created = 0;
+        for index in &spawn {
+            if let Some(id) = self.do_spawn(*index, report) {
+                self.npc_world.last_spawned.insert(*index, id);
+                created += 1;
+            }
+        }
+        // Java counts the calls to doSpawn, not the NPCs that came out.
+        info!(
+            "DayNightSpawnManager: Spawned {} {spawn_name} creatures",
+            spawn.len()
+        );
+        created
+    }
+
+    /// Java's `new Spawn(npcId)` can fail (no class): then the spawn does not exist.
+    fn spawn_is_creatable(&self, spawn: &NpcSpawn, report: &mut SpawnReport) -> bool {
+        let Some(templates) = &self.npc_world.templates else {
+            return false;
+        };
+        let Some(template) = templates.get(spawn.npc_id) else {
+            return false;
+        };
+        if NpcClass::from_type(&template.npc_type).is_none() {
+            debug!(
+                "Spawn could not be initialized: NPC {} class not found",
+                spawn.npc_id
+            );
+            report.skipped_type += 1;
+            return false;
+        }
+        true
+    }
+
+    /// Java `SpawnGroup.initialSpawn()`.
+    fn spawn_group_initially(&mut self, group_index: usize, report: &mut SpawnReport) -> usize {
+        let Some(spawns) = self.npc_world.spawns.clone() else {
+            return 0;
+        };
+        let Some(group) = spawns.groups().get(group_index) else {
+            return 0;
+        };
+        if group.entries.is_empty() {
+            // The loader already warned ("has no valid entries"), as Java does here.
+            return 0;
+        }
+        // The slots of an entry whose class Java cannot build do not exist.
+        let entries: Vec<Vec<usize>> = group
+            .entries
+            .iter()
+            .map(|entry| {
+                entry
+                    .slots
+                    .iter()
+                    .copied()
+                    .filter(|slot| {
+                        spawns
+                            .spawns()
+                            .get(*slot)
+                            .is_some_and(|s| self.spawn_is_creatable(s, report))
+                    })
+                    .collect()
+            })
+            .collect();
+        let mut state = GroupState {
+            selection: group.selection,
+            maximum: i64::from(group.maximum_npc),
+            alive: 0,
+            entry_alive: vec![0; group.entries.len()],
+            entry_total: group.entries.iter().map(|e| i64::from(e.total)).collect(),
+        };
+        let mut spawned = 0;
+        match group.selection {
+            SpawnSelection::All => {
+                for (i, entry) in group.entries.iter().enumerate() {
+                    if state.try_reserve(i, i64::from(entry.total)) {
+                        spawned += self.spawn_units(&mut state, &entries[i], i, entry.total, report);
+                    }
+                }
+            }
+            SpawnSelection::Random => {
+                // A single roll over the entry index, the whole quota of the rolled entry spawns.
+                let i = self.entry_roll(group.entries.len());
+                let total = group.entries[i].total;
+                if state.try_reserve(i, i64::from(total)) {
+                    spawned += self.spawn_units(&mut state, &entries[i], i, total, report);
+                }
+            }
+            SpawnSelection::RandomFill => {
+                // The cap is the roll counter; rolls use replacement, a roll into a full entry is lost.
+                for _ in 0..group.maximum_npc {
+                    let i = self.entry_roll(group.entries.len());
+                    if state.try_reserve(i, 1) {
+                        spawned += self.spawn_units(&mut state, &entries[i], i, 1, report);
+                    }
+                }
+            }
+        }
+        spawned
+    }
+
+    fn entry_roll(&mut self, len: usize) -> usize {
+        let bound = i32::try_from(len).unwrap_or(i32::MAX);
+        usize::try_from(self.rng().below(bound)).unwrap_or(0)
+    }
+
+    /// Java `SpawnGroup.spawnUnits`: a territory slot is rolled per unit.
+    fn spawn_units(
+        &mut self,
+        state: &mut GroupState,
+        slots: &[usize],
+        entry: usize,
+        count: i32,
+        report: &mut SpawnReport,
+    ) -> usize {
+        let mut spawned = 0;
+        for _ in 0..count {
+            let slot = slots.get(self.entry_roll(slots.len())).copied();
+            if slot.is_some_and(|slot| self.do_spawn(slot, report).is_some()) {
+                spawned += 1;
+            } else {
+                state.release(entry, 1);
+            }
+        }
+        spawned
+    }
+
+    /// Java `Spawn.doSpawn(false)` -> `initializeNpc`: creates one NPC for spawn `index`.
+    fn do_spawn(&mut self, index: usize, report: &mut SpawnReport) -> Option<ObjectId> {
+        let spawns = self.npc_world.spawns.clone()?;
+        let templates = self.npc_world.templates.clone()?;
+        let spawn = spawns.spawns().get(index)?;
+        let template = templates.get(spawn.npc_id)?;
+        let class = NpcClass::from_type(&template.npc_type)?;
+        let settings = self.npc_world.settings.clone();
+
+        // `new Npc(template)`: the random weapon enchant is drawn before the position.
+        let enchant = if settings.enable_random_enchant_effect {
+            self.rng().get(4, 21)
+        } else {
+            template.weapon_enchant
+        };
+
+        let geo = self.geo.clone();
+        let height = move |x: i32, y: i32, z: i32| geo.as_ref().map_or(z, |g| g.height(x, y, z));
+
+        let (mut x, mut y, mut z);
+        let mut heading = spawn.heading;
+        let mut territory_high_z = None;
+        if let Some(name) = &spawn.territory {
+            let territory = spawns.territory(name)?;
+            // None where Java's getRandomPoint throws; doSpawn catches it and returns null.
+            let Some(point) = territory.random_point(self.rng(), &height) else {
+                warn!(
+                    "NPC {} class not found: its spawn territory {name} has no usable shape.",
+                    spawn.npc_id
+                );
+                report.failed += 1;
+                return None;
+            };
+            (x, y, z) = (point.x, point.y, point.z);
+            // NOTE(java-quirk): a territory spawn forgets the heading of the XML (setHeading(-1)).
+            heading = -1;
+            territory_high_z = territory.shape().map(l2_data::spawn::TerritoryShape::high_z);
+        } else if spawn.location.x == 0 && spawn.location.y == 0 {
+            warn!("NPC {} doesn't have spawn location!", spawn.npc_id);
+            report.failed += 1;
+            return None;
+        } else {
+            (x, y, z) = (spawn.location.x, spawn.location.y, spawn.location.z);
+        }
+
+        let mut in_water = self.npc_world.water.as_ref().is_some_and(|f| f(x, y, z));
+
+        // Random monster spawns (custom RandomSpawns.ini): a monster with a fixed heading
+        // spawns up to MaxSpawnMobRange away, if it can walk and see there.
+        // WalkingManager.isTargeted (walker routes) and instances: M4.
+        if settings.random_monster_spawns
+            && heading != -1
+            && class.is_monster()
+            && !template.quest_monster
+            && !template.undying
+            && !class.is_raid()
+            && !template.flying
+            && !in_water
+            && !settings.mobs_not_random.contains(&template.id)
+        {
+            let range = settings.mob_max_spawn_range;
+            let rand_x = x.wrapping_add(self.rng().get(-range, range));
+            let rand_y = y.wrapping_add(self.rng().get(-range, range));
+            let ok = self.geo.as_ref().is_none_or(|g| {
+                let from = l2_geo::Location { x, y, z };
+                let to = l2_geo::Location {
+                    x: rand_x,
+                    y: rand_y,
+                    z,
+                };
+                g.can_move_to_target(from, to, 0) && g.can_see_target_in_instance(from, to, 0)
+            });
+            if ok {
+                x = rand_x;
+                y = rand_y;
+                heading = -1;
+                in_water = self.npc_world.water.as_ref().is_some_and(|f| f(x, y, z));
+            }
+        }
+
+        // Correct Z of monsters.
+        if class.is_monster() && !template.flying && !in_water {
+            let geo_z = height(x, y, z);
+            let dz = f64::from(z) - f64::from(geo_z);
+            // NOTE(java-quirk): Java passes `squared = true` to calculateDistance, so the "300"
+            // is a squared distance: Z is only corrected when it is less than ~17 off.
+            if dz * dz < 300.0 {
+                z = geo_z;
+            }
+            // Prevent new z exceeding spawn territory high z.
+            if let Some(high_z) = territory_high_z
+                && high_z < z
+            {
+                z = high_z;
+            }
+        }
+
+        let heading = if heading == -1 {
+            self.rng().below(61794)
+        } else {
+            heading
+        };
+
+        let id = self.create_npc(
+            template,
+            class,
+            Some(index),
+            None,
+            (x, y, z),
+            heading,
+            in_water,
+            enchant,
+        )?;
+
+        // Minions of master monsters.
+        if class.is_monster() && templates.master_monster_ids().contains(&template.id) {
+            self.spawn_minions(id, template, &templates, report);
+        }
+        Some(id)
+    }
+
+    /// Java `MinionList.spawnMinions(template.getParameters().getMinionList("Privates"))` for a
+    /// master that has none yet.
+    fn spawn_minions(
+        &mut self,
+        master: ObjectId,
+        master_template: &NpcTemplate,
+        templates: &NpcTemplates,
+        report: &mut SpawnReport,
+    ) {
+        let mut spawned_by_id: HashMap<i32, i32> = HashMap::new();
+        for holder in master_template.minion_list("Privates") {
+            let already = spawned_by_id.get(&holder.id).copied().unwrap_or(0);
+            for _ in 0..(holder.count - already).max(0) {
+                if holder.id == 0 {
+                    continue;
+                }
+                let Some(minion_template) = templates.get(holder.id) else {
+                    continue;
+                };
+                if self
+                    .spawn_minion(master, master_template, minion_template)
+                    .is_some()
+                {
+                    *spawned_by_id.entry(holder.id).or_insert(0) += 1;
+                    report.minions += 1;
+                }
+            }
+        }
+    }
+
+    /// Java `MinionList.spawnMinion` / `initializeNpc`: a `Monster` near its master.
+    fn spawn_minion(
+        &mut self,
+        master: ObjectId,
+        master_template: &NpcTemplate,
+        template: &NpcTemplate,
+    ) -> Option<ObjectId> {
+        const SPAWN_OFFSET_RADIUS: i32 = 200;
+        const MINIMUM_SPAWN_RADIUS: i32 = 30;
+        let (mx, my, mz, heading) = {
+            let m = self.npcs.get(&master)?;
+            (m.core.x, m.core.y, m.core.z, m.core.heading)
+        };
+        let spawn_radius = SPAWN_OFFSET_RADIUS;
+        // `(int) master.getCollisionRadius()`.
+        let minimum_radius = f64::from(master_template.collision_radius) as i32 + MINIMUM_SPAWN_RADIUS;
+        let mut new_x = self.rng().get(minimum_radius * 2, spawn_radius * 2);
+        let mut new_y = self.rng().get(new_x, spawn_radius * 2);
+        new_y = (f64::from(new_y * new_y - new_x * new_x)).sqrt() as i32;
+        new_x = if new_x > spawn_radius + minimum_radius {
+            (mx + new_x) - spawn_radius
+        } else {
+            (mx - new_x) + minimum_radius
+        };
+        new_y = if new_y > spawn_radius + minimum_radius {
+            (my + new_y) - spawn_radius
+        } else {
+            (my - new_y) + minimum_radius
+        };
+        let in_water = self.npc_world.water.as_ref().is_some_and(|f| f(new_x, new_y, mz));
+        let enchant = if self.npc_world.settings.enable_random_enchant_effect {
+            self.rng().get(4, 21)
+        } else {
+            template.weapon_enchant
+        };
+        self.create_npc(
+            template,
+            NpcClass::Monster,
+            None,
+            Some(master),
+            (new_x, new_y, mz),
+            heading,
+            in_water,
+            enchant,
+        )
+    }
+
+    /// The common end of every spawn: a new object id, full hit points, into the world.
+    #[allow(clippy::too_many_arguments)]
+    fn create_npc(
+        &mut self,
+        template: &NpcTemplate,
+        class: NpcClass,
+        spawn: Option<usize>,
+        leader: Option<ObjectId>,
+        position: (i32, i32, i32),
+        heading: i32,
+        in_water: bool,
+        enchant: i32,
+    ) -> Option<ObjectId> {
+        let ids = self.npc_world.ids.clone();
+        let Some(ids) = ids else {
+            warn!(
+                "Cannot spawn NPC {}: the world has no object id factory.",
+                template.id
+            );
+            return None;
+        };
+        let id = match ids.allocate() {
+            Ok(id) => id,
+            Err(e) => {
+                warn!("Cannot spawn NPC {}: {e}", template.id);
+                return None;
+            }
+        };
+        // Java `Creature.getMaxHp()/getMaxMp()`: the template value times the CON / MEN bonus.
+        let con = self.data.base_stat_bonus(BaseStat::Con, template.base_con);
+        let men = self.data.base_stat_bonus(BaseStat::Men, template.base_men);
+        let max_hp = f64::from(positive(f64::from(template.base_hp_max) * con) as i32);
+        let max_mp = f64::from(positive(f64::from(template.base_mp_max) * men) as i32);
+        let (x, y, z) = position;
+        let npc = Npc {
+            core: CreatureCore {
+                object_id: id,
+                x,
+                y,
+                z,
+                heading,
+                level: i32::from(template.level),
+                cur_hp: max_hp,
+                max_hp,
+                cur_mp: max_mp,
+                max_mp,
+                cur_cp: 0.0,
+                max_cp: 0.0,
+            },
+            npc_id: template.id,
+            class,
+            spawn,
+            leader,
+            decayed: false,
+            in_water,
+            right_hand: template.rhand_id,
+            left_hand: template.lhand_id,
+            enchant_effect: enchant,
+            display_effect: 0,
+        };
+        self.npcs.insert(id, npc);
+        self.register_object(id, ObjectKind::Npc);
+        self.spawn_at(id, x, y, z);
+        if !self.npcs.contains_key(&id) {
+            // Out of the world: `spawn` removed it again.
+            ids.release(id);
+            return None;
+        }
+        Some(id)
+    }
+
+    /// A new NPC of template `npc_id` at an exact place, the way an admin spawn command makes
+    /// one (`Spawn` with fixed coordinates and heading): no territory, no Z correction, no
+    /// minions. `None` for an unknown template, a type Java cannot build, or no free object id.
+    pub fn spawn_npc_at(&mut self, npc_id: i32, x: i32, y: i32, z: i32, heading: i32) -> Option<ObjectId> {
+        let templates = self.npc_world.templates.clone()?;
+        let template = templates.get(npc_id)?;
+        let class = NpcClass::from_type(&template.npc_type)?;
+        let in_water = self.npc_world.water.as_ref().is_some_and(|f| f(x, y, z));
+        let enchant = if self.npc_world.settings.enable_random_enchant_effect {
+            self.rng().get(4, 21)
+        } else {
+            template.weapon_enchant
+        };
+        self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)
+    }
+
+    /// Java `Npc.deleteMe()`: the NPC goes out of view for everybody and out of the world. Its
+    /// minions go with it (`Monster.deleteMe` -> `MinionList.onMasterDie(true)`).
+    ///
+    /// The object id is not given back: Java's NPCs keep theirs for their next life, and the
+    /// respawn that would use it is M4.
+    pub fn delete_npc(&mut self, id: ObjectId) -> bool {
+        let Some(npc) = self.npcs.get_mut(&id) else {
+            return false;
+        };
+        npc.decayed = true;
+        let minions: Vec<ObjectId> = self
+            .npcs
+            .iter()
+            .filter(|(_, n)| n.leader == Some(id))
+            .map(|(minion, _)| *minion)
+            .collect();
+        for minion in minions {
+            self.delete_npc(minion);
+        }
+        self.decay(id);
+        self.npcs.remove(&id);
+        self.npc_world.last_spawned.retain(|_, last| *last != id);
+        true
+    }
+
+    /// Java `Npc.sendInfo(player)`.
+    pub(crate) fn send_npc_info(&mut self, subject: ObjectId, viewer: ObjectId) {
+        if !self.is_visible_for(subject, viewer) {
+            return;
+        }
+        if let Some(info) = self.npc_info(subject, viewer) {
+            self.send(viewer, &info);
+        }
+    }
+
+    /// `new AbstractNpcInfo.NpcInfo(npc, viewer)`: what `viewer` is told when `subject` comes
+    /// into view. `None` for a decayed NPC (Java writes nothing), an unknown template and a fake
+    /// player (`FakePlayerInfo`, not ported).
+    // Java: Npc.sendInfo sends ServerObjectInfo instead when getRunSpeed() == 0; the template
+    // loader never lets a speed reach 0, so that packet is not ported.
+    pub fn npc_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<NpcInfo> {
+        let npc = self.npcs.get(&subject)?;
+        if npc.decayed {
+            return None;
+        }
+        let template = self.npc_world.templates.as_ref()?.get(npc.npc_id)?;
+        if template.fake_player {
+            return None;
+        }
+        let settings = &self.npc_world.settings;
+        let stats = NpcStats::of(&*self.data, template, npc.in_water);
+        let viewer_karma = self.players.get(&viewer).map_or(0, |p| p.data.karma);
+
+        let name = if template.using_server_side_name {
+            template.name.clone()
+        } else {
+            String::new()
+        };
+        // Creature._title of an NPC is never set, so it is null (written as empty) unless the
+        // template says to send its own.
+        let mut title = if template.using_server_side_title {
+            template.title.clone()
+        } else {
+            String::new()
+        };
+        if npc.class.is_monster() && (settings.show_npc_level || settings.show_npc_aggression) {
+            let mut t1 = String::new();
+            if settings.show_npc_level {
+                t1 += &format!("Lv {}", npc.core.level);
+            }
+            let mut t2 = String::new();
+            if settings.show_npc_aggression {
+                if !t1.is_empty() {
+                    t2 += " ";
+                }
+                if template.is_aggressive {
+                    t2 += "[A]";
+                }
+                if !template.clans.is_empty() && template.clan_help_range > 0 {
+                    t2 += "[G]";
+                }
+            }
+            t1 += &t2;
+            if !title.is_empty() {
+                t1 += " ";
+                t1 += &title;
+            }
+            title = t1;
+        }
+
+        Some(NpcInfo {
+            object_id: subject.0,
+            display_id: template.display_id,
+            attackable: npc.class.auto_attackable_by(viewer_karma),
+            x: npc.core.x,
+            y: npc.core.y,
+            z: npc.core.z,
+            heading: npc.core.heading,
+            m_atk_spd: stats.m_atk_spd,
+            p_atk_spd: stats.p_atk_spd,
+            run_speed: stats.run_speed,
+            walk_speed: stats.walk_speed,
+            swim_run_speed: stats.swim_run_speed,
+            swim_walk_speed: stats.swim_walk_speed,
+            fly_run_speed: if template.flying { stats.run_speed } else { 0 },
+            fly_walk_speed: if template.flying { stats.walk_speed } else { 0 },
+            move_multiplier: stats.move_multiplier,
+            attack_speed_multiplier: stats.attack_speed_multiplier,
+            collision_radius: template.collision_radius,
+            collision_height: template.collision_height,
+            right_hand: npc.right_hand,
+            left_hand: npc.left_hand,
+            running: false,
+            in_combat: false,
+            alike_dead: false,
+            show_summon_animation: false,
+            name,
+            title,
+            abnormal_visual_effects: 0,
+            clan_id: 0,
+            clan_crest_id: 0,
+            ally_id: 0,
+            ally_crest_id: 0,
+            water_or_flying: if npc.in_water {
+                1
+            } else if template.flying {
+                2
+            } else {
+                0
+            },
+            team: 0,
+            enchant_effect: npc.enchant_effect,
+            flying: template.flying,
+            color_effect: 0,
+            targetable: template.targetable,
+            show_name: template.show_name,
+            abnormal_visual_effect_special: 0,
+            display_effect: npc.display_effect,
+        })
+    }
+
+    /// `NpcInfo` as bytes, for tools and tests.
+    pub fn npc_info_bytes(&self, subject: ObjectId, viewer: ObjectId) -> Option<Vec<u8>> {
+        self.npc_info(subject, viewer).map(|info| info.to_bytes())
+    }
+}
+
+/// Java `calcStat`'s "avoid some troubles with negative stats": a value of 0 or less becomes 1.
+fn positive(value: f64) -> f64 {
+    if value <= 0.0 { 1.0 } else { value }
+}
+
+/// Java `Math.round(double)` cast to `int`: floor(x + 0.5) as a long (NaN is 0, infinities
+/// saturate), then the low 32 bits.
+fn java_round_to_int(value: f64) -> i32 {
+    java_round(value) as i32
+}
+
+fn java_round(value: f64) -> i64 {
+    if value.is_nan() {
+        0
+    } else {
+        (value + 0.5).floor() as i64
+    }
+}
+
+/// The numbers of `AbstractNpcInfo`'s constructor that Java gets from the stat system, for an
+/// NPC without effects: the template value times the DEX or WIT bonus (`FuncPAtkSpeed`,
+/// `FuncMAtkSpeed`, `FuncMoveSpeed` of `NPC_STD_CALCULATOR`).
+#[derive(Debug, Clone, PartialEq)]
+struct NpcStats {
+    m_atk_spd: i32,
+    p_atk_spd: i32,
+    run_speed: i32,
+    walk_speed: i32,
+    swim_run_speed: i32,
+    swim_walk_speed: i32,
+    move_multiplier: f64,
+    attack_speed_multiplier: f32,
+}
+
+impl NpcStats {
+    fn of(data: &dyn StaticData, t: &NpcTemplate, in_water: bool) -> Self {
+        /// `PlayerConfig.MAX_MATK_SPEED` default (`MaxMAtkSpeed`).
+        const MAX_MATK_SPEED: f64 = 1999.0;
+        let dex = data.base_stat_bonus(BaseStat::Dex, t.base_dex);
+        let wit = data.base_stat_bonus(BaseStat::Wit, t.base_wit);
+
+        // `getBaseMAtkSpd() * bonusSpdAtk` is int * float in Java.
+        let m_atk_spd = positive(f64::from(t.base_m_atk_spd as f32) * wit).min(MAX_MATK_SPEED) as i32;
+        let p_atk_spd = java_round(positive(f64::from(t.base_p_atk_spd as f32) * dex)) as f64;
+
+        // calcStat(MOVE_SPEED, base * gmSpeedMultiplier): no clamp for this stat.
+        let moved = |base: f64| if base <= 0.0 { 0.0 } else { base * dex };
+        let swim_run = moved(t.swim_run_speed);
+        let swim_walk = moved(t.swim_walk_speed);
+        // NOTE(java-quirk): in water getRunSpeed()/getWalkSpeed() take the already modified
+        // swim speed as their base, so the DEX bonus is applied twice.
+        let run = moved(if in_water { swim_run } else { t.run_speed });
+        let walk = moved(if in_water { swim_walk } else { t.walk_speed });
+
+        // getMovementSpeedMultiplier(): NPCs walk (`_isRunning` is false).
+        let (base_speed, speed) = if in_water {
+            (t.swim_walk_speed, swim_walk)
+        } else {
+            (t.walk_speed, walk)
+        };
+        let move_multiplier = speed * (1.0 / base_speed);
+
+        Self {
+            m_atk_spd,
+            p_atk_spd: p_atk_spd as i32,
+            run_speed: java_round_to_int(run / move_multiplier),
+            walk_speed: java_round_to_int(walk / move_multiplier),
+            swim_run_speed: java_round_to_int(swim_run / move_multiplier),
+            swim_walk_speed: java_round_to_int(swim_walk / move_multiplier),
+            move_multiplier,
+            // CreatureStat.getAttackSpeedMultiplier(): (float) ((1.1 * getPAtkSpd()) / basePAtkSpd)
+            attack_speed_multiplier: ((1.1 * p_atk_spd) / f64::from(t.base_p_atk_spd)) as f32,
+        }
+    }
+}
+
+/// The census of one group while it rolls its first units (Java `SpawnGroup._aliveOrReserved`
+/// and `SpawnGroupEntry._aliveOrReserved`).
+struct GroupState {
+    selection: SpawnSelection,
+    maximum: i64,
+    alive: i64,
+    entry_alive: Vec<i64>,
+    entry_total: Vec<i64>,
+}
+
+impl GroupState {
+    /// `SpawnGroup.tryReserve`. The cap is deliberately not read for `random` groups.
+    fn try_reserve(&mut self, entry: usize, count: i64) -> bool {
+        if self.selection != SpawnSelection::Random && self.maximum > 0 && self.alive + count > self.maximum {
+            return false;
+        }
+        if self.entry_alive[entry] + count > self.entry_total[entry] {
+            return false;
+        }
+        self.entry_alive[entry] += count;
+        self.alive += count;
+        true
+    }
+
+    /// `SpawnGroup.release`.
+    fn release(&mut self, entry: usize, count: i64) {
+        self.entry_alive[entry] -= count;
+        self.alive -= count;
+    }
+}

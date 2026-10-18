@@ -18,6 +18,7 @@ pub mod enter;
 pub mod ids;
 pub mod leave;
 pub mod movement;
+pub mod npc;
 pub mod objects;
 pub mod outbox;
 pub mod player;
@@ -33,13 +34,14 @@ pub mod zones;
 
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use data::{
-    AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, DerivedStats, ItemStatic, NoData, RACE_DWARF,
-    StaticData, WorldSettings,
+    AccessLevelStatic, BaseStat, ChatBroadcast, DEFAULT_TITLE_COLOR, DerivedStats, ItemStatic, NoData,
+    RACE_DWARF, StaticData, WorldSettings,
 };
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{Intention, MoveData, MovementState, PathRequests, object_of_requester, requester_of};
+pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{

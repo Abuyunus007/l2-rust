@@ -2555,6 +2555,7 @@ dependencies = [
  "l2-protocol-game",
  "l2-util",
  "serde_json",
+ "tempfile",
  "tracing",
 ]
 

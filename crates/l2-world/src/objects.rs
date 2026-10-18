@@ -7,6 +7,9 @@
 // which kind an id is and where it is in the grid (D-11: ids, never references).
 
 pub use crate::door::{Door, Fence, StaticObject};
+use l2_util::ObjectId;
+
+use crate::npc::NpcClass;
 use crate::player::CreatureCore;
 use crate::region::RegionId;
 
@@ -61,10 +64,28 @@ impl ObjectEntry {
     }
 }
 
-/// An NPC in the world. M3-NPC-01 fills in what spawning and `NpcInfo` need.
+/// An NPC in the world (Java `Npc` and its subclasses, D-17: one struct plus [`NpcClass`]).
+/// Spawning and `NpcInfo` are in `npc.rs`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Npc {
     pub core: CreatureCore,
     /// The template id (`npc_id`, Java `getId()`).
     pub npc_id: i32,
+    /// Java: which `entity/actor/instance/*` class the template type names.
+    pub class: NpcClass,
+    /// Java `_spawn`: index into the world's spawn list; `None` for minions and NPCs made by
+    /// admin commands.
+    pub spawn: Option<usize>,
+    /// Java `Monster._master`: the monster whose minion this is.
+    pub leader: Option<ObjectId>,
+    /// Java `_isDecayed`.
+    pub decayed: bool,
+    /// Java `isInsideZone(ZoneId.WATER)`, decided when it spawned (NPCs do not move before M4).
+    pub in_water: bool,
+    /// Java `_currentRHandId`, `_currentLHandId`, `_currentEnchant`.
+    pub right_hand: i32,
+    pub left_hand: i32,
+    pub enchant_effect: i32,
+    /// Java `_displayEffect`.
+    pub display_effect: i32,
 }
