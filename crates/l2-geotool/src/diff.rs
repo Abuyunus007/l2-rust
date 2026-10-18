@@ -9,7 +9,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use anyhow::{Context, anyhow};
 use l2_geo::Region;
 
-use crate::stats::{CELLS, region_names, region_path, region_stem, top, walk_cells};
+use l2_geo::view::{CELLS, top_layer, walk_cells};
+
+use crate::stats::{region_names, region_path, region_stem};
 
 /// Header of the diff CSV.
 pub(crate) const DIFF_HEADER: &str = "region,a_flat,a_cplx,a_multi,b_flat,b_cplx,b_multi,a_avg_layers,b_avg_layers,\
@@ -37,13 +39,13 @@ pub(crate) fn diff_row(name: &str, a: &Region, b: &Region) -> String {
     let counts_a = a.block_counts();
     let counts_b = b.block_counts();
     let mut t = Totals::default();
-    walk_cells(a, Some(b), |_, layers_a, layers_b| {
+    walk_cells(Some(a), Some(b), |_, layers_a, layers_b| {
         t.layers_a += layers_a.len() as u64;
         t.layers_b += layers_b.len() as u64;
         if layers_a.len() != layers_b.len() {
             t.count_differs += 1;
         }
-        let (Some(top_a), Some(top_b)) = (top(layers_a), top(layers_b)) else {
+        let (Some(top_a), Some(top_b)) = (top_layer(layers_a), top_layer(layers_b)) else {
             return;
         };
         let dz = top_a.z.abs_diff(top_b.z);

@@ -13,6 +13,7 @@
 
 pub mod connection;
 pub mod data_browser;
+pub mod geodata;
 pub mod logs;
 pub mod packets;
 pub mod players;
@@ -39,16 +40,18 @@ pub enum ViewId {
     Logs,
     Packets,
     Data,
+    Geodata,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 6] = [
+    pub const ALL: [ViewId; 7] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
+        ViewId::Geodata,
     ];
 
     pub fn label(self) -> &'static str {
@@ -59,6 +62,7 @@ impl ViewId {
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
+            ViewId::Geodata => "Geodata",
         }
     }
 
@@ -72,6 +76,7 @@ impl ViewId {
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
+                | ViewId::Geodata
         )
     }
 
@@ -84,7 +89,8 @@ impl ViewId {
             | ViewId::Players
             | ViewId::Logs
             | ViewId::Packets
-            | ViewId::Data => "",
+            | ViewId::Data
+            | ViewId::Geodata => "",
         }
     }
 }
@@ -98,6 +104,7 @@ pub struct Views {
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
+    pub geodata: geodata::GeodataView,
 }
 
 impl Views {
@@ -110,6 +117,7 @@ impl Views {
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
+            ViewId::Geodata => Some(&mut self.geodata),
         }
     }
 
