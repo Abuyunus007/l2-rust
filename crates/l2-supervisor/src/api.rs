@@ -246,29 +246,155 @@ impl AdminHandler for SupervisorHandler {
             Request::Shutdown { .. } => Response::Error {
                 message: "shutdown is sent to a server endpoint; use stop_server here".into(),
             },
-            // Game status comes from the game server endpoint; the supervisor doesn't relay it yet.
-            Request::GetGameStatus { .. } => Response::Error {
-                message: "the supervisor does not relay game status yet".into(),
-            },
-            Request::GetLoginStatus { server: None } => Response::Error {
-                message: "the supervisor needs a server name".into(),
-            },
-            Request::GetLoginStatus { server: Some(name) } => {
-                if self.supervisor.get(&name).is_none() {
-                    return Self::unknown(&name);
-                }
-                let Some(client) = self.links.get(&name).and_then(AdminLink::current) else {
-                    return Response::Error {
-                        message: format!("no admin connection to '{name}'"),
-                    };
-                };
-                match client.request(Request::GetLoginStatus { server: None }).await {
-                    Ok(response) => response,
-                    Err(e) => Response::Error {
-                        message: format!("'{name}' did not answer: {e}"),
-                    },
+            Request::GetLoginStatus { server: None } | Request::GetGameStatus { server: None } => {
+                Response::Error {
+                    message: "the supervisor needs a server name".into(),
                 }
             }
+            Request::GetLoginStatus { server: Some(name) } => {
+                self.relay(&name, Request::GetLoginStatus { server: None }).await
+            }
+            Request::GetGameStatus { server: Some(name) } => {
+                self.relay(&name, Request::GetGameStatus { server: None }).await
+            }
         }
+    }
+}
+
+impl SupervisorHandler {
+    /// Forwards a status request to the named server's own admin endpoint and returns its answer.
+    /// `request` must carry `server: None`: the server answers for itself.
+    async fn relay(&self, name: &str, request: Request) -> Response {
+        if self.supervisor.get(name).is_none() {
+            return Self::unknown(name);
+        }
+        let Some(client) = self.links.get(name).and_then(AdminLink::current) else {
+            return Response::Error {
+                message: format!("no admin connection to '{name}'"),
+            };
+        };
+        match client.request(request).await {
+            Ok(response) => response,
+            Err(e) => Response::Error {
+                message: format!("'{name}' did not answer: {e}"),
+            },
+        }
+    }
+}
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)] // test helpers may panic
+mod tests {
+    use std::sync::Arc;
+
+    use l2_admin_api::{
+        AdminClient, AdminHandler, GamePlayer, GameStatus, Request, Response, Session, Token, serve,
+    };
+    use tokio::net::TcpListener;
+
+    use crate::Running;
+    use crate::config::{ServerConfig, SupervisorConfig};
+
+    /// A stand-in for a game server's admin endpoint.
+    struct FakeGameServer;
+
+    impl AdminHandler for FakeGameServer {
+        async fn handle(&self, request: Request, _session: &Session) -> Response {
+            match request {
+                Request::GetGameStatus { server: None } => Response::GameStatus {
+                    status: GameStatus {
+                        players: vec![GamePlayer {
+                            name: "Amy".into(),
+                            account: "acc1".into(),
+                            level: 80,
+                            class_id: 88,
+                            ip: None,
+                            online_since_ms: 1_700_000_000_000,
+                        }],
+                    },
+                },
+                _ => Response::Error {
+                    message: "unsupported".into(),
+                },
+            }
+        }
+    }
+
+    fn server(name: &str, admin_endpoint: Option<String>) -> ServerConfig {
+        ServerConfig {
+            name: name.into(),
+            // Never started by this test.
+            command: "unused".into(),
+            args: vec![],
+            working_dir: None,
+            admin_endpoint,
+            admin_token: "gs-secret".into(),
+            autostart: false,
+            restart_on_exit_code: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn game_status_is_relayed_to_the_named_server() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let fake_addr = listener.local_addr().unwrap();
+        tokio::spawn(serve(
+            listener,
+            "game".into(),
+            Token::new("gs-secret"),
+            Arc::new(FakeGameServer),
+        ));
+
+        let running = Running::start(SupervisorConfig {
+            listen: "127.0.0.1:0".parse().unwrap(),
+            token: "secret".into(),
+            log_buffer_lines: 100,
+            stop_timeout: std::time::Duration::from_secs(2),
+            restart_delay: std::time::Duration::ZERO,
+            servers: vec![server("game", Some(fake_addr.to_string())), server("plain", None)],
+        })
+        .await
+        .unwrap();
+        let (client, _events) = AdminClient::connect(&format!("ws://{}", running.local_addr()), "secret")
+            .await
+            .unwrap();
+
+        // The link connects in the background; ask until it answers.
+        let mut answer = None;
+        for _ in 0..200 {
+            let response = client
+                .request(Request::GetGameStatus {
+                    server: Some("game".into()),
+                })
+                .await
+                .unwrap();
+            if let Response::GameStatus { status } = response {
+                answer = Some(status);
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+        assert_eq!(answer.unwrap().players[0].name, "Amy");
+
+        // Errors: no endpoint, unknown server, missing name.
+        for (server, expected) in [
+            (Some("plain"), "no admin connection to 'plain'"),
+            (Some("zzz"), "unknown server 'zzz'"),
+            (None, "the supervisor needs a server name"),
+        ] {
+            let response = client
+                .request(Request::GetGameStatus {
+                    server: server.map(Into::into),
+                })
+                .await
+                .unwrap();
+            assert_eq!(
+                response,
+                Response::Error {
+                    message: expected.into()
+                }
+            );
+        }
+        running.shutdown().await;
     }
 }
