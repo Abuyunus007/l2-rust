@@ -20,6 +20,7 @@ pub mod charscreen;
 pub mod enterworld;
 pub mod handshake;
 pub mod ingame;
+pub mod interaction;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
@@ -27,6 +28,7 @@ pub use charscreen::{
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, Say2};
+pub use interaction::{Action, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld};
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

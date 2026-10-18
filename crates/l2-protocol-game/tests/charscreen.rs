@@ -321,10 +321,15 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::EnterWorld(p) => p.to_bytes(),
             ClientPacket::RequestKeyMapping(p) => p.to_bytes(),
             // Chat packets are checked in tests/chat.rs.
+            // Chat packets are checked in tests/chat.rs, interaction packets in tests/interaction.rs.
             ClientPacket::Say2(_)
             | ClientPacket::Logout(_)
             | ClientPacket::RequestRestart(_)
             | ClientPacket::RequestNetPing(_)
+            | ClientPacket::Action(_)
+            | ClientPacket::RequestTargetCanceld(_)
+            | ClientPacket::RequestBypassToServer(_)
+            | ClientPacket::RequestLinkHtml(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };
