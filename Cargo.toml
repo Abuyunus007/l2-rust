@@ -15,6 +15,11 @@ repository = "https://github.com/Abuyunus007/l2-rust"
 # Internal crates
 l2-util = { path = "crates/l2-util" }
 l2-testkit = { path = "crates/l2-testkit" }
+l2-net = { path = "crates/l2-net" }
+l2-crypto = { path = "crates/l2-crypto" }
+l2-config = { path = "crates/l2-config" }
+l2-admin-api = { path = "crates/l2-admin-api" }
+l2-protocol-game = { path = "crates/l2-protocol-game" }
 
 # Async, networking
 tokio = { version = "1.53", features = ["full"] }
