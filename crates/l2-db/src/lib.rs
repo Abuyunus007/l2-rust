@@ -14,7 +14,7 @@ mod pool;
 pub use error::{DbError, Result};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
-    NewCharacter,
+    IdRepository, NewCharacter, UsedIds,
 };
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,
