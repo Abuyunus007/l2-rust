@@ -3,6 +3,7 @@
 //! To add a target: create `targets/<name>.rs` with a `generate(&JavaSources) -> Result<Vec<Output>>`
 //! style function (see `opcodes.rs`, the reference), add it to [`Target`] and to `run` in `main.rs`.
 
+pub mod messages;
 pub mod opcodes;
 
 use anyhow::Result;
@@ -22,7 +23,7 @@ pub struct Output {
 
 /// Modules in `crates/l2-protocol-game/src/generated/`. A generator for that crate adds its module
 /// name here, so `generated/mod.rs` always lists every generated file.
-pub const GAME_GENERATED_MODS: &[&str] = &["opcodes"];
+pub const GAME_GENERATED_MODS: &[&str] = &["npc_string_id", "opcodes", "system_message_id"];
 
 /// Renders a token stream as formatted Rust source, with the generated-file header.
 ///
