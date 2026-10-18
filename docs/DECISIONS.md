@@ -48,7 +48,10 @@ Background for each decision: `docs/analysis/`.
 | D-31 | **Admin GUI** in Rust with **egui/eframe**, a separate app that connects to the admin API locally or remotely (Linux host). |
 | D-32 | GUI scope, eventually: server control + live logs, **packet inspector** (via a decrypting proxy: live list, decoded fields, hex, filter, save/load), admin tasks (accounts, bans, access levels, online players, kick/announce, GS registration, config editing), data browser and geodata viewer. |
 | D-33 | The GUI **grows with milestones**. M1 = packet inspector + login server control/logs. Later milestones add views as features exist. |
-| D-34 | Packet captures are saved as JSON lines and double as **test fixtures**. |
+| D-34 | Packet captures are saved as JSON lines and double as **test fixtures**. Credentials are always redacted (the repo is public). |
+| D-35 | The **proxy runs inside the GUI process** (library `l2-proxy`) on the PC where the game client runs. A standalone `l2-proxy` CLI also exists. The supervisor doesn't relay captures. |
+| D-36 | **Rust-only settings live in new files** (`config/Admin.ini` per server, `supervisor.ini`). The Java `.ini` files are never extended. |
+| D-37 | **License:** MIT, like L2JMobius. The original `Copyright (c) 2013 L2jMobius` notice is kept in `LICENSE`. |
 
 ## Process and quality
 

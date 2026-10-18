@@ -13,7 +13,7 @@ How work moves from the plan to `main`. Roles:
 ```
 1. **Plan:** at the start of a milestone the orchestrator splits its scope (`docs/PLAN.md`) into cards from `TEMPLATE.md` under `docs/tasks/M<n>/` and lists them in `BOARD.md`.
 2. **Ready:** a card is ready when its dependencies are merged and its reference implementation exists.
-3. **Dispatch:** the orchestrator starts the worker named in the card's `Model` field with `isolation: worktree`, so each card gets its own branch. Independent ready cards run in parallel (max throughput, D-40). Cards touching the same files never run at the same time.
+3. **Dispatch:** the orchestrator starts the worker named in the card's `Model` field with `isolation: worktree`, so each card gets its own branch. Independent ready cards run in parallel (max throughput, D-40). Cards touching the same files never run at the same time. Exception: cards that only add a `mod`/re-export line to a shared `lib.rs` (or a member to a manifest) may run in parallel, and the orchestrator resolves those one-line merge conflicts.
 4. **Report:** the worker ends with its report (done / blocked).
 5. **Review:** `Review: full` → the reviewer agent does a full review. `Review: spot` → automatic checks + the reviewer on a sample (D-44).
 6. **Merge:** the orchestrator merges into `main` after a `merge` verdict and green CI, then updates `BOARD.md`.
