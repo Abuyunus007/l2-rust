@@ -166,7 +166,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-DATA-09](M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | planned |
 | [M3-GUI-02](M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | merged |
 | [M3-GUI-03](M3/M3-GUI-03.md) | GUI geodata viewer | haiku | spot | GEO-01 | in-progress |
-| [M3-WREG-01](M3/M3-WREG-01.md) | World regions, visibility, object tables | opus (orchestrator) | full | M2-ENTER-01, GPROTO-05 | planned |
+| [M3-WREG-01](M3/M3-WREG-01.md) | World regions, visibility, object tables | opus (orchestrator) | full | M2-ENTER-01, GPROTO-05 | merged |
 | [M3-MOVE-01](M3/M3-MOVE-01.md) | Movement with geodata and pathfinding | sonnet | full | WREG-01, GEO-02, GPROTO-05 | planned |
 | [M3-NPC-01](M3/M3-NPC-01.md) | NPC spawns in the world (no AI) | sonnet | full | WREG-01, DATA-05, DATA-06, GPROTO-05 | planned |
 | [M3-TELE-01](M3/M3-TELE-01.md) | Teleports, zones in the world, map regions | sonnet | full | WREG-01, DATA-07, GPROTO-05 | planned |
