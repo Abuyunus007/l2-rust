@@ -9,6 +9,7 @@
 pub mod class_list;
 pub mod loader;
 pub mod player_template;
+pub mod skill_tree;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -16,6 +17,7 @@ use std::sync::Arc;
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
 pub use loader::DataError;
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
+pub use skill_tree::{SkillLearn, SkillTrees};
 
 /// Everything loaded from a datapack folder.
 #[derive(Debug, Clone)]
@@ -26,6 +28,8 @@ pub struct Datapack {
     pub class_list: Arc<ClassList>,
     /// `data/stats/players/templates/**`.
     pub player_templates: Arc<PlayerTemplates>,
+    /// `data/stats/players/skillTrees/**`.
+    pub skill_trees: Arc<SkillTrees>,
 }
 
 impl Datapack {
@@ -40,6 +44,7 @@ impl Datapack {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
+            skill_trees: Arc::new(SkillTrees::load(root)),
         })
     }
 }
