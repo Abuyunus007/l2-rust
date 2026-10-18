@@ -46,6 +46,8 @@ pub enum ClientInput {
     ValidatePosition { x: i32, y: i32, z: i32, heading: i32 },
     /// Java `CannotMoveAnymore`.
     CannotMoveAnymore { x: i32, y: i32, z: i32, heading: i32 },
+    /// Java `Appearing`: the client has loaded the target of a teleport.
+    Appearing,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

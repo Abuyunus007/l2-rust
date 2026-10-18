@@ -202,6 +202,10 @@ pub struct Player {
     /// Java `_move`, the movement-related fields of `Creature`/`Player` and the move intention of
     /// `PlayerAI` (see `movement.rs`).
     pub movement: crate::movement::MovementState,
+    /// The zones the player is inside and the flags they set (see `zones.rs`).
+    pub zones: crate::zones::PlayerZones,
+    /// Java `isTeleporting()` and the teleport watchdog (see `teleport.rs`).
+    pub tele: crate::teleport::TeleportState,
 }
 
 impl Player {
@@ -234,6 +238,8 @@ impl Player {
             stats: DerivedStats::default(),
             known_relations: std::collections::HashMap::new(),
             movement,
+            zones: crate::zones::PlayerZones::default(),
+            tele: crate::teleport::TeleportState::default(),
         }
     }
 

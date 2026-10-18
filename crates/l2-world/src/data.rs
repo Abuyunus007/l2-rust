@@ -301,6 +301,10 @@ pub struct WorldSettings {
     pub keyboard_movement: bool,
     /// `PlayerConfig.PLAYER_MOVEMENT_BLOCK_TIME` (`NpcTalkBlockingTime` seconds, kept in ms).
     pub player_movement_block_time_ms: i32,
+    /// The values zone types read (`PeaceZoneMode`, `JailIsPvp`, ...).
+    pub zones: crate::zones::ZoneSettings,
+    /// The values `teleToLocation` and the restart point lookups read.
+    pub teleport: crate::teleport::TeleportSettings,
 }
 
 impl Default for WorldSettings {
@@ -331,6 +335,8 @@ impl Default for WorldSettings {
             trade_chat: ChatBroadcast::On,
             gm_hero_aura: false,
             log_chat: false,
+            zones: crate::zones::ZoneSettings::default(),
+            teleport: crate::teleport::TeleportSettings::default(),
         }
     }
 }

@@ -456,6 +456,7 @@ impl ClientSession {
                 z: p.z,
                 heading: p.heading,
             },
+            ClientPacket::Appearing(_) => ClientInput::Appearing,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

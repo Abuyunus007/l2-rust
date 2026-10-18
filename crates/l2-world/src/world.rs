@@ -60,6 +60,8 @@ pub struct World {
     pub(crate) warned_no_path_service: bool,
     /// Creatures with a running move (Java `MovementTaskManager`'s pools).
     pub(crate) moving: Vec<ObjectId>,
+    /// Zone table, map regions and geoengine (see `zones.rs`, `teleport.rs`).
+    pub(crate) zoning: crate::zones::ZoneContext,
 }
 
 impl World {
@@ -87,6 +89,7 @@ impl World {
             next_path_request_id: 0,
             warned_no_path_service: false,
             moving: Vec::new(),
+            zoning: crate::zones::ZoneContext::default(),
         }
     }
 
@@ -107,6 +110,9 @@ impl World {
 
     /// Hands the world the geodata. Call before players enter.
     pub fn set_geo(&mut self, geo: Arc<l2_geo::GeoEngine>) {
+        // One engine for everything: movement, spawns and teleports (M3-TELE-01 keeps its copy in
+        // the zone context).
+        self.zoning.geo = Some(Arc::clone(&geo));
         self.geo = Some(geo);
     }
 
@@ -301,6 +307,8 @@ impl World {
             input @ (ClientInput::MoveTo { .. }
             | ClientInput::ValidatePosition { .. }
             | ClientInput::CannotMoveAnymore { .. }) => self.on_movement_input(id, input),
+            // Java: Appearing -> onTeleported (when teleporting), then updateUserInfo
+            ClientInput::Appearing => self.on_appearing(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -321,6 +329,7 @@ impl World {
             }
             TimerKind::Marker(n) => debug!("timer marker {n}"),
             TimerKind::RegionNeighborsOn(_) | TimerKind::RegionNeighborsOff(_) => self.on_region_timer(kind),
+            TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
         }
     }
 

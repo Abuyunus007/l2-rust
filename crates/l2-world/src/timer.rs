@@ -26,6 +26,8 @@ pub enum TimerKind {
     /// Java `WorldRegion.startDeactivation`'s timer: switch off the neighbours that hold no
     /// player.
     RegionNeighborsOff(crate::region::RegionId),
+    /// Java `TeleportWatchdogTask`: completes a teleport whose client never sent `Appearing`.
+    TeleportWatchdog(ObjectId),
 }
 
 #[derive(Debug, Default)]

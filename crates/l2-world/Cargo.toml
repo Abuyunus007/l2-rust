@@ -13,6 +13,9 @@ l2-geo.workspace = true
 l2-util.workspace = true
 l2-net.workspace = true
 l2-protocol-game.workspace = true
+# Immutable datapack tables (zones, map regions) and the geoengine queries a teleport asks. Both are
+# domain crates below `l2-world` (MODULE_MAP layers) and need no runtime or socket.
+l2-data.workspace = true
 tracing.workspace = true
 
 # Only the tests read the Java capture fixtures.

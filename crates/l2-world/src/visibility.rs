@@ -83,7 +83,11 @@ impl World {
             y
         };
         // Not spawned yet, so this does not switch regions (same as Java's setXYZ before spawnMe).
-        self.set_position_raw(id, x, y, z);
+        // Creature.setXYZ may refuse the position (see `zones.rs`); `spawnMe()` then runs anyway,
+        // at the old position.
+        if self.zone_gate_set_xyz(id, x, y) {
+            self.set_position_raw(id, x, y, z);
+        }
         self.spawn(id);
     }
 
@@ -103,10 +107,22 @@ impl World {
         }
         self.region_add(region, id);
         self.world_add_visible(id, region);
+        // Java `onSpawn()`.
+        self.on_spawn(id);
     }
 
     /// Java `WorldObject.decayMe()`: out of view for everybody, out of the world table.
     pub fn decay(&mut self, id: ObjectId) {
+        self.decay_keep_entry(id);
+        // Java `World.removeObject`.
+        self.objects.remove(&id);
+    }
+
+    /// `decayMe()` without `World.removeObject`: out of view for everybody, but the object keeps
+    /// its table entry (kind, instance, invisibility, last region). A teleporting player needs
+    /// that, because it is still online and gets its position set while it is away from the
+    /// grid (Java keeps `_allPlayers` and the object's own fields the same way).
+    pub(crate) fn decay_keep_entry(&mut self, id: ObjectId) {
         let region = match self.objects.get_mut(&id) {
             Some(entry) => {
                 entry.spawned = false;
@@ -117,14 +133,27 @@ impl World {
         if let Some(region) = region {
             self.world_remove_visible(id, region);
         }
-        // Java `World.removeObject`.
-        self.objects.remove(&id);
     }
 
     /// Java `WorldObject.setXYZ`: moves the object; a spawned object that crosses into another
     /// region switches regions (with the packets that brings).
+    ///
+    /// For creatures this also runs `Creature.setXYZ`'s zone part (a position outside the zone
+    /// grid is refused, a new zone cell drops the old cell's zones) and, for a spawned player,
+    /// Java's movement-tick `revalidateZone(false)` right after the move, so every caller (the
+    /// movement tick, `ValidatePosition`, teleports) keeps the zone flags and the compass icon
+    /// current without a call of its own. See `zones.rs`.
     pub fn set_position(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
+        if !self.zone_gate_set_xyz(id, x, y) {
+            return;
+        }
         self.set_position_raw(id, x, y, z);
+        self.set_position_region(id, x, y, z);
+        self.revalidate_zone(id, false);
+    }
+
+    /// The region part of `WorldObject.setXYZ`.
+    fn set_position_region(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
         let Some(entry) = self.objects.get(&id) else {
             return;
         };
