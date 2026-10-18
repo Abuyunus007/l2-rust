@@ -8,9 +8,10 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    Action, AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld,
-    Logout, NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestKeyMapping,
-    RequestLinkHtml, RequestNetPing, RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2,
+    Action, Appearing, AuthLogin, CannotMoveAnymore, CharacterCreate, CharacterDelete, CharacterRestore,
+    CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter, ProtocolVersion,
+    RequestBypassToServer, RequestGotoLobby, RequestKeyMapping, RequestLinkHtml, RequestNetPing,
+    RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -36,6 +37,10 @@ pub enum ClientPacket {
     RequestTargetCanceld(RequestTargetCanceld),
     RequestBypassToServer(RequestBypassToServer),
     RequestLinkHtml(RequestLinkHtml),
+    MoveToLocation(MoveToLocation),
+    ValidatePosition(ValidatePosition),
+    CannotMoveAnymore(CannotMoveAnymore),
+    Appearing(Appearing),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -87,6 +92,10 @@ pub fn decode_client(
             ClientPacket::RequestBypassToServer(RequestBypassToServer::decode(reader)?)
         }
         RequestLinkHtml::OPCODE => ClientPacket::RequestLinkHtml(RequestLinkHtml::decode(reader)?),
+        MoveToLocation::OPCODE => ClientPacket::MoveToLocation(MoveToLocation::decode(reader)?),
+        ValidatePosition::OPCODE => ClientPacket::ValidatePosition(ValidatePosition::decode(reader)?),
+        CannotMoveAnymore::OPCODE => ClientPacket::CannotMoveAnymore(CannotMoveAnymore::decode(reader)?),
+        Appearing::OPCODE => ClientPacket::Appearing(Appearing::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
