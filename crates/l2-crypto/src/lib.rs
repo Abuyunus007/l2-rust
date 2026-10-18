@@ -2,6 +2,7 @@
 //!
 //! - [`blowfish`]: Blowfish with L2's little-endian word order (`L2Blowfish`).
 //! - [`checksum`]: the XOR checksum `NewCrypt.appendChecksum` / `verifyChecksum`.
+//! - [`login`]: the login server's client packet cipher (`LoginEncryption`), server and client side.
 //! - [`xor_pass`]: the `NewCrypt.encXORPass` pass used in the login `Init` packet.
 //!
 //! Everything here is pure and allocation-free. Malformed input (bad key or buffer length)
@@ -12,9 +13,11 @@
 
 pub mod blowfish;
 pub mod checksum;
+pub mod login;
 pub mod xor_pass;
 
 mod error;
 
 pub use blowfish::L2Blowfish;
 pub use error::CryptoError;
+pub use login::{LoginCipher, LoginClientCipher};
