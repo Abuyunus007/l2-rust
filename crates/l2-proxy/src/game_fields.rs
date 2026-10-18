@@ -16,7 +16,7 @@
 use l2_net::{Decode, PacketError, PacketReader};
 use l2_protocol_game::server::charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, CharSelectionInfo,
-    NewCharacterSuccess, ServerClose,
+    NewCharacterSuccess, ServerClose, SsqInfo,
 };
 use l2_protocol_game::server::chat::{LeaveWorld, NetPing, RestartResponse};
 use l2_protocol_game::server::enterworld::{
@@ -24,10 +24,22 @@ use l2_protocol_game::server::enterworld::{
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
     SkillCoolTime, SkillList, ValidateLocation,
 };
-use l2_protocol_game::server::handshake::KeyPacket;
+use l2_protocol_game::server::entry::{
+    ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
+    ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
+};
+use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
+use l2_protocol_game::server::interaction::{
+    ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
+    TargetSelected, TargetUnselected,
+};
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
+use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::system_message::{SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::userinfo::UserInfo;
+use l2_protocol_game::server::visibility::{
+    CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
+};
 use l2_protocol_game::{ClientOpcode, ClientPacket, ConnectionState, ServerOpcode, decode_client};
 use serde_json::{Value, json};
 
@@ -178,6 +190,37 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExGetBookmarkInfo => decoded::<ExGetBookMarkInfoPacket>(&mut r, bookmark_info_fields),
         ServerOpcode::ExUiSetting => decoded::<ExUiSetting>(&mut r, ui_setting_fields),
         ServerOpcode::ExShowScreenMessage => decoded::<ExShowScreenMessage>(&mut r, screen_message_fields),
+        ServerOpcode::LoginFail => decoded::<LoginFail>(&mut r, login_fail_fields),
+        ServerOpcode::SsqInfo => decoded::<SsqInfo>(&mut r, ssq_info_fields),
+        ServerOpcode::ActionFail => decoded::<ActionFailed>(&mut r, no_fields),
+        ServerOpcode::MyTargetSelected => decoded::<MyTargetSelected>(&mut r, my_target_selected_fields),
+        ServerOpcode::TargetSelected => decoded::<TargetSelected>(&mut r, target_selected_fields),
+        ServerOpcode::TargetUnselected => decoded::<TargetUnselected>(&mut r, target_unselected_fields),
+        ServerOpcode::NpcHtmlMessage => decoded::<NpcHtmlMessage>(&mut r, npc_html_message_fields),
+        ServerOpcode::DoorInfo => decoded::<DoorInfo>(&mut r, door_info_fields),
+        ServerOpcode::DoorStatusUpdate => decoded::<DoorStatusUpdate>(&mut r, door_status_update_fields),
+        ServerOpcode::StaticObject => decoded::<StaticObjectInfo>(&mut r, static_object_info_fields),
+        ServerOpcode::CharInfo => decoded::<CharInfo>(&mut r, char_info_fields),
+        ServerOpcode::NpcInfo => decoded::<NpcInfo>(&mut r, npc_info_fields),
+        ServerOpcode::DeleteObject => decoded::<DeleteObject>(&mut r, delete_object_fields),
+        ServerOpcode::RelationChanged => decoded::<RelationChanged>(&mut r, relation_changed_fields),
+        ServerOpcode::StatusUpdate => decoded::<StatusUpdate>(&mut r, status_update_fields),
+        ServerOpcode::ExSetCompassZoneCode => decoded::<ExSetCompassZoneCode>(&mut r, compass_zone_fields),
+        ServerOpcode::MoveToLocation => decoded::<MoveToLocation>(&mut r, move_to_location_fields),
+        ServerOpcode::StopMove => decoded::<StopMove>(&mut r, stop_move_fields),
+        ServerOpcode::MoveToPawn => decoded::<MoveToPawn>(&mut r, move_to_pawn_fields),
+        ServerOpcode::TeleportToLocation => {
+            decoded::<TeleportToLocation>(&mut r, teleport_to_location_fields)
+        }
+        ServerOpcode::MacroList => decoded::<MacroList>(&mut r, macro_list_fields),
+        ServerOpcode::ExQuestItemList => decoded::<ExQuestItemList>(&mut r, quest_item_list_fields),
+        ServerOpcode::ExRotation => decoded::<ExRotation>(&mut r, rotation_fields),
+        ServerOpcode::ExReceiveShowPostFriend => decoded::<ExShowContactList>(&mut r, contact_list_fields),
+        ServerOpcode::ExBrExtraUserInfo => decoded::<ExBrExtraUserInfo>(&mut r, br_extra_user_info_fields),
+        ServerOpcode::ExNavitAdventPointInfo => decoded::<ExNevitAdventPointInfo>(&mut r, nevit_point_fields),
+        ServerOpcode::ExNavitAdventTimeChange => {
+            decoded::<ExNevitAdventTimeChange>(&mut r, nevit_time_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -415,6 +458,162 @@ fn screen_message_fields(p: &ExShowScreenMessage) -> Value {
     )
 }
 
+fn login_fail_fields(p: &LoginFail) -> Value {
+    object!(p => reason)
+}
+
+fn ssq_info_fields(p: &SsqInfo) -> Value {
+    object!(p => state)
+}
+
+// Visibility: the packets that put other objects (players, NPCs, doors) on the client's screen.
+
+fn char_info_fields(p: &CharInfo) -> Value {
+    object!(
+        p => x, y, z, vehicle_id, object_id, name, race, is_female, base_class, paperdoll_item_ids,
+        paperdoll_augmentation_ids, talisman_slots, can_equip_cloak, pvp_flag, karma, m_atk_spd, p_atk_spd,
+        run_speed, walk_speed, swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier,
+        attack_speed_multiplier, collision_radius, collision_height, hair_style, hair_color, face, title, clan_id,
+        clan_crest_id, ally_id, ally_crest_id, sitting, running, in_combat, alike_dead, invisible, mount_type,
+        private_store_type, cubics, in_party_match_room, abnormal_visual_effects, water_or_flying, recom_have,
+        mount_npc_id, class_id, enchant_effect, team, clan_crest_large_id, noble, hero, fishing, fish_x, fish_y,
+        fish_z, name_color, heading, pledge_class, pledge_type, title_color, cursed_weapon_level,
+        clan_reputation_score, transformation_display_id, agathion_id, abnormal_visual_effect_special
+    )
+}
+
+fn npc_info_fields(p: &NpcInfo) -> Value {
+    object!(
+        p => object_id, display_id, attackable, x, y, z, heading, m_atk_spd, p_atk_spd, run_speed, walk_speed,
+        swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier, attack_speed_multiplier,
+        collision_radius, collision_height, right_hand, left_hand, running, in_combat, alike_dead,
+        show_summon_animation, name, title, abnormal_visual_effects, clan_id, clan_crest_id, ally_id,
+        ally_crest_id, water_or_flying, team, enchant_effect, flying, color_effect, targetable, show_name,
+        abnormal_visual_effect_special, display_effect
+    )
+}
+
+fn delete_object_fields(p: &DeleteObject) -> Value {
+    object!(p => object_id)
+}
+
+fn relation_changed_fields(p: &RelationChanged) -> Value {
+    let relations: Vec<Value> = p
+        .relations
+        .iter()
+        .map(|r| object!(r => object_id, relation, auto_attackable, karma, pvp_flag))
+        .collect();
+    json!({ "relations": relations })
+}
+
+fn status_update_fields(p: &StatusUpdate) -> Value {
+    let attributes: Vec<Value> = p
+        .attributes
+        .iter()
+        .map(|&(id, value)| json!({ "id": id, "value": value }))
+        .collect();
+    json!({ "object_id": p.object_id, "attributes": attributes })
+}
+
+fn compass_zone_fields(p: &ExSetCompassZoneCode) -> Value {
+    object!(p => zone_type)
+}
+
+// Movement
+
+fn move_to_location_fields(p: &MoveToLocation) -> Value {
+    object!(p => object_id, dest_x, dest_y, dest_z, x, y, z)
+}
+
+fn stop_move_fields(p: &StopMove) -> Value {
+    object!(p => object_id, x, y, z, heading)
+}
+
+fn move_to_pawn_fields(p: &MoveToPawn) -> Value {
+    object!(p => object_id, target_id, distance, x, y, z, target_x, target_y, target_z)
+}
+
+fn teleport_to_location_fields(p: &TeleportToLocation) -> Value {
+    object!(p => object_id, x, y, z, heading)
+}
+
+// Interaction: targets, dialogs, doors and other static objects.
+
+fn my_target_selected_fields(p: &MyTargetSelected) -> Value {
+    object!(p => object_id, color)
+}
+
+fn target_selected_fields(p: &TargetSelected) -> Value {
+    object!(p => object_id, target_id, x, y, z)
+}
+
+fn target_unselected_fields(p: &TargetUnselected) -> Value {
+    object!(p => target_id, x, y, z)
+}
+
+fn npc_html_message_fields(p: &NpcHtmlMessage) -> Value {
+    object!(p => npc_obj_id, html, item_id)
+}
+
+fn door_info_fields(p: &DoorInfo) -> Value {
+    object!(p => object_id, door_id)
+}
+
+fn door_status_update_fields(p: &DoorStatusUpdate) -> Value {
+    object!(p => object_id, closed, damage, is_enemy, door_id, current_hp, max_hp)
+}
+
+fn static_object_info_fields(p: &StaticObjectInfo) -> Value {
+    object!(
+        p => static_object_id, object_id, kind, targetable, mesh_index, closed, is_enemy, current_hp, max_hp,
+        show_hp, damage_grade
+    )
+}
+
+// Enter-world sequence: macros, quest items, rotation, contacts and the Nevit packets.
+
+fn macro_command_fields(c: &MacroCommandEntry) -> Value {
+    object!(c => kind, d1, d2, cmd)
+}
+
+fn macro_entry_fields(m: &MacroEntry) -> Value {
+    let commands: Vec<Value> = m.commands.iter().map(macro_command_fields).collect();
+    let mut fields = object!(m => id, name, descr, acronym, icon);
+    fields["commands"] = json!(commands);
+    fields
+}
+
+fn macro_list_fields(p: &MacroList) -> Value {
+    let entry = p.macro_entry.as_ref().map_or(Value::Null, macro_entry_fields);
+    json!({ "revision": p.revision, "count": p.count, "macro": entry })
+}
+
+fn quest_item_list_fields(p: &ExQuestItemList) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    let block = p.block.as_ref().map_or(Value::Null, block_fields);
+    json!({ "items": items, "block": block })
+}
+
+fn rotation_fields(p: &ExRotation) -> Value {
+    object!(p => char_id, heading)
+}
+
+fn contact_list_fields(p: &ExShowContactList) -> Value {
+    object!(p => contacts)
+}
+
+fn br_extra_user_info_fields(p: &ExBrExtraUserInfo) -> Value {
+    object!(p => object_id, abnormal_visual_effects_event, lecture_mark)
+}
+
+fn nevit_point_fields(p: &ExNevitAdventPointInfo) -> Value {
+    object!(p => points)
+}
+
+fn nevit_time_fields(p: &ExNevitAdventTimeChange) -> Value {
+    object!(p => started, time)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -433,7 +632,74 @@ mod tests {
     use l2_protocol_game::server::enterworld::{
         FriendListEntry, OtherShortcut, QuestListEntry, SkillCoolTimeEntry, SkillListEntry, TeleportBookmark,
     };
+    use l2_protocol_game::server::visibility::{RelationEntry, compass_zone, relation};
     use l2_protocol_game::server::{CharSelectEntry, NewCharTemplate};
+    use std::collections::BTreeSet;
+    use std::fs;
+    use std::path::Path;
+
+    use crate::capture::CaptureReader;
+
+    /// The server packets that have a decoder in `describe_server`. A test checks that the
+    /// match agrees with this list, so a new decoder has to be added to both.
+    const DECODED_SERVER_PACKETS: &[ServerOpcode] = &[
+        ServerOpcode::VersionCheck,
+        ServerOpcode::CharacterSelectionInfo,
+        ServerOpcode::NewCharacterSuccess,
+        ServerOpcode::CharacterCreateSuccess,
+        ServerOpcode::CharacterCreateFail,
+        ServerOpcode::CharacterDeleteSuccess,
+        ServerOpcode::CharacterDeleteFail,
+        ServerOpcode::CharacterSelected,
+        ServerOpcode::ServerClose,
+        ServerOpcode::ItemList,
+        ServerOpcode::UserInfo,
+        ServerOpcode::ShortCutInit,
+        ServerOpcode::SkillList,
+        ServerOpcode::SystemMessage,
+        ServerOpcode::RestartResponse,
+        ServerOpcode::NetPing,
+        ServerOpcode::LogOutOk,
+        ServerOpcode::L2FriendList,
+        ServerOpcode::ValidateLocation,
+        ServerOpcode::QuestList,
+        ServerOpcode::SkillCoolTime,
+        ServerOpcode::HennaInfo,
+        ServerOpcode::EtcStatusUpdate,
+        ServerOpcode::ExStorageMaxCount,
+        ServerOpcode::ExBasicActionList,
+        ServerOpcode::ExVoteSystemInfo,
+        ServerOpcode::ExGetBookmarkInfo,
+        ServerOpcode::ExUiSetting,
+        ServerOpcode::ExShowScreenMessage,
+        ServerOpcode::LoginFail,
+        ServerOpcode::SsqInfo,
+        ServerOpcode::ActionFail,
+        ServerOpcode::MyTargetSelected,
+        ServerOpcode::TargetSelected,
+        ServerOpcode::TargetUnselected,
+        ServerOpcode::NpcHtmlMessage,
+        ServerOpcode::DoorInfo,
+        ServerOpcode::DoorStatusUpdate,
+        ServerOpcode::StaticObject,
+        ServerOpcode::CharInfo,
+        ServerOpcode::NpcInfo,
+        ServerOpcode::DeleteObject,
+        ServerOpcode::RelationChanged,
+        ServerOpcode::StatusUpdate,
+        ServerOpcode::ExSetCompassZoneCode,
+        ServerOpcode::MoveToLocation,
+        ServerOpcode::StopMove,
+        ServerOpcode::MoveToPawn,
+        ServerOpcode::TeleportToLocation,
+        ServerOpcode::MacroList,
+        ServerOpcode::ExQuestItemList,
+        ServerOpcode::ExRotation,
+        ServerOpcode::ExReceiveShowPostFriend,
+        ServerOpcode::ExBrExtraUserInfo,
+        ServerOpcode::ExNavitAdventPointInfo,
+        ServerOpcode::ExNavitAdventTimeChange,
+    ];
 
     /// The ex id of a server packet the way the relay reads it.
     fn ex_of(raw: &[u8]) -> Option<u16> {
@@ -950,6 +1216,411 @@ mod tests {
                 raw.extend(ex.to_le_bytes());
             }
             let _ = s2c(&raw);
+        }
+    }
+
+    #[test]
+    fn the_decoder_match_agrees_with_the_list_of_decoded_packets() {
+        for op in ServerOpcode::ALL {
+            let mut raw = vec![op.id()];
+            if let Some(ex) = op.ex_id() {
+                raw.extend(ex.to_le_bytes());
+            }
+            // An empty body: a decoder still answers, with a decode_error, so `None` means
+            // "no decoder".
+            assert_eq!(
+                s2c(&raw).is_some(),
+                DECODED_SERVER_PACKETS.contains(&op),
+                "{}",
+                op.name()
+            );
+        }
+    }
+
+    #[test]
+    fn visibility_packets_show_their_fields() {
+        let char_info = CharInfo {
+            name: "Hero".into(),
+            object_id: 268_435_457,
+            x: 1,
+            y: -2,
+            z: 3,
+            mount_npc_id: 12_345,
+            running: true,
+            ..CharInfo::default()
+        };
+        let fields = s2c_fields(&char_info.to_bytes());
+        assert_eq!(fields["name"], "Hero");
+        assert_eq!(fields["object_id"], 268_435_457);
+        assert_eq!(fields["y"], -2);
+        assert_eq!(fields["mount_npc_id"], 12_345);
+        assert_eq!(fields["running"], true);
+        assert_eq!(fields["paperdoll_item_ids"].as_array().map(Vec::len), Some(25));
+
+        let npc = NpcInfo {
+            object_id: 5,
+            display_id: 20_101,
+            attackable: true,
+            name: "Guard".into(),
+            x: 7,
+            ..NpcInfo::default()
+        };
+        let fields = s2c_fields(&npc.to_bytes());
+        assert_eq!(fields["object_id"], 5);
+        assert_eq!(fields["display_id"], 20_101);
+        assert_eq!(fields["attackable"], true);
+        assert_eq!(fields["name"], "Guard");
+        assert_eq!(fields["x"], 7);
+
+        assert_eq!(
+            s2c_fields(&DeleteObject { object_id: 9 }.to_bytes()),
+            json!({ "object_id": 9 })
+        );
+
+        let entry = RelationEntry {
+            object_id: 4,
+            relation: relation::PARTY1,
+            auto_attackable: true,
+            karma: 0,
+            pvp_flag: 1,
+        };
+        assert_eq!(
+            s2c_fields(&RelationChanged::single(entry).to_bytes()),
+            json!({
+                "relations": [
+                    { "object_id": 4, "relation": 1, "auto_attackable": true, "karma": 0, "pvp_flag": 1 }
+                ]
+            })
+        );
+
+        let mut status = StatusUpdate::new(10);
+        status.add_attribute(9, 100);
+        status.add_attribute(10, 50);
+        assert_eq!(
+            s2c_fields(&status.to_bytes()),
+            json!({
+                "object_id": 10,
+                "attributes": [{ "id": 9, "value": 100 }, { "id": 10, "value": 50 }]
+            })
+        );
+
+        let zone = ExSetCompassZoneCode {
+            zone_type: compass_zone::PEACEZONE,
+        };
+        assert_eq!(s2c_fields(&zone.to_bytes()), json!({ "zone_type": 0x0C }));
+    }
+
+    #[test]
+    fn movement_packets_show_their_fields() {
+        let to = MoveToLocation {
+            object_id: 1,
+            dest_x: 10,
+            dest_y: 20,
+            dest_z: 30,
+            x: 1,
+            y: 2,
+            z: 3,
+        };
+        assert_eq!(
+            s2c_fields(&to.to_bytes()),
+            json!({ "object_id": 1, "dest_x": 10, "dest_y": 20, "dest_z": 30, "x": 1, "y": 2, "z": 3 })
+        );
+
+        let stop = StopMove {
+            object_id: 2,
+            x: 4,
+            y: 5,
+            z: 6,
+            heading: 7,
+        };
+        assert_eq!(
+            s2c_fields(&stop.to_bytes()),
+            json!({ "object_id": 2, "x": 4, "y": 5, "z": 6, "heading": 7 })
+        );
+
+        let pawn = MoveToPawn {
+            object_id: 3,
+            target_id: 4,
+            distance: 25,
+            x: 1,
+            y: 2,
+            z: 3,
+            target_x: 4,
+            target_y: 5,
+            target_z: 6,
+        };
+        assert_eq!(
+            s2c_fields(&pawn.to_bytes()),
+            json!({
+                "object_id": 3, "target_id": 4, "distance": 25, "x": 1, "y": 2, "z": 3,
+                "target_x": 4, "target_y": 5, "target_z": 6
+            })
+        );
+
+        let teleport = TeleportToLocation {
+            object_id: 8,
+            x: 1,
+            y: 2,
+            z: 3,
+            heading: 4,
+        };
+        assert_eq!(
+            s2c_fields(&teleport.to_bytes()),
+            json!({ "object_id": 8, "x": 1, "y": 2, "z": 3, "heading": 4 })
+        );
+    }
+
+    #[test]
+    fn interaction_packets_show_their_fields() {
+        let mine = MyTargetSelected {
+            object_id: 3,
+            color: 2,
+        };
+        assert_eq!(
+            s2c_fields(&mine.to_bytes()),
+            json!({ "object_id": 3, "color": 2 })
+        );
+
+        let selected = TargetSelected {
+            object_id: 3,
+            target_id: 4,
+            x: 1,
+            y: 2,
+            z: 3,
+        };
+        assert_eq!(
+            s2c_fields(&selected.to_bytes()),
+            json!({ "object_id": 3, "target_id": 4, "x": 1, "y": 2, "z": 3 })
+        );
+
+        let unselected = TargetUnselected {
+            target_id: 4,
+            x: 1,
+            y: 2,
+            z: 3,
+        };
+        assert_eq!(
+            s2c_fields(&unselected.to_bytes()),
+            json!({ "target_id": 4, "x": 1, "y": 2, "z": 3 })
+        );
+
+        assert_eq!(s2c_fields(&ActionFailed.to_bytes()), json!({}));
+
+        let html = NpcHtmlMessage {
+            npc_obj_id: 5,
+            html: "<html>hi</html>".into(),
+            item_id: 0,
+        };
+        assert_eq!(
+            s2c_fields(&html.to_bytes()),
+            json!({ "npc_obj_id": 5, "html": "<html>hi</html>", "item_id": 0 })
+        );
+
+        let door = DoorInfo {
+            object_id: 6,
+            door_id: 7,
+        };
+        assert_eq!(
+            s2c_fields(&door.to_bytes()),
+            json!({ "object_id": 6, "door_id": 7 })
+        );
+
+        let door_status = DoorStatusUpdate {
+            object_id: 6,
+            closed: true,
+            damage: 0,
+            is_enemy: false,
+            door_id: 7,
+            current_hp: 100,
+            max_hp: 200,
+        };
+        assert_eq!(
+            s2c_fields(&door_status.to_bytes()),
+            json!({
+                "object_id": 6, "closed": true, "damage": 0, "is_enemy": false, "door_id": 7,
+                "current_hp": 100, "max_hp": 200
+            })
+        );
+
+        let object = StaticObjectInfo {
+            static_object_id: 1,
+            object_id: 2,
+            kind: 0,
+            targetable: true,
+            mesh_index: 3,
+            closed: false,
+            is_enemy: false,
+            current_hp: 0,
+            max_hp: 0,
+            show_hp: false,
+            damage_grade: 0,
+        };
+        let fields = s2c_fields(&object.to_bytes());
+        assert_eq!(fields["static_object_id"], 1);
+        assert_eq!(fields["mesh_index"], 3);
+        assert_eq!(fields["targetable"], true);
+    }
+
+    #[test]
+    fn enter_world_packets_show_their_fields() {
+        let macros = MacroList {
+            revision: 1,
+            count: 1,
+            macro_entry: Some(MacroEntry {
+                id: 3,
+                name: "heal".into(),
+                descr: "d".into(),
+                acronym: "h".into(),
+                icon: 2,
+                commands: vec![MacroCommandEntry {
+                    kind: 3,
+                    d1: 0,
+                    d2: 0,
+                    cmd: "/heal".into(),
+                }],
+            }),
+        };
+        let fields = s2c_fields(&macros.to_bytes());
+        assert_eq!(fields["revision"], 1);
+        assert_eq!(fields["macro"]["name"], "heal");
+        assert_eq!(fields["macro"]["commands"][0]["cmd"], "/heal");
+        let empty = MacroList {
+            revision: 2,
+            count: 0,
+            macro_entry: None,
+        };
+        assert_eq!(s2c_fields(&empty.to_bytes())["macro"], Value::Null);
+
+        let quest_items = ExQuestItemList {
+            items: vec![ItemInfo::plain(0x1000, 57, 100)],
+            block: None,
+        };
+        let fields = s2c_fields(&quest_items.to_bytes());
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        assert_eq!(fields["block"], Value::Null);
+
+        let rotation = ExRotation {
+            char_id: 1,
+            heading: 2,
+        };
+        assert_eq!(
+            s2c_fields(&rotation.to_bytes()),
+            json!({ "char_id": 1, "heading": 2 })
+        );
+
+        let contacts = ExShowContactList {
+            contacts: vec!["Pal".into()],
+        };
+        assert_eq!(s2c_fields(&contacts.to_bytes()), json!({ "contacts": ["Pal"] }));
+
+        let extra = ExBrExtraUserInfo {
+            object_id: 3,
+            abnormal_visual_effects_event: 4,
+            lecture_mark: 1,
+        };
+        assert_eq!(
+            s2c_fields(&extra.to_bytes()),
+            json!({ "object_id": 3, "abnormal_visual_effects_event": 4, "lecture_mark": 1 })
+        );
+
+        assert_eq!(
+            s2c_fields(&ExNevitAdventPointInfo { points: 7 }.to_bytes()),
+            json!({ "points": 7 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExNevitAdventTimeChange {
+                    started: true,
+                    time: 60,
+                }
+                .to_bytes()
+            ),
+            json!({ "started": true, "time": 60 })
+        );
+    }
+
+    #[test]
+    fn login_fail_and_seven_signs_show_their_fields() {
+        assert_eq!(
+            s2c_fields(&LoginFail { reason: 2 }.to_bytes()),
+            json!({ "reason": 2 })
+        );
+        assert_eq!(
+            s2c_fields(&SsqInfo { state: 1 }.to_bytes()),
+            json!({ "state": 1 })
+        );
+    }
+
+    /// Every server packet of the committed Java captures with a decoder must have fields, and
+    /// no other server packet may have any. A decode error here means a `Decode` impl does not
+    /// match what Java sends.
+    #[test]
+    fn every_decoded_server_packet_in_the_committed_captures_has_fields() {
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/captures");
+        let mut seen = BTreeSet::new();
+        let mut problems = Vec::new();
+        for entry in fs::read_dir(&dir).expect("the committed captures folder") {
+            let path = entry.expect("a directory entry").path();
+            if path.extension().is_none_or(|e| e != "jsonl") {
+                continue;
+            }
+            let file = path
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            let records = CaptureReader::open(&path)
+                .expect("a readable capture")
+                .read_all()
+                .expect("well-formed records");
+            for (index, record) in records.iter().enumerate() {
+                if record.dir != Dir::S2c {
+                    continue;
+                }
+                let raw = record.raw_bytes().expect("a hex payload");
+                let fields = describe(Dir::S2c, ConnectionState::InGame, record.ex_opcode, &raw, false);
+                let decoded = ServerOpcode::from_id(record.opcode, record.ex_opcode)
+                    .filter(|op| DECODED_SERVER_PACKETS.contains(op));
+                // The header is line 1, so a record's line is its index plus two.
+                let place = format!("{file} line {}", index + 2);
+                match &fields {
+                    None if decoded.is_some() => {
+                        problems.push(format!("{place}: {} has no fields", record.name));
+                    }
+                    Some(_) if decoded.is_none() => {
+                        problems.push(format!("{place}: {} has fields without a decoder", record.name));
+                    }
+                    Some(v) if v.get("decode_error").is_some() => {
+                        problems.push(format!("{place}: {} {}", record.name, v["decode_error"]));
+                    }
+                    _ => {}
+                }
+                if let Some(op) = decoded {
+                    seen.insert(op);
+                }
+            }
+        }
+        assert!(
+            problems.is_empty(),
+            "{} problems:\n{}",
+            problems.len(),
+            problems.join("\n")
+        );
+        // The sweep must actually reach the packet families it is meant to cover.
+        for op in [
+            ServerOpcode::NpcInfo,
+            ServerOpcode::MoveToLocation,
+            ServerOpcode::StatusUpdate,
+            ServerOpcode::StopMove,
+            ServerOpcode::MoveToPawn,
+            ServerOpcode::DeleteObject,
+            ServerOpcode::MyTargetSelected,
+            ServerOpcode::UserInfo,
+            ServerOpcode::ActionFail,
+            ServerOpcode::ExRotation,
+            ServerOpcode::ExBrExtraUserInfo,
+            ServerOpcode::ExNavitAdventTimeChange,
+        ] {
+            assert!(seen.contains(&op), "the captures hold no {}", op.name());
         }
     }
 }
