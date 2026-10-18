@@ -1,0 +1,19 @@
+[package]
+name = "l2-protocol-login"
+description = "Login protocol: client<->login server packet structs, reason enums, opcode dispatcher"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+l2-net.workspace = true
+
+[dev-dependencies]
+l2-testkit.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true
