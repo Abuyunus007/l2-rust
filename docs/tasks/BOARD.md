@@ -135,7 +135,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | planned |
 | [M2-RUN-01](M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | planned |
 
-## M3: World and movement (plan, waiting for the owner's OK)
+## M3: World and movement (approved 2026-10-18)
 
 21 cards: 3 opus (orchestrator), 10 sonnet, 8 haiku. Design: [docs/design/m3-world.md](../design/m3-world.md). GEO-01 started early on the owner's go (2026-10-18). Workers run **at most 4-5 at a time** (CPU: every worktree compiles the workspace); the next card starts when one merges.
 
@@ -157,11 +157,11 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 |---|---|---|---|---|---|
 | [M3-GEO-01](M3/M3-GEO-01.md) | Geoengine: height, line of sight, movement checks, per-region override | sonnet | full | M1 l2-geo | in-progress |
 | [M3-GEO-02](M3/M3-GEO-02.md) | Pathfinding on worker threads | sonnet | full | GEO-01 | planned |
-| [M3-GPROTO-05](M3/M3-GPROTO-05.md) | Visibility and movement packets | sonnet | full | none | planned |
-| [M3-GPROTO-06](M3/M3-GPROTO-06.md) | Target, action and NPC dialog packets | haiku | spot | none | planned |
-| [M3-DATA-05](M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | planned |
+| [M3-GPROTO-05](M3/M3-GPROTO-05.md) | Visibility and movement packets | sonnet | full | none | in-progress |
+| [M3-GPROTO-06](M3/M3-GPROTO-06.md) | Target, action and NPC dialog packets | haiku | spot | none | in-progress |
+| [M3-DATA-05](M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | in-progress |
 | [M3-DATA-06](M3/M3-DATA-06.md) | Spawn data | haiku | spot | none | planned |
-| [M3-DATA-07](M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | planned |
+| [M3-DATA-07](M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | in-progress |
 | [M3-DATA-08](M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | planned |
 | [M3-DATA-09](M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | planned |
 | [M3-GUI-02](M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | planned |
