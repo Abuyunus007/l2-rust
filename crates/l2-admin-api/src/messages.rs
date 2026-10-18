@@ -64,7 +64,7 @@ pub enum Request {
     GetLoginStatus {
         server: Option<String>,
     },
-    /// Game server endpoint: the online characters. (The supervisor does not relay it yet.)
+    /// Game server endpoint: the online characters. The supervisor relays it to the named server.
     GetGameStatus {
         server: Option<String>,
     },

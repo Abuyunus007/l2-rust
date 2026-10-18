@@ -37,7 +37,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `subscribe_logs` | `server` (null = all), `since` (last seq the client has, or null) | supervisor | `ok`, then `log_line` events: backlog after `since` first, then live |
 | `unsubscribe_logs` | | supervisor | `ok` |
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
-| `get_game_status` | `server` (GS itself: null) | GS endpoint (the supervisor does not relay it yet) | `game_status` |
+| `get_game_status` | `server` (GS itself: null) | GS endpoint, or the supervisor (relays to the named server) | `game_status` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
 
 ### Responses
