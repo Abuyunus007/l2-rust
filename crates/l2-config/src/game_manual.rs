@@ -7,6 +7,7 @@
 // `manual`. The `effective_*` accessors on `GameConfig` are the Java values after the
 // post-processing statements of `load()` (the generated fields hold the raw getter result).
 
+use regex::Regex;
 use tracing::warn;
 
 use crate::{ConfigError, GameConfig, IniFile};
@@ -41,6 +42,71 @@ pub struct Location {
     pub heading: i32,
 }
 
+/// A Java name template: `Pattern.compile(setting)`, matched with `matcher(text).matches()`.
+///
+/// The setting is compiled once, when the config loads. Java's `matches()` needs the whole text to
+/// match, so the regex is anchored as `\A(?:...)\z`. The `regex` crate has no look-around and no
+/// backreferences: a setting that uses them is invalid here, so it falls back to `.*` (wider than
+/// Java, which would enforce it; the alphanumeric check on character names still applies).
+// Java: ServerConfig.java:150-185 (the three patterns and their `.*` fallback)
+#[derive(Debug, Clone)]
+pub struct NamePattern {
+    /// The setting as written (or `.*` after a fallback). Equality compares this text.
+    source: String,
+    /// `None` is the `.*` fallback, which needs no regex.
+    regex: Option<Regex>,
+}
+
+impl NamePattern {
+    /// Java `Pattern.compile(source)`. An invalid pattern is logged under `key` and replaced by
+    /// `.*`, like Java's `catch (PatternSyntaxException)`.
+    pub fn compile(key: &str, source: &str) -> Self {
+        match Self::try_compile(source) {
+            Ok(pattern) => pattern,
+            Err(error) => {
+                warn!(
+                    "{key} = {source} cannot be used ({error}): using .* instead, as Java does for an invalid pattern."
+                );
+                Self {
+                    source: ANY_PATTERN.to_owned(),
+                    regex: None,
+                }
+            }
+        }
+    }
+
+    fn try_compile(source: &str) -> Result<Self, regex::Error> {
+        // Compiled on its own first: inside `(?:...)` an unbalanced `)` could make a different,
+        // valid pattern, and Java would reject the setting.
+        Regex::new(source)?;
+        let anchored = Regex::new(&format!(r"\A(?:{source})\z"))?;
+        Ok(Self {
+            source: source.to_owned(),
+            regex: Some(anchored),
+        })
+    }
+
+    /// Java `CHARNAME_TEMPLATE_PATTERN.matcher(text).matches()`: the whole text has to match.
+    pub fn is_match(&self, text: &str) -> bool {
+        match &self.regex {
+            Some(regex) => regex.is_match(text),
+            // Java's `.` does not match a line terminator.
+            None => !text.contains(['\n', '\r', '\u{85}', '\u{2028}', '\u{2029}']),
+        }
+    }
+}
+
+/// The Java default of the three name templates.
+const ANY_PATTERN: &str = ".*";
+
+impl PartialEq for NamePattern {
+    fn eq(&self, other: &Self) -> bool {
+        self.source == other.source
+    }
+}
+
+impl Eq for NamePattern {}
+
 /// `ServerConfig` fields that the generator could not port (`config/Server.ini`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServerManual {
@@ -49,20 +115,18 @@ pub struct ServerManual {
     /// Java `split(";")`, then `Integer.parseInt(piece.trim())`. A piece that does not parse is
     /// logged and skipped.
     pub protocol_list: Vec<i32>,
-    /// Java `CHARNAME_TEMPLATE_PATTERN`: `CnameTemplate`, default `.*`.
-    ///
-    /// TODO(M2-CFG-01): stored as the raw pattern string. Java compiles it with
-    /// `Pattern.compile` and falls back to `.*` when it is invalid. Regex matching needs an
-    /// approved regex crate (none is approved yet), so the pattern is not compiled or checked.
+    /// Java `CHARNAME_TEMPLATE_PATTERN`: `CnameTemplate`, default `.*`. The raw setting.
     pub charname_template_pattern: String,
-    /// Java `PET_NAME_TEMPLATE_PATTERN`: `PetNameTemplate`, default `.*`.
-    ///
-    /// TODO(M2-CFG-01): raw pattern string, same reason as `charname_template_pattern`.
+    /// The compiled `charname_template_pattern`, used by the character creation name check.
+    pub charname_template: NamePattern,
+    /// Java `PET_NAME_TEMPLATE_PATTERN`: `PetNameTemplate`, default `.*`. The raw setting.
     pub pet_name_template_pattern: String,
-    /// Java `CLAN_NAME_TEMPLATE_PATTERN`: `ClanNameTemplate`, default `.*`.
-    ///
-    /// TODO(M2-CFG-01): raw pattern string, same reason as `charname_template_pattern`.
+    /// The compiled `pet_name_template_pattern`. Not used yet (no pets).
+    pub pet_name_template: NamePattern,
+    /// Java `CLAN_NAME_TEMPLATE_PATTERN`: `ClanNameTemplate`, default `.*`. The raw setting.
     pub clan_name_template_pattern: String,
+    /// The compiled `clan_name_template_pattern`. Not used yet (no clans).
+    pub clan_name_template: NamePattern,
 }
 
 impl ServerManual {
@@ -83,14 +147,21 @@ impl ServerManual {
         })
         .collect();
 
+        // Java: ServerConfig.java:150-160 (CnameTemplate)
+        let charname_template_pattern = ini.get_string("CnameTemplate", ANY_PATTERN);
+        // Java: ServerConfig.java:162-172 (PetNameTemplate)
+        let pet_name_template_pattern = ini.get_string("PetNameTemplate", ANY_PATTERN);
+        // Java: ServerConfig.java:174-185 (ClanNameTemplate)
+        let clan_name_template_pattern = ini.get_string("ClanNameTemplate", ANY_PATTERN);
+
         Self {
             protocol_list,
-            // Java: ServerConfig.java:150-160 (CnameTemplate)
-            charname_template_pattern: ini.get_string("CnameTemplate", ".*"),
-            // Java: ServerConfig.java:162-172 (PetNameTemplate)
-            pet_name_template_pattern: ini.get_string("PetNameTemplate", ".*"),
-            // Java: ServerConfig.java:174-185 (ClanNameTemplate)
-            clan_name_template_pattern: ini.get_string("ClanNameTemplate", ".*"),
+            charname_template: NamePattern::compile("CnameTemplate", &charname_template_pattern),
+            charname_template_pattern,
+            pet_name_template: NamePattern::compile("PetNameTemplate", &pet_name_template_pattern),
+            pet_name_template_pattern,
+            clan_name_template: NamePattern::compile("ClanNameTemplate", &clan_name_template_pattern),
+            clan_name_template_pattern,
         }
     }
 }
@@ -347,6 +418,57 @@ mod tests {
         assert_eq!(server.charname_template_pattern, ".*");
         assert_eq!(server.pet_name_template_pattern, ".*");
         assert_eq!(server.clan_name_template_pattern, ".*");
+        assert!(server.charname_template.is_match("Any Name, 123"));
+        assert!(!server.charname_template.is_match("two\nlines"));
+    }
+
+    #[test]
+    fn name_template_matches_the_whole_name() {
+        let pattern = NamePattern::compile("CnameTemplate", "[A-Za-z0-9]{1,16}");
+        assert!(pattern.is_match("Hero1"));
+        assert!(pattern.is_match("abcdefghijklmnop"));
+        assert!(!pattern.is_match(""));
+        assert!(!pattern.is_match("abcdefghijklmnopq"));
+        // A partial match is not a match in Java's `matches()`.
+        assert!(!pattern.is_match("Hero!"));
+        assert!(!pattern.is_match("!Hero"));
+        assert!(!pattern.is_match("a b"));
+        // Alternation is grouped, so the anchors apply to every branch.
+        let alternation = NamePattern::compile("CnameTemplate", "cat|dog");
+        assert!(alternation.is_match("dog"));
+        assert!(!alternation.is_match("cats"));
+        assert!(!alternation.is_match("hotdog"));
+    }
+
+    #[test]
+    fn name_template_keeps_java_case_and_dot_rules() {
+        let pattern = NamePattern::compile("CnameTemplate", "(?i)hero.*");
+        assert!(pattern.is_match("HERO of Dawn"));
+        // Java's `.` does not cross a line terminator.
+        assert!(!pattern.is_match("hero\nx"));
+    }
+
+    #[test]
+    fn invalid_template_falls_back_to_any_pattern() {
+        for bad in ["[A-Z", "a)|(b", "abc\\", "(?=a)a", "(a)\\1"] {
+            let pattern = NamePattern::compile("CnameTemplate", bad);
+            assert_eq!(pattern, NamePattern::compile("CnameTemplate", ".*"), "{bad}");
+            assert!(pattern.is_match("anything"), "{bad}");
+            assert!(!pattern.is_match("two\nlines"), "{bad}");
+        }
+    }
+
+    #[test]
+    fn server_ini_keys_compile_the_three_templates() {
+        let text = "CnameTemplate = [A-Z][a-z]*\nPetNameTemplate = [a-z]+\nClanNameTemplate = x\n";
+        let server = ServerManual::from_ini(&ini(text));
+        assert!(server.charname_template.is_match("Hero"));
+        assert!(!server.charname_template.is_match("hero"));
+        assert!(server.pet_name_template.is_match("pet"));
+        assert!(!server.pet_name_template.is_match("Pet"));
+        assert!(server.clan_name_template.is_match("x"));
+        assert!(!server.clan_name_template.is_match("xx"));
+        assert_eq!(server.charname_template_pattern, "[A-Z][a-z]*");
     }
 
     #[test]

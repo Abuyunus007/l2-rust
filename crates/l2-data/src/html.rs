@@ -37,12 +37,21 @@ pub struct HtmCache {
 }
 
 impl HtmCache {
+    /// Loads every html file below `root` (the folder that contains `data/`), with Java's code
+    /// default for `CheckHtmlEncoding` (true). See [`HtmCache::load_with`].
+    pub fn load(root: &Path, lazy_cache_requested: bool) -> Self {
+        Self::load_with(root, lazy_cache_requested, true)
+    }
+
     /// Loads every html file below `root` (the folder that contains `data/`).
     ///
     /// `lazy_cache_requested` is Java's `HtmCache = False`: the cache still preloads, and the
     /// note is logged once. A missing root is not an error: Java logs nothing in that case either
     /// and the cache is simply empty.
-    pub fn load(root: &Path, lazy_cache_requested: bool) -> Self {
+    ///
+    /// `check_encoding` is `General.ini` `CheckHtmlEncoding`: when true, a file with non ASCII text
+    /// outside `data/lang` is logged. The text is loaded the same way either way.
+    pub fn load_with(root: &Path, lazy_cache_requested: bool, check_encoding: bool) -> Self {
         if lazy_cache_requested {
             info!(
                 "Cache[HTML]: LazyCache is set, but html is preloaded (same text, no file IO in the world)."
@@ -50,7 +59,7 @@ impl HtmCache {
         }
         info!("Html cache start...");
         let mut cache = Self::default();
-        cache.parse_dir(root, root);
+        cache.parse_dir(root, root, check_encoding);
         info!(
             "Cache[HTML]: {:.3} megabytes on {} files loaded.",
             cache.memory_mb(),
@@ -102,7 +111,7 @@ impl HtmCache {
     }
 
     /// Java `parseDir`: every entry of `dir`, recursively. Unreadable folders are skipped.
-    fn parse_dir(&mut self, root: &Path, dir: &Path) {
+    fn parse_dir(&mut self, root: &Path, dir: &Path, check_encoding: bool) {
         let Ok(entries) = std::fs::read_dir(dir) else {
             return;
         };
@@ -112,15 +121,15 @@ impl HtmCache {
         paths.sort();
         for path in paths {
             if path.is_dir() {
-                self.parse_dir(root, &path);
+                self.parse_dir(root, &path, check_encoding);
             } else {
-                self.load_file(root, &path);
+                self.load_file(root, &path, check_encoding);
             }
         }
     }
 
     /// Java `loadFile`: reads one html file into the cache. Problems are logged and skipped.
-    fn load_file(&mut self, root: &Path, file: &Path) {
+    fn load_file(&mut self, root: &Path, file: &Path, check_encoding: bool) {
         if !file.is_file() || !is_html_name(file) {
             return;
         }
@@ -135,14 +144,19 @@ impl HtmCache {
             }
         };
         let text = process_html(&raw);
-        // Java: `CheckHtmlEncoding` (code default true) warns about non ASCII text outside
-        // `data/lang`, where the translations are allowed to use other characters.
-        if !key.starts_with("data/lang") && !text.is_ascii() {
+        if warns_about_encoding(&key, &text, check_encoding) {
             warn!("HTML encoding check: File {key} contains non ASCII content.");
         }
         self.raw_bytes += raw.len() as u64;
         self.files.insert(key, text);
     }
+}
+
+/// Java `loadFile` with `GeneralConfig.CHECK_HTML_ENCODING`: non ASCII text is reported, except
+/// under `data/lang`, where the translations may use other characters.
+// Java: gameserver/cache/HtmCache.java:140
+fn warns_about_encoding(key: &str, text: &str, check_encoding: bool) -> bool {
+    check_encoding && !key.starts_with("data/lang") && !text.is_ascii()
 }
 
 /// Java `HtmCache.loadFile` name check: the lower-cased name ends in `.htm` or `.html`.
@@ -246,6 +260,25 @@ mod tests {
             Some("plain")
         );
         assert_eq!(cache.get_localized("", "data/html/missing.htm"), None);
+    }
+
+    #[test]
+    fn encoding_warning_follows_the_check_flag() {
+        assert!(warns_about_encoding("data/html/a.htm", "Zoë", true));
+        assert!(!warns_about_encoding("data/html/a.htm", "Zoë", false));
+        assert!(!warns_about_encoding("data/html/a.htm", "plain", true));
+        // Translations may use other characters.
+        assert!(!warns_about_encoding("data/lang/en/data/html/a.htm", "Zoë", true));
+    }
+
+    #[test]
+    fn the_check_flag_does_not_change_the_loaded_text() {
+        let dir = tempfile::tempdir().unwrap();
+        write(dir.path(), "data/html/u.htm", "Zoë".as_bytes());
+        let checked = HtmCache::load_with(dir.path(), false, true);
+        let unchecked = HtmCache::load_with(dir.path(), false, false);
+        assert_eq!(checked.get("data/html/u.htm"), Some("Zoë"));
+        assert_eq!(unchecked.get("data/html/u.htm"), Some("Zoë"));
     }
 
     #[test]

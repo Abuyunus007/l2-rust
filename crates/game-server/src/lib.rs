@@ -428,9 +428,10 @@ fn resolve_datapack_root(root: &Path, value: &str) -> PathBuf {
 /// Each value is the key's getter result after Java's `load()`, with the same defaults, so an
 /// empty config gives [`DatapackOptions::default`]. Keys: `General.ini` `CustomItemsLoad`,
 /// `CustomNpcData` and `HtmCache`; `NPC.ini` `MaxAggroRange` and `DefaultCorpseTime`;
-/// `Custom/FakePlayers.ini` `EnableFakePlayers`; `Development.ini` `NoSpawns`.
+/// `Custom/FakePlayers.ini` `EnableFakePlayers`; `Development.ini` `NoSpawns`; `General.ini`
+/// `CheckHtmlEncoding`.
 // Java: GeneralConfig.java:258, 355, 358; NpcConfig.java:142, 145; FakePlayersConfig.java:50;
-// the NoSpawns read in DevelopmentConfig.
+// the NoSpawns read in DevelopmentConfig; HtmCache.java:140 (CHECK_HTML_ENCODING).
 fn options_from_config(config: &GameConfig) -> DatapackOptions {
     DatapackOptions {
         custom_items_load: config.general.custom_items_load,
@@ -440,6 +441,7 @@ fn options_from_config(config: &GameConfig) -> DatapackOptions {
         max_aggro_range: config.npc.max_aggro_range,
         default_corpse_time: config.npc.default_corpse_time,
         htm_cache: config.general.htm_cache,
+        check_html_encoding: config.general.check_html_encoding,
     }
 }
 
@@ -598,6 +600,7 @@ mod tests {
         assert!(options.custom_items_load);
         assert!(options.custom_npc_data);
         assert!(!options.htm_cache);
+        assert!(options.check_html_encoding);
         assert!(!options.no_spawns);
         assert_eq!(options.max_aggro_range, 450);
     }
@@ -611,7 +614,7 @@ mod tests {
         std::fs::create_dir_all(&custom).unwrap();
         std::fs::write(
             dir.path().join("General.ini"),
-            "CustomItemsLoad = True\nHtmCache = False\n",
+            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\n",
         )
         .unwrap();
         std::fs::write(
@@ -633,6 +636,7 @@ mod tests {
                 max_aggro_range: 900,
                 default_corpse_time: 3,
                 htm_cache: false,
+                check_html_encoding: false,
             }
         );
     }

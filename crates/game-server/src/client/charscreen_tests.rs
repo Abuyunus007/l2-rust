@@ -1,6 +1,8 @@
 //! Small checks of the helpers of the character screen.
 
-use super::charscreen::{NameTemplate, game_time_minutes, is_alpha_numeric};
+use l2_config::GameConfig;
+
+use super::charscreen::{game_time_minutes, is_alpha_numeric, is_valid_char_name};
 
 #[test]
 fn alphanumeric_means_letters_and_digits_only() {
@@ -15,11 +17,19 @@ fn alphanumeric_means_letters_and_digits_only() {
 }
 
 #[test]
-fn only_the_default_name_template_is_understood() {
-    assert!(NameTemplate::parse(".*").matches("anything"));
-    let strict = NameTemplate::parse("[A-Z][a-z]*");
-    assert_eq!(strict, NameTemplate::Unsupported("[A-Z][a-z]*".into()));
-    assert!(!strict.matches("Hero"));
+fn a_name_must_also_match_the_cname_template() {
+    // The default `.*` accepts any name that is letters and digits.
+    assert!(is_valid_char_name(&GameConfig::default(), "Hero"));
+
+    let dir = tempfile::tempdir().unwrap();
+    std::fs::write(dir.path().join("Server.ini"), "CnameTemplate = [A-Z][a-z]*\n").unwrap();
+    let config = GameConfig::load(dir.path()).unwrap();
+    assert!(is_valid_char_name(&config, "Hero"));
+    // Refused by the template, although every character is a letter or a digit.
+    assert!(!is_valid_char_name(&config, "hero"));
+    assert!(!is_valid_char_name(&config, "Hero2"));
+    // Refused by the letters-and-digits rule.
+    assert!(!is_valid_char_name(&config, "He ro"));
 }
 
 #[test]

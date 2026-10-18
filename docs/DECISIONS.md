@@ -38,7 +38,7 @@ Background for each decision: `docs/analysis/`.
 | D-25 | Logging: `tracing`, console + files, including separate chat/item/GM-audit logs like Java. |
 | D-26 | Geodata: support both sets, with a **per-region override list** so sets can be mixed. Which set is the default is decided after the geotool render + an in-game check (doc 05). |
 | D-27 | Rust **2024 edition**, stable toolchain. Errors: `thiserror` in libraries, `anyhow` only in binaries. |
-| D-28 | **New dependencies** need approval by the orchestrator (named in the card or here). Keeps the dependency tree small and reviewed. |
+| D-28 | **New dependencies** need approval by the orchestrator (named in the card or here). Keeps the dependency tree small and reviewed. Approved so far: `regex` (M3-FIX-01, the Java name templates in `Server.ini`, matched with whole-string semantics). |
 
 ## Tools and GUI
 
