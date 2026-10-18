@@ -16,7 +16,7 @@ Crates live in `crates/<name>/`. Binaries are marked **(bin)**. Milestone = when
  test:      l2-testkit (dev-dependency only)                                     (codegen writes into crates)
 ```
 Rules:
-- `l2-world` does **not** use tokio, sqlx or any socket type (it depends on `l2-net` for the `Encode`/`Decode` packet traits and on `l2-protocol-game` for the packet structs it sends; the datapack and the config reach it through the `StaticData` trait and `WorldSettings`, M2-ENTER-01). It receives commands and emits events/packets through plain channels and traits. That keeps it testable and synchronous (D-10, D-15).
+- `l2-world` does **not** use tokio, sqlx or any socket type (it depends on `l2-net` for the `Encode`/`Decode` packet traits and on `l2-protocol-game` for the packet structs it sends; the datapack and the config reach it through the `StaticData` trait and `WorldSettings`, M2-ENTER-01; the zone table and map regions (`Arc<Zones>`, `Arc<MapRegions>` of `l2-data`) and the `Arc<GeoEngine>` of `l2-geo` are handed in at startup, M3-TELE-01: both are domain crates below it). It receives commands and emits events/packets through plain channels and traits. That keeps it testable and synchronous (D-10, D-15).
 - Protocol crates hold packet **structs + encode/decode only**, no game logic. They're shared by the servers and the proxy/GUI.
 - Only the binaries choose runtimes, ports and file paths.
 

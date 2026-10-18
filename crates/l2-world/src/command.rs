@@ -32,6 +32,8 @@ pub enum ClientInput {
     SkillCoolTime,
     /// Java `RequestKeyMapping` (answered with the stored UI key mapping).
     KeyMapping,
+    /// Java `Appearing`: the client has loaded the target of a teleport.
+    Appearing,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

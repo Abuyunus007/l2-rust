@@ -287,6 +287,10 @@ pub struct WorldSettings {
     pub grid_neighbor_turnon_secs: i32,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNOFF_TIME` (`GridNeighborTurnOffTime`), seconds.
     pub grid_neighbor_turnoff_secs: i32,
+    /// The values zone types read (`PeaceZoneMode`, `JailIsPvp`, ...).
+    pub zones: crate::zones::ZoneSettings,
+    /// The values `teleToLocation` and the restart point lookups read.
+    pub teleport: crate::teleport::TeleportSettings,
 }
 
 impl Default for WorldSettings {
@@ -315,6 +319,8 @@ impl Default for WorldSettings {
             trade_chat: ChatBroadcast::On,
             gm_hero_aura: false,
             log_chat: false,
+            zones: crate::zones::ZoneSettings::default(),
+            teleport: crate::teleport::TeleportSettings::default(),
         }
     }
 }

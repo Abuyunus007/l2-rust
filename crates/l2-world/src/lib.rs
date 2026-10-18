@@ -23,9 +23,11 @@ mod player_view;
 pub mod region;
 pub mod runner;
 pub mod snapshot;
+pub mod teleport;
 pub mod timer;
 mod visibility;
 pub mod world;
+pub mod zones;
 
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use data::{
@@ -42,5 +44,7 @@ pub use player::{
 };
 pub use region::{RegionId, region_of};
 pub use snapshot::snapshot_for_store;
+pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
+pub use zones::{PlayerZones, ZoneId, ZoneSettings};

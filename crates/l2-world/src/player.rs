@@ -199,6 +199,10 @@ pub struct Player {
     /// Java `getKnownRelations()`: the relation (mask, auto-attackable) each viewer was last told
     /// about this player, so `RelationChanged` only goes out when it changes.
     pub known_relations: std::collections::HashMap<ObjectId, (i32, bool)>,
+    /// The zones the player is inside and the flags they set (see `zones.rs`).
+    pub zones: crate::zones::PlayerZones,
+    /// Java `isTeleporting()` and the teleport watchdog (see `teleport.rs`).
+    pub tele: crate::teleport::TeleportState,
 }
 
 impl Player {
@@ -229,6 +233,8 @@ impl Player {
             hourglass_ms: 0,
             stats: DerivedStats::default(),
             known_relations: std::collections::HashMap::new(),
+            zones: crate::zones::PlayerZones::default(),
+            tele: crate::teleport::TeleportState::default(),
         }
     }
 

@@ -50,6 +50,8 @@ pub struct World {
     pub(crate) regions: RegionGrid,
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     pub(crate) doors: HashMap<ObjectId, Door>,
+    /// Zone table, map regions and geoengine (see `zones.rs`, `teleport.rs`).
+    pub(crate) zoning: crate::zones::ZoneContext,
 }
 
 impl World {
@@ -72,6 +74,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             doors: HashMap::new(),
+            zoning: crate::zones::ZoneContext::default(),
         }
     }
 
@@ -265,6 +268,8 @@ impl World {
                     self.send(id, &packet);
                 }
             }
+            // Java: Appearing -> onTeleported (when teleporting), then updateUserInfo
+            ClientInput::Appearing => self.on_appearing(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -285,6 +290,7 @@ impl World {
             }
             TimerKind::Marker(n) => debug!("timer marker {n}"),
             TimerKind::RegionNeighborsOn(_) | TimerKind::RegionNeighborsOff(_) => self.on_region_timer(kind),
+            TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
         }
     }
 

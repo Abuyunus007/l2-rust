@@ -1,0 +1,403 @@
+//! `teleToLocation`: taking a player out of the world, telling the client where it goes, and
+//! putting it back once the client answers with `Appearing`.
+// Java: entity/actor/Creature.java (teleToLocation, onTeleported, setTeleporting, stopMove)
+// Java: entity/actor/Player.java (teleToLocation, onTeleported, setTeleporting, broadcastPacket,
+//       TeleportWatchdogTask)
+// Java: network/clientpackets/Appearing.java
+// Java: entity/WorldObject.java (decayMe, spawnMe, broadcastInfo, setInstanceId)
+// Java: data/xml/MapRegionData.java (getTeleToLocation)
+//
+// # The sequence
+// `tele_to_location` is Java's `Creature.teleToLocation`: `StopMove` to the player and to those
+// who see it, `setTeleporting(true)`, `decayMe` (everybody around gets `DeleteObject`, the
+// player gets `DeleteObject` for everybody), the offset search, `TeleportToLocation` to the
+// player and to those who saw it leave, the new instance, the new position (`setXYZ`). The player
+// is now out of every region until its client has loaded the target and sends `Appearing`.
+//
+// `on_appearing` is `Appearing.runImpl`: `onTeleported` (`spawnMe`: the player sees what is
+// around the target and the others see the player, `setTeleporting(false)`, the zones are
+// revalidated for real, `broadcastInfo`), then `UserInfo`.
+//
+// # What is left out, with the system that brings it
+// - `stopMove`'s movement state, `abortAttack`, `abortCast`, `setTarget(null)`,
+//   `getAI().setIntentionActive()`, `doRevive` of a pending revive: movement (M3-MOVE-01), targets
+//   (M3-TALK-01), combat and AI (M4). Their call sites are marked `FOLLOW-UP`.
+// - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
+//   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, flying
+//   mounts below -1005: M4+.
+// - A detached client (`GameClient.isDetached`, offline mode) is never teleported "in place".
+
+use l2_geo::Location;
+use l2_protocol_game::server::{StopMove, TeleportToLocation};
+use l2_util::ObjectId;
+use tracing::{debug, warn};
+
+use crate::timer::{TimerId, TimerKind};
+use crate::world::World;
+
+/// The `.ini` values a teleport reads (Java `PlayerConfig`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TeleportSettings {
+    /// `OffsetOnTeleportEnabled`.
+    pub offset_on_teleport_enabled: bool,
+    /// `MaxOffsetOnTeleport`: the random offset of `teleToLocation(..., true)`.
+    pub max_offset_on_teleport: i32,
+    /// `RandomRespawnInTownEnabled`: restart points are picked at random.
+    pub random_respawn_in_town_enabled: bool,
+    /// `TeleportWatchdogTimeout` in seconds; 0 = no watchdog.
+    pub teleport_watchdog_timeout: i32,
+}
+
+impl Default for TeleportSettings {
+    fn default() -> Self {
+        Self {
+            offset_on_teleport_enabled: true,
+            max_offset_on_teleport: 50,
+            random_respawn_in_town_enabled: true,
+            teleport_watchdog_timeout: 0,
+        }
+    }
+}
+
+/// Java `Creature._isTeleporting` and the `TeleportWatchdogTask` of a player.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TeleportState {
+    pub teleporting: bool,
+    watchdog: Option<TimerId>,
+}
+
+/// Where a teleport goes: the arguments of Java's `teleToLocation` overloads.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TeleportTarget {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+    /// 0 keeps the current heading (Java: `if (heading != 0) setHeading(heading)`).
+    pub heading: i32,
+    /// The instance to enter; negative keeps the current one (the overloads without a
+    /// `Location` pass -1).
+    pub instance_id: i32,
+    /// `randomOffset`: 0 or `MaxOffsetOnTeleport`.
+    pub random_offset: i32,
+}
+
+impl TeleportTarget {
+    /// Java `teleToLocation(x, y, z)`: heading and instance unchanged, no random offset.
+    pub fn at(x: i32, y: i32, z: i32) -> Self {
+        Self {
+            x,
+            y,
+            z,
+            heading: 0,
+            instance_id: -1,
+            random_offset: 0,
+        }
+    }
+
+    #[must_use]
+    pub fn with_heading(mut self, heading: i32) -> Self {
+        self.heading = heading;
+        self
+    }
+
+    #[must_use]
+    pub fn with_instance(mut self, instance_id: i32) -> Self {
+        self.instance_id = instance_id;
+        self
+    }
+
+    #[must_use]
+    pub fn with_random_offset(mut self, random_offset: i32) -> Self {
+        self.random_offset = random_offset;
+        self
+    }
+}
+
+/// Java `TeleportWhereType`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TeleportWhereType {
+    Castle,
+    ClanHall,
+    SiegeFlag,
+    Town,
+    Fortress,
+}
+
+impl World {
+    /// Java `Creature.isTeleporting()`.
+    pub fn is_teleporting(&self, id: ObjectId) -> bool {
+        self.players.get(&id).is_some_and(|p| p.tele.teleporting)
+    }
+
+    /// Java `Player.setTeleporting(value, true)`: the flag, and the watchdog that completes a
+    /// teleport whose client never answers (`TeleportWatchdogTimeout`).
+    fn set_teleporting(&mut self, id: ObjectId, value: bool) {
+        let timeout = self.settings.teleport.teleport_watchdog_timeout;
+        let Some(player) = self.players.get_mut(&id) else {
+            return;
+        };
+        player.tele.teleporting = value;
+        if value {
+            if player.tele.watchdog.is_none() && timeout > 0 {
+                let ticks = crate::timer::TimerWheel::duration_to_ticks(std::time::Duration::from_secs(
+                    u64::try_from(timeout).unwrap_or(0),
+                ));
+                let due = self.tick + ticks;
+                let timer = self.timers.schedule_at(due, TimerKind::TeleportWatchdog(id));
+                if let Some(player) = self.players.get_mut(&id) {
+                    player.tele.watchdog = Some(timer);
+                }
+            }
+        } else if let Some(timer) = player.tele.watchdog.take() {
+            self.timers.cancel(timer);
+        }
+    }
+
+    /// Java `TeleportWatchdogTask.run`.
+    pub(crate) fn on_teleport_watchdog(&mut self, id: ObjectId) {
+        if self.is_teleporting(id) {
+            debug!("{id} did not answer its teleport; completing it.");
+            self.on_teleported(id);
+        }
+    }
+
+    /// Java `Player.broadcastPacket(packet)` for packets other than `CharInfo`: the player first,
+    /// then everybody who can see it.
+    pub(crate) fn broadcast_to_self_and_visible(&self, id: ObjectId, packet: &impl l2_net::Encode) {
+        self.send(id, packet);
+        self.broadcast_packet(id, packet);
+    }
+
+    /// Java `WorldObject.broadcastInfo()`: `sendInfo` to every player who can see the object.
+    pub(crate) fn broadcast_info(&mut self, id: ObjectId) {
+        for viewer in self.visible_players(id) {
+            if self.is_visible_for(id, viewer) {
+                self.send_info(id, viewer);
+            }
+        }
+    }
+
+    /// Java `Creature.teleToLocation(x, y, z, heading, instanceId, randomOffset)` for a player.
+    /// Does nothing for a player who is not online.
+    pub fn tele_to_location(&mut self, id: ObjectId, target: TeleportTarget) {
+        // "Prevent teleporting for players that disconnected unexpectedly."
+        if !self.players.contains_key(&id) || !self.sinks.contains_key(&id) {
+            return;
+        }
+        let TeleportTarget {
+            x: x_value,
+            y: y_value,
+            z: z_value,
+            heading,
+            instance_id,
+            random_offset,
+        } = target;
+        let geo = self.zoning.geo.clone();
+        let mut x = x_value;
+        let mut y = y_value;
+        // Not flying: the ground under the target.
+        let mut z = geo
+            .as_ref()
+            .map_or(z_value, |geo| geo.height(x_value, y_value, z_value));
+
+        // FOLLOW-UP(M4): `if (_isPendingRevive) doRevive();`
+
+        // "Abort any client actions, casting and remove target."
+        // `stopMove(null)`: the movement state goes (FOLLOW-UP(M3-MOVE-01): clear it here), and
+        // `StopMove` is broadcast.
+        if let Some(player) = self.players.get(&id) {
+            let stop = StopMove {
+                object_id: id.0,
+                x: player.core.x,
+                y: player.core.y,
+                z: player.core.z,
+                heading: player.core.heading,
+            };
+            self.broadcast_to_self_and_visible(id, &stop);
+        }
+        // FOLLOW-UP(M4): `abortAttack()`, `abortCast()`.
+        // FOLLOW-UP(M3-TALK-01): `setTarget(null)` (TargetUnselected to everybody if it had one).
+
+        self.set_teleporting(id, true);
+        // FOLLOW-UP(M4): `getAI().setIntentionActive()`.
+
+        // Java sends `TeleportToLocation` after `decayMe()`, but `forEachVisibleObject` goes by
+        // the object's position, which has not changed yet: the same players who just got
+        // `DeleteObject` get the teleport packet too.
+        let watchers: Vec<ObjectId> = self
+            .visible_players(id)
+            .into_iter()
+            .filter(|viewer| self.is_visible_for(id, *viewer))
+            .collect();
+        // "Remove the object from its old location."
+        self.decay_keep_entry(id);
+
+        // "Adjust position a bit."
+        if self.settings.teleport.offset_on_teleport_enabled || random_offset > 0 {
+            let radius = self.players.get(&id).map_or(0.0, |p| p.stats.collision_radius);
+            let ro = random_offset;
+            x = x_value + self.rng().get(-ro, ro);
+            y = y_value + self.rng().get(-ro, ro);
+
+            let collision = f64::from((radius * 2.0).min(ro as f32));
+            let from = Location::new(x_value, y_value, z_value);
+            let mut count = 0;
+            loop {
+                let attempt = count;
+                count += 1;
+                if attempt >= 100 {
+                    break;
+                }
+                let (dx, dy, dz) = (
+                    f64::from(x_value - x),
+                    f64::from(y_value - y),
+                    f64::from(z_value - z),
+                );
+                let too_close = (dx * dx + dy * dy + dz * dz).sqrt() < collision;
+                let to = Location::new(x, y, z);
+                let blocked = too_close
+                    || geo.as_ref().is_some_and(|geo| {
+                        !geo.can_see_target_in_instance(from, to, instance_id)
+                            || !geo.can_move_to_target(from, to, instance_id)
+                    });
+                if !blocked {
+                    break;
+                }
+                x = x_value + self.rng().get(-ro, ro);
+                y = y_value + self.rng().get(-ro, ro);
+            }
+
+            // Not flying.
+            if let Some(geo) = &geo {
+                let valid = geo.valid_location(
+                    Location::new(x_value, y_value, z),
+                    Location::new(x, y, z),
+                    instance_id,
+                );
+                (x, y, z) = (valid.x, valid.y, valid.z);
+            }
+        }
+
+        z += 5;
+
+        // "Send teleport packet where needed."
+        let packet = TeleportToLocation {
+            object_id: id.0,
+            x,
+            y,
+            z,
+            heading,
+        };
+        self.send(id, &packet);
+        let bytes = l2_net::Encode::to_bytes(&packet);
+        for viewer in watchers {
+            self.send_bytes(viewer, bytes.clone());
+        }
+
+        // "Change instance id."
+        self.set_instance_id(id, instance_id);
+
+        // "Set the x,y,z position of the WorldObject and if necessary modify its _worldRegion."
+        self.set_position(id, x, y, z);
+
+        // "Also adjust heading."
+        if heading != 0
+            && let Some(player) = self.players.get_mut(&id)
+        {
+            player.core.heading = heading;
+        }
+
+        // Java completes the teleport right here only for a detached client; everybody else
+        // waits for `Appearing`.
+
+        self.revalidate_zone(id, true);
+    }
+
+    /// Java `WorldObject.setInstanceId`: negative keeps the instance. Instance worlds are not
+    /// modelled, so only the normal world (0) can be entered; Java ignores an id with no
+    /// instance behind it the same way.
+    fn set_instance_id(&mut self, id: ObjectId, instance_id: i32) {
+        let Some(entry) = self.objects.get_mut(&id) else {
+            return;
+        };
+        if instance_id < 0 || entry.instance_id == instance_id {
+            return;
+        }
+        if instance_id == 0 {
+            entry.instance_id = 0;
+        } else {
+            debug!(
+                "{id}: instance {instance_id} does not exist; staying in instance {}",
+                entry.instance_id
+            );
+        }
+    }
+
+    /// Java `Appearing.runImpl`: the client has loaded the target of a teleport.
+    pub(crate) fn on_appearing(&mut self, id: ObjectId) {
+        if !self.players.contains_key(&id) {
+            return;
+        }
+        if self.is_teleporting(id) {
+            self.on_teleported(id);
+        }
+        self.send_user_info(id);
+    }
+
+    /// Java `Player.onTeleported()` (with `Creature.onTeleported()`): back into the world at the
+    /// new position.
+    pub fn on_teleported(&mut self, id: ObjectId) {
+        // Creature.onTeleported
+        if !self.is_teleporting(id) {
+            return;
+        }
+        let Some((x, y, z)) = self.position_of(id) else {
+            return;
+        };
+        self.spawn_at(id, x, y, z);
+        self.set_teleporting(id, false);
+
+        // Player.onTeleported
+        // FOLLOW-UP(M3-MOVE-01): `setLastServerPosition(x, y, z)` (the position `ValidatePosition`
+        // compares against).
+        // "Force a revalidation"
+        self.revalidate_zone(id, true);
+        // FOLLOW-UP(M4): `checkItemRestriction()`, teleport protection, pet, tamed beasts, movie,
+        // auto play.
+        // "Send info to nearby players."
+        self.broadcast_info(id);
+    }
+
+    /// Java `MapRegionData.getTeleToLocation(player, where)`. Clan halls, castles, fortresses and
+    /// siege flags need clans and sieges (M5): without them a player takes the paths every
+    /// clanless player takes in Java: karma players go outside the town, everybody else to the
+    /// nearest town. The instance exit and the faction base are not modelled either.
+    pub fn get_tele_to_location(
+        &mut self,
+        id: ObjectId,
+        _where: TeleportWhereType,
+    ) -> Option<(i32, i32, i32)> {
+        let karma = self.players.get(&id)?.data.karma;
+        if karma > 0 {
+            return self.nearest_karma_respawn(id);
+        }
+        self.nearest_town_respawn(id)
+    }
+
+    /// Java `teleToLocation(TeleportWhereType)`: `teleToLocation(getTeleToLocation(this, where),
+    /// true)`, i.e. the restart point with the random offset, in instance 0.
+    pub fn tele_to_location_where(&mut self, id: ObjectId, teleport_where: TeleportWhereType) {
+        let Some((x, y, z)) = self.get_tele_to_location(id, teleport_where) else {
+            // Java throws a NullPointerException here.
+            warn!("{id}: no restart point for {teleport_where:?}; not teleporting.");
+            return;
+        };
+        let offset = self.settings.teleport.max_offset_on_teleport;
+        self.tele_to_location(
+            id,
+            TeleportTarget::at(x, y, z)
+                .with_instance(0)
+                .with_random_offset(offset),
+        );
+    }
+}

@@ -204,12 +204,15 @@ impl Server {
             let acks = left_acks.clone();
             let store = DbStore::new(pool.clone());
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
+            let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
             WorldRuntime::start_configured(
                 WorldRng::from_entropy(),
                 autosave,
                 move |world| {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
+                    // Zones (flags, compass icon) and the restart points of the map regions.
+                    world.set_zone_data(zones, map_regions);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

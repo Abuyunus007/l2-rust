@@ -435,6 +435,7 @@ impl ClientSession {
             ClientPacket::RequestNetPing(_) => ClientInput::NetPing,
             ClientPacket::RequestSkillCoolTime(_) => ClientInput::SkillCoolTime,
             ClientPacket::RequestKeyMapping(_) => ClientInput::KeyMapping,
+            ClientPacket::Appearing(_) => ClientInput::Appearing,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

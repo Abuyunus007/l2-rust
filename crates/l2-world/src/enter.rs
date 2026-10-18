@@ -429,16 +429,18 @@ impl World {
 
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
         // storage limits, friends, the welcome message and the skill cool times.
-        let (before_spawn, after_spawn) = self.enter_packets(id, now_ms);
-        for bytes in before_spawn {
+        for bytes in self.enter_packets(id, now_ms) {
             self.send_bytes(id, bytes);
         }
         // `player.spawnMe(x, y, z)`: everybody around sees the player, and the player sees them
-        // (NpcInfo, CharInfo, ... come here, between QuestList and ExRotation).
+        // (NpcInfo, CharInfo, ... come here, between QuestList and ExRotation), then the zones
+        // the player stands in say so (`onSpawn` -> `revalidateZone(true)`: zone messages and
+        // the compass icon).
         if let Some((x, y, z)) = self.position_of(id) {
             self.spawn_at(id, x, y, z);
         }
-        for bytes in after_spawn {
+        // Built after the spawn: `EtcStatusUpdate` shows the danger icon of a zone.
+        for bytes in self.after_spawn_packets(id) {
             self.send_bytes(id, bytes);
         }
 
@@ -508,16 +510,16 @@ impl World {
             .unwrap_or(0)
     }
 
-    /// The encoded packets from the macro list to `SkillCoolTime`.
-    fn enter_packets(&self, id: ObjectId, now_ms: i64) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
+    /// The encoded packets from the macro list to `QuestList`, which Java sends before
+    /// `spawnMe`.
+    fn enter_packets(&self, id: ObjectId, now_ms: i64) -> Vec<Vec<u8>> {
         use l2_net::Encode;
 
         let Some(player) = self.players.get(&id) else {
-            return (Vec::new(), Vec::new());
+            return Vec::new();
         };
         let data = &player.data;
         let st = &*self.data;
-        let is_gm = st.access_level(data.access_level).is_gm;
         let mut packets: Vec<Vec<u8>> = Vec::new();
         // player.getMacros().sendUpdate()
         for list in macro_lists(&data.profile.macros) {
@@ -539,8 +541,20 @@ impl World {
         // HennaInfo, QuestList: not loaded (no henna and no quest system yet).
         packets.push(HennaInfo::default().to_bytes());
         packets.push(QuestList::default().to_bytes());
-        // spawnMe(): the caller spawns the player between these two halves. Then ExRotation.
-        let before_spawn = std::mem::take(&mut packets);
+        packets
+    }
+
+    /// The encoded packets from `ExRotation` to `SkillCoolTime`, which Java sends after
+    /// `spawnMe`.
+    fn after_spawn_packets(&self, id: ObjectId) -> Vec<Vec<u8>> {
+        use l2_net::Encode;
+
+        let Some(player) = self.players.get(&id) else {
+            return Vec::new();
+        };
+        let data = &player.data;
+        let is_gm = self.data.access_level(data.access_level).is_gm;
+        let mut packets: Vec<Vec<u8>> = Vec::new();
         packets.push(
             ExRotation {
                 char_id: id.0,
@@ -549,14 +563,7 @@ impl World {
             .to_bytes(),
         );
         // EtcStatusUpdate (the weight penalty comes from refreshOverloaded)
-        packets.push(
-            EtcStatusUpdate {
-                weight_penalty: weight_penalty(current_load(data, st), player.stats.max_load),
-                death_penalty_level: data.profile.death_penalty_level,
-                ..EtcStatusUpdate::default()
-            }
-            .to_bytes(),
-        );
+        packets.extend(self.etc_status_update(id).map(|p| p.to_bytes()));
         packets.push(storage_max_count(data, is_gm, &self.settings).to_bytes());
         // FriendList: not loaded.
         packets.push(FriendList::default().to_bytes());
@@ -564,7 +571,28 @@ impl World {
         // Seven Signs period message, announcements, server news: not ported.
         // SkillCoolTime: the reuse timers are not restored.
         packets.push(SkillCoolTime::default().to_bytes());
-        (before_spawn, packets)
+        packets
+    }
+
+    /// Java `new EtcStatusUpdate(player)`: the weight penalty, the death penalty and the danger
+    /// icon of the zone the player stands in. Charges, souls, the expertise penalties and the
+    /// refusal flags are 0 until the systems behind them exist.
+    pub(crate) fn etc_status_update(&self, id: ObjectId) -> Option<EtcStatusUpdate> {
+        let player = self.players.get(&id)?;
+        let data = &player.data;
+        Some(EtcStatusUpdate {
+            weight_penalty: weight_penalty(current_load(data, &*self.data), player.stats.max_load),
+            danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
+            death_penalty_level: data.profile.death_penalty_level,
+            ..EtcStatusUpdate::default()
+        })
+    }
+
+    /// `sendPacket(new EtcStatusUpdate(player))`.
+    pub(crate) fn send_etc_status_update(&self, id: ObjectId) {
+        if let Some(packet) = self.etc_status_update(id) {
+            self.send(id, &packet);
+        }
     }
 }
 

@@ -17,7 +17,8 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData, WorldSettings,
+    AccessLevelStatic, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData, TeleportSettings,
+    WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -520,6 +521,17 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         grid_neighbor_turnoff_secs: config.general.grid_neighbor_turnoff_time,
         gm_hero_aura: config.general.gm_hero_aura,
         log_chat: config.general.log_chat,
+        zones: ZoneSettings {
+            peace_zone_mode: config.general.peace_zone_mode,
+            jail_is_pvp: config.general.jail_is_pvp,
+            jail_disable_transaction: config.general.jail_disable_transaction,
+        },
+        teleport: TeleportSettings {
+            offset_on_teleport_enabled: p.offset_on_teleport_enabled,
+            max_offset_on_teleport: p.max_offset_on_teleport,
+            random_respawn_in_town_enabled: p.random_respawn_in_town_enabled,
+            teleport_watchdog_timeout: p.teleport_watchdog_timeout,
+        },
         ..WorldSettings::default()
     };
     // Java: `Enum.valueOf(ChatBroadcastType.class, config.getString("GlobalChat", "ON"))` throws

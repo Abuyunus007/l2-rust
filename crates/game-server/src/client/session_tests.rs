@@ -937,7 +937,9 @@ async fn a_refused_session_key_gets_login_fail() {
 
 // ---- entering the world, chat, logout and restart ----------------------------------------------
 
-use l2_protocol_game::client::{EnterWorld, RequestKeyMapping, RequestNetPing, RequestRestart, Say2};
+use l2_protocol_game::client::{
+    Appearing, EnterWorld, RequestKeyMapping, RequestNetPing, RequestRestart, Say2,
+};
 use l2_protocol_game::server::enterworld::{ExUiSetting, SkillList};
 use l2_protocol_game::server::{
     ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField,
@@ -1154,6 +1156,16 @@ async fn unknown_in_game_packets_are_ignored_and_the_net_ping_is_answered() {
     assert_eq!(name_of(&body), "NET_PING");
     let ping = NetPing::decode(&mut l2_net::PacketReader::new(&body[1..])).unwrap();
     assert!((0..1440).contains(&ping.game_time));
+}
+
+#[tokio::test]
+async fn appearing_reaches_the_world_and_is_answered_with_the_user_info() {
+    // Java Appearing.runImpl: not teleporting, so only `updateUserInfo()`.
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client.send(Appearing.to_bytes()).await;
+    assert_eq!(name_of(&client.recv().await.unwrap()), "USER_INFO");
+    assert_eq!(name_of(&client.recv().await.unwrap()), "EX_BR_EXTRA_USER_INFO");
 }
 
 #[tokio::test]
