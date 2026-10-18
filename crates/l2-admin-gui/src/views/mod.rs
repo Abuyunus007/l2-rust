@@ -14,6 +14,7 @@
 pub mod connection;
 pub mod logs;
 pub mod packets;
+pub mod players;
 pub mod servers;
 
 use crate::app::AppCtx;
@@ -33,17 +34,25 @@ pub trait View {
 pub enum ViewId {
     Connection,
     Servers,
+    Players,
     Logs,
     Packets,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 4] = [ViewId::Connection, ViewId::Servers, ViewId::Logs, ViewId::Packets];
+    pub const ALL: [ViewId; 5] = [
+        ViewId::Connection,
+        ViewId::Servers,
+        ViewId::Players,
+        ViewId::Logs,
+        ViewId::Packets,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
             ViewId::Connection => "Connection",
             ViewId::Servers => "Servers",
+            ViewId::Players => "Players",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
         }
@@ -53,7 +62,7 @@ impl ViewId {
     pub fn is_available(self) -> bool {
         matches!(
             self,
-            ViewId::Connection | ViewId::Servers | ViewId::Logs | ViewId::Packets
+            ViewId::Connection | ViewId::Servers | ViewId::Players | ViewId::Logs | ViewId::Packets
         )
     }
 
@@ -61,7 +70,7 @@ impl ViewId {
     /// A new placeholder is a new `ViewId` whose arm names its card here.
     pub fn planned_in(self) -> &'static str {
         match self {
-            ViewId::Connection | ViewId::Servers | ViewId::Logs | ViewId::Packets => "",
+            ViewId::Connection | ViewId::Servers | ViewId::Players | ViewId::Logs | ViewId::Packets => "",
         }
     }
 }
@@ -71,6 +80,7 @@ impl ViewId {
 pub struct Views {
     pub connection: connection::ConnectionView,
     pub servers: servers::ServersView,
+    pub players: players::PlayersView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
 }
@@ -81,6 +91,7 @@ impl Views {
         match id {
             ViewId::Connection => Some(&mut self.connection),
             ViewId::Servers => Some(&mut self.servers),
+            ViewId::Players => Some(&mut self.players),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
         }
@@ -89,6 +100,7 @@ impl Views {
     pub fn dispatch(&mut self, event: &BridgeEvent) {
         self.connection.on_event(event);
         self.servers.on_event(event);
+        self.players.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }
