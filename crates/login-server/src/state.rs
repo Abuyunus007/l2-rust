@@ -11,8 +11,9 @@
 // `.await`.
 
 use std::collections::{BTreeMap, HashMap};
+use std::net::SocketAddr;
 use std::sync::atomic::{AtomicU8, Ordering};
-use std::sync::{Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError};
 
 use l2_config::LoginConfigSet;
 use l2_crypto::RsaKeyPair;
@@ -22,12 +23,14 @@ use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
 use crate::bans::BanList;
+use crate::gs::link::GsLink;
+use crate::gs::subnet::GameServerAddress;
 use crate::keys::{ClientKeys, GameServerKeys, ScrambledKeyPair};
 use crate::server_names::ServerNames;
 
 /// Locks a mutex and keeps going if another task panicked while holding it: the data behind
 /// these locks (counters, a map) cannot be left half-updated in a way that matters.
-fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
+pub(crate) fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
 }
 
@@ -115,7 +118,8 @@ impl ShutdownHandle {
 }
 
 /// One row of the registered game server table.
-// Java: GameServerTable.GameServerInfo (table model only; registration is M1-LS-04)
+// Java: GameServerTable.GameServerInfo. The operations on it (registration, going down, the
+// address lookup) are in `gs/table.rs`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameServerInfo {
     pub id: i32,
@@ -124,6 +128,16 @@ pub struct GameServerInfo {
     pub hex_id: Vec<u8>,
     pub authed: bool,
     pub status: ServerStatus,
+    /// The port clients connect to, 0 while the server is down.
+    pub port: u16,
+    pub max_players: i32,
+    /// Subnet and host pairs from `GameServerAuth`, in the order the game server sent them.
+    pub addresses: Vec<GameServerAddress>,
+    pub server_type: i32,
+    pub age_limit: i32,
+    pub showing_brackets: bool,
+    /// The connection while the server is up (Java `getGameServerThread`).
+    pub link: Option<Arc<GsLink>>,
 }
 
 impl GameServerInfo {
@@ -134,6 +148,13 @@ impl GameServerInfo {
             hex_id,
             authed: false,
             status: ServerStatus::Down,
+            port: 0,
+            max_players: 0,
+            addresses: Vec::new(),
+            server_type: 0,
+            age_limit: 0,
+            showing_brackets: false,
+            link: None,
         }
     }
 }
@@ -142,8 +163,12 @@ impl GameServerInfo {
 // Java: GameServerTable
 pub struct GameServerTable {
     names: ServerNames,
-    registered: Mutex<BTreeMap<i32, GameServerInfo>>,
+    /// Locked only for short, synchronous updates (never across an `.await`). `gs/table.rs`
+    /// has the operations that change it.
+    pub(crate) registered: Mutex<BTreeMap<i32, GameServerInfo>>,
     keys: GameServerKeys,
+    /// Where the game server listener is bound, once it runs.
+    listen_addr: OnceLock<SocketAddr>,
 }
 
 impl GameServerTable {
@@ -152,7 +177,17 @@ impl GameServerTable {
             names,
             registered: Mutex::new(registered),
             keys,
+            listen_addr: OnceLock::new(),
         }
+    }
+
+    /// The address the game server listener is bound to; `None` before it started.
+    pub fn listen_addr(&self) -> Option<SocketAddr> {
+        self.listen_addr.get().copied()
+    }
+
+    pub(crate) fn set_listen_addr(&self, address: SocketAddr) {
+        let _ = self.listen_addr.set(address);
     }
 
     /// Reads the `gameservers` table. Like Java, a database error is logged and leaves the
@@ -279,6 +314,14 @@ impl LoginState {
     pub fn random_game_server_key_pair(&self) -> Option<&RsaKeyPair> {
         let pairs = self.game_servers.key_pairs();
         pairs.get(self.random_index(pairs.len()))
+    }
+
+    /// A random game server link RSA pair with its index in the pool, so a connection can keep
+    /// the index and use the private key later without holding a borrow.
+    pub fn random_game_server_key(&self) -> Option<(usize, &RsaKeyPair)> {
+        let pairs = self.game_servers.key_pairs();
+        let index = self.random_index(pairs.len());
+        pairs.get(index).map(|pair| (index, pair))
     }
 
     // Java: LoginServer.getStatus / setStatus

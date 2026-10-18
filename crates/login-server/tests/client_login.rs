@@ -128,7 +128,7 @@ impl TestDb {
         .unwrap();
         std::fs::write(
             config.join("Server.ini"),
-            "LoginserverHostname = 127.0.0.1\nLoginserverPort = 0\nLoginTryBeforeBan = 3\n\
+            "LoginserverHostname = 127.0.0.1\nLoginserverPort = 0\nLoginPort = 0\nLoginTryBeforeBan = 3\n\
              LoginBlockAfterBan = 600\nAutoCreateAccounts = True\nShowLicence = True\n",
         )
         .unwrap();

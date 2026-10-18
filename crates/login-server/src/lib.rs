@@ -18,6 +18,7 @@
 
 pub mod bans;
 pub mod client;
+pub mod gs;
 pub mod keys;
 pub mod logging;
 pub mod server_names;
@@ -85,8 +86,13 @@ pub enum StartupError {
     Database(#[from] DbError),
     #[error("cannot create the key pools: {0}")]
     Keys(#[from] KeyError),
-    #[error("cannot listen on {0}: {1}")]
-    Bind(String, std::io::Error),
+    /// A listener could not be opened. Java: "FATAL: ... listener could not be started on ...".
+    #[error("{what} listener could not be started on {address}: {source}")]
+    Listen {
+        what: &'static str,
+        address: String,
+        source: std::io::Error,
+    },
 }
 
 /// A running login server (initialized, background tasks started).
@@ -167,6 +173,8 @@ impl Server {
 
     /// Starts the network listeners (see the list in `start_with`).
     async fn start_listeners(&mut self) -> Result<(), StartupError> {
+        // Java order: game server listener first, then clients.
+        gs::start(self).await?;
         client::start_listener(self).await?;
         Ok(())
     }

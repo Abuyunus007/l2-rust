@@ -43,7 +43,11 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
     let address = format!("{host}:{}", login.port_login);
     let listener = TcpListener::bind(&address)
         .await
-        .map_err(|e| StartupError::Bind(address.clone(), e))?;
+        .map_err(|source| StartupError::Listen {
+            what: "Login client",
+            address: address.clone(),
+            source,
+        })?;
     info!("Login client listener started on {address}.");
     server.client_addr = listener.local_addr().ok();
 
