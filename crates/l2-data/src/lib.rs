@@ -10,6 +10,7 @@ pub mod class_list;
 pub mod experience;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
+pub mod item;
 pub mod loader;
 pub mod player_template;
 pub mod skill_tree;
@@ -23,6 +24,7 @@ pub use initial_equipment::{InitialEquipment, InitialEquipments};
 pub use initial_shortcuts::{
     InitialShortcut, InitialShortcuts, MacroCommand, MacroPreset, MacroType, ShortcutType,
 };
+pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use loader::DataError;
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
@@ -44,6 +46,8 @@ pub struct Datapack {
     pub player_templates: Arc<PlayerTemplates>,
     /// `data/stats/players/skillTrees/**`.
     pub skill_trees: Arc<SkillTrees>,
+    /// `data/stats/items/*.xml`.
+    pub items: Arc<ItemTemplates>,
 }
 
 impl Datapack {
@@ -67,6 +71,9 @@ impl Datapack {
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
             skill_trees: Arc::new(SkillTrees::load(root)),
+            // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
+            // there is no config in this crate yet.
+            items: Arc::new(ItemTemplates::load(root, false)),
         })
     }
 }
@@ -93,5 +100,6 @@ mod tests {
         assert!(pack.experience.is_empty());
         assert!(pack.initial_equipment.is_empty());
         assert!(pack.player_templates.is_empty());
+        assert!(pack.items.is_empty());
     }
 }
