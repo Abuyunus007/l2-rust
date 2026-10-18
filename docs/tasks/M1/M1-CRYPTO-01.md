@@ -43,3 +43,6 @@ Create:
 ## Done when
 - [ ] all vector tests pass
 - [ ] committed as `M1-CRYPTO-01: <summary>`
+
+## Notes from the orchestrator
+From the JV-01 report: `NewCrypt.verifyChecksum/appendChecksum(buf, offset, size)` compute `dataLength = size - 4` **without** adding `offset`, so they are only correct as "operate on the slice starting at offset". `GameServerThread.sendPacket` calls `appendChecksum(data, 2, len - 2)`, which works out to the checksum over the body. Implement checksum functions on a body slice (offset 0 semantics) and add a test showing that equals Java's `(buf, 2, len-2)` call.

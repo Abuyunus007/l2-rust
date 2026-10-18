@@ -45,3 +45,6 @@ Modify:
 ## Done when
 - [ ] tests pass
 - [ ] committed as `M1-CFG-02: <summary>`
+
+## Notes from the orchestrator
+From the CFG-01 report: `get_enum` needs a **case-sensitive** `FromStr` (Java `Enum.valueOf`). `get_bool` never falls back on bad values (anything but "true" is false). Trailing blanks in values are kept, so ints with a trailing space fall back to the default. Port the Java defaults with that in mind; don't trim.
