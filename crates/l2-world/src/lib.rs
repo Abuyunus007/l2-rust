@@ -16,6 +16,7 @@ pub mod data;
 pub mod enter;
 pub mod ids;
 pub mod leave;
+pub mod movement;
 pub mod objects;
 pub mod outbox;
 pub mod player;
@@ -34,6 +35,7 @@ pub use data::{
 };
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
+pub use movement::{Intention, MoveData, MovementState, PathRequests, object_of_requester, requester_of};
 pub use objects::{Door, Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{

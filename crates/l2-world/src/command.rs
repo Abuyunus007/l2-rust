@@ -32,6 +32,20 @@ pub enum ClientInput {
     SkillCoolTime,
     /// Java `RequestKeyMapping` (answered with the stored UI key mapping).
     KeyMapping,
+    /// Java `MoveToLocation` (the client wants to walk; `movement_mode` 1 = mouse, 0 = keys).
+    MoveTo {
+        target_x: i32,
+        target_y: i32,
+        target_z: i32,
+        origin_x: i32,
+        origin_y: i32,
+        origin_z: i32,
+        movement_mode: i32,
+    },
+    /// Java `ValidatePosition`: where the client thinks the player is.
+    ValidatePosition { x: i32, y: i32, z: i32, heading: i32 },
+    /// Java `CannotMoveAnymore`.
+    CannotMoveAnymore { x: i32, y: i32, z: i32, heading: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }
@@ -94,6 +108,9 @@ pub enum WorldCommand {
         request_id: u64,
         result: l2_geo::PathResult,
     },
+    /// Installs the path search service (the pool starts after the world thread, so it cannot be
+    /// given to the world before it runs).
+    SetPathRequests(Box<dyn crate::movement::PathRequests>),
     /// Store everyone, tell their sessions, then call `done` and stop the world thread.
     Shutdown {
         done: Box<dyn FnOnce() + Send>,
@@ -119,6 +136,7 @@ impl fmt::Debug for WorldCommand {
                 "PathFound({requester}, {request_id}, {})",
                 if result.path.is_ok() { "path" } else { "no path" }
             ),
+            Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
         }
     }

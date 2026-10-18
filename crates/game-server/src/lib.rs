@@ -50,7 +50,7 @@ use l2_data::{DataError, Datapack, DatapackOptions};
 use l2_db::{DbError, IdRepository, Pool};
 use l2_net::CancellationToken;
 use l2_util::WorldRng;
-use l2_world::{IdError, IdFactory, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID, StaticData};
+use l2_world::{IdError, IdFactory, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID, StaticData, WorldCommand};
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{info, warn};
@@ -243,6 +243,18 @@ impl Server {
             &geo_settings,
             Arc::new(geo::WorldPathSink::new(world.handle())),
         );
+
+        // The world asks the pool for paths through this (nothing to install when it is off: a
+        // move then goes straight to its destination, like Java with `PathFinding = 0`).
+        if geo.paths.is_enabled() {
+            let requests = geo::WorldPathRequests::new(Arc::clone(&geo.paths));
+            if !world
+                .handle()
+                .send(WorldCommand::SetPathRequests(Box::new(requests)))
+            {
+                warn!("The world stopped before it got the path service.");
+            }
+        }
 
         let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let max_players = config.server.maximum_online_users;

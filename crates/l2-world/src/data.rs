@@ -173,6 +173,12 @@ pub trait StaticData: Send + Sync {
     /// The access level with this id. An id the file does not list gives Java's default
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
+
+    /// `PlayerTemplate.getSafeFallHeight()` (`baseSafeFall`) of the player's class; Java's default
+    /// when the template does not set it is 333.
+    fn safe_fall_height(&self, _player: &PlayerData) -> i32 {
+        333
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -194,6 +200,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
+    }
+
+    fn safe_fall_height(&self, player: &PlayerData) -> i32 {
+        (**self).safe_fall_height(player)
     }
 }
 
@@ -287,6 +297,10 @@ pub struct WorldSettings {
     pub grid_neighbor_turnon_secs: i32,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNOFF_TIME` (`GridNeighborTurnOffTime`), seconds.
     pub grid_neighbor_turnoff_secs: i32,
+    /// `PlayerConfig.ENABLE_KEYBOARD_MOVEMENT` (`KeyboardMovement`).
+    pub keyboard_movement: bool,
+    /// `PlayerConfig.PLAYER_MOVEMENT_BLOCK_TIME` (`NpcTalkBlockingTime` seconds, kept in ms).
+    pub player_movement_block_time_ms: i32,
 }
 
 impl Default for WorldSettings {
@@ -311,6 +325,8 @@ impl Default for WorldSettings {
             grids_always_on: false,
             grid_neighbor_turnon_secs: 1,
             grid_neighbor_turnoff_secs: 90,
+            keyboard_movement: true,
+            player_movement_block_time_ms: 0,
             global_chat: ChatBroadcast::On,
             trade_chat: ChatBroadcast::On,
             gm_hero_aura: false,
