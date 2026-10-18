@@ -20,7 +20,7 @@ for f in $(git diff --name-only --diff-filter=U); do
   esac
   git add "$f"
 done
-if [ -f .git/MERGE_HEAD ]; then git commit -q --no-edit; fi
+if [ -f .git/MERGE_HEAD ]; then cargo fmt --all >/dev/null 2>&1; git add -u; git commit -q --no-edit; fi
 cargo metadata --format-version 1 >/dev/null 2>&1   # refresh Cargo.lock if needed
 
 cargo fmt --all -- --check >/dev/null 2>&1 || { echo "FMT FAILED"; exit 1; }

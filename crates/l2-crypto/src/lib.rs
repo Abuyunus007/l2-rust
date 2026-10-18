@@ -16,10 +16,10 @@
 pub mod blowfish;
 pub mod checksum;
 pub mod game;
+pub mod link;
 pub mod login;
 pub mod rsa;
 pub mod scramble;
-pub mod link;
 pub mod xor_pass;
 
 mod error;
@@ -28,5 +28,5 @@ pub use self::rsa::{RsaError, RsaKeyPair};
 pub use blowfish::L2Blowfish;
 pub use error::CryptoError;
 pub use game::{GameCipher, game_key_from_random};
-pub use login::{LoginCipher, LoginClientCipher};
 pub use link::LinkCipher;
+pub use login::{LoginCipher, LoginClientCipher};
