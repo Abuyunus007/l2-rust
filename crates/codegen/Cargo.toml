@@ -1,0 +1,18 @@
+[package]
+name = "codegen"
+description = "Code generators (D-23): Java tables in, Rust sources out. Dev tool, never a runtime dependency."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+prettyplease.workspace = true
+quote.workspace = true
+syn.workspace = true
+
+[lints]
+workspace = true
