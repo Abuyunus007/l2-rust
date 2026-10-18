@@ -7,17 +7,20 @@ cd "$(dirname "$0")/.."
 agent="$1"; card="$2"; shift 2
 branch="worktree-agent-$agent"
 
-git merge --no-ff "$branch" -m "Merge $card
+if [ ! -f .git/MERGE_HEAD ]; then
+  git merge --no-ff "$branch" -m "Merge $card
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" >/dev/null 2>&1
-conflicts=$(git diff --name-only --diff-filter=U)
-if [ -n "$conflicts" ]; then
-  if [ "$conflicts" = "Cargo.lock" ]; then
-    git checkout --ours Cargo.lock && git add Cargo.lock && git commit -q --no-edit
-  else
-    echo "CONFLICT in: $conflicts (resolve by hand, then rerun checks)"; exit 1
-  fi
 fi
+for f in $(git diff --name-only --diff-filter=U); do
+  case "$f" in
+    Cargo.lock) git checkout --ours Cargo.lock ;;
+    */lib.rs|*/mod.rs) python -I tools/union-conflict.py "$f" ;;   # parallel cards adding mod/use lines: keep both
+    *) echo "CONFLICT in: $f (resolve by hand, then rerun this script)"; exit 1 ;;
+  esac
+  git add "$f"
+done
+if [ -f .git/MERGE_HEAD ]; then git commit -q --no-edit; fi
 cargo metadata --format-version 1 >/dev/null 2>&1   # refresh Cargo.lock if needed
 
 cargo fmt --all -- --check >/dev/null 2>&1 || { echo "FMT FAILED"; exit 1; }
