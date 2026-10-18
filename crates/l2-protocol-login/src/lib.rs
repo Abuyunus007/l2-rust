@@ -19,6 +19,7 @@
 pub mod client;
 pub mod dispatch;
 pub mod enums;
+pub mod link;
 pub mod server;
 
 pub use client::{
@@ -26,6 +27,12 @@ pub use client::{
 };
 pub use dispatch::{ClientPacket, ConnectionState, decode_client};
 pub use enums::{AccountKickedReason, LoginFailReason, PlayFailReason};
+pub use link::{
+    AuthResponse, BlowFishKey, ChangeAccessLevel, ChangePassword, ChangePasswordResponse, GameServerAuth,
+    GsPacket, InitLS, KickPlayer, LinkError, LinkState, LoginServerFail, LsPacket, PlayerAuthRequest,
+    PlayerAuthResponse, PlayerInGame, PlayerLogout, PlayerTracert, ReplyCharacters, RequestCharacters,
+    RequestTempBan, SendMail, ServerStatus, decode_from_gs, decode_from_ls,
+};
 pub use server::{
     AccountKicked, GGAuth, Init, LoginFail, LoginOk, PlayFail, PlayOk, ServerCharInfo, ServerEntry,
     ServerList,
