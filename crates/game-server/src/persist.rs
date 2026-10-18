@@ -24,6 +24,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
+use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_config::IniFile;
@@ -34,6 +35,7 @@ use l2_db::{
 };
 use l2_world::{ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::oneshot;
 use tokio::task;
 use tracing::{debug, error, info, warn};
 
@@ -96,6 +98,38 @@ impl Default for RetryPolicy {
     }
 }
 
+/// Who waits for a character's last store. The session of a client that goes back to the
+/// character screen (`Restart`) waits here before it reads the character list, because Java
+/// stores synchronously before it answers `RestartResponse` (found by M2-E2E-01).
+///
+/// Network-side bookkeeping, not game state (D-10): the lock is held only to add or take a
+/// waiter.
+#[derive(Clone, Default)]
+pub struct LeftAcks(Arc<Mutex<HashMap<ObjectId, Vec<oneshot::Sender<()>>>>>);
+
+impl LeftAcks {
+    /// A receiver that completes once `PlayerLeft` of `id` was handled: the final store is done
+    /// (or failed for good, which is logged) and the character is marked offline.
+    pub fn wait_for(&self, id: ObjectId) -> oneshot::Receiver<()> {
+        let (tx, rx) = oneshot::channel();
+        self.0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .entry(id)
+            .or_default()
+            .push(tx);
+        rx
+    }
+
+    /// Wakes everyone waiting for `id`. The persistence task calls it after `PlayerLeft`.
+    pub fn ack(&self, id: ObjectId) {
+        let waiters = self.0.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+        for tx in waiters.into_iter().flatten() {
+            let _ = tx.send(());
+        }
+    }
+}
+
 /// Starts the persistence task on the receiving end of the world's outbox.
 ///
 /// The task ends when the channel is closed (the world thread is gone), after handling
@@ -105,8 +139,9 @@ pub fn spawn<S: PlayerStore>(
     messages: UnboundedReceiver<OutboxMessage>,
     notices: UnboundedSender<LsNotice>,
     retry: RetryPolicy,
+    acks: LeftAcks,
 ) -> task::JoinHandle<()> {
-    task::spawn(run(store, messages, notices, retry))
+    task::spawn(run(store, messages, notices, retry, acks))
 }
 
 async fn run<S: PlayerStore>(
@@ -114,6 +149,7 @@ async fn run<S: PlayerStore>(
     mut messages: UnboundedReceiver<OutboxMessage>,
     notices: UnboundedSender<LsNotice>,
     retry: RetryPolicy,
+    acks: LeftAcks,
 ) {
     // Characters whose last store failed for good.
     let mut unsaved: HashSet<ObjectId> = HashSet::new();
@@ -159,6 +195,7 @@ async fn run<S: PlayerStore>(
                 if logout {
                     let _ = notices.send(LsNotice::PlayerLogout { account });
                 }
+                acks.ack(object_id);
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
@@ -698,7 +735,7 @@ mod tests {
         let calls = Arc::clone(&store.calls);
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let (notice_tx, mut notice_rx) = tokio::sync::mpsc::unbounded_channel();
-        let task = spawn(store, rx, notice_tx, NO_WAIT);
+        let task = spawn(store, rx, notice_tx, NO_WAIT, LeftAcks::default());
         for message in messages {
             tx.send(message).unwrap();
         }
@@ -734,7 +771,7 @@ mod tests {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let (notice_tx, mut notice_rx) = tokio::sync::mpsc::unbounded_channel();
         let calls = Arc::clone(&store.calls);
-        let task = spawn(store, rx, notice_tx, NO_WAIT);
+        let task = spawn(store, rx, notice_tx, NO_WAIT, LeftAcks::default());
         tx.send(store_msg(1, "Alpha")).unwrap();
         tx.send(left_msg(1)).unwrap();
         // The store sleeps 20 ms: right now nothing may have been announced.
@@ -872,7 +909,7 @@ mod tests {
         let runtime = crate::runtime::WorldRuntime::start_with_autosave(
             l2_util::WorldRng::from_seed(5),
             Duration::from_millis(200),
-            move |outbox| spawn(store, outbox, notice_tx, NO_WAIT),
+            move |outbox| spawn(store, outbox, notice_tx, NO_WAIT, LeftAcks::default()),
         )
         .unwrap();
         (runtime, notice_rx)

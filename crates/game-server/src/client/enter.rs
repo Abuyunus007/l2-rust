@@ -391,6 +391,7 @@ impl ClientSession {
         );
 
         let (sink, events) = ConnectionSink::new(ctl.handle().clone(), Arc::clone(&self.in_world));
+        let object_id = player.object_id;
         let sent = self.ctx.world.send(WorldCommand::EnterWorld {
             session: self.session_id(),
             player,
@@ -408,6 +409,7 @@ impl ClientSession {
         // `EnterWorld`.
         self.in_world.store(true, Ordering::Release);
         self.sink_events = Some(events);
+        self.in_world_object = Some(object_id);
         // The world owns the character now; a disconnect is reported to it, not to the database.
         self.selected = None;
     }
@@ -468,6 +470,8 @@ impl ClientSession {
         let Some(mut events) = self.sink_events.take() else {
             return;
         };
+        // Registered before the restart is forwarded, so the acknowledgement cannot be missed.
+        let stored = self.in_world_object.map(|id| self.ctx.left_acks.wait_for(id));
         self.forward(ClientInput::Restart);
         let answer = tokio::time::timeout(RESTART_WAIT, events.recv()).await;
         match answer {
@@ -483,6 +487,18 @@ impl ClientSession {
                 return;
             }
         }
+        // Java stores the character synchronously before `RestartResponse`. Here the persistence
+        // task stores it: wait until it is done (and the character is marked offline) before the
+        // list and a following select read the database (race found by M2-E2E-01).
+        if let Some(stored) = stored
+            && tokio::time::timeout(RESTART_WAIT, stored).await.is_err()
+        {
+            warn!(
+                "The store after the restart of {} took too long; continuing.",
+                self.ip
+            );
+        }
+        self.in_world_object = None;
         // Java: `client.setConnectionState(AUTHENTICATED)`, `RestartResponse`, `CharSelectionInfo`.
         // The world queued the RestartResponse; the list follows through the same queue so the
         // order on the wire is the order of sending.

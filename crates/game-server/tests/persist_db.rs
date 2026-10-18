@@ -356,7 +356,13 @@ async fn the_task_stores_before_it_announces_the_logout() {
 
     let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
     let (notice_tx, mut notices) = tokio::sync::mpsc::unbounded_channel();
-    let task = spawn(DbStore::new(pool.clone()), rx, notice_tx, RetryPolicy::default());
+    let task = spawn(
+        DbStore::new(pool.clone()),
+        rx,
+        notice_tx,
+        RetryPolicy::default(),
+        game_server::persist::LeftAcks::default(),
+    );
     tx.send(OutboxMessage::Persist(PersistCommand::StorePlayer(Box::new(
         player_data(),
     ))))

@@ -94,6 +94,8 @@ pub struct ClientContext {
     pub data: Arc<dyn StaticData>,
     /// The configuration values the enter-world code reads.
     pub settings: WorldSettings,
+    /// Completes when the persistence task handled a character's `PlayerLeft`.
+    pub left_acks: crate::persist::LeftAcks,
 }
 
 impl ClientContext {
@@ -179,6 +181,7 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         loader: Arc::new(DbPlayerLoader::new(state.pool.clone())),
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),
+        left_acks: state.left_acks.clone(),
     });
 
     // Java: ConnectionConfig (Network.ini). A missing file gives Java's defaults.

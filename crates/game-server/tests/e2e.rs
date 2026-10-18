@@ -290,8 +290,12 @@ impl Rig {
         assert_eq!(key.server_id, SAMPLE_SERVER_ID, "the id the login server gave");
         game.auth(account, &ok, &play).await;
         let list = game.char_selection_info().await;
-        assert_eq!(list.account_name, account);
-        assert_eq!(list.session_id, play.play_ok1);
+        // The account name and session id are written inside every entry (Java), so an empty list
+        // carries neither.
+        if !list.characters.is_empty() {
+            assert_eq!(list.account_name, account);
+            assert_eq!(list.session_id, play.play_ok1);
+        }
         assert_eq!(list.max_characters, 7, "CharMaxNumber default");
         // The game server told the login server the account is on it. The login connection
         // stayed open until now, like the real client's does while it connects.

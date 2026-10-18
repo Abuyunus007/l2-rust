@@ -199,7 +199,9 @@ impl Server {
         // task; it stores in order and reports logouts (after the store) on `ls_notices`.
         let autosave = persist::autosave_interval(&paths.config_dir);
         let (notices_tx, ls_notices) = mpsc::unbounded_channel();
+        let left_acks = persist::LeftAcks::default();
         let world = {
+            let acks = left_acks.clone();
             let store = DbStore::new(pool.clone());
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
             WorldRuntime::start_configured(
@@ -209,7 +211,7 @@ impl Server {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
                 },
-                move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default()),
+                move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
             .map_err(StartupError::WorldThread)?
         };
@@ -225,6 +227,7 @@ impl Server {
             static_data,
             world_settings,
             world: world.handle(),
+            left_acks,
             hexid,
             shutdown,
         });
@@ -410,6 +413,7 @@ pub(crate) mod test_support {
             static_data: Arc::new(l2_world::NoData),
             world_settings: l2_world::WorldSettings::default(),
             world: handle,
+            left_acks: persist::LeftAcks::default(),
             hexid: None,
             shutdown,
         });

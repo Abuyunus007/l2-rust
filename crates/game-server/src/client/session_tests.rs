@@ -333,9 +333,11 @@ async fn start_with(
         },
     ));
     let settings = l2_world::WorldSettings::default();
+    let left_acks = crate::persist::LeftAcks::default();
     let world = {
         let (data, settings) = (Arc::clone(&static_data), settings.clone());
         let collected = Arc::clone(&outbox);
+        let acks = left_acks.clone();
         WorldRuntime::start_configured(
             WorldRng::from_seed(5),
             Duration::from_secs(900),
@@ -346,6 +348,13 @@ async fn start_with(
             move |mut rx| {
                 tokio::spawn(async move {
                     while let Some(message) = rx.recv().await {
+                        // Like the persistence task: `PlayerLeft` is "stored" once it is seen.
+                        if let crate::runtime::OutboxMessage::Persist(
+                            l2_world::PersistCommand::PlayerLeft { object_id, .. },
+                        ) = &message
+                        {
+                            acks.ack(*object_id);
+                        }
                         collected.lock().unwrap().push(message);
                     }
                 })
@@ -371,6 +380,7 @@ async fn start_with(
         loader: Arc::new(FakeLoader),
         data: static_data,
         settings,
+        left_acks,
     });
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();

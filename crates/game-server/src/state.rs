@@ -102,6 +102,8 @@ pub struct GameState {
     /// The configuration values the world and the sessions read for entering the world and chat.
     pub world_settings: WorldSettings,
     pub world: WorldHandle,
+    /// Signals that a character's last store finished (the restart waits for it).
+    pub left_acks: crate::persist::LeftAcks,
     /// The registration found in `config/hexid.txt`, if any (M2-GS-02 uses it for `AuthRequest`
     /// and writes the file after a new registration with [`crate::hexid::save`]).
     pub hexid: Option<HexId>,

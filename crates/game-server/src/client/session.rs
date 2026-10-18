@@ -58,6 +58,8 @@ pub struct ClientSession {
     pub(super) pending: Option<Box<PlayerData>>,
     /// What the world says about the character in the world (it left, and why).
     pub(super) sink_events: Option<UnboundedReceiver<l2_world::LeaveReason>>,
+    /// The character this connection has in the world (set at `EnterWorld`).
+    pub(super) in_world_object: Option<l2_world::ObjectId>,
 }
 
 impl ClientSession {
@@ -78,6 +80,7 @@ impl ClientSession {
             in_world: Arc::default(),
             pending: None,
             sink_events: None,
+            in_world_object: None,
         }
     }
 
