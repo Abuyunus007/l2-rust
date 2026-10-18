@@ -32,10 +32,10 @@ case "$summary" in *" 0 failed") ;; *) echo "TESTS FAILED"; exit 1 ;; esac
 git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null
 git branch -q -D "$branch" 2>/dev/null
 
-re_card="${card#M1-}"
-sed -i "s/| \(\[M1-$re_card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1merged |/" docs/tasks/BOARD.md
+sed -i "s/| \(\[$card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1merged |/" docs/tasks/BOARD.md
 for next in "$@"; do
-  sed -i "s/| \(\[M1-$next\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1in-progress |/" docs/tasks/BOARD.md
+  case "$next" in M[0-9]*-*) ;; *) next="M1-$next" ;; esac   # short form = an M1 card
+  sed -i "s/| \(\[$next\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1in-progress |/" docs/tasks/BOARD.md
 done
 git add -A docs/tasks/BOARD.md Cargo.lock
 git commit -q -m "Board: $card merged${*:+, started $*}
