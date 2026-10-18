@@ -37,6 +37,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `subscribe_logs` | `server` (null = all), `since` (last seq the client has, or null) | supervisor | `ok`, then `log_line` events: backlog after `since` first, then live |
 | `unsubscribe_logs` | | supervisor | `ok` |
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
+| `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
 
 ### Responses
 | kind | Fields |
@@ -95,7 +96,7 @@ Server.login.RestartOnExitCode = 2
 - **Events reach a client only after its first request.** The GUI should send `list_servers` right after `welcome`.
 - `subscribe_logs`: one subscription per connection (a new one replaces the old). With `server: null`, `since` applies to each server's own `seq`. The `ok` and the backlog lines may arrive in either order.
 - The supervisor adds its own lines to each server's log stream (target `supervisor`): started, exited, restarting, crashed, killed.
-- ⚠️ **Stopping on Windows is not graceful yet.** The child is killed, so Java shutdown hooks (saving players) **don't run**. Stop the Java GS from its own console or the in-game `//server_shutdown` until card M1-ADM-04 adds a graceful stop. On Linux the supervisor sends SIGTERM first, then kills after `StopTimeoutSecs`.
+- **Stopping (D-38):** for a server with `AdminEndpoint`, the supervisor sends `shutdown` first; otherwise SIGTERM (Linux) / `taskkill` (Windows). After `StopTimeoutSecs` it kills. ⚠️ The **Java GS has no admin endpoint**, so on Windows it would be killed and lose player saves: don't manage it with the supervisor; stop it from its own console or in-game.
 
 ## Changing the protocol
 Add a variant in `messages.rs`, extend the snapshot test, document it here. Breaking changes (renamed or removed fields, changed meaning) bump `PROTOCOL_VERSION`.

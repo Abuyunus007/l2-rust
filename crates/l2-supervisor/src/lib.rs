@@ -44,6 +44,13 @@ impl Running {
         let mut links = HashMap::new();
         for server in &config.servers {
             if let Some((link, task)) = spawn_admin_link(server, supervisor.event_sender()) {
+                if let Some(handle) = supervisor.get(&server.name) {
+                    let graceful = link.clone();
+                    handle.set_graceful_stop(Arc::new(move || {
+                        let link = graceful.clone();
+                        Box::pin(async move { link.request_shutdown().await })
+                    }));
+                }
                 links.insert(server.name.clone(), link);
                 tasks.push(task);
             }

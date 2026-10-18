@@ -16,6 +16,7 @@
 // (`LoginController`), game server table, IP bans, scheduled restart, listeners. The listeners
 // are M1-LS-02 (clients) and M1-LS-04 (game servers) and slot in before `ready`.
 
+pub mod admin;
 pub mod bans;
 pub mod client;
 pub mod gs;
@@ -167,6 +168,7 @@ impl Server {
         // - client listener on LoginserverPort (M1-LS-02)
         // - game server listener on LoginPort (M1-LS-04)
         server.start_listeners().await?;
+        admin::start(&mut server, &paths.config_dir).await?;
         info!("Login server is ready.");
         Ok(server)
     }

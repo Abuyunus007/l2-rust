@@ -21,8 +21,10 @@
 //!   of waiting for the timeout. NOTE: servers should get an admin `shutdown` request later.
 //! * After `StopTimeoutSecs` without an exit, the process is killed.
 
+use std::future::Future;
+use std::pin::Pin;
 use std::process::Stdio;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use l2_admin_api::{Event, LogLevel, ServerState, ServerStatus};
@@ -54,7 +56,12 @@ pub struct ServerHandle {
     name: Arc<str>,
     cmd_tx: mpsc::UnboundedSender<Cmd>,
     status: Arc<Mutex<StatusInner>>,
+    graceful: GracefulSlot,
 }
+
+/// Asks a server to exit cleanly (e.g. an admin `shutdown` request). `true` = it accepted.
+pub type GracefulStop = Arc<dyn Fn() -> Pin<Box<dyn Future<Output = bool> + Send>> + Send + Sync>;
+type GracefulSlot = Arc<Mutex<Option<GracefulStop>>>;
 
 impl ServerHandle {
     pub fn name(&self) -> &str {
@@ -68,6 +75,11 @@ impl ServerHandle {
     /// Starts the server. Errors when it is already running or cannot be spawned.
     pub async fn start(&self) -> Result<(), String> {
         self.send(Cmd::Start).await
+    }
+
+    /// Registers the graceful stop used before signals and kills (D-38).
+    pub fn set_graceful_stop(&self, stop: GracefulStop) {
+        *self.graceful.lock().unwrap_or_else(PoisonError::into_inner) = Some(stop);
     }
 
     /// Stops the server and waits until the process is gone. Stopping a stopped server is fine.
@@ -128,7 +140,9 @@ impl Supervisor {
                     last_exit_code: None,
                 }));
                 let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
+                let graceful: GracefulSlot = Arc::default();
                 let actor = Actor {
+                    graceful: Arc::clone(&graceful),
                     cfg: Arc::new(server.clone()),
                     stop_timeout: config.stop_timeout,
                     restart_delay: config.restart_delay,
@@ -138,6 +152,7 @@ impl Supervisor {
                 };
                 tokio::spawn(actor.run(cmd_rx));
                 ServerHandle {
+                    graceful,
                     name: server.name.as_str().into(),
                     cmd_tx,
                     status,
@@ -197,6 +212,7 @@ impl Supervisor {
 }
 
 struct Actor {
+    graceful: GracefulSlot,
     cfg: Arc<ServerConfig>,
     stop_timeout: Duration,
     restart_delay: Duration,
@@ -386,9 +402,25 @@ impl Actor {
     async fn stop_child(&self, child: &mut Child) {
         let name = self.cfg.name.as_str();
         self.set_state(ServerState::Stopping, child.id());
-        let asked = match child.id() {
-            Some(pid) => request_exit(pid).await,
-            None => false, // already exited
+        let graceful = self
+            .graceful
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        let asked = match (child.id(), graceful) {
+            (None, _) => false, // already exited
+            (Some(pid), Some(stop)) => {
+                if stop().await {
+                    self.note(
+                        LogLevel::Info,
+                        "asked to shut down through its admin endpoint".into(),
+                    );
+                    true
+                } else {
+                    request_exit(pid).await
+                }
+            }
+            (Some(pid), None) => request_exit(pid).await,
         };
         let status = if asked {
             match tokio::time::timeout(self.stop_timeout, child.wait()).await {

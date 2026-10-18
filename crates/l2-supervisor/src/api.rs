@@ -35,6 +35,18 @@ impl AdminLink {
     fn set(&self, client: Option<Arc<AdminClient>>) {
         *self.client.lock().unwrap_or_else(|e| e.into_inner()) = client;
     }
+
+    /// Sends `shutdown` to the server's endpoint. `false` when there is no connection or the
+    /// server refused, so the caller falls back to signals (D-38).
+    pub async fn request_shutdown(&self) -> bool {
+        match self.current() {
+            Some(client) => matches!(
+                client.request(Request::Shutdown { restart: false }).await,
+                Ok(Response::Ok)
+            ),
+            None => false,
+        }
+    }
 }
 
 /// Keeps a connection to `server.admin_endpoint` alive (reconnecting forever) and turns the
@@ -230,6 +242,10 @@ impl AdminHandler for SupervisorHandler {
                 }
                 Response::Ok
             }
+            // The GUI stops servers with StopServer; `shutdown` is for server endpoints.
+            Request::Shutdown { .. } => Response::Error {
+                message: "shutdown is sent to a server endpoint; use stop_server here".into(),
+            },
             Request::GetLoginStatus { server: None } => Response::Error {
                 message: "the supervisor needs a server name".into(),
             },

@@ -64,6 +64,11 @@ pub enum Request {
     GetLoginStatus {
         server: Option<String>,
     },
+    /// Server endpoint: shut down cleanly (D-38). `restart: true` = exit code 2. The supervisor
+    /// sends this before it falls back to a kill.
+    Shutdown {
+        restart: bool,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -225,6 +230,13 @@ mod tests {
                     },
                 },
                 r#"{"type":"request","id":3,"request":{"kind":"subscribe_logs","server":null,"since":5}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 6,
+                    request: Request::Shutdown { restart: false },
+                },
+                r#"{"type":"request","id":6,"request":{"kind":"shutdown","restart":false}}"#,
             ),
             (
                 Message::Response {
