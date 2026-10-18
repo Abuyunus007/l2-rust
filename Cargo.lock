@@ -2423,6 +2423,7 @@ dependencies = [
 name = "l2-geo"
 version = "0.1.0"
 dependencies = [
+ "l2-config",
  "l2-testkit",
  "serde",
  "tempfile",

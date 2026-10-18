@@ -41,10 +41,12 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto, login-packets (later: geo, ...)
+    Main.java                dispatches: crypto, login-packets, geo, geo-engine
     Json.java                tiny JSON writer (no dependencies)
     CryptoVectors.java       one generator = one class
     LoginPacketVectors.java  login / LS<->GS packet payloads
+    GeoVectors.java          region-level geodata queries (geo_<set>_<region>.json)
+    GeoEngineVectors.java    GeoEngine: coordinates, line iterators, height, LOS, movement (geo_engine_*.json)
   out/*.json                 committed output
 ```
 
@@ -108,6 +110,30 @@ How some payloads are produced (the real Java class is used unless stated):
 - **Scrambled modulus, extra cases.** Only the first modulus is a valid RSA modulus; the others
   are arbitrary odd numbers of the right size. `scrambleModulus` only shuffles bytes, so they
   still pin down the byte logic.
+
+## Files (geo engine, M3-GEO-01)
+
+The two geo generators need the geodata folders (git-ignored, never copied into the repo), so they
+are not part of `all`. `build.ps1 -NoRun` compiles them; run them by hand from a folder that has no
+`data/Doors.xml` (see below), with a JVM that can hold the world (`-Xmx6g` is plenty):
+
+```powershell
+java -Xmx6g -cp "java-vectors\build;C:\l2-rust\l2jmobius\dist\libs\*" l2rust.vectors.Main geo-engine java-vectors\out C:\l2-rust\geodata-download C:\l2-rust\geodata-converted
+```
+
+| File | Java source | Contents |
+|---|---|---|
+| `geo_engine_coords.json` | `GeoEngine.getGeoX/getGeoY/getWorldX/getWorldY`, `GridLineIterator2D/3D` | 346 world to geo and 329 geo to world conversions per axis (edges, negatives, int overflow), 170 paths per line iterator. Needs no geodata, so CI runs it. |
+| `geo_engine_download.json`, `geo_engine_converted.json` | `GeoEngine` (the real constructor, whole world of the set) | per set: 960 `getHeight`/`hasGeo`/`getSpawnHeight`/Z lookups, 640 anti-corner-cut NSWE + `isCompletelyBlocked`, 1760 `canSeeTarget`, 1200 `canMoveToTarget`, 1200 `getValidLocation`, plus 2 x 400 of the last three with one config flag flipped. Regions 12_24, 13_21, 14_23, 16_10, 22_22, 17_10 and two tile positions without a file. |
+
+Cases are one string per query, `"<inputs> > <outputs>"`, to keep the files small (see the `note` in each file).
+
+How the engine is driven: `GeoEngine`'s constructor is protected and reads `GeoEngineConfig.GEODATA_PATH`
+(a public static), so the generator sets the statics (`PATHFINDING = 2`, `AVOID_OBSTRUCTED_PATH_NODES = true`,
+the shipped ini values) and calls the constructor by reflection, once per set. **Doors and fences are not
+stubbed:** the real `DoorData` / `FenceData` singletons load with no `./data/Doors.xml` / `FenceData.xml`
+(warning only) and `World.init()` is never called, so `checkIfDoorsBetween` / `checkIfFenceBetween` return false.
+The generator aborts if those files exist in the working directory. Only instance id 0 is used.
 
 ## Writing a new generator
 
