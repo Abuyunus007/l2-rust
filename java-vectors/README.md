@@ -41,12 +41,13 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto, login-packets, geo, geo-engine
+    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path
     Json.java                tiny JSON writer (no dependencies)
     CryptoVectors.java       one generator = one class
     LoginPacketVectors.java  login / LS<->GS packet payloads
     GeoVectors.java          region-level geodata queries (geo_<set>_<region>.json)
     GeoEngineVectors.java    GeoEngine: coordinates, line iterators, height, LOS, movement (geo_engine_*.json)
+    GeoPathVectors.java      PathFinding.findPath on the whole-world engine (geo_path_*.json)
   out/*.json                 committed output
 ```
 
@@ -134,6 +135,24 @@ the shipped ini values) and calls the constructor by reflection, once per set. *
 stubbed:** the real `DoorData` / `FenceData` singletons load with no `./data/Doors.xml` / `FenceData.xml`
 (warning only) and `World.init()` is never called, so `checkIfDoorsBetween` / `checkIfFenceBetween` return false.
 The generator aborts if those files exist in the working directory. Only instance id 0 is used.
+
+## Files (pathfinding, M3-GEO-02)
+
+Same arguments and the same rules as the geo engine generator (run by hand from a folder without
+`data/Doors.xml`, `-Xmx6g`, not part of `all`):
+
+```powershell
+java -Xmx6g -cp "java-vectors\build;C:\l2-rust\l2jmobius\dist\libs\*" l2rust.vectors.Main geo-path java-vectors\out C:\l2-rust\geodata-download C:\l2-rust\geodata-converted
+```
+
+| File | Java source | Contents |
+|---|---|---|
+| `geo_path_download.json`, `geo_path_converted.json` | `PathFinding.findPath` (real `NodeBuffer` A*, `GeoLocation`, LOS postfilter) on the whole-world `GeoEngine` | per set 4 config variants (`shipped`, `advanced_diagonal`, `odd_weights`, `no_postfilter`; ~450 + 3 x 175 cases): start/target pairs 1 to 350 cells apart in the six analysis regions, targets on completely blocked cells, same cell and neighbour cells, starts without geodata. Expected results are the node lists (`nodeX,nodeY,geoHeight,nswe`) or `null` (no path, iteration limit, no geodata, no buffer large enough). |
+
+How it is driven: the first `GeoEngine.getInstance()` loads the first set; the second set is loaded by calling
+the protected constructor by reflection (the region table is static, so the singleton sees it). `PathFinding`
+reads the weights in its constructor and `NodeBuffer` when a thread-local buffer is allocated, so every config
+variant gets a fresh `PathFinding` by reflection after the `GeoEngineConfig` statics are set.
 
 ## Writing a new generator
 

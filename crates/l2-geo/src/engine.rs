@@ -844,6 +844,19 @@ impl GeoEngine {
     /// straight line? Same walk as [`valid_location`](Self::valid_location), but answers yes / no
     /// and, with `AvoidObstructedPathNodes`, also checks the plain NSWE of every step.
     pub fn can_move_to_target(&self, from: Location, to: Location, instance_id: i32) -> bool {
+        self.can_move_to_target_with(self.obstacles.as_ref(), from, to, instance_id)
+    }
+
+    /// [`can_move_to_target`](Self::can_move_to_target) asking `obstacles` instead of the engine's
+    /// own door / fence hook. The path workers use it with the door snapshot that came with the
+    /// request (M3-GEO-02): the engine is shared and immutable, the doors are per request.
+    pub fn can_move_to_target_with(
+        &self,
+        obstacles: &dyn DynamicObstacles,
+        from: Location,
+        to: Location,
+        instance_id: i32,
+    ) -> bool {
         let start_geo_x = geo_x(from.x);
         let start_geo_y = geo_y(from.y);
         let nearest_from_z = self.nearest_z(start_geo_x, start_geo_y, from.z);
@@ -852,7 +865,7 @@ impl GeoEngine {
         let nearest_to_z = self.nearest_z(target_geo_x, target_geo_y, to.z);
 
         // Door checks.
-        if self.obstacles.doors_between(
+        if obstacles.doors_between(
             Location::new(from.x, from.y, nearest_from_z),
             Location::new(to.x, to.y, nearest_to_z),
             instance_id,
@@ -862,7 +875,7 @@ impl GeoEngine {
         }
 
         // Fence checks.
-        if self.obstacles.fence_between(
+        if obstacles.fence_between(
             Location::new(from.x, from.y, nearest_from_z),
             Location::new(to.x, to.y, nearest_to_z),
             instance_id,
