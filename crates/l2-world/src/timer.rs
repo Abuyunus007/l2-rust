@@ -21,6 +21,11 @@ pub enum TimerKind {
     Autosave(ObjectId),
     /// For tests and tools: carries a number, does nothing.
     Marker(u32),
+    /// Java `WorldRegion.startActivation`'s timer: switch the neighbours of a region on.
+    RegionNeighborsOn(crate::region::RegionId),
+    /// Java `WorldRegion.startDeactivation`'s timer: switch off the neighbours that hold no
+    /// player.
+    RegionNeighborsOff(crate::region::RegionId),
 }
 
 #[derive(Debug, Default)]

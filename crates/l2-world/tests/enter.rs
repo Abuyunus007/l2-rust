@@ -13,8 +13,8 @@ use l2_protocol_game::server::enterworld::{
     SkillCoolTime, SkillList,
 };
 use l2_protocol_game::server::{
-    ActionFailed, ChatType, CreatureSay, ExQuestItemList, ItemList, LeaveWorld, MacroList, NetPing,
-    RestartResponse, SayBody, SenderField, ServerClose, SystemMessage, UserInfo,
+    ActionFailed, ChatType, CreatureSay, DeleteObject, ExQuestItemList, ItemList, LeaveWorld, MacroList,
+    NetPing, RestartResponse, SayBody, SenderField, ServerClose, SystemMessage, UserInfo,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::*;
@@ -917,8 +917,11 @@ fn an_invalid_channel_or_empty_text_logs_the_player_out() {
             out[2],
             Out::Persist(PersistCommand::PlayerLeft { logout: true, .. })
         ));
-        assert_eq!(out[3], Out::Packet(1, LeaveWorld.to_bytes()));
-        assert_eq!(out[4], Out::Left(1, LeaveReason::Logout));
+        // Java `deleteMe()` after `storeMe()`: both players forget each other (M3-WREG-01).
+        assert_eq!(out[3], Out::Packet(1, DeleteObject { object_id: 2 }.to_bytes()));
+        assert_eq!(out[4], Out::Packet(2, DeleteObject { object_id: 1 }.to_bytes()));
+        assert_eq!(out[5], Out::Packet(1, LeaveWorld.to_bytes()));
+        assert_eq!(out[6], Out::Left(1, LeaveReason::Logout));
         assert_eq!(w.online_count(), 1);
     }
 }

@@ -12,8 +12,10 @@ use tracing::{debug, info, warn};
 
 use crate::command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 use crate::data::{NoData, StaticData, WorldSettings};
+use crate::objects::{Door, Npc, ObjectEntry, ObjectKind};
 use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
+use crate::region::RegionGrid;
 use crate::snapshot::snapshot_for_store;
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 
@@ -42,6 +44,12 @@ pub struct World {
     pub(crate) data: Box<dyn StaticData>,
     /// The configuration values the world reads.
     pub(crate) settings: WorldSettings,
+    /// Every object in the world by id: its kind and grid state (Java `World._allObjects`).
+    pub(crate) objects: HashMap<ObjectId, ObjectEntry>,
+    /// The region grid (Java `World._worldRegions`).
+    pub(crate) regions: RegionGrid,
+    pub(crate) npcs: HashMap<ObjectId, Npc>,
+    pub(crate) doors: HashMap<ObjectId, Door>,
 }
 
 impl World {
@@ -60,6 +68,10 @@ impl World {
             autosave_timers: HashMap::new(),
             data: Box::new(NoData),
             settings: WorldSettings::default(),
+            objects: HashMap::new(),
+            regions: RegionGrid::new(false),
+            npcs: HashMap::new(),
+            doors: HashMap::new(),
         }
     }
 
@@ -70,6 +82,11 @@ impl World {
 
     /// Installs the configuration values the world reads. Call before players enter.
     pub fn set_settings(&mut self, settings: WorldSettings) {
+        // Java: `WorldRegion._active` starts as `GRIDS_ALWAYS_ON`. Settings are installed before
+        // anything spawns, so the grid is still empty here.
+        if self.regions.len() == 0 {
+            self.regions = RegionGrid::new(settings.grids_always_on);
+        }
         self.settings = settings;
     }
 
@@ -197,6 +214,8 @@ impl World {
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
+        self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
         self.player_sessions.insert(id, session);
         self.sinks.insert(id, sink);
@@ -265,6 +284,7 @@ impl World {
                 }
             }
             TimerKind::Marker(n) => debug!("timer marker {n}"),
+            TimerKind::RegionNeighborsOn(_) | TimerKind::RegionNeighborsOff(_) => self.on_region_timer(kind),
         }
     }
 

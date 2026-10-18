@@ -73,6 +73,11 @@ impl World {
             // not when the player goes back to the character screen.
             logout: reason != LeaveReason::Restart,
         });
+        // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
+        self.decay(id);
+        for other in self.players.values_mut() {
+            other.known_relations.remove(&id);
+        }
         let Some(sink) = self.sinks.remove(&id) else {
             return;
         };

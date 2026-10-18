@@ -196,6 +196,9 @@ pub struct Player {
     /// What `UserInfo` prints that the stat system will compute (see [`DerivedStats`]); set when
     /// the player enters.
     pub stats: DerivedStats,
+    /// Java `getKnownRelations()`: the relation (mask, auto-attackable) each viewer was last told
+    /// about this player, so `RelationChanged` only goes out when it changes.
+    pub known_relations: std::collections::HashMap<ObjectId, (i32, bool)>,
 }
 
 impl Player {
@@ -225,6 +228,7 @@ impl Player {
             recom_left: 0,
             hourglass_ms: 0,
             stats: DerivedStats::default(),
+            known_relations: std::collections::HashMap::new(),
         }
     }
 

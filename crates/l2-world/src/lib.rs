@@ -16,11 +16,15 @@ pub mod data;
 pub mod enter;
 pub mod ids;
 pub mod leave;
+pub mod objects;
 pub mod outbox;
 pub mod player;
+mod player_view;
+pub mod region;
 pub mod runner;
 pub mod snapshot;
 pub mod timer;
+mod visibility;
 pub mod world;
 
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
@@ -30,11 +34,13 @@ pub use data::{
 };
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
+pub use objects::{Door, Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,
 };
+pub use region::{RegionId, region_of};
 pub use snapshot::snapshot_for_store;
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

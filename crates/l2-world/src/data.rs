@@ -281,6 +281,12 @@ pub struct WorldSettings {
     pub gm_hero_aura: bool,
     /// `GeneralConfig.LOG_CHAT` (`LogChat`).
     pub log_chat: bool,
+    /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
+    pub grids_always_on: bool,
+    /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
+    pub grid_neighbor_turnon_secs: i32,
+    /// `GeneralConfig.GRID_NEIGHBOR_TURNOFF_TIME` (`GridNeighborTurnOffTime`), seconds.
+    pub grid_neighbor_turnoff_secs: i32,
 }
 
 impl Default for WorldSettings {
@@ -302,6 +308,9 @@ impl Default for WorldSettings {
             dwarf_recipe_limit: 50,
             common_recipe_limit: 50,
             minimum_chat_level: 20,
+            grids_always_on: false,
+            grid_neighbor_turnon_secs: 1,
+            grid_neighbor_turnoff_secs: 90,
             global_chat: ChatBroadcast::On,
             trade_chat: ChatBroadcast::On,
             gm_hero_aura: false,

@@ -429,7 +429,16 @@ impl World {
 
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
         // storage limits, friends, the welcome message and the skill cool times.
-        for bytes in self.enter_packets(id, now_ms) {
+        let (before_spawn, after_spawn) = self.enter_packets(id, now_ms);
+        for bytes in before_spawn {
+            self.send_bytes(id, bytes);
+        }
+        // `player.spawnMe(x, y, z)`: everybody around sees the player, and the player sees them
+        // (NpcInfo, CharInfo, ... come here, between QuestList and ExRotation).
+        if let Some((x, y, z)) = self.position_of(id) {
+            self.spawn_at(id, x, y, z);
+        }
+        for bytes in after_spawn {
             self.send_bytes(id, bytes);
         }
 
@@ -500,11 +509,11 @@ impl World {
     }
 
     /// The encoded packets from the macro list to `SkillCoolTime`.
-    fn enter_packets(&self, id: ObjectId, now_ms: i64) -> Vec<Vec<u8>> {
+    fn enter_packets(&self, id: ObjectId, now_ms: i64) -> (Vec<Vec<u8>>, Vec<Vec<u8>>) {
         use l2_net::Encode;
 
         let Some(player) = self.players.get(&id) else {
-            return Vec::new();
+            return (Vec::new(), Vec::new());
         };
         let data = &player.data;
         let st = &*self.data;
@@ -530,7 +539,8 @@ impl World {
         // HennaInfo, QuestList: not loaded (no henna and no quest system yet).
         packets.push(HennaInfo::default().to_bytes());
         packets.push(QuestList::default().to_bytes());
-        // spawnMe(): M3. Then ExRotation.
+        // spawnMe(): the caller spawns the player between these two halves. Then ExRotation.
+        let before_spawn = std::mem::take(&mut packets);
         packets.push(
             ExRotation {
                 char_id: id.0,
@@ -554,7 +564,7 @@ impl World {
         // Seven Signs period message, announcements, server news: not ported.
         // SkillCoolTime: the reuse timers are not restored.
         packets.push(SkillCoolTime::default().to_bytes());
-        packets
+        (before_spawn, packets)
     }
 }
 
