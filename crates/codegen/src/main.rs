@@ -3,6 +3,7 @@
 //! ```text
 //! cargo run -p codegen -- opcodes            # write crates/*/src/generated/...
 //! cargo run -p codegen -- messages           # SystemMessageId / NpcStringId
+//! cargo run -p codegen -- config             # game config structs + docs/analysis/config-manual-fields.md
 //! cargo run -p codegen -- all --check        # compare instead of writing (CI)
 //! ```
 //!
@@ -25,6 +26,8 @@ enum Target {
     Opcodes,
     /// SystemMessageId and NpcStringId tables (l2-protocol-game).
     Messages,
+    /// Game server config structs (l2-config) and the report of the fields left for hand-porting.
+    Config,
     /// Every target.
     All,
 }
@@ -52,10 +55,11 @@ fn generate(target: Target, l2j_root: &Path) -> Result<Vec<Output>> {
     match target {
         Target::Opcodes => targets::opcodes::generate(&targets::opcodes::read_sources(l2j_root)?),
         Target::Messages => targets::messages::generate(&targets::messages::read_sources(l2j_root)?),
+        Target::Config => targets::config::generate(&targets::config::read_sources(l2j_root)?),
         Target::All => {
-            // Every target also emits `generated/mod.rs`; keep one copy of each path.
+            // Every target may emit a shared `generated/mod.rs`; keep one copy of each path.
             let mut all: Vec<Output> = Vec::new();
-            for target in [Target::Opcodes, Target::Messages] {
+            for target in [Target::Opcodes, Target::Messages, Target::Config] {
                 for output in generate(target, l2j_root)? {
                     if !all.iter().any(|o| o.path == output.path) {
                         all.push(output);

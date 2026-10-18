@@ -5,6 +5,9 @@
 
 mod database;
 mod error;
+pub mod game;
+#[rustfmt::skip]
+pub mod generated;
 mod interface;
 mod login;
 mod network;
@@ -13,6 +16,7 @@ mod threads;
 
 pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;
+pub use game::GameConfig;
 pub use interface::InterfaceConfig;
 pub use login::{LoginConfig, LoginConfigSet};
 pub use network::NetworkConfig;
