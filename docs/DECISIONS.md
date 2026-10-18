@@ -53,6 +53,7 @@ Background for each decision: `docs/analysis/`.
 | D-36 | **Rust-only settings live in new files** (`config/Admin.ini` per server, `supervisor.ini`). The Java `.ini` files are never extended. |
 | D-37 | **License:** MIT, like L2JMobius. The original `Copyright (c) 2013 L2jMobius` notice is kept in `LICENSE`. |
 | D-38 | **Graceful stop:** Rust servers stop through an admin `shutdown` request (the supervisor sends it, kill only after `StopTimeoutSecs`). The Java GS is **not** managed by the supervisor on Windows (no safe Ctrl event without `unsafe`, and a kill loses player saves); it's temporary until the Rust GS replaces it. |
+| D-39 | **Side by side:** the Java GS and the Rust GS run at the same time on the same DB, both registered with the Rust LS under **different server ids and ports** (Java: id 2 / 7777, Rust: its own id / 7778). The LS keeps an account on one GS at a time. The Rust GS allocates new object ids from a **separate high range** so it never collides with Java's IdManager. The supervisor runs the proxy permanently in front of the LS, so every session is recorded to `run/captures/` (local, git-ignored) as reference material. |
 
 ## Process and quality
 
