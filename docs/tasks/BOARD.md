@@ -135,6 +135,15 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | planned |
 | [M2-RUN-01](M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | planned |
 
+## M3: World and movement (draft, being planned)
+
+The full M3 plan and its cards follow for the owner's sign-off. The geoengine card started early on the owner's go (2026-10-18): it only touches `l2-geo` and the Java vector harness, nothing M2 uses.
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M3-GEO-01](M3/M3-GEO-01.md) | Geoengine: height, line of sight, movement checks, per-region override | sonnet | full | M1 l2-geo | in-progress |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
