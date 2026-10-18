@@ -2,6 +2,7 @@
 //!
 //! ```text
 //! cargo run -p codegen -- opcodes            # write crates/*/src/generated/...
+//! cargo run -p codegen -- config             # game config structs + docs/analysis/config-manual-fields.md
 //! cargo run -p codegen -- all --check        # compare instead of writing (CI)
 //! ```
 //!
@@ -22,6 +23,8 @@ const DEFAULT_L2J_ROOT: &str = r"C:\l2-rust\l2jmobius";
 enum Target {
     /// Game packet opcode tables (l2-protocol-game).
     Opcodes,
+    /// Game server config structs (l2-config) and the report of the fields left for hand-porting.
+    Config,
     /// Every target.
     All,
 }
@@ -48,7 +51,12 @@ fn workspace_root() -> Result<PathBuf> {
 fn generate(target: Target, l2j_root: &Path) -> Result<Vec<Output>> {
     match target {
         Target::Opcodes => targets::opcodes::generate(&targets::opcodes::read_sources(l2j_root)?),
-        Target::All => generate(Target::Opcodes, l2j_root),
+        Target::Config => targets::config::generate(&targets::config::read_sources(l2j_root)?),
+        Target::All => {
+            let mut outputs = generate(Target::Opcodes, l2j_root)?;
+            outputs.extend(generate(Target::Config, l2j_root)?);
+            Ok(outputs)
+        }
     }
 }
 
