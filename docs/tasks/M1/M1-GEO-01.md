@@ -45,3 +45,10 @@ Create:
 ## Done when
 - [ ] vector tests pass
 - [ ] committed as `M1-GEO-01: <summary>`
+
+## Notes from the orchestrator
+From the JV-03 report (verify in the Java source):
+- Heights are `(short)(v & 0xFFF0) >> 1`: the sign comes from the short cast, so use an arithmetic shift on `i16`.
+- `MultilayerBlock.getNearestZ` falls back to `getNextLowerZ` when the nearest layer is more than 1000 above `worldZ`, so for multilayer cells `nearest_z` is not always the closest layer.
+- The vector samples use **global** geo cell coordinates (`regionX * 2048 + local`), like GeoEngine. Each sample has one `world_z` and a `z_source` field.
+- Vector files: `java-vectors/out/geo_{download,converted}_{22_22,14_23,16_10,12_24,13_21}.json`.

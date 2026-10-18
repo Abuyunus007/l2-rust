@@ -46,7 +46,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-WS-01](M1/M1-WS-01.md) | Cargo workspace skeleton | opus | full | none | merged (`a96b3c0`, CI green; reviewed by the orchestrator as author) |
 | [M1-JV-01](M1/M1-JV-01.md) | Java vector harness + crypto vectors | sonnet | full | WS-01 | merged |
 | [M1-JV-02](M1/M1-JV-02.md) | Login packet vectors | sonnet | spot | JV-01 | ready |
-| [M1-JV-03](M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | ready |
+| [M1-JV-03](M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | merged |
 | [M1-GEN-01](M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | merged |
 | [M1-CRYPTO-01](M1/M1-CRYPTO-01.md) | Blowfish-LE and NewCrypt | sonnet | full | WS-01, JV-01 | ready |
 | [M1-CRYPTO-02](M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | planned |
@@ -75,7 +75,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-GUI-02](M1/M1-GUI-02.md) | Servers view | haiku | spot | GUI-01, ADM-02 | planned |
 | [M1-GUI-03](M1/M1-GUI-03.md) | Logs view | haiku | spot | GUI-01, ADM-02 | planned |
 | [M1-GUI-04](M1/M1-GUI-04.md) | Packet inspector | sonnet | full | GUI-01, PROXY-02 | planned |
-| [M1-GEO-01](M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | planned |
+| [M1-GEO-01](M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | in-progress |
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | planned |
 
 ## Milestone test results
