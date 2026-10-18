@@ -48,8 +48,12 @@ pub fn connect_options(config: &DatabaseConfig) -> Result<MySqlConnectOptions> {
         .host(&url.host)
         .port(url.port)
         .username(&config.database_login)
-        .password(&config.database_password)
         .charset("utf8mb4");
+    // An empty password means "no password" (like Connector/J). Sending an empty one makes
+    // MariaDB/MySQL reject a password-less account ("using password: YES").
+    if !config.database_password.is_empty() {
+        options = options.password(&config.database_password);
+    }
     if !url.database.is_empty() {
         options = options.database(&url.database);
     }
