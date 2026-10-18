@@ -1,10 +1,29 @@
 //! Game client/server protocol.
 //!
-//! For now this crate only holds the generated opcode tables (M1-GEN-01), which the packet proxy
-//! uses to name packets. Packet structs and encode/decode code arrive in M2.
+//! - [`generated`]: the opcode tables (M1-GEN-01), which the packet proxy also uses for names
+//! - [`client`]: packets the client sends (`Decode` for the server, `Encode` for test clients)
+//! - [`server`]: packets the server sends (`Encode` for the server, `Decode` for tests/proxy)
+//! - [`dispatch`]: `(connection state, opcode)` to a decoded client packet
+//!
+//! Plaintext packets only: no framing, no encryption, no game logic.
+//!
+//! ## The packet pattern (copy it for every new packet)
+//! One struct per packet with public fields, a `// Java: path/To/Class.java` line, an `OPCODE`
+//! const (client: [`ClientOpcode`], server: [`ServerOpcode`], ex client packets: `EX_OPCODE`)
+//! taken from the generated tables, `impl Encode` (opcode + fields, Java `writeImpl`) and
+//! `impl Decode` (the fields after the opcode, Java `readImpl`). Server packets write their id
+//! with [`server::write_opcode`], which knows the ex-id rules. Java quirks get a
+//! `// NOTE(java-quirk):` comment. Values Java computes from game objects or the database are
+//! plain fields: the caller prepares them. Packets that are only constants are unit structs.
+//! A packet is done when it has a round-trip test and a hand-computed byte-layout test; see
+//! `tests/charscreen.rs` for the capture-driven check.
 
+pub mod client;
+pub mod dispatch;
 pub mod generated;
+pub mod server;
 
+pub use dispatch::{ClientPacket, decode_client};
 pub use generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode, ServerOpcode};
 
 #[cfg(test)]
