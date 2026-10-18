@@ -13,6 +13,7 @@ l2-config.workspace = true
 l2-data.workspace = true
 l2-crypto.workspace = true
 l2-db.workspace = true
+l2-geo.workspace = true
 l2-net.workspace = true
 l2-protocol-game.workspace = true
 l2-protocol-login.workspace = true

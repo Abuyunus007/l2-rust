@@ -9,6 +9,7 @@ repository.workspace = true
 
 # No tokio, sqlx or sockets here (MODULE_MAP). `l2-net` is used for its packet traits only.
 [dependencies]
+l2-geo.workspace = true
 l2-util.workspace = true
 l2-net.workspace = true
 l2-protocol-game.workspace = true
