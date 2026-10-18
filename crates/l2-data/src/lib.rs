@@ -7,6 +7,9 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod class_list;
+pub mod experience;
+pub mod initial_equipment;
+pub mod initial_shortcuts;
 pub mod loader;
 pub mod player_template;
 
@@ -14,6 +17,11 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use experience::ExperienceTable;
+pub use initial_equipment::{InitialEquipment, InitialEquipments};
+pub use initial_shortcuts::{
+    InitialShortcut, InitialShortcuts, MacroCommand, MacroPreset, MacroType, ShortcutType,
+};
 pub use loader::DataError;
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 
@@ -24,6 +32,12 @@ pub struct Datapack {
     pub root: PathBuf,
     /// `data/stats/players/classList.xml`.
     pub class_list: Arc<ClassList>,
+    /// `data/stats/players/experience.xml`.
+    pub experience: Arc<ExperienceTable>,
+    /// `data/stats/players/initialEquipment.xml`.
+    pub initial_equipment: Arc<InitialEquipments>,
+    /// `data/stats/players/initialShortcuts.xml`.
+    pub initial_shortcuts: Arc<InitialShortcuts>,
     /// `data/stats/players/templates/**`.
     pub player_templates: Arc<PlayerTemplates>,
 }
@@ -36,10 +50,17 @@ impl Datapack {
         if !root.join("data").is_dir() {
             return Err(DataError::MissingRoot(root.to_path_buf()));
         }
+        // The highest player level comes from experience.xml (Java reads it there too). The
+        // constant is only the fallback for a missing or broken experience file.
+        let experience = ExperienceTable::load(root);
+        let max_level = experience.max_level().unwrap_or(DEFAULT_MAX_PLAYER_LEVEL);
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
-            player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
+            experience: Arc::new(experience),
+            initial_equipment: Arc::new(InitialEquipments::load(root)),
+            initial_shortcuts: Arc::new(InitialShortcuts::load(root)),
+            player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
         })
     }
 }
@@ -63,6 +84,8 @@ mod tests {
         std::fs::create_dir(dir.path().join("data")).unwrap();
         let pack = Datapack::load(dir.path()).unwrap();
         assert!(pack.class_list.is_empty());
+        assert!(pack.experience.is_empty());
+        assert!(pack.initial_equipment.is_empty());
         assert!(pack.player_templates.is_empty());
     }
 }
