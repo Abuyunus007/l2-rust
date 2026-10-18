@@ -7,7 +7,9 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod class_list;
+pub mod door;
 pub mod experience;
+pub mod fence;
 pub mod html;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
@@ -18,6 +20,7 @@ pub mod npc;
 pub mod player_template;
 pub mod skill_tree;
 pub mod spawn;
+pub mod static_object;
 pub mod teleporter;
 pub mod zone;
 
@@ -25,7 +28,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use door::{DoorTemplate, DoorTemplates};
 pub use experience::ExperienceTable;
+pub use fence::{FenceState, FenceTemplate, FenceTemplates};
 pub use html::HtmCache;
 pub use initial_equipment::{InitialEquipment, InitialEquipments};
 pub use initial_shortcuts::{
@@ -38,6 +43,7 @@ pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
 pub use spawn::{SpawnData, SpawnLoadOptions};
+pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
@@ -72,6 +78,12 @@ pub struct Datapack {
     pub teleporters: Arc<TeleporterData>,
     /// `data/spawns/**/*.xml`.
     pub spawns: Arc<SpawnData>,
+    /// `data/Doors.xml`.
+    pub doors: Arc<DoorTemplates>,
+    /// `data/FenceData.xml`.
+    pub fences: Arc<FenceTemplates>,
+    /// `data/StaticObjects.xml`.
+    pub static_objects: Arc<StaticObjectTemplates>,
 }
 
 impl Datapack {
@@ -108,6 +120,9 @@ impl Datapack {
             // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
             npcs: Arc::new(npcs),
             spawns: Arc::new(spawns),
+            doors: Arc::new(DoorTemplates::load(root)),
+            fences: Arc::new(FenceTemplates::load(root)),
+            static_objects: Arc::new(StaticObjectTemplates::load(root)),
         })
     }
 }

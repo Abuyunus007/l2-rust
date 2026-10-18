@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_net::Encode;
@@ -12,7 +13,8 @@ use tracing::{debug, info, warn};
 
 use crate::command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 use crate::data::{NoData, StaticData, WorldSettings};
-use crate::objects::{Door, Npc, ObjectEntry, ObjectKind};
+use crate::door::{Door, DoorIndex, DoorSnapshot, Fence, StaticObject};
+use crate::objects::{Npc, ObjectEntry, ObjectKind};
 use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
 use crate::region::RegionGrid;
@@ -50,6 +52,12 @@ pub struct World {
     pub(crate) regions: RegionGrid,
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     pub(crate) doors: HashMap<ObjectId, Door>,
+    pub(crate) fences: HashMap<ObjectId, Fence>,
+    pub(crate) static_objects: HashMap<ObjectId, StaticObject>,
+    /// `DoorData`'s id and group lookups.
+    pub(crate) door_index: DoorIndex,
+    /// The door view handed to path workers; `None` after a door or fence changed.
+    pub(crate) door_snapshot: Option<Arc<DoorSnapshot>>,
 }
 
 impl World {
@@ -72,6 +80,10 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             doors: HashMap::new(),
+            fences: HashMap::new(),
+            static_objects: HashMap::new(),
+            door_index: DoorIndex::default(),
+            door_snapshot: None,
         }
     }
 
