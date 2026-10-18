@@ -19,8 +19,8 @@ use l2_util::time::now_millis;
 use tokio::sync::watch;
 use tracing::warn;
 
+use crate::gs::subnet::GameServerAddress;
 use crate::state::{GameServerTable, LoginState, ServerStatus};
-use crate::subnet::GameServerAddress;
 
 /// How long the server list waits for the game servers' `ReplyCharacters`.
 // Java: ServerList constructor (10 × 50 ms)
@@ -48,8 +48,8 @@ impl GsServerSnapshot {
     pub fn server_address(&self, client: IpAddr) -> Option<&str> {
         self.addresses
             .iter()
-            .find(|a| a.matches(client))
-            .map(GameServerAddress::server_address)
+            .find(|a| a.subnet.contains(client))
+            .map(|a| a.host.as_str())
     }
 
     // Java: GameServerInfo.canLogin
@@ -93,20 +93,20 @@ impl GsView for GameServerTable {
             id: info.id,
             status: info.status,
             authed: info.authed,
-            // TODO(M1-LS-04): port, player count, max players, type, brackets and the host list
-            // come from the game server link (`GameServerAuth` / `ServerStatus`).
-            port: 0,
-            current_players: 0,
-            max_players: 0,
-            server_type: 0,
-            brackets: false,
-            addresses: Vec::new(),
+            port: i32::from(info.port),
+            current_players: info
+                .link
+                .as_ref()
+                .map_or(0, |link| i32::try_from(link.player_count()).unwrap_or(i32::MAX)),
+            max_players: info.max_players,
+            server_type: info.server_type,
+            brackets: info.showing_brackets,
+            addresses: info.addresses.clone(),
         })
     }
 
-    fn request_characters(&self, _account: &str) -> Vec<i32> {
-        // TODO(M1-LS-04): send `RequestCharacters` over each authed link.
-        Vec::new()
+    fn request_characters(&self, account: &str) -> Vec<i32> {
+        GameServerTable::request_characters(self, account)
     }
 }
 

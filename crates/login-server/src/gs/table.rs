@@ -221,9 +221,13 @@ impl GameServerTable {
 
     /// Asks every connected game server how many characters `account` has there.
     // Java: LoginController.getCharactersOnAccount
-    pub fn request_characters(&self, account: &str) {
-        for (_, link) in self.links() {
+    /// Returns the ids of the servers that were asked, so the server list knows which
+    /// `ReplyCharacters` to wait for.
+    pub fn request_characters(&self, account: &str) -> Vec<i32> {
+        let links = self.links();
+        for (_, link) in &links {
             link.request_characters(account);
         }
+        links.into_iter().map(|(id, _)| id).collect()
     }
 }

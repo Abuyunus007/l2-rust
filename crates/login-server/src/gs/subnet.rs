@@ -121,6 +121,14 @@ pub struct GameServerAddress {
 }
 
 impl GameServerAddress {
+    /// `subnet` in CIDR form (or a bare address), `host` as sent by the game server.
+    pub fn new(subnet: &str, host: &str) -> Result<Self, SubnetError> {
+        Ok(Self {
+            subnet: Subnet::parse(subnet)?,
+            host: host.to_owned(),
+        })
+    }
+
     /// Java `GameServerAddress.toString`: `host/subnet`.
     pub fn describe(&self) -> String {
         format!("{}/{}", self.host, self.subnet)

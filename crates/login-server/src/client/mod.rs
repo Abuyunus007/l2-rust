@@ -25,9 +25,7 @@ use tracing::{debug, info};
 
 use self::auth::{AccountInfo, LoginResult, can_check_in, retrieve_account_info};
 use self::registry::AuthedClient;
-use self::server_list::{
-    CHARACTER_WAIT, CharacterReplies, ClientView, GsView, is_login_possible, make_server_list,
-};
+use self::server_list::{CHARACTER_WAIT, CharacterReplies, ClientView, is_login_possible, make_server_list};
 use self::session_key::SessionKey;
 use crate::state::{LoginState, ServerStatus};
 use crate::{Server, StartupError};
@@ -248,7 +246,8 @@ impl ClientSession {
             }
             LoginResult::AlreadyOnGs => {
                 Self::login_fail(ctl, LoginFailReason::AccountInUse);
-                // TODO(M1-LS-04): kick the account on the game server that has it.
+                // Java: gsi.getGameServerThread().kickPlayer(login)
+                self.state.game_servers.kick_player(&info.login);
             }
         }
     }
@@ -264,7 +263,10 @@ impl ClientSession {
         // canCheckin sets these on the client.
         self.access_level = info.access_level;
         self.last_server = info.last_server;
-        // TODO(M1-LS-04): `isAccountInAnyGameServer` → LoginResult::AlreadyOnGs.
+        // Java: isAccountInAnyGameServer
+        if self.state.game_servers.is_account_on_any_gs(&info.login) {
+            return LoginResult::AlreadyOnGs;
+        }
         let placeholder = SessionKey {
             login_ok1: 0,
             login_ok2: 0,
