@@ -12,9 +12,9 @@
 //!   connection are different numbers.
 //! - `dir`: `c2s` (client to server) or `s2c`.
 //! - `channel`: `login` (client <-> login server), `game` (client <-> game server), `link`
-//!   (login server <-> game server). Only `login` is produced so far.
+//!   (login server <-> game server). `login` and `game` are produced so far.
 //! - `opcode`: the first byte of the plaintext payload. `ex_opcode` is only present for game
-//!   packets with a 16-bit sub-opcode (0xD0), added by M1-PROXY-02.
+//!   packets with a 16-bit sub-opcode (client `0xD0`, server `0xFE`).
 //! - `name`: the packet name, or `"unknown"`.
 //! - `fields`: the decoded fields as a JSON object, or `null` when the packet is not decoded.
 //! - `raw`: lowercase hex of the plaintext payload (opcode included, without length header,

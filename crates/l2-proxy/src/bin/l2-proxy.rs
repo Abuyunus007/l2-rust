@@ -1,4 +1,4 @@
-//! `l2-proxy`: the standalone login proxy. The GUI runs the same library in-process (D-35).
+//! `l2-proxy`: the standalone login and game proxy. The GUI runs the same library in-process (D-35).
 //!
 //! Point the game client at `--listen`, point `--upstream` at the real login server:
 //!
@@ -16,7 +16,7 @@ use l2_proxy::{CaptureWriter, Dir, Proxy, ProxyConfig};
 use tokio::sync::mpsc;
 use tracing_subscriber::EnvFilter;
 
-/// Decrypting login proxy with JSONL captures.
+/// Decrypting login and game proxy with JSONL captures.
 #[derive(Debug, Parser)]
 #[command(version, about)]
 struct Args {
@@ -79,7 +79,7 @@ async fn main() -> Result<()> {
     println!("Generating RSA keys...");
     let proxy = Proxy::start(config, tx).await.context("cannot start the proxy")?;
     println!(
-        "Login proxy ready: client -> {}  =>  login server {}",
+        "Proxy ready: client -> {}  =>  login server {}",
         proxy.local_addr(),
         args.upstream
     );
@@ -93,12 +93,20 @@ async fn main() -> Result<()> {
                 Dir::C2s => "client -> server",
                 Dir::S2c => "server -> client",
             };
-            tracing::info!(
-                "[conn {}] {arrow}: {} (opcode {:#04x})",
-                record.conn,
-                record.name,
-                record.opcode
-            );
+            match record.ex_opcode {
+                Some(ex) => tracing::info!(
+                    "[conn {}] {arrow}: {} (opcode {:#04x} {ex:#06x})",
+                    record.conn,
+                    record.name,
+                    record.opcode
+                ),
+                None => tracing::info!(
+                    "[conn {}] {arrow}: {} (opcode {:#04x})",
+                    record.conn,
+                    record.name,
+                    record.opcode
+                ),
+            }
             if let Some(writer) = writer.as_mut() {
                 if let Err(e) = writer.write_record(&record) {
                     tracing::error!("cannot write the capture: {e}");

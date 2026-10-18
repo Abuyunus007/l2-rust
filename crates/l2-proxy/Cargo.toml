@@ -1,6 +1,6 @@
 [package]
 name = "l2-proxy"
-description = "Decrypting man-in-the-middle proxy for the L2 login protocol, with JSONL captures (D-34, D-35)"
+description = "Decrypting man-in-the-middle proxy for the L2 login and game protocols, with JSONL captures (D-34, D-35)"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -11,6 +11,7 @@ repository.workspace = true
 l2-net.workspace = true
 l2-crypto.workspace = true
 l2-protocol-login.workspace = true
+l2-protocol-game.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 hex.workspace = true

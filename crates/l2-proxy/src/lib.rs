@@ -1,10 +1,14 @@
-//! A decrypting man-in-the-middle proxy for the L2 login protocol (D-34, D-35).
+//! A decrypting man-in-the-middle proxy for the L2 login and game protocols (D-34, D-35).
 //!
 //! The H5 client connects to the proxy instead of the login server. The proxy talks to the real
 //! login server (Java or Rust) as a client, decrypts both directions, writes every packet as a
 //! [`Record`] to a channel (a JSONL capture file, or a live packet list in the GUI) and rewrites
 //! the `ServerList` so the game connection goes through the proxy too. Credentials are never
 //! recorded. See the `login` module source for the protocol details.
+//!
+//! The game connection is a pass-through: the bytes are forwarded unchanged, and a copy is
+//! split into frames, decrypted (when the `KeyPacket` announces encryption) and recorded with
+//! the opcode name from the generated tables. See the `game` module source.
 //!
 //! ```no_run
 //! # async fn demo() -> Result<(), l2_proxy::ProxyError> {
@@ -21,8 +25,8 @@
 //! ```
 
 pub mod capture;
+mod game;
 mod login;
-mod relay;
 pub mod rewrite;
 
 use std::io;
@@ -40,8 +44,8 @@ use tokio::task::JoinHandle;
 
 pub use capture::{CaptureError, CaptureReader, CaptureWriter, Channel, Dir, Record};
 
+use game::Relays;
 use login::ProxyKeys;
-use relay::Relays;
 
 /// Everything that can go wrong in the proxy.
 #[derive(Debug, Error)]
@@ -112,7 +116,8 @@ pub(crate) struct Shared {
     pub(crate) records: UnboundedSender<Record>,
     pub(crate) conn_config: Arc<ConnectionConfig>,
     pub(crate) cancel: CancellationToken,
-    next_conn: AtomicU64,
+    /// Connection numbers, shared with the game relays so every capture `conn` is unique.
+    next_conn: Arc<AtomicU64>,
 }
 
 /// A running proxy.
@@ -150,15 +155,22 @@ impl Proxy {
         let listener = TcpListener::bind(config.listen).await?;
         let local_addr = listener.local_addr()?;
         let cancel = CancellationToken::new();
+        let next_conn = Arc::new(AtomicU64::new(1));
         let shared = Arc::new(Shared {
-            relays: Relays::new(game_bind_ip, config.game_port_base, cancel.clone()),
+            relays: Relays::new(
+                game_bind_ip,
+                config.game_port_base,
+                cancel.clone(),
+                records.clone(),
+                Arc::clone(&next_conn),
+            ),
             config,
             advertise_ip,
             keys,
             records,
             conn_config: Arc::new(ConnectionConfig::default()),
             cancel: cancel.clone(),
-            next_conn: AtomicU64::new(1),
+            next_conn,
         });
         tracing::info!(
             "login proxy listening on {local_addr}, upstream {}",
