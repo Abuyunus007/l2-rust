@@ -13,6 +13,7 @@
 pub mod chat;
 pub mod command;
 pub mod data;
+pub mod door;
 pub mod enter;
 pub mod ids;
 pub mod leave;
@@ -35,10 +36,11 @@ pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, DerivedStats, ItemStatic, NoData, RACE_DWARF,
     StaticData, WorldSettings,
 };
+pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{Intention, MoveData, MovementState, PathRequests, object_of_requester, requester_of};
-pub use objects::{Door, Npc, ObjectEntry, ObjectKind};
+pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,

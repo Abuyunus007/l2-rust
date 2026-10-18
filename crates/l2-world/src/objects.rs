@@ -6,8 +6,7 @@
 // The kinds keep their own tables in `World` (`players`, `npcs`, `doors`); this table only says
 // which kind an id is and where it is in the grid (D-11: ids, never references).
 
-use l2_util::ObjectId;
-
+pub use crate::door::{Door, Fence, StaticObject};
 use crate::player::CreatureCore;
 use crate::region::RegionId;
 
@@ -17,6 +16,10 @@ pub enum ObjectKind {
     Player,
     Npc,
     Door,
+    /// Java `Fence` (a `WorldObject`, not a creature).
+    Fence,
+    /// Java `StaticObject` (town maps, thrones, signboards).
+    StaticObject,
 }
 
 impl ObjectKind {
@@ -25,9 +28,10 @@ impl ObjectKind {
         matches!(self, Self::Player)
     }
 
-    /// Java `isCreature()`: forgets targets when an object leaves view.
+    /// Java `isCreature()`: forgets targets when an object leaves view. Doors and static objects
+    /// extend `Creature` in Java; fences do not.
     pub fn is_creature(self) -> bool {
-        matches!(self, Self::Player | Self::Npc)
+        matches!(self, Self::Player | Self::Npc | Self::Door | Self::StaticObject)
     }
 }
 
@@ -63,16 +67,4 @@ pub struct Npc {
     pub core: CreatureCore,
     /// The template id (`npc_id`, Java `getId()`).
     pub npc_id: i32,
-}
-
-/// A door in the world. M3-DOOR-01 fills in templates, state and packets.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Door {
-    pub object_id: ObjectId,
-    /// The door id from `Doors.xml`.
-    pub door_id: i32,
-    pub x: i32,
-    pub y: i32,
-    pub z: i32,
-    pub open: bool,
 }

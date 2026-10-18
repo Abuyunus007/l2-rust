@@ -9,8 +9,8 @@
 // What Java does on top that is not here yet, with its card:
 // - AI hooks (`describeStateToPlayer`, `setIntentionActive`, `notifyActionForgetObject`,
 //   `switchAI`): M4.
-// - Doors and fences in the region door lists: M3-DOOR-01.
-// - What NPCs and doors send when they come into view (`sendInfo`): M3-NPC-01, M3-DOOR-01.
+// - What NPCs send when they come into view (`sendInfo`): M3-NPC-01. Doors, fences and static
+//   objects are in `door.rs`.
 
 use l2_net::Encode;
 use l2_protocol_game::server::DeleteObject;
@@ -34,6 +34,8 @@ impl World {
             ObjectKind::Player => self.players.get(&id).map(|p| (p.core.x, p.core.y, p.core.z)),
             ObjectKind::Npc => self.npcs.get(&id).map(|n| (n.core.x, n.core.y, n.core.z)),
             ObjectKind::Door => self.doors.get(&id).map(|d| (d.x, d.y, d.z)),
+            ObjectKind::Fence => self.fences.get(&id).map(|f| (f.x, f.y, f.z)),
+            ObjectKind::StaticObject => self.static_objects.get(&id).map(|o| (o.x, o.y, o.z)),
         }
     }
 
@@ -55,6 +57,16 @@ impl World {
             ObjectKind::Door => {
                 if let Some(d) = self.doors.get_mut(&id) {
                     (d.x, d.y, d.z) = (x, y, z);
+                }
+            }
+            ObjectKind::Fence => {
+                if let Some(f) = self.fences.get_mut(&id) {
+                    (f.x, f.y, f.z) = (x, y, z);
+                }
+            }
+            ObjectKind::StaticObject => {
+                if let Some(o) = self.static_objects.get_mut(&id) {
+                    (o.x, o.y, o.z) = (x, y, z);
                 }
             }
         }
@@ -123,6 +135,8 @@ impl World {
     /// that, because it is still online and gets its position set while it is away from the
     /// grid (Java keeps `_allPlayers` and the object's own fields the same way).
     pub(crate) fn decay_keep_entry(&mut self, id: ObjectId) {
+        // Fences send DeleteObject for their height pieces first; the door snapshot is dropped.
+        self.on_object_decay(id);
         let region = match self.objects.get_mut(&id) {
             Some(entry) => {
                 entry.spawned = false;
@@ -196,7 +210,7 @@ impl World {
         !invisible || self.is_gm(viewer)
     }
 
-    fn is_gm(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_gm(&self, id: ObjectId) -> bool {
         self.players
             .get(&id)
             .is_some_and(|p| self.data.access_level(p.data.access_level).is_gm)
@@ -394,20 +408,37 @@ impl World {
             ObjectKind::Player => self.send_player_info(subject, viewer),
             // M3-NPC-01: NpcInfo (Npc.sendInfo).
             ObjectKind::Npc => {}
-            // M3-DOOR-01: StaticObjectInfo + DoorStatusUpdate (Door.sendInfo).
-            ObjectKind::Door => {}
+            ObjectKind::Door => self.send_door_info(subject, viewer),
+            ObjectKind::Fence => self.send_fence_info(subject, viewer),
+            ObjectKind::StaticObject => self.send_static_object_info(subject, viewer),
         }
     }
 
     /// Java `WorldRegion.addVisibleObject` (the region part of spawning / switching).
     fn region_add(&mut self, region: RegionId, id: ObjectId) {
-        let playable = self.objects.get(&id).is_some_and(|e| e.kind.is_playable());
+        let kind = self.objects.get(&id).map(|e| e.kind);
+        let playable = kind.is_some_and(ObjectKind::is_playable);
         let always_on = self.regions.always_on;
         let active = {
             let r = self.regions.get_mut(region);
             r.objects.insert(id);
             r.active
         };
+        // Java: a door or fence also goes into the lists of every surrounding region, which the
+        // geodata checks read.
+        match kind {
+            Some(ObjectKind::Door) => {
+                for r in region.surrounding() {
+                    self.regions.get_mut(r).doors.insert(id);
+                }
+            }
+            Some(ObjectKind::Fence) => {
+                for r in region.surrounding() {
+                    self.regions.get_mut(r).fences.insert(id);
+                }
+            }
+            _ => {}
+        }
         // "If this is the first player to enter the region, activate self and neighbors."
         if playable && !active && !always_on {
             self.start_activation(region);
@@ -420,7 +451,22 @@ impl World {
             Some(r) if !r.objects.is_empty() => self.regions.get_mut(region).objects.remove(&id),
             _ => false,
         };
-        let playable = self.objects.get(&id).is_some_and(|e| e.kind.is_playable());
+        let kind = self.objects.get(&id).map(|e| e.kind);
+        // Java removes a door or fence from the surrounding regions' lists after the
+        // `_visibleObjects.isEmpty()` early return, whether or not it was in the set.
+        if self.regions.get(region).is_some() && matches!(kind, Some(ObjectKind::Door | ObjectKind::Fence)) {
+            for r in region.surrounding() {
+                if let Some(list) = self.regions.get(r) {
+                    if !list.doors.is_empty() || !list.fences.is_empty() {
+                        let list = self.regions.get_mut(r);
+                        list.doors.remove(&id);
+                        list.fences.remove(&id);
+                    }
+                    self.regions.compact(r);
+                }
+            }
+        }
+        let playable = kind.is_some_and(ObjectKind::is_playable);
         if removed && playable && self.are_neighbors_empty(region) && !self.regions.always_on {
             self.start_deactivation(region);
         }
@@ -521,6 +567,9 @@ impl World {
         self.objects.remove(&id);
         self.npcs.remove(&id);
         self.doors.remove(&id);
+        self.fences.remove(&id);
+        self.static_objects.remove(&id);
+        self.door_snapshot = None;
     }
 }
 

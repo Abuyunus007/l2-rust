@@ -13,6 +13,7 @@ pub mod charscreen;
 pub mod chat;
 pub mod enterworld;
 pub mod entry;
+pub mod fence;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
@@ -36,6 +37,7 @@ pub use entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
+pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,

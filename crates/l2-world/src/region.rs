@@ -53,6 +53,16 @@ impl RegionId {
         (self.x - other.x).abs() <= 1 && (self.y - other.y).abs() <= 1 && (self.z - other.z).abs() <= 1
     }
 
+    /// Whether `other` is in this region's [`surrounding`](Self::surrounding) list, without
+    /// building the list: within one cell on every axis and inside the bounds `World.init` used
+    /// (so never the last column or row, see the quirk below).
+    pub fn lists(self, other: RegionId) -> bool {
+        self.is_surrounding(other)
+            && (0..REGIONS_X).contains(&other.x)
+            && (0..REGIONS_Y).contains(&other.y)
+            && (0..REGIONS_Z).contains(&other.z)
+    }
+
     /// Java `getSurroundingRegions()`: the neighbours built in `World.init`, in that order, with
     /// this region swapped to the front.
     ///
@@ -112,6 +122,12 @@ pub(crate) struct Region {
     // NOTE: Java's ConcurrentHashMap key set has no defined order; packets to a player entering a
     // crowded area may come in a different order than on the Java server.
     pub objects: BTreeSet<ObjectId>,
+    /// Java `_doors`: the doors in this region **and** in every region around it (Java adds a
+    /// door to the lists of all its surrounding regions), so the geodata checks need only the
+    /// region of the start point.
+    pub doors: BTreeSet<ObjectId>,
+    /// Java `_fences`, kept the same way as `doors`.
+    pub fences: BTreeSet<ObjectId>,
     pub active: bool,
     /// Java `_activeNeighbors`.
     pub active_neighbors: i32,
@@ -164,11 +180,29 @@ impl RegionGrid {
             .flat_map(|r| r.objects.iter().copied())
     }
 
+    /// Java `WorldRegion.getDoors()`, in id order.
+    pub fn doors(&self, id: RegionId) -> impl Iterator<Item = ObjectId> + '_ {
+        self.regions
+            .get(&id)
+            .into_iter()
+            .flat_map(|r| r.doors.iter().copied())
+    }
+
+    /// Java `WorldRegion.getFences()`, in id order.
+    pub fn fences(&self, id: RegionId) -> impl Iterator<Item = ObjectId> + '_ {
+        self.regions
+            .get(&id)
+            .into_iter()
+            .flat_map(|r| r.fences.iter().copied())
+    }
+
     /// Drops regions that hold nothing worth keeping, so the map stays small.
     pub fn compact(&mut self, id: RegionId) {
         let always_on = self.always_on;
         if let Some(r) = self.regions.get(&id)
             && r.objects.is_empty()
+            && r.doors.is_empty()
+            && r.fences.is_empty()
             && r.active == always_on
             && r.active_neighbors == 0
             && r.neighbors_task.is_none()
@@ -252,6 +286,31 @@ mod tests {
             z: 5,
         };
         assert!(!inner.surrounding().contains(&edge));
+    }
+
+    #[test]
+    fn lists_matches_the_surrounding_list() {
+        for (x, y, z) in [
+            (10, 20, 5),
+            (0, 0, 0),
+            (REGIONS_X, 100, 5),
+            (REGIONS_X - 1, REGIONS_Y, 15),
+        ] {
+            let r = RegionId { x, y, z };
+            let list = r.surrounding();
+            for dx in -2..=2 {
+                for dy in -2..=2 {
+                    for dz in -2..=2 {
+                        let o = RegionId {
+                            x: x + dx,
+                            y: y + dy,
+                            z: z + dz,
+                        };
+                        assert_eq!(r.lists(o), list.contains(&o), "{r:?} lists {o:?}");
+                    }
+                }
+            }
+        }
     }
 
     #[test]
