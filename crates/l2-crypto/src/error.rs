@@ -18,4 +18,8 @@ pub enum CryptoError {
     /// The checksum covers whole 32-bit words.
     #[error("buffer length {len} is not a multiple of 4")]
     NotWordAligned { len: usize },
+
+    /// The trailing checksum does not match the data (the caller closes the connection).
+    #[error("packet checksum mismatch")]
+    ChecksumMismatch,
 }

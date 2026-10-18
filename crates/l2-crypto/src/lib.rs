@@ -12,9 +12,11 @@
 
 pub mod blowfish;
 pub mod checksum;
+pub mod link;
 pub mod xor_pass;
 
 mod error;
 
 pub use blowfish::L2Blowfish;
 pub use error::CryptoError;
+pub use link::LinkCipher;
