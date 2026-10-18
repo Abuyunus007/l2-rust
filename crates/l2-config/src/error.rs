@@ -18,4 +18,13 @@ pub enum ConfigError {
     /// `TimeUtil.parseDuration` found a number but no known unit.
     #[error("unrecognized time unit: '{0}'")]
     UnknownTimeUnit(String),
+
+    /// A `x,y,z[,heading]` location that Java's `Integer.parseInt` / array indexing rejects.
+    /// Java throws out of `FactionSystemConfig.load()`, so the server does not start.
+    #[error("invalid location for config '{key}' in file '{file}': '{value}'")]
+    InvalidLocation {
+        file: String,
+        key: String,
+        value: String,
+    },
 }

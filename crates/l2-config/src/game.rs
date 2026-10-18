@@ -8,6 +8,7 @@
 
 use std::path::Path;
 
+use crate::game_manual::GameManual;
 use crate::{ConfigError, IniFile};
 
 pub use crate::generated::game::{
@@ -92,6 +93,9 @@ pub struct GameConfig {
     pub walker_bot_protection: WalkerBotProtectionConfig,
     pub warehouse_sorting: WarehouseSortingConfig,
     pub wedding: WeddingConfig,
+    /// The fields the generator could not port (`()` placeholders above). Use the
+    /// `effective_*` accessors of [`GameConfig`] for the values after Java's post-processing.
+    pub manual: GameManual,
 }
 
 impl GameConfig {
@@ -100,8 +104,14 @@ impl GameConfig {
     /// A missing file gives the Java defaults for that file (with warnings), like Java. The only
     /// error is a malformed `\uXXXX` escape in one of the files.
     pub fn load(config_dir: &Path) -> Result<Self, ConfigError> {
+        // The three files behind the manual fields are read once and shared with the structs.
+        let server_ini = IniFile::load(config_dir.join(ServerConfig::FILE))?;
+        let player_ini = IniFile::load(config_dir.join(PlayerConfig::FILE))?;
+        let faction_system_ini = IniFile::load(config_dir.join(FactionSystemConfig::FILE))?;
+        let manual = GameManual::from_inis(&server_ini, &player_ini, &faction_system_ini)?;
         Ok(Self {
-            server: ServerConfig::from_ini(&IniFile::load(config_dir.join(ServerConfig::FILE))?),
+            manual,
+            server: ServerConfig::from_ini(&server_ini),
             conquerable_hall_siege: ConquerableHallSiegeConfig::from_ini(&IniFile::load(
                 config_dir.join(ConquerableHallSiegeConfig::FILE),
             )?),
@@ -121,7 +131,7 @@ impl GameConfig {
             id_manager: IdManagerConfig::from_ini(&IniFile::load(config_dir.join(IdManagerConfig::FILE))?),
             npc: NpcConfig::from_ini(&IniFile::load(config_dir.join(NpcConfig::FILE))?),
             olympiad: OlympiadConfig::from_ini(&IniFile::load(config_dir.join(OlympiadConfig::FILE))?),
-            player: PlayerConfig::from_ini(&IniFile::load(config_dir.join(PlayerConfig::FILE))?),
+            player: PlayerConfig::from_ini(&player_ini),
             pvp: PvpConfig::from_ini(&IniFile::load(config_dir.join(PvpConfig::FILE))?),
             rates: RatesConfig::from_ini(&IniFile::load(config_dir.join(RatesConfig::FILE))?),
             underground_coliseum: UndergroundColiseumConfig::from_ini(&IniFile::load(
@@ -163,9 +173,7 @@ impl GameConfig {
             dualbox_check: DualboxCheckConfig::from_ini(&IniFile::load(
                 config_dir.join(DualboxCheckConfig::FILE),
             )?),
-            faction_system: FactionSystemConfig::from_ini(&IniFile::load(
-                config_dir.join(FactionSystemConfig::FILE),
-            )?),
+            faction_system: FactionSystemConfig::from_ini(&faction_system_ini),
             fake_players: FakePlayersConfig::from_ini(&IniFile::load(
                 config_dir.join(FakePlayersConfig::FILE),
             )?),

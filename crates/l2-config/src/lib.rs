@@ -6,6 +6,7 @@
 mod database;
 mod error;
 pub mod game;
+pub mod game_manual;
 #[rustfmt::skip]
 pub mod generated;
 mod interface;
