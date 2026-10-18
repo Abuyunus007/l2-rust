@@ -20,6 +20,7 @@ l2-crypto = { path = "crates/l2-crypto" }
 l2-config = { path = "crates/l2-config" }
 l2-admin-api = { path = "crates/l2-admin-api" }
 l2-protocol-game = { path = "crates/l2-protocol-game" }
+l2-protocol-login = { path = "crates/l2-protocol-login" }
 
 # Async, networking
 tokio = { version = "1.53", features = ["full"] }

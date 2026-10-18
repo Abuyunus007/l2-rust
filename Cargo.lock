@@ -501,6 +501,16 @@ name = "l2-protocol-game"
 version = "0.1.0"
 
 [[package]]
+name = "l2-protocol-login"
+version = "0.1.0"
+dependencies = [
+ "l2-net",
+ "l2-testkit",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [
