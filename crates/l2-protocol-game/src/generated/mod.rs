@@ -2,4 +2,8 @@
 // Lists every generated module of this crate (see codegen `GAME_GENERATED_MODS`).
 
 #[rustfmt::skip]
+pub mod npc_string_id;
+#[rustfmt::skip]
 pub mod opcodes;
+#[rustfmt::skip]
+pub mod system_message_id;

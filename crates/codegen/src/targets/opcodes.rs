@@ -41,7 +41,7 @@ pub fn read_sources(l2j_root: &Path) -> Result<Sources> {
 }
 
 /// `LOGOUT` -> `Logout`, `REQUEST_EX_2ND_PASSWORD_CHECK` -> `RequestEx2ndPasswordCheck`.
-fn camel_case(java_name: &str) -> String {
+pub(super) fn camel_case(java_name: &str) -> String {
     java_name
         .split('_')
         .filter(|part| !part.is_empty())

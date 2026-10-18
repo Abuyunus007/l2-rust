@@ -2,6 +2,7 @@
 //!
 //! ```text
 //! cargo run -p codegen -- opcodes            # write crates/*/src/generated/...
+//! cargo run -p codegen -- messages           # SystemMessageId / NpcStringId
 //! cargo run -p codegen -- all --check        # compare instead of writing (CI)
 //! ```
 //!
@@ -22,6 +23,8 @@ const DEFAULT_L2J_ROOT: &str = r"C:\l2-rust\l2jmobius";
 enum Target {
     /// Game packet opcode tables (l2-protocol-game).
     Opcodes,
+    /// SystemMessageId and NpcStringId tables (l2-protocol-game).
+    Messages,
     /// Every target.
     All,
 }
@@ -48,7 +51,19 @@ fn workspace_root() -> Result<PathBuf> {
 fn generate(target: Target, l2j_root: &Path) -> Result<Vec<Output>> {
     match target {
         Target::Opcodes => targets::opcodes::generate(&targets::opcodes::read_sources(l2j_root)?),
-        Target::All => generate(Target::Opcodes, l2j_root),
+        Target::Messages => targets::messages::generate(&targets::messages::read_sources(l2j_root)?),
+        Target::All => {
+            // Every target also emits `generated/mod.rs`; keep one copy of each path.
+            let mut all: Vec<Output> = Vec::new();
+            for target in [Target::Opcodes, Target::Messages] {
+                for output in generate(target, l2j_root)? {
+                    if !all.iter().any(|o| o.path == output.path) {
+                        all.push(output);
+                    }
+                }
+            }
+            Ok(all)
+        }
     }
 }
 
@@ -128,6 +143,12 @@ mod tests {
         assert_eq!(count(&src.client, "ClientPackets"), 170);
         assert_eq!(count(&src.ex_client, "ExClientPackets"), 144);
         assert_eq!(count(&src.server, "ServerPackets"), 485);
+
+        let msg = targets::messages::read_sources(&root).unwrap();
+        let sm = targets::messages::parse_entries(&msg.system_message_id, "SystemMessageId").unwrap();
+        let ns = targets::messages::parse_entries(&msg.npc_string_id, "NpcStringId").unwrap();
+        assert_eq!(sm.len(), 3236);
+        assert_eq!(ns.len(), 5915);
 
         // The committed files equal the generator output (same as `--check`).
         let ws = workspace_root().unwrap();
