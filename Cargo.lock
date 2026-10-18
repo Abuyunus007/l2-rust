@@ -1732,6 +1732,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "game-server"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "l2-admin-api",
+ "l2-config",
+ "l2-data",
+ "l2-db",
+ "l2-net",
+ "l2-testkit",
+ "l2-util",
+ "l2-world",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
