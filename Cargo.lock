@@ -2363,6 +2363,7 @@ dependencies = [
  "egui",
  "l2-admin-api",
  "l2-data",
+ "l2-geo",
  "l2-proxy",
  "serde",
  "serde_json",

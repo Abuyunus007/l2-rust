@@ -10,6 +10,9 @@
 //! All coordinates in the region / block types are **global geo cell coordinates**
 //! (`regionX * 2048 + local`), exactly what `GeoEngine` passes to `Region`. Z values are world Z.
 //! [`GeoEngine`] also takes world coordinates (see [`coords`]).
+//!
+//! [`view`] holds the layer and colour rules of the debug pictures (`l2-geotool render`, the admin
+//! GUI geodata viewer). Game logic does not use it.
 
 pub mod block;
 pub mod cell;
@@ -20,6 +23,7 @@ pub mod line;
 pub mod obstacles;
 pub mod pathfinding;
 pub mod region;
+pub mod view;
 
 pub use block::{BLOCK_CELLS, BlockRef, BlockType};
 pub use coords::Location;
