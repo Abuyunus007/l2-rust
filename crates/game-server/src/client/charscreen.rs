@@ -249,30 +249,12 @@ impl CharScreenStore for DbCharScreen {
     }
 }
 
-/// `CnameTemplate`. Java compiles the setting as a regular expression; no regex crate is
-/// approved, so only the default `.*` (anything) is understood.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NameTemplate {
-    /// `.*`
-    AnyChars,
-    /// Any other pattern: names cannot be checked, so none is accepted (and the problem is
-    /// logged once at startup).
-    Unsupported(String),
-}
-
-impl NameTemplate {
-    pub fn parse(pattern: &str) -> Self {
-        if pattern == ".*" {
-            Self::AnyChars
-        } else {
-            Self::Unsupported(pattern.to_owned())
-        }
-    }
-
-    /// Java `CHARNAME_TEMPLATE_PATTERN.matcher(name).matches()`.
-    pub fn matches(&self, _name: &str) -> bool {
-        matches!(self, Self::AnyChars)
-    }
+/// The name checks of `CharacterCreate` that need only the config: letters and digits (Java
+/// `StringUtil.isAlphaNumeric`), then the `CnameTemplate` pattern (Java
+/// `CHARNAME_TEMPLATE_PATTERN.matcher(name).matches()`).
+// Java: CharacterCreate.runImpl (the name checks)
+pub fn is_valid_char_name(config: &GameConfig, name: &str) -> bool {
+    is_alpha_numeric(name) && config.manual.server.charname_template.is_match(name)
 }
 
 /// Java `StringUtil.isAlphaNumeric`: not empty and every UTF-16 unit is a letter or a digit.
@@ -297,7 +279,6 @@ pub struct CharScreen {
     pub ids: Arc<IdFactory>,
     pub stat_bonus: StatBonus,
     pub item_max_mp: ItemMaxMp,
-    pub name_template: NameTemplate,
     /// Names of fake players, lower case (Java `FakePlayerData.getProperName`). NPCs are not
     /// loaded yet, so the set is empty in the server.
     pub reserved_names: HashSet<String>,
@@ -318,12 +299,6 @@ impl CharScreen {
         ids: Arc<IdFactory>,
         select_interval_ticks: i32,
     ) -> Self {
-        let name_template = NameTemplate::parse(&config.manual.server.charname_template_pattern);
-        if let NameTemplate::Unsupported(pattern) = &name_template {
-            error!(
-                "CnameTemplate = {pattern} is not supported (only .*): every character name will be refused."
-            );
-        }
         if config.manual.player.forbidden_names.iter().any(String::is_empty) {
             warn!(
                 "ForbiddenNames has an empty entry (the key is missing or ends in a comma): like Java, \
@@ -341,7 +316,6 @@ impl CharScreen {
             ids,
             stat_bonus,
             item_max_mp,
-            name_template,
             reserved_names: HashSet::new(),
             select_interval: Duration::from_millis(u64::try_from(select_interval_ticks).unwrap_or(0) * 100),
             create_lock: tokio::sync::Mutex::new(()),
@@ -416,7 +390,7 @@ pub fn check_request(screen: &CharScreen, packet: &CharacterCreate, client: &str
     if screen.reserved_names.contains(&lower) {
         return Err(CharCreateFail::REASON_INCORRECT_NAME);
     }
-    if !is_alpha_numeric(name) || !screen.name_template.matches(name) {
+    if !is_valid_char_name(&screen.config, name) {
         return Err(CharCreateFail::REASON_INCORRECT_NAME);
     }
     if !(0..=2).contains(&packet.face) {

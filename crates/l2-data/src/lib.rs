@@ -109,6 +109,9 @@ pub struct DatapackOptions {
     /// `General.ini` `HtmCache` (default true). False is Java's lazy mode. The Rust HTML cache
     /// preloads in both cases (see `HtmCache::load`), so this only changes the log note.
     pub htm_cache: bool,
+    /// `General.ini` `CheckHtmlEncoding` (default true): log html files with non ASCII text
+    /// outside `data/lang`.
+    pub check_html_encoding: bool,
 }
 
 impl Default for DatapackOptions {
@@ -123,6 +126,7 @@ impl Default for DatapackOptions {
             max_aggro_range: npc.max_aggro_range,
             default_corpse_time: npc.default_corpse_time,
             htm_cache: true,
+            check_html_encoding: true,
         }
     }
 }
@@ -170,7 +174,11 @@ impl Datapack {
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
             // Java `HtmCache = False` is the lazy mode, so the lazy flag is the inverse.
-            html: Arc::new(HtmCache::load(root, !options.htm_cache)),
+            html: Arc::new(HtmCache::load_with(
+                root,
+                !options.htm_cache,
+                options.check_html_encoding,
+            )),
             teleporters: Arc::new(TeleporterData::load(root)),
             npcs: Arc::new(npcs),
             spawns: Arc::new(spawns),
@@ -203,6 +211,7 @@ mod tests {
         assert!(!options.no_spawns);
         assert_eq!((options.max_aggro_range, options.default_corpse_time), (450, 7));
         assert!(options.htm_cache);
+        assert!(options.check_html_encoding);
     }
 
     #[test]
