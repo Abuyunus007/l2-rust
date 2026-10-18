@@ -80,6 +80,61 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | merged |
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
+## M2: Game server skeleton (log in, create a character, enter the world)
+
+27 cards: 4 opus (orchestrator), 14 sonnet, 9 haiku. Design: [docs/design/world-loop.md](../design/world-loop.md). Side by side with the Java GS on the same DB (D-39).
+
+### Waves
+| Wave | Cards | Parallel workers |
+|---|---|---:|
+| 🎮 **CP-M2-0** | **You, starting now:** play normally on the Java GS (sessions are recorded automatically). Please also do once: create a character, delete it, enter the world, chat, log out, use *Restart* (back to character select). | |
+| W0 | WORLD-01 (o), GEN-01 (s), GEN-02 (s), DATA-01 (s), GPROTO-01 (s), DB-01 (s), CAP-01 (o) | 5 |
+| W1 | CFG-01 (h), DATA-02 (h), DATA-03 (h), DATA-04 (s), GPROTO-02 (s), GPROTO-03 (h), GPROTO-04 (h), DB-02 (h), IDF-01 (s) | 9 |
+| W2 | GS-01 (s), PERSIST-01 (s), PROXY-01 (h) | 3 |
+| W3 | GS-02 (s), ADM-01 (h) | 2 |
+| W4 | GS-03 (o), GUI-01 (h) | 1 |
+| 🎮 **CP-M2a** | **You:** the Rust GS appears in the server list **next to** the Java GS; the character screen of the Rust GS shows your existing characters (same DB). | |
+| W5 | CHAR-01 (s) | 1 |
+| 🎮 **CP-M2b** | **You:** create and delete a character on the Rust GS. | |
+| W6 | ENTER-01 (s) | 1 |
+| 🎮 **CP-M2c** | **You:** enter the world on the Rust GS: see yourself and your gear, chat, log out, log in again (saved). | |
+| W7 | E2E-01 (s) | 1 |
+| W8 | RUN-01 (o) | 0 |
+| 🎮 **CP-M2d** | **Milestone test (you):** cross-check — a character created on the Rust GS plays on the Java GS and vice versa. | |
+
+Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → ENTER-01 → E2E-01 → RUN-01.
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M2-WORLD-01](M2/M2-WORLD-01.md) | World loop skeleton | opus (orchestrator) | full | none | ready |
+| [M2-GEN-01](M2/M2-GEN-01.md) | SystemMessageId and NpcStringId generator | sonnet | spot | none | ready |
+| [M2-GEN-02](M2/M2-GEN-02.md) | Game config generator | sonnet | full | none | ready |
+| [M2-CFG-01](M2/M2-CFG-01.md) | Hand-ported game config fields needed by M2 | haiku | spot | GEN-02 | planned |
+| [M2-DATA-01](M2/M2-DATA-01.md) | l2-data crate + player templates (reference loader) | sonnet | full | none | ready |
+| [M2-DATA-02](M2/M2-DATA-02.md) | Experience table, initial equipment, initial shortcuts | haiku | spot | DATA-01 | planned |
+| [M2-DATA-03](M2/M2-DATA-03.md) | Skill trees (ids and levels only) | haiku | spot | DATA-01 | planned |
+| [M2-DATA-04](M2/M2-DATA-04.md) | Item templates (basic fields) | sonnet | full | DATA-01 | planned |
+| [M2-GPROTO-01](M2/M2-GPROTO-01.md) | Game packet pattern + handshake and character screen packets | sonnet | full | none | ready |
+| [M2-GPROTO-02](M2/M2-GPROTO-02.md) | UserInfo and ItemList | sonnet | full | GPROTO-01 | planned |
+| [M2-GPROTO-03](M2/M2-GPROTO-03.md) | Enter-world small packets and SystemMessage | haiku | spot | GPROTO-01, GEN-01 | planned |
+| [M2-GPROTO-04](M2/M2-GPROTO-04.md) | Chat, logout and restart packets | haiku | spot | GPROTO-01 | planned |
+| [M2-DB-01](M2/M2-DB-01.md) | Game repository: characters | sonnet | full | none | ready |
+| [M2-DB-02](M2/M2-DB-02.md) | Game repository: items, skills, shortcuts, subclasses | haiku | spot | DB-01 | planned |
+| [M2-IDF-01](M2/M2-IDF-01.md) | IdFactory (object ids) with a separate Rust range | sonnet | full | DB-01 | planned |
+| [M2-GS-01](M2/M2-GS-01.md) | Game server bootstrap | sonnet | full | GEN-02, DB-01, IDF-01, DATA-01, WORLD-01 | planned |
+| [M2-GS-02](M2/M2-GS-02.md) | Login server link (GS side) | sonnet | full | GS-01 | planned |
+| [M2-GS-03](M2/M2-GS-03.md) | Client session layer | opus (orchestrator) | full | GS-02, GPROTO-01, DB-02 | planned |
+| [M2-CHAR-01](M2/M2-CHAR-01.md) | Character screen logic | sonnet | full | GS-03, DATA-02, DATA-03, DATA-04, DB-02, CFG-01 | planned |
+| [M2-ENTER-01](M2/M2-ENTER-01.md) | Enter world, chat, logout, restart | sonnet | full | CHAR-01, GPROTO-02, GPROTO-03, GPROTO-04, WORLD-01 | planned |
+| [M2-PERSIST-01](M2/M2-PERSIST-01.md) | Persistence task and autosave | sonnet | full | WORLD-01, DB-02 | planned |
+| [M2-ADM-01](M2/M2-ADM-01.md) | Game server admin status + supervisor entry | haiku | spot | GS-01 | planned |
+| [M2-GUI-01](M2/M2-GUI-01.md) | Online players view | haiku | spot | ADM-01 | planned |
+| [M2-PROXY-01](M2/M2-PROXY-01.md) | Field decoding of game packets in proxy and inspector | haiku | spot | GPROTO-01, GPROTO-02, GPROTO-03, GPROTO-04 | planned |
+| [M2-CAP-01](M2/M2-CAP-01.md) | Reference captures from the owner's Java GS | opus (orchestrator) + owner | full | none | ready |
+| [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | planned |
+| [M2-RUN-01](M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | planned |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
