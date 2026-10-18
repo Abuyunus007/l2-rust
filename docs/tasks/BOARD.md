@@ -93,7 +93,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | W2 | GS-01 (s), PERSIST-01 (s), PROXY-01 (h) | 3 |
 | W3 | GS-02 (s), ADM-01 (h) | 2 |
 | W4 | GS-03 (o), GUI-01 (h) | 1 |
-| 🎮 **CP-M2a** | **You:** the Rust GS appears in the server list **next to** the Java GS; the character screen of the Rust GS shows your existing characters (same DB). | |
+| 🎮 **CP-M2a** | **You:** the Rust GS appears in the server list **next to** the Java GS; the character screen of the Rust GS shows your existing characters (same DB). | ✅ passed 2026-10-18 |
 | W5 | CHAR-01 (s) | 1 |
 | 🎮 **CP-M2b** | **You:** create and delete a character on the Rust GS. | |
 | W6 | ENTER-01 (s) | 1 |
@@ -125,7 +125,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M2-GS-01](M2/M2-GS-01.md) | Game server bootstrap | sonnet | full | GEN-02, DB-01, IDF-01, DATA-01, WORLD-01 | merged |
 | [M2-GS-02](M2/M2-GS-02.md) | Login server link (GS side) | sonnet | full | GS-01 | merged |
 | [M2-GS-03](M2/M2-GS-03.md) | Client session layer | opus (orchestrator) | full | GS-02, GPROTO-01, DB-02 | merged |
-| [M2-CHAR-01](M2/M2-CHAR-01.md) | Character screen logic | sonnet | full | GS-03, DATA-02, DATA-03, DATA-04, DB-02, CFG-01 | planned |
+| [M2-CHAR-01](M2/M2-CHAR-01.md) | Character screen logic | sonnet | full | GS-03, DATA-02, DATA-03, DATA-04, DB-02, CFG-01 | in-progress |
 | [M2-ENTER-01](M2/M2-ENTER-01.md) | Enter world, chat, logout, restart | sonnet | full | CHAR-01, GPROTO-02, GPROTO-03, GPROTO-04, WORLD-01 | planned |
 | [M2-PERSIST-01](M2/M2-PERSIST-01.md) | Persistence task and autosave | sonnet | full | WORLD-01, DB-02 | merged |
 | [M2-ADM-01](M2/M2-ADM-01.md) | Game server admin status + supervisor entry | haiku | spot | GS-01 | merged |
