@@ -87,13 +87,17 @@ fn no_fields<P>(_: &P) -> Value {
 
 fn describe_client(state: ConnectionState, raw: &[u8]) -> Option<Value> {
     let (&opcode, body) = raw.split_first()?;
-    // The dispatcher checks the state first, like Java. A packet the state does not allow has
-    // no fields. The state here is the proxy's guess, so such a packet is shown without fields.
-    match decode_client(state, opcode, &mut PacketReader::new(body)) {
-        Ok(Some(packet)) => client_fields(&packet),
-        Ok(None) => None,
-        Err(error) => Some(decode_error(&error)),
+    // The dispatcher checks the state first, like Java. The state here is only a guess, and the
+    // client's packets are not ordered against the server's answers, so the guess can lag behind.
+    // The field layout does not depend on the state: try the guessed state, then the others.
+    for candidate in std::iter::once(state).chain(ConnectionState::ALL.iter().copied()) {
+        match decode_client(candidate, opcode, &mut PacketReader::new(body)) {
+            Ok(Some(packet)) => return client_fields(&packet),
+            Ok(None) => {}
+            Err(error) => return Some(decode_error(&error)),
+        }
     }
+    None
 }
 
 fn client_fields(packet: &ClientPacket) -> Option<Value> {
@@ -516,15 +520,18 @@ mod tests {
     }
 
     #[test]
-    fn a_client_packet_outside_its_state_has_no_fields() {
-        // ProtocolVersion is only accepted in CONNECTED (Java checks the state first).
+    fn a_client_packet_is_decoded_even_when_the_state_guess_lags() {
+        // The dispatcher accepts ProtocolVersion only in CONNECTED, but the guess may say InGame
+        // when the packet arrives, so the fields are still shown.
         assert_eq!(
-            c2s(
+            c2s_fields(
                 ConnectionState::InGame,
                 &ProtocolVersion { version: 1 }.to_bytes()
             ),
-            None
+            json!({ "version": 1 })
         );
+        // An ex id that no table entry has: no fields.
+        assert_eq!(c2s(ConnectionState::InGame, &[0xD0, 0xFF, 0xFF]), None);
     }
 
     #[test]
