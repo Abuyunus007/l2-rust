@@ -9,9 +9,10 @@ import java.nio.file.Paths;
  * <pre>
  * java l2rust.vectors.Main &lt;generator|all&gt; [outDir]
  * java l2rust.vectors.Main geo [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
+ * java l2rust.vectors.Main geo-engine [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * </pre>
  *
- * Generators: {@code crypto}, {@code login-packets}, {@code geo} (needs the two geodata folders as arguments, so {@code all} does not run it).<br>
+ * Generators: {@code crypto}, {@code login-packets}, {@code geo} and {@code geo-engine} (both need the two geodata folders as arguments, so {@code all} does not run them).<br>
  * {@code outDir} defaults to {@code java-vectors/out} (relative to the working directory).
  */
 public final class Main
@@ -25,7 +26,7 @@ public final class Main
 		if (args.length < 1)
 		{
 			System.err.println("usage: Main <crypto|login-packets|all> [outDir]");
-			System.err.println("       Main geo [outDir] <geodataDownloadDir> <geodataConvertedDir>");
+			System.err.println("       Main geo|geo-engine [outDir] <geodataDownloadDir> <geodataConvertedDir>");
 			System.exit(2);
 		}
 
@@ -41,6 +42,15 @@ public final class Main
 					System.exit(2);
 				}
 				GeoVectors.generate(out, Paths.get(args[2]), Paths.get(args[3]));
+			}
+			case "geo-engine" ->
+			{
+				if (args.length < 4)
+				{
+					System.err.println("usage: Main geo-engine [outDir] <geodataDownloadDir> <geodataConvertedDir>");
+					System.exit(2);
+				}
+				GeoEngineVectors.generate(out, Paths.get(args[2]), Paths.get(args[3]));
 			}
 			case "login-packets" -> LoginPacketVectors.generate(out);
 			case "all" ->
