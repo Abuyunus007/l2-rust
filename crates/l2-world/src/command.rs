@@ -1,6 +1,7 @@
 //! What the rest of the server can ask the world to do.
 
 use std::fmt;
+use std::net::IpAddr;
 
 use crate::outbox::PacketSink;
 use crate::player::{OnlinePlayer, PlayerData};
@@ -55,6 +56,9 @@ pub enum WorldCommand {
         session: SessionId,
         player: Box<PlayerData>,
         sink: Box<dyn PacketSink>,
+        /// The client's address, from its connection. `None` when the session doesn't know it.
+        /// Only the admin status shows it.
+        ip: Option<IpAddr>,
     },
     /// An in-game packet from the client of `session`.
     Input {

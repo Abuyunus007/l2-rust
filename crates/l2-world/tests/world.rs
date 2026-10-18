@@ -93,6 +93,7 @@ fn enter(world: &mut World, log: &Log, session: u64, id: i32, account: &str, nam
         session: SessionId(session),
         player: Box::new(data(id, account, name)),
         sink: Box::new(Sink(id, log.clone())),
+        ip: None,
     });
 }
 
@@ -234,6 +235,36 @@ fn admin_lists_online_players_sorted() {
 }
 
 #[test]
+fn admin_reports_the_client_address_and_entry_time() {
+    let log = Log::default();
+    let mut w = world(&log);
+    let before = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64;
+    w.handle(WorldCommand::EnterWorld {
+        session: SessionId(1),
+        player: Box::new(data(1, "a", "Known")),
+        sink: Box::new(Sink(1, log.clone())),
+        ip: Some(std::net::IpAddr::from([127, 0, 0, 1])),
+    });
+    enter(&mut w, &log, 2, 2, "b", "Unknown");
+    let got = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&got);
+    w.handle(WorldCommand::Admin(AdminQuery::OnlinePlayers(Box::new(
+        move |list| {
+            *sink.lock().unwrap() = list;
+        },
+    ))));
+    let list = got.lock().unwrap().clone();
+    let known = list.iter().find(|p| p.name == "Known").unwrap();
+    let unknown = list.iter().find(|p| p.name == "Unknown").unwrap();
+    assert_eq!(known.ip, Some(std::net::IpAddr::from([127, 0, 0, 1])));
+    assert_eq!(unknown.ip, None);
+    assert!(known.online_since_unix_ms >= before);
+}
+
+#[test]
 fn shutdown_stores_everyone_and_stops() {
     let log = Log::default();
     let mut w = world(&log);
@@ -283,6 +314,7 @@ fn runner_ticks_handles_commands_and_stops_on_shutdown() {
         session: SessionId(1),
         player: Box::new(data(1, "a", "A")),
         sink: Box::new(Sink(1, log.clone())),
+        ip: None,
     })
     .unwrap();
     // Generous wait: under parallel test load (many rustc/test processes) 300 ms gave < 3 ticks.
@@ -311,6 +343,7 @@ fn runner_stores_players_when_all_senders_are_gone() {
         session: SessionId(1),
         player: Box::new(data(1, "a", "A")),
         sink: Box::new(Sink(1, log.clone())),
+        ip: None,
     })
     .unwrap();
     drop(tx);

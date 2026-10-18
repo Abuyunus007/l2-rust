@@ -37,6 +37,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `subscribe_logs` | `server` (null = all), `since` (last seq the client has, or null) | supervisor | `ok`, then `log_line` events: backlog after `since` first, then live |
 | `unsubscribe_logs` | | supervisor | `ok` |
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
+| `get_game_status` | `server` (GS itself: null) | GS endpoint (the supervisor does not relay it yet) | `game_status` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
 
 ### Responses
@@ -46,6 +47,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `error` | `message` |
 | `servers` | `servers`: list of ServerStatus |
 | `login_status` | `status`: LoginStatus |
+| `game_status` | `status`: GameStatus |
 
 ### Events
 | kind | Fields | Sent when |
@@ -58,6 +60,8 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 - **ServerStatus:** `name`, `state` (`stopped` / `starting` / `running` / `stopping` / `crashed`), `pid`, `uptime_secs`, `last_exit_code`
 - **LogLine:** `server`, `seq` (per server, increasing), `ts_ms`, `level` (`error` / `warn` / `info` / `debug` / `trace` / null), `target`, `message`
 - **LoginStatus:** `game_servers` (list of `id`, `name`, `authed`, `online`, `max_players`, `status`), `authed_clients`
+- **GameStatus:** `players`: list of GamePlayer, sorted by `name`. The list is the characters in the world now (not the accounts on the LS).
+- **GamePlayer:** `name`, `account`, `level`, `class_id`, `ip` (the client address; `null` when the session didn't report one), `online_since_ms` (Unix time in ms when the character entered the world)
 
 ## Settings (Rust-only files, D-36)
 
@@ -69,6 +73,8 @@ Bind = 127.0.0.1:7901
 # Shared secret; empty = endpoint refuses every connection.
 Token =
 ```
+
+**Game server:** `config/Admin.ini` with the same keys; the default bind is `127.0.0.1:7902`. The supervisor example (`crates/l2-supervisor/supervisor.example.ini`) has a commented `game` entry for it.
 
 **Supervisor:** `supervisor.ini` (Java `.ini` syntax; example: `crates/l2-supervisor/supervisor.example.ini`):
 ```ini

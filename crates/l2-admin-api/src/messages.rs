@@ -64,6 +64,10 @@ pub enum Request {
     GetLoginStatus {
         server: Option<String>,
     },
+    /// Game server endpoint: the online characters. (The supervisor does not relay it yet.)
+    GetGameStatus {
+        server: Option<String>,
+    },
     /// Server endpoint: shut down cleanly (D-38). `restart: true` = exit code 2. The supervisor
     /// sends this before it falls back to a kill.
     Shutdown {
@@ -77,6 +81,7 @@ pub enum Response {
     Ok,
     Servers { servers: Vec<ServerStatus> },
     LoginStatus { status: LoginStatus },
+    GameStatus { status: GameStatus },
     Error { message: String },
 }
 
@@ -152,6 +157,25 @@ pub struct GameServerStatus {
     pub status: String,
 }
 
+/// Game server status: the characters in the world right now, sorted by name.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameStatus {
+    pub players: Vec<GamePlayer>,
+}
+
+/// One character in the world.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GamePlayer {
+    pub name: String,
+    pub account: String,
+    pub level: i32,
+    pub class_id: i32,
+    /// The client's address. `None` when the session didn't report one.
+    pub ip: Option<String>,
+    /// Unix time in milliseconds at which the character entered the world.
+    pub online_since_ms: i64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -177,6 +201,16 @@ mod tests {
                 status: "Normal".into(),
             }],
             authed_clients: 1,
+        };
+        let game = GameStatus {
+            players: vec![GamePlayer {
+                name: "Amy".into(),
+                account: "acc1".into(),
+                level: 80,
+                class_id: 88,
+                ip: Some("127.0.0.1".into()),
+                online_since_ms: 1_700_000_000_000,
+            }],
         };
         let line = LogLine {
             server: "login".into(),
@@ -264,6 +298,20 @@ mod tests {
                     },
                 },
                 r#"{"type":"response","id":5,"response":{"kind":"login_status","status":{"game_servers":[{"id":1,"name":"Bartz","authed":true,"online":3,"max_players":2000,"status":"Normal"}],"authed_clients":1}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 7,
+                    request: Request::GetGameStatus { server: None },
+                },
+                r#"{"type":"request","id":7,"request":{"kind":"get_game_status","server":null}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 7,
+                    response: Response::GameStatus { status: game },
+                },
+                r#"{"type":"response","id":7,"response":{"kind":"game_status","status":{"players":[{"name":"Amy","account":"acc1","level":80,"class_id":88,"ip":"127.0.0.1","online_since_ms":1700000000000}]}}}"#,
             ),
             (
                 Message::Event {
