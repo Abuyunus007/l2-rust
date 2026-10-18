@@ -107,19 +107,19 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M2-WORLD-01](M2/M2-WORLD-01.md) | World loop skeleton | opus (orchestrator) | full | none | ready |
-| [M2-GEN-01](M2/M2-GEN-01.md) | SystemMessageId and NpcStringId generator | sonnet | spot | none | ready |
-| [M2-GEN-02](M2/M2-GEN-02.md) | Game config generator | sonnet | full | none | ready |
+| [M2-WORLD-01](M2/M2-WORLD-01.md) | World loop skeleton | opus (orchestrator) | full | none | merged |
+| [M2-GEN-01](M2/M2-GEN-01.md) | SystemMessageId and NpcStringId generator | sonnet | spot | none | in-progress |
+| [M2-GEN-02](M2/M2-GEN-02.md) | Game config generator | sonnet | full | none | in-progress |
 | [M2-CFG-01](M2/M2-CFG-01.md) | Hand-ported game config fields needed by M2 | haiku | spot | GEN-02 | planned |
-| [M2-DATA-01](M2/M2-DATA-01.md) | l2-data crate + player templates (reference loader) | sonnet | full | none | ready |
+| [M2-DATA-01](M2/M2-DATA-01.md) | l2-data crate + player templates (reference loader) | sonnet | full | none | in-progress |
 | [M2-DATA-02](M2/M2-DATA-02.md) | Experience table, initial equipment, initial shortcuts | haiku | spot | DATA-01 | planned |
 | [M2-DATA-03](M2/M2-DATA-03.md) | Skill trees (ids and levels only) | haiku | spot | DATA-01 | planned |
 | [M2-DATA-04](M2/M2-DATA-04.md) | Item templates (basic fields) | sonnet | full | DATA-01 | planned |
-| [M2-GPROTO-01](M2/M2-GPROTO-01.md) | Game packet pattern + handshake and character screen packets | sonnet | full | none | ready |
+| [M2-GPROTO-01](M2/M2-GPROTO-01.md) | Game packet pattern + handshake and character screen packets | sonnet | full | none | in-progress |
 | [M2-GPROTO-02](M2/M2-GPROTO-02.md) | UserInfo and ItemList | sonnet | full | GPROTO-01 | planned |
 | [M2-GPROTO-03](M2/M2-GPROTO-03.md) | Enter-world small packets and SystemMessage | haiku | spot | GPROTO-01, GEN-01 | planned |
 | [M2-GPROTO-04](M2/M2-GPROTO-04.md) | Chat, logout and restart packets | haiku | spot | GPROTO-01 | planned |
-| [M2-DB-01](M2/M2-DB-01.md) | Game repository: characters | sonnet | full | none | ready |
+| [M2-DB-01](M2/M2-DB-01.md) | Game repository: characters | sonnet | full | none | in-progress |
 | [M2-DB-02](M2/M2-DB-02.md) | Game repository: items, skills, shortcuts, subclasses | haiku | spot | DB-01 | planned |
 | [M2-IDF-01](M2/M2-IDF-01.md) | IdFactory (object ids) with a separate Rust range | sonnet | full | DB-01 | planned |
 | [M2-GS-01](M2/M2-GS-01.md) | Game server bootstrap | sonnet | full | GEN-02, DB-01, IDF-01, DATA-01, WORLD-01 | planned |
