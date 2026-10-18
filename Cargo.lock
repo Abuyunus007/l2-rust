@@ -551,6 +551,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-geo"
+version = "0.1.0"
+dependencies = [
+ "l2-testkit",
+ "serde",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "l2-net"
 version = "0.1.0"
 dependencies = [
