@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod connection;
+pub mod data_browser;
 pub mod logs;
 pub mod packets;
 pub mod players;
@@ -37,15 +38,17 @@ pub enum ViewId {
     Players,
     Logs,
     Packets,
+    Data,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 5] = [
+    pub const ALL: [ViewId; 6] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
         ViewId::Logs,
         ViewId::Packets,
+        ViewId::Data,
     ];
 
     pub fn label(self) -> &'static str {
@@ -55,6 +58,7 @@ impl ViewId {
             ViewId::Players => "Players",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
+            ViewId::Data => "Data",
         }
     }
 
@@ -62,7 +66,12 @@ impl ViewId {
     pub fn is_available(self) -> bool {
         matches!(
             self,
-            ViewId::Connection | ViewId::Servers | ViewId::Players | ViewId::Logs | ViewId::Packets
+            ViewId::Connection
+                | ViewId::Servers
+                | ViewId::Players
+                | ViewId::Logs
+                | ViewId::Packets
+                | ViewId::Data
         )
     }
 
@@ -70,7 +79,12 @@ impl ViewId {
     /// A new placeholder is a new `ViewId` whose arm names its card here.
     pub fn planned_in(self) -> &'static str {
         match self {
-            ViewId::Connection | ViewId::Servers | ViewId::Players | ViewId::Logs | ViewId::Packets => "",
+            ViewId::Connection
+            | ViewId::Servers
+            | ViewId::Players
+            | ViewId::Logs
+            | ViewId::Packets
+            | ViewId::Data => "",
         }
     }
 }
@@ -83,6 +97,7 @@ pub struct Views {
     pub players: players::PlayersView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
+    pub data: data_browser::DataBrowserView,
 }
 
 impl Views {
@@ -94,6 +109,7 @@ impl Views {
             ViewId::Players => Some(&mut self.players),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
+            ViewId::Data => Some(&mut self.data),
         }
     }
 

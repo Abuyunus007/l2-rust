@@ -95,6 +95,8 @@ pub struct Settings {
     pub auto_connect: bool,
     /// Packet inspector and in-process proxy (D-35).
     pub packets: PacketSettings,
+    /// The datapack folder (the one that contains `data/`) the data browser loads. Empty = not set.
+    pub datapack_path: String,
 }
 
 impl Default for Settings {
@@ -105,6 +107,7 @@ impl Default for Settings {
             theme: Theme::default(),
             auto_connect: true,
             packets: PacketSettings::default(),
+            datapack_path: String::new(),
         }
     }
 }
@@ -118,6 +121,7 @@ impl fmt::Debug for Settings {
             .field("theme", &self.theme)
             .field("auto_connect", &self.auto_connect)
             .field("packets", &self.packets)
+            .field("datapack_path", &self.datapack_path)
             .finish()
     }
 }
@@ -212,6 +216,7 @@ mod tests {
                 noisy: "MOVE_TO_LOCATION".into(),
                 ..PacketSettings::default()
             },
+            datapack_path: "some/datapack/game".into(),
         };
         let mut storage = MemStorage::default();
         settings.save(&mut storage);
@@ -234,6 +239,10 @@ mod tests {
         assert_eq!(settings.url, DEFAULT_URL);
         assert_eq!(settings.theme, Theme::System);
         assert_eq!(settings.packets, PacketSettings::default());
+        assert!(
+            settings.datapack_path.is_empty(),
+            "no datapack until the user sets one"
+        );
     }
 
     #[test]
