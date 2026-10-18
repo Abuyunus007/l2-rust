@@ -1,0 +1,21 @@
+[package]
+name = "l2-crypto"
+description = "L2 crypto: little-endian Blowfish, NewCrypt checksum and XOR pass"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+blowfish.workspace = true
+cipher.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+l2-testkit.workspace = true
+proptest.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
