@@ -58,8 +58,8 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-CFG-01](M1/M1-CFG-01.md) | `.ini` reader with ConfigReader semantics | sonnet | full | WS-01 | merged |
 | [M1-CFG-02](M1/M1-CFG-02.md) | Login server config structs | sonnet | full | CFG-01 | merged |
 | [M1-DB-01](M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | merged |
-| [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | in-progress |
-| [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | planned |
+| [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | merged |
+| [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | in-progress |
 | [M1-LS-01](M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | in-progress |
 | [M1-LS-02](M1/M1-LS-02.md) | Client connection, GameGuard, authentication | opus | full | LS-01, NET-02, CRYPTO-03, LPROTO-01 | planned |
 | [M1-LS-03](M1/M1-LS-03.md) | Server list, server login, session purge | sonnet | full | LS-02 | planned |
