@@ -19,10 +19,9 @@
 //   4. data              `Datapack::load`                                (M2-DATA-01)
 //   5. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
 //   6. hexid.txt         the saved login server registration
-//   7. client listener   placeholder until M2-GS-03
+//   7. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
 //   8. admin endpoint
-// Still to come, each slotting into `start_with`: login server link (M2-GS-02, Java starts
-// `LoginServerThread` last), client sessions (M2-GS-03).
+// The character screen (M2-CHAR-01) and entering the world (M2-ENTER-01) live in `client/`.
 
 pub mod admin;
 pub mod client;
@@ -218,11 +217,23 @@ impl Server {
             admin_addr: None,
             ls_link: None,
         };
-        // Listeners and links, in Java's order. Each card adds one line here:
-        // - client listener on GameserverPort (this card: placeholder, M2-GS-03: sessions)
-        // - login server link (M2-GS-02; Java starts `LoginServerThread` after the listener)
+        // The login server link first: the client sessions authenticate through it. (Java starts
+        // `LoginServerThread` after the listener; nothing can log in before the link is up
+        // either way.)
+        let link = ls_link::start(&mut server);
+        if let Some(mut notices) = server.take_ls_notices() {
+            // PlayerInGame / PlayerLogout in the order the world and the persistence task
+            // produced them; a logout only after the character is stored (D-15).
+            server.spawn(async move {
+                while let Some(notice) = notices.recv().await {
+                    match notice {
+                        LsNotice::PlayerInGame { account } => link.player_in_game(&account).await,
+                        LsNotice::PlayerLogout { account } => link.player_logout(&account).await,
+                    }
+                }
+            });
+        }
         client::start_listener(&mut server).await?;
-        ls_link::start(&mut server);
         admin::start(&mut server, &paths.config_dir).await?;
 
         info!("GameServer: Maximum number of connected players is {max_players}.");

@@ -1,0 +1,256 @@
+//! One game client connection before it enters the world: protocol check, key exchange,
+//! authentication against the login server and the character list.
+// Java: org/l2jmobius/gameserver/network/GameClient.java (state, close, onDisconnection)
+// Java: org/l2jmobius/gameserver/network/clientpackets/ProtocolVersion.java
+// Java: org/l2jmobius/gameserver/network/clientpackets/AuthLogin.java
+// Java: org/l2jmobius/gameserver/LoginServerThread.java (PlayerAuthResponse -> CharSelectionInfo)
+//
+// Design (docs/design/world-loop.md): everything before the world (this file and the character
+// screen) runs in the connection task and may use the database. Once a character is in the world,
+// its in-game packets become `WorldCommand::Input` (M2-ENTER-01).
+
+use std::net::IpAddr;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use l2_net::{Control, Encode, FrameHandler, PacketReader};
+use l2_protocol_game::client::{AuthLogin, ProtocolVersion};
+use l2_protocol_game::server::charscreen::active_slot;
+use l2_protocol_game::server::{CharSelectionInfo, KeyPacket};
+use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
+use l2_util::WorldRng;
+use l2_world::{SessionId, WorldCommand};
+use tracing::{debug, info, warn};
+
+use super::ClientContext;
+use super::charlist::CharacterInfo;
+use super::cipher::GameFrameCipher;
+use super::registry::SessionEntry;
+use crate::ls_link::SessionKey;
+
+/// One client connection. Java: `GameClient`.
+pub struct ClientSession {
+    ctx: Arc<ClientContext>,
+    session: SessionId,
+    ip: IpAddr,
+    rng: WorldRng,
+    state: ConnectionState,
+    /// Java `_protocolOk`: set by a `ProtocolVersion` the server accepts.
+    protocol_ok: bool,
+    /// Set once `ProtocolVersion` was answered; a second one is ignored.
+    key_sent: bool,
+    /// Java `_accountName`, set when `AuthLogin` was accepted by the login server.
+    account: Option<String>,
+    session_key: Option<SessionKey>,
+    /// Java `_charSlotMapping` (`setCharSelection`): the list the client was shown, by slot.
+    characters: Vec<CharacterInfo>,
+    /// Shared with the registry entry: is the account's character in the world?
+    in_world: Arc<AtomicBool>,
+}
+
+impl ClientSession {
+    pub fn new(ctx: Arc<ClientContext>, session: SessionId, ip: IpAddr) -> Self {
+        Self {
+            ctx,
+            session,
+            ip,
+            rng: WorldRng::from_entropy(),
+            state: ConnectionState::Connected,
+            protocol_ok: false,
+            key_sent: false,
+            account: None,
+            session_key: None,
+            characters: Vec::new(),
+            in_world: Arc::default(),
+        }
+    }
+
+    pub fn state(&self) -> ConnectionState {
+        self.state
+    }
+
+    pub fn account(&self) -> Option<&str> {
+        self.account.as_deref()
+    }
+
+    /// The list last sent to the client, by slot.
+    pub fn characters(&self) -> &[CharacterInfo] {
+        &self.characters
+    }
+
+    // Java: ProtocolVersion.runImpl
+    fn on_protocol_version(&mut self, packet: ProtocolVersion, ctl: &mut Control<'_>) {
+        if packet.version == -2 {
+            // "This is just a ping attempt from the new C2 client."
+            ctl.close();
+            return;
+        }
+        if self.key_sent {
+            // NOTE(java-quirk): Java would generate a new key and send another KeyPacket, which
+            // desynchronises the cipher. A client never does this; ignore it.
+            debug!("Repeated ProtocolVersion from {}", self.ip);
+            return;
+        }
+        self.key_sent = true;
+        // Java: client.enableCrypt() — 8 random bytes plus the fixed tail. With
+        // PacketEncryption off no cipher is installed and the key is only announced.
+        let mut random = [0u8; 8];
+        for b in &mut random {
+            *b = self.rng.next_i32() as u8;
+        }
+        let key = l2_crypto::game_key_from_random(random);
+        let use_encryption = self.ctx.packet_encryption;
+        if use_encryption {
+            ctl.set_cipher(Box::new(GameFrameCipher::new(key)));
+        }
+        let mut short_key = [0u8; 8];
+        short_key.copy_from_slice(&key[..8]);
+        let accepted = self.ctx.protocol_list.contains(&packet.version);
+        let reply = KeyPacket {
+            result: if accepted {
+                KeyPacket::RESULT_OK
+            } else {
+                KeyPacket::RESULT_WRONG_PROTOCOL
+            },
+            key: short_key,
+            use_encryption,
+            server_id: self.ctx.gate.server_id(),
+        };
+        if accepted {
+            self.protocol_ok = true;
+            ctl.send(reply.to_bytes());
+        } else {
+            // Java: LOGGER_ACCOUNTING.warning + client.close(KeyPacket(.., 0))
+            warn!("Wrong protocol version {} from {}.", packet.version, self.ip);
+            ctl.send_and_close(reply.to_bytes());
+        }
+    }
+
+    // Java: AuthLogin.runImpl + LoginServerThread (PlayerAuthResponse)
+    async fn on_auth_login(&mut self, packet: AuthLogin, ctl: &mut Control<'_>) {
+        if packet.login_name.is_empty() || !self.protocol_ok {
+            ctl.close();
+            return;
+        }
+        if self.account.is_some() {
+            // Java: "Avoid potential exploits." A second AuthLogin is ignored.
+            return;
+        }
+        let key = SessionKey {
+            login_ok1: packet.login_key1,
+            login_ok2: packet.login_key2,
+            play_ok1: packet.play_key1,
+            play_ok2: packet.play_key2,
+        };
+        let account = packet.login_name;
+        if !self.ctx.gate.auth_player(&account, key).await {
+            // Java: a duplicate login on this server closes right away (close(null)); a refused
+            // session key sends LoginFail(SYSTEM_ERROR_LOGIN_LATER) first. The link answers both
+            // with `false` and already sent PlayerLogout for the refusal.
+            // TODO(M2-CHAR-01): the game server's LoginFail packet has no struct yet.
+            info!("Session key refused for account '{account}' from {}.", self.ip);
+            ctl.close();
+            return;
+        }
+        // Java: setConnectionState(AUTHENTICATED), setSessionId, new CharSelectionInfo(...)
+        self.state = ConnectionState::Authenticated;
+        self.account = Some(account.clone());
+        self.session_key = Some(key);
+        self.ctx.registry.insert(
+            &account,
+            SessionEntry {
+                session: self.session,
+                handle: ctl.handle().clone(),
+                in_world: Arc::clone(&self.in_world),
+            },
+        );
+        info!("Account '{account}' authenticated from {}.", self.ip);
+        self.send_character_list(ctl, None).await;
+    }
+
+    /// Loads the account's characters and sends `CharSelectionInfo`. `active` picks the
+    /// highlighted slot; `None` lets the most recently used character win (Java `_activeId = -1`).
+    // Java: new CharSelectionInfo(account, playOkID1[, activeId]) + client.setCharSelection
+    pub async fn send_character_list(&mut self, ctl: &mut Control<'_>, active: Option<usize>) {
+        let (Some(account), Some(key)) = (self.account.clone(), self.session_key) else {
+            return;
+        };
+        let mut characters = self.ctx.characters.character_list(&account).await;
+        let last_access: Vec<i64> = characters.iter().map(|c| c.last_access).collect();
+        let selected = active.or_else(|| active_slot(&last_access));
+        for (i, c) in characters.iter_mut().enumerate() {
+            c.entry.selected = Some(i) == selected;
+        }
+        let packet = CharSelectionInfo {
+            account_name: account,
+            session_id: key.play_ok1,
+            max_characters: self.ctx.max_characters,
+            characters: characters.iter().map(|c| c.entry.clone()).collect(),
+        };
+        ctl.send(packet.to_bytes());
+        self.characters = characters;
+    }
+
+    // Java: Logout.runImpl with no player: client.disconnect()
+    fn on_logout_without_player(&mut self, ctl: &mut Control<'_>) {
+        ctl.close();
+    }
+}
+
+impl FrameHandler for ClientSession {
+    // Java: GameClient.onConnected (only logs)
+    async fn on_connect(&mut self, _ctl: &mut Control<'_>) {
+        debug!("Client connected: {}", self.ip);
+    }
+
+    // Java: GamePacketHandler.handle
+    async fn on_frame(&mut self, body: Vec<u8>, ctl: &mut Control<'_>) {
+        let mut reader = PacketReader::new(&body);
+        let Ok(opcode) = reader.u8() else {
+            return;
+        };
+        let packet = match decode_client(self.state, opcode, &mut reader) {
+            Ok(Some(packet)) => packet,
+            Ok(None) => {
+                debug!(
+                    "Ignored packet 0x{opcode:02X} in {:?} from {}",
+                    self.state, self.ip
+                );
+                return;
+            }
+            Err(e) => {
+                debug!("Bad packet 0x{opcode:02X} from {}: {e}", self.ip);
+                return;
+            }
+        };
+        match packet {
+            ClientPacket::ProtocolVersion(p) => self.on_protocol_version(p, ctl),
+            ClientPacket::AuthLogin(p) => self.on_auth_login(p, ctl).await,
+            ClientPacket::Logout(_) if !self.in_world.load(Ordering::Acquire) => {
+                self.on_logout_without_player(ctl);
+            }
+            other => {
+                // Character screen (M2-CHAR-01) and the world (M2-ENTER-01) are not here yet.
+                debug!("Packet not handled yet from {}: {other:?}", self.ip);
+            }
+        }
+    }
+
+    // Java: GameClient.onDisconnection
+    async fn on_disconnect(&mut self) {
+        debug!("Client disconnected: {}", self.ip);
+        let Some(account) = self.account.clone() else {
+            return;
+        };
+        self.ctx.registry.remove_if_session(&account, self.session);
+        if self.in_world.load(Ordering::Acquire) {
+            // The world stores the character; the persistence task tells the login server
+            // afterwards (D-15). Java sends PlayerLogout first and stores later.
+            self.ctx.world.send(WorldCommand::Disconnected {
+                session: self.session,
+            });
+        } else {
+            self.ctx.gate.player_logout(&account).await;
+        }
+    }
+}

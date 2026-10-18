@@ -1742,6 +1742,7 @@ dependencies = [
  "l2-data",
  "l2-db",
  "l2-net",
+ "l2-protocol-game",
  "l2-protocol-login",
  "l2-testkit",
  "l2-util",
