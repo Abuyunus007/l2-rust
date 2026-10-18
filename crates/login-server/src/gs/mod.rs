@@ -18,9 +18,10 @@
 // frames strictly in order, so the game server's next frame is read with the new key.
 //
 // Layout: `link` = cipher + the `GsLink` handle, `table` = operations on the registered
-// servers, `register` = the `GameServerAuth` decision and saving new servers, `subnet` = the
-// address list.
+// servers, `register` = the `GameServerAuth` decision and saving new servers, `handlers` = the
+// packets of a registered server, `subnet` = the address list.
 
+pub mod handlers;
 pub mod link;
 pub mod register;
 pub mod subnet;
@@ -42,8 +43,9 @@ use l2_protocol_login::link::{
 };
 use l2_util::time::now_millis;
 use tokio::net::{TcpListener, lookup_host};
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
+use crate::gs::handlers::AccountStore;
 use crate::gs::link::{GsLink, LinkFrameCipher};
 use crate::gs::register::{GameServerStore, save_new_server};
 use crate::state::LoginState;
@@ -60,7 +62,7 @@ pub(crate) async fn start(server: &mut Server) -> Result<(), StartupError> {
 }
 
 /// [`start`] with another place to save new game servers (tests).
-pub(crate) async fn start_with_store<S: GameServerStore>(
+pub(crate) async fn start_with_store<S: GameServerStore + AccountStore>(
     server: &mut Server,
     store: Arc<S>,
 ) -> Result<(), StartupError> {
@@ -128,7 +130,7 @@ async fn bind(login: &LoginConfig) -> Result<TcpListener, StartupError> {
 
 /// Accepts game server connections until the token is cancelled.
 // Java: FloodProtectorListener.run, GameServerListener.addClient
-async fn serve<S: GameServerStore>(
+async fn serve<S: GameServerStore + AccountStore>(
     listener: TcpListener,
     state: Arc<LoginState>,
     store: Arc<S>,
@@ -264,7 +266,7 @@ impl FloodProtector {
 
 /// The login server's side of one game server connection.
 // Java: GameServerThread + GameServerPacketHandler
-struct GsConnection<S: GameServerStore> {
+struct GsConnection<S: GameServerStore + AccountStore> {
     state: Arc<LoginState>,
     store: Arc<S>,
     flood: Arc<FloodProtector>,
@@ -277,7 +279,7 @@ struct GsConnection<S: GameServerStore> {
     peer_ip: Option<IpAddr>,
 }
 
-impl<S: GameServerStore> GsConnection<S> {
+impl<S: GameServerStore + AccountStore> GsConnection<S> {
     fn new(state: Arc<LoginState>, store: Arc<S>, flood: Arc<FloodProtector>) -> Self {
         Self {
             state,
@@ -371,14 +373,15 @@ impl<S: GameServerStore> GsConnection<S> {
     }
 
     /// Packets of a registered game server.
-    // TODO(M1-LS-05): PlayerInGame, PlayerLogout, ChangeAccessLevel, PlayerAuthRequest,
-    // ServerStatus, PlayerTracert, ReplyCharacters, RequestTempBan and ChangePassword.
-    fn handle_authed(&mut self, packet: GsPacket) {
-        debug!("game server packet not handled yet: {packet:?}");
+    async fn handle_authed(&mut self, packet: GsPacket) {
+        let (Some(link), Some(server_id)) = (&self.link, self.server_id) else {
+            return;
+        };
+        handlers::handle(&self.state, &*self.store, link, server_id, packet).await;
     }
 }
 
-impl<S: GameServerStore> FrameHandler for GsConnection<S> {
+impl<S: GameServerStore + AccountStore> FrameHandler for GsConnection<S> {
     async fn on_connect(&mut self, ctl: &mut Control<'_>) {
         let peer_ip = ctl.peer().ip();
         self.peer_ip = Some(peer_ip);
@@ -439,7 +442,7 @@ impl<S: GameServerStore> FrameHandler for GsConnection<S> {
             None => {}
             Some(GsPacket::BlowFishKey(key)) => self.handle_blowfish_key(&key.encrypted_key, ctl),
             Some(GsPacket::GameServerAuth(request)) => self.handle_auth(&request, ctl).await,
-            Some(other) => self.handle_authed(other),
+            Some(other) => self.handle_authed(other).await,
         }
     }
 
@@ -461,17 +464,26 @@ mod tests {
     use std::time::Duration;
 
     use l2_crypto::rsa::encrypt_raw;
-    use l2_net::Encode;
+    use l2_db::{ChangePasswordResult, DbError, TracertHops, hash_password};
+    use l2_net::{CancellationToken, ConnectionHandle, Encode, spawn_connection};
     use l2_protocol_login::link::{
-        BlowFishKey, KickPlayer, LsPacket, PROTOCOL_REV, PlayerInGame, RequestCharacters, decode_from_ls,
+        BlowFishKey, ChangeAccessLevel, ChangePassword, ChangePasswordResponse, KickPlayer, LsPacket,
+        PROTOCOL_REV, PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, PlayerTracert,
+        ReplyCharacters, RequestCharacters, RequestTempBan, SendMail, ServerStatus as StatusPacket,
+        decode_from_ls,
     };
+    use l2_protocol_login::server::ServerEntry;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpStream;
     use tokio::task::JoinSet;
     use tokio::time::timeout;
 
+    use super::handlers::AccountStore;
     use super::register::tests::{RecordingStore, auth};
     use super::*;
+    use crate::client::registry::AuthedClient;
+    use crate::client::server_list::{CharacterReplies, ClientView, GsView, build_server_list};
+    use crate::client::session_key::SessionKey;
     use crate::state::test_support::{default_config, state_with};
     use crate::state::{ExitReason, ServerStatus};
 
@@ -556,7 +568,7 @@ mod tests {
     struct Harness {
         server: Server,
         address: SocketAddr,
-        store: Arc<RecordingStore>,
+        store: Arc<TestStore>,
     }
 
     impl Harness {
@@ -579,7 +591,7 @@ mod tests {
                 cancel: l2_net::CancellationToken::new(),
                 client_addr: None,
             };
-            let store = Arc::new(RecordingStore::default());
+            let store = Arc::new(TestStore::default());
             start_with_store(&mut server, Arc::clone(&store)).await.unwrap();
             let address = server.state().game_servers.listen_addr().unwrap();
             Self {
@@ -621,6 +633,172 @@ mod tests {
         panic!("condition not met in time");
     }
 
+    /// Records the account queries, and answers `change_password` with a chosen result (`None`
+    /// is a database error).
+    struct TestStore {
+        recording: RecordingStore,
+        access_levels: Mutex<Vec<(String, i32)>>,
+        tracerts: Mutex<Vec<(String, TracertHops)>>,
+        temp_bans: Mutex<Vec<(String, i64)>>,
+        password_calls: Mutex<Vec<(String, String, String)>>,
+        password_result: Mutex<Option<ChangePasswordResult>>,
+    }
+
+    impl Default for TestStore {
+        fn default() -> Self {
+            Self {
+                recording: RecordingStore::default(),
+                access_levels: Mutex::default(),
+                tracerts: Mutex::default(),
+                temp_bans: Mutex::default(),
+                password_calls: Mutex::default(),
+                password_result: Mutex::new(Some(ChangePasswordResult::Changed)),
+            }
+        }
+    }
+
+    impl GameServerStore for TestStore {
+        async fn save(&self, server_id: i32, hex_id: &str, host: &str) -> Result<(), DbError> {
+            self.recording.save(server_id, hex_id, host).await
+        }
+    }
+
+    impl AccountStore for TestStore {
+        async fn set_access_level(&self, login: &str, access_level: i32) -> Result<(), DbError> {
+            self.access_levels
+                .lock()
+                .unwrap()
+                .push((login.to_owned(), access_level));
+            Ok(())
+        }
+
+        async fn set_tracert(&self, login: &str, hops: &TracertHops) -> Result<(), DbError> {
+            self.tracerts
+                .lock()
+                .unwrap()
+                .push((login.to_owned(), hops.clone()));
+            Ok(())
+        }
+
+        async fn temp_ban(&self, login: &str, ban_time_ms: i64) -> Result<(), DbError> {
+            self.temp_bans
+                .lock()
+                .unwrap()
+                .push((login.to_owned(), ban_time_ms));
+            Ok(())
+        }
+
+        async fn change_password(
+            &self,
+            login: &str,
+            current_hash: &str,
+            new_hash: &str,
+        ) -> Result<ChangePasswordResult, DbError> {
+            self.password_calls.lock().unwrap().push((
+                login.to_owned(),
+                current_hash.to_owned(),
+                new_hash.to_owned(),
+            ));
+            let result = *self.password_result.lock().unwrap();
+            result.ok_or_else(|| DbError::InvalidHexId("test failure".to_owned()))
+        }
+    }
+
+    struct IdleClient;
+
+    impl FrameHandler for IdleClient {
+        async fn on_frame(&mut self, _body: Vec<u8>, _ctl: &mut Control<'_>) {}
+    }
+
+    /// The server side of a loopback connection, standing in for a client of the login server.
+    /// The returned stream is the far end and must stay alive.
+    async fn client_connection() -> (ConnectionHandle, TcpStream) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let address = listener.local_addr().unwrap();
+        let (client, accepted) = tokio::join!(TcpStream::connect(address), listener.accept());
+        let handle = spawn_connection(
+            accepted.unwrap().0,
+            Arc::new(ConnectionConfig::default()),
+            Box::new(l2_net::NoCipher),
+            IdleClient,
+            CancellationToken::new(),
+        )
+        .unwrap();
+        (handle, client.unwrap())
+    }
+
+    const KEY: SessionKey = SessionKey {
+        login_ok1: 11,
+        login_ok2: 12,
+        play_ok1: 13,
+        play_ok2: 14,
+    };
+
+    /// Logs `account` in on the login server, as `RequestAuthLogin` does.
+    async fn login_client(state: &LoginState, account: &str) -> (Arc<CharacterReplies>, TcpStream) {
+        let (handle, far_end) = client_connection().await;
+        let characters = Arc::new(CharacterReplies::default());
+        state.clients.insert(
+            account,
+            AuthedClient {
+                session_key: KEY,
+                handle,
+                connection_id: 1,
+                connected_at_ms: 0,
+                access_level: 0,
+                last_server: 0,
+                joined_gs: Arc::default(),
+                characters: Arc::clone(&characters),
+            },
+        );
+        (characters, far_end)
+    }
+
+    fn auth_request(account: &str, key: SessionKey) -> PlayerAuthRequest {
+        PlayerAuthRequest {
+            account: account.to_owned(),
+            play_ok1: key.play_ok1,
+            play_ok2: key.play_ok2,
+            login_ok1: key.login_ok1,
+            login_ok2: key.login_ok2,
+        }
+    }
+
+    async fn player_auth_response(gs: &mut FakeGs) -> PlayerAuthResponse {
+        match gs.recv_ls().await {
+            Some(LsPacket::PlayerAuthResponse(response)) => response,
+            other => panic!("expected PlayerAuthResponse, got {other:?}"),
+        }
+    }
+
+    async fn password_response(gs: &mut FakeGs) -> ChangePasswordResponse {
+        match gs.recv_ls().await {
+            Some(LsPacket::ChangePasswordResponse(response)) => response,
+            other => panic!("expected ChangePasswordResponse, got {other:?}"),
+        }
+    }
+
+    fn change_password_packet(account: &str) -> ChangePassword {
+        ChangePassword {
+            account: account.to_owned(),
+            character_name: "Char".to_owned(),
+            old_pass: "old".to_owned(),
+            new_pass: "new".to_owned(),
+        }
+    }
+
+    /// The server list entry a client at 10.0.0.1 would get for game server 1.
+    fn list_entry(state: &LoginState) -> ServerEntry {
+        let snapshot = state.game_servers.server(1).unwrap();
+        let client = ClientView {
+            ip: "10.0.0.1".parse().unwrap(),
+            access_level: 0,
+            last_server: 0,
+        };
+        let mut list = build_server_list(&[snapshot], &client, &Default::default(), 0);
+        list.servers.pop().expect("the server is listed")
+    }
+
     #[tokio::test]
     async fn the_listener_binds_and_sends_init_ls() {
         let harness = Harness::new().await;
@@ -659,7 +837,7 @@ mod tests {
         assert_eq!(row.max_players, 100);
         assert!(row.link.is_some());
         assert!(
-            harness.store.saved.lock().unwrap().is_empty(),
+            harness.store.recording.saved.lock().unwrap().is_empty(),
             "a known server is not saved again"
         );
         harness.finish().await;
@@ -680,7 +858,7 @@ mod tests {
         );
         assert!(harness.state().game_servers.registered(2).unwrap().authed);
         assert_eq!(
-            *harness.store.saved.lock().unwrap(),
+            *harness.store.recording.saved.lock().unwrap(),
             [(2, "2ad66b".to_owned(), "play.example.org".to_owned())]
         );
         harness.finish().await;
@@ -764,8 +942,8 @@ mod tests {
                 server_name: "Sieghardt".to_owned(),
             }))
         );
-        assert_eq!(harness.store.saved.lock().unwrap().len(), 1);
-        assert_eq!(harness.store.saved.lock().unwrap()[0].0, 2);
+        assert_eq!(harness.store.recording.saved.lock().unwrap().len(), 1);
+        assert_eq!(harness.store.recording.saved.lock().unwrap()[0].0, 2);
         harness.finish().await;
     }
 
@@ -1023,10 +1201,458 @@ mod tests {
             cancel: l2_net::CancellationToken::new(),
             client_addr: None,
         };
-        let error = start_with_store(&mut second, Arc::new(RecordingStore::default()))
+        let error = start_with_store(&mut second, Arc::new(TestStore::default()))
             .await
             .unwrap_err();
         assert!(matches!(error, StartupError::Listen { .. }), "{error}");
         first.finish().await;
+    }
+
+    // ----- Packets of a registered game server (M1-LS-05) -----
+
+    #[tokio::test]
+    async fn players_in_game_leave_the_login_server_and_count_on_the_game_server() {
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let link = state.game_servers.link(1).unwrap();
+        let (_hero, _hero_end) = login_client(&state, "hero").await;
+        let (_mage, _mage_end) = login_client(&state, "mage").await;
+
+        // The empty name is skipped, like Java.
+        gs.send(&PlayerInGame {
+            accounts: vec!["hero".to_owned(), String::new()],
+        })
+        .await;
+        until(|| link.has_account("hero")).await;
+        assert_eq!(link.player_count(), 1);
+        assert!(
+            state.clients.get("hero").is_none(),
+            "no longer a login server client"
+        );
+        assert!(state.clients.get("mage").is_some());
+        assert_eq!(state.game_servers.server(1).unwrap().current_players, 1);
+        assert_eq!(state.game_servers.account_on_game_server("hero"), Some(1));
+
+        // A second login attempt would make the table kick the player on this game server.
+        assert!(state.game_servers.kick_player("hero"));
+        assert_eq!(
+            gs.recv_ls().await,
+            Some(LsPacket::KickPlayer(KickPlayer {
+                account: "hero".to_owned()
+            }))
+        );
+
+        // Logging out removes the account, and also a login server client of the same name.
+        gs.send(&PlayerLogout {
+            account: String::new(),
+        })
+        .await;
+        gs.send(&PlayerLogout {
+            account: "mage".to_owned(),
+        })
+        .await;
+        until(|| state.clients.get("mage").is_none()).await;
+        assert!(link.has_account("hero"), "the empty name removed nothing");
+        gs.send(&PlayerLogout {
+            account: "hero".to_owned(),
+        })
+        .await;
+        until(|| !link.has_account("hero")).await;
+        assert_eq!(state.game_servers.server(1).unwrap().current_players, 0);
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn player_auth_request_checks_the_session_key() {
+        // ShowLicence is on by default: the play pair and the login pair must both match.
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let (_hero, _end) = login_client(&state, "hero").await;
+
+        for wrong in [
+            SessionKey {
+                play_ok1: KEY.play_ok1 + 1,
+                ..KEY
+            },
+            SessionKey {
+                play_ok2: KEY.play_ok2 + 1,
+                ..KEY
+            },
+            SessionKey {
+                login_ok1: KEY.login_ok1 + 1,
+                ..KEY
+            },
+            SessionKey {
+                login_ok2: KEY.login_ok2 + 1,
+                ..KEY
+            },
+        ] {
+            gs.send(&auth_request("hero", wrong)).await;
+            assert_eq!(
+                player_auth_response(&mut gs).await,
+                PlayerAuthResponse {
+                    account: "hero".to_owned(),
+                    authed: false
+                }
+            );
+            assert!(state.clients.get("hero").is_some(), "a refusal keeps the client");
+        }
+
+        // Not logged in here at all.
+        gs.send(&auth_request("nobody", KEY)).await;
+        assert!(!player_auth_response(&mut gs).await.authed);
+
+        // The right keys: accepted, and the login server client is gone.
+        gs.send(&auth_request("hero", KEY)).await;
+        assert_eq!(
+            player_auth_response(&mut gs).await,
+            PlayerAuthResponse {
+                account: "hero".to_owned(),
+                authed: true
+            }
+        );
+        assert!(state.clients.get("hero").is_none());
+
+        // Each login is good for one game server login.
+        gs.send(&auth_request("hero", KEY)).await;
+        assert!(!player_auth_response(&mut gs).await.authed);
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn without_the_licence_only_the_play_pair_is_compared() {
+        let harness = Harness::with_config(|config| config.login.show_licence = false).await;
+        let state = Arc::clone(harness.state());
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let (_hero, _end) = login_client(&state, "hero").await;
+
+        gs.send(&auth_request(
+            "hero",
+            SessionKey {
+                play_ok1: KEY.play_ok1 + 1,
+                ..KEY
+            },
+        ))
+        .await;
+        assert!(!player_auth_response(&mut gs).await.authed);
+
+        // The client never saw the login pair, so whatever the game server sends for it passes.
+        gs.send(&auth_request(
+            "hero",
+            SessionKey {
+                login_ok1: 0,
+                login_ok2: 0,
+                ..KEY
+            },
+        ))
+        .await;
+        assert!(player_auth_response(&mut gs).await.authed);
+        assert!(state.clients.get("hero").is_none());
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn server_status_changes_what_the_server_list_shows() {
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let table = &state.game_servers;
+
+        // A registered server is DOWN until it reports a status; this is what a client saw
+        // before ServerStatus was handled.
+        assert_eq!(table.registered(1).unwrap().status, ServerStatus::Down);
+        assert!(!list_entry(&state).up);
+
+        // What the Java game server sends after AuthResponse (age as attribute 5, see below).
+        gs.send(&StatusPacket {
+            attributes: vec![
+                (StatusPacket::SERVER_LIST_SQUARE_BRACKET, StatusPacket::ON),
+                (
+                    StatusPacket::SERVER_TYPE,
+                    StatusPacket::SERVER_NORMAL | StatusPacket::SERVER_FREE,
+                ),
+                (StatusPacket::SERVER_LIST_STATUS, StatusPacket::STATUS_AUTO),
+                (StatusPacket::TEST_SERVER, StatusPacket::SERVER_AGE_15),
+                (StatusPacket::MAX_PLAYERS, 500),
+            ],
+        })
+        .await;
+        until(|| table.registered(1).unwrap().max_players == 500).await;
+        let row = table.registered(1).unwrap();
+        assert_eq!(row.status, ServerStatus::Auto);
+        assert!(row.showing_brackets);
+        assert_eq!(row.server_type, 0x41);
+        assert_eq!(row.age_limit, 0, "attribute 5 is not the age for this side");
+        let entry = list_entry(&state);
+        assert!(entry.up);
+        assert!(entry.brackets);
+        assert_eq!(entry.server_type, 0x41);
+        assert_eq!(entry.max_players, 500);
+
+        // Attribute 6 is the age; the list never shows it.
+        gs.send(&StatusPacket {
+            attributes: vec![
+                (StatusPacket::SERVER_AGE, StatusPacket::SERVER_AGE_18),
+                (StatusPacket::SERVER_LIST_SQUARE_BRACKET, StatusPacket::OFF),
+            ],
+        })
+        .await;
+        until(|| !table.registered(1).unwrap().showing_brackets).await;
+        assert_eq!(table.registered(1).unwrap().age_limit, 18);
+        assert!(!list_entry(&state).brackets);
+
+        // Each status value.
+        for (value, expected, up) in [
+            (StatusPacket::STATUS_GOOD, ServerStatus::Good, true),
+            (StatusPacket::STATUS_NORMAL, ServerStatus::Normal, true),
+            (StatusPacket::STATUS_FULL, ServerStatus::Full, true),
+            (StatusPacket::STATUS_DOWN, ServerStatus::Down, false),
+        ] {
+            gs.send(&StatusPacket {
+                attributes: vec![(StatusPacket::SERVER_LIST_STATUS, value)],
+            })
+            .await;
+            until(|| table.registered(1).unwrap().status == expected).await;
+            assert_eq!(list_entry(&state).up, up, "status {value}");
+        }
+
+        // GM only: the list hides the server from a plain account.
+        gs.send(&StatusPacket {
+            attributes: vec![(StatusPacket::SERVER_LIST_STATUS, StatusPacket::STATUS_GM_ONLY)],
+        })
+        .await;
+        until(|| table.registered(1).unwrap().status == ServerStatus::GmOnly).await;
+
+        // Unknown attributes and values change nothing; the last pair proves the packet was read.
+        gs.send(&StatusPacket {
+            attributes: vec![
+                (StatusPacket::SERVER_LIST_STATUS, 9),
+                (0x77, 1),
+                (StatusPacket::MAX_PLAYERS, 7),
+            ],
+        })
+        .await;
+        until(|| table.registered(1).unwrap().max_players == 7).await;
+        assert_eq!(table.registered(1).unwrap().status, ServerStatus::GmOnly);
+
+        // A login server that is DOWN or GM only wins over what the game server says.
+        state.set_status(ServerStatus::GmOnly);
+        gs.send(&StatusPacket {
+            attributes: vec![
+                (StatusPacket::SERVER_LIST_STATUS, StatusPacket::STATUS_GOOD),
+                (StatusPacket::MAX_PLAYERS, 8),
+            ],
+        })
+        .await;
+        until(|| table.registered(1).unwrap().max_players == 8).await;
+        assert_eq!(table.registered(1).unwrap().status, ServerStatus::GmOnly);
+        state.set_status(ServerStatus::Down);
+        gs.send(&StatusPacket {
+            attributes: vec![
+                (StatusPacket::SERVER_LIST_STATUS, StatusPacket::STATUS_GOOD),
+                (StatusPacket::MAX_PLAYERS, 9),
+            ],
+        })
+        .await;
+        until(|| table.registered(1).unwrap().max_players == 9).await;
+        assert_eq!(table.registered(1).unwrap().status, ServerStatus::Down);
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn every_reply_of_characters_feeds_the_waiting_server_list() {
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let (hero, _hero_end) = login_client(&state, "hero").await;
+        let (mage, _mage_end) = login_client(&state, "mage").await;
+        hero.expect([1]);
+        mage.expect([1]);
+        assert!(!hero.snapshot().is_complete());
+
+        // No characters: nothing to show, but the wait is over.
+        gs.send(&ReplyCharacters {
+            account: "hero".to_owned(),
+            chars: 0,
+            delete_times: vec![],
+        })
+        .await;
+        until(|| hero.snapshot().is_complete()).await;
+        assert!(hero.snapshot().chars().is_empty());
+        assert!(!mage.snapshot().is_complete(), "only the named account");
+
+        // Characters, two of them being deleted.
+        gs.send(&ReplyCharacters {
+            account: "mage".to_owned(),
+            chars: 3,
+            delete_times: vec![5_000, 6_000],
+        })
+        .await;
+        until(|| mage.snapshot().is_complete()).await;
+        let snapshot = mage.snapshot();
+        assert_eq!(snapshot.chars().get(&1), Some(&3));
+        assert_eq!(snapshot.delete_times().get(&1), Some(&vec![5_000, 6_000]));
+
+        // An account that is not logged in here is ignored.
+        gs.send(&ReplyCharacters {
+            account: "ghost".to_owned(),
+            chars: 1,
+            delete_times: vec![],
+        })
+        .await;
+        gs.send(&PlayerInGame {
+            accounts: vec!["sync".to_owned()],
+        })
+        .await;
+        let link = state.game_servers.link(1).unwrap();
+        until(|| link.has_account("sync")).await;
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn account_changes_reach_the_store_and_the_ban_list() {
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let store = Arc::clone(&harness.store);
+        let mut gs = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+
+        gs.send(&ChangeAccessLevel {
+            account: "hero".to_owned(),
+            level: -100,
+        })
+        .await;
+        until(|| !store.access_levels.lock().unwrap().is_empty()).await;
+        assert_eq!(*store.access_levels.lock().unwrap(), [("hero".to_owned(), -100)]);
+
+        gs.send(&PlayerTracert {
+            account: "hero".to_owned(),
+            pc_ip: "10.0.0.5".to_owned(),
+            hop1: "10.0.0.1".to_owned(),
+            hop2: "10.0.1.1".to_owned(),
+            hop3: String::new(),
+            hop4: "10.9.9.9".to_owned(),
+        })
+        .await;
+        until(|| !store.tracerts.lock().unwrap().is_empty()).await;
+        let (account, hops) = store.tracerts.lock().unwrap()[0].clone();
+        assert_eq!(account, "hero");
+        assert_eq!(hops.pc_ip.as_deref(), Some("10.0.0.5"));
+        assert_eq!(
+            hops.hops,
+            [
+                Some("10.0.0.1".to_owned()),
+                Some("10.0.1.1".to_owned()),
+                Some(String::new()),
+                Some("10.9.9.9".to_owned()),
+            ]
+        );
+
+        // The ban is stored for the account and put on the address list, with or without reason.
+        assert!(!state.bans.is_banned("10.7.7.7"));
+        gs.send(&RequestTempBan {
+            account: "hero".to_owned(),
+            ip: "10.7.7.7".to_owned(),
+            ban_time: 123_456_789,
+            reason: Some("botting".to_owned()),
+        })
+        .await;
+        gs.send(&RequestTempBan {
+            account: "mage".to_owned(),
+            ip: "10.7.7.8".to_owned(),
+            ban_time: 987_654_321,
+            reason: None,
+        })
+        .await;
+        until(|| store.temp_bans.lock().unwrap().len() == 2).await;
+        assert_eq!(
+            *store.temp_bans.lock().unwrap(),
+            [("hero".to_owned(), 123_456_789), ("mage".to_owned(), 987_654_321)]
+        );
+        until(|| state.bans.is_banned("10.7.7.8")).await;
+        assert!(state.bans.is_banned("10.7.7.7"));
+        // NOTE(java-quirk) in the handler: the "end time" is used as a duration.
+        let expiry = state.bans.expiry("10.7.7.7").unwrap();
+        assert!(expiry > l2_util::time::now_millis() + 123_000_000);
+
+        // SendMail is known and ignored: the link stays up and keeps working.
+        gs.send(&SendMail {
+            account: "hero".to_owned(),
+            mail_id: "x".to_owned(),
+            args: vec![],
+        })
+        .await;
+        gs.send(&PlayerInGame {
+            accounts: vec!["sync".to_owned()],
+        })
+        .await;
+        let link = state.game_servers.link(1).unwrap();
+        until(|| link.has_account("sync")).await;
+        harness.finish().await;
+    }
+
+    #[tokio::test]
+    async fn a_changed_password_is_answered_with_the_java_messages() {
+        let harness = Harness::new().await;
+        let state = Arc::clone(harness.state());
+        let store = Arc::clone(&harness.store);
+        let mut first = harness.authed_gs(&auth(1, &[0x12, 0x34], false)).await;
+        let mut second = harness.authed_gs(&auth(2, &[0x2A, 0xD6, 0x6B], false)).await;
+        // "hero" is online on the second game server; the first one asks for the change.
+        second
+            .send(&PlayerInGame {
+                accounts: vec!["hero".to_owned()],
+            })
+            .await;
+        until(|| state.game_servers.is_account_on_any_gs("hero")).await;
+
+        first.send(&change_password_packet("hero")).await;
+        assert_eq!(
+            password_response(&mut second).await,
+            ChangePasswordResponse {
+                character_name: "Char".to_owned(),
+                message: "You have successfully changed your password!".to_owned(),
+            }
+        );
+        assert_eq!(
+            *store.password_calls.lock().unwrap(),
+            [("hero".to_owned(), hash_password("old"), hash_password("new"))]
+        );
+
+        *store.password_result.lock().unwrap() = Some(ChangePasswordResult::CurrentMismatch);
+        first.send(&change_password_packet("hero")).await;
+        assert_eq!(
+            password_response(&mut second).await.message,
+            "The typed current password doesn't match with your current one."
+        );
+
+        *store.password_result.lock().unwrap() = Some(ChangePasswordResult::UpdateFailed);
+        first.send(&change_password_packet("hero")).await;
+        assert_eq!(
+            password_response(&mut second).await.message,
+            "The password change was unsuccessful!"
+        );
+
+        // An account that is online nowhere is ignored without touching the store.
+        first.send(&change_password_packet("nobody")).await;
+        // A database error is logged and not answered.
+        *store.password_result.lock().unwrap() = None;
+        first.send(&change_password_packet("hero")).await;
+        until(|| store.password_calls.lock().unwrap().len() == 4).await;
+        assert!(
+            store
+                .password_calls
+                .lock()
+                .unwrap()
+                .iter()
+                .all(|(account, _, _)| account == "hero")
+        );
+        state.game_servers.request_characters("probe");
+        assert!(
+            matches!(second.recv_ls().await, Some(LsPacket::RequestCharacters(_))),
+            "neither the unknown account nor the error produced an answer"
+        );
+        harness.finish().await;
     }
 }
