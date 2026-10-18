@@ -11,6 +11,7 @@
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
 pub mod command;
+pub mod ids;
 pub mod outbox;
 pub mod player;
 pub mod runner;
@@ -18,6 +19,7 @@ pub mod timer;
 pub mod world;
 
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{CreatureCore, ItemData, OnlinePlayer, Player, PlayerData, ShortcutData, SkillData};

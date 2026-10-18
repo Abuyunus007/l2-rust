@@ -5,8 +5,10 @@
 //! mirror the column types.
 
 mod characters;
+mod ids;
 
 pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     NewCharacter,
 };
+pub use ids::{IdRepository, UsedIds};
