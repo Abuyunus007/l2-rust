@@ -162,7 +162,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-DATA-05](M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | merged |
 | [M3-DATA-06](M3/M3-DATA-06.md) | Spawn data | haiku | spot | none | in-progress |
 | [M3-DATA-07](M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | merged |
-| [M3-DATA-08](M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | in-progress |
+| [M3-DATA-08](M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | merged |
 | [M3-DATA-09](M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | planned |
 | [M3-GUI-02](M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | in-progress |
 | [M3-GUI-03](M3/M3-GUI-03.md) | GUI geodata viewer | haiku | spot | GEO-01 | planned |
