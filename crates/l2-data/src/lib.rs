@@ -100,13 +100,12 @@ impl Datapack {
             // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
             // there is no config in this crate yet.
             items: Arc::new(ItemTemplates::load(root, false)),
-            // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
-            npcs: Arc::new(NpcTemplates::load(root, &NpcLoadOptions::default())),
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
             // Java's code default for `HtmCache` is true (preload); the shipped General.ini says False.
             html: Arc::new(HtmCache::load(root, false)),
             teleporters: Arc::new(TeleporterData::load(root)),
+            // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
             npcs: Arc::new(npcs),
             spawns: Arc::new(spawns),
         })
