@@ -11,11 +11,15 @@ repository.workspace = true
 l2-admin-api.workspace = true
 l2-config.workspace = true
 l2-data.workspace = true
+l2-crypto.workspace = true
 l2-db.workspace = true
 l2-net.workspace = true
+l2-protocol-login.workspace = true
 l2-util.workspace = true
 l2-world.workspace = true
 clap.workspace = true
+quick-xml.workspace = true
+rand.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
@@ -24,6 +28,7 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 l2-testkit.workspace = true
+login-server = { path = "../login-server" }
 sqlx.workspace = true
 tempfile.workspace = true
 

@@ -28,6 +28,7 @@ pub mod admin;
 pub mod client;
 pub mod hexid;
 pub mod logging;
+pub mod ls_link;
 pub mod persist;
 pub mod runtime;
 pub mod state;
@@ -119,6 +120,8 @@ pub struct Server {
     client_addr: Option<SocketAddr>,
     /// Where the admin endpoint is bound, when enabled.
     admin_addr: Option<SocketAddr>,
+    /// The link to the login server (M2-GS-02).
+    ls_link: Option<ls_link::LsLink>,
 }
 
 impl Server {
@@ -213,11 +216,13 @@ impl Server {
             cancel: CancellationToken::new(),
             client_addr: None,
             admin_addr: None,
+            ls_link: None,
         };
         // Listeners and links, in Java's order. Each card adds one line here:
         // - client listener on GameserverPort (this card: placeholder, M2-GS-03: sessions)
         // - login server link (M2-GS-02; Java starts `LoginServerThread` after the listener)
         client::start_listener(&mut server).await?;
+        ls_link::start(&mut server);
         admin::start(&mut server, &paths.config_dir).await?;
 
         info!("GameServer: Maximum number of connected players is {max_players}.");
@@ -240,6 +245,11 @@ impl Server {
     /// The bound address of the admin endpoint (`None` when `Admin.ini` does not enable it).
     pub fn admin_addr(&self) -> Option<SocketAddr> {
         self.admin_addr
+    }
+
+    /// The link to the login server (`auth_player`, `player_logout`, ...).
+    pub fn ls_link(&self) -> Option<&ls_link::LsLink> {
+        self.ls_link.as_ref()
     }
 
     /// Runs `task` until shutdown. Listener and link cards use this.
@@ -302,6 +312,10 @@ impl Server {
         //    still open, and so the login server link (a task below) is still up for the
         //    `PlayerLogout` messages M2-GS-02 sends once a character is saved.
         self.world.shutdown().await;
+        // Java: the server is reported down, then `LoginServerThread` is interrupted.
+        if let Some(link) = &self.ls_link {
+            link.shutdown().await;
+        }
         // 2. Stop listeners and connections, then abort the remaining tasks and wait for them,
         //    so nothing touches the pool later.
         self.cancel.cancel();
@@ -372,6 +386,7 @@ pub(crate) mod test_support {
             cancel: CancellationToken::new(),
             client_addr: None,
             admin_addr: None,
+            ls_link: None,
         }
     }
 
