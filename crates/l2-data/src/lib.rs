@@ -12,9 +12,11 @@ pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod item;
 pub mod loader;
+pub mod map_region;
 pub mod npc;
 pub mod player_template;
 pub mod skill_tree;
+pub mod zone;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -27,9 +29,11 @@ pub use initial_shortcuts::{
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use loader::DataError;
+pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
+pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
 /// Everything loaded from a datapack folder.
 #[derive(Debug, Clone)]
@@ -52,6 +56,10 @@ pub struct Datapack {
     pub items: Arc<ItemTemplates>,
     /// `data/stats/npcs/*.xml`.
     pub npcs: Arc<NpcTemplates>,
+    /// `data/zones/*.xml`.
+    pub zones: Arc<Zones>,
+    /// `data/mapregion/*.xml`.
+    pub map_regions: Arc<MapRegions>,
 }
 
 impl Datapack {
@@ -79,6 +87,8 @@ impl Datapack {
             items: Arc::new(ItemTemplates::load(root, false)),
             // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
             npcs: Arc::new(NpcTemplates::load(root, &NpcLoadOptions::default())),
+            zones: Arc::new(Zones::load(root)),
+            map_regions: Arc::new(MapRegions::load(root)),
         })
     }
 }
