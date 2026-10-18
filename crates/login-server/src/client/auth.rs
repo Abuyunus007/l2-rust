@@ -62,6 +62,14 @@ pub async fn retrieve_account_info(
                 return None;
             }
             if stored != hash {
+                // Not in Java: without this line a failed login leaves no trace for the admin.
+                // Never log the password itself; its length helps spot truncated input.
+                info!(
+                    "Login failed for '{login}' from {address}: wrong password ({} characters received, attempt {} of {}).",
+                    password.chars().count(),
+                    state.failed_logins(address) + 1,
+                    state.config.login.login_try_before_ban
+                );
                 state.record_failed_login(address);
                 return None;
             }
@@ -75,6 +83,7 @@ pub async fn retrieve_account_info(
 
         if !auto_create || !state.config.login.auto_create_accounts {
             // Account does not exist and auto create is off.
+            info!("Login failed for '{login}' from {address}: no such account (AutoCreateAccounts is off).");
             state.record_failed_login(address);
             return None;
         }
