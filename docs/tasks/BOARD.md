@@ -129,7 +129,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M2-ENTER-01](M2/M2-ENTER-01.md) | Enter world, chat, logout, restart | sonnet | full | CHAR-01, GPROTO-02, GPROTO-03, GPROTO-04, WORLD-01 | planned |
 | [M2-PERSIST-01](M2/M2-PERSIST-01.md) | Persistence task and autosave | sonnet | full | WORLD-01, DB-02 | merged |
 | [M2-ADM-01](M2/M2-ADM-01.md) | Game server admin status + supervisor entry | haiku | spot | GS-01 | merged |
-| [M2-GUI-01](M2/M2-GUI-01.md) | Online players view | haiku | spot | ADM-01 | in-progress |
+| [M2-GUI-01](M2/M2-GUI-01.md) | Online players view | haiku | spot | ADM-01 | merged |
 | [M2-PROXY-01](M2/M2-PROXY-01.md) | Field decoding of game packets in proxy and inspector | haiku | spot | GPROTO-01, GPROTO-02, GPROTO-03, GPROTO-04 | merged |
 | [M2-CAP-01](M2/M2-CAP-01.md) | Reference captures from the owner's Java GS | opus (orchestrator) + owner | full | none | ready |
 | [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | planned |
