@@ -80,7 +80,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | merged |
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
-## M2: Game server skeleton (log in, create a character, enter the world)
+## M2: Game server skeleton (log in, create a character, enter the world) ✅ (closed 2026-10-19)
 
 27 cards: 4 opus (orchestrator), 14 sonnet, 9 haiku. Design: [docs/design/world-loop.md](../design/world-loop.md). Side by side with the Java GS on the same DB (D-39).
 
@@ -100,7 +100,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | 🎮 **CP-M2c** | **You:** enter the world on the Rust GS: see yourself and your gear, chat, log out, log in again (saved). | ✅ passed 2026-10-18 (enter + restart by owner; chat/logout via tests + E2E-01) |
 | W7 | E2E-01 (s) | 1 |
 | W8 | RUN-01 (o) | 0 |
-| 🎮 **CP-M2d** | **Milestone test (you):** cross-check — a character created on the Rust GS plays on the Java GS and vice versa. | |
+| 🎮 **CP-M2d** | **Milestone test (you):** cross-check — a character created on the Rust GS plays on the Java GS and vice versa. | ✅ passed 2026-10-19 |
 
 Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → ENTER-01 → E2E-01 → RUN-01.
 
@@ -197,3 +197,21 @@ Findings during the tests:
 - "High traffic" on server select before LS-05 = `PlayFail(SERVER_OVERLOADED)` because `ServerStatus` wasn't handled yet.
 
 M1 follow-ups carried into M2: record a Java capture fixture (CP1); Windows CI build time (GUI/wgpu); Java GS stays outside the supervisor (D-38).
+
+### M2 (2026-10-19)
+| Check | Result |
+|---|---|
+| CP-M2a: the Rust GS (Kain, id 3, port 7778) appears next to the Java GS; its character list shows the existing characters (same DB) | ✅ passed |
+| CP-M2b: create, delete and restore a character on the Rust GS | ✅ passed |
+| CP-M2c: enter the world on the Rust GS, gear/skills/shortcuts, restart | ✅ passed |
+| CP-M2d: a Rust-created character plays on the Java GS and a Java character on the Rust GS, nothing lost | ✅ passed |
+| Java fixtures: re-encoded byte for byte (charscreen, enter world, chat; scrubbed copies in `fixtures/captures/`) | ✅ in CI |
+| CI: Windows + Linux + MariaDB (game-server DB tests and end-to-end tests included) | ✅ green |
+
+Findings during the tests:
+- An account row stored with NUL padding could log in but never enter a game server ("Session key incorrect"); the Rust LS now trims the name read from the DB.
+- CI's DB job had not run game-server's DB tests at all; added, and it found a missing test table and a wrong assertion.
+- M2-E2E-01 found a restart race (character list read before the store finished); the session now waits for the store.
+- The owner's Java GS runs without geodata (`data/geodata` is empty); the Rust GS uses `C:\l2-rust\geodata-converted` for now (decision at CP-M3a).
+
+M2 follow-ups carried into M3: `CheckHtmlEncoding` gating in the html loader; regex support for name templates (`CnameTemplate`); clan data (pledge packets) and the remaining enter-world packets (quests, friends, hennas).

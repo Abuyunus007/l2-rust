@@ -41,7 +41,7 @@ The first Rust code. Everything here works with the **Java game server**.
 3. The GUI starts and stops the Rust LS (and the Java GS), shows logs, and shows a live decoded capture of a full login + enter-world session.
 4. CI is green on Windows and Linux. All Java-vector tests pass.
 
-## M2: Game server skeleton (log in, create a character, enter the world)
+## M2: Game server skeleton (log in, create a character, enter the world) ✅
 | Content | Who |
 |---|---|
 | `codegen`: SystemMessageId, NpcStringId, client/server opcode tables | G |
