@@ -13,7 +13,7 @@ The orchestrator keeps this file current. It's the single source of truth for pr
 | M0-04 | PLAN, MODULE_MAP, CLAUDE.md, agents, task workflow | opus | merged | signed off by owner |
 | M0-05 | Public GitHub repo + CI skeleton | opus | merged | `Abuyunus007/l2-rust`; commits use the GitHub no-reply email |
 
-## M1: Foundations, Rust login server, packet inspector
+## M1: Foundations, Rust login server, packet inspector ✅ (closed 2026-10-18)
 
 34 cards: 5 opus (orchestrator), 21 sonnet, 8 haiku. M1 is mostly *first-of-its-kind* work (patterns others copy), so Sonnet carries most of it. The Haiku share rises from M2 on, once these reference patterns exist.
 
@@ -32,7 +32,7 @@ A card can start once everything it depends on is merged. Cards in the same wave
 | 🎮 **CP1** | **Client checkpoint 1 (you):** Java LS + Java GS through the proxy CLI. Real client logs in, the capture shows decoded login packets. | |
 | W6 | LS-03 (s), PROXY-02 (s) | 2 |
 | W7 | LS-05 (s), GUI-04 (s) | 2 |
-| 🎮 **CP2** | **Client checkpoint 2 (you):** **Rust LS** + Java GS + real client: login, server list, enter the game. | |
+| 🎮 **CP2** ✅ | **Client checkpoint 2 (you):** **Rust LS** + Java GS + real client: login, server list, enter the game. | |
 | W8 | LS-06 (s), ADM-03 (h) | 2 |
 | 🎮 **CP3** | **Milestone test (you):** full M1 runbook from LS-06 with the GUI, packet inspector and supervisor. | |
 
@@ -81,4 +81,19 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
 ## Milestone test results
-_None yet._
+
+### M1 (2026-10-18)
+| Check | Result |
+|---|---|
+| CP1a: real H5 client logs in through the Rust LS against the real DB (`l2jmobiush5`) | ✅ passed |
+| Java GS (`C:\L2J_Mobius_CT_2.6_HighFive`) registers with the Rust LS (hexid, host list) | ✅ passed |
+| CP2: login → server list (GS up) → server login → **enter the game on the Java GS** | ✅ passed |
+| Supervisor + admin GUI control the Rust LS, live logs, clean stop via admin `shutdown` | ✅ running |
+| CI: Windows + Linux + MariaDB integration (612 tests) | ✅ green |
+| CP1: Java LS through the proxy, capture of a Java session | ⏳ optional, not done yet (needed for the Java capture fixture in LS-06) |
+
+Findings during the tests:
+- Two old accounts had a different password than the owner remembered; the hashing was proven identical to the installed Java `LoginServer.jar` (SHA-1/Base64). Failed logins are now logged (account, reason, attempt count; never the password).
+- "High traffic" on server select before LS-05 = `PlayFail(SERVER_OVERLOADED)` because `ServerStatus` wasn't handled yet.
+
+M1 follow-ups carried into M2: record a Java capture fixture (CP1); Windows CI build time (GUI/wgpu); Java GS stays outside the supervisor (D-38).

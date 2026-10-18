@@ -13,11 +13,11 @@ A milestone's work is split into **task cards** only when the milestone starts. 
 
 ---
 
-## M0: Planning (in progress)
+## M0: Planning ✅
 Analysis, decisions, plan, module map, `CLAUDE.md`, agent definitions, task card template, GitHub repo + CI.
 **Done when:** you sign off on these docs.
 
-## M1: Foundations, Rust login server, packet inspector
+## M1: Foundations, Rust login server, packet inspector ✅
 The first Rust code. Everything here works with the **Java game server**.
 
 | Track | Content | Who |
