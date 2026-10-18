@@ -48,6 +48,8 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 - Byte-level code (crypto, packets, geodata, formulas) must be checked against Java vectors in `java-vectors/out/` through `l2-testkit`.
 - Every packet struct gets a round-trip test (decode(encode(x)) == x) plus a vector/capture test when one exists.
 - Don't weaken, skip or delete a failing test to make a card pass. Report it instead.
+- Integration test files (`tests/*.rs`) start with `#![allow(clippy::unwrap_used, clippy::expect_used)]`. Clippy's test exemption only covers `#[test]` functions, not helpers.
+- Tests that need the reference folders (`C:\l2-rust\l2jmobius`, geodata) or a database skip with a printed message when they're missing. CI has neither, except the MariaDB service on Linux.
 
 ## Working on a task card (worker agents)
 1. You work in your own git worktree/branch. Touch only the files your card lists (plus new files in the paths it names).
