@@ -110,33 +110,38 @@ impl HtmCache {
         self.files.is_empty()
     }
 
-    /// Java `parseDir`: every entry of `dir`, recursively. Unreadable folders are skipped.
+    /// Java `parseDir` + `loadFile`: every html file below `dir`, recursively. Unreadable folders
+    /// are skipped. The files are read on a few threads (the slow part is the file system, one
+    /// open per file, ~21,000 files); the results go into the cache in the walk order, so the
+    /// warnings and the content do not depend on the thread count.
     fn parse_dir(&mut self, root: &Path, dir: &Path, check_encoding: bool) {
-        let Ok(entries) = std::fs::read_dir(dir) else {
-            return;
-        };
-        let mut paths: Vec<PathBuf> = entries.flatten().map(|entry| entry.path()).collect();
-        // Java lists files in the OS order; sorting keeps the warnings and the count the same on
-        // every platform.
-        paths.sort();
-        for path in paths {
-            if path.is_dir() {
-                self.parse_dir(root, &path, check_encoding);
-            } else {
-                self.load_file(root, &path, check_encoding);
-            }
+        let mut files = Vec::new();
+        collect_html_files(dir, &mut files);
+        let threads = std::thread::available_parallelism()
+            .map_or(4, |n| n.get())
+            .clamp(1, 8);
+        let chunk = files.len().div_ceil(threads).max(1);
+        let loaded: Vec<Vec<(PathBuf, std::io::Result<Vec<u8>>)>> = std::thread::scope(|scope| {
+            let handles: Vec<_> = files
+                .chunks(chunk)
+                .map(|part| scope.spawn(move || part.iter().map(|f| (f.clone(), std::fs::read(f))).collect()))
+                .collect();
+            handles
+                .into_iter()
+                .map(|h| h.join().unwrap_or_default())
+                .collect()
+        });
+        for (file, raw) in loaded.into_iter().flatten() {
+            self.load_file(root, &file, raw, check_encoding);
         }
     }
 
-    /// Java `loadFile`: reads one html file into the cache. Problems are logged and skipped.
-    fn load_file(&mut self, root: &Path, file: &Path, check_encoding: bool) {
-        if !file.is_file() || !is_html_name(file) {
-            return;
-        }
+    /// Java `loadFile`: one html file into the cache. Problems are logged and skipped.
+    fn load_file(&mut self, root: &Path, file: &Path, raw: std::io::Result<Vec<u8>>, check_encoding: bool) {
         let Some(key) = datapack_key(root, file) else {
             return;
         };
-        let raw = match std::fs::read(file) {
+        let raw = match raw {
             Ok(raw) => raw,
             Err(error) => {
                 warn!("Problem with htm file {key}: {error}");
@@ -149,6 +154,31 @@ impl HtmCache {
         }
         self.raw_bytes += raw.len() as u64;
         self.files.insert(key, text);
+    }
+}
+
+/// The html files below `dir` in Java's walk order made stable: sorted per folder, folders
+/// descended where they appear.
+fn collect_html_files(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut entries: Vec<(PathBuf, bool)> = entries
+        .flatten()
+        .map(|entry| {
+            let is_dir = entry.file_type().is_ok_and(|t| t.is_dir());
+            (entry.path(), is_dir)
+        })
+        .collect();
+    // Java lists files in the OS order; sorting keeps the warnings and the count the same on
+    // every platform.
+    entries.sort();
+    for (path, is_dir) in entries {
+        if is_dir {
+            collect_html_files(&path, out);
+        } else if is_html_name(&path) {
+            out.push(path);
+        }
     }
 }
 
