@@ -14,6 +14,7 @@ pub mod chat;
 pub mod enterworld;
 pub mod entry;
 pub mod handshake;
+pub mod interaction;
 pub mod items;
 pub mod system_message;
 pub mod userinfo;
@@ -30,10 +31,14 @@ pub use enterworld::{
     ValidateLocation,
 };
 pub use entry::{
-    ActionFailed, ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,
-    ExRotation, ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
+    ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
+    ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use handshake::{KeyPacket, LoginFail};
+pub use interaction::{
+    ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
+    TargetSelected, TargetUnselected,
+};
 pub use items::{
     InventoryBlock, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item, read_item_updates,
     write_inventory_block, write_item, write_item_elemental_and_enchant, write_item_updates,

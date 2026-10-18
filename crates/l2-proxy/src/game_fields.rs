@@ -124,6 +124,10 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             fields
         }
         ClientPacket::Say2(p) => object!(p => text, chat_type, target),
+        ClientPacket::Action(p) => object!(p => object_id, origin_x, origin_y, origin_z, action_id),
+        ClientPacket::RequestTargetCanceld(p) => object!(p => unselect),
+        ClientPacket::RequestBypassToServer(p) => object!(p => command),
+        ClientPacket::RequestLinkHtml(p) => object!(p => link),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }

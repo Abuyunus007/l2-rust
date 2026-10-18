@@ -1,5 +1,6 @@
 //! More server packets of the enter-world sequence: the macro list, the quest item list, the
-//! rotation, the contact list, `ActionFailed`, `ExBrExtraUserInfo` and the two Nevit packets.
+//! rotation, the contact list, `ExBrExtraUserInfo` and the two Nevit packets (`ActionFailed`
+//! lives in [`super::interaction`]).
 //!
 //! Same rules as [`super::enterworld`]: values only, the caller prepares them.
 
@@ -217,27 +218,6 @@ impl Decode for ExShowContactList {
             contacts.push(r.string());
         }
         Ok(Self { contacts })
-    }
-}
-
-// Java: gameserver/network/serverpackets/ActionFailed.java
-/// "Nothing happened": unlocks the client after a refused action (`ACTION_FAIL`). No fields.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ActionFailed;
-
-impl ActionFailed {
-    pub const OPCODE: ServerOpcode = ServerOpcode::ActionFail;
-}
-
-impl Encode for ActionFailed {
-    fn encode(&self, w: &mut PacketWriter) {
-        write_opcode(w, Self::OPCODE);
-    }
-}
-
-impl Decode for ActionFailed {
-    fn decode(_r: &mut PacketReader) -> Result<Self, PacketError> {
-        Ok(Self)
     }
 }
 

@@ -8,9 +8,9 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout,
-    NewCharacter, ProtocolVersion, RequestGotoLobby, RequestKeyMapping, RequestNetPing, RequestRestart,
-    RequestSkillCoolTime, Say2,
+    Action, AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld,
+    Logout, NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestKeyMapping,
+    RequestLinkHtml, RequestNetPing, RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -32,6 +32,10 @@ pub enum ClientPacket {
     RequestRestart(RequestRestart),
     RequestNetPing(RequestNetPing),
     RequestSkillCoolTime(RequestSkillCoolTime),
+    Action(Action),
+    RequestTargetCanceld(RequestTargetCanceld),
+    RequestBypassToServer(RequestBypassToServer),
+    RequestLinkHtml(RequestLinkHtml),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -75,6 +79,14 @@ pub fn decode_client(
         RequestSkillCoolTime::OPCODE => {
             ClientPacket::RequestSkillCoolTime(RequestSkillCoolTime::decode(reader)?)
         }
+        Action::OPCODE => ClientPacket::Action(Action::decode(reader)?),
+        RequestTargetCanceld::OPCODE => {
+            ClientPacket::RequestTargetCanceld(RequestTargetCanceld::decode(reader)?)
+        }
+        RequestBypassToServer::OPCODE => {
+            ClientPacket::RequestBypassToServer(RequestBypassToServer::decode(reader)?)
+        }
+        RequestLinkHtml::OPCODE => ClientPacket::RequestLinkHtml(RequestLinkHtml::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
