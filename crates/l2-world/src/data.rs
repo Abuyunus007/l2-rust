@@ -155,6 +155,17 @@ impl Default for DerivedStats {
     }
 }
 
+/// Java `BaseStat`: the stats whose value picks a multiplier out of `statBonus.xml`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum BaseStat {
+    Str,
+    Int,
+    Dex,
+    Wit,
+    Con,
+    Men,
+}
+
 /// Everything static the world reads. Implemented over the datapack by the game server.
 pub trait StaticData: Send + Sync {
     /// The template of an item, `None` if the item id is unknown.
@@ -173,6 +184,13 @@ pub trait StaticData: Send + Sync {
     /// The access level with this id. An id the file does not list gives Java's default
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
+
+    /// Java `BaseStat.calcBonus`: the `statBonus.xml` multiplier of `stat` at `value`. NPC speeds,
+    /// attack speeds and hit points are their template values times these. The default is
+    /// "nothing loaded": no bonus (1.0), as Java does for a null actor.
+    fn base_stat_bonus(&self, _stat: BaseStat, _value: i32) -> f64 {
+        1.0
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -194,6 +212,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
+    }
+
+    fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
+        (**self).base_stat_bonus(stat, value)
     }
 }
 

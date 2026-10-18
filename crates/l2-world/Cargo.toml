@@ -12,6 +12,7 @@ repository.workspace = true
 l2-geo.workspace = true
 l2-util.workspace = true
 l2-net.workspace = true
+l2-data.workspace = true
 l2-protocol-game.workspace = true
 tracing.workspace = true
 
@@ -19,6 +20,7 @@ tracing.workspace = true
 [dev-dependencies]
 serde_json.workspace = true
 hex.workspace = true
+tempfile.workspace = true
 
 [lints]
 workspace = true

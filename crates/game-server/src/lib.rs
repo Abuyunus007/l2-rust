@@ -36,6 +36,7 @@ pub mod geo;
 pub mod hexid;
 pub mod logging;
 pub mod ls_link;
+pub mod npcs;
 pub mod persist;
 pub mod runtime;
 pub mod state;
@@ -224,6 +225,12 @@ impl Server {
             let store = DbStore::new(pool.clone());
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
             let geo_engine = Arc::clone(&geo_engine);
+            let npc_start = (
+                Arc::clone(&datapack),
+                Arc::clone(&ids),
+                config.clone(),
+                paths.config_dir.clone(),
+            );
             WorldRuntime::start_configured(
                 WorldRng::from_entropy(),
                 autosave,
@@ -231,6 +238,9 @@ impl Server {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
                     world.set_geo(geo_engine);
+                    // Java: GameServer, after the managers: SpawnData, then the day/night start.
+                    let (datapack, ids, config, config_dir) = npc_start;
+                    npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

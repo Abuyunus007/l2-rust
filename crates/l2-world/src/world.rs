@@ -50,6 +50,8 @@ pub struct World {
     /// The region grid (Java `World._worldRegions`).
     pub(crate) regions: RegionGrid,
     pub(crate) npcs: HashMap<ObjectId, Npc>,
+    /// Spawn lists, NPC templates and settings (M3-NPC-01).
+    pub(crate) npc_world: crate::npc::NpcWorld,
     pub(crate) doors: HashMap<ObjectId, Door>,
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
@@ -75,6 +77,7 @@ impl World {
             objects: HashMap::new(),
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
+            npc_world: crate::npc::NpcWorld::default(),
             doors: HashMap::new(),
             geo: None,
         }

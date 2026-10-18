@@ -17,7 +17,8 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData, WorldSettings,
+    AccessLevelStatic, BaseStat, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData,
+    WorldSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -374,6 +375,21 @@ impl StaticData for DatapackData {
 
     fn skill_is_passive(&self, skill_id: i32) -> bool {
         self.passive.contains(skill_id)
+    }
+
+    // Java: BaseStat.calcBonus (STRbonus[value] ...). A value outside the table is a Java
+    // ArrayIndexOutOfBounds; 0 here, as `BaseStatBonus::at` does everywhere else.
+    fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
+        let b = &self.bonus;
+        let table = match stat {
+            BaseStat::Str => &b.str,
+            BaseStat::Int => &b.int,
+            BaseStat::Dex => &b.dex,
+            BaseStat::Wit => &b.wit,
+            BaseStat::Con => &b.con,
+            BaseStat::Men => &b.men,
+        };
+        BaseStatBonus::at(table, value)
     }
 
     fn exp_percent(&self, exp: i64, level: i32) -> f64 {

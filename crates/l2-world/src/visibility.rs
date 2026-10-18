@@ -10,7 +10,7 @@
 // - AI hooks (`describeStateToPlayer`, `setIntentionActive`, `notifyActionForgetObject`,
 //   `switchAI`): M4.
 // - Doors and fences in the region door lists: M3-DOOR-01.
-// - What NPCs and doors send when they come into view (`sendInfo`): M3-NPC-01, M3-DOOR-01.
+// - What doors send when they come into view (`sendInfo`): M3-DOOR-01 (NPCs: `npc.rs`).
 
 use l2_net::Encode;
 use l2_protocol_game::server::DeleteObject;
@@ -363,8 +363,7 @@ impl World {
         };
         match kind {
             ObjectKind::Player => self.send_player_info(subject, viewer),
-            // M3-NPC-01: NpcInfo (Npc.sendInfo).
-            ObjectKind::Npc => {}
+            ObjectKind::Npc => self.send_npc_info(subject, viewer),
             // M3-DOOR-01: StaticObjectInfo + DoorStatusUpdate (Door.sendInfo).
             ObjectKind::Door => {}
         }
