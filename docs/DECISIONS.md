@@ -52,6 +52,7 @@ Background for each decision: `docs/analysis/`.
 | D-35 | The **proxy runs inside the GUI process** (library `l2-proxy`) on the PC where the game client runs. A standalone `l2-proxy` CLI also exists. The supervisor doesn't relay captures. |
 | D-36 | **Rust-only settings live in new files** (`config/Admin.ini` per server, `supervisor.ini`). The Java `.ini` files are never extended. |
 | D-37 | **License:** MIT, like L2JMobius. The original `Copyright (c) 2013 L2jMobius` notice is kept in `LICENSE`. |
+| D-38 | **Graceful stop:** Rust servers stop through an admin `shutdown` request (the supervisor sends it, kill only after `StopTimeoutSecs`). The Java GS is **not** managed by the supervisor on Windows (no safe Ctrl event without `unsafe`, and a kill loses player saves); it's temporary until the Rust GS replaces it. |
 
 ## Process and quality
 

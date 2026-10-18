@@ -28,7 +28,7 @@ A card can start once everything it depends on is merged. Cards in the same wave
 | W3 | CRYPTO-02 (s), CRYPTO-03 (s), CRYPTO-04 (h), CRYPTO-05 (h), DB-01 (s), LPROTO-01 (s), GEO-01 (s), GUI-02 (h), GUI-03 (h) | 9 |
 | W4 | LS-01 (s), LPROTO-02 (h), GEO-02 (h) | 3 |
 | W5 | LS-02 (o), LS-04 (s), PROXY-01 (s) | 2 |
-| 🎮 **CP1a** | **First client test (you):** Rust LS against your local DB (`l2jmobiush5`). Real client logs in, the password is checked, server list shown (no GS yet). Right after LS-02. | |
+| 🎮 **CP1a** ✅ | **First client test (you):** Rust LS against your local DB (`l2jmobiush5`). Real client logs in, the password is checked, server list shown (no GS yet). Right after LS-02. | |
 | 🎮 **CP1** | **Client checkpoint 1 (you):** Java LS + Java GS through the proxy CLI. Real client logs in, the capture shows decoded login packets. | |
 | W6 | LS-03 (s), PROXY-02 (s) | 2 |
 | W7 | LS-05 (s), GUI-04 (s) | 2 |
@@ -77,7 +77,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-GUI-03](M1/M1-GUI-03.md) | Logs view | haiku | spot | GUI-01, ADM-02 | merged |
 | [M1-GUI-04](M1/M1-GUI-04.md) | Packet inspector | sonnet | full | GUI-01, PROXY-02 | planned |
 | [M1-GEO-01](M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | merged |
-| M1-ADM-04 | Graceful stop on Windows (admin `Shutdown` request and/or console Ctrl event; needs a decision on `unsafe`/`windows-sys`) | opus | full | ADM-02 | planned (follow-up from ADM-02, not needed for CP1) |
+| M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | planned |
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
 ## Milestone test results
