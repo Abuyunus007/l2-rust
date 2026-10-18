@@ -59,7 +59,7 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 ## Working on a task card (worker agents)
 1. You work in your own git worktree/branch. Touch only the files your card lists (plus new files in the paths it names).
 2. Port behaviour faithfully from the Java files named in the card. If the Java code looks buggy, port it as is and add a `// NOTE(java-quirk):` comment. Don't fix it silently.
-3. Run fmt, clippy and test. Commit on your branch with a message `<card-id>: <summary>`.
+3. Run fmt, clippy and test with `CARGO_INCREMENTAL=0` set (the owner's disk is shared by several worktrees; the incremental cache costs gigabytes). Commit on your branch with a message `<card-id>: <summary>`.
 4. Final report (your last message): what you did, files changed, test results (copy the summary lines), anything you couldn't do, and every guess you made.
 5. **When stuck** (unclear Java behaviour, the card contradicts DECISIONS, a needed change is outside your files, tests you can't make pass): stop and report. Don't improvise architecture.
 

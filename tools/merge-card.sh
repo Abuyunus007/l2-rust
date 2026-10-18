@@ -30,6 +30,8 @@ echo "tests: $summary"
 case "$summary" in *" 0 failed") ;; *) echo "TESTS FAILED"; exit 1 ;; esac
 
 git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null
+# The incremental cache of the main checkout only grows (it reached 62 GB): drop it after each merge.
+rm -rf target/debug/incremental
 git branch -q -D "$branch" 2>/dev/null
 
 sed -i "s/| \(\[$card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1merged |/" docs/tasks/BOARD.md
