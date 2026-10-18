@@ -30,3 +30,30 @@ What the replay needs from the recording:
    address the game server announced: `127.0.0.1` or a `192.168.x.x` address is fine, a public
    address is not. If it is public, do not commit; ask the orchestrator for a scrub step.
 3. The file must be LF text (the repo converts line endings).
+
+## `java-gs-*.jsonl` (recorded from the owner's Java GS, scrubbed)
+
+Game-channel sessions with the **Java** game server, recorded by the proxy in front of the LS
+(D-39) and made safe with the scrubber (M2-CAP-01):
+
+| File | Contents |
+|---|---|
+| `java-gs-session.jsonl` | character select, enter world, moving around, chat, restart, logout |
+| `java-gs-charscreen.jsonl` | character screen: NewCharacter, two CharacterCreate, select, delete (marked), restore |
+
+Used by the capture tests of `l2-protocol-game` (`tests/charscreen.rs`, `chat.rs`,
+`enterworld_big.rs`, `enterworld_small.rs`): every packet that has a struct is decoded and
+re-encoded and must be byte-identical. They read `L2_CAPTURE_DIR` when it is set (your own,
+unscrubbed recordings in `run/captures/`), else this folder.
+
+### Making a new one
+
+```
+cargo run --release -p l2-proxy --bin scrub-capture -- run/captures/capture-<ms>.jsonl fixtures/captures/java-gs-<topic>.jsonl --secret <account> --secret <clan name>
+```
+
+The scrubber (`crates/l2-proxy/src/scrub.rs`) keeps only game packets; replaces account names,
+character names, titles and chat lines (found automatically, plus every `--secret`) with
+placeholders of the same length in the fields and in the raw bytes; zeroes session ids and the
+game key; and refuses to write anything if a secret is still found afterwards. Pass every
+account name of the session and any clan name with `--secret`. Then still read the file once.

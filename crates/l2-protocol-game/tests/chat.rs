@@ -277,10 +277,11 @@ fn check_server(opcode: u8, raw: &[u8]) -> Option<bool> {
 /// account and character data.
 #[test]
 fn chat_packets_match_recorded_java_sessions() {
-    let Some(dir) = std::env::var_os("L2_CAPTURE_DIR").map(PathBuf::from) else {
-        eprintln!("L2_CAPTURE_DIR is not set: skipping the capture comparison");
-        return;
-    };
+    // The owner's own recordings (L2_CAPTURE_DIR), else the scrubbed fixtures in the repo
+    // (M2-CAP-01), so CI compares against real Java packets too.
+    let dir = std::env::var_os("L2_CAPTURE_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/captures"));
     let mut compared = 0;
     let mut mismatches = Vec::new();
     for entry in fs::read_dir(&dir).unwrap() {
