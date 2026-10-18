@@ -15,6 +15,7 @@ pub mod loader;
 pub mod npc;
 pub mod player_template;
 pub mod skill_tree;
+pub mod spawn;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -30,6 +31,7 @@ pub use loader::DataError;
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
+pub use spawn::{SpawnData, SpawnLoadOptions};
 
 /// Everything loaded from a datapack folder.
 #[derive(Debug, Clone)]
@@ -52,6 +54,8 @@ pub struct Datapack {
     pub items: Arc<ItemTemplates>,
     /// `data/stats/npcs/*.xml`.
     pub npcs: Arc<NpcTemplates>,
+    /// `data/spawns/**/*.xml`.
+    pub spawns: Arc<SpawnData>,
 }
 
 impl Datapack {
@@ -66,6 +70,9 @@ impl Datapack {
         // constant is only the fallback for a missing or broken experience file.
         let experience = ExperienceTable::load(root);
         let max_level = experience.max_level().unwrap_or(DEFAULT_MAX_PLAYER_LEVEL);
+        // Java loads NpcData before SpawnData (SpawnData checks every spawn against it).
+        let npcs = NpcTemplates::load(root, &NpcLoadOptions::default());
+        let spawns = SpawnData::load(root, &npcs, &SpawnLoadOptions::default());
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -78,7 +85,8 @@ impl Datapack {
             // there is no config in this crate yet.
             items: Arc::new(ItemTemplates::load(root, false)),
             // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
-            npcs: Arc::new(NpcTemplates::load(root, &NpcLoadOptions::default())),
+            npcs: Arc::new(npcs),
+            spawns: Arc::new(spawns),
         })
     }
 }
