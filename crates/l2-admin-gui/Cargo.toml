@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 l2-admin-api = { path = "../l2-admin-api" }
+l2-data.workspace = true # the data browser reads the datapack (NPC and item templates)
 l2-proxy = { path = "../l2-proxy" } # the packet inspector runs the proxy in-process (D-35)
 eframe = { workspace = true, features = ["persistence"] } # persistence = settings in eframe storage
 egui.workspace = true
