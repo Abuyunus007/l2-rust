@@ -178,7 +178,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-GEO-03](M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | merged |
 | [M3-CFG-02](M3/M3-CFG-02.md) | Datapack options from the game config | haiku | spot | DATA-05, DATA-06, DATA-08 | merged |
 | [M3-PROXY-02](M3/M3-PROXY-02.md) | Proxy field decoders for the M2/M3 server packets | haiku | spot | GPROTO-05, GPROTO-06, M2-ENTER-01 | merged |
-| [M3-FIX-01](M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | in-progress |
+| [M3-FIX-01](M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | merged |
 | [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | planned |
 
 ## Milestone test results
