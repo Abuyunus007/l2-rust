@@ -8,6 +8,7 @@
 
 pub mod class_list;
 pub mod experience;
+pub mod html;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod item;
@@ -16,6 +17,7 @@ pub mod map_region;
 pub mod npc;
 pub mod player_template;
 pub mod skill_tree;
+pub mod teleporter;
 pub mod zone;
 
 use std::path::{Path, PathBuf};
@@ -23,6 +25,7 @@ use std::sync::Arc;
 
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
 pub use experience::ExperienceTable;
+pub use html::HtmCache;
 pub use initial_equipment::{InitialEquipment, InitialEquipments};
 pub use initial_shortcuts::{
     InitialShortcut, InitialShortcuts, MacroCommand, MacroPreset, MacroType, ShortcutType,
@@ -33,6 +36,7 @@ pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
+pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
 /// Everything loaded from a datapack folder.
@@ -60,6 +64,10 @@ pub struct Datapack {
     pub zones: Arc<Zones>,
     /// `data/mapregion/*.xml`.
     pub map_regions: Arc<MapRegions>,
+    /// Every `.htm` / `.html` file below the root (Java `HtmCache`, always preloaded).
+    pub html: Arc<HtmCache>,
+    /// `data/teleporters/**`: gatekeeper lists by NPC id.
+    pub teleporters: Arc<TeleporterData>,
 }
 
 impl Datapack {
@@ -89,6 +97,9 @@ impl Datapack {
             npcs: Arc::new(NpcTemplates::load(root, &NpcLoadOptions::default())),
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
+            // Java's code default for `HtmCache` is true (preload); the shipped General.ini says False.
+            html: Arc::new(HtmCache::load(root, false)),
+            teleporters: Arc::new(TeleporterData::load(root)),
         })
     }
 }
