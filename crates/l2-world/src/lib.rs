@@ -15,6 +15,7 @@ pub mod ids;
 pub mod outbox;
 pub mod player;
 pub mod runner;
+pub mod snapshot;
 pub mod timer;
 pub mod world;
 
@@ -23,5 +24,6 @@ pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RU
 pub use l2_util::{ObjectId, WorldRng};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{CreatureCore, ItemData, OnlinePlayer, Player, PlayerData, ShortcutData, SkillData};
+pub use snapshot::snapshot_for_store;
 pub use timer::{TimerId, TimerKind, TimerWheel};
-pub use world::{TICK, World};
+pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World};

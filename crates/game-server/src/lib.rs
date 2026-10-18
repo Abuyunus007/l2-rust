@@ -17,17 +17,18 @@
 //   2. database          `l2_db::connect`
 //   3. IdManager         `IdFactory` from the Rust range (D-39)           (M2-IDF-01)
 //   4. data              `Datapack::load`                                (M2-DATA-01)
-//   5. world             the world thread + outbox seam                  (M2-WORLD-01)
+//   5. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
 //   6. hexid.txt         the saved login server registration
 //   7. client listener   placeholder until M2-GS-03
 //   8. admin endpoint
 // Still to come, each slotting into `start_with`: login server link (M2-GS-02, Java starts
-// `LoginServerThread` last), the persistence task (M2-PERSIST-01), client sessions (M2-GS-03).
+// `LoginServerThread` last), client sessions (M2-GS-03).
 
 pub mod admin;
 pub mod client;
 pub mod hexid;
 pub mod logging;
+pub mod persist;
 pub mod runtime;
 pub mod state;
 
@@ -45,7 +46,8 @@ use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{info, warn};
 
-use crate::runtime::{WorldRuntime, spawn_stub_consumer};
+use crate::persist::{DbStore, LsNotice, RetryPolicy};
+use crate::runtime::WorldRuntime;
 use crate::state::{ExitReason, GameState, ShutdownHandle};
 
 /// File names inside the config directory.
@@ -104,8 +106,11 @@ pub enum StartupError {
 pub struct Server {
     state: Arc<GameState>,
     shutdown_requests: mpsc::UnboundedReceiver<ExitReason>,
-    /// The world thread and the consumer of its outbox (persistence, later).
+    /// The world thread and the consumer of its outbox (the persistence task).
     world: WorldRuntime,
+    /// What the login server link sends next: `PlayerInGame`, and `PlayerLogout` once the
+    /// character is stored. Taken once by the link (M2-GS-02).
+    ls_notices: Option<mpsc::UnboundedReceiver<LsNotice>>,
     /// Background and listener tasks. All are stopped on shutdown.
     tasks: JoinSet<()>,
     /// Cancelled on shutdown; listeners and their connections watch it (child tokens).
@@ -174,9 +179,17 @@ impl Server {
         // Java: ServerConfig.loadHexid (at the end of ServerConfig.load)
         let hexid = hexid::load(&paths.config_dir);
 
-        // Java: World.init. The outbox consumer is a stub until M2-PERSIST-01 replaces it.
-        let world = WorldRuntime::start(WorldRng::from_entropy(), spawn_stub_consumer)
-            .map_err(StartupError::WorldThread)?;
+        // Java: World.init, PlayerAutoSaveTaskManager. The outbox consumer is the persistence
+        // task; it stores in order and reports logouts (after the store) on `ls_notices`.
+        let autosave = persist::autosave_interval(&paths.config_dir);
+        let (notices_tx, ls_notices) = mpsc::unbounded_channel();
+        let world = {
+            let store = DbStore::new(pool.clone());
+            WorldRuntime::start_with_autosave(WorldRng::from_entropy(), autosave, move |outbox| {
+                persist::spawn(store, outbox, notices_tx, RetryPolicy::default())
+            })
+            .map_err(StartupError::WorldThread)?
+        };
 
         let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let max_players = config.server.maximum_online_users;
@@ -195,6 +208,7 @@ impl Server {
             state,
             shutdown_requests,
             world,
+            ls_notices: Some(ls_notices),
             tasks: JoinSet::new(),
             cancel: CancellationToken::new(),
             client_addr: None,
@@ -209,6 +223,13 @@ impl Server {
         info!("GameServer: Maximum number of connected players is {max_players}.");
         info!("Game server is ready.");
         Ok(server)
+    }
+
+    /// The login server notices in the order the world produced them. A `PlayerLogout` comes
+    /// only after the character's final store (requirement of M2-PERSIST-01). `None` after the
+    /// first call: the login server link takes it.
+    pub fn take_ls_notices(&mut self) -> Option<mpsc::UnboundedReceiver<LsNotice>> {
+        self.ls_notices.take()
     }
 
     /// The bound address of the client listener.
@@ -329,7 +350,7 @@ pub(crate) mod test_support {
 
     /// A server with a running world, no listeners and a pool that is never used.
     pub(crate) fn idle_server() -> Server {
-        let world = WorldRuntime::start(WorldRng::from_seed(1), spawn_stub_consumer).unwrap();
+        let world = WorldRuntime::start(WorldRng::from_seed(1), crate::runtime::spawn_stub_consumer).unwrap();
         let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let handle: WorldHandle = world.handle();
         let state = Arc::new(GameState {
@@ -346,6 +367,7 @@ pub(crate) mod test_support {
             state,
             shutdown_requests,
             world,
+            ls_notices: None,
             tasks: JoinSet::new(),
             cancel: CancellationToken::new(),
             client_addr: None,

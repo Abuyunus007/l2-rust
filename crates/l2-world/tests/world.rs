@@ -218,6 +218,85 @@ fn autosave_timer_stores_without_removing() {
 }
 
 #[test]
+fn entering_arms_an_autosave_that_repeats_until_the_player_leaves() {
+    let log = Log::default();
+    let mut w = world(&log);
+    w.set_autosave_interval(Duration::from_millis(200)); // 4 ticks
+    enter(&mut w, &log, 1, 4, "acc", "Hero");
+    log.take();
+    for _ in 0..3 {
+        w.tick();
+    }
+    assert!(log.take().is_empty());
+    w.tick();
+    let out = log.take();
+    assert!(
+        matches!(&out[..], [Out::Persist(PersistCommand::StorePlayer(p))] if p.name == "Hero"),
+        "{out:?}"
+    );
+    // Due again one interval later, and only once.
+    for _ in 0..3 {
+        w.tick();
+    }
+    assert!(log.take().is_empty());
+    w.tick();
+    assert_eq!(log.take().len(), 1);
+    // Leaving cancels it: only the final store and PlayerLeft follow, then silence.
+    w.handle(WorldCommand::Disconnected {
+        session: SessionId(1),
+    });
+    let out = log.take();
+    assert!(matches!(
+        &out[..],
+        [
+            Out::Persist(PersistCommand::StorePlayer(_)),
+            Out::Persist(PersistCommand::PlayerLeft { .. }),
+            Out::Left(..)
+        ]
+    ));
+    for _ in 0..20 {
+        w.tick();
+    }
+    assert!(log.take().is_empty());
+}
+
+#[test]
+fn autosave_snapshot_counts_the_session_in_the_online_time() {
+    let log = Log::default();
+    let mut w = world(&log);
+    w.set_autosave_interval(Duration::from_secs(60)); // 1200 ticks
+    enter(&mut w, &log, 1, 4, "acc", "Hero");
+    log.take();
+    for _ in 0..1200 {
+        w.tick();
+    }
+    let out = log.take();
+    let [Out::Persist(PersistCommand::StorePlayer(p))] = &out[..] else {
+        panic!("{out:?}");
+    };
+    // 10 s were stored when the player entered, plus the 60 s of this session.
+    assert_eq!(p.online_time, 70);
+}
+
+#[test]
+fn a_character_that_enters_twice_keeps_a_single_autosave() {
+    let log = Log::default();
+    let mut w = world(&log);
+    w.set_autosave_interval(Duration::from_millis(100)); // 2 ticks
+    enter(&mut w, &log, 1, 4, "acc", "Hero");
+    enter(&mut w, &log, 2, 4, "acc", "Hero"); // replaces the first instance
+    log.take();
+    w.tick();
+    w.tick();
+    let stores = log
+        .take()
+        .into_iter()
+        .filter(|o| matches!(o, Out::Persist(PersistCommand::StorePlayer(_))))
+        .count();
+    assert_eq!(stores, 1);
+}
+
+#[test]
 fn admin_lists_online_players_sorted() {
     let log = Log::default();
     let mut w = world(&log);

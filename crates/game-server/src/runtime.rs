@@ -5,10 +5,10 @@
 // The world only knows the `Outbox` trait. Here it is implemented with a channel
 // ([`ChannelOutbox`]): the world thread pushes [`OutboxMessage`]s, a tokio task consumes them.
 // Which task that is, is decided by the caller of [`WorldRuntime::start`]:
-// - now: [`spawn_stub_consumer`] (logs and drops; nothing can enter the world yet),
-// - M2-PERSIST-01 (crates/game-server/src/persist.rs): the persistence task, which stores
-//   `StorePlayer` in order per character and answers `PlayerLeft` with `PlayerLogout` to the
-//   login server (M2-GS-02),
+// - tests: [`spawn_stub_consumer`] (logs and drops),
+// - the server: the persistence task (crates/game-server/src/persist.rs), which stores
+//   `StorePlayer` in order and answers `PlayerLeft` with a `PlayerLogout` notice for the login
+//   server link (M2-GS-02) once the data is safe,
 // - M2-GS-03 / M2-ENTER-01: client sessions send `WorldCommand`s through [`WorldHandle`] and
 //   hand the world a `PacketSink` backed by their `ConnectionHandle`.
 
@@ -16,7 +16,7 @@ use std::sync::mpsc;
 use std::thread::JoinHandle;
 
 use l2_util::WorldRng;
-use l2_world::{LsEvent, Outbox, PersistCommand, World, WorldCommand};
+use l2_world::{DEFAULT_AUTOSAVE_INTERVAL, LsEvent, Outbox, PersistCommand, World, WorldCommand};
 use tokio::sync::{mpsc::UnboundedReceiver, mpsc::UnboundedSender, oneshot};
 use tokio::task;
 use tracing::{debug, error, info, warn};
@@ -58,16 +58,15 @@ impl Outbox for ChannelOutbox {
     }
 }
 
-/// Placeholder consumer until M2-PERSIST-01 and M2-GS-02 land: nothing can enter the world
-/// yet, so there is nothing to store. If a store arrives anyway it is logged loudly, never
-/// silently dropped.
+/// Consumer for tests that do not need a database. If a store arrives anyway it is logged
+/// loudly, never silently dropped.
 pub fn spawn_stub_consumer(mut messages: UnboundedReceiver<OutboxMessage>) -> task::JoinHandle<()> {
     task::spawn(async move {
         while let Some(message) = messages.recv().await {
             match message {
                 OutboxMessage::Persist(PersistCommand::StorePlayer(player)) => {
                     warn!(
-                        "Persistence is not wired yet (M2-PERSIST-01): the state of {} is NOT stored.",
+                        "The stub consumer does not persist: the state of {} is NOT stored.",
                         player.name
                     );
                 }
@@ -94,9 +93,23 @@ impl WorldRuntime {
     where
         F: FnOnce(UnboundedReceiver<OutboxMessage>) -> task::JoinHandle<()>,
     {
+        Self::start_with_autosave(rng, DEFAULT_AUTOSAVE_INTERVAL, spawn_consumer)
+    }
+
+    /// Like [`start`](Self::start), with the time between two autosaves of a player
+    /// (Java `CharacterDataStoreInterval`, see [`crate::persist::autosave_interval`]).
+    pub fn start_with_autosave<F>(
+        rng: WorldRng,
+        autosave: std::time::Duration,
+        spawn_consumer: F,
+    ) -> std::io::Result<Self>
+    where
+        F: FnOnce(UnboundedReceiver<OutboxMessage>) -> task::JoinHandle<()>,
+    {
         let (outbox_tx, outbox_rx) = tokio::sync::mpsc::unbounded_channel();
         let consumer = spawn_consumer(outbox_rx);
-        let world = World::new(rng, Box::new(ChannelOutbox::new(outbox_tx)));
+        let mut world = World::new(rng, Box::new(ChannelOutbox::new(outbox_tx)));
+        world.set_autosave_interval(autosave);
         let (commands_tx, commands_rx) = mpsc::channel();
         let thread = l2_world::runner::spawn(world, commands_rx)?;
         Ok(Self {
