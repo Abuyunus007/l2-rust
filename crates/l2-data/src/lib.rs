@@ -17,6 +17,7 @@ pub mod map_region;
 pub mod npc;
 pub mod player_template;
 pub mod skill_tree;
+pub mod spawn;
 pub mod teleporter;
 pub mod zone;
 
@@ -36,6 +37,7 @@ pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
+pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
@@ -68,6 +70,8 @@ pub struct Datapack {
     pub html: Arc<HtmCache>,
     /// `data/teleporters/**`: gatekeeper lists by NPC id.
     pub teleporters: Arc<TeleporterData>,
+    /// `data/spawns/**/*.xml`.
+    pub spawns: Arc<SpawnData>,
 }
 
 impl Datapack {
@@ -82,6 +86,9 @@ impl Datapack {
         // constant is only the fallback for a missing or broken experience file.
         let experience = ExperienceTable::load(root);
         let max_level = experience.max_level().unwrap_or(DEFAULT_MAX_PLAYER_LEVEL);
+        // Java loads NpcData before SpawnData (SpawnData checks every spawn against it).
+        let npcs = NpcTemplates::load(root, &NpcLoadOptions::default());
+        let spawns = SpawnData::load(root, &npcs, &SpawnLoadOptions::default());
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -100,6 +107,8 @@ impl Datapack {
             // Java's code default for `HtmCache` is true (preload); the shipped General.ini says False.
             html: Arc::new(HtmCache::load(root, false)),
             teleporters: Arc::new(TeleporterData::load(root)),
+            npcs: Arc::new(npcs),
+            spawns: Arc::new(spawns),
         })
     }
 }

@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+l2-util.workspace = true
 quick-xml.workspace = true
 serde.workspace = true
 thiserror.workspace = true

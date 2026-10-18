@@ -2399,6 +2399,7 @@ dependencies = [
 name = "l2-data"
 version = "0.1.0"
 dependencies = [
+ "l2-util",
  "quick-xml 0.42.0",
  "serde",
  "tempfile",
