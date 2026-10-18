@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  rust:
+    name: Rust (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # The Cargo workspace is created in M1. Until then this job only checks out the repo.
+      - name: Detect workspace
+        id: ws
+        shell: bash
+        run: |
+          if [ -f Cargo.toml ]; then echo "present=true" >> "$GITHUB_OUTPUT"; else echo "present=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Install Rust
+        if: steps.ws.outputs.present == 'true'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache
+        if: steps.ws.outputs.present == 'true'
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        if: steps.ws.outputs.present == 'true'
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        if: steps.ws.outputs.present == 'true'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Test
+        if: steps.ws.outputs.present == 'true'
+        run: cargo test --workspace
+
+      - name: No workspace yet
+        if: steps.ws.outputs.present != 'true'
+        shell: bash
+        run: echo "No Cargo.toml yet (created in M1); nothing to build."
+
+  hygiene:
+    name: Repo hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reference material must not be committed
+        run: |
+          bad=$(git ls-files | grep -E '^(l2jmobius|geodata-download|geodata-converted)/|\.l2j$|\.local\.ini$|(^|/)\.env$' || true)
+          if [ -n "$bad" ]; then echo "Forbidden files committed:"; echo "$bad"; exit 1; fi
+      - name: Line endings are LF
+        run: |
+          crlf=$(git ls-files --eol | awk '$1 ~ /crlf/ {print $NF}' | grep -vE '\.(bat|cmd|ps1)$' || true)
+          if [ -n "$crlf" ]; then echo "Files with CRLF in the index:"; echo "$crlf"; exit 1; fi
