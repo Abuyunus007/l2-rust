@@ -15,7 +15,7 @@ fi
 for f in $(git diff --name-only --diff-filter=U); do
   case "$f" in
     Cargo.lock) git checkout --ours Cargo.lock ;;
-    */lib.rs|*/mod.rs|*/error.rs) python -I tools/union-conflict.py "$f" ;;   # parallel cards adding mod/use lines: keep both
+    Cargo.toml|*/lib.rs|*/mod.rs|*/error.rs) python -I tools/union-conflict.py "$f" ;;   # parallel cards adding mod/use lines: keep both
     *) echo "CONFLICT in: $f (resolve by hand, then rerun this script)"; exit 1 ;;
   esac
   git add "$f"
