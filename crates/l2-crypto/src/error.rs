@@ -20,6 +20,7 @@ pub enum CryptoError {
     NotWordAligned { len: usize },
 
     /// A packet failed its checksum after decryption (corrupt data or the wrong key).
+    /// The trailing checksum does not match the data (the caller closes the connection).
     #[error("packet checksum mismatch")]
     ChecksumMismatch,
 }

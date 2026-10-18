@@ -19,6 +19,7 @@ pub mod game;
 pub mod login;
 pub mod rsa;
 pub mod scramble;
+pub mod link;
 pub mod xor_pass;
 
 mod error;
@@ -28,3 +29,4 @@ pub use blowfish::L2Blowfish;
 pub use error::CryptoError;
 pub use game::{GameCipher, game_key_from_random};
 pub use login::{LoginCipher, LoginClientCipher};
+pub use link::LinkCipher;
