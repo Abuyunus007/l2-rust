@@ -60,17 +60,17 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-CFG-02](M1/M1-CFG-02.md) | Login server config structs | sonnet | full | CFG-01 | merged |
 | [M1-DB-01](M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | merged |
 | [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | merged |
-| [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | in-progress |
+| [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | merged |
 | [M1-LS-01](M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | merged |
 | [M1-LS-02](M1/M1-LS-02.md) | Client connection, GameGuard, authentication | opus | full | LS-01, NET-02, CRYPTO-03, LPROTO-01 | in-progress |
 | [M1-LS-03](M1/M1-LS-03.md) | Server list, server login, session purge | sonnet | full | LS-02 | planned |
-| [M1-LS-04](M1/M1-LS-04.md) | GS link: listener and registration | sonnet | full | LS-01, CRYPTO-05, LPROTO-02, NET-02 | planned |
+| [M1-LS-04](M1/M1-LS-04.md) | GS link: listener and registration | sonnet | full | LS-01, CRYPTO-05, LPROTO-02, NET-02 | in-progress |
 | [M1-LS-05](M1/M1-LS-05.md) | GS link: authed packet handlers | sonnet | full | LS-04, LS-03 | planned |
 | [M1-LS-06](M1/M1-LS-06.md) | End-to-end test kit + Java compatibility runbook | sonnet | full | LS-05, PROXY-01 | planned |
 | [M1-ADM-01](M1/M1-ADM-01.md) | Admin API protocol | opus | full | WS-01 | merged (`ea43164`) |
 | [M1-ADM-02](M1/M1-ADM-02.md) | Supervisor | sonnet | full | ADM-01 | merged |
 | [M1-ADM-03](M1/M1-ADM-03.md) | Login server admin endpoint | haiku | spot | ADM-01, LS-05 | planned |
-| [M1-PROXY-01](M1/M1-PROXY-01.md) | Login MITM proxy and capture format | sonnet | full | LPROTO-02, CRYPTO-02, CRYPTO-03, NET-02 | planned |
+| [M1-PROXY-01](M1/M1-PROXY-01.md) | Login MITM proxy and capture format | sonnet | full | LPROTO-02, CRYPTO-02, CRYPTO-03, NET-02 | in-progress |
 | [M1-PROXY-02](M1/M1-PROXY-02.md) | Game traffic pass-through with opcode names | sonnet | full | PROXY-01, GEN-01, CRYPTO-04 | planned |
 | [M1-GUI-01](M1/M1-GUI-01.md) | Admin GUI shell | sonnet | full | ADM-01 | merged |
 | [M1-GUI-02](M1/M1-GUI-02.md) | Servers view | haiku | spot | GUI-01, ADM-02 | in-progress |
