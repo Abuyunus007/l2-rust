@@ -16,6 +16,10 @@ pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     IdRepository, NewCharacter, UsedIds,
 };
+pub use game::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
+pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
+pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
+pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,
     hash_password, hex_to_string, string_to_hex,
