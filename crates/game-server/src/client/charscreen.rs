@@ -684,8 +684,20 @@ impl ClientSession {
             ctl.send_and_close(ServerClose.to_bytes());
             return;
         }
-        let screen = Arc::clone(&self.ctx);
-        let screen = &screen.charscreen;
+        let ctx = Arc::clone(&self.ctx);
+        let screen = &ctx.charscreen;
+        let Some(account) = self.account.clone() else {
+            return;
+        };
+        // Java: `client.load(slot)`. A character that cannot be loaded is not selected; Java
+        // logs it and sends nothing.
+        let player = match ctx.loader.load_player(&account, info.entry.object_id).await {
+            Ok(player) => player,
+            Err(e) => {
+                super::enter::log_load_failure(info.entry.object_id, &e);
+                return;
+            }
+        };
         let now = now_millis();
         // Player.load ... cha.setOnlineStatus(true, true)
         if let Err(e) = screen.store.set_online(info.entry.object_id, 1, now).await {
@@ -740,12 +752,18 @@ impl ClientSession {
             }
             .to_bytes(),
         );
+        // Java: `Player.load` queued `sendSkillList()`, which reaches the client right after
+        // `CharSelected` (the Java capture shows it there).
+        ctl.send(l2_world::enter::skill_list(&player, &*ctx.data).to_bytes());
+        // The world takes it over at `EnterWorld`.
+        self.pending = Some(Box::new(player));
         debug!("Character {} selected by {}.", entry.object_id, self.ip);
     }
 
     /// The client left after `CharacterSelect` but before the world took the character over:
     /// Java stores and removes the player, which clears the online flag.
     pub(super) async fn release_selected_character(&mut self) {
+        self.pending = None;
         let Some(char_id) = self.selected.take() else {
             return;
         };

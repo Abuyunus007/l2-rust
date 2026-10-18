@@ -13,7 +13,7 @@ use std::sync::mpsc::Sender;
 use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_db::Pool;
-use l2_world::{IdFactory, WorldCommand};
+use l2_world::{IdFactory, StaticData, WorldCommand, WorldSettings};
 use tokio::sync::mpsc;
 
 use crate::Paths;
@@ -97,6 +97,10 @@ pub struct GameState {
     /// Object ids from the Rust range (D-39).
     pub ids: Arc<IdFactory>,
     pub datapack: Arc<Datapack>,
+    /// The datapack as the packets need it: shared by the world and the client sessions.
+    pub static_data: Arc<dyn StaticData>,
+    /// The configuration values the world and the sessions read for entering the world and chat.
+    pub world_settings: WorldSettings,
     pub world: WorldHandle,
     /// The registration found in `config/hexid.txt`, if any (M2-GS-02 uses it for `AuthRequest`
     /// and writes the file after a new registration with [`crate::hexid::save`]).

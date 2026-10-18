@@ -20,6 +20,18 @@ pub enum ClientInput {
     Logout,
     /// Java `RequestRestart`: store the character and go back to the character screen.
     Restart,
+    /// Java `Say2`. `chat_type` is the number the client sent; the world checks it.
+    Say {
+        chat_type: i32,
+        text: String,
+        target: Option<String>,
+    },
+    /// Java `RequestNetPing`.
+    NetPing,
+    /// Java `RequestSkillCoolTime`.
+    SkillCoolTime,
+    /// Java `RequestKeyMapping` (answered with the stored UI key mapping).
+    KeyMapping,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

@@ -10,6 +10,7 @@
 pub mod charlist;
 pub mod charscreen;
 pub mod cipher;
+pub mod enter;
 pub mod newchar;
 pub mod registry;
 pub mod session;
@@ -21,12 +22,13 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use l2_config::{IniFile, NetworkConfig};
 use l2_net::{ConnectionConfig, FrameCipher, NoCipher};
-use l2_world::SessionId;
+use l2_world::{SessionId, StaticData, WorldSettings};
 use tokio::net::TcpListener;
 use tracing::info;
 
 use self::charlist::{CharacterSource, DbCharacterList};
 use self::charscreen::{CharScreen, DbCharScreen};
+use self::enter::{DbPlayerLoader, PlayerLoader};
 use self::registry::{KickOutcome, SessionRegistry};
 use self::session::ClientSession;
 use crate::ls_link::{LsLink, SessionKey};
@@ -86,6 +88,12 @@ pub struct ClientContext {
     pub max_characters: i32,
     /// Creating, deleting, restoring and selecting characters.
     pub charscreen: CharScreen,
+    /// Loads the full character at `CharacterSelect` (Java `Player.load`).
+    pub loader: Arc<dyn PlayerLoader>,
+    /// The datapack as the packets need it (the same view the world has).
+    pub data: Arc<dyn StaticData>,
+    /// The configuration values the enter-world code reads.
+    pub settings: WorldSettings,
 }
 
 impl ClientContext {
@@ -168,6 +176,9 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
             Arc::clone(&state.ids),
             character_select_interval(&state.paths.config_dir),
         ),
+        loader: Arc::new(DbPlayerLoader::new(state.pool.clone())),
+        data: Arc::clone(&state.static_data),
+        settings: state.world_settings.clone(),
     });
 
     // Java: ConnectionConfig (Network.ini). A missing file gives Java's defaults.

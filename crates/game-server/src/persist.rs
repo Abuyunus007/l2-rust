@@ -143,7 +143,11 @@ async fn run<S: PlayerStore>(
                     }
                 }
             }
-            OutboxMessage::Persist(PersistCommand::PlayerLeft { account, object_id }) => {
+            OutboxMessage::Persist(PersistCommand::PlayerLeft {
+                account,
+                object_id,
+                logout,
+            }) => {
                 if unsaved.remove(&object_id) {
                     // Java logs a failed store and carries on with the logout, so does this.
                     error!("Character {} left with data that is NOT stored.", object_id.0);
@@ -151,7 +155,10 @@ async fn run<S: PlayerStore>(
                 if let Err(e) = store.player_offline(object_id).await {
                     error!("Could not mark character {} offline: {e}", object_id.0);
                 }
-                let _ = notices.send(LsNotice::PlayerLogout { account });
+                // A restart keeps the connection: the account is still on this server.
+                if logout {
+                    let _ = notices.send(LsNotice::PlayerLogout { account });
+                }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
@@ -665,6 +672,7 @@ mod tests {
             items: vec![],
             skills: vec![],
             shortcuts: vec![],
+            profile: Default::default(),
         }
     }
 
@@ -676,6 +684,7 @@ mod tests {
         OutboxMessage::Persist(PersistCommand::PlayerLeft {
             account: format!("acc{id}"),
             object_id: ObjectId(id),
+            logout: true,
         })
     }
 

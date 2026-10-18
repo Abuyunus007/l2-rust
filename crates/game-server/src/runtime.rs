@@ -106,10 +106,26 @@ impl WorldRuntime {
     where
         F: FnOnce(UnboundedReceiver<OutboxMessage>) -> task::JoinHandle<()>,
     {
+        Self::start_configured(rng, autosave, |_| {}, spawn_consumer)
+    }
+
+    /// Like [`start_with_autosave`](Self::start_with_autosave), and `setup` can configure the
+    /// world (the datapack view, the settings) before its thread starts.
+    pub fn start_configured<S, F>(
+        rng: WorldRng,
+        autosave: std::time::Duration,
+        setup: S,
+        spawn_consumer: F,
+    ) -> std::io::Result<Self>
+    where
+        S: FnOnce(&mut World),
+        F: FnOnce(UnboundedReceiver<OutboxMessage>) -> task::JoinHandle<()>,
+    {
         let (outbox_tx, outbox_rx) = tokio::sync::mpsc::unbounded_channel();
         let consumer = spawn_consumer(outbox_rx);
         let mut world = World::new(rng, Box::new(ChannelOutbox::new(outbox_tx)));
         world.set_autosave_interval(autosave);
+        setup(&mut world);
         let (commands_tx, commands_rx) = mpsc::channel();
         let thread = l2_world::runner::spawn(world, commands_rx)?;
         Ok(Self {
@@ -207,6 +223,7 @@ mod tests {
             items: vec![],
             skills: vec![],
             shortcuts: vec![],
+            profile: Default::default(),
         }
     }
 
@@ -290,6 +307,7 @@ mod tests {
         outbox.persist(PersistCommand::PlayerLeft {
             account: "a".into(),
             object_id: ObjectId(1),
+            logout: true,
         });
         assert!(matches!(rx.try_recv(), Ok(OutboxMessage::Ls(_))));
         assert!(matches!(rx.try_recv(), Ok(OutboxMessage::Persist(_))));

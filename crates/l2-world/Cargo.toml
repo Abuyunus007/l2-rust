@@ -11,6 +11,7 @@ repository.workspace = true
 [dependencies]
 l2-util.workspace = true
 l2-net.workspace = true
+l2-protocol-game.workspace = true
 tracing.workspace = true
 
 [lints]
