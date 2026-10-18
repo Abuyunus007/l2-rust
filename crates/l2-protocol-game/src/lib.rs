@@ -25,6 +25,7 @@ pub mod server;
 
 pub use dispatch::{ClientPacket, decode_client};
 pub use generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode, ServerOpcode};
+pub use generated::{npc_string_id::NpcStringId, system_message_id::SystemMessageId};
 
 #[cfg(test)]
 mod tests {

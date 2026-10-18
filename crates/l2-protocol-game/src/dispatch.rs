@@ -8,8 +8,8 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter,
-    ProtocolVersion, RequestGotoLobby,
+    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, NewCharacter,
+    ProtocolVersion, RequestGotoLobby, RequestKeyMapping,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -24,6 +24,8 @@ pub enum ClientPacket {
     CharacterRestore(CharacterRestore),
     CharacterSelect(CharacterSelect),
     RequestGotoLobby(RequestGotoLobby),
+    EnterWorld(EnterWorld),
+    RequestKeyMapping(RequestKeyMapping),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -59,6 +61,7 @@ pub fn decode_client(
         CharacterDelete::OPCODE => ClientPacket::CharacterDelete(CharacterDelete::decode(reader)?),
         CharacterRestore::OPCODE => ClientPacket::CharacterRestore(CharacterRestore::decode(reader)?),
         CharacterSelect::OPCODE => ClientPacket::CharacterSelect(CharacterSelect::decode(reader)?),
+        EnterWorld::OPCODE => ClientPacket::EnterWorld(EnterWorld::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -79,6 +82,7 @@ fn decode_ex_client(
     // pick the packet. Whoever ports the bookmark packets handles it here.
     let packet = match ex {
         RequestGotoLobby::EX_OPCODE => ClientPacket::RequestGotoLobby(RequestGotoLobby::decode(reader)?),
+        RequestKeyMapping::EX_OPCODE => ClientPacket::RequestKeyMapping(RequestKeyMapping::decode(reader)?),
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))
@@ -91,7 +95,8 @@ mod tests {
     use l2_net::Encode;
 
     /// A body long enough for every ported packet (all fields zero; strings are empty).
-    const ZEROS: [u8; 64] = [0; 64];
+    /// EnterWorld needs 104 bytes.
+    const ZEROS: [u8; 128] = [0; 128];
     /// The id byte of ex packets.
     const EX_PACKET: u8 = 0xD0;
 
@@ -146,6 +151,7 @@ mod tests {
             (0x12, Authenticated),
             (0x13, Authenticated),
             (0x7B, Authenticated),
+            (0x11, Entering),
         ];
         for (opcode, home) in ported {
             for &state in ConnectionState::ALL {
@@ -162,6 +168,14 @@ mod tests {
             assert_eq!(
                 decode(state, EX_PACKET, &[0x36, 0x00]).unwrap().is_some(),
                 state == Authenticated,
+                "{state:?}"
+            );
+        }
+        // RequestKeyMapping is ex id 0x0021, ENTERING and IN_GAME.
+        for &state in ConnectionState::ALL {
+            assert_eq!(
+                decode(state, EX_PACKET, &[0x21, 0x00]).unwrap().is_some(),
+                matches!(state, Entering | InGame),
                 "{state:?}"
             );
         }
@@ -212,10 +226,6 @@ mod tests {
             decode(InGame, 0x00, &[]).unwrap(),
             Some(ClientPacket::Unported(ClientOpcode::Logout))
         );
-        assert_eq!(
-            decode(Entering, 0x11, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::EnterWorld))
-        );
         // RequestManorList (ex id 0x0001): the id is consumed, the body is left alone.
         let mut r = PacketReader::new(&[0x01, 0x00, 0xAA]);
         let result = decode_client(InGame, 0xD0, &mut r).unwrap();
@@ -242,6 +252,7 @@ mod tests {
             (Authenticated, 0x0D, 3),
             (Authenticated, 0x12, 17),
             (Authenticated, 0x7B, 0),
+            (Entering, 0x11, 103),
             (Authenticated, 0xD0, 1),
         ] {
             assert!(

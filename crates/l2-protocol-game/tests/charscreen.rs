@@ -318,6 +318,8 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::CharacterRestore(p) => p.to_bytes(),
             ClientPacket::CharacterSelect(p) => p.to_bytes(),
             ClientPacket::RequestGotoLobby(p) => p.to_bytes(),
+            ClientPacket::EnterWorld(p) => p.to_bytes(),
+            ClientPacket::RequestKeyMapping(p) => p.to_bytes(),
             ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
         };
         return Some(raw.starts_with(&encoded));

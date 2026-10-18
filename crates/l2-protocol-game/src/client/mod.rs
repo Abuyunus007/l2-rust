@@ -17,11 +17,13 @@ use l2_net::PacketWriter;
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
 pub mod charscreen;
+pub mod enterworld;
 pub mod handshake;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
+pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 
 /// Writes the id byte of a plain client packet.
