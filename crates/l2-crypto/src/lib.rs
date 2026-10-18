@@ -3,6 +3,8 @@
 //! - [`blowfish`]: Blowfish with L2's little-endian word order (`L2Blowfish`).
 //! - [`checksum`]: the XOR checksum `NewCrypt.appendChecksum` / `verifyChecksum`.
 //! - [`xor_pass`]: the `NewCrypt.encXORPass` pass used in the login `Init` packet.
+//! - [`rsa`]: raw (no padding) RSA, key generation and Java `toByteArray` conversions.
+//! - [`scramble`]: the scrambled RSA modulus of the login `Init` packet (and its inverse).
 //!
 //! Everything here is pure and allocation-free. Malformed input (bad key or buffer length)
 //! returns [`CryptoError`], never a panic: the buffers come from the network.
@@ -12,9 +14,12 @@
 
 pub mod blowfish;
 pub mod checksum;
+pub mod rsa;
+pub mod scramble;
 pub mod xor_pass;
 
 mod error;
 
+pub use self::rsa::{RsaError, RsaKeyPair};
 pub use blowfish::L2Blowfish;
 pub use error::CryptoError;

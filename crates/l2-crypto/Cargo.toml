@@ -1,6 +1,6 @@
 [package]
 name = "l2-crypto"
-description = "L2 crypto: little-endian Blowfish, NewCrypt checksum and XOR pass"
+description = "L2 crypto: little-endian Blowfish, NewCrypt checksum and XOR pass, raw RSA"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
@@ -10,11 +10,14 @@ repository.workspace = true
 [dependencies]
 blowfish.workspace = true
 cipher.workspace = true
+rand.workspace = true
+rsa.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
 l2-testkit.workspace = true
 proptest.workspace = true
+rand_chacha.workspace = true
 serde.workspace = true
 
 [lints]
