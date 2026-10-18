@@ -75,7 +75,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Database tests of l2-db, login-server and game-server (unit + integration)
-        run: cargo test -p l2-db -p login-server -p game-server -- --nocapture
+        run: cargo test --no-fail-fast -p l2-db -p login-server -p game-server -- --nocapture
 
   hygiene:
     name: Repo hygiene

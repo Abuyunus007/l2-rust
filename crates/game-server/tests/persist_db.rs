@@ -19,11 +19,13 @@ use l2_testkit::test_db::TestDb;
 use l2_world::{ItemData, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 4] = [
+const SCHEMA: [&str; 5] = [
     include_str!("../../l2-db/sql/game/characters.sql"),
     include_str!("../../l2-db/sql/game/items.sql"),
     include_str!("../../l2-db/sql/game/character_skills.sql"),
     include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
+    // Deleting an item also deletes its augmentation row, as Java's Item.removeFromDb does.
+    include_str!("../../l2-db/sql/game/item_attributes.sql"),
 ];
 
 const CHAR_ID: i32 = 0x6000_0001;
