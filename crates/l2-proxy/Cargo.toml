@@ -1,0 +1,29 @@
+[package]
+name = "l2-proxy"
+description = "Decrypting man-in-the-middle proxy for the L2 login protocol, with JSONL captures (D-34, D-35)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+l2-net.workspace = true
+l2-crypto.workspace = true
+l2-protocol-login.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+hex.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
