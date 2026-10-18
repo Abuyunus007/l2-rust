@@ -16,7 +16,7 @@
 //   1. config            `GameConfig::load`                              (M2-CFG-01)
 //   2. database          `l2_db::connect`
 //   3. IdManager         `IdFactory` from the Rust range (D-39)           (M2-IDF-01)
-//   4. data              `Datapack::load`                                (M2-DATA-01)
+//   4. data              `Datapack::load_with` (options from the config) (M2-DATA-01, M3-CFG-02)
 //   5. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
 //   6. hexid.txt         the saved login server registration
 //   7. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
@@ -38,7 +38,7 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use l2_config::{ConfigError, DatabaseConfig, GameConfig, IniFile, InterfaceConfig};
-use l2_data::{DataError, Datapack};
+use l2_data::{DataError, Datapack, DatapackOptions};
 use l2_db::{DbError, IdRepository, Pool};
 use l2_net::CancellationToken;
 use l2_util::WorldRng;
@@ -174,7 +174,8 @@ impl Server {
         );
         let datapack = {
             let root = datapack_root.clone();
-            tokio::task::spawn_blocking(move || Datapack::load(&root))
+            let options = options_from_config(&config);
+            tokio::task::spawn_blocking(move || Datapack::load_with(&root, &options))
                 .await
                 .map_err(|e| StartupError::Internal(format!("datapack loader: {e}")))??
         };
@@ -384,6 +385,27 @@ fn resolve_datapack_root(root: &Path, value: &str) -> PathBuf {
     out
 }
 
+/// The datapack options the owner's Java game server gets from its config, so the Rust GS loads
+/// the same custom items and NPCs (D-39, both servers share one database).
+///
+/// Each value is the key's getter result after Java's `load()`, with the same defaults, so an
+/// empty config gives [`DatapackOptions::default`]. Keys: `General.ini` `CustomItemsLoad`,
+/// `CustomNpcData` and `HtmCache`; `NPC.ini` `MaxAggroRange` and `DefaultCorpseTime`;
+/// `Custom/FakePlayers.ini` `EnableFakePlayers`; `Development.ini` `NoSpawns`.
+// Java: GeneralConfig.java:258, 355, 358; NpcConfig.java:142, 145; FakePlayersConfig.java:50;
+// the NoSpawns read in DevelopmentConfig.
+fn options_from_config(config: &GameConfig) -> DatapackOptions {
+    DatapackOptions {
+        custom_items_load: config.general.custom_items_load,
+        custom_npc_data: config.general.custom_npc_data,
+        fake_players_enabled: config.fake_players.fake_players_enabled,
+        no_spawns: config.development.no_spawns,
+        max_aggro_range: config.npc.max_aggro_range,
+        default_corpse_time: config.npc.default_corpse_time,
+        htm_cache: config.general.htm_cache,
+    }
+}
+
 /// Building blocks for unit tests that need a `Server` without a database.
 #[cfg(test)]
 pub(crate) mod test_support {
@@ -509,5 +531,71 @@ mod tests {
     #[test]
     fn fatal_has_exit_code_1() {
         assert_eq!(ExitReason::Fatal.code(), 1);
+    }
+
+    /// No config files at all: every key has Java's default, so the options are the defaults.
+    #[test]
+    fn options_from_an_empty_config_are_java_defaults() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        assert_eq!(options_from_config(&config), DatapackOptions::default());
+        assert_eq!(
+            options_from_config(&GameConfig::default()),
+            DatapackOptions::default()
+        );
+    }
+
+    /// The shipped `dist/game/config` turns the custom folders on and HtmCache off. Skips when
+    /// the Java checkout is not there (CI).
+    #[test]
+    fn options_from_the_shipped_config_enable_custom_data() {
+        let root = std::env::var("L2J_ROOT").unwrap_or_else(|_| r"C:\l2-rust\l2jmobius".to_string());
+        let dir = Path::new(&root).join("dist").join("game").join("config");
+        if !dir.is_dir() {
+            eprintln!("skipped: no Java dist config at {}", dir.display());
+            return;
+        }
+        let config = GameConfig::load(&dir).unwrap();
+        let options = options_from_config(&config);
+        assert!(options.custom_items_load);
+        assert!(options.custom_npc_data);
+        assert!(!options.htm_cache);
+        assert!(!options.no_spawns);
+        assert_eq!(options.max_aggro_range, 450);
+    }
+
+    /// Each key reaches its option: EnableFakePlayers, NoSpawns, MaxAggroRange and
+    /// DefaultCorpseTime from their own files, CustomItemsLoad from General.ini.
+    #[test]
+    fn each_config_key_reaches_its_option() {
+        let dir = tempfile::tempdir().unwrap();
+        let custom = dir.path().join("Custom");
+        std::fs::create_dir_all(&custom).unwrap();
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "CustomItemsLoad = True\nHtmCache = False\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("NPC.ini"),
+            "MaxAggroRange = 900\nDefaultCorpseTime = 3\n",
+        )
+        .unwrap();
+        std::fs::write(dir.path().join("Development.ini"), "NoSpawns = True\n").unwrap();
+        std::fs::write(custom.join("FakePlayers.ini"), "EnableFakePlayers = True\n").unwrap();
+
+        let options = options_from_config(&GameConfig::load(dir.path()).unwrap());
+        assert_eq!(
+            options,
+            DatapackOptions {
+                custom_items_load: true,
+                custom_npc_data: false,
+                fake_players_enabled: true,
+                no_spawns: true,
+                max_aggro_range: 900,
+                default_corpse_time: 3,
+                htm_cache: false,
+            }
+        );
     }
 }
