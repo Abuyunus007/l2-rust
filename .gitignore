@@ -29,3 +29,6 @@ Thumbs.db
 # Real supervisor config holds the admin token (the example is committed)
 /supervisor.ini
 crates/l2-supervisor/supervisor.ini
+
+# Local run folders with real configs/credentials (never commit)
+/run/

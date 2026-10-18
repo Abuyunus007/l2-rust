@@ -28,6 +28,7 @@ A card can start once everything it depends on is merged. Cards in the same wave
 | W3 | CRYPTO-02 (s), CRYPTO-03 (s), CRYPTO-04 (h), CRYPTO-05 (h), DB-01 (s), LPROTO-01 (s), GEO-01 (s), GUI-02 (h), GUI-03 (h) | 9 |
 | W4 | LS-01 (s), LPROTO-02 (h), GEO-02 (h) | 3 |
 | W5 | LS-02 (o), LS-04 (s), PROXY-01 (s) | 2 |
+| 🎮 **CP1a** | **First client test (you):** Rust LS against your local DB (`l2jmobiush5`). Real client logs in, the password is checked, server list shown (no GS yet). Right after LS-02. | |
 | 🎮 **CP1** | **Client checkpoint 1 (you):** Java LS + Java GS through the proxy CLI. Real client logs in, the capture shows decoded login packets. | |
 | W6 | LS-03 (s), PROXY-02 (s) | 2 |
 | W7 | LS-05 (s), GUI-04 (s) | 2 |
