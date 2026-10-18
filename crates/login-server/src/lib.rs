@@ -22,6 +22,7 @@ pub mod keys;
 pub mod logging;
 pub mod server_names;
 pub mod state;
+pub mod subnet;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
