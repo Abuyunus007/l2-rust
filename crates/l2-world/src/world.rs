@@ -10,10 +10,14 @@ use tracing::{debug, info, warn};
 use crate::command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
-use crate::timer::{TimerKind, TimerWheel};
+use crate::snapshot::snapshot_for_store;
+use crate::timer::{TimerId, TimerKind, TimerWheel};
 
 /// One world tick (D-12).
 pub const TICK: Duration = Duration::from_millis(50);
+
+/// Java `GeneralConfig.CHAR_DATA_STORE_INTERVAL` default: `CharacterDataStoreInterval = 15` minutes.
+pub const DEFAULT_AUTOSAVE_INTERVAL: Duration = Duration::from_secs(15 * 60);
 
 pub struct World {
     tick: u64,
@@ -26,6 +30,10 @@ pub struct World {
     sinks: HashMap<ObjectId, Box<dyn PacketSink>>,
     outbox: Box<dyn Outbox>,
     stopped: bool,
+    /// Ticks between two autosaves of a player (Java `CHAR_DATA_STORE_INTERVAL`).
+    autosave_ticks: u64,
+    /// The pending autosave timer of each online player.
+    autosave_timers: HashMap<ObjectId, TimerId>,
 }
 
 impl World {
@@ -40,7 +48,16 @@ impl World {
             sinks: HashMap::new(),
             outbox,
             stopped: false,
+            autosave_ticks: TimerWheel::duration_to_ticks(DEFAULT_AUTOSAVE_INTERVAL),
+            autosave_timers: HashMap::new(),
         }
+    }
+
+    /// Sets the time between two autosaves of a player; applies from the next (re)schedule.
+    // Java: PlayerAutoSaveTaskManager polls once a second, so shorter intervals are not honoured
+    // there either; callers clamp to one second.
+    pub fn set_autosave_interval(&mut self, interval: Duration) {
+        self.autosave_ticks = TimerWheel::duration_to_ticks(interval);
     }
 
     /// Ticks since the world started.
@@ -167,6 +184,8 @@ impl World {
         self.sessions.insert(session, id);
         self.player_sessions.insert(id, session);
         self.sinks.insert(id, sink);
+        // Java: Player.load -> PlayerAutoSaveTaskManager.add
+        self.schedule_autosave(id);
         self.outbox.ls_event(LsEvent::PlayerInGame { account });
         self.on_entered(id);
     }
@@ -182,10 +201,11 @@ impl World {
         if let Some(session) = self.player_sessions.remove(&id) {
             self.sessions.remove(&session);
         }
-        let mut snapshot = player.snapshot();
-        let online_ticks = self.tick.saturating_sub(player.entered_at_tick);
-        let online_secs = online_ticks * TICK.as_millis() as u64 / 1000;
-        snapshot.online_time += i64::try_from(online_secs).unwrap_or(0);
+        // Java: PlayerAutoSaveTaskManager.remove
+        if let Some(timer) = self.autosave_timers.remove(&id) {
+            self.timers.cancel(timer);
+        }
+        let snapshot = snapshot_for_store(&player, self.tick);
         let account = snapshot.account.clone();
         info!("{} ({account}) left the world: {reason:?}.", snapshot.name);
         self.outbox
@@ -196,6 +216,15 @@ impl World {
         });
         if let Some(sink) = self.sinks.remove(&id) {
             sink.left_world(reason);
+        }
+    }
+
+    /// Arms the next autosave of `id`, replacing a pending one so there is only ever one.
+    fn schedule_autosave(&mut self, id: ObjectId) {
+        let due = self.tick + self.autosave_ticks;
+        let timer = self.timers.schedule_at(due, TimerKind::Autosave(id));
+        if let Some(old) = self.autosave_timers.insert(id, timer) {
+            self.timers.cancel(old);
         }
     }
 
@@ -215,10 +244,14 @@ impl World {
 
     fn on_timer(&mut self, kind: TimerKind) {
         match kind {
+            // Java: PlayerAutoSaveTaskManager.run -> Player.autoSave, then due again after
+            // CHAR_DATA_STORE_INTERVAL. A player who left has no timer any more.
             TimerKind::Autosave(id) => {
                 if let Some(player) = self.players.get(&id) {
+                    let snapshot = snapshot_for_store(player, self.tick);
                     self.outbox
-                        .persist(PersistCommand::StorePlayer(Box::new(player.snapshot())));
+                        .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
+                    self.schedule_autosave(id);
                 }
             }
             TimerKind::Marker(n) => debug!("timer marker {n}"),
