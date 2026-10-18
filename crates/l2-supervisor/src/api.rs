@@ -1,0 +1,254 @@
+//! The supervisor's admin API: [`SupervisorHandler`] answers the GUI, [`spawn_admin_link`]
+//! connects to a server's own admin endpoint and relays its status.
+//!
+//! Reference: `crates/l2-admin-api/src/transport.rs` (`serve`, `AdminHandler`, `AdminClient`).
+
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
+
+use l2_admin_api::{AdminClient, AdminHandler, Event, Request, Response, Session};
+use tokio::sync::broadcast;
+use tokio::sync::broadcast::error::RecvError;
+use tokio::task::JoinHandle;
+
+use crate::config::ServerConfig;
+use crate::logs::LogStore;
+use crate::process::Supervisor;
+
+/// Pause between attempts to reach a server's admin endpoint.
+const RECONNECT_DELAY: Duration = Duration::from_secs(2);
+/// How often a log forwarder checks whether its client is still there (when no lines flow).
+const CLOSED_CHECK_INTERVAL: Duration = Duration::from_secs(5);
+
+/// The connection to one server's admin endpoint, shared with the handler.
+#[derive(Clone, Default)]
+pub struct AdminLink {
+    client: Arc<Mutex<Option<Arc<AdminClient>>>>,
+}
+
+impl AdminLink {
+    fn current(&self) -> Option<Arc<AdminClient>> {
+        self.client.lock().unwrap_or_else(|e| e.into_inner()).clone()
+    }
+
+    fn set(&self, client: Option<Arc<AdminClient>>) {
+        *self.client.lock().unwrap_or_else(|e| e.into_inner()) = client;
+    }
+}
+
+/// Keeps a connection to `server.admin_endpoint` alive (reconnecting forever) and turns the
+/// server's `LoginStatusChanged` events into events for the GUI, with `server` set to our name.
+///
+/// Returns `None` when the server has no admin endpoint.
+pub fn spawn_admin_link(
+    server: &ServerConfig,
+    events: broadcast::Sender<Event>,
+) -> Option<(AdminLink, JoinHandle<()>)> {
+    let endpoint = server.admin_endpoint.clone()?;
+    let (name, token) = (server.name.clone(), server.admin_token.clone());
+    let link = AdminLink::default();
+    let shared = link.clone();
+    let task = tokio::spawn(async move {
+        let url = format!("ws://{endpoint}");
+        loop {
+            match AdminClient::connect(&url, &token).await {
+                Ok((client, mut incoming)) => {
+                    tracing::info!("{name}: admin endpoint {endpoint} connected");
+                    let client = Arc::new(client);
+                    shared.set(Some(Arc::clone(&client)));
+                    // The server only pushes events to connections that have sent a request,
+                    // and the GUI wants the current picture right away.
+                    if let Ok(Response::LoginStatus { status }) =
+                        client.request(Request::GetLoginStatus { server: None }).await
+                    {
+                        let _ = events.send(Event::LoginStatusChanged {
+                            server: name.clone(),
+                            status,
+                        });
+                    }
+                    while let Some(event) = incoming.recv().await {
+                        if let Event::LoginStatusChanged { status, .. } = event {
+                            let _ = events.send(Event::LoginStatusChanged {
+                                server: name.clone(),
+                                status,
+                            });
+                        }
+                    }
+                    shared.set(None);
+                    tracing::info!("{name}: admin endpoint {endpoint} disconnected");
+                }
+                Err(e) => tracing::debug!("{name}: admin endpoint {endpoint} not reachable: {e}"),
+            }
+            tokio::time::sleep(RECONNECT_DELAY).await;
+        }
+    });
+    Some((link, task))
+}
+
+pub struct SupervisorHandler {
+    supervisor: Arc<Supervisor>,
+    logs: Arc<LogStore>,
+    links: HashMap<String, AdminLink>,
+    /// Clients that have made at least one request: the targets of broadcast events.
+    sessions: Arc<Mutex<HashMap<u64, Session>>>,
+    /// The running log forwarder of each session (one `SubscribeLogs` at a time).
+    log_streams: Mutex<HashMap<u64, JoinHandle<()>>>,
+}
+
+impl SupervisorHandler {
+    /// Creates the handler and the task that pushes state/status events to all clients.
+    pub fn new(supervisor: Arc<Supervisor>, links: HashMap<String, AdminLink>) -> Arc<Self> {
+        let sessions: Arc<Mutex<HashMap<u64, Session>>> = Arc::default();
+        tokio::spawn(broadcast_events(
+            supervisor.subscribe_events(),
+            Arc::clone(&sessions),
+        ));
+        Arc::new(Self {
+            logs: Arc::clone(supervisor.logs()),
+            supervisor,
+            links,
+            sessions,
+            log_streams: Mutex::default(),
+        })
+    }
+
+    fn streams(&self) -> MutexGuard<'_, HashMap<u64, JoinHandle<()>>> {
+        self.log_streams.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    fn unknown(name: &str) -> Response {
+        Response::Error {
+            message: format!("unknown server '{name}'"),
+        }
+    }
+
+    fn control(result: Result<(), String>) -> Response {
+        match result {
+            Ok(()) => Response::Ok,
+            Err(message) => Response::Error { message },
+        }
+    }
+
+    /// Starts the forwarder task of a `SubscribeLogs`: backlog first, then live lines.
+    fn subscribe_logs(
+        &self,
+        server: Option<String>,
+        since: Option<u64>,
+        session: &Session,
+    ) -> Result<JoinHandle<()>, Response> {
+        if let Some(name) = &server
+            && self.supervisor.get(name).is_none()
+        {
+            return Err(Self::unknown(name));
+        }
+        let (backlog, mut live) = self.logs.subscribe(server.as_deref(), since);
+        let session = session.clone();
+        Ok(tokio::spawn(async move {
+            for line in backlog {
+                if !session.send_event(Event::LogLine { line }) {
+                    return;
+                }
+            }
+            let mut check = tokio::time::interval(CLOSED_CHECK_INTERVAL);
+            loop {
+                tokio::select! {
+                    line = live.recv() => match line {
+                        Ok(line) => {
+                            if server.as_deref().is_some_and(|s| s != line.server) {
+                                continue;
+                            }
+                            if !session.send_event(Event::LogLine { line }) {
+                                return;
+                            }
+                        }
+                        Err(RecvError::Lagged(missed)) => {
+                            tracing::warn!("log subscriber of {} fell behind, {missed} lines dropped", session.peer());
+                        }
+                        Err(RecvError::Closed) => return,
+                    },
+                    _ = check.tick() => if session.is_closed() { return },
+                }
+            }
+        }))
+    }
+}
+
+/// Pushes every event to every registered client; forgets clients that are gone.
+async fn broadcast_events(
+    mut events: broadcast::Receiver<Event>,
+    sessions: Arc<Mutex<HashMap<u64, Session>>>,
+) {
+    loop {
+        match events.recv().await {
+            Ok(event) => {
+                let mut sessions = sessions.lock().unwrap_or_else(|e| e.into_inner());
+                sessions.retain(|_, session| session.send_event(event.clone()));
+            }
+            Err(RecvError::Lagged(missed)) => tracing::warn!("{missed} state events dropped"),
+            Err(RecvError::Closed) => return,
+        }
+    }
+}
+
+impl AdminHandler for SupervisorHandler {
+    async fn handle(&self, request: Request, session: &Session) -> Response {
+        self.sessions
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .insert(session.id(), session.clone());
+        match request {
+            Request::ListServers => Response::Servers {
+                servers: self.supervisor.list(),
+            },
+            Request::StartServer { name } => match self.supervisor.get(&name) {
+                Some(server) => Self::control(server.start().await),
+                None => Self::unknown(&name),
+            },
+            Request::StopServer { name } => match self.supervisor.get(&name) {
+                Some(server) => Self::control(server.stop().await),
+                None => Self::unknown(&name),
+            },
+            Request::RestartServer { name } => match self.supervisor.get(&name) {
+                Some(server) => Self::control(server.restart().await),
+                None => Self::unknown(&name),
+            },
+            Request::SubscribeLogs { server, since } => match self.subscribe_logs(server, since, session) {
+                Ok(task) => {
+                    let mut streams = self.streams();
+                    streams.retain(|_, t| !t.is_finished());
+                    if let Some(old) = streams.insert(session.id(), task) {
+                        old.abort();
+                    }
+                    Response::Ok
+                }
+                Err(response) => response,
+            },
+            Request::UnsubscribeLogs => {
+                if let Some(task) = self.streams().remove(&session.id()) {
+                    task.abort();
+                }
+                Response::Ok
+            }
+            Request::GetLoginStatus { server: None } => Response::Error {
+                message: "the supervisor needs a server name".into(),
+            },
+            Request::GetLoginStatus { server: Some(name) } => {
+                if self.supervisor.get(&name).is_none() {
+                    return Self::unknown(&name);
+                }
+                let Some(client) = self.links.get(&name).and_then(AdminLink::current) else {
+                    return Response::Error {
+                        message: format!("no admin connection to '{name}'"),
+                    };
+                };
+                match client.request(Request::GetLoginStatus { server: None }).await {
+                    Ok(response) => response,
+                    Err(e) => Response::Error {
+                        message: format!("'{name}' did not answer: {e}"),
+                    },
+                }
+            }
+        }
+    }
+}

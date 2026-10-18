@@ -1,0 +1,29 @@
+[package]
+name = "l2-supervisor"
+description = "Starts, stops and restarts the server processes, collects their logs and serves the admin API"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+l2-admin-api = { path = "../l2-admin-api" }
+l2-config = { path = "../l2-config" }
+tokio.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+# Tiny child process for the process tests (exit codes, output, ignoring the stop signal).
+[[bin]]
+name = "supervisor-test-child"
+path = "tests/bin/child.rs"
+test = false
+
+[lints]
+workspace = true
