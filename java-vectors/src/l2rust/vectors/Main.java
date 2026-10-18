@@ -11,7 +11,7 @@ import java.nio.file.Paths;
  * java l2rust.vectors.Main geo [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * </pre>
  *
- * Generators: {@code crypto}, {@code geo} (needs the two geodata folders as arguments, so {@code all} does not run it). Later cards add {@code login-packets}, ...<br>
+ * Generators: {@code crypto}, {@code login-packets}, {@code geo} (needs the two geodata folders as arguments, so {@code all} does not run it).<br>
  * {@code outDir} defaults to {@code java-vectors/out} (relative to the working directory).
  */
 public final class Main
@@ -24,7 +24,7 @@ public final class Main
 	{
 		if (args.length < 1)
 		{
-			System.err.println("usage: Main <crypto|all> [outDir]");
+			System.err.println("usage: Main <crypto|login-packets|all> [outDir]");
 			System.err.println("       Main geo [outDir] <geodataDownloadDir> <geodataConvertedDir>");
 			System.exit(2);
 		}
@@ -42,7 +42,13 @@ public final class Main
 				}
 				GeoVectors.generate(out, Paths.get(args[2]), Paths.get(args[3]));
 			}
-			case "all" -> CryptoVectors.generate(out); // Add new generators here (geo needs its own arguments, see above).
+			case "login-packets" -> LoginPacketVectors.generate(out);
+			case "all" ->
+			{
+				// Add new generators here (geo needs its own arguments, see above).
+				CryptoVectors.generate(out);
+				LoginPacketVectors.generate(out);
+			}
 			default ->
 			{
 				System.err.println("unknown generator: " + args[0]);

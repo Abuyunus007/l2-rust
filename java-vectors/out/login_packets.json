@@ -1,0 +1,2168 @@
+{
+  "source": "org.l2jmobius.loginserver.network.serverpackets.*, org.l2jmobius.loginserver.network.gameserverpackets.send.*, org.l2jmobius.gameserver.network.loginserverpackets.send.*",
+  "generated_by": "java-vectors",
+  "note": "payload = packet bytes with opcode, WITHOUT the 2-byte length header and WITHOUT encryption/checksum. Integers in fields are signed Java values, byte arrays are hex strings (keys ending in _hex), strings are the Java strings (non-ASCII and surrogate pairs included; the wire format is UTF-16LE code units with a 0x0000 terminator). A variant with produced_by = replay was not made by the real class (see its what). All other variants come from the real Java class.",
+  "packets": [
+    {
+      "name": "Init",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.Init",
+      "direction": "login_server_to_client",
+      "opcode": 0,
+      "variants": [
+        {
+          "what": "session 0x12345678, ascending key bytes",
+          "fields": {
+            "session_id": 305419896,
+            "public_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+            "blowfish_key_hex": "101112131415161718191a1b1c1d1e1f",
+            "protocol_revision": 50721
+          },
+          "payload": "007856341221c60000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f4e95dd29fc9cc37720b6ad97f7e0bd07101112131415161718191a1b1c1d1e1f00"
+        },
+        {
+          "what": "negative session id, random key bytes",
+          "fields": {
+            "session_id": -1,
+            "public_key_hex": "63cc9c3b253f15da4e9bbb7803e71ea367276f3bfae698fcda0da7b8ae2bfe1186c351ed7896f37c92897c37340268d24fd0a8306e39227265863a3b58b7349997553a3f346ffd3d9f23acf312a234edf5a43e8a131118a27d3816e6922a351d72ee81eee33a954b045a4cf283bda08481ecbddbf4b9c3410eeaaf02942f14e1",
+            "blowfish_key_hex": "2cdb4d323106c7f7a58328463355e8e7",
+            "protocol_revision": 50721
+          },
+          "payload": "00ffffffff21c6000063cc9c3b253f15da4e9bbb7803e71ea367276f3bfae698fcda0da7b8ae2bfe1186c351ed7896f37c92897c37340268d24fd0a8306e39227265863a3b58b7349997553a3f346ffd3d9f23acf312a234edf5a43e8a131118a27d3816e6922a351d72ee81eee33a954b045a4cf283bda08481ecbddbf4b9c3410eeaaf02942f14e14e95dd29fc9cc37720b6ad97f7e0bd072cdb4d323106c7f7a58328463355e8e700"
+        },
+        {
+          "what": "Integer.MIN_VALUE session, all 0xff scrambled key, all 0x00 Blowfish key",
+          "fields": {
+            "session_id": -2147483648,
+            "public_key_hex": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "blowfish_key_hex": "00000000000000000000000000000000",
+            "protocol_revision": 50721
+          },
+          "payload": "000000008021c60000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff4e95dd29fc9cc37720b6ad97f7e0bd070000000000000000000000000000000000"
+        },
+        {
+          "what": "session 0 with a shorter Blowfish key (length is not checked in Java)",
+          "fields": {
+            "session_id": 0,
+            "public_key_hex": "902ece6d822974bb935846e49bd256758bbc5c0672390b4d3954b4951168cdf3b34d458c1247dcea9f1729a7693e73d989c931de1ce97083cc226338cff717f8ee71b4675ac4c1ee58bfad24c388fc80d5e175b848b691853f8031e4651d62f639c3b712f8857e93f76a2ce6f28ecb4051707815353ff17ec31d5bc18e2da2f1",
+            "blowfish_key_hex": "02f49222eb9b1608",
+            "protocol_revision": 50721
+          },
+          "payload": "000000000021c60000902ece6d822974bb935846e49bd256758bbc5c0672390b4d3954b4951168cdf3b34d458c1247dcea9f1729a7693e73d989c931de1ce97083cc226338cff717f8ee71b4675ac4c1ee58bfad24c388fc80d5e175b848b691853f8031e4651d62f639c3b712f8857e93f76a2ce6f28ecb4051707815353ff17ec31d5bc18e2da2f14e95dd29fc9cc37720b6ad97f7e0bd0702f49222eb9b160800"
+        }
+      ]
+    },
+    {
+      "name": "LoginFail",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.LoginFail",
+      "direction": "login_server_to_client",
+      "opcode": 1,
+      "variants": [
+        {
+          "what": "REASON_NO_MESSAGE",
+          "fields": {
+            "reason": 0
+          },
+          "payload": "0100"
+        },
+        {
+          "what": "REASON_SYSTEM_ERROR_LOGIN_LATER",
+          "fields": {
+            "reason": 1
+          },
+          "payload": "0101"
+        },
+        {
+          "what": "REASON_USER_OR_PASS_WRONG",
+          "fields": {
+            "reason": 2
+          },
+          "payload": "0102"
+        },
+        {
+          "what": "REASON_ACCESS_FAILED_TRY_AGAIN_LATER",
+          "fields": {
+            "reason": 4
+          },
+          "payload": "0104"
+        },
+        {
+          "what": "REASON_ACCOUNT_INFO_INCORRECT_CONTACT_SUPPORT",
+          "fields": {
+            "reason": 5
+          },
+          "payload": "0105"
+        },
+        {
+          "what": "REASON_NOT_AUTHED",
+          "fields": {
+            "reason": 6
+          },
+          "payload": "0106"
+        },
+        {
+          "what": "REASON_ACCOUNT_IN_USE",
+          "fields": {
+            "reason": 7
+          },
+          "payload": "0107"
+        },
+        {
+          "what": "REASON_UNDER_18_YEARS_KR",
+          "fields": {
+            "reason": 12
+          },
+          "payload": "010c"
+        },
+        {
+          "what": "REASON_SERVER_OVERLOADED",
+          "fields": {
+            "reason": 15
+          },
+          "payload": "010f"
+        },
+        {
+          "what": "REASON_SERVER_MAINTENANCE",
+          "fields": {
+            "reason": 16
+          },
+          "payload": "0110"
+        },
+        {
+          "what": "REASON_TEMP_PASS_EXPIRED",
+          "fields": {
+            "reason": 17
+          },
+          "payload": "0111"
+        },
+        {
+          "what": "REASON_GAME_TIME_EXPIRED",
+          "fields": {
+            "reason": 18
+          },
+          "payload": "0112"
+        },
+        {
+          "what": "REASON_NO_TIME_LEFT",
+          "fields": {
+            "reason": 19
+          },
+          "payload": "0113"
+        },
+        {
+          "what": "REASON_SYSTEM_ERROR",
+          "fields": {
+            "reason": 20
+          },
+          "payload": "0114"
+        },
+        {
+          "what": "REASON_ACCESS_FAILED",
+          "fields": {
+            "reason": 21
+          },
+          "payload": "0115"
+        },
+        {
+          "what": "REASON_RESTRICTED_IP",
+          "fields": {
+            "reason": 22
+          },
+          "payload": "0116"
+        },
+        {
+          "what": "REASON_WEEK_USAGE_FINISHED",
+          "fields": {
+            "reason": 30
+          },
+          "payload": "011e"
+        },
+        {
+          "what": "REASON_SECURITY_CARD_NUMBER_INVALID",
+          "fields": {
+            "reason": 31
+          },
+          "payload": "011f"
+        },
+        {
+          "what": "REASON_AGE_NOT_VERIFIED_CANT_LOG_BEETWEEN_10PM_6AM",
+          "fields": {
+            "reason": 32
+          },
+          "payload": "0120"
+        },
+        {
+          "what": "REASON_SERVER_CANNOT_BE_ACCESSED_BY_YOUR_COUPON",
+          "fields": {
+            "reason": 33
+          },
+          "payload": "0121"
+        },
+        {
+          "what": "REASON_DUAL_BOX",
+          "fields": {
+            "reason": 35
+          },
+          "payload": "0123"
+        },
+        {
+          "what": "REASON_INACTIVE",
+          "fields": {
+            "reason": 36
+          },
+          "payload": "0124"
+        },
+        {
+          "what": "REASON_USER_AGREEMENT_REJECTED_ON_WEBSITE",
+          "fields": {
+            "reason": 37
+          },
+          "payload": "0125"
+        },
+        {
+          "what": "REASON_GUARDIAN_CONSENT_REQUIRED",
+          "fields": {
+            "reason": 38
+          },
+          "payload": "0126"
+        },
+        {
+          "what": "REASON_USER_AGREEMENT_DECLINED_OR_WITHDRAWL_REQUEST",
+          "fields": {
+            "reason": 39
+          },
+          "payload": "0127"
+        },
+        {
+          "what": "REASON_ACCOUNT_SUSPENDED_CALL",
+          "fields": {
+            "reason": 40
+          },
+          "payload": "0128"
+        },
+        {
+          "what": "REASON_CHANGE_PASSWORD_AND_QUIZ_ON_WEBSITE",
+          "fields": {
+            "reason": 41
+          },
+          "payload": "0129"
+        },
+        {
+          "what": "REASON_ALREADY_LOGGED_INTO_10_ACCOUNTS",
+          "fields": {
+            "reason": 42
+          },
+          "payload": "012a"
+        },
+        {
+          "what": "REASON_MASTER_ACCOUNT_RESTRICTED",
+          "fields": {
+            "reason": 43
+          },
+          "payload": "012b"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED",
+          "fields": {
+            "reason": 46
+          },
+          "payload": "012e"
+        },
+        {
+          "what": "REASON_TELEPHONE_CERTIFICATION_UNAVAILABLE",
+          "fields": {
+            "reason": 47
+          },
+          "payload": "012f"
+        },
+        {
+          "what": "REASON_TELEPHONE_SIGNALS_DELAYED",
+          "fields": {
+            "reason": 48
+          },
+          "payload": "0130"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED_LINE_BUSY",
+          "fields": {
+            "reason": 49
+          },
+          "payload": "0131"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_NUMBER_EXPIRED_OR_INCORRECT",
+          "fields": {
+            "reason": 50
+          },
+          "payload": "0132"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_CURRENTLY_BEING_CHECKED",
+          "fields": {
+            "reason": 51
+          },
+          "payload": "0133"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_CANT_BE_USED_HEAVY_VOLUME",
+          "fields": {
+            "reason": 52
+          },
+          "payload": "0134"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_EXPIRED_GAMEPLAY_BLOCKED",
+          "fields": {
+            "reason": 53
+          },
+          "payload": "0135"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED_3_TIMES_GAMEPLAY_BLOCKED_30_MIN",
+          "fields": {
+            "reason": 54
+          },
+          "payload": "0136"
+        },
+        {
+          "what": "REASON_CERTIFICATION_DAILY_USE_EXCEEDED",
+          "fields": {
+            "reason": 55
+          },
+          "payload": "0137"
+        },
+        {
+          "what": "REASON_CERTIFICATION_UNDERWAY_TRY_AGAIN_LATER",
+          "fields": {
+            "reason": 56
+          },
+          "payload": "0138"
+        }
+      ]
+    },
+    {
+      "name": "AccountKicked",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.AccountKicked",
+      "direction": "login_server_to_client",
+      "opcode": 2,
+      "variants": [
+        {
+          "what": "REASON_DATA_STEALER",
+          "fields": {
+            "reason": 1
+          },
+          "payload": "0201000000"
+        },
+        {
+          "what": "REASON_GENERIC_VIOLATION",
+          "fields": {
+            "reason": 8
+          },
+          "payload": "0208000000"
+        },
+        {
+          "what": "REASON_7_DAYS_SUSPENDED",
+          "fields": {
+            "reason": 16
+          },
+          "payload": "0210000000"
+        },
+        {
+          "what": "REASON_PERMANENTLY_BANNED",
+          "fields": {
+            "reason": 32
+          },
+          "payload": "0220000000"
+        }
+      ]
+    },
+    {
+      "name": "LoginOk",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.LoginOk",
+      "direction": "login_server_to_client",
+      "opcode": 3,
+      "variants": [
+        {
+          "what": "ascending ints",
+          "fields": {
+            "login_ok1": 16909060,
+            "login_ok2": 84281096
+          },
+          "payload": "0304030201080706050000000000000000ea03000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "what": "negative ints",
+          "fields": {
+            "login_ok1": -1,
+            "login_ok2": -2
+          },
+          "payload": "03fffffffffeffffff0000000000000000ea03000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "what": "zeros and max",
+          "fields": {
+            "login_ok1": 0,
+            "login_ok2": 2147483647
+          },
+          "payload": "0300000000ffffff7f0000000000000000ea03000000000000000000000000000000000000000000000000000000000000"
+        },
+        {
+          "what": "random ints",
+          "fields": {
+            "login_ok1": 312313673,
+            "login_ok2": -1598627261
+          },
+          "payload": "0349879d1243e2b6a00000000000000000ea03000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "name": "ServerList",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.ServerList",
+      "direction": "login_server_to_client",
+      "opcode": 4,
+      "variants": [
+        {
+          "what": "one server, 2 characters on it",
+          "fields": {
+            "last_server": 1,
+            "servers": [
+              {
+                "server_id": 1,
+                "ip": [
+                  127,
+                  0,
+                  0,
+                  1
+                ],
+                "port": 7777,
+                "age_limit": 0,
+                "pvp": true,
+                "current_players": 12,
+                "max_players": 3000,
+                "brackets": false,
+                "status": 2,
+                "server_type": 1
+              }
+            ],
+            "chars_on_servers": [
+              {
+                "server_id": 1,
+                "chars": 2
+              }
+            ]
+          },
+          "payload": "040101017f000001611e000000010c00b80b010100000000000001010200"
+        },
+        {
+          "what": "no servers, no character info (null map)",
+          "fields": {
+            "last_server": 0,
+            "servers": [],
+            "chars_on_servers": null
+          },
+          "payload": "040000000000"
+        },
+        {
+          "what": "no servers, empty character map",
+          "fields": {
+            "last_server": 0,
+            "servers": [],
+            "chars_on_servers": []
+          },
+          "payload": "040000000000"
+        },
+        {
+          "what": "two servers, second is DOWN, ages 15/18, brackets, type flags 0x41, characters listed out of order, empty delete-timer arrays",
+          "fields": {
+            "last_server": 2,
+            "servers": [
+              {
+                "server_id": 1,
+                "ip": [
+                  192,
+                  168,
+                  1,
+                  10
+                ],
+                "port": 7777,
+                "age_limit": 15,
+                "pvp": false,
+                "current_players": 1,
+                "max_players": 100,
+                "brackets": true,
+                "status": 1,
+                "server_type": 65
+              },
+              {
+                "server_id": 2,
+                "ip": [
+                  10,
+                  0,
+                  0,
+                  254
+                ],
+                "port": 7778,
+                "age_limit": 18,
+                "pvp": true,
+                "current_players": 65535,
+                "max_players": 65535,
+                "brackets": true,
+                "status": 4,
+                "server_type": 8
+              }
+            ],
+            "chars_on_servers": [
+              {
+                "server_id": 2,
+                "chars": 1
+              },
+              {
+                "server_id": 1,
+                "chars": 3
+              }
+            ]
+          },
+          "payload": "04020201c0a8010a611e00000f0001006400014100000001020a0000fe621e00001201ffffffff000800000001000002020100010300"
+        },
+        {
+          "what": "server id 255, ip 255.255.255.255 (bytes are masked with 0xff), max port, last server 255, 255 characters",
+          "fields": {
+            "last_server": 255,
+            "servers": [
+              {
+                "server_id": 255,
+                "ip": [
+                  255,
+                  255,
+                  255,
+                  255
+                ],
+                "port": 65535,
+                "age_limit": 0,
+                "pvp": false,
+                "current_players": 0,
+                "max_players": 0,
+                "brackets": false,
+                "status": 0,
+                "server_type": 127
+              }
+            ],
+            "chars_on_servers": [
+              {
+                "server_id": 255,
+                "chars": 255
+              }
+            ]
+          },
+          "payload": "0401ffffffffffffffff0000000000000000017f00000000000001ffff00"
+        },
+        {
+          "what": "three servers with status values 1, 3, 5 (only DOWN is written as 0), mixed player counts",
+          "fields": {
+            "last_server": 3,
+            "servers": [
+              {
+                "server_id": 3,
+                "ip": [
+                  1,
+                  2,
+                  3,
+                  4
+                ],
+                "port": 2106,
+                "age_limit": 0,
+                "pvp": true,
+                "current_players": 1,
+                "max_players": 2,
+                "brackets": false,
+                "status": 1,
+                "server_type": 1
+              },
+              {
+                "server_id": 4,
+                "ip": [
+                  5,
+                  6,
+                  7,
+                  8
+                ],
+                "port": 2107,
+                "age_limit": 0,
+                "pvp": false,
+                "current_players": 30000,
+                "max_players": 40000,
+                "brackets": true,
+                "status": 3,
+                "server_type": 2
+              },
+              {
+                "server_id": 5,
+                "ip": [
+                  9,
+                  10,
+                  11,
+                  12
+                ],
+                "port": 2108,
+                "age_limit": 15,
+                "pvp": true,
+                "current_players": 0,
+                "max_players": 1,
+                "brackets": false,
+                "status": 5,
+                "server_type": 4
+              }
+            ],
+            "chars_on_servers": [
+              {
+                "server_id": 3,
+                "chars": 0
+              },
+              {
+                "server_id": 4,
+                "chars": 9
+              },
+              {
+                "server_id": 5,
+                "chars": 1
+              }
+            ]
+          },
+          "payload": "04030303010203043a08000000010100020001010000000004050607083b08000000003075409c01020000000105090a0b0c3c0800000f0100000100010400000000000003030000040900050100"
+        }
+      ]
+    },
+    {
+      "name": "PlayFail",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.PlayFail",
+      "direction": "login_server_to_client",
+      "opcode": 6,
+      "variants": [
+        {
+          "what": "REASON_NO_MESSAGE",
+          "fields": {
+            "reason": 0
+          },
+          "payload": "0600"
+        },
+        {
+          "what": "REASON_SYSTEM_ERROR_LOGIN_LATER",
+          "fields": {
+            "reason": 1
+          },
+          "payload": "0601"
+        },
+        {
+          "what": "REASON_USER_OR_PASS_WRONG",
+          "fields": {
+            "reason": 2
+          },
+          "payload": "0602"
+        },
+        {
+          "what": "REASON_ACCESS_FAILED_TRY_AGAIN_LATER",
+          "fields": {
+            "reason": 4
+          },
+          "payload": "0604"
+        },
+        {
+          "what": "REASON_ACCOUNT_INFO_INCORRECT_CONTACT_SUPPORT",
+          "fields": {
+            "reason": 5
+          },
+          "payload": "0605"
+        },
+        {
+          "what": "REASON_ACCOUNT_IN_USE",
+          "fields": {
+            "reason": 7
+          },
+          "payload": "0607"
+        },
+        {
+          "what": "REASON_UNDER_18_YEARS_KR",
+          "fields": {
+            "reason": 12
+          },
+          "payload": "060c"
+        },
+        {
+          "what": "REASON_SERVER_OVERLOADED",
+          "fields": {
+            "reason": 15
+          },
+          "payload": "060f"
+        },
+        {
+          "what": "REASON_SERVER_MAINTENANCE",
+          "fields": {
+            "reason": 16
+          },
+          "payload": "0610"
+        },
+        {
+          "what": "REASON_TEMP_PASS_EXPIRED",
+          "fields": {
+            "reason": 17
+          },
+          "payload": "0611"
+        },
+        {
+          "what": "REASON_GAME_TIME_EXPIRED",
+          "fields": {
+            "reason": 18
+          },
+          "payload": "0612"
+        },
+        {
+          "what": "REASON_NO_TIME_LEFT",
+          "fields": {
+            "reason": 19
+          },
+          "payload": "0613"
+        },
+        {
+          "what": "REASON_SYSTEM_ERROR",
+          "fields": {
+            "reason": 20
+          },
+          "payload": "0614"
+        },
+        {
+          "what": "REASON_ACCESS_FAILED",
+          "fields": {
+            "reason": 21
+          },
+          "payload": "0615"
+        },
+        {
+          "what": "REASON_RESTRICTED_IP",
+          "fields": {
+            "reason": 22
+          },
+          "payload": "0616"
+        },
+        {
+          "what": "REASON_WEEK_USAGE_FINISHED",
+          "fields": {
+            "reason": 30
+          },
+          "payload": "061e"
+        },
+        {
+          "what": "REASON_SECURITY_CARD_NUMBER_INVALID",
+          "fields": {
+            "reason": 31
+          },
+          "payload": "061f"
+        },
+        {
+          "what": "REASON_AGE_NOT_VERIFIED_CANT_LOG_BEETWEEN_10PM_6AM",
+          "fields": {
+            "reason": 32
+          },
+          "payload": "0620"
+        },
+        {
+          "what": "REASON_SERVER_CANNOT_BE_ACCESSED_BY_YOUR_COUPON",
+          "fields": {
+            "reason": 33
+          },
+          "payload": "0621"
+        },
+        {
+          "what": "REASON_DUAL_BOX",
+          "fields": {
+            "reason": 35
+          },
+          "payload": "0623"
+        },
+        {
+          "what": "REASON_INACTIVE",
+          "fields": {
+            "reason": 36
+          },
+          "payload": "0624"
+        },
+        {
+          "what": "REASON_USER_AGREEMENT_REJECTED_ON_WEBSITE",
+          "fields": {
+            "reason": 37
+          },
+          "payload": "0625"
+        },
+        {
+          "what": "REASON_GUARDIAN_CONSENT_REQUIRED",
+          "fields": {
+            "reason": 38
+          },
+          "payload": "0626"
+        },
+        {
+          "what": "REASON_USER_AGREEMENT_DECLINED_OR_WITHDRAWL_REQUEST",
+          "fields": {
+            "reason": 39
+          },
+          "payload": "0627"
+        },
+        {
+          "what": "REASON_ACCOUNT_SUSPENDED_CALL",
+          "fields": {
+            "reason": 40
+          },
+          "payload": "0628"
+        },
+        {
+          "what": "REASON_CHANGE_PASSWORD_AND_QUIZ_ON_WEBSITE",
+          "fields": {
+            "reason": 41
+          },
+          "payload": "0629"
+        },
+        {
+          "what": "REASON_ALREADY_LOGGED_INTO_10_ACCOUNTS",
+          "fields": {
+            "reason": 42
+          },
+          "payload": "062a"
+        },
+        {
+          "what": "REASON_MASTER_ACCOUNT_RESTRICTED",
+          "fields": {
+            "reason": 43
+          },
+          "payload": "062b"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED",
+          "fields": {
+            "reason": 46
+          },
+          "payload": "062e"
+        },
+        {
+          "what": "REASON_TELEPHONE_CERTIFICATION_UNAVAILABLE",
+          "fields": {
+            "reason": 47
+          },
+          "payload": "062f"
+        },
+        {
+          "what": "REASON_TELEPHONE_SIGNALS_DELAYED",
+          "fields": {
+            "reason": 48
+          },
+          "payload": "0630"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED_LINE_BUSY",
+          "fields": {
+            "reason": 49
+          },
+          "payload": "0631"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_NUMBER_EXPIRED_OR_INCORRECT",
+          "fields": {
+            "reason": 50
+          },
+          "payload": "0632"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_CURRENTLY_BEING_CHECKED",
+          "fields": {
+            "reason": 51
+          },
+          "payload": "0633"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_CANT_BE_USED_HEAVY_VOLUME",
+          "fields": {
+            "reason": 52
+          },
+          "payload": "0634"
+        },
+        {
+          "what": "REASON_CERTIFICATION_SERVICE_EXPIRED_GAMEPLAY_BLOCKED",
+          "fields": {
+            "reason": 53
+          },
+          "payload": "0635"
+        },
+        {
+          "what": "REASON_CERTIFICATION_FAILED_3_TIMES_GAMEPLAY_BLOCKED_30_MIN",
+          "fields": {
+            "reason": 54
+          },
+          "payload": "0636"
+        },
+        {
+          "what": "REASON_CERTIFICATION_DAILY_USE_EXCEEDED",
+          "fields": {
+            "reason": 55
+          },
+          "payload": "0637"
+        },
+        {
+          "what": "REASON_CERTIFICATION_UNDERWAY_TRY_AGAIN_LATER",
+          "fields": {
+            "reason": 56
+          },
+          "payload": "0638"
+        }
+      ]
+    },
+    {
+      "name": "PlayOk",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.PlayOk",
+      "direction": "login_server_to_client",
+      "opcode": 7,
+      "variants": [
+        {
+          "what": "ascending ints",
+          "fields": {
+            "play_ok1": 151653132,
+            "play_ok2": 219025168
+          },
+          "payload": "070c0b0a09100f0e0d"
+        },
+        {
+          "what": "negative ints",
+          "fields": {
+            "play_ok1": -1,
+            "play_ok2": -2147483648
+          },
+          "payload": "07ffffffff00000080"
+        },
+        {
+          "what": "random ints",
+          "fields": {
+            "play_ok1": 568630185,
+            "play_ok2": 1172621848
+          },
+          "payload": "07a99be42118cae445"
+        }
+      ]
+    },
+    {
+      "name": "GGAuth",
+      "java_class": "org.l2jmobius.loginserver.network.serverpackets.GGAuth",
+      "direction": "login_server_to_client",
+      "opcode": 11,
+      "variants": [
+        {
+          "what": "response 11",
+          "fields": {
+            "response": 11
+          },
+          "payload": "0b0b00000000000000000000000000000000000000"
+        },
+        {
+          "what": "response 0",
+          "fields": {
+            "response": 0
+          },
+          "payload": "0b0000000000000000000000000000000000000000"
+        },
+        {
+          "what": "response -1",
+          "fields": {
+            "response": -1
+          },
+          "payload": "0bffffffff00000000000000000000000000000000"
+        },
+        {
+          "what": "response 2147483647",
+          "fields": {
+            "response": 2147483647
+          },
+          "payload": "0bffffff7f00000000000000000000000000000000"
+        },
+        {
+          "what": "response -2147483648",
+          "fields": {
+            "response": -2147483648
+          },
+          "payload": "0b0000008000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "name": "InitLS",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.InitLS",
+      "direction": "login_server_to_game_server",
+      "opcode": 0,
+      "variants": [
+        {
+          "what": "65-byte modulus with leading 0x00 (BigInteger.toByteArray of a 512-bit key)",
+          "fields": {
+            "public_key_hex": "002a69ae3b455c770b6ed285f6884ce13b541e7285d78c1ece518adc5f1f09d871c064ffd0897352b3bc40b332dfaa3c1f89035c74dca263ced531c55db4d87be2",
+            "protocol_revision": 262
+          },
+          "payload": "000601000041000000002a69ae3b455c770b6ed285f6884ce13b541e7285d78c1ece518adc5f1f09d871c064ffd0897352b3bc40b332dfaa3c1f89035c74dca263ced531c55db4d87be2"
+        },
+        {
+          "what": "64-byte modulus",
+          "fields": {
+            "public_key_hex": "9d8dfe0a575b1b947b69dff635ce45fea024612c995e81d4cf9a2f3ed1b670bd0f06437db15fc34df56b2a7f4708c9eda8469326ada4b2aa1b3aa4975b9068d1",
+            "protocol_revision": 262
+          },
+          "payload": "0006010000400000009d8dfe0a575b1b947b69dff635ce45fea024612c995e81d4cf9a2f3ed1b670bd0f06437db15fc34df56b2a7f4708c9eda8469326ada4b2aa1b3aa4975b9068d1"
+        },
+        {
+          "what": "empty key (length is not checked)",
+          "fields": {
+            "public_key_hex": "",
+            "protocol_revision": 262
+          },
+          "payload": "000601000000000000"
+        },
+        {
+          "what": "ascending 128 bytes",
+          "fields": {
+            "public_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+            "protocol_revision": 262
+          },
+          "payload": "000601000080000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+        }
+      ]
+    },
+    {
+      "name": "LoginServerFail",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.LoginServerFail",
+      "direction": "login_server_to_game_server",
+      "opcode": 1,
+      "variants": [
+        {
+          "what": "reason 1",
+          "fields": {
+            "reason": 1
+          },
+          "payload": "0101"
+        },
+        {
+          "what": "reason 2",
+          "fields": {
+            "reason": 2
+          },
+          "payload": "0102"
+        },
+        {
+          "what": "reason 3",
+          "fields": {
+            "reason": 3
+          },
+          "payload": "0103"
+        },
+        {
+          "what": "reason 4",
+          "fields": {
+            "reason": 4
+          },
+          "payload": "0104"
+        },
+        {
+          "what": "reason 5",
+          "fields": {
+            "reason": 5
+          },
+          "payload": "0105"
+        },
+        {
+          "what": "reason 6",
+          "fields": {
+            "reason": 6
+          },
+          "payload": "0106"
+        },
+        {
+          "what": "reason 7",
+          "fields": {
+            "reason": 7
+          },
+          "payload": "0107"
+        },
+        {
+          "what": "NOTE(java-quirk): reason 0x1ff, only the low byte is written",
+          "fields": {
+            "reason": 511
+          },
+          "payload": "01ff"
+        }
+      ]
+    },
+    {
+      "name": "AuthResponse",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.AuthResponse",
+      "direction": "login_server_to_game_server",
+      "opcode": 2,
+      "variants": [
+        {
+          "what": "server 1, ASCII name",
+          "fields": {
+            "server_id": 1,
+            "server_name": "Bartz"
+          },
+          "payload": "020142006100720074007a000000",
+          "produced_by": "replay"
+        },
+        {
+          "what": "server 127, non-ASCII name",
+          "fields": {
+            "server_id": 127,
+            "server_name": "Привет한글이름"
+          },
+          "payload": "027f1f04400438043204350442045cd500ae74c784b90000",
+          "produced_by": "replay"
+        },
+        {
+          "what": "server 255, emoji name (surrogate pair)",
+          "fields": {
+            "server_id": 255,
+            "server_name": "a😀b"
+          },
+          "payload": "02ff61003dd800de62000000",
+          "produced_by": "replay"
+        },
+        {
+          "what": "NOTE(java-quirk): GameServerTable.getServerNameById returns null for an unknown id, writeString(null) writes only the terminator",
+          "fields": {
+            "server_id": 9,
+            "server_name": null
+          },
+          "payload": "02090000",
+          "produced_by": "replay"
+        },
+        {
+          "what": "server id 0x101, only the low byte is written, empty name",
+          "fields": {
+            "server_id": 257,
+            "server_name": ""
+          },
+          "payload": "02010000",
+          "produced_by": "replay"
+        }
+      ]
+    },
+    {
+      "name": "PlayerAuthResponse",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.PlayerAuthResponse",
+      "direction": "login_server_to_game_server",
+      "opcode": 3,
+      "variants": [
+        {
+          "what": "ok",
+          "fields": {
+            "account": "player1",
+            "response": true
+          },
+          "payload": "0370006c0061007900650072003100000001"
+        },
+        {
+          "what": "denied, non-ASCII account",
+          "fields": {
+            "account": "Привет",
+            "response": false
+          },
+          "payload": "031f0440043804320435044204000000"
+        },
+        {
+          "what": "empty account",
+          "fields": {
+            "account": "",
+            "response": true
+          },
+          "payload": "03000001"
+        },
+        {
+          "what": "emoji account",
+          "fields": {
+            "account": "a😀b",
+            "response": false
+          },
+          "payload": "0361003dd800de6200000000"
+        }
+      ]
+    },
+    {
+      "name": "KickPlayer",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.KickPlayer",
+      "direction": "login_server_to_game_server",
+      "opcode": 4,
+      "variants": [
+        {
+          "what": "account 7 chars",
+          "fields": {
+            "account": "player1"
+          },
+          "payload": "0470006c00610079006500720031000000"
+        },
+        {
+          "what": "account 6 chars",
+          "fields": {
+            "account": "Привет"
+          },
+          "payload": "041f04400438043204350442040000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "한글이름"
+          },
+          "payload": "045cd500ae74c784b90000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "a😀b"
+          },
+          "payload": "0461003dd800de62000000"
+        },
+        {
+          "what": "account 8 chars",
+          "fields": {
+            "account": "q\"b\\s\tn\n"
+          },
+          "payload": "047100220062005c00730009006e000a000000"
+        },
+        {
+          "what": "empty",
+          "fields": {
+            "account": ""
+          },
+          "payload": "040000"
+        },
+        {
+          "what": "null (writeString(null) writes only the terminator)",
+          "fields": {
+            "account": null
+          },
+          "payload": "040000"
+        }
+      ]
+    },
+    {
+      "name": "RequestCharacters",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.RequestCharacters",
+      "direction": "login_server_to_game_server",
+      "opcode": 5,
+      "variants": [
+        {
+          "what": "account 7 chars",
+          "fields": {
+            "account": "player1"
+          },
+          "payload": "0570006c00610079006500720031000000"
+        },
+        {
+          "what": "account 6 chars",
+          "fields": {
+            "account": "Привет"
+          },
+          "payload": "051f04400438043204350442040000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "한글이름"
+          },
+          "payload": "055cd500ae74c784b90000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "a😀b"
+          },
+          "payload": "0561003dd800de62000000"
+        },
+        {
+          "what": "account 8 chars",
+          "fields": {
+            "account": "q\"b\\s\tn\n"
+          },
+          "payload": "057100220062005c00730009006e000a000000"
+        },
+        {
+          "what": "empty",
+          "fields": {
+            "account": ""
+          },
+          "payload": "050000"
+        },
+        {
+          "what": "null (writeString(null) writes only the terminator)",
+          "fields": {
+            "account": null
+          },
+          "payload": "050000"
+        }
+      ]
+    },
+    {
+      "name": "ChangePasswordResponse",
+      "java_class": "org.l2jmobius.loginserver.network.gameserverpackets.send.ChangePasswordResponse",
+      "direction": "login_server_to_game_server",
+      "opcode": 6,
+      "variants": [
+        {
+          "what": "ASCII",
+          "fields": {
+            "character_name": "Hero",
+            "message": "Password changed."
+          },
+          "payload": "064800650072006f000000500061007300730077006f007200640020006300680061006e006700650064002e000000"
+        },
+        {
+          "what": "non-ASCII",
+          "fields": {
+            "character_name": "한글이름",
+            "message": "Привет"
+          },
+          "payload": "065cd500ae74c784b900001f04400438043204350442040000"
+        },
+        {
+          "what": "empty strings",
+          "fields": {
+            "character_name": "",
+            "message": ""
+          },
+          "payload": "0600000000"
+        },
+        {
+          "what": "null strings (writeString(null) writes only the terminator)",
+          "fields": {
+            "character_name": null,
+            "message": null
+          },
+          "payload": "0600000000"
+        }
+      ]
+    },
+    {
+      "name": "BlowFishKey",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.BlowFishKey",
+      "direction": "game_server_to_login_server",
+      "opcode": 0,
+      "variants": [
+        {
+          "what": "Blowfish key of 16 bytes, RSA-512 public key",
+          "fields": {
+            "blowfish_key_hex": "3d8aa83be5a756506415ed215bd5f508",
+            "rsa_n_hex": "9e909ec5144209a357748d31640c6d3ee9b2ba242f709da88aad29022633956b993c04c335196f7c1e3548b7f93f71ffc4432c7f16d323a5e18854f5e44827e7",
+            "rsa_e": 65537
+          },
+          "payload": "0040000000987afca2d312ac15387daf3dda3f8a9cda041fefcc255502d8cbc0d8d08e14eebe25cadb1ea506b70bf2412a96e48948885eec1a35b845af139059b67ea5789e"
+        },
+        {
+          "what": "Blowfish key of 22 bytes, RSA-512 public key",
+          "fields": {
+            "blowfish_key_hex": "1a2171178e5547887f0b2028fa698ffc5784c52f84d4",
+            "rsa_n_hex": "9e909ec5144209a357748d31640c6d3ee9b2ba242f709da88aad29022633956b993c04c335196f7c1e3548b7f93f71ffc4432c7f16d323a5e18854f5e44827e7",
+            "rsa_e": 65537
+          },
+          "payload": "00400000008f897a17ca077b270a55021a0537756decb4523001fd833f1d0700c1c0fb4f647ad851da06433eb820c2e1d4c0d4726e06c339706589f1361adea971ddf496ca"
+        },
+        {
+          "what": "Blowfish key of 40 bytes, RSA-512 public key",
+          "fields": {
+            "blowfish_key_hex": "0459f6dea672a005209d75080dd54d5a5aa341524078b97445d0671c4bb766773252cef57fbfea4d",
+            "rsa_n_hex": "9e909ec5144209a357748d31640c6d3ee9b2ba242f709da88aad29022633956b993c04c335196f7c1e3548b7f93f71ffc4432c7f16d323a5e18854f5e44827e7",
+            "rsa_e": 65537
+          },
+          "payload": "00400000002fb7645e1846e4b5f7ef7291f83b30aa2d97853d56666f2484c5a1f37445cb0fa6010117bd52694ab3469e6fa157f908db85286b16cd52ee480635f55ad0e9de"
+        },
+        {
+          "what": "Blowfish key of 63 bytes, RSA-512 public key",
+          "fields": {
+            "blowfish_key_hex": "11faaa4bc2445e6eb424277611880788dba802a317feb3f7fa65e0fa069abbca9b284cb81a016332c174fd656ec5a1d6c033f01506cb98635d92fa35403850",
+            "rsa_n_hex": "9e909ec5144209a357748d31640c6d3ee9b2ba242f709da88aad29022633956b993c04c335196f7c1e3548b7f93f71ffc4432c7f16d323a5e18854f5e44827e7",
+            "rsa_e": 65537
+          },
+          "payload": "00400000009a5d3a4dd33a606b6195b1079047084df3d0b9a4045ed21d09f1162717a129f9fac79ebc0e50d4fdc2b3c5c67f2b041f4a407441bbf90369c301531da182c369"
+        }
+      ]
+    },
+    {
+      "name": "AuthRequest",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.AuthRequest",
+      "direction": "game_server_to_login_server",
+      "opcode": 1,
+      "variants": [
+        {
+          "what": "typical: server 1, one subnet/host pair",
+          "fields": {
+            "id": 1,
+            "accept_alternate": false,
+            "hex_id_hex": "3f5d7e7e065b9f83ed2c302a7dce39a7",
+            "port": 7777,
+            "reserve_host": false,
+            "max_players": 5000,
+            "subnets": [
+              "0.0.0.0/0"
+            ],
+            "hosts": [
+              "127.0.0.1"
+            ]
+          },
+          "payload": "01010000611e88130000100000003f5d7e7e065b9f83ed2c302a7dce39a70100000030002e0030002e0030002e0030002f00300000003100320037002e0030002e0030002e0031000000"
+        },
+        {
+          "what": "flags on, max values, two pairs",
+          "fields": {
+            "id": 255,
+            "accept_alternate": true,
+            "hex_id_hex": "ffffffffffffffffffffffffffffffff",
+            "port": 65535,
+            "reserve_host": true,
+            "max_players": 2147483647,
+            "subnets": [
+              "192.168.0.0/16",
+              "10.0.0.0/8"
+            ],
+            "hosts": [
+              "192.168.1.2",
+              "game.Привет.example"
+            ]
+          },
+          "payload": "01ff0101ffffffffff7f10000000ffffffffffffffffffffffffffffffff020000003100390032002e003100360038002e0030002e0030002f003100360000003100390032002e003100360038002e0031002e0032000000310030002e0030002e0030002e0030002f0038000000670061006d0065002e001f04400438043204350442042e006500780061006d0070006c0065000000"
+        },
+        {
+          "what": "negative max players, short hex id, no pairs",
+          "fields": {
+            "id": 2,
+            "accept_alternate": false,
+            "hex_id_hex": "ef87cc",
+            "port": 0,
+            "reserve_host": false,
+            "max_players": -1,
+            "subnets": [],
+            "hosts": []
+          },
+          "payload": "010200000000ffffffff03000000ef87cc00000000"
+        },
+        {
+          "what": "null hex id/subnets/hosts become empty",
+          "fields": {
+            "id": 3,
+            "accept_alternate": true,
+            "hex_id_hex": null,
+            "port": 2106,
+            "reserve_host": false,
+            "max_players": 0,
+            "subnets": null,
+            "hosts": null
+          },
+          "payload": "010301003a08000000000000000000000000"
+        },
+        {
+          "what": "NOTE(java-quirk): lists of different size, only min(size) pairs are written; null entries become empty strings",
+          "fields": {
+            "id": 4,
+            "accept_alternate": false,
+            "hex_id_hex": "fb78e8c6d018e4f294c091ad13ffc507",
+            "port": 7777,
+            "reserve_host": true,
+            "max_players": 100,
+            "subnets": [
+              "a",
+              null,
+              "c"
+            ],
+            "hosts": [
+              "x",
+              "y"
+            ]
+          },
+          "payload": "01040001611e6400000010000000fb78e8c6d018e4f294c091ad13ffc507020000006100000078000000000079000000"
+        },
+        {
+          "what": "id 0x1ff and port 0x1ffff: byte and short are truncated",
+          "fields": {
+            "id": 511,
+            "accept_alternate": false,
+            "hex_id_hex": "7c24c02c576db012085451f13804bb03",
+            "port": 131071,
+            "reserve_host": false,
+            "max_players": 1,
+            "subnets": [],
+            "hosts": []
+          },
+          "payload": "01ff0000ffff01000000100000007c24c02c576db012085451f13804bb0300000000"
+        }
+      ]
+    },
+    {
+      "name": "PlayerInGame",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.PlayerInGame",
+      "direction": "game_server_to_login_server",
+      "opcode": 2,
+      "variants": [
+        {
+          "what": "single player (String constructor)",
+          "fields": {
+            "players": [
+              "player1"
+            ]
+          },
+          "payload": "02010070006c00610079006500720031000000"
+        },
+        {
+          "what": "single null player becomes one empty name",
+          "fields": {
+            "players": [
+              ""
+            ]
+          },
+          "payload": "0201000000"
+        },
+        {
+          "what": "list of three, non-ASCII",
+          "fields": {
+            "players": [
+              "a",
+              "Привет",
+              "한글이름"
+            ]
+          },
+          "payload": "020300610000001f044004380432043504420400005cd500ae74c784b90000"
+        },
+        {
+          "what": "empty list",
+          "fields": {
+            "players": []
+          },
+          "payload": "020000"
+        },
+        {
+          "what": "null list",
+          "fields": {
+            "players": null
+          },
+          "payload": "020000"
+        },
+        {
+          "what": "list with a null entry written as empty",
+          "fields": {
+            "players": [
+              "a",
+              null
+            ]
+          },
+          "payload": "020200610000000000"
+        }
+      ]
+    },
+    {
+      "name": "PlayerLogout",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.PlayerLogout",
+      "direction": "game_server_to_login_server",
+      "opcode": 3,
+      "variants": [
+        {
+          "what": "account 7 chars",
+          "fields": {
+            "account": "player1"
+          },
+          "payload": "0370006c00610079006500720031000000"
+        },
+        {
+          "what": "account 6 chars",
+          "fields": {
+            "account": "Привет"
+          },
+          "payload": "031f04400438043204350442040000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "한글이름"
+          },
+          "payload": "035cd500ae74c784b90000"
+        },
+        {
+          "what": "account 4 chars",
+          "fields": {
+            "account": "a😀b"
+          },
+          "payload": "0361003dd800de62000000"
+        },
+        {
+          "what": "account 8 chars",
+          "fields": {
+            "account": "q\"b\\s\tn\n"
+          },
+          "payload": "037100220062005c00730009006e000a000000"
+        },
+        {
+          "what": "empty",
+          "fields": {
+            "account": ""
+          },
+          "payload": "030000"
+        },
+        {
+          "what": "null (writeString(null) writes only the terminator)",
+          "fields": {
+            "account": null
+          },
+          "payload": "030000"
+        }
+      ]
+    },
+    {
+      "name": "ChangeAccessLevel",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.ChangeAccessLevel",
+      "direction": "game_server_to_login_server",
+      "opcode": 4,
+      "variants": [
+        {
+          "what": "level 100",
+          "fields": {
+            "player": "gm1",
+            "access": 100
+          },
+          "payload": "046400000067006d0031000000"
+        },
+        {
+          "what": "banned level -100, non-ASCII",
+          "fields": {
+            "player": "Привет",
+            "access": -100
+          },
+          "payload": "049cffffff1f04400438043204350442040000"
+        },
+        {
+          "what": "Integer.MIN_VALUE, empty name",
+          "fields": {
+            "player": "",
+            "access": -2147483648
+          },
+          "payload": "04000000800000"
+        },
+        {
+          "what": "Integer.MAX_VALUE, null name",
+          "fields": {
+            "player": null,
+            "access": 2147483647
+          },
+          "payload": "04ffffff7f0000"
+        }
+      ]
+    },
+    {
+      "name": "PlayerAuthRequest",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.PlayerAuthRequest",
+      "direction": "game_server_to_login_server",
+      "opcode": 5,
+      "variants": [
+        {
+          "what": "ascending ints",
+          "fields": {
+            "account": "player1",
+            "play_ok1": 151653132,
+            "play_ok2": 219025168,
+            "login_ok1": 16909060,
+            "login_ok2": 84281096
+          },
+          "payload": "0570006c006100790065007200310000000c0b0a09100f0e0d0403020108070605"
+        },
+        {
+          "what": "negative ints, non-ASCII account",
+          "fields": {
+            "account": "Привет",
+            "play_ok1": -2,
+            "play_ok2": 2147483647,
+            "login_ok1": -1,
+            "login_ok2": -2147483648
+          },
+          "payload": "051f04400438043204350442040000feffffffffffff7fffffffff00000080"
+        },
+        {
+          "what": "null account and null key become empty string and zeros",
+          "fields": {
+            "account": null,
+            "session_key": null
+          },
+          "payload": "05000000000000000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "name": "ServerStatus",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.ServerStatus",
+      "direction": "game_server_to_login_server",
+      "opcode": 6,
+      "variants": [
+        {
+          "what": "no attributes",
+          "fields": {
+            "attributes": []
+          },
+          "payload": "0600000000"
+        },
+        {
+          "what": "status and max players",
+          "fields": {
+            "attributes": [
+              {
+                "id": 1,
+                "value": 1
+              },
+              {
+                "id": 4,
+                "value": 3000
+              }
+            ]
+          },
+          "payload": "0602000000010000000100000004000000b80b0000"
+        },
+        {
+          "what": "all five attributes",
+          "fields": {
+            "attributes": [
+              {
+                "id": 1,
+                "value": 5
+              },
+              {
+                "id": 2,
+                "value": 33
+              },
+              {
+                "id": 3,
+                "value": 1
+              },
+              {
+                "id": 4,
+                "value": 2147483647
+              },
+              {
+                "id": 5,
+                "value": 18
+              }
+            ]
+          },
+          "payload": "060500000001000000050000000200000021000000030000000100000004000000ffffff7f0500000012000000"
+        },
+        {
+          "what": "negative and repeated attributes",
+          "fields": {
+            "attributes": [
+              {
+                "id": 4,
+                "value": -1
+              },
+              {
+                "id": 4,
+                "value": -2147483648
+              },
+              {
+                "id": -5,
+                "value": 7
+              }
+            ]
+          },
+          "payload": "060300000004000000ffffffff0400000000000080fbffffff07000000"
+        },
+        {
+          "what": "20 attributes (array grows past 16 pairs)",
+          "fields": {
+            "attributes": [
+              {
+                "id": 1,
+                "value": 0
+              },
+              {
+                "id": 2,
+                "value": 1000
+              },
+              {
+                "id": 3,
+                "value": 2000
+              },
+              {
+                "id": 4,
+                "value": 3000
+              },
+              {
+                "id": 5,
+                "value": 4000
+              },
+              {
+                "id": 1,
+                "value": 5000
+              },
+              {
+                "id": 2,
+                "value": 6000
+              },
+              {
+                "id": 3,
+                "value": 7000
+              },
+              {
+                "id": 4,
+                "value": 8000
+              },
+              {
+                "id": 5,
+                "value": 9000
+              },
+              {
+                "id": 1,
+                "value": 10000
+              },
+              {
+                "id": 2,
+                "value": 11000
+              },
+              {
+                "id": 3,
+                "value": 12000
+              },
+              {
+                "id": 4,
+                "value": 13000
+              },
+              {
+                "id": 5,
+                "value": 14000
+              },
+              {
+                "id": 1,
+                "value": 15000
+              },
+              {
+                "id": 2,
+                "value": 16000
+              },
+              {
+                "id": 3,
+                "value": 17000
+              },
+              {
+                "id": 4,
+                "value": 18000
+              },
+              {
+                "id": 5,
+                "value": 19000
+              }
+            ]
+          },
+          "payload": "0614000000010000000000000002000000e803000003000000d007000004000000b80b000005000000a00f00000100000088130000020000007017000003000000581b000004000000401f00000500000028230000010000001027000002000000f82a000003000000e02e000004000000c832000005000000b036000001000000983a000002000000803e00000300000068420000040000005046000005000000384a0000"
+        }
+      ]
+    },
+    {
+      "name": "PlayerTracert",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.PlayerTracert",
+      "direction": "game_server_to_login_server",
+      "opcode": 7,
+      "variants": [
+        {
+          "what": "ASCII",
+          "fields": {
+            "account": "player1",
+            "pc_ip": "192.168.0.5",
+            "hop1": "10.0.0.1",
+            "hop2": "10.0.1.1",
+            "hop3": "10.0.2.1",
+            "hop4": "10.0.3.1"
+          },
+          "payload": "0770006c006100790065007200310000003100390032002e003100360038002e0030002e0035000000310030002e0030002e0030002e0031000000310030002e0030002e0031002e0031000000310030002e0030002e0032002e0031000000310030002e0030002e0033002e0031000000"
+        },
+        {
+          "what": "non-ASCII",
+          "fields": {
+            "account": "Привет",
+            "pc_ip": "한글이름",
+            "hop1": "a😀b",
+            "hop2": "q\"b\\s\tn\n",
+            "hop3": "",
+            "hop4": "x"
+          },
+          "payload": "071f044004380432043504420400005cd500ae74c784b9000061003dd800de620000007100220062005c00730009006e000a000000000078000000"
+        },
+        {
+          "what": "all null become empty",
+          "fields": {
+            "account": null,
+            "pc_ip": null,
+            "hop1": null,
+            "hop2": null,
+            "hop3": null,
+            "hop4": null
+          },
+          "payload": "07000000000000000000000000"
+        },
+        {
+          "what": "only account",
+          "fields": {
+            "account": "player1",
+            "pc_ip": "",
+            "hop1": "",
+            "hop2": "",
+            "hop3": "",
+            "hop4": ""
+          },
+          "payload": "0770006c0061007900650072003100000000000000000000000000"
+        }
+      ]
+    },
+    {
+      "name": "ReplyCharacters",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.ReplyCharacters",
+      "direction": "game_server_to_login_server",
+      "opcode": 8,
+      "variants": [
+        {
+          "what": "no pending deletes",
+          "fields": {
+            "account": "player1",
+            "chars": 3,
+            "times": []
+          },
+          "payload": "0870006c006100790065007200310000000300"
+        },
+        {
+          "what": "three timers incl. negative and max",
+          "fields": {
+            "account": "Привет",
+            "chars": 7,
+            "times": [
+              1,
+              9223372036854775807,
+              -1
+            ]
+          },
+          "payload": "081f0440043804320435044204000007030100000000000000ffffffffffffff7fffffffffffffffff"
+        },
+        {
+          "what": "null account, chars 0x1ff (low byte only), null list",
+          "fields": {
+            "account": null,
+            "chars": 511,
+            "times": null
+          },
+          "payload": "080000ff00"
+        },
+        {
+          "what": "timer list with a null entry written as 0",
+          "fields": {
+            "account": "a😀b",
+            "chars": 255,
+            "times": [
+              1700000000000,
+              null,
+              -9223372036854775808
+            ]
+          },
+          "payload": "0861003dd800de62000000ff030068e5cf8b01000000000000000000000000000000000080"
+        }
+      ]
+    },
+    {
+      "name": "SendMail",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.SendMail",
+      "direction": "game_server_to_login_server",
+      "opcode": 9,
+      "variants": [
+        {
+          "what": "two args",
+          "fields": {
+            "account": "player1",
+            "mail_id": "welcome",
+            "args": [
+              "a",
+              "b"
+            ]
+          },
+          "payload": "0970006c00610079006500720031000000770065006c0063006f006d0065000000026100000062000000"
+        },
+        {
+          "what": "no args",
+          "fields": {
+            "account": "Привет",
+            "mail_id": "한글이름",
+            "args": []
+          },
+          "payload": "091f044004380432043504420400005cd500ae74c784b9000000"
+        },
+        {
+          "what": "nulls",
+          "fields": {
+            "account": null,
+            "mail_id": null,
+            "args": null
+          },
+          "payload": "090000000000"
+        },
+        {
+          "what": "null arg written as empty",
+          "fields": {
+            "account": "a",
+            "mail_id": "m",
+            "args": [
+              "x",
+              null,
+              "a😀b"
+            ]
+          },
+          "payload": "09610000006d0000000378000000000061003dd800de62000000"
+        }
+      ]
+    },
+    {
+      "name": "TempBan",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.TempBan",
+      "direction": "game_server_to_login_server",
+      "opcode": 10,
+      "variants": [
+        {
+          "what": "5 minutes",
+          "fields": {
+            "account": "player1",
+            "ip": "10.1.2.3",
+            "minutes": 5,
+            "now_millis": 1700000000000,
+            "expire_millis": 1700000300000
+          },
+          "payload": "0a70006c00610079006500720031000000310030002e0031002e0032002e0033000000e0fbe9cf8b01000000",
+          "clock_pinned": true
+        },
+        {
+          "what": "non-ASCII account, empty ip, 1 day",
+          "fields": {
+            "account": "Привет",
+            "ip": "",
+            "minutes": 1440,
+            "now_millis": 1700000000000,
+            "expire_millis": 1700086400000
+          },
+          "payload": "0a1f04400438043204350442040000000000c40bd58b01000000",
+          "clock_pinned": true
+        },
+        {
+          "what": "0 minutes",
+          "fields": {
+            "account": "a",
+            "ip": "b",
+            "minutes": 0,
+            "now_millis": 1700000000000,
+            "expire_millis": 1700000000000
+          },
+          "payload": "0a61000000620000000068e5cf8b01000000",
+          "clock_pinned": true
+        },
+        {
+          "what": "negative minutes are clamped to 0",
+          "fields": {
+            "account": "a",
+            "ip": "b",
+            "minutes": -10,
+            "now_millis": 1700000000000,
+            "expire_millis": 1700000000000
+          },
+          "payload": "0a61000000620000000068e5cf8b01000000",
+          "clock_pinned": true
+        },
+        {
+          "what": "null account and ip, 1 minute",
+          "fields": {
+            "account": null,
+            "ip": null,
+            "minutes": 1,
+            "now_millis": 1700000000000,
+            "expire_millis": 1700000060000
+          },
+          "payload": "0a000000006052e6cf8b01000000",
+          "clock_pinned": true
+        },
+        {
+          "what": "NOTE(java-quirk): Long.MAX_VALUE minutes overflows minutes * 60000",
+          "fields": {
+            "account": "a",
+            "ip": "b",
+            "minutes": 9223372036854775807,
+            "now_millis": 1700000000000,
+            "expire_millis": 1699999940000
+          },
+          "payload": "0a6100000062000000a07de4cf8b01000000",
+          "clock_pinned": true
+        }
+      ]
+    },
+    {
+      "name": "ChangePassword",
+      "java_class": "org.l2jmobius.gameserver.network.loginserverpackets.send.ChangePassword",
+      "direction": "game_server_to_login_server",
+      "opcode": 11,
+      "variants": [
+        {
+          "what": "ASCII",
+          "fields": {
+            "account": "acc",
+            "character": "Hero",
+            "old_pass": "old",
+            "new_pass": "new"
+          },
+          "payload": "0b61006300630000004800650072006f0000006f006c00640000006e00650077000000"
+        },
+        {
+          "what": "non-ASCII",
+          "fields": {
+            "account": "Привет",
+            "character": "한글이름",
+            "old_pass": "a😀b",
+            "new_pass": "q\"b\\s\tn\n"
+          },
+          "payload": "0b1f044004380432043504420400005cd500ae74c784b9000061003dd800de620000007100220062005c00730009006e000a000000"
+        },
+        {
+          "what": "empty",
+          "fields": {
+            "account": "",
+            "character": "",
+            "old_pass": "",
+            "new_pass": ""
+          },
+          "payload": "0b0000000000000000"
+        },
+        {
+          "what": "null",
+          "fields": {
+            "account": null,
+            "character": null,
+            "old_pass": null,
+            "new_pass": null
+          },
+          "payload": "0b0000000000000000"
+        }
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "name": "Init(LoginClient)",
+      "reason": "Constructor that reads scrambled modulus, Blowfish key and session id from a LoginClient. Same bytes as Init(byte[], byte[], int), which is covered."
+    },
+    {
+      "name": "ServerList pending-delete timers",
+      "reason": "The per-server delete times are written as (deleteTime - System.currentTimeMillis()) / 1000, so the bytes depend on the clock. Only the branches without timers are covered. Cover with a capture."
+    },
+    {
+      "name": "ServerList(LoginClient) constructor logic",
+      "reason": "Status computation (GM-only, access level < 0 gives DOWN), GM-only filtering and the 500 ms wait for the character counts need GameServerTable, a database and a LoginClient. Only the wire layout is covered. Cover with a capture."
+    },
+    {
+      "name": "BlowFishKey with a null/empty key or a null public key",
+      "reason": "Throws IllegalArgumentException, nothing is written."
+    },
+    {
+      "name": "BlowFishKey when the RSA operation fails",
+      "reason": "Logs and leaves the packet empty (no opcode). Not reachable with a valid key."
+    }
+  ]
+}

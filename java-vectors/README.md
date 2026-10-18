@@ -41,9 +41,10 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto (later: login-packets, geo, ...)
+    Main.java                dispatches: crypto, login-packets (later: geo, ...)
     Json.java                tiny JSON writer (no dependencies)
     CryptoVectors.java       one generator = one class
+    LoginPacketVectors.java  login / LS<->GS packet payloads
   out/*.json                 committed output
 ```
 
@@ -66,6 +67,32 @@ java-vectors/
 | `crypto_scrambled_modulus.json` | `ScrambledKeyPair` | modulus bytes to scrambled modulus (with and without the leading `0x00`) |
 | `crypto_rsa_nopadding.json` | `Cipher RSA/ECB/nopadding` | fixed RSA-1024 and RSA-512 test keys (n, e, d), encrypt and decrypt |
 | `crypto_game_xor.json` | `Encryption`, `BlowFishKeygen` | game XOR cipher: enable-on-first-encrypt, key evolution over 5+ packets, offset wrap |
+
+## Files (login packets, M1-JV-02)
+
+`login_packets.json` holds the plaintext payload (opcode included, no length header, no encryption)
+of 27 packet classes, 2+ variants each: login server to client (`Init`, `LoginFail`, `AccountKicked`,
+`LoginOk`, `ServerList`, `PlayFail`, `PlayOk`, `GGAuth`), login server to game server (`InitLS`,
+`LoginServerFail`, `AuthResponse`, `PlayerAuthResponse`, `KickPlayer`, `RequestCharacters`,
+`ChangePasswordResponse`) and game server to login server (`BlowFishKey`, `AuthRequest`,
+`PlayerInGame`, `PlayerLogout`, `ChangeAccessLevel`, `PlayerAuthRequest`, `ServerStatus`,
+`PlayerTracert`, `ReplyCharacters`, `SendMail`, `TempBan`, `ChangePassword`).
+Shape: `packets[] { name, java_class, direction, opcode, variants[] { what, fields, payload } }`
+and `skipped[] { name, reason }`. Byte-array fields end in `_hex`.
+
+How some payloads are produced (the real Java class is used unless stated):
+
+- **ServerList.** The constructor needs `GameServerTable` and a `LoginClient`. The instance is
+  allocated without its constructor, the fields are injected by reflection and the real
+  `writeImpl` runs. The constructor logic (status computation, GM-only filtering) and the
+  pending-delete timers (they use the clock) are not covered.
+- **AuthResponse.** Calls `GameServerTable.getInstance()` (needs a database). The variants are a
+  replay of its three write calls (`"produced_by": "replay"`).
+- **TempBan.** Writes `System.currentTimeMillis()`. The real class runs, its expiry is range-checked
+  against the clock, then the 8 bytes are replaced with `1700000000000 + minutes * 60000`
+  (`"clock_pinned": true`).
+- **BlowFishKey.** RSA-512 key with the same seed as `crypto_rsa_nopadding.json` (`rsa_n_hex` is in
+  the fields). The encrypted output is deterministic because the padding is `nopadding`.
 
 ### Values not taken straight from one Java call
 
