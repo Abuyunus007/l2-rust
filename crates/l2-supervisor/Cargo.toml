@@ -8,8 +8,8 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-l2-admin-api = { path = "../l2-admin-api" }
-l2-config = { path = "../l2-config" }
+l2-admin-api.workspace = true
+l2-config.workspace = true
 tokio.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true

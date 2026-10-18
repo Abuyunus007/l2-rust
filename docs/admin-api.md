@@ -69,11 +69,33 @@ Bind = 127.0.0.1:7901
 Token =
 ```
 
-**Supervisor:** `supervisor.ini` (format defined by M1-ADM-02):
+**Supervisor:** `supervisor.ini` (Java `.ini` syntax; example: `crates/l2-supervisor/supervisor.example.ini`):
 ```ini
 Listen = 127.0.0.1:7900
 Token =
+LogBufferLines = 10000
+StopTimeoutSecs = 30
+RestartDelaySecs = 10
+Servers = login, game
+
+Server.login.Command = ../target/release/login-server
+Server.login.Args =
+Server.login.WorkingDir = ../login
+Server.login.AdminEndpoint = ws://127.0.0.1:7901
+Server.login.AdminToken =
+Server.login.Autostart = True
+# Absent = 2 (Java restart code). Empty = never restart.
+Server.login.RestartOnExitCode = 2
 ```
+- Exit 0 = stopped. The restart code = restart after `RestartDelaySecs`. Any other code or a signal = crashed, not restarted.
+- Relative `WorkingDir`, and commands containing a slash, are resolved against the folder of `supervisor.ini`. A bare `java` is looked up on `PATH`.
+- The real `supervisor.ini` is git-ignored (it holds the token).
+
+## Behaviour notes
+- **Events reach a client only after its first request.** The GUI should send `list_servers` right after `welcome`.
+- `subscribe_logs`: one subscription per connection (a new one replaces the old). With `server: null`, `since` applies to each server's own `seq`. The `ok` and the backlog lines may arrive in either order.
+- The supervisor adds its own lines to each server's log stream (target `supervisor`): started, exited, restarting, crashed, killed.
+- ⚠️ **Stopping on Windows is not graceful yet.** The child is killed, so Java shutdown hooks (saving players) **don't run**. Stop the Java GS from its own console or the in-game `//server_shutdown` until card M1-ADM-04 adds a graceful stop. On Linux the supervisor sends SIGTERM first, then kills after `StopTimeoutSecs`.
 
 ## Changing the protocol
 Add a variant in `messages.rs`, extend the snapshot test, document it here. Breaking changes (renamed or removed fields, changed meaning) bump `PROTOCOL_VERSION`.

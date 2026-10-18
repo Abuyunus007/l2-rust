@@ -25,3 +25,7 @@ Thumbs.db
 
 # Agent worktrees (one per task card)
 /.claude/worktrees/
+
+# Real supervisor config holds the admin token (the example is committed)
+/supervisor.ini
+crates/l2-supervisor/supervisor.ini
