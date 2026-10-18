@@ -74,11 +74,58 @@ pub struct Datapack {
     pub spawns: Arc<SpawnData>,
 }
 
+/// The config values that change what the loaders read. The game server builds it from
+/// `GameConfig` (`options_from_config` in `game-server`).
+///
+/// [`DatapackOptions::default`] holds Java's *code* defaults, not the values of the shipped
+/// `.ini` files, so [`Datapack::load`] behaves as it always did. Each field names its key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DatapackOptions {
+    /// `General.ini` `CustomItemsLoad` (default false): also load `data/stats/items/custom`.
+    pub custom_items_load: bool,
+    /// `General.ini` `CustomNpcData` (default false): also load `data/stats/npcs/custom`.
+    pub custom_npc_data: bool,
+    /// `Custom/FakePlayers.ini` `EnableFakePlayers` (default false): fake player NPCs are
+    /// loaded and may spawn. Used by both the NPC and the spawn loader.
+    pub fake_players_enabled: bool,
+    /// `Development.ini` `NoSpawns` (default false): spawns are not loaded at all.
+    pub no_spawns: bool,
+    /// `NPC.ini` `MaxAggroRange` (default 450).
+    pub max_aggro_range: i32,
+    /// `NPC.ini` `DefaultCorpseTime` (default 7).
+    pub default_corpse_time: i32,
+    /// `General.ini` `HtmCache` (default true). False is Java's lazy mode. The Rust HTML cache
+    /// preloads in both cases (see `HtmCache::load`), so this only changes the log note.
+    pub htm_cache: bool,
+}
+
+impl Default for DatapackOptions {
+    /// Java's code defaults, taken from the loaders' own option structs.
+    fn default() -> Self {
+        let npc = NpcLoadOptions::default();
+        Self {
+            custom_items_load: false,
+            custom_npc_data: npc.custom_npc_data,
+            fake_players_enabled: npc.fake_players_enabled,
+            no_spawns: false,
+            max_aggro_range: npc.max_aggro_range,
+            default_corpse_time: npc.default_corpse_time,
+            htm_cache: true,
+        }
+    }
+}
+
 impl Datapack {
+    /// Loads all tables below `root` (the folder that contains `data/`), with Java's code
+    /// defaults. See [`Datapack::load_with`].
+    pub fn load(root: &Path) -> Result<Self, DataError> {
+        Self::load_with(root, &DatapackOptions::default())
+    }
+
     /// Loads all tables below `root` (the folder that contains `data/`), logging Java's count
     /// line for each. Like Java, a broken or missing file is logged and skipped, not fatal; the
     /// only error is a `root` that has no `data` folder at all.
-    pub fn load(root: &Path) -> Result<Self, DataError> {
+    pub fn load_with(root: &Path, options: &DatapackOptions) -> Result<Self, DataError> {
         if !root.join("data").is_dir() {
             return Err(DataError::MissingRoot(root.to_path_buf()));
         }
@@ -87,8 +134,18 @@ impl Datapack {
         let experience = ExperienceTable::load(root);
         let max_level = experience.max_level().unwrap_or(DEFAULT_MAX_PLAYER_LEVEL);
         // Java loads NpcData before SpawnData (SpawnData checks every spawn against it).
-        let npcs = NpcTemplates::load(root, &NpcLoadOptions::default());
-        let spawns = SpawnData::load(root, &npcs, &SpawnLoadOptions::default());
+        let npc_options = NpcLoadOptions {
+            custom_npc_data: options.custom_npc_data,
+            fake_players_enabled: options.fake_players_enabled,
+            max_aggro_range: options.max_aggro_range,
+            default_corpse_time: options.default_corpse_time,
+        };
+        let npcs = NpcTemplates::load(root, &npc_options);
+        let spawn_options = SpawnLoadOptions {
+            fake_players_enabled: options.fake_players_enabled,
+            no_spawns: options.no_spawns,
+        };
+        let spawns = SpawnData::load(root, &npcs, &spawn_options);
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -97,15 +154,12 @@ impl Datapack {
             initial_shortcuts: Arc::new(InitialShortcuts::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             skill_trees: Arc::new(SkillTrees::load(root)),
-            // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
-            // there is no config in this crate yet.
-            items: Arc::new(ItemTemplates::load(root, false)),
+            items: Arc::new(ItemTemplates::load(root, options.custom_items_load)),
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
-            // Java's code default for `HtmCache` is true (preload); the shipped General.ini says False.
-            html: Arc::new(HtmCache::load(root, false)),
+            // Java `HtmCache = False` is the lazy mode, so the lazy flag is the inverse.
+            html: Arc::new(HtmCache::load(root, !options.htm_cache)),
             teleporters: Arc::new(TeleporterData::load(root)),
-            // Java's code defaults (`CustomNpcData` false, fake players off), like items above.
             npcs: Arc::new(npcs),
             spawns: Arc::new(spawns),
         })
@@ -123,6 +177,76 @@ mod tests {
             Datapack::load(dir.path()),
             Err(DataError::MissingRoot(_))
         ));
+    }
+
+    #[test]
+    fn default_options_are_java_code_defaults() {
+        let options = DatapackOptions::default();
+        assert!(!options.custom_items_load);
+        assert!(!options.custom_npc_data);
+        assert!(!options.fake_players_enabled);
+        assert!(!options.no_spawns);
+        assert_eq!((options.max_aggro_range, options.default_corpse_time), (450, 7));
+        assert!(options.htm_cache);
+    }
+
+    #[test]
+    fn custom_folders_load_only_when_the_options_say_so() {
+        let dir = tempfile::tempdir().unwrap();
+        let items = dir.path().join("data/stats/items/custom");
+        let npcs = dir.path().join("data/stats/npcs/custom");
+        std::fs::create_dir_all(&items).unwrap();
+        std::fs::create_dir_all(&npcs).unwrap();
+        std::fs::write(
+            items.join("custom.xml"),
+            r#"<?xml version="1.0" encoding="UTF-8"?><list><item id="900001" type="EtcItem" name="Custom Item"/></list>"#,
+        )
+        .unwrap();
+        std::fs::write(
+            npcs.join("custom.xml"),
+            r#"<?xml version="1.0" encoding="UTF-8"?><list><npc id="900001" name="Custom Npc"/></list>"#,
+        )
+        .unwrap();
+
+        let defaults = Datapack::load(dir.path()).unwrap();
+        assert!(defaults.items.get(900_001).is_none());
+        assert!(defaults.npcs.get(900_001).is_none());
+
+        let custom = DatapackOptions {
+            custom_items_load: true,
+            custom_npc_data: true,
+            ..DatapackOptions::default()
+        };
+        let pack = Datapack::load_with(dir.path(), &custom).unwrap();
+        assert_eq!(
+            pack.items.get(900_001).map(|item| item.name.as_str()),
+            Some("Custom Item")
+        );
+        assert_eq!(
+            pack.npcs.get(900_001).map(|npc| npc.name.as_str()),
+            Some("Custom Npc")
+        );
+    }
+
+    #[test]
+    fn no_spawns_skips_the_spawn_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let spawns = dir.path().join("data/spawns");
+        std::fs::create_dir_all(&spawns).unwrap();
+        std::fs::write(
+            spawns.join("spawn.xml"),
+            r#"<?xml version="1.0" encoding="UTF-8"?><list enabled="true"></list>"#,
+        )
+        .unwrap();
+
+        let loaded = Datapack::load(dir.path()).unwrap();
+        assert_eq!(loaded.spawns.parsed_files(), 1);
+        let options = DatapackOptions {
+            no_spawns: true,
+            ..DatapackOptions::default()
+        };
+        let skipped = Datapack::load_with(dir.path(), &options).unwrap();
+        assert_eq!(skipped.spawns.parsed_files(), 0);
     }
 
     #[test]
