@@ -7,10 +7,15 @@
 //! structs whose field types match the column types.
 
 mod error;
+mod game;
 mod login;
 mod pool;
 
 pub use error::{DbError, Result};
+pub use game::{
+    CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
+    NewCharacter,
+};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,
     hash_password, hex_to_string, string_to_hex,
