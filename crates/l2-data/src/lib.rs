@@ -12,8 +12,10 @@ pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod item;
 pub mod loader;
+pub mod map_region;
 pub mod player_template;
 pub mod skill_tree;
+pub mod zone;
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -26,8 +28,10 @@ pub use initial_shortcuts::{
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use loader::DataError;
+pub use map_region::{MapRegion, MapRegions};
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
+pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
 /// Everything loaded from a datapack folder.
 #[derive(Debug, Clone)]
@@ -48,6 +52,10 @@ pub struct Datapack {
     pub skill_trees: Arc<SkillTrees>,
     /// `data/stats/items/*.xml`.
     pub items: Arc<ItemTemplates>,
+    /// `data/zones/*.xml`.
+    pub zones: Arc<Zones>,
+    /// `data/mapregion/*.xml`.
+    pub map_regions: Arc<MapRegions>,
 }
 
 impl Datapack {
@@ -73,6 +81,8 @@ impl Datapack {
             // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
             // there is no config in this crate yet.
             items: Arc::new(ItemTemplates::load(root, false)),
+            zones: Arc::new(Zones::load(root)),
+            map_regions: Arc::new(MapRegions::load(root)),
         })
     }
 }
