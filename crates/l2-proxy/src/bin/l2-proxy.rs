@@ -29,8 +29,13 @@ struct Args {
     upstream: SocketAddr,
 
     /// Write every packet to this JSON-lines file (credentials are always redacted).
-    #[arg(long)]
+    #[arg(long, conflicts_with = "capture_dir")]
     capture: Option<PathBuf>,
+
+    /// Write each run to a new file `capture-<unix-ms>.jsonl` in this folder (created if
+    /// missing). Use this when the proxy runs permanently, e.g. under the supervisor.
+    #[arg(long)]
+    capture_dir: Option<PathBuf>,
 
     /// Also record the account name of each login attempt (never the password).
     #[arg(long)]
@@ -60,7 +65,19 @@ async fn main() -> Result<()> {
         .init();
     let args = Args::parse();
 
-    let mut writer = match &args.capture {
+    let capture_path = match (&args.capture, &args.capture_dir) {
+        (Some(path), _) => Some(path.clone()),
+        (None, Some(dir)) => {
+            std::fs::create_dir_all(dir).with_context(|| format!("cannot create {}", dir.display()))?;
+            let ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis())
+                .unwrap_or(0);
+            Some(dir.join(format!("capture-{ms}.jsonl")))
+        }
+        (None, None) => None,
+    };
+    let mut writer = match &capture_path {
         Some(path) => Some(
             CaptureWriter::create(path)
                 .with_context(|| format!("cannot create capture {}", path.display()))?,
@@ -83,7 +100,7 @@ async fn main() -> Result<()> {
         proxy.local_addr(),
         args.upstream
     );
-    if let Some(path) = &args.capture {
+    if let Some(path) = &capture_path {
         println!("Capturing to {} (Ctrl+C to stop)", path.display());
     }
 
