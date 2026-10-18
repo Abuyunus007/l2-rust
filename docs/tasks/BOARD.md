@@ -135,14 +135,47 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | planned |
 | [M2-RUN-01](M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | planned |
 
-## M3: World and movement (draft, being planned)
+## M3: World and movement (plan, waiting for the owner's OK)
 
-The full M3 plan and its cards follow for the owner's sign-off. The geoengine card started early on the owner's go (2026-10-18): it only touches `l2-geo` and the Java vector harness, nothing M2 uses.
+21 cards: 3 opus (orchestrator), 10 sonnet, 8 haiku. Design: [docs/design/m3-world.md](../design/m3-world.md). GEO-01 started early on the owner's go (2026-10-18). Workers run **at most 4-5 at a time** (CPU: every worktree compiles the workspace); the next card starts when one merges.
+
+### Waves
+| Wave | Cards | Parallel workers |
+|---|---|---:|
+| W0 | GEO-01 (s, running), GPROTO-05 (s), GPROTO-06 (h), DATA-05 (s), DATA-06 (h), DATA-07 (s), DATA-08 (h), DATA-09 (h) | 4-5 at a time |
+| W1 | GEO-02 (s), GUI-02 (h), GUI-03 (h), WREG-01 (o, after M2-ENTER-01) | 3 |
+| W2 | MOVE-01 (s), NPC-01 (s), TELE-01 (s), DOOR-01 (s) | 4 |
+| 🎮 **CP-M3a** | **You:** walk around on Kain with geodata (no walking through walls, no falling), see NPCs where Java has them, doors. Plus the geodata check: compare both sets at a few spots with `//loc` (12_24, 17_10, 16_10, 14_23) so we pick the default set (D-26). | |
+| W3 | TALK-01 (s), PLAYERS-01 (o) | 1 |
+| 🎮 **CP-M3b** | **You:** talk to gatekeepers and teleport; two clients see each other moving and chatting. | |
+| W4 | ADMIN-01 (h), E2E-01 (s) | 2 |
+| W5 | RUN-01 (o) | 0 |
+| 🎮 **CP-M3c** | **Milestone test (you):** walk the world with geodata, NPCs, a second player, gatekeepers, admin commands (`//spawn`, `//teleport`, `//loc`, `//kill`, `//heal`). | |
 
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
 | [M3-GEO-01](M3/M3-GEO-01.md) | Geoengine: height, line of sight, movement checks, per-region override | sonnet | full | M1 l2-geo | in-progress |
+| [M3-GEO-02](M3/M3-GEO-02.md) | Pathfinding on worker threads | sonnet | full | GEO-01 | planned |
+| [M3-GPROTO-05](M3/M3-GPROTO-05.md) | Visibility and movement packets | sonnet | full | none | planned |
+| [M3-GPROTO-06](M3/M3-GPROTO-06.md) | Target, action and NPC dialog packets | haiku | spot | none | planned |
+| [M3-DATA-05](M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | planned |
+| [M3-DATA-06](M3/M3-DATA-06.md) | Spawn data | haiku | spot | none | planned |
+| [M3-DATA-07](M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | planned |
+| [M3-DATA-08](M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | planned |
+| [M3-DATA-09](M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | planned |
+| [M3-GUI-02](M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | planned |
+| [M3-GUI-03](M3/M3-GUI-03.md) | GUI geodata viewer | haiku | spot | GEO-01 | planned |
+| [M3-WREG-01](M3/M3-WREG-01.md) | World regions, visibility, object tables | opus (orchestrator) | full | M2-ENTER-01, GPROTO-05 | planned |
+| [M3-MOVE-01](M3/M3-MOVE-01.md) | Movement with geodata and pathfinding | sonnet | full | WREG-01, GEO-02, GPROTO-05 | planned |
+| [M3-NPC-01](M3/M3-NPC-01.md) | NPC spawns in the world (no AI) | sonnet | full | WREG-01, DATA-05, DATA-06, GPROTO-05 | planned |
+| [M3-TELE-01](M3/M3-TELE-01.md) | Teleports, zones in the world, map regions | sonnet | full | WREG-01, DATA-07, GPROTO-05 | planned |
+| [M3-DOOR-01](M3/M3-DOOR-01.md) | Doors and fences in the world | sonnet | full | WREG-01, DATA-09, GEO-01, GPROTO-06 | planned |
+| [M3-TALK-01](M3/M3-TALK-01.md) | Targeting, NPC dialogs, bypasses, gatekeepers | sonnet | full | NPC-01, DATA-08, TELE-01, GPROTO-06 | planned |
+| [M3-PLAYERS-01](M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | planned |
+| [M3-ADMIN-01](M3/M3-ADMIN-01.md) | Core admin commands | haiku | spot | TALK-01 | planned |
+| [M3-E2E-01](M3/M3-E2E-01.md) | Two fake clients end to end | sonnet | spot | PLAYERS-01, TALK-01, M2-E2E-01 | planned |
+| [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | planned |
 
 ## Milestone test results
 
