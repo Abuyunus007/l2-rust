@@ -2541,8 +2541,11 @@ dependencies = [
 name = "l2-world"
 version = "0.1.0"
 dependencies = [
+ "hex",
  "l2-net",
+ "l2-protocol-game",
  "l2-util",
+ "serde_json",
  "tracing",
 ]
 

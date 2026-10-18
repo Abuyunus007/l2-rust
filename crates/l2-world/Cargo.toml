@@ -11,7 +11,13 @@ repository.workspace = true
 [dependencies]
 l2-util.workspace = true
 l2-net.workspace = true
+l2-protocol-game.workspace = true
 tracing.workspace = true
+
+# Only the tests read the Java capture fixtures.
+[dev-dependencies]
+serde_json.workspace = true
+hex.workspace = true
 
 [lints]
 workspace = true

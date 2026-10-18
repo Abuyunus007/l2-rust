@@ -109,7 +109,8 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         | ClientPacket::RequestKeyMapping(_)
         | ClientPacket::Logout(_)
         | ClientPacket::RequestRestart(_)
-        | ClientPacket::RequestNetPing(_) => json!({}),
+        | ClientPacket::RequestNetPing(_)
+        | ClientPacket::RequestSkillCoolTime(_) => json!({}),
         ClientPacket::CharacterCreate(p) => object!(
             p => name, race, is_female, class_id, int, str, con, men, dex, wit, hair_style, hair_color, face
         ),

@@ -20,7 +20,15 @@ enum Out {
 struct Log(Arc<Mutex<Vec<Out>>>);
 
 impl Log {
+    /// Everything except the packets (those are checked in tests/enter.rs).
     fn take(&self) -> Vec<Out> {
+        self.take_all()
+            .into_iter()
+            .filter(|o| !matches!(o, Out::Packet(..)))
+            .collect()
+    }
+
+    fn take_all(&self) -> Vec<Out> {
         std::mem::take(&mut self.0.lock().unwrap())
     }
 }
@@ -81,6 +89,7 @@ fn data(id: i32, account: &str, name: &str) -> PlayerData {
         items: vec![],
         skills: vec![],
         shortcuts: vec![],
+        profile: Default::default(),
     }
 }
 
@@ -136,7 +145,8 @@ fn logout_stores_then_reports_left_then_tells_the_session() {
         out[1],
         Out::Persist(PersistCommand::PlayerLeft {
             account: "acc".into(),
-            object_id: ObjectId(7)
+            object_id: ObjectId(7),
+            logout: true,
         })
     );
     assert_eq!(out[2], Out::Left(7, LeaveReason::Logout));

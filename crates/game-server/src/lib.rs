@@ -31,6 +31,7 @@ pub mod ls_link;
 pub mod persist;
 pub mod runtime;
 pub mod state;
+pub mod world_data;
 
 use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
@@ -41,7 +42,7 @@ use l2_data::{DataError, Datapack};
 use l2_db::{DbError, IdRepository, Pool};
 use l2_net::CancellationToken;
 use l2_util::WorldRng;
-use l2_world::{IdError, IdFactory, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
+use l2_world::{IdError, IdFactory, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID, StaticData};
 use tokio::sync::mpsc;
 use tokio::task::JoinSet;
 use tracing::{info, warn};
@@ -49,6 +50,7 @@ use tracing::{info, warn};
 use crate::persist::{DbStore, LsNotice, RetryPolicy};
 use crate::runtime::WorldRuntime;
 use crate::state::{ExitReason, GameState, ShutdownHandle};
+use crate::world_data::DatapackData;
 
 /// File names inside the config directory.
 pub const DATABASE_CONFIG_FILE: &str = "Database.ini";
@@ -177,6 +179,18 @@ impl Server {
                 .map_err(|e| StartupError::Internal(format!("datapack loader: {e}")))??
         };
         let datapack = Arc::new(datapack);
+        // The base stat bonuses, the passive skill flags and the access levels the packets need
+        // (see `world_data`), and the config values the world reads.
+        let static_data: Arc<dyn StaticData> = {
+            let (datapack, config, config_dir) =
+                (Arc::clone(&datapack), config.clone(), paths.config_dir.clone());
+            Arc::new(
+                tokio::task::spawn_blocking(move || DatapackData::load(datapack, &config, &config_dir))
+                    .await
+                    .map_err(|e| StartupError::Internal(format!("data loader: {e}")))?,
+            )
+        };
+        let world_settings = world_data::world_settings(&config, &paths.config_dir);
 
         // Java: ServerConfig.loadHexid (at the end of ServerConfig.load)
         let hexid = hexid::load(&paths.config_dir);
@@ -187,9 +201,16 @@ impl Server {
         let (notices_tx, ls_notices) = mpsc::unbounded_channel();
         let world = {
             let store = DbStore::new(pool.clone());
-            WorldRuntime::start_with_autosave(WorldRng::from_entropy(), autosave, move |outbox| {
-                persist::spawn(store, outbox, notices_tx, RetryPolicy::default())
-            })
+            let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
+            WorldRuntime::start_configured(
+                WorldRng::from_entropy(),
+                autosave,
+                move |world| {
+                    world.set_static_data(Box::new(data));
+                    world.set_settings(settings);
+                },
+                move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default()),
+            )
             .map_err(StartupError::WorldThread)?
         };
 
@@ -201,6 +222,8 @@ impl Server {
             pool,
             ids,
             datapack,
+            static_data,
+            world_settings,
             world: world.handle(),
             hexid,
             shutdown,
@@ -384,6 +407,8 @@ pub(crate) mod test_support {
             pool: lazy_pool(),
             ids: Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()),
             datapack: Arc::new(empty_datapack()),
+            static_data: Arc::new(l2_world::NoData),
+            world_settings: l2_world::WorldSettings::default(),
             world: handle,
             hexid: None,
             shutdown,

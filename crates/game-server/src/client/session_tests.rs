@@ -23,11 +23,14 @@ use tokio::net::TcpStream;
 
 use super::charlist::CharacterInfo;
 use super::charscreen::{CharScreen, CharScreenStore, DeleteOutcome, StoreError};
+use super::enter::{LoadError, PlayerLoader};
 use super::newchar::NewCharacterPlan;
 use super::*;
-use crate::state::WorldHandle;
+use crate::runtime::{OutboxMessage, WorldRuntime};
+use crate::world_data::{AccessLevels, BaseStatBonus, DatapackData, PassiveSkills, StatLimits};
 use l2_config::GameConfig;
-use l2_world::IdFactory;
+use l2_util::WorldRng;
+use l2_world::{IdFactory, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 
 const ACCOUNT: &str = "acc";
 const KEY: SessionKey = SessionKey {
@@ -82,6 +85,108 @@ impl CharacterSource for FakeCharacters {
             Vec::new()
         };
         Box::pin(async move { list })
+    }
+}
+
+/// Loads the characters of [`FakeCharacters`] as level 20 characters with a wand, adena, two
+/// skills and a skill shortcut.
+struct FakeLoader;
+
+impl PlayerLoader for FakeLoader {
+    fn load_player<'a>(
+        &'a self,
+        account: &'a str,
+        char_id: i32,
+    ) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
+        let result =
+            match ["Older", "Recent", "Middle"].get(usize::try_from(char_id - 0x1000_0000).unwrap_or(9)) {
+                // "Older" cannot be loaded (a database error, say).
+                Some(&"Older") => Err(LoadError::Database("boom".into())),
+                Some(name) if account == ACCOUNT => Ok(test_player(char_id, name)),
+                _ => Err(LoadError::NotFound(char_id)),
+            };
+        Box::pin(async move { result })
+    }
+}
+
+fn test_player(char_id: i32, name: &str) -> PlayerData {
+    PlayerData {
+        object_id: ObjectId(char_id),
+        account: ACCOUNT.into(),
+        name: name.into(),
+        title: String::new(),
+        class_id: 10,
+        base_class: 10,
+        race: 0,
+        sex: 0,
+        face: 0,
+        hair_style: 1,
+        hair_color: 2,
+        level: 20,
+        exp: 100,
+        sp: 5,
+        karma: 0,
+        pvp_kills: 0,
+        pk_kills: 0,
+        access_level: 0,
+        x: -71_338,
+        y: 258_271,
+        z: -3_104,
+        heading: 1_000,
+        cur_hp: 90.0,
+        max_hp: 100.0,
+        cur_mp: 40.0,
+        max_mp: 50.0,
+        cur_cp: 10.0,
+        max_cp: 20.0,
+        online_time: 10,
+        items: vec![
+            ItemData {
+                object_id: ObjectId(0x2000_0000 + char_id % 16),
+                item_id: 6,
+                count: 1,
+                enchant_level: 3,
+                loc: "PAPERDOLL".into(),
+                loc_data: 5,
+                custom_type1: 0,
+                custom_type2: 0,
+                mana_left: -1,
+                time: -1,
+            },
+            ItemData {
+                object_id: ObjectId(0x2000_0010 + char_id % 16),
+                item_id: 57,
+                count: 1_000,
+                enchant_level: 0,
+                loc: "INVENTORY".into(),
+                loc_data: 0,
+                custom_type1: 0,
+                custom_type2: 0,
+                mana_left: -1,
+                time: -1,
+            },
+        ],
+        skills: vec![
+            SkillData {
+                skill_id: 1177,
+                skill_level: 1,
+            },
+            SkillData {
+                skill_id: 1216,
+                skill_level: 1,
+            },
+        ],
+        shortcuts: vec![ShortcutData {
+            slot: 1,
+            page: 0,
+            kind: 2,
+            shortcut_id: 1177,
+            level: 1,
+        }],
+        profile: l2_world::PlayerProfile {
+            recom_left: 20,
+            ..l2_world::PlayerProfile::default()
+        },
     }
 }
 
@@ -180,7 +285,9 @@ struct Harness {
     ids: Arc<IdFactory>,
     _datapack: tempfile::TempDir,
     ctx: Arc<ClientContext>,
-    _world_rx: std::sync::mpsc::Receiver<l2_world::WorldCommand>,
+    /// What the world sent to the persistence side, in order.
+    outbox: Arc<Mutex<Vec<OutboxMessage>>>,
+    _world: WorldRuntime,
     cancel: l2_net::CancellationToken,
 }
 
@@ -207,12 +314,50 @@ async fn start_with(
     config.manual.player.forbidden_names = vec!["annou".to_owned()];
     tweak(&mut config);
     let ids = Arc::new(IdFactory::new([]).unwrap());
-    let (world_tx, world_rx) = std::sync::mpsc::channel();
+    // A real world thread; its outbox is collected for the assertions.
+    let outbox: Arc<Mutex<Vec<OutboxMessage>>> = Arc::default();
+    let static_data: Arc<dyn l2_world::StaticData> = Arc::new(DatapackData::new(
+        Arc::clone(&datapack),
+        BaseStatBonus::default(),
+        PassiveSkills::default(),
+        AccessLevels::default(),
+        StatLimits {
+            max_patk: 99_999,
+            max_matk: 99_999,
+            max_pcrit_rate: 500,
+            max_evasion: 250,
+            max_patk_speed: 1_500,
+            max_matk_speed: 1_999,
+            max_run_speed: 250,
+            alt_weight_limit: 1.0,
+        },
+    ));
+    let settings = l2_world::WorldSettings::default();
+    let world = {
+        let (data, settings) = (Arc::clone(&static_data), settings.clone());
+        let collected = Arc::clone(&outbox);
+        WorldRuntime::start_configured(
+            WorldRng::from_seed(5),
+            Duration::from_secs(900),
+            move |world| {
+                world.set_static_data(Box::new(data));
+                world.set_settings(settings);
+            },
+            move |mut rx| {
+                tokio::spawn(async move {
+                    while let Some(message) = rx.recv().await {
+                        collected.lock().unwrap().push(message);
+                    }
+                })
+            },
+        )
+        .unwrap()
+    };
     let ctx = Arc::new(ClientContext {
         gate: gate.clone(),
         characters: Arc::new(FakeCharacters),
         registry: Arc::default(),
-        world: WorldHandle::new(world_tx),
+        world: world.handle(),
         protocol_list: vec![267, 268, 271, 273],
         packet_encryption,
         max_characters: 7,
@@ -223,6 +368,9 @@ async fn start_with(
             Arc::clone(&ids),
             select_interval_ticks,
         ),
+        loader: Arc::new(FakeLoader),
+        data: static_data,
+        settings,
     });
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -245,7 +393,8 @@ async fn start_with(
         ids,
         _datapack: datapack_dir,
         ctx,
-        _world_rx: world_rx,
+        outbox,
+        _world: world,
         cancel,
     }
 }
@@ -774,4 +923,369 @@ async fn a_refused_session_key_gets_login_fail() {
         .to_bytes()
     );
     client.expect_closed().await;
+}
+
+// ---- entering the world, chat, logout and restart ----------------------------------------------
+
+use l2_protocol_game::client::{EnterWorld, RequestKeyMapping, RequestNetPing, RequestRestart, Say2};
+use l2_protocol_game::server::enterworld::{ExUiSetting, SkillList};
+use l2_protocol_game::server::{
+    ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField,
+};
+
+/// The opcode name of a server packet body.
+fn name_of(body: &[u8]) -> String {
+    let ex = (body[0] == 0xFE).then(|| u16::from_le_bytes([body[1], body[2]]));
+    ServerOpcode::from_id(body[0], ex).map_or_else(|| format!("?{:02X}", body[0]), |o| o.name().to_owned())
+}
+
+fn enter_world_packet() -> EnterWorld {
+    EnterWorld {
+        unknown1: [0; 32],
+        unknown2: [0; 4],
+        unknown3: [0; 32],
+        unknown4: 0,
+        tracert: [[0; 4]; 5],
+    }
+}
+
+/// The sequence Java sends after `EnterWorld` for a plain character (see `enter.rs` of
+/// `l2-world` for what is left out and why).
+const ENTER_SEQUENCE: [&str; 26] = [
+    "USER_INFO",
+    "EX_VOTE_SYSTEM_INFO",
+    "MACRO_LIST",
+    "ITEM_LIST",
+    "EX_QUEST_ITEM_LIST",
+    "EX_GET_BOOKMARK_INFO",
+    "SHORT_CUT_INIT",
+    "EX_BASIC_ACTION_LIST",
+    "HENNA_INFO",
+    "QUEST_LIST",
+    "EX_ROTATION",
+    "ETC_STATUS_UPDATE",
+    "EX_STORAGE_MAX_COUNT",
+    "L2_FRIEND_LIST",
+    "SYSTEM_MESSAGE",
+    "SKILL_COOL_TIME",
+    "EX_VOTE_SYSTEM_INFO",
+    "EX_RECEIVE_SHOW_POST_FRIEND",
+    "EX_NAVIT_ADVENT_POINT_INFO",
+    "EX_NAVIT_ADVENT_TIME_CHANGE",
+    "USER_INFO",
+    "EX_BR_EXTRA_USER_INFO",
+    "VALIDATE_LOCATION",
+    "ACTION_FAIL",
+    "SKILL_LIST",
+    "<end>",
+];
+
+/// Selects the character of `slot` and reads SSQ_INFO, CHARACTER_SELECTED and SKILL_LIST.
+async fn select(client: &mut FakeClient, slot: i32) {
+    client.send(select_packet(slot).to_bytes()).await;
+    assert_eq!(name_of(&client.recv().await.unwrap()), "SSQ_INFO");
+    assert_eq!(name_of(&client.recv().await.unwrap()), "CHARACTER_SELECTED");
+    assert_eq!(name_of(&client.recv().await.unwrap()), "SKILL_LIST");
+}
+
+/// Sends `EnterWorld` and reads the whole sequence, returning the packet names.
+async fn enter_world(client: &mut FakeClient) -> Vec<String> {
+    client.send(enter_world_packet().to_bytes()).await;
+    let mut names = Vec::new();
+    for _ in 0..ENTER_SEQUENCE.len() - 1 {
+        names.push(name_of(&client.recv().await.unwrap()));
+    }
+    names
+}
+
+async fn in_world(h: &Harness) -> FakeClient {
+    let mut client = logged_in(h).await;
+    select(&mut client, 1).await;
+    enter_world(&mut client).await;
+    client
+}
+
+fn outbox_has(h: &Harness, wanted: impl Fn(&OutboxMessage) -> bool) -> bool {
+    h.outbox.lock().unwrap().iter().any(wanted)
+}
+
+#[tokio::test]
+async fn enter_world_sends_the_java_sequence_and_tells_the_login_server() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    select(&mut client, 1).await;
+
+    // Between CharacterSelect and EnterWorld the stored key mapping is asked for.
+    client.send(RequestKeyMapping.to_bytes()).await;
+    assert_eq!(
+        client.recv().await.unwrap(),
+        ExUiSetting {
+            ui_key_mapping: vec![]
+        }
+        .to_bytes()
+    );
+
+    let names = enter_world(&mut client).await;
+    assert_eq!(names, ENTER_SEQUENCE[..ENTER_SEQUENCE.len() - 1]);
+
+    // The registry knows the character is in the world; the selection is not undone on leave.
+    assert!(
+        h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
+    assert!(outbox_has(&h, |m| matches!(
+        m,
+        OutboxMessage::Ls(LsEvent::PlayerInGame { account }) if account == ACCOUNT
+    )));
+    drop(client);
+    // The world stores the character, not the screen's online reset.
+    wait_for(|| {
+        outbox_has(&h, |m| {
+            matches!(m, OutboxMessage::Persist(PersistCommand::PlayerLeft { .. }))
+        })
+    })
+    .await;
+    assert_eq!(h.store.online.lock().unwrap().as_slice(), [(0x1000_0001, 1)]);
+}
+
+#[tokio::test]
+async fn the_skill_list_after_select_describes_the_loaded_skills() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    client.send(select_packet(1).to_bytes()).await;
+    client.recv().await.unwrap();
+    client.recv().await.unwrap();
+    let body = client.recv().await.unwrap();
+    let list = SkillList::decode(&mut l2_net::PacketReader::new(&body[1..])).unwrap();
+    let ids: Vec<_> = list.skills.iter().map(|s| (s.id, s.level, s.passive)).collect();
+    assert_eq!(ids, [(1177, 1, false), (1216, 1, false)]);
+}
+
+#[tokio::test]
+async fn chat_goes_to_the_speaker_and_a_whisper_to_the_named_player() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client
+        .send(
+            Say2 {
+                text: "hello".into(),
+                chat_type: 0,
+                target: None,
+            }
+            .to_bytes(),
+        )
+        .await;
+    let expected = CreatureSay {
+        sender_object_id: 0x1000_0001,
+        chat_type: ChatType::General,
+        sender: SenderField::Name("Recent".into()),
+        message_id: -1,
+        body: SayBody::Text("hello".into()),
+    };
+    assert_eq!(client.recv().await.unwrap(), expected.to_bytes());
+
+    // A whisper to oneself (the name is compared ignoring case): the receiver's copy shows the
+    // sender, the sender's copy shows "->name".
+    client
+        .send(
+            Say2 {
+                text: "psst".into(),
+                chat_type: 2,
+                target: Some("RECENT".into()),
+            }
+            .to_bytes(),
+        )
+        .await;
+    let to_receiver = CreatureSay {
+        chat_type: ChatType::Whisper,
+        body: SayBody::Text("psst".into()),
+        ..expected.clone()
+    };
+    let to_sender = CreatureSay {
+        sender: SenderField::Name("->Recent".into()),
+        ..to_receiver.clone()
+    };
+    assert_eq!(client.recv().await.unwrap(), to_receiver.to_bytes());
+    assert_eq!(client.recv().await.unwrap(), to_sender.to_bytes());
+
+    // Nobody called Ghost: "That player is not online."
+    client
+        .send(
+            Say2 {
+                text: "boo".into(),
+                chat_type: 2,
+                target: Some("Ghost".into()),
+            }
+            .to_bytes(),
+        )
+        .await;
+    assert_eq!(
+        client.recv().await.unwrap(),
+        SystemMessage::new(SystemMessageId::ThatPlayerIsNotOnline).to_bytes()
+    );
+}
+
+#[tokio::test]
+async fn unknown_in_game_packets_are_ignored_and_the_net_ping_is_answered() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    // `Attack` is a valid IN_GAME packet without a handler yet; it must not disconnect.
+    client
+        .send(vec![l2_protocol_game::ClientOpcode::Attack.id(), 0, 0, 0, 0])
+        .await;
+    // An opcode the table does not know at all.
+    client.send(vec![0x02, 1, 2, 3]).await;
+    client.send(RequestNetPing.to_bytes()).await;
+    let body = client.recv().await.unwrap();
+    assert_eq!(name_of(&body), "NET_PING");
+    let ping = NetPing::decode(&mut l2_net::PacketReader::new(&body[1..])).unwrap();
+    assert!((0..1440).contains(&ping.game_time));
+}
+
+#[tokio::test]
+async fn logout_stores_the_character_says_goodbye_and_closes() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client.send(Logout.to_bytes()).await;
+    assert_eq!(client.recv().await.unwrap(), LeaveWorld.to_bytes());
+    client.expect_closed().await;
+    wait_for(|| h.ctx.registry.is_empty()).await;
+
+    let messages = h.outbox.lock().unwrap().clone();
+    let stored = messages
+        .iter()
+        .position(
+            |m| matches!(m, OutboxMessage::Persist(PersistCommand::StorePlayer(p)) if p.name == "Recent"),
+        )
+        .expect("the final store");
+    let left = messages
+        .iter()
+        .position(|m| {
+            matches!(
+                m,
+                OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. })
+            )
+        })
+        .expect("PlayerLeft");
+    assert!(stored < left, "the store comes before PlayerLeft");
+    // The persistence task tells the login server after the store; the session must not.
+    assert!(h.gate.logouts.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn closing_the_connection_in_the_world_stores_the_character() {
+    let h = start(true).await;
+    let client = in_world(&h).await;
+    drop(client);
+    wait_for(|| {
+        outbox_has(&h, |m| {
+            matches!(
+                m,
+                OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. })
+            )
+        })
+    })
+    .await;
+    assert!(h.gate.logouts.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn restart_returns_to_the_character_screen_and_the_character_can_enter_again() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client.send(RequestRestart.to_bytes()).await;
+    assert_eq!(
+        client.recv().await.unwrap(),
+        RestartResponse { result: true }.to_bytes()
+    );
+    let list = decode_char_list(&client.recv().await.unwrap());
+    assert_eq!(list.characters.len(), 3);
+
+    // The character was stored, but the account stays on the server: no PlayerLogout.
+    assert!(outbox_has(&h, |m| matches!(
+        m,
+        OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: false, .. })
+    )));
+    assert!(
+        !h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
+    assert!(h.gate.logouts.lock().unwrap().is_empty());
+
+    // Back in AUTHENTICATED: select and enter again, then leave for good.
+    select(&mut client, 1).await;
+    assert_eq!(enter_world(&mut client).await.len(), ENTER_SEQUENCE.len() - 1);
+    assert!(
+        h.ctx
+            .registry
+            .get(ACCOUNT)
+            .unwrap()
+            .in_world
+            .load(Ordering::Acquire)
+    );
+    client.send(Logout.to_bytes()).await;
+    assert_eq!(client.recv().await.unwrap(), LeaveWorld.to_bytes());
+    client.expect_closed().await;
+}
+
+#[tokio::test]
+async fn a_restart_then_closing_tells_the_login_server_from_the_session() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client.send(RequestRestart.to_bytes()).await;
+    client.recv().await.unwrap();
+    decode_char_list(&client.recv().await.unwrap());
+    drop(client);
+    wait_for(|| h.gate.logouts.lock().unwrap().as_slice() == [ACCOUNT]).await;
+}
+
+#[tokio::test]
+async fn a_kick_of_a_character_in_the_world_goes_through_the_world() {
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    assert_eq!(h.ctx.registry.kick(ACCOUNT, &h.ctx.world), KickOutcome::WorldKick);
+    assert_eq!(
+        client.recv().await.unwrap(),
+        SystemMessage::new(SystemMessageId::AnotherPersonHasLoggedInWithTheSameAccount).to_bytes()
+    );
+    client.expect_closed().await;
+    wait_for(|| {
+        outbox_has(&h, |m| {
+            matches!(
+                m,
+                OutboxMessage::Persist(PersistCommand::PlayerLeft { logout: true, .. })
+            )
+        })
+    })
+    .await;
+}
+
+#[tokio::test]
+async fn a_character_that_cannot_be_loaded_is_not_selected() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    // Java: `client.load` returns null, the packet ends, nothing is sent and nothing is marked.
+    client.send(select_packet(0).to_bytes()).await;
+    client.send(RequestGotoLobby.to_bytes()).await;
+    decode_char_list(&client.recv().await.unwrap());
+    assert!(h.store.online.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn enter_world_is_not_accepted_before_a_character_was_selected() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    // EnterWorld is an ENTERING packet: in AUTHENTICATED it is dropped like any unknown packet.
+    client.send(enter_world_packet().to_bytes()).await;
+    client.send(RequestGotoLobby.to_bytes()).await;
+    decode_char_list(&client.recv().await.unwrap());
+    assert!(!outbox_has(&h, |_| true));
 }

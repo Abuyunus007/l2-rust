@@ -117,3 +117,24 @@ impl Decode for RequestNetPing {
         Ok(Self)
     }
 }
+
+// Java: gameserver/network/clientpackets/RequestSkillCoolTime.java
+/// Asks for the skills that are still in their reuse delay. No fields.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RequestSkillCoolTime;
+
+impl RequestSkillCoolTime {
+    pub const OPCODE: ClientOpcode = ClientOpcode::RequestSkillCoolTime;
+}
+
+impl Encode for RequestSkillCoolTime {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+    }
+}
+
+impl Decode for RequestSkillCoolTime {
+    fn decode(_r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self)
+    }
+}

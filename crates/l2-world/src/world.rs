@@ -5,10 +5,13 @@ use std::net::IpAddr;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_net::Encode;
+use l2_protocol_game::server::NetPing;
+use l2_protocol_game::server::enterworld::SkillCoolTime;
 use l2_util::{ObjectId, WorldRng};
 use tracing::{debug, info, warn};
 
 use crate::command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+use crate::data::{NoData, StaticData, WorldSettings};
 use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
 use crate::snapshot::snapshot_for_store;
@@ -21,20 +24,24 @@ pub const TICK: Duration = Duration::from_millis(50);
 pub const DEFAULT_AUTOSAVE_INTERVAL: Duration = Duration::from_secs(15 * 60);
 
 pub struct World {
-    tick: u64,
+    pub(crate) tick: u64,
     rng: WorldRng,
-    timers: TimerWheel,
-    players: HashMap<ObjectId, Player>,
-    sessions: HashMap<SessionId, ObjectId>,
+    pub(crate) timers: TimerWheel,
+    pub(crate) players: HashMap<ObjectId, Player>,
+    pub(crate) sessions: HashMap<SessionId, ObjectId>,
     /// The session of each player (the reverse of `sessions`).
-    player_sessions: HashMap<ObjectId, SessionId>,
-    sinks: HashMap<ObjectId, Box<dyn PacketSink>>,
-    outbox: Box<dyn Outbox>,
+    pub(crate) player_sessions: HashMap<ObjectId, SessionId>,
+    pub(crate) sinks: HashMap<ObjectId, Box<dyn PacketSink>>,
+    pub(crate) outbox: Box<dyn Outbox>,
     stopped: bool,
     /// Ticks between two autosaves of a player (Java `CHAR_DATA_STORE_INTERVAL`).
     autosave_ticks: u64,
     /// The pending autosave timer of each online player.
-    autosave_timers: HashMap<ObjectId, TimerId>,
+    pub(crate) autosave_timers: HashMap<ObjectId, TimerId>,
+    /// Item templates, skills, class templates (see [`StaticData`]).
+    pub(crate) data: Box<dyn StaticData>,
+    /// The configuration values the world reads.
+    pub(crate) settings: WorldSettings,
 }
 
 impl World {
@@ -51,7 +58,19 @@ impl World {
             stopped: false,
             autosave_ticks: TimerWheel::duration_to_ticks(DEFAULT_AUTOSAVE_INTERVAL),
             autosave_timers: HashMap::new(),
+            data: Box::new(NoData),
+            settings: WorldSettings::default(),
         }
+    }
+
+    /// Installs the datapack view the packets are built from. Call before players enter.
+    pub fn set_static_data(&mut self, data: Box<dyn StaticData>) {
+        self.data = data;
+    }
+
+    /// Installs the configuration values the world reads. Call before players enter.
+    pub fn set_settings(&mut self, settings: WorldSettings) {
+        self.settings = settings;
     }
 
     /// Sets the time between two autosaves of a player; applies from the next (re)schedule.
@@ -133,16 +152,7 @@ impl World {
                     self.leave(id, LeaveReason::Disconnected);
                 }
             }
-            WorldCommand::Kick { account } => {
-                let found = self
-                    .players
-                    .values()
-                    .find(|p| p.data.account == account)
-                    .map(|p| p.core.object_id);
-                if let Some(id) = found {
-                    self.leave(id, LeaveReason::Kicked);
-                }
-            }
+            WorldCommand::Kick { account } => self.kick_account(&account),
             WorldCommand::Admin(query) => self.on_admin(query),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -165,7 +175,7 @@ impl World {
         }
     }
 
-    // Java: EnterWorld.run (the world part; the packets come with M2-ENTER-01)
+    // Java: EnterWorld.runImpl (the world part; the packets are in `enter.rs`)
     fn enter(&mut self, session: SessionId, data: PlayerData, sink: Box<dyn PacketSink>, ip: Option<IpAddr>) {
         if self.sessions.contains_key(&session) {
             warn!("{session:?} tried to enter the world twice; ignored.");
@@ -183,6 +193,7 @@ impl World {
         let account = data.account.clone();
         info!("{} ({account}) entered the world.", data.name);
         let mut player = Player::from_data(data, self.tick);
+        player.stats = self.data.derive_stats(&player.data);
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
@@ -193,35 +204,6 @@ impl World {
         self.schedule_autosave(id);
         self.outbox.ls_event(LsEvent::PlayerInGame { account });
         self.on_entered(id);
-    }
-
-    /// Hook for the enter-world packet sequence (M2-ENTER-01).
-    fn on_entered(&mut self, _id: ObjectId) {}
-
-    /// Removes a player: final store, then `PlayerLeft`, then the session hears about it.
-    fn leave(&mut self, id: ObjectId, reason: LeaveReason) {
-        let Some(player) = self.players.remove(&id) else {
-            return;
-        };
-        if let Some(session) = self.player_sessions.remove(&id) {
-            self.sessions.remove(&session);
-        }
-        // Java: PlayerAutoSaveTaskManager.remove
-        if let Some(timer) = self.autosave_timers.remove(&id) {
-            self.timers.cancel(timer);
-        }
-        let snapshot = snapshot_for_store(&player, self.tick);
-        let account = snapshot.account.clone();
-        info!("{} ({account}) left the world: {reason:?}.", snapshot.name);
-        self.outbox
-            .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
-        self.outbox.persist(PersistCommand::PlayerLeft {
-            account,
-            object_id: id,
-        });
-        if let Some(sink) = self.sinks.remove(&id) {
-            sink.left_world(reason);
-        }
     }
 
     /// Arms the next autosave of `id`, replacing a pending one so there is only ever one.
@@ -239,8 +221,31 @@ impl World {
             return;
         };
         match input {
-            ClientInput::Logout => self.leave(id, LeaveReason::Logout),
-            ClientInput::Restart => self.leave(id, LeaveReason::Restart),
+            ClientInput::Logout => self.on_logout(id),
+            ClientInput::Restart => self.on_restart(id),
+            ClientInput::Say {
+                chat_type,
+                text,
+                target,
+            } => self.on_say(id, chat_type, text, target),
+            // Java: RequestNetPing -> NetPing(GameTimeTaskManager.getGameTime())
+            ClientInput::NetPing => {
+                let game_time = game_time_minutes(unix_ms_now());
+                self.send(id, &NetPing { game_time });
+            }
+            // Java: RequestSkillCoolTime -> SkillCoolTime(player). The reuse timers are not
+            // modelled yet, so the list is empty.
+            ClientInput::SkillCoolTime => {
+                self.send(id, &SkillCoolTime::default());
+            }
+            // Java: RequestKeyMapping -> ExUISetting(player) when StoreCharUiSettings is on.
+            ClientInput::KeyMapping => {
+                if let Some(player) = self.players.get(&id)
+                    && let Some(packet) = crate::enter::ui_setting(&player.data, &self.settings)
+                {
+                    self.send(id, &packet);
+                }
+            }
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -288,9 +293,19 @@ impl World {
     }
 }
 
-/// Unix time in milliseconds for the admin view. A clock before 1970 reads as 0.
-fn unix_ms_now() -> i64 {
+/// Unix time in milliseconds. A clock before 1970 reads as 0.
+pub(crate) fn unix_ms_now() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
+}
+
+/// Java `GameTimeTaskManager.getGameTime()`: the in-game minute of the day, 0 to 1439.
+///
+/// One game minute lasts ten real seconds, so a game day is four real hours.
+// NOTE: Java counts from local midnight; this counts from UTC midnight (std has no time zone).
+pub fn game_time_minutes(now_ms: i64) -> i32 {
+    const TICKS_PER_IG_DAY: i64 = 144_000;
+    let ticks = now_ms.rem_euclid(86_400_000) / 100;
+    i32::try_from(((ticks % TICKS_PER_IG_DAY) / 100) % (24 * 60)).unwrap_or(0)
 }

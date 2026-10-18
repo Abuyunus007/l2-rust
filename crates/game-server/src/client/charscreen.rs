@@ -660,8 +660,8 @@ impl ClientSession {
         }
     }
 
-    /// Java `CharacterSelect.runImpl` as far as the character screen goes: the player is loaded by
-    /// the enter-world card (M2-ENTER-01).
+    /// Java `CharacterSelect.runImpl`: the player is loaded (see [`super::enter`]) and the client
+    /// is told; the world takes the character over at `EnterWorld`.
     pub(super) async fn on_character_select(&mut self, packet: CharacterSelect, ctl: &mut Control<'_>) {
         if !self.can_select_character() {
             return;
@@ -678,14 +678,26 @@ impl ClientSession {
         };
         // NOTE: not ported yet because their systems do not exist: SecondaryAuth, a character that
         // is already in the world (offline traders), PunishmentManager bans, dual-box limits and the
-        // faction balance. The restored RESTORE_LOCATION variable is up to M2-ENTER-01.
+        // faction balance. The RESTORE_LOCATION variable is applied by the loader.
         if info.access_level < 0 {
             // "Selected character is banned (compatibility with previous versions)."
             ctl.send_and_close(ServerClose.to_bytes());
             return;
         }
-        let screen = Arc::clone(&self.ctx);
-        let screen = &screen.charscreen;
+        let ctx = Arc::clone(&self.ctx);
+        let screen = &ctx.charscreen;
+        let Some(account) = self.account.clone() else {
+            return;
+        };
+        // Java: `client.load(slot)`. A character that cannot be loaded is not selected; Java
+        // logs it and sends nothing.
+        let player = match ctx.loader.load_player(&account, info.entry.object_id).await {
+            Ok(player) => player,
+            Err(e) => {
+                super::enter::log_load_failure(info.entry.object_id, &e);
+                return;
+            }
+        };
         let now = now_millis();
         // Player.load ... cha.setOnlineStatus(true, true)
         if let Err(e) = screen.store.set_online(info.entry.object_id, 1, now).await {
@@ -740,12 +752,18 @@ impl ClientSession {
             }
             .to_bytes(),
         );
+        // Java: `Player.load` queued `sendSkillList()`, which reaches the client right after
+        // `CharSelected` (the Java capture shows it there).
+        ctl.send(l2_world::enter::skill_list(&player, &*ctx.data).to_bytes());
+        // The world takes it over at `EnterWorld`.
+        self.pending = Some(Box::new(player));
         debug!("Character {} selected by {}.", entry.object_id, self.ip);
     }
 
     /// The client left after `CharacterSelect` but before the world took the character over:
     /// Java stores and removes the player, which clears the online flag.
     pub(super) async fn release_selected_character(&mut self) {
+        self.pending = None;
         let Some(char_id) = self.selected.take() else {
             return;
         };

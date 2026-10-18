@@ -277,6 +277,7 @@ Token = t
             items: vec![],
             skills: vec![],
             shortcuts: vec![],
+            profile: Default::default(),
         }
     }
 

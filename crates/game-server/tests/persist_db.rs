@@ -160,6 +160,7 @@ fn player_data() -> PlayerData {
             shortcut_id: 2,
             level: 0,
         }],
+        profile: Default::default(),
     }
 }
 
@@ -363,6 +364,7 @@ async fn the_task_stores_before_it_announces_the_logout() {
     tx.send(OutboxMessage::Persist(PersistCommand::PlayerLeft {
         account: "acc".into(),
         object_id: ObjectId(CHAR_ID),
+        logout: true,
     }))
     .unwrap();
 

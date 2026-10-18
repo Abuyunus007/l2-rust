@@ -25,7 +25,14 @@ pub enum PersistCommand {
     StorePlayer(Box<PlayerData>),
     /// The player left. Sent *after* the final `StorePlayer`, so the persistence task can tell
     /// the login server `PlayerLogout` only once the data is safe.
-    PlayerLeft { account: String, object_id: ObjectId },
+    ///
+    /// `logout` is false when the connection stays (a restart to the character screen): the
+    /// character is marked offline, but the account is still on this server for the login server.
+    PlayerLeft {
+        account: String,
+        object_id: ObjectId,
+        logout: bool,
+    },
 }
 
 /// Messages for the login server link.

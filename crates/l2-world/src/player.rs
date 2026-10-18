@@ -3,9 +3,12 @@
 //! Java: `entity/actor/Creature.java`, `Playable.java`, `Player.java`. Only what M2 needs is
 //! here; later milestones add fields (stats, effects, target, AI state…).
 
+use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 use l2_util::ObjectId;
+
+use crate::data::{DEFAULT_TITLE_COLOR, DerivedStats};
 
 /// What every creature has (players now, NPCs in M3).
 #[derive(Debug, Clone, PartialEq)]
@@ -62,6 +65,72 @@ pub struct ShortcutData {
     pub level: i32,
 }
 
+/// One command of a macro (Java `MacroCmd`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroCmdData {
+    /// Java `MacroType` ordinal.
+    pub kind: i32,
+    pub d1: i32,
+    pub d2: i32,
+    pub cmd: String,
+}
+
+/// One macro (`character_macroses`, Java `Macro`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MacroData {
+    pub id: i32,
+    pub icon: i32,
+    pub name: String,
+    pub descr: String,
+    pub acronym: String,
+    pub commands: Vec<MacroCmdData>,
+}
+
+/// The load-only part of a character: values the enter-world packets show, read from tables the
+/// Java game server also owns (D-39). The persistence task never writes any of it, so it only
+/// travels database -> world.
+#[derive(Debug, Clone, PartialEq)]
+pub struct PlayerProfile {
+    /// `characters.fame`.
+    pub fame: i32,
+    /// `characters.nobless`.
+    pub noble: bool,
+    /// `characters.title_color`.
+    pub title_color: i32,
+    /// `characters.vitality_points`.
+    pub vitality_points: i32,
+    /// `characters.bookmarkslot`.
+    pub bookmark_slot: i32,
+    /// `characters.death_penalty_level`.
+    pub death_penalty_level: i32,
+    /// `character_reco_bonus.rec_have` / `rec_left` / `time_left` (ms of the Nevit hourglass).
+    pub recom_have: i32,
+    pub recom_left: i32,
+    pub recom_time_left_ms: i64,
+    /// `character_macroses`.
+    pub macros: Vec<MacroData>,
+    /// `character_variables` (Java `PlayerVariables`).
+    pub variables: BTreeMap<String, String>,
+}
+
+impl Default for PlayerProfile {
+    fn default() -> Self {
+        Self {
+            fame: 0,
+            noble: false,
+            title_color: DEFAULT_TITLE_COLOR,
+            vitality_points: 0,
+            bookmark_slot: 0,
+            death_penalty_level: 0,
+            recom_have: 0,
+            recom_left: 0,
+            recom_time_left_ms: 0,
+            macros: Vec::new(),
+            variables: BTreeMap::new(),
+        }
+    }
+}
+
 /// A character as loaded from (and stored to) the database. The session task builds it before
 /// `EnterWorld`; the world hands snapshots of it to the persistence task.
 ///
@@ -101,6 +170,8 @@ pub struct PlayerData {
     pub items: Vec<ItemData>,
     pub skills: Vec<SkillData>,
     pub shortcuts: Vec<ShortcutData>,
+    /// Values loaded for the enter-world packets that the persistence task never writes.
+    pub profile: PlayerProfile,
 }
 
 /// A player inside the world.
@@ -114,6 +185,17 @@ pub struct Player {
     pub entered_at_unix_ms: i64,
     /// The client's address when the session entered (`None` if unknown).
     pub client_ip: Option<IpAddr>,
+    /// Java `hasEnteredWorld()`: set once the enter-world packets went out. `UserInfo` tells the
+    /// client it can equip a cloak only before that.
+    pub entered_world: bool,
+    /// Java `_recomHave` / `_recomLeft` and the milliseconds the Nevit hourglass has left; loaded
+    /// from the profile when the player enters (`Player.checkRecoBonusTask`), 0 before that.
+    pub recom_have: i32,
+    pub recom_left: i32,
+    pub hourglass_ms: i64,
+    /// What `UserInfo` prints that the stat system will compute (see [`DerivedStats`]); set when
+    /// the player enters.
+    pub stats: DerivedStats,
 }
 
 impl Player {
@@ -138,6 +220,11 @@ impl Player {
             entered_at_tick: tick,
             entered_at_unix_ms: 0,
             client_ip: None,
+            entered_world: false,
+            recom_have: 0,
+            recom_left: 0,
+            hourglass_ms: 0,
+            stats: DerivedStats::default(),
         }
     }
 

@@ -20,7 +20,8 @@ use l2_protocol_game::server::charscreen::active_slot;
 use l2_protocol_game::server::{CharSelectionInfo, KeyPacket, LoginFail};
 use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
 use l2_util::WorldRng;
-use l2_world::{SessionId, WorldCommand};
+use l2_world::{PlayerData, SessionId, WorldCommand};
+use tokio::sync::mpsc::UnboundedReceiver;
 use tracing::{debug, info, warn};
 
 use super::ClientContext;
@@ -50,8 +51,13 @@ pub struct ClientSession {
     pub(super) selected: Option<i32>,
     /// When the next `CharacterSelect` / `CharacterRestore` is allowed (flood protector).
     pub(super) next_select: Option<Instant>,
-    /// Shared with the registry entry: is the account's character in the world?
-    in_world: Arc<AtomicBool>,
+    /// Shared with the registry entry and the packet sink: is the account's character in the
+    /// world?
+    pub(super) in_world: Arc<AtomicBool>,
+    /// The character `CharacterSelect` loaded, until `EnterWorld` hands it to the world.
+    pub(super) pending: Option<Box<PlayerData>>,
+    /// What the world says about the character in the world (it left, and why).
+    pub(super) sink_events: Option<UnboundedReceiver<l2_world::LeaveReason>>,
 }
 
 impl ClientSession {
@@ -70,7 +76,13 @@ impl ClientSession {
             selected: None,
             next_select: None,
             in_world: Arc::default(),
+            pending: None,
+            sink_events: None,
         }
+    }
+
+    pub(super) fn session_id(&self) -> SessionId {
+        self.session
     }
 
     pub fn state(&self) -> ConnectionState {
@@ -254,6 +266,12 @@ impl FrameHandler for ClientSession {
             ClientPacket::Logout(_) if !self.in_world.load(Ordering::Acquire) => {
                 self.on_logout_without_player(ctl);
             }
+            ClientPacket::EnterWorld(p) => self.on_enter_world(&p, ctl),
+            // Between CharacterSelect and EnterWorld the session answers it itself.
+            ClientPacket::RequestKeyMapping(_) if self.state == ConnectionState::Entering => {
+                self.on_request_key_mapping_entering(ctl);
+            }
+            ClientPacket::RequestRestart(_) => self.on_request_restart(ctl).await,
             ClientPacket::NewCharacter(_) => self.on_new_character(ctl),
             ClientPacket::CharacterCreate(p) => self.on_character_create(p, ctl).await,
             ClientPacket::CharacterDelete(p) => self.on_character_delete(p, ctl).await,
@@ -261,8 +279,10 @@ impl FrameHandler for ClientSession {
             ClientPacket::CharacterSelect(p) => self.on_character_select(p, ctl).await,
             ClientPacket::RequestGotoLobby(_) => self.on_request_goto_lobby(ctl).await,
             other => {
-                // The world (M2-ENTER-01) is not here yet.
-                debug!("Packet not handled yet from {}: {other:?}", self.ip);
+                if self.state != ConnectionState::InGame || !self.on_in_game_packet(other.clone()) {
+                    // Java ignores what it has no handler for: so does this.
+                    debug!("Packet not handled yet from {}: {other:?}", self.ip);
+                }
             }
         }
     }
