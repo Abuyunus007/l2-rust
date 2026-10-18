@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Orchestrator helper: merge a finished worker branch into main.
-# Usage: tools/merge-card.sh <agent-id> <CARD-ID> [next-card-ids-to-mark-in-progress...]
+# Usage: tools/merge-card.sh <agent-id> <CARD-ID> [next CARD-IDs to mark in-progress...]  (full ids, e.g. M2-DB-02)
 # Stops (exit 1) on any conflict other than Cargo.lock, or on failing checks.
 set -uo pipefail
 cd "$(dirname "$0")/.."
