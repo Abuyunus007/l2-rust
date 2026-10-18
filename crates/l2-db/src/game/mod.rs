@@ -5,8 +5,11 @@
 //! mirror the column types.
 
 mod characters;
+mod clans;
 mod ids;
 mod items;
+mod macros;
+mod recommendations;
 mod shortcuts;
 mod skills;
 mod sql_number;
@@ -16,8 +19,11 @@ pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     NewCharacter,
 };
+pub use clans::ClanRepository;
 pub use ids::{IdRepository, UsedIds};
 pub use items::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
+pub use macros::{MacroRepository, NewMacro};
+pub use recommendations::RecommendationRepository;
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use subclasses::{SubclassRepository, SubclassRow, SubclassValues};

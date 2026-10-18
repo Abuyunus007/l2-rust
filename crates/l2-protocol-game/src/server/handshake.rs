@@ -55,6 +55,44 @@ impl Decode for KeyPacket {
     }
 }
 
+// Java: gameserver/network/serverpackets/LoginFail.java
+/// The login server refused the session key of `AuthLogin` (sent right before the connection is
+/// closed).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoginFail {
+    /// One of the `REASON_*` / Java constants; a plain int on the wire.
+    pub reason: i32,
+}
+
+impl LoginFail {
+    pub const OPCODE: ServerOpcode = ServerOpcode::LoginFail;
+    pub const NO_TEXT: i32 = 0;
+    /// "System error. Please log in again later."
+    pub const SYSTEM_ERROR_LOGIN_LATER: i32 = 1;
+    pub const PASSWORD_DOES_NOT_MATCH_THIS_ACCOUNT: i32 = 2;
+    pub const PASSWORD_DOES_NOT_MATCH_THIS_ACCOUNT2: i32 = 3;
+    pub const ACCESS_FAILED_TRY_LATER: i32 = 4;
+    pub const INCORRECT_ACCOUNT_INFO_CONTACT_CUSTOMER_SUPPORT: i32 = 5;
+    pub const ACCESS_FAILED_TRY_LATER2: i32 = 6;
+    pub const ACOUNT_ALREADY_IN_USE: i32 = 7;
+    pub const ACCESS_FAILED_TRY_LATER3: i32 = 8;
+    pub const ACCESS_FAILED_TRY_LATER4: i32 = 9;
+    pub const ACCESS_FAILED_TRY_LATER5: i32 = 10;
+}
+
+impl Encode for LoginFail {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.reason);
+    }
+}
+
+impl Decode for LoginFail {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self { reason: r.i32()? })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +113,19 @@ mod tests {
         assert_eq!(bytes, expected);
         assert_eq!(
             KeyPacket::decode(&mut PacketReader::new(&bytes[1..])).unwrap(),
+            packet
+        );
+    }
+
+    #[test]
+    fn login_fail_layout() {
+        let packet = LoginFail {
+            reason: LoginFail::SYSTEM_ERROR_LOGIN_LATER,
+        };
+        let bytes = packet.to_bytes();
+        assert_eq!(bytes, [0x0A, 1, 0, 0, 0]);
+        assert_eq!(
+            LoginFail::decode(&mut PacketReader::new(&bytes[1..])).unwrap(),
             packet
         );
     }

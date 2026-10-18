@@ -32,6 +32,8 @@ l2-testkit.workspace = true
 login-server = { path = "../login-server" }
 sqlx.workspace = true
 tempfile.workspace = true
+hex.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

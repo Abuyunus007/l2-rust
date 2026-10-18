@@ -12,21 +12,24 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use l2_db::{
-    ItemLocation, ItemRepository, ItemUpdate, NewItem, NewShortcut, NewSkillSave, Pool, ShortcutRepository,
-    ShortcutRow, SkillLevel, SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues,
-    connect_with,
+    ClanRepository, ItemLocation, ItemRepository, ItemUpdate, MacroRepository, NewItem, NewMacro,
+    NewShortcut, NewSkillSave, Pool, RecommendationRepository, ShortcutRepository, ShortcutRow, SkillLevel,
+    SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues, connect_with,
 };
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 /// The tables of the item, skill, shortcut and subclass repositories.
-const SCHEMA: [&str; 6] = [
+const SCHEMA: [&str; 9] = [
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/item_attributes.sql"),
     include_str!("../sql/game/character_skills.sql"),
     include_str!("../sql/game/character_skills_save.sql"),
     include_str!("../sql/game/character_shortcuts.sql"),
     include_str!("../sql/game/character_subclasses.sql"),
+    include_str!("../sql/game/character_macroses.sql"),
+    include_str!("../sql/game/character_reco_bonus.sql"),
+    include_str!("../sql/game/clan_data.sql"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -543,5 +546,60 @@ async fn subclasses_insert_update_and_delete() {
     assert_eq!(subs[0].class_index, 2);
     assert!(repo.subclasses_of(BOB).await.unwrap().is_empty());
 
+    db.drop_database().await;
+}
+
+#[tokio::test]
+async fn macros_clans_and_recommendations() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    // Macros: insert, the primary key refuses a second row, delete.
+    let macros = MacroRepository::new(db.pool.clone());
+    let m = NewMacro {
+        id: 10001,
+        icon: 2,
+        name: "On".into(),
+        descr: None,
+        acronym: "ON".into(),
+        commands: "1,1177,1;".into(),
+    };
+    macros.insert_macro(ALICE, &m).await.unwrap();
+    assert!(macros.insert_macro(ALICE, &m).await.is_err());
+    assert_eq!(db.count("character_macroses", "charId", ALICE).await, 1);
+    let descr: Option<String> =
+        sqlx::query_scalar("SELECT descr FROM character_macroses WHERE charId = ? AND id = 10001")
+            .bind(ALICE)
+            .fetch_one(&db.pool)
+            .await
+            .unwrap();
+    assert_eq!(descr, None);
+    macros.delete_macro(ALICE, 10001).await.unwrap();
+    assert_eq!(db.count("character_macroses", "charId", ALICE).await, 0);
+
+    // Clans: the leader, a missing clan, a NULL leader.
+    sqlx::query("INSERT INTO clan_data (clan_id, clan_name, leader_id) VALUES (1, 'A', ?), (2, 'B', NULL)")
+        .bind(BOB)
+        .execute(&db.pool)
+        .await
+        .unwrap();
+    let clans = ClanRepository::new(db.pool.clone());
+    assert_eq!(clans.leader_id(1).await.unwrap(), Some(BOB));
+    assert_eq!(clans.leader_id(2).await.unwrap(), Some(0));
+    assert_eq!(clans.leader_id(3).await.unwrap(), None);
+
+    // Recommendations: REPLACE keeps one row.
+    let reco = RecommendationRepository::new(db.pool.clone());
+    reco.replace_reco_bonus(ALICE, 0, 20, 0).await.unwrap();
+    reco.replace_reco_bonus(ALICE, 3, 17, 5_000).await.unwrap();
+    assert_eq!(db.count("character_reco_bonus", "charId", ALICE).await, 1);
+    let row: (i64, i64, i64) = sqlx::query_as(
+        "SELECT CAST(rec_have AS SIGNED), CAST(rec_left AS SIGNED), CAST(time_left AS SIGNED) FROM character_reco_bonus WHERE charId = ?",
+    )
+    .bind(ALICE)
+    .fetch_one(&db.pool)
+    .await
+    .unwrap();
+    assert_eq!(row, (3, 17, 5_000));
     db.drop_database().await;
 }
