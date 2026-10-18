@@ -95,7 +95,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | W4 | GS-03 (o), GUI-01 (h) | 1 |
 | 🎮 **CP-M2a** | **You:** the Rust GS appears in the server list **next to** the Java GS; the character screen of the Rust GS shows your existing characters (same DB). | ✅ passed 2026-10-18 |
 | W5 | CHAR-01 (s) | 1 |
-| 🎮 **CP-M2b** | **You:** create and delete a character on the Rust GS. | |
+| 🎮 **CP-M2b** | **You:** create and delete a character on the Rust GS. | ✅ passed 2026-10-18 |
 | W6 | ENTER-01 (s) | 1 |
 | 🎮 **CP-M2c** | **You:** enter the world on the Rust GS: see yourself and your gear, chat, log out, log in again (saved). | |
 | W7 | E2E-01 (s) | 1 |
