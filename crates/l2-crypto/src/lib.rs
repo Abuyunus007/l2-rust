@@ -12,9 +12,11 @@
 
 pub mod blowfish;
 pub mod checksum;
+pub mod game;
 pub mod xor_pass;
 
 mod error;
 
 pub use blowfish::L2Blowfish;
 pub use error::CryptoError;
+pub use game::{GameCipher, game_key_from_random};
