@@ -8,8 +8,9 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout,
-    NewCharacter, ProtocolVersion, RequestGotoLobby, RequestKeyMapping, RequestNetPing, RequestRestart, Say2,
+    Appearing, AuthLogin, CannotMoveAnymore, CharacterCreate, CharacterDelete, CharacterRestore,
+    CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter, ProtocolVersion, RequestGotoLobby,
+    RequestKeyMapping, RequestNetPing, RequestRestart, Say2, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -30,6 +31,10 @@ pub enum ClientPacket {
     Logout(Logout),
     RequestRestart(RequestRestart),
     RequestNetPing(RequestNetPing),
+    MoveToLocation(MoveToLocation),
+    ValidatePosition(ValidatePosition),
+    CannotMoveAnymore(CannotMoveAnymore),
+    Appearing(Appearing),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -70,6 +75,10 @@ pub fn decode_client(
         Logout::OPCODE => ClientPacket::Logout(Logout::decode(reader)?),
         RequestRestart::OPCODE => ClientPacket::RequestRestart(RequestRestart::decode(reader)?),
         RequestNetPing::OPCODE => ClientPacket::RequestNetPing(RequestNetPing::decode(reader)?),
+        MoveToLocation::OPCODE => ClientPacket::MoveToLocation(MoveToLocation::decode(reader)?),
+        ValidatePosition::OPCODE => ClientPacket::ValidatePosition(ValidatePosition::decode(reader)?),
+        CannotMoveAnymore::OPCODE => ClientPacket::CannotMoveAnymore(CannotMoveAnymore::decode(reader)?),
+        Appearing::OPCODE => ClientPacket::Appearing(Appearing::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))

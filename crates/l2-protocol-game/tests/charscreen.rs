@@ -325,6 +325,10 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::Logout(_)
             | ClientPacket::RequestRestart(_)
             | ClientPacket::RequestNetPing(_)
+            | ClientPacket::MoveToLocation(_)
+            | ClientPacket::ValidatePosition(_)
+            | ClientPacket::CannotMoveAnymore(_)
+            | ClientPacket::Appearing(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

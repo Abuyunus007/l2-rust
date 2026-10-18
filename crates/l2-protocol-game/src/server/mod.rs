@@ -14,8 +14,10 @@ pub mod chat;
 pub mod enterworld;
 pub mod handshake;
 pub mod items;
+pub mod movement;
 pub mod system_message;
 pub mod userinfo;
+pub mod visibility;
 
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
@@ -33,8 +35,12 @@ pub use items::{
     InventoryBlock, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item, read_item_updates,
     write_inventory_block, write_item, write_item_elemental_and_enchant, write_item_updates,
 };
+pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 pub use system_message::{SystemMessage, SystemMessageParam};
 pub use userinfo::UserInfo;
+pub use visibility::{
+    CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
+};
 
 /// Writes a server packet's id the way Java `ServerPackets.writeId` does: the id byte, then the
 /// `u16` ex id for ex packets (id byte `0xFE`).

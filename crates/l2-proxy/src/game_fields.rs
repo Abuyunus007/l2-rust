@@ -123,6 +123,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             fields
         }
         ClientPacket::Say2(p) => object!(p => text, chat_type, target),
+        ClientPacket::MoveToLocation(p) => {
+            object!(p => target_x, target_y, target_z, origin_x, origin_y, origin_z, movement_mode)
+        }
+        ClientPacket::ValidatePosition(p) => object!(p => x, y, z, heading, vehicle_id),
+        ClientPacket::CannotMoveAnymore(p) => object!(p => x, y, z, heading),
+        ClientPacket::Appearing(_) => json!({}),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
