@@ -1,0 +1,22 @@
+[package]
+name = "l2-admin-gui"
+description = "Admin GUI (egui): server control, logs and the packet inspector (D-31)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+l2-admin-api = { path = "../l2-admin-api" }
+eframe = { workspace = true, features = ["persistence"] } # persistence = settings in eframe storage
+egui.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[lints]
+workspace = true
