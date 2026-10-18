@@ -24,10 +24,12 @@ if [ -f .git/MERGE_HEAD ]; then cargo fmt --all >/dev/null 2>&1; git add -u; git
 cargo metadata --format-version 1 >/dev/null 2>&1   # refresh Cargo.lock if needed
 
 cargo fmt --all -- --check >/dev/null 2>&1 || { echo "FMT FAILED"; exit 1; }
-cargo clippy -q --workspace --all-targets -- -D warnings 2>&1 | grep -E "^(error|warning)" && { echo "CLIPPY FAILED"; exit 1; }
-summary=$(cargo test -q --workspace 2>&1 | grep -E "test result" | awk '{s+=$4; f+=$6} END {print s" passed, "f" failed"}')
+CARGO_INCREMENTAL=0 cargo clippy -q --workspace --all-targets -- -D warnings 2>&1 | grep -E "^(error|warning)" && { echo "CLIPPY FAILED"; exit 1; }
+log=$(mktemp)
+CARGO_INCREMENTAL=0 cargo test -q --workspace --no-fail-fast >"$log" 2>&1
+summary=$(grep -E "test result" "$log" | awk '{s+=$4; f+=$6} END {print s" passed, "f" failed"}')
 echo "tests: $summary"
-case "$summary" in *" 0 failed") ;; *) echo "TESTS FAILED"; exit 1 ;; esac
+case "$summary" in *" 0 failed") rm -f "$log" ;; *) grep -E "panicked at|^test .* FAILED|^error" "$log" | head -10; echo "TESTS FAILED (log: $log)"; exit 1 ;; esac
 
 git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null
 # The incremental cache of the main checkout only grows (it reached 62 GB): drop it after each merge.
