@@ -69,7 +69,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-LS-06](M1/M1-LS-06.md) | End-to-end test kit + Java compatibility runbook | sonnet | full | LS-05, PROXY-01 | in-progress |
 | [M1-ADM-01](M1/M1-ADM-01.md) | Admin API protocol | opus | full | WS-01 | merged (`ea43164`) |
 | [M1-ADM-02](M1/M1-ADM-02.md) | Supervisor | sonnet | full | ADM-01 | merged |
-| [M1-ADM-03](M1/M1-ADM-03.md) | Login server admin endpoint | haiku | spot | ADM-01, LS-05 | planned |
+| [M1-ADM-03](M1/M1-ADM-03.md) | Login server admin endpoint | haiku | spot | ADM-01, LS-05 | merged |
 | [M1-PROXY-01](M1/M1-PROXY-01.md) | Login MITM proxy and capture format | sonnet | full | LPROTO-02, CRYPTO-02, CRYPTO-03, NET-02 | merged |
 | [M1-PROXY-02](M1/M1-PROXY-02.md) | Game traffic pass-through with opcode names | sonnet | full | PROXY-01, GEN-01, CRYPTO-04 | merged |
 | [M1-GUI-01](M1/M1-GUI-01.md) | Admin GUI shell | sonnet | full | ADM-01 | merged |
@@ -77,7 +77,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-GUI-03](M1/M1-GUI-03.md) | Logs view | haiku | spot | GUI-01, ADM-02 | merged |
 | [M1-GUI-04](M1/M1-GUI-04.md) | Packet inspector | sonnet | full | GUI-01, PROXY-02 | merged |
 | [M1-GEO-01](M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | merged |
-| M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | planned |
+| M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | merged |
 | [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
 ## Milestone test results
