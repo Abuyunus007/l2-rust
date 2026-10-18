@@ -2492,6 +2492,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-world"
+version = "0.1.0"
+dependencies = [
+ "l2-net",
+ "l2-util",
+ "tracing",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

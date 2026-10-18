@@ -1,0 +1,17 @@
+[package]
+name = "l2-world"
+description = "The game world: single-owner world loop, entities, timers (D-10..D-15)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# No tokio, sqlx or sockets here (MODULE_MAP). `l2-net` is used for its packet traits only.
+[dependencies]
+l2-util.workspace = true
+l2-net.workspace = true
+tracing.workspace = true
+
+[lints]
+workspace = true

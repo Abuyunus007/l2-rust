@@ -1,0 +1,115 @@
+//! The timer wheel: what Java does with `ThreadPool.schedule` and the task managers (D-12).
+//!
+//! Timers are due at a world tick. Firing order is by tick, then by scheduling order. A
+//! cancelled timer never fires. Later cards add [`TimerKind`] variants (autosave, regen…).
+
+use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashMap};
+use std::time::Duration;
+
+use l2_util::ObjectId;
+
+use crate::world::TICK;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct TimerId(u64);
+
+/// What to do when a timer fires. The world matches on it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TimerKind {
+    /// Store an online player (Java `PlayerAutoSaveTaskManager`), see M2-PERSIST-01.
+    Autosave(ObjectId),
+    /// For tests and tools: carries a number, does nothing.
+    Marker(u32),
+}
+
+#[derive(Debug, Default)]
+pub struct TimerWheel {
+    /// (due tick, timer id) — ids grow, so equal ticks keep scheduling order.
+    queue: BinaryHeap<Reverse<(u64, TimerId)>>,
+    live: HashMap<TimerId, TimerKind>,
+    next_id: u64,
+}
+
+impl TimerWheel {
+    /// Java delays are milliseconds; the world counts ticks. Rounds up, at least one tick.
+    pub fn ms_to_ticks(ms: u64) -> u64 {
+        let tick_ms = TICK.as_millis() as u64; // 50
+        ms.div_ceil(tick_ms).max(1)
+    }
+
+    pub fn duration_to_ticks(delay: Duration) -> u64 {
+        Self::ms_to_ticks(u64::try_from(delay.as_millis()).unwrap_or(u64::MAX))
+    }
+
+    /// Schedules `kind` for tick `due`.
+    pub fn schedule_at(&mut self, due: u64, kind: TimerKind) -> TimerId {
+        self.next_id += 1;
+        let id = TimerId(self.next_id);
+        self.queue.push(Reverse((due, id)));
+        self.live.insert(id, kind);
+        id
+    }
+
+    /// Cancels a timer. `false` if it already fired or was cancelled.
+    pub fn cancel(&mut self, id: TimerId) -> bool {
+        self.live.remove(&id).is_some()
+    }
+
+    /// Removes and returns every timer due at or before `now`, in firing order.
+    pub fn take_due(&mut self, now: u64) -> Vec<(TimerId, TimerKind)> {
+        let mut due = Vec::new();
+        while let Some(Reverse((tick, id))) = self.queue.peek().copied() {
+            if tick > now {
+                break;
+            }
+            self.queue.pop();
+            if let Some(kind) = self.live.remove(&id) {
+                due.push((id, kind));
+            }
+        }
+        due
+    }
+
+    /// Timers still waiting (cancelled ones are not counted).
+    pub fn len(&self) -> usize {
+        self.live.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.live.is_empty()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ms_round_up_to_ticks() {
+        assert_eq!(TimerWheel::ms_to_ticks(0), 1);
+        assert_eq!(TimerWheel::ms_to_ticks(1), 1);
+        assert_eq!(TimerWheel::ms_to_ticks(50), 1);
+        assert_eq!(TimerWheel::ms_to_ticks(51), 2);
+        assert_eq!(TimerWheel::ms_to_ticks(60_000), 1200);
+    }
+
+    #[test]
+    fn fires_in_order_and_respects_cancel() {
+        let mut wheel = TimerWheel::default();
+        let late = wheel.schedule_at(5, TimerKind::Marker(3));
+        let a = wheel.schedule_at(2, TimerKind::Marker(1));
+        let b = wheel.schedule_at(2, TimerKind::Marker(2));
+        let gone = wheel.schedule_at(1, TimerKind::Marker(9));
+        assert!(wheel.cancel(gone));
+        assert!(!wheel.cancel(gone));
+        assert!(wheel.take_due(1).is_empty());
+        assert_eq!(
+            wheel.take_due(4),
+            vec![(a, TimerKind::Marker(1)), (b, TimerKind::Marker(2))]
+        );
+        assert_eq!(wheel.len(), 1);
+        assert_eq!(wheel.take_due(10), vec![(late, TimerKind::Marker(3))]);
+        assert!(wheel.is_empty());
+    }
+}

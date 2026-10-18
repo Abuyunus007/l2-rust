@@ -1,0 +1,25 @@
+//! The game world (D-10..D-15). Design: `docs/design/world-loop.md`.
+//!
+//! One [`World`] owns all game state and runs on one thread ([`runner::spawn`]). Everything
+//! else talks to it through [`WorldCommand`]s and hears back through [`PacketSink`] (per
+//! player connection) and [`Outbox`] (persistence, login server link). Tests drive the world
+//! synchronously with [`World::handle`] and [`World::tick`].
+//!
+//! Rules for code in this crate:
+//! - Never block, never await, never touch the database or a socket.
+//! - Refer to other objects by id ([`ObjectId`]), never by reference (D-11).
+//! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
+
+pub mod command;
+pub mod outbox;
+pub mod player;
+pub mod runner;
+pub mod timer;
+pub mod world;
+
+pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use l2_util::{ObjectId, WorldRng};
+pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
+pub use player::{CreatureCore, ItemData, OnlinePlayer, Player, PlayerData, ShortcutData, SkillData};
+pub use timer::{TimerId, TimerKind, TimerWheel};
+pub use world::{TICK, World};
