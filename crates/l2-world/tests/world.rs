@@ -285,7 +285,8 @@ fn runner_ticks_handles_commands_and_stops_on_shutdown() {
         sink: Box::new(Sink(1, log.clone())),
     })
     .unwrap();
-    std::thread::sleep(Duration::from_millis(300));
+    // Generous wait: under parallel test load (many rustc/test processes) 300 ms gave < 3 ticks.
+    std::thread::sleep(Duration::from_millis(1000));
     let (done_tx, done_rx) = mpsc::channel();
     tx.send(WorldCommand::Shutdown {
         done: Box::new(move || done_tx.send(()).unwrap()),
