@@ -501,6 +501,20 @@ name = "l2-protocol-game"
 version = "0.1.0"
 
 [[package]]
+name = "l2-supervisor"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "l2-admin-api",
+ "l2-config",
+ "tempfile",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "l2-testkit"
 version = "0.1.0"
 dependencies = [
