@@ -131,15 +131,15 @@ impl GsLink {
 
     /// Adds an account to the game server's online set.
     // Java: GameServerThread.addAccountOnGameServer
-    // TODO(M1-LS-05): the caller must also drop the account from the login server's list of
-    // authed clients (`LoginController.removeAuthedLoginClient`), which Java does in here.
+    // Java also drops the account from the login server's list of authed clients in there. The
+    // link does not know that list, so `gs::handlers::add_account_on_game_server` does both.
     pub fn add_account(&self, account: &str) {
         lock(&self.accounts).insert(account.to_owned());
     }
 
     /// Removes an account from the online set.
     // Java: GameServerThread.removeAccountOnGameServer
-    // TODO(M1-LS-05): see `add_account`.
+    // See `add_account`: `gs::handlers::remove_account_on_game_server` does both steps.
     pub fn remove_account(&self, account: &str) {
         lock(&self.accounts).remove(account);
     }
