@@ -15,9 +15,10 @@ use l2_crypto::login::decrypt_init;
 use l2_crypto::rsa::encrypt_raw;
 use l2_crypto::scramble::unscramble_modulus;
 use l2_net::{Decode, Encode, PacketReader};
-use l2_protocol_login::client::{AuthGameGuard, RequestAuthLogin, RequestServerList};
-use l2_protocol_login::enums::{AccountKickedReason, LoginFailReason};
-use l2_protocol_login::server::{AccountKicked, Init, LoginFail, LoginOk, ServerList};
+use l2_protocol_login::client::{AuthGameGuard, RequestAuthLogin, RequestServerList, RequestServerLogin};
+use l2_protocol_login::enums::{AccountKickedReason, LoginFailReason, PlayFailReason};
+use l2_protocol_login::server::{AccountKicked, Init, LoginFail, LoginOk, PlayFail, PlayOk, ServerList};
+use login_server::state::ServerStatus;
 use login_server::{Paths, Server};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
@@ -324,6 +325,149 @@ async fn client_login_flow() {
     decrypt_init(&mut body).unwrap(); // first packet → static key
     assert_eq!(login_fail(&body), LoginFailReason::NotAuthed);
     assert!(read_frame(&mut stream).await.is_none());
+
+    server.shutdown(false).await;
+    db.drop_db().await;
+}
+
+/// Logs in and returns the `LoginOk` pair.
+async fn login_ok(client: &mut FakeClient, user: &str, password: &str) -> LoginOk {
+    client.game_guard().await;
+    let reply = client.login(user, password).await;
+    assert_eq!(reply[0], LoginOk::OPCODE, "LoginOk for {user}");
+    LoginOk::decode(&mut PacketReader::new(&reply[1..])).unwrap()
+}
+
+async fn request_list(client: &mut FakeClient, ok: &LoginOk) -> ServerList {
+    client
+        .send(
+            &RequestServerList {
+                login_ok1: ok.login_ok1,
+                login_ok2: ok.login_ok2,
+            }
+            .to_bytes(),
+        )
+        .await;
+    let reply = client.recv().await.unwrap();
+    assert_eq!(reply[0], ServerList::OPCODE);
+    ServerList::decode(&mut PacketReader::new(&reply[1..])).unwrap()
+}
+
+async fn request_play(client: &mut FakeClient, ok: &LoginOk, server_id: u8) -> Vec<u8> {
+    client
+        .send(
+            &RequestServerLogin {
+                login_ok1: ok.login_ok1,
+                login_ok2: ok.login_ok2,
+                server_id,
+            }
+            .to_bytes(),
+        )
+        .await;
+    client.recv().await.unwrap()
+}
+
+fn play_fail(reply: &[u8]) -> PlayFailReason {
+    assert_eq!(
+        reply[0],
+        PlayFail::OPCODE,
+        "expected PlayFail, got 0x{:02X}",
+        reply[0]
+    );
+    PlayFail::decode(&mut PacketReader::new(&reply[1..]))
+        .unwrap()
+        .reason
+}
+
+#[tokio::test]
+async fn server_list_and_server_login_flow() {
+    let Some(db) = TestDb::create().await else { return };
+    // "test" hashed; access level 1 makes a GM.
+    db.exec(
+        "INSERT INTO accounts (login, password, accessLevel, lastServer) \
+         VALUES ('gm', 'qUqP5cyxm6YcTAhz05Hph5gvu9M=', 1, 1)",
+    )
+    .await;
+    let root = tempfile::tempdir().unwrap();
+    db.write_server_folder(root.path());
+    let paths = Paths::resolve(root.path(), Path::new("./config"), Path::new("./data"));
+    let server = Server::start(&paths).await.unwrap();
+    let addr = server.client_addr().unwrap();
+    let state = std::sync::Arc::clone(server.state());
+
+    // Game server 2 (from the gameservers table) connects, GM only for now. There is no link
+    // yet (M1-LS-04), so the table is set directly.
+    assert!(state.game_servers.update_registered(2, |gs| {
+        gs.authed = true;
+        gs.status = ServerStatus::GmOnly;
+    }));
+
+    let mut player = FakeClient::connect(addr).await;
+    let player_ok = login_ok(&mut player, "hero", "secret").await;
+    let mut gm = FakeClient::connect(addr).await;
+    let gm_ok = login_ok(&mut gm, "gm", "test").await;
+
+    // GM-only: hidden from the player, shown (up) to the GM, who also gets lastServer = 1.
+    assert!(request_list(&mut player, &player_ok).await.servers.is_empty());
+    let list = request_list(&mut gm, &gm_ok).await;
+    assert_eq!(list.servers.len(), 1);
+    assert_eq!(list.servers[0].server_id, 2);
+    assert!(list.servers[0].up);
+    assert_eq!(list.last_server, 1);
+    assert_eq!(list.char_info, None, "no ReplyCharacters, no counts");
+    assert_eq!(
+        play_fail(&request_play(&mut player, &player_ok, 2).await),
+        PlayFailReason::ServerOverloaded
+    );
+
+    // Normal, but without room (max players is 0 until the link reports it): only a GM gets in.
+    assert!(
+        state
+            .game_servers
+            .update_registered(2, |gs| gs.status = ServerStatus::Normal)
+    );
+    let list = request_list(&mut player, &player_ok).await;
+    assert_eq!(list.servers.len(), 1);
+    assert_eq!(
+        play_fail(&request_play(&mut player, &player_ok, 2).await),
+        PlayFailReason::ServerOverloaded
+    );
+    // A server that does not exist.
+    assert_eq!(
+        play_fail(&request_play(&mut gm, &gm_ok, 9).await),
+        PlayFailReason::ServerOverloaded
+    );
+    // A wrong login pair is refused before anything else.
+    let wrong = LoginOk {
+        login_ok1: gm_ok.login_ok1 ^ 1,
+        login_ok2: gm_ok.login_ok2,
+    };
+    assert_eq!(
+        login_fail(&request_play(&mut gm, &wrong, 2).await),
+        LoginFailReason::AccessFailed
+    );
+
+    // The GM gets PlayOk with the play pair of the session, and lastServer changes.
+    let key = state.clients.session_key("gm").unwrap();
+    let reply = request_play(&mut gm, &gm_ok, 2).await;
+    assert_eq!(reply[0], PlayOk::OPCODE, "PlayOk");
+    let play = PlayOk::decode(&mut PacketReader::new(&reply[1..])).unwrap();
+    assert_eq!((play.play_ok1, play.play_ok2), (key.play_ok1, key.play_ok2));
+    let mut conn = TestDb::connect_to(&db.url, &db.name).await;
+    let last_server: i8 = sqlx::query_scalar(AssertSqlSafe(
+        "SELECT lastServer FROM accounts WHERE login = 'gm'",
+    ))
+    .fetch_one(&mut conn)
+    .await
+    .unwrap();
+    assert_eq!(last_server, 2);
+
+    // Login server DOWN: nobody gets to a game server.
+    state.set_status(ServerStatus::Down);
+    assert_eq!(
+        login_fail(&request_play(&mut gm, &gm_ok, 2).await),
+        LoginFailReason::AccessFailed
+    );
 
     server.shutdown(false).await;
     db.drop_db().await;

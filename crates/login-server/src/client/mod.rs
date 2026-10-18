@@ -8,26 +8,28 @@ pub mod registry;
 pub mod server_list;
 pub mod session_key;
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use l2_crypto::LoginCipher;
 use l2_net::{CipherError, ConnectionConfig, Control, Encode, FrameCipher, FrameHandler, PacketReader};
-use l2_protocol_login::client::{RequestAuthLogin, credentials_from_decrypted};
+use l2_protocol_login::client::{RequestAuthLogin, RequestServerLogin, credentials_from_decrypted};
 use l2_protocol_login::dispatch::{ClientPacket, ConnectionState, decode_client};
-use l2_protocol_login::enums::{AccountKickedReason, LoginFailReason};
-use l2_protocol_login::server::{AccountKicked, GGAuth, Init, LoginFail, LoginOk};
+use l2_protocol_login::enums::{AccountKickedReason, LoginFailReason, PlayFailReason};
+use l2_protocol_login::server::{AccountKicked, GGAuth, Init, LoginFail, LoginOk, PlayFail, PlayOk};
 use l2_util::WorldRng;
 use l2_util::time::now_millis;
 use tokio::net::TcpListener;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use self::auth::{AccountInfo, LoginResult, can_check_in, retrieve_account_info};
 use self::registry::AuthedClient;
-use self::server_list::build_server_list;
+use self::server_list::{
+    CHARACTER_WAIT, CharacterReplies, ClientView, GsView, is_login_possible, make_server_list,
+};
 use self::session_key::SessionKey;
-use crate::state::LoginState;
+use crate::state::{LoginState, ServerStatus};
 use crate::{Server, StartupError};
 
 /// Binds `LoginserverHostname:LoginserverPort` and accepts clients until shutdown.
@@ -91,6 +93,7 @@ impl FrameCipher for LoginFrameCipher {
 pub struct ClientSession {
     state: Arc<LoginState>,
     ip: String,
+    ip_addr: IpAddr,
     connection_id: u64,
     connected_at_ms: i64,
     session_id: i32,
@@ -103,7 +106,10 @@ pub struct ClientSession {
     session_key: Option<SessionKey>,
     access_level: i32,
     last_server: i32,
-    joined_gs: bool,
+    /// Shared with the registry entry, which the purge reads.
+    joined_gs: Arc<AtomicBool>,
+    /// Filled by the game server links; shared with the registry entry.
+    characters: Arc<CharacterReplies>,
 }
 
 impl ClientSession {
@@ -119,6 +125,7 @@ impl ClientSession {
         let mut rng = WorldRng::from_entropy();
         Some(Self {
             ip: peer.ip().to_string(),
+            ip_addr: peer.ip(),
             connection_id,
             connected_at_ms: now_millis(),
             session_id: rng.next_i32(),
@@ -130,7 +137,8 @@ impl ClientSession {
             session_key: None,
             access_level: 0,
             last_server: 0,
-            joined_gs: false,
+            joined_gs: Arc::default(),
+            characters: Arc::default(),
             state,
         })
     }
@@ -200,7 +208,10 @@ impl ClientSession {
                 self.state
                     .clients
                     .insert(&info.login, self.registry_entry(key, ctl));
-                // TODO(M1-LS-04): getCharactersOnAccount → RequestCharacters to every authed GS.
+                // Java getCharactersOnAccount: ask every authed GS how many characters the
+                // account has; the server list waits for the replies.
+                let asked = self.state.game_servers.request_characters(&info.login);
+                self.characters.expect(asked);
                 if self.state.config.login.show_licence {
                     ctl.send(
                         LoginOk {
@@ -210,7 +221,7 @@ impl ClientSession {
                         .to_bytes(),
                     );
                 } else {
-                    ctl.send(build_server_list(&self.state, self.last_server).to_bytes());
+                    self.send_server_list(ctl).await;
                 }
                 info!("Account '{}' logged in from {}.", info.login, self.ip);
             }
@@ -279,18 +290,88 @@ impl ClientSession {
             connected_at_ms: self.connected_at_ms,
             access_level: self.access_level,
             last_server: self.last_server,
+            joined_gs: Arc::clone(&self.joined_gs),
+            characters: Arc::clone(&self.characters),
         }
     }
 
+    /// Builds the `ServerList` (waiting up to [`CHARACTER_WAIT`] for the character counts) and
+    /// sends it.
+    // Java: new ServerList(client)
+    async fn send_server_list(&self, ctl: &mut Control<'_>) {
+        let client = ClientView {
+            ip: self.ip_addr,
+            access_level: self.access_level,
+            last_server: self.last_server,
+        };
+        let list = make_server_list(
+            &self.state.game_servers,
+            &self.characters,
+            &client,
+            CHARACTER_WAIT,
+        )
+        .await;
+        ctl.send(list.to_bytes());
+    }
+
     // Java: RequestServerList.run
-    fn on_request_server_list(&mut self, login_ok1: i32, login_ok2: i32, ctl: &mut Control<'_>) {
+    async fn on_request_server_list(&mut self, login_ok1: i32, login_ok2: i32, ctl: &mut Control<'_>) {
         let valid = self
             .session_key
             .is_some_and(|k| k.check_login_pair(login_ok1, login_ok2));
         if valid {
-            ctl.send(build_server_list(&self.state, self.last_server).to_bytes());
+            self.send_server_list(ctl).await;
         } else {
             Self::login_fail(ctl, LoginFailReason::AccessFailed);
+        }
+    }
+
+    // Java: RequestServerLogin.run
+    async fn on_request_server_login(&mut self, request: RequestServerLogin, ctl: &mut Control<'_>) {
+        let Some(key) = self.session_key else {
+            return;
+        };
+        // If the licence was not shown, the client never got the pair, so it cannot be checked.
+        if self.state.config.login.show_licence && !key.check_login_pair(request.login_ok1, request.login_ok2)
+        {
+            Self::login_fail(ctl, LoginFailReason::AccessFailed);
+            return;
+        }
+        let status = self.state.status();
+        if status == ServerStatus::Down || (status == ServerStatus::GmOnly && self.access_level < 1) {
+            Self::login_fail(ctl, LoginFailReason::AccessFailed);
+            return;
+        }
+        // NOTE(java-quirk): Java reads the id with the signed `readByte()`, so ids above 127 are
+        // negative and match no game server.
+        let server_id = i32::from(request.server_id as i8);
+        let possible = is_login_possible(
+            &self.state,
+            &self.state.game_servers,
+            self.account.as_deref().unwrap_or_default(),
+            self.access_level,
+            self.last_server,
+            server_id,
+        )
+        .await;
+        if possible {
+            self.joined_gs.store(true, Ordering::Relaxed);
+            ctl.send(
+                PlayOk {
+                    play_ok1: key.play_ok1,
+                    play_ok2: key.play_ok2,
+                }
+                .to_bytes(),
+            );
+        } else {
+            // Like `close(LoginFailReason)`, Java's `close(PlayFailReason)` leaves the
+            // connection open.
+            ctl.send(
+                PlayFail {
+                    reason: PlayFailReason::ServerOverloaded,
+                }
+                .to_bytes(),
+            );
         }
     }
 }
@@ -337,17 +418,16 @@ impl FrameHandler for ClientSession {
         match packet {
             ClientPacket::AuthGameGuard(p) => self.on_auth_game_guard(p.session_id, ctl),
             ClientPacket::RequestAuthLogin(p) => self.on_request_auth_login(*p, ctl).await,
-            ClientPacket::RequestServerList(p) => self.on_request_server_list(p.login_ok1, p.login_ok2, ctl),
-            ClientPacket::RequestServerLogin(_) => {
-                // TODO(M1-LS-03): RequestServerLogin → PlayOk / PlayFail.
-                warn!("RequestServerLogin is not implemented yet (M1-LS-03).");
+            ClientPacket::RequestServerList(p) => {
+                self.on_request_server_list(p.login_ok1, p.login_ok2, ctl).await;
             }
+            ClientPacket::RequestServerLogin(p) => self.on_request_server_login(p, ctl).await,
         }
     }
 
     // Java: LoginClient.onDisconnection
     async fn on_disconnect(&mut self) {
-        if !self.joined_gs
+        if !self.joined_gs.load(Ordering::Relaxed)
             && let Some(account) = &self.account
         {
             // Java removes by account name; we only remove our own entry, so a newer login of

@@ -236,6 +236,13 @@ impl GameServerTable {
         lock(&self.registered).get(&id).cloned()
     }
 
+    /// Changes a registered server in place. `false` when `id` is not registered.
+    // TODO(M1-LS-04): the game server link will have its own setters; this is the hook the
+    // client tests use to make a server look connected.
+    pub fn update_registered(&self, id: i32, change: impl FnOnce(&mut GameServerInfo)) -> bool {
+        lock(&self.registered).get_mut(&id).map(change).is_some()
+    }
+
     /// The ids of all registered servers, ascending.
     pub fn registered_ids(&self) -> Vec<i32> {
         lock(&self.registered).keys().copied().collect()
@@ -370,8 +377,11 @@ impl LoginState {
     /// [`LOGIN_TIMEOUT`](crate::LOGIN_TIMEOUT).
     // Java: LoginController.purge (scheduled in the constructor)
     pub fn purge(&self) {
-        // TODO(M1-LS-03): kick clients that did not join a game server within LOGIN_TIMEOUT and
-        // drop disconnected ones. There is no client registry yet.
+        let timeout_ms = i64::try_from(crate::LOGIN_TIMEOUT.as_millis()).unwrap_or(i64::MAX);
+        let removed = self.clients.purge(l2_util::time::now_millis(), timeout_ms);
+        if removed > 0 {
+            tracing::debug!("Purged {removed} stale login client(s).");
+        }
     }
 
     // Java: LoginServer.shutdown(restart)
