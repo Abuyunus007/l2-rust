@@ -3,6 +3,8 @@
 //! Java: `entity/actor/Creature.java`, `Playable.java`, `Player.java`. Only what M2 needs is
 //! here; later milestones add fields (stats, effects, target, AI state…).
 
+use std::net::IpAddr;
+
 use l2_util::ObjectId;
 
 /// What every creature has (players now, NPCs in M3).
@@ -108,6 +110,10 @@ pub struct Player {
     pub data: PlayerData,
     /// World tick at which the player entered (for online time and admin views).
     pub entered_at_tick: u64,
+    /// Unix time (ms) at which the player entered. Set by the world; only the admin view uses it.
+    pub entered_at_unix_ms: i64,
+    /// The client's address when the session entered (`None` if unknown).
+    pub client_ip: Option<IpAddr>,
 }
 
 impl Player {
@@ -130,6 +136,8 @@ impl Player {
             core,
             data,
             entered_at_tick: tick,
+            entered_at_unix_ms: 0,
+            client_ip: None,
         }
     }
 
@@ -159,4 +167,8 @@ pub struct OnlinePlayer {
     pub class_id: i32,
     /// Seconds since the player entered the world.
     pub online_secs: u64,
+    /// Unix time (ms) at which the player entered the world.
+    pub online_since_unix_ms: i64,
+    /// The client's address (`None` when the session didn't report one).
+    pub ip: Option<IpAddr>,
 }

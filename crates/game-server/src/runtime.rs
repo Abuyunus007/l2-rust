@@ -222,6 +222,7 @@ mod tests {
                 session: SessionId(session),
                 player: Box::new(player(id, name)),
                 sink: Box::new(Sink(Arc::clone(&left))),
+                ip: None,
             }));
         }
 

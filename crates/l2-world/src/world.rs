@@ -1,7 +1,8 @@
 //! The world: all game state, changed only by [`World::handle`] and [`World::tick`].
 
 use std::collections::HashMap;
-use std::time::Duration;
+use std::net::IpAddr;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_net::Encode;
 use l2_util::{ObjectId, WorldRng};
@@ -107,7 +108,8 @@ impl World {
                 session,
                 player,
                 sink,
-            } => self.enter(session, *player, sink),
+                ip,
+            } => self.enter(session, *player, sink, ip),
             WorldCommand::Input { session, input } => self.on_input(session, input),
             WorldCommand::Disconnected { session } => {
                 if let Some(id) = self.sessions.get(&session).copied() {
@@ -147,7 +149,7 @@ impl World {
     }
 
     // Java: EnterWorld.run (the world part; the packets come with M2-ENTER-01)
-    fn enter(&mut self, session: SessionId, data: PlayerData, sink: Box<dyn PacketSink>) {
+    fn enter(&mut self, session: SessionId, data: PlayerData, sink: Box<dyn PacketSink>, ip: Option<IpAddr>) {
         if self.sessions.contains_key(&session) {
             warn!("{session:?} tried to enter the world twice; ignored.");
             return;
@@ -163,7 +165,10 @@ impl World {
         }
         let account = data.account.clone();
         info!("{} ({account}) entered the world.", data.name);
-        self.players.insert(id, Player::from_data(data, self.tick));
+        let mut player = Player::from_data(data, self.tick);
+        player.entered_at_unix_ms = unix_ms_now();
+        player.client_ip = ip;
+        self.players.insert(id, player);
         self.sessions.insert(session, id);
         self.player_sessions.insert(id, session);
         self.sinks.insert(id, sink);
@@ -239,6 +244,8 @@ impl World {
                         level: p.core.level,
                         class_id: p.data.class_id,
                         online_secs: self.tick.saturating_sub(p.entered_at_tick) * tick_ms / 1000,
+                        online_since_unix_ms: p.entered_at_unix_ms,
+                        ip: p.client_ip,
                     })
                     .collect();
                 list.sort_by(|a, b| a.name.cmp(&b.name));
@@ -246,4 +253,11 @@ impl World {
             }
         }
     }
+}
+
+/// Unix time in milliseconds for the admin view. A clock before 1970 reads as 0.
+fn unix_ms_now() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX))
 }

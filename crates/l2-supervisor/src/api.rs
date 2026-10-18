@@ -246,6 +246,10 @@ impl AdminHandler for SupervisorHandler {
             Request::Shutdown { .. } => Response::Error {
                 message: "shutdown is sent to a server endpoint; use stop_server here".into(),
             },
+            // Game status comes from the game server endpoint; the supervisor doesn't relay it yet.
+            Request::GetGameStatus { .. } => Response::Error {
+                message: "the supervisor does not relay game status yet".into(),
+            },
             Request::GetLoginStatus { server: None } => Response::Error {
                 message: "the supervisor needs a server name".into(),
             },
