@@ -1,0 +1,20 @@
+[package]
+name = "l2-data"
+description = "Immutable datapack tables loaded from the Java server's XML files"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+quick-xml.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

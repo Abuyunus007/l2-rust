@@ -2365,6 +2365,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-data"
+version = "0.1.0"
+dependencies = [
+ "quick-xml 0.42.0",
+ "serde",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tracing",
+]
+
+[[package]]
 name = "l2-db"
 version = "0.1.0"
 dependencies = [

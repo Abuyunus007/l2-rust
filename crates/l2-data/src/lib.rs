@@ -1,0 +1,68 @@
+//! The immutable datapack: tables loaded once from the Java server's XML files.
+//!
+//! [`Datapack::load`] is the single entry point; every loader module adds one field to it.
+//! How a loader is written is described in [`loader`]; [`player_template`] is the reference.
+//!
+//! Tables are plain data behind `Arc`, so the world loop and the network tasks can share them
+//! without locks (D-10: nothing here is mutable game state).
+
+pub mod class_list;
+pub mod loader;
+pub mod player_template;
+
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use loader::DataError;
+pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
+
+/// Everything loaded from a datapack folder.
+#[derive(Debug, Clone)]
+pub struct Datapack {
+    /// The folder that contains `data/` (the Java server's working directory, `dist/game`).
+    pub root: PathBuf,
+    /// `data/stats/players/classList.xml`.
+    pub class_list: Arc<ClassList>,
+    /// `data/stats/players/templates/**`.
+    pub player_templates: Arc<PlayerTemplates>,
+}
+
+impl Datapack {
+    /// Loads all tables below `root` (the folder that contains `data/`), logging Java's count
+    /// line for each. Like Java, a broken or missing file is logged and skipped, not fatal; the
+    /// only error is a `root` that has no `data` folder at all.
+    pub fn load(root: &Path) -> Result<Self, DataError> {
+        if !root.join("data").is_dir() {
+            return Err(DataError::MissingRoot(root.to_path_buf()));
+        }
+        Ok(Self {
+            root: root.to_path_buf(),
+            class_list: Arc::new(ClassList::load(root)),
+            player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn root_without_data_folder_is_an_error() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(matches!(
+            Datapack::load(dir.path()),
+            Err(DataError::MissingRoot(_))
+        ));
+    }
+
+    #[test]
+    fn empty_data_folder_loads_empty_tables() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir(dir.path().join("data")).unwrap();
+        let pack = Datapack::load(dir.path()).unwrap();
+        assert!(pack.class_list.is_empty());
+        assert!(pack.player_templates.is_empty());
+    }
+}
