@@ -9,6 +9,11 @@ repository.workspace = true
 
 [dependencies]
 thiserror.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+bytes.workspace = true
+futures-util.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
