@@ -54,6 +54,8 @@ pub struct World {
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
     pub(crate) doors: HashMap<ObjectId, Door>,
+    /// Java `GameTimeTaskManager._isNight`; `None` while the game clock is off.
+    pub(crate) game_clock_night: Option<bool>,
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
     pub(crate) geo: Option<Arc<l2_geo::GeoEngine>>,
@@ -94,6 +96,7 @@ impl World {
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
             doors: HashMap::new(),
+            game_clock_night: None,
             geo: None,
             path_requests: None,
             next_path_request_id: 0,
@@ -243,6 +246,31 @@ impl World {
         }
         // Java: MovementTaskManager.
         self.update_movement();
+        // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
+        if self.tick % 2 == 0 {
+            self.update_game_clock();
+        }
+    }
+
+    /// Java `GameTimeTaskManager`: from now on the world follows the game clock and switches the
+    /// day and night spawns when the game hour crosses 6 or 0. Off until called, so tests stay
+    /// independent of the wall clock.
+    pub fn start_game_clock(&mut self) {
+        self.game_clock_night = Some(Self::is_night_now());
+    }
+
+    fn update_game_clock(&mut self) {
+        let Some(was_night) = self.game_clock_night else {
+            return;
+        };
+        let night = Self::is_night_now();
+        if night != was_night {
+            self.game_clock_night = Some(night);
+            info!("Game clock: it is now {}.", if night { "night" } else { "day" });
+            // Java also adds or removes the Dark Elves' Shadow Sense skill here (with a system
+            // message): skills and their effects are M5.
+            self.set_night(night);
+        }
     }
 
     // Java: EnterWorld.runImpl (the world part; the packets are in `enter.rs`)

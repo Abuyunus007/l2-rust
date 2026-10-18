@@ -72,6 +72,8 @@ pub fn spawn_npcs(
     world.set_npc_data(Arc::clone(&datapack.npcs), Arc::clone(&datapack.spawns));
     let started = Instant::now();
     let report = world.spawn_all_npcs(World::is_night_now());
+    // Java GameTimeTaskManager: the day/night spawns switch while the server runs.
+    world.start_game_clock();
     info!(
         "NPC spawns: {} NPCs in the world ({} minions) in {} ms.",
         report.npcs,

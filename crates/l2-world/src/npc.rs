@@ -20,8 +20,8 @@
 //   (`ChampionMonstersConfig`, off by default): M4.
 // - Raid and grand bosses: Java's `RaidBossSpawnManager` / `GrandBossManager` spawn them from
 //   their own tables, the spawn files skip them (`SpawnData.checkTemplate`).
-// - the day/night switch while the server runs (`GameTimeTaskManager` -> `set_night`): needs the
-//   game clock service; only the start state is applied.
+// - the day/night switch while the server runs: `World::start_game_clock` (world.rs) calls
+//   `set_night` when the game hour crosses 6 or 0.
 // - castle owner crests in `NpcInfo`: castles are not loaded, so nobody owns one.
 
 use std::collections::{HashMap, HashSet};
