@@ -28,10 +28,14 @@ A card can start once everything it depends on is merged. Cards in the same wave
 | W3 | CRYPTO-02 (s), CRYPTO-03 (s), CRYPTO-04 (h), CRYPTO-05 (h), DB-01 (s), LPROTO-01 (s), GEO-01 (s), GUI-02 (h), GUI-03 (h) | 9 |
 | W4 | LS-01 (s), LPROTO-02 (h), GEO-02 (h) | 3 |
 | W5 | LS-02 (o), LS-04 (s), PROXY-01 (s) | 2 |
+| 🎮 **CP1** | **Client checkpoint 1 (you):** Java LS + Java GS through the proxy CLI. Real client logs in, the capture shows decoded login packets. | |
 | W6 | LS-03 (s), PROXY-02 (s) | 2 |
 | W7 | LS-05 (s), GUI-04 (s) | 2 |
+| 🎮 **CP2** | **Client checkpoint 2 (you):** **Rust LS** + Java GS + real client: login, server list, enter the game. | |
 | W8 | LS-06 (s), ADM-03 (h) | 2 |
-| ✔ | **Milestone test by you** (runbook from LS-06) | |
+| 🎮 **CP3** | **Milestone test (you):** full M1 runbook from LS-06 with the GUI, packet inspector and supervisor. | |
+
+Every milestone from M2 on also gets client checkpoints. The rule: you can see progress in the real client at least every 2–3 waves.
 
 Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-05 → LS-06.
 
@@ -40,18 +44,18 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
 | [M1-WS-01](M1/M1-WS-01.md) | Cargo workspace skeleton | opus | full | none | merged (`a96b3c0`, CI green; reviewed by the orchestrator as author) |
-| [M1-JV-01](M1/M1-JV-01.md) | Java vector harness + crypto vectors | sonnet | full | WS-01 | ready |
+| [M1-JV-01](M1/M1-JV-01.md) | Java vector harness + crypto vectors | sonnet | full | WS-01 | in-progress (sonnet worker) |
 | [M1-JV-02](M1/M1-JV-02.md) | Login packet vectors | sonnet | spot | JV-01 | planned |
 | [M1-JV-03](M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | planned |
-| [M1-GEN-01](M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | ready |
+| [M1-GEN-01](M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | in-progress (sonnet worker) |
 | [M1-CRYPTO-01](M1/M1-CRYPTO-01.md) | Blowfish-LE and NewCrypt | sonnet | full | WS-01, JV-01 | planned |
 | [M1-CRYPTO-02](M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | planned |
 | [M1-CRYPTO-03](M1/M1-CRYPTO-03.md) | Login client encryption | sonnet | full | CRYPTO-01 | planned |
 | [M1-CRYPTO-04](M1/M1-CRYPTO-04.md) | Game XOR cipher and BF key generator | haiku | spot | CRYPTO-01, JV-01 | planned |
 | [M1-CRYPTO-05](M1/M1-CRYPTO-05.md) | LS↔GS link cipher | haiku | spot | CRYPTO-01 | planned |
-| [M1-NET-01](M1/M1-NET-01.md) | Packet reader/writer and packet traits | opus | full | WS-01 | ready |
+| [M1-NET-01](M1/M1-NET-01.md) | Packet reader/writer and packet traits | opus | full | WS-01 | in-progress (orchestrator) |
 | [M1-NET-02](M1/M1-NET-02.md) | Framing codec and connection task | opus | full | NET-01 | planned |
-| [M1-CFG-01](M1/M1-CFG-01.md) | `.ini` reader with ConfigReader semantics | sonnet | full | WS-01 | ready |
+| [M1-CFG-01](M1/M1-CFG-01.md) | `.ini` reader with ConfigReader semantics | sonnet | full | WS-01 | in-progress (sonnet worker) |
 | [M1-CFG-02](M1/M1-CFG-02.md) | Login server config structs | sonnet | full | CFG-01 | planned |
 | [M1-DB-01](M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | planned |
 | [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | planned |
