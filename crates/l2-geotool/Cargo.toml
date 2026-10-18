@@ -1,0 +1,20 @@
+[package]
+name = "l2-geotool"
+description = "Geodata tool: per-region stats, diff of two geodata sets, and PNG renders"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+l2-geo.workspace = true
+png.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
