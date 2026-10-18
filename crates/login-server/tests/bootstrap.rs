@@ -54,7 +54,8 @@ fn write_server_folder(root: &Path, database: &str, url: &str) {
     .unwrap();
     std::fs::write(
         config.join("Server.ini"),
-        "LoginRestartSchedule = True\nLoginRestartTime = 6\n",
+        // LoginPort 0: the game server listener takes a free port, so tests never fight over 9013.
+        "LoginRestartSchedule = True\nLoginRestartTime = 6\nLoginPort = 0\n",
     )
     .unwrap();
     std::fs::write(
