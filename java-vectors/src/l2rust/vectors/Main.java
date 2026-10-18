@@ -10,7 +10,7 @@ import java.nio.file.Paths;
  * java l2rust.vectors.Main &lt;generator|all&gt; [outDir]
  * </pre>
  *
- * Generators: {@code crypto}. Later cards add {@code login-packets}, {@code geo}, ...<br>
+ * Generators: {@code crypto}, {@code login-packets}. Later cards add {@code geo}, ...<br>
  * {@code outDir} defaults to {@code java-vectors/out} (relative to the working directory).
  */
 public final class Main
@@ -23,7 +23,7 @@ public final class Main
 	{
 		if (args.length < 1)
 		{
-			System.err.println("usage: Main <crypto|all> [outDir]");
+			System.err.println("usage: Main <crypto|login-packets|all> [outDir]");
 			System.exit(2);
 		}
 
@@ -31,7 +31,13 @@ public final class Main
 		switch (args[0])
 		{
 			case "crypto" -> CryptoVectors.generate(out);
-			case "all" -> CryptoVectors.generate(out); // Add new generators here.
+			case "login-packets" -> LoginPacketVectors.generate(out);
+			case "all" ->
+			{
+				// Add new generators here.
+				CryptoVectors.generate(out);
+				LoginPacketVectors.generate(out);
+			}
 			default ->
 			{
 				System.err.println("unknown generator: " + args[0]);
