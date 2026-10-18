@@ -10,6 +10,7 @@ use l2_net::PacketWriter;
 use crate::generated::opcodes::ServerOpcode;
 
 pub mod charscreen;
+pub mod chat;
 pub mod enterworld;
 pub mod handshake;
 pub mod items;
@@ -21,6 +22,7 @@ pub use charscreen::{
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, active_slot, delete_seconds,
     exp_percent,
 };
+pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, SkillCoolTime, SkillList,

@@ -320,7 +320,13 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestGotoLobby(p) => p.to_bytes(),
             ClientPacket::EnterWorld(p) => p.to_bytes(),
             ClientPacket::RequestKeyMapping(p) => p.to_bytes(),
-            ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
+            // Chat packets are checked in tests/chat.rs.
+            ClientPacket::Say2(_)
+            | ClientPacket::Logout(_)
+            | ClientPacket::RequestRestart(_)
+            | ClientPacket::RequestNetPing(_)
+            | ClientPacket::Unported(_)
+            | ClientPacket::UnportedEx(_) => return None,
         };
         return Some(raw.starts_with(&encoded));
     }
