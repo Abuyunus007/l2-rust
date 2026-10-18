@@ -435,6 +435,27 @@ impl ClientSession {
             ClientPacket::RequestNetPing(_) => ClientInput::NetPing,
             ClientPacket::RequestSkillCoolTime(_) => ClientInput::SkillCoolTime,
             ClientPacket::RequestKeyMapping(_) => ClientInput::KeyMapping,
+            ClientPacket::MoveToLocation(p) => ClientInput::MoveTo {
+                target_x: p.target_x,
+                target_y: p.target_y,
+                target_z: p.target_z,
+                origin_x: p.origin_x,
+                origin_y: p.origin_y,
+                origin_z: p.origin_z,
+                movement_mode: p.movement_mode,
+            },
+            ClientPacket::ValidatePosition(p) => ClientInput::ValidatePosition {
+                x: p.x,
+                y: p.y,
+                z: p.z,
+                heading: p.heading,
+            },
+            ClientPacket::CannotMoveAnymore(p) => ClientInput::CannotMoveAnymore {
+                x: p.x,
+                y: p.y,
+                z: p.z,
+                heading: p.heading,
+            },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

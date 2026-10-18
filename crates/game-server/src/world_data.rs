@@ -487,6 +487,13 @@ impl StaticData for DatapackData {
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         self.access.get(level)
     }
+
+    fn safe_fall_height(&self, player: &PlayerData) -> i32 {
+        self.datapack
+            .player_templates
+            .get_by_id(player.class_id)
+            .map_or(333, |t| t.safe_fall)
+    }
 }
 
 /// The values the world reads from the configuration (Java `PlayerConfig`, `GeneralConfig`).
@@ -522,6 +529,12 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         log_chat: config.general.log_chat,
         ..WorldSettings::default()
     };
+    // `NpcTalkBlockingTime` is post-processed (seconds -> ms) in the generated config, so it is
+    // read from `Player.ini` directly.
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        settings.player_movement_block_time_ms = ini.get_int("NpcTalkBlockingTime", 0).saturating_mul(1000);
+    }
+    settings.keyboard_movement = p.enable_keyboard_movement;
     // Java: `Enum.valueOf(ChatBroadcastType.class, config.getString("GlobalChat", "ON"))` throws
     // for a bad name; the default is kept here.
     if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {

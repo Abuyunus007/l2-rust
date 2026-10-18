@@ -262,11 +262,39 @@ impl PathService {
     }
 }
 
+/// The world's view of the pool (D-14): the movement code asks through `PathRequests`; answers
+/// come back as `WorldCommand::PathFound` ([`WorldPathSink`]).
+pub struct WorldPathRequests {
+    service: Arc<PathService>,
+}
+
+impl WorldPathRequests {
+    pub fn new(service: Arc<PathService>) -> Self {
+        Self { service }
+    }
+}
+
+impl l2_world::PathRequests for WorldPathRequests {
+    fn request(&mut self, request: PathRequest) -> bool {
+        match self.service.request(request) {
+            Ok(()) => true,
+            Err(e) => {
+                debug!("path request refused: {e}");
+                false
+            }
+        }
+    }
+
+    fn cancel(&mut self, requester: u64) {
+        self.service.cancel(requester);
+    }
+}
+
 /// The geodata and the path pool, shared through `GameState`.
 pub struct Geo {
     /// Always present; has no regions when no geodata was found (null regions, like Java).
     pub engine: Arc<GeoEngine>,
-    pub paths: PathService,
+    pub paths: Arc<PathService>,
 }
 
 impl Geo {
@@ -274,7 +302,7 @@ impl Geo {
     pub fn empty() -> Self {
         Self {
             engine: Arc::new(GeoEngine::new(GeoSet::new(), GeoEngineOptions::default())),
-            paths: PathService::disabled(),
+            paths: Arc::new(PathService::disabled()),
         }
     }
 
@@ -304,7 +332,10 @@ impl Geo {
             info!("GeoEngine: Path finding is off (PathFinding = {mode}).");
             PathService::disabled()
         };
-        Self { engine, paths }
+        Self {
+            engine,
+            paths: Arc::new(paths),
+        }
     }
 }
 
@@ -473,6 +504,35 @@ mod tests {
         settings.geodata_path = dir.to_path_buf();
         settings.path_threads = threads;
         settings
+    }
+
+    #[test]
+    fn the_world_requests_paths_through_the_pool_and_a_stopped_pool_refuses() {
+        use l2_world::PathRequests;
+
+        let dir = tempfile::tempdir().unwrap();
+        let settings = flat_settings(dir.path(), "PathFinding = 2", 1);
+        let engine = load_engine(&settings);
+        let (sink, rx) = sink();
+        let geo = Geo::start(engine, &settings, sink);
+        let mut requests = WorldPathRequests::new(Arc::clone(&geo.paths));
+
+        let cell = |gx: i32, gy: i32| Location::new(world_x(20 * 2048 + gx), world_y(18 * 2048 + gy), 0);
+        let request = PathRequest::new(5, 1, cell(10, 10), cell(40, 30), Arc::new(NoObstacles));
+        assert!(requests.request(request));
+        assert!(matches!(
+            rx.recv_timeout(Duration::from_secs(20)).unwrap(),
+            WorldCommand::PathFound {
+                requester: 5,
+                request_id: 1,
+                ..
+            }
+        ));
+        requests.cancel(5);
+
+        geo.paths.shutdown();
+        let late = PathRequest::new(5, 2, cell(1, 1), cell(2, 2), Arc::new(NoObstacles));
+        assert!(!requests.request(late), "refused: the move then walks straight");
     }
 
     #[test]

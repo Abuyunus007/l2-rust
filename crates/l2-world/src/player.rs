@@ -199,6 +199,9 @@ pub struct Player {
     /// Java `getKnownRelations()`: the relation (mask, auto-attackable) each viewer was last told
     /// about this player, so `RelationChanged` only goes out when it changes.
     pub known_relations: std::collections::HashMap<ObjectId, (i32, bool)>,
+    /// Java `_move`, the movement-related fields of `Creature`/`Player` and the move intention of
+    /// `PlayerAI` (see `movement.rs`).
+    pub movement: crate::movement::MovementState,
 }
 
 impl Player {
@@ -217,6 +220,7 @@ impl Player {
             cur_cp: data.cur_cp,
             max_cp: data.max_cp,
         };
+        let movement = crate::movement::MovementState::at(data.x, data.y, data.z);
         Self {
             core,
             data,
@@ -229,6 +233,7 @@ impl Player {
             hourglass_ms: 0,
             stats: DerivedStats::default(),
             known_relations: std::collections::HashMap::new(),
+            movement,
         }
     }
 

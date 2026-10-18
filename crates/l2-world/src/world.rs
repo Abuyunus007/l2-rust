@@ -54,6 +54,12 @@ pub struct World {
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
     pub(crate) geo: Option<Arc<l2_geo::GeoEngine>>,
+    /// Where path searches go (D-14); installed by the game server after the pool started.
+    pub(crate) path_requests: Option<Box<dyn crate::movement::PathRequests>>,
+    pub(crate) next_path_request_id: u64,
+    pub(crate) warned_no_path_service: bool,
+    /// Creatures with a running move (Java `MovementTaskManager`'s pools).
+    pub(crate) moving: Vec<ObjectId>,
 }
 
 impl World {
@@ -77,6 +83,10 @@ impl World {
             npcs: HashMap::new(),
             doors: HashMap::new(),
             geo: None,
+            path_requests: None,
+            next_path_request_id: 0,
+            warned_no_path_service: false,
+            moving: Vec::new(),
         }
     }
 
@@ -186,12 +196,12 @@ impl World {
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
             WorldCommand::Admin(query) => self.on_admin(query),
-            // Nothing asks for paths yet (M3-MOVE-01 will use this).
             WorldCommand::PathFound {
                 requester,
                 request_id,
-                ..
-            } => debug!("path {request_id} of {requester} arrived; no movement code uses it yet"),
+                result,
+            } => self.on_path_found(requester, request_id, result),
+            WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
                 info!("World shutting down, storing {} player(s).", online.len());
@@ -211,6 +221,8 @@ impl World {
         for (_, kind) in self.timers.take_due(self.tick) {
             self.on_timer(kind);
         }
+        // Java: MovementTaskManager.
+        self.update_movement();
     }
 
     // Java: EnterWorld.runImpl (the world part; the packets are in `enter.rs`)
@@ -286,6 +298,9 @@ impl World {
                     self.send(id, &packet);
                 }
             }
+            input @ (ClientInput::MoveTo { .. }
+            | ClientInput::ValidatePosition { .. }
+            | ClientInput::CannotMoveAnymore { .. }) => self.on_movement_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
