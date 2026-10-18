@@ -3,8 +3,9 @@
 // Java: dist/game/data/scripts/handlers/chat/channels/{ChatGeneral,ChatShout,ChatTrade,
 // Java: ChatWhisper,ChatHeroVoice}.java
 //
-// There are no regions yet (M3), so "players in range" and "players in the same region" both
-// mean everybody in the world. Left out because the systems do not exist: chat bans, jail, cursed
+// General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
+// trade in `ON` mode go to the speaker's map region in Java; until the map regions are in the world
+// (M3-TELE-01) they reach everybody, like `GLOBAL`. Left out because the systems do not exist: chat bans, jail, cursed
 // weapons, block lists, factions, the say filter (`UseChatFilter`), voiced commands, fake
 // players, the global-chat flood protector, and the party, clan, alliance, petition and room
 // channels (their messages are dropped with a debug line, like Java does for a channel without
@@ -25,6 +26,9 @@ const MAX_TEXT_LEN: usize = 105;
 const MAX_LINKED_TEXT_LEN: usize = 500;
 /// The character the client puts around an item link.
 const ITEM_LINK_MARK: char = '\u{8}';
+/// Java `ChatGeneral`: `forEachVisibleObjectInRange(activeChar, Player.class, 1250, ...)`.
+const GENERAL_CHAT_RANGE: i32 = 1250;
+
 /// Level needed for trade chat (hard-coded in Java's `ChatTrade`).
 const TRADE_CHAT_LEVEL: i32 = 20;
 
@@ -200,10 +204,14 @@ impl World {
             );
             return;
         }
-        // World.forEachVisibleObjectInRange(activeChar, Player.class, 1250, ...) and then the
-        // speaker: with no regions yet that is everybody in the world, the speaker once.
+        // World.forEachVisibleObjectInRange(activeChar, Player.class, 1250, ...), then the speaker.
         let packet = self.say_packet(id, ChatType::General, &player.data.name, text);
-        self.broadcast_say(&packet);
+        for to in self.visible_objects_in_range(id, GENERAL_CHAT_RANGE) {
+            if self.players.contains_key(&to) {
+                self.send(to, &packet);
+            }
+        }
+        self.send(id, &packet);
     }
 
     // Java: ChatShout.onChat

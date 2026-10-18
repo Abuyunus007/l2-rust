@@ -737,11 +737,14 @@ fn general_shout_and_trade_chat_reach_everybody_once() {
         say(&mut w, 1, chat_type, "hi", None);
         let out = log.take();
         let expected = say_packet(1, kind, "Alice", "hi");
-        assert_eq!(
-            out,
-            vec![Out::Packet(1, expected.clone()), Out::Packet(2, expected)],
-            "{kind:?}"
-        );
+        // Java ChatGeneral: the players in range first, then the speaker. Shout and trade go over
+        // `World.getPlayers()` (the speaker included, in id order here).
+        let order = if kind == ChatType::General {
+            vec![Out::Packet(2, expected.clone()), Out::Packet(1, expected)]
+        } else {
+            vec![Out::Packet(1, expected.clone()), Out::Packet(2, expected)]
+        };
+        assert_eq!(out, order, "{kind:?}");
     }
 }
 

@@ -295,3 +295,30 @@ fn spawning_clamps_into_the_world_like_java() {
     assert_eq!(w.position_of(ObjectId(1)).unwrap().0, region::WORLD_X_MAX - 5_000);
     assert!(w.object(ObjectId(1)).unwrap().spawned);
 }
+
+#[test]
+fn general_chat_reaches_only_players_within_1250() {
+    let log = Log::default();
+    let mut w = world(&log);
+    // The test characters are level 1; MinimumChatLevel would refuse them.
+    w.set_settings(WorldSettings {
+        minimum_chat_level: 0,
+        ..WorldSettings::default()
+    });
+    enter(&mut w, &log, 1, X, Y);
+    enter(&mut w, &log, 2, X + 1_000, Y);
+    enter(&mut w, &log, 3, X + 1_400, Y);
+    log.take();
+    w.handle(WorldCommand::Input {
+        session: SessionId(1),
+        input: ClientInput::Say {
+            chat_type: 0,
+            text: "hi".into(),
+            target: None,
+        },
+    });
+    let out = log.take();
+    let said = |to: i32| names_to(&out, to).iter().any(|n| n == "SAY2");
+    assert!(said(1) && said(2), "speaker and the player 1000 away");
+    assert!(!said(3), "1400 away is out of the 1250 range");
+}

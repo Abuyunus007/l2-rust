@@ -5,14 +5,17 @@
 //
 // The values come from the same computation as the player's own `UserInfo`
 // (`enter::build_user_info`), so both views agree.
-// TODO(M3-PLAYERS-01): compare every CharInfo field with Java's CharInfo constructor (Java takes
-// some values from different getters than UserInfo), and boats/airships, private store messages,
-// summons' relations.
+// Compared field by field with Java's CharInfo constructor and writeImpl (M3-PLAYERS-01): the
+// speeds, flags and colours come from the same getters as UserInfo; only the GM-invisibility
+// handling differs. Not here yet: boats/airships, private store messages, summons' relations.
 
 use l2_protocol_game::server::{CharInfo, ExBrExtraUserInfo, RelationChanged, RelationEntry};
 use l2_util::ObjectId;
 
 use crate::enter::build_user_info;
+
+/// Java `AbnormalVisualEffect.STEALTH.getMask()`.
+const STEALTH_MASK: i32 = 0x0010_0000;
 use crate::world::World;
 
 impl World {
@@ -101,12 +104,18 @@ impl World {
             running: ui.running,
             in_combat: false,
             alike_dead: false,
-            invisible: gm_sees_invisible,
+            // Java: `!gmSeeInvis && isInvisible()` (a GM sees the player, a ghostly one).
+            invisible: !gm_sees_invisible && invisible,
             mount_type: ui.mount_type,
             private_store_type: ui.private_store_type,
             cubics: ui.cubics,
             in_party_match_room: ui.in_party_match_room,
-            abnormal_visual_effects: ui.abnormal_visual_effects,
+            // Java: a GM viewer gets `AbnormalVisualEffect.STEALTH` on top.
+            abnormal_visual_effects: if gm_sees_invisible {
+                ui.abnormal_visual_effects | STEALTH_MASK
+            } else {
+                ui.abnormal_visual_effects
+            },
             water_or_flying: ui.water_or_flying,
             recom_have: ui.recom_have,
             mount_npc_id: ui.mount_npc_id,
