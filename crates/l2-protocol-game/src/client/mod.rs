@@ -18,11 +18,13 @@ use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
 pub mod charscreen;
 pub mod handshake;
+pub mod ingame;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
 pub use handshake::{AuthLogin, ProtocolVersion};
+pub use ingame::{Logout, RequestNetPing, RequestRestart, Say2};
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

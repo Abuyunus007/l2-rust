@@ -8,8 +8,8 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter,
-    ProtocolVersion, RequestGotoLobby,
+    AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, Logout, NewCharacter,
+    ProtocolVersion, RequestGotoLobby, RequestNetPing, RequestRestart, Say2,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -24,6 +24,10 @@ pub enum ClientPacket {
     CharacterRestore(CharacterRestore),
     CharacterSelect(CharacterSelect),
     RequestGotoLobby(RequestGotoLobby),
+    Say2(Say2),
+    Logout(Logout),
+    RequestRestart(RequestRestart),
+    RequestNetPing(RequestNetPing),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -59,6 +63,10 @@ pub fn decode_client(
         CharacterDelete::OPCODE => ClientPacket::CharacterDelete(CharacterDelete::decode(reader)?),
         CharacterRestore::OPCODE => ClientPacket::CharacterRestore(CharacterRestore::decode(reader)?),
         CharacterSelect::OPCODE => ClientPacket::CharacterSelect(CharacterSelect::decode(reader)?),
+        Say2::OPCODE => ClientPacket::Say2(Say2::decode(reader)?),
+        Logout::OPCODE => ClientPacket::Logout(Logout::decode(reader)?),
+        RequestRestart::OPCODE => ClientPacket::RequestRestart(RequestRestart::decode(reader)?),
+        RequestNetPing::OPCODE => ClientPacket::RequestNetPing(RequestNetPing::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -165,6 +173,21 @@ mod tests {
                 "{state:?}"
             );
         }
+        // Logout is accepted in AUTHENTICATED and IN_GAME; chat, restart and net ping in IN_GAME.
+        for &state in ConnectionState::ALL {
+            assert_eq!(
+                decode(state, 0x00, &ZEROS).unwrap().is_some(),
+                matches!(state, Authenticated | InGame),
+                "{state:?}"
+            );
+            for opcode in [0x49, 0x57, 0xB1] {
+                assert_eq!(
+                    decode(state, opcode, &ZEROS).unwrap().is_some(),
+                    state == InGame,
+                    "opcode {opcode:#04x} in {state:?}"
+                );
+            }
+        }
     }
 
     #[test]
@@ -190,6 +213,18 @@ mod tests {
             decode(Authenticated, 0xD0, &[0x36, 0x00]).unwrap(),
             Some(ClientPacket::RequestGotoLobby(RequestGotoLobby))
         );
+        assert_eq!(
+            decode(InGame, 0x49, &[0x41, 0, 0, 0, 2, 0, 0, 0, 0x42, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::Say2(Say2 {
+                text: "A".into(),
+                chat_type: 2,
+                target: Some("B".into()),
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x57, &[]).unwrap(),
+            Some(ClientPacket::RequestRestart(RequestRestart))
+        );
         // What the encoders write decodes to the same packet (opcode bytes stripped).
         let select = CharacterSelect {
             char_slot: 3,
@@ -207,10 +242,10 @@ mod tests {
 
     #[test]
     fn known_but_unported_packets_are_reported() {
-        // Logout (0x00) is accepted in AUTHENTICATED and IN_GAME, but has no struct yet.
+        // Attack (0x01) is accepted in IN_GAME, but has no struct yet.
         assert_eq!(
-            decode(InGame, 0x00, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::Logout))
+            decode(InGame, 0x01, &[]).unwrap(),
+            Some(ClientPacket::Unported(ClientOpcode::Attack))
         );
         assert_eq!(
             decode(Entering, 0x11, &[]).unwrap(),
@@ -243,6 +278,7 @@ mod tests {
             (Authenticated, 0x12, 17),
             (Authenticated, 0x7B, 0),
             (Authenticated, 0xD0, 1),
+            (InGame, 0x49, 2),
         ] {
             assert!(
                 decode(state, opcode, &ZEROS[..len]).is_err(),

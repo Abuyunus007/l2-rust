@@ -10,6 +10,7 @@ use l2_net::PacketWriter;
 use crate::generated::opcodes::ServerOpcode;
 
 pub mod charscreen;
+pub mod chat;
 pub mod handshake;
 
 pub use charscreen::{
@@ -17,6 +18,7 @@ pub use charscreen::{
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, active_slot, delete_seconds,
     exp_percent,
 };
+pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
 pub use handshake::KeyPacket;
 
 /// Writes a server packet's id the way Java `ServerPackets.writeId` does: the id byte, then the
