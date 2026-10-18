@@ -97,7 +97,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | W5 | CHAR-01 (s) | 1 |
 | 🎮 **CP-M2b** | **You:** create and delete a character on the Rust GS. | ✅ passed 2026-10-18 |
 | W6 | ENTER-01 (s) | 1 |
-| 🎮 **CP-M2c** | **You:** enter the world on the Rust GS: see yourself and your gear, chat, log out, log in again (saved). | |
+| 🎮 **CP-M2c** | **You:** enter the world on the Rust GS: see yourself and your gear, chat, log out, log in again (saved). | ✅ passed 2026-10-18 (enter + restart by owner; chat/logout via tests + E2E-01) |
 | W7 | E2E-01 (s) | 1 |
 | W8 | RUN-01 (o) | 0 |
 | 🎮 **CP-M2d** | **Milestone test (you):** cross-check — a character created on the Rust GS plays on the Java GS and vice versa. | |
