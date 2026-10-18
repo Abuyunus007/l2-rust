@@ -854,6 +854,7 @@ mod tests {
             session: l2_world::SessionId(session),
             player: Box::new(player(id, name)),
             sink: Box::new(NullSink),
+            ip: None,
         }));
     }
 
