@@ -75,7 +75,7 @@ pub async fn retrieve_account_info(
             }
             state.clear_failed_logins(address);
             return Some(AccountInfo {
-                login: row.login.to_lowercase(),
+                login: account_key(&row.login),
                 access_level: row.access_level,
                 last_server: row.last_server_or_zero(),
             });
@@ -179,6 +179,17 @@ pub async fn can_check_in(state: &LoginState, address: &str, info: &AccountInfo)
     true
 }
 
+/// The account name as the rest of the login server keys it: the `login` column, lower-cased
+/// (Java `AccountInfo`) and with control characters around it removed.
+///
+/// Deliberate deviation: Java keeps the column value as it is. A row whose name was stored with
+/// trailing NUL bytes is still found by the lookup (MariaDB's collations ignore U+0000), but the
+/// game server later asks for the account by the name the client typed, so with the NULs kept
+/// `PlayerAuthRequest` never matches ("Session key incorrect") on the Java GS and the Rust GS.
+fn account_key(login: &str) -> String {
+    login.trim_matches(|c: char| c <= ' ').to_lowercase()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -194,5 +205,12 @@ mod tests {
         assert_eq!(is_valid_ip("+1.2.3.4"), Some(true)); // Java parseInt accepts a leading '+'
         assert_eq!(is_valid_ip("a.b.c.d"), None);
         assert_eq!(is_valid_ip("1..3.4"), None);
+    }
+
+    #[test]
+    fn account_keys_drop_nul_padding_and_case() {
+        assert_eq!(account_key("Yunus"), "yunus");
+        assert_eq!(account_key("abc    "), "abc");
+        assert_eq!(account_key(" abc "), "abc");
     }
 }
