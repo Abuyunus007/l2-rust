@@ -2350,6 +2350,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-geotool"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "l2-geo",
+ "png",
+ "tempfile",
+]
+
+[[package]]
 name = "l2-net"
 version = "0.1.0"
 dependencies = [
