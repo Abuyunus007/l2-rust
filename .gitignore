@@ -1,0 +1,21 @@
+# Rust build output
+/target/
+**/*.rs.bk
+
+# Reference material: read-only, referenced by absolute path, never committed
+/l2jmobius/
+/geodata-download/
+/geodata-converted/
+
+# Local runtime data and secrets
+/logs/
+/captures/
+*.local.ini
+.env
+
+# Editors / OS
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+.DS_Store
