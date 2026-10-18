@@ -16,6 +16,10 @@
 //! - `opcode`: the first byte of the plaintext payload. `ex_opcode` is only present for game
 //!   packets with a 16-bit sub-opcode (client `0xD0`, server `0xFE`).
 //! - `name`: the packet name, or `"unknown"`.
+//! - `state`: optional; only game packets have it. The proxy's guess of the game connection
+//!   state when the packet was seen, as the Java `ConnectionState` constant name (`CONNECTED`,
+//!   `AUTHENTICATED`, `ENTERING`, `IN_GAME`, ...). Omitted when unknown. It is a guess made
+//!   from the packet sequence, not something the server tells the client.
 //! - `fields`: the decoded fields as a JSON object, or `null` when the packet is not decoded.
 //! - `raw`: lowercase hex of the plaintext payload (opcode included, without length header,
 //!   padding or checksum). **Redacted packets** (`RequestAuthLogin`) carry only the opcode byte
@@ -121,6 +125,9 @@ pub struct Record {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ex_opcode: Option<u16>,
     pub name: String,
+    /// The proxy's guess of the connection state (game packets only), see the module docs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
     pub fields: Option<Value>,
     pub raw: String,
 }
@@ -144,6 +151,7 @@ impl Record {
             opcode,
             ex_opcode: None,
             name: name.into(),
+            state: None,
             fields,
             raw: hex::encode(raw),
         }
@@ -319,6 +327,29 @@ mod tests {
         assert!(rec["fields"].is_null(), "fields is null, not missing");
         assert_eq!(rec["raw"], "01abcd");
         assert!(rec.get("ex_opcode").is_none(), "ex_opcode is omitted when absent");
+        assert!(rec.get("state").is_none(), "state is omitted when absent");
+    }
+
+    #[test]
+    fn state_round_trips_and_old_captures_without_it_still_read() {
+        let mut record = sample(2);
+        record.state = Some("IN_GAME".into());
+        let bytes = write_all(std::slice::from_ref(&record));
+        assert!(
+            String::from_utf8(bytes.clone())
+                .unwrap()
+                .contains("\"state\":\"IN_GAME\"")
+        );
+        let read = CaptureReader::new(bytes.as_slice()).unwrap().read_all().unwrap();
+        assert_eq!(read[0].state.as_deref(), Some("IN_GAME"));
+
+        let old = concat!(
+            "{\"format\":\"l2-capture\",\"version\":1,\"tool\":\"x\",\"created_ms\":1}\n",
+            "{\"ts_ms\":1,\"conn\":2,\"dir\":\"c2s\",\"channel\":\"game\",\"opcode\":3,",
+            "\"name\":\"n\",\"fields\":null,\"raw\":\"03\"}\n",
+        );
+        let records = CaptureReader::new(old.as_bytes()).unwrap().read_all().unwrap();
+        assert_eq!(records[0].state, None);
     }
 
     #[test]

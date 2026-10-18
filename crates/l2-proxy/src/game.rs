@@ -94,7 +94,7 @@ struct Packet {
     /// The Java constant name from the generated tables, or `"unknown"`.
     name: &'static str,
     /// Our guess of the connection state when the packet was seen (before the packet's own
-    /// effect on it). The capture format has no key for it yet.
+    /// effect on it). Goes into the capture's optional `state` key.
     state: ConnectionState,
     /// The plaintext payload, opcode included. For a redacted packet only the opcode byte.
     raw: Vec<u8>,
@@ -491,6 +491,7 @@ async fn pump(
                 &packet.raw,
             );
             record.ex_opcode = packet.ex_opcode;
+            record.state = Some(packet.state.name().to_owned());
             // The receiver may be gone (GUI closed the inspector); the relay keeps working.
             let _ = records.send(record);
         }

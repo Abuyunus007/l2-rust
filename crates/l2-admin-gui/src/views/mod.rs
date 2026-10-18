@@ -13,6 +13,7 @@
 
 pub mod connection;
 pub mod logs;
+pub mod packets;
 pub mod servers;
 
 use crate::app::AppCtx;
@@ -50,14 +51,17 @@ impl ViewId {
 
     /// Placeholders (`false`) are shown greyed out and cannot be selected.
     pub fn is_available(self) -> bool {
-        matches!(self, ViewId::Connection | ViewId::Servers | ViewId::Logs)
+        matches!(
+            self,
+            ViewId::Connection | ViewId::Servers | ViewId::Logs | ViewId::Packets
+        )
     }
 
-    /// Which card adds the view; shown in the placeholder's tooltip.
+    /// Which card adds the view; shown in the placeholder's tooltip. Empty for available views.
+    /// A new placeholder is a new `ViewId` whose arm names its card here.
     pub fn planned_in(self) -> &'static str {
         match self {
-            ViewId::Connection | ViewId::Servers | ViewId::Logs => "",
-            ViewId::Packets => "M1-GUI-04",
+            ViewId::Connection | ViewId::Servers | ViewId::Logs | ViewId::Packets => "",
         }
     }
 }
@@ -68,6 +72,7 @@ pub struct Views {
     pub connection: connection::ConnectionView,
     pub servers: servers::ServersView,
     pub logs: logs::LogsView,
+    pub packets: packets::PacketsView,
 }
 
 impl Views {
@@ -77,7 +82,7 @@ impl Views {
             ViewId::Connection => Some(&mut self.connection),
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Logs => Some(&mut self.logs),
-            ViewId::Packets => None,
+            ViewId::Packets => Some(&mut self.packets),
         }
     }
 
@@ -85,6 +90,7 @@ impl Views {
         self.connection.on_event(event);
         self.servers.on_event(event);
         self.logs.on_event(event);
+        self.packets.on_event(event);
     }
 }
 
