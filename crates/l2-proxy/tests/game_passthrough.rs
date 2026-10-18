@@ -417,6 +417,10 @@ fn check_capture(records: &[Record], text: &str, encryption: bool) {
     );
     // ex_opcode is only written where it exists.
     assert!(text.contains("\"ex_opcode\":232"));
+    // Every game record carries the state guess; the first client packet is still CONNECTED.
+    assert!(text.contains("\"state\":\"CONNECTED\""));
+    assert!(records.iter().all(|r| r.state.is_some()));
+    assert_eq!(find("PROTOCOL_VERSION").state.as_deref(), Some("CONNECTED"));
 }
 
 // ---------------------------------------------------------------------------------------------
