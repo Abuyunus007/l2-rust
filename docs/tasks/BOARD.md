@@ -172,7 +172,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-TELE-01](M3/M3-TELE-01.md) | Teleports, zones in the world, map regions | sonnet | full | WREG-01, DATA-07, GPROTO-05 | merged |
 | [M3-DOOR-01](M3/M3-DOOR-01.md) | Doors and fences in the world | sonnet | full | WREG-01, DATA-09, GEO-01, GPROTO-06 | merged |
 | [M3-TALK-01](M3/M3-TALK-01.md) | Targeting, NPC dialogs, bypasses, gatekeepers | sonnet | full | NPC-01, DATA-08, TELE-01, GPROTO-06 | in-progress |
-| [M3-PLAYERS-01](M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | planned |
+| [M3-PLAYERS-01](M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | merged |
 | [M3-ADMIN-01](M3/M3-ADMIN-01.md) | Core admin commands | haiku | spot | TALK-01 | planned |
 | [M3-E2E-01](M3/M3-E2E-01.md) | Two fake clients end to end | sonnet | spot | PLAYERS-01, TALK-01, M2-E2E-01 | planned |
 | [M3-GEO-03](M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | merged |
