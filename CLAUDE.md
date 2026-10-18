@@ -58,4 +58,5 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 
 ## Git
 - `main` is protected by the review: only the orchestrator merges.
+- **The repo is public.** Never commit personal data, real account names, IPs, passwords or emails.
 - Never commit anything from the reference folders, geodata, captures with real account data, or secrets (`*.local.ini`, `.env`).

@@ -57,7 +57,7 @@ Background for each decision: `docs/analysis/`.
 | D-40 | **Agents:** Opus plans, writes task cards, builds core/architecture code and reviews. **Haiku does as much as possible** (templated work), and Sonnet takes cards that are too hard for Haiku. **Max throughput:** parallel agents. |
 | D-41 | **Java oracle:** small Java harness programs call the real L2JMobius classes and dump test vectors as JSON. Rust must match byte for byte (crypto, packets, geodata queries, formulas). Captures from the real client cover end-to-end flows. |
 | D-42 | **One git worktree/branch per task card.** Opus reviews and merges into `main`. |
-| D-43 | **Private GitHub repo + GitHub Actions CI** on Windows and Linux: `cargo fmt --check`, `clippy -D warnings`, `cargo test`. CI must pass before a merge. |
+| D-43 | **Public GitHub repo** (`Abuyunus007/l2-rust`, public by owner's choice) **+ GitHub Actions CI** on Windows and Linux: `cargo fmt --check`, `clippy -D warnings`, `cargo test`. CI must pass before a merge. |
 | D-44 | **Risk-based review:** core/architecture code gets a full Opus review. Templated work is gated by automatic tests + spot checks. |
 | D-45 | Planning state lives in the repo (`docs/`, `CLAUDE.md`, task cards), never only in a conversation. |
 | D-46 | The Java reference (`C:\l2-rust\l2jmobius`) and the geodata folders are read-only and git-ignored. Agents reference them by absolute path. |
