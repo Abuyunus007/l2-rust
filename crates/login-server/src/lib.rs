@@ -17,6 +17,7 @@
 // are M1-LS-02 (clients) and M1-LS-04 (game servers) and slot in before `ready`.
 
 pub mod bans;
+pub mod client;
 pub mod keys;
 pub mod logging;
 pub mod server_names;
@@ -84,6 +85,8 @@ pub enum StartupError {
     Database(#[from] DbError),
     #[error("cannot create the key pools: {0}")]
     Keys(#[from] KeyError),
+    #[error("cannot listen on {0}: {1}")]
+    Bind(String, std::io::Error),
 }
 
 /// A running login server (initialized, background tasks started).
@@ -94,6 +97,8 @@ pub struct Server {
     tasks: JoinSet<()>,
     /// Cancelled on shutdown; listeners and their connections watch it (child tokens).
     cancel: CancellationToken,
+    /// Where the client listener is bound (useful with port 0 in tests).
+    client_addr: Option<std::net::SocketAddr>,
 }
 
 impl Server {
@@ -150,6 +155,7 @@ impl Server {
             shutdown_requests,
             tasks,
             cancel: CancellationToken::new(),
+            client_addr: None,
         };
         // Listeners. Each card adds one line here:
         // - client listener on LoginserverPort (M1-LS-02)
@@ -161,7 +167,13 @@ impl Server {
 
     /// Starts the network listeners (see the list in `start_with`).
     async fn start_listeners(&mut self) -> Result<(), StartupError> {
+        client::start_listener(self).await?;
         Ok(())
+    }
+
+    /// The bound address of the client listener.
+    pub fn client_addr(&self) -> Option<std::net::SocketAddr> {
+        self.client_addr
     }
 
     /// Runs `task` until shutdown. Listener cards use this.
@@ -356,6 +368,7 @@ mod tests {
             shutdown_requests: requests,
             tasks: JoinSet::new(),
             cancel: CancellationToken::new(),
+            client_addr: None,
         };
         state.request_shutdown(true);
         let reason = server.run_until(std::future::pending::<()>()).await;
@@ -373,6 +386,7 @@ mod tests {
             shutdown_requests: requests,
             tasks,
             cancel: CancellationToken::new(),
+            client_addr: None,
         };
         let reason = server.run_until(std::future::ready(())).await;
         assert_eq!(reason, ExitReason::Shutdown);

@@ -54,7 +54,7 @@ fn write_server_folder(root: &Path, database: &str, url: &str) {
     .unwrap();
     std::fs::write(
         config.join("Server.ini"),
-        "LoginRestartSchedule = True\nLoginRestartTime = 6\n",
+        "LoginRestartSchedule = True\nLoginRestartTime = 6\nLoginserverPort = 0\n",
     )
     .unwrap();
     std::fs::write(

@@ -219,6 +219,8 @@ pub struct LoginState {
     pub client_keys: ClientKeys,
     pub game_servers: GameServerTable,
     pub bans: BanList,
+    /// Accounts logged in on the login server (Java `_loginServerClients`).
+    pub clients: crate::client::registry::ClientRegistry,
     /// Failed login attempts per client address (Java `_failedLoginAttemps`).
     failed_logins: Mutex<HashMap<String, i32>>,
     status: AtomicU8,
@@ -245,6 +247,7 @@ impl LoginState {
             client_keys,
             game_servers,
             bans,
+            clients: Default::default(),
             failed_logins: Mutex::new(HashMap::new()),
             status: AtomicU8::new(ServerStatus::Normal as u8),
             rng: Mutex::new(rng),
