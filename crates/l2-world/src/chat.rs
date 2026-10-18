@@ -4,8 +4,8 @@
 // Java: ChatWhisper,ChatHeroVoice}.java
 //
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
-// trade in `ON` mode go to the speaker's map region in Java; until the map regions are in the world
-// (M3-TELE-01) they reach everybody, like `GLOBAL`. Left out because the systems do not exist: chat bans, jail, cursed
+// trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
+// `GLOBAL` to everybody. Left out because the systems do not exist: chat bans, jail, cursed
 // weapons, block lists, factions, the say filter (`UseChatFilter`), voiced commands, fake
 // players, the global-chat flood protector, and the party, clan, alliance, petition and room
 // channels (their messages are dropped with a debug line, like Java does for a channel without
@@ -231,7 +231,7 @@ impl World {
             return;
         }
         let packet = self.say_packet(id, ChatType::Shout, &player.data.name, text);
-        self.broadcast_by_mode(self.settings.global_chat, is_gm, &packet);
+        self.broadcast_by_mode(id, self.settings.global_chat, is_gm, &packet);
     }
 
     // Java: ChatTrade.onChat
@@ -245,17 +245,48 @@ impl World {
         }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         let packet = self.say_packet(id, ChatType::Trade, &player.data.name, text);
-        self.broadcast_by_mode(self.settings.trade_chat, is_gm, &packet);
+        self.broadcast_by_mode(id, self.settings.trade_chat, is_gm, &packet);
     }
 
     /// The `DEFAULT_GLOBAL_CHAT` / `DEFAULT_TRADE_CHAT` switch: `ON` (and `GM` for a GM) goes to
     /// the speaker's region, `GLOBAL` to everybody, `OFF` to nobody (not even the speaker).
     /// There is one region for now, so the first two do the same as the third.
-    fn broadcast_by_mode(&self, mode: ChatBroadcast, speaker_is_gm: bool, packet: &CreatureSay) {
+    fn broadcast_by_mode(
+        &self,
+        id: ObjectId,
+        mode: ChatBroadcast,
+        speaker_is_gm: bool,
+        packet: &CreatureSay,
+    ) {
         match mode {
-            ChatBroadcast::On | ChatBroadcast::Global => self.broadcast_say(packet),
-            ChatBroadcast::Gm if speaker_is_gm => self.broadcast_say(packet),
+            // `World.getPlayers()` with the same `getMapRegionLocId` and instance as the speaker.
+            ChatBroadcast::On => self.broadcast_say_in_map_region(id, packet),
+            ChatBroadcast::Gm if speaker_is_gm => self.broadcast_say_in_map_region(id, packet),
+            // `World.getPlayers()`: everybody.
+            ChatBroadcast::Global => self.broadcast_say(packet),
             ChatBroadcast::Gm | ChatBroadcast::Off => {}
+        }
+    }
+
+    /// Java `MapRegionData.getMapRegionLocId(player)` of a player (0 without map region data).
+    fn map_region_loc_id(&self, id: ObjectId) -> i32 {
+        match (self.zoning.map_regions.as_ref(), self.players.get(&id)) {
+            (Some(regions), Some(p)) => regions.map_region_loc_id(p.core.x, p.core.y),
+            _ => 0,
+        }
+    }
+
+    fn broadcast_say_in_map_region(&self, id: ObjectId, packet: &CreatureSay) {
+        let region = self.map_region_loc_id(id);
+        let instance = self.objects.get(&id).map_or(0, |e| e.instance_id);
+        let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
+        ids.sort();
+        for to in ids {
+            if self.map_region_loc_id(to) == region
+                && self.objects.get(&to).map_or(0, |e| e.instance_id) == instance
+            {
+                self.send(to, packet);
+            }
         }
     }
 

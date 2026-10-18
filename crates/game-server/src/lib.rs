@@ -241,8 +241,13 @@ impl Server {
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);
-                    // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
+                    // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
+                    // spawns.
+                    if let Err(e) = world.spawn_door_data(&datapack, &ids) {
+                        tracing::error!("Doors, fences and static objects could not all be spawned: {e}");
+                    }
+                    // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),

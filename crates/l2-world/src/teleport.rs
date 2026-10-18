@@ -28,7 +28,7 @@
 // - A detached client (`GameClient.isDetached`, offline mode) is never teleported "in place".
 
 use l2_geo::Location;
-use l2_protocol_game::server::{StopMove, TeleportToLocation};
+use l2_protocol_game::server::TeleportToLocation;
 use l2_util::ObjectId;
 use tracing::{debug, warn};
 
@@ -137,6 +137,8 @@ impl World {
             return;
         };
         player.tele.teleporting = value;
+        // The same Java flag, as the movement code reads it (M3-MOVE-01).
+        player.movement.teleporting = value;
         if value {
             if player.tele.watchdog.is_none() && timeout > 0 {
                 let ticks = crate::timer::TimerWheel::duration_to_ticks(std::time::Duration::from_secs(
@@ -159,13 +161,6 @@ impl World {
             debug!("{id} did not answer its teleport; completing it.");
             self.on_teleported(id);
         }
-    }
-
-    /// Java `Player.broadcastPacket(packet)` for packets other than `CharInfo`: the player first,
-    /// then everybody who can see it.
-    pub(crate) fn broadcast_to_self_and_visible(&self, id: ObjectId, packet: &impl l2_net::Encode) {
-        self.send(id, packet);
-        self.broadcast_packet(id, packet);
     }
 
     /// Java `WorldObject.broadcastInfo()`: `sendInfo` to every player who can see the object.
@@ -203,18 +198,9 @@ impl World {
         // FOLLOW-UP(M4): `if (_isPendingRevive) doRevive();`
 
         // "Abort any client actions, casting and remove target."
-        // `stopMove(null)`: the movement state goes (FOLLOW-UP(M3-MOVE-01): clear it here), and
-        // `StopMove` is broadcast.
-        if let Some(player) = self.players.get(&id) {
-            let stop = StopMove {
-                object_id: id.0,
-                x: player.core.x,
-                y: player.core.y,
-                z: player.core.z,
-                heading: player.core.heading,
-            };
-            self.broadcast_to_self_and_visible(id, &stop);
-        }
+        // `stopMove(null)`: the movement state goes (with a pending path search) and `StopMove` is
+        // broadcast.
+        self.stop_move(id, None);
         // FOLLOW-UP(M4): `abortAttack()`, `abortCast()`.
         // FOLLOW-UP(M3-TALK-01): `setTarget(null)` (TargetUnselected to everybody if it had one).
 
@@ -358,8 +344,10 @@ impl World {
         self.set_teleporting(id, false);
 
         // Player.onTeleported
-        // FOLLOW-UP(M3-MOVE-01): `setLastServerPosition(x, y, z)` (the position `ValidatePosition`
-        // compares against).
+        // `setLastServerPosition(x, y, z)`: the position `ValidatePosition` compares against.
+        if let Some(p) = self.players.get_mut(&id) {
+            p.movement.last_server_position = (x, y, z);
+        }
         // "Force a revalidation"
         self.revalidate_zone(id, true);
         // FOLLOW-UP(M4): `checkItemRestriction()`, teleport protection, pet, tamed beasts, movie,

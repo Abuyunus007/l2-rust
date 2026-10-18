@@ -759,6 +759,18 @@ impl GeoEngine {
     /// cell and returns the last position before an obstacle, or the target (with its ground Z) if
     /// the way is free. A closed door or fence on the segment returns the start on the ground.
     pub fn valid_location(&self, from: Location, to: Location, instance_id: i32) -> Location {
+        self.valid_location_with(self.obstacles.as_ref(), from, to, instance_id)
+    }
+
+    /// [`valid_location`](Self::valid_location) asking `obstacles` instead of the engine's own door
+    /// / fence hook (the world thread passes its live doors, M3-DOOR-01).
+    pub fn valid_location_with(
+        &self,
+        obstacles: &dyn DynamicObstacles,
+        from: Location,
+        to: Location,
+        instance_id: i32,
+    ) -> Location {
         let start_geo_x = geo_x(from.x);
         let start_geo_y = geo_y(from.y);
         let nearest_from_z = self.nearest_z(start_geo_x, start_geo_y, from.z);
@@ -767,7 +779,7 @@ impl GeoEngine {
         let nearest_to_z = self.nearest_z(target_geo_x, target_geo_y, to.z);
 
         // Door checks.
-        if self.obstacles.doors_between(
+        if obstacles.doors_between(
             Location::new(from.x, from.y, nearest_from_z),
             Location::new(to.x, to.y, nearest_to_z),
             instance_id,
@@ -777,7 +789,7 @@ impl GeoEngine {
         }
 
         // Fence checks.
-        if self.obstacles.fence_between(
+        if obstacles.fence_between(
             Location::new(from.x, from.y, nearest_from_z),
             Location::new(to.x, to.y, nearest_to_z),
             instance_id,

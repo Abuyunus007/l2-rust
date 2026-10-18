@@ -797,10 +797,16 @@ fn validate_position_ignores_zero_and_absurd_reports() {
     let log = Log::default();
     let mut world = world_with_player(&log);
     validate(&mut world, 1, 0, 0, Z);
+    assert!(log.take().is_empty(), "0/0 is ignored");
+    // An abnormal z: Java `teleToLocation(lastServerPosition)` (M3-TELE-01).
     validate(&mut world, 1, X, Y, 20_001);
-    validate(&mut world, 1, X, Y, -20_001);
-    assert!(log.take().is_empty());
-    assert_eq!(pos(&world, 1), (X, Y, Z));
+    let out = log.take();
+    assert!(
+        out.iter().any(|o| o.to == 1 && o.bytes[0] == 0x22),
+        "TeleportToLocation to the last server position"
+    );
+    // Java `teleToLocation` lifts the target by 5 ("z += 5").
+    assert_eq!(pos(&world, 1), (X, Y, Z + 5));
     assert_eq!(world.player(ObjectId(1)).unwrap().movement.client_z, 0);
 }
 

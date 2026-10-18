@@ -33,10 +33,8 @@
 //   obstacle hook is used by every check that goes through it.
 // - NPC movement (`MoveToPawn`, attackable teleport back): M4.
 
-use std::sync::Arc;
-
 use l2_geo::coords::{geo_x, geo_y};
-use l2_geo::{DynamicObstacles, GeoLocation, Location, NoObstacles, PathRequest, PathResult};
+use l2_geo::{GeoLocation, Location, PathRequest, PathResult};
 use l2_net::Encode;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, MoveToLocation, StopMove, SystemMessage, ValidateLocation};
@@ -474,11 +472,10 @@ impl World {
         // Abnormal z read from client.
         if !(-20_000..=20_000).contains(&z) {
             // Java: `teleToLocation(lastServerPosition)`.
-            // TODO(M3-TELE-01): call the teleport once it exists; until then the report is only
-            // logged.
-            warn!(
-                "{id}: client reported an abnormal z ({z}); teleport to the last server position is not ported yet."
-            );
+            warn!("{id}: client reported an abnormal z ({z}); back to the last server position.");
+            if let Some((lx, ly, lz)) = self.players.get(&id).map(|p| p.movement.last_server_position) {
+                self.tele_to_location(id, crate::teleport::TeleportTarget::at(lx, ly, lz));
+            }
             return;
         }
 
@@ -1162,6 +1159,12 @@ impl World {
     /// Sends the path request. `Some(request id)` when it is out.
     fn submit_path_request(&mut self, id: ObjectId, calc: &MoveCalc) -> Option<u64> {
         let instance = self.instance_id_of(id);
+        // The doors as they are now travel with the request (D-14: workers never see the world).
+        let obstacles = if self.path_requests.is_some() {
+            Some(self.door_snapshot())
+        } else {
+            None
+        };
         let Some(sink) = self.path_requests.as_mut() else {
             if !self.warned_no_path_service {
                 self.warned_no_path_service = true;
@@ -1178,7 +1181,7 @@ impl World {
             request_id,
             Location::new(calc.cur_x, calc.cur_y, calc.cur_z),
             Location::new(calc.original_x, calc.original_y, calc.original_z),
-            obstacle_snapshot(),
+            obstacles?,
         )
         .with_instance(instance)
         .with_playable(true);
@@ -1370,19 +1373,19 @@ impl World {
     }
 
     /// Java `DoorData.checkIfDoorsBetween(...)`. M3-DOOR-01 answers it from the door table.
-    fn doors_between(
-        &self,
-        _from: Location,
-        _to: Location,
-        _instance: i32,
-        _double_face_check: bool,
-    ) -> bool {
-        false
+    fn doors_between(&self, from: Location, to: Location, instance: i32, double_face_check: bool) -> bool {
+        // Java `DoorData.checkIfDoorsBetween` over the world's live doors (M3-DOOR-01).
+        use l2_geo::DynamicObstacles;
+        self.obstacles()
+            .doors_between(from, to, instance, double_face_check)
     }
 
     /// `!region.getDoors().isEmpty() || !region.getFences().isEmpty()` (M3-DOOR-01).
-    fn region_has_doors_or_fences(&self, _id: ObjectId) -> bool {
-        false
+    fn region_has_doors_or_fences(&self, id: ObjectId) -> bool {
+        // Java `getWorldRegion().getDoors()/getFences()` are not empty.
+        self.objects.get(&id).and_then(|e| e.region).is_some_and(|r| {
+            self.regions.doors(r).next().is_some() || self.regions.fences(r).next().is_some()
+        })
     }
 
     fn instance_id_of(&self, id: ObjectId) -> i32 {
@@ -1395,14 +1398,14 @@ impl World {
 
     fn geo_valid_location(&self, from: Location, to: Location, instance: i32) -> Location {
         match &self.geo {
-            Some(geo) => geo.valid_location(from, to, instance),
+            Some(geo) => geo.valid_location_with(&self.obstacles(), from, to, instance),
             None => to,
         }
     }
 
     fn geo_can_move_to_target(&self, from: Location, to: Location, instance: i32) -> bool {
         match &self.geo {
-            Some(geo) => geo.can_move_to_target(from, to, instance),
+            Some(geo) => geo.can_move_to_target_with(&self.obstacles(), from, to, instance),
             None => true,
         }
     }
@@ -1504,10 +1507,6 @@ impl World {
 
 /// The door and fence view sent with a path request. M3-DOOR-01 takes a snapshot of the world's
 /// door table here.
-fn obstacle_snapshot() -> Arc<dyn DynamicObstacles> {
-    Arc::new(NoObstacles)
-}
-
 /// The requester number of a path request (the object id).
 pub fn requester_of(id: ObjectId) -> u64 {
     u64::from(id.0.unsigned_abs())
