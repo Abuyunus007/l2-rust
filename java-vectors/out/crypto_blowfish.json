@@ -1,0 +1,355 @@
+{
+  "source": "org.l2jmobius.commons.crypt.BlowfishEngine#init/encryptBlock/decryptBlock",
+  "generated_by": "java-vectors",
+  "note": "Blocks are 8 bytes. The first key is the static login key from LoginEncryption.STATIC_BLOWFISH_KEY. Keys of 16, 16, 22 (incl. trailing NUL) and 40 bytes.",
+  "cases": [
+    {
+      "key": "6b60cb5b82ce90b1cc2b6c556c6c6c6c",
+      "encrypt_block": [
+        {
+          "input": "0000000000000000",
+          "output": "46d6a19b80854746"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "2876313c32bac280"
+        },
+        {
+          "input": "0001020304050607",
+          "output": "458ef8cb40966a79"
+        },
+        {
+          "input": "f8f9fafbfcfdfeff",
+          "output": "cffea76974372432"
+        },
+        {
+          "input": "ab1614d47a39fe7e",
+          "output": "875297860db5cafa"
+        },
+        {
+          "input": "771da0dde86a06b4",
+          "output": "bccb814fd3f57c29"
+        },
+        {
+          "input": "2eba24aea0a0333c",
+          "output": "70d452c235dbe4f7"
+        },
+        {
+          "input": "fe5e46a8457c3277",
+          "output": "4085443f9df94a2c"
+        }
+      ],
+      "decrypt_block": [
+        {
+          "input": "46d6a19b80854746",
+          "output": "0000000000000000"
+        },
+        {
+          "input": "2876313c32bac280",
+          "output": "ffffffffffffffff"
+        },
+        {
+          "input": "458ef8cb40966a79",
+          "output": "0001020304050607"
+        },
+        {
+          "input": "cffea76974372432",
+          "output": "f8f9fafbfcfdfeff"
+        },
+        {
+          "input": "875297860db5cafa",
+          "output": "ab1614d47a39fe7e"
+        },
+        {
+          "input": "bccb814fd3f57c29",
+          "output": "771da0dde86a06b4"
+        },
+        {
+          "input": "70d452c235dbe4f7",
+          "output": "2eba24aea0a0333c"
+        },
+        {
+          "input": "4085443f9df94a2c",
+          "output": "fe5e46a8457c3277"
+        },
+        {
+          "input": "0000000000000000",
+          "output": "dc13dab50e466870"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "46c3c89dd1336a00"
+        },
+        {
+          "input": "65df9f94ee2620f2",
+          "output": "9d4444c722a99cf2"
+        },
+        {
+          "input": "6490ea5b7f42491a",
+          "output": "68e73fb1597a460e"
+        }
+      ]
+    },
+    {
+      "key": "9f3b28fc0f065fc91f5b71b3ea90545d",
+      "encrypt_block": [
+        {
+          "input": "0000000000000000",
+          "output": "ca7dafb88ce7c220"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "67b9d7a94d8052d7"
+        },
+        {
+          "input": "0001020304050607",
+          "output": "4a08c5d1cf4fc912"
+        },
+        {
+          "input": "f8f9fafbfcfdfeff",
+          "output": "7576380bd0a79fbe"
+        },
+        {
+          "input": "8b912161be9be40e",
+          "output": "7df6f6573aea60d8"
+        },
+        {
+          "input": "6127215df8cef6b3",
+          "output": "7ac5c86139447734"
+        },
+        {
+          "input": "edd6b6156a67dba5",
+          "output": "b91ca0a21c8b6222"
+        },
+        {
+          "input": "712b5cefd7e1d883",
+          "output": "da81dee5e36bf46e"
+        }
+      ],
+      "decrypt_block": [
+        {
+          "input": "ca7dafb88ce7c220",
+          "output": "0000000000000000"
+        },
+        {
+          "input": "67b9d7a94d8052d7",
+          "output": "ffffffffffffffff"
+        },
+        {
+          "input": "4a08c5d1cf4fc912",
+          "output": "0001020304050607"
+        },
+        {
+          "input": "7576380bd0a79fbe",
+          "output": "f8f9fafbfcfdfeff"
+        },
+        {
+          "input": "7df6f6573aea60d8",
+          "output": "8b912161be9be40e"
+        },
+        {
+          "input": "7ac5c86139447734",
+          "output": "6127215df8cef6b3"
+        },
+        {
+          "input": "b91ca0a21c8b6222",
+          "output": "edd6b6156a67dba5"
+        },
+        {
+          "input": "da81dee5e36bf46e",
+          "output": "712b5cefd7e1d883"
+        },
+        {
+          "input": "0000000000000000",
+          "output": "5480e1c7154d9a64"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "6b45923ca897d643"
+        },
+        {
+          "input": "990a774eeb746b5e",
+          "output": "699d0bc166bc79ea"
+        },
+        {
+          "input": "a408d2fd5426a111",
+          "output": "61bf7edc3c1077f5"
+        }
+      ]
+    },
+    {
+      "key": "7ddfbd351adf60b98990fedfa4baa7b7a62d723a5200",
+      "encrypt_block": [
+        {
+          "input": "0000000000000000",
+          "output": "05150cb6e84dd540"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "7d76a5fbce703141"
+        },
+        {
+          "input": "0001020304050607",
+          "output": "0b1d97762a77e85f"
+        },
+        {
+          "input": "f8f9fafbfcfdfeff",
+          "output": "2f1d96c877172791"
+        },
+        {
+          "input": "559deccbc391edf8",
+          "output": "d13ccbe2df66a17c"
+        },
+        {
+          "input": "b23b7ee3326f68ea",
+          "output": "cf1f8dc2a610e8c2"
+        },
+        {
+          "input": "d37194191d68adb7",
+          "output": "e73c1f08208f13f6"
+        },
+        {
+          "input": "522b78d28db75ad9",
+          "output": "76e5b12054056338"
+        }
+      ],
+      "decrypt_block": [
+        {
+          "input": "05150cb6e84dd540",
+          "output": "0000000000000000"
+        },
+        {
+          "input": "7d76a5fbce703141",
+          "output": "ffffffffffffffff"
+        },
+        {
+          "input": "0b1d97762a77e85f",
+          "output": "0001020304050607"
+        },
+        {
+          "input": "2f1d96c877172791",
+          "output": "f8f9fafbfcfdfeff"
+        },
+        {
+          "input": "d13ccbe2df66a17c",
+          "output": "559deccbc391edf8"
+        },
+        {
+          "input": "cf1f8dc2a610e8c2",
+          "output": "b23b7ee3326f68ea"
+        },
+        {
+          "input": "e73c1f08208f13f6",
+          "output": "d37194191d68adb7"
+        },
+        {
+          "input": "76e5b12054056338",
+          "output": "522b78d28db75ad9"
+        },
+        {
+          "input": "0000000000000000",
+          "output": "ad01455cb4e33f39"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "e37eea58e4adfa23"
+        },
+        {
+          "input": "22487ae43177fd6e",
+          "output": "a174f1f757e5a7b3"
+        },
+        {
+          "input": "cbc2cd51d5eb1bbd",
+          "output": "72ec72f3f0c9f5f5"
+        }
+      ]
+    },
+    {
+      "key": "ccd0947a64c92f36a467424a206a545cae0bacb75643d4d63bfe7ca8be63598943da94e2cdeb2592",
+      "encrypt_block": [
+        {
+          "input": "0000000000000000",
+          "output": "3ef1816fe7a9c0fc"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "0b7ca5b2df5d9f9f"
+        },
+        {
+          "input": "0001020304050607",
+          "output": "84a9f67328061a52"
+        },
+        {
+          "input": "f8f9fafbfcfdfeff",
+          "output": "89efbca998ed6078"
+        },
+        {
+          "input": "66ec6b2bedade72c",
+          "output": "1d3e4e13551a230e"
+        },
+        {
+          "input": "caa1d4151abfc182",
+          "output": "c169e22ed7f40b25"
+        },
+        {
+          "input": "cb1ca423d18b7ab5",
+          "output": "da4049f19c2d1075"
+        },
+        {
+          "input": "76f5bd4289103fca",
+          "output": "1e093194a961a84b"
+        }
+      ],
+      "decrypt_block": [
+        {
+          "input": "3ef1816fe7a9c0fc",
+          "output": "0000000000000000"
+        },
+        {
+          "input": "0b7ca5b2df5d9f9f",
+          "output": "ffffffffffffffff"
+        },
+        {
+          "input": "84a9f67328061a52",
+          "output": "0001020304050607"
+        },
+        {
+          "input": "89efbca998ed6078",
+          "output": "f8f9fafbfcfdfeff"
+        },
+        {
+          "input": "1d3e4e13551a230e",
+          "output": "66ec6b2bedade72c"
+        },
+        {
+          "input": "c169e22ed7f40b25",
+          "output": "caa1d4151abfc182"
+        },
+        {
+          "input": "da4049f19c2d1075",
+          "output": "cb1ca423d18b7ab5"
+        },
+        {
+          "input": "1e093194a961a84b",
+          "output": "76f5bd4289103fca"
+        },
+        {
+          "input": "0000000000000000",
+          "output": "e54e5ff9a16a7246"
+        },
+        {
+          "input": "ffffffffffffffff",
+          "output": "100b2ef3fdd270a4"
+        },
+        {
+          "input": "b65a69c51aec4c06",
+          "output": "09fa532e6107778b"
+        },
+        {
+          "input": "c24e665136a5e17a",
+          "output": "913c27c769bd3286"
+        }
+      ]
+    }
+  ]
+}

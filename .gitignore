@@ -7,6 +7,9 @@
 /geodata-download/
 /geodata-converted/
 
+# Output of java-vectors/build.* (the generated JSON in java-vectors/out/ is committed)
+/java-vectors/build/
+
 # Local runtime data and secrets
 /logs/
 /captures/

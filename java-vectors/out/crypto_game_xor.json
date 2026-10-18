@@ -1,0 +1,183 @@
+{
+  "source": "org.l2jmobius.gameserver.network.Encryption#setKey/encrypt/decrypt, BlowFishKeygen",
+  "generated_by": "java-vectors",
+  "note": "Per sequence: encrypt_calls run on one Encryption instance (the first call only enables the cipher), decrypt_calls on another (decrypt does nothing until enabled; the generator enabled it with a 1-byte encrypt call between the first and second decrypt call). key_after = the instance's inbound/outbound 16-byte key after the call (bytes 8..11 hold the rolling little-endian offset, advanced by the packet size). A zero-length packet changes nothing. blowfish_keygen: BlowFishKeygen.getRandomKey() is 16 bytes = 8 random + this fixed 8-byte tail.",
+  "sequences": [
+    {
+      "what": "random key, 5 packets",
+      "key": "02c794357af07b9b3e65d10f6d783753",
+      "encrypt_calls": [
+        {
+          "enabled_before": false,
+          "input": "4538dc4ac337",
+          "output": "4538dc4ac337",
+          "key_after": "02c794357af07b9b3e65d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "be",
+          "output": "bc",
+          "key_after": "02c794357af07b9b3f65d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "d63fea82c79af5",
+          "output": "d42c52e55832bc",
+          "key_after": "02c794357af07b9b4665d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "75c9bb2f532613672aa083d6d7d05d22",
+          "output": "7779564c65b3db274b8edc05bf177d0c",
+          "key_after": "02c794357af07b9b5665d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "6de768c041371ddbd184a8bfc7ec18af95",
+          "output": "6f4fb3467dbadc9c1bfa8333990d22de49",
+          "key_after": "02c794357af07b9b6765d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "bae26465ab23263ec02d62b668f5c7e12135400a7c78d481090dae90e9adf2a7f02a5b0004b6d93e",
+          "output": "b89d6d3dec3f62c760289b2227aa5ae8cb39edd2d45cf3e987ef900f8b5e9b6f9d70bf8af4b210b5",
+          "key_after": "02c794357af07b9b8f65d10f6d783753"
+        }
+      ],
+      "decrypt_calls": [
+        {
+          "enabled_before": false,
+          "input": "885b6944d56a8695db",
+          "output": "885b6944d56a8695db",
+          "key_after": "02c794357af07b9b3e65d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "bc",
+          "output": "be",
+          "key_after": "02c794357af07b9b3f65d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "d42c52e55832bc",
+          "output": "d63fea82c79af5",
+          "key_after": "02c794357af07b9b4665d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "7779564c65b3db274b8edc05bf177d0c",
+          "output": "75c9bb2f532613672aa083d6d7d05d22",
+          "key_after": "02c794357af07b9b5665d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "6f4fb3467dbadc9c1bfa8333990d22de49",
+          "output": "6de768c041371ddbd184a8bfc7ec18af95",
+          "key_after": "02c794357af07b9b6765d10f6d783753"
+        },
+        {
+          "enabled_before": true,
+          "input": "b89d6d3dec3f62c760289b2227aa5ae8cb39edd2d45cf3e987ef900f8b5e9b6f9d70bf8af4b210b5",
+          "output": "bae26465ab23263ec02d62b668f5c7e12135400a7c78d481090dae90e9adf2a7f02a5b0004b6d93e",
+          "key_after": "02c794357af07b9b8f65d10f6d783753"
+        }
+      ]
+    },
+    {
+      "what": "key whose rolling offset wraps past 2^32, 6 packets (one empty)",
+      "key": "d2426b384f1a7f3cfeffffff08ac6294",
+      "encrypt_calls": [
+        {
+          "enabled_before": false,
+          "input": "4c348b088833",
+          "output": "4c348b088833",
+          "key_after": "d2426b384f1a7f3cfeffffff08ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "1b3a44",
+          "output": "c9b19e",
+          "key_after": "d2426b384f1a7f3c0100000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "36c4a97a42703ed5bcc26f3c8b16e5b393d8aa37",
+          "output": "e462a0e2ef85c42d90523d018238bf98d943828d",
+          "key_after": "d2426b384f1a7f3c1500000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "",
+          "output": "",
+          "key_after": "d2426b384f1a7f3c1500000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "88",
+          "output": "5a",
+          "key_after": "d2426b384f1a7f3c1600000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "8330aa9bce0a5012af8f246b8823df166d243496960f1b908ebeaef1cb8a83e3fd",
+          "output": "5123e241c0d0ffd168e7c3a828a71a9827411eb0697c18b42c923ccd0e28c9be91",
+          "key_after": "d2426b384f1a7f3c3700000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "15197fe1e3a209d68bc7c01eb0a69045",
+          "output": "c79c8851fd4533d965a2627cc4ce3ced",
+          "key_after": "d2426b384f1a7f3c4700000008ac6294"
+        }
+      ],
+      "decrypt_calls": [
+        {
+          "enabled_before": false,
+          "input": "b2077b09b51730f086",
+          "output": "b2077b09b51730f086",
+          "key_after": "d2426b384f1a7f3cfeffffff08ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "c9b19e",
+          "output": "1b3a44",
+          "key_after": "d2426b384f1a7f3c0100000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "e462a0e2ef85c42d90523d018238bf98d943828d",
+          "output": "36c4a97a42703ed5bcc26f3c8b16e5b393d8aa37",
+          "key_after": "d2426b384f1a7f3c1500000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "",
+          "output": "",
+          "key_after": "d2426b384f1a7f3c1500000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "5a",
+          "output": "88",
+          "key_after": "d2426b384f1a7f3c1600000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "5123e241c0d0ffd168e7c3a828a71a9827411eb0697c18b42c923ccd0e28c9be91",
+          "output": "8330aa9bce0a5012af8f246b8823df166d243496960f1b908ebeaef1cb8a83e3fd",
+          "key_after": "d2426b384f1a7f3c3700000008ac6294"
+        },
+        {
+          "enabled_before": true,
+          "input": "c79c8851fd4533d965a2627cc4ce3ced",
+          "output": "15197fe1e3a209d68bc7c01eb0a69045",
+          "key_after": "d2426b384f1a7f3c4700000008ac6294"
+        }
+      ]
+    }
+  ],
+  "blowfish_keygen": {
+    "length": 16,
+    "fixed_tail": "c8279301a16c3197"
+  }
+}

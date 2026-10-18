@@ -1,0 +1,43 @@
+{
+  "source": "org.l2jmobius.loginserver.controller.ScrambledKeyPair#scrambleModulus",
+  "generated_by": "java-vectors",
+  "note": "modulus = big-endian unsigned bytes (no sign byte). scrambled = getScrambledModulus() (128 bytes). Moduli other than the first are not valid RSA moduli (not products of two primes), they only exercise the byte shuffling. Moduli shorter than 1017 bits make Java throw ArrayIndexOutOfBounds and are not covered.",
+  "cases": [
+    {
+      "what": "RSA-1024 key from crypto_rsa_nopadding.json; top bit set, toByteArray() has a leading 0x00",
+      "modulus": "8386aea4d0930eea761e9241f3db7ed70ab64cc649934ff5d32872e97082ef19565f8fbc09cc1aae72ebb43b5b60f4b8dd3ee26eb1cafa657b6d3c2a749e342e9c5cc25a857ac8d484d08b2409d7857457606c13534976c17e6b776c50a11a6476226a656d0027a095c1277b4e49518ec0839640afaf8bd3f886d74649ec73a7",
+      "to_byte_array_length": 129,
+      "scrambled": "4bd9b60d55e9c63ef2ce1965fa469d0818d620d51ada3934ad4305852023f57d207de5d964cc3d0ee72a93401529a5361dbd742e1e6571b683ebeb6c3d724789d7857457d0930eea761e9241f3c51ba6bcb64cc649934ff5d32872e97082ef19565f8fbc09cc1aae72ebb43b5b60f4b8dd3ee26eb1cafa657b6d3c2a749e342e"
+    },
+    {
+      "what": "random 1024-bit odd number, top bit set; toByteArray() has a leading 0x00",
+      "modulus": "b642ac35fac1fe87695934621f55e51eb9366ff075f7db5329bff2549e288569e6b9c3cfd9b3f526a2195e7fba205be96a348f06b20013003e602195fa218d8d35c6b8dc9b773b33679461dfaabf14810097f131f4eb944c26bb8685a9deca1391a2631fd17b053a0d4d681b81310a0e3d85ca49353c31895740f6c6b8e1f429",
+      "to_byte_array_length": 129,
+      "scrambled": "8ad239dc61b6c5b40ecd55bdb5649b9005a19ec1811c4f1f0f0474d137f64f7a771ba0d008c8f01caf5436643b1151e757b1454f873c22896920d75342c079a4bf148100fac1fe87695934621fd2d93c30366ff075f7db5329bff2549e288569e6b9c3cfd9b3f526a2195e7fba205be96a348f06b20013003e602195fa218d8d"
+    },
+    {
+      "what": "random 1024-bit odd number, top bit set; toByteArray() has a leading 0x00",
+      "modulus": "ae0cae0b7ff4296d4d1166f565fa5a21e690aefc249d9a79ea6c7d060568043983594f6b9e959fa7c1610af28fa1fa7a4493ab92a3c517961e3b3342c54e9b46cb9946e19a1d4acb6b6a46bbcc7ffe6fa499f0c14a2a7e7bd5225541fe49d09d86cec47fd4afdd662f8b6973ffdd66c6d7e1d612e37fe05b16aad3a50e6bdbc7",
+      "to_byte_array_length": 129,
+      "scrambled": "b4672945e5e963a6267b204ea914ec7820095e3d6eb7e4023f4e2847fb21d4a405978b144a3a42c1eeea6381707c9cbc93727d8040baf7cd0891e0e7cb2540817ffe6fa47ff4296d4d1166f565bae0d62b90aefc249d9a79ea6c7d060568043983594f6b9e959fa7c1610af28fa1fa7a4493ab92a3c517961e3b3342c54e9b46"
+    },
+    {
+      "what": "random 1024-bit odd number, top bit set; toByteArray() has a leading 0x00",
+      "modulus": "f52d79a821ffe2e15470165f9d637ddcb3e65d58ec0d9b448985b0df22f75cb2a17571bb4948266408bb92122fd522db907c6c9218d1a739fe48d034c08d381ed45300ad891c1b4dd939339dd322a683cbfd6827ce6d6479e6a721023e9f3e171ed75b7711fcfe563cb1e603bcc6fee24687fac2a8f233b7d8453c5548331e43",
+      "to_byte_array_length": 129,
+      "scrambled": "f6f58366a8e3f9ac8d4925c24e267331951b357f2260ff3d6f2291dd1c6862a5bfa22acc58b4d832340a74119313dc39d6fb9650b023948e260dec6188be265d22a683cb21ffe2e15470165f9dd35e483de65d58ec0d9b448985b0df22f75cb2a17571bb4948266408bb92122fd522db907c6c9218d1a739fe48d034c08d381e"
+    },
+    {
+      "what": "1020-bit odd number; toByteArray() is 128 bytes, no leading 0x00",
+      "modulus": "0af5e58087c0c470093421baae7384d5e6440550f66aa6be0e17d9ff5eff5843861f517c83d712f1fd0baaae83137ecf14ce3374394110bce550c65053cd335f97e612fc114dde0336320ef0a81522d03d929faba871bb5a61ea38b0cf31ddb7a2afd6ee32a66c1bbb57b9e2a00de2bd52556aa3ae8c1c04a6ac9d77ce92443d",
+      "to_byte_array_length": 128,
+      "scrambled": "82c4c2c1968d1a733f062f4a06eebc3cded69afb5e1b1de46ffde14f91ce85f424b08792b1717eea465c134c231e9c72469b59d797cd0cb843fc5b279d5f77621522d03d87c0c470093421baaee449d95e440550f66aa6be0e17d9ff5eff5843861f517c83d712f1fd0baaae83137ecf14ce3374394110bce550c65053cd335f"
+    },
+    {
+      "what": "1017-bit odd number; toByteArray() is 128 bytes, no leading 0x00",
+      "modulus": "0178e27e5a8bc6bcf27df78080a11bac49bc5aba6989b5ce80d34b7f207e5b6f7cac9f5af342e536281f612371c888b39ae9cd9e2d689016dc3dbb06e74fbbac5b08ba40d9fb24b30de773de32590918c22990d9ffa47b4c4d2e20ce1b29e9745b8f86c6dde7c59435fb599894e89f6fc3af6eb51b7a7244889b8e720936b299",
+      "to_byte_array_length": 128,
+      "scrambled": "0201a2828370e20fff9a845eb29671ac6595ca63962dce82cdfd6bb13b57b21b2723199c2ea520a21de438bbe52017dc5946a32b3612e25254a63574ee790935590918c25a8bc6bcf27df7808097094e1bbc5aba6989b5ce80d34b7f207e5b6f7cac9f5af342e536281f612371c888b39ae9cd9e2d689016dc3dbb06e74fbbac"
+    }
+  ]
+}

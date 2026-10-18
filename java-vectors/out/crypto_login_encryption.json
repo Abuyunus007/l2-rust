@@ -1,0 +1,531 @@
+{
+  "source": "org.l2jmobius.loginserver.network.LoginEncryption#encrypt/decrypt",
+  "generated_by": "java-vectors",
+  "note": "first_packet: the first encrypt() call uses the static key and Rnd.nextInt() as XOR key. Rnd can't be injected, so output = the same steps replayed with the given xor_key; for every case the generator also ran the real class, recovered its random key from the output and checked that the replay is identical. Encrypted size = ((payload + 8) rounded up to the next multiple of 8, always at least +1 byte) + 8. session: after setKey() and one spent first call, encrypt = appendChecksum + session-key crypt; encrypted size = (payload + 4 rounded up the same way) + 8. 'decrypted' is the full buffer after decrypt(): payload, zero padding and the 4-byte checksum slot. A corrupted packet makes decrypt() return false and leaves the buffer untouched.",
+  "static_key": "6b60cb5b82ce90b1cc2b6c556c6c6c6c",
+  "session_key": "1c4f9ae0f7c14b2a9f6877253302fe93",
+  "first_packet": [
+    {
+      "payload": "56",
+      "xor_key": 799164378,
+      "output": "8d53dfa8d7607aff7c43f35e764b9f804a2565a3740ad75c"
+    },
+    {
+      "payload": "9f0a",
+      "xor_key": 494840060,
+      "output": "b0ee654df6eea13ff409f6ac09b292d4d6bfb0b35912de2d"
+    },
+    {
+      "payload": "9a2774",
+      "xor_key": -1324348442,
+      "output": "5217f2165d04c7e890f45b784496f4a0754ece134e27289b"
+    },
+    {
+      "payload": "4439a16b",
+      "xor_key": -1276099494,
+      "output": "aefb03bb602d81f32fa7417db4466c35547bab4bbe057301"
+    },
+    {
+      "payload": "f01be5f5f5",
+      "xor_key": 571383869,
+      "output": "94613edc5df5c113f85ef80200cb6712485938ac64bdbdec"
+    },
+    {
+      "payload": "d63968697534",
+      "xor_key": 1149240767,
+      "output": "019158cb6ae42ad4c5d253ea343655a58f5b418d86ecc8b5"
+    },
+    {
+      "payload": "a428b3ce3e0459",
+      "xor_key": -2052425494,
+      "output": "2d9d81b898be9a83ab7d60c02a5b6e05156d5e0b5a9541a9"
+    },
+    {
+      "payload": "d5abc2c2d608b7e4",
+      "xor_key": -220460743,
+      "output": "124fb1466ed859582fafdb9eb8a919c52fafdb9eb8a919c5cde0bdd644b5e0b3"
+    },
+    {
+      "payload": "c86b80952a6d444bad",
+      "xor_key": 517523560,
+      "output": "9ea0df2903b9795706dba7d569f27a18a4a3a9fcf991c0650f50f4839e1e8336"
+    },
+    {
+      "payload": "9774a562d46352e8f46a",
+      "xor_key": -1119004472,
+      "output": "ae61569836b9a7324db4ae15a725c1ccadb2e82dd915b3dee7b9ea036d885072"
+    },
+    {
+      "payload": "7f1b2e71146ebfe2171b38",
+      "xor_key": 265738329,
+      "output": "6d9fe5d0ef205472128fe8ee46ecbce289678bc0284779e3af8843e11ae34f36"
+    },
+    {
+      "payload": "1feac3449360b67a1a36f34c",
+      "xor_key": -1067535868,
+      "output": "9ac3b2491f9ed1e42b42635976e558f5e7d7170762e3e54d61591f808d6b7f0c"
+    },
+    {
+      "payload": "9d056726ee98066eccff4535b9",
+      "xor_key": -437856771,
+      "output": "6639956594b635a3ffe223f04e08482bc8f64d4ced5c17218b07bf30355f59df"
+    },
+    {
+      "payload": "74b448d83bcd015bd77e65cbb64e",
+      "xor_key": 986804014,
+      "output": "f9fd83e2eb2e1cc93bd7ae26e3b46e8a867f24b216bc2b53e55ccd5bfed046f0"
+    },
+    {
+      "payload": "6a91054fd184460282ac1d3f1fef44",
+      "xor_key": 927203649,
+      "output": "aed7957c5eea455ee4c0fea2515c35d0189bf3ea60e411575183853a7c4b84ba"
+    },
+    {
+      "payload": "0d32981f75bc80fbccfffcbbc4827307",
+      "xor_key": 2091101455,
+      "output": "9458b3bccb80a2f95ab5fb80d70af54e2de609fc39e673442de609fc39e67344f7199799c178a608"
+    },
+    {
+      "payload": "51008648fe01995b875b71d7d6ffa85517",
+      "xor_key": -248081467,
+      "output": "647955fde6bbe04bdfc4f4bbe1301a270108152daca73b6876df631f5526dec4d2715343b7012118"
+    },
+    {
+      "payload": "61d2045686292c21e178092ec0343ec96038",
+      "xor_key": 969877062,
+      "output": "c3d0f6c94f7426d78bd66172be7afd8a7f886936dbcb969257fe6c0d1a27a9f3a11ba90eaaa53eff"
+    },
+    {
+      "payload": "efe80ac59c6a9f33fc0cb9316b11ea65fe1874",
+      "xor_key": 806103513,
+      "output": "81c926493cb57327fb0779a17281dbb77004bd5cfa546ac34cfddfc1f9a808efea46f5346c0dddb3"
+    },
+    {
+      "payload": "8eb16796d6c580e7e0ea0f4bd4867b070260426a",
+      "xor_key": -1085824871,
+      "output": "126667774cbc90129ca66af8ba0fd4600b8e32b59723074dc56da6ceb28c73cbdd8bfd7d06ed18fe"
+    },
+    {
+      "payload": "49d59c5f01f33746cb58eac6e0495f94e6446ec477",
+      "xor_key": -1238533097,
+      "output": "de26a265cb5c39a9705ab161db832842f1f496165462e662e39008bde2ca84e6e5f4bd81df25de1c"
+    },
+    {
+      "payload": "0ea8894ab37a9a97b135f1ca43c20503266118288d7b",
+      "xor_key": -729701486,
+      "output": "520c3a04cdb5d3da8c4520ad7ff94a3bdb28ae51335f23ba86210f1d84c6fd5ad48482498cd4adee"
+    },
+    {
+      "payload": "914733886c8ef79506e53e70a95fcf5e18dfbe414b863d",
+      "xor_key": 2128198520,
+      "output": "6b861e9179b8c4f8d191f921ad91e13959f10642ee57d8e2ad47bbb8d7cb118e92510d59f124665a"
+    },
+    {
+      "payload": "b688c92bfb601e9979e0d2d85c85528b6deb0054dd279389",
+      "xor_key": -1521215400,
+      "output": "4f28c80735dca55d6a1febd30e5f4346bed4fd049766e813ae0efb264a027a4aae0efb264a027a4a23d69d8295a077b0"
+    },
+    {
+      "payload": "dc477de779850be09471ee969f71804fa6384ac3c3b46e461c",
+      "xor_key": -1331690695,
+      "output": "7c9f7e1fe9982eeed9495a58f4ab1e7697d64168eed854896dddaaca334024b7c8fa45169e80db1b36caa91f8537cf38"
+    },
+    {
+      "payload": "0239318cf396666bcd4f23156d0c85da266e7199365d4560d073",
+      "xor_key": -2006255554,
+      "output": "03544a0504e8d2b411af189a5e94fbdcdfc019be3f234ea02da9e6d3067b531c0148020477458711d8680cfe4a66618d"
+    },
+    {
+      "payload": "c88a417042988dfacff159ad13b33771f59dc2a796c0968bebeb72",
+      "xor_key": -255183205,
+      "output": "c45da6c45682ec751987814432e2205d19bbd76850b595b69204f149e7441359b0caae673bc42d20c8c04fbce7b95076"
+    },
+    {
+      "payload": "217b503f067fbb28f32fa53aea6f4b737e0fe85f76790576d27ee109",
+      "xor_key": -450567193,
+      "output": "180fe344664932db9d205910173bf8385e017ebc0c0dea5a632417d63a8a1e7f21ffbca160259a80dfc3ebba9d005c0f"
+    },
+    {
+      "payload": "90380de4e5a7422a47574c3deab5926601f01e56ad75ac37dc37fa1fa1",
+      "xor_key": 614588593,
+      "output": "43b527863d137d494ba7501911e535c7426c11087581399e49a50eaa8a9b2359481b794420140a223b4723dac5fcb377"
+    },
+    {
+      "payload": "083309d8108cd9bf33519e3811b9f6b3d69ab4a2d6b83140a6a4bc94b1ce",
+      "xor_key": 1183084700,
+      "output": "9c65cb994863c9796370c4aa102402bf8dd04244de25838b26030c773d1d949de906ae2facba518915f6c6003c341226"
+    },
+    {
+      "payload": "42fca18985e719ae16e72634cf7a4abd811402aebc7f8a24d1390994535d05",
+      "xor_key": 103932426,
+      "output": "54404c5fc49211f8fa1b1d512acb0016a81e32a54b73457661adfc7bb1fd7ae49570e97372e6b388c890e525453a76bd"
+    },
+    {
+      "payload": "c7080844ccfff4353e18e6ab137904470bfa65cde62343e1e02e685a4556460c",
+      "xor_key": 1765789571,
+      "output": "9008bf24328a60a118b2893908ab78d80b305366b16c3077dfda891466d19b0979937c46b708edea79937c46b708edea0439f51e20cd1afd"
+    },
+    {
+      "payload": "c2e8e40b07bb165eb2aaa51c9f980ee3dc9722d37ef078dc06f33e9a6811cea0dc",
+      "xor_key": -1538992937,
+      "output": "c420e64a2d5ffa07f1c7ce31b2bf43fed07bf34ca75902791a22bc1c25e245325052dc4132c0bfe7187122322c1a83868c82bfe21be68ed2"
+    },
+    {
+      "payload": "fc4dff90e7a977e72e38d6816a2f9f27144631b1c71f1cd0d2d7ab229df51bf18202",
+      "xor_key": -1295348167,
+      "output": "587cc326bc51489e8e117ad3b064670872efb090d54a4dd6f7db96801ae70bb540b764a03c8566f7bbbfe1c790800bdfd022ff0fe00ca2ef"
+    },
+    {
+      "payload": "701dd58464b7a2c8691308b31718feb5aff24d8b0bd08eed484d4cf24c903901c60428",
+      "xor_key": 1654349619,
+      "output": "19a7571aeb10c08b3ae79b6fd04971829f8dc8e210741c198a430023c7254df49f958be7135b19090eaeaeb6db52cd8e410ebbf518b38b04"
+    },
+    {
+      "payload": "b467580b72c40a4a52e4305d194ea7324753023dbc4d257a6ace39631ee55d43d87ad675",
+      "xor_key": -1914762219,
+      "output": "2a5745c7e912768cc21f49309b04ef1317267ab1d12fae06976ec0949dbf9a74f90a9ff971c8881bd62bb31c7a221ad562609b0eea478718"
+    },
+    {
+      "payload": "f072eaec83b594f0ec63ca5389af56722a4cc9c273dbf7806b6294e8e4f32e2c905bb9dd46",
+      "xor_key": -568437866,
+      "output": "476d9d99e519d572b001bffce3ea46bec3618d34589a1ff983d0b4f0f56533eb39b5e2fc1dc2e4117901fcd52dcd24f1628581c7b3e68251"
+    },
+    {
+      "payload": "98724f61e75fd68003a50c6d38947403e32ec61b8ed89540276d3d141ba6f1d23140f33f176a",
+      "xor_key": 858096036,
+      "output": "fc57a4afcf318fd859be3906aed6c276b008769ed95ad5a78890152b948d219073f34da0f8bd58bc634477ecc36cd7914af516454f79cfd3"
+    },
+    {
+      "payload": "bd387ae9be3eda5e18785cc92c3c9e564489a4637f560bcd43082c8eaeaa4647ae4de193422450",
+      "xor_key": -988986700,
+      "output": "9120219928a359dd38cc3d259c227e7c4c9507bba59dbc7c9393b6e36924ec5ed72982dd97dc5e0fe9fe25a710fdab6809f7e69f6b8c478c"
+    },
+    {
+      "payload": "20ab8dbc4c9f6be313c166028a2396c17f7f5be270982802e29fd76ab8315921131ef2736599f6d6",
+      "xor_key": -610721438,
+      "output": "0ade80ec4ea2fe8a04ad4100cd713b5a8c94d71243983fcd11c0f5b18f86136f7ff3b308dddf8b69668030b341495d4c668030b341495d4cd63e8fb8cc234800"
+    }
+  ],
+  "session": [
+    {
+      "payload": "d1",
+      "encrypted": "349c9622c6f0f6a5f5e205b1bff3ed9d",
+      "decrypted": "d10000000000000000000000d1000000",
+      "decrypt_valid": true,
+      "corrupted": "349c9622c6f0f6a5f5e205b1bff3ed9c",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "d87f",
+      "encrypted": "c047eaaca9bb52b88f13c636b666a8b2",
+      "decrypted": "d87f00000000000000000000d87f0000",
+      "decrypt_valid": true,
+      "corrupted": "c047eaaca9bb52b88f13c636b666a8b3",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "33a25f",
+      "encrypted": "3144121ae3c16a7932b84fb85d1c3dea",
+      "decrypted": "33a25f00000000000000000033a25f00",
+      "decrypt_valid": true,
+      "corrupted": "3144121ae3c16a7932b84fb85d1c3deb",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "42079aed",
+      "encrypted": "3570e21d3c1ad574d964e9d33869aafa95f57a721cd76501",
+      "decrypted": "42079aed0000000000000000000000000000000042079aed",
+      "decrypt_valid": true,
+      "corrupted": "3570e21d3c1ad574d964e9d33869aafa95f57a721cd76500",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "c176da6afc",
+      "encrypted": "9fc020261ac9ea58d964e9d33869aafa6f3274ecbcc4b1b6",
+      "decrypted": "c176da6afc0000000000000000000000000000003d76da6a",
+      "decrypt_valid": true,
+      "corrupted": "9fc020261ac9ea58d964e9d33869aafa6f3274ecbcc4b1b7",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "882a0909708c",
+      "encrypted": "2fe19d910199738ed964e9d33869aafa750c6fb04239250d",
+      "decrypted": "882a0909708c0000000000000000000000000000f8a60909",
+      "decrypt_valid": true,
+      "corrupted": "2fe19d910199738ed964e9d33869aafa750c6fb04239250c",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "7d0d80dd86d6f3",
+      "encrypted": "6765a19e8004f7f0d964e9d33869aafac8402575f99dba95",
+      "decrypted": "7d0d80dd86d6f300000000000000000000000000fbdb73dd",
+      "decrypt_valid": true,
+      "corrupted": "6765a19e8004f7f0d964e9d33869aafac8402575f99dba94",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "4e98ad0a71d9c634",
+      "encrypted": "3c37fff3908695b3d964e9d33869aafa384307ada89a0a8a",
+      "decrypted": "4e98ad0a71d9c6340000000000000000000000003f416b3e",
+      "decrypt_valid": true,
+      "corrupted": "3c37fff3908695b3d964e9d33869aafa384307ada89a0a8b",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "50dd9537f85e3abcaf",
+      "encrypted": "0208a77824260eb5d668990322e00e9cb0fa4c8a2bafee68",
+      "decrypted": "50dd9537f85e3abcaf00000000000000000000000783af8b",
+      "decrypt_valid": true,
+      "corrupted": "0208a77824260eb5d668990322e00e9cb0fa4c8a2bafee69",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "f66036a4902bbb5cf8e7",
+      "encrypted": "34eeafea1c82b2f029a2b5b25fafb1353b8120d20c0103b8",
+      "decrypted": "f66036a4902bbb5cf8e7000000000000000000009eac8df8",
+      "decrypt_valid": true,
+      "corrupted": "34eeafea1c82b2f029a2b5b25fafb1353b8120d20c0103b9",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "c51873f30e4e09ed386b4d",
+      "encrypted": "e95d900440a0e4268a387b19b7c99993ed10862226b7d3cf",
+      "decrypted": "c51873f30e4e09ed386b4d000000000000000000f33d371e",
+      "decrypt_valid": true,
+      "corrupted": "e95d900440a0e4268a387b19b7c99993ed10862226b7d3ce",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "562a1c924be385b8c90352c3",
+      "encrypted": "a7f9a7f4f0b498b94f2009ab241eaf51d964e9d33869aafaa412325ab8e9cfae",
+      "decrypted": "562a1c924be385b8c90352c300000000000000000000000000000000d4cacbe9",
+      "decrypt_valid": true,
+      "corrupted": "a7f9a7f4f0b498b94f2009ab241eaf51d964e9d33869aafaa412325ab8e9cfaf",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "b3edb0b44dee43da965954c01e",
+      "encrypted": "031279627d705603c7a9eec056fc8583d964e9d33869aafa04cb9769b5d56259",
+      "decrypted": "b3edb0b44dee43da965954c01e000000000000000000000000000000765aa7ae",
+      "decrypt_valid": true,
+      "corrupted": "031279627d705603c7a9eec056fc8583d964e9d33869aafa04cb9769b5d56258",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "fa4c337d082e0a63c5c86db00e6b",
+      "encrypted": "15b3a1ce02795adb5519c6df368d1168d964e9d33869aafa8c056c4721362b00",
+      "decrypted": "fa4c337d082e0a63c5c86db00e6b000000000000000000000000000039c154ae",
+      "decrypt_valid": true,
+      "corrupted": "15b3a1ce02795adb5519c6df368d1168d964e9d33869aafa8c056c4721362b01",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "e0e2e15a685c68de37d47d3308476a",
+      "encrypted": "1efbc92313393ed8b57ebac2f41193acd964e9d33869aafa77fb53585c0bfa48",
+      "decrypted": "e0e2e15a685c68de37d47d3308476a00000000000000000000000000b72d9eb7",
+      "decrypt_valid": true,
+      "corrupted": "1efbc92313393ed8b57ebac2f41193acd964e9d33869aafa77fb53585c0bfa49",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "ace17f2f04d4215e3d52b2c88f9fdf3d",
+      "encrypted": "f5044e2301eda60ea2c0dbcb40f7c321d964e9d33869aafa5ee4081004eeadaf",
+      "decrypted": "ace17f2f04d4215e3d52b2c88f9fdf3d0000000000000000000000001af83384",
+      "decrypt_valid": true,
+      "corrupted": "f5044e2301eda60ea2c0dbcb40f7c321d964e9d33869aafa5ee4081004eeadae",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "e8e16c4070b2ca7610c055f119e15b0478",
+      "encrypted": "6beaa30b729333140ba10e295fee662c51eb379fe4b4d3432a68ef2e8d97b2b4",
+      "decrypted": "e8e16c4070b2ca7610c055f119e15b04780000000000000000000000e972a8c3",
+      "decrypt_valid": true,
+      "corrupted": "6beaa30b729333140ba10e295fee662c51eb379fe4b4d3432a68ef2e8d97b2b5",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "c2a34a6a058108e33aed1ee1edaf18a25262",
+      "encrypted": "06b50b25b85bb41a544628dfd052a08d3dc325ed4d7f756389cd4a157803343a",
+      "decrypted": "c2a34a6a058108e33aed1ee1edaf18a2526200000000000000000000420244ca",
+      "decrypt_valid": true,
+      "corrupted": "06b50b25b85bb41a544628dfd052a08d3dc325ed4d7f756389cd4a157803343b",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "fe5cf2a4022af6651b64a009c0eee2e724f2e8",
+      "encrypted": "07f721a5937e8a14a9c9b41d8e4334f1ddeabb795b19638ab44625dd18ef1356",
+      "decrypted": "fe5cf2a4022af6651b64a009c0eee2e724f2e8000000000000000000030eae2f",
+      "decrypt_valid": true,
+      "corrupted": "07f721a5937e8a14a9c9b41d8e4334f1ddeabb795b19638ab44625dd18ef1357",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "a2a3b26fe8f67b683ac431fcd20d1f705524ad6a",
+      "encrypted": "7bb86dba7caff79d7e50d4f0e63111f21947b8a96cbc130ed964e9d33869aafae37d1ab5c1e7d8ec",
+      "decrypted": "a2a3b26fe8f67b683ac431fcd20d1f705524ad6a00000000000000000000000000000000f7b84ae1",
+      "decrypt_valid": true,
+      "corrupted": "7bb86dba7caff79d7e50d4f0e63111f21947b8a96cbc130ed964e9d33869aafae37d1ab5c1e7d8ed",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "66cf52dcfe8ca555d420bcbf7c6699fb248cbd7f1e",
+      "encrypted": "039181bb8bb6f3f426387e35b62d0c7d2274e6c54c4d9dced964e9d33869aafa29b651b2d6bf74f6",
+      "decrypted": "66cf52dcfe8ca555d420bcbf7c6699fb248cbd7f1e0000000000000000000000000000000a896fb2",
+      "decrypt_valid": true,
+      "corrupted": "039181bb8bb6f3f426387e35b62d0c7d2274e6c54c4d9dced964e9d33869aafa29b651b2d6bf74f7",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "d042fadb0bc557efc0f5373f82a9da0004795c89240e",
+      "encrypted": "9ec38e4e7652a9993eb88322ad9e13fc8a5a7f37bff75a16d964e9d33869aafa62a1460c21221290",
+      "decrypted": "d042fadb0bc557efc0f5373f82a9da0004795c89240e0000000000000000000000000000b9ac1c82",
+      "decrypt_valid": true,
+      "corrupted": "9ec38e4e7652a9993eb88322ad9e13fc8a5a7f37bff75a16d964e9d33869aafa62a1460c21221291",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "c106a74333a9e1db31347656005c8e71a31c97a6d69e25",
+      "encrypted": "e6735793e3863e4e3358c8707e2799784a0b2f6a83190875d964e9d33869aafaf7f3d7f85fae9efb",
+      "decrypted": "c106a74333a9e1db31347656005c8e71a31c97a6d69e2500000000000000000000000000b6450c19",
+      "decrypt_valid": true,
+      "corrupted": "e6735793e3863e4e3358c8707e2799784a0b2f6a83190875d964e9d33869aafaf7f3d7f85fae9efa",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "d639d86e1618f11632a6033a75d48820a16c46c8758c3dfe",
+      "encrypted": "f2ba9551572b597cbcf64e8d82249dcf78e38265a2bbbee5d964e9d33869aafaec6af206d388ab2a",
+      "decrypted": "d639d86e1618f11632a6033a75d48820a16c46c8758c3dfe00000000000000000000000053b3d954",
+      "decrypt_valid": true,
+      "corrupted": "f2ba9551572b597cbcf64e8d82249dcf78e38265a2bbbee5d964e9d33869aafaec6af206d388ab2b",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "1be3bae885e3817822289d7875a708dabf8885da245b8394c1",
+      "encrypted": "b6322eba82647cd93854d6dce2ad64dcb49a2dc3e201ff2ce24aa979711626befd837eda6a7393c2",
+      "decrypted": "1be3bae885e3817822289d7875a708dabf8885da245b8394c10000000000000000000000935ca87c",
+      "decrypt_valid": true,
+      "corrupted": "b6322eba82647cd93854d6dce2ad64dcb49a2dc3e201ff2ce24aa979711626befd837eda6a7393c3",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "8ed56fa54a606371a1064130f21078aa8715c4090432ab104198",
+      "encrypted": "5e2ec63a4d659a2f13baf2e1527a67235759b15866c75a8d937a0159d25c780116deb2d1d11a7863",
+      "decrypted": "8ed56fa54a606371a1064130f21078aa8715c4090432ab10419800000000000000000000551c5a57",
+      "decrypt_valid": true,
+      "corrupted": "5e2ec63a4d659a2f13baf2e1527a67235759b15866c75a8d937a0159d25c780116deb2d1d11a7862",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "a668932ed2aa8fcde691edac40bc1b74041c12f136125a7670615f",
+      "encrypted": "8cce00d570195052b50eabb428eceb94cfdb719d037b7a9afe794ba08af8402245bf07f58e841b4f",
+      "decrypted": "a668932ed2aa8fcde691edac40bc1b74041c12f136125a7670615f0000000000000000009080fdbc",
+      "decrypt_valid": true,
+      "corrupted": "8cce00d570195052b50eabb428eceb94cfdb719d037b7a9afe794ba08af8402245bf07f58e841b4e",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "16d80530581c1340ae1ca406b91a8acefaf9a7cc4beed5019154d0c4",
+      "encrypted": "72e477b12136b10d372a27daee1e6cf80a522f70712705b28471d18712805eded964e9d33869aafaf748dc6d18ec6b4f",
+      "decrypted": "16d80530581c1340ae1ca406b91a8acefaf9a7cc4beed5019154d0c40000000000000000000000000000000079819ab1",
+      "decrypt_valid": true,
+      "corrupted": "72e477b12136b10d372a27daee1e6cf80a522f70712705b28471d18712805eded964e9d33869aafaf748dc6d18ec6b4e",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "c7384d1babbc71f354bce1cbf2104acc20511d666d23c6926e9c660449",
+      "encrypted": "3c107f3511a1fa81f6f9f2e3b32e3335823dc31befcdb02cef73d370dd4d2ef2d964e9d33869aafacf7daf797d3cea75",
+      "decrypted": "c7384d1babbc71f354bce1cbf2104acc20511d666d23c6926e9c660449000000000000000000000000000000a0c62a1f",
+      "decrypt_valid": true,
+      "corrupted": "3c107f3511a1fa81f6f9f2e3b32e3335823dc31befcdb02cef73d370dd4d2ef2d964e9d33869aafacf7daf797d3cea74",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "a1b2227e51b2278e0bfd80d9520b6cfb8d9da273ba46d795486d12d834bd",
+      "encrypted": "40d6c30ea94ccdec0548c7996d7dace7b77c9cbdd6dd405c6205569501d77621d964e9d33869aafa434b53f82c81b1a8",
+      "decrypted": "a1b2227e51b2278e0bfd80d9520b6cfb8d9da273ba46d795486d12d834bd0000000000000000000000000000e2fd8eec",
+      "decrypt_valid": true,
+      "corrupted": "40d6c30ea94ccdec0548c7996d7dace7b77c9cbdd6dd405c6205569501d77621d964e9d33869aafa434b53f82c81b1a9",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "e8683b921b7469fd613462f7e685fa9e06292dc70569ce76666cebeace89af",
+      "encrypted": "69a0fb5746dd82ac136fd0c7cba13de980a1693109e757c2cfd0f4bbbfa0c991d964e9d33869aafad18daff838ad7daf",
+      "decrypted": "e8683b921b7469fd613462f7e685fa9e06292dc70569ce76666cebeace89af00000000000000000000000000df086d5d",
+      "decrypt_valid": true,
+      "corrupted": "69a0fb5746dd82ac136fd0c7cba13de980a1693109e757c2cfd0f4bbbfa0c991d964e9d33869aafad18daff838ad7dae",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "5eab6dcf60a084a42e94e54faad9261da3dbdf85f8e26eb28ccc6fe3b339fe8e",
+      "encrypted": "14a1b7f8fc93b582bc56a82e74f7eebc126aa7bf678b1c9a4d189e9370b44998d964e9d33869aafaca3b8adfefe70602",
+      "decrypted": "5eab6dcf60a084a42e94e54faad9261da3dbdf85f8e26eb28ccc6fe3b339fe8e000000000000000000000000de8a0a63",
+      "decrypt_valid": true,
+      "corrupted": "14a1b7f8fc93b582bc56a82e74f7eebc126aa7bf678b1c9a4d189e9370b44998d964e9d33869aafaca3b8adfefe70603",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "15e6f34e3b5d4a85c03416d8ffb6e2bc13ab769d40cd498d301aecd026af829ef5",
+      "encrypted": "e1ce4245aa3f4d2474b6900a86823b04157f9bb78692969cc6e175eacea94289cf392bbabed6c179b653331fbe62fe83",
+      "decrypted": "15e6f34e3b5d4a85c03416d8ffb6e2bc13ab769d40cd498d301aecd026af829ef50000000000000000000000a1ea1cf1",
+      "decrypt_valid": true,
+      "corrupted": "e1ce4245aa3f4d2474b6900a86823b04157f9bb78692969cc6e175eacea94289cf392bbabed6c179b653331fbe62fe82",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "0b0d271d58efec24282ea6f118393bc90f7d4c14fd3d01328ec6d46439192991f312",
+      "encrypted": "fa4eaa4d12429553e519fd5166a28e95bfc9f71f1b85bdc9c4d846b8c70cf7891155eb5c6db29516791e42aba183decb",
+      "decrypted": "0b0d271d58efec24282ea6f118393bc90f7d4c14fd3d01328ec6d46439192991f31200000000000000000000d578e6d2",
+      "decrypt_valid": true,
+      "corrupted": "fa4eaa4d12429553e519fd5166a28e95bfc9f71f1b85bdc9c4d846b8c70cf7891155eb5c6db29516791e42aba183deca",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "a8082483ce47bed906c27e8c9910f22c524ff8e3f3f60d7ff2714aaf5ba79dfc5babe5",
+      "encrypted": "7b32ed8340cf21549cf54a82e612a369880396afd6ab36b4dd25565aaa50f177c0bd4168f4c4ca5b63047768ec46b171",
+      "decrypted": "a8082483ce47bed906c27e8c9910f22c524ff8e3f3f60d7ff2714aaf5ba79dfc5babe5000000000000000000aa59d135",
+      "decrypt_valid": true,
+      "corrupted": "7b32ed8340cf21549cf54a82e612a369880396afd6ab36b4dd25565aaa50f177c0bd4168f4c4ca5b63047768ec46b170",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "7d2da6e1485bf32f970b6a40c136cef88582bc7c83805d556dbc56248d32df9725e22c8d",
+      "encrypted": "c9be3056a5a3c00b1cf2457dab3148a01e20f874b0ad8ab8cc1109c4016ff342b11ebdab66d9a94bd964e9d33869aafa5f746649e36ca8c9",
+      "decrypted": "7d2da6e1485bf32f970b6a40c136cef88582bc7c83805d556dbc56248d32df9725e22c8d00000000000000000000000000000000a025b561",
+      "decrypt_valid": true,
+      "corrupted": "c9be3056a5a3c00b1cf2457dab3148a01e20f874b0ad8ab8cc1109c4016ff342b11ebdab66d9a94bd964e9d33869aafa5f746649e36ca8c8",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "dc817e60c7034665902021851637dc702330f96899f294384f4483bd998a69fdd2f85e8769",
+      "encrypted": "708012517d1108927623a8696aeb4c211eb5c1eed64cb4cdf701c8f1cf6c725127cbafe14aef49e3d964e9d33869aafa68f2539da205801f",
+      "decrypted": "dc817e60c7034665902021851637dc702330f96899f294384f4483bd998a69fdd2f85e87690000000000000000000000000000004a611c67",
+      "decrypt_valid": true,
+      "corrupted": "708012517d1108927623a8696aeb4c211eb5c1eed64cb4cdf701c8f1cf6c725127cbafe14aef49e3d964e9d33869aafa68f2539da205801e",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "3bbf69b29bbef6735e7f13ca119d3e7525bc842e1346c0e8d0f7bf54c317ee16f05d2ac5ae7f",
+      "encrypted": "385fdd327c2940f9267987e5754b0a50bf3af8ddef67923455d98b3c84e454fb26ba84a0d2f5a841d964e9d33869aafad4933849e45b26b6",
+      "decrypted": "3bbf69b29bbef6735e7f13ca119d3e7525bc842e1346c0e8d0f7bf54c317ee16f05d2ac5ae7f000000000000000000000000000094db8d3f",
+      "decrypt_valid": true,
+      "corrupted": "385fdd327c2940f9267987e5754b0a50bf3af8ddef67923455d98b3c84e454fb26ba84a0d2f5a841d964e9d33869aafad4933849e45b26b7",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "941609a34ed6f4678765d449ae96796091a9133f9fa96d0411c3fd510f0e2fcf792e91b089a403",
+      "encrypted": "2ba59d6b018d7fbcb3695e2f2a78f4be1a611b209636f9b21f99ba71421bbc158b8be9d35187c0aed964e9d33869aafa08fc1b2d729bf0a3",
+      "decrypted": "941609a34ed6f4678765d449ae96796091a9133f9fa96d0411c3fd510f0e2fcf792e91b089a4030000000000000000000000000013746ef8",
+      "decrypt_valid": true,
+      "corrupted": "2ba59d6b018d7fbcb3695e2f2a78f4be1a611b209636f9b21f99ba71421bbc158b8be9d35187c0aed964e9d33869aafa08fc1b2d729bf0a2",
+      "corrupted_valid": false
+    },
+    {
+      "payload": "6386ab2eeb59aeed61faceeac8ed642eb6e2af8f1e2bda5a93c6d7d4432e82f599396d882d518a45",
+      "encrypted": "e9971e211936ff280a21aa0ae70473e9d8bfd2a5a4a9015afa1092f3265499ff9a54b4c97a8183d6d964e9d33869aafafe7ef8305d94bb58",
+      "decrypted": "6386ab2eeb59aeed61faceeac8ed642eb6e2af8f1e2bda5a93c6d7d4432e82f599396d882d518a45000000000000000000000000ed81683e",
+      "decrypt_valid": true,
+      "corrupted": "e9971e211936ff280a21aa0ae70473e9d8bfd2a5a4a9015afa1092f3265499ff9a54b4c97a8183d6d964e9d33869aafafe7ef8305d94bb59",
+      "corrupted_valid": false
+    }
+  ]
+}
