@@ -14,13 +14,14 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use l2_db::{
     ClanRepository, ItemLocation, ItemRepository, ItemUpdate, MacroRepository, NewItem, NewMacro,
     NewShortcut, NewSkillSave, Pool, RecommendationRepository, ShortcutRepository, ShortcutRow, SkillLevel,
-    SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues, connect_with,
+    SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues, VariableRepository,
+    connect_with,
 };
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 /// The tables of the item, skill, shortcut and subclass repositories.
-const SCHEMA: [&str; 9] = [
+const SCHEMA: [&str; 10] = [
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/item_attributes.sql"),
     include_str!("../sql/game/character_skills.sql"),
@@ -30,6 +31,7 @@ const SCHEMA: [&str; 9] = [
     include_str!("../sql/game/character_macroses.sql"),
     include_str!("../sql/game/character_reco_bonus.sql"),
     include_str!("../sql/game/clan_data.sql"),
+    include_str!("../sql/game/character_variables.sql"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -567,6 +569,13 @@ async fn macros_clans_and_recommendations() {
     macros.insert_macro(ALICE, &m).await.unwrap();
     assert!(macros.insert_macro(ALICE, &m).await.is_err());
     assert_eq!(db.count("character_macroses", "charId", ALICE).await, 1);
+    let rows = macros.macros_of(ALICE).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(rows[0].id, 10001);
+    assert_eq!(rows[0].name.as_deref(), Some("On"));
+    assert_eq!(rows[0].descr, None);
+    assert_eq!(rows[0].commands.as_deref(), Some("1,1177,1;"));
+    assert!(macros.macros_of(BOB).await.unwrap().is_empty());
     let descr: Option<String> =
         sqlx::query_scalar("SELECT descr FROM character_macroses WHERE charId = ? AND id = 10001")
             .bind(ALICE)
@@ -590,6 +599,7 @@ async fn macros_clans_and_recommendations() {
 
     // Recommendations: REPLACE keeps one row.
     let reco = RecommendationRepository::new(db.pool.clone());
+    assert_eq!(reco.reco_bonus_of(ALICE).await.unwrap(), None);
     reco.replace_reco_bonus(ALICE, 0, 20, 0).await.unwrap();
     reco.replace_reco_bonus(ALICE, 3, 17, 5_000).await.unwrap();
     assert_eq!(db.count("character_reco_bonus", "charId", ALICE).await, 1);
@@ -601,5 +611,21 @@ async fn macros_clans_and_recommendations() {
     .await
     .unwrap();
     assert_eq!(row, (3, 17, 5_000));
+    let bonus = reco.reco_bonus_of(ALICE).await.unwrap().unwrap();
+    assert_eq!((bonus.rec_have, bonus.rec_left, bonus.time_left), (3, 17, 5_000));
+
+    // Variables: the select returns the pairs of one character only.
+    sqlx::query("INSERT INTO character_variables (charId, var, val) VALUES (?, 'UI_KEY_MAPPING', '1	2'), (?, 'x', 'y')")
+        .bind(ALICE)
+        .bind(BOB)
+        .execute(&db.pool)
+        .await
+        .unwrap();
+    let vars = VariableRepository::new(db.pool.clone());
+    assert_eq!(
+        vars.variables_of(ALICE).await.unwrap(),
+        vec![("UI_KEY_MAPPING".to_owned(), "1	2".to_owned())]
+    );
+    assert!(vars.variables_of(12_345).await.unwrap().is_empty());
     db.drop_database().await;
 }

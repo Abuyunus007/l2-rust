@@ -12,6 +12,7 @@ use crate::generated::opcodes::ServerOpcode;
 pub mod charscreen;
 pub mod chat;
 pub mod enterworld;
+pub mod entry;
 pub mod handshake;
 pub mod items;
 pub mod system_message;
@@ -27,6 +28,10 @@ pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, SkillCoolTime, SkillList,
     ValidateLocation,
+};
+pub use entry::{
+    ActionFailed, ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,
+    ExRotation, ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use handshake::{KeyPacket, LoginFail};
 pub use items::{

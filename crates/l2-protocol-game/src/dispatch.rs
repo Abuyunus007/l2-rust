@@ -9,7 +9,8 @@ use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
     AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout,
-    NewCharacter, ProtocolVersion, RequestGotoLobby, RequestKeyMapping, RequestNetPing, RequestRestart, Say2,
+    NewCharacter, ProtocolVersion, RequestGotoLobby, RequestKeyMapping, RequestNetPing, RequestRestart,
+    RequestSkillCoolTime, Say2,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -30,6 +31,7 @@ pub enum ClientPacket {
     Logout(Logout),
     RequestRestart(RequestRestart),
     RequestNetPing(RequestNetPing),
+    RequestSkillCoolTime(RequestSkillCoolTime),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -70,6 +72,9 @@ pub fn decode_client(
         Logout::OPCODE => ClientPacket::Logout(Logout::decode(reader)?),
         RequestRestart::OPCODE => ClientPacket::RequestRestart(RequestRestart::decode(reader)?),
         RequestNetPing::OPCODE => ClientPacket::RequestNetPing(RequestNetPing::decode(reader)?),
+        RequestSkillCoolTime::OPCODE => {
+            ClientPacket::RequestSkillCoolTime(RequestSkillCoolTime::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))

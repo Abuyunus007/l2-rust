@@ -325,6 +325,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::Logout(_)
             | ClientPacket::RequestRestart(_)
             | ClientPacket::RequestNetPing(_)
+            | ClientPacket::RequestSkillCoolTime(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };
