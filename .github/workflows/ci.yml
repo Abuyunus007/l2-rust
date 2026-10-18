@@ -45,6 +45,38 @@ jobs:
       - name: Generated code is current (skipped without the Java source)
         run: cargo run -p codegen -- all --check
 
+  # Integration tests that need a real database. GitHub service containers only exist on Linux
+  # runners, so this is its own job; the Windows job above skips those tests (no
+  # L2_TEST_DATABASE_URL). The database is a throwaway container, never a real one.
+  database:
+    name: Database integration (ubuntu-latest, MariaDB)
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: "1"
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      L2_TEST_DATABASE_URL: mysql://root@127.0.0.1:3306/
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: l2-db tests (unit + integration)
+        run: cargo test -p l2-db -- --nocapture
+
   hygiene:
     name: Repo hygiene
     runs-on: ubuntu-latest
