@@ -69,7 +69,6 @@ impl Datapack {
             initial_equipment: Arc::new(InitialEquipments::load(root)),
             initial_shortcuts: Arc::new(InitialShortcuts::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
-            player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
             skill_trees: Arc::new(SkillTrees::load(root)),
             // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
             // there is no config in this crate yet.
