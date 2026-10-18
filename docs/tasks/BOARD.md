@@ -49,7 +49,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-JV-03](M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | merged |
 | [M1-GEN-01](M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | merged |
 | [M1-CRYPTO-01](M1/M1-CRYPTO-01.md) | Blowfish-LE and NewCrypt | sonnet | full | WS-01, JV-01 | merged |
-| [M1-CRYPTO-02](M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | in-progress |
+| [M1-CRYPTO-02](M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | merged |
 | [M1-CRYPTO-03](M1/M1-CRYPTO-03.md) | Login client encryption | sonnet | full | CRYPTO-01 | merged |
 | [M1-CRYPTO-04](M1/M1-CRYPTO-04.md) | Game XOR cipher and BF key generator | haiku | spot | CRYPTO-01, JV-01 | merged |
 | [M1-CRYPTO-05](M1/M1-CRYPTO-05.md) | LS↔GS link cipher | haiku | spot | CRYPTO-01 | in-progress |
@@ -60,7 +60,7 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 | [M1-DB-01](M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | in-progress |
 | [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | in-progress |
 | [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | planned |
-| [M1-LS-01](M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | planned |
+| [M1-LS-01](M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | in-progress |
 | [M1-LS-02](M1/M1-LS-02.md) | Client connection, GameGuard, authentication | opus | full | LS-01, NET-02, CRYPTO-03, LPROTO-01 | planned |
 | [M1-LS-03](M1/M1-LS-03.md) | Server list, server login, session purge | sonnet | full | LS-02 | planned |
 | [M1-LS-04](M1/M1-LS-04.md) | GS link: listener and registration | sonnet | full | LS-01, CRYPTO-05, LPROTO-02, NET-02 | planned |
