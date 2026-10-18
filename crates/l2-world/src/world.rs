@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 use std::net::IpAddr;
+use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_net::Encode;
@@ -42,6 +43,9 @@ pub struct World {
     pub(crate) data: Box<dyn StaticData>,
     /// The configuration values the world reads.
     pub(crate) settings: WorldSettings,
+    /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
+    /// the path workers (D-14).
+    pub(crate) geo: Option<Arc<l2_geo::GeoEngine>>,
 }
 
 impl World {
@@ -60,6 +64,7 @@ impl World {
             autosave_timers: HashMap::new(),
             data: Box::new(NoData),
             settings: WorldSettings::default(),
+            geo: None,
         }
     }
 
@@ -71,6 +76,16 @@ impl World {
     /// Installs the configuration values the world reads. Call before players enter.
     pub fn set_settings(&mut self, settings: WorldSettings) {
         self.settings = settings;
+    }
+
+    /// Hands the world the geodata. Call before players enter.
+    pub fn set_geo(&mut self, geo: Arc<l2_geo::GeoEngine>) {
+        self.geo = Some(geo);
+    }
+
+    /// The geodata, if the server loaded any engine at all (it can hold zero regions).
+    pub fn geo(&self) -> Option<&Arc<l2_geo::GeoEngine>> {
+        self.geo.as_ref()
     }
 
     /// Sets the time between two autosaves of a player; applies from the next (re)schedule.
@@ -154,6 +169,12 @@ impl World {
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
             WorldCommand::Admin(query) => self.on_admin(query),
+            // Nothing asks for paths yet (M3-MOVE-01 will use this).
+            WorldCommand::PathFound {
+                requester,
+                request_id,
+                ..
+            } => debug!("path {request_id} of {requester} arrived; no movement code uses it yet"),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
                 info!("World shutting down, storing {} player(s).", online.len());

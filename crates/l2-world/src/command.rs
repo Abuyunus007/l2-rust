@@ -86,6 +86,14 @@ pub enum WorldCommand {
         account: String,
     },
     Admin(AdminQuery),
+    /// A path worker finished a search (M3-GEO-03). `requester` and `request_id` are the ones
+    /// of the `l2_geo::PathRequest`; the movement code (M3-MOVE-01) matches them against the
+    /// creature's current request and drops stale answers.
+    PathFound {
+        requester: u64,
+        request_id: u64,
+        result: l2_geo::PathResult,
+    },
     /// Store everyone, tell their sessions, then call `done` and stop the world thread.
     Shutdown {
         done: Box<dyn FnOnce() + Send>,
@@ -102,6 +110,15 @@ impl fmt::Debug for WorldCommand {
             Self::Disconnected { session } => write!(f, "Disconnected({session:?})"),
             Self::Kick { account } => write!(f, "Kick({account})"),
             Self::Admin(query) => write!(f, "Admin({query:?})"),
+            Self::PathFound {
+                requester,
+                request_id,
+                result,
+            } => write!(
+                f,
+                "PathFound({requester}, {request_id}, {})",
+                if result.path.is_ok() { "path" } else { "no path" }
+            ),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
         }
     }

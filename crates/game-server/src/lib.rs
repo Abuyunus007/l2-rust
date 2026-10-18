@@ -17,14 +17,17 @@
 //   2. database          `l2_db::connect`
 //   3. IdManager         `IdFactory` from the Rust range (D-39)           (M2-IDF-01)
 //   4. data              `Datapack::load`                                (M2-DATA-01)
-//   5. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
-//   6. hexid.txt         the saved login server registration
-//   7. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
-//   8. admin endpoint
+//   5. geodata           `geo::load_engine` (before the world: it gets the engine) (M3-GEO-03)
+//   6. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
+//   7. path workers      `geo::Geo::start` (need the world's command channel)   (M3-GEO-03)
+//   8. hexid.txt         the saved login server registration
+//   9. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
+//  10. admin endpoint
 // The character screen (M2-CHAR-01) and entering the world (M2-ENTER-01) live in `client/`.
 
 pub mod admin;
 pub mod client;
+pub mod geo;
 pub mod hexid;
 pub mod logging;
 pub mod ls_link;
@@ -192,6 +195,16 @@ impl Server {
         };
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
 
+        // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
+        // world thread gets the engine. Not fatal: Java runs without geodata too.
+        let geo_settings = geo::GeoSettings::load(&config, &paths.config_dir, &datapack_root);
+        let geo_engine = {
+            let settings = geo_settings.clone();
+            tokio::task::spawn_blocking(move || geo::load_engine(&settings))
+                .await
+                .map_err(|e| StartupError::Internal(format!("geodata loader: {e}")))?
+        };
+
         // Java: ServerConfig.loadHexid (at the end of ServerConfig.load)
         let hexid = hexid::load(&paths.config_dir);
 
@@ -204,17 +217,26 @@ impl Server {
             let acks = left_acks.clone();
             let store = DbStore::new(pool.clone());
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
+            let geo_engine = Arc::clone(&geo_engine);
             WorldRuntime::start_configured(
                 WorldRng::from_entropy(),
                 autosave,
                 move |world| {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
+                    world.set_geo(geo_engine);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
             .map_err(StartupError::WorldThread)?
         };
+
+        // D-14: the path workers answer with `WorldCommand::PathFound` on the world's channel.
+        let geo = geo::Geo::start(
+            geo_engine,
+            &geo_settings,
+            Arc::new(geo::WorldPathSink::new(world.handle())),
+        );
 
         let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let max_players = config.server.maximum_online_users;
@@ -226,6 +248,7 @@ impl Server {
             datapack,
             static_data,
             world_settings,
+            geo,
             world: world.handle(),
             left_acks,
             hexid,
@@ -344,6 +367,15 @@ impl Server {
                 ""
             }
         );
+        // 0. The path workers first: they send to the world's channel, and no search can start
+        //    once the world no longer reads.
+        let state = Arc::clone(&self.state);
+        if tokio::task::spawn_blocking(move || state.geo.paths.shutdown())
+            .await
+            .is_err()
+        {
+            warn!("The path worker shutdown task failed.");
+        }
         // 1. Store and disconnect every player, and wait until the outbox is drained. This
         //    comes first so the players get their goodbye packets while the connections are
         //    still open, and so the login server link (a task below) is still up for the
@@ -412,6 +444,7 @@ pub(crate) mod test_support {
             datapack: Arc::new(empty_datapack()),
             static_data: Arc::new(l2_world::NoData),
             world_settings: l2_world::WorldSettings::default(),
+            geo: geo::Geo::empty(),
             world: handle,
             left_acks: persist::LeftAcks::default(),
             hexid: None,

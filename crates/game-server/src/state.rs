@@ -101,6 +101,8 @@ pub struct GameState {
     pub static_data: Arc<dyn StaticData>,
     /// The configuration values the world and the sessions read for entering the world and chat.
     pub world_settings: WorldSettings,
+    /// The geodata and the path worker pool (M3-GEO-03).
+    pub geo: crate::geo::Geo,
     pub world: WorldHandle,
     /// Signals that a character's last store finished (the restart waits for it).
     pub left_acks: crate::persist::LeftAcks,
