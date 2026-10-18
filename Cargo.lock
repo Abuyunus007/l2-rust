@@ -2467,8 +2467,17 @@ name = "l2-testkit"
 version = "0.1.0"
 dependencies = [
  "hex",
+ "l2-crypto",
+ "l2-db",
+ "l2-net",
+ "l2-protocol-login",
+ "l2-proxy",
+ "rand 0.10.3",
  "serde",
  "serde_json",
+ "sqlx",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]
@@ -2593,10 +2602,13 @@ dependencies = [
  "l2-db",
  "l2-net",
  "l2-protocol-login",
+ "l2-proxy",
+ "l2-testkit",
  "l2-util",
  "quick-xml 0.42.0",
  "rand 0.10.3",
  "rand_chacha 0.10.0",
+ "serde_json",
  "sqlx",
  "tempfile",
  "thiserror 2.0.21",

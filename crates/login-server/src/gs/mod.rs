@@ -465,18 +465,17 @@ mod tests {
 
     use l2_crypto::rsa::encrypt_raw;
     use l2_db::{ChangePasswordResult, DbError, TracertHops, hash_password};
-    use l2_net::{CancellationToken, ConnectionHandle, Encode, spawn_connection};
+    use l2_net::{CancellationToken, ConnectionHandle, spawn_connection};
     use l2_protocol_login::link::{
         BlowFishKey, ChangeAccessLevel, ChangePassword, ChangePasswordResponse, KickPlayer, LsPacket,
         PROTOCOL_REV, PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, PlayerTracert,
         ReplyCharacters, RequestCharacters, RequestTempBan, SendMail, ServerStatus as StatusPacket,
-        decode_from_ls,
     };
     use l2_protocol_login::server::ServerEntry;
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     use tokio::net::TcpStream;
     use tokio::task::JoinSet;
-    use tokio::time::timeout;
+
+    use l2_testkit::fake_game_server::FakeGameServer;
 
     use super::handlers::AccountStore;
     use super::register::tests::{RecordingStore, auth};
@@ -488,77 +487,7 @@ mod tests {
     use crate::state::{ExitReason, ServerStatus};
 
     /// A game server speaking the real link protocol, the way `LoginServerThread` does.
-    struct FakeGs {
-        stream: TcpStream,
-        cipher: LinkCipher,
-    }
-
-    const WAIT: Duration = Duration::from_secs(10);
-
-    impl FakeGs {
-        async fn connect(address: SocketAddr) -> Self {
-            Self {
-                stream: TcpStream::connect(address).await.unwrap(),
-                cipher: LinkCipher::default_key().unwrap(),
-            }
-        }
-
-        /// The next packet's plaintext (padding and checksum slot included), or `None` when the
-        /// login server closed the connection.
-        async fn recv(&mut self) -> Option<Vec<u8>> {
-            let mut header = [0u8; 2];
-            timeout(WAIT, self.stream.read_exact(&mut header))
-                .await
-                .unwrap()
-                .ok()?;
-            let length = usize::from(u16::from_le_bytes(header));
-            let mut body = vec![0u8; length - 2];
-            timeout(WAIT, self.stream.read_exact(&mut body))
-                .await
-                .unwrap()
-                .ok()?;
-            Some(self.cipher.open(&mut body).unwrap().to_vec())
-        }
-
-        async fn recv_ls(&mut self) -> Option<LsPacket> {
-            let body = self.recv().await?;
-            Some(decode_from_ls(body[0], &mut PacketReader::new(&body[1..])).unwrap())
-        }
-
-        async fn send_raw(&mut self, payload: &[u8]) {
-            let body = self.cipher.seal(payload);
-            let mut frame = u16::try_from(body.len() + 2).unwrap().to_le_bytes().to_vec();
-            frame.extend_from_slice(&body);
-            self.stream.write_all(&frame).await.unwrap();
-        }
-
-        async fn send<P: Encode>(&mut self, packet: &P) {
-            self.send_raw(&packet.to_bytes()).await;
-        }
-
-        async fn read_init(&mut self) -> InitLS {
-            match self.recv_ls().await {
-                Some(LsPacket::InitLS(init)) => init,
-                other => panic!("expected InitLS, got {other:?}"),
-            }
-        }
-
-        /// Everything up to and including the key switch, like `LoginServerThread` case 0x00.
-        async fn handshake(&mut self, session_key: &[u8]) -> InitLS {
-            let init = self.read_init().await;
-            let encrypted = encrypt_raw(&init.public_key, &[1, 0, 1], session_key).unwrap();
-            self.send(&BlowFishKey {
-                encrypted_key: encrypted,
-            })
-            .await;
-            self.cipher = LinkCipher::new(session_key).unwrap();
-            init
-        }
-
-        async fn is_closed(&mut self) -> bool {
-            self.recv().await.is_none()
-        }
-    }
+    type FakeGs = FakeGameServer;
 
     /// A 40-byte session key whose first byte is not zero (the LS strips leading zeros).
     fn session_key() -> Vec<u8> {
@@ -614,7 +543,7 @@ mod tests {
             let mut gs = self.gs().await;
             gs.handshake(&session_key()).await;
             gs.send(request).await;
-            assert!(matches!(gs.recv_ls().await, Some(LsPacket::AuthResponse(_))));
+            assert!(matches!(gs.recv_opt().await, Some(LsPacket::AuthResponse(_))));
             gs
         }
 
@@ -765,14 +694,14 @@ mod tests {
     }
 
     async fn player_auth_response(gs: &mut FakeGs) -> PlayerAuthResponse {
-        match gs.recv_ls().await {
+        match gs.recv_opt().await {
             Some(LsPacket::PlayerAuthResponse(response)) => response,
             other => panic!("expected PlayerAuthResponse, got {other:?}"),
         }
     }
 
     async fn password_response(gs: &mut FakeGs) -> ChangePasswordResponse {
-        match gs.recv_ls().await {
+        match gs.recv_opt().await {
             Some(LsPacket::ChangePasswordResponse(response)) => response,
             other => panic!("expected ChangePasswordResponse, got {other:?}"),
         }
@@ -825,7 +754,7 @@ mod tests {
         gs.handshake(&session_key()).await;
         gs.send(&auth(1, &[0x12, 0x34], true)).await;
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::AuthResponse(AuthResponse {
                 server_id: 1,
                 server_name: "Bartz".to_owned(),
@@ -850,7 +779,7 @@ mod tests {
         gs.handshake(&session_key()).await;
         gs.send(&auth(2, &[0x2A, 0xD6, 0x6B], false)).await;
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::AuthResponse(AuthResponse {
                 server_id: 2,
                 server_name: "Sieghardt".to_owned(),
@@ -871,7 +800,7 @@ mod tests {
         gs.handshake(&session_key()).await;
         gs.send(&auth(9, &[1], false)).await;
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::AuthResponse(AuthResponse {
                 server_id: 9,
                 server_name: String::new(),
@@ -882,7 +811,7 @@ mod tests {
 
     async fn expect_fail(gs: &mut FakeGs, reason: u8) {
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::LoginServerFail(LoginServerFail { reason }))
         );
         assert!(gs.is_closed().await, "the link is closed after a refusal");
@@ -921,7 +850,7 @@ mod tests {
         // The first link still works: the table can reach it.
         harness.state().game_servers.request_characters("somebody");
         assert_eq!(
-            first.recv_ls().await,
+            first.recv_opt().await,
             Some(LsPacket::RequestCharacters(RequestCharacters {
                 account: "somebody".to_owned()
             }))
@@ -936,7 +865,7 @@ mod tests {
         gs.handshake(&session_key()).await;
         gs.send(&auth(1, &[9, 9], true)).await;
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::AuthResponse(AuthResponse {
                 server_id: 2,
                 server_name: "Sieghardt".to_owned(),
@@ -1023,9 +952,9 @@ mod tests {
             encrypted_key: encrypted,
         })
         .await;
-        gs.cipher = LinkCipher::new(&key).unwrap();
+        gs.use_session_key(&key);
         gs.send(&auth(1, &[0x12, 0x34], false)).await;
-        assert!(matches!(gs.recv_ls().await, Some(LsPacket::AuthResponse(_))));
+        assert!(matches!(gs.recv_opt().await, Some(LsPacket::AuthResponse(_))));
         harness.finish().await;
     }
 
@@ -1035,10 +964,7 @@ mod tests {
         let mut gs = harness.gs().await;
         gs.read_init().await;
         // 8 bytes of garbage do not decrypt to a valid checksum.
-        gs.stream
-            .write_all(&[10, 0, 1, 2, 3, 4, 5, 6, 7, 8])
-            .await
-            .unwrap();
+        gs.send_wire(&[10, 0, 1, 2, 3, 4, 5, 6, 7, 8]).await;
         assert!(gs.is_closed().await);
         harness.finish().await;
     }
@@ -1092,21 +1018,21 @@ mod tests {
 
         assert!(table.kick_player("player"));
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::KickPlayer(KickPlayer {
                 account: "player".to_owned()
             }))
         );
         table.request_characters("player");
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::RequestCharacters(RequestCharacters {
                 account: "player".to_owned()
             }))
         );
         link.change_password_response("Char", "done");
         assert!(matches!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::ChangePasswordResponse(_))
         ));
 
@@ -1237,7 +1163,7 @@ mod tests {
         // A second login attempt would make the table kick the player on this game server.
         assert!(state.game_servers.kick_player("hero"));
         assert_eq!(
-            gs.recv_ls().await,
+            gs.recv_opt().await,
             Some(LsPacket::KickPlayer(KickPlayer {
                 account: "hero".to_owned()
             }))
@@ -1650,7 +1576,7 @@ mod tests {
         );
         state.game_servers.request_characters("probe");
         assert!(
-            matches!(second.recv_ls().await, Some(LsPacket::RequestCharacters(_))),
+            matches!(second.recv_opt().await, Some(LsPacket::RequestCharacters(_))),
             "neither the unknown account nor the error produced an answer"
         );
         harness.finish().await;
