@@ -24,6 +24,8 @@ pub struct CharacterInfo {
     /// `deletetime` (ms), 0 when the character is not marked for deletion.
     pub delete_time_ms: i64,
     pub access_level: i32,
+    /// `title` (empty when the column is NULL), for `CharSelected`.
+    pub title: String,
 }
 
 /// Where the character list comes from. The database in the server, a fake in tests.
@@ -78,9 +80,8 @@ pub fn build_character(
 ) -> Option<CharacterInfo> {
     let delete_time_ms = i64::try_from(row.deletetime).unwrap_or(i64::MAX);
     if delete_time_ms > 0 && now_ms > delete_time_ms {
-        // NOTE: Java deletes the character right here (GameClient.deleteCharByObjId, plus the
-        // clan member removal). The delete is ported with the character screen (M2-CHAR-01);
-        // until then the character is only left out of the list.
+        // Java deletes the character right here; `DbCharacterList::load` does that before it
+        // gets here, so this only keeps the list free of it.
         return None;
     }
     let base_class = i32::from(row.base_class);
@@ -146,20 +147,24 @@ pub fn build_character(
         last_access: i64::try_from(row.last_access).unwrap_or(i64::MAX),
         delete_time_ms,
         access_level: row.accesslevel.unwrap_or(0),
+        title: row.title.clone().unwrap_or_default(),
     })
 }
 
 /// The list from the game database.
 pub struct DbCharacterList {
     characters: CharacterRepository,
+    /// `WeddingConfig.ALLOW_WEDDING`: `deleteCharByObjId` then also clears `mods_wedding`.
+    delete_wedding: bool,
     items: ItemRepository,
     subclasses: SubclassRepository,
     datapack: Arc<Datapack>,
 }
 
 impl DbCharacterList {
-    pub fn new(pool: Pool, datapack: Arc<Datapack>) -> Self {
+    pub fn new(pool: Pool, datapack: Arc<Datapack>, delete_wedding: bool) -> Self {
         Self {
+            delete_wedding,
             characters: CharacterRepository::new(pool.clone()),
             items: ItemRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool),
@@ -179,6 +184,20 @@ impl DbCharacterList {
         let mut list = Vec::with_capacity(rows.len());
         for row in rows {
             let object_id = row.object_id();
+            // See if the char must be deleted.
+            let delete_time = i64::try_from(row.deletetime).unwrap_or(i64::MAX);
+            if delete_time > 0 && now > delete_time {
+                // NOTE: Java first removes the character from its clan (`Clan.removeClanMember`);
+                // clans are not modelled yet, so the clan keeps a member row that points nowhere.
+                if let Err(e) = self
+                    .characters
+                    .delete_character(object_id, self.delete_wedding)
+                    .await
+                {
+                    warn!("Error deleting character: {e}");
+                }
+                continue;
+            }
             let subclass = if row.base_class != row.classid.unwrap_or(0) {
                 self.active_subclass(object_id, i32::from(row.classid.unwrap_or(0)))
                     .await

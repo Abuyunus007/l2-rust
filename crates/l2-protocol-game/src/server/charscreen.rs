@@ -632,9 +632,49 @@ impl Decode for ServerClose {
     }
 }
 
+// Java: gameserver/network/serverpackets/SSQInfo.java
+/// Sky colour of the Seven Signs competition (opcode name `SSQ_INFO`): 0 normal, 1 dusk, 2 dawn.
+/// Java sends it right before `CharSelected`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SsqInfo {
+    /// Java `_state`.
+    pub state: i32,
+}
+
+impl SsqInfo {
+    pub const OPCODE: ServerOpcode = ServerOpcode::SsqInfo;
+}
+
+impl Encode for SsqInfo {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        // Java: `writeShort(256 + _state)`.
+        w.i16((256 + self.state) as i16);
+    }
+}
+
+impl Decode for SsqInfo {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            state: i32::from(r.i16()?) - 256,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ssq_info_adds_256_to_the_state() {
+        let packet = SsqInfo { state: 2 };
+        let bytes = packet.to_bytes();
+        assert_eq!(bytes, [0x73, 0x02, 0x01]);
+        assert_eq!(
+            SsqInfo::decode(&mut PacketReader::new(&bytes[1..])).unwrap(),
+            packet
+        );
+    }
 
     #[test]
     fn exp_percent_uses_float_precision() {

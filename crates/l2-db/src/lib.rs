@@ -16,6 +16,7 @@ pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     IdRepository, NewCharacter, UsedIds,
 };
+pub use game::{ClanRepository, MacroRepository, NewMacro, RecommendationRepository};
 pub use game::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};

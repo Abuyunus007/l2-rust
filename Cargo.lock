@@ -1736,6 +1736,7 @@ name = "game-server"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "hex",
  "l2-admin-api",
  "l2-config",
  "l2-crypto",
@@ -1750,6 +1751,7 @@ dependencies = [
  "login-server",
  "quick-xml 0.42.0",
  "rand 0.10.3",
+ "serde_json",
  "sqlx",
  "tempfile",
  "thiserror 2.0.21",

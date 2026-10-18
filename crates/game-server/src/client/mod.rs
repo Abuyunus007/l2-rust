@@ -8,7 +8,9 @@
 // `0.0.0.0` mean every interface), which behaves the same with the shipped config.
 
 pub mod charlist;
+pub mod charscreen;
 pub mod cipher;
+pub mod newchar;
 pub mod registry;
 pub mod session;
 
@@ -24,6 +26,7 @@ use tokio::net::TcpListener;
 use tracing::info;
 
 use self::charlist::{CharacterSource, DbCharacterList};
+use self::charscreen::{CharScreen, DbCharScreen};
 use self::registry::{KickOutcome, SessionRegistry};
 use self::session::ClientSession;
 use crate::ls_link::{LsLink, SessionKey};
@@ -81,6 +84,8 @@ pub struct ClientContext {
     pub packet_encryption: bool,
     /// `CharMaxNumber`.
     pub max_characters: i32,
+    /// Creating, deleting, restoring and selecting characters.
+    pub charscreen: CharScreen,
 }
 
 impl ClientContext {
@@ -95,6 +100,18 @@ impl ClientContext {
             ClientSession::new(Arc::clone(self), session, peer.ip()),
             Box::new(NoCipher),
         )
+    }
+}
+
+/// `FloodProtectorCharacterSelectInterval` (ticks of 100 ms) from `FloodProtector.ini`; the flood
+/// protector settings are not part of `GameConfig` yet.
+fn character_select_interval(config_dir: &std::path::Path) -> i32 {
+    match IniFile::load(config_dir.join("FloodProtector.ini")) {
+        Ok(ini) => ini.get_int(
+            "FloodProtectorCharacterSelectInterval",
+            CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
+        ),
+        Err(_) => CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
     }
 }
 
@@ -137,12 +154,20 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         characters: Arc::new(DbCharacterList::new(
             state.pool.clone(),
             Arc::clone(&state.datapack),
+            state.config.wedding.allow_wedding,
         )),
         registry: Arc::clone(&registry),
         world: state.world.clone(),
         protocol_list: state.config.manual.server.protocol_list.clone(),
         packet_encryption: state.config.server.packet_encryption,
         max_characters: state.config.server.max_characters_number_per_account,
+        charscreen: CharScreen::new(
+            Arc::new(DbCharScreen::new(state.pool.clone())),
+            Arc::clone(&state.datapack),
+            Arc::clone(&state.config),
+            Arc::clone(&state.ids),
+            character_select_interval(&state.paths.config_dir),
+        ),
     });
 
     // Java: ConnectionConfig (Network.ini). A missing file gives Java's defaults.
@@ -193,4 +218,12 @@ mod tests {
 }
 
 #[cfg(test)]
+mod charscreen_db_tests;
+#[cfg(test)]
+mod charscreen_tests;
+#[cfg(test)]
+mod newchar_tests;
+#[cfg(test)]
 mod session_tests;
+#[cfg(test)]
+mod testdata;

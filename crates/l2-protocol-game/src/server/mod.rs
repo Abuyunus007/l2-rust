@@ -19,8 +19,8 @@ pub mod userinfo;
 
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
-    CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, active_slot, delete_seconds,
-    exp_percent,
+    CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
+    delete_seconds, exp_percent,
 };
 pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
 pub use enterworld::{
@@ -28,7 +28,7 @@ pub use enterworld::{
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, SkillCoolTime, SkillList,
     ValidateLocation,
 };
-pub use handshake::KeyPacket;
+pub use handshake::{KeyPacket, LoginFail};
 pub use items::{
     InventoryBlock, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item, read_item_updates,
     write_inventory_block, write_item, write_item_elemental_and_enchant, write_item_updates,

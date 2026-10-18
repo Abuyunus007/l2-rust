@@ -12,11 +12,12 @@
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
 use l2_net::{Control, Encode, FrameHandler, PacketReader};
 use l2_protocol_game::client::{AuthLogin, ProtocolVersion};
 use l2_protocol_game::server::charscreen::active_slot;
-use l2_protocol_game::server::{CharSelectionInfo, KeyPacket};
+use l2_protocol_game::server::{CharSelectionInfo, KeyPacket, LoginFail};
 use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
 use l2_util::WorldRng;
 use l2_world::{SessionId, WorldCommand};
@@ -30,20 +31,25 @@ use crate::ls_link::SessionKey;
 
 /// One client connection. Java: `GameClient`.
 pub struct ClientSession {
-    ctx: Arc<ClientContext>,
+    pub(super) ctx: Arc<ClientContext>,
     session: SessionId,
-    ip: IpAddr,
-    rng: WorldRng,
-    state: ConnectionState,
+    pub(super) ip: IpAddr,
+    pub(super) rng: WorldRng,
+    pub(super) state: ConnectionState,
     /// Java `_protocolOk`: set by a `ProtocolVersion` the server accepts.
     protocol_ok: bool,
     /// Set once `ProtocolVersion` was answered; a second one is ignored.
     key_sent: bool,
     /// Java `_accountName`, set when `AuthLogin` was accepted by the login server.
-    account: Option<String>,
-    session_key: Option<SessionKey>,
+    pub(super) account: Option<String>,
+    pub(super) session_key: Option<SessionKey>,
     /// Java `_charSlotMapping` (`setCharSelection`): the list the client was shown, by slot.
-    characters: Vec<CharacterInfo>,
+    pub(super) characters: Vec<CharacterInfo>,
+    /// The character `CharacterSelect` picked, until the world takes it over (M2-ENTER-01 clears
+    /// it) or the client leaves.
+    pub(super) selected: Option<i32>,
+    /// When the next `CharacterSelect` / `CharacterRestore` is allowed (flood protector).
+    pub(super) next_select: Option<Instant>,
     /// Shared with the registry entry: is the account's character in the world?
     in_world: Arc<AtomicBool>,
 }
@@ -61,6 +67,8 @@ impl ClientSession {
             account: None,
             session_key: None,
             characters: Vec::new(),
+            selected: None,
+            next_select: None,
             in_world: Arc::default(),
         }
     }
@@ -147,9 +155,15 @@ impl ClientSession {
             // Java: a duplicate login on this server closes right away (close(null)); a refused
             // session key sends LoginFail(SYSTEM_ERROR_LOGIN_LATER) first. The link answers both
             // with `false` and already sent PlayerLogout for the refusal.
-            // TODO(M2-CHAR-01): the game server's LoginFail packet has no struct yet.
+            // NOTE: the link answers a duplicate login with `false` as well; Java closes that one
+            // without a packet, here it gets the LoginFail too.
             info!("Session key refused for account '{account}' from {}.", self.ip);
-            ctl.close();
+            ctl.send_and_close(
+                LoginFail {
+                    reason: LoginFail::SYSTEM_ERROR_LOGIN_LATER,
+                }
+                .to_bytes(),
+            );
             return;
         }
         // Java: setConnectionState(AUTHENTICATED), setSessionId, new CharSelectionInfo(...)
@@ -172,8 +186,20 @@ impl ClientSession {
     /// highlighted slot; `None` lets the most recently used character win (Java `_activeId = -1`).
     // Java: new CharSelectionInfo(account, playOkID1[, activeId]) + client.setCharSelection
     pub async fn send_character_list(&mut self, ctl: &mut Control<'_>, active: Option<usize>) {
+        if let Some((characters, packet)) = self.load_character_list(active).await {
+            ctl.send(packet.to_bytes());
+            self.characters = characters;
+        }
+    }
+
+    /// The account's characters and the `CharSelectionInfo` that shows them, without touching the
+    /// slot table of the session (Java builds the packet first and calls `setCharSelection` after).
+    pub(super) async fn load_character_list(
+        &self,
+        active: Option<usize>,
+    ) -> Option<(Vec<CharacterInfo>, CharSelectionInfo)> {
         let (Some(account), Some(key)) = (self.account.clone(), self.session_key) else {
-            return;
+            return None;
         };
         let mut characters = self.ctx.characters.character_list(&account).await;
         let last_access: Vec<i64> = characters.iter().map(|c| c.last_access).collect();
@@ -187,8 +213,7 @@ impl ClientSession {
             max_characters: self.ctx.max_characters,
             characters: characters.iter().map(|c| c.entry.clone()).collect(),
         };
-        ctl.send(packet.to_bytes());
-        self.characters = characters;
+        Some((characters, packet))
     }
 
     // Java: Logout.runImpl with no player: client.disconnect()
@@ -229,8 +254,14 @@ impl FrameHandler for ClientSession {
             ClientPacket::Logout(_) if !self.in_world.load(Ordering::Acquire) => {
                 self.on_logout_without_player(ctl);
             }
+            ClientPacket::NewCharacter(_) => self.on_new_character(ctl),
+            ClientPacket::CharacterCreate(p) => self.on_character_create(p, ctl).await,
+            ClientPacket::CharacterDelete(p) => self.on_character_delete(p, ctl).await,
+            ClientPacket::CharacterRestore(p) => self.on_character_restore(p, ctl).await,
+            ClientPacket::CharacterSelect(p) => self.on_character_select(p, ctl).await,
+            ClientPacket::RequestGotoLobby(_) => self.on_request_goto_lobby(ctl).await,
             other => {
-                // Character screen (M2-CHAR-01) and the world (M2-ENTER-01) are not here yet.
+                // The world (M2-ENTER-01) is not here yet.
                 debug!("Packet not handled yet from {}: {other:?}", self.ip);
             }
         }
@@ -243,6 +274,7 @@ impl FrameHandler for ClientSession {
             return;
         };
         self.ctx.registry.remove_if_session(&account, self.session);
+        self.release_selected_character().await;
         if self.in_world.load(Ordering::Acquire) {
             // The world stores the character; the persistence task tells the login server
             // afterwards (D-15). Java sends PlayerLogout first and stores later.
