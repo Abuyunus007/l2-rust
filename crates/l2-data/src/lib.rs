@@ -7,6 +7,7 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod class_list;
+pub mod item;
 pub mod loader;
 pub mod player_template;
 
@@ -14,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use loader::DataError;
 pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
 
@@ -26,6 +28,8 @@ pub struct Datapack {
     pub class_list: Arc<ClassList>,
     /// `data/stats/players/templates/**`.
     pub player_templates: Arc<PlayerTemplates>,
+    /// `data/stats/items/*.xml`.
+    pub items: Arc<ItemTemplates>,
 }
 
 impl Datapack {
@@ -40,6 +44,9 @@ impl Datapack {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, DEFAULT_MAX_PLAYER_LEVEL)),
+            // Java's code default for `CustomItemsLoad` is false (the shipped General.ini sets True);
+            // there is no config in this crate yet.
+            items: Arc::new(ItemTemplates::load(root, false)),
         })
     }
 }
@@ -64,5 +71,6 @@ mod tests {
         let pack = Datapack::load(dir.path()).unwrap();
         assert!(pack.class_list.is_empty());
         assert!(pack.player_templates.is_empty());
+        assert!(pack.items.is_empty());
     }
 }
