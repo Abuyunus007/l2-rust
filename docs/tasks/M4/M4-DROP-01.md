@@ -43,4 +43,7 @@
 
 ## Notes from the orchestrator
 - Read `docs/design/m4-combat.md`, `docs/design/world-loop.md`, `docs/design/m3-world.md` first, then CLAUDE.md safety rules.
+- Merged APIs: death/respawn (`crates/l2-world/src/death.rs`, `respawn.rs`), combat (`combat/`: aggro list `AggroInfo` with damage per attacker), status (`status.rs`), inventory (`inventory/`), stats (`stats/`). DEATH-01 left `// M4-EXP-01:` / `// M4-DROP-01:` markers in `death.rs` (`calculate_rewards`, ...): fill yours there.
+- INV-01 left `// M4-DROP-01:` in `inventory/` (`RequestDropItem` refuses for now; `World::drop_from_inventory` returns the split item): turn that into the real drop. Pickup needs `Inventory.addItem` (stack merge, ADDED flag), which INV-01 did not port: port it here.
+- M4-EXP-01 runs at the same time and fills the exp half of `calculate_rewards`: keep your edits there to the drop part, additive.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
