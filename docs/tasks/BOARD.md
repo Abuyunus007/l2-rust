@@ -223,7 +223,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-ADMIN-02](M4/M4-ADMIN-02.md) | Admin commands for combat testing | haiku | spot | DEATH-01 | merged |
 | [M4-ADMIN-03](M4/M4-ADMIN-03.md) | Item, level and exp admin commands (rest of ADMIN-02) | haiku | spot | ADMIN-02, EXP-01, DROP-01 | merged |
 | [M4-E2E-01](M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | merged |
-| [M4-RUN-01](M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | in-progress |
+| [M4-RUN-01](M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M4a..d with the owner |
 
 ## M5: Skills and effects (approved 2026-10-20)
 
