@@ -16,8 +16,9 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, ItemStatic, PlayerData, StatData,
-    StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
+    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, ItemStatic, PlayerData,
+    RegenSettings, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings,
+    ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -304,6 +305,18 @@ impl StaticData for DatapackData {
             .player_templates
             .get_by_id(player.class_id)
             .map_or(333, |t| t.safe_fall)
+    }
+}
+
+/// The regeneration multipliers the world reads (Java `PlayerConfig` and `NpcConfig`, after the
+/// `/ 100` of their post-processing; see `l2_config::GameManual`).
+pub fn regen_settings(config: &GameConfig) -> RegenSettings {
+    RegenSettings {
+        hp_regen_multiplier: config.manual.player.hp_regen_multiplier,
+        mp_regen_multiplier: config.manual.player.mp_regen_multiplier,
+        cp_regen_multiplier: config.manual.player.cp_regen_multiplier,
+        raid_hp_regen_multiplier: config.manual.npc.raid_hp_regen_multiplier,
+        raid_mp_regen_multiplier: config.manual.npc.raid_mp_regen_multiplier,
     }
 }
 

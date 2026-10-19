@@ -107,8 +107,9 @@ impl GameConfig {
         // The three files behind the manual fields are read once and shared with the structs.
         let server_ini = IniFile::load(config_dir.join(ServerConfig::FILE))?;
         let player_ini = IniFile::load(config_dir.join(PlayerConfig::FILE))?;
+        let npc_ini = IniFile::load(config_dir.join(NpcConfig::FILE))?;
         let faction_system_ini = IniFile::load(config_dir.join(FactionSystemConfig::FILE))?;
-        let manual = GameManual::from_inis(&server_ini, &player_ini, &faction_system_ini)?;
+        let manual = GameManual::from_inis(&server_ini, &player_ini, &npc_ini, &faction_system_ini)?;
         Ok(Self {
             manual,
             server: ServerConfig::from_ini(&server_ini),

@@ -65,9 +65,8 @@ impl World {
         };
         if let Some(npc) = self.npcs.get_mut(&id) {
             npc.core.max_hp = hp;
-            npc.core.cur_hp = hp;
             npc.core.max_mp = mp;
-            npc.core.cur_mp = mp;
         }
+        self.set_current_hp_mp(id, hp, mp);
     }
 }

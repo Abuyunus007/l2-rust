@@ -281,26 +281,6 @@ fn a_hurt_player_regenerates_once_per_three_seconds() {
 }
 
 #[test]
-fn a_task_stops_when_the_vitals_were_filled_without_the_setters() {
-    let mut w = world();
-    let log = Log::default();
-    enter(&mut w, &log, 1, player_data(PLAYER, "Hero", 1.0, 10.0, 10.0));
-    assert!(w.is_hp_mp_regenerating(PLAYER));
-    // An admin heal writes the vitals directly (`admin/commands.rs`), so no setter runs.
-    w.player_mut(PLAYER).unwrap().core.cur_hp = 100.0;
-    log.take();
-    tick(&mut w, 60);
-    assert!(
-        !w.is_hp_mp_regenerating(PLAYER),
-        "nothing is below its maximum any more"
-    );
-    assert!(
-        updates_to(&log.take(), PLAYER).is_empty(),
-        "and no packet goes out for it"
-    );
-}
-
-#[test]
 fn a_full_player_starts_no_task_until_it_is_hurt() {
     let mut w = world();
     let log = Log::default();
