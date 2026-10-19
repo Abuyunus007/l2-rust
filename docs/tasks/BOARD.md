@@ -219,7 +219,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-EXP-01](M4/M4-EXP-01.md) | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | merged |
 | [M4-VIT-01](M4/M4-VIT-01.md) | Vitality and Nevit (Java gives 1.5x-3x kill exp with the shipped config) | sonnet | full | EXP-01 | in-progress |
 | [M4-DROP-01](M4/M4-DROP-01.md) | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | merged |
-| [M4-JV-02](M4/M4-JV-02.md) | Java vectors for drop chances | sonnet | full | JV-01, DROP-01 | in-progress |
+| [M4-JV-02](M4/M4-JV-02.md) | Java vectors for drop chances | sonnet | full | JV-01, DROP-01 | merged |
 | [M4-ADMIN-02](M4/M4-ADMIN-02.md) | Admin commands for combat testing | haiku | spot | DEATH-01 | merged |
 | [M4-ADMIN-03](M4/M4-ADMIN-03.md) | Item, level and exp admin commands (rest of ADMIN-02) | haiku | spot | ADMIN-02, EXP-01, DROP-01 | in-progress |
 | [M4-E2E-01](M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | in-progress |
