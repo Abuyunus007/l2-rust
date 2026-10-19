@@ -74,6 +74,18 @@ memory only); the stat engine comes first (CP-M4a), combat after it.
 - `RequestRestartPoint` sets "pending revive" and calls `teleToLocation`, which revives first, as
   in Java. Clan hall, castle, fortress and siege buttons need clans and sieges (M5).
 
+## Exp, SP and levels (M4-EXP-01)
+- `rewards/exp.rs` follows Java's stat class chain: `Attackable.calculateRewards` (the exp half,
+  called from `death.rs` after the drops) -> `PlayerStat.addExpAndSp` -> `addExp` ->
+  `PlayableStat.addExp` -> `addLevel` (`rewardSkills`, the level up packets). The tables
+  (`experience.xml`, `experienceLoss.xml`, `karmaLoss.xml`, the class skill trees) are `Arc`s
+  installed with `World::set_exp_data`; the `.ini` values are `WorldSettings::exp`.
+- A player's `exp`, `sp`, `level` and `expBeforeDeath` live in `PlayerData` / `PlayerProfile`; the
+  `characters` row is written by the normal store. Skills a level teaches or takes are also sent
+  at once as `PersistCommand::SkillChanges` (Java's `storeSkill` / `removeSkill`).
+- Not yet (own cards): parties, vitality and Nevit bonuses, pets/summons, the over-hit bonus,
+  `AutoLearnSkills = True`.
+
 ## Not in M4
 - Active skills and their effects (cast, buffs, debuffs, heals): M5. Only passive skill stat
   funcs and the stat parts of item skills are applied in M4.

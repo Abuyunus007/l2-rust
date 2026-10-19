@@ -63,15 +63,87 @@ pub(crate) struct PendingRespawn {
 }
 
 impl World {
+    /// The number of spawns of the datapack. Runtime spawns come after them in the index space.
+    fn static_spawn_count(&self) -> usize {
+        self.npc_world.spawn_data().map_or(0, |s| s.spawns().len())
+    }
+
+    /// The definition of spawn `index`: an entry of the datapack's spawn list, or else a spawn an
+    /// admin command made ([`World::admin_spawn`]). One index space for both, so `Npc::spawn`
+    /// and the spawn runtime work the same for each.
+    pub(crate) fn spawn_def(&self, index: usize) -> Option<&l2_data::spawn::NpcSpawn> {
+        let static_count = self.static_spawn_count();
+        if index < static_count {
+            self.npc_world.spawn_data().and_then(|s| s.spawns().get(index))
+        } else {
+            self.death.runtime_spawns.get(index - static_count)
+        }
+    }
+
+    /// Java `new Spawn(template)` + `setXYZ` + `setHeading` + `setAmount` + `setRespawnDelay` +
+    /// `init()` (+ `stopRespawn()` when the spawn is not permanent or has no delay), as the admin
+    /// commands `//spawn`, `//spawn_monster`, `//spawn_once` and `//spawnat` make it. The NPCs
+    /// are created now and the returned list is what got a place.
+    ///
+    /// `respawn_delay` is in seconds (`setRespawnDelay(delay)`: 0 is no respawn, a negative
+    /// delay counts as one second). `permanent` is Java's flag: `SpawnData.addNewSpawn` makes
+    /// the spawn permanent, which is not written to the datapack here (FOLLOW-UP).
+    pub(crate) fn admin_spawn(
+        &mut self,
+        npc_id: i32,
+        position: (i32, i32, i32),
+        heading: i32,
+        amount: i32,
+        respawn_delay: i32,
+        permanent: bool,
+    ) -> Vec<ObjectId> {
+        // `setRespawnDelay(delay, 0)`: `Math.max(1, delay) * 1000` for a delay, 0 for none.
+        let delay_ms = if respawn_delay == 0 {
+            0
+        } else {
+            respawn_delay.max(1).saturating_mul(1000)
+        };
+        let index = self.static_spawn_count() + self.death.runtime_spawns.len();
+        self.death.runtime_spawns.push(l2_data::spawn::NpcSpawn {
+            npc_id,
+            amount,
+            location: l2_data::Location {
+                x: position.0,
+                y: position.1,
+                z: position.2,
+            },
+            heading,
+            respawn_min_ms: delay_ms,
+            respawn_max_ms: delay_ms,
+            // `init()` leaves `_doRespawn = _respawnMinDelay > 0`; `stopRespawn()` follows when
+            // `!permanent || respawnTime <= 0` (a negative delay too).
+            respawn_enabled: permanent && respawn_delay > 0,
+            chase_range: 0,
+            name: None,
+            territory: None,
+            period_of_day: None,
+            ai_data: None,
+            group: None,
+            source: "admin command".to_owned(),
+        });
+        let mut created = Vec::new();
+        let mut report = crate::npc::SpawnReport::default();
+        for _ in 0..amount {
+            // Java `init()`: the loop stops when a unit cannot be made.
+            match self.initialize_npc(index, None, &mut report) {
+                Some(id) => created.push(id),
+                None => break,
+            }
+        }
+        debug!("admin spawn {index}: npc {npc_id} x{} of {amount}", created.len());
+        created
+    }
+
     /// The runtime of spawn `index`. Java creates a `Spawn` with `_doRespawn = true` and
     /// `init()` sets it to `_respawnMinDelay > 0` once the first NPCs stand; the loader
     /// (`NpcSpawn::respawn_enabled`) already computed the value `init()` leaves.
     pub(crate) fn spawn_runtime(&mut self, index: usize) -> &mut SpawnRuntime {
-        let enabled = self
-            .npc_world
-            .spawn_data()
-            .and_then(|s| s.spawns().get(index))
-            .is_some_and(|s| s.respawn_enabled);
+        let enabled = self.spawn_def(index).is_some_and(|s| s.respawn_enabled);
         self.death.spawns.entry(index).or_insert_with(|| SpawnRuntime {
             do_respawn: enabled,
             ..SpawnRuntime::default()
@@ -100,11 +172,7 @@ impl World {
         match self.death.spawns.get(&index) {
             Some(rt) => rt.do_respawn,
             // Not touched yet: the value `init()` leaves.
-            None => self
-                .npc_world
-                .spawn_data()
-                .and_then(|s| s.spawns().get(index))
-                .is_some_and(|s| s.respawn_enabled),
+            None => self.spawn_def(index).is_some_and(|s| s.respawn_enabled),
         }
     }
 
@@ -216,6 +284,7 @@ impl World {
         // `WorldObject.decayMe`: out of view for everybody, out of the object table.
         self.cancel_decay_task(id);
         self.decay(id);
+        self.forget_npc_ai(id);
         self.forget_combat(id);
         self.forget_status(id);
         // `ZoneRegion.removeFromZones`: NPCs have no zone state.
@@ -234,7 +303,7 @@ impl World {
     /// Java `Spawn.decreaseCount(oldNpc)`.
     pub(crate) fn decrease_count(&mut self, index: usize, old: ObjectId, enchant: i32) {
         let (min, max, amount, group) = {
-            let Some(spawn) = self.npc_world.spawn_data().and_then(|s| s.spawns().get(index)) else {
+            let Some(spawn) = self.spawn_def(index) else {
                 return;
             };
             (

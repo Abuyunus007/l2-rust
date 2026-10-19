@@ -1,5 +1,7 @@
-//! What a dead monster gives: items (`drop`, M4-DROP-01) and, from another card, exp and sp.
+//! What a kill gives: exp and SP (`exp.rs`), drops (`drop.rs`, M4-DROP-01).
+//! Design: `docs/design/m4-combat.md`.
 // Java: entity/actor/Attackable.java (calculateRewards), entity/actor/templates/NpcTemplate.java
 //       (calculateDrops)
 
 pub mod drop;
+pub mod exp;

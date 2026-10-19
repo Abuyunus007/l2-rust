@@ -185,6 +185,9 @@ pub struct CreatureStatus {
     /// Java `isDead()`'s flag. Death (`death.rs`) sets it through [`World::set_dead`] and
     /// `do_revive` clears it.
     dead: bool,
+    /// Java `Creature._isInvul` (`setInvul`): set by the GM `//invul` commands. Read through
+    /// [`World::is_invul`], which also reads the teleporting state as Java's `isInvul()` does.
+    invul: bool,
     /// Java `_statusListener`: the players who target this creature, sorted for determinism.
     listeners: BTreeSet<ObjectId>,
     /// Java `Player._broadcastStatusUpdateTask`: the pending self update of a player.
@@ -385,6 +388,27 @@ impl World {
         }
     }
 
+    /// Java `Creature.setInvul(value)`: only the flag. [`World::is_invul`] is what the damage
+    /// code reads. A creature that is not in the world keeps no flag.
+    pub fn set_invul(&mut self, id: ObjectId, value: bool) {
+        if !self.is_tracked(id) {
+            return;
+        }
+        self.status_mut(id).invul = value;
+    }
+
+    /// Java `Creature.isInvul()`: `_isInvul || _isTeleporting || isAffected(EffectFlag.INVUL)`.
+    /// The effect flag is M5. `Player.isInvul()` also adds `isTeleportProtected()` (spawn
+    /// protection), which is not modelled.
+    pub fn is_invul(&self, id: ObjectId) -> bool {
+        self.invul_flag(id) || self.is_teleporting(id)
+    }
+
+    /// Java `_isInvul` alone (the field that `setInvul` writes).
+    pub fn invul_flag(&self, id: ObjectId) -> bool {
+        self.statuses.get(&id).is_some_and(|s| s.invul)
+    }
+
     /// Java `Creature.setDead`. `World::do_die` sets it, `World::do_revive` clears it (both in
     /// `death.rs`). While it is set, the vitals do not change and no regeneration starts. It does
     /// not stop a running task: Java's `doDie` does that itself.
@@ -417,10 +441,19 @@ impl World {
         if self.is_dead(id) {
             return;
         }
-        // M5: invulnerability; a GM without `giveDamage` rights (access level flags are not
-        // loaded: every access level may give damage); `stopEffectsOnDamage(awake)` and the
-        // stun break (no draw without a stun). NpcStatus: duels (M5); M4-AI-01:
-        // `addAttackerToAttackByList(attacker)`. AttackableStatus: over-hit is a skill effect (M5).
+        // NpcStatus.reduceHp adds the attacker to the attack-by list before it calls
+        // CreatureStatus.reduceHp, so this comes before the invulnerability check.
+        if let Some(attacker) = attacker {
+            self.add_attacker_to_attack_by_list(id, attacker);
+        }
+        // "invul handling": `isInvul() && !(isDOT || isHPConsumption)`. DOT and HP consumption do
+        // not reach this function yet (they are effects, M5).
+        if self.is_invul(id) {
+            return;
+        }
+        // M5: a GM without `giveDamage` rights (access level flags are not loaded: every access
+        // level may give damage); `stopEffectsOnDamage(awake)` and the stun break (no draw without
+        // a stun). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill effect (M5).
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
@@ -440,7 +473,12 @@ impl World {
         if self.is_dead(id) {
             return;
         }
-        // Offline traders, invulnerability (M5).
+        // Java: `player.isInvul() && !(isDOT || isHPConsumption)`, before anything else. DOT and HP
+        // consumption do not reach this function yet (M5).
+        if self.is_invul(id) {
+            return;
+        }
+        // Offline traders (M5).
         // M5: `stopEffectsOnDamage(awake)`. Crafting, private stores and sitting (stand up): not
         // modelled yet. Stun break: M5.
         let mut amount = value;

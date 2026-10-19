@@ -11,7 +11,7 @@ use std::time::Instant;
 use l2_config::{GameConfig, IniFile};
 use l2_data::Datapack;
 use l2_world::npc::{NpcSettings, WaterCheck};
-use l2_world::{IdFactory, World};
+use l2_world::{AiSettings, IdFactory, World};
 use tracing::{info, warn};
 
 /// The NPC-related configuration values.
@@ -47,6 +47,25 @@ pub fn npc_settings(config: &GameConfig, config_dir: &Path) -> NpcSettings {
     }
 }
 
+/// The `Npc.ini` values the NPC AI reads (Java `NpcConfig`).
+pub fn ai_settings(config: &GameConfig) -> AiSettings {
+    let npc = &config.npc;
+    AiSettings {
+        max_drift_range: npc.max_drift_range,
+        aggro_distance_check_enabled: npc.aggro_distance_check_enabled,
+        aggro_distance_check_range: npc.aggro_distance_check_range,
+        aggro_distance_check_raids: npc.aggro_distance_check_raids,
+        aggro_distance_check_raid_range: npc.aggro_distance_check_raid_range,
+        aggro_distance_check_instances: npc.aggro_distance_check_instances,
+        aggro_distance_check_restore_life: npc.aggro_distance_check_restore_life,
+        alt_mob_agro_in_peacezone: npc.alt_mob_agro_in_peacezone,
+        attackables_camp_player_corpses: npc.attackables_camp_player_corpses,
+        raid_chaos_time: npc.raid_chaos_time,
+        grand_chaos_time: npc.grand_chaos_time,
+        minion_chaos_time: npc.minion_chaos_time,
+    }
+}
+
 /// `ZoneManager.getZone(x, y, z, WaterZone.class) != null` over the datapack's zones.
 pub fn water_check(datapack: &Arc<Datapack>) -> WaterCheck {
     let datapack = Arc::clone(datapack);
@@ -63,6 +82,7 @@ pub fn spawn_npcs(
     config_dir: &Path,
 ) {
     world.set_npc_settings(npc_settings(config, config_dir));
+    world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
     world.set_id_factory(ids);
     if config.development.no_spawns {

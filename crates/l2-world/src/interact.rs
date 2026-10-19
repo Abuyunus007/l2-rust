@@ -21,7 +21,7 @@
 use l2_protocol_game::server::{ActionFailed, MoveToPawn, StopMove};
 use l2_util::ObjectId;
 
-use crate::movement::{Intention, MoveStep};
+use crate::movement::{AfterMove, Intention, MoveStep};
 use crate::objects::ObjectKind;
 use crate::target::{distance_2d, distance_3d};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
@@ -125,12 +125,8 @@ impl World {
         // often.
         let game_time = self.game_ticks();
         let moving = self.is_moving(id);
-        let on_geodata_path = self
-            .players
-            .get(&id)
-            .and_then(|p| p.movement.mv.as_ref())
-            .is_some_and(|mv| mv.is_on_geodata_path());
-        let Some(state) = self.players.get(&id).map(|p| p.movement.pawn.clone()) else {
+        let on_geodata_path = self.mv_of(id).is_some_and(|mv| mv.is_on_geodata_path());
+        let Some(state) = self.pawn_of(id).cloned() else {
             return;
         };
         if moving && state.ai_target == Some(pawn) {
@@ -146,10 +142,10 @@ impl World {
         }
 
         // Set AI movement data.
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.pawn.client_moving_to_pawn_offset = offset;
-            p.movement.pawn.ai_target = Some(pawn);
-            p.movement.pawn.move_to_pawn_timeout = game_time + MOVE_TO_PAWN_TIMEOUT_TICKS;
+        if let Some(state) = self.pawn_mut(id) {
+            state.client_moving_to_pawn_offset = offset;
+            state.ai_target = Some(pawn);
+            state.move_to_pawn_timeout = game_time + MOVE_TO_PAWN_TIMEOUT_TICKS;
         }
         let Some((px, py, pz)) = self.position_of(pawn) else {
             return;
@@ -158,7 +154,11 @@ impl World {
         // Calculate movement data for a move to location action and add the actor to the moving
         // objects.
         if self.move_to_location(id, px, py, pz, offset) == MoveStep::WaitingForPath {
-            // The packet goes out when the path is there (`on_path_found`).
+            // The packet goes out when the path is there (`on_path_found`). A player's follows
+            // from its intention, an NPC's is told here.
+            if !self.is_player(id) {
+                self.set_after_move(id, AfterMove::ToPawn(pawn));
+            }
             return;
         }
         self.broadcast_pawn_move(id, pawn);
@@ -168,21 +168,14 @@ impl World {
     pub(crate) fn broadcast_pawn_move(&mut self, id: ObjectId, pawn: ObjectId) {
         let creature = self.objects.get(&pawn).is_some_and(|e| e.kind.is_creature());
         if creature {
-            let on_geodata_path = self
-                .players
-                .get(&id)
-                .and_then(|p| p.movement.mv.as_ref())
-                .is_some_and(|mv| mv.is_on_geodata_path());
+            let on_geodata_path = self.mv_of(id).is_some_and(|mv| mv.is_on_geodata_path());
             if on_geodata_path {
                 self.broadcast_move_to_location(id, false);
-                if let Some(p) = self.players.get_mut(&id) {
-                    p.movement.pawn.client_moving_to_pawn_offset = 0;
+                if let Some(state) = self.pawn_mut(id) {
+                    state.client_moving_to_pawn_offset = 0;
                 }
             } else if self.object_region_active(id) {
-                let offset = self
-                    .players
-                    .get(&id)
-                    .map_or(0, |p| p.movement.pawn.client_moving_to_pawn_offset);
+                let offset = self.pawn_of(id).map_or(0, |p| p.client_moving_to_pawn_offset);
                 if let (Some(me), Some(target)) = (self.position_of(id), self.position_of(pawn)) {
                     let packet = MoveToPawn {
                         object_id: id.0,
@@ -195,7 +188,7 @@ impl World {
                         target_y: target.1,
                         target_z: target.2,
                     };
-                    self.broadcast_with_self(id, &packet);
+                    self.broadcast_creature_packet(id, &packet);
                 }
             }
         } else {
@@ -213,20 +206,23 @@ impl World {
     /// Java `AbstractAI.clientStoppedMoving`: a client that was sent a `MoveToPawn` is told to
     /// stop.
     pub(crate) fn client_stopped_moving(&mut self, id: ObjectId) {
-        let Some(p) = self.players.get_mut(&id) else {
+        let Some(state) = self.pawn_mut(id) else {
             return;
         };
-        if p.movement.pawn.client_moving_to_pawn_offset > 0 {
+        if state.client_moving_to_pawn_offset > 0 {
             // movetoPawn needs to be stopped.
-            p.movement.pawn.client_moving_to_pawn_offset = 0;
+            state.client_moving_to_pawn_offset = 0;
+            let Some(core) = self.core_of(id) else {
+                return;
+            };
             let packet = StopMove {
                 object_id: id.0,
-                x: p.core.x,
-                y: p.core.y,
-                z: p.core.z,
-                heading: p.core.heading,
+                x: core.x,
+                y: core.y,
+                z: core.z,
+                heading: core.heading,
             };
-            self.broadcast_with_self(id, &packet);
+            self.broadcast_creature_packet(id, &packet);
         }
     }
 

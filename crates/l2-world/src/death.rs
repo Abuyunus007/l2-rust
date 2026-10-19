@@ -28,7 +28,7 @@
 use std::collections::{HashMap, HashSet};
 
 use l2_protocol_game::server::visibility::status as attr;
-use l2_protocol_game::server::{Die, Revive, StatusUpdate, StopMove};
+use l2_protocol_game::server::{Die, Revive, StatusUpdate};
 use l2_util::ObjectId;
 use tracing::{debug, warn};
 
@@ -71,6 +71,9 @@ impl Default for DeathSettings {
 /// Everything death keeps in the world, outside the creatures themselves.
 #[derive(Debug, Default)]
 pub struct DeathWorld {
+    /// The spawns that admin commands made (`//spawn`, `//spawnat`): spawn index
+    /// `static count + position` (see `respawn.rs`, `World::spawn_def`).
+    pub(crate) runtime_spawns: Vec<l2_data::spawn::NpcSpawn>,
     /// The runtime fields of each spawn (Java `Spawn`), by index into the spawn data.
     pub(crate) spawns: HashMap<usize, SpawnRuntime>,
     /// The census of each spawn group that rolled units (Java `SpawnGroup._aliveOrReserved`).
@@ -111,22 +114,8 @@ impl World {
     /// Java `Creature.stopMove(null)` for a creature that is dead: the movement ends and every
     /// player who sees it gets `StopMove`.
     fn stop_move_on_death(&mut self, id: ObjectId) {
-        if self.is_player(id) {
-            self.stop_move(id, None);
-            return;
-        }
-        // M4-AI-01: NPC movement state (`_move = null`); `World::stop_move` moves players only.
-        let (Some(core), true) = (self.core_of(id), self.is_npc(id)) else {
-            return;
-        };
-        let packet = StopMove {
-            object_id: id.0,
-            x: core.x,
-            y: core.y,
-            z: core.z,
-            heading: core.heading,
-        };
-        self.broadcast_packet(id, &packet);
+        // `stop_move` clears the movement state of a player or an NPC and broadcasts `StopMove`.
+        self.stop_move(id, None);
     }
 
     /// Java `Creature.doDie(killer)` for an NPC. `false` when it was dead already.
@@ -137,7 +126,12 @@ impl World {
         // ON_CREATURE_DEATH / ON_CREATURE_KILLED: script events (D-05).
 
         // Calculate rewards for main damage dealer.
-        self.calculate_rewards(id, killer);
+        let main_damage_dealer = if self.is_monster(id) {
+            self.get_main_damage_dealer(id)
+        } else {
+            None
+        };
+        self.calculate_rewards(id, main_damage_dealer.or(killer));
 
         // Set target to null and cancel Attack or Cast: an NPC's target belongs to its AI
         // (M4-AI-01).
@@ -147,8 +141,8 @@ impl World {
         self.stop_hp_mp_regeneration(id);
 
         // M5: `stopAllEffects()` (a spawn that respawns) or `stopAllEffectsWithoutExclusions`.
-        // M4-AI-01: for an attackable killed by a player that is not a GM, the clan help range
-        // aggro on kill (`called.getAI().notifyActionAggression(killer, 1)`).
+        // Clan help range aggro on kill.
+        self.clan_help_on_kill(id, killer);
 
         // Send the Server->Client packet StatusUpdate with current HP and MP to all other Player
         // to inform.
@@ -160,7 +154,7 @@ impl World {
         }
 
         // `ZoneManager.getRegion(this).onDeath(this)`: no zone type reacts to a death.
-        // M4-AI-01: `getAttackByList().clear()`.
+        self.attack_by_clear(id);
         // `isChannelized()` (M5) and the boss defeat announcements (Custom/BossAnnouncements.ini,
         // off by default) are not ported.
         true
@@ -225,12 +219,9 @@ impl World {
     /// Java `Attackable.doDie(killer)` after `Npc.doDie`.
     fn attackable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
         // ON_ATTACKABLE_KILL: script event (D-05).
-        let _ = (id, killer);
-        // M4-AI-01: "Notify to minions if there are": `leader.getMinionList().onMinionDie(mob,
-        // respawnTime)` (a raid minion comes back after `RaidMinionRespawnTime`) and
-        // `mob.getMinionList().onMasterDie(false)` (a raid boss' minions are deleted). Raid bosses
-        // are not spawned from the spawn files, and the minions of other monsters neither
-        // respawn nor go.
+        let _ = killer;
+        // Notify to minions if there are.
+        self.minions_on_die(id);
     }
 
     /// Java `Player.doDie(killer)` after `Playable.doDie`.
@@ -242,7 +233,7 @@ impl World {
             self.broadcast_status_update(id);
 
             // Clear resurrect xp calculation.
-            // M4-EXP-01: `setExpBeforeDeath(0)`.
+            self.set_exp_before_death(id, 0);
 
             // Cursed weapons and combat flags (territory wars, fort sieges) are not modelled, so
             // the `else` branch of Java's cursed/flag checks always runs.
@@ -302,16 +293,16 @@ impl World {
 
     /// Java `Creature.calculateRewards(killer)`, overridden by `Attackable` (exp, sp and the
     /// drops of the monster that just died). `killer` is Java's argument, which for a monster is
-    /// `getMainDamageDealer()` when there is one: the caller does not pick it yet.
-    // M4-EXP-01: `Attackable.calculateRewards` (the damage shares of the aggro list, party
-    //            shares, `addExpAndSp`), `getMustRewardExpSP()`.
+    /// `getMainDamageDealer()` when there is one (`creature_do_die` picks it).
     // M4-DROP-01: `doItemDrop(maxDealer or lastAttacker)` and `EventDropManager.doEventDrop`, in
     //             the same method, before the exp.
     pub(crate) fn calculate_rewards(&mut self, dying: ObjectId, killer: Option<ObjectId>) {
-        // M4-DROP-01: the drop half (`rewards/drop.rs`). Java returns here when the aggro list is
-        // empty (`aggro_list`), which skips the exp half as well.
+        // M4-DROP-01: the drop half (`rewards/drop.rs`). Java returns early when the aggro list is
+        // empty, which skips the exp as well (`reward_exp_and_sp` checks it too).
         self.drop_rewards(dying, killer);
-        // M4-EXP-01: the exp half goes here.
+        // Only the drops use the killer; the exp goes to everybody in the aggro list.
+        // M4-EXP-01: the exp and SP of the damage shares (`rewards/exp.rs`).
+        self.reward_exp_and_sp(dying);
     }
 
     /// Java `Player.onDieDropItem(killer)`: karma players and players killed by monsters may drop
@@ -324,15 +315,15 @@ impl World {
 
     /// Java `Player.calculateDeathExpPenalty(killer, atWar)`, called when `PLAYER_DELEVEL`.
     // M4-EXP-01: the exp loss, `_expBeforeDeath`, the lucky/advent/event checks (the zone check is
-    //            the caller's).
+    //            the caller's): `rewards/exp.rs`.
     pub(crate) fn calculate_death_exp_penalty(&mut self, dying: ObjectId, killer: ObjectId) {
-        let _ = (dying, killer);
+        self.player_calculate_death_exp_penalty(dying, killer);
     }
 
     /// Java `Player.restoreExp(percent)`: gives back the exp lost at death (`doRevive(power)`).
-    // M4-EXP-01: needs `_expBeforeDeath`.
+    // M4-EXP-01: `rewards/exp.rs`.
     pub(crate) fn restore_exp(&mut self, player: ObjectId, percent: f64) {
-        let _ = (player, percent);
+        self.player_restore_exp(player, percent);
     }
 
     // ------------------------------------------------------------------ the Die packet

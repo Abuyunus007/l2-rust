@@ -70,6 +70,8 @@ pub struct World {
     pub(crate) warned_no_path_service: bool,
     /// Creatures with a running move (Java `MovementTaskManager`'s pools).
     pub(crate) moving: Vec<ObjectId>,
+    /// The ids in `moving`, for the membership test.
+    pub(crate) moving_set: std::collections::HashSet<ObjectId>,
     /// Zone table, map regions and geoengine (see `zones.rs`, `teleport.rs`).
     pub(crate) zoning: crate::zones::ZoneContext,
     pub(crate) fences: HashMap<ObjectId, Fence>,
@@ -93,6 +95,8 @@ pub struct World {
     pub(crate) death: crate::death::DeathWorld,
     /// Items on the ground, the auto destroy list and the `itemsonground` timers (M4-DROP-01).
     pub(crate) ground: crate::ground_item::GroundWorld,
+    /// The experience tables and skill trees exp and levels read (M4-EXP-01, `rewards/exp.rs`).
+    pub(crate) rewards: crate::rewards::exp::ExpWorld,
 }
 
 impl World {
@@ -124,6 +128,7 @@ impl World {
             next_path_request_id: 0,
             warned_no_path_service: false,
             moving: Vec::new(),
+            moving_set: std::collections::HashSet::new(),
             zoning: crate::zones::ZoneContext::default(),
             fences: HashMap::new(),
             static_objects: HashMap::new(),
@@ -136,6 +141,7 @@ impl World {
             regen: RegenSettings::default(),
             death: crate::death::DeathWorld::default(),
             ground: crate::ground_item::GroundWorld::default(),
+            rewards: crate::rewards::exp::ExpWorld::default(),
         }
     }
 
@@ -290,6 +296,8 @@ impl World {
         }
         // Java: MovementTaskManager.
         self.update_movement();
+        // Java: AttackableThinkTaskManager.
+        self.think_attackables();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
         if self.tick % 2 == 0 {
             self.update_game_clock();

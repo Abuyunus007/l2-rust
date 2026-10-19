@@ -91,4 +91,12 @@ pub struct Npc {
     pub enchant_effect: i32,
     /// Java `_displayEffect`.
     pub display_effect: i32,
+    /// The Creature fields an NPC's movement uses: `_move`, `_isRunning`, `_isTeleporting`, the
+    /// pending path search and `AbstractAI`'s pawn move fields (M4-AI-01, see `movement.rs`).
+    pub movement: crate::movement::NpcMovement,
+    /// Java `getSpawn().getLocation()` as of the time this NPC spawned: where `returnHome` walks.
+    /// (0, 0, 0) for an NPC without a spawn.
+    pub spawn_point: (i32, i32, i32),
+    /// Java `Attackable._spawnTime`, in world milliseconds ([`crate::World::world_ms`]).
+    pub spawn_time_ms: i64,
 }

@@ -94,6 +94,13 @@ pub trait StaticData: Send + Sync {
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
 
+    /// `AccessLevel.canTakeAggro()` (`takeAggro` of `AccessLevels.xml`, default true): whether
+    /// monsters aggress a player of this level.
+    // FOLLOW-UP: the game server does not read `takeAggro` yet, so every level is aggressed.
+    fn can_take_aggro(&self, _level: i32) -> bool {
+        true
+    }
+
     /// `PlayerTemplate.getSafeFallHeight()` (`baseSafeFall`) of the player's class; Java's default
     /// when the template does not set it is 333.
     fn safe_fall_height(&self, _player: &PlayerData) -> i32 {
@@ -133,6 +140,11 @@ pub trait StaticData: Send + Sync {
     fn access_level_allows_fixed_res(&self, _level: i32) -> bool {
         false
     }
+
+    /// Java `AccessLevel.canGainExp()` (`gainExp` of `AccessLevels.xml`, default true).
+    fn access_level_can_gain_exp(&self, _level: i32) -> bool {
+        true
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -150,6 +162,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
+    }
+
+    fn can_take_aggro(&self, level: i32) -> bool {
+        (**self).can_take_aggro(level)
     }
 
     fn safe_fall_height(&self, player: &PlayerData) -> i32 {
@@ -178,6 +194,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level_allows_fixed_res(&self, level: i32) -> bool {
         (**self).access_level_allows_fixed_res(level)
+    }
+
+    fn access_level_can_gain_exp(&self, level: i32) -> bool {
+        (**self).access_level_can_gain_exp(level)
     }
 }
 
@@ -294,6 +314,8 @@ pub struct WorldSettings {
     pub ground: crate::ground_item::GroundItemSettings,
     /// The drop rates and level gap rules of `Rates.ini` (M4-DROP-01).
     pub drops: crate::rewards::drop::DropSettings,
+    /// The values exp, SP and levels read (M4-EXP-01).
+    pub exp: crate::rewards::exp::ExpSettings,
 }
 
 impl Default for WorldSettings {
@@ -335,6 +357,7 @@ impl Default for WorldSettings {
             death: crate::death::DeathSettings::default(),
             ground: crate::ground_item::GroundItemSettings::default(),
             drops: crate::rewards::drop::DropSettings::default(),
+            exp: crate::rewards::exp::ExpSettings::default(),
         }
     }
 }

@@ -1,7 +1,7 @@
 //! The core admin commands: `//admin` (the panels), `//spawn`, `//teleport`..., `//goto`,
-//! `//kill`, `//heal`.
+//! `//heal`. The combat ones (`//kill`, `//res`) are in `combat.rs`.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminAdmin,AdminSpawn,
-// Java: AdminTeleport,AdminGoto,AdminKill,AdminHeal,AdminHtml}.java
+// Java: AdminTeleport,AdminGoto,AdminHeal,AdminHtml}.java
 //
 // Only the commands the card names are here (plus the few the panels link to and `//goto`
 // needs); every other command of those classes answers "The command '...' does not exist!" like
@@ -9,17 +9,16 @@
 // does what the Java `onCommand` branch does, including its odd corners.
 //
 // Left out, with the system that brings it:
-// - Death (M4): `//kill` deletes an NPC and only logs for a player.
 // - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml and
-//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here a spawned NPC lives until the server
-//   stops and has no respawn (FOLLOW-UP: spawn tables, M4).
+//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here the spawn lives until the server stops
+//   (its respawn is ported, `respawn.rs`), but it is not written anywhere (FOLLOW-UP).
 // - Jail (`Player.isJailed`), instances, effects (`stopAllEffects`), the DB update of
 //   `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
-use tracing::{debug, info, warn};
+use tracing::warn;
 
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, is_numeric, parse_int};
 use crate::objects::ObjectKind;
@@ -62,8 +61,6 @@ pub(crate) fn register_core(handlers: &mut AdminHandlers) {
         ("admin_goup", admin_teleport),
         ("admin_godown", admin_teleport),
         ("admin_goto", admin_goto),
-        ("admin_kill", admin_kill),
-        ("admin_kill_monster", admin_kill),
         ("admin_heal", admin_heal),
     ];
     for (command, handler) in table {
@@ -72,7 +69,7 @@ pub(crate) fn register_core(handlers: &mut AdminHandlers) {
 }
 
 /// Java `String.split(" ")`: trailing empty strings are dropped.
-fn java_split_space(text: &str) -> Vec<&str> {
+pub(crate) fn java_split_space(text: &str) -> Vec<&str> {
     let mut parts: Vec<&str> = text.split(' ').collect();
     while parts.len() > 1 && parts.last().is_some_and(|p| p.is_empty()) {
         parts.pop();
@@ -207,6 +204,9 @@ fn spawn_monster(
     // A template that does not exist makes `template.isFakePlayer()` throw: the panel again.
     let template = template.ok_or(())?;
     let (template_id, name, fake_player) = (template.id, template.name.clone(), template.fake_player);
+    // FOLLOW-UP(M4): a raid boss goes through `RaidBossSpawnManager` (its own table, and a respawn
+    // of 12 to 36 hours). Here it is a plain spawn that does not respawn.
+    let is_raid = template.npc_type == "RaidBoss";
 
     // `FakePlayersConfig.FAKE_PLAYERS_ENABLED` is off (fake players are not ported).
     if fake_player {
@@ -219,14 +219,19 @@ fn spawn_monster(
         .or_else(|| world.creature_position(gm))
         .ok_or(())?;
     let heading = world.players.get(&gm).map_or(0, |p| p.core.heading);
-    // FOLLOW-UP(M4): `RaidBossSpawnManager.isDefined`, `addNewSpawn` for raid bosses; the spawn is
-    // not stored in the datapack (`permanent`) and `respawn_time` has no respawn to set.
-    debug!("{gm}: spawn of {template_id} x{mob_count}, respawn {respawn_time}s, permanent {permanent}");
-    for _ in 0..mob_count {
-        if world.spawn_npc_at(template_id, x, y, z, heading).is_none() {
-            world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
-            return Ok(());
-        }
+    // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `init()`, and
+    // `stopRespawn()` when the spawn is not permanent or has no delay.
+    let created = world.admin_spawn(
+        template_id,
+        (x, y, z),
+        heading,
+        mob_count,
+        respawn_time,
+        permanent && !is_raid,
+    );
+    if i64::try_from(created.len()).unwrap_or(i64::MAX) < i64::from(mob_count) {
+        world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
+        return Ok(());
     }
     world.send_sys_message(gm, &format!("Created {name} on {}", target.0));
     Ok(())
@@ -256,8 +261,14 @@ fn spawn_at(world: &mut World, gm: ObjectId, command: &str) -> Result<(), ()> {
         world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
         return Ok(());
     }
-    // FOLLOW-UP(M4): `SpawnData.addNewSpawn` stores it in the datapack; here it is not saved.
-    match world.spawn_npc_at(id, x, y, z, heading) {
+    // Java `spawnMonster(activeChar, id, x, y, z, h)`: `setAmount(1)`, `setRespawnDelay(60)`,
+    // `SpawnData.addNewSpawn` (permanent: FOLLOW-UP(M4), the datapack is not written), `init()`.
+    // The NPC comes back 60 seconds after it dies.
+    match world
+        .admin_spawn(id, (x, y, z), heading, 1, 60, true)
+        .last()
+        .copied()
+    {
         Some(npc) => {
             world.broadcast_info(npc);
             world.send_sys_message(gm, &format!("Created {name} on {}", target.0));
@@ -766,85 +777,6 @@ fn admin_goto(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     // "When no predefined location or player found, try to move to NPC."
     world.admin_command(gm, &format!("admin_list_positions {target_name} 1"), false);
     Ok(())
-}
-
-// -------------------------------------------------------------------------------- AdminKill
-
-/// Java `AdminKill.onCommand`. NOTE(java-quirk): `//kill_monster` is the same command as
-/// `//kill`, it also kills players.
-fn admin_kill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
-    let mut st = Tokens::spaces(command);
-    st.next_token(); // skip command
-    if !st.has_more() {
-        match world.target_of(gm).filter(|t| world.is_creature_kind(*t)) {
-            Some(target) => kill(world, gm, target),
-            None => world.invalid_target(gm),
-        }
-        return Ok(());
-    }
-
-    let Some(first) = st.next_token() else {
-        return Ok(());
-    };
-    if let Some(player) = world.player_by_name(first) {
-        if st.has_more() {
-            let radius = st.next_token().map(parse_int);
-            match radius {
-                Some(Ok(radius)) => {
-                    kill_in_range(world, gm, player, radius);
-                    world.send_sys_message(
-                        gm,
-                        &format!("Killed all characters within a {radius} unit radius."),
-                    );
-                }
-                _ => world.send_sys_message(gm, "Invalid radius."),
-            }
-            return Ok(());
-        }
-        kill(world, gm, player);
-    } else {
-        match parse_int(first) {
-            Ok(radius) => {
-                kill_in_range(world, gm, gm, radius);
-                world.send_sys_message(
-                    gm,
-                    &format!("Killed all characters within a {radius} unit radius."),
-                );
-            }
-            Err(_) => world.send_sys_message(gm, "Usage: //kill <player_name | radius>"),
-        }
-    }
-    Ok(())
-}
-
-/// `World.forEachVisibleObjectInRange(center, Creature.class, radius, ...)` minus the GM.
-fn kill_in_range(world: &mut World, gm: ObjectId, center: ObjectId, radius: i32) {
-    let victims: Vec<ObjectId> = world
-        .visible_objects_in_range(center, radius)
-        .into_iter()
-        .filter(|o| *o != gm && world.is_creature_kind(*o))
-        .collect();
-    for victim in victims {
-        kill(world, gm, victim);
-    }
-}
-
-/// Java `AdminKill.kill`: `reduceCurrentHp(maxHp + 1, ...)`. Death is M4.
-fn kill(world: &mut World, gm: ObjectId, target: ObjectId) {
-    match world.objects.get(&target).map(|e| e.kind) {
-        Some(ObjectKind::Player) => {
-            // FOLLOW-UP(M4): `stopAllEffects()` for a non-GM and `reduceCurrentHp(maxHp + maxCp +
-            // 1)` -> `doDie`.
-            info!("{gm}: //kill {target}: a player's death is M4, nothing happens yet");
-        }
-        Some(ObjectKind::Npc) => {
-            // FOLLOW-UP(M4): real death (`doDie`: corpse, decay, rewards, respawn). Until then
-            // the NPC is simply taken out of the world.
-            info!("{gm}: //kill {target}: death is M4, the NPC is deleted instead");
-            world.delete_npc(target);
-        }
-        _ => debug!("{gm}: //kill {target}: not a character or NPC; nothing to kill yet"),
-    }
 }
 
 // -------------------------------------------------------------------------------- AdminHeal

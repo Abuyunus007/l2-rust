@@ -1,5 +1,8 @@
-//! Player movement: `MoveToLocation` -> checks (geodata, pathfinding) -> per-tick position
+//! Creature movement: `MoveToLocation` -> checks (geodata, pathfinding) -> per-tick position
 //! updates -> `MoveToLocation` / `StopMove` broadcasts, `CannotMoveAnymore`, `ValidatePosition`.
+//! Players and NPCs share it, as they share Java's `Creature`; the NPC branches of Java's code
+//! (no cursor keys, the `z` of the valid location, the closest-point search of an attackable,
+//! the teleport home on a jump of the ground layer) are marked where they are.
 // Java: org/l2jmobius/gameserver/entity/actor/Creature.java (moveToLocation, moveToNextRoutePoint,
 //       updatePosition, stopMove, broadcastMoveToLocation, isOnGeodataPath, setSyncedXYZ)
 // Java: org/l2jmobius/gameserver/taskmanagers/MovementTaskManager.java
@@ -10,6 +13,15 @@
 //       notifyActionArrivedBlocked)
 // Java: org/l2jmobius/gameserver/entity/actor/Player.java (isFalling, last server position,
 //       client position)
+//
+// # NPCs (M4-AI-01)
+// An NPC keeps `_move`, `isRunning()`, `isTeleporting()`, the pending path search and the AI's
+// pawn fields in `Npc::movement` ([`NpcMovement`]); every function here reaches them through
+// `mv_of` / `mv_slot` / `pawn_of`, so there is one code path. The AI's `moveTo` /
+// `moveToPawn` / `clientStopMoving` / `notifyActionArrived` for NPCs are `ai_move_to`,
+// `move_to_pawn` (`interact.rs`), `client_stop_moving`, `npc_notify_action_arrived`
+// (`ai/attackable.rs`). What an AI move broadcasts once its path search is back is remembered in
+// the pending search ([`AfterMove`]).
 //
 // # Time
 // Java's movement manager calls `updatePosition` for players every 50 ms, but the position only
@@ -32,7 +44,8 @@
 //   here (direct move, the target's collision, the `ATTACK` probe; M4-COMBAT-01).
 // - Doors and fences: M3-DOOR-01 (`doors_between`, the region door lists). The geoengine's own
 //   obstacle hook is used by every check that goes through it.
-// - NPC movement (`MoveToPawn`, attackable teleport back): M4.
+// - The AI revalidate task (`ThreadPool.schedule(notifyActionArrivedRevalidate, 2000)` of a
+//   walk longer than 3 s): an attackable thinks every second anyway.
 
 use l2_geo::coords::{geo_x, geo_y};
 use l2_geo::{GeoLocation, Location, PathRequest, PathResult};
@@ -169,11 +182,65 @@ pub struct MoveCalc {
     geo_checks: bool,
 }
 
+/// What an AI move does once its path search comes back (the end of `AbstractAI.moveTo` /
+/// `moveToPawn`, which Java runs right after `moveToLocation`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub(crate) enum AfterMove {
+    /// A player's move: the intention decides (see `World::on_path_found`).
+    #[default]
+    Player,
+    /// `AbstractAI.moveTo`: `broadcastMoveToLocation()`.
+    MoveTo,
+    /// `AbstractAI.moveToPawn`: `MoveToPawn` or `MoveToLocation`.
+    ToPawn(ObjectId),
+}
+
+/// The search for the closest reachable point that an attackable makes when the path to its
+/// destination was not found (the loop in `Creature.moveToLocation`).
+#[derive(Debug, Clone, PartialEq)]
+struct ClosestSearch {
+    candidates: Vec<(i32, i32)>,
+    next: usize,
+    short_distance: f64,
+    /// The best candidate so far: its path and the point.
+    best: Option<(Vec<GeoLocation>, i32, i32)>,
+    /// The answer of the search for the real destination (Java keeps it in `move.geoPath`).
+    fallback: Option<Vec<GeoLocation>>,
+    /// The candidate the live request is for.
+    asked: (i32, i32),
+    /// `tempDistance` of that candidate.
+    asked_distance: f64,
+}
+
 /// A path request in flight.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PendingPath {
     pub request_id: u64,
     calc: MoveCalc,
+    after: AfterMove,
+    closest: Option<ClosestSearch>,
+}
+
+/// What an NPC keeps of Java's `Creature` / `AbstractAI` movement fields (players keep theirs in
+/// [`MovementState`]).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NpcMovement {
+    /// Java `_move`.
+    pub mv: Option<MoveData>,
+    /// Java `isRunning()`. NPCs are created walking (`Attackable.onSpawn` -> `setWalking()`).
+    pub running: bool,
+    /// Java `isTeleporting()`.
+    pub teleporting: bool,
+    pending: Option<PendingPath>,
+    /// `AbstractAI._target`, `_clientMovingToPawnOffset`, `_moveToPawnTimeout`.
+    pub pawn: crate::interact::PawnState,
+}
+
+impl NpcMovement {
+    /// True while a path search for this NPC is out.
+    pub fn is_waiting_for_path(&self) -> bool {
+        self.pending.is_some()
+    }
 }
 
 /// Movement state of one player (what Java keeps in `Creature`/`Player` fields).
@@ -316,16 +383,70 @@ impl World {
 
     /// Java `Creature.isMoving()`.
     pub fn is_moving(&self, id: ObjectId) -> bool {
-        self.players.get(&id).is_some_and(|p| p.movement.is_moving())
+        self.mv_of(id).is_some()
     }
 
-    /// Java `getXdestination()`, `getYdestination()`, `getZdestination()`: where the player is
+    /// Java `_move` of a player or an NPC.
+    pub(crate) fn mv_of(&self, id: ObjectId) -> Option<&MoveData> {
+        if let Some(p) = self.players.get(&id) {
+            return p.movement.mv.as_ref();
+        }
+        self.npcs.get(&id)?.movement.mv.as_ref()
+    }
+
+    /// The `_move` field itself, to set or clear.
+    pub(crate) fn mv_slot(&mut self, id: ObjectId) -> Option<&mut Option<MoveData>> {
+        if let Some(p) = self.players.get_mut(&id) {
+            return Some(&mut p.movement.mv);
+        }
+        self.npcs.get_mut(&id).map(|n| &mut n.movement.mv)
+    }
+
+    fn pending_slot(&mut self, id: ObjectId) -> Option<&mut Option<PendingPath>> {
+        if let Some(p) = self.players.get_mut(&id) {
+            return Some(&mut p.movement.pending);
+        }
+        self.npcs.get_mut(&id).map(|n| &mut n.movement.pending)
+    }
+
+    /// The `AbstractAI` pawn fields (`_target`, `_clientMovingToPawnOffset`, ...) of a player or
+    /// an NPC.
+    pub(crate) fn pawn_of(&self, id: ObjectId) -> Option<&crate::interact::PawnState> {
+        if let Some(p) = self.players.get(&id) {
+            return Some(&p.movement.pawn);
+        }
+        self.npcs.get(&id).map(|n| &n.movement.pawn)
+    }
+
+    pub(crate) fn pawn_mut(&mut self, id: ObjectId) -> Option<&mut crate::interact::PawnState> {
+        if let Some(p) = self.players.get_mut(&id) {
+            return Some(&mut p.movement.pawn);
+        }
+        self.npcs.get_mut(&id).map(|n| &mut n.movement.pawn)
+    }
+
+    /// Java `_cursorKeyMovement`: keyboard movement is a player thing.
+    fn is_cursor_movement(&self, id: ObjectId) -> bool {
+        self.players
+            .get(&id)
+            .is_some_and(|p| p.movement.cursor_key_movement)
+    }
+
+    /// Java `isRunning()`.
+    pub fn is_running(&self, id: ObjectId) -> bool {
+        if let Some(p) = self.players.get(&id) {
+            return p.movement.running;
+        }
+        self.npcs.get(&id).is_some_and(|n| n.movement.running)
+    }
+
+    /// Java `getXdestination()`, `getYdestination()`, `getZdestination()`: where the creature is
     /// heading, or where it is when it stands still.
     pub fn destination_of(&self, id: ObjectId) -> Option<(i32, i32, i32)> {
-        let p = self.players.get(&id)?;
-        Some(match &p.movement.mv {
+        let core = self.core_of(id)?;
+        Some(match self.mv_of(id) {
             Some(mv) => (mv.x_destination, mv.y_destination, mv.z_destination),
-            None => (p.core.x, p.core.y, p.core.z),
+            None => (core.x, core.y, core.z),
         })
     }
 
@@ -610,18 +731,22 @@ impl World {
     }
 
     /// Java `AbstractAI.moveTo(x, y, z)`.
-    fn ai_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
+    pub(crate) fn ai_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
         if self.is_movement_disabled(id) {
             self.send(id, &ActionFailed);
             return;
         }
         // Set AI movement data: this is not a move to a pawn.
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.pawn.client_moving_to_pawn_offset = 0;
+        if let Some(pawn) = self.pawn_mut(id) {
+            pawn.client_moving_to_pawn_offset = 0;
         }
         match self.move_to_location(id, x, y, z, 0) {
             MoveStep::Finished => self.broadcast_move_to_location(id, false),
-            MoveStep::WaitingForPath => {}
+            MoveStep::WaitingForPath => {
+                if !self.is_player(id) {
+                    self.set_after_move(id, AfterMove::MoveTo);
+                }
+            }
         }
     }
 
@@ -650,13 +775,17 @@ impl World {
         if self.is_moving(id) {
             self.stop_move(id, loc);
         }
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.pawn.client_moving_to_pawn_offset = 0;
+        if let Some(pawn) = self.pawn_mut(id) {
+            pawn.client_moving_to_pawn_offset = 0;
         }
     }
 
     /// Java `CreatureAI.notifyActionArrived`.
     pub(crate) fn notify_action_arrived(&mut self, id: ObjectId) {
+        if self.is_npc(id) {
+            self.npc_notify_action_arrived(id);
+            return;
+        }
         // Java `canHandleAction`: spawned (or teleporting) and has an AI.
         let spawned = self.objects.get(&id).is_some_and(|e| e.spawned);
         let teleporting = self.players.get(&id).is_some_and(|p| p.movement.teleporting);
@@ -704,29 +833,27 @@ impl World {
     /// Java `Creature.stopMove(loc)`. Does not send anything but the `StopMove` broadcast.
     pub fn stop_move(&mut self, id: ObjectId, loc: Option<(i32, i32, i32, i32)>) {
         self.clear_pending_path(id);
-        let Some(player) = self.players.get_mut(&id) else {
+        let Some(slot) = self.mv_slot(id) else {
             return;
         };
         // Delete movement data of the Creature.
-        player.movement.mv = None;
+        *slot = None;
         if let Some((x, y, z, heading)) = loc {
             self.set_xyz(id, x, y, z);
-            if let Some(p) = self.players.get_mut(&id) {
-                p.core.heading = heading;
-            }
+            self.set_heading(id, heading);
             // `revalidateZone(true)`: zones are not modelled.
         }
-        let Some(p) = self.players.get(&id) else {
+        let Some(core) = self.core_of(id) else {
             return;
         };
         let packet = StopMove {
             object_id: id.0,
-            x: p.core.x,
-            y: p.core.y,
-            z: p.core.z,
-            heading: p.core.heading,
+            x: core.x,
+            y: core.y,
+            z: core.z,
+            heading: core.heading,
         };
-        self.broadcast_with_self(id, &packet);
+        self.broadcast_creature_packet(id, &packet);
     }
 
     /// Java `Creature.setXYZ` (the override): `(0, 0)` and positions outside the world are
@@ -747,14 +874,14 @@ impl World {
     /// coordinates in step.
     pub(crate) fn set_synced_xyz(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
         self.set_xyz(id, x, y, z);
-        if let Some(mv) = self.players.get_mut(&id).and_then(|p| p.movement.mv.as_mut()) {
+        if let Some(mv) = self.mv_slot(id).and_then(|m| m.as_mut()) {
             mv.x_accurate = f64::from(x);
             mv.y_accurate = f64::from(y);
         }
     }
 
     fn register_moving_object(&mut self, id: ObjectId) {
-        if !self.moving.contains(&id) {
+        if self.moving_set.insert(id) {
             self.moving.push(id);
         }
     }
@@ -764,38 +891,43 @@ impl World {
         if self.moving.is_empty() {
             return;
         }
-        let ids = self.moving.clone();
+        // Creatures that start moving while this runs (an arrival that starts the next move) are
+        // appended to `moving` and wait for the next tick, as in Java's pools.
+        let ids = std::mem::take(&mut self.moving);
         for id in ids {
-            if !self.moving.contains(&id) {
+            if !self.moving_set.contains(&id) {
                 continue;
             }
             if self.update_position(id) {
-                self.moving.retain(|m| *m != id);
+                self.moving_set.remove(&id);
+                // `creature.getAI().notifyActionArrived()`: `getAI()` makes an NPC's AI.
+                self.wake_ai(id);
                 self.notify_action_arrived(id);
+            } else {
+                self.moving.push(id);
             }
         }
     }
 
-    /// Java `Creature.updatePosition()` for a player. `true` when the movement is finished.
+    /// Java `Creature.updatePosition()`. `true` when the movement is finished.
     fn update_position(&mut self, id: ObjectId) -> bool {
         let spawned = self.objects.get(&id).is_some_and(|e| e.spawned);
         let game_ticks = self.game_ticks();
-        let speed = self.move_speed(id);
-        let instance = self.instance_id_of(id);
-        let collision = f64::from(self.stats(id).map_or(0.0, |s| s.collision_radius()));
-        let Some(player) = self.players.get_mut(&id) else {
+        let is_player = self.players.contains_key(&id);
+        let cursor = self.is_cursor_movement(id);
+        let Some(core) = self.core_of(id) else {
             return true;
         };
+        let (x_prev, y_prev, z_prev, heading) = (core.x, core.y, core.z, core.heading);
         if !spawned {
-            player.movement.mv = None;
+            if let Some(slot) = self.mv_slot(id) {
+                *slot = None;
+            }
             return true;
         }
-        let Some(mut mv) = player.movement.mv.take() else {
+        let Some(mut mv) = self.mv_slot(id).and_then(Option::take) else {
             return true;
         };
-        let (x_prev, y_prev, z_prev) = (player.core.x, player.core.y, player.core.z);
-        let heading = player.core.heading;
-        let cursor = player.movement.cursor_key_movement;
 
         // Check if this is the first update.
         if mv.move_timestamp == 0 {
@@ -804,18 +936,22 @@ impl World {
             mv.y_accurate = f64::from(y_prev);
         }
 
-        // Check if the position has already been calculated.
+        // Check if the position has already been calculated. (Every second world tick: the speed
+        // and the other stats below are only worked out when the position moves.)
         if mv.move_timestamp == game_ticks {
-            player.movement.mv = Some(mv);
+            self.put_move(id, mv);
             return false;
         }
 
+        let speed = self.move_speed(id);
+        let instance = self.instance_id_of(id);
+        let collision = f64::from(self.stats(id).map_or(0.0, |s| s.collision_radius()));
         let dx = f64::from(mv.x_destination) - mv.x_accurate;
         let dy = f64::from(mv.y_destination) - mv.y_accurate;
         let dz = f64::from(mv.z_destination.wrapping_sub(z_prev)); // Z coordinate will follow client values.
 
         // Java: `isPlayer() && !_isFlying`.
-        if cursor {
+        if is_player && cursor {
             // In case of cursor movement, avoid moving through obstacles.
             let (x, y) = front_probe(x_prev, y_prev, heading, speed);
             if !self.geo_can_move_to_target(
@@ -830,7 +966,7 @@ impl World {
                 self.stop_move(id, Some((x_prev, y_prev, z_prev, heading)));
                 return true;
             }
-        } else {
+        } else if is_player {
             // Mouse click movement.
             // Stop movement when player has clicked far away and intersected with an obstacle.
             let distance = (dx * dx + dy * dy).sqrt();
@@ -899,7 +1035,8 @@ impl World {
 
         // Target collision should be subtracted from current distance (the selected target's
         // when attacking, else the creature's own radius).
-        let collision = match self.target_of(id) {
+        let target = self.target_of(id);
+        let collision = match target {
             Some(target)
                 if self.intention_of(id) == Intention::Attack
                     && self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) =>
@@ -925,6 +1062,15 @@ impl World {
             let new_z = z_prev.wrapping_add(((dz * dist_fraction) + 0.5) as i32);
             mv.x_accurate += dx * dist_fraction;
             mv.y_accurate += dy * dist_fraction;
+
+            // Prevent attackables teleporting to another ground layer while moving.
+            if self.is_attackable_npc(id) && !is_floating && new_z.wrapping_sub(z_prev).abs() > 300 {
+                // Java leaves `_move` as it is; `teleToLocation` stops it right below.
+                self.put_move(id, mv);
+                self.attackable_back_to_spawn(id);
+                return true;
+            }
+
             // Set the position of the Creature to estimated after partial move.
             self.set_position(id, mv.x_accurate as i32, mv.y_accurate as i32, new_z);
         }
@@ -940,37 +1086,37 @@ impl World {
         if arrived && !on_path {
             self.broadcast_move_to_location(id, true);
         }
+        // Java also broadcasts for an attackable that has a Creature `_target`; an NPC's is only
+        // set by skills (M5).
         arrived
     }
 
     fn put_move(&mut self, id: ObjectId, mv: MoveData) {
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.mv = Some(mv);
+        if let Some(slot) = self.mv_slot(id) {
+            *slot = Some(mv);
         }
     }
 
     /// Java `Creature.moveToNextRoutePoint()`: on to the next node of the calculated path.
-    fn move_to_next_route_point(&mut self, id: ObjectId) -> bool {
+    pub(crate) fn move_to_next_route_point(&mut self, id: ObjectId) -> bool {
         let speed = self.move_speed(id);
         let disabled = self.is_movement_disabled(id);
         let game_ticks = self.game_ticks();
-        let Some(player) = self.players.get_mut(&id) else {
+        let Some(core) = self.core_of(id) else {
             return false;
         };
-        let Some(mv) = player.movement.mv.as_ref() else {
+        let (cur_x, cur_y) = (core.x, core.y);
+        let Some(slot) = self.mv_slot(id) else {
             return false;
         };
-        if !mv.is_on_geodata_path() {
+        let Some(mv) = slot.as_ref() else {
+            return false;
+        };
+        if !mv.is_on_geodata_path() || speed <= 0.0 || disabled {
             // Cancel the move action.
-            player.movement.mv = None;
+            *slot = None;
             return false;
         }
-        if speed <= 0.0 || disabled {
-            // Cancel the move action.
-            player.movement.mv = None;
-            return false;
-        }
-        let (cur_x, cur_y) = (player.core.x, player.core.y);
         let Some(path) = mv.geo_path.clone() else {
             return false;
         };
@@ -983,21 +1129,22 @@ impl World {
         new_move.geo_path_gty = mv.geo_path_gty;
         new_move.geo_path_accurate_tx = mv.geo_path_accurate_tx;
         new_move.geo_path_accurate_ty = mv.geo_path_accurate_ty;
-        let Some(next) = usize::try_from(new_move.on_geodata_path_index)
+        let Some((nx, ny, nz)) = usize::try_from(new_move.on_geodata_path_index)
             .ok()
             .and_then(|i| path.get(i))
+            .map(|n| (n.x(), n.y(), n.z()))
         else {
-            player.movement.mv = None;
+            *slot = None;
             return false;
         };
         if usize::try_from(old_index).is_ok_and(|i| i + 2 == path.len()) {
             new_move.x_destination = mv.geo_path_accurate_tx;
             new_move.y_destination = mv.geo_path_accurate_ty;
-            new_move.z_destination = next.z();
+            new_move.z_destination = nz;
         } else {
-            new_move.x_destination = next.x();
-            new_move.y_destination = next.y();
-            new_move.z_destination = next.z();
+            new_move.x_destination = nx;
+            new_move.y_destination = ny;
+            new_move.z_destination = nz;
         }
         new_move.geo_path = Some(path);
 
@@ -1005,15 +1152,17 @@ impl World {
         let ndx = f64::from(new_move.x_destination.wrapping_sub(cur_x));
         let ndy = f64::from(new_move.y_destination.wrapping_sub(cur_y));
         let distance = (ndx * ndx + ndy * ndy).sqrt();
-        if distance != 0.0 {
-            player.core.heading =
-                heading_from_points(cur_x, cur_y, new_move.x_destination, new_move.y_destination);
-        }
+        let heading = (distance != 0.0)
+            .then(|| heading_from_points(cur_x, cur_y, new_move.x_destination, new_move.y_destination));
 
-        // (The `ticksToMove > 3000 ms` revalidate task only makes the AI think; players don't.)
+        // (The `ticksToMove > 3000 ms` revalidate task only makes the AI think; see the NOTE at
+        // `complete_move`.)
         new_move.heading = 0; // Initial value for coordinate sync.
         new_move.move_start_time = game_ticks;
-        player.movement.mv = Some(new_move);
+        *slot = Some(new_move);
+        if let Some(heading) = heading {
+            self.set_heading(id, heading);
+        }
         self.register_moving_object(id);
 
         // Send a Server->Client packet MoveToLocation to the actor and all Player in its known players.
@@ -1021,15 +1170,15 @@ impl World {
         true
     }
 
-    /// Java `Creature.broadcastMoveToLocation(force)` for a player.
+    /// Java `Creature.broadcastMoveToLocation(force)`.
     pub(crate) fn broadcast_move_to_location(&mut self, id: ObjectId, force: bool) {
         let game_ticks = self.game_ticks();
-        let Some(p) = self.players.get_mut(&id) else {
+        let cursor = self.is_cursor_movement(id);
+        let Some(core) = self.core_of(id) else {
             return;
         };
-        let cursor = p.movement.cursor_key_movement;
-        let (cx, cy, cz) = (p.core.x, p.core.y, p.core.z);
-        let Some(mv) = p.movement.mv.as_mut() else {
+        let (cx, cy, cz) = (core.x, core.y, core.z);
+        let Some(mv) = self.mv_slot(id).and_then(|m| m.as_mut()) else {
             return;
         };
         // Broadcast MoveToLocation when forced or once per second.
@@ -1047,12 +1196,22 @@ impl World {
             y: cy,
             z: cz,
         };
-        self.broadcast_with_self(id, &packet);
+        if self.is_player(id) {
+            self.broadcast_with_self(id, &packet);
+            return;
+        }
+        // Not playable: Java sends `MoveToPawn` when the intention is ATTACK or FOLLOW and the
+        // Creature's `_target` is set. An NPC's `_target` is only set by its skills (M5; the
+        // AI's own target is another field), so the plain `MoveToLocation` is what goes out,
+        // when the region is on.
+        if self.are_region_neighbors_active(id) {
+            self.broadcast_packet(id, &packet);
+        }
     }
 
     // ------------------------------------------------------------------ moveToLocation
 
-    /// Java `Creature.moveToLocation(x, y, z, offset)` for a player.
+    /// Java `Creature.moveToLocation(x, y, z, offset)`.
     pub(crate) fn move_to_location(&mut self, id: ObjectId, x: i32, y: i32, z: i32, offset: i32) -> MoveStep {
         let Some((calc, need_path)) = self.prepare_move(id, x, y, z, offset) else {
             return MoveStep::Finished;
@@ -1063,8 +1222,13 @@ impl World {
         }
         match self.submit_path_request(id, &calc) {
             Some(request_id) => {
-                if let Some(p) = self.players.get_mut(&id) {
-                    p.movement.pending = Some(PendingPath { request_id, calc });
+                if let Some(slot) = self.pending_slot(id) {
+                    *slot = Some(PendingPath {
+                        request_id,
+                        calc,
+                        after: AfterMove::Player,
+                        closest: None,
+                    });
                 }
                 MoveStep::WaitingForPath
             }
@@ -1073,6 +1237,14 @@ impl World {
                 self.complete_move(id, calc, Some(None));
                 MoveStep::Finished
             }
+        }
+    }
+
+    /// Tells the pending path search what to broadcast when it comes back (an NPC's
+    /// `moveTo` / `moveToPawn` do that right after `moveToLocation` in Java).
+    pub(crate) fn set_after_move(&mut self, id: ObjectId, after: AfterMove) {
+        if let Some(Some(pending)) = self.pending_slot(id) {
+            pending.after = after;
         }
     }
 
@@ -1092,6 +1264,7 @@ impl World {
             self.send(id, &ActionFailed);
             return None;
         }
+        let is_player = self.players.contains_key(&id);
 
         let (mut x, mut y, mut z) = (x_value, y_value, z_value);
         let mut offset = offset_value;
@@ -1131,7 +1304,9 @@ impl World {
 
             // If no distance to go through, the movement is canceled.
             if distance < 1.0 || (distance - f64::from(offset)) <= 0.0 {
-                // Notify the AI that the Creature is arrived at destination.
+                // Notify the AI that the Creature is arrived at destination (`getAI()` makes an
+                // NPC's AI).
+                self.wake_ai(id);
                 self.notify_action_arrived(id);
                 self.send(id, &ActionFailed);
                 return None;
@@ -1158,10 +1333,7 @@ impl World {
         let region_active = self.are_region_neighbors_active(id);
         mv.disregarding_geodata = !region_active;
         mv.on_geodata_path_index = -1; // Initialize not on geodata path.
-        let cursor = self
-            .players
-            .get(&id)
-            .is_some_and(|p| p.movement.cursor_key_movement);
+        let cursor = self.is_cursor_movement(id);
         let mut original = (x, y, z);
         let mut original_distance = distance;
         let (mut gtx, mut gty) = (0, 0);
@@ -1174,22 +1346,31 @@ impl World {
                 original_distance = distance;
                 gtx = original.0.wrapping_sub(WORLD_X_MIN) >> 4;
                 gty = original.1.wrapping_sub(WORLD_Y_MIN) >> 4;
-                if let Some(current) = self.players.get_mut(&id).and_then(|p| p.movement.mv.as_mut())
+                let mut already_there = false;
+                if let Some(current) = self.mv_slot(id).and_then(|m| m.as_mut())
                     && current.is_on_geodata_path()
                 {
                     if gtx == current.geo_path_gtx && gty == current.geo_path_gty {
-                        self.send(id, &ActionFailed);
-                        return None;
+                        already_there = true;
+                    } else {
+                        current.on_geodata_path_index = -1; // Set not on geodata path.
                     }
-                    current.on_geodata_path_index = -1; // Set not on geodata path.
+                }
+                if already_there {
+                    self.send(id, &ActionFailed);
+                    return None;
                 }
 
                 // Player attack with direct movement.
-                let direct_move = self.intention_of(id) == Intention::Attack;
-                let destination_in_water = self.is_water_at(x, y, z);
+                let direct_move = is_player && self.intention_of(id) == Intention::Attack;
+                let destination_in_water = is_player && self.is_water_at(x, y, z);
                 if direct_move
                     || (!destination_in_water
-                        && distance <= 3000.0 // Should be able to click far away and move.
+                        && !(is_player && distance > 3000.0) // Should be able to click far away and move.
+                        // Monsters can move on ledges.
+                        && !(self.is_monster(id)
+                            && dz.abs() > 100.0
+                            && self.target_of(id).is_some_and(|t| self.can_see_target(id, t)))
                         && !(cur_z.wrapping_sub(z) > 300 && distance < 300.0))
                 // Prohibit correcting destination if character wants to fall.
                 {
@@ -1201,7 +1382,10 @@ impl World {
                     );
                     x = destination.x;
                     y = destination.y;
-                    // Players keep the z they asked for (`if (!isPlayer()) z = destination.getZ()`).
+                    // Players keep the z they asked for.
+                    if !is_player {
+                        z = destination.z;
+                    }
                     dx = f64::from(x.wrapping_sub(cur_x));
                     dy = f64::from(y.wrapping_sub(cur_y));
                     dz = f64::from(z.wrapping_sub(cur_z));
@@ -1240,9 +1424,20 @@ impl World {
         Some((calc, need_path))
     }
 
-    /// Sends the path request. `Some(request id)` when it is out.
+    /// Sends the path request for the move in `calc`. `Some(request id)` when it is out.
     fn submit_path_request(&mut self, id: ObjectId, calc: &MoveCalc) -> Option<u64> {
+        self.submit_path(
+            id,
+            Location::new(calc.cur_x, calc.cur_y, calc.cur_z),
+            Location::new(calc.original_x, calc.original_y, calc.original_z),
+        )
+    }
+
+    /// Sends one path request of `id`. `Some(request id)` when it is out.
+    fn submit_path(&mut self, id: ObjectId, from: Location, to: Location) -> Option<u64> {
         let instance = self.instance_id_of(id);
+        // Java `findPath(..., isPlayer())`: only players get the multi-pass line of sight filter.
+        let playable = self.players.contains_key(&id);
         // The doors as they are now travel with the request (D-14: workers never see the world).
         let obstacles = if self.path_requests.is_some() {
             Some(self.door_snapshot())
@@ -1260,15 +1455,9 @@ impl World {
         };
         self.next_path_request_id += 1;
         let request_id = self.next_path_request_id;
-        let request = PathRequest::new(
-            requester_of(id),
-            request_id,
-            Location::new(calc.cur_x, calc.cur_y, calc.cur_z),
-            Location::new(calc.original_x, calc.original_y, calc.original_z),
-            obstacles?,
-        )
-        .with_instance(instance)
-        .with_playable(true);
+        let request = PathRequest::new(requester_of(id), request_id, from, to, obstacles?)
+            .with_instance(instance)
+            .with_playable(playable);
         if sink.request(request) {
             Some(request_id)
         } else {
@@ -1279,10 +1468,7 @@ impl World {
 
     /// Drops the pending path search of `id`, if any.
     pub(crate) fn clear_pending_path(&mut self, id: ObjectId) {
-        let had = self
-            .players
-            .get_mut(&id)
-            .is_some_and(|p| p.movement.pending.take().is_some());
+        let had = self.pending_slot(id).is_some_and(|slot| slot.take().is_some());
         if had && let Some(sink) = self.path_requests.as_mut() {
             sink.cancel(requester_of(id));
         }
@@ -1292,16 +1478,143 @@ impl World {
     /// for any more (newer request, stop, left the world) is dropped.
     pub(crate) fn on_path_found(&mut self, requester: u64, request_id: u64, result: PathResult) {
         let requester = object_of_requester(requester);
-        let Some(player) = self.players.get_mut(&requester) else {
+        let Some(slot) = self.pending_slot(requester) else {
             return;
         };
-        match player.movement.pending.take() {
+        match slot.take() {
             Some(pending) if pending.request_id == request_id => {
                 let path = result.path.ok();
-                self.complete_move(requester, pending.calc, Some(path));
+                self.continue_path(requester, pending, path);
+            }
+            other => {
+                // Not the request this creature waits for (or none): put a newer one back.
+                *slot = other;
+                debug!("{requester}: stale path result {request_id} dropped");
+            }
+        }
+    }
+
+    /// The answer to the live request of `pending` (`path` is Java's return value of
+    /// `findPath`): either the next search of an attackable's closest-point loop, or the end of
+    /// the move.
+    fn continue_path(&mut self, id: ObjectId, mut pending: PendingPath, path: Option<Vec<GeoLocation>>) {
+        let found = path.as_ref().is_some_and(|p| p.len() > 1);
+        let mut search = match pending.closest.take() {
+            Some(mut search) => {
+                // A candidate of the loop.
+                if found && let Some(path) = path {
+                    search.short_distance = search.asked_distance;
+                    search.best = Some((path, search.asked.0, search.asked.1));
+                }
+                search
+            }
+            None => {
+                // The search for the real destination. If no path was found and this is an
+                // Attackable, attempt to find closest path to destination.
+                if !found && self.is_attackable_npc(id) {
+                    match Self::closest_search(&pending.calc) {
+                        Some(mut search) => {
+                            search.fallback = path;
+                            search
+                        }
+                        // Nothing to try: `found` stays false.
+                        None => return self.finish_path(id, pending, path, None),
+                    }
+                } else {
+                    return self.finish_path(id, pending, path, None);
+                }
+            }
+        };
+        // Ask for the next candidate that is closer than the best so far.
+        while search.next < search.candidates.len() {
+            let (sx, sy) = search.candidates[search.next];
+            search.next += 1;
+            let tdx = f64::from(sx.wrapping_sub(pending.calc.original_x));
+            let tdy = f64::from(sy.wrapping_sub(pending.calc.original_y));
+            let temp_distance = (tdx * tdx + tdy * tdy).sqrt();
+            if temp_distance >= search.short_distance {
+                continue;
+            }
+            let from = Location::new(pending.calc.cur_x, pending.calc.cur_y, pending.calc.cur_z);
+            let to = Location::new(sx, sy, pending.calc.original_z);
+            if let Some(request_id) = self.submit_path(id, from, to) {
+                search.asked = (sx, sy);
+                search.asked_distance = temp_distance;
+                pending.request_id = request_id;
+                pending.closest = Some(search);
+                if let Some(slot) = self.pending_slot(id) {
+                    *slot = Some(pending);
+                }
+                return;
+            }
+            // Refused: Java's `findPath` would have returned null for it; try the next one.
+        }
+        // The loop is over.
+        let ClosestSearch { fallback, best, .. } = search;
+        match best {
+            Some((path, x, y)) => self.finish_path(id, pending, Some(path), Some((x, y))),
+            None => self.finish_path(id, pending, fallback, None),
+        }
+    }
+
+    /// The candidate points of the closest-point loop of `Creature.moveToLocation`.
+    fn closest_search(calc: &MoveCalc) -> Option<ClosestSearch> {
+        let mut x_min = calc.cur_x.min(calc.original_x);
+        let mut x_max = calc.cur_x.max(calc.original_x);
+        let mut y_min = calc.cur_y.min(calc.original_y);
+        let mut y_max = calc.cur_y.max(calc.original_y);
+        let max_diff = (x_max.wrapping_sub(x_min))
+            .max(y_max.wrapping_sub(y_min))
+            .min(500);
+        x_min = x_min.wrapping_sub(max_diff);
+        x_max = x_max.wrapping_add(max_diff);
+        y_min = y_min.wrapping_sub(max_diff);
+        y_max = y_max.wrapping_add(max_diff);
+        let mut candidates = Vec::new();
+        let mut sx = x_min;
+        while sx < x_max {
+            let mut sy = y_min;
+            while sy < y_max {
+                candidates.push((sx, sy));
+                sy += 500;
+            }
+            sx += 500;
+        }
+        if candidates.is_empty() {
+            return None;
+        }
+        Some(ClosestSearch {
+            candidates,
+            next: 0,
+            short_distance: f64::MAX,
+            best: None,
+            fallback: None,
+            asked: (0, 0),
+            asked_distance: 0.0,
+        })
+    }
+
+    /// The end of a path search: `moveToLocation`'s second half, then what the caller of
+    /// `moveToLocation` sends. `closest` is the point the path leads to when it is not the
+    /// destination (the closest-point loop).
+    fn finish_path(
+        &mut self,
+        id: ObjectId,
+        pending: PendingPath,
+        path: Option<Vec<GeoLocation>>,
+        closest: Option<(i32, i32)>,
+    ) {
+        let PendingPath { mut calc, after, .. } = pending;
+        if let Some((x, y)) = closest {
+            calc.original_x = x;
+            calc.original_y = y;
+        }
+        self.complete_move(id, calc, Some(path));
+        match after {
+            AfterMove::Player => {
                 // A pawn move (`moveToPawn` of the interact or attack intention, or the follow
                 // task) broadcasts `MoveToPawn`.
-                let pawn = self.players.get(&requester).and_then(|p| {
+                let pawn = self.players.get(&id).and_then(|p| {
                     matches!(
                         p.movement.intention,
                         Intention::Interact | Intention::Attack | Intention::PickUp
@@ -1311,19 +1624,16 @@ impl World {
                 });
                 if let Some(pawn) = pawn {
                     // The move was a `moveToPawn` (a click on something far away).
-                    self.broadcast_pawn_move(requester, pawn);
+                    self.broadcast_pawn_move(id, pawn);
                 } else {
-                    if let Some(p) = self.players.get_mut(&requester) {
+                    if let Some(p) = self.players.get_mut(&id) {
                         p.movement.intention = Intention::MoveTo;
                     }
-                    self.broadcast_move_to_location(requester, false);
+                    self.broadcast_move_to_location(id, false);
                 }
             }
-            other => {
-                // Not the request this player waits for (or none): put a newer one back.
-                player.movement.pending = other;
-                debug!("{requester}: stale path result {request_id} dropped");
-            }
+            AfterMove::MoveTo => self.broadcast_move_to_location(id, false),
+            AfterMove::ToPawn(pawn) => self.broadcast_pawn_move(id, pawn),
         }
     }
 
@@ -1331,6 +1641,7 @@ impl World {
     /// for Java's `null` path and `Some(Some(nodes))` for a found one.
     fn complete_move(&mut self, id: ObjectId, mut calc: MoveCalc, path: Option<Option<Vec<GeoLocation>>>) {
         let instance = self.instance_id_of(id);
+        let is_player = self.players.contains_key(&id);
         if let Some(found_path) = path {
             // Path calculation -- overrides previous movement check.
             calc.mv.geo_path = found_path;
@@ -1365,11 +1676,9 @@ impl World {
             // Verify destination when using mouse movement and no path is found.
             // NOTE(java-quirk): a path with fewer than two nodes still counts as "a path" here
             // (`geoPath == null` fails), so the destination is not corrected in that case.
-            let cursor = self
-                .players
-                .get(&id)
-                .is_some_and(|p| p.movement.cursor_key_movement);
-            if !cursor
+            let cursor = self.is_cursor_movement(id);
+            if is_player
+                && !cursor
                 && calc.mv.geo_path.is_none()
                 && calc.distance < 3000.0 // Should be able to click far away and move.
                 && !(calc.cur_z.wrapping_sub(calc.z) > 300 && calc.distance < 300.0)
@@ -1390,8 +1699,7 @@ impl World {
             }
 
             // If no distance to go through, the movement is canceled.
-            if calc.distance < 1.0 {
-                // Java: `(PATHFINDING > 0) || isPlayable()`; a player is always playable.
+            if calc.distance < 1.0 && (self.pathfinding_enabled() || is_player) {
                 // An attack or cast already in flight has to survive this, cancelling it is what
                 // strands melee.
                 if !matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
@@ -1404,7 +1712,10 @@ impl World {
 
         // (Flying and swimming add the z distance for the timing here; neither exists yet.)
         // Calculate the number of ticks between the current position and the destination: only
-        // used for the AI revalidate task, which does nothing for a player.
+        // used for the AI revalidate task (`ThreadPool.schedule(notifyActionArrivedRevalidate,
+        // 2000)` when the walk takes more than 3 s).
+        // NOTE: that task is not ported: it makes the AI think once, 2 s into a long walk. An
+        // attackable's AI thinks every second anyway, and nothing else this card moves uses it.
         let MoveCalc {
             x,
             y,
@@ -1423,11 +1734,9 @@ impl World {
         mv.move_start_time = self.game_ticks();
 
         self.clear_pending_path(id);
-        if let Some(p) = self.players.get_mut(&id) {
-            p.core.heading = heading_from_delta(cos, sin);
-            // Set the Creature _move object to MoveData object.
-            p.movement.mv = Some(mv);
-        }
+        self.set_heading(id, heading_from_delta(cos, sin));
+        // Set the Creature _move object to MoveData object.
+        self.put_move(id, mv);
         // Add the Creature to moving objects of the MovementTaskManager.
         self.register_moving_object(id);
     }
@@ -1436,9 +1745,6 @@ impl World {
 
     /// Java `getMoveSpeed()` of the stat engine: the run or walk (or swim) speed.
     pub fn move_speed(&self, id: ObjectId) -> f64 {
-        if !self.players.contains_key(&id) {
-            return 0.0;
-        }
         self.stats(id).map_or(0.0, |s| s.move_speed())
     }
 
@@ -1451,15 +1757,18 @@ impl World {
     /// Java `Creature.isMovementDisabled()` (stun, root, sleep, paralysis and immobilization are
     /// effects: M5).
     pub(crate) fn is_movement_disabled(&self, id: ObjectId) -> bool {
+        if let Some(n) = self.npcs.get(&id) {
+            return self.is_dead(id) || n.movement.teleporting;
+        }
         self.players.get(&id).is_none_or(|p| {
             self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_dead(id) || p.movement.teleporting
         })
     }
 
-    /// Java `isInsideZone(ZoneId.WATER) && !isInsideZone(ZoneId.CASTLE)`. Zones are not modelled
-    /// yet, so nobody is in water.
-    fn is_in_water(&self, _id: ObjectId) -> bool {
-        false
+    /// Java `isInsideZone(ZoneId.WATER) && !isInsideZone(ZoneId.CASTLE)`. Player zones are not
+    /// modelled yet, so no player is in water; an NPC is when it spawned in a water zone.
+    fn is_in_water(&self, id: ObjectId) -> bool {
+        self.npcs.get(&id).is_some_and(|n| n.in_water)
     }
 
     /// Is there a water zone at this point (`ZoneManager.getZone(x, y, z, WaterZone.class)`)?
@@ -1491,14 +1800,14 @@ impl World {
         self.geo.as_ref().is_some_and(|g| g.options().pathfinding > 0)
     }
 
-    fn geo_valid_location(&self, from: Location, to: Location, instance: i32) -> Location {
+    pub(crate) fn geo_valid_location(&self, from: Location, to: Location, instance: i32) -> Location {
         match &self.geo {
             Some(geo) => geo.valid_location_with(&self.obstacles(), from, to, instance),
             None => to,
         }
     }
 
-    fn geo_can_move_to_target(&self, from: Location, to: Location, instance: i32) -> bool {
+    pub(crate) fn geo_can_move_to_target(&self, from: Location, to: Location, instance: i32) -> bool {
         match &self.geo {
             Some(geo) => geo.can_move_to_target_with(&self.obstacles(), from, to, instance),
             None => true,

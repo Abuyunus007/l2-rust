@@ -52,6 +52,7 @@ pub mod zones;
 
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
 pub use ai::AiState;
+pub use ai::attackable::AiSettings;
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
@@ -66,7 +67,9 @@ pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
 pub use l2_util::{ObjectId, WorldRng};
-pub use movement::{Intention, MoveData, MovementState, PathRequests, object_of_requester, requester_of};
+pub use movement::{
+    Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
+};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
@@ -76,6 +79,7 @@ pub use player::{
 };
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};
+pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

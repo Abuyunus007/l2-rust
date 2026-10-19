@@ -360,8 +360,8 @@ impl World {
         // Consume arrows.
         self.reduce_arrow_count(id, crossbow);
         // Java `_move = null`: the move data goes without a `StopMove`.
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.mv = None;
+        if let Some(slot) = self.mv_slot(id) {
+            *slot = None;
         }
         let mut outcome = HitOutcome {
             miss,

@@ -5,7 +5,7 @@
 //! they hand the value to a queue and return.
 
 use crate::command::LeaveReason;
-use crate::player::{ItemData, PlayerData};
+use crate::player::{ItemData, PlayerData, SkillData};
 use l2_util::ObjectId;
 
 /// One player's connection.
@@ -46,6 +46,16 @@ pub enum PersistCommand {
     /// Java `ItemsOnGroundManager.run()` (only with `SaveDroppedItem`): `DELETE FROM
     /// itemsonground`, then one `INSERT` per row.
     SaveGroundItems(Vec<crate::ground_item::GroundItemRow>),
+    /// Java `Player.storeSkill` / `removeSkill`: `character_skills` rows of one character that
+    /// changed (a level up that teaches or takes skills), written when they change and not only
+    /// at the next full store. `upserts` are an `UPDATE` of the level when the row exists, else a
+    /// `REPLACE`, like Java; `removed` are skill ids whose row Java deletes. Applied in order with
+    /// the character's other commands.
+    SkillChanges {
+        owner: ObjectId,
+        upserts: Vec<SkillData>,
+        removed: Vec<i32>,
+    },
 }
 
 /// Messages for the login server link.

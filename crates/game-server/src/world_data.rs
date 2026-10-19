@@ -17,8 +17,8 @@ use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
     AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, DeathSettings,
-    DropSettings, GroundItemSettings, ItemStatic, PlayerData, RegenSettings, StatData, StatSettings,
-    StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
+    DropSettings, ExpSettings, GroundItemSettings, ItemStatic, PlayerData, RegenSettings, StatData,
+    StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -105,6 +105,8 @@ pub struct AccessLevels {
     levels: BTreeMap<i32, AccessLevelStatic>,
     /// The levels with `allowFixedRes="true"` (Java `AccessLevel.allowFixedRes()`).
     fixed_res: std::collections::BTreeSet<i32>,
+    /// The levels with `gainExp="false"` (Java `AccessLevel.canGainExp()`, default true).
+    no_gain_exp: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -191,6 +193,9 @@ impl AccessLevels {
                     if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
                         table.fixed_res.insert(level);
                     }
+                    if attribute(&e, "gainExp").is_some_and(|v| v.eq_ignore_ascii_case("false")) {
+                        table.no_gain_exp.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -211,6 +216,12 @@ impl AccessLevels {
     pub fn allows_fixed_res(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         self.fixed_res.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).canGainExp()`.
+    pub fn can_gain_exp(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        !self.no_gain_exp.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -328,6 +339,44 @@ impl StaticData for DatapackData {
     fn access_level_allows_fixed_res(&self, level: i32) -> bool {
         self.access.allows_fixed_res(level)
     }
+
+    fn access_level_can_gain_exp(&self, level: i32) -> bool {
+        self.access.can_gain_exp(level)
+    }
+}
+
+/// The values exp, SP and levels read (Java `RatesConfig`, `PlayerConfig`). `MaxSp` is a `long`
+/// the generated config keeps as a placeholder, so it comes from `Player.ini` here.
+pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
+    use l2_config::IniFile;
+
+    let r = &config.rates;
+    let p = &config.player;
+    let mut settings = ExpSettings {
+        rate_xp: r.rate_xp,
+        rate_sp: r.rate_sp,
+        monster_exp_max_level_difference: r.monster_exp_max_level_difference,
+        // Java: `if (RATE_KARMA_LOST == -1) RATE_KARMA_LOST = RATE_XP;`
+        rate_karma_lost: if r.rate_karma_lost == -1.0 {
+            r.rate_xp
+        } else {
+            r.rate_karma_lost
+        },
+        rate_karma_exp_lost: r.rate_karma_exp_lost,
+        player_delevel: p.player_delevel,
+        decrease_skill_level: p.decrease_skill_level,
+        auto_learn_skills: p.auto_learn_skills,
+        max_bonus_exp: p.max_bonus_exp,
+        max_bonus_sp: p.max_bonus_sp,
+        alt_party_range: p.alt_party_range,
+        ..ExpSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        // Java: `MAX_SP = getLong("MaxSp", 50000000000L) >= 0 ? that : Long.MAX_VALUE`.
+        let max_sp = ini.get_long("MaxSp", 50_000_000_000);
+        settings.max_sp = if max_sp >= 0 { max_sp } else { i64::MAX };
+    }
+    settings
 }
 
 /// The values dying and reviving read. `RespawnRestoreCP/HP/MP` are `()` placeholders in the
@@ -580,6 +629,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         death: death_settings(config, config_dir),
         ground: ground_item_settings(config, config_dir),
         drops: drop_settings(config, config_dir),
+        exp: exp_settings(config, config_dir),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
