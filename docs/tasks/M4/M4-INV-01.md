@@ -45,4 +45,5 @@ Equip, unequip, use, drop to the ground (hand-off to DROP-01), destroy items lik
 
 ## Notes from the orchestrator
 - Read `docs/design/m4-combat.md`, `docs/design/world-loop.md`, `docs/design/m3-world.md` first, then CLAUDE.md safety rules.
+- The stat engine is merged (M4-STAT-01, `crates/l2-world/src/stats/`): read stats through `world.stats(id)` (a read-only `StatView`: `p_atk(target)`, `p_def(target)`, `accuracy()`, `evasion_rate(target)`, `critical_hit(..)`, `p_atk_spd()`, `max_hp()`, ... named after the Java getters; grep the module). Equipment changes call `stats::on_equip` / `stats::on_unequip`; skills go through `stats::skills::add_skill` / `remove_skill`; `refresh_overloaded` and `refresh_expertise_penalty` exist; `refresh_max_vitals` keeps `core.max_*` in sync.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
