@@ -319,6 +319,8 @@ pub struct WorldSettings {
     pub drops: crate::rewards::drop::DropSettings,
     /// The values exp, SP and levels read (M4-EXP-01).
     pub exp: crate::rewards::exp::ExpSettings,
+    /// The values learning skills reads (M5-LEARN-01).
+    pub learn: crate::skills::learn::LearnSettings,
 }
 
 impl Default for WorldSettings {
@@ -362,6 +364,7 @@ impl Default for WorldSettings {
             ground: crate::ground_item::GroundItemSettings::default(),
             drops: crate::rewards::drop::DropSettings::default(),
             exp: crate::rewards::exp::ExpSettings::default(),
+            learn: crate::skills::learn::LearnSettings::default(),
         }
     }
 }

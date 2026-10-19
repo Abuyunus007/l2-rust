@@ -30,8 +30,8 @@
 //   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
 //   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), subclasses
 //   (`isSubClassActive`), clans and the tutorial quest event, scripts (D-05).
-// - `AutoLearnSkills = True`: needs the item requirements and `isSkillAllowed` of the skill trees;
-//   it falls back to the auto-get skills with a warning.
+// - `AutoLearnSkills = True` is `skills/learn.rs` (`give_available_skills`), with the item
+//   requirements of the skill trees.
 
 use std::sync::Arc;
 
@@ -112,14 +112,12 @@ pub struct ExpWorld {
     experience: Arc<ExperienceTable>,
     experience_loss: Arc<ExperienceLoss>,
     karma_loss: Arc<KarmaLoss>,
-    skill_trees: Arc<SkillTrees>,
-    /// `AutoLearnSkills = True` was announced once.
-    warned_auto_learn: bool,
+    pub(crate) skill_trees: Arc<SkillTrees>,
 }
 
 /// What a batch of skill changes writes: `character_skills` rows (Java `storeSkill`).
 #[derive(Debug, Default)]
-struct SkillWrites {
+pub(crate) struct SkillWrites {
     upserts: Vec<SkillData>,
     removed: Vec<i32>,
 }
@@ -139,7 +137,6 @@ impl World {
             experience_loss,
             karma_loss,
             skill_trees,
-            warned_auto_learn: false,
         };
     }
 
@@ -724,14 +721,17 @@ impl World {
     pub(crate) fn reward_skills(&mut self, id: ObjectId) {
         let mut writes = SkillWrites::default();
         // Give all normal skills if activated Auto-Learn is activated, included AutoGet skills.
-        if self.settings.exp.auto_learn_skills && !self.rewards.warned_auto_learn {
-            self.rewards.warned_auto_learn = true;
-            warn!(
-                "AutoLearnSkills = True is not ported yet (it needs the skill tree item requirements); \
-                 only the auto-get skills are given."
+        if self.settings.exp.auto_learn_skills {
+            self.give_available_skills(
+                id,
+                self.settings.learn.auto_learn_fs_skills,
+                true,
+                self.settings.learn.auto_learn_skills_without_items,
+                &mut writes,
             );
+        } else {
+            self.give_available_auto_get_skills(id, &mut writes);
         }
-        self.give_available_auto_get_skills(id, &mut writes);
 
         if self.settings.exp.decrease_skill_level && !self.is_gm(id) {
             self.check_player_skills(id, &mut writes);
@@ -791,7 +791,13 @@ impl World {
 
     /// Java `Player.addSkill(skill, true)`: the skill joins the player and the next store writes
     /// it (`writes` is the immediate `storeSkill`). `false` when no such skill exists.
-    fn learn_skill(&mut self, id: ObjectId, skill_id: i32, level: i32, writes: &mut SkillWrites) -> bool {
+    pub(crate) fn learn_skill(
+        &mut self,
+        id: ObjectId,
+        skill_id: i32,
+        level: i32,
+        writes: &mut SkillWrites,
+    ) -> bool {
         if !self.add_skill(id, skill_id, level) {
             return false;
         }
@@ -832,7 +838,7 @@ impl World {
     }
 
     /// Hands the rows of a batch of skill changes to the persistence task.
-    fn flush_skill_writes(&mut self, id: ObjectId, writes: SkillWrites) {
+    pub(crate) fn flush_skill_writes(&mut self, id: ObjectId, writes: SkillWrites) {
         if writes.upserts.is_empty() && writes.removed.is_empty() {
             return;
         }

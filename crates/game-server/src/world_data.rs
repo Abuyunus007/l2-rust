@@ -649,6 +649,13 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         ground: ground_item_settings(config, config_dir),
         drops: drop_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
+        learn: l2_world::LearnSettings {
+            alt_game_skill_learn: p.alt_game_skill_learn,
+            divine_sp_book_needed: p.divine_sp_book_needed,
+            auto_learn_skills_without_items: p.auto_learn_skills_without_items,
+            auto_learn_fs_skills: p.auto_learn_fs_skills,
+            auto_learn_divine_inspiration: p.auto_learn_divine_inspiration,
+        },
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,

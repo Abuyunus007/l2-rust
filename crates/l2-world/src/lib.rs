@@ -38,6 +38,7 @@ pub mod region;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod skills;
 pub mod snapshot;
 pub mod stats;
 pub mod status;
@@ -80,6 +81,7 @@ pub use player::{
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
+pub use skills::learn::LearnSettings;
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

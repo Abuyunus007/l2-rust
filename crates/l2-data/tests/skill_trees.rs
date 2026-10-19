@@ -86,3 +86,41 @@ fn warrior_inherits_the_human_fighter_starting_skills() {
     assert!(skills.contains(&(194, 1)), "{skills:?}");
     assert!(skills.contains(&(1322, 1)), "{skills:?}");
 }
+
+/// `data/SkillLearn.xml` lists 256 trainer NPCs (counted with grep on the Java file); Auron
+/// (30010) teaches the ten human fighter classes.
+#[test]
+fn skill_learn_data_matches_the_java_file() {
+    let Some(dir) = game_dir() else { return };
+    let pack = Datapack::load(&dir).unwrap();
+    assert_eq!(pack.skill_learn.len(), 256);
+    let auron: Vec<u16> = pack
+        .skill_learn
+        .classes_of(30010)
+        .unwrap()
+        .iter()
+        .map(|c| c.0)
+        .collect();
+    assert_eq!(auron, (0..=9).collect::<Vec<u16>>());
+    assert!(pack.skill_learn.classes_of(1).is_none());
+}
+
+/// A skill of the real tree with an item cost and an SP cost: Rogue's Divine Inspiration level 1
+/// (`Rogue.xml`: getLevel 52, learnedByNpc, item 8618).
+#[test]
+fn skill_learn_lines_carry_sp_and_items() {
+    let Some(dir) = game_dir() else { return };
+    let pack = Datapack::load(&dir).unwrap();
+    let line = pack.skill_trees.class_skill(ClassId(7), 1405, 1).unwrap();
+    assert_eq!((line.get_level, line.learned_by_npc), (52, true));
+    assert_eq!(line.required_items.len(), 1);
+    assert_eq!(
+        (line.required_items[0].item_id, line.required_items[0].count),
+        (8618, 1)
+    );
+    // Bow Mastery 1: levelUpSp 1100, getLevel 20 (Rogue.xml).
+    let bow = pack.skill_trees.class_skill(ClassId(7), 208, 1).unwrap();
+    assert_eq!((bow.level_up_sp, bow.get_level), (1100, 20));
+    // A third class inherits it.
+    assert!(pack.skill_trees.class_skill(ClassId(93), 208, 1).is_some());
+}
