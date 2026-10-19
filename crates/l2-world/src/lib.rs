@@ -18,6 +18,7 @@ pub mod data;
 pub mod dialog;
 pub mod door;
 pub mod enter;
+pub mod formulas;
 pub mod ids;
 pub mod interact;
 pub mod item_ops;
