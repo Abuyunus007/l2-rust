@@ -7,8 +7,6 @@
 // `World::add_exp_and_sp`), and `//add_exp_sp` clamps the sp to `MaxSp` (`settings.exp.max_sp`).
 //
 // # Left out, with the system that brings it
-// - `//remove_exp_sp` changes nothing yet: `Player.removeExpAndSp` (the `removeSp` of
-//   `PlayableStat` and the messages of `PlayerStat`) is not in EXP-01's port (FOLLOW-UP(M4)).
 // - The menu `data/html/admin/expsp.htm` that Java shows after every command of this handler:
 //   its `%class%` needs `ClassListData`, which is not in the world's static data yet (FOLLOW-UP).
 //   Only the target check of that menu is ported (`INVALID_TARGET` for a missing target).
@@ -130,7 +128,9 @@ fn remove_exp_sp(world: &mut World, gm: ObjectId, exp_sp: &str) -> bool {
             player,
             &format!("Admin is removing you {expval} xp and {spval} sp."),
         );
-        // M4-EXP-01: `player.removeExpAndSp(expval, spval)`.
+        // `player.removeExpAndSp(expval, spval)`: `sendMessage` is true, so the target is told
+        // the amounts again by the two `YOUR_..._DECREASED` messages.
+        world.remove_exp_and_sp(player, expval, spval, true);
         // Admin information.
         world.send_sys_message(gm, &format!("Removed {expval} xp and {spval} sp from {name}."));
     }

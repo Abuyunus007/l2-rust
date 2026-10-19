@@ -13,7 +13,7 @@ use std::sync::{Arc, Mutex};
 
 use l2_data::{
     ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions, NpcTemplates,
-    SkillTrees, SpawnData, SpawnLoadOptions,
+    SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
@@ -110,6 +110,7 @@ fn rights() -> AdminRights {
         ("give_item_target", 100, true),
         ("give_item_to_all", 100, true),
         ("add_level", 100, false),
+        ("set_level", 100, false),
     ] {
         rights.add_command(command, level, confirm);
     }
@@ -142,6 +143,13 @@ const ITEMS: &str = r#"<list>
 <item id="24" type="EtcItem" name="Blade"><set name="enchant_enabled" val="true" /><set name="weight" val="1" /></item>
 </list>"#;
 
+/// A passive skill with a reflect effect (`reflectDam`, 50 percent): the target of the reflect test
+/// learns it, so the stat engine gives it reflect.
+const SKILLS: &str = r##"<list>
+<skill id="3100" levels="1" name="Reflect"><operateType>P</operateType><targetType>SELF</targetType>
+<effects><effect name="Buff"><add stat="reflectDam" val="50"/></effect></effects></skill>
+</list>"##;
+
 fn class_data() -> StatData {
     let mut levels = String::new();
     for level in 1..=40 {
@@ -163,6 +171,11 @@ fn class_data() -> StatData {
     StatData {
         player_templates: Arc::new(l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()),
         items: Arc::new(ItemTemplates::from_xml(ITEMS).unwrap()),
+        skills: Arc::new(SkillTemplates::from_xml(
+            SKILLS,
+            &l2_data::skill::EnchantSkillGroups::default(),
+            &l2_data::SkillLoadOptions::default(),
+        )),
         ..StatData::default()
     }
 }
@@ -170,9 +183,6 @@ fn class_data() -> StatData {
 impl StaticData for Fake {
     fn item(&self, _item_id: i32) -> Option<ItemStatic> {
         None
-    }
-    fn skill_is_passive(&self, _skill_id: i32) -> bool {
-        false
     }
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
@@ -199,6 +209,12 @@ impl StaticData for Fake {
     }
     fn item_stackable(&self, item_id: i32) -> bool {
         self.stats.items.get(item_id).is_some_and(|t| t.stackable)
+    }
+    fn skill_is_passive(&self, skill_id: i32) -> bool {
+        self.stats
+            .skills
+            .iter()
+            .any(|s| s.id == skill_id && s.is_passive())
     }
 }
 
@@ -279,9 +295,11 @@ fn items_of(s: &Setup, id: i32) -> Vec<(i32, i64, String)> {
         .collect()
 }
 
-/// `experience.xml` for levels 1 to 85: a level needs more exp than the one before it.
+/// `experience.xml` for levels 1 to 88 (`maxLevel` 85: Java's `getMaxLevel()` is 86, and the exp of
+/// that cap is the row of level 86, as in the shipped table): a level needs more exp than the one
+/// before it.
 fn experience_table() -> Arc<ExperienceTable> {
-    let rows: String = (1..=85)
+    let rows: String = (1..=88)
         .map(|level| {
             format!(
                 r#"<experience level="{level}" tolevel="{}" />"#,
@@ -1056,12 +1074,10 @@ fn create_item_with_an_enchant_applies_no_enchant_to_a_plain_item_and_refuses_an
     );
     assert_eq!(items_of(&s, GM), [(12, 1, "INVENTORY".to_owned())]);
 
-    // The blade is enchantable, which needs `EnchantItemGroupsData` (not ported): nothing is made.
+    // The blade is enchantable, which needs `EnchantItemGroupsData` (not ported): nothing is made
+    // and, like Java's other unsupported paths, nothing is said to the GM.
     s.cmd(GM, "create_item 24 1 5");
-    assert_eq!(
-        texts_to(&s.log.take(), GM),
-        ["Enchanting an item with //create_item is not available yet."]
-    );
+    assert!(texts_to(&s.log.take(), GM).is_empty());
     assert_eq!(items_of(&s, GM).len(), 1);
 }
 
@@ -1281,4 +1297,197 @@ fn add_exp_sp_caps_the_sp_at_max_sp() {
     // At the cap nothing more is added, and the message still says what the admin asked for.
     s.cmd(GM, "add_exp_sp 0 50");
     assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.sp, 100);
+}
+
+// ----------------------------------------- set_level, remove_exp_sp, startup invul, blocked hit
+
+/// The experience table of `experience_table()`, for the tests that read exp.
+fn set_experience(s: &mut Setup) {
+    s.world.set_exp_data(
+        experience_table(),
+        Arc::new(ExperienceLoss::from_xml(r#"<list><experience level="5" val="9.5" /></list>"#).unwrap()),
+        Arc::new(KarmaLoss::from_xml(r#"<list><modifier level="10" val="2.0" /></list>"#).unwrap()),
+        Arc::new(SkillTrees::from_xml("<list></list>").unwrap()),
+    );
+}
+
+fn exp_of(s: &Setup, id: i32) -> i64 {
+    s.world.player(ObjectId(id)).unwrap().data.exp
+}
+
+fn level_of(s: &Setup, id: i32) -> i32 {
+    s.world.player(ObjectId(id)).unwrap().core.level
+}
+
+fn hp_of(s: &Setup, id: i32) -> f64 {
+    s.world.player(ObjectId(id)).unwrap().core.cur_hp
+}
+
+#[test]
+fn set_level_moves_the_exp_to_that_levels_exp_and_tells_both_sides() {
+    let mut s = setup();
+    set_experience(&mut s);
+    s.enter(GM, 0);
+    let mut data = player(USER, 0, 100);
+    data.exp = 1_000_000;
+    s.enter_with(data);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    // Down: level 10 needs 100000 exp; the difference is removed, and the target is told so.
+    s.cmd(GM, "set_level 10");
+    let out = s.log.take();
+    assert_eq!(level_of(&s, USER), 10);
+    assert_eq!(exp_of(&s, USER), 100_000);
+    assert_eq!(texts_to(&out, GM), ["Removed 900000 exp."]);
+    assert_eq!(
+        system_ids_to(&out, USER),
+        [
+            SystemMessageId::YourExperienceHasDecreasedByS1,
+            SystemMessageId::YourSpHasDecreasedByS1,
+        ]
+    );
+
+    // Up: level 20 needs 400000 exp; the exp is added (the level follows it).
+    s.log.take();
+    s.cmd(GM, "set_level 20");
+    let out = s.log.take();
+    assert_eq!(level_of(&s, USER), 20);
+    assert_eq!(exp_of(&s, USER), 400_000);
+    assert_eq!(texts_to(&out, GM), ["Added 300000 exp."]);
+
+    // Java's `maxLevel` is the table's last level plus one.
+    for command in ["set_level 0", "set_level 87", "set_level x"] {
+        s.log.take();
+        s.cmd(GM, command);
+        assert_eq!(
+            texts_to(&s.log.take(), GM),
+            ["You must specify level between 1 and 86."],
+            "{command}"
+        );
+    }
+    assert_eq!(level_of(&s, USER), 20);
+
+    // No target: `THAT_IS_AN_INCORRECT_TARGET`.
+    s.world.set_target(ObjectId(GM), None);
+    s.log.take();
+    s.cmd(GM, "set_level 5");
+    assert_eq!(
+        system_ids_to(&s.log.take(), GM),
+        [SystemMessageId::ThatIsAnIncorrectTarget]
+    );
+}
+
+#[test]
+fn remove_exp_sp_takes_the_exp_and_the_sp_and_tells_the_target_twice() {
+    let mut s = setup();
+    set_experience(&mut s);
+    s.enter(GM, 0);
+    let mut data = player(USER, 0, 100);
+    data.exp = 1_000_000;
+    data.sp = 10;
+    s.enter_with(data);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    s.cmd(GM, "remove_exp_sp 500 4");
+    let out = s.log.take();
+    assert_eq!(exp_of(&s, USER), 999_500);
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.sp, 6);
+    assert_eq!(texts_to(&out, USER), ["Admin is removing you 500 xp and 4 sp."]);
+    assert_eq!(
+        system_ids_to(&out, USER),
+        [
+            SystemMessageId::YourExperienceHasDecreasedByS1,
+            SystemMessageId::YourSpHasDecreasedByS1,
+        ]
+    );
+    assert_eq!(texts_to(&out, GM), ["Removed 500 xp and 4 sp from P1."]);
+
+    // More sp than the target has: the sp goes to 0.
+    s.cmd(GM, "remove_exp_sp 0 100");
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.sp, 0);
+
+    // Nothing asked: nothing said.
+    s.log.take();
+    s.cmd(GM, "remove_exp_sp 0 0");
+    let out = s.log.take();
+    assert!(texts_to(&out, USER).is_empty());
+    assert!(system_ids_to(&out, USER).is_empty());
+}
+
+#[test]
+fn gm_startup_invulnerable_makes_a_gm_with_the_admin_invul_right_invulnerable_on_enter() {
+    let settings = WorldSettings {
+        gm_startup_invulnerable: true,
+        ..WorldSettings::default()
+    };
+    let mut s = setup_with(settings);
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    assert!(s.world.is_invul(ObjectId(GM)));
+    assert!(!s.world.is_invul(ObjectId(USER)));
+}
+
+#[test]
+fn gm_startup_invulnerable_is_off_by_default() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    assert!(!s.world.is_invul(ObjectId(GM)));
+}
+
+/// A hit of `attacker` on `target` as `Creature.onHitTimer` gets it (no crit, no miss).
+fn hit(attacker: i32, target: i32, damage: i32) -> HitTask {
+    HitTask {
+        attacker: ObjectId(attacker),
+        target: ObjectId(target),
+        damage,
+        crit: false,
+        miss: false,
+        shld: 0,
+        soulshot: false,
+        recharge_shots: false,
+    }
+}
+
+/// A GM that learned the reflect passive (`reflectDam` 50 percent).
+fn reflecting_gm() -> PlayerData {
+    let mut data = player(GM, 100, 0);
+    data.skills = vec![SkillData {
+        skill_id: 3100,
+        skill_level: 1,
+    }];
+    data
+}
+
+#[test]
+fn an_invulnerable_target_takes_no_hit_reflects_nothing_and_the_attacker_is_told() {
+    let mut s = setup();
+    s.enter_with(reflecting_gm());
+    s.enter(USER, 100);
+    s.world.set_invul(ObjectId(GM), true);
+    s.log.take();
+
+    s.world.on_hit_timer(hit(USER, GM, 40));
+    let out = s.log.take();
+    assert_eq!(
+        system_ids_to(&out, USER),
+        [SystemMessageId::TheAttackHasBeenBlocked]
+    );
+    assert_eq!(hp_of(&s, GM), 100.0);
+    assert_eq!(hp_of(&s, USER), 100.0);
+}
+
+#[test]
+fn a_mortal_target_takes_the_hit_and_reflects_part_of_it() {
+    let mut s = setup();
+    s.enter_with(reflecting_gm());
+    s.enter(USER, 100);
+    s.log.take();
+
+    s.world.on_hit_timer(hit(USER, GM, 40));
+    let out = s.log.take();
+    assert!(!system_ids_to(&out, USER).contains(&SystemMessageId::TheAttackHasBeenBlocked));
+    assert!(hp_of(&s, GM) < 100.0);
+    assert!(hp_of(&s, USER) < 100.0, "the reflected part");
 }

@@ -2,23 +2,23 @@
 //! `//give_item_target`, `//give_item_to_all`, `//delete_item` and `//use_item`.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCreateItem.java
 //
-// Items are made by `World::add_item`, the `Player.addItem` port of M4-DROP-01 (stacking, the
-// `ADDED` / `MODIFIED` flag, the update packets). The database rows follow the item list.
+// Items are made by `World::inventory_add_item_by_id`, Java's `Inventory.addItem` (stacking, the
+// `ADDED` / `MODIFIED` flag, the update packets; no overflow drop, no herb skip, as Java's admin
+// commands get). The database rows follow the item list.
 //
 // # Left out, with the system that brings it
 // - `//create_item <id> <amount> <enchant>` for an enchantable item: `OverEnchantProtection` clamps
-//   the enchant to `EnchantItemGroupsData`, which is not ported (FOLLOW-UP(M4)). Such a command is
-//   refused with a message and creates nothing. The other cases of the form are as Java.
+//   the enchant to `EnchantItemGroupsData`, which is not ported (FOLLOW-UP(M4)). Such a command
+//   creates nothing and logs a warning. The other cases of the form are as Java.
 // - `GMViewItemList` to the GM after `//delete_item` and `//use_item` (refreshes the GM's item
 //   window): the packet is not ported (FOLLOW-UP(M4)).
 // - `//use_item` of an item that is not equippable runs its item handler (potions, scrolls, ...),
 //   which is M5: nothing happens for those items here.
-// - Over capacity: `World::add_item` drops what does not fit (`Player.addItem`), where Java's
-//   `Inventory.addItem`, which these commands call, keeps it in the inventory (FOLLOW-UP(M4)).
-// - A herb (`ExImmediateEffect`) is not put into the inventory by `World::add_item`: it casts its
-//   skills (M5).
+// - The ConfirmDlg of `confirmDlg` commands (`//give_item_target`, `//give_item_to_all`,
+//   `//delete_item`, `//use_item`): not ported (FOLLOW-UP(M4)); see `admin/mod.rs`.
 
 use l2_util::ObjectId;
+use tracing::warn;
 
 use super::exp_sp::parse_long;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
@@ -122,12 +122,14 @@ fn create_item(world: &mut World, gm: ObjectId, target: ObjectId, id: i32, num: 
     }
     let name = template.name.clone();
     if enchant.is_some_and(|enchant| enchant > 0 && template.enchantable) {
-        // FOLLOW-UP(M4): `OverEnchantProtection` clamps the enchant to `EnchantItemGroupsData`.
-        world.send_sys_message(gm, "Enchanting an item with //create_item is not available yet.");
+        // FOLLOW-UP(M4): `OverEnchantProtection` clamps the enchant to `EnchantItemGroupsData`,
+        // which is not ported. Nothing is created and, as with Java's other unsupported paths, the
+        // GM is not told.
+        warn!("//create_item {id} with an enchant level: EnchantItemGroupsData is not ported yet");
         return;
     }
 
-    world.add_item(target, id, num, false);
+    world.inventory_add_item_by_id(target, id, num);
     if enchant.is_some() {
         // Java: `item != null && item.isEnchantable() && enchant > 0` is false here.
         world.send_message(gm, "This item is not enchantable, no enchant applied.");
@@ -258,7 +260,7 @@ fn admin_give_item_to_all(world: &mut World, gm: ObjectId, command: &str) -> Out
     players.sort_by_key(|p| p.0);
     let counter = players.len();
     for player in players {
-        world.add_item(player, id, num, false);
+        world.inventory_add_item_by_id(player, id, num);
         world.send_message(player, &format!("Admin spawned {num} {name} in your inventory."));
     }
     world.send_message(gm, &format!("{counter} players rewarded with {name}"));

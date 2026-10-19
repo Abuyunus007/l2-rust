@@ -410,6 +410,19 @@ impl World {
         }
         let now_ms = crate::world::unix_ms_now();
 
+        // Java `EnterWorld`: `GMStartupInvulnerable` and `AdminData.hasAccess("admin_invul", ..)`
+        // for a GM (`player.setInvul(true)`). The flag shows in no packet, so it is set first.
+        if self.settings.gm_startup_invulnerable
+            && self.is_gm(id)
+            && self.players.get(&id).is_some_and(|p| {
+                self.data
+                    .admin_rights()
+                    .is_some_and(|rights| rights.has_access("admin_invul", p.data.access_level))
+            })
+        {
+            self.set_invul(id, true);
+        }
+
         // player.sendPacket(new UserInfo(player)), without ExBrExtraUserInfo. The
         // recommendations are not loaded yet (`checkRecoBonusTask` below), so this one shows 0,
         // like the Java capture.
