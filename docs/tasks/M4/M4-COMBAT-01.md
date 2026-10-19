@@ -48,4 +48,5 @@ Melee and bow auto-attack like Java: `AttackRequest`/`Action` on an attackable t
 
 ## Notes from the orchestrator
 - Read `docs/design/m4-combat.md`, `docs/design/world-loop.md`, `docs/design/m3-world.md` first, then CLAUDE.md safety rules.
+- The formulas are already ported and vector-checked (M4-FORM-01, `crates/l2-world/src/formulas/`): call `calc_hit_miss`, `calc_crit`, `calc_shld_use`, `calc_phys_dam`, `calc_p_atk_spd`, `calculate_time_between_attacks`, `calc_atk_break`, with inputs filled from the stat engine. Do not port them again. This card supplies what FORM-01 could not: element attack/defence values, attack trait inputs, ClassBalance multipliers, `RANDOM_DAMAGE`, and the real `Position` (Java `isBehind`/`isInFrontOf`, `Position.getPosition`).
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).

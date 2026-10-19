@@ -40,4 +40,5 @@ Java's regeneration: `CreatureStatus.startHpMpRegeneration`/`doRegeneration` wit
 
 ## Notes from the orchestrator
 - Read `docs/design/m4-combat.md`, `docs/design/world-loop.md`, `docs/design/m3-world.md` first, then CLAUDE.md safety rules.
+- The regen formulas are already ported and vector-checked (M4-FORM-01, `crates/l2-world/src/formulas/regen.rs`): fill `HpRegenInput`/`MpRegenInput`/`CpRegenInput` from the stat engine and the world (posture, festival/siege/clan hall factors, mother tree bonus) and call `calc_*_regen` / `get_regenerate_period`. Do not port them again.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
