@@ -60,13 +60,13 @@ impl World {
             return false;
         };
         let settings = &self.npc_world.settings;
-        // Java `isRandomAnimationEnabled()`: the spawn's `AIData` overrides the template, as
-        // `NpcPersonalAIData.initializeNpcParameters` runs after `onSpawn`.
+        // Java `isRandomAnimationEnabled()`: not a fake player, and the spawn's `AIData` overrides
+        // the template, as `NpcPersonalAIData.initializeNpcParameters` runs after `onSpawn`.
         let enabled = match self.spawn_ai_value(id, "disableRandomAnimation") {
             Some(value) => value == 0,
             None => template.random_animation,
         };
-        if !enabled {
+        if !enabled || template.fake_player {
             return false;
         }
         if self.is_attackable_npc(id) {
@@ -221,11 +221,11 @@ impl World {
     /// Java `Npc.onRandomAnimation(animationId)`: the social action goes out at most once per
     /// [`MINIMUM_SOCIAL_INTERVAL_MS`], and only while the neighbouring regions are on
     /// (`broadcastSocialAction`).
-    fn npc_on_random_animation(&mut self, id: ObjectId, animation: i32) {
+    pub(crate) fn npc_on_random_animation(&mut self, id: ObjectId, animation: i32) {
         let now = self.world_ms();
-        let Some(state) = self.npc_world.animations.get_mut(&id) else {
-            return;
-        };
+        // The greeting (`target.rs`) animates NPCs that are not in the registry: the throttle is
+        // the NPC's either way.
+        let state = self.npc_world.animations.entry(id).or_default();
         if state
             .last_social_ms
             .is_some_and(|last| now - last <= MINIMUM_SOCIAL_INTERVAL_MS)

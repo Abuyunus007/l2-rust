@@ -481,7 +481,6 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             karma_player_can_use_warehouse: p.alt_game_karma_player_can_use_warehouse,
             max_free_teleport_level: p.max_free_teleport_level,
             teleport_while_siege_in_progress: p.teleport_while_siege_in_progress,
-            max_npc_animation: config.general.max_npc_animation,
             gm_debug_html_paths: config.general.gm_debug_html_paths,
             ..TalkSettings::default()
         },
