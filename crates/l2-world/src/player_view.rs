@@ -150,7 +150,7 @@ impl World {
 
     /// Java `Player.isAutoAttackable(attacker)` between two players: karma, PvP flag, duels,
     /// olympiad and siege rules. Without them (M4/M5) nobody is auto-attackable.
-    fn is_auto_attackable(&self, _subject: ObjectId, _viewer: ObjectId) -> bool {
+    pub(crate) fn is_auto_attackable(&self, _subject: ObjectId, _viewer: ObjectId) -> bool {
         false
     }
 }

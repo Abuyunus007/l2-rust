@@ -40,12 +40,13 @@ pub use entry::{
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{
-    ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
-    TargetSelected, TargetUnselected,
+    ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, ShowTownMap, SocialAction,
+    StaticObjectInfo, TargetSelected, TargetUnselected,
 };
 pub use items::{
-    InventoryBlock, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item, read_item_updates,
-    write_inventory_block, write_item, write_item_elemental_and_enchant, write_item_updates,
+    InventoryBlock, InventoryUpdate, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item,
+    read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
+    write_item_updates,
 };
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 pub use system_message::{SystemMessage, SystemMessageParam};

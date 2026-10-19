@@ -232,6 +232,67 @@ impl Decode for NpcHtmlMessage {
     }
 }
 
+// Java: gameserver/network/serverpackets/SocialAction.java
+/// An object plays an animation (`SOCIAL_ACTION`): the greeting of a talked-to NPC, a player's
+/// social emote. Java marks it droppable under load.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SocialAction {
+    pub object_id: i32,
+    pub action_id: i32,
+}
+
+impl SocialAction {
+    pub const OPCODE: ServerOpcode = ServerOpcode::SocialAction;
+}
+
+impl Encode for SocialAction {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id).i32(self.action_id);
+    }
+}
+
+impl Decode for SocialAction {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            object_id: r.i32()?,
+            action_id: r.i32()?,
+        })
+    }
+}
+
+// Java: gameserver/network/serverpackets/ShowTownMap.java
+/// Opens the town map window (`SHOW_TOWN_MAP`); a clicked map sign sends it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShowTownMap {
+    /// Java `"town_map." + texture`.
+    pub texture: String,
+    pub x: i32,
+    pub y: i32,
+}
+
+impl ShowTownMap {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ShowTownMap;
+}
+
+impl Encode for ShowTownMap {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.string(&self.texture).i32(self.x).i32(self.y);
+    }
+}
+
+impl Decode for ShowTownMap {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let texture = r.string();
+        Ok(Self {
+            texture,
+            x: r.i32()?,
+            y: r.i32()?,
+        })
+    }
+}
+
 // Java: gameserver/network/serverpackets/DoorInfo.java
 /// Tells a player that a door exists (sent when the door enters the player's view).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

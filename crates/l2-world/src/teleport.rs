@@ -19,9 +19,9 @@
 // revalidated for real, `broadcastInfo`), then `UserInfo`.
 //
 // # What is left out, with the system that brings it
-// - `stopMove`'s movement state, `abortAttack`, `abortCast`, `setTarget(null)`,
-//   `getAI().setIntentionActive()`, `doRevive` of a pending revive: movement (M3-MOVE-01), targets
-//   (M3-TALK-01), combat and AI (M4). Their call sites are marked `FOLLOW-UP`.
+// - `stopMove`'s movement state, `abortAttack`, `abortCast`,
+//   `getAI().setIntentionActive()`, `doRevive` of a pending revive: movement (M3-MOVE-01), combat
+//   and AI (M4). Their call sites are marked `FOLLOW-UP`. `setTarget(null)` is in (M3-TALK-01).
 // - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
 //   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, flying
 //   mounts below -1005: M4+.
@@ -202,7 +202,8 @@ impl World {
         // broadcast.
         self.stop_move(id, None);
         // FOLLOW-UP(M4): `abortAttack()`, `abortCast()`.
-        // FOLLOW-UP(M3-TALK-01): `setTarget(null)` (TargetUnselected to everybody if it had one).
+        // `setTarget(null)`: TargetUnselected to everybody if it had a target.
+        self.set_target(id, None);
 
         self.set_teleporting(id, true);
         // FOLLOW-UP(M4): `getAI().setIntentionActive()`.

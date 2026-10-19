@@ -457,6 +457,13 @@ impl ClientSession {
                 heading: p.heading,
             },
             ClientPacket::Appearing(_) => ClientInput::Appearing,
+            ClientPacket::Action(p) => ClientInput::Action {
+                object_id: p.object_id,
+                action_id: p.action_id,
+            },
+            ClientPacket::RequestTargetCanceld(p) => ClientInput::TargetCanceled { unselect: p.unselect },
+            ClientPacket::RequestBypassToServer(p) => ClientInput::Bypass { command: p.command },
+            ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

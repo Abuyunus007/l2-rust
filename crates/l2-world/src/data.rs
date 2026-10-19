@@ -197,6 +197,16 @@ pub trait StaticData: Send + Sync {
     fn base_stat_bonus(&self, _stat: BaseStat, _value: i32) -> f64 {
         1.0
     }
+
+    /// Java `ItemTemplate.getName()`, `None` for an unknown item.
+    fn item_name(&self, _item_id: i32) -> Option<String> {
+        None
+    }
+
+    /// Java `ItemTemplate.isStackable()`.
+    fn item_stackable(&self, _item_id: i32) -> bool {
+        false
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -226,6 +236,14 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
         (**self).base_stat_bonus(stat, value)
+    }
+
+    fn item_name(&self, item_id: i32) -> Option<String> {
+        (**self).item_name(item_id)
+    }
+
+    fn item_stackable(&self, item_id: i32) -> bool {
+        (**self).item_stackable(item_id)
     }
 }
 
@@ -327,6 +345,8 @@ pub struct WorldSettings {
     pub zones: crate::zones::ZoneSettings,
     /// The values `teleToLocation` and the restart point lookups read.
     pub teleport: crate::teleport::TeleportSettings,
+    /// The values NPC dialogs and gatekeepers read.
+    pub talk: crate::dialog::TalkSettings,
 }
 
 impl Default for WorldSettings {
@@ -359,6 +379,7 @@ impl Default for WorldSettings {
             log_chat: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
+            talk: crate::dialog::TalkSettings::default(),
         }
     }
 }

@@ -18,7 +18,7 @@ use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
     AccessLevelStatic, BaseStat, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData,
-    TeleportSettings, WorldSettings, ZoneSettings,
+    TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -377,6 +377,14 @@ impl StaticData for DatapackData {
         self.passive.contains(skill_id)
     }
 
+    fn item_name(&self, item_id: i32) -> Option<String> {
+        self.datapack.items.get(item_id).map(|t| t.name.clone())
+    }
+
+    fn item_stackable(&self, item_id: i32) -> bool {
+        self.datapack.items.get(item_id).is_some_and(|t| t.stackable)
+    }
+
     // Java: BaseStat.calcBonus (STRbonus[value] ...). A value outside the table is a Java
     // ArrayIndexOutOfBounds; 0 here, as `BaseStatBonus::at` does everywhere else.
     fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
@@ -554,8 +562,28 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             random_respawn_in_town_enabled: p.random_respawn_in_town_enabled,
             teleport_watchdog_timeout: p.teleport_watchdog_timeout,
         },
+        talk: TalkSettings {
+            karma_player_can_shop: p.alt_game_karma_player_can_shop,
+            karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
+            karma_player_can_use_warehouse: p.alt_game_karma_player_can_use_warehouse,
+            max_free_teleport_level: p.max_free_teleport_level,
+            teleport_while_siege_in_progress: p.teleport_while_siege_in_progress,
+            max_npc_animation: config.general.max_npc_animation,
+            gm_debug_html_paths: config.general.gm_debug_html_paths,
+            ..TalkSettings::default()
+        },
         ..WorldSettings::default()
     };
+    // `ListPetRentNpc` is a post-processed list in the generated config, so it is read from
+    // `NPC.ini` directly (Java: `Integer.parseInt` of each comma separated id).
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
+        let text = ini.get_string("ListPetRentNpc", "30827");
+        let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
+        match ids {
+            Ok(ids) => settings.talk.list_pet_rent_npc = ids.into_iter().collect(),
+            Err(_) => warn!("ListPetRentNpc = {text} is not a list of ids; using 30827."),
+        }
+    }
     // `NpcTalkBlockingTime` is post-processed (seconds -> ms) in the generated config, so it is
     // read from `Player.ini` directly.
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {

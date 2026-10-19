@@ -10,12 +10,16 @@
 //! - Refer to other objects by id ([`ObjectId`]), never by reference (D-11).
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
+pub mod bypass;
 pub mod chat;
 pub mod command;
 pub mod data;
+pub mod dialog;
 pub mod door;
 pub mod enter;
 pub mod ids;
+pub mod interact;
+pub mod item_ops;
 pub mod leave;
 pub mod movement;
 pub mod npc;
@@ -26,17 +30,21 @@ mod player_view;
 pub mod region;
 pub mod runner;
 pub mod snapshot;
+pub mod target;
 pub mod teleport;
+pub mod teleporter;
 pub mod timer;
 mod visibility;
 pub mod world;
 pub mod zones;
 
+pub use bypass::{BypassHandler, BypassHandlers};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use data::{
     AccessLevelStatic, BaseStat, ChatBroadcast, DEFAULT_TITLE_COLOR, DerivedStats, ItemStatic, NoData,
     RACE_DWARF, StaticData, WorldSettings,
 };
+pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use l2_util::{ObjectId, WorldRng};
