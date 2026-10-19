@@ -17,21 +17,25 @@ use l2_net::PacketWriter;
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
 pub mod charscreen;
+pub mod combat;
 pub mod enterworld;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
+pub mod item;
 pub mod movement;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
+pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
 pub use interaction::{
     Action, BypassUserCmd, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld, SendBypassBuildCmd,
 };
+pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 
 /// Writes the id byte of a plain client packet.
