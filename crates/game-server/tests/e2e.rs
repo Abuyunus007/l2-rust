@@ -134,6 +134,8 @@ fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::create_dir_all(config_dir).unwrap();
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
     std::fs::write(config_dir.join("Player.ini"), "ForbiddenNames = annou\n").unwrap();
+    // The shipped General.ini says 0; Java's code default (20) would refuse level-1 chat.
+    std::fs::write(config_dir.join("General.ini"), "MinimumChatLevel = 0\n").unwrap();
     std::fs::write(
         config_dir.join("FloodProtector.ini"),
         "FloodProtectorCharacterSelectInterval = 0\n",
