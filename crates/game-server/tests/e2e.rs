@@ -54,7 +54,7 @@ const RUST_ID_START: i32 = 0x6000_0000;
 
 /// The packets the Rust game server sends after `EnterWorld` (the closing `SKILL_LIST` is the
 /// last). Java sends the same ones in this order, with others in between (see the module docs).
-const ENTER_WORLD_PACKETS: [&str; 25] = [
+const ENTER_WORLD_PACKETS: [&str; 26] = [
     "USER_INFO",
     "EX_VOTE_SYSTEM_INFO",
     "MACRO_LIST",
@@ -65,6 +65,8 @@ const ENTER_WORLD_PACKETS: [&str; 25] = [
     "EX_BASIC_ACTION_LIST",
     "HENNA_INFO",
     "QUEST_LIST",
+    // Java: spawnMe -> revalidateZone (the zone the character stands in).
+    "EX_SET_COMPASS_ZONE_CODE",
     "EX_ROTATION",
     "ETC_STATUS_UPDATE",
     "EX_STORAGE_MAX_COUNT",
@@ -133,7 +135,7 @@ fn game_server_ini(ls_port: u16) -> String {
 fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::create_dir_all(config_dir).unwrap();
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
-    std::fs::write(config_dir.join("Player.ini"), "ForbiddenNames = annou\n").unwrap();
+    std::fs::write(config_dir.join("Player.ini"), "ForbiddenNames = annoy\n").unwrap();
     // The shipped General.ini says 0; Java's code default (20) would refuse level-1 chat.
     std::fs::write(config_dir.join("General.ini"), "MinimumChatLevel = 0\n").unwrap();
     std::fs::write(
@@ -788,7 +790,7 @@ fn the_config_the_rig_writes_says_what_it_should() {
     assert_eq!(config.server.game_server_login_host, "127.0.0.1");
     assert!(config.server.packet_encryption);
     assert_eq!(config.server.max_characters_number_per_account, 7);
-    assert_eq!(config.manual.player.forbidden_names, ["annou"]);
+    assert_eq!(config.manual.player.forbidden_names, ["annoy"]);
     assert!(config.manual.server.protocol_list.contains(&PROTOCOL));
     let saved = hexid::load(&config_dir).expect("hexid.txt");
     assert_eq!(saved.server_id, SAMPLE_SERVER_ID);
