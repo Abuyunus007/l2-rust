@@ -39,11 +39,12 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
-    ItemRepository, ItemUpdate, NewItem, NewShortcut, Pool, RecommendationRepository, ShortcutRepository,
-    SkillLevel, SkillRepository, VariableRepository,
+    ItemRepository, ItemUpdate, NewItem, NewShortcut, NewSkillSave, Pool, RecommendationRepository,
+    ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
 };
 use l2_world::{
-    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData,
+    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, SavedEffect, ShortcutData,
+    SkillData,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -474,6 +475,35 @@ impl DbStore {
         Ok(())
     }
 
+    /// Java `Player.storeEffect`: the character's `character_skills_save` rows are deleted, then
+    /// one row per saved buff or reuse timer, `buff_index` counting from 1 in the order the world
+    /// gave them (`restoreEffects` reads them back in that order). Java runs the batch on one
+    /// connection without a transaction, so does this.
+    // Java: Player.storeEffect (DELETE_SKILL_SAVE, ADD_SKILL_SAVE)
+    async fn store_effects(
+        &self,
+        char_id: i32,
+        class_index: i32,
+        effects: &[SavedEffect],
+    ) -> Result<(), PersistError> {
+        let rows: Vec<NewSkillSave> = effects
+            .iter()
+            .enumerate()
+            .map(|(index, effect)| NewSkillSave {
+                skill_id: effect.skill_id,
+                skill_level: effect.skill_level,
+                remaining_time: effect.remaining_time,
+                reuse_delay: effect.reuse_delay,
+                systime: effect.systime,
+                restore_type: effect.restore_type,
+                buff_index: i32::try_from(index + 1).unwrap_or(i32::MAX),
+            })
+            .collect();
+        self.skills.delete_skill_effects(char_id, class_index).await?;
+        self.skills.add_skill_effects(char_id, class_index, &rows).await?;
+        Ok(())
+    }
+
     /// The baseline of a character that was not stored since the server started: its rows as
     /// they are in the database now.
     async fn load_baseline(&self, char_id: i32, class_index: Option<i32>) -> Result<Baseline, PersistError> {
@@ -894,6 +924,11 @@ impl PlayerStore for DbStore {
             .await?;
         // Java: Player.store -> getVariables().storeMe(); autoSave / deleteMe -> storeRecommendations.
         self.store_nevit_rows(player).await?;
+        // Java: Player.store -> storeEffect (the buffs of the character, see `store_effects`).
+        if let Some(effects) = &player.profile.effects_to_store {
+            self.store_effects(char_id, player.profile.class_index, effects)
+                .await?;
+        }
 
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);
