@@ -463,7 +463,8 @@ fn using_a_worn_item_takes_it_off() {
         })
         .collect();
     // The "disarmed" message comes first, then the stat functions go (UserInfo, StatusUpdate),
-    // the expertise penalty ends (EtcStatusUpdate), `broadcastUserInfo`.
+    // the expertise penalty ends (`removeSkill(.., true)` stops the passive with REMOVED: "The
+    // effect of $s1 has been removed.", then EtcStatusUpdate), `broadcastUserInfo`.
     assert_eq!(
         names(&packets),
         [
@@ -471,6 +472,7 @@ fn using_a_worn_item_takes_it_off() {
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
             "STATUS_UPDATE",
+            "SYSTEM_MESSAGE",
             "ETC_STATUS_UPDATE",
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
@@ -588,7 +590,15 @@ fn a_bow_takes_the_arrows_and_the_arrows_go_with_the_bow() {
             _ => None,
         })
         .collect();
-    let message = &system_messages(&packets)[0];
+    // The grade penalty of the bow ends first (inside the unequip): "The effect of $s1 has been
+    // removed." for the passive penalty skill, then the message of RequestUnEquipItem.
+    let messages = system_messages(&packets);
+    assert_eq!(messages[0].id, SystemMessageId::TheEffectOfS1HasBeenRemoved);
+    assert_eq!(
+        messages[0].params,
+        [SystemMessageParam::SkillName { id: 6209, level: 4 }]
+    );
+    let message = &messages[1];
     assert_eq!(message.id, SystemMessageId::S1HasBeenDisarmed);
     assert_eq!(message.params, [SystemMessageParam::ItemName(9)]);
     assert_eq!(
@@ -884,12 +894,14 @@ fn unequip_by_slot_reports_the_item_and_broadcasts() {
         })
         .collect();
     // StatsListener (UserInfo), `refreshExpertisePenalty` (a D armor without Expertise had a
-    // penalty), `broadcastUserInfo`, then the message.
+    // penalty: its passive ends with "The effect of $s1 has been removed."),
+    // `broadcastUserInfo`, then the message.
     assert_eq!(
         names(&packets),
         [
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
+            "SYSTEM_MESSAGE",
             "ETC_STATUS_UPDATE",
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
@@ -1237,7 +1249,13 @@ fn dropping_refuses_what_java_refuses_and_puts_the_rest_on_the_ground() {
     drop(&mut world, 101, 1, 1149, 50);
     drop(&mut world, 100, 1, 1000, 0);
     let out = log.take();
-    assert!(system_messages_of(&out).is_empty());
+    // The only message: the grade penalty of the dropped sword ends ("The effect of $s1 has
+    // been removed.", `removeSkill(.., true)` of the passive penalty skill).
+    let messages = system_messages_of(&out);
+    assert_eq!(
+        messages.iter().map(|m| m.id).collect::<Vec<_>>(),
+        [SystemMessageId::TheEffectOfS1HasBeenRemoved]
+    );
     // The rows are deleted at once (`Item.updateDatabase()` of an item that has no owner); the
     // sword is written as taken off first.
     assert_eq!(

@@ -32,6 +32,14 @@ pub enum FuncOwner {
     Skill { id: i32, level: i32 },
     /// An armor set's own functions, by chest item id.
     ArmorSet(i32),
+    /// An effect (Java: the `AbstractEffect` object, which one skill level shares between all
+    /// its buff infos): the effect `index` of `scope` of the skill (M5-EFFECT-01).
+    Effect {
+        skill_id: i32,
+        skill_level: i32,
+        scope: l2_data::skill::EffectScope,
+        index: u16,
+    },
 }
 
 /// Which `Func*` class a function is.

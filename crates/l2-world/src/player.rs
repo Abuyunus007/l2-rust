@@ -35,8 +35,6 @@ pub struct CreatureCore {
     /// Java `_skills`: every skill the creature knows as `(id, level)`, one per id, in the order
     /// they were added (learned skills, item and armor set skills, penalty skills).
     pub skills: Vec<(i32, i32)>,
-    /// Java `EffectList._passives`: the passive skills whose effects are applied.
-    pub passives: Vec<(i32, i32)>,
 }
 
 /// One item of a player (inventory or worn). Mirrors the `items` table row.
@@ -274,7 +272,6 @@ impl Player {
             // The world builds the calculators when the player enters (`init_player_stats`).
             calculators: Calculators::default(),
             skills: Vec::new(),
-            passives: Vec::new(),
         };
         let movement = crate::movement::MovementState::at(data.x, data.y, data.z);
         Self {

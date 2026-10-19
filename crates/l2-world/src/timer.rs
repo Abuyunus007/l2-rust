@@ -79,6 +79,16 @@ pub enum TimerKind {
     NevitEffectEnd(ObjectId),
     /// Java `RecoBonusTaskEnd`: the end of the Nevit hourglass.
     NevitHourglassEnd(ObjectId),
+    /// Java `BuffFinishTask`'s 1 s run for one creature: its timed buffs count down, see
+    /// `effects/list.rs`.
+    BuffFinish(ObjectId),
+    /// Java `EffectTickTask`: one tick of a ticking effect (`onActionTime`), see
+    /// `effects/buff_info.rs`.
+    EffectTick(crate::effects::buff_info::EffectTickTask),
+    /// Java `EffectList`'s 300 ms icon task: the player's `AbnormalStatusUpdate`.
+    EffectIcons(ObjectId),
+    /// Java `Player.updateAndBroadcastStatus`'s 50 ms task.
+    UpdateAndBroadcastStatus(ObjectId),
 }
 
 #[derive(Debug, Default)]

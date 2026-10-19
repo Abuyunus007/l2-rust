@@ -479,11 +479,24 @@ fn passive_skills_apply_their_effect_functions_at_enter_world() {
     // Active skills and passives whose conditions fail add nothing.
     assert_eq!(s.p_atk(None), 4.0 * 0.9);
     let core = &world.player(ME).unwrap().core;
-    assert_eq!(core.passives, [(142, 2), (4408, 1)]);
+    let passives: Vec<(i32, i32)> = world
+        .effect_list(ME)
+        .unwrap()
+        .passives()
+        .iter()
+        .map(|i| (i.skill().id, i.skill().level))
+        .collect();
+    assert_eq!(passives, [(142, 2), (4408, 1)]);
     assert_eq!(core.skills.len(), 4);
+    // Java owns the functions by the effect object (`skill:142:2/Buff`).
     assert_eq!(
         core.calculators.funcs(Stat::PowerDefence).last().unwrap().owner,
-        FuncOwner::Skill { id: 142, level: 2 }
+        FuncOwner::Effect {
+            skill_id: 142,
+            skill_level: 2,
+            scope: l2_data::skill::EffectScope::Passive,
+            index: 0
+        }
     );
 }
 
@@ -507,7 +520,7 @@ fn a_new_level_replaces_the_old_one_and_removal_takes_the_functions() {
     );
     assert!(world.remove_skill(ME, 142, true));
     assert_eq!(world.stats(ME).unwrap().p_def(None), 80.0 * 0.9);
-    assert!(world.player(ME).unwrap().core.passives.is_empty());
+    assert!(world.effect_list(ME).unwrap().passives().is_empty());
     assert!(!world.add_skill(ME, 5555, 1), "unknown skill");
 }
 

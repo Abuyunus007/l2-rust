@@ -684,6 +684,14 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         exp: exp_settings(config, config_dir),
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
+        effects: l2_world::EffectSettings {
+            buffs_max_amount: i32::from(p.buffs_max_amount),
+            triggered_buffs_max_amount: i32::from(p.triggered_buffs_max_amount),
+            dances_max_amount: i32::from(p.dances_max_amount),
+            effect_tick_ratio: p.effect_tick_ratio,
+            show_effect_messages_on_login: p.show_effect_messages_on_login,
+            debuff_duration_uses_resists: config.general.debuff_duration_uses_resists,
+        },
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,

@@ -1,36 +1,32 @@
-//! The stat side of skills: what `Creature.addSkill` / `removeSkill` do to the calculators, the
-//! passive skills' effect functions, and the skills the inventory listeners and the penalty
-//! checks give a player.
+//! The stat side of skills: what `Creature.addSkill` / `removeSkill` do, and the skills the
+//! inventory listeners and the penalty checks give a player.
 // Java: entity/actor/Creature.java (addSkill, removeSkill, the NPC constructor's template skills)
-// Java: mechanics/skill/Skill.java (applyEffects with passive = true, getStatFuncs, checkCondition)
-// Java: entity/actor/holders/creature/EffectList.java (add for a passive skill)
-// Java: mechanics/skill/BuffInfo.java (initializeEffects, removeStats)
-// Java: mechanics/effects/AbstractEffect.java (getStatFuncs), handlers/skill/effects/* (canStart,
-//       isInstant, and the onStart of EnableCloak, TalismanSlot, CrystalGradeModify)
+// Java: mechanics/skill/Skill.java (applyEffects with passive = true; see `effects/apply.rs`)
 // Java: entity/itemcontainer/Inventory.java (ArmorSetListener, ItemSkillsListener)
 // Java: entity/actor/Player.java (refreshOverloaded, refreshExpertisePenalty)
 //
-// A passive skill's effect functions are owned by `FuncOwner::Skill { id, level }`. Java owns
-// them by the effect objects and removes them with `BuffInfo.removeStats` (every effect and the
-// skill); removing everything of the skill's id and level is the same.
+// A passive skill is applied through the effect engine (`effects/`, M5-EFFECT-01): its info sits
+// in the effect list's passives, its effects' functions are owned by `FuncOwner::Effect`, like
+// Java's `EffectList._passives` and the `AbstractEffect` owners.
 //
-// Only the stat part is ported here. What the skill system of M5 brings: skill reuse timestamps
-// of active item skills, `SkillList` updates, the system messages of a failed passive condition,
-// effects other than stat functions (the `onStart` of every handler except the three named
-// above), and skills of summons.
+// The talisman slots, the cloak slot and the expertise penalty bonus are read from the passive
+// effects (`EnableCloak`, `TalismanSlot`, `CrystalGradeModify`) here instead of the handlers'
+// `onStart` / `onExit`, which are not ported yet (M5-EFX-02/03).
+//
+// What other M5 cards bring: skill reuse timestamps of active item skills, `SkillList` updates,
+// skills of summons.
 
 use l2_data::SkillTemplate;
 use l2_data::item::{CrystalType, EtcItemType};
-use l2_data::skill::{EffectScope, EffectTemplate};
-use l2_data::stats::AbnormalType;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_util::ObjectId;
 use tracing::warn;
 
-use super::calculators::{Func, FuncOwner};
-use super::conditions::{self, CondEnv};
+use super::calculators::FuncOwner;
 use super::creature_stat::StatView;
 use super::{CalcSkill, StatData};
+use crate::effects::apply::ApplyMode;
+use crate::effects::{SkillFinishType, SkillKey};
 use crate::player::ItemData;
 use crate::world::World;
 
@@ -40,111 +36,6 @@ pub const WEAPON_GRADE_PENALTY: i32 = 6209;
 pub const ARMOR_GRADE_PENALTY: i32 = 6213;
 pub const WEIGHT_PENALTY: i32 = 4270;
 pub const EXPERTISE: i32 = 239;
-
-/// The effect handlers whose `isInstant()` is true: they never stay on a passive skill.
-const INSTANT_EFFECTS: &[&str] = &[
-    "AddHate",
-    "ApplySkillEffects",
-    "Backstab",
-    "Blink",
-    "Bluff",
-    "CallParty",
-    "CallPc",
-    "CallSkill",
-    "ChangeFace",
-    "ChangeHairColor",
-    "ChangeHairStyle",
-    "Confuse",
-    "ConsumeBody",
-    "ConvertItem",
-    "CpDamPercent",
-    "CpHeal",
-    "CpHealPercent",
-    "DeathLink",
-    "DeleteHate",
-    "DeleteHateOfMe",
-    "DetectHiddenObjects",
-    "Detection",
-    "DispelAll",
-    "DispelByCategory",
-    "DispelBySlot",
-    "DispelBySlotProbability",
-    "EnemyCharge",
-    "EnergyDamage",
-    "Escape",
-    "FatalBlow",
-    "Fishing",
-    "FlipBlock",
-    "FocusEnergy",
-    "FocusMaxEnergy",
-    "FocusSouls",
-    "GetAgro",
-    "GiveRecommendation",
-    "GiveSp",
-    "Harvesting",
-    "HeadquarterCreate",
-    "Heal",
-    "HealPercent",
-    "HpByLevel",
-    "HpDrain",
-    "Lethal",
-    "MagicalDamage",
-    "MagicalDamageByAbnormal",
-    "MagicalDamageMp",
-    "MagicalSoulDamage",
-    "ManaHeal",
-    "ManaHealByLevel",
-    "ManaHealPercent",
-    "OpenChest",
-    "OpenCommonRecipeBook",
-    "OpenDoor",
-    "OpenDwarfRecipeBook",
-    "OutpostCreate",
-    "OutpostDestroy",
-    "PhysicalDamage",
-    "PhysicalDamageHpLink",
-    "PhysicalSoulDamage",
-    "Pumping",
-    "RandomizeHate",
-    "RebalanceHP",
-    "Recovery",
-    "Reeling",
-    "RefuelAirship",
-    "Restoration",
-    "RestorationRandom",
-    "Resurrection",
-    "Ride",
-    "RunAway",
-    "SetSkill",
-    "SkillTurning",
-    "SoulBlow",
-    "Sow",
-    "Spoil",
-    "StaticDamage",
-    "StealAbnormal",
-    "Summon",
-    "SummonAgathion",
-    "SummonCubic",
-    "SummonNpc",
-    "SummonPet",
-    "SummonTrap",
-    "Sweeper",
-    "TakeCastle",
-    "TakeFort",
-    "TakeFortStart",
-    "TakeTerritoryFlag",
-    "TargetCancel",
-    "TargetMeProbability",
-    "Teleport",
-    "TeleportToTarget",
-    "ThrowUp",
-    "TransferHate",
-    "TrapDetect",
-    "TrapRemove",
-    "Unsummon",
-    "UnsummonAgathion",
-    "VitalityPointUp",
-];
 
 /// Java `SkillData.getSkill(id, level)` without its log lines: a level above the skill's highest
 /// gives the highest. The callers log what Java logs at their place (`restoreSkills`, NpcData
@@ -165,99 +56,6 @@ pub(crate) fn calc_skill(skill: &SkillTemplate) -> CalcSkill {
         level: skill.level,
         magic: skill.is_magic(),
     }
-}
-
-/// `AbstractEffect.canStart(effector, effected, skill)` of the handler, for a passive skill (the
-/// effector is the effected).
-fn can_start(effect: &EffectTemplate, view: &StatView<'_>) -> bool {
-    match effect.name.as_str() {
-        "Passive" => view.is_attackable(),
-        "CrystalGradeModify"
-        | "EnableCloak"
-        | "TalismanSlot"
-        | "Lucky"
-        | "CubicMastery"
-        | "EnlargeAbnormalSlot"
-        | "NevitsHourglass"
-        | "Disarm"
-        | "BlockAction"
-        | "BlockChat"
-        | "BlockParty"
-        | "ProtectionBlessing"
-        | "Flag"
-        | "Transformation" => view.is_player(),
-        "NoblesseBless" => view.is_playable(),
-        // `effector.isPlayer() && effected.isSummon()`.
-        "Betray" => false,
-        // Players, and attackables that are no siege NPCs.
-        "Fear" => {
-            view.is_player()
-                || (view.is_attackable()
-                    && !view.npc_template().is_some_and(|t| {
-                        matches!(t.npc_type.as_str(), "Defender" | "FortCommander" | "SiegeFlag")
-                            || t.race == l2_data::npc::NpcRace::SiegeWeapon
-                    }))
-        }
-        _ => true,
-    }
-}
-
-/// The effects of a passive skill that stay on its owner (`applyEffectScope(PASSIVE, info,
-/// false, true)`: not instant, `canStart`).
-fn lasting_passive_effects<'a>(
-    skill: &'a SkillTemplate,
-    view: &'a StatView<'_>,
-) -> impl Iterator<Item = &'a EffectTemplate> + 'a {
-    skill
-        .effects
-        .get(EffectScope::Passive)
-        .iter()
-        .filter(|e| !INSTANT_EFFECTS.contains(&e.name.as_str()))
-        .filter(move |e| can_start(e, view))
-}
-
-/// `Skill.checkCondition(creature, creature, false)` for a passive skill.
-fn check_condition(skill: &SkillTemplate, view: &StatView<'_>, skill_ctx: &CalcSkill) -> bool {
-    // "creature.isGM() && !GM_SKILL_RESTRICTION". (Fake players are not ported; mounted players
-    // only fail for skills with negative effects, which passives are not.)
-    if view.is_gm() && !view.settings().gm_skill_restriction {
-        return true;
-    }
-    skill.pre_conditions.iter().all(|c| {
-        conditions::test(
-            &c.condition,
-            &CondEnv {
-                actor: view,
-                target: Some(view.object_id()),
-                skill: Some(skill_ctx),
-            },
-        )
-    })
-}
-
-/// The functions a passive skill gives its owner (`EffectList.add` -> `initializeEffects` ->
-/// `effect.getStatFuncs(effector, effected, skill)`). `None` when the skill's conditions fail
-/// (the passive is then not applied at all).
-fn passive_funcs(skill: &SkillTemplate, view: &StatView<'_>) -> Option<Vec<Func>> {
-    let ctx = calc_skill(skill);
-    if !check_condition(skill, view, &ctx) {
-        return None;
-    }
-    let owner = FuncOwner::Skill {
-        id: skill.id,
-        level: skill.level,
-    };
-    let env = CondEnv {
-        actor: view,
-        target: Some(view.object_id()),
-        skill: Some(&ctx),
-    };
-    let funcs = lasting_passive_effects(skill, view)
-        .flat_map(|e| e.funcs.iter())
-        .filter(|t| t.attach_cond.as_deref().is_none_or(|c| conditions::test(c, &env)))
-        .map(|t| Func::from_template(t, owner))
-        .collect();
-    Some(funcs)
 }
 
 impl<'w> StatView<'w> {
@@ -285,22 +83,24 @@ impl<'w> StatView<'w> {
         })
     }
 
-    /// The applied passive skills (Java `EffectList._passives`) with their templates.
-    fn passive_templates(&self) -> impl Iterator<Item = &'w SkillTemplate> + 'w {
-        let skills = self.stat_data().map(|d| &d.skills);
-        self.core()
-            .passives
-            .iter()
-            .filter_map(move |&(id, level)| skills?.get(id, level))
-    }
-
-    /// The parameter `key` of every lasting passive effect named `name`.
+    /// The parameter `key` of every effect named `name` of the applied passive skills (Java
+    /// `EffectList._passives`), in the order they were applied.
     fn passive_effect_params(&self, name: &str, key: &str) -> Vec<i32> {
         let mut out = Vec::new();
-        for skill in self.passive_templates() {
-            for effect in lasting_passive_effects(skill, self) {
-                if effect.name == name {
-                    out.push(effect.param(key).and_then(|v| v.trim().parse().ok()).unwrap_or(0));
+        let (Some(list), Some(data)) = (self.world().effect_list(self.object_id()), self.stat_data()) else {
+            return out;
+        };
+        for info in list.passives() {
+            let skill = info.skill();
+            let Some(template) = data.skills.get(skill.id, skill.level) else {
+                continue;
+            };
+            for effect in info.effects() {
+                let Some(e) = template.effects.get(effect.scope).get(effect.index) else {
+                    continue;
+                };
+                if e.name == name {
+                    out.push(e.param(key).and_then(|v| v.trim().parse().ok()).unwrap_or(0));
                 }
             }
         }
@@ -354,8 +154,8 @@ impl World {
         self.data.stat_data()
     }
 
-    /// Java `Creature.addSkill(skill)`, the stat part: the skill replaces a known one of the same
-    /// id (its functions and passive effects go), then a passive skill applies its effects.
+    /// Java `Creature.addSkill(skill)`: the skill replaces a known one of the same id (its
+    /// functions go and, for a passive, its effects), then a passive skill applies its effects.
     /// `false` when the skill does not exist (Java skips it with a warning).
     pub fn add_skill(&mut self, id: ObjectId, skill_id: i32, level: i32) -> bool {
         let Some((skill_id, level, passive)) = self
@@ -377,62 +177,30 @@ impl World {
             }
         };
         if let Some((_, old_level)) = old {
-            // `removeStatsOwner(oldSkill)` and, for a passive, `stopSkillEffects(id)`.
+            // `removeStatsOwner(oldSkill)`, then `stopSkillEffects(NORMAL, id)` for a passive.
             core.calculators.remove_owner(FuncOwner::Skill {
                 id: skill_id,
                 level: old_level,
             });
-            core.passives.retain(|(s, _)| *s != skill_id);
+            let old_passive = self
+                .skill_templates()
+                .and_then(|d| d.skills.get(skill_id, old_level))
+                .is_some_and(SkillTemplate::is_passive);
+            if old_passive {
+                self.stop_skill_effects(id, SkillFinishType::Normal, skill_id);
+            }
         }
         // `addStatFuncs(newSkill.getStatFuncs(null, this))`: skills carry no functions of their
         // own in the H5 data (DocumentSkill only attaches functions to effects).
         if passive {
-            self.apply_passive(id, skill_id, level);
+            // `newSkill.applyEffects(this, this, false, true, false, 0)`.
+            self.apply_effects_with(id, id, SkillKey::new(skill_id, level), ApplyMode::PASSIVE);
         }
         true
     }
 
-    /// `Skill.applyEffects(this, this, false, true, false, 0)` -> `EffectList.add(info)`.
-    fn apply_passive(&mut self, id: ObjectId, skill_id: i32, level: i32) {
-        let funcs = {
-            let Some(view) = self.stats(id) else {
-                return;
-            };
-            let Some(skill) = view.stat_data().and_then(|d| d.skills.get(skill_id, level)) else {
-                return;
-            };
-            if skill.abnormal_type != AbnormalType::None {
-                warn!(
-                    "Passive {}({skill_id}/{level}) with abnormal type: {}!",
-                    skill.name,
-                    skill.abnormal_type.name()
-                );
-            }
-            match passive_funcs(skill, &view) {
-                Some(funcs) => funcs,
-                None => return,
-            }
-        };
-        let Some(core) = self.core_mut(id) else {
-            return;
-        };
-        // "Removes the old stats from the creature if the skill was present."
-        let old: Vec<(i32, i32)> = core
-            .passives
-            .iter()
-            .copied()
-            .filter(|(s, _)| *s == skill_id)
-            .collect();
-        for (s, l) in old {
-            core.calculators
-                .remove_owner(FuncOwner::Skill { id: s, level: l });
-        }
-        core.passives.retain(|(s, _)| *s != skill_id);
-        core.passives.push((skill_id, level));
-        core.calculators.add_all(funcs);
-    }
-
-    /// Java `Creature.removeSkill(skillId, cancelEffect)`, the stat part.
+    /// Java `Creature.removeSkill(skillId, cancelEffect)`: a passive or toggle skill (or any with
+    /// `cancel_effect`) also loses its functions and its effects (`REMOVED`).
     pub fn remove_skill(&mut self, id: ObjectId, skill_id: i32, cancel_effect: bool) -> bool {
         let Some(core) = self.core_mut(id) else {
             return false;
@@ -441,20 +209,17 @@ impl World {
             return false;
         };
         let (_, level) = core.skills.remove(at);
-        core.calculators
-            .remove_owner(FuncOwner::Skill { id: skill_id, level });
-        if cancel_effect {
-            let passives: Vec<(i32, i32)> = core
-                .passives
-                .iter()
-                .copied()
-                .filter(|(s, _)| *s == skill_id)
-                .collect();
-            for (s, l) in passives {
+        // Stopping a cast of this skill (`abortCast`) is M5-CAST-01's.
+        let (toggle, passive) = self
+            .skill_templates()
+            .and_then(|d| d.skills.get(skill_id, level))
+            .map_or((false, false), |s| (s.is_toggle(), s.is_passive()));
+        if cancel_effect || toggle || passive {
+            if let Some(core) = self.core_mut(id) {
                 core.calculators
-                    .remove_owner(FuncOwner::Skill { id: s, level: l });
+                    .remove_owner(FuncOwner::Skill { id: skill_id, level });
             }
-            core.passives.retain(|(s, _)| *s != skill_id);
+            self.stop_skill_effects(id, SkillFinishType::Removed, skill_id);
         }
         true
     }

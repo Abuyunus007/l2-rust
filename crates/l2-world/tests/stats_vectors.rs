@@ -567,6 +567,21 @@ fn function_lists_match_the_java_trace() {
                         ),
                         FuncOwner::Skill { id, level } => format!("skill:{id}:{level}"),
                         FuncOwner::ArmorSet(chest) => format!("set:{chest}"),
+                        // Java prints an effect owner as its skill and its handler name.
+                        FuncOwner::Effect {
+                            skill_id,
+                            skill_level,
+                            scope,
+                            index,
+                        } => {
+                            let name = t
+                                .stats
+                                .skills
+                                .get(skill_id, skill_level)
+                                .and_then(|s| s.effects.get(scope).get(usize::from(index)))
+                                .map_or("?", |e| e.name.as_str());
+                            format!("skill:{skill_id}:{skill_level}/{name}")
+                        }
                     };
                     let cond = f.cond.as_deref().map_or("null".to_owned(), cond_class);
                     format!("{} {} {} {owner} {cond}", class_of(f.calc), f.order, f.value)
@@ -578,8 +593,6 @@ fn function_lists_match_the_java_trace() {
                     list.iter()
                         .map(|f| {
                             let owner = f["owner"].as_str().unwrap();
-                            // Rust owns passive effect functions by the skill.
-                            let owner = owner.split('/').next().unwrap();
                             format!(
                                 "{} {} {} {owner} {}",
                                 f["class"].as_str().unwrap(),

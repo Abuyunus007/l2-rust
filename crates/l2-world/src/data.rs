@@ -323,6 +323,8 @@ pub struct WorldSettings {
     pub vitality: crate::rewards::vitality::VitalitySettings,
     /// The values Nevit's blessing reads besides `nevit_enabled` (M4-VIT-01).
     pub nevit: crate::rewards::nevit::NevitSettings,
+    /// The buff slot limits and the effect tick length (M5-EFFECT-01).
+    pub effects: crate::effects::EffectSettings,
 }
 
 impl Default for WorldSettings {
@@ -368,6 +370,7 @@ impl Default for WorldSettings {
             exp: crate::rewards::exp::ExpSettings::default(),
             vitality: crate::rewards::vitality::VitalitySettings::default(),
             nevit: crate::rewards::nevit::NevitSettings::default(),
+            effects: crate::effects::EffectSettings::default(),
         }
     }
 }
