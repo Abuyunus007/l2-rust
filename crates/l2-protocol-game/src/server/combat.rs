@@ -375,3 +375,74 @@ impl Decode for ExUseSharedGroupItem {
         })
     }
 }
+
+// Java: gameserver/network/serverpackets/SetupGauge.java
+/// A progress bar on the client (`SETUP_GAUGE`): a bow's reload, a cast. Java writes the time
+/// twice with the three-argument constructor (current and maximum).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SetupGauge {
+    pub object_id: i32,
+    /// [`Self::BLUE`], [`Self::RED`] or [`Self::CYAN`] (Java `_dat1`).
+    pub color: i32,
+    /// Milliseconds (Java `_time`).
+    pub time: i32,
+    /// Milliseconds (Java `_time2`).
+    pub max_time: i32,
+}
+
+impl SetupGauge {
+    pub const OPCODE: ServerOpcode = ServerOpcode::SetupGauge;
+    pub const BLUE: i32 = 0;
+    pub const RED: i32 = 1;
+    pub const CYAN: i32 = 2;
+
+    /// Java `new SetupGauge(objectId, color, time)`: the time is both current and maximum.
+    pub fn new(object_id: i32, color: i32, time: i32) -> Self {
+        Self {
+            object_id,
+            color,
+            time,
+            max_time: time,
+        }
+    }
+}
+
+impl Encode for SetupGauge {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id)
+            .i32(self.color)
+            .i32(self.time)
+            .i32(self.max_time);
+    }
+}
+
+impl Decode for SetupGauge {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            object_id: r.i32()?,
+            color: r.i32()?,
+            time: r.i32()?,
+            max_time: r.i32()?,
+        })
+    }
+}
+
+#[cfg(test)]
+mod setup_gauge_tests {
+    use super::*;
+
+    #[test]
+    fn setup_gauge_round_trip_and_layout() {
+        let packet = SetupGauge::new(0x1234, SetupGauge::RED, 1551);
+        let bytes = packet.to_bytes();
+        // Opcode 0x6B, then four ints.
+        assert_eq!(bytes[0], 0x6B);
+        assert_eq!(bytes.len(), 1 + 16);
+        assert_eq!(&bytes[5..9], &1_i32.to_le_bytes());
+        assert_eq!(&bytes[9..13], &1551_i32.to_le_bytes());
+        assert_eq!(&bytes[13..17], &1551_i32.to_le_bytes());
+        let decoded = SetupGauge::decode(&mut PacketReader::new(&bytes[1..])).unwrap();
+        assert_eq!(decoded, packet);
+    }
+}

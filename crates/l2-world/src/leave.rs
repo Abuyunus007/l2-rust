@@ -75,6 +75,7 @@ impl World {
         });
         // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);
+        self.forget_combat(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

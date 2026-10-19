@@ -198,6 +198,22 @@ pub struct ClassBalance {
     pub pvp_magical_skill_critical_chance: Vec<f32>,
     /// `PveMagicalSkillCriticalChanceMultipliers`.
     pub pve_magical_skill_critical_chance: Vec<f32>,
+    // The normal attack's tables (M4-COMBAT-01: `Formulas.calcCrit` / `calcPhysDam`).
+    /// `PvpPhysicalSkillDefenceMultipliers` (Java applies it to normal attacks too, by the
+    /// target's class).
+    pub pvp_physical_skill_defence: Vec<f32>,
+    /// `PvpPhysicalAttackCriticalChanceMultipliers`.
+    pub pvp_physical_attack_critical_chance: Vec<f32>,
+    /// `PvePhysicalAttackCriticalChanceMultipliers`.
+    pub pve_physical_attack_critical_chance: Vec<f32>,
+    /// `PvpPhysicalAttackCriticalDamageMultipliers`.
+    pub pvp_physical_attack_critical_damage: Vec<f32>,
+    /// `PvePhysicalAttackCriticalDamageMultipliers`.
+    pub pve_physical_attack_critical_damage: Vec<f32>,
+    /// `PvpPhysicalAttackDamageMultipliers`.
+    pub pvp_physical_attack_damage: Vec<f32>,
+    /// `PvePhysicalAttackDamageMultipliers`.
+    pub pve_physical_attack_damage: Vec<f32>,
 }
 
 impl ClassBalance {
@@ -225,7 +241,14 @@ impl Default for ClassBalance {
             pve_magical_skill_defence: ones.clone(),
             pve_physical_skill_defence: ones.clone(),
             pvp_magical_skill_critical_chance: ones.clone(),
-            pve_magical_skill_critical_chance: ones,
+            pve_magical_skill_critical_chance: ones.clone(),
+            pvp_physical_skill_defence: ones.clone(),
+            pvp_physical_attack_critical_chance: ones.clone(),
+            pve_physical_attack_critical_chance: ones.clone(),
+            pvp_physical_attack_critical_damage: ones.clone(),
+            pve_physical_attack_critical_damage: ones.clone(),
+            pvp_physical_attack_damage: ones.clone(),
+            pve_physical_attack_damage: ones,
         }
     }
 }

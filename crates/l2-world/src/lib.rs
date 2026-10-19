@@ -11,8 +11,10 @@
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
 pub mod admin;
+pub mod ai;
 pub mod bypass;
 pub mod chat;
+pub mod combat;
 pub mod command;
 pub mod data;
 pub mod dialog;
@@ -43,7 +45,9 @@ pub mod world;
 pub mod zones;
 
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
+pub use ai::AiState;
 pub use bypass::{BypassHandler, BypassHandlers};
+pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,

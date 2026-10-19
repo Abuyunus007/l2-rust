@@ -32,6 +32,15 @@ pub enum TimerKind {
     InventoryUpdate(ObjectId),
     /// Java `CreatureFollowTaskManager`'s 500 ms follow task, for one player.
     Follow(ObjectId),
+    /// Java `HitTask`: one hit of an attack lands (`Creature.onHitTimer`), see `combat/`.
+    Hit(crate::combat::HitTask),
+    /// Java `ThreadPool.schedule(() -> getAI().notifyActionReadyToAct(), delay)`: the attack (or
+    /// a refused bow shot) is over and the AI may act again.
+    ReadyToAct(ObjectId),
+    /// Java `AttackStanceTaskManager`'s 1 s run: ends the combat stances older than 15 s.
+    AttackStanceCheck,
+    /// Java `Player.broadcastStatusUpdate`'s 50 ms task (one pending per player).
+    PlayerStatusUpdate(ObjectId),
 }
 
 #[derive(Debug, Default)]

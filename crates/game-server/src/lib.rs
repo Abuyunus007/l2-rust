@@ -226,6 +226,7 @@ impl Server {
             let geo_engine = Arc::clone(&geo_engine);
             let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
             let (html, teleporters) = (Arc::clone(&datapack.html), Arc::clone(&datapack.teleporters));
+            let hit_condition_bonus = Arc::clone(&datapack.hit_condition_bonus);
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -244,6 +245,8 @@ impl Server {
                     // The pages of NPC dialogs and the gatekeeper lists (always preloaded).
                     world.set_html_cache(html);
                     world.set_teleporter_data(teleporters);
+                    // Java: HitConditionBonusData (the attack's height, side and night bonus).
+                    world.set_hit_condition_bonus(hit_condition_bonus);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the

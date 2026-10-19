@@ -11,8 +11,9 @@
 // - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, a pending
 //   trade/party request (`getActiveRequester`), spawn protection (`onActionRequest`): none of them
 //   exist yet.
-// - Attacking (`setIntentionAttack`) and following (`setIntentionFollow`): M4. A second click on
-//   something attackable or on another player only keeps the target, as in Java without AI.
+// - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
+//   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
+//   (M4-COMBAT-01); doors are attacked in sieges (M5).
 // - The GM shift click (`NpcShiftClick`, `npcinfo.htm`) and `AltGameViewNpc`: the GM gets the
 //   target and `ActionFailed`.
 // - Locked targets (aggression effects), `isOutOfControl`, vehicles, parties: M4/M5.
@@ -57,13 +58,13 @@ impl World {
         self.objects.get(&id).filter(|e| e.spawned).map(|_| id)
     }
 
-    /// Java `isDead()` / `isAlikeDead()`. Death is M4; a creature without hit points counts.
+    /// Java `isAlikeDead()`: dead (fake death is an effect, M5). See `World::is_dead`.
     pub fn is_alike_dead(&self, id: ObjectId) -> bool {
-        self.players.get(&id).is_some_and(|p| p.core.cur_hp < 0.5)
+        self.is_dead(id)
     }
 
     /// Java `WorldObject.isTargetable()`.
-    fn is_targetable(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_targetable(&self, id: ObjectId) -> bool {
         match self.objects.get(&id).map(|e| e.kind) {
             Some(ObjectKind::Npc) => self
                 .npcs
@@ -348,12 +349,16 @@ impl World {
         if self.target_of(player) != Some(npc) {
             // Set the target of the Player player.
             self.set_target(player, Some(npc));
-            // `if (target.isAutoAttackable(player)) npc.getAI();` wakes the AI up: M4.
+            // Check if the player is attackable (without a forced attack).
+            if self.is_auto_attackable_by(npc, player) {
+                // Wake up the AI (`npc.getAI()`).
+                self.wake_ai(npc);
+            }
         } else if interact {
             let attackable = self.is_auto_attackable_by(npc, player);
+            // Check if the player is attackable (without a forced attack) and isn't dead.
             if attackable && !self.is_alike_dead(npc) {
-                // FOLLOW-UP(M4): `player.getAI().setIntentionAttack(target)`.
-                debug!("{player} clicked the attackable {npc} twice: attacking arrives with M4");
+                self.set_intention_attack(player, npc);
             } else if !attackable {
                 // Calculate the distance between the Player and the Npc.
                 if !self.can_interact(npc, player) {
@@ -446,9 +451,11 @@ impl World {
         if self.target_of(player) != Some(target) {
             self.set_target(player, Some(target));
         } else if interact {
-            // FOLLOW-UP(M4): private stores (`setIntentionInteract`), attacking an auto-attackable
-            // player and `setIntentionFollow` for the rest.
-            if !self.is_auto_attackable_by(target, player) {
+            // FOLLOW-UP(M5): private stores (`setIntentionInteract`), the cursed weapon level
+            // rule, `setIntentionFollow` for a player that cannot be attacked.
+            if self.is_auto_attackable_by(target, player) {
+                self.set_intention_attack(player, target);
+            } else {
                 // This Action Failed packet avoids player getting stuck when clicking three or
                 // more times.
                 self.send(player, &ActionFailed);

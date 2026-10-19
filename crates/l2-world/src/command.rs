@@ -62,6 +62,9 @@ pub enum ClientInput {
     BuildCmd { command: String },
     /// Java `BypassUserCmd`: a user command such as `/loc` (id 0).
     UserCommand { id: i32 },
+    /// Java `AttackRequest` (opcodes `ATTACK` and `ATTACK_REQUEST`): a click to attack. The
+    /// client's position and the shift flag are read and never used by Java.
+    AttackRequest { object_id: i32, attack_id: i8 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }
