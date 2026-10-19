@@ -16,8 +16,7 @@
 // - clans, sieges, Seven Signs (the period message), announcements, the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
 // - friends, contacts, teleport bookmarks, the mail check, premium items
-// - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty), `Die` for a
-//   character stored dead
+// - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
 
 use l2_protocol_game::SystemMessageId;
@@ -606,6 +605,11 @@ impl World {
         packets.push(FriendList::default().to_bytes());
         packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
         // Seven Signs period message, announcements, server news: not ported.
+        // "Dead or fake dead": no broadcast needed since the player will already spawn dead to
+        // others.
+        if self.is_alike_dead(id) {
+            packets.push(self.die_packet(id).to_bytes());
+        }
         // SkillCoolTime: the reuse timers are not restored.
         packets.push(SkillCoolTime::default().to_bytes());
         packets

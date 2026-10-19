@@ -58,6 +58,22 @@ memory only); the stat engine comes first (CP-M4a), combat after it.
   events). One `ai` state per NPC (enum of Java intentions), no threads.
 - Damage, death, exp and drops are world events; the outbox carries packets and DB writes.
 
+## Death, corpses and respawn (M4-DEATH-01)
+- `World::do_die` (combat/damage.rs) hands over to `death.rs`, which follows Java's class chain
+  (a player: `Playable.doDie` then `Player.doDie`; an NPC: `Creature.doDie`, `Npc.doDie`, and for
+  an attackable `Attackable.doDie`). The `Die` packet is sent by `notify_action_death`
+  (ai/mod.rs), as in Java, so an NPC without an AI dies silently. Rewards, drops and the exp
+  penalty are empty hooks in `death.rs` marked `// M4-EXP-01:` / `// M4-DROP-01:`.
+- `respawn.rs` is `Spawn.decreaseCount`, `DecayTaskManager`, `RespawnTaskManager` and
+  `SpawnGroupTaskManager` on the timer wheel (`TimerKind::{Decay, Respawn, GroupSpawn}`). Java's
+  managers poll once a second; here an entry fires on the tick its due time falls in.
+- A dead NPC's entry leaves `World::npcs` when the corpse decays; its object id stays reserved and
+  the respawn re-creates the NPC with the same id (Java re-initialises the same `Npc` object).
+  Per-spawn counters (`_currentCount`, `_scheduledCount`, `_doRespawn`, `_spawnedNpcs`) and the
+  spawn group census live in `DeathWorld`.
+- `RequestRestartPoint` sets "pending revive" and calls `teleToLocation`, which revives first, as
+  in Java. Clan hall, castle, fortress and siege buttons need clans and sieges (M5).
+
 ## Not in M4
 - Active skills and their effects (cast, buffs, debuffs, heals): M5. Only passive skill stat
   funcs and the stat parts of item skills are applied in M4.
