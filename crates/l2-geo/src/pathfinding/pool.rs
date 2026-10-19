@@ -488,10 +488,11 @@ fn worker_loop(shared: &Shared, mut finder: PathFinder, options: &PathOptions) {
             path,
             elapsed,
         };
+        // Counted before the hand-over, so whoever receives the result already sees it counted.
+        shared.counters.delivered.fetch_add(1, Ordering::Relaxed);
         if catch_unwind(AssertUnwindSafe(|| shared.sink.deliver(result))).is_err() {
             warn!("path sink panicked");
         }
-        shared.counters.delivered.fetch_add(1, Ordering::Relaxed);
     }
 }
 
