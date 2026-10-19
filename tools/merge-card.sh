@@ -36,10 +36,10 @@ git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null
 rm -rf target/debug/incremental
 git branch -q -D "$branch" 2>/dev/null
 
-sed -i "s/| \(\[$card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1merged |/" docs/tasks/BOARD.md
+sed -i "s/| \(\[$card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[^|]* |/| \1merged |/" docs/tasks/BOARD.md
 for next in "$@"; do
   case "$next" in M[0-9]*-*) ;; *) next="M1-$next" ;; esac   # short form = an M1 card
-  sed -i "s/| \(\[$next\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[a-z-]* |/| \1in-progress |/" docs/tasks/BOARD.md
+  sed -i "s/| \(\[$next\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[^|]* |/| \1in-progress |/" docs/tasks/BOARD.md
 done
 git add -A docs/tasks/BOARD.md Cargo.lock
 git commit -q -m "Board: $card merged${*:+, started $*}
