@@ -7,7 +7,7 @@
 # Environment:
 #   L2J_SRC   Java source root of L2JMobius (the folder that contains "org\"). Default: C:\l2-rust\l2jmobius\java
 #   L2J_LIBS  Folder with the third-party jars.                              Default: <L2J_SRC>\..\dist\libs
-#   L2J_GAME_ROOT  Game server root (has config\ and data\).                 Default: <L2J_SRC>\..\dist\game   (stats, formulas only)
+#   L2J_GAME_ROOT  Game server root (has config\ and data\).                 Default: <L2J_SRC>\..\dist\game   (stats, formulas, drops only)
 
 param(
     [string]$Generator = "all",
@@ -47,7 +47,7 @@ if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 if ($NoRun) { return }
 
 # The stat and formula generators read ./config and ./data of the game server root, so they run with that as the working directory (the output path is absolute).
-if (($Generator -eq "stats") -or ($Generator -eq "formulas")) {
+if (($Generator -eq "stats") -or ($Generator -eq "formulas") -or ($Generator -eq "drops")) {
     if (-not (Test-Path (Join-Path $gameRoot "config\Server.ini"))) { throw "L2J_GAME_ROOT '$gameRoot' has no config\Server.ini" }
     Push-Location $gameRoot
     try {

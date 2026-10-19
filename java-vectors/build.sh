@@ -5,12 +5,13 @@
 #   ./java-vectors/build.sh crypto       # build, then run one generator
 #   ./java-vectors/build.sh stats        # stat engine vectors (runs from the game server root)
 #   ./java-vectors/build.sh formulas     # Formulas vectors (runs from the game server root)
+#   ./java-vectors/build.sh drops        # calculateDrops vectors (runs from the game server root)
 #   NO_RUN=1 ./java-vectors/build.sh     # build only
 #
 # Environment:
 #   L2J_SRC        Java source root of L2JMobius (the folder that contains "org/"). Required unless the default exists.
 #   L2J_LIBS       Folder with the third-party jars. Default: <L2J_SRC>/../dist/libs
-#   L2J_GAME_ROOT  Game server root (has config/ and data/). Default: <L2J_SRC>/../dist/game   (stats, formulas only)
+#   L2J_GAME_ROOT  Game server root (has config/ and data/). Default: <L2J_SRC>/../dist/game   (stats, formulas, drops only)
 set -eu
 
 # Windows (Git Bash / MSYS) needs ';' as classpath separator and Windows-style paths for java/javac.
@@ -49,7 +50,7 @@ rm -f "$build/sources.txt"
 
 # The stat and formula generators read ./config and ./data of the game server root, so they run with that as the working directory (the output path is absolute).
 case "$generator" in
-  stats|formulas)
+  stats|formulas|drops)
     [ -f "$game_root/config/Server.ini" ] || { echo "L2J_GAME_ROOT '$game_root' has no config/Server.ini" >&2; exit 1; }
     (cd "$game_root" && java -Xmx2g -cp "$build$sep$libs/*" l2rust.vectors.Main "$generator" "$out")
     exit 0
