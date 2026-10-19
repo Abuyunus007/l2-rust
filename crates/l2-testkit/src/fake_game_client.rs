@@ -6,6 +6,10 @@
 //! nothing about the game server's code. Methods that expect a certain packet panic with a clear
 //! message when something else arrives, because they only run inside tests.
 //!
+//! In the world it can walk (`MoveToLocation`, `ValidatePosition`), click (`Action`), follow a
+//! link of an html page (`RequestBypassToServer`) and answer a teleport (`Appearing`); the
+//! `skip_until`, `expect_later` and `read_quiet` helpers collect what the world sends on its own.
+//!
 //! Every packet that is sent or received is also written to a log of `(direction, packet name)`
 //! ([`FakeGameClient::log`]), so a test can compare the whole conversation with a capture of the
 //! Java game server by name and order (see `crates/game-server/tests/e2e.rs`).
@@ -23,8 +27,9 @@ use std::time::Duration;
 use l2_crypto::{GameCipher, game_key_from_random};
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::client::{
-    AuthLogin, CharacterCreate, CharacterSelect, EnterWorld, Logout, NewCharacter, ProtocolVersion,
-    RequestGotoLobby, RequestRestart, Say2,
+    Action, Appearing, AuthLogin, CharacterCreate, CharacterSelect, EnterWorld, Logout, MoveToLocation,
+    NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestRestart, Say2,
+    ValidatePosition,
 };
 use l2_protocol_game::server::{
     CharCreateFail, CharCreateOk, CharSelected, CharSelectionInfo, KeyPacket, NewCharacterSuccess,
@@ -197,6 +202,34 @@ impl FakeGameClient {
         }
     }
 
+    /// Reads packets until one is called `name` and returns that one; the packets before it are
+    /// dropped (they stay in [`log`](Self::log)). For tests that only care about one answer among
+    /// the traffic the world sends on its own.
+    pub async fn skip_until(&mut self, name: &str) -> Vec<u8> {
+        self.read_until(name)
+            .await
+            .pop()
+            .expect("read_until returns the match")
+    }
+
+    /// Like [`skip_until`](Self::skip_until), decoded as `P` (a single-byte opcode packet).
+    pub async fn expect_later<P: Decode>(&mut self, name: &str) -> P {
+        decode(&self.skip_until(name).await)
+    }
+
+    /// Everything that arrives until nothing has arrived for `quiet` (the connection must stay
+    /// open). The way to collect what a world event made the server send.
+    pub async fn read_quiet(&mut self, quiet: Duration) -> Vec<Vec<u8>> {
+        let mut packets = Vec::new();
+        loop {
+            match self.recv_within(quiet).await {
+                Recv::Packet(body) => packets.push(body),
+                Recv::Silent => return packets,
+                Recv::Closed => panic!("the game server closed the connection"),
+            }
+        }
+    }
+
     /// Reads packets until one is called `name` (that one is the last of the result).
     pub async fn read_until(&mut self, name: &str) -> Vec<Vec<u8>> {
         let mut packets = Vec::new();
@@ -322,6 +355,59 @@ impl FakeGameClient {
         .await;
     }
 
+    /// `MoveToLocation` with the mouse (`movement_mode` 1): walk to `target`, with the position
+    /// the client believes it has as `origin`. Does not wait for the answer.
+    pub async fn move_to(&mut self, target: (i32, i32, i32), origin: (i32, i32, i32)) {
+        self.send_packet(&MoveToLocation {
+            target_x: target.0,
+            target_y: target.1,
+            target_z: target.2,
+            origin_x: origin.0,
+            origin_y: origin.1,
+            origin_z: origin.2,
+            movement_mode: 1,
+        })
+        .await;
+    }
+
+    /// `ValidatePosition`: where the client thinks the player is.
+    pub async fn validate_position(&mut self, x: i32, y: i32, z: i32, heading: i32) {
+        self.send_packet(&ValidatePosition {
+            x,
+            y,
+            z,
+            heading,
+            vehicle_id: 0,
+        })
+        .await;
+    }
+
+    /// `Action`: a simple click on an object (target it; a second click talks to an NPC).
+    /// `origin` is where the client stands; Java reads it and ignores it.
+    pub async fn click(&mut self, object_id: i32, origin: (i32, i32, i32)) {
+        self.send_packet(&Action {
+            object_id,
+            origin_x: origin.0,
+            origin_y: origin.1,
+            origin_z: origin.2,
+            action_id: Action::SIMPLE_CLICK,
+        })
+        .await;
+    }
+
+    /// `RequestBypassToServer`: the command of a link in an html page.
+    pub async fn bypass(&mut self, command: &str) {
+        self.send_packet(&RequestBypassToServer {
+            command: command.to_owned(),
+        })
+        .await;
+    }
+
+    /// `Appearing`: the client has loaded the place of a teleport.
+    pub async fn appearing(&mut self) {
+        self.send_packet(&Appearing).await;
+    }
+
     /// `Logout` in the world: returns the packets that arrive before the server closes the
     /// connection.
     pub async fn logout(&mut self) -> Vec<Vec<u8>> {
@@ -341,6 +427,11 @@ impl FakeGameClient {
         );
         self.char_selection_info().await
     }
+}
+
+/// The names of packet bodies, in order.
+pub fn names_of(bodies: &[Vec<u8>]) -> Vec<String> {
+    bodies.iter().map(|body| packet_name(body)).collect()
 }
 
 /// An `EnterWorld` like the client's: the unknown blocks are zero and the five trace route
@@ -500,6 +591,62 @@ mod tests {
         let before_close = client.logout().await;
         assert_eq!(before_close, [l2_protocol_game::server::LeaveWorld.to_bytes()]);
         server.await.unwrap();
+    }
+
+    /// The in-world senders write the packets Java reads, and the log names them.
+    #[tokio::test]
+    async fn the_world_packets_are_sent_and_named() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            read_frame(&mut stream).await;
+            let key = KeyPacket {
+                result: KeyPacket::RESULT_OK,
+                key: [0; 8],
+                use_encryption: false,
+                server_id: 1,
+            };
+            write_frame(&mut stream, &key.to_bytes()).await;
+            let mut received = Vec::new();
+            for _ in 0..5 {
+                received.push(read_frame(&mut stream).await);
+            }
+            received
+        });
+        let mut client = FakeGameClient::connect(addr).await;
+        client.handshake(273).await;
+        client.move_to((1, 2, 3), (4, 5, 6)).await;
+        client.validate_position(7, 8, 9, 10).await;
+        client.click(11, (0, 0, 0)).await;
+        client.bypass("npc_5_showTeleports").await;
+        client.appearing().await;
+        let received = server.await.unwrap();
+        assert_eq!(
+            client.sent_names(),
+            [
+                "PROTOCOL_VERSION",
+                "MOVE_TO_LOCATION",
+                "VALIDATE_POSITION",
+                "ACTION",
+                "REQUEST_BYPASS_TO_SERVER",
+                "APPEARING"
+            ]
+        );
+        assert_eq!(
+            received[0],
+            MoveToLocation {
+                target_x: 1,
+                target_y: 2,
+                target_z: 3,
+                origin_x: 4,
+                origin_y: 5,
+                origin_z: 6,
+                movement_mode: 1,
+            }
+            .to_bytes()
+        );
+        assert_eq!(received[4], Appearing.to_bytes());
     }
 
     #[tokio::test]
