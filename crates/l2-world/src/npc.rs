@@ -861,7 +861,6 @@ impl World {
                 // Java: `_calculators = NPC_STD_CALCULATOR`.
                 calculators: self.npc_calculators(),
                 skills: Vec::new(),
-                passives: Vec::new(),
             },
             npc_id: template.id,
             class,
@@ -878,6 +877,8 @@ impl World {
             spawn_time_ms: 0,
         };
         self.npcs.insert(id, npc);
+        // A new Java object has a new effect list (a respawn re-creates the NPC with its old id).
+        self.forget_effects(id);
         // Java's constructor: the template's skills (passive effects copy the calculators).
         self.add_npc_template_skills(id);
         // Java `MinionList.onMinionSpawn`: the minion joins its master's list.

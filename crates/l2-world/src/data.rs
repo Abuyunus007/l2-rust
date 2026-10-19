@@ -316,6 +316,8 @@ pub struct WorldSettings {
     pub drops: crate::rewards::drop::DropSettings,
     /// The values exp, SP and levels read (M4-EXP-01).
     pub exp: crate::rewards::exp::ExpSettings,
+    /// The buff slot limits and the effect tick length (M5-EFFECT-01).
+    pub effects: crate::effects::EffectSettings,
 }
 
 impl Default for WorldSettings {
@@ -358,6 +360,7 @@ impl Default for WorldSettings {
             ground: crate::ground_item::GroundItemSettings::default(),
             drops: crate::rewards::drop::DropSettings::default(),
             exp: crate::rewards::exp::ExpSettings::default(),
+            effects: crate::effects::EffectSettings::default(),
         }
     }
 }

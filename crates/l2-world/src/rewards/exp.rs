@@ -840,9 +840,7 @@ impl World {
 
     /// Java `Player.isLucky()`: below level 10 and under the passive skill Lucky.
     fn is_lucky(&self, id: ObjectId) -> bool {
-        self.players
-            .get(&id)
-            .is_some_and(|p| p.core.level <= 9 && p.core.passives.iter().any(|(s, _)| *s == LUCKY_SKILL_ID))
+        self.players.get(&id).is_some_and(|p| p.core.level <= 9) && self.has_passive(id, LUCKY_SKILL_ID)
     }
 
     /// Java `Player.setExpBeforeDeath(exp)`.

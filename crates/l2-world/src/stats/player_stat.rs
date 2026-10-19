@@ -393,12 +393,13 @@ impl World {
     /// then the max HP/MP/CP and the current values clamped to them (`Player.restore` sets the
     /// current values after the inventory).
     pub(crate) fn init_player_stats(&mut self, id: ObjectId) {
+        // A new `Player` object: a new effect list (the passives join it below).
+        self.forget_effects(id);
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
         player.core.calculators = Calculators::own(CalcSet::std_player());
         player.core.skills.clear();
-        player.core.passives.clear();
         // The session loads the items `ORDER BY loc_data`, like `Inventory.restore`.
         let worn: Vec<ItemData> = player
             .data

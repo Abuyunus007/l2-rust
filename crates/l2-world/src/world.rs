@@ -97,6 +97,8 @@ pub struct World {
     pub(crate) ground: crate::ground_item::GroundWorld,
     /// The experience tables and skill trees exp and levels read (M4-EXP-01, `rewards/exp.rs`).
     pub(crate) rewards: crate::rewards::exp::ExpWorld,
+    /// Every creature's effect list and the effect handlers (M5-EFFECT-01, `effects/`).
+    pub(crate) effects: crate::effects::EffectsWorld,
 }
 
 impl World {
@@ -142,12 +144,15 @@ impl World {
             death: crate::death::DeathWorld::default(),
             ground: crate::ground_item::GroundWorld::default(),
             rewards: crate::rewards::exp::ExpWorld::default(),
+            effects: crate::effects::EffectsWorld::default(),
         }
     }
 
     /// Installs the datapack view the packets are built from. Call before players enter.
     pub fn set_static_data(&mut self, data: Box<dyn StaticData>) {
         self.data = data;
+        // The effect handlers belong to the skill templates of the old data.
+        self.effects.clear_handlers();
     }
 
     /// Installs the configuration values the world reads. Call before players enter.
@@ -293,6 +298,7 @@ impl World {
         }
         if self.tick % STATUS_SWEEP_TICKS == 0 {
             self.sweep_statuses();
+            self.sweep_effects();
         }
         // Java: MovementTaskManager.
         self.update_movement();
@@ -492,6 +498,12 @@ impl World {
             TimerKind::SaveGroundItems => self.on_save_ground_items_timer(),
             // Java: RandomAnimationTaskManager.run (for one NPC)
             TimerKind::RandomAnimation(id) => self.on_random_animation_timer(id),
+            // Java: BuffFinishTask, EffectTickTask, EffectList's icon task,
+            // Player.updateAndBroadcastStatus
+            TimerKind::BuffFinish(id) => self.on_buff_finish_timer(id),
+            TimerKind::EffectTick(task) => self.on_effect_tick(task),
+            TimerKind::EffectIcons(id) => self.on_effect_icons_timer(id),
+            TimerKind::UpdateAndBroadcastStatus(id) => self.on_update_and_broadcast_status_timer(id),
         }
     }
 

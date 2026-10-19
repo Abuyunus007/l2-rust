@@ -140,7 +140,10 @@ impl World {
         // Stop HP/MP/CP Regeneration task.
         self.stop_hp_mp_regeneration(id);
 
-        // M5: `stopAllEffects()` (a spawn that respawns) or `stopAllEffectsWithoutExclusions`.
+        // An attackable whose spawn respawns loses its effects (`stopAllEffects()`), one that
+        // does not respawn every effect (`stopAllEffectsWithoutExclusions(true, true)`); any
+        // other creature keeps those that last through death.
+        self.stop_effects_on_death(id);
         // Clan help range aggro on kill.
         self.clan_help_on_kill(id, killer);
 
@@ -176,8 +179,20 @@ impl World {
         // Stop HP/MP/CP Regeneration task.
         self.stop_hp_mp_regeneration(id);
 
-        // M5: noblesse blessing, resurrection special, the charm of courage, and
-        // `stopAllEffectsExceptThoseThatLastThroughDeath()`.
+        // Noblesse blessing and resurrection special keep the buffs (and end themselves); the
+        // charm of courage is not modelled.
+        let mut delete_buffs = true;
+        if self.is_affected(id, crate::effects::effect_flag::NOBLESS_BLESSING) {
+            self.stop_effects(id, crate::effects::EffectType::NoblesseBlessing);
+            delete_buffs = false;
+        }
+        if self.is_affected(id, crate::effects::effect_flag::RESURRECTION_SPECIAL) {
+            self.stop_effects(id, crate::effects::EffectType::ResurrectionSpecial);
+            delete_buffs = false;
+        }
+        if delete_buffs {
+            self.stop_all_effects_except_those_that_last_through_death(id);
+        }
 
         // Send the Server->Client packet StatusUpdate with current HP and MP to all other Player
         // to inform.
@@ -424,9 +439,12 @@ impl World {
             }
         }
         if self.is_player(id) {
-            // Player.doRevive: stop decay task, `updateEffectIcons()` (no effect list yet), and
-            // the death penalty icon.
+            // Player.doRevive: stop decay task, `updateEffectIcons()`, and the death penalty
+            // icon.
             self.cancel_decay_task(id);
+            if self.effect_list(id).is_some() {
+                self.update_effect_icons(id, false);
+            }
             self.send_etc_status_update(id);
             // The pet revive request, a summon next to its owner in a peace zone, the mount's
             // food, the dimensional rift and the instance's eject timer: not modelled.

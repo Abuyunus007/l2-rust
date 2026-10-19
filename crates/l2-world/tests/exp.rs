@@ -623,7 +623,9 @@ fn a_kill_is_shared_by_damage_with_java_integer_arithmetic() {
     let sent = s.log.take();
     // PlayerStat.addExpAndSp: addExp -> UserInfo; addSp -> StatusUpdate(SP); then the message.
     let me = names(&sent, ME);
-    // The rewards come before the `StopMove` and the `Die` of `Creature.doDie`.
+    // The rewards come before the `StopMove` and the `Die` of `Creature.doDie`; in between,
+    // `stopAllEffects()` of a monster that respawns ends with `updateAbnormalEffect()`, the
+    // `NpcInfo` of the dead monster.
     assert_eq!(
         me.iter()
             .filter(|n| *n != "STOP_MOVE")
@@ -634,6 +636,7 @@ fn a_kill_is_shared_by_damage_with_java_integer_arithmetic() {
             "EX_BR_EXTRA_USER_INFO",
             "STATUS_UPDATE",
             "SYSTEM_MESSAGE",
+            "NPC_INFO",
             "DIE"
         ]
     );

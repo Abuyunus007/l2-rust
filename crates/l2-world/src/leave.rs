@@ -51,7 +51,13 @@ impl World {
     /// Removes a player: final store, then `PlayerLeft`, the last packet of this way out, and
     /// finally the session hears about it.
     pub(crate) fn leave(&mut self, id: ObjectId, reason: LeaveReason) {
-        let Some(player) = self.players.remove(&id) else {
+        // `storeMe()` comes first: the snapshot is taken while the effects are still on.
+        let Some(snapshot) = self.players.get(&id).map(|p| snapshot_for_store(p, self.tick)) else {
+            return;
+        };
+        // `Player.deleteMe` stops the toggles while the player is still in view.
+        self.stop_all_toggles(id, true);
+        let Some(_player) = self.players.remove(&id) else {
             return;
         };
         if let Some(session) = self.player_sessions.remove(&id) {
@@ -61,7 +67,6 @@ impl World {
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);
         }
-        let snapshot = snapshot_for_store(&player, self.tick);
         let account = snapshot.account.clone();
         info!("{} ({account}) left the world: {reason:?}.", snapshot.name);
         self.outbox
@@ -75,6 +80,11 @@ impl World {
         });
         // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);
+        // `Creature.deleteMe`: every effect goes without broadcasting
+        // (`stopAllEffectsWithoutExclusions(false, false)`); the messages still reach a client
+        // that is connected. Then the `BuffFinishTask` stops with the object.
+        self.stop_all_effects_without_exclusions(id, false, false);
+        self.forget_effects(id);
         self.forget_combat(id);
         self.forget_death_state(id);
         // Java: the Player object is gone with its `_isInvul` and regeneration task (a new login is
