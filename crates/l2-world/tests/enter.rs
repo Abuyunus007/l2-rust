@@ -9,8 +9,8 @@ use std::sync::{Arc, Mutex};
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
-    EtcStatusUpdate, ExStorageMaxCount, ExUiSetting, ExVoteSystemInfo, ShortcutEntry, ShortcutInit,
-    SkillCoolTime, SkillList,
+    EtcStatusUpdate, ExStorageMaxCount, ExUiSetting, ExVoteSystemInfo, HennaInfo, ShortcutEntry,
+    ShortcutInit, SkillCoolTime, SkillList,
 };
 use l2_protocol_game::server::{
     ActionFailed, ChatType, CreatureSay, DeleteObject, ExQuestItemList, ItemList, LeaveWorld, MacroList,
@@ -1065,4 +1065,123 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
         assert_eq!(out.last(), Some(&Out::Left(1, reason)), "{what}");
         assert_eq!(w.online_count(), 0);
     }
+}
+
+// ---- hennas (Java HennaInfo, Player.getHennaStat*) ---------------------------------------------
+
+/// Three dyes for class 10: 1 is STR+1 CON-3 (the first retail dye), 2 is STR+4 and 3 is INT-1
+/// DEX+2.
+fn henna_data() -> FakeData {
+    let mut data = data();
+    let dye = |id: i32, item: i32, stats: &str| {
+        format!(
+            r#"<henna dyeId="{id}" dyeItemId="{item}" dyeLevel="1"><stats {stats} /><wear count="10" fee="37000" /><cancel count="5" fee="7400" /><classId>10</classId></henna>"#
+        )
+    };
+    let xml = format!(
+        "<list>{}{}{}</list>",
+        dye(1, 4445, r#"str="1" con="-3""#),
+        dye(2, 4446, r#"str="4""#),
+        dye(3, 4447, r#"int="-1" dex="2""#),
+    );
+    data.stats.hennas = Arc::new(l2_data::Hennas::from_xml(&xml).unwrap());
+    data
+}
+
+fn world_with_dyes(log: &Log) -> World {
+    let mut world = World::new(WorldRng::from_seed(1), Box::new(RecOutbox(log.clone())));
+    world.set_static_data(Box::new(henna_data()));
+    world
+}
+
+/// The `HennaInfo` the character gets at enter world, decoded and as sent.
+fn henna_info_at_enter(hennas: [i32; 3]) -> (HennaInfo, Vec<u8>) {
+    let log = Log::default();
+    let mut w = world_with_dyes(&log);
+    let mut p = equipped(1, "Hero");
+    p.profile.hennas = hennas;
+    enter_player(&mut w, &log, 1, p);
+    let packets = log.packets(1);
+    let bytes = first(&packets, "HENNA_INFO").clone();
+    (decode(&bytes), bytes)
+}
+
+#[test]
+fn henna_info_without_dyes_is_the_empty_packet() {
+    let (info, _) = henna_info_at_enter([0, 0, 0]);
+    assert_eq!(info, HennaInfo::default());
+}
+
+#[test]
+fn henna_info_with_one_dye_has_its_bonus_and_the_java_wire_form() {
+    let (info, bytes) = henna_info_at_enter([1, 0, 0]);
+    assert_eq!(
+        info,
+        HennaInfo {
+            str: 1,
+            con: -3,
+            dye_ids: vec![1],
+            ..HennaInfo::default()
+        }
+    );
+    // HennaInfo.writeImpl: the opcode, INT STR CON MEN DEX WIT as bytes, then 3 slots, the count,
+    // and each dye id followed by a 1.
+    let mut want = vec![0xE5, 0, 1, 0xFD, 0, 0, 0];
+    for word in [3_i32, 1, 1, 1] {
+        want.extend_from_slice(&word.to_le_bytes());
+    }
+    assert_eq!(bytes, want);
+}
+
+#[test]
+fn henna_info_with_three_dyes_adds_the_bonuses_with_the_java_cap() {
+    let (info, _) = henna_info_at_enter([1, 2, 3]);
+    // STR: 1, then 1 + 4 = 5 (not above 5, so it counts). CON -3. INT -1 and DEX +2 from dye 3.
+    assert_eq!(
+        info,
+        HennaInfo {
+            int: -1,
+            str: 5,
+            con: -3,
+            dex: 2,
+            dye_ids: vec![1, 2, 3],
+            ..HennaInfo::default()
+        }
+    );
+}
+
+#[test]
+fn a_dye_the_datapack_does_not_know_is_an_empty_slot() {
+    let (info, _) = henna_info_at_enter([1, 99, 0]);
+    assert_eq!(
+        info,
+        HennaInfo {
+            str: 1,
+            con: -3,
+            dye_ids: vec![1],
+            ..HennaInfo::default()
+        }
+    );
+}
+
+#[test]
+fn a_dye_changes_the_str_and_con_that_user_info_shows() {
+    let user_info = |hennas: [i32; 3]| {
+        let log = Log::default();
+        let mut w = world_with_dyes(&log);
+        let mut p = equipped(1, "Hero");
+        p.profile.hennas = hennas;
+        enter_player(&mut w, &log, 1, p);
+        let packets = log.packets(1);
+        let info: UserInfo = decode(first(&packets, "USER_INFO"));
+        info
+    };
+    let plain = user_info([0, 0, 0]);
+    let dyed = user_info([1, 0, 0]);
+    // The dye is STR+1 CON-3 and the engine applies it (`FuncHenna`); nothing else moves.
+    assert_eq!((dyed.str, dyed.con), (plain.str + 1, plain.con - 3));
+    assert_eq!(
+        (dyed.dex, dyed.int, dyed.wit, dyed.men),
+        (plain.dex, plain.int, plain.wit, plain.men)
+    );
 }

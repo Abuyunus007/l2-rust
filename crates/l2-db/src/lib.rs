@@ -20,6 +20,7 @@ pub use game::{
     ClanRepository, MacroRepository, MacroRow, NewMacro, RecoBonus, RecommendationRepository,
     VariableRepository,
 };
+pub use game::{HennaRepository, HennaRow};
 pub use game::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
