@@ -40,6 +40,11 @@ use l2_protocol_game::server::interaction::{
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+use l2_protocol_game::server::skills::{
+    AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
+    MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
+    SkillPosition,
+};
 use l2_protocol_game::server::system_message::{SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
@@ -161,6 +166,19 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDropItem(p) => object!(p => object_id, count, x, y, z),
         ClientPacket::RequestDestroyItem(p) => object!(p => object_id, count),
         ClientPacket::RequestItemList(_) => json!({}),
+        ClientPacket::RequestMagicSkillUse(p) => object!(p => magic_id, ctrl_pressed, shift_pressed),
+        ClientPacket::RequestAutoSoulShot(p) => object!(p => item_id, shot_type),
+        ClientPacket::RequestAcquireSkill(p) => {
+            let mut fields = object!(p => id, level, sub_type);
+            fields["skill_type"] = json!(p.skill_type.id());
+            fields
+        }
+        ClientPacket::RequestAcquireSkillInfo(p) => {
+            let mut fields = object!(p => id, level);
+            fields["skill_type"] = json!(p.skill_type.id());
+            fields
+        }
+        ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -249,6 +267,20 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::SpawnItem => decoded::<SpawnItem>(&mut r, spawn_item_fields),
         ServerOpcode::DropItem => decoded::<DropItem>(&mut r, drop_item_fields),
         ServerOpcode::GetItem => decoded::<GetItem>(&mut r, get_item_fields),
+        ServerOpcode::MagicSkillUse => decoded::<MagicSkillUse>(&mut r, magic_skill_use_fields),
+        ServerOpcode::MagicSkillLaunched => {
+            decoded::<MagicSkillLaunched>(&mut r, magic_skill_launched_fields)
+        }
+        ServerOpcode::MagicSkillCanceled => {
+            decoded::<MagicSkillCanceled>(&mut r, magic_skill_canceled_fields)
+        }
+        ServerOpcode::AbnormalStatusUpdate => decoded::<AbnormalStatusUpdate>(&mut r, abnormal_status_fields),
+        ServerOpcode::ShortBuffStatusUpdate => decoded::<ShortBuffStatusUpdate>(&mut r, short_buff_fields),
+        ServerOpcode::ExAutoSoulshot => decoded::<ExAutoSoulShot>(&mut r, auto_soulshot_fields),
+        ServerOpcode::AcquireSkillList => decoded::<AcquireSkillList>(&mut r, acquire_skill_list_fields),
+        ServerOpcode::AcquireSkillInfo => decoded::<AcquireSkillInfo>(&mut r, acquire_skill_info_fields),
+        ServerOpcode::AcquireSkillDone => decoded::<AcquireSkillDone>(&mut r, no_fields),
+        ServerOpcode::PartySpelled => decoded::<PartySpelled>(&mut r, party_spelled_fields),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -700,6 +732,76 @@ fn get_item_fields(p: &GetItem) -> Value {
     object!(p => player_id, object_id, x, y, z)
 }
 
+// Skills and buffs: casting, buff icons, the learn lists and the soulshot switch.
+
+fn skill_position_fields(p: &SkillPosition) -> Value {
+    object!(p => x, y, z)
+}
+
+fn magic_skill_use_fields(p: &MagicSkillUse) -> Value {
+    let mut fields = object!(p => creature_id, target_id, skill_id, skill_level, hit_time, reuse_delay);
+    fields["creature"] = skill_position_fields(&p.creature);
+    fields["ground_location"] = p
+        .ground_location
+        .as_ref()
+        .map_or(Value::Null, skill_position_fields);
+    fields["target"] = skill_position_fields(&p.target);
+    fields
+}
+
+fn magic_skill_launched_fields(p: &MagicSkillLaunched) -> Value {
+    object!(p => creature_id, skill_id, skill_level, target_ids)
+}
+
+fn magic_skill_canceled_fields(p: &MagicSkillCanceled) -> Value {
+    object!(p => object_id)
+}
+
+fn effect_icon_fields(icon: &EffectIcon) -> Value {
+    object!(icon => display_id, display_level, time, in_use)
+}
+
+fn abnormal_status_fields(p: &AbnormalStatusUpdate) -> Value {
+    let effects: Vec<Value> = p.effects.iter().map(effect_icon_fields).collect();
+    json!({ "effects": effects })
+}
+
+fn short_buff_fields(p: &ShortBuffStatusUpdate) -> Value {
+    object!(p => skill_id, skill_level, duration)
+}
+
+fn auto_soulshot_fields(p: &ExAutoSoulShot) -> Value {
+    object!(p => item_id, shot_type)
+}
+
+fn acquire_skill_list_fields(p: &AcquireSkillList) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|s| object!(s => id, next_level, max_level, sp_cost, requirements))
+        .collect();
+    json!({ "skill_type": p.skill_type.id(), "skills": skills })
+}
+
+fn acquire_skill_info_fields(p: &AcquireSkillInfo) -> Value {
+    let requirements: Vec<Value> = p
+        .requirements
+        .iter()
+        .map(|r| object!(r => req_type, item_id, count, unk))
+        .collect();
+    let mut fields = object!(p => skill_id, level, sp_cost);
+    fields["skill_type"] = json!(p.skill_type.id());
+    fields["requirements"] = json!(requirements);
+    fields
+}
+
+fn party_spelled_fields(p: &PartySpelled) -> Value {
+    let effects: Vec<Value> = p.effects.iter().map(effect_icon_fields).collect();
+    let mut fields = object!(p => creature_type, creature_id);
+    fields["effects"] = json!(effects);
+    fields
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -711,8 +813,9 @@ mod tests {
     use l2_protocol_game::SystemMessageId;
     use l2_protocol_game::client::{
         AttackRequest, AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect,
-        EnterWorld, Logout, NewCharacter, ProtocolVersion, RequestActionUse, RequestDestroyItem,
-        RequestDropItem, RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestNetPing,
+        EnterWorld, Logout, NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo,
+        RequestActionUse, RequestAutoSoulShot, RequestDestroyItem, RequestDispel, RequestDropItem,
+        RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestMagicSkillUse, RequestNetPing,
         RequestRestart, RequestRestartPoint, RequestUnEquipItem, Say2, UseItem,
     };
     use l2_protocol_game::server::chat::{ChatType, CreatureSay, SayBody, SenderField};
@@ -720,6 +823,7 @@ mod tests {
     use l2_protocol_game::server::enterworld::{
         FriendListEntry, OtherShortcut, QuestListEntry, SkillCoolTimeEntry, SkillListEntry, TeleportBookmark,
     };
+    use l2_protocol_game::server::skills::{AcquireSkillRequirement, AcquireSkillType};
     use l2_protocol_game::server::visibility::{RelationEntry, compass_zone, relation};
     use l2_protocol_game::server::{CharSelectEntry, NewCharTemplate};
     use std::collections::BTreeSet;
@@ -798,6 +902,16 @@ mod tests {
         ServerOpcode::SpawnItem,
         ServerOpcode::DropItem,
         ServerOpcode::GetItem,
+        ServerOpcode::MagicSkillUse,
+        ServerOpcode::MagicSkillLaunched,
+        ServerOpcode::MagicSkillCanceled,
+        ServerOpcode::AbnormalStatusUpdate,
+        ServerOpcode::ShortBuffStatusUpdate,
+        ServerOpcode::ExAutoSoulshot,
+        ServerOpcode::AcquireSkillList,
+        ServerOpcode::AcquireSkillInfo,
+        ServerOpcode::AcquireSkillDone,
+        ServerOpcode::PartySpelled,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -1860,6 +1974,178 @@ mod tests {
         assert_eq!(
             s2c_fields(&SsqInfo { state: 1 }.to_bytes()),
             json!({ "state": 1 })
+        );
+    }
+
+    #[test]
+    fn skill_packets_show_their_fields() {
+        use ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestMagicSkillUse {
+                    magic_id: 1177,
+                    ctrl_pressed: true,
+                    shift_pressed: false,
+                }
+                .to_bytes()
+            ),
+            json!({ "magic_id": 1177, "ctrl_pressed": true, "shift_pressed": false })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestAutoSoulShot {
+                    item_id: 1463,
+                    shot_type: RequestAutoSoulShot::ON,
+                }
+                .to_bytes()
+            ),
+            json!({ "item_id": 1463, "shot_type": 1 })
+        );
+        let learn = RequestAcquireSkill {
+            id: 3,
+            level: 2,
+            skill_type: AcquireSkillType::Subpledge,
+            sub_type: 1001,
+        };
+        assert_eq!(
+            c2s_fields(InGame, &learn.to_bytes()),
+            json!({ "id": 3, "level": 2, "sub_type": 1001, "skill_type": 3 })
+        );
+        let info = RequestAcquireSkillInfo {
+            id: 4,
+            level: 1,
+            skill_type: AcquireSkillType::Class,
+        };
+        assert_eq!(
+            c2s_fields(InGame, &info.to_bytes()),
+            json!({ "id": 4, "level": 1, "skill_type": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestDispel {
+                    object_id: 9,
+                    skill_id: 1204,
+                    skill_level: 2,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 9, "skill_id": 1204, "skill_level": 2 })
+        );
+    }
+
+    #[test]
+    fn skill_server_packets_show_their_fields() {
+        let use_skill = MagicSkillUse {
+            creature_id: 1,
+            target_id: 2,
+            skill_id: 1177,
+            skill_level: 1,
+            hit_time: 1000,
+            reuse_delay: 500,
+            creature: SkillPosition { x: 10, y: 20, z: 30 },
+            ground_location: None,
+            target: SkillPosition { x: 40, y: 50, z: 60 },
+        };
+        let fields = s2c_fields(&use_skill.to_bytes());
+        assert_eq!(fields["skill_id"], 1177);
+        assert_eq!(fields["ground_location"], Value::Null);
+        assert_eq!(fields["creature"], json!({ "x": 10, "y": 20, "z": 30 }));
+        assert_eq!(fields["target"]["z"], 60);
+
+        let ground = MagicSkillUse {
+            ground_location: Some(SkillPosition { x: 7, y: 8, z: 9 }),
+            ..use_skill
+        };
+        assert_eq!(
+            s2c_fields(&ground.to_bytes())["ground_location"],
+            json!({ "x": 7, "y": 8, "z": 9 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &MagicSkillLaunched {
+                    creature_id: 1,
+                    skill_id: 1177,
+                    skill_level: 1,
+                    target_ids: vec![2, 3],
+                }
+                .to_bytes()
+            ),
+            json!({ "creature_id": 1, "skill_id": 1177, "skill_level": 1, "target_ids": [2, 3] })
+        );
+        assert_eq!(
+            s2c_fields(&MagicSkillCanceled { object_id: 5 }.to_bytes()),
+            json!({ "object_id": 5 })
+        );
+
+        let mut buffs = AbnormalStatusUpdate::default();
+        buffs.add_skill(
+            EffectIcon {
+                display_id: 1204,
+                display_level: 2,
+                time: 90,
+                in_use: true,
+            },
+            false,
+        );
+        assert_eq!(
+            s2c_fields(&buffs.to_bytes()),
+            json!({ "effects": [{ "display_id": 1204, "display_level": 2, "time": 90, "in_use": true }] })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ShortBuffStatusUpdate {
+                    skill_id: 1331,
+                    skill_level: 1,
+                    duration: 12,
+                }
+                .to_bytes()
+            ),
+            json!({ "skill_id": 1331, "skill_level": 1, "duration": 12 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExAutoSoulShot {
+                    item_id: 6,
+                    shot_type: 0
+                }
+                .to_bytes()
+            ),
+            json!({ "item_id": 6, "shot_type": 0 })
+        );
+
+        let mut list = AcquireSkillList::new(AcquireSkillType::Pledge);
+        list.add_skill(370, 1, 3, 100, 0);
+        assert_eq!(
+            s2c_fields(&list.to_bytes()),
+            json!({
+                "skill_type": 2,
+                "skills": [{ "id": 370, "next_level": 1, "max_level": 3, "sp_cost": 100, "requirements": 0 }]
+            })
+        );
+        let info = AcquireSkillInfo {
+            skill_type: AcquireSkillType::Class,
+            skill_id: 1,
+            level: 1,
+            sp_cost: 0,
+            requirements: vec![AcquireSkillRequirement::item(57, 2)],
+        };
+        let fields = s2c_fields(&info.to_bytes());
+        assert_eq!(fields["skill_type"], 0);
+        assert_eq!(fields["requirements"][0]["item_id"], 57);
+        assert_eq!(fields["requirements"][0]["count"], 2);
+        assert_eq!(fields["requirements"][0]["req_type"], 99);
+        assert_eq!(s2c_fields(&AcquireSkillDone.to_bytes()), json!({}));
+        let party = PartySpelled {
+            creature_type: PartySpelled::PET,
+            creature_id: 8,
+            effects: Vec::new(),
+        };
+        assert_eq!(
+            s2c_fields(&party.to_bytes()),
+            json!({ "creature_type": 1, "creature_id": 8, "effects": [] })
         );
     }
 

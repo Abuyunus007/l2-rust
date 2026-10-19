@@ -631,6 +631,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         log_chat: config.general.log_chat,
         gm_audit: config.general.gmaudit,
         gm_startup_builder_hide: config.general.gm_startup_builder_hide,
+        gm_startup_invulnerable: config.general.gm_startup_invulnerable,
         zones: ZoneSettings {
             peace_zone_mode: config.general.peace_zone_mode,
             jail_is_pvp: config.general.jail_is_pvp,

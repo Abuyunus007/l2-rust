@@ -3,16 +3,13 @@
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminExpSp.java
 //
 // The handler's own part is here: the target check, the two numbers, the messages to the target
-// and to the GM. The change of the target's exp and sp is `Player.addExpAndSp` /
-// `removeExpAndSp`, which is M4-EXP-01 (`// M4-EXP-01:` below), so until that card lands the
-// command says what it would do and changes nothing.
+// and to the GM. The change of the target's exp and sp is `Player.addExpAndSp` (M4-EXP-01,
+// `World::add_exp_and_sp`), and `//add_exp_sp` clamps the sp to `MaxSp` (`settings.exp.max_sp`).
 //
 // # Left out, with the system that brings it
 // - The menu `data/html/admin/expsp.htm` that Java shows after every command of this handler:
 //   its `%class%` needs `ClassListData`, which is not in the world's static data yet (FOLLOW-UP).
 //   Only the target check of that menu is ported (`INVALID_TARGET` for a missing target).
-// - `PlayerConfig.MAX_SP` (`MaxSp`, shipped as 2000000000 in `Player.ini`): the clamp of
-//   `//add_exp_sp` needs the value in the world's settings (FOLLOW-UP), so it is not applied.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -36,7 +33,7 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
 }
 
 /// Java `Long.parseLong(text)`: an optional sign and at least one digit, nothing else.
-fn parse_long(text: &str) -> Option<i64> {
+pub(crate) fn parse_long(text: &str) -> Option<i64> {
     let digits = text.strip_prefix(['+', '-']).unwrap_or(text);
     if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
         return None;
@@ -94,7 +91,8 @@ fn add_exp_sp(world: &mut World, gm: ObjectId, exp_sp: &str) -> bool {
     let (Some(expval), Some(spval)) = (parse_long(exp), parse_long(sp)) else {
         return false;
     };
-    // NOTE: Java clamps `spval` to `PlayerConfig.MAX_SP` here (see the module comment).
+    // `Math.min(Long.parseLong(sp), PlayerConfig.MAX_SP)`.
+    let spval = spval.min(world.settings.exp.max_sp);
 
     if expval != 0 || spval != 0 {
         let name = world.object_name(player).unwrap_or_default();
@@ -103,7 +101,8 @@ fn add_exp_sp(world: &mut World, gm: ObjectId, exp_sp: &str) -> bool {
             player,
             &format!("Admin is adding you {expval} xp and {spval} sp."),
         );
-        // M4-EXP-01: `player.addExpAndSp(expval, spval)`.
+        // `player.addExpAndSp(expval, spval)`: `Player.addExpAndSp(double, double)` uses no bonuses.
+        world.add_exp_and_sp(player, expval as f64, spval as f64, false);
         // Admin information.
         world.send_sys_message(gm, &format!("Added {expval} xp and {spval} sp to {name}."));
     }
@@ -129,7 +128,9 @@ fn remove_exp_sp(world: &mut World, gm: ObjectId, exp_sp: &str) -> bool {
             player,
             &format!("Admin is removing you {expval} xp and {spval} sp."),
         );
-        // M4-EXP-01: `player.removeExpAndSp(expval, spval)`.
+        // `player.removeExpAndSp(expval, spval)`: `sendMessage` is true, so the target is told
+        // the amounts again by the two `YOUR_..._DECREASED` messages.
+        world.remove_exp_and_sp(player, expval, spval, true);
         // Admin information.
         world.send_sys_message(gm, &format!("Removed {expval} xp and {spval} sp from {name}."));
     }

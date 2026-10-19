@@ -156,7 +156,12 @@ impl World {
     /// Java `Inventory.addItem(process, itemId, count, actor, reference)` with
     /// `PlayerInventory`'s additions: the items are created here (new ids from the factory), the
     /// client gets the `InventoryUpdate` and the load.
-    fn inventory_add_item_by_id(&mut self, player: ObjectId, item_id: i32, count: i64) -> Option<AddedItem> {
+    pub(crate) fn inventory_add_item_by_id(
+        &mut self,
+        player: ObjectId,
+        item_id: i32,
+        count: i64,
+    ) -> Option<AddedItem> {
         let templates = self.item_templates()?;
         let multiple = self.settings.ground.multiple_item_drop;
         let old = self.inventory_item_by_item_id(player, item_id).cloned();

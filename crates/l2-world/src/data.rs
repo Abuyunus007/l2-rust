@@ -286,6 +286,9 @@ pub struct WorldSettings {
     /// `GeneralConfig.GM_STARTUP_BUILDER_HIDE` (`GMStartupBuilderHide`): `sendSysMessage` goes to
     /// the chat window as a "SYS" line instead of a system message.
     pub gm_startup_builder_hide: bool,
+    /// `GeneralConfig.GM_STARTUP_INVULNERABLE` (`GMStartupInvulnerable`): a GM with `admin_invul`
+    /// access is invulnerable from the moment they enter the world.
+    pub gm_startup_invulnerable: bool,
     /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
@@ -350,6 +353,7 @@ impl Default for WorldSettings {
             log_chat: false,
             gm_audit: false,
             gm_startup_builder_hide: false,
+            gm_startup_invulnerable: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),

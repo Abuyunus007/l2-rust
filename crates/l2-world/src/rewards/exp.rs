@@ -504,6 +504,72 @@ impl World {
         true
     }
 
+    /// Java `PlayableStat.removeSp(amount)`: the SP minus the amount, never below 0. Java's
+    /// `setSp` (`CreatureStat`) is not capped, so this only ever lowers the SP.
+    pub fn remove_sp(&mut self, id: ObjectId, amount: i64) -> bool {
+        let Some(player) = self.players.get_mut(&id) else {
+            return false;
+        };
+        let sp = player.data.sp;
+        player.data.sp = if sp < amount { 0 } else { sp.wrapping_sub(amount) };
+        true
+    }
+
+    /// Java `PlayerStat.removeExpAndSp(removeExp, removeSp, sendMessage)`: the exp and the SP
+    /// (`PlayableStat.removeExpAndSp`, each only when above 0). With `send_message`, the two
+    /// messages of the amounts asked for, and a status update when the level went down. `false`
+    /// when nothing was removed (then nothing is said).
+    pub fn remove_exp_and_sp(
+        &mut self,
+        id: ObjectId,
+        remove_exp: i64,
+        remove_sp: i64,
+        send_message: bool,
+    ) -> bool {
+        let level_before = self.core_of(id).map_or(0, |c| c.level);
+        let mut exp_removed = false;
+        let mut sp_removed = false;
+        if remove_exp > 0 {
+            exp_removed = self.remove_exp(id, remove_exp);
+        }
+        if remove_sp > 0 {
+            sp_removed = self.remove_sp(id, remove_sp);
+        }
+        if !(exp_removed || sp_removed) {
+            return false;
+        }
+
+        if send_message {
+            // Java: `YOUR_EXPERIENCE_HAS_DECREASED_BY_S1` and `YOUR_SP_HAS_DECREASED_BY_S1`, both
+            // sent even when one of the two amounts is 0.
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourExperienceHasDecreasedByS1)
+                    .with(SystemMessageParam::LongNumber(remove_exp)),
+            );
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourSpHasDecreasedByS1)
+                    .with(SystemMessageParam::LongNumber(remove_sp)),
+            );
+            if self.core_of(id).map_or(0, |c| c.level) < level_before {
+                self.broadcast_status_update(id);
+            }
+        }
+        true
+    }
+
+    /// Java `ExperienceData.getMaxLevel()` (the table's last level plus one), for the admin
+    /// commands that read it.
+    pub(crate) fn exp_table_max_level(&self) -> Option<i32> {
+        self.java_max_level()
+    }
+
+    /// Java `ExperienceData.getExpForLevel(level)`, for the admin commands.
+    pub(crate) fn exp_needed_for_level(&self, level: i32) -> Option<i64> {
+        self.exp_for_level(level)
+    }
+
     fn set_exp(&mut self, id: ObjectId, value: i64) {
         if let Some(player) = self.players.get_mut(&id) {
             player.data.exp = value;
@@ -582,7 +648,7 @@ impl World {
     }
 
     /// Java `PlayerStat.setLevel(value)`: capped at the last level.
-    fn set_level(&mut self, id: ObjectId, value: i32) {
+    pub(crate) fn set_level(&mut self, id: ObjectId, value: i32) {
         let Some(max_level) = self.java_max_level() else {
             return;
         };
