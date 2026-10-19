@@ -624,7 +624,7 @@ impl World {
 
     /// Java `Player.checkAndEquipArrows()`: arrows in the left hand, or the first arrows of the
     /// bow's grade from the inventory put there.
-    fn check_and_equip_arrows(&mut self, id: ObjectId, grade: CrystalType) -> bool {
+    pub(crate) fn check_and_equip_arrows(&mut self, id: ObjectId, grade: CrystalType) -> bool {
         let Some(view) = self.stats(id) else {
             return false;
         };

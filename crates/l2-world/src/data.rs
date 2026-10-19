@@ -310,6 +310,10 @@ pub struct WorldSettings {
     pub inventory: crate::inventory::InventorySettings,
     /// The values dying and coming back read (M4-DEATH-01).
     pub death: crate::death::DeathSettings,
+    /// The values ground items and their pickup read (M4-DROP-01).
+    pub ground: crate::ground_item::GroundItemSettings,
+    /// The drop rates and level gap rules of `Rates.ini` (M4-DROP-01).
+    pub drops: crate::rewards::drop::DropSettings,
     /// The values exp, SP and levels read (M4-EXP-01).
     pub exp: crate::rewards::exp::ExpSettings,
 }
@@ -351,6 +355,8 @@ impl Default for WorldSettings {
             combat: crate::combat::CombatSettings::default(),
             inventory: crate::inventory::InventorySettings::default(),
             death: crate::death::DeathSettings::default(),
+            ground: crate::ground_item::GroundItemSettings::default(),
+            drops: crate::rewards::drop::DropSettings::default(),
             exp: crate::rewards::exp::ExpSettings::default(),
         }
     }

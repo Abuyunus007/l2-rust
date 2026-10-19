@@ -1040,6 +1040,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::StorePlayer(_)) => "store",
                 Out::Persist(PersistCommand::PlayerLeft { .. }) => "left",
                 Out::Persist(PersistCommand::ItemChanges { .. }) => "items",
+                Out::Persist(PersistCommand::SaveGroundItems(_)) => "ground",
                 Out::Persist(PersistCommand::SkillChanges { .. }) => "skills",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",

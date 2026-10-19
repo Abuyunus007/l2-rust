@@ -297,18 +297,20 @@ impl World {
     // M4-DROP-01: `doItemDrop(maxDealer or lastAttacker)` and `EventDropManager.doEventDrop`, in
     //             the same method, before the exp.
     pub(crate) fn calculate_rewards(&mut self, dying: ObjectId, killer: Option<ObjectId>) {
+        // M4-DROP-01: the drop half (`rewards/drop.rs`). Java returns early when the aggro list is
+        // empty, which skips the exp as well (`reward_exp_and_sp` checks it too).
+        self.drop_rewards(dying, killer);
         // Only the drops use the killer; the exp goes to everybody in the aggro list.
-        let _ = killer;
         // M4-EXP-01: the exp and SP of the damage shares (`rewards/exp.rs`).
         self.reward_exp_and_sp(dying);
     }
 
     /// Java `Player.onDieDropItem(killer)`: karma players and players killed by monsters may drop
     /// items.
-    // M4-DROP-01: needs items on the ground (`dropItem(ItemProcessType.DEATH, ...)`). The chances
-    //             (`PlayerRateDrop` ...) are 0 in the shipped `Rates.ini`.
+    // M4-DROP-01: `rewards/drop.rs` (`player_on_die_drop_item`). The chances (`PlayerRateDrop`
+    //             ...) are 0 in the shipped `Rates.ini`.
     pub(crate) fn on_die_drop_item(&mut self, dying: ObjectId, killer: ObjectId) {
-        let _ = (dying, killer);
+        self.player_on_die_drop_item(dying, killer);
     }
 
     /// Java `Player.calculateDeathExpPenalty(killer, atWar)`, called when `PLAYER_DELEVEL`.

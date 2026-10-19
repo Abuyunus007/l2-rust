@@ -333,6 +333,8 @@ impl World {
             Some(ObjectKind::Player) => self.player_click(player, obj, interact),
             Some(ObjectKind::Door) => self.door_click(player, obj, interact),
             Some(ObjectKind::StaticObject) => self.static_object_click(player, obj, interact),
+            // Java: ItemClick
+            Some(ObjectKind::Item) => self.item_click(player, obj),
             // A fence has no click handler.
             _ => {}
         }

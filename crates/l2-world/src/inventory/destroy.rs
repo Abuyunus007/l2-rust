@@ -13,10 +13,10 @@
 // item list. A dropped part of a stack is written at once (`dropItem` calls `updateDatabase()`),
 // a whole item that is dropped is deleted at once.
 //
-// # What is left to the ground items (M4-DROP-01)
+// # Dropping (M4-DROP-01)
 // `World::drop_from_inventory` is the inventory half of `Player.dropItem`; the handler of
-// `RequestDropItem` checks everything Java checks and then refuses, because there is no ground
-// item to create yet.
+// `RequestDropItem` checks everything Java checks, takes a worn item off and puts the item on the
+// ground (`ground_item.rs`).
 
 use l2_data::item::TYPE2_QUEST;
 use l2_protocol_game::SystemMessageId;
@@ -283,6 +283,15 @@ impl World {
         self.send(id, &update);
     }
 
+    /// Java `AdminData.broadcastMessageToGMs(message)`: `sendMessage` to every GM online.
+    fn broadcast_message_to_gms(&self, text: &str) {
+        let mut gms: Vec<ObjectId> = self.players.keys().copied().filter(|p| self.is_gm(*p)).collect();
+        gms.sort_unstable_by_key(|p| p.0);
+        for gm in gms {
+            self.send_message(gm, text);
+        }
+    }
+
     /// `PunishmentManager.handleIllegalPlayerAction` with `DefaultPunish`: the punishment system
     /// does not exist, the attempt is logged.
     fn illegal_action(&self, id: ObjectId, what: &str) {
@@ -396,14 +405,88 @@ impl World {
 
         // `canManipulateWithItemId` is always true here.
 
-        // M4-DROP-01: from here Java takes a worn item off (`unEquipItemInSlotAndRecord`,
-        // `unChargeAllShots`, `sendInventoryUpdate`, `broadcastUserInfo`, `sendItemList(true)`),
-        // then `player.dropItem(DROP, objectId, count, x, y, z, null, false, false)`. The ground
-        // item does not exist yet, so the drop is refused *before* anything changes; replace
-        // this refusal with the unequip above and `drop_from_inventory` (the inventory half,
-        // ready), then create the item on the ground at (x, y, z) and log the GM audit / the
-        // 1,000,000 adena warning.
-        self.send(id, &discard_refused);
+        if item.loc == LOC_PAPERDOLL {
+            let unequipped =
+                self.unequip_item_in_slot_and_record(id, usize::try_from(item.loc_data).unwrap_or(0));
+            // M5: `itm.unChargeAllShots()`.
+            let entries: Vec<ItemUpdate> = unequipped
+                .iter()
+                .filter_map(|o| self.modified_entry(id, *o))
+                .collect();
+            for entry in entries {
+                self.send_inventory_update(id, entry);
+            }
+            self.broadcast_user_info(id);
+            self.send_item_list(id, true);
+        }
+
+        let dropped = self.player_drop_item(id, object_id, count, x, y, z);
+
+        // Java: `GMAudit.logAction(name [objectId], "Drop", target, "(id: ... x: ... z: ...)")` for a
+        // GM (the file target `log/GMAudit/<name>.txt` comes with the logging card, D-25). Java
+        // reads the dropped item before it checks it for null.
+        if gm && self.settings.gm_audit {
+            let name = self.players.get(&id).map_or("?", |p| p.data.name.as_str());
+            let target = self
+                .target_of(id)
+                .and_then(|t| self.object_name(t))
+                .unwrap_or_else(|| "no-target".to_owned());
+            if let (Some(dropped), Some((px, py, pz))) = (dropped.as_ref(), self.position_of(id)) {
+                let item_name = self.data.item_name(dropped.item_id).unwrap_or_default();
+                tracing::info!(
+                    target: "gmaudit",
+                    "{name} [{id}]>Drop>{target}>(id: {} name: {item_name} objId: {} x: {px} y: {py} z: {pz})",
+                    dropped.item_id,
+                    dropped.object_id.0
+                );
+            }
+        }
+
+        if let Some(dropped) = dropped
+            && dropped.item_id == l2_data::item::ADENA_ID
+            && dropped.count >= 1_000_000
+        {
+            let name = self.players.get(&id).map_or("?", |p| p.data.name.as_str());
+            let msg = format!(
+                "Character ({name}) has dropped ({})adena at ({x},{y},{z})",
+                dropped.count
+            );
+            warn!("{msg}");
+            // `AdminData.broadcastMessageToGMs(msg)`.
+            self.broadcast_message_to_gms(&msg);
+        }
+    }
+
+    /// Java `Player.dropItem(process, objectId, count, x, y, z, reference, sendMessage,
+    /// protectItem)` with `sendMessage` and `protectItem` false, as `RequestDropItem` calls it.
+    /// Returns the item that lies on the ground now (the split-off part of a stack).
+    pub(crate) fn player_drop_item(
+        &mut self,
+        id: ObjectId,
+        object_id: ObjectId,
+        count: i64,
+        x: i32,
+        y: i32,
+        z: i32,
+    ) -> Option<ItemData> {
+        // A split stack needs a new object id.
+        let new_object_id = match self.inventory_item(id, object_id) {
+            Some(item) if item.count > count => self.allocate_item_id()?,
+            _ => ObjectId(0),
+        };
+        let Some((dropped, shown)) = self.drop_from_inventory_quiet(id, object_id, count, new_object_id)
+        else {
+            if new_object_id.0 != 0 {
+                self.release_item_id(new_object_id);
+            }
+            return None;
+        };
+        let placed = self.player_drop_to_ground(id, dropped.clone(), x, y, z, false);
+        placed?;
+        // Send inventory update packet; update current load as well.
+        self.send_inventory_update(id, shown);
+        self.send_cur_load(id);
+        Some(dropped)
     }
 
     /// Java `Inventory.dropItem(process, objectId, count, ...)` and the inventory half of
@@ -413,7 +496,6 @@ impl World {
     /// A worn item must be taken off first (the handler does that). When `count` is less than the
     /// stack, the returned item is a new one with `new_object_id`; otherwise it is the item
     /// itself, now owned by nobody (`loc` `VOID`). `None` when the item is not in the inventory.
-    // M4-DROP-01: the caller creates the ground item from the returned data.
     pub fn drop_from_inventory(
         &mut self,
         id: ObjectId,
@@ -421,6 +503,24 @@ impl World {
         count: i64,
         new_object_id: ObjectId,
     ) -> Option<ItemData> {
+        let (dropped, shown) = self.drop_from_inventory_quiet(id, object_id, count, new_object_id)?;
+        // Send inventory update packet.
+        self.send_inventory_update(id, shown);
+        // Update current load as well.
+        self.send_cur_load(id);
+        Some(dropped)
+    }
+
+    /// [`Self::drop_from_inventory`] without the two packets: `Player.dropItem` sends them after
+    /// `dropMe`, so the ground item is shown first. Returns the item to put on the ground and
+    /// the entry of the `InventoryUpdate`.
+    pub(crate) fn drop_from_inventory_quiet(
+        &mut self,
+        id: ObjectId,
+        object_id: ObjectId,
+        count: i64,
+        new_object_id: ObjectId,
+    ) -> Option<(ItemData, ItemUpdate)> {
         let item = self.inventory_item(id, object_id)?.clone();
         let (dropped, shown) = if item.count > count {
             // Adjust item quantity and create new instance to drop.
@@ -447,11 +547,6 @@ impl World {
             (removed, shown)
         };
         self.refresh_weight(id);
-
-        // Send inventory update packet.
-        self.send_inventory_update(id, shown);
-        // Update current load as well.
-        self.send_cur_load(id);
-        Some(dropped)
+        Some((dropped, shown))
     }
 }

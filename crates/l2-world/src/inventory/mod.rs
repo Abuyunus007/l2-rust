@@ -34,6 +34,7 @@
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 
+mod add;
 mod capacity;
 mod db;
 mod destroy;

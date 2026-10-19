@@ -93,6 +93,8 @@ pub struct World {
     /// Spawn counters, corpses waiting to decay, NPCs waiting to respawn, pending revives
     /// (M4-DEATH-01, `death.rs`, `respawn.rs`).
     pub(crate) death: crate::death::DeathWorld,
+    /// Items on the ground, the auto destroy list and the `itemsonground` timers (M4-DROP-01).
+    pub(crate) ground: crate::ground_item::GroundWorld,
     /// The experience tables and skill trees exp and levels read (M4-EXP-01, `rewards/exp.rs`).
     pub(crate) rewards: crate::rewards::exp::ExpWorld,
 }
@@ -138,6 +140,7 @@ impl World {
             statuses: HashMap::new(),
             regen: RegenSettings::default(),
             death: crate::death::DeathWorld::default(),
+            ground: crate::ground_item::GroundWorld::default(),
             rewards: crate::rewards::exp::ExpWorld::default(),
         }
     }
@@ -273,6 +276,8 @@ impl World {
                 for id in online {
                     self.leave(id, LeaveReason::ServerShutdown);
                 }
+                // Java Shutdown: "Save items on ground before closing."
+                self.save_ground_items();
                 self.stopped = true;
                 done();
             }
@@ -479,6 +484,12 @@ impl World {
             TimerKind::Decay(id) => self.on_decay_timer(id),
             TimerKind::Respawn(id) => self.on_respawn_timer(id),
             TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
+            // Java: ItemManager.ResetOwner, DropProtection, ItemsAutoDestroyTaskManager,
+            // ItemsOnGroundManager
+            TimerKind::ItemOwnerReset(id) => self.on_item_owner_reset(id),
+            TimerKind::ItemDropProtection(id) => self.on_item_drop_protection_end(id),
+            TimerKind::ItemsAutoDestroy => self.on_items_auto_destroy(),
+            TimerKind::SaveGroundItems => self.on_save_ground_items_timer(),
         }
     }
 

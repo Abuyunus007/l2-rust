@@ -60,6 +60,15 @@ pub enum TimerKind {
     /// Java `SpawnGroupTaskManager`: a spawn group materialises the unit it reserved when one of
     /// its units died (`group` and `entry` are indices into the spawn data).
     GroupSpawn { group: usize, entry: usize },
+    /// Java `ResetOwner` (`ItemManager.createItem`): the loot privilege of a dropped item ends.
+    ItemOwnerReset(ObjectId),
+    /// Java `DropProtection.run()`: the 15 second pickup protection of a dropped item ends.
+    ItemDropProtection(ObjectId),
+    /// Java `ItemsAutoDestroyTaskManager.run()`, every 5 seconds while items wait.
+    ItemsAutoDestroy,
+    /// Java `ItemsOnGroundManager.run()`: every `SaveDroppedItemInterval` the items on the
+    /// ground are written to `itemsonground`.
+    SaveGroundItems,
 }
 
 #[derive(Debug, Default)]

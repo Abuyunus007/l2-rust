@@ -1196,7 +1196,7 @@ fn destroying_an_item_removes_its_shortcut() {
 // ---- dropping and the item list ---------------------------------------------------------------------
 
 #[test]
-fn dropping_is_refused_until_the_ground_items_exist() {
+fn dropping_refuses_what_java_refuses_and_puts_the_rest_on_the_ground() {
     let (mut world, log) = world_with(player(vec![worn(100, 2, paperdoll::RHAND), inv(101, 3)]));
     let drop = |world: &mut World, object_id: i32, count: i64, x: i32, z: i32| {
         input(
@@ -1232,14 +1232,30 @@ fn dropping_is_refused_until_the_ground_items_exist() {
         system_messages(&log.packets())[0].id,
         SystemMessageId::YouCannotDiscardSomethingThatFarAwayFromYou
     );
-    // Valid requests are refused too (M4-DROP-01), before anything changes.
+    // Valid requests drop the item (M4-DROP-01): `Player.dropItem` takes it out of the inventory and
+    // `dropMe` puts it on the ground.
     drop(&mut world, 101, 1, 1149, 50);
     drop(&mut world, 100, 1, 1000, 0);
     let out = log.take();
-    assert_eq!(system_messages_of(&out).len(), 2);
-    assert!(item_changes(&out).is_empty());
-    assert_eq!(worn_slots(&world), [(5, 100)]);
-    assert_eq!(world.player(ME).unwrap().data.items.len(), 2);
+    assert!(system_messages_of(&out).is_empty());
+    // The rows are deleted at once (`Item.updateDatabase()` of an item that has no owner); the
+    // sword is written as taken off first.
+    assert_eq!(
+        item_changes(&out),
+        [
+            (vec![], vec![101]),
+            (vec![(100, "INVENTORY".to_string(), 0)], vec![]),
+            (vec![], vec![100]),
+        ]
+    );
+    assert!(worn_slots(&world).is_empty());
+    assert!(world.player(ME).unwrap().data.items.is_empty());
+    assert_eq!(world.ground_item_ids(), [ObjectId(100), ObjectId(101)]);
+    // `DropItem` for the dropper's neighbours is `broadcast`; the dropper hears about the loss of
+    // the item through the delayed `InventoryUpdate`.
+    advance(&mut world, 200);
+    let packets = names(&log.packets());
+    assert!(packets.contains(&"INVENTORY_UPDATE".to_string()), "{packets:?}");
 }
 
 fn system_messages_of(out: &[Out]) -> Vec<SystemMessage> {

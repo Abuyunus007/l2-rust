@@ -43,6 +43,9 @@ pub enum PersistCommand {
         upserts: Vec<ItemData>,
         removed: Vec<ObjectId>,
     },
+    /// Java `ItemsOnGroundManager.run()` (only with `SaveDroppedItem`): `DELETE FROM
+    /// itemsonground`, then one `INSERT` per row.
+    SaveGroundItems(Vec<crate::ground_item::GroundItemRow>),
     /// Java `Player.storeSkill` / `removeSkill`: `character_skills` rows of one character that
     /// changed (a level up that teaches or takes skills), written when they change and not only
     /// at the next full store. `upserts` are an `UPDATE` of the level when the row exists, else a
