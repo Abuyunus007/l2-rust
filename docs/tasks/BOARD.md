@@ -212,7 +212,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-HENNA-01](M4/M4-HENNA-01.md) | Load the character's dyes and show them | haiku | spot | STAT-01, DATA-12 | merged |
 | [M4-INV-01](M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | merged |
 | [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | merged |
-| [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | in-progress |
+| [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | merged |
 | [M4-AI-01](M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | ready (refined when deps merge) |
 | [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | ready (refined when deps merge) |
 | [M4-DEATH-01](M4/M4-DEATH-01.md) | Death, respawn, corpses | sonnet | full | COMBAT-01 | ready (refined when deps merge) |
