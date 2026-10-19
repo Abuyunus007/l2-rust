@@ -35,6 +35,7 @@ impl World {
             ObjectKind::Door => self.doors.get(&id).map(|d| (d.x, d.y, d.z)),
             ObjectKind::Fence => self.fences.get(&id).map(|f| (f.x, f.y, f.z)),
             ObjectKind::StaticObject => self.static_objects.get(&id).map(|o| (o.x, o.y, o.z)),
+            ObjectKind::Item => self.ground.items.get(&id).map(|i| (i.x, i.y, i.z)),
         }
     }
 
@@ -66,6 +67,11 @@ impl World {
             ObjectKind::StaticObject => {
                 if let Some(o) = self.static_objects.get_mut(&id) {
                     (o.x, o.y, o.z) = (x, y, z);
+                }
+            }
+            ObjectKind::Item => {
+                if let Some(i) = self.ground.items.get_mut(&id) {
+                    (i.x, i.y, i.z) = (x, y, z);
                 }
             }
         }
@@ -405,6 +411,7 @@ impl World {
             ObjectKind::Door => self.send_door_info(subject, viewer),
             ObjectKind::Fence => self.send_fence_info(subject, viewer),
             ObjectKind::StaticObject => self.send_static_object_info(subject, viewer),
+            ObjectKind::Item => self.send_ground_item_info(subject, viewer),
         }
     }
 
@@ -567,6 +574,7 @@ impl World {
         self.doors.remove(&id);
         self.fences.remove(&id);
         self.static_objects.remove(&id);
+        self.ground.items.remove(&id);
         self.door_snapshot = None;
     }
 }

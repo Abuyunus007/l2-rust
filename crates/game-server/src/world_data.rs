@@ -17,8 +17,8 @@ use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
     AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, DeathSettings,
-    ItemStatic, PlayerData, RegenSettings, StatData, StatSettings, StaticData, TalkSettings,
-    TeleportSettings, WorldSettings, ZoneSettings,
+    DropSettings, GroundItemSettings, ItemStatic, PlayerData, RegenSettings, StatData, StatSettings,
+    StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -348,6 +348,177 @@ pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
     s
 }
 
+/// Java `Integer.parseInt` of every piece of a comma separated list; a piece that is not a number
+/// is skipped with a warning (Java throws while it loads the configuration).
+fn parse_int_list(key: &str, text: &str) -> Vec<i32> {
+    text.split(',')
+        .filter_map(|piece| match piece.trim().parse::<i32>() {
+            Ok(id) => Some(id),
+            Err(_) => {
+                warn!("{key}: \"{piece}\" is not an item id; skipped.");
+                None
+            }
+        })
+        .collect()
+}
+
+/// The values ground items read (Java `GeneralConfig` and `PlayerConfig`). The herb destroy time,
+/// the protected item list, the save interval and the auto loot item list are post-processed in
+/// Java (placeholders in the generated config), so they are read from the files here.
+pub fn ground_item_settings(config: &GameConfig, config_dir: &Path) -> GroundItemSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let g = &config.general;
+    let p = &config.player;
+    let mut s = GroundItemSettings {
+        autodestroy_item_after: g.autodestroy_item_after,
+        destroy_dropped_player_item: g.destroy_dropped_player_item,
+        destroy_equipable_player_item: g.destroy_equipable_player_item,
+        save_dropped_item: g.save_dropped_item,
+        multiple_item_drop: g.multiple_item_drop,
+        auto_loot: p.auto_loot,
+        auto_loot_raids: p.auto_loot_raids,
+        auto_loot_herbs: p.auto_loot_herbs,
+        max_adena: config.effective_max_adena(),
+        ..GroundItemSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        // `HERB_AUTO_DESTROY_TIME = getInt("AutoDestroyHerbTime", 60) * 1000`.
+        s.herb_auto_destroy_time = ini.get_int("AutoDestroyHerbTime", 60).wrapping_mul(1000);
+        s.list_protected_items = parse_int_list(
+            "ListOfProtectedItems",
+            &ini.get_string("ListOfProtectedItems", "0"),
+        );
+        // `SAVE_DROPPED_ITEM_INTERVAL = getInt("SaveDroppedItemInterval", 60) * 60000`.
+        s.save_dropped_item_interval_ms = i64::from(ini.get_int("SaveDroppedItemInterval", 60)) * 60_000;
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        // 0 and unparsable entries are left out of `AUTO_LOOT_ITEM_IDS`.
+        s.auto_loot_item_ids = parse_int_list("AutoLootItemIds", &ini.get_string("AutoLootItemIds", "0"))
+            .into_iter()
+            .filter(|id| *id != 0)
+            .collect();
+    }
+    s
+}
+
+/// `Map<Integer, Float>` of `Rates.ini`: `id,value;id,value` (Java's `DropAmountMultiplierByItemId`
+/// and `DropChanceMultiplierByItemId`). A malformed pair is skipped with a warning.
+fn parse_item_multipliers(key: &str, text: &str) -> std::collections::BTreeMap<i32, f32> {
+    let mut map = std::collections::BTreeMap::new();
+    if text.is_empty() {
+        return map;
+    }
+    for item in text.split(';') {
+        let parts: Vec<&str> = item.split(',').collect();
+        let parsed = match parts.as_slice() {
+            [id, value] => id.parse::<i32>().ok().zip(value.parse::<f32>().ok()),
+            _ => None,
+        };
+        match parsed {
+            Some((id, value)) => {
+                map.insert(id, value);
+            }
+            None => {
+                if !item.is_empty() {
+                    warn!("Config.load(): invalid config property -> {key} \"{item}\"");
+                }
+            }
+        }
+    }
+    map
+}
+
+/// `BossDropList` of `Rates.ini`: `itemId,min,max,chance;...` (Java `Integer.parseInt` for the
+/// first three, `Double.parseDouble` for the chance). A malformed entry is skipped with a warning.
+fn parse_boss_drop_list(text: &str) -> Vec<l2_data::npc::DropEntry> {
+    let mut list = Vec::new();
+    for s in text.trim().split(';') {
+        if s.is_empty() {
+            continue;
+        }
+        let parts: Vec<&str> = s.split(',').collect();
+        let entry = match parts.as_slice() {
+            [id, min, max, chance, ..] => (|| {
+                Some(l2_data::npc::DropEntry {
+                    drop_type: l2_data::npc::DropType::Drop,
+                    item_id: id.parse().ok()?,
+                    min: i64::from(min.parse::<i32>().ok()?),
+                    max: i64::from(max.parse::<i32>().ok()?),
+                    chance: chance.parse().ok()?,
+                })
+            })(),
+            _ => None,
+        };
+        match entry {
+            Some(entry) => list.push(entry),
+            None => warn!("BossDropList: \"{s}\" is not itemId,min,max,chance; skipped."),
+        }
+    }
+    list
+}
+
+/// The drop rates and level gap rules (Java `RatesConfig`), `AltPartyRange` and the karma drop
+/// lists (`PvpConfig`). The per-item multiplier maps and the boss list are post-processed in Java
+/// (placeholders in the generated config), so they are read from `Rates.ini` here.
+pub fn drop_settings(config: &GameConfig, config_dir: &Path) -> DropSettings {
+    use l2_config::IniFile;
+
+    let r = &config.rates;
+    let mut s = DropSettings {
+        rate_death_drop_amount_multiplier: r.rate_death_drop_amount_multiplier,
+        rate_spoil_drop_amount_multiplier: r.rate_spoil_drop_amount_multiplier,
+        rate_herb_drop_amount_multiplier: r.rate_herb_drop_amount_multiplier,
+        rate_raid_drop_amount_multiplier: r.rate_raid_drop_amount_multiplier,
+        rate_death_drop_chance_multiplier: r.rate_death_drop_chance_multiplier,
+        rate_spoil_drop_chance_multiplier: r.rate_spoil_drop_chance_multiplier,
+        rate_herb_drop_chance_multiplier: r.rate_herb_drop_chance_multiplier,
+        rate_raid_drop_chance_multiplier: r.rate_raid_drop_chance_multiplier,
+        drop_max_occurrences_normal: r.drop_max_occurrences_normal,
+        drop_max_occurrences_raidboss: r.drop_max_occurrences_raidboss,
+        drop_adena_min_level_difference: r.drop_adena_min_level_difference,
+        drop_adena_max_level_difference: r.drop_adena_max_level_difference,
+        drop_adena_min_level_gap_chance: r.drop_adena_min_level_gap_chance,
+        drop_item_min_level_difference: r.drop_item_min_level_difference,
+        drop_item_max_level_difference: r.drop_item_max_level_difference,
+        drop_item_min_level_gap_chance: r.drop_item_min_level_gap_chance,
+        boss_drop_enabled: r.boss_drop_enabled,
+        boss_drop_min_level: r.boss_drop_min_level,
+        boss_drop_max_level: r.boss_drop_max_level,
+        alt_party_range: config.player.alt_party_range,
+        player_drop_limit: r.player_drop_limit,
+        player_rate_drop: r.player_rate_drop,
+        player_rate_drop_item: r.player_rate_drop_item,
+        player_rate_drop_equip: r.player_rate_drop_equip,
+        player_rate_drop_equip_weapon: r.player_rate_drop_equip_weapon,
+        karma_drop_limit: r.karma_drop_limit,
+        karma_rate_drop: r.karma_rate_drop,
+        karma_rate_drop_item: r.karma_rate_drop_item,
+        karma_rate_drop_equip: r.karma_rate_drop_equip,
+        karma_rate_drop_equip_weapon: r.karma_rate_drop_equip_weapon,
+        karma_drop_gm: config.pvp.karma_drop_gm,
+        karma_pk_limit: config.pvp.karma_pk_limit,
+        ..DropSettings::default()
+    };
+    // `Arrays.sort(KARMA_LIST_NONDROPPABLE_ITEMS)`.
+    let mut nondroppable = parse_int_list("ListOfNonDroppableItems", &config.pvp.karma_nondroppable_items);
+    nondroppable.sort_unstable();
+    s.karma_list_nondroppable_items = nondroppable;
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::RatesConfig::FILE)) {
+        s.rate_drop_amount_by_id = parse_item_multipliers(
+            "DropAmountMultiplierByItemId",
+            &ini.get_string("DropAmountMultiplierByItemId", ""),
+        );
+        s.rate_drop_chance_by_id = parse_item_multipliers(
+            "DropChanceMultiplierByItemId",
+            &ini.get_string("DropChanceMultiplierByItemId", ""),
+        );
+        s.boss_drop_list = parse_boss_drop_list(&ini.get_string("BossDropList", ""));
+    }
+    s
+}
+
 /// The regeneration multipliers the world reads (Java `PlayerConfig` and `NpcConfig`, after the
 /// `/ 100` of their post-processing; see `l2_config::GameManual`).
 pub fn regen_settings(config: &GameConfig) -> RegenSettings {
@@ -407,6 +578,8 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         stats: stat_settings(config, config_dir),
         combat: combat_settings(config, config_dir),
         death: death_settings(config, config_dir),
+        ground: ground_item_settings(config, config_dir),
+        drops: drop_settings(config, config_dir),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,

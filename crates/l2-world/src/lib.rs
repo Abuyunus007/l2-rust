@@ -22,6 +22,7 @@ pub mod dialog;
 pub mod door;
 pub mod enter;
 pub mod formulas;
+pub mod ground_item;
 pub mod ids;
 pub mod interact;
 pub mod inventory;
@@ -35,6 +36,7 @@ pub mod player;
 mod player_view;
 pub mod region;
 pub mod respawn;
+pub mod rewards;
 pub mod runner;
 pub mod snapshot;
 pub mod stats;
@@ -60,6 +62,7 @@ pub use data::{
 pub use death::DeathSettings;
 pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
+pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
 pub use l2_util::{ObjectId, WorldRng};
@@ -72,6 +75,7 @@ pub use player::{
     ShortcutData, SkillData,
 };
 pub use region::{RegionId, region_of};
+pub use rewards::drop::{DropSettings, ItemHolder};
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

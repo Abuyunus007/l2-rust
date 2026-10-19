@@ -73,6 +73,7 @@ impl World {
         match player.movement.intention {
             Intention::Attack => self.think_attack(id),
             Intention::Interact => self.think_interact(id),
+            Intention::PickUp => self.think_pick_up(id),
             _ => {}
         }
         if let Some(player) = self.players.get_mut(&id) {
@@ -429,7 +430,7 @@ impl World {
         };
         // If the object was targeted and the Intention was INTERACT, set the Intention to ACTIVE.
         let was_target = p.movement.pawn.ai_target == Some(object);
-        let interacting = p.movement.intention == Intention::Interact;
+        let interacting = matches!(p.movement.intention, Intention::Interact | Intention::PickUp);
         if was_target {
             p.movement.pawn.ai_target = None;
             if interacting {

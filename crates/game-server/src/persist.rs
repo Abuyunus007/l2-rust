@@ -36,10 +36,12 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
-    CharacterRepository, CharacterRow, CharacterUpdate, ItemLocation, ItemRepository, ItemUpdate, NewItem,
-    NewShortcut, Pool, ShortcutRepository, SkillLevel, SkillRepository,
+    CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
+    ItemRepository, ItemUpdate, NewItem, NewShortcut, Pool, ShortcutRepository, SkillLevel, SkillRepository,
 };
-use l2_world::{ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
+use l2_world::{
+    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData,
+};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
 use tokio::task;
@@ -93,6 +95,13 @@ pub trait PlayerStore: Send + 'static {
         owner: ObjectId,
         upserts: &[ItemData],
         removed: &[ObjectId],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Java `ItemsOnGroundManager.run()`: the table `itemsonground` is emptied and `rows` are
+    /// inserted. Only sent with `SaveDroppedItem` on.
+    fn store_ground_items(
+        &mut self,
+        rows: &[GroundItemRow],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
 }
 
@@ -234,12 +243,93 @@ async fn run<S: PlayerStore>(
                     error!("Item changes of {} could NOT be stored: {e}", owner.0);
                 }
             }
+            OutboxMessage::Persist(PersistCommand::SaveGroundItems(rows)) => {
+                let mut result = store.store_ground_items(&rows).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the items on the ground (try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_ground_items(&rows).await;
+                }
+                // The next periodic save (or the one at shutdown) writes the whole table again.
+                if let Err(e) = result {
+                    error!("The items on the ground could NOT be stored: {e}");
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
         }
     }
     debug!("Outbox closed, persistence task done.");
+}
+
+/// Java `ItemsOnGroundManager`'s constructor, the database half (`load()`): what is in
+/// `itemsonground` when the server starts. The world puts the rows back
+/// (`World::load_ground_items`).
+///
+/// D-39: exactly as Java, nothing touches the table unless the owner turned `SaveDroppedItem`
+/// (read, and rewritten later by the world's periodic save) or `ClearDroppedItemTable` (emptied
+/// when `SaveDroppedItem` is off) on. A database error is logged and the server goes on without
+/// the items, like Java.
+pub async fn restore_ground_items(pool: &Pool, general: &GeneralConfig) -> Vec<GroundItemRow> {
+    let repo = GroundItemRepository::new(pool.clone());
+    // If SaveDroppedItem is false, may want to delete all items previously stored to avoid add old
+    // items on reactivate.
+    if !general.save_dropped_item && general.clear_dropped_item_table {
+        if let Err(e) = repo.empty_table().await {
+            error!("ItemsOnGroundManager: Error while cleaning table ItemsOnGround {e}");
+        }
+    }
+    if !general.save_dropped_item {
+        return Vec::new();
+    }
+
+    // If DestroyPlayerDroppedItem was previously false, items currently protected will be added to
+    // ItemsAutoDestroy.
+    if general.destroy_dropped_player_item {
+        let now_ms = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX));
+        if let Err(e) = repo
+            .recycle_protected(now_ms, general.destroy_equipable_player_item)
+            .await
+        {
+            error!("ItemsOnGroundManager: Error while updating table ItemsOnGround {e}");
+        }
+    }
+
+    // Add items to world.
+    let rows = match repo.load_all().await {
+        Ok(records) => records
+            .into_iter()
+            .map(|r| GroundItemRow {
+                object_id: ObjectId(r.object_id),
+                item_id: r.item_id,
+                count: r.count,
+                enchant_level: r.enchant_level,
+                x: r.x,
+                y: r.y,
+                z: r.z,
+                drop_time: r.drop_time,
+                equipable: r.equipable,
+            })
+            .collect(),
+        Err(e) => {
+            error!("ItemsOnGroundManager: Error while loading ItemsOnGround {e}");
+            Vec::new()
+        }
+    };
+
+    if general.empty_dropped_item_table_after_load {
+        if let Err(e) = repo.empty_table().await {
+            error!("ItemsOnGroundManager: Error while cleaning table ItemsOnGround {e}");
+        }
+    }
+    rows
 }
 
 /// Java `GeneralConfig.CHAR_DATA_STORE_INTERVAL`: `CharacterDataStoreInterval` (minutes,
@@ -298,6 +388,7 @@ impl Baseline {
 pub struct DbStore {
     characters: CharacterRepository,
     items: ItemRepository,
+    ground_items: GroundItemRepository,
     skills: SkillRepository,
     shortcuts: ShortcutRepository,
     baselines: HashMap<ObjectId, Baseline>,
@@ -308,6 +399,7 @@ impl DbStore {
         Self {
             characters: CharacterRepository::new(pool.clone()),
             items: ItemRepository::new(pool.clone()),
+            ground_items: GroundItemRepository::new(pool.clone()),
             skills: SkillRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool),
             baselines: HashMap::new(),
@@ -729,6 +821,25 @@ impl PlayerStore for DbStore {
         result
     }
 
+    async fn store_ground_items(&mut self, rows: &[GroundItemRow]) -> Result<(), PersistError> {
+        let records: Vec<GroundItemRecord> = rows
+            .iter()
+            .map(|row| GroundItemRecord {
+                object_id: row.object_id.0,
+                item_id: row.item_id,
+                count: row.count,
+                enchant_level: row.enchant_level,
+                x: row.x,
+                y: row.y,
+                z: row.z,
+                drop_time: row.drop_time,
+                equipable: row.equipable,
+            })
+            .collect();
+        self.ground_items.replace_all(&records).await?;
+        Ok(())
+    }
+
     async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
         self.baselines.remove(&object_id);
         let now_ms = SystemTime::now()
@@ -755,6 +866,8 @@ mod tests {
         Offline(i32),
         /// Item changes: owner, object ids written, object ids deleted.
         Items(i32, Vec<i32>, Vec<i32>),
+        /// The rows of one `itemsonground` save (object ids).
+        GroundItems(Vec<i32>),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -779,6 +892,14 @@ mod tests {
 
         async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Offline(object_id.0));
+            Ok(())
+        }
+
+        async fn store_ground_items(&mut self, rows: &[GroundItemRow]) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::GroundItems(rows.iter().map(|r| r.object_id.0).collect()));
             Ok(())
         }
 
@@ -944,6 +1065,38 @@ mod tests {
                 Call::Items(1, vec![10], vec![]),
                 Call::Store("A1".into()),
                 Call::Items(1, vec![11, 12], vec![10]),
+                Call::Offline(1),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn ground_item_saves_are_applied_in_order_with_the_other_writes() {
+        let ground = |ids: &[i32]| {
+            OutboxMessage::Persist(PersistCommand::SaveGroundItems(
+                ids.iter()
+                    .map(|id| GroundItemRow {
+                        object_id: ObjectId(*id),
+                        item_id: 57,
+                        count: 1,
+                        enchant_level: 0,
+                        x: 0,
+                        y: 0,
+                        z: 0,
+                        drop_time: -1,
+                        equipable: false,
+                    })
+                    .collect(),
+            ))
+        };
+        let messages = vec![item_msg(1, &[10], &[]), ground(&[7, 8]), ground(&[]), left_msg(1)];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Items(1, vec![10], vec![]),
+                Call::GroundItems(vec![7, 8]),
+                Call::GroundItems(vec![]),
                 Call::Offline(1),
             ]
         );

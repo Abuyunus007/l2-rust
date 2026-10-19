@@ -192,7 +192,7 @@ pub(crate) struct NpcWorld {
     spawns: Option<Arc<SpawnData>>,
     settings: NpcSettings,
     water: Option<WaterCheck>,
-    ids: Option<Arc<IdFactory>>,
+    pub(crate) ids: Option<Arc<IdFactory>>,
     /// Java `DayNightSpawnManager._dayCreatures` / `_nightCreatures`: indices into the spawns.
     day: Vec<usize>,
     night: Vec<usize>,

@@ -201,6 +201,9 @@ impl Server {
         };
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
         let regen_settings = world_data::regen_settings(&config);
+        // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
+        // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
+        let ground_items = persist::restore_ground_items(&pool, &config.general).await;
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -258,6 +261,8 @@ impl Server {
                     }
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
+                    // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
+                    world.load_ground_items(ground_items);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

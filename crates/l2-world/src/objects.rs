@@ -23,6 +23,9 @@ pub enum ObjectKind {
     Fence,
     /// Java `StaticObject` (town maps, thrones, signboards).
     StaticObject,
+    /// Java `Item` lying on the ground (`ground_item.rs`). Items in an inventory are not world
+    /// objects here: they are rows of the owner's item list.
+    Item,
 }
 
 impl ObjectKind {

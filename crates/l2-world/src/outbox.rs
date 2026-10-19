@@ -43,6 +43,9 @@ pub enum PersistCommand {
         upserts: Vec<ItemData>,
         removed: Vec<ObjectId>,
     },
+    /// Java `ItemsOnGroundManager.run()` (only with `SaveDroppedItem`): `DELETE FROM
+    /// itemsonground`, then one `INSERT` per row.
+    SaveGroundItems(Vec<crate::ground_item::GroundItemRow>),
 }
 
 /// Messages for the login server link.

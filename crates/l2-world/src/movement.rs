@@ -1302,9 +1302,12 @@ impl World {
                 // A pawn move (`moveToPawn` of the interact or attack intention, or the follow
                 // task) broadcasts `MoveToPawn`.
                 let pawn = self.players.get(&requester).and_then(|p| {
-                    matches!(p.movement.intention, Intention::Interact | Intention::Attack)
-                        .then_some(p.movement.pawn.ai_target)
-                        .flatten()
+                    matches!(
+                        p.movement.intention,
+                        Intention::Interact | Intention::Attack | Intention::PickUp
+                    )
+                    .then_some(p.movement.pawn.ai_target)
+                    .flatten()
                 });
                 if let Some(pawn) = pawn {
                     // The move was a `moveToPawn` (a click on something far away).

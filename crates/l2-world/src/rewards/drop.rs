@@ -1,0 +1,971 @@
+//! The drops of a dead monster: `NpcTemplate.calculateDrops` (the drop lists, the groups, the
+//! rates and the integer/double quirks of Java) and `Attackable.doItemDrop` (who gets the loot,
+//! auto loot, items on the ground).
+// Java: entity/actor/templates/NpcTemplate.java (calculateDrops, calculateGroupDrops,
+//       calculateUngroupedDrops, calculateGroupDrop, calculateUngroupedDrop)
+// Java: entity/actor/Attackable.java (calculateRewards: who the loot goes to; doItemDrop)
+// Java: data/xml/NpcData.java (the drop list post-processing: unknown items dropped, ungrouped
+//       lists sorted by chance high to low, groups low to high, `BossDrop*`)
+// Java: config/RatesConfig.java
+// Java: util/MathUtil.java (scaleToRange)
+//
+// # How the numbers are computed
+// All of it is done like Java does it, so a seeded run draws in the same order:
+// - the multipliers of `Rates.ini` are `float`s, widened to `double` when they meet a chance
+//   (`0.1f` is `0.10000000149011612`), so they are `f32` here and `f64::from` at the use;
+// - a drop's level gap check draws first (`Rnd.nextDouble() * 100`), the chance draws second, the
+//   count (`Rnd.get(min, max)` with longs, which draws nothing when `min >= max`) third;
+// - the count is `(long) (Rnd.get(min, max) * rateAmount)`, a saturating cast;
+// - `rateChance == 1` is an exact `double` comparison and decides if a group rolls its items one
+//   after the other (the x1 case) or each on its own (any custom rate).
+//
+// # Not modelled, with what brings it
+// - Spoil: `isSpoiled()` needs the Spoil skill (M5); `calculate_drops` can roll a `SPOIL` list
+//   (the code is Java's) but nothing asks for it yet, and sweeping is M5.
+// - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion), seeds (manor) and
+//   the premium system (`PremiumSystem.ini`, off by default; there is no premium status).
+// - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
+// - Parties: Java picks the leader of the party that did the most damage as the one the loot
+//   belongs to and shares auto loot by `distributeItem`; without parties (M5) the loot goes to
+//   the single biggest damage dealer.
+
+use std::collections::BTreeMap;
+
+use l2_data::ItemTemplates;
+use l2_data::NpcTemplate;
+use l2_data::Stat;
+use l2_data::item::ADENA_ID;
+use l2_data::npc::{DropEntry, DropGroup, DropType};
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+use l2_util::ObjectId;
+use tracing::warn;
+
+use crate::formulas::Rnd;
+use crate::target::distance_3d;
+use crate::world::World;
+
+/// Java `ItemHolder`: an item id and a count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ItemHolder {
+    pub id: i32,
+    pub count: i64,
+}
+
+/// The values of `Rates.ini` that drops read, plus `AltPartyRange` (the damage dealer must be
+/// within it). `Default` is the Java default of each key (not the shipped `Rates.ini`: the two
+/// per-item maps are empty in the code).
+#[derive(Debug, Clone, PartialEq)]
+pub struct DropSettings {
+    /// `RATE_DEATH_DROP_AMOUNT_MULTIPLIER` (`DeathDropAmountMultiplier`), a Java `float`.
+    pub rate_death_drop_amount_multiplier: f32,
+    /// `RATE_SPOIL_DROP_AMOUNT_MULTIPLIER` (`SpoilDropAmountMultiplier`).
+    pub rate_spoil_drop_amount_multiplier: f32,
+    /// `RATE_HERB_DROP_AMOUNT_MULTIPLIER` (`HerbDropAmountMultiplier`).
+    pub rate_herb_drop_amount_multiplier: f32,
+    /// `RATE_RAID_DROP_AMOUNT_MULTIPLIER` (`RaidDropAmountMultiplier`).
+    pub rate_raid_drop_amount_multiplier: f32,
+    /// `RATE_DEATH_DROP_CHANCE_MULTIPLIER` (`DeathDropChanceMultiplier`).
+    pub rate_death_drop_chance_multiplier: f32,
+    /// `RATE_SPOIL_DROP_CHANCE_MULTIPLIER` (`SpoilDropChanceMultiplier`).
+    pub rate_spoil_drop_chance_multiplier: f32,
+    /// `RATE_HERB_DROP_CHANCE_MULTIPLIER` (`HerbDropChanceMultiplier`).
+    pub rate_herb_drop_chance_multiplier: f32,
+    /// `RATE_RAID_DROP_CHANCE_MULTIPLIER` (`RaidDropChanceMultiplier`).
+    pub rate_raid_drop_chance_multiplier: f32,
+    /// `RATE_DROP_AMOUNT_BY_ID` (`DropAmountMultiplierByItemId`).
+    pub rate_drop_amount_by_id: BTreeMap<i32, f32>,
+    /// `RATE_DROP_CHANCE_BY_ID` (`DropChanceMultiplierByItemId`).
+    pub rate_drop_chance_by_id: BTreeMap<i32, f32>,
+    /// `DROP_MAX_OCCURRENCES_NORMAL` (`DropMaxOccurrencesNormal`).
+    pub drop_max_occurrences_normal: i32,
+    /// `DROP_MAX_OCCURRENCES_RAIDBOSS` (`DropMaxOccurrencesRaidboss`).
+    pub drop_max_occurrences_raidboss: i32,
+    /// `DROP_ADENA_MIN_LEVEL_DIFFERENCE` (`DropAdenaMinLevelDifference`).
+    pub drop_adena_min_level_difference: i32,
+    /// `DROP_ADENA_MAX_LEVEL_DIFFERENCE` (`DropAdenaMaxLevelDifference`).
+    pub drop_adena_max_level_difference: i32,
+    /// `DROP_ADENA_MIN_LEVEL_GAP_CHANCE` (`DropAdenaMinLevelGapChance`).
+    pub drop_adena_min_level_gap_chance: f64,
+    /// `DROP_ITEM_MIN_LEVEL_DIFFERENCE` (`DropItemMinLevelDifference`).
+    pub drop_item_min_level_difference: i32,
+    /// `DROP_ITEM_MAX_LEVEL_DIFFERENCE` (`DropItemMaxLevelDifference`).
+    pub drop_item_max_level_difference: i32,
+    /// `DROP_ITEM_MIN_LEVEL_GAP_CHANCE` (`DropItemMinLevelGapChance`).
+    pub drop_item_min_level_gap_chance: f64,
+    /// `BOSS_DROP_ENABLED` (`BossDropEnable`).
+    pub boss_drop_enabled: bool,
+    /// `BOSS_DROP_MIN_LEVEL` (`BossDropMinLevel`).
+    pub boss_drop_min_level: i32,
+    /// `BOSS_DROP_MAX_LEVEL` (`BossDropMaxLevel`).
+    pub boss_drop_max_level: i32,
+    /// `BOSS_DROP_LIST` (`BossDropList`), all of type `DROP`.
+    pub boss_drop_list: Vec<DropEntry>,
+    /// `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`): a damage dealer farther from the monster
+    /// than this gets no share of the loot.
+    pub alt_party_range: i32,
+    /// `PLAYER_DROP_LIMIT`, `PLAYER_RATE_DROP`, `PLAYER_RATE_DROP_ITEM`, `PLAYER_RATE_DROP_EQUIP`,
+    /// `PLAYER_RATE_DROP_EQUIP_WEAPON` (`PlayerDropLimit` ...): what a player killed by a monster
+    /// drops.
+    pub player_drop_limit: i32,
+    pub player_rate_drop: i32,
+    pub player_rate_drop_item: i32,
+    pub player_rate_drop_equip: i32,
+    pub player_rate_drop_equip_weapon: i32,
+    /// `KARMA_DROP_LIMIT`, `KARMA_RATE_DROP`, ... (`KarmaDropLimit` ...): what a player with karma
+    /// drops when killed.
+    pub karma_drop_limit: i32,
+    pub karma_rate_drop: i32,
+    pub karma_rate_drop_item: i32,
+    pub karma_rate_drop_equip: i32,
+    pub karma_rate_drop_equip_weapon: i32,
+    /// `PvpConfig.KARMA_DROP_GM` (`CanGMDropEquipment`).
+    pub karma_drop_gm: bool,
+    /// `PvpConfig.KARMA_PK_LIMIT` (`MinimumPKRequiredToDrop`).
+    pub karma_pk_limit: i32,
+    /// `PvpConfig.KARMA_LIST_NONDROPPABLE_ITEMS` (`ListOfNonDroppableItems`).
+    pub karma_list_nondroppable_items: Vec<i32>,
+}
+
+impl Default for DropSettings {
+    fn default() -> Self {
+        Self {
+            rate_death_drop_amount_multiplier: 1.0,
+            rate_spoil_drop_amount_multiplier: 1.0,
+            rate_herb_drop_amount_multiplier: 1.0,
+            rate_raid_drop_amount_multiplier: 1.0,
+            rate_death_drop_chance_multiplier: 1.0,
+            rate_spoil_drop_chance_multiplier: 1.0,
+            rate_herb_drop_chance_multiplier: 1.0,
+            rate_raid_drop_chance_multiplier: 1.0,
+            rate_drop_amount_by_id: BTreeMap::new(),
+            rate_drop_chance_by_id: BTreeMap::new(),
+            drop_max_occurrences_normal: 2,
+            drop_max_occurrences_raidboss: 7,
+            drop_adena_min_level_difference: 8,
+            drop_adena_max_level_difference: 15,
+            drop_adena_min_level_gap_chance: 10.0,
+            drop_item_min_level_difference: 5,
+            drop_item_max_level_difference: 10,
+            drop_item_min_level_gap_chance: 10.0,
+            boss_drop_enabled: false,
+            boss_drop_min_level: 40,
+            boss_drop_max_level: 999,
+            boss_drop_list: Vec::new(),
+            alt_party_range: 1500,
+            player_drop_limit: 3,
+            player_rate_drop: 5,
+            player_rate_drop_item: 70,
+            player_rate_drop_equip: 25,
+            player_rate_drop_equip_weapon: 5,
+            karma_drop_limit: 10,
+            karma_rate_drop: 70,
+            karma_rate_drop_item: 50,
+            karma_rate_drop_equip: 40,
+            karma_rate_drop_equip_weapon: 10,
+            karma_drop_gm: false,
+            karma_pk_limit: 5,
+            karma_list_nondroppable_items: vec![
+                57, 1147, 425, 1146, 461, 10, 2368, 7, 6, 2370, 2369, 6842, 6611, 6612, 6613, 6614, 6615,
+                6616, 6617, 6618, 6619, 6620, 6621, 7694, 8181, 5575, 7694, 9388, 9389, 9390,
+            ],
+        }
+    }
+}
+
+/// The monster side of a drop roll (Java `victim`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DropVictim {
+    /// `getLevel()`.
+    pub level: i32,
+    /// `isRaid()`.
+    pub raid: bool,
+    /// `isChampion()`: nobody is one yet.
+    pub champion: bool,
+    /// `isMonster() && isSeeded()`: manor seeds are M5.
+    pub seeded: bool,
+}
+
+/// The player side of a drop roll (Java `killer.asPlayer()`): its level and the multipliers of
+/// its bonus stats (`1 + calcStat(BONUS_DROP_RATE, 0) / 100` and so on).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct DropKiller {
+    pub level: i32,
+    pub bonus_drop_rate: f64,
+    pub bonus_drop_amount: f64,
+    pub bonus_drop_adena: f64,
+    pub bonus_spoil_rate: f64,
+}
+
+impl DropKiller {
+    /// A killer without any bonus.
+    pub fn plain(level: i32) -> Self {
+        Self {
+            level,
+            bonus_drop_rate: 1.0,
+            bonus_drop_amount: 1.0,
+            bonus_drop_adena: 1.0,
+            bonus_spoil_rate: 1.0,
+        }
+    }
+}
+
+/// Java `MathUtil.scaleToRange(double, double, double, double, double)`.
+fn scale_to_range(value: f64, source_min: f64, source_max: f64, target_min: f64, target_max: f64) -> f64 {
+    let clamped = value.min(source_max).max(source_min);
+    (((clamped - source_min) * (target_max - target_min)) / (source_max - source_min)) + target_min
+}
+
+/// A drop that was rolled, tagged with its position so the `remove(Object)` calls of Java (which
+/// compare by identity) can find it again.
+#[derive(Debug, Clone, Copy)]
+struct Rolled {
+    seq: usize,
+    holder: ItemHolder,
+}
+
+struct Gaps {
+    adena: f64,
+    item: f64,
+}
+
+impl Gaps {
+    fn of(s: &DropSettings, victim: &DropVictim, killer: &DropKiller) -> Self {
+        let level_difference = f64::from(victim.level - killer.level);
+        Self {
+            adena: scale_to_range(
+                level_difference,
+                f64::from(-s.drop_adena_max_level_difference),
+                f64::from(-s.drop_adena_min_level_difference),
+                s.drop_adena_min_level_gap_chance,
+                100.0,
+            ),
+            item: scale_to_range(
+                level_difference,
+                f64::from(-s.drop_item_max_level_difference),
+                f64::from(-s.drop_item_min_level_difference),
+                s.drop_item_min_level_gap_chance,
+                100.0,
+            ),
+        }
+    }
+
+    /// `dropItem.getItemId() == Inventory.ADENA_ID ? adena : item`.
+    fn of_item(&self, item_id: i32) -> f64 {
+        if item_id == ADENA_ID {
+            self.adena
+        } else {
+            self.item
+        }
+    }
+}
+
+/// The chance multiplier of one `DROP` item (the first block of `calculateGroupDrops` and
+/// `calculateUngroupedDrop`).
+fn rate_chance(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    item_id: i32,
+    victim: &DropVictim,
+    killer: &DropKiller,
+) -> f64 {
+    let ex_immediate = items.get(item_id).is_some_and(|t| t.ex_immediate_effect);
+    let mut rate = 1.0_f64;
+    if let Some(by_id) = s.rate_drop_chance_by_id.get(&item_id) {
+        rate *= f64::from(*by_id);
+        // Champion adena chance: `ChampionMonsters.ini`, off.
+        if item_id == ADENA_ID && rate > 100.0 {
+            rate = 100.0;
+        }
+    } else if ex_immediate {
+        rate *= f64::from(s.rate_herb_drop_chance_multiplier);
+    } else if victim.raid {
+        rate *= f64::from(s.rate_raid_drop_chance_multiplier);
+    } else {
+        // Champion rewards chance: off.
+        rate *= f64::from(s.rate_death_drop_chance_multiplier);
+    }
+    // Premium chance: `PremiumSystem.ini` is off. Bonus drop rate effect:
+    rate *= killer.bonus_drop_rate;
+    rate
+}
+
+/// The amount multiplier of one `DROP` item.
+fn rate_amount(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    item_id: i32,
+    victim: &DropVictim,
+    killer: &DropKiller,
+) -> f64 {
+    let ex_immediate = items.get(item_id).is_some_and(|t| t.ex_immediate_effect);
+    let mut rate = 1.0_f64;
+    if let Some(by_id) = s.rate_drop_amount_by_id.get(&item_id) {
+        rate *= f64::from(*by_id);
+    } else if ex_immediate {
+        rate *= f64::from(s.rate_herb_drop_amount_multiplier);
+    } else if victim.raid {
+        rate *= f64::from(s.rate_raid_drop_amount_multiplier);
+    } else {
+        rate *= f64::from(s.rate_death_drop_amount_multiplier);
+    }
+    // Bonus drop amount effect.
+    rate *= killer.bonus_drop_amount;
+    if item_id == ADENA_ID {
+        rate *= killer.bonus_drop_adena;
+    }
+    rate
+}
+
+/// `(long) (Rnd.get(min, max) * rateAmount)`.
+fn amount(rng: &mut impl Rnd, entry: &DropEntry, rate: f64) -> i64 {
+    (rng.get_long_range(entry.min, entry.max) as f64 * rate) as i64
+}
+
+/// The ungrouped drop list of one type, as `NpcData` leaves it: items that do not exist dropped,
+/// sorted by chance from high to low (a stable sort), the boss drops of `Rates.ini` added before
+/// sorting.
+fn ungrouped_list(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    template: &NpcTemplate,
+    drop_type: DropType,
+) -> Vec<DropEntry> {
+    let source = match drop_type {
+        DropType::Drop => &template.drops,
+        DropType::Spoil => &template.spoils,
+    };
+    // Java checks the item of a drop when it loads the NPC ("Could not find drop with id").
+    let mut list: Vec<DropEntry> = source
+        .iter()
+        .filter(|e| items.get(e.item_id).is_some())
+        .copied()
+        .collect();
+    if drop_type == DropType::Drop
+        && s.boss_drop_enabled
+        && template.npc_type.contains("RaidBoss")
+        && i32::from(template.level) >= s.boss_drop_min_level
+        && i32::from(template.level) <= s.boss_drop_max_level
+    {
+        // The configurable boss drops are added unchecked.
+        list.extend(s.boss_drop_list.iter().copied());
+    }
+    // Drops are sorted by chance (high to low); `Double.compare`.
+    list.sort_by(|a, b| b.chance.total_cmp(&a.chance));
+    list
+}
+
+/// The drop groups of the template, as `NpcData` leaves them: items that do not exist dropped, each
+/// group sorted by chance from low to high.
+fn group_list(items: &ItemTemplates, template: &NpcTemplate) -> Vec<DropGroup> {
+    template
+        .drop_groups
+        .iter()
+        .map(|group| {
+            let mut entries: Vec<DropEntry> = group
+                .items
+                .iter()
+                .filter(|e| items.get(e.item_id).is_some())
+                .copied()
+                .collect();
+            // Group drops are sorted by chance (low to high).
+            entries.sort_by(|a, b| a.chance.total_cmp(&b.chance));
+            DropGroup {
+                chance: group.chance,
+                items: entries,
+            }
+        })
+        .collect()
+}
+
+/// Java `NpcTemplate.calculateDrops(dropType, victim, killer)`: the items the monster drops.
+///
+/// `rng` draws in Java's order. An empty vector is Java's `null` (nothing dropped).
+pub fn calculate_drops(
+    settings: &DropSettings,
+    items: &ItemTemplates,
+    template: &NpcTemplate,
+    drop_type: DropType,
+    victim: &DropVictim,
+    killer: &DropKiller,
+    rng: &mut impl Rnd,
+) -> Vec<ItemHolder> {
+    match drop_type {
+        DropType::Drop => {
+            // Calculate group drops.
+            let mut group_drops = Vec::new();
+            if !template.drop_groups.is_empty() {
+                group_drops = calculate_group_drops(settings, items, template, victim, killer, rng);
+                if victim.seeded {
+                    group_drops.retain(|i| is_seal_stone_or_adena(i.id));
+                }
+            }
+
+            // Calculate ungrouped drops.
+            let mut ungrouped_drops = Vec::new();
+            let list = ungrouped_list(settings, items, template, DropType::Drop);
+            if !list.is_empty() {
+                ungrouped_drops = calculate_ungrouped_drops(settings, items, &list, victim, killer, rng);
+                if victim.seeded {
+                    ungrouped_drops.retain(|i| is_seal_stone_or_adena(i.id));
+                }
+            }
+
+            // Return results.
+            group_drops.extend(ungrouped_drops);
+            group_drops
+        }
+        DropType::Spoil => {
+            let list = ungrouped_list(settings, items, template, DropType::Spoil);
+            if list.is_empty() {
+                return Vec::new();
+            }
+            calculate_ungrouped_drops(settings, items, &list, victim, killer, rng)
+        }
+    }
+}
+
+/// `i.getId() != 57 && != 6361 && != 6362 && != 6360` kept out of a seeded monster's drops.
+fn is_seal_stone_or_adena(item_id: i32) -> bool {
+    matches!(item_id, 57 | 6361 | 6362 | 6360)
+}
+
+/// Java `calculateGroupDrops`.
+fn calculate_group_drops(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    template: &NpcTemplate,
+    victim: &DropVictim,
+    killer: &DropKiller,
+    rng: &mut impl Rnd,
+) -> Vec<ItemHolder> {
+    let gaps = Gaps::of(s, victim, killer);
+    let mut calculated: Option<Vec<Rolled>> = None;
+    let mut counter = if victim.raid {
+        s.drop_max_occurrences_raidboss
+    } else {
+        s.drop_max_occurrences_normal
+    };
+    let mut seq = 0usize;
+    if counter > 0 {
+        let mut random: Option<Vec<usize>> = None;
+        let mut cached: Option<Rolled> = None;
+        for group in group_list(items, template) {
+            // Total group chance is 100.
+            let mut total_chance = 0.0_f64;
+            for drop_item in &group.items {
+                let item_id = drop_item.item_id;
+                let rate_chance = rate_chance(s, items, item_id, victim, killer);
+
+                // Only use total chance on x1, custom rates break this logic because total chance
+                // is more than 100%.
+                if rate_chance == 1.0 {
+                    total_chance += drop_item.chance;
+                } else {
+                    total_chance = drop_item.chance;
+                }
+
+                let group_item_chance = total_chance * (group.chance / 100.0) * rate_chance;
+
+                // Check if maximum drop occurrences have been reached. Items that have 100% drop
+                // chance without server rate multipliers drop normally.
+                if counter == 0
+                    && group_item_chance < 100.0
+                    && let (Some(random), Some(calculated)) = (random.as_mut(), calculated.as_mut())
+                {
+                    // Custom rates break this logic because total chance is more than 100%.
+                    if rate_chance == 1.0 && !random.is_empty() {
+                        // Remove highest chance item (temporarily if no other item replaces it).
+                        let first = random.remove(0);
+                        if let Some(at) = calculated.iter().position(|r| r.seq == first) {
+                            cached = Some(calculated.remove(at));
+                        }
+                    }
+                    counter = 1;
+                }
+
+                // Check level gap that may prevent to drop item.
+                if rng.next_double() * 100.0 > gaps.of_item(item_id) {
+                    continue;
+                }
+
+                // Calculate chances.
+                let Some(holder) =
+                    calculate_group_drop(s, items, drop_item, victim, killer, group_item_chance, rng)
+                else {
+                    continue;
+                };
+                let rolled = Rolled { seq, holder };
+                seq += 1;
+
+                // Finally.
+                let random = random.get_or_insert_with(Vec::new);
+                let calculated = calculated.get_or_insert_with(Vec::new);
+                let counts = match s.rate_drop_chance_by_id.get(&item_id) {
+                    Some(by_id) => group_item_chance * f64::from(*by_id) < 100.0,
+                    None => group_item_chance < 100.0,
+                };
+                if counts {
+                    counter -= 1;
+                    // Custom rates break this logic because total chance is more than 100%.
+                    if rate_chance == 1.0 {
+                        random.push(rolled.seq);
+                    }
+                }
+                calculated.push(rolled);
+
+                // No more drops from this group, only use on x1, custom rates break this logic
+                // because total chance is more than 100%.
+                if rate_chance == 1.0 {
+                    break;
+                }
+            }
+        }
+
+        // Add temporarily removed item when not replaced.
+        if counter > 0
+            && let (Some(cached), Some(calculated)) = (cached, calculated.as_mut())
+        {
+            calculated.push(cached);
+        }
+        // Champion extra drop: `ChampionMonsters.ini` is off.
+    }
+    calculated
+        .unwrap_or_default()
+        .into_iter()
+        .map(|r| r.holder)
+        .collect()
+}
+
+/// Java `calculateGroupDrop`.
+fn calculate_group_drop(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    drop_item: &DropEntry,
+    victim: &DropVictim,
+    killer: &DropKiller,
+    chance: f64,
+    rng: &mut impl Rnd,
+) -> Option<ItemHolder> {
+    // Calculate if item will drop.
+    if rng.next_double() * 100.0 < chance {
+        // Amount is calculated after chance returned success.
+        let rate = rate_amount(s, items, drop_item.item_id, victim, killer);
+        return Some(ItemHolder {
+            id: drop_item.item_id,
+            count: amount(rng, drop_item, rate),
+        });
+    }
+    None
+}
+
+/// Java `calculateUngroupedDrops` for a list that is already filtered and sorted.
+fn calculate_ungrouped_drops(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    list: &[DropEntry],
+    victim: &DropVictim,
+    killer: &DropKiller,
+    rng: &mut impl Rnd,
+) -> Vec<ItemHolder> {
+    let gaps = Gaps::of(s, victim, killer);
+    let mut counter = if victim.raid {
+        s.drop_max_occurrences_raidboss
+    } else {
+        s.drop_max_occurrences_normal
+    };
+    let mut calculated: Option<Vec<Rolled>> = None;
+    let mut random: Option<Vec<usize>> = None;
+    let mut cached: Option<Rolled> = None;
+    let mut seq = 0usize;
+    if counter > 0 {
+        for drop_item in list {
+            // Check if maximum drop occurrences have been reached. Items that have 100% drop chance
+            // without server rate multipliers drop normally.
+            if counter == 0
+                && drop_item.chance < 100.0
+                && let (Some(random), Some(calculated)) = (random.as_mut(), calculated.as_mut())
+            {
+                // Remove highest chance item (temporarily if no other item replaces it).
+                // NOTE(java-quirk): `randomDrops.remove(0)` throws on an empty list; the counter
+                // only reaches 0 after something was added, so the list is not empty here.
+                if !random.is_empty() {
+                    let first = random.remove(0);
+                    if let Some(at) = calculated.iter().position(|r| r.seq == first) {
+                        cached = Some(calculated.remove(at));
+                    }
+                }
+                counter = 1;
+            }
+
+            // Check level gap that may prevent to drop item.
+            if rng.next_double() * 100.0 > gaps.of_item(drop_item.item_id) {
+                continue;
+            }
+
+            // Calculate chances.
+            let Some(holder) = calculate_ungrouped_drop(s, items, drop_item, victim, killer, rng) else {
+                continue;
+            };
+            let rolled = Rolled { seq, holder };
+            seq += 1;
+
+            // Finally.
+            let random = random.get_or_insert_with(Vec::new);
+            let calculated = calculated.get_or_insert_with(Vec::new);
+            let counts = match s.rate_drop_chance_by_id.get(&drop_item.item_id) {
+                Some(by_id) => drop_item.chance * f64::from(*by_id) < 100.0,
+                None => drop_item.chance < 100.0,
+            };
+            if counts {
+                counter -= 1;
+                random.push(rolled.seq);
+            }
+            calculated.push(rolled);
+        }
+    }
+
+    // Add temporarily removed item when not replaced.
+    if counter > 0
+        && let (Some(cached), Some(calculated)) = (cached, calculated.as_mut())
+    {
+        calculated.push(cached);
+    }
+    // Champion extra drop: `ChampionMonsters.ini` is off.
+    calculated
+        .unwrap_or_default()
+        .into_iter()
+        .map(|r| r.holder)
+        .collect()
+}
+
+/// Java `calculateUngroupedDrop`.
+fn calculate_ungrouped_drop(
+    s: &DropSettings,
+    items: &ItemTemplates,
+    drop_item: &DropEntry,
+    victim: &DropVictim,
+    killer: &DropKiller,
+    rng: &mut impl Rnd,
+) -> Option<ItemHolder> {
+    match drop_item.drop_type {
+        DropType::Drop => {
+            let item_id = drop_item.item_id;
+            let rate_chance = rate_chance(s, items, item_id, victim, killer);
+            // Calculate if item will drop.
+            if rng.next_double() * 100.0 < drop_item.chance * rate_chance {
+                // Amount is calculated after chance returned success.
+                let rate = rate_amount(s, items, item_id, victim, killer);
+                return Some(ItemHolder {
+                    id: item_id,
+                    count: amount(rng, drop_item, rate),
+                });
+            }
+            None
+        }
+        DropType::Spoil => {
+            // Chance; bonus spoil rate effect.
+            let rate_chance = f64::from(s.rate_spoil_drop_chance_multiplier) * killer.bonus_spoil_rate;
+            // Calculate if item will be rewarded.
+            if rng.next_double() * 100.0 < drop_item.chance * rate_chance {
+                // Amount is calculated after chance returned success.
+                let rate = f64::from(s.rate_spoil_drop_amount_multiplier);
+                return Some(ItemHolder {
+                    id: drop_item.item_id,
+                    count: amount(rng, drop_item, rate),
+                });
+            }
+            None
+        }
+    }
+}
+
+impl World {
+    /// The drop half of Java `Attackable.calculateRewards(lastAttacker)`: who the loot belongs to
+    /// (the player who did the most damage within `AltPartyRange`, else the last attacker), then
+    /// `doItemDrop`.
+    ///
+    /// Java returns early when the aggro list is empty, which skips the exp as well; callers that
+    /// add the exp half must do the same (`aggro_list(npc).is_empty()`).
+    // NOTE(java-quirk): the biggest damage dealer is the first one over the running maximum, in the
+    // order Java's `ConcurrentHashMap` iterates the aggro list (an identity hash order). Here it
+    // is the order the attackers hit first; only an exact tie can differ.
+    pub(crate) fn drop_rewards(&mut self, dying: ObjectId, last_attacker: Option<ObjectId>) {
+        if !self.is_attackable_npc(dying) {
+            return;
+        }
+        let aggro = self.aggro_list(dying).to_vec();
+        if aggro.is_empty() {
+            return;
+        }
+        let Some(victim_pos) = self.position_of(dying) else {
+            return;
+        };
+        let range = f64::from(self.settings.drops.alt_party_range);
+        let mut max_dealer: Option<ObjectId> = None;
+        let mut max_damage: i64 = 0;
+        let mut rewards: Vec<(ObjectId, i64)> = Vec::new();
+        for info in &aggro {
+            // Get the Creature corresponding to this attacker.
+            let Some(attacker) = self.players.get(&info.attacker).map(|p| p.core.object_id) else {
+                continue;
+            };
+            // Get damages done by this attacker.
+            let damage = info.damage;
+            // Prevent unwanted behavior.
+            if damage > 1 {
+                // Check if damage dealer isn't too far from this (killed monster).
+                let Some(pos) = self.position_of(attacker) else {
+                    continue;
+                };
+                if distance_3d(victim_pos, pos) > range {
+                    continue;
+                }
+                // Calculate real damages (summoners should get own damage plus summon's damage).
+                let total = match rewards.iter_mut().find(|(a, _)| *a == attacker) {
+                    Some(entry) => {
+                        entry.1 = entry.1.saturating_add(damage);
+                        entry.1
+                    }
+                    None => {
+                        rewards.push((attacker, damage));
+                        damage
+                    }
+                };
+                if total > max_damage {
+                    max_dealer = Some(attacker);
+                    max_damage = total;
+                }
+            }
+        }
+        // Parties (M5): the leader of the party that did the most damage gets the loot when its
+        // members together beat the single best dealer.
+
+        // Manage base, quests and sweep drops of the Attackable.
+        let dealer = match max_dealer {
+            // `maxDealer.isOnline()`.
+            Some(p) if self.players.contains_key(&p) => Some(p),
+            _ => last_attacker,
+        };
+        self.do_item_drop(dying, dealer);
+        // `EventDropManager.doEventDrop`: no event drops.
+    }
+
+    /// Java `Player.onDieDropItem(killer)`: a player with karma, or one killed by a monster, may
+    /// drop items on the ground.
+    pub(crate) fn player_on_die_drop_item(&mut self, dying: ObjectId, killer: ObjectId) {
+        // `isOnEvent()`: no events. A war between the clans of both (`isAtWarWith`): clans are M5.
+        let killer_is_player = self.players.contains_key(&killer);
+        let s = self.settings.drops.clone();
+        let inside_pvp = self.is_inside_zone(dying, crate::zones::ZoneId::Pvp);
+        if !((!inside_pvp || !killer_is_player) && (!self.is_gm(dying) || s.karma_drop_gm)) {
+            return;
+        }
+        let Some((karma, pk_kills, level)) = self
+            .players
+            .get(&dying)
+            .map(|p| (p.data.karma, p.data.pk_kills, p.core.level))
+        else {
+            return;
+        };
+        let killer_is_npc = self.npcs.contains_key(&killer);
+        let (mut drop_equip, mut drop_equip_weapon, mut drop_item, mut drop_limit, mut drop_percent) =
+            (0, 0, 0, 0, 0);
+        let mut is_karma_drop = false;
+        if karma > 0 && pk_kills >= s.karma_pk_limit {
+            is_karma_drop = true;
+            drop_percent = s.karma_rate_drop;
+            drop_equip = s.karma_rate_drop_equip;
+            drop_equip_weapon = s.karma_rate_drop_equip_weapon;
+            drop_item = s.karma_rate_drop_item;
+            drop_limit = s.karma_drop_limit;
+        // `!isFestivalParticipant()`: the festival is not modelled.
+        } else if killer_is_npc && level > 4 {
+            drop_percent = s.player_rate_drop;
+            drop_equip = s.player_rate_drop_equip;
+            drop_equip_weapon = s.player_rate_drop_equip_weapon;
+            drop_item = s.player_rate_drop_item;
+            drop_limit = s.player_drop_limit;
+        }
+
+        if !(drop_percent > 0 && self.rng().below(100) < drop_percent) {
+            return;
+        }
+        let Some(templates) = self.item_templates() else {
+            return;
+        };
+        let mut drop_count = 0;
+        let mut item_drop_percent;
+        // Java walks the live item container; the items are taken from a snapshot here, in the
+        // order of the item list.
+        let snapshot: Vec<crate::player::ItemData> = self
+            .players
+            .get(&dying)
+            .map(|p| {
+                p.data
+                    .items
+                    .iter()
+                    .filter(|i| i.loc == "INVENTORY" || i.loc == "PAPERDOLL")
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default();
+        for item_drop in snapshot {
+            let Some(template) = templates.get(item_drop.item_id) else {
+                continue;
+            };
+            // Don't drop: shadow items, time limited items, items that cannot be dropped, adena,
+            // quest items, the control item of the active pet (no pets), the non droppable items.
+            // The pet item list needs pets (M5).
+            if item_drop.mana_left >= 0
+                || item_drop.time > 0
+                || !template.dropable
+                || item_drop.item_id == ADENA_ID
+                || template.type2 == l2_data::item::TYPE2_QUEST
+                || s.karma_list_nondroppable_items.contains(&item_drop.item_id)
+            {
+                continue;
+            }
+            let equipped = item_drop.loc == "PAPERDOLL";
+            if equipped {
+                // Set proper chance according to Item type of equipped Item.
+                item_drop_percent = if template.type2 == l2_data::item::TYPE2_WEAPON {
+                    drop_equip_weapon
+                } else {
+                    drop_equip
+                };
+            } else {
+                // Item in inventory.
+                item_drop_percent = drop_item;
+            }
+
+            // NOTE: Each time an item is dropped, the chance of another item being dropped gets
+            // lesser (dropCount * 2) -- a comment of Java's that the code does not follow.
+            if self.rng().below(100) < item_drop_percent {
+                if equipped {
+                    let slot = usize::try_from(item_drop.loc_data).unwrap_or(0);
+                    let mut changed = Vec::new();
+                    self.set_paperdoll_item(dying, slot, None, &mut changed);
+                    self.refresh_expertise(dying);
+                }
+                self.player_drop_item_object(dying, item_drop.object_id, false, true);
+                self.send_item_list(dying, false);
+
+                let name = self
+                    .players
+                    .get(&dying)
+                    .map(|p| p.data.name.clone())
+                    .unwrap_or_default();
+                if is_karma_drop {
+                    warn!(
+                        "{name} has karma and dropped id = {}, count = {}",
+                        item_drop.item_id, item_drop.count
+                    );
+                } else {
+                    warn!(
+                        "{name} dropped id = {}, count = {}",
+                        item_drop.item_id, item_drop.count
+                    );
+                }
+
+                drop_count += 1;
+                if drop_count >= drop_limit {
+                    break;
+                }
+            }
+        }
+    }
+
+    /// Java `Attackable.doItemDrop(mainDamageDealer)`.
+    pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
+        let Some(dealer) = main_damage_dealer else {
+            return;
+        };
+        // Don't drop anything if the last attacker or owner isn't Player (a fake player may, when
+        // `FakePlayerCanDropItems` is on: fake players are not ported).
+        if !self.players.contains_key(&dealer) {
+            return;
+        }
+        // `CursedWeaponsManager.checkDrop(this, player)`: cursed weapons are M5.
+        // `if (isSpoiled()) _sweepItems.set(calculateDrops(SPOIL, ...))`: spoil is M5.
+
+        let Some(templates) = self.item_templates() else {
+            return;
+        };
+        let Some((npc_id, victim_level, raid, raid_minion)) = self
+            .npcs
+            .get(&dying)
+            .map(|n| (n.npc_id, n.core.level, n.class.is_raid(), n.leader.is_some()))
+        else {
+            return;
+        };
+        let Some(npc_name) = self.npc_world.template(npc_id).map(|t| t.name.clone()) else {
+            return;
+        };
+        let Some(player_level) = self.players.get(&dealer).map(|p| p.core.level) else {
+            return;
+        };
+        let killer = match self.stats(dealer) {
+            Some(view) => DropKiller {
+                level: player_level,
+                bonus_drop_rate: 1.0 + view.calc(Stat::BonusDropRate, 0.0) / 100.0,
+                bonus_drop_amount: 1.0 + view.calc(Stat::BonusDropAmount, 0.0) / 100.0,
+                bonus_drop_adena: 1.0 + view.calc(Stat::BonusDropAdena, 0.0) / 100.0,
+                bonus_spoil_rate: 1.0 + view.calc(Stat::BonusSpoilRate, 0.0) / 100.0,
+            },
+            None => DropKiller::plain(player_level),
+        };
+        let victim = DropVictim {
+            level: victim_level,
+            raid,
+            champion: false,
+            seeded: false,
+        };
+        let settings = self.settings.drops.clone();
+        let death_items = self.with_rng(|world, rng| {
+            world.npc_world.template(npc_id).map(|npc_template| {
+                calculate_drops(
+                    &settings,
+                    &templates,
+                    npc_template,
+                    DropType::Drop,
+                    &victim,
+                    &killer,
+                    rng,
+                )
+            })
+        });
+        let Some(death_items) = death_items else {
+            return;
+        };
+        let ground = self.settings.ground.clone();
+        for drop in death_items {
+            let Some(item) = templates.get(drop.id) else {
+                warn!("{dying}: drop of unknown item {}", drop.id);
+                continue;
+            };
+            // Check if the autoLoot mode is active.
+            // `isFlying()`: a flying monster cannot drop things on the ground; none is modelled.
+            let auto_loot = ground.auto_loot_item_ids.contains(&item.id)
+                || (!item.ex_immediate_effect
+                    && ((!raid && ground.auto_loot) || (raid && ground.auto_loot_raids)))
+                || (item.ex_immediate_effect && ground.auto_loot_herbs);
+            if auto_loot {
+                // Give the item(s) to the Player that has killed the Attackable.
+                self.do_auto_loot(dealer, dying, drop.id, drop.count);
+            } else {
+                // Drop the item on the ground.
+                self.npc_drop_item(dying, Some(dealer), drop.id, drop.count);
+            }
+
+            // Broadcast message if RaidBoss was defeated.
+            if raid && !raid_minion && drop.count > 0 {
+                let message = SystemMessage::new(SystemMessageId::C1DiedAndDroppedS3S2)
+                    .with(SystemMessageParam::Text(npc_name.clone()))
+                    .with(SystemMessageParam::ItemName(drop.id))
+                    .with(SystemMessageParam::LongNumber(drop.count));
+                self.broadcast_packet(dying, &message);
+            }
+        }
+    }
+}
