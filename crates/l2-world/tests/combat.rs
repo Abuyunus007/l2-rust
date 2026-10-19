@@ -358,6 +358,10 @@ fn player_kills_a_weak_monster() {
     let mut hits = landed.iter();
     for (max, value) in &bars {
         assert_eq!(*max, 300);
+        if *value == 0 && hp == 0 {
+            // `doDie` broadcasts the status once more (Java `Creature.doDie`).
+            continue;
+        }
         if *value > hp {
             assert!(value - hp <= 10, "regeneration, not a jump: {bars:?}");
         } else {

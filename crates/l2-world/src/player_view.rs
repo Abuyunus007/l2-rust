@@ -103,7 +103,8 @@ impl World {
             sitting: false,
             running: ui.running,
             in_combat: false,
-            alike_dead: false,
+            // Java: `!_player.isInOlympiadMode() && _player.isAlikeDead()`.
+            alike_dead: self.is_alike_dead(subject),
             // Java: `!gmSeeInvis && isInvisible()` (a GM sees the player, a ghostly one).
             invisible: !gm_sees_invisible && invisible,
             mount_type: ui.mount_type,

@@ -90,6 +90,9 @@ pub struct World {
     pub(crate) statuses: HashMap<ObjectId, CreatureStatus>,
     /// The multipliers the regeneration formulas read (`status.rs`).
     pub(crate) regen: RegenSettings,
+    /// Spawn counters, corpses waiting to decay, NPCs waiting to respawn, pending revives
+    /// (M4-DEATH-01, `death.rs`, `respawn.rs`).
+    pub(crate) death: crate::death::DeathWorld,
 }
 
 impl World {
@@ -132,6 +135,7 @@ impl World {
             ai: crate::ai::AiWorld::default(),
             statuses: HashMap::new(),
             regen: RegenSettings::default(),
+            death: crate::death::DeathWorld::default(),
         }
     }
 
@@ -423,6 +427,8 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            // Java: RequestRestartPoint
+            ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -466,6 +472,10 @@ impl World {
             TimerKind::ItemList(id) => self.on_item_list_timer(id),
             TimerKind::Regeneration(id) => self.on_regeneration_timer(id),
             TimerKind::SelfStatusUpdate(id) => self.on_self_update_timer(id),
+            // Java: DecayTaskManager, RespawnTaskManager, SpawnGroupTaskManager
+            TimerKind::Decay(id) => self.on_decay_timer(id),
+            TimerKind::Respawn(id) => self.on_respawn_timer(id),
+            TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
         }
     }
 

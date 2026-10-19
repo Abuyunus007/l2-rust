@@ -1,6 +1,6 @@
 //! A hit lands: `Creature.onHitTimer`, the damage messages, `reduceCurrentHp` (player, NPC and
 //! attackable variants), the aggro list's damage and hate, and the death hook.
-// Java: entity/actor/Creature.java (onHitTimer, sendDamageMessage, reduceCurrentHp, doDie)
+// Java: entity/actor/Creature.java (onHitTimer, sendDamageMessage, reduceCurrentHp)
 // Java: entity/actor/Player.java (sendDamageMessage, reduceCurrentHp)
 // Java: entity/actor/Attackable.java (reduceCurrentHp, addDamage, addDamageHate, getHateRatio)
 // Java: entity/actor/holders/npc/AggroInfo.java
@@ -407,30 +407,9 @@ impl World {
 
     /// Java `Creature.doDie(killer)`: `false` when the creature was already dead.
     ///
-    /// M4-DEATH-01 fills this in. For now it does the start of Java's method (HP to 0, dead) and
-    /// what makes the creature stop fighting: its attack and its AI's targets are dropped.
+    /// The class chain (`Playable`/`Player`, or `Creature`/`Npc`/`Attackable`) is in `death.rs`;
+    /// the `Die` packet is `notifyActionDeath`'s (`ai/mod.rs`).
     pub fn do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
-        // Killing is only possible one time.
-        if self.is_dead(id) {
-            return false;
-        }
-        // Now reset currentHp to zero (the dead flag is `status.rs`'s, the only one).
-        self.set_current_hp(id, 0.0, true);
-        self.set_dead(id, true);
-        // The attack in its animation ends with the creature.
-        if let Some(state) = self.combat.creatures.get_mut(&id) {
-            state.attack_end_ms = 0;
-        }
-        // M4-DEATH-01: ON_CREATURE_DEATH / ON_CREATURE_KILLED events, rewards (`calculateRewards`
-        // of the main damage dealer: M4-EXP-01, M4-DROP-01), `setTarget(null)`, `stopMove(null)`,
-        // then the regeneration stop below, effects, the clan help call on kill (M4-AI-01),
-        // `broadcastStatusUpdate()`, the zones' `onDeath`, the attack-by list, then the overrides
-        // (`Npc`/`Attackable`/`Player.doDie`: decay, respawn, death penalty, karma drops).
-        // `getAI().notifyActionDeath()` without the `Die` packet, which DEATH-01 sends.
-        let _ = killer;
-        // Stop HP/MP/CP Regeneration task.
-        self.stop_hp_mp_regeneration(id);
-        self.notify_action_death(id);
-        true
+        self.do_die_chain(id, killer)
     }
 }

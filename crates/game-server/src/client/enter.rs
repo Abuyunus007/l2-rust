@@ -518,6 +518,10 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            // Java: RequestRestartPoint
+            ClientPacket::RequestRestartPoint(p) => ClientInput::RestartPoint {
+                point_type: p.requested_point_type,
+            },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

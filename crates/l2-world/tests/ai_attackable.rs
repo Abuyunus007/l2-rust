@@ -604,6 +604,30 @@ fn a_hit_monster_calls_its_clan() {
     assert!(s.world.aggro_list(boar).is_empty());
 }
 
+/// When a player kills a monster, the members of its clan in range attack the killer
+/// (`Creature.doDie`'s clan help aggro), and the dead monster leaves the think set.
+#[test]
+fn killing_a_monster_calls_its_clan() {
+    let body = format!(
+        "{}{}{}",
+        spawn_line(9003, X + 60, Y, Z),
+        spawn_line(9004, X + 120, Y + 60, Z),
+        spawn_line(9005, X + 120, Y - 60, Z)
+    );
+    let mut s = Scene::new(&body);
+    let scout = s.npc_of(9003);
+    let guard = s.npc_of(9004);
+    let boar = s.npc_of(9005);
+    s.enter(ME, "Hero", (X, Y, Z), vec![]);
+    s.ticks(200);
+    assert!(s.world.is_thinking_npc(scout));
+    s.world.do_die(scout, Some(ObjectId(ME)));
+    assert!(!s.world.is_thinking_npc(scout));
+    assert_eq!(s.world.intention_of(guard), Intention::Attack);
+    assert_eq!(s.world.attack_target_of(guard), Some(ObjectId(ME)));
+    assert_eq!(s.world.intention_of(boar), Intention::Active);
+}
+
 /// Regions that switch off take their monsters out of the think set and drop their AI.
 #[test]
 fn a_region_that_switches_off_stops_its_monsters() {

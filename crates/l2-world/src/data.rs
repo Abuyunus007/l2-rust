@@ -129,6 +129,17 @@ pub trait StaticData: Send + Sync {
     fn admin_rights(&self) -> Option<&AdminRights> {
         None
     }
+
+    /// Java `ItemTemplate.isAllowSelfResurrection()` (`allow_self_resurrection`): the item is a
+    /// self-resurrection scroll or feather.
+    fn item_allows_self_resurrection(&self, _item_id: i32) -> bool {
+        false
+    }
+
+    /// Java `AccessLevel.allowFixedRes()` (`allowFixedRes` of `AccessLevels.xml`).
+    fn access_level_allows_fixed_res(&self, _level: i32) -> bool {
+        false
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -170,6 +181,14 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn admin_rights(&self) -> Option<&AdminRights> {
         (**self).admin_rights()
+    }
+
+    fn item_allows_self_resurrection(&self, item_id: i32) -> bool {
+        (**self).item_allows_self_resurrection(item_id)
+    }
+
+    fn access_level_allows_fixed_res(&self, level: i32) -> bool {
+        (**self).access_level_allows_fixed_res(level)
     }
 }
 
@@ -280,6 +299,8 @@ pub struct WorldSettings {
     pub combat: crate::combat::CombatSettings,
     /// The values equipping, destroying and dropping items read.
     pub inventory: crate::inventory::InventorySettings,
+    /// The values dying and coming back read (M4-DEATH-01).
+    pub death: crate::death::DeathSettings,
 }
 
 impl Default for WorldSettings {
@@ -318,6 +339,7 @@ impl Default for WorldSettings {
             stats: StatSettings::default(),
             combat: crate::combat::CombatSettings::default(),
             inventory: crate::inventory::InventorySettings::default(),
+            death: crate::death::DeathSettings::default(),
         }
     }
 }

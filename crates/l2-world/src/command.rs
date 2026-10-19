@@ -81,6 +81,9 @@ pub enum ClientInput {
     },
     /// Java `RequestItemList`.
     ItemList,
+    /// Java `RequestRestartPoint`: the raw `_requestedPointType` (0 village, 1 clan hall, 2
+    /// castle, 3 fortress, 4 siege headquarters, 5 fixed, 27 jail).
+    RestartPoint { point_type: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

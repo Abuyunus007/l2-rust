@@ -1558,6 +1558,76 @@ impl World {
         }
     }
 
+    /// The "clan help range aggro on kill" of `Creature.doDie`: when a player who is not a GM
+    /// kills an attackable, the members of its clan in range attack the killer.
+    pub(crate) fn clan_help_on_kill(&mut self, id: ObjectId, killer: Option<ObjectId>) {
+        let Some(killer) = killer.filter(|k| self.is_player(*k) && !self.is_gm(*k)) else {
+            return;
+        };
+        if !self.is_attackable_npc(id) {
+            return;
+        }
+        let Some(template) = self.npc_template(id) else {
+            return;
+        };
+        if template.clans.is_empty() {
+            return;
+        }
+        let clans = template.clans.clone();
+        let range = template.clan_help_range;
+        let generic_clan = self.npc_world.generic_clan_id();
+        let killer_z = self.position_of(killer).map_or(0, |p| p.2);
+        let now = self.world_ms();
+        for called in self.visible_objects_in_range(id, range) {
+            if !self.is_attackable_npc(called) || self.is_dead(called) || !self.has_ai(called) {
+                continue;
+            }
+            let called_z = self.position_of(called).map_or(0, |p| p.2);
+            if killer_z.wrapping_sub(called_z).abs() > 600 {
+                continue;
+            }
+            // Don't call npcs spawned within the last 7 seconds.
+            if now - self.npcs.get(&called).map_or(0, |n| n.spawn_time_ms) < FACTION_CALL_SPAWN_GRACE_MS {
+                continue;
+            }
+            if !matches!(self.intention_of(called), Intention::Idle | Intention::Active) {
+                continue;
+            }
+            let same_clan = self
+                .npc_template(called)
+                .is_some_and(|t| clans.contains(&generic_clan) || t.clans.iter().any(|c| clans.contains(c)));
+            if !same_clan {
+                continue;
+            }
+            // By default, when a faction member calls for help, attack the caller's attacker.
+            self.notify_action_aggression(called, killer, 1);
+            // D-05: `ON_ATTACKABLE_FACTION_CALL`.
+        }
+    }
+
+    /// `Attackable.doDie`'s minion part: `leader.getMinionList().onMinionDie(mob, respawnTime)`
+    /// and `mob.getMinionList().onMasterDie(false)`.
+    pub(crate) fn minions_on_die(&mut self, id: ObjectId) {
+        // onMinionDie: the dead minion leaves its master's list. (A minion comes back only for a
+        // raid master, `RaidMinionRespawnTimer`, or with `MinionsRespawnTime`: raid bosses are not
+        // spawned from the spawn files, and the per-NPC respawn table is not ported.)
+        if let Some(master) = self.leader_of(id)
+            && let Some(list) = self.ai.attackable.minions.get_mut(&master)
+        {
+            list.retain(|m| *m != id);
+        }
+        // onMasterDie(false): only a raid boss' minions go (`FORCE_DELETE_MINIONS` is not ported).
+        if self.is_raid(id) {
+            let minions = self.ai.attackable.minions.remove(&id).unwrap_or_default();
+            for minion in minions {
+                if let Some(npc) = self.npcs.get_mut(&minion) {
+                    npc.leader = None;
+                }
+                self.delete_npc(minion);
+            }
+        }
+    }
+
     /// Java `AttackableAI.notifyActionAggression(target, aggro)`.
     pub(crate) fn notify_action_aggression(&mut self, id: ObjectId, target: ObjectId, aggro: i64) {
         if !self.is_attackable_npc(id) {

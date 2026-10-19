@@ -26,8 +26,9 @@
 // `reduce_hp` / `player_reduce_hp` / `reduce_mp`.
 //
 // # Hooks left for other cards (grep the markers)
-// - `// M4-DEATH-01:` `World::do_die` only marks the creature dead, stops its attack and resets
-//   its AI; the `Die` packet, decay, respawn, rewards are DEATH-01's.
+// - `World::do_die` hands over to `death.rs` (M4-DEATH-01): the `Die` packet, the corpse, the
+//   respawn, the death penalty hooks. Rewards and drops are marked `// M4-EXP-01:` and
+//   `// M4-DROP-01:` there.
 // - `// M4-AI-01:` what an attackable NPC does when attacked, its thinking and its aggro list use.
 // - `// M5:` soulshots, skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
 
