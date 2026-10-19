@@ -225,6 +225,40 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-E2E-01](M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | in-progress |
 | [M4-RUN-01](M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
 
+## M5: Skills and effects (approved 2026-10-20)
+
+18 cards (draft: [M5/DRAFT.md](M5/DRAFT.md)). Design: [docs/design/m5-skills.md](../design/m5-skills.md). Owner decisions: summons/pets/cubics/transformations and parties go to M6 ("party" = just me in M5); effect engine and casting first, consumables right after. Starts while M4 finishes; workers 4-5 at a time.
+
+### Checkpoints
+| Checkpoint | You test |
+|---|---|
+| 🎮 **CP-M5a** | Potions, herbs, scrolls; soulshots glow and hit harder; auto soulshots. |
+| 🎮 **CP-M5b** | Attack, heal and buff skills; buff icons and times match Sieghardt; buffs and reuse survive a relog and a move to Sieghardt. |
+| 🎮 **CP-M5c** | Monsters use their skills; spoil and sweep; learn a skill at a trainer. |
+| 🎮 **CP-M5d** | Milestone: a play session with skills and consumables on Kain, then the same character on Sieghardt. |
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M5-GPROTO-08](M5/M5-GPROTO-08.md) | Skill, buff and item-use packets | haiku | spot | none | in-progress |
+| [M5-JV-03](M5/M5-JV-03.md) | Java vectors for skill formulas | sonnet | full | none | in-progress |
+| M5-FORM-02 | Skill formulas as pure functions | sonnet | full | JV-03 | card pending |
+| M5-EFFECT-01 | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 | card pending |
+| M5-CAST-01 | Casting | opus | full | EFFECT-01, FORM-02 | card pending |
+| M5-TARGET-01 | The 34 target handlers | sonnet | full | CAST-01 | card pending |
+| M5-EFX-01 | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | card pending |
+| M5-EFX-02 | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | card pending |
+| M5-EFX-03 | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | card pending |
+| M5-ITEM-01 | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | card pending |
+| M5-SHOT-01 | Soulshots and spiritshots | sonnet | full | CAST-01 | card pending |
+| M5-SPOIL-01 | Spoil and sweep | haiku | spot | EFX-03 | card pending |
+| M5-AI-03 | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | card pending |
+| M5-LEARN-01 | Learning skills at trainers | sonnet | full | GPROTO-08 | card pending |
+| M5-SAVE-01 | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | card pending |
+| M5-ADMIN-04 | Admin commands for skills | haiku | spot | CAST-01 | card pending |
+| M5-E2E-01 | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | card pending |
+| M5-RUN-01 | Runbook and milestone checks | opus | full | E2E-01 | card pending |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
