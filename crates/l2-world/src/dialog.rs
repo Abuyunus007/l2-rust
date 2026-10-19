@@ -72,8 +72,6 @@ pub struct TalkSettings {
     pub max_free_teleport_level: i32,
     /// `PlayerConfig.TELEPORT_WHILE_SIEGE_IN_PROGRESS` (`TeleportWhileSiegeInProgress`).
     pub teleport_while_siege_in_progress: bool,
-    /// `GeneralConfig.MAX_NPC_ANIMATION` (`MaxNpcAnimation`): 0 turns the greeting animation off.
-    pub max_npc_animation: i32,
     /// `GeneralConfig.GM_DEBUG_HTML_PATHS` (`GMDebugHtmlPaths`): GMs are told which file is shown.
     pub gm_debug_html_paths: bool,
     /// `NpcConfig.LIST_PET_RENT_NPC` (`ListPetRentNpc`).
@@ -92,7 +90,6 @@ impl Default for TalkSettings {
             karma_player_can_use_warehouse: true,
             max_free_teleport_level: 40,
             teleport_while_siege_in_progress: true,
-            max_npc_animation: 60,
             gm_debug_html_paths: true,
             list_pet_rent_npc: HashSet::from([30827]),
             clock_override_unix_ms: None,
@@ -236,8 +233,6 @@ pub(crate) struct TalkWorld {
     pub html: Option<Arc<HtmCache>>,
     pub teleporters: Option<Arc<TeleporterData>>,
     pub bypass_handlers: crate::bypass::BypassHandlers,
-    /// Java `Npc._lastSocialBroadcast`, in world milliseconds. Absent = never.
-    pub last_social_ms: std::collections::HashMap<ObjectId, i64>,
 }
 
 /// Java: which `entity/actor/instance/*` classes are a `Merchant`.

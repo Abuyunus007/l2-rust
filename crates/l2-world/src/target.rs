@@ -19,7 +19,7 @@
 // - Locked targets (aggression effects), `isOutOfControl`, vehicles, parties: M4/M5.
 
 use l2_protocol_game::server::{
-    ActionFailed, MoveToPawn, MyTargetSelected, NpcHtmlMessage, ShowTownMap, SocialAction, TargetSelected,
+    ActionFailed, MoveToPawn, MyTargetSelected, NpcHtmlMessage, ShowTownMap, TargetSelected,
     TargetUnselected, ValidateLocation,
 };
 use l2_util::ObjectId;
@@ -43,9 +43,6 @@ pub(crate) fn distance_3d(a: (i32, i32, i32), b: (i32, i32, i32)) -> f64 {
     let dz = f64::from(a.2.wrapping_sub(b.2));
     (dx * dx + dy * dy + dz * dz).sqrt()
 }
-
-/// Java `Npc.MINIMUM_SOCIAL_INTERVAL`.
-const MINIMUM_SOCIAL_INTERVAL_MS: i64 = 6000;
 
 impl World {
     /// Java `Creature.getTarget()` of a player.
@@ -408,9 +405,11 @@ impl World {
                 },
             );
         }
-        if self.has_random_animation(npc) {
+        // Java `Npc.onAction`: the greeting is the same `onRandomAnimation` as the idle animation,
+        // so both share the NPC's social throttle (`ai/idle.rs`).
+        if self.npc_has_random_animation(npc) {
             let animation = self.rng().below(8);
-            self.on_random_animation(npc, animation);
+            self.npc_on_random_animation(npc, animation);
         }
 
         // Stop movement when trying to talk to a moving NPC: NPCs do not move before M4.
@@ -420,40 +419,6 @@ impl World {
 
         if self.settings.player_movement_block_time_ms > 0 {
             self.update_not_move_until(player);
-        }
-    }
-
-    /// Java `Npc.hasRandomAnimation()`.
-    fn has_random_animation(&self, npc: ObjectId) -> bool {
-        let Some(template) = self
-            .npcs
-            .get(&npc)
-            .and_then(|n| self.npc_world.template(n.npc_id))
-        else {
-            return false;
-        };
-        self.settings.talk.max_npc_animation > 0
-            && template.random_animation
-            && !template.fake_player
-            && template.ai_type != l2_data::npc::AiType::Corpse
-    }
-
-    /// Java `Npc.onRandomAnimation(animationId)`: the greeting is shown at most every 6 seconds.
-    fn on_random_animation(&mut self, npc: ObjectId, animation: i32) {
-        let now = self.world_ms();
-        let last = self.talk.last_social_ms.get(&npc).copied();
-        if last.is_none_or(|last| now - last > MINIMUM_SOCIAL_INTERVAL_MS) {
-            self.talk.last_social_ms.insert(npc, now);
-            // `broadcastSocialAction`: an NPC only does it where players are awake.
-            if self.are_region_neighbors_active(npc) {
-                self.broadcast_packet(
-                    npc,
-                    &SocialAction {
-                        object_id: npc.0,
-                        action_id: animation,
-                    },
-                );
-            }
         }
     }
 

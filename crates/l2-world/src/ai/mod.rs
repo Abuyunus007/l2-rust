@@ -30,6 +30,7 @@
 // - Cast, follow, pick up intentions (M5 / M4 ground items).
 
 pub mod attackable;
+pub mod idle;
 pub mod npc;
 pub mod player;
 

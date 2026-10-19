@@ -490,6 +490,8 @@ impl World {
             TimerKind::ItemDropProtection(id) => self.on_item_drop_protection_end(id),
             TimerKind::ItemsAutoDestroy => self.on_items_auto_destroy(),
             TimerKind::SaveGroundItems => self.on_save_ground_items_timer(),
+            // Java: RandomAnimationTaskManager.run (for one NPC)
+            TimerKind::RandomAnimation(id) => self.on_random_animation_timer(id),
         }
     }
 

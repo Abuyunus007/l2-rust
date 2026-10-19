@@ -69,6 +69,8 @@ pub enum TimerKind {
     /// Java `ItemsOnGroundManager.run()`: every `SaveDroppedItemInterval` the items on the
     /// ground are written to `itemsonground`.
     SaveGroundItems,
+    /// Java `RandomAnimationTaskManager`: the NPC's next random animation check, see `ai/idle.rs`.
+    RandomAnimation(ObjectId),
 }
 
 #[derive(Debug, Default)]
