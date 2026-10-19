@@ -8,10 +8,12 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    Action, Appearing, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate, CharacterDelete,
-    CharacterRestore, CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter, ProtocolVersion,
-    RequestBypassToServer, RequestGotoLobby, RequestKeyMapping, RequestLinkHtml, RequestNetPing,
-    RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2, SendBypassBuildCmd, ValidatePosition,
+    Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
+    CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter,
+    ProtocolVersion, RequestActionUse, RequestBypassToServer, RequestDestroyItem, RequestDropItem,
+    RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestNetPing, RequestRestart,
+    RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, Say2,
+    SendBypassBuildCmd, UseItem, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -43,6 +45,15 @@ pub enum ClientPacket {
     ValidatePosition(ValidatePosition),
     CannotMoveAnymore(CannotMoveAnymore),
     Appearing(Appearing),
+    /// `ATTACK` (0x01) and `ATTACK_REQUEST` (0x32): Java's `AttackRequest` for both.
+    AttackRequest(AttackRequest),
+    RequestActionUse(RequestActionUse),
+    RequestRestartPoint(RequestRestartPoint),
+    UseItem(UseItem),
+    RequestUnEquipItem(RequestUnEquipItem),
+    RequestDropItem(RequestDropItem),
+    RequestDestroyItem(RequestDestroyItem),
+    RequestItemList(RequestItemList),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -100,6 +111,18 @@ pub fn decode_client(
         ValidatePosition::OPCODE => ClientPacket::ValidatePosition(ValidatePosition::decode(reader)?),
         CannotMoveAnymore::OPCODE => ClientPacket::CannotMoveAnymore(CannotMoveAnymore::decode(reader)?),
         Appearing::OPCODE => ClientPacket::Appearing(Appearing::decode(reader)?),
+        AttackRequest::OPCODE | AttackRequest::OPCODE_REQUEST => {
+            ClientPacket::AttackRequest(AttackRequest::decode(reader)?)
+        }
+        RequestActionUse::OPCODE => ClientPacket::RequestActionUse(RequestActionUse::decode(reader)?),
+        RequestRestartPoint::OPCODE => {
+            ClientPacket::RequestRestartPoint(RequestRestartPoint::decode(reader)?)
+        }
+        UseItem::OPCODE => ClientPacket::UseItem(UseItem::decode(reader)?),
+        RequestUnEquipItem::OPCODE => ClientPacket::RequestUnEquipItem(RequestUnEquipItem::decode(reader)?),
+        RequestDropItem::OPCODE => ClientPacket::RequestDropItem(RequestDropItem::decode(reader)?),
+        RequestDestroyItem::OPCODE => ClientPacket::RequestDestroyItem(RequestDestroyItem::decode(reader)?),
+        RequestItemList::OPCODE => ClientPacket::RequestItemList(RequestItemList::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -286,10 +309,10 @@ mod tests {
 
     #[test]
     fn known_but_unported_packets_are_reported() {
-        // Attack (0x01) is accepted in IN_GAME, but has no struct yet.
+        // RequestGetItemFromPet (0x2C, a pet packet) is accepted in IN_GAME, but has no struct yet.
         assert_eq!(
-            decode(InGame, 0x01, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::Attack))
+            decode(InGame, 0x2C, &[]).unwrap(),
+            Some(ClientPacket::Unported(ClientOpcode::RequestGetItemFromPet))
         );
         // RequestManorList (ex id 0x0001): the id is consumed, the body is left alone.
         let mut r = PacketReader::new(&[0x01, 0x00, 0xAA]);
@@ -299,6 +322,50 @@ mod tests {
             Some(ClientPacket::UnportedEx(ExClientOpcode::RequestManorList))
         );
         assert_eq!(r.remaining(), 1);
+    }
+
+    #[test]
+    fn attack_request_has_both_java_ids() {
+        // Java ClientPackets: ATTACK (0x01) and ATTACK_REQUEST (0x32) both use AttackRequest.
+        // object id, three zero origin ints, then the attack id byte (1 = shift-click).
+        let mut body = 0x4433_2211_i32.to_le_bytes().to_vec();
+        body.extend([0; 12]);
+        body.push(1);
+        let expected = Some(ClientPacket::AttackRequest(AttackRequest {
+            object_id: 0x4433_2211,
+            origin_x: 0,
+            origin_y: 0,
+            origin_z: 0,
+            attack_id: 1,
+        }));
+        for id in [0x01, 0x32] {
+            assert_eq!(decode(InGame, id, &body).unwrap(), expected, "opcode {id:#04x}");
+        }
+        // Not in the other states, like the rest of the table.
+        assert_eq!(decode(Authenticated, 0x01, &body).unwrap(), None);
+    }
+
+    #[test]
+    fn combat_and_item_packets_decode_in_game() {
+        assert_eq!(
+            decode(InGame, 0x14, &[]).unwrap(),
+            Some(ClientPacket::RequestItemList(RequestItemList))
+        );
+        assert_eq!(
+            decode(InGame, 0x19, &[7, 0, 0, 0, 1, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::UseItem(UseItem {
+                object_id: 7,
+                ctrl_pressed: true,
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x7D, &[5, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestRestartPoint(RequestRestartPoint {
+                requested_point_type: 5,
+            }))
+        );
+        // The state check comes first: RequestRestartPoint is IN_GAME only.
+        assert_eq!(decode(Authenticated, 0x7D, &[5, 0, 0, 0]).unwrap(), None);
     }
 
     #[test]

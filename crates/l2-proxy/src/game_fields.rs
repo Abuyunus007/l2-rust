@@ -19,6 +19,10 @@ use l2_protocol_game::server::charscreen::{
     NewCharacterSuccess, ServerClose, SsqInfo,
 };
 use l2_protocol_game::server::chat::{LeaveWorld, NetPing, RestartResponse};
+use l2_protocol_game::server::combat::{
+    Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
+    ExUseSharedGroupItem, Revive,
+};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -28,6 +32,7 @@ use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
+use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
 use l2_protocol_game::server::interaction::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
@@ -148,6 +153,14 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::ValidatePosition(p) => object!(p => x, y, z, heading, vehicle_id),
         ClientPacket::CannotMoveAnymore(p) => object!(p => x, y, z, heading),
         ClientPacket::Appearing(_) => json!({}),
+        ClientPacket::AttackRequest(p) => object!(p => object_id, origin_x, origin_y, origin_z, attack_id),
+        ClientPacket::RequestActionUse(p) => object!(p => action_id, ctrl_pressed, shift_pressed),
+        ClientPacket::RequestRestartPoint(p) => object!(p => requested_point_type),
+        ClientPacket::UseItem(p) => object!(p => object_id, ctrl_pressed),
+        ClientPacket::RequestUnEquipItem(p) => object!(p => paperdoll_slot),
+        ClientPacket::RequestDropItem(p) => object!(p => object_id, count, x, y, z),
+        ClientPacket::RequestDestroyItem(p) => object!(p => object_id, count),
+        ClientPacket::RequestItemList(_) => json!({}),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -223,6 +236,19 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExNavitAdventTimeChange => {
             decoded::<ExNevitAdventTimeChange>(&mut r, nevit_time_fields)
         }
+        ServerOpcode::Attack => decoded::<Attack>(&mut r, attack_fields),
+        ServerOpcode::AutoAttackStart => decoded::<AutoAttackStart>(&mut r, auto_attack_start_fields),
+        ServerOpcode::AutoAttackStop => decoded::<AutoAttackStop>(&mut r, auto_attack_stop_fields),
+        ServerOpcode::Die => decoded::<Die>(&mut r, die_fields),
+        ServerOpcode::Revive => decoded::<Revive>(&mut r, revive_fields),
+        ServerOpcode::ChangeMoveType => decoded::<ChangeMoveType>(&mut r, change_move_type_fields),
+        ServerOpcode::ChangeWaitType => decoded::<ChangeWaitType>(&mut r, change_wait_type_fields),
+        ServerOpcode::ExUseSharedGroupItem => {
+            decoded::<ExUseSharedGroupItem>(&mut r, shared_group_item_fields)
+        }
+        ServerOpcode::SpawnItem => decoded::<SpawnItem>(&mut r, spawn_item_fields),
+        ServerOpcode::DropItem => decoded::<DropItem>(&mut r, drop_item_fields),
+        ServerOpcode::GetItem => decoded::<GetItem>(&mut r, get_item_fields),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -616,6 +642,64 @@ fn nevit_time_fields(p: &ExNevitAdventTimeChange) -> Value {
     object!(p => started, time)
 }
 
+// Combat and items: attacks, death and revive, move and wait types, the ground items.
+
+fn attack_hit_fields(hit: &AttackHit) -> Value {
+    object!(hit => target_id, damage, flags)
+}
+
+fn attack_fields(p: &Attack) -> Value {
+    let other_hits: Vec<Value> = p.other_hits.iter().map(attack_hit_fields).collect();
+    let mut fields = object!(
+        p => attacker_id, attacker_x, attacker_y, attacker_z, target_x, target_y, target_z
+    );
+    fields["first_hit"] = attack_hit_fields(&p.first_hit);
+    fields["other_hits"] = json!(other_hits);
+    fields
+}
+
+fn auto_attack_start_fields(p: &AutoAttackStart) -> Value {
+    object!(p => target_id)
+}
+
+fn auto_attack_stop_fields(p: &AutoAttackStop) -> Value {
+    object!(p => target_id)
+}
+
+fn die_fields(p: &Die) -> Value {
+    object!(
+        p => object_id, can_teleport, to_clan_hall, to_castle, to_siege_hq, sweepable, fixed_res, to_fortress
+    )
+}
+
+fn revive_fields(p: &Revive) -> Value {
+    object!(p => object_id)
+}
+
+fn change_move_type_fields(p: &ChangeMoveType) -> Value {
+    object!(p => object_id, running)
+}
+
+fn change_wait_type_fields(p: &ChangeWaitType) -> Value {
+    object!(p => object_id, move_type, x, y, z)
+}
+
+fn shared_group_item_fields(p: &ExUseSharedGroupItem) -> Value {
+    object!(p => item_id, group_id, remaining_secs, total_secs)
+}
+
+fn spawn_item_fields(p: &SpawnItem) -> Value {
+    object!(p => object_id, display_id, x, y, z, stackable, count)
+}
+
+fn drop_item_fields(p: &DropItem) -> Value {
+    object!(p => player_id, object_id, display_id, x, y, z, stackable, count)
+}
+
+fn get_item_fields(p: &GetItem) -> Value {
+    object!(p => player_id, object_id, x, y, z)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -626,11 +710,13 @@ mod tests {
     use l2_net::Encode;
     use l2_protocol_game::SystemMessageId;
     use l2_protocol_game::client::{
-        AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout,
-        NewCharacter, ProtocolVersion, RequestGotoLobby, RequestKeyMapping, RequestNetPing, RequestRestart,
-        Say2,
+        AttackRequest, AuthLogin, CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect,
+        EnterWorld, Logout, NewCharacter, ProtocolVersion, RequestActionUse, RequestDestroyItem,
+        RequestDropItem, RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestNetPing,
+        RequestRestart, RequestRestartPoint, RequestUnEquipItem, Say2, UseItem,
     };
     use l2_protocol_game::server::chat::{ChatType, CreatureSay, SayBody, SenderField};
+    use l2_protocol_game::server::combat::{HITFLAG_CRIT, HITFLAG_MISS};
     use l2_protocol_game::server::enterworld::{
         FriendListEntry, OtherShortcut, QuestListEntry, SkillCoolTimeEntry, SkillListEntry, TeleportBookmark,
     };
@@ -701,6 +787,17 @@ mod tests {
         ServerOpcode::ExBrExtraUserInfo,
         ServerOpcode::ExNavitAdventPointInfo,
         ServerOpcode::ExNavitAdventTimeChange,
+        ServerOpcode::Attack,
+        ServerOpcode::AutoAttackStart,
+        ServerOpcode::AutoAttackStop,
+        ServerOpcode::Die,
+        ServerOpcode::Revive,
+        ServerOpcode::ChangeMoveType,
+        ServerOpcode::ChangeWaitType,
+        ServerOpcode::ExUseSharedGroupItem,
+        ServerOpcode::SpawnItem,
+        ServerOpcode::DropItem,
+        ServerOpcode::GetItem,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -1542,6 +1639,219 @@ mod tests {
     }
 
     #[test]
+    fn combat_and_item_client_packets_show_their_fields() {
+        use ConnectionState::InGame;
+        let attack = AttackRequest {
+            object_id: 268_435_460,
+            origin_x: 1,
+            origin_y: 2,
+            origin_z: 3,
+            attack_id: AttackRequest::SHIFT_CLICK,
+        };
+        let expected = json!({
+            "object_id": 268_435_460, "origin_x": 1, "origin_y": 2, "origin_z": 3, "attack_id": 1
+        });
+        assert_eq!(c2s_fields(InGame, &attack.to_bytes()), expected);
+        // ATTACK_REQUEST (0x32) is the same struct with the other id.
+        let mut second_id = attack.to_bytes();
+        second_id[0] = ClientOpcode::AttackRequest.id();
+        assert_eq!(c2s_fields(InGame, &second_id), expected);
+
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestActionUse {
+                    action_id: 15,
+                    ctrl_pressed: true,
+                    shift_pressed: false,
+                }
+                .to_bytes()
+            ),
+            json!({ "action_id": 15, "ctrl_pressed": true, "shift_pressed": false })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestRestartPoint {
+                    requested_point_type: 5,
+                }
+                .to_bytes()
+            ),
+            json!({ "requested_point_type": 5 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &UseItem {
+                    object_id: 7,
+                    ctrl_pressed: false,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 7, "ctrl_pressed": false })
+        );
+        assert_eq!(
+            c2s_fields(InGame, &RequestUnEquipItem { paperdoll_slot: 7 }.to_bytes()),
+            json!({ "paperdoll_slot": 7 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestDropItem {
+                    object_id: 9,
+                    count: 3,
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 9, "count": 3, "x": 1, "y": 2, "z": 3 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestDestroyItem {
+                    object_id: 9,
+                    count: 3,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 9, "count": 3 })
+        );
+        assert_eq!(c2s_fields(InGame, &RequestItemList.to_bytes()), json!({}));
+    }
+
+    #[test]
+    fn combat_and_item_server_packets_show_their_fields() {
+        let attack = Attack {
+            attacker_id: 1,
+            attacker_x: 2,
+            attacker_y: 3,
+            attacker_z: 4,
+            first_hit: AttackHit {
+                target_id: 5,
+                damage: 6,
+                flags: HITFLAG_CRIT,
+            },
+            other_hits: vec![AttackHit {
+                target_id: 5,
+                damage: 0,
+                flags: HITFLAG_MISS,
+            }],
+            target_x: 7,
+            target_y: 8,
+            target_z: 9,
+        };
+        let fields = s2c_fields(&attack.to_bytes());
+        assert_eq!(fields["attacker_id"], 1);
+        assert_eq!(fields["target_z"], 9);
+        assert_eq!(
+            fields["first_hit"],
+            json!({ "target_id": 5, "damage": 6, "flags": 0x20 })
+        );
+        assert_eq!(
+            fields["other_hits"],
+            json!([{ "target_id": 5, "damage": 0, "flags": 0x80 }])
+        );
+
+        assert_eq!(
+            s2c_fields(&AutoAttackStart { target_id: 8 }.to_bytes()),
+            json!({ "target_id": 8 })
+        );
+        assert_eq!(
+            s2c_fields(&AutoAttackStop { target_id: 8 }.to_bytes()),
+            json!({ "target_id": 8 })
+        );
+        let die = Die {
+            object_id: 3,
+            can_teleport: true,
+            to_clan_hall: false,
+            to_castle: true,
+            to_siege_hq: false,
+            sweepable: false,
+            fixed_res: true,
+            to_fortress: false,
+        };
+        let fields = s2c_fields(&die.to_bytes());
+        assert_eq!(fields["can_teleport"], true);
+        assert_eq!(fields["to_castle"], true);
+        assert_eq!(fields["fixed_res"], true);
+        assert_eq!(fields["to_fortress"], false);
+        assert_eq!(
+            s2c_fields(&Revive { object_id: 4 }.to_bytes()),
+            json!({ "object_id": 4 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ChangeMoveType {
+                    object_id: 5,
+                    running: true,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 5, "running": true })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ChangeWaitType {
+                    object_id: 6,
+                    move_type: ChangeWaitType::WT_STANDING,
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 6, "move_type": 1, "x": 1, "y": 2, "z": 3 })
+        );
+        assert_eq!(
+            s2c_fields(&ExUseSharedGroupItem::new(1061, 32, 12_000, 60_000).to_bytes()),
+            json!({ "item_id": 1061, "group_id": 32, "remaining_secs": 12, "total_secs": 60 })
+        );
+
+        let spawn = SpawnItem {
+            object_id: 9,
+            display_id: 57,
+            x: 1,
+            y: 2,
+            z: 3,
+            stackable: true,
+            count: 5,
+        };
+        let fields = s2c_fields(&spawn.to_bytes());
+        assert_eq!(fields["display_id"], 57);
+        assert_eq!(fields["stackable"], true);
+        assert_eq!(fields["count"], 5);
+        let drop = DropItem {
+            player_id: 10,
+            object_id: 9,
+            display_id: 57,
+            x: 1,
+            y: 2,
+            z: 3,
+            stackable: false,
+            count: 1,
+        };
+        let fields = s2c_fields(&drop.to_bytes());
+        assert_eq!(fields["player_id"], 10);
+        assert_eq!(fields["stackable"], false);
+        assert_eq!(
+            s2c_fields(
+                &GetItem {
+                    player_id: 10,
+                    object_id: 9,
+                    x: 1,
+                    y: 2,
+                    z: 3,
+                }
+                .to_bytes()
+            ),
+            json!({ "player_id": 10, "object_id": 9, "x": 1, "y": 2, "z": 3 })
+        );
+    }
+
+    #[test]
     fn login_fail_and_seven_signs_show_their_fields() {
         assert_eq!(
             s2c_fields(&LoginFail { reason: 2 }.to_bytes()),
@@ -1621,6 +1931,10 @@ mod tests {
             ServerOpcode::ExRotation,
             ServerOpcode::ExBrExtraUserInfo,
             ServerOpcode::ExNavitAdventTimeChange,
+            ServerOpcode::Attack,
+            ServerOpcode::Die,
+            ServerOpcode::DropItem,
+            ServerOpcode::GetItem,
         ] {
             assert!(seen.contains(&op), "the captures hold no {}", op.name());
         }
