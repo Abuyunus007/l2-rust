@@ -10,15 +10,15 @@
 //
 // Left out, with the system that brings it:
 // - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml and
-//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here a spawned NPC lives until the server
-//   stops and has no respawn (FOLLOW-UP: spawn tables, M4).
+//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here the spawn lives until the server stops
+//   (its respawn is ported, `respawn.rs`), but it is not written anywhere (FOLLOW-UP).
 // - Jail (`Player.isJailed`), instances, effects (`stopAllEffects`), the DB update of
 //   `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, is_numeric, parse_int};
 use crate::objects::ObjectKind;
@@ -204,6 +204,9 @@ fn spawn_monster(
     // A template that does not exist makes `template.isFakePlayer()` throw: the panel again.
     let template = template.ok_or(())?;
     let (template_id, name, fake_player) = (template.id, template.name.clone(), template.fake_player);
+    // FOLLOW-UP(M4): a raid boss goes through `RaidBossSpawnManager` (its own table, and a respawn
+    // of 12 to 36 hours). Here it is a plain spawn that does not respawn.
+    let is_raid = template.npc_type == "RaidBoss";
 
     // `FakePlayersConfig.FAKE_PLAYERS_ENABLED` is off (fake players are not ported).
     if fake_player {
@@ -216,14 +219,19 @@ fn spawn_monster(
         .or_else(|| world.creature_position(gm))
         .ok_or(())?;
     let heading = world.players.get(&gm).map_or(0, |p| p.core.heading);
-    // FOLLOW-UP(M4): `RaidBossSpawnManager.isDefined`, `addNewSpawn` for raid bosses; the spawn is
-    // not stored in the datapack (`permanent`) and `respawn_time` has no respawn to set.
-    debug!("{gm}: spawn of {template_id} x{mob_count}, respawn {respawn_time}s, permanent {permanent}");
-    for _ in 0..mob_count {
-        if world.spawn_npc_at(template_id, x, y, z, heading).is_none() {
-            world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
-            return Ok(());
-        }
+    // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `init()`, and
+    // `stopRespawn()` when the spawn is not permanent or has no delay.
+    let created = world.admin_spawn(
+        template_id,
+        (x, y, z),
+        heading,
+        mob_count,
+        respawn_time,
+        permanent && !is_raid,
+    );
+    if i64::try_from(created.len()).unwrap_or(i64::MAX) < i64::from(mob_count) {
+        world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
+        return Ok(());
     }
     world.send_sys_message(gm, &format!("Created {name} on {}", target.0));
     Ok(())
@@ -253,8 +261,14 @@ fn spawn_at(world: &mut World, gm: ObjectId, command: &str) -> Result<(), ()> {
         world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
         return Ok(());
     }
-    // FOLLOW-UP(M4): `SpawnData.addNewSpawn` stores it in the datapack; here it is not saved.
-    match world.spawn_npc_at(id, x, y, z, heading) {
+    // Java `spawnMonster(activeChar, id, x, y, z, h)`: `setAmount(1)`, `setRespawnDelay(60)`,
+    // `SpawnData.addNewSpawn` (permanent: FOLLOW-UP(M4), the datapack is not written), `init()`.
+    // The NPC comes back 60 seconds after it dies.
+    match world
+        .admin_spawn(id, (x, y, z), heading, 1, 60, true)
+        .last()
+        .copied()
+    {
         Some(npc) => {
             world.broadcast_info(npc);
             world.send_sys_message(gm, &format!("Created {name} on {}", target.0));

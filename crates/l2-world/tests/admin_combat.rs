@@ -96,6 +96,8 @@ fn rights() -> AdminRights {
         ("add_exp_sp_to_character", 100, false),
         ("add_exp_sp", 100, false),
         ("remove_exp_sp", 100, false),
+        ("invul", 30, false),
+        ("setinvul", 100, false),
         ("heal", 100, false),
     ] {
         rights.add_command(command, level, confirm);
@@ -379,6 +381,15 @@ impl Setup {
                 command: command.to_owned(),
             },
         );
+    }
+
+    /// The NPCs of a template, in object id order.
+    fn npcs_of(&self, npc_id: i32) -> Vec<ObjectId> {
+        self.world
+            .npc_ids()
+            .into_iter()
+            .filter(|id| self.world.npc(*id).unwrap().npc_id == npc_id)
+            .collect()
     }
 }
 
@@ -672,4 +683,217 @@ fn remove_exp_sp_mirrors_add_and_takes_no_cap() {
             "{command}"
         );
     }
+}
+
+/// Runs ticks until `done` holds; the number of ticks it took, `None` when it never did.
+fn run_until(s: &mut Setup, limit: u32, done: impl Fn(&World) -> bool) -> Option<u32> {
+    for n in 1..=limit {
+        s.world.tick();
+        if done(&s.world) {
+            return Some(n);
+        }
+    }
+    None
+}
+
+/// Java `Spawn.setRespawnDelay` / `init()`: 50 ms ticks for a number of seconds.
+fn ticks_of_seconds(seconds: u32) -> u32 {
+    seconds * 20
+}
+
+// ------------------------------------------------------------------------------ //invul
+
+#[test]
+fn invul_makes_the_gm_immune_and_toggles_with_java_messages() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    // Java: the GM is told, and nobody else (the admin is the target).
+    s.cmd(GM, "invul");
+    assert_eq!(texts_to(&s.log.take(), GM), ["You are now invulnerable."]);
+    assert!(s.world.is_invul(ObjectId(GM)));
+
+    // Damage does not reach an invulnerable creature (`reduceHp` returns early).
+    s.world
+        .reduce_current_hp(ObjectId(GM), 1000.0, Some(ObjectId(USER)));
+    assert!(!s.world.is_dead(ObjectId(GM)));
+    assert_eq!(s.world.player(ObjectId(GM)).unwrap().core.cur_hp, 100.0);
+
+    // And the toggle back.
+    s.cmd(GM, "invul");
+    assert_eq!(texts_to(&s.log.take(), GM), ["You are now mortal."]);
+    assert!(!s.world.is_invul(ObjectId(GM)));
+    s.world
+        .reduce_current_hp(ObjectId(GM), 1000.0, Some(ObjectId(USER)));
+    assert!(s.world.is_dead(ObjectId(GM)));
+
+    // Unknown words are not the command: nothing happens (Java's `switch` on the whole text).
+    s.log.take();
+    s.cmd(GM, "invul x");
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    assert!(out.is_empty(), "{:?}", names_to(&out, GM));
+}
+
+#[test]
+fn setinvul_targets_a_player_and_tells_both_of_them() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    s.cmd(GM, "setinvul");
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, USER), ["You are now invulnerable."]);
+    assert_eq!(texts_to(&out, GM), ["You made P1 invulnerable."]);
+    assert!(s.world.is_invul(ObjectId(USER)));
+
+    // A kill does nothing to him now: `PlayerStatus.reduceHp` returns early.
+    s.cmd(GM, "kill P1");
+    assert!(!s.world.is_dead(ObjectId(USER)));
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().core.cur_hp, 100.0);
+
+    s.log.take();
+    s.cmd(GM, "setinvul");
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, USER), ["You are now mortal."]);
+    assert_eq!(texts_to(&out, GM), ["You made P1 mortal."]);
+    s.cmd(GM, "kill P1");
+    assert!(s.world.is_dead(ObjectId(USER)));
+}
+
+#[test]
+fn setinvul_needs_a_player_target() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    let rat = s.world.spawn_npc_at(2000, X + 50, Y, Z, 0).unwrap();
+    s.log.take();
+
+    s.cmd(GM, "setinvul");
+    assert_eq!(texts_to(&s.log.take(), GM), ["You must target a player."]);
+    s.world.set_target(ObjectId(GM), Some(rat));
+    s.cmd(GM, "setinvul");
+    assert_eq!(texts_to(&s.log.take(), GM), ["You must target a player."]);
+    assert!(!s.world.is_invul(rat));
+}
+
+#[test]
+fn an_invulnerable_npc_is_made_mortal_for_the_kill_and_stays_invulnerable() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 300);
+    let rat = s.world.spawn_npc_at(2000, X + 50, Y, Z, 0).unwrap();
+    s.world.set_invul(rat, true);
+    s.world.set_target(ObjectId(GM), Some(rat));
+
+    // Java `AdminKill.kill`: `setInvul(false)`, the hit, `setInvul(true)`.
+    s.cmd(GM, "kill");
+    assert!(s.world.is_dead(rat));
+    assert!(s.world.is_invul(rat));
+}
+
+#[test]
+fn a_teleporting_player_cannot_be_hurt() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 300);
+    s.cmd(GM, "move_to -80000 150000 -3000");
+    // Java `isInvul()`: `_isTeleporting` counts, until the client says it arrived.
+    assert!(s.world.is_teleporting(ObjectId(GM)));
+    assert!(s.world.is_invul(ObjectId(GM)));
+    s.world
+        .reduce_current_hp(ObjectId(GM), 1000.0, Some(ObjectId(USER)));
+    assert!(!s.world.is_dead(ObjectId(GM)));
+}
+
+#[test]
+fn invul_is_gone_when_the_character_leaves_the_world() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.cmd(GM, "invul");
+    assert!(s.world.is_invul(ObjectId(GM)));
+
+    s.world.handle(WorldCommand::Disconnected {
+        session: SessionId(u64::try_from(GM).unwrap()),
+    });
+    s.enter(GM, 0);
+    // A new login is a new Java object: `_isInvul` starts false.
+    assert!(!s.world.is_invul(ObjectId(GM)));
+}
+
+// ------------------------------------------------------------------------------ spawns
+
+#[test]
+fn spawn_with_a_respawn_time_brings_the_npc_back_at_its_spawn() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    // Java: `setAmount(2)`, `setRespawnDelay(30)`, `init()` leaves `_doRespawn` on.
+    s.cmd(GM, "spawn 2000 2 30");
+    let rats = s.npcs_of(2000);
+    assert_eq!(rats.len(), 2);
+    let rat = rats[0];
+    let (x, y, z) = {
+        let core = &s.world.npc(rat).unwrap().core;
+        (core.x, core.y, core.z)
+    };
+
+    s.world.reduce_current_hp(rat, 1000.0, None);
+    assert!(s.world.is_dead(rat));
+    // The corpse decays first (its template's corpse time), then the spawn counts one NPC less.
+    assert!(run_until(&mut s, 2000, |w| w.npc(rat).is_none()).is_some());
+    assert_eq!(s.npcs_of(2000).len(), 1);
+    assert!(s.world.has_pending_respawn(rat));
+
+    // The respawn is 30 seconds later, with the same object id, at the spawn place, alive.
+    let waited = run_until(&mut s, 2000, |w| w.npc(rat).is_some());
+    assert_eq!(waited, Some(ticks_of_seconds(30)));
+    let back = s.world.npc(rat).unwrap();
+    assert_eq!((back.core.x, back.core.y, back.core.z), (x, y, z));
+    assert!(!s.world.is_dead(rat));
+    assert_eq!(s.npcs_of(2000).len(), 2);
+}
+
+#[test]
+fn spawn_once_and_a_zero_delay_do_not_respawn() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    // `spawn_once` is not permanent: `stopRespawn()`.
+    s.cmd(GM, "spawn_once 2000");
+    let once = s.npcs_of(2000)[0];
+    // A zero delay: `init()` leaves `_doRespawn = false`.
+    s.cmd(GM, "spawn 2001 1 0");
+    let zero = s.npcs_of(2001)[0];
+
+    for npc in [once, zero] {
+        s.world.reduce_current_hp(npc, 1000.0, None);
+        assert!(run_until(&mut s, 2000, |w| w.npc(npc).is_none()).is_some());
+        assert!(!s.world.has_pending_respawn(npc));
+    }
+    // Well past any respawn delay the tests use: nothing comes back.
+    run_ticks(&mut s, ticks_of_seconds(300));
+    assert!(s.npcs_of(2000).is_empty());
+    assert!(s.npcs_of(2001).is_empty());
+}
+
+#[test]
+fn spawnat_comes_back_after_sixty_seconds() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    // Java `spawnMonster(id, x, y, z, h)`: `setRespawnDelay(60)` and `init()`.
+    s.cmd(GM, &format!("spawnat 2000 {} {Y} {Z} 0", X + 50));
+    let rat = s.npcs_of(2000)[0];
+    s.world.reduce_current_hp(rat, 1000.0, None);
+    assert!(run_until(&mut s, 2000, |w| w.npc(rat).is_none()).is_some());
+    let waited = run_until(&mut s, 5000, |w| w.npc(rat).is_some());
+    assert_eq!(waited, Some(ticks_of_seconds(60)));
 }

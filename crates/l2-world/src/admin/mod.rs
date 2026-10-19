@@ -20,6 +20,7 @@
 pub mod combat;
 pub mod commands;
 pub mod exp_sp;
+pub mod invul;
 pub mod rights;
 
 use std::collections::HashMap;
@@ -97,6 +98,7 @@ impl Default for AdminWorld {
         commands::register_core(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
+        invul::register(&mut handlers);
         Self { handlers }
     }
 }

@@ -545,7 +545,8 @@ impl World {
     ) -> Option<ObjectId> {
         let spawns = self.npc_world.spawns.clone()?;
         let templates = self.npc_world.templates.clone()?;
-        let spawn = spawns.spawns().get(index)?;
+        // A copy: the runtime spawns live in `self`, and the rest of this function borrows it.
+        let spawn = self.spawn_def(index)?.clone();
         let template = templates.get(spawn.npc_id)?;
         let class = NpcClass::from_type(&template.npc_type)?;
         let settings = self.npc_world.settings.clone();

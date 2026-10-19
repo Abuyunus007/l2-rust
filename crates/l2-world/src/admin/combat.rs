@@ -9,8 +9,6 @@
 // # Left out, with the system that brings it
 // - `stopAllEffects()` for a non-GM player: effects are M5.
 // - Champions (`ChampionMonstersConfig`): not rolled, so the champion branch of `kill` is not taken.
-// - `AdminKill.kill`'s invulnerability switch around the hit (`setInvul(false)` and back): the
-//   invulnerability state is not ported yet (`//invul`, see the M4-ADMIN-02 report).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -235,7 +233,17 @@ fn kill(world: &mut World, gm: ObjectId, target: ObjectId) {
             let Some(view) = world.stats(target) else {
                 return;
             };
-            f64::from(view.max_hp()) + 1.0
+            let amount = f64::from(view.max_hp()) + 1.0;
+            // Java: an invulnerable NPC is made mortal for the hit, and invulnerable again after it.
+            let was_invul = world.is_invul(target);
+            if was_invul {
+                world.set_invul(target, false);
+            }
+            world.reduce_current_hp(target, amount, Some(gm));
+            if was_invul {
+                world.set_invul(target, true);
+            }
+            return;
         }
         // Doors and static objects are creatures in Java; their hit points belong to the door and
         // static object code, which is not ported.

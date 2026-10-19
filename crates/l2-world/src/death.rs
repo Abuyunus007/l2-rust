@@ -71,6 +71,9 @@ impl Default for DeathSettings {
 /// Everything death keeps in the world, outside the creatures themselves.
 #[derive(Debug, Default)]
 pub struct DeathWorld {
+    /// The spawns that admin commands made (`//spawn`, `//spawnat`): spawn index
+    /// `static count + position` (see `respawn.rs`, `World::spawn_def`).
+    pub(crate) runtime_spawns: Vec<l2_data::spawn::NpcSpawn>,
     /// The runtime fields of each spawn (Java `Spawn`), by index into the spawn data.
     pub(crate) spawns: HashMap<usize, SpawnRuntime>,
     /// The census of each spawn group that rolled units (Java `SpawnGroup._aliveOrReserved`).
