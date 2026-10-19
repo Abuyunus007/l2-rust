@@ -33,6 +33,7 @@ pub mod region;
 pub mod runner;
 pub mod snapshot;
 pub mod stats;
+pub mod status;
 pub mod target;
 pub mod teleport;
 pub mod teleporter;
@@ -67,6 +68,7 @@ pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,
     StatView,
 };
+pub use status::RegenSettings;
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

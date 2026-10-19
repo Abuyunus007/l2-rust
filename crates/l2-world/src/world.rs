@@ -19,6 +19,7 @@ use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
 use crate::region::RegionGrid;
 use crate::snapshot::snapshot_for_store;
+use crate::status::{CreatureStatus, RegenSettings, STATUS_SWEEP_TICKS};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 
 /// One world tick (D-12).
@@ -79,6 +80,10 @@ pub struct World {
     pub(crate) door_snapshot: Option<Arc<DoorSnapshot>>,
     /// Java `NPC_STD_CALCULATOR`: the calculators every NPC shares until it gets its own.
     pub(crate) std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators,
+    /// HP, MP and CP regeneration and the status listeners, per creature (`status.rs`).
+    pub(crate) statuses: HashMap<ObjectId, CreatureStatus>,
+    /// The multipliers the regeneration formulas read (`status.rs`).
+    pub(crate) regen: RegenSettings,
 }
 
 impl World {
@@ -116,6 +121,8 @@ impl World {
             door_index: DoorIndex::default(),
             door_snapshot: None,
             std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators::default(),
+            statuses: HashMap::new(),
+            regen: RegenSettings::default(),
         }
     }
 
@@ -253,6 +260,9 @@ impl World {
         for (_, kind) in self.timers.take_due(self.tick) {
             self.on_timer(kind);
         }
+        if self.tick % STATUS_SWEEP_TICKS == 0 {
+            self.sweep_statuses();
+        }
         // Java: MovementTaskManager.
         self.update_movement();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
@@ -297,6 +307,8 @@ impl World {
             );
             self.leave(id, LeaveReason::Kicked);
         }
+        // A new Java object starts with no regeneration task and no listeners.
+        self.forget_status(id);
         let account = data.account.clone();
         info!("{} ({account}) entered the world.", data.name);
         let mut player = Player::from_data(data, self.tick);
@@ -306,6 +318,8 @@ impl World {
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
+        // Java `Player.restore`'s setCurrentCp/Hp/Mp: starts the regeneration of what is not full.
+        self.restore_player_vitals(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -392,6 +406,8 @@ impl World {
             TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
             TimerKind::InventoryUpdate(id) => self.on_inventory_update_timer(id),
             TimerKind::Follow(id) => self.on_follow_timer(id),
+            TimerKind::Regeneration(id) => self.on_regeneration_timer(id),
+            TimerKind::SelfStatusUpdate(id) => self.on_self_update_timer(id),
         }
     }
 

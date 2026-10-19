@@ -32,6 +32,10 @@ pub enum TimerKind {
     InventoryUpdate(ObjectId),
     /// Java `CreatureFollowTaskManager`'s 500 ms follow task, for one player.
     Follow(ObjectId),
+    /// Java `CreatureStatus`'s regeneration task (every 3 s) of one creature, see `status.rs`.
+    Regeneration(ObjectId),
+    /// Java `Player.broadcastStatusUpdate`'s 50 ms task: a player's own vitals, see `status.rs`.
+    SelfStatusUpdate(ObjectId),
 }
 
 #[derive(Debug, Default)]

@@ -493,7 +493,11 @@ impl World {
             n.active_neighbors += if value { 1 } else { -1 };
             self.regions.compact(r);
         }
-        // Java `switchAI(value)`: NPC AI, regeneration and random animation tasks. M4.
+        // Java `switchAI(value)`: the regeneration of the attackables starts when the region
+        // turns on (`status.rs`). The NPC AI and random animation parts come with M4-AI-01.
+        if value {
+            self.start_regeneration_in_region(region);
+        }
         self.regions.compact(region);
     }
 
