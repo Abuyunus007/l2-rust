@@ -17,6 +17,7 @@ pub mod chat;
 pub mod combat;
 pub mod command;
 pub mod data;
+pub mod death;
 pub mod dialog;
 pub mod door;
 pub mod enter;
@@ -33,6 +34,7 @@ pub mod outbox;
 pub mod player;
 mod player_view;
 pub mod region;
+pub mod respawn;
 pub mod runner;
 pub mod snapshot;
 pub mod stats;
@@ -55,6 +57,7 @@ pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,
     WorldSettings,
 };
+pub use death::DeathSettings;
 pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};

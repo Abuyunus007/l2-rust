@@ -15,11 +15,10 @@
 //
 // The damage path (`reduceHp`, `reduceMp`) is here too, called by `combat/damage.rs`
 // (`World::reduce_current_hp`, M4-COMBAT-01). The dead flag ([`World::is_dead`] /
-// [`World::set_dead`]) is the only one in the world: `World::do_die` (combat, filled in by
-// M4-DEATH-01) sets it, revive clears it.
+// [`World::set_dead`]) is the only one in the world: `World::do_die` sets it, `World::do_revive`
+// clears it (both in `death.rs`, M4-DEATH-01).
 //
-// Left out, with the card that brings it: the rest of death and revive (`doDie`, `doRevive`,
-// M4-DEATH-01), the party, duel and olympiad
+// Left out, with the card that brings it: the party, duel and olympiad
 // parts of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
 // festival, siege and clan hall regeneration modifiers (no such state yet), `isSitting()` (sitting
 // is not modelled), and the champion regeneration (champions are not rolled).
@@ -183,8 +182,8 @@ pub struct CreatureStatus {
     regen_timer: Option<TimerId>,
     /// Java `_flagsRegenActive`: which vitals are below their maximum.
     regen_flags: u8,
-    /// Java `isDead()`'s flag. Death (M4-DEATH-01) sets it through [`World::set_dead`]; until then
-    /// nothing does, so a creature with 0 HP is still treated as alive here.
+    /// Java `isDead()`'s flag. Death (`death.rs`) sets it through [`World::set_dead`] and
+    /// `do_revive` clears it.
     dead: bool,
     /// Java `_statusListener`: the players who target this creature, sorted for determinism.
     listeners: BTreeSet<ObjectId>,
@@ -386,8 +385,8 @@ impl World {
         }
     }
 
-    /// Java `Creature.setDead`. `World::do_die` sets it (M4-COMBAT-01's start of `doDie`, which
-    /// M4-DEATH-01 completes); `doRevive` (M4-DEATH-01) clears it. While it is set, the vitals do not change and no regeneration starts. It does
+    /// Java `Creature.setDead`. `World::do_die` sets it, `World::do_revive` clears it (both in
+    /// `death.rs`). While it is set, the vitals do not change and no regeneration starts. It does
     /// not stop a running task: Java's `doDie` does that itself.
     pub fn set_dead(&mut self, id: ObjectId, dead: bool) {
         if !self.is_tracked(id) {

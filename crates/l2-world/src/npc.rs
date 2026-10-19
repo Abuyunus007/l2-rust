@@ -15,7 +15,7 @@
 //
 // Not done here, with the reason:
 // - respawn after death, `Spawn.decreaseCount`, group replacement rolls, `RespawnTaskManager`:
-//   M4 (nothing dies yet).
+//   `respawn.rs` (M4-DEATH-01). This module creates the NPCs; `respawn.rs` counts them per spawn.
 // - AI, walking routes (`WalkingManager`), `NpcPersonalAIData` (spawn `AIData`), champions
 //   (`ChampionMonstersConfig`, off by default): M4.
 // - Raid and grand bosses: Java's `RaidBossSpawnManager` / `GrandBossManager` spawn them from
@@ -196,14 +196,17 @@ pub(crate) struct NpcWorld {
     /// Java `DayNightSpawnManager._dayCreatures` / `_nightCreatures`: indices into the spawns.
     day: Vec<usize>,
     night: Vec<usize>,
-    /// Java `Spawn.getLastSpawn()` of the day and night spawns.
-    last_spawned: HashMap<usize, ObjectId>,
 }
 
 impl NpcWorld {
     /// The template of an NPC id, if the templates are loaded and know it.
     pub(crate) fn template(&self, npc_id: i32) -> Option<&NpcTemplate> {
         self.templates.as_ref()?.get(npc_id)
+    }
+
+    /// The spawn list (`SpawnData`), if one was handed over.
+    pub(crate) fn spawn_data(&self) -> Option<&Arc<SpawnData>> {
+        self.spawns.as_ref()
     }
 
     /// Java `NpcData.getTemplateByName(name)`.
@@ -386,7 +389,9 @@ impl World {
         if !unspawn.is_empty() {
             let mut removed = 0;
             for index in unspawn {
-                if let Some(last) = self.npc_world.last_spawned.remove(&index) {
+                // `spawn.stopRespawn()` first, so the NPC that goes does not come back.
+                self.stop_respawn(index);
+                if let Some(last) = self.last_spawn(index) {
                     self.delete_npc(last);
                     removed += 1;
                 }
@@ -395,8 +400,9 @@ impl World {
         }
         let mut created = 0;
         for index in &spawn {
-            if let Some(id) = self.do_spawn(*index, report) {
-                self.npc_world.last_spawned.insert(*index, id);
+            // `spawnDat.startRespawn(); spawnDat.doSpawn()`.
+            self.start_respawn(*index);
+            if self.do_spawn(*index, report).is_some() {
                 created += 1;
             }
         }
@@ -463,6 +469,7 @@ impl World {
             alive: 0,
             entry_alive: vec![0; group.entries.len()],
             entry_total: group.entries.iter().map(|e| i64::from(e.total)).collect(),
+            slots: entries.clone(),
         };
         let mut spawned = 0;
         match group.selection {
@@ -491,16 +498,18 @@ impl World {
                 }
             }
         }
+        // The census goes on living: a unit that dies is replaced through it (`respawn.rs`).
+        self.death.groups.insert(group_index, state);
         spawned
     }
 
-    fn entry_roll(&mut self, len: usize) -> usize {
+    pub(crate) fn entry_roll(&mut self, len: usize) -> usize {
         let bound = i32::try_from(len).unwrap_or(i32::MAX);
         usize::try_from(self.rng().below(bound)).unwrap_or(0)
     }
 
     /// Java `SpawnGroup.spawnUnits`: a territory slot is rolled per unit.
-    fn spawn_units(
+    pub(crate) fn spawn_units(
         &mut self,
         state: &mut GroupState,
         slots: &[usize],
@@ -521,7 +530,19 @@ impl World {
     }
 
     /// Java `Spawn.doSpawn(false)` -> `initializeNpc`: creates one NPC for spawn `index`.
-    fn do_spawn(&mut self, index: usize, report: &mut SpawnReport) -> Option<ObjectId> {
+    pub(crate) fn do_spawn(&mut self, index: usize, report: &mut SpawnReport) -> Option<ObjectId> {
+        self.initialize_npc(index, None, report)
+    }
+
+    /// Java `Spawn.initializeNpc(npc)`. `reuse` is `Spawn.respawnNpc(oldNpc)`: the NPC that died
+    /// comes back with its object id (Java re-initialises the same object) and keeps the weapon
+    /// enchant effect its constructor rolled.
+    pub(crate) fn initialize_npc(
+        &mut self,
+        index: usize,
+        reuse: Option<(ObjectId, i32)>,
+        report: &mut SpawnReport,
+    ) -> Option<ObjectId> {
         let spawns = self.npc_world.spawns.clone()?;
         let templates = self.npc_world.templates.clone()?;
         let spawn = spawns.spawns().get(index)?;
@@ -529,11 +550,12 @@ impl World {
         let class = NpcClass::from_type(&template.npc_type)?;
         let settings = self.npc_world.settings.clone();
 
-        // `new Npc(template)`: the random weapon enchant is drawn before the position.
-        let enchant = if settings.enable_random_enchant_effect {
-            self.rng().get(4, 21)
-        } else {
-            template.weapon_enchant
+        // `new Npc(template)`: the random weapon enchant is drawn before the position. A
+        // respawn does not run the constructor again.
+        let enchant = match reuse {
+            Some((_, enchant)) => enchant,
+            None if settings.enable_random_enchant_effect => self.rng().get(4, 21),
+            None => template.weapon_enchant,
         };
 
         let geo = self.geo.clone();
@@ -623,7 +645,8 @@ impl World {
             heading
         };
 
-        let id = self.create_npc(
+        let id = self.create_npc_with_id(
+            reuse.map(|(id, _)| id),
             template,
             class,
             Some(index),
@@ -633,6 +656,8 @@ impl World {
             in_water,
             enchant,
         )?;
+        // `_spawnedNpcs.add(npc)` and `_currentCount++`.
+        self.spawn_registered(index, id);
 
         // Minions of master monsters.
         if class.is_monster() && templates.master_monster_ids().contains(&template.id) {
@@ -650,7 +675,14 @@ impl World {
         templates: &NpcTemplates,
         report: &mut SpawnReport,
     ) {
+        // `MinionList.countSpawnedMinionsById`: a master that comes back from its death (respawn)
+        // still has the minions that survived it, so only the missing ones are made.
         let mut spawned_by_id: HashMap<i32, i32> = HashMap::new();
+        for minion in self.npcs.values() {
+            if minion.leader == Some(master) && !self.is_dead(minion.core.object_id) {
+                *spawned_by_id.entry(minion.npc_id).or_insert(0) += 1;
+            }
+        }
         for holder in master_template.minion_list("Privates") {
             let already = spawned_by_id.get(&holder.id).copied().unwrap_or(0);
             for _ in 0..(holder.count - already).max(0) {
@@ -731,6 +763,26 @@ impl World {
         in_water: bool,
         enchant: i32,
     ) -> Option<ObjectId> {
+        self.create_npc_with_id(
+            None, template, class, spawn, leader, position, heading, in_water, enchant,
+        )
+    }
+
+    /// [`Self::create_npc`] with the object id of an NPC that died and comes back (`reuse`), as
+    /// Java's `respawnNpc` re-initialises the same `Npc` object.
+    #[allow(clippy::too_many_arguments)]
+    fn create_npc_with_id(
+        &mut self,
+        reuse: Option<ObjectId>,
+        template: &NpcTemplate,
+        class: NpcClass,
+        spawn: Option<usize>,
+        leader: Option<ObjectId>,
+        position: (i32, i32, i32),
+        heading: i32,
+        in_water: bool,
+        enchant: i32,
+    ) -> Option<ObjectId> {
         let ids = self.npc_world.ids.clone();
         let Some(ids) = ids else {
             warn!(
@@ -739,12 +791,15 @@ impl World {
             );
             return None;
         };
-        let id = match ids.allocate() {
-            Ok(id) => id,
-            Err(e) => {
-                warn!("Cannot spawn NPC {}: {e}", template.id);
-                return None;
-            }
+        let id = match reuse {
+            Some(id) => id,
+            None => match ids.allocate() {
+                Ok(id) => id,
+                Err(e) => {
+                    warn!("Cannot spawn NPC {}: {e}", template.id);
+                    return None;
+                }
+            },
         };
         let (x, y, z) = position;
         let npc = Npc {
@@ -811,15 +866,15 @@ impl World {
     }
 
     /// Java `Npc.deleteMe()`: the NPC goes out of view for everybody and out of the world. Its
-    /// minions go with it (`Monster.deleteMe` -> `MinionList.onMasterDie(true)`).
+    /// minions go with it (`Monster.deleteMe` -> `MinionList.onMasterDie(true)`). Like Java it
+    /// is `onDecay()`: the spawn counts one NPC less and, unless the spawn was told to stop
+    /// (`Spawn.stopRespawn`), the NPC comes back after the respawn delay (see `respawn.rs`).
     ///
-    /// The object id is not given back: Java's NPCs keep theirs for their next life, and the
-    /// respawn that would use it is M4.
+    /// The object id is not given back: Java's NPCs keep theirs for their next life.
     pub fn delete_npc(&mut self, id: ObjectId) -> bool {
-        let Some(npc) = self.npcs.get_mut(&id) else {
+        if !self.npcs.contains_key(&id) {
             return false;
-        };
-        npc.decayed = true;
+        }
         let minions: Vec<ObjectId> = self
             .npcs
             .iter()
@@ -829,9 +884,9 @@ impl World {
         for minion in minions {
             self.delete_npc(minion);
         }
-        self.decay(id);
-        self.npcs.remove(&id);
-        self.npc_world.last_spawned.retain(|_, last| *last != id);
+        // A minion that is deleted tells its master (`onMinionDie(this, 0)`): no respawn of it,
+        // and the master's list is derived from `leader`, so nothing to do.
+        self.on_npc_decay(id);
         true
     }
 
@@ -928,7 +983,7 @@ impl World {
             left_hand: npc.left_hand,
             running: false,
             in_combat: false,
-            alike_dead: false,
+            alike_dead: self.is_dead(subject),
             show_summon_animation: false,
             name,
             title,
@@ -963,17 +1018,20 @@ impl World {
 
 /// The census of one group while it rolls its first units (Java `SpawnGroup._aliveOrReserved`
 /// and `SpawnGroupEntry._aliveOrReserved`).
-struct GroupState {
-    selection: SpawnSelection,
-    maximum: i64,
-    alive: i64,
-    entry_alive: Vec<i64>,
-    entry_total: Vec<i64>,
+#[derive(Debug)]
+pub(crate) struct GroupState {
+    pub(crate) selection: SpawnSelection,
+    pub(crate) maximum: i64,
+    pub(crate) alive: i64,
+    pub(crate) entry_alive: Vec<i64>,
+    pub(crate) entry_total: Vec<i64>,
+    /// The slots of each entry that Java can build (`SpawnGroupEntry.getSlots`).
+    pub(crate) slots: Vec<Vec<usize>>,
 }
 
 impl GroupState {
     /// `SpawnGroup.tryReserve`. The cap is deliberately not read for `random` groups.
-    fn try_reserve(&mut self, entry: usize, count: i64) -> bool {
+    pub(crate) fn try_reserve(&mut self, entry: usize, count: i64) -> bool {
         if self.selection != SpawnSelection::Random && self.maximum > 0 && self.alive + count > self.maximum {
             return false;
         }
@@ -986,7 +1044,7 @@ impl GroupState {
     }
 
     /// `SpawnGroup.release`.
-    fn release(&mut self, entry: usize, count: i64) {
+    pub(crate) fn release(&mut self, entry: usize, count: i64) {
         self.entry_alive[entry] -= count;
         self.alive -= count;
     }

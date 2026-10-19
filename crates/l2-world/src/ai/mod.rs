@@ -274,18 +274,28 @@ impl World {
         self.notify_action_think(id);
     }
 
-    /// Java `notifyActionDeath()` without the `Die` broadcast (M4-DEATH-01 sends it from
-    /// `doDie`): the AI forgets everything and stops.
+    /// Java `notifyActionDeath()`: the `Die` broadcast, then the AI forgets everything and stops.
     pub fn notify_action_death(&mut self, id: ObjectId) {
         if !self.can_handle_action(id) {
             return;
         }
         // `stopAITask()`.
         self.stop_follow(id);
-        // `clientNotifyDead()`: (`Die` broadcast: M4-DEATH-01), then the AI is reset.
+        // `_actor.asNpc().setDisplayEffect(0)`: `ExChangeNpcState` is not ported, and no NPC has
+        // a display effect before scripts (D-05).
+        if let Some(npc) = self.npcs.get_mut(&id) {
+            npc.display_effect = 0;
+        }
+        // `clientNotifyDead()`: PlayerAI first forgets the offset of a move to a pawn, then the
+        // `Die` packet goes to the actor (a player gets it first) and everybody who sees it,
+        // then the AI is reset.
         if let Some(p) = self.players.get_mut(&id) {
             // PlayerAI.clientNotifyDead
             p.movement.pawn.client_moving_to_pawn_offset = 0;
+        }
+        let die = self.die_packet(id);
+        self.broadcast_creature_packet(id, &die);
+        if let Some(p) = self.players.get_mut(&id) {
             p.movement.pawn.ai_target = None;
         }
         self.set_intention_value(id, Intention::Idle);

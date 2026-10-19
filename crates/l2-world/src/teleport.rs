@@ -19,9 +19,9 @@
 // revalidated for real, `broadcastInfo`), then `UserInfo`.
 //
 // # What is left out, with the system that brings it
-// - `stopMove`'s movement state, `abortAttack`, `abortCast`,
-//   `getAI().setIntentionActive()`, `doRevive` of a pending revive: movement (M3-MOVE-01), combat
-//   and AI (M4). Their call sites are marked `FOLLOW-UP`. `setTarget(null)` is in (M3-TALK-01).
+// - `abortCast`: skills (M5). `stopMove`, `abortAttack`, `getAI().setIntentionActive()` and the
+//   `doRevive` of a pending revive (a restart point, M4-DEATH-01) are in. `setTarget(null)` is
+//   in (M3-TALK-01).
 // - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
 //   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, flying
 //   mounts below -1005: M4+.
@@ -202,18 +202,23 @@ impl World {
             .as_ref()
             .map_or(z_value, |geo| geo.height(x_value, y_value, z_value));
 
-        // FOLLOW-UP(M4): `if (_isPendingRevive) doRevive();`
+        // "Prepare creature for teleport." A player who picked a restart point is revived now,
+        // before he leaves (`RequestRestartPoint` set the flag).
+        if self.death.pending_revive.contains(&id) {
+            self.do_revive(id);
+        }
 
         // "Abort any client actions, casting and remove target."
         // `stopMove(null)`: the movement state goes (with a pending path search) and `StopMove` is
         // broadcast.
         self.stop_move(id, None);
-        // FOLLOW-UP(M4): `abortAttack()`, `abortCast()`.
+        self.abort_attack(id);
+        // FOLLOW-UP(M5): `abortCast()`.
         // `setTarget(null)`: TargetUnselected to everybody if it had a target.
         self.set_target(id, None);
 
         self.set_teleporting(id, true);
-        // FOLLOW-UP(M4): `getAI().setIntentionActive()`.
+        self.set_intention_active(id);
 
         // Java sends `TeleportToLocation` after `decayMe()`, but `forEachVisibleObject` goes by
         // the object's position, which has not changed yet: the same players who just got

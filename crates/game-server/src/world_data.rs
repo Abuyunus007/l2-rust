@@ -16,9 +16,9 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, ItemStatic,
-    PlayerData, RegenSettings, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings,
-    WorldSettings, ZoneSettings,
+    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, DeathSettings,
+    ItemStatic, PlayerData, RegenSettings, StatData, StatSettings, StaticData, TalkSettings,
+    TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -103,6 +103,8 @@ fn attribute(element: &BytesStart<'_>, key: &str) -> Option<String> {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AccessLevels {
     levels: BTreeMap<i32, AccessLevelStatic>,
+    /// The levels with `allowFixedRes="true"` (Java `AccessLevel.allowFixedRes()`).
+    fixed_res: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -186,6 +188,9 @@ impl AccessLevels {
                         .and_then(|v| v.trim().parse::<i32>().ok())
                         .unwrap_or(0);
                     table.rights.add_level(level, child);
+                    if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
+                        table.fixed_res.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -200,6 +205,12 @@ impl AccessLevels {
             }
         }
         table
+    }
+
+    /// Java `AdminData.getAccessLevel(level).allowFixedRes()`.
+    pub fn allows_fixed_res(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        self.fixed_res.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -306,6 +317,35 @@ impl StaticData for DatapackData {
             .get_by_id(player.class_id)
             .map_or(333, |t| t.safe_fall)
     }
+
+    fn item_allows_self_resurrection(&self, item_id: i32) -> bool {
+        self.datapack
+            .items
+            .get(item_id)
+            .is_some_and(|t| t.allow_self_resurrection)
+    }
+
+    fn access_level_allows_fixed_res(&self, level: i32) -> bool {
+        self.access.allows_fixed_res(level)
+    }
+}
+
+/// The values dying and reviving read. `RespawnRestoreCP/HP/MP` are `()` placeholders in the
+/// generated config (Java divides them by 100 after reading), so they come from `Player.ini`.
+pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
+    use l2_config::IniFile;
+
+    let mut s = DeathSettings {
+        disconnect_after_death: config.player.disconnect_after_death,
+        default_corpse_time: config.npc.default_corpse_time,
+        ..DeathSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        s.respawn_restore_cp = ini.get_double("RespawnRestoreCP", 0.0) / 100.0;
+        s.respawn_restore_hp = ini.get_double("RespawnRestoreHP", 65.0) / 100.0;
+        s.respawn_restore_mp = ini.get_double("RespawnRestoreMP", 0.0) / 100.0;
+    }
+    s
 }
 
 /// The regeneration multipliers the world reads (Java `PlayerConfig` and `NpcConfig`, after the
@@ -366,6 +406,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         },
         stats: stat_settings(config, config_dir),
         combat: combat_settings(config, config_dir),
+        death: death_settings(config, config_dir),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
