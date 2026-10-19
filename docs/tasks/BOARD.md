@@ -181,6 +181,45 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-FIX-01](M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | merged |
 | [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | runbook done; geodata decision at CP-M3a |
 
+## M4: Combat, NPC AI, progression (approved 2026-10-19)
+
+17 cards (draft: [M4/DRAFT.md](M4/DRAFT.md)). Design: [docs/design/m4-combat.md](../design/m4-combat.md). Owner decisions: same `Rates.ini` on both servers; ground items follow `SaveDroppedItem` of `General.ini` like Java (default off); stats first. Workers 4-5 at a time.
+
+### Waves
+| Wave | Cards | Parallel workers |
+|---|---|---:|
+| W0 | DATA-10 (s), DATA-12 (h), JV-01 (s), GPROTO-07 (h) | 4 |
+| W1 | DATA-11 (s), STAT-01 (o, after DATA-10/11/12 + JV-01) | 2 |
+| 🎮 **CP-M4a** | **You:** equip/unequip gear on Kain; P.Atk/P.Def/M.Def match Sieghardt for the same character. | |
+| W2 | INV-01 (s), REGEN-01 (h), COMBAT-01 (o) | 3 |
+| W3 | AI-01 (s), DEATH-01 (s), AI-02 (h) | 3 |
+| 🎮 **CP-M4b** | **You:** hunt a monster: it fights back, dies, gives exp/SP, drops items you pick up. | |
+| W4 | EXP-01 (s), DROP-01 (s), ADMIN-02 (h) | 3 |
+| 🎮 **CP-M4c** | **You:** die, go to town, monsters respawn, HP/MP regenerate. | |
+| W5 | E2E-01 (s), RUN-01 (o) | 1 |
+| 🎮 **CP-M4d** | **Milestone (you):** hunt on Kain, then play the character on Sieghardt with the loot and levels. | |
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M4-DATA-10](M4/M4-DATA-10.md) | Stat enum, function templates, conditions, item stat data | sonnet | full | M2-DATA-04 | in-progress |
+| [M4-DATA-12](M4/M4-DATA-12.md) | Armor sets, enchant HP bonus, hit condition bonus, hennas | haiku | spot | none | in-progress |
+| [M4-JV-01](M4/M4-JV-01.md) | Java vectors for the stat engine and Formulas | sonnet | full | none | in-progress |
+| [M4-GPROTO-07](M4/M4-GPROTO-07.md) | Combat, death and item packets | haiku | spot | none | in-progress |
+| M4-DATA-11 | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | card pending |
+| M4-STAT-01 | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | card pending |
+| M4-INV-01 | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | card pending |
+| M4-REGEN-01 | HP/MP/CP regeneration | haiku | spot | STAT-01 | card pending |
+| M4-COMBAT-01 | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | card pending |
+| M4-AI-01 | NPC AI: attackable core | sonnet | full | COMBAT-01 | card pending |
+| M4-AI-02 | NPC AI: idle behaviour | haiku | spot | AI-01 | card pending |
+| M4-DEATH-01 | Death, respawn, corpses | sonnet | full | COMBAT-01 | card pending |
+| M4-EXP-01 | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | card pending |
+| M4-DROP-01 | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | card pending |
+| M4-ADMIN-02 | Admin commands for combat testing | haiku | spot | DEATH-01 | card pending |
+| M4-E2E-01 | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | card pending |
+| M4-RUN-01 | Runbook and milestone checks | opus | full | E2E-01 | card pending |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
