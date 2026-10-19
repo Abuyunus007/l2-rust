@@ -346,6 +346,12 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestDropItem(_)
             | ClientPacket::RequestDestroyItem(_)
             | ClientPacket::RequestItemList(_)
+            // Skill packets are checked in tests/skills.rs.
+            | ClientPacket::RequestMagicSkillUse(_)
+            | ClientPacket::RequestAutoSoulShot(_)
+            | ClientPacket::RequestAcquireSkill(_)
+            | ClientPacket::RequestAcquireSkillInfo(_)
+            | ClientPacket::RequestDispel(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

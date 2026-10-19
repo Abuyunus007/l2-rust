@@ -10,10 +10,11 @@ use l2_net::{Decode, PacketError, PacketReader};
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter,
-    ProtocolVersion, RequestActionUse, RequestBypassToServer, RequestDestroyItem, RequestDropItem,
-    RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestNetPing, RequestRestart,
-    RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, Say2,
-    SendBypassBuildCmd, UseItem, ValidatePosition,
+    ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse, RequestAutoSoulShot,
+    RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem, RequestGotoLobby,
+    RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse, RequestNetPing,
+    RequestRestart, RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem,
+    Say2, SendBypassBuildCmd, UseItem, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -54,6 +55,13 @@ pub enum ClientPacket {
     RequestDropItem(RequestDropItem),
     RequestDestroyItem(RequestDestroyItem),
     RequestItemList(RequestItemList),
+    RequestMagicSkillUse(RequestMagicSkillUse),
+    RequestAcquireSkill(RequestAcquireSkill),
+    RequestAcquireSkillInfo(RequestAcquireSkillInfo),
+    /// `EX_REQUEST_AUTO_SOULSHOT` (`0xD0` 0x000D), an ex packet.
+    RequestAutoSoulShot(RequestAutoSoulShot),
+    /// `EX_REQUEST_DISPEL` (`0xD0` 0x004B), an ex packet.
+    RequestDispel(RequestDispel),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -123,6 +131,15 @@ pub fn decode_client(
         RequestDropItem::OPCODE => ClientPacket::RequestDropItem(RequestDropItem::decode(reader)?),
         RequestDestroyItem::OPCODE => ClientPacket::RequestDestroyItem(RequestDestroyItem::decode(reader)?),
         RequestItemList::OPCODE => ClientPacket::RequestItemList(RequestItemList::decode(reader)?),
+        RequestMagicSkillUse::OPCODE => {
+            ClientPacket::RequestMagicSkillUse(RequestMagicSkillUse::decode(reader)?)
+        }
+        RequestAcquireSkill::OPCODE => {
+            ClientPacket::RequestAcquireSkill(RequestAcquireSkill::decode(reader)?)
+        }
+        RequestAcquireSkillInfo::OPCODE => {
+            ClientPacket::RequestAcquireSkillInfo(RequestAcquireSkillInfo::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -144,6 +161,10 @@ fn decode_ex_client(
     let packet = match ex {
         RequestGotoLobby::EX_OPCODE => ClientPacket::RequestGotoLobby(RequestGotoLobby::decode(reader)?),
         RequestKeyMapping::EX_OPCODE => ClientPacket::RequestKeyMapping(RequestKeyMapping::decode(reader)?),
+        RequestAutoSoulShot::EX_OPCODE => {
+            ClientPacket::RequestAutoSoulShot(RequestAutoSoulShot::decode(reader)?)
+        }
+        RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))
@@ -152,6 +173,7 @@ fn decode_ex_client(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::server::skills::AcquireSkillType;
     use ConnectionState::{Authenticated, Connected, Entering, InGame};
     use l2_net::Encode;
 
@@ -366,6 +388,67 @@ mod tests {
         );
         // The state check comes first: RequestRestartPoint is IN_GAME only.
         assert_eq!(decode(Authenticated, 0x7D, &[5, 0, 0, 0]).unwrap(), None);
+    }
+
+    #[test]
+    fn skill_and_soulshot_packets_decode_in_game() {
+        assert_eq!(
+            decode(InGame, 0x39, &[0x99, 0x04, 0, 0, 2, 0, 0, 0, 1]).unwrap(),
+            Some(ClientPacket::RequestMagicSkillUse(RequestMagicSkillUse {
+                magic_id: 0x499,
+                // Java: any non-zero int is "pressed" for ctrl and any non-zero byte for shift.
+                ctrl_pressed: true,
+                shift_pressed: true,
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x7C, &[1, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestAcquireSkill(RequestAcquireSkill {
+                id: 1,
+                level: 2,
+                skill_type: AcquireSkillType::Pledge,
+                sub_type: 0,
+            }))
+        );
+        // The squad id is only read for SUBPLEDGE (type 3).
+        assert_eq!(
+            decode(InGame, 0x7C, &[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 5, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestAcquireSkill(RequestAcquireSkill {
+                id: 1,
+                level: 2,
+                skill_type: AcquireSkillType::Subpledge,
+                sub_type: 5,
+            }))
+        );
+        // An unknown learn type is a bad packet, not a panic.
+        assert!(decode(InGame, 0x7C, &[1, 0, 0, 0, 2, 0, 0, 0, 9, 0, 0, 0]).is_err());
+        assert_eq!(
+            decode(InGame, 0x73, &[4, 0, 0, 0, 1, 0, 0, 0, 4, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestAcquireSkillInfo(RequestAcquireSkillInfo {
+                id: 4,
+                level: 1,
+                skill_type: AcquireSkillType::Transform,
+            }))
+        );
+        // Ex packets: the dispatcher consumes the ex id (0x000D soulshot, 0x004B dispel).
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x0D, 0x00, 7, 0, 0, 0, 1, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestAutoSoulShot(RequestAutoSoulShot {
+                item_id: 7,
+                shot_type: RequestAutoSoulShot::ON,
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x4B, 0x00, 9, 0, 0, 0, 3, 0, 0, 0, 2, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestDispel(RequestDispel {
+                object_id: 9,
+                skill_id: 3,
+                skill_level: 2,
+            }))
+        );
+        // The state check comes first: these are IN_GAME only.
+        assert_eq!(decode(Authenticated, 0x39, &ZEROS).unwrap(), None);
+        assert_eq!(decode(Entering, 0xD0, &[0x4B, 0x00]).unwrap(), None);
     }
 
     #[test]
