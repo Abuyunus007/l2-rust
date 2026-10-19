@@ -21,11 +21,13 @@ as Java registers them), `//set_level`/`//add_level` (AdminLevel), and applying 
 
 ## Files
 - `crates/l2-world/src/admin/*.rs`
+- `crates/l2-world/src/enter.rs` (one call), `crates/l2-world/src/combat/damage.rs` (comments)
 - `crates/l2-world/tests/admin_combat.rs` (extend)
 
 ## Requirements
 1. Use DROP-01's `Inventory.addItem` port (stacking, `ADDED` update, capacity) and EXP-01's `addExpAndSp`/`removeExpAndSp`/`setLevel` ports. No second copy.
 2. Command names, access checks and messages exactly as Java.
+3. ADMIN-02 leftovers: `GMStartupInvulnerable` (General.ini, Java `EnterWorld` sets invul at enter for a GM with `admin_invul` access: one call in `crates/l2-world/src/enter.rs`, using `World::set_invul`); update the stale "invulnerability is M5" comments in `crates/l2-world/src/combat/damage.rs` (status.rs honours it now); the `MaxSp` clamp of `//add_exp_sp`.
 
 ## Out of scope
 - Anything else.
