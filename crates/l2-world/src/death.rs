@@ -71,6 +71,9 @@ impl Default for DeathSettings {
 /// Everything death keeps in the world, outside the creatures themselves.
 #[derive(Debug, Default)]
 pub struct DeathWorld {
+    /// The spawns that admin commands made (`//spawn`, `//spawnat`): spawn index
+    /// `static count + position` (see `respawn.rs`, `World::spawn_def`).
+    pub(crate) runtime_spawns: Vec<l2_data::spawn::NpcSpawn>,
     /// The runtime fields of each spawn (Java `Spawn`), by index into the spawn data.
     pub(crate) spawns: HashMap<usize, SpawnRuntime>,
     /// The census of each spawn group that rolled units (Java `SpawnGroup._aliveOrReserved`).
@@ -123,7 +126,12 @@ impl World {
         // ON_CREATURE_DEATH / ON_CREATURE_KILLED: script events (D-05).
 
         // Calculate rewards for main damage dealer.
-        self.calculate_rewards(id, killer);
+        let main_damage_dealer = if self.is_monster(id) {
+            self.get_main_damage_dealer(id)
+        } else {
+            None
+        };
+        self.calculate_rewards(id, main_damage_dealer.or(killer));
 
         // Set target to null and cancel Attack or Cast: an NPC's target belongs to its AI
         // (M4-AI-01).
@@ -225,7 +233,7 @@ impl World {
             self.broadcast_status_update(id);
 
             // Clear resurrect xp calculation.
-            // M4-EXP-01: `setExpBeforeDeath(0)`.
+            self.set_exp_before_death(id, 0);
 
             // Cursed weapons and combat flags (territory wars, fort sieges) are not modelled, so
             // the `else` branch of Java's cursed/flag checks always runs.
@@ -285,13 +293,14 @@ impl World {
 
     /// Java `Creature.calculateRewards(killer)`, overridden by `Attackable` (exp, sp and the
     /// drops of the monster that just died). `killer` is Java's argument, which for a monster is
-    /// `getMainDamageDealer()` when there is one: the caller does not pick it yet.
-    // M4-EXP-01: `Attackable.calculateRewards` (the damage shares of the aggro list, party
-    //            shares, `addExpAndSp`), `getMustRewardExpSP()`.
+    /// `getMainDamageDealer()` when there is one (`creature_do_die` picks it).
     // M4-DROP-01: `doItemDrop(maxDealer or lastAttacker)` and `EventDropManager.doEventDrop`, in
     //             the same method, before the exp.
     pub(crate) fn calculate_rewards(&mut self, dying: ObjectId, killer: Option<ObjectId>) {
-        let _ = (dying, killer);
+        // Only the drops use the killer; the exp goes to everybody in the aggro list.
+        let _ = killer;
+        // M4-EXP-01: the exp and SP of the damage shares (`rewards/exp.rs`).
+        self.reward_exp_and_sp(dying);
     }
 
     /// Java `Player.onDieDropItem(killer)`: karma players and players killed by monsters may drop
@@ -304,15 +313,15 @@ impl World {
 
     /// Java `Player.calculateDeathExpPenalty(killer, atWar)`, called when `PLAYER_DELEVEL`.
     // M4-EXP-01: the exp loss, `_expBeforeDeath`, the lucky/advent/event checks (the zone check is
-    //            the caller's).
+    //            the caller's): `rewards/exp.rs`.
     pub(crate) fn calculate_death_exp_penalty(&mut self, dying: ObjectId, killer: ObjectId) {
-        let _ = (dying, killer);
+        self.player_calculate_death_exp_penalty(dying, killer);
     }
 
     /// Java `Player.restoreExp(percent)`: gives back the exp lost at death (`doRevive(power)`).
-    // M4-EXP-01: needs `_expBeforeDeath`.
+    // M4-EXP-01: `rewards/exp.rs`.
     pub(crate) fn restore_exp(&mut self, player: ObjectId, percent: f64) {
-        let _ = (player, percent);
+        self.player_restore_exp(player, percent);
     }
 
     // ------------------------------------------------------------------ the Die packet

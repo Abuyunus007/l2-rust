@@ -77,6 +77,9 @@ impl World {
         self.decay(id);
         self.forget_combat(id);
         self.forget_death_state(id);
+        // Java: the Player object is gone with its `_isInvul` and regeneration task (a new login is
+        // a new object, so the invulnerability of the GM does not carry over).
+        self.forget_status(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

@@ -94,6 +94,16 @@ pub trait PlayerStore: Send + 'static {
         upserts: &[ItemData],
         removed: &[ObjectId],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// `character_skills` rows that changed (Java `Player.storeSkill` / `removeSkill`): written at
+    /// once, not with the next full store. An upsert becomes an `UPDATE` of the level when the row
+    /// is known, else a `REPLACE`; `removed` skill ids are deleted.
+    fn store_skill_changes(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[SkillData],
+        removed: &[i32],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send;
 }
 
 /// How often a failed store is tried again before it is given up (and logged as lost).
@@ -232,6 +242,28 @@ async fn run<S: PlayerStore>(
                 // item list against what was last written.
                 if let Err(e) = result {
                     error!("Item changes of {} could NOT be stored: {e}", owner.0);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::SkillChanges {
+                owner,
+                upserts,
+                removed,
+            }) => {
+                let mut result = store.store_skill_changes(owner, &upserts, &removed).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store skill changes of {} (try {} of {attempts}): {e}",
+                        owner.0,
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_skill_changes(owner, &upserts, &removed).await;
+                }
+                // A lost skill write is caught by the next full store, which compares the whole
+                // skill list against what was last written.
+                if let Err(e) = result {
+                    error!("Skill changes of {} could NOT be stored: {e}", owner.0);
                 }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
@@ -434,6 +466,47 @@ impl DbStore {
         Ok(())
     }
 
+    /// The writes of `store_skill_changes`; the baseline follows each successful statement.
+    // Java: Player.storeSkill (UPDATE_CHARACTER_SKILL_LEVEL when the skill was known, else
+    // ADD_NEW_SKILLS) and Player.removeSkill (DELETE_SKILL_FROM_CHAR).
+    async fn apply_skill_changes(
+        &self,
+        char_id: i32,
+        class_index: i32,
+        upserts: &[SkillData],
+        removed: &[i32],
+        baseline: &mut Baseline,
+    ) -> Result<(), PersistError> {
+        for SkillData {
+            skill_id,
+            skill_level,
+        } in upserts
+        {
+            if baseline.skills.contains_key(skill_id) {
+                self.skills
+                    .update_skill_level(char_id, class_index, *skill_id, *skill_level)
+                    .await?;
+            } else {
+                self.skills
+                    .replace_skills(
+                        char_id,
+                        class_index,
+                        &[SkillLevel {
+                            skill_id: *skill_id,
+                            skill_level: *skill_level,
+                        }],
+                    )
+                    .await?;
+            }
+            baseline.skills.insert(*skill_id, *skill_level);
+        }
+        for skill_id in removed {
+            self.skills.delete_skill(char_id, class_index, *skill_id).await?;
+            baseline.skills.remove(skill_id);
+        }
+        Ok(())
+    }
+
     /// Writes what differs between `player` and the baseline, and updates the baseline after
     /// every successful statement, so a failure half way leaves it accurate for the next try.
     async fn sync_children(
@@ -630,7 +703,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         } else {
             row.exp.map_or(0, clamp_i64)
         },
-        exp_before_death: row.exp_before_death.map_or(0, clamp_i64),
+        // Java writes `_expBeforeDeath`, which it never reads back (0 after a login).
+        exp_before_death: player.profile.exp_before_death,
         sp: if base_active { player.sp } else { clamp_i64(row.sp) },
         karma: player.karma,
         fame: clamp_i32(u64::from(row.fame)),
@@ -729,6 +803,36 @@ impl PlayerStore for DbStore {
         result
     }
 
+    async fn store_skill_changes(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[SkillData],
+        removed: &[i32],
+    ) -> Result<(), PersistError> {
+        let char_id = owner.0;
+        let row = self
+            .characters
+            .restore_character(char_id)
+            .await?
+            .ok_or(PersistError::NoSuchCharacter(char_id))?;
+        // Skills belong to the active class index; a subclass is not modelled (see `sync_children`).
+        let class_index = (row.classid == Some(row.base_class)).then_some(0);
+        let Some(class_index) = class_index else {
+            return Ok(());
+        };
+        // The skills this character is known to have: from its last store, else from the
+        // database (once; the baseline then follows every write).
+        let mut baseline = match self.baselines.remove(&owner) {
+            Some(baseline) => baseline,
+            None => self.load_baseline(char_id, Some(class_index)).await?,
+        };
+        let result = self
+            .apply_skill_changes(char_id, class_index, upserts, removed, &mut baseline)
+            .await;
+        self.baselines.insert(owner, baseline);
+        result
+    }
+
     async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
         self.baselines.remove(&object_id);
         let now_ms = SystemTime::now()
@@ -755,6 +859,8 @@ mod tests {
         Offline(i32),
         /// Item changes: owner, object ids written, object ids deleted.
         Items(i32, Vec<i32>, Vec<i32>),
+        /// Skill changes: owner, (skill id, level) written, skill ids deleted.
+        Skills(i32, Vec<(i32, i32)>, Vec<i32>),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -792,6 +898,20 @@ mod tests {
                 owner.0,
                 upserts.iter().map(|i| i.object_id.0).collect(),
                 removed.iter().map(|i| i.0).collect(),
+            ));
+            Ok(())
+        }
+
+        async fn store_skill_changes(
+            &mut self,
+            owner: ObjectId,
+            upserts: &[SkillData],
+            removed: &[i32],
+        ) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Skills(
+                owner.0,
+                upserts.iter().map(|s| (s.skill_id, s.skill_level)).collect(),
+                removed.to_vec(),
             ));
             Ok(())
         }
@@ -944,6 +1064,39 @@ mod tests {
                 Call::Items(1, vec![10], vec![]),
                 Call::Store("A1".into()),
                 Call::Items(1, vec![11, 12], vec![10]),
+                Call::Offline(1),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn skill_changes_are_applied_in_order_between_the_stores() {
+        let skills = |owner: i32, upserts: &[(i32, i32)], removed: &[i32]| {
+            OutboxMessage::Persist(PersistCommand::SkillChanges {
+                owner: ObjectId(owner),
+                upserts: upserts
+                    .iter()
+                    .map(|&(skill_id, skill_level)| SkillData {
+                        skill_id,
+                        skill_level,
+                    })
+                    .collect(),
+                removed: removed.to_vec(),
+            })
+        };
+        let messages = vec![
+            skills(1, &[(239, 1)], &[]),
+            store_msg(1, "A1"),
+            skills(1, &[(239, 2), (1216, 1)], &[3]),
+            left_msg(1),
+        ];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Skills(1, vec![(239, 1)], vec![]),
+                Call::Store("A1".into()),
+                Call::Skills(1, vec![(239, 2), (1216, 1)], vec![3]),
                 Call::Offline(1),
             ]
         );

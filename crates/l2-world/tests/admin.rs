@@ -1050,7 +1050,7 @@ fn list_positions_lists_and_teleports_by_index() {
 // -------------------------------------------------------------------------------- //kill
 
 #[test]
-fn kill_removes_the_target_npc_and_only_logs_for_a_player() {
+fn kill_is_a_real_death_for_the_target_and_says_nothing_without_one() {
     let mut s = setup();
     s.enter(GM, 0);
     s.enter(USER, 100);
@@ -1061,17 +1061,17 @@ fn kill_removes_the_target_npc_and_only_logs_for_a_player() {
     s.cmd(GM, "kill");
     assert_eq!(system_ids_to(&s.log.take(), GM), [SystemMessageId::InvalidTarget]);
 
+    // Java `AdminKill.kill`: `reduceCurrentHp(maxHp + 1)`. The NPC dies and stays a corpse until
+    // it decays (M4-DEATH-01), it is not deleted.
     s.world.set_target(ObjectId(GM), Some(rat));
     s.cmd(GM, "kill");
-    assert!(s.world.npc(rat).is_none());
-    // Everybody who saw it loses it.
-    assert!(names_to(&s.log.take(), USER).contains(&"DELETE_OBJECT".to_owned()));
+    assert!(s.world.is_dead(rat));
+    assert!(s.world.npc(rat).is_some());
 
-    // A player: death is M4, the player stays as it is.
+    // A player dies the same way (`maxHp + maxCp + 1`), see admin_combat.rs for the packets.
     s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
     s.cmd(GM, "kill");
-    s.cmd(GM, "kill P1");
-    assert_eq!(s.world.player(ObjectId(USER)).unwrap().core.cur_hp, 100.0);
+    assert!(s.world.is_dead(ObjectId(USER)));
 }
 
 #[test]
@@ -1084,8 +1084,10 @@ fn kill_with_a_radius_or_a_player_name() {
     s.log.take();
 
     s.cmd(GM, "kill 100");
-    assert!(s.world.npc(near).is_none());
-    assert!(s.world.npc(far).is_some());
+    assert!(s.world.is_dead(near));
+    assert!(!s.world.is_dead(far));
+    // Java kills every creature in the radius, the player 100 units away included.
+    assert!(s.world.is_dead(ObjectId(USER)));
     assert_eq!(
         texts_to(&s.log.take(), GM),
         ["Killed all characters within a 100 unit radius."]
@@ -1093,7 +1095,7 @@ fn kill_with_a_radius_or_a_player_name() {
 
     // Around another player.
     s.cmd(GM, "kill_monster p1 2000");
-    assert!(s.world.npc(far).is_none());
+    assert!(s.world.is_dead(far));
     assert_eq!(
         texts_to(&s.log.take(), GM),
         ["Killed all characters within a 2000 unit radius."]

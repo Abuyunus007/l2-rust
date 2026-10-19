@@ -115,6 +115,10 @@ pub struct PlayerProfile {
     pub bookmark_slot: i32,
     /// `characters.death_penalty_level`.
     pub death_penalty_level: i32,
+    /// Java `_expBeforeDeath`: the exp the character had before a death took some. Java never
+    /// reads the column back (it is 0 after a login) but writes the live value with every
+    /// store, so this one is written too.
+    pub exp_before_death: i64,
     /// `character_reco_bonus.rec_have` / `rec_left` / `time_left` (ms of the Nevit hourglass).
     pub recom_have: i32,
     pub recom_left: i32,
@@ -137,6 +141,7 @@ impl Default for PlayerProfile {
             vitality_points: 0,
             bookmark_slot: 0,
             death_penalty_level: 0,
+            exp_before_death: 0,
             recom_have: 0,
             recom_left: 0,
             recom_time_left_ms: 0,

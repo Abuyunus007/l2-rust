@@ -567,7 +567,8 @@ impl World {
     ) -> Option<ObjectId> {
         let spawns = self.npc_world.spawns.clone()?;
         let templates = self.npc_world.templates.clone()?;
-        let spawn = spawns.spawns().get(index)?;
+        // A copy: the runtime spawns live in `self`, and the rest of this function borrows it.
+        let spawn = self.spawn_def(index)?.clone();
         let template = templates.get(spawn.npc_id)?;
         let class = NpcClass::from_type(&template.npc_type)?;
         let settings = self.npc_world.settings.clone();
@@ -703,10 +704,14 @@ impl World {
     ) {
         // `MinionList.countSpawnedMinionsById`: a master that comes back from its death (respawn)
         // still has the minions that survived it, so only the missing ones are made.
+        // Through the master -> minions index, not a scan of every NPC (see `delete_npc`).
         let mut spawned_by_id: HashMap<i32, i32> = HashMap::new();
-        for minion in self.npcs.values() {
-            if minion.leader == Some(master) && !self.is_dead(minion.core.object_id) {
-                *spawned_by_id.entry(minion.npc_id).or_insert(0) += 1;
+        for &minion in self.minions_of(master) {
+            if let Some(npc) = self.npcs.get(&minion)
+                && npc.leader == Some(master)
+                && !self.is_dead(minion)
+            {
+                *spawned_by_id.entry(npc.npc_id).or_insert(0) += 1;
             }
         }
         for holder in master_template.minion_list("Privates") {
@@ -831,7 +836,7 @@ impl World {
         // Java `Spawn.getLocation()`: the XML location, or for a territory spawn the point rolled
         // for the last NPC created (here: this NPC's own point).
         let spawn_point = spawn.and_then(|index| {
-            let data = self.npc_world.spawns.as_ref()?.spawns().get(index)?;
+            let data = self.spawn_def(index)?;
             Some(if data.territory.is_some() {
                 position
             } else {
@@ -918,12 +923,9 @@ impl World {
         if !self.npcs.contains_key(&id) {
             return false;
         }
-        let minions: Vec<ObjectId> = self
-            .npcs
-            .iter()
-            .filter(|(_, n)| n.leader == Some(id))
-            .map(|(minion, _)| *minion)
-            .collect();
+        // The master -> minions index (`MinionList`), not a scan of every NPC: the day/night
+        // switch deletes hundreds of NPCs in one tick, and a scan made each delete cost ~0.5 ms.
+        let minions: Vec<ObjectId> = self.minions_of(id).to_vec();
         for minion in minions {
             self.delete_npc(minion);
         }
