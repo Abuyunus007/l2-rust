@@ -46,6 +46,18 @@ if ($LASTEXITCODE -ne 0) { throw "javac failed" }
 
 if ($NoRun) { return }
 
+# The skill formula generator (M5-JV-03) also reads the game server root (working directory, absolute output path).
+if ($Generator -eq "skill-formulas") {
+    if (-not (Test-Path (Join-Path $gameRoot "config\Server.ini"))) { throw "L2J_GAME_ROOT '$gameRoot' has no config\Server.ini" }
+    Push-Location $gameRoot
+    try {
+        & java -Xmx2g -cp "$build;$cp" l2rust.vectors.Main $Generator $out
+        if ($LASTEXITCODE -ne 0) { throw "vector generation failed" }
+    }
+    finally { Pop-Location }
+    return
+}
+
 # The stat and formula generators read ./config and ./data of the game server root, so they run with that as the working directory (the output path is absolute).
 if (($Generator -eq "stats") -or ($Generator -eq "formulas") -or ($Generator -eq "drops")) {
     if (-not (Test-Path (Join-Path $gameRoot "config\Server.ini"))) { throw "L2J_GAME_ROOT '$gameRoot' has no config\Server.ini" }

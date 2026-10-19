@@ -53,6 +53,7 @@ java-vectors/
     StatVectors.java         UserInfo/NpcInfo numbers from the real stat engine (stats_*.json)
     FormulaVectors.java      Formulas.* with scripted Rnd draws (formulas_*.json)
     DropVectors.java         NpcTemplate.calculateDrops with scripted Rnd draws (drops_*.json)
+    SkillFormulaVectors.java Formulas.* for skills, Heal effect, traits, elements (skill_formulas_*.json, generator `skill-formulas`)
   src/org/l2jmobius/...      harness replacements that sit before the L2JMobius sources on the class path
                              (commons/util/Rnd, commons/database/DatabaseFactory, gameserver/managers/IdManager,
                               gameserver/taskmanagers/GameTimeTaskManager); the Java tree itself is never changed
@@ -236,6 +237,49 @@ A player is built like `Player.restore` does it, without SQL (`Bootstrap.newPlay
 **Geometry.** Attacker and target positions are written straight into the objects' own `Location` (`Creature.setXYZ` would go through `ZoneManager`). The target stands at a fixed spot with heading 16384; the attacker stands 40 units away at the first of 32 spots where the real `isInFrontOf` / `isOnSideOf` / `isBehind` give the wanted relation. The spots are in the `geometry` header of each file and are the same for every pair.
 
 **Not covered** (no vector, say so before relying on it): henna, augmentation, elemental attributes, enchant options (`EnchantItemOptionsData` is not loaded), transformations, summons and pets, buffs and any active skill effect, zones (water, mother tree, peace), clan hall / castle / fort regeneration functions, festival and siege regeneration modifiers, champion monsters, subclasses, `AutoLearnSkills=True`, hero/noble, cursed weapons, the vitality system, weight penalty cases above 50 % load, the `ClassBalance.ini` multipliers (the generator checks they are all 1.0 and writes the list of arrays that are not into `formulas_creatures.json`). Magic damage, blow, backstab and skill hit formulas are out of scope of this set.
+
+## Files (skill formulas, M5-JV-03)
+
+`SkillFormulaVectors.java`, run by hand like `stats` / `formulas` (game server root as working directory, absolute output path; not part of `all`):
+
+```powershell
+.\java-vectors\build.ps1 skill-formulas   # skill_formulas_*.json (about 15 s)
+```
+
+Same creatures, placement geometry, scripted `Rnd` and `Run`/`putDraws` record format as `FormulaVectors` (see "How the Rnd draws are stored"), same fake `DatabaseFactory`. Skills are real skills of the datapack (`id:level` keys, facts in `skill_formulas_skills.json`). Cases are one JSON line each.
+Creatures: the 17 of `formulas_creatures.json` plus a dagger user (`adventurer76`), a healer (`cardinal76`) and 13 variants (`archmage76_elem`, `npc_20677_res`, `npc_21090_invul`, ...) built with extra stat functions (`add:STAT:v` = `FuncAdd` order 0x40, `mul:STAT:v` = `FuncMul` order 0x30), attack/defence traits and trait invulnerabilities. Every creature has its trait tables, element values and the stat probes the skill formulas read in `skill_formulas_creatures.json`.
+
+| File | Java source | Contents |
+|---|---|---|
+| `skill_formulas_creatures.json` | `StatVectors`, `CreatureStat` | 32 creatures (base + variants) with stats, `skill_probes`, `traits`, `elements`, `flags`; the config values the skill formulas read |
+| `skill_formulas_skills.json` | `Skill` | the 41 skills the cases use (nukes, heals, blows, debuffs, buffs, magic level 0, static) with every field the formulas read |
+| `skill_formulas_magic_dam.json` | `Formulas.calcMagicDam` | 1368 cases: 19 pairs x 6 skills x 12 variants (sps/bss, mcrit flag, 4 draw scripts for the MagicFailures paths, shield 0/1/2) |
+| `skill_formulas_mcrit.json` | `Creature.getMCriticalHit`, `Formulas.calcMCrit` | 192 rates (every creature x 3 skills x 2 targets) + 110 `calcMCrit` rate/draw cases |
+| `skill_formulas_mana_dam.json` | `Formulas.calcManaDam` | 80 cases (Aura Sink, 10 pairs x 8 variants) |
+| `skill_formulas_phys_dam.json` | `Formulas.calcPhysDam` with a skill | 742 cases: 22 pair rows, skills with and without base crit rate, a bow skill, an NPC skill, trait/element variants, front/side/back for the first three rows, shield 0/1/2 x crit x soulshot |
+| `skill_formulas_blow.json` | `Formulas.calcBlowDamage`, `calcBackstabDamage` | 640 cases: 9 pairs x blow/backstab x 3 skills, front/side/back, ss, shield |
+| `skill_formulas_skill_crit.json` | `Formulas.calcCrit(a, t, skill)` | 231 cases (draws around the boundary) |
+| `skill_formulas_blow_success.json` | `Formulas.calcBlowSuccess` | 367 cases (3 skills x front/side/back, draws around the threshold) |
+| `skill_formulas_phys_evasion.json` | `Formulas.calcPhysicalSkillEvasion` | 66 cases |
+| `skill_formulas_effect_success.json` | `Formulas.calcEffectSuccess` | 1621 cases: 14 pairs x 15 skills (debuffs, buffs, magic level 0, physical debuffs), none/blessed spiritshot, debuff immunity, trait invulnerability, draws around the threshold |
+| `skill_formulas_magic_success.json` | `Formulas.calcMagicSuccess` | 438 cases |
+| `skill_formulas_magic_affected.json` | `Formulas.calcMagicAffected` | 374 cases (see the gaussian note below) |
+| `skill_formulas_mastery.json` | `Formulas.calcSkillMastery`, `calcEffectAbnormalTime` | 299 cases: mastery (stat 1 and 4, rate, non-player, static skill) and abnormal times (buffs, debuffs with resistances, magic level 0, mastery draws) |
+| `skill_formulas_skill_timing.json` | `Formulas.calcAtkSpd`, replay of `Creature.beginCast` | 210 cases: cast time and reuse delay per creature x skill x shots |
+| `skill_formulas_resurrect.json` | `Formulas.calculateSkillResurrectRestorePercent` | 448 cases (14 base percents x 32 casters) |
+| `skill_formulas_heal.json` | `Heal.onStart` (the real effect object) | 464 cases: 7 pairs x 5 heal skills x none/sps/bss x full/almost full HP x 2 mcrit draws, plus 3 static heals (potions) |
+| `skill_formulas_traits.json` | `Formulas.calcGeneralTraitBonus`, `calcWeaponTraitBonus`, `calcAttackTraitBonus` | 602 cases: 7 pairs x every trait type x ignoreResistance |
+| `skill_formulas_attribute.json` | `Formulas.calcAttributeBonus` | 209 cases: 4 attackers x 5 targets x 6 element skills, 2 non-element skills and no skill |
+
+Notes and limits:
+
+- **Draws around a threshold.** For calls that compare `Rnd.get(100)` with a rate (effect success, magic success, blow success, mastery, evasion) the generator calls the real function with all 100 draws, derives the threshold and writes the draws 0, 50, 99 and the ones around the threshold (`draw` in the case; `-1` = the call draws nothing, e.g. debuff immunity, rate -1).
+- **`nextGaussian`.** `calcMagicAffected` uses `Rnd.nextGaussian()`; the harness `Rnd` returns `2u - 1` for a script value `u` (not a real Gaussian). The recorded `returned` value is what the Rust side must feed to its own `next_gaussian`; the draws are fixed values plus the one on the threshold (bisection on the real function).
+- **Heal** runs the real `Heal` effect (`onStart`) on the creatures: `result` = HP after minus HP before. A creature without a weapon cannot hold charged shots; those shot variants are skipped (the `shots` field of a case is the state that was really set).
+- **Cast and reuse time** replay the pure-number lines of `Creature.beginCast` (the method needs a world); `calcAtkSpd` and every `calcStat` are the real code.
+- **Traits** are written directly into the creature's trait arrays (`def_trait:X:v` = value `v`, count 1); NPC templates bring their own traits (see `traits` of each creature). Servitor targets (halved herb buffs) and cubics are not covered (M6). `calcMagicDam` / `calcManaDam` messages to players go nowhere (no client).
+- **CalculateMagicSuccessBySkillMagicLevel** is on: a low-level nuke (Wind Strike 5, magic level 14) against a level 66 monster is resisted at every draw (damage 1). That is the real behaviour; the level 74/95 skills show the success paths.
+- **Static heals** (`Heal` effect on a static skill: Quick Healing Potion 2038, Elixir of Life 2287, 5146) skip the stat part of `Heal.onStart` (amount = power, capped) and draw nothing.
 
 ## Writing a new generator
 

@@ -48,6 +48,15 @@ rm -f "$build/sources.txt"
 
 [ -n "${NO_RUN:-}" ] && exit 0
 
+# The skill formula generator (M5-JV-03) also reads the game server root (working directory, absolute output path).
+case "$generator" in
+  skill-formulas)
+    [ -f "$game_root/config/Server.ini" ] || { echo "L2J_GAME_ROOT '$game_root' has no config/Server.ini" >&2; exit 1; }
+    (cd "$game_root" && java -Xmx2g -cp "$build$sep$libs/*" l2rust.vectors.Main "$generator" "$out")
+    exit 0
+    ;;
+esac
+
 # The stat and formula generators read ./config and ./data of the game server root, so they run with that as the working directory (the output path is absolute).
 case "$generator" in
   stats|formulas|drops)
