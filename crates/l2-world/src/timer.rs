@@ -32,6 +32,12 @@ pub enum TimerKind {
     InventoryUpdate(ObjectId),
     /// Java `CreatureFollowTaskManager`'s 500 ms follow task, for one player.
     Follow(ObjectId),
+    /// Java `Player.broadcastCharInfo`'s 100 ms task.
+    CharInfo(ObjectId),
+    /// Java `Player.sendSkillList`'s 300 ms task.
+    SkillList(ObjectId),
+    /// Java `Player.sendItemList`'s 250 ms task.
+    ItemList(ObjectId),
 }
 
 #[derive(Debug, Default)]

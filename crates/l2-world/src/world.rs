@@ -369,6 +369,23 @@ impl World {
             ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
             ClientInput::BuildCmd { command } => self.on_build_cmd(id, &command),
             ClientInput::UserCommand { id: command } => self.on_user_command(id, command),
+            // Java: UseItem, RequestUnEquipItem, RequestDestroyItem, RequestDropItem, RequestItemList
+            ClientInput::UseItem {
+                object_id,
+                ctrl_pressed,
+            } => self.on_use_item(id, object_id, ctrl_pressed),
+            ClientInput::UnEquipItem { paperdoll_slot } => self.on_request_unequip_item(id, paperdoll_slot),
+            ClientInput::DestroyItem { object_id, count } => {
+                self.on_request_destroy_item(id, object_id, count)
+            }
+            ClientInput::DropItem {
+                object_id,
+                count,
+                x,
+                y,
+                z,
+            } => self.on_request_drop_item(id, object_id, count, x, y, z),
+            ClientInput::ItemList => self.on_request_item_list(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -392,6 +409,9 @@ impl World {
             TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
             TimerKind::InventoryUpdate(id) => self.on_inventory_update_timer(id),
             TimerKind::Follow(id) => self.on_follow_timer(id),
+            TimerKind::CharInfo(id) => self.on_char_info_timer(id),
+            TimerKind::SkillList(id) => self.on_skill_list_timer(id),
+            TimerKind::ItemList(id) => self.on_item_list_timer(id),
         }
     }
 

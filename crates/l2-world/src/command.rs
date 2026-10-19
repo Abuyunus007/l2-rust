@@ -62,6 +62,22 @@ pub enum ClientInput {
     BuildCmd { command: String },
     /// Java `BypassUserCmd`: a user command such as `/loc` (id 0).
     UserCommand { id: i32 },
+    /// Java `UseItem` (`ctrl_pressed` is the ctrl key).
+    UseItem { object_id: i32, ctrl_pressed: bool },
+    /// Java `RequestUnEquipItem`: the raw paperdoll slot number.
+    UnEquipItem { paperdoll_slot: i32 },
+    /// Java `RequestDestroyItem`.
+    DestroyItem { object_id: i32, count: i64 },
+    /// Java `RequestDropItem`.
+    DropItem {
+        object_id: i32,
+        count: i64,
+        x: i32,
+        y: i32,
+        z: i32,
+    },
+    /// Java `RequestItemList`.
+    ItemList,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

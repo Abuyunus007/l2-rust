@@ -265,6 +265,8 @@ pub struct WorldSettings {
     pub talk: crate::dialog::TalkSettings,
     /// The caps and multipliers the stat getters read.
     pub stats: StatSettings,
+    /// The values equipping, destroying and dropping items read.
+    pub inventory: crate::inventory::InventorySettings,
 }
 
 impl Default for WorldSettings {
@@ -301,6 +303,7 @@ impl Default for WorldSettings {
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),
             stats: StatSettings::default(),
+            inventory: crate::inventory::InventorySettings::default(),
         }
     }
 }

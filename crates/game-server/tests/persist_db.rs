@@ -322,6 +322,102 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
 }
 
 #[tokio::test]
+async fn item_changes_are_written_at_once_with_javas_columns() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let items = ItemRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    // What the Java game server left: a sword in the bag and a warehouse item.
+    for (object_id, item_id, loc) in [
+        (0x6000_1001, 2, ItemLocation::Inventory),
+        (0x6000_1003, 6, ItemLocation::Warehouse),
+    ] {
+        items
+            .insert_item(&NewItem {
+                owner_id: CHAR_ID,
+                item_id,
+                count: 1,
+                loc,
+                loc_data: 0,
+                enchant_level: 0,
+                object_id,
+                custom_type1: 0,
+                custom_type2: 0,
+                mana_left: -1,
+                time: -1,
+            })
+            .await
+            .unwrap();
+    }
+    let owner = ObjectId(CHAR_ID);
+    let mut store = DbStore::new(pool.clone());
+
+    // Equip: Java's `Item.updateDatabase()` -> UPDATE items SET owner_id, count, loc, loc_data, ...
+    let sword = item(0x6000_1001, 2, 1, "PAPERDOLL", 5);
+    store.store_item_changes(owner, &[sword], &[]).await.unwrap();
+    let worn = items
+        .inventory_items(CHAR_ID, ItemLocation::Inventory, ItemLocation::Paperdoll)
+        .await
+        .unwrap();
+    assert_eq!(worn.len(), 1);
+    assert_eq!(worn[0].loc.as_deref(), Some("PAPERDOLL"));
+    assert_eq!(worn[0].loc_data, Some(5));
+
+    // Unequip, and a row Rust created (an INSERT, the id is not known to the store).
+    let back = item(0x6000_1001, 2, 1, "INVENTORY", 0);
+    let created = item(0x6000_1010, 57, 300, "INVENTORY", 0);
+    store
+        .store_item_changes(owner, &[back.clone(), created.clone()], &[])
+        .await
+        .unwrap();
+    let bag = items
+        .inventory_items(CHAR_ID, ItemLocation::Inventory, ItemLocation::Paperdoll)
+        .await
+        .unwrap();
+    assert_eq!(bag.len(), 2);
+    assert!(bag.iter().all(|i| i.loc.as_deref() == Some("INVENTORY")));
+    assert_eq!(
+        bag.iter().find(|i| i.object_id == 0x6000_1010).unwrap().count,
+        300
+    );
+
+    // Destroy: the row goes (`removeFromDb`); an id nobody knows is ignored.
+    store
+        .store_item_changes(owner, &[], &[ObjectId(0x6000_1010), ObjectId(0x6000_FFFF)])
+        .await
+        .unwrap();
+    let bag = items
+        .inventory_items(CHAR_ID, ItemLocation::Inventory, ItemLocation::Paperdoll)
+        .await
+        .unwrap();
+    assert_eq!(bag.len(), 1);
+
+    // The next full store agrees with what was written: no duplicate insert, no extra delete,
+    // and the warehouse item stays.
+    let mut data = player_data();
+    data.items = vec![back];
+    store.store_player(&data).await.unwrap();
+    let bag = items
+        .inventory_items(CHAR_ID, ItemLocation::Inventory, ItemLocation::Paperdoll)
+        .await
+        .unwrap();
+    assert_eq!(bag.len(), 1);
+    assert_eq!(
+        items
+            .items_of_location(CHAR_ID, ItemLocation::Warehouse)
+            .await
+            .unwrap()
+            .len(),
+        1
+    );
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+#[tokio::test]
 async fn a_store_for_the_wrong_account_or_a_missing_character_writes_nothing() {
     let Some((db, pool)) = setup().await else {
         return;
