@@ -494,6 +494,11 @@ impl ClientSession {
             ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
             ClientPacket::SendBypassBuildCmd(p) => ClientInput::BuildCmd { command: p.command },
             ClientPacket::BypassUserCmd(p) => ClientInput::UserCommand { id: p.command },
+            // Java: AttackRequest (opcodes ATTACK and ATTACK_REQUEST)
+            ClientPacket::AttackRequest(p) => ClientInput::AttackRequest {
+                object_id: p.object_id,
+                attack_id: p.attack_id,
+            },
             ClientPacket::UseItem(p) => ClientInput::UseItem {
                 object_id: p.object_id,
                 ctrl_pressed: p.ctrl_pressed,

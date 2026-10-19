@@ -26,8 +26,8 @@
 // Java sends around it.
 //
 // # Left out on purpose (each has a marker where it belongs)
-// - Combat state: `isAttackingNow` / `isCastingNow` / `abortAttack` and the attack end delay of
-//   `UseItem` (M4-COMBAT-01 / M5).
+// - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
+//   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
 // - Item handlers (potions, scrolls, shots), item reuse timestamps (M5).
 // - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations, the
 //   olympiad, augmentations and element attributes: not modelled yet, treated as "not active".

@@ -80,6 +80,10 @@ pub struct World {
     pub(crate) door_snapshot: Option<Arc<DoorSnapshot>>,
     /// Java `NPC_STD_CALCULATOR`: the calculators every NPC shares until it gets its own.
     pub(crate) std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators,
+    /// Attack timing, death, aggro and the combat stances (M4-COMBAT-01, `combat/`).
+    pub(crate) combat: crate::combat::CombatWorld,
+    /// The AI state of every creature that has one (M4-COMBAT-01, `ai/`).
+    pub(crate) ai: crate::ai::AiWorld,
     /// HP, MP and CP regeneration and the status listeners, per creature (`status.rs`).
     pub(crate) statuses: HashMap<ObjectId, CreatureStatus>,
     /// The multipliers the regeneration formulas read (`status.rs`).
@@ -121,6 +125,8 @@ impl World {
             door_index: DoorIndex::default(),
             door_snapshot: None,
             std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators::default(),
+            combat: crate::combat::CombatWorld::default(),
+            ai: crate::ai::AiWorld::default(),
             statuses: HashMap::new(),
             regen: RegenSettings::default(),
         }
@@ -168,6 +174,16 @@ impl World {
 
     pub fn rng(&mut self) -> &mut WorldRng {
         &mut self.rng
+    }
+
+    /// Runs `f` with a read-only world and the world RNG at once (the formulas read the stat
+    /// engine through `&World` while they draw). The RNG is moved out for the call and put back,
+    /// so the sequence of draws is the same as drawing from `self.rng` directly.
+    pub(crate) fn with_rng<R>(&mut self, f: impl FnOnce(&World, &mut WorldRng) -> R) -> R {
+        let mut rng = std::mem::replace(&mut self.rng, WorldRng::from_seed(0));
+        let result = f(self, &mut rng);
+        self.rng = rng;
+        result
     }
 
     pub fn timers(&mut self) -> &mut TimerWheel {
@@ -383,6 +399,8 @@ impl World {
             ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
             ClientInput::BuildCmd { command } => self.on_build_cmd(id, &command),
             ClientInput::UserCommand { id: command } => self.on_user_command(id, command),
+            // Java: AttackRequest (the origin and the shift flag are never used)
+            ClientInput::AttackRequest { object_id, .. } => self.on_attack_request(id, object_id),
             // Java: UseItem, RequestUnEquipItem, RequestDestroyItem, RequestDropItem, RequestItemList
             ClientInput::UseItem {
                 object_id,
@@ -423,6 +441,21 @@ impl World {
             TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
             TimerKind::InventoryUpdate(id) => self.on_inventory_update_timer(id),
             TimerKind::Follow(id) => self.on_follow_timer(id),
+            // Java: HitTask -> Creature.onHitTimer
+            TimerKind::Hit(task) => self.on_hit_task(task),
+            // Java: getAI().notifyActionReadyToAct() after an attack
+            TimerKind::ReadyToAct(id) => {
+                if self.objects.contains_key(&id) {
+                    self.notify_action_ready_to_act(id);
+                }
+            }
+            TimerKind::AttackStanceCheck => self.on_attack_stance_check(),
+            // Java: UseItem's delayed useEquippableItem(item, false)
+            TimerKind::EquipAfterAttack { player, item } => {
+                if self.players.contains_key(&player) {
+                    self.use_equippable_item(player, item, false);
+                }
+            }
             TimerKind::CharInfo(id) => self.on_char_info_timer(id),
             TimerKind::SkillList(id) => self.on_skill_list_timer(id),
             TimerKind::ItemList(id) => self.on_item_list_timer(id),

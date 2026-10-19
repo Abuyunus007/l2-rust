@@ -1,5 +1,6 @@
 //! Walking up to something that was clicked: the `INTERACT` intention of a player, `moveToPawn`,
-//! and the follow task that walks the last steps.
+//! and the follow task that walks the last steps (also the chase of the `ATTACK` intention, see
+//! `ai/`).
 // Java: ai/CreatureAI.java (setIntentionInteract, maybeMoveToPawn, notifyActionForgetObject)
 // Java: ai/PlayerAI.java (thinkInteract, notifyActionThink)
 // Java: ai/AbstractAI.java (moveToPawn, startFollow, stopFollow, clientStoppedMoving)
@@ -14,9 +15,8 @@
 // `doInteract` clicks the NPC again, which opens the dialog.
 //
 // # Left out
-// - Following another player (`setIntentionFollow`) and the other intentions (attack, cast,
-//   pick up): M4.
-// - A moving target (`offset -= 100`): NPCs do not move before M4.
+// - Following another player (`setIntentionFollow`) and the other intentions (cast, pick up):
+//   M4/M5. The attack intention is in `ai/` (M4-COMBAT-01).
 
 use l2_protocol_game::server::{ActionFailed, MoveToPawn, StopMove};
 use l2_util::ObjectId;
@@ -60,8 +60,9 @@ pub struct PawnState {
 }
 
 impl World {
-    /// Java `PlayerAI.notifyActionThink`: only the interact intention thinks for now.
-    pub(crate) fn notify_action_think(&mut self, id: ObjectId) {
+    /// Java `PlayerAI.notifyActionThink`: the attack and interact intentions think (cast and
+    /// pick up arrive with their systems).
+    pub(crate) fn player_notify_action_think(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
@@ -69,8 +70,10 @@ impl World {
             return;
         }
         player.movement.pawn.thinking = true;
-        if player.movement.intention == Intention::Interact {
-            self.think_interact(id);
+        match player.movement.intention {
+            Intention::Attack => self.think_attack(id),
+            Intention::Interact => self.think_interact(id),
+            _ => {}
         }
         if let Some(player) = self.players.get_mut(&id) {
             player.movement.pawn.thinking = false;
@@ -89,7 +92,13 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        if player.movement.intention == Intention::Interact {
+        // Stop the actor auto-attack client side (a player keeps its stance until it ends).
+        self.client_stop_auto_attack(id);
+        if self
+            .players
+            .get(&id)
+            .is_some_and(|p| p.movement.intention == Intention::Interact)
+        {
             return;
         }
         // Set the Intention of this AbstractAI to INTERACT.
@@ -104,8 +113,8 @@ impl World {
 
     /// Java `AbstractAI.moveToPawn(pawn, offsetValue)`.
     pub(crate) fn move_to_pawn(&mut self, id: ObjectId, pawn: ObjectId, offset_value: i32) {
-        // Check if actor can move. (`isAttackingNow()` and `isCastingNow()`: M4.)
-        if self.is_movement_disabled(id) {
+        // Check if actor can move. (`isCastingNow()`: M5.)
+        if self.is_movement_disabled(id) || self.is_attacking_now(id) {
             self.send(id, &ActionFailed);
             return;
         }
@@ -252,7 +261,7 @@ impl World {
     }
 
     /// Java `CreatureAI.maybeMoveToPawn(target, offsetValue)` for a player.
-    fn maybe_move_to_pawn(&mut self, id: ObjectId, target: ObjectId, offset_value: i32) -> bool {
+    pub(crate) fn maybe_move_to_pawn(&mut self, id: ObjectId, target: ObjectId, offset_value: i32) -> bool {
         if offset_value < 0 {
             // skill radius -1
             return false;
@@ -280,8 +289,11 @@ impl World {
             }
 
             if self.is_movement_disabled(id) || self.move_speed(id) <= 0.0 {
-                // If player is trying attack target but he cannot move to attack target, change
-                // his intention to idle: no attack intention yet.
+                // If player is trying attack target but he cannot move to attack target.
+                // Change his intention to idle.
+                if self.intention_of(id) == Intention::Attack {
+                    self.set_intention_idle(id);
+                }
                 return true;
             }
 
@@ -289,7 +301,9 @@ impl World {
             let mut offset = offset_value;
             let is_door = self.objects.get(&target).map(|e| e.kind) == Some(ObjectKind::Door);
             if creature && !is_door {
-                // The target moves: NPCs do not before M4 (`offset -= 100`).
+                if self.is_moving(target) {
+                    offset -= 100;
+                }
                 if offset < 5 {
                     offset = 5;
                 }
@@ -308,7 +322,7 @@ impl World {
     }
 
     /// `getTemplate().getCollisionRadius()` of a creature that is not the player.
-    fn collision_radius_of(&self, id: ObjectId) -> i32 {
+    pub(crate) fn collision_radius_of(&self, id: ObjectId) -> i32 {
         match self.objects.get(&id).map(|e| e.kind) {
             Some(ObjectKind::Player) => self.stats(id).map_or(0, |s| s.collision_radius() as i32),
             Some(ObjectKind::Npc) => self
@@ -392,8 +406,14 @@ impl World {
                 return;
             }
             self.move_to_pawn(id, follow.target, follow.range);
-            // FOLLOW-UP(M4): `notifyActionArrived` when the move was refused and the intention
-            // is ATTACK or CAST.
+            // GeoEngine can reject or truncate a route without ever raising ARRIVED. Revalidate
+            // rather than leave the action waiting on an event that never comes.
+            if !self.is_moving(id) && self.intention_of(id) == Intention::Attack {
+                self.notify_action_arrived(id);
+            }
+        } else if !self.is_moving(id) && self.intention_of(id) == Intention::Attack {
+            // This task can observe arrival before the movement manager does.
+            self.notify_action_arrived(id);
         }
     }
 
@@ -414,6 +434,16 @@ impl World {
             p.movement.pawn.ai_target = None;
             if interacting {
                 self.set_intention_idle(id);
+            }
+        }
+        // Check if the object was targeted to attack.
+        if self.attack_target_of(id) == Some(object) {
+            // Cancel attack target.
+            self.set_attack_target(id, None);
+            // Set the Intention of this AbstractAI to ACTIVE (not for a corpse: fixes stop move
+            // from cast target decay).
+            if !self.is_alike_dead(object) {
+                self.set_intention_active(id);
             }
         }
         // Check if the object was targeted to follow.

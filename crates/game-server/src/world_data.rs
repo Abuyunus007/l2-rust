@@ -3,7 +3,7 @@
 // Java: mechanics/stats/BaseStat.java (the statBonus.xml loader)
 // Java: data/xml/{AdminData,SkillData}.java, data/holders/AccessLevel.java
 // Java: config/{PlayerConfig,NpcConfig,ChampionMonstersConfig,OlympiadConfig,FeatureConfig}.java,
-//       config/custom/ClassBalanceConfig.java (the values the stat getters read)
+//       config/custom/ClassBalanceConfig.java (the values the stat getters and the attack read)
 //
 // The stat engine itself is `l2_world::stats` (M4-STAT-01); this file only hands it the tables
 // (`StatData`) and the settings (`StatSettings`).
@@ -16,9 +16,9 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, ItemStatic, PlayerData,
-    RegenSettings, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings,
-    ZoneSettings,
+    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, ItemStatic,
+    PlayerData, RegenSettings, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings,
+    WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -365,6 +365,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             teleport_watchdog_timeout: p.teleport_watchdog_timeout,
         },
         stats: stat_settings(config, config_dir),
+        combat: combat_settings(config, config_dir),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
@@ -540,11 +541,91 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
                 "PveMagicalSkillCriticalChanceMultipliers",
                 &mut cb.pve_magical_skill_critical_chance,
             ),
+            (
+                "PvpPhysicalSkillDefenceMultipliers",
+                &mut cb.pvp_physical_skill_defence,
+            ),
+            (
+                "PvpPhysicalAttackCriticalChanceMultipliers",
+                &mut cb.pvp_physical_attack_critical_chance,
+            ),
+            (
+                "PvePhysicalAttackCriticalChanceMultipliers",
+                &mut cb.pve_physical_attack_critical_chance,
+            ),
+            (
+                "PvpPhysicalAttackCriticalDamageMultipliers",
+                &mut cb.pvp_physical_attack_critical_damage,
+            ),
+            (
+                "PvePhysicalAttackCriticalDamageMultipliers",
+                &mut cb.pve_physical_attack_critical_damage,
+            ),
+            (
+                "PvpPhysicalAttackDamageMultipliers",
+                &mut cb.pvp_physical_attack_damage,
+            ),
+            (
+                "PvePhysicalAttackDamageMultipliers",
+                &mut cb.pve_physical_attack_damage,
+            ),
         ] {
             parse_class_multipliers(key, &ini.get_string(key, ""), table);
         }
     }
     s
+}
+
+/// The values the attack code reads (M4-COMBAT-01). `AltGameCancelByHit` and the NPC damage
+/// penalty lists are post-processed in Java (placeholders in the generated config), so they are
+/// read from `Player.ini` and `NPC.ini` here.
+pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings {
+    use l2_config::IniFile;
+
+    let p = &config.player;
+    let mut s = CombatSettings {
+        alt_game_shield_blocks: p.alt_game_shield_blocks,
+        alt_perfect_shld_block: p.alt_perfect_shld_block,
+        randomize_auto_attack_damage: p.randomize_auto_attack_damage,
+        calculate_distance_bow_damage: p.calculate_distance_bow_damage,
+        karma_player_can_be_killed_in_peacezone: p.alt_game_karma_player_can_be_killed_in_peacezone,
+        min_npc_level_dmg_penalty: config.npc.min_npc_level_dmg_penalty,
+        alt_attackable_npcs: config.npc.alt_attackable_npcs,
+        ..CombatSettings::default()
+    };
+    // Java: `ALT_GAME_CANCEL_BOW = AltGameCancelByHit is "bow" or "all"`, `ALT_GAME_CANCEL_CAST`
+    // the same with "cast" (both ignoring case, default "Cast").
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        let cancel = ini.get_string("AltGameCancelByHit", "Cast");
+        s.alt_game_cancel_bow = cancel.eq_ignore_ascii_case("bow") || cancel.eq_ignore_ascii_case("all");
+        s.alt_game_cancel_cast = cancel.eq_ignore_ascii_case("cast") || cancel.eq_ignore_ascii_case("all");
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
+        s.npc_dmg_penalty = float_list(
+            "DmgPenaltyForLvLDifferences",
+            &ini.get_string("DmgPenaltyForLvLDifferences", "0.7, 0.6, 0.6, 0.55"),
+            &s.npc_dmg_penalty,
+        );
+        s.npc_crit_dmg_penalty = float_list(
+            "CritDmgPenaltyForLvLDifferences",
+            &ini.get_string("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58"),
+            &s.npc_crit_dmg_penalty,
+        );
+    }
+    s
+}
+
+/// Java's `split(",")` + `Float.parseFloat` of the NPC damage penalty lists. Java fails to load the
+/// config on a broken number; the default list is kept then, with a warning.
+fn float_list(key: &str, text: &str, default: &[f32]) -> Vec<f32> {
+    let parsed: Result<Vec<f32>, _> = text.split(',').map(|v| v.trim().parse::<f32>()).collect();
+    match parsed {
+        Ok(values) => values,
+        Err(e) => {
+            warn!("{key}: cannot read '{text}' ({e}); the default is used.");
+            default.to_vec()
+        }
+    }
 }
 
 /// Java `ClassBalanceConfig.load` for one key: `id*multiplier;id*multiplier...`.

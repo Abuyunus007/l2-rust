@@ -2,7 +2,8 @@
 //! `StatusUpdate` broadcast.
 // Java: entity/actor/status/CreatureStatus.java (setCurrentHp/Mp, start/stopHpMpRegeneration,
 //       doRegeneration, add/removeStatusListener)
-// Java: entity/actor/status/PlayerStatus.java (setCurrentCp, doRegeneration)
+// Java: entity/actor/status/PlayerStatus.java (setCurrentCp, doRegeneration, reduceHp)
+// Java: entity/actor/status/{NpcStatus,AttackableStatus}.java (reduceHp)
 // Java: entity/actor/Creature.java (broadcastStatusUpdate, needHpUpdate)
 // Java: entity/actor/Player.java (broadcastStatusUpdate, needCpUpdate, needMpUpdate)
 // Java: entity/WorldRegion.java (switchAI: the regeneration part)
@@ -12,8 +13,13 @@
 // creature in `World::statuses` (D-17: data, not a class tree). An entry exists while its creature
 // needs one; `sweep_statuses` drops the entries of creatures that have left the world.
 //
-// Left out, with the card that brings it: the damage path (`reduceHp`, M4-COMBAT-01), death and
-// revive (`doDie`, `doRevive`, M4-DEATH-01, which call `set_dead`), the party, duel and olympiad
+// The damage path (`reduceHp`, `reduceMp`) is here too, called by `combat/damage.rs`
+// (`World::reduce_current_hp`, M4-COMBAT-01). The dead flag ([`World::is_dead`] /
+// [`World::set_dead`]) is the only one in the world: `World::do_die` (combat, filled in by
+// M4-DEATH-01) sets it, revive clears it.
+//
+// Left out, with the card that brings it: the rest of death and revive (`doDie`, `doRevive`,
+// M4-DEATH-01), the party, duel and olympiad
 // parts of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
 // festival, siege and clan hall regeneration modifiers (no such state yet), `isSitting()` (sitting
 // is not modelled), and the champion regeneration (champions are not rolled).
@@ -202,18 +208,20 @@ impl World {
         self.players.contains_key(&id) || self.npcs.contains_key(&id)
     }
 
-    fn is_player(&self, id: ObjectId) -> bool {
+    /// Java `isPlayer()`.
+    pub(crate) fn is_player(&self, id: ObjectId) -> bool {
         self.players.contains_key(&id)
     }
 
-    fn core_of(&self, id: ObjectId) -> Option<&CreatureCore> {
+    /// The `CreatureCore` of a player or NPC.
+    pub(crate) fn core_of(&self, id: ObjectId) -> Option<&CreatureCore> {
         self.players
             .get(&id)
             .map(|p| &p.core)
             .or_else(|| self.npcs.get(&id).map(|n| &n.core))
     }
 
-    fn core_of_mut(&mut self, id: ObjectId) -> Option<&mut CreatureCore> {
+    pub(crate) fn core_of_mut(&mut self, id: ObjectId) -> Option<&mut CreatureCore> {
         if let Some(p) = self.players.get_mut(&id) {
             return Some(&mut p.core);
         }
@@ -226,6 +234,11 @@ impl World {
 
     fn dead_flag(&self, id: ObjectId) -> bool {
         self.statuses.get(&id).is_some_and(|s| s.dead)
+    }
+
+    /// Java `Creature.isDead()`: the one dead flag of the world (see [`Self::set_dead`]).
+    pub fn is_dead(&self, id: ObjectId) -> bool {
+        self.dead_flag(id)
     }
 
     /// The NPC template of an NPC (`None` for a player or an unknown id).
@@ -373,8 +386,8 @@ impl World {
         }
     }
 
-    /// Java `Creature.setDead`. Death (M4-DEATH-01) sets it in `doDie` and clears it in
-    /// `doRevive`. While it is set, the vitals do not change and no regeneration starts. It does
+    /// Java `Creature.setDead`. `World::do_die` sets it (M4-COMBAT-01's start of `doDie`, which
+    /// M4-DEATH-01 completes); `doRevive` (M4-DEATH-01) clears it. While it is set, the vitals do not change and no regeneration starts. It does
     /// not stop a running task: Java's `doDie` does that itself.
     pub fn set_dead(&mut self, id: ObjectId, dead: bool) {
         if !self.is_tracked(id) {
@@ -384,6 +397,102 @@ impl World {
             self.status_mut(id).dead = true;
         } else if let Some(st) = self.statuses.get_mut(&id) {
             st.dead = false;
+        }
+    }
+
+    /// Java `CreatureStatus.reduceMp(value)`.
+    pub fn reduce_mp(&mut self, id: ObjectId, value: f64) {
+        let Some((cur, _)) = self.mp_and_max(id) else {
+            return;
+        };
+        self.set_current_mp(id, (cur - value).max(0.0), true);
+    }
+
+    // ------------------------------------------------------------------ damage
+
+    /// Java `CreatureStatus.reduceHp(value, attacker, awake = true, isDOT = false,
+    /// isHPConsumption = false)` with `NpcStatus` / `AttackableStatus` (their extras are duels,
+    /// the attack-by list and over-hit; see the comments). The attackable's aggro list is
+    /// `Attackable.reduceCurrentHp`'s, in `combat/damage.rs`.
+    pub(crate) fn reduce_hp(&mut self, id: ObjectId, value: f64, attacker: Option<ObjectId>) {
+        if self.is_dead(id) {
+            return;
+        }
+        // M5: invulnerability; a GM without `giveDamage` rights (access level flags are not
+        // loaded: every access level may give damage); `stopEffectsOnDamage(awake)` and the
+        // stun break (no draw without a stun). NpcStatus: duels (M5); M4-AI-01:
+        // `addAttackerToAttackByList(attacker)`. AttackableStatus: over-hit is a skill effect (M5).
+        if value > 0.0 {
+            let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
+            self.set_current_hp(id, (current - value).max(0.0), true);
+        }
+        // `isMortal()`: nothing makes a creature immortal before scripts.
+        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
+            self.abort_attack(id);
+            // M5: `abortCast()`.
+            self.do_die(id, attacker);
+        }
+    }
+
+    /// Java `PlayerStatus.reduceHp(value, attacker, awake = true, isDOT = false,
+    /// isHPConsumption = false, ignoreCP = false)`: CP takes a playable's hit first, the damage
+    /// message, then HP.
+    pub(crate) fn player_reduce_hp(&mut self, id: ObjectId, value: f64, attacker: Option<ObjectId>) {
+        if self.is_dead(id) {
+            return;
+        }
+        // Offline traders, invulnerability (M5).
+        // M5: `stopEffectsOnDamage(awake)`. Crafting, private stores and sitting (stand up): not
+        // modelled yet. Stun break: M5.
+        let mut amount = value;
+        let full_value = amount as i32;
+        if let Some(attacker) = attacker.filter(|a| *a != id) {
+            // GM `giveDamage` rights and duels: M5.
+            // Summon damage transfer, mana shield and damage transfer to a party member: M5
+            // (effects and summons; their stats are 0 without them).
+            if self.is_player(attacker) {
+                // `attacker.isPlayable() || attacker.isFakePlayer()`: CP takes the hit first.
+                let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
+                if cp >= amount {
+                    // Set Cp to diff of Cp vs value.
+                    self.set_current_cp(id, cp - amount, true);
+                    // No need to subtract anything from Hp.
+                    amount = 0.0;
+                } else {
+                    // Get diff from value vs Cp; will apply diff to Hp.
+                    amount -= cp;
+                    self.set_current_cp(id, 0.0, false);
+                }
+            }
+            if full_value > 0 {
+                // Send a System Message to the Player.
+                let message = l2_protocol_game::server::SystemMessage::new(
+                    l2_protocol_game::SystemMessageId::C1HasReceivedS3DamageFromC2,
+                )
+                .with(l2_protocol_game::server::SystemMessageParam::Text(
+                    self.creature_name(id),
+                ))
+                .with(l2_protocol_game::server::SystemMessageParam::Text(
+                    self.creature_name(attacker),
+                ))
+                .with(l2_protocol_game::server::SystemMessageParam::IntNumber(
+                    full_value,
+                ));
+                self.send(id, &message);
+            }
+        }
+
+        if amount > 0.0 {
+            let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
+            // Duels end at 1 HP: M5.
+            let new_hp = (current - amount).max(0.0);
+            self.set_current_hp(id, new_hp, true);
+        }
+
+        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
+            self.abort_attack(id);
+            // M5: `abortCast()`; olympiad matches end without death.
+            self.do_die(id, attacker);
         }
     }
 

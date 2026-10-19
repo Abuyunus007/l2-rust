@@ -69,9 +69,9 @@ impl crate::world::World {
         // `player.onActionRequest()` removes the spawn protection: not modelled.
 
         if is_equipable(template) {
-            // M4-COMBAT-01: "Check if player is casting or using a skill" ->
-            // YOU_CANNOT_CHANGE_WEAPONS_DURING_AN_ATTACK + ActionFailed, and the cast-finished
-            // next action.
+            // Check if player is casting or using a skill: casting is M5 (`isCastingNow()` and
+            // `isCastingSimultaneouslyNow()` are false until then), which sends
+            // YOU_CANNOT_CHANGE_WEAPONS_DURING_AN_ATTACK + ActionFailed here.
 
             // Don't allow to put formal wear while a cursed weapon is equipped: no cursed weapons.
             let _ = FORMAL_WEAR_ID;
@@ -139,10 +139,25 @@ impl crate::world::World {
             // Java) destroys an item enchanted past the maximum of `EnchantItemGroupsData`; that
             // table is not loaded, so nothing is destroyed here.
 
-            // M4-COMBAT-01: casting -> the equip waits for the cast to finish; an attack in
-            // progress -> `useEquippableItem(item, false)` after the attack ends. Without combat
-            // state the item is equipped at once and the attack is aborted.
-            self.use_equippable_item(id, object_id, true);
+            // M5: while casting, the equip waits for the cast to finish (`NextAction` on
+            // FINISH_CASTING).
+            // Equip or unEquip: during an attack animation, when it ends (without aborting it);
+            // otherwise at once, aborting the attack.
+            let now = self.world_ms();
+            let attack_end = self.combat_state(id).map_or(0, |c| c.attack_end_ms);
+            if attack_end > now {
+                let delay = u64::try_from(attack_end - now).unwrap_or(0);
+                let due = self.tick + crate::timer::TimerWheel::ms_to_ticks(delay);
+                self.timers.schedule_at(
+                    due,
+                    crate::timer::TimerKind::EquipAfterAttack {
+                        player: id,
+                        item: object_id,
+                    },
+                );
+            } else {
+                self.use_equippable_item(id, object_id, true);
+            }
         }
         // M5: the item handler of an item that is not equipped (potions, scrolls, shots), the
         // fishing-rod lure case (`PAPERDOLL_LHAND`), the item reuse timestamp.
@@ -150,7 +165,7 @@ impl crate::world::World {
 
     /// Java `Player.useEquippableItem(item, abortAttack)`: take the item off if it is worn, else
     /// put it on, and tell the client.
-    pub(crate) fn use_equippable_item(&mut self, id: ObjectId, object_id: ObjectId, _abort_attack: bool) {
+    pub(crate) fn use_equippable_item(&mut self, id: ObjectId, object_id: ObjectId, abort_attack: bool) {
         // Check if the item is owned by this player and in the inventory or worn.
         let Some(item) = self.inventory_item(id, object_id).cloned() else {
             return;
@@ -208,7 +223,9 @@ impl crate::world::World {
         // `iu.addItems(items)`: one entry per object, as the items are now.
         self.send_changed_items(id, &changed);
 
-        // M4-COMBAT-01: `if (abortAttack) abortAttack();`
+        if abort_attack {
+            self.abort_attack(id);
+        }
 
         let limit = self.stats(id).map_or(0, |v| v.inventory_limit());
         if limit != old_inventory_limit {
@@ -267,8 +284,14 @@ impl crate::world::World {
         };
 
         // The English system message say weapon, but it's applied to any equipped item.
-        // M4-COMBAT-01: `isAttackingNow() || isCastingNow() || isCastingSimultaneouslyNow()` ->
-        // YOU_CANNOT_CHANGE_WEAPONS_DURING_AN_ATTACK.
+        // M5: `isCastingNow() || isCastingSimultaneouslyNow()` join the check with the casts.
+        if self.is_attacking_now(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotChangeWeaponsDuringAnAttack),
+            );
+            return;
+        }
 
         // Arrows and bolts.
         if part == Some(BodyPart::LeftHand) && template.is_etc_item() {

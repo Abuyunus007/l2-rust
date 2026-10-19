@@ -27,8 +27,9 @@
 //
 // # What is not modelled yet (each has its card)
 // - Zones (water, castle, `revalidateZone`): M3-TELE-01 / M3 zones. Nobody is "in water".
-// - Flying, vehicles, transformations, falling damage (HP), casting/attacking intentions,
-//   spawn protection (`onActionRequest`), the admin tele mode: M4/M5.
+// - Flying, vehicles, transformations, falling damage (HP), the casting intention, spawn
+//   protection (`onActionRequest`), the admin tele mode: M4/M5. The attack intention's parts are
+//   here (direct move, the target's collision, the `ATTACK` probe; M4-COMBAT-01).
 // - Doors and fences: M3-DOOR-01 (`doors_between`, the region door lists). The geoengine's own
 //   obstacle hook is used by every check that goes through it.
 // - NPC movement (`MoveToPawn`, attackable teleport back): M4.
@@ -59,13 +60,24 @@ const FALLING_VALIDATION_DELAY_MS: i64 = 1000;
 /// `LocationUtil.calculateHeadingFrom`: client heading units per degree.
 const HEADING_PER_DEGREE: f64 = 182.044_444_444;
 
-/// Java `Intention`, as far as the move path needs it (the rest arrives with combat and NPC AI).
+/// Java `Intention`. Players keep theirs in [`MovementState::intention`], NPCs in the AI table of
+/// `ai/` (see `World::intention_of`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Intention {
     #[default]
     Idle,
+    /// Java `ACTIVE`: NPCs only (`PlayerAI.setIntentionActive` is `setIntentionIdle`).
+    Active,
     Rest,
+    /// Auto attacking the AI's attack target (see `ai/` and `combat/`).
+    Attack,
+    /// Casting (M5).
+    Cast,
     MoveTo,
+    /// Following another creature (M5 for players; NPC AI uses it for minions).
+    Follow,
+    /// Walking up to an item on the ground (M4 ground items).
+    PickUp,
     /// Walking up to a clicked object (see `interact.rs`).
     Interact,
 }
@@ -573,15 +585,27 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Java also refuses while the duel state is "dead", while all skills are disabled, while
-        // casting and while attacking (saving the move for later): none of it exists yet.
+        // Java also refuses while the duel state is "dead" (M5).
+        // M5: `isAllSkillsDisabled()`, `isCastingNow()`.
+        if self.is_attacking_now(id) {
+            self.send(id, &ActionFailed);
+            // Save the move-to as the next intention to replay once ready.
+            self.ai_state_mut(id).saved_move_to = Some((x, y, z));
+            return;
+        }
 
-        // Java `stopFollow()`; `clearSavedIntention()`, `clientStopAutoAttack()`, `abortAttack()`
-        // have nothing to do without combat.
         self.stop_follow(id);
+        // Set the Intention of this AbstractAI to MOVE_TO (`clearSavedIntention()` first).
+        if let Some(ai) = self.ai.creatures.get_mut(&id) {
+            ai.saved_move_to = None;
+        }
         if let Some(player) = self.players.get_mut(&id) {
             player.movement.intention = Intention::MoveTo;
         }
+        // Stop the actor auto-attack client side (the stance stays until it ends).
+        self.client_stop_auto_attack(id);
+        // Abort the attack of the Creature and send Server->Client ActionFailed packet.
+        self.abort_attack(id);
         self.ai_move_to(id, x, y, z);
     }
 
@@ -601,15 +625,24 @@ impl World {
         }
     }
 
-    /// Java `PlayerAI.setIntentionIdle` (`setIntentionActive` is the same for players).
+    /// Java `CreatureAI.setIntentionIdle` (`PlayerAI.setIntentionActive` is the same for
+    /// players). NPCs go through `ai/`.
     pub(crate) fn set_intention_idle(&mut self, id: ObjectId) {
+        if !self.players.contains_key(&id) {
+            self.npc_set_intention_idle(id);
+            return;
+        }
         self.stop_follow(id);
         if let Some(p) = self.players.get_mut(&id) {
             p.movement.intention = Intention::Idle;
         }
+        // Init cast and attack target.
+        self.set_attack_target(id, None);
         // A new intention supersedes a move that still waits for its path.
         self.clear_pending_path(id);
         self.client_stop_moving(id, None);
+        // Stop the actor auto-attack client side (the stance stays until it ends).
+        self.client_stop_auto_attack(id);
     }
 
     /// Java `AbstractAI.clientStopMoving`: only stops a creature that moves.
@@ -813,6 +846,27 @@ impl World {
                     self.set_intention_idle(id);
                     return true;
                 }
+            } else if self.intention_of(id) == Intention::Attack {
+                // Support for player attack with direct movement. Tested at retail on May 11th
+                // 2023.
+                let (x, y) = front_probe(x_prev, y_prev, heading, speed);
+                if !self.geo_can_move_to_target(
+                    Location::new(x_prev, y_prev, z_prev),
+                    Location::new(x, y, z_prev),
+                    instance,
+                ) {
+                    mv.on_geodata_path_index = -1;
+                    self.put_move(id, mv);
+                    let packet = StopMove {
+                        object_id: id.0,
+                        x: x_prev,
+                        y: y_prev,
+                        z: z_prev,
+                        heading,
+                    };
+                    self.broadcast_with_self(id, &packet);
+                    return true;
+                }
             } else if self.region_has_doors_or_fences(id)
                 && self.doors_between(
                     Location::new(x_prev, y_prev, z_prev),
@@ -831,7 +885,6 @@ impl World {
                 self.stop_move(id, None);
                 return true;
             }
-            // Java's `intention == ATTACK` direct-move probe: no attacking yet.
         }
 
         // Distance from destination.
@@ -844,8 +897,17 @@ impl World {
             delta = (delta + dz * dz).sqrt();
         }
 
-        // Target collision should be subtracted from current distance (only when attacking a
-        // target; this is the creature's own radius).
+        // Target collision should be subtracted from current distance (the selected target's
+        // when attacking, else the creature's own radius).
+        let collision = match self.target_of(id) {
+            Some(target)
+                if self.intention_of(id) == Intention::Attack
+                    && self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) =>
+            {
+                f64::from(self.collision_radius_of(target))
+            }
+            _ => collision,
+        };
         delta = (delta - collision).max(0.000_01);
 
         let mut dist_fraction = f64::MAX;
@@ -1122,8 +1184,8 @@ impl World {
                     current.on_geodata_path_index = -1; // Set not on geodata path.
                 }
 
-                // Player attack with direct movement (`Intention.ATTACK`): no attacking yet.
-                let direct_move = false;
+                // Player attack with direct movement.
+                let direct_move = self.intention_of(id) == Intention::Attack;
                 let destination_in_water = self.is_water_at(x, y, z);
                 if direct_move
                     || (!destination_in_water
@@ -1237,8 +1299,10 @@ impl World {
             Some(pending) if pending.request_id == request_id => {
                 let path = result.path.ok();
                 self.complete_move(requester, pending.calc, Some(path));
+                // A pawn move (`moveToPawn` of the interact or attack intention, or the follow
+                // task) broadcasts `MoveToPawn`.
                 let pawn = self.players.get(&requester).and_then(|p| {
-                    (p.movement.intention == Intention::Interact)
+                    matches!(p.movement.intention, Intention::Interact | Intention::Attack)
                         .then_some(p.movement.pawn.ai_target)
                         .flatten()
                 });
@@ -1325,8 +1389,11 @@ impl World {
             // If no distance to go through, the movement is canceled.
             if calc.distance < 1.0 {
                 // Java: `(PATHFINDING > 0) || isPlayable()`; a player is always playable.
-                // Not attacking or casting, so the intention goes idle.
-                self.set_intention_idle(id);
+                // An attack or cast already in flight has to survive this, cancelling it is what
+                // strands melee.
+                if !matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
+                    self.set_intention_idle(id);
+                }
                 self.send(id, &ActionFailed);
                 return;
             }
@@ -1381,9 +1448,9 @@ impl World {
     /// Java `Creature.isMovementDisabled()` (stun, root, sleep, paralysis and immobilization are
     /// effects: M5).
     pub(crate) fn is_movement_disabled(&self, id: ObjectId) -> bool {
-        self.players
-            .get(&id)
-            .is_none_or(|p| self.is_overloaded(p) || p.core.cur_hp < 0.5 || p.movement.teleporting)
+        self.players.get(&id).is_none_or(|p| {
+            self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_dead(id) || p.movement.teleporting
+        })
     }
 
     /// Java `isInsideZone(ZoneId.WATER) && !isInsideZone(ZoneId.CASTLE)`. Zones are not modelled
