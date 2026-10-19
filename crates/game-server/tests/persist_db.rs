@@ -16,15 +16,16 @@ use l2_db::{
     RecommendationRepository, ShortcutRepository, SkillRepository, VariableRepository, connect_with,
 };
 use l2_testkit::test_db::TestDb;
-use l2_world::{ItemData, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
+use l2_world::{ItemData, ObjectId, PersistCommand, PlayerData, SavedEffect, ShortcutData, SkillData};
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 7] = [
+const SCHEMA: [&str; 8] = [
     include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
     include_str!("../../l2-db/sql/game/character_variables.sql"),
     include_str!("../../l2-db/sql/game/characters.sql"),
     include_str!("../../l2-db/sql/game/items.sql"),
     include_str!("../../l2-db/sql/game/character_skills.sql"),
+    include_str!("../../l2-db/sql/game/character_skills_save.sql"),
     include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
     // Deleting an item also deletes its augmentation row, as Java's Item.removeFromDb does.
     include_str!("../../l2-db/sql/game/item_attributes.sql"),
@@ -326,6 +327,73 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
 /// A level up (M4-EXP-01): the skills it teaches are written at once like Java's `storeSkill`
 /// (`REPLACE` for a new skill, `UPDATE` of the level for a known one), a skill it takes is
 /// deleted, and the next full store agrees. `expBeforeDeath` is written from the snapshot.
+/// M5-SAVE-01: `Player.storeEffect` replaces the character's `character_skills_save` rows with
+/// the saved buffs and reuse timers, and `restoreEffects`' read (`skill_effects_of`) gets them back
+/// in order. A snapshot that carries no effects (`effects_to_store` None) leaves the rows alone.
+#[tokio::test]
+async fn saved_buffs_are_written_like_java_and_read_back_in_order() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let skills = SkillRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    let saved = |skill_id, skill_level, remaining_time, restore_type| SavedEffect {
+        skill_id,
+        skill_level,
+        remaining_time,
+        reuse_delay: if restore_type == 1 { 60_000 } else { 0 },
+        systime: if restore_type == 1 { NOW + 60_000 } else { 0 },
+        restore_type,
+    };
+    let shape = |rows: Vec<l2_db::SkillSaveRow>| {
+        rows.iter()
+            .map(|r| (r.skill_id, r.skill_level, r.remaining_time, r.restore_type))
+            .collect::<Vec<_>>()
+    };
+
+    let mut data = player_data();
+    data.items = vec![];
+    data.shortcuts = vec![];
+    data.skills = vec![];
+    data.profile.effects_to_store = Some(vec![saved(9001, 1, 50, 0), saved(1040, 3, -1, 1)]);
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(skills.skill_effects_of(CHAR_ID, 0).await.unwrap()),
+        vec![(9001, 1, 50, 0), (1040, 3, -1, 1)]
+    );
+    let reuse = skills.skill_effects_of(CHAR_ID, 0).await.unwrap();
+    assert_eq!(
+        (reuse[1].reuse_delay, reuse[1].systime),
+        (60_000, (NOW + 60_000) as u64)
+    );
+
+    // The next store replaces the rows (DELETE, then the new rows).
+    data.profile.effects_to_store = Some(vec![saved(9002, 1, 30, 0)]);
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(skills.skill_effects_of(CHAR_ID, 0).await.unwrap()),
+        vec![(9002, 1, 30, 0)]
+    );
+
+    // No effects in the snapshot: the table is not touched.
+    data.profile.effects_to_store = None;
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(skills.skill_effects_of(CHAR_ID, 0).await.unwrap()),
+        vec![(9002, 1, 30, 0)]
+    );
+
+    // An empty list clears the rows, like Java's DELETE with no batch.
+    data.profile.effects_to_store = Some(vec![]);
+    store.store_player(&data).await.unwrap();
+    assert!(skills.skill_effects_of(CHAR_ID, 0).await.unwrap().is_empty());
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
 #[tokio::test]
 async fn skill_changes_and_exp_before_death_are_written_like_java() {
     let Some((db, pool)) = setup().await else {

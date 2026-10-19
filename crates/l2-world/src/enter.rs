@@ -446,6 +446,9 @@ impl World {
         for bytes in self.after_spawn_packets(id) {
             self.send_bytes(id, bytes);
         }
+        // Java `onPlayerEnter` -> `restoreEffects()`: the buffs of the last logout come back with
+        // the time they had left (`effects/save.rs`).
+        self.restore_saved_effects(id);
 
         if self.settings.nevit_enabled {
             // `player.sendPacket(new ExVoteSystemInfo(player))`
