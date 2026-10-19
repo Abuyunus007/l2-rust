@@ -18,6 +18,7 @@ A Lineage 2 H5 private server (login + game server + admin tools) ported from Ja
 - Java core: `C:\l2-rust\l2jmobius\java\org\l2jmobius\`
 - Datapack, configs, scripts, SQL: `C:\l2-rust\l2jmobius\dist\`
 - Geodata: `C:\l2-rust\geodata-download\`, `C:\l2-rust\geodata-converted\`
+- Packet index (generated from the Java sources by the owner): `C:\l2-rust\PACKET_DOCS\` (`README.md` = opcode index; layouts per packet with offsets, connection states, users). A quick map only: when it and the Java code disagree, the Java code wins (its "Server handling"/"Used in" parts are regex summaries).
 Use these absolute paths. They work from any git worktree.
 
 ## Commands
