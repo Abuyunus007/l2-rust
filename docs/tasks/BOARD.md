@@ -145,12 +145,12 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | W0 | GEO-01 (s, running), GPROTO-05 (s), GPROTO-06 (h), DATA-05 (s), DATA-06 (h), DATA-07 (s), DATA-08 (h), DATA-09 (h) | 4-5 at a time |
 | W1 | GEO-02 (s), GUI-02 (h), GUI-03 (h), WREG-01 (o, after M2-ENTER-01) | 3 |
 | W2 | MOVE-01 (s), NPC-01 (s), TELE-01 (s), DOOR-01 (s) | 4 |
-| 🎮 **CP-M3a** | **You:** walk around on Kain with geodata (no walking through walls, no falling), see NPCs where Java has them, doors. Plus the geodata check: compare both sets at a few spots with `//loc` (12_24, 17_10, 16_10, 14_23) so we pick the default set (D-26). | |
+| 🎮 **CP-M3a** | **You:** walk around on Kain with geodata (no walking through walls, no falling), see NPCs where Java has them, doors. Plus the geodata check: compare both sets at a few spots with `/loc` (12_24, 17_10, 16_10, 14_23) so we pick the default set (D-26). | |
 | W3 | TALK-01 (s), PLAYERS-01 (o) | 1 |
 | 🎮 **CP-M3b** | **You:** talk to gatekeepers and teleport; two clients see each other moving and chatting. | |
 | W4 | ADMIN-01 (h), E2E-01 (s) | 2 |
 | W5 | RUN-01 (o) | 0 |
-| 🎮 **CP-M3c** | **Milestone test (you):** walk the world with geodata, NPCs, a second player, gatekeepers, admin commands (`//spawn`, `//teleport`, `//loc`, `//kill`, `//heal`). | |
+| 🎮 **CP-M3c** | **Milestone test (you):** walk the world with geodata, NPCs, a second player, gatekeepers, admin commands (`//spawn`, `//teleport`, `//kill`, `//heal`; `/loc` for the position). Steps: [docs/runbooks/m3-world-test.md](../runbooks/m3-world-test.md). | |
 
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
@@ -179,7 +179,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M3-CFG-02](M3/M3-CFG-02.md) | Datapack options from the game config | haiku | spot | DATA-05, DATA-06, DATA-08 | merged |
 | [M3-PROXY-02](M3/M3-PROXY-02.md) | Proxy field decoders for the M2/M3 server packets | haiku | spot | GPROTO-05, GPROTO-06, M2-ENTER-01 | merged |
 | [M3-FIX-01](M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | merged |
-| [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | in-progress |
+| [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | runbook done; geodata decision at CP-M3a |
 
 ## Milestone test results
 
