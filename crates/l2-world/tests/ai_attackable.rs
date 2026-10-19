@@ -350,6 +350,29 @@ impl Scene {
         panic!("not done after {limit} ticks");
     }
 
+    /// Swings at `target` until the target's aggro list shows the attacker, which a hit does. A
+    /// swing can miss, and a miss makes no fight, so the swing is repeated: the scenario does not
+    /// depend on which hit or miss the world's draws give. Panics after `attempts` swings.
+    fn swing_until_hit(&mut self, attacker: i32, target: ObjectId, attempts: u32) {
+        for _ in 0..attempts {
+            self.world.do_attack(ObjectId(attacker), target);
+            // One swing takes well under 40 ticks (2 s).
+            for _ in 0..40 {
+                self.world.tick();
+                self.log.take();
+                if self
+                    .world
+                    .aggro_list(target)
+                    .iter()
+                    .any(|a| a.attacker == ObjectId(attacker))
+                {
+                    return;
+                }
+            }
+        }
+        panic!("the swings never hit {target:?} in {attempts} attempts");
+    }
+
     /// The only NPC of a template.
     fn npc_of(&self, npc_id: i32) -> ObjectId {
         let found: Vec<ObjectId> = self
@@ -470,13 +493,14 @@ fn passive_monster_fights_back_only_when_hit() {
     let mut s = Scene::new(&spawn_line(9002, X + 50, Y, Z));
     let hare = s.npc_of(9002);
     s.enter(ME, "Hero", (X, Y, Z), sword());
-    // 20 seconds: no aggression, no movement.
+    // 20 seconds: no aggression, no chase. It may take a random step around its spawn point (a
+    // walk is 1 think in 30, so it is not always still), but it never runs at the player.
     let sent = s.ticks(400);
     assert!(of(&sent, ME, "ATTACK").is_empty(), "{:?}", names(&sent, ME));
+    assert!(of(&sent, ME, "MOVE_TO_PAWN").is_empty(), "{:?}", names(&sent, ME));
     assert!(s.world.aggro_list(hare).is_empty());
     assert_eq!(s.world.intention_of(hare), Intention::Active);
     assert!(!s.world.is_running(hare));
-    assert!(!s.world.is_moving(hare));
 
     // The player hits it (and keeps hitting).
     s.world.set_intention_attack(ObjectId(ME), hare);
@@ -947,16 +971,24 @@ fn minions_follow_their_leader() {
     // drift range, so it does not walk home).
     let start: Vec<(i32, i32, i32)> = minions.iter().map(|m| s.pos(*m)).collect();
     s.world.set_position(chief, X + 680, Y, Z);
-    let sent = s.run_until(100, |w| minions.iter().any(|m| w.is_moving(*m)));
-    assert!(!of(&sent, ME, "MOVE_TO_LOCATION").is_empty());
-    s.run_until(1500, |w| {
+    // A minion spawns within 200 of the chief, so one may already be close enough to the new
+    // position that it does not walk; the walk is required only when one is further away.
+    let far_at_start = minions.iter().any(|m| dist2(s.pos(*m), (X + 680, Y, Z)) > 200.0);
+    // The packets of the whole walk, from the teleport to the arrival: a minion may already be on
+    // a random walk of its own when the leader moves, so the first step is not always in here.
+    let sent = s.run_until(1500, |w| {
         let leader = w.position_of(chief).unwrap();
         minions
             .iter()
             .all(|m| !w.is_moving(*m) && dist2(w.position_of(*m).unwrap(), leader) <= 200.0)
     });
+    if far_at_start {
+        assert!(!of(&sent, ME, "MOVE_TO_LOCATION").is_empty());
+    }
     let end: Vec<(i32, i32, i32)> = minions.iter().map(|m| s.pos(*m)).collect();
-    assert_ne!(start, end, "they walked");
+    if far_at_start {
+        assert_ne!(start, end, "they walked");
+    }
     for m in &minions {
         assert!(!s.world.is_running(*m), "the leader walks, so they do");
     }
@@ -970,7 +1002,7 @@ fn a_hit_leader_calls_its_minions() {
     let minions = s.world.minions_of(chief).to_vec();
     s.enter(ME, "Hero", (X, Y, Z), sword());
     s.ticks(200);
-    s.world.do_attack(ObjectId(ME), chief);
+    s.swing_until_hit(ME, chief, 10);
     s.run_until(200, |w| w.intention_of(chief) == Intention::Attack);
     for m in &minions {
         let aggro = s.world.aggro_list(*m);

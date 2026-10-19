@@ -223,15 +223,16 @@ impl World {
         self.npc_template(id).map_or(0, |t| t.aggro_range)
     }
 
-    /// Java `Npc.isRandomWalkingEnabled()`: the template's flag, unless the spawn's `AIData`
-    /// says `disableRandomWalk`.
+    /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
+    /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
     fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
         if let Some(spawn) = self.npc_spawn(id)
             && let Some(value) = spawn.ai_data.as_ref().and_then(|d| d.get("disableRandomWalk"))
         {
             return *value == 0;
         }
-        self.npc_template(id).is_some_and(|t| t.random_walk)
+        self.npc_template(id)
+            .is_some_and(NpcTemplate::is_random_walk_enabled)
     }
 
     /// Java `Attackable.getLeader()` (`Monster._master`).
@@ -702,6 +703,9 @@ impl World {
     }
 
     /// The end of `thinkActive`: a step around the spawn point.
+    // NOTE(java-quirk): Java's `int` products wrap, and the sqrt of a negative value is NaN, which
+    // `(int)` makes 0. `wrapping_*` gives the same value; a plain `*` would panic in a debug build
+    // once MaxDriftRange is above ~23000.
     fn random_walk(&mut self, id: ObjectId, settings: &AiSettings) {
         let drift = settings.max_drift_range;
         let Some((x, y, z)) = self.position_of(id) else {
@@ -716,7 +720,12 @@ impl World {
             for _ in 0..WANDER_ATTEMPTS {
                 let delta_x = self.rng().below(drift * 2); // x
                 let mut delta_y = self.rng().get(delta_x, drift * 2); // distance
-                delta_y = f64::from(delta_y * delta_y - delta_x * delta_x).sqrt() as i32; // y
+                delta_y = f64::from(
+                    delta_y
+                        .wrapping_mul(delta_y)
+                        .wrapping_sub(delta_x.wrapping_mul(delta_x)),
+                )
+                .sqrt() as i32; // y
                 let x2 = (delta_x + x) - drift;
                 let y2 = (delta_y + y) - drift;
                 let inside = |world: &World, px: i32, py: i32| {
@@ -747,7 +756,12 @@ impl World {
         if distance_2d((x, y, z), (x1, y1, 0)) < f64::from(drift) {
             let delta_x = self.rng().below(drift * 2); // x
             let mut delta_y = self.rng().get(delta_x, drift * 2); // distance
-            delta_y = f64::from(delta_y * delta_y - delta_x * delta_x).sqrt() as i32; // y
+            delta_y = f64::from(
+                delta_y
+                    .wrapping_mul(delta_y)
+                    .wrapping_sub(delta_x.wrapping_mul(delta_x)),
+            )
+            .sqrt() as i32; // y
             x1 = (delta_x + x1) - drift;
             y1 = (delta_y + y1) - drift;
             z1 = z;
@@ -1789,11 +1803,14 @@ impl World {
     /// Java `WorldRegion.switchAI(isOn)`.
     pub(crate) fn switch_ai(&mut self, region: RegionId, on: bool) {
         if on {
-            // Start HP/MP/CP regeneration task. (`RandomAnimationTaskManager`: social actions
-            // are not ported.)
+            // Start HP/MP/CP regeneration task.
             self.start_regeneration_in_region(region);
+            // Java: RandomAnimationTaskManager.add for each NPC of the region (`ai/idle.rs`).
+            self.start_random_animation_in_region(region);
             return;
         }
+        // Java: RandomAnimationTaskManager.remove for each NPC of the region (`ai/idle.rs`).
+        self.stop_random_animation_in_region(region);
         let max_drift = f64::from(self.ai.attackable.settings.max_drift_range);
         let mobs: Vec<ObjectId> = self
             .regions

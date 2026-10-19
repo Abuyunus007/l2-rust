@@ -42,7 +42,7 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path, stats, formulas
+    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path, stats, formulas, drops
     Json.java                tiny JSON writer (no dependencies; `Json.compact` writes a map/list on one line)
     CryptoVectors.java       one generator = one class
     LoginPacketVectors.java  login / LS<->GS packet payloads
@@ -52,6 +52,7 @@ java-vectors/
     Bootstrap.java           minimal in-process server start (configs, datapack loaders, no DB, no network) + player/NPC builders
     StatVectors.java         UserInfo/NpcInfo numbers from the real stat engine (stats_*.json)
     FormulaVectors.java      Formulas.* with scripted Rnd draws (formulas_*.json)
+    DropVectors.java         NpcTemplate.calculateDrops with scripted Rnd draws (drops_*.json)
   src/org/l2jmobius/...      harness replacements that sit before the L2JMobius sources on the class path
                              (commons/util/Rnd, commons/database/DatabaseFactory, gameserver/managers/IdManager,
                               gameserver/taskmanagers/GameTimeTaskManager); the Java tree itself is never changed
@@ -189,6 +190,23 @@ Nothing is written into the Java tree or the game root: configs and the datapack
 | `formulas_atk_break.json` | `Formulas.calcAtkBreak` | 162 cases: targets casting / bow-attacking / idle, 6 damages, 3 draws |
 | `formulas_regen.json` | `Formulas.calcHpRegen`, `calcMpRegen`, `calcCpRegen` | 393 cases: the 17 formula creatures standing / sitting / running / walking, and every creature of the `stats_*.json` files standing |
 | `formulas_lvl_bonus.json` | `Formulas.calcLvlBonusMod` | 270 cases: 30 pairs x 9 skills (different magic levels and lvlBonusRate, one with magic level 0) |
+
+## Files (drops, M4-JV-02)
+
+Run by hand like `stats` / `formulas` (game server root as working directory, set up by the build scripts): `.\java-vectors\build.ps1 drops` (about 15 s).
+The real `NpcTemplate.calculateDrops(DropType.DROP, victim, killer)` runs on real NPCs of the datapack (`Bootstrap.newNpc`) with a real `Player` (class 0, the wanted level) as the killer.
+Every `Rnd` draw is scripted and recorded as for the formulas, but the draws are stored as one short string each (`D<u>` = `nextDouble`, `L<origin>,<bound>=<value>` = `Rnd.get(long, long)`; see the `note` in each file),
+and a case names its script (`zero`, `high`, `seed1`, `cube2`, `cube3`: described in `drops_setup.json`) instead of repeating the values.
+
+| File | Java source | Contents |
+|---|---|---|
+| `drops_setup.json` | `NpcData` (loader post-processing), `ItemData`, `RatesConfig` | 35 NPCs with their drop lists as the loader left them (the input of every case), the 406 items they use (`hasExImmediateEffect`), the 14 rate profiles (all the `RatesConfig` values the drop code reads), the scripts |
+| `drops_monsters.json` | `calculateGroupDrops`, `calculateUngroupedDrops`, `calculateGroupDrop`, `calculateUngroupedDrop` | 530 cases: 22 monsters (group lists at levels 1 to 75, herbs, adena in a group, one ungrouped item, seven ungrouped items, groups + ungrouped), shipped `Rates.ini`, killer level minus victim level 0/5/9/10/15 (and -5/8/12 for four NPCs), 5 scripts |
+| `drops_raids.json` | same, victim is a raid | 295 cases: 13 raid and grand bosses (7 to 28 ungrouped items, up to 32 groups, groups + ungrouped), shipped `Rates.ini`, the same gaps and scripts |
+| `drops_rates.json` | same, other `RatesConfig` | 702 cases: 13 profiles (x1 with empty per item maps, x5 chance/amount, fractional float multipliers, per item chance/amount maps incl. adena cap and chance 0, `DropMaxOccurrences` 1/3, 0, 5/20, custom level gap settings, min = max level difference (NaN gap chance), bonus stats of the killer) x 10 NPCs x gaps 0 and 10 x 3 scripts |
+
+Not covered: spoil (M5), parties, champions and the premium system (the generator checks it is off), seeded monsters, `BossDropEnable` (applied when `NpcData` loads), the items on the ground and auto loot of `Attackable.doItemDrop`.
+The bonus stats are `FuncAdd` functions on the four bonus drop stats of the killer; the cases carry the multipliers `PlayerStat` returned, the Rust test feeds them to `DropKiller` (the stat engine is checked by the stat vectors).
 
 ### The bootstrap (`Bootstrap.java`)
 

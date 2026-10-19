@@ -34,6 +34,7 @@ use l2_protocol_game::server::NpcInfo;
 use l2_util::ObjectId;
 use tracing::{debug, info, warn};
 
+use crate::ai::idle::AnimationState;
 use crate::ids::IdFactory;
 use crate::objects::{Npc, ObjectKind};
 use crate::player::CreatureCore;
@@ -166,6 +167,16 @@ pub struct NpcSettings {
     pub mob_max_spawn_range: i32,
     /// `RandomSpawnsConfig.MOBS_LIST_NOT_RANDOM` (`MobsSpawnNotRandom`).
     pub mobs_not_random: HashSet<i32>,
+    /// `GeneralConfig.MIN_NPC_ANIMATION` (`MinNpcAnimation`): the shortest wait, in seconds,
+    /// before an NPC's random animation check.
+    pub min_npc_animation: i32,
+    /// `GeneralConfig.MAX_NPC_ANIMATION` (`MaxNpcAnimation`): the longest wait; 0 turns the random
+    /// animation of NPCs off.
+    pub max_npc_animation: i32,
+    /// `GeneralConfig.MIN_MONSTER_ANIMATION` (`MinMonsterAnimation`).
+    pub min_monster_animation: i32,
+    /// `GeneralConfig.MAX_MONSTER_ANIMATION` (`MaxMonsterAnimation`); 0 turns it off for attackables.
+    pub max_monster_animation: i32,
 }
 
 impl Default for NpcSettings {
@@ -177,6 +188,10 @@ impl Default for NpcSettings {
             random_monster_spawns: false,
             mob_max_spawn_range: 150,
             mobs_not_random: HashSet::new(),
+            min_npc_animation: 5,
+            max_npc_animation: 60,
+            min_monster_animation: 5,
+            max_monster_animation: 60,
         }
     }
 }
@@ -190,12 +205,14 @@ pub type WaterCheck = Arc<dyn Fn(i32, i32, i32) -> bool + Send + Sync>;
 pub(crate) struct NpcWorld {
     templates: Option<Arc<NpcTemplates>>,
     spawns: Option<Arc<SpawnData>>,
-    settings: NpcSettings,
+    pub(crate) settings: NpcSettings,
     water: Option<WaterCheck>,
     pub(crate) ids: Option<Arc<IdFactory>>,
     /// Java `DayNightSpawnManager._dayCreatures` / `_nightCreatures`: indices into the spawns.
     day: Vec<usize>,
     night: Vec<usize>,
+    /// Java `RandomAnimationTaskManager`'s entries and `Npc._lastSocialBroadcast`, see `ai/idle.rs`.
+    pub(crate) animations: HashMap<ObjectId, AnimationState>,
 }
 
 impl NpcWorld {
@@ -664,6 +681,10 @@ impl World {
         )?;
         // `_spawnedNpcs.add(npc)` and `_currentCount++`.
         self.spawn_registered(index, id);
+        // A respawn is the same object, which keeps its random animation entry (`ai/idle.rs`).
+        if reuse.is_some() {
+            self.resume_random_animation(id);
+        }
 
         // Minions of master monsters.
         if class.is_monster() && templates.master_monster_ids().contains(&template.id) {
