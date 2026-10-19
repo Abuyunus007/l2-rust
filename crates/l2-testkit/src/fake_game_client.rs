@@ -6,8 +6,9 @@
 //! nothing about the game server's code. Methods that expect a certain packet panic with a clear
 //! message when something else arrives, because they only run inside tests.
 //!
-//! In the world it can walk (`MoveToLocation`, `ValidatePosition`), click (`Action`), follow a
-//! link of an html page (`RequestBypassToServer`) and answer a teleport (`Appearing`); the
+//! In the world it can walk (`MoveToLocation`, `ValidatePosition`), click (`Action`), attack
+//! (`AttackRequest`), follow a link of an html page (`RequestBypassToServer`), pick a button of the
+//! death window (`RequestRestartPoint`) and answer a teleport (`Appearing`); the
 //! `skip_until`, `expect_later` and `read_quiet` helpers collect what the world sends on its own.
 //!
 //! Every packet that is sent or received is also written to a log of `(direction, packet name)`
@@ -27,9 +28,9 @@ use std::time::Duration;
 use l2_crypto::{GameCipher, game_key_from_random};
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::client::{
-    Action, Appearing, AuthLogin, CharacterCreate, CharacterSelect, EnterWorld, Logout, MoveToLocation,
-    NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestRestart, Say2,
-    ValidatePosition,
+    Action, Appearing, AttackRequest, AuthLogin, CharacterCreate, CharacterSelect, EnterWorld, Logout,
+    MoveToLocation, NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestRestart,
+    RequestRestartPoint, Say2, ValidatePosition,
 };
 use l2_protocol_game::server::{
     CharCreateFail, CharCreateOk, CharSelected, CharSelectionInfo, KeyPacket, NewCharacterSuccess,
@@ -395,6 +396,26 @@ impl FakeGameClient {
         .await;
     }
 
+    /// `AttackRequest`: a simple click that attacks (the client sends it instead of `Action` for
+    /// something it knows is attackable and already targeted). Does not wait for the answer.
+    pub async fn attack(&mut self, object_id: i32, origin: (i32, i32, i32)) {
+        self.send_packet(&AttackRequest {
+            object_id,
+            origin_x: origin.0,
+            origin_y: origin.1,
+            origin_z: origin.2,
+            attack_id: AttackRequest::SIMPLE_CLICK,
+        })
+        .await;
+    }
+
+    /// `RequestRestartPoint`: the button of the death window (0 = "to the village"). Does not
+    /// wait for the answer.
+    pub async fn restart_point(&mut self, requested_point_type: i32) {
+        self.send_packet(&RequestRestartPoint { requested_point_type })
+            .await;
+    }
+
     /// `RequestBypassToServer`: the command of a link in an html page.
     pub async fn bypass(&mut self, command: &str) {
         self.send_packet(&RequestBypassToServer {
@@ -647,6 +668,56 @@ mod tests {
             .to_bytes()
         );
         assert_eq!(received[4], Appearing.to_bytes());
+    }
+
+    /// The combat senders write the packets Java reads, and the log names them.
+    #[tokio::test]
+    async fn the_combat_packets_are_sent_and_named() {
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let server = tokio::spawn(async move {
+            let (mut stream, _) = listener.accept().await.unwrap();
+            read_frame(&mut stream).await;
+            let key = KeyPacket {
+                result: KeyPacket::RESULT_OK,
+                key: [0; 8],
+                use_encryption: false,
+                server_id: 1,
+            };
+            write_frame(&mut stream, &key.to_bytes()).await;
+            let mut received = Vec::new();
+            for _ in 0..2 {
+                received.push(read_frame(&mut stream).await);
+            }
+            received
+        });
+        let mut client = FakeGameClient::connect(addr).await;
+        client.handshake(273).await;
+        client.attack(77, (1, 2, 3)).await;
+        client.restart_point(0).await;
+        let received = server.await.unwrap();
+        assert_eq!(
+            client.sent_names(),
+            ["PROTOCOL_VERSION", "ATTACK", "REQUEST_RESTART_POINT"]
+        );
+        assert_eq!(
+            received[0],
+            AttackRequest {
+                object_id: 77,
+                origin_x: 1,
+                origin_y: 2,
+                origin_z: 3,
+                attack_id: AttackRequest::SIMPLE_CLICK,
+            }
+            .to_bytes()
+        );
+        assert_eq!(
+            received[1],
+            RequestRestartPoint {
+                requested_point_type: 0
+            }
+            .to_bytes()
+        );
     }
 
     #[tokio::test]
