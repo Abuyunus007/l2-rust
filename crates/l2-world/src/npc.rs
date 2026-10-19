@@ -811,7 +811,7 @@ impl World {
         // Java `Spawn.getLocation()`: the XML location, or for a territory spawn the point rolled
         // for the last NPC created (here: this NPC's own point).
         let spawn_point = spawn.and_then(|index| {
-            let data = self.npc_world.spawns.as_ref()?.spawns().get(index)?;
+            let data = self.spawn_def(index)?;
             Some(if data.territory.is_some() {
                 position
             } else {
