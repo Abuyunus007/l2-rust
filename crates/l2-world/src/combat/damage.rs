@@ -289,7 +289,13 @@ impl World {
             if let Some(attacker) = attacker {
                 self.attackable_add_damage(target, attacker, amount as i32);
             }
-            // M4-AI-01: minions call each other for help (`MinionList.onAssist`).
+            // If this Attackable is a Monster and it has spawned minions, call its minions to
+            // battle.
+            if let Some(attacker) = attacker
+                && self.is_monster(target)
+            {
+                self.minions_assist(target, attacker);
+            }
             // Champions are not rolled (`ChampionMonstersConfig`), so the HP is not divided.
             // AttackableStatus.reduceHp: over-hit is a skill effect (M5).
         }

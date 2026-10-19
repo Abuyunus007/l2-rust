@@ -117,6 +117,8 @@ pub struct CombatState {
     /// Java `Attackable._aggroList`, in the order attackers were first added (only the damage
     /// and hate this card adds; M4-AI-01 reads and extends it).
     pub aggro: Vec<AggroInfo>,
+    /// Java `Creature._attackByList`: the creatures that hit this attackable (M4-AI-01).
+    pub attack_by: Vec<ObjectId>,
 }
 
 /// The combat tables of the world.

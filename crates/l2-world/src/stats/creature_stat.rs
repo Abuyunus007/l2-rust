@@ -375,11 +375,11 @@ impl<'w> StatView<'w> {
         }
     }
 
-    /// Java `isRunning()`. NPCs walk until their AI makes them run (M4 AI).
+    /// Java `isRunning()`. NPCs walk until their AI makes them run.
     pub fn is_running(&self) -> bool {
         match self.who {
             Who::Player(p) => p.movement.running,
-            Who::Npc(_) => false,
+            Who::Npc(n) => n.movement.running,
         }
     }
 

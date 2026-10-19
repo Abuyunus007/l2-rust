@@ -210,6 +210,16 @@ impl NpcWorld {
     pub(crate) fn template_by_name(&self, name: &str) -> Option<&NpcTemplate> {
         self.templates.as_ref()?.get_by_name(name)
     }
+
+    /// The loaded spawn list (Java `SpawnData`), for the AI's spawn lookups.
+    pub(crate) fn spawn_data(&self) -> Option<&Arc<SpawnData>> {
+        self.spawns.as_ref()
+    }
+
+    /// Java `NpcData.getGenericClanId()`.
+    pub(crate) fn generic_clan_id(&self) -> i32 {
+        self.templates.as_ref().map_or(0, |t| t.generic_clan_id())
+    }
 }
 
 /// What [`World::spawn_all_npcs`] did.
@@ -747,6 +757,16 @@ impl World {
             }
         };
         let (x, y, z) = position;
+        // Java `Spawn.getLocation()`: the XML location, or for a territory spawn the point rolled
+        // for the last NPC created (here: this NPC's own point).
+        let spawn_point = spawn.and_then(|index| {
+            let data = self.npc_world.spawns.as_ref()?.spawns().get(index)?;
+            Some(if data.territory.is_some() {
+                position
+            } else {
+                (data.location.x, data.location.y, data.location.z)
+            })
+        });
         let npc = Npc {
             core: CreatureCore {
                 object_id: id,
@@ -777,10 +797,17 @@ impl World {
             left_hand: template.lhand_id,
             enchant_effect: enchant,
             display_effect: 0,
+            movement: crate::movement::NpcMovement::default(),
+            spawn_point: spawn_point.unwrap_or_default(),
+            spawn_time_ms: 0,
         };
         self.npcs.insert(id, npc);
         // Java's constructor: the template's skills (passive effects copy the calculators).
         self.add_npc_template_skills(id);
+        // Java `MinionList.onMinionSpawn`: the minion joins its master's list.
+        if let Some(master) = leader {
+            self.register_minion(master, id);
+        }
         // Java `onSpawn`: full HP and MP (`getMaxHp()`: the template value through the standard
         // NPC calculators, so times the CON / MEN bonus).
         self.init_npc_stats(id);
@@ -830,6 +857,7 @@ impl World {
             self.delete_npc(minion);
         }
         self.decay(id);
+        self.forget_npc_ai(id);
         self.npcs.remove(&id);
         self.npc_world.last_spawned.retain(|_, last| *last != id);
         true
@@ -926,8 +954,8 @@ impl World {
             collision_height: template.collision_height,
             right_hand: npc.right_hand,
             left_hand: npc.left_hand,
-            running: false,
-            in_combat: false,
+            running: npc.movement.running,
+            in_combat: self.is_in_combat(subject),
             alike_dead: false,
             show_summon_animation: false,
             name,
