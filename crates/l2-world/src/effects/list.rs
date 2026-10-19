@@ -17,6 +17,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use l2_data::skill::{AbnormalVisualEffect, EffectScope};
 use l2_data::stats::AbnormalType;
+use l2_protocol_game::server::{AbnormalStatusUpdate, EffectIcon, ShortBuffStatusUpdate};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -477,6 +478,71 @@ impl World {
     pub fn abnormal_visual_effects(&self, id: ObjectId) -> (i32, i32, i32) {
         self.effect_list(id)
             .map_or((0, 0, 0), EffectList::abnormal_visual_effects)
+    }
+
+    /// Java `EffectList.addBlockedAbnormalTypes(types)` (the `BlockAbnormalSlot` effect).
+    pub fn add_blocked_abnormal_types(
+        &mut self,
+        id: ObjectId,
+        types: impl IntoIterator<Item = AbnormalType>,
+    ) {
+        if let Some(list) = self.effect_list_mut(id) {
+            list.add_blocked_abnormal_types(types);
+        }
+    }
+
+    /// Java `EffectList.removeBlockedAbnormalTypes(types)`: whether the set changed.
+    pub fn remove_blocked_abnormal_types(
+        &mut self,
+        id: ObjectId,
+        types: impl IntoIterator<Item = AbnormalType>,
+    ) -> bool {
+        self.effects
+            .lists
+            .get_mut(&id)
+            .is_some_and(|l| l.remove_blocked_abnormal_types(types))
+    }
+
+    /// Java `CreatureStat.setMaxBuffCount(count)` (the `EnlargeAbnormalSlot` effect).
+    pub fn set_max_buff_count(&mut self, id: ObjectId, count: i32) {
+        if let Some(list) = self.effect_list_mut(id) {
+            list.set_max_buff_count(count);
+        }
+    }
+
+    /// Java `Creature.addInvulAgainst(holder)` (the `ResistSkill` effect).
+    pub fn add_invul_against(&mut self, id: ObjectId, skill_id: i32, skill_level: i32) {
+        if let Some(list) = self.effect_list_mut(id) {
+            list.add_invul_against(skill_id, skill_level);
+        }
+    }
+
+    /// Java `Creature.removeInvulAgainst(holder)`.
+    pub fn remove_invul_against(&mut self, id: ObjectId, skill_id: i32) {
+        if let Some(list) = self.effects.lists.get_mut(&id) {
+            list.remove_invul_against(skill_id);
+        }
+    }
+
+    /// Java `Creature.startAbnormalVisualEffect(true, aves)`.
+    pub fn start_abnormal_visual_effect(&mut self, id: ObjectId, aves: &[AbnormalVisualEffect]) {
+        if let Some(list) = self.effect_list_mut(id) {
+            list.start_abnormal_visual_effects(aves);
+        }
+        self.update_abnormal_effect(id);
+    }
+
+    /// Java `Creature.stopAbnormalVisualEffect(true, aves)`.
+    pub fn stop_abnormal_visual_effect(&mut self, id: ObjectId, aves: &[AbnormalVisualEffect]) {
+        if let Some(list) = self.effects.lists.get_mut(&id) {
+            list.stop_abnormal_visual_effects(aves);
+        }
+        self.update_abnormal_effect(id);
+    }
+
+    /// The effect handler registry.
+    pub fn effect_registry(&self) -> &super::EffectRegistry {
+        self.effects.registry()
     }
 
     /// Whether a passive skill of this id is applied (Java `EffectList.getPassives()`).
@@ -1260,13 +1326,34 @@ impl World {
     }
 
     /// Sends the `AbnormalStatusUpdate` of `icons` to the player.
-    fn send_abnormal_status_update(&self, _owner: ObjectId, _icons: &[IconEntry]) {
-        // PENDING(M5-GPROTO-08): `AbnormalStatusUpdate` is not on main yet.
+    // Java builds the packet in the icon task and writes it at once, so every icon added (all in
+    // use) is written; the count quirk of the packet never shows here.
+    fn send_abnormal_status_update(&self, owner: ObjectId, icons: &[IconEntry]) {
+        let mut asu = AbnormalStatusUpdate::default();
+        for icon in icons {
+            asu.add_skill(
+                EffectIcon {
+                    display_id: icon.skill_id,
+                    display_level: icon.skill_level,
+                    time: icon.time,
+                    in_use: true,
+                },
+                false,
+            );
+        }
+        self.send(owner, &asu);
     }
 
     /// Sends `ShortBuffStatusUpdate` (the entry) or `RESET_SHORT_BUFF` (`None`) to the player.
-    fn send_short_buff_status_update(&self, _owner: ObjectId, _entry: Option<IconEntry>) {
-        // PENDING(M5-GPROTO-08): `ShortBuffStatusUpdate` is not on main yet.
+    fn send_short_buff_status_update(&self, owner: ObjectId, entry: Option<IconEntry>) {
+        let packet = entry.map_or(ShortBuffStatusUpdate::RESET_SHORT_BUFF, |e| {
+            ShortBuffStatusUpdate {
+                skill_id: e.skill_id,
+                skill_level: e.skill_level,
+                duration: e.time,
+            }
+        });
+        self.send(owner, &packet);
     }
 
     /// `Skill.applyEffectScope(END, info, true, false)` for an info that ended.
