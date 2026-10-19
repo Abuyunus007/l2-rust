@@ -1145,9 +1145,16 @@ async fn chat_goes_to_the_speaker_and_a_whisper_to_the_named_player() {
 async fn unknown_in_game_packets_are_ignored_and_the_net_ping_is_answered() {
     let h = start(true).await;
     let mut client = in_world(&h).await;
-    // `Attack` is a valid IN_GAME packet without a handler yet; it must not disconnect.
+    // `RequestGetItemFromPet` (a pet packet) is a valid IN_GAME packet without a struct yet; the
+    // world gets it as `Other` and must not disconnect.
     client
-        .send(vec![l2_protocol_game::ClientOpcode::Attack.id(), 0, 0, 0, 0])
+        .send(vec![
+            l2_protocol_game::ClientOpcode::RequestGetItemFromPet.id(),
+            0,
+            0,
+            0,
+            0,
+        ])
         .await;
     // An opcode the table does not know at all.
     client.send(vec![0x02, 1, 2, 3]).await;

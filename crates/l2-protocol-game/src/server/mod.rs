@@ -11,9 +11,11 @@ use crate::generated::opcodes::ServerOpcode;
 
 pub mod charscreen;
 pub mod chat;
+pub mod combat;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
+pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
@@ -28,6 +30,10 @@ pub use charscreen::{
     delete_seconds, exp_percent,
 };
 pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
+pub use combat::{
+    Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
+    ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive,
+};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, SkillCoolTime, SkillList,
@@ -38,6 +44,7 @@ pub use entry::{
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, ShowTownMap, SocialAction,

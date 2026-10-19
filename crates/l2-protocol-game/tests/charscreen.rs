@@ -337,6 +337,15 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::ValidatePosition(_)
             | ClientPacket::CannotMoveAnymore(_)
             | ClientPacket::Appearing(_)
+            // Combat and item packets are checked in tests/combat.rs.
+            | ClientPacket::AttackRequest(_)
+            | ClientPacket::RequestActionUse(_)
+            | ClientPacket::RequestRestartPoint(_)
+            | ClientPacket::UseItem(_)
+            | ClientPacket::RequestUnEquipItem(_)
+            | ClientPacket::RequestDropItem(_)
+            | ClientPacket::RequestDestroyItem(_)
+            | ClientPacket::RequestItemList(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };
