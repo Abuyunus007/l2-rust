@@ -8,9 +8,11 @@
 //       (reduceHp)
 //
 // # Left out (each has its card)
-// - Effects (M5): invulnerability, reflect/absorb come from effects and passives, so they are read
-//   from the stat engine (passive funcs do apply); stun breaking, `stopEffectsOnDamage`, fake death,
-//   trigger skills, the weapon's on-critical skill, the raid curse (skill 4515).
+// - Effects (M5): the invulnerability *effect* (`EffectFlag.INVUL`) and reflect/absorb come from
+//   effects and passives, so they are read from the stat engine (passive funcs do apply). The
+//   invulnerability flag itself (`//invul`, `Creature.setInvul`) is honoured by `status.rs`; stun
+//   breaking, `stopEffectsOnDamage`, fake death, trigger skills, the weapon's on-critical skill,
+//   the raid curse (skill 4515).
 // - Summons (damage transfer), mana shield messages, duels, olympiad, offline traders, the
 //   tutorial quest: not ported yet.
 // - Minions calling for help (`MinionList.onAssist`), `addAttackerToAttackByList`, the aggro-range
@@ -140,8 +142,8 @@ impl World {
                 })
                 .is_some_and(|t| matches!(t, WeaponType::Bow | WeaponType::CrossBow));
             let mut reflected_damage = 0;
-            // Do not reflect if weapon is of type bow or target is invulnerable (M5).
-            if !is_bow {
+            // Do not reflect if weapon is of type bow or target is invulnerable.
+            if !is_bow && !self.is_invul(target) {
                 // Quick fix for no drop from raid if boss attack high-level char with damage
                 // reflection.
                 let attacker_level = self.players.get(&id).map(|p| p.core.level);
@@ -257,8 +259,11 @@ impl World {
         }
         // Olympiad damage counting: not ported.
         let target_kind = self.objects.get(&target).map(|e| e.kind);
-        // M5: `target.isInvul() && !target.isNpc()` sends THE_ATTACK_HAS_BEEN_BLOCKED.
-        if target_kind == Some(ObjectKind::Door) {
+        // Java: an invulnerable target that is not an NPC makes the attack "blocked" (the target
+        // itself takes no damage, `status.rs`).
+        if self.is_invul(target) && target_kind != Some(ObjectKind::Npc) {
+            self.send(id, &SystemMessage::new(SystemMessageId::TheAttackHasBeenBlocked));
+        } else if target_kind == Some(ObjectKind::Door) {
             // (and `ControlTower`, a siege NPC: M5)
             let message = SystemMessage::new(SystemMessageId::YouHitForS1Damage)
                 .with(SystemMessageParam::IntNumber(damage));
