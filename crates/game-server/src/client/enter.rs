@@ -464,6 +464,8 @@ impl ClientSession {
             ClientPacket::RequestTargetCanceld(p) => ClientInput::TargetCanceled { unselect: p.unselect },
             ClientPacket::RequestBypassToServer(p) => ClientInput::Bypass { command: p.command },
             ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
+            ClientPacket::SendBypassBuildCmd(p) => ClientInput::BuildCmd { command: p.command },
+            ClientPacket::BypassUserCmd(p) => ClientInput::UserCommand { id: p.command },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

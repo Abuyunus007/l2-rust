@@ -10,6 +10,7 @@
 //! - Refer to other objects by id ([`ObjectId`]), never by reference (D-11).
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
+pub mod admin;
 pub mod bypass;
 pub mod chat;
 pub mod command;
@@ -34,10 +35,12 @@ pub mod target;
 pub mod teleport;
 pub mod teleporter;
 pub mod timer;
+pub mod user_command;
 mod visibility;
 pub mod world;
 pub mod zones;
 
+pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use data::{

@@ -7,6 +7,7 @@
 //! Tests plug in small fakes. [`NoData`] and `WorldSettings::default()` are the "nothing loaded"
 //! and "Java defaults" versions, so a bare `World::new` still works.
 
+use crate::admin::AdminRights;
 use crate::player::PlayerData;
 
 /// Java `Race.DWARF.ordinal()`.
@@ -207,6 +208,12 @@ pub trait StaticData: Send + Sync {
     fn item_stackable(&self, _item_id: i32) -> bool {
         false
     }
+
+    /// The admin command rights (`config/AccessLevels.xml` + `config/AdminCommands.xml`). The
+    /// default is "nothing loaded": no GM may run any command.
+    fn admin_rights(&self) -> Option<&AdminRights> {
+        None
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -244,6 +251,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn item_stackable(&self, item_id: i32) -> bool {
         (**self).item_stackable(item_id)
+    }
+
+    fn admin_rights(&self) -> Option<&AdminRights> {
+        (**self).admin_rights()
     }
 }
 
@@ -331,6 +342,11 @@ pub struct WorldSettings {
     pub gm_hero_aura: bool,
     /// `GeneralConfig.LOG_CHAT` (`LogChat`).
     pub log_chat: bool,
+    /// `GeneralConfig.GMAUDIT` (`GMAudit`): one `gmaudit` log line per admin command.
+    pub gm_audit: bool,
+    /// `GeneralConfig.GM_STARTUP_BUILDER_HIDE` (`GMStartupBuilderHide`): `sendSysMessage` goes to
+    /// the chat window as a "SYS" line instead of a system message.
+    pub gm_startup_builder_hide: bool,
     /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
@@ -377,6 +393,8 @@ impl Default for WorldSettings {
             trade_chat: ChatBroadcast::On,
             gm_hero_aura: false,
             log_chat: false,
+            gm_audit: false,
+            gm_startup_builder_hide: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),

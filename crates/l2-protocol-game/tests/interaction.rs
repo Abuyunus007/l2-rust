@@ -10,7 +10,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use l2_net::{Decode, Encode, PacketReader};
-use l2_protocol_game::client::{Action, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld};
+use l2_protocol_game::client::{
+    Action, BypassUserCmd, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld, SendBypassBuildCmd,
+};
 use l2_protocol_game::server::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
     TargetSelected, TargetUnselected,
@@ -441,6 +443,49 @@ fn request_bypass_empty_or_missing_string_reads_as_empty() {
     assert_eq!(decoded.command, "");
     let decoded = RequestBypassToServer::decode(&mut PacketReader::new(&[])).unwrap();
     assert_eq!(decoded.command, "");
+}
+
+#[test]
+fn send_bypass_build_cmd_layout_and_trim() {
+    // `//spawn 20101`: the client sends the text after the slashes.
+    let packet = SendBypassBuildCmd {
+        command: "spawn 20101".into(),
+    };
+    check_round_trip(
+        &packet,
+        &Bytes::default().byte(0x74).text("spawn 20101").done(),
+        1,
+    );
+    // Java `readImpl` trims the text.
+    let padded = Bytes::default().byte(0x74).text("  admin 	").done();
+    let decoded = SendBypassBuildCmd::decode(&mut PacketReader::new(&padded[1..])).unwrap();
+    assert_eq!(decoded.command, "admin");
+    // Allowed in game only: the generated table decides.
+    let body = Bytes::default().text("loc").done();
+    let in_game = decode_client(ConnectionState::InGame, 0x74, &mut PacketReader::new(&body)).unwrap();
+    assert_eq!(
+        in_game,
+        Some(ClientPacket::SendBypassBuildCmd(SendBypassBuildCmd {
+            command: "loc".into()
+        }))
+    );
+    let before = decode_client(
+        ConnectionState::Authenticated,
+        0x74,
+        &mut PacketReader::new(&body),
+    )
+    .unwrap();
+    assert_eq!(before, None);
+}
+
+#[test]
+fn bypass_user_cmd_layout() {
+    // `/loc` is user command 0.
+    let packet = BypassUserCmd { command: 0 };
+    check_round_trip(&packet, &Bytes::default().byte(0xB3).int(0).done(), 1);
+    let other = BypassUserCmd { command: 52 };
+    check_round_trip(&other, &Bytes::default().byte(0xB3).int(52).done(), 1);
+    assert!(BypassUserCmd::decode(&mut PacketReader::new(&[1, 0])).is_err());
 }
 
 #[test]

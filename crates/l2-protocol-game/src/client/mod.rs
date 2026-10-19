@@ -29,7 +29,9 @@ pub use charscreen::{
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
-pub use interaction::{Action, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld};
+pub use interaction::{
+    Action, BypassUserCmd, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld, SendBypassBuildCmd,
+};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 
 /// Writes the id byte of a plain client packet.

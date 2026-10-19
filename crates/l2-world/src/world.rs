@@ -55,6 +55,8 @@ pub struct World {
     pub(crate) npc_world: crate::npc::NpcWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
+    /// The admin command handlers (M3-ADMIN-01).
+    pub(crate) admin: crate::admin::AdminWorld,
     pub(crate) doors: HashMap<ObjectId, Door>,
     /// Java `GameTimeTaskManager._isNight`; `None` while the game clock is off.
     pub(crate) game_clock_night: Option<bool>,
@@ -98,6 +100,7 @@ impl World {
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
+            admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
             game_clock_night: None,
             geo: None,
@@ -359,6 +362,8 @@ impl World {
             ClientInput::TargetCanceled { unselect } => self.on_target_canceled(id, unselect),
             ClientInput::Bypass { command } => self.on_bypass_to_server(id, &command),
             ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
+            ClientInput::BuildCmd { command } => self.on_build_cmd(id, &command),
+            ClientInput::UserCommand { id: command } => self.on_user_command(id, command),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }

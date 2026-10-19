@@ -17,8 +17,8 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, BaseStat, ChatBroadcast, DerivedStats, ItemStatic, PlayerData, StaticData,
-    TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
+    AccessLevelStatic, AdminRights, BaseStat, ChatBroadcast, DerivedStats, ItemStatic, PlayerData,
+    StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -219,18 +219,21 @@ impl PassiveSkills {
     }
 }
 
-/// `config/AccessLevels.xml` (Java `AdminData.loadAccessLevels`).
+/// `config/AccessLevels.xml` and `config/AdminCommands.xml` (Java `AdminData`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AccessLevels {
     levels: BTreeMap<i32, AccessLevelStatic>,
+    /// Who may run which admin command.
+    rights: AdminRights,
 }
 
 impl AccessLevels {
     pub const FILE: &'static str = "AccessLevels.xml";
+    pub const COMMANDS_FILE: &'static str = "AdminCommands.xml";
 
     pub fn load(config_dir: &Path) -> Self {
         let path = config_dir.join(Self::FILE);
-        match std::fs::read(&path) {
+        let mut table = match std::fs::read(&path) {
             Ok(bytes) => Self::from_xml(&String::from_utf8_lossy(&bytes)),
             Err(e) => {
                 warn!(
@@ -238,6 +241,47 @@ impl AccessLevels {
                     path.display()
                 );
                 Self::default()
+            }
+        };
+        info!("AdminData: Loaded {} access levels.", table.rights.level_count());
+        let path = config_dir.join(Self::COMMANDS_FILE);
+        match std::fs::read(&path) {
+            Ok(bytes) => table.add_commands_xml(&String::from_utf8_lossy(&bytes)),
+            Err(e) => warn!(
+                "Cannot read {}: {e}; no GM may use admin commands.",
+                path.display()
+            ),
+        }
+        info!(
+            "AdminData: Loaded {} access commands.",
+            table.rights.command_count()
+        );
+        table
+    }
+
+    /// The admin command rights.
+    pub fn rights(&self) -> &AdminRights {
+        &self.rights
+    }
+
+    /// Java `AdminData.parseDocument`, `<admin>`: `command`, `accessLevel` (default 100) and
+    /// `confirmDlg` (default false).
+    pub fn add_commands_xml(&mut self, xml: &str) {
+        let mut reader = Reader::from_str(xml);
+        loop {
+            match reader.read_event() {
+                Ok(Event::Empty(e) | Event::Start(e)) if e.name().as_ref() == "admin" => {
+                    let Some(command) = attribute(&e, "command") else {
+                        continue;
+                    };
+                    let level = attribute(&e, "accessLevel")
+                        .and_then(|v| v.trim().parse::<i32>().ok())
+                        .unwrap_or(100);
+                    let confirm = attribute(&e, "confirmDlg").is_some_and(|v| v.eq_ignore_ascii_case("true"));
+                    self.rights.add_command(&command, level, confirm);
+                }
+                Ok(Event::Eof) | Err(_) => break,
+                Ok(_) => {}
             }
         }
     }
@@ -258,6 +302,10 @@ impl AccessLevels {
                             .and_then(|v| i32::from_str_radix(v.trim(), 16).ok())
                             .unwrap_or(0x00FF_FFFF)
                     };
+                    let child = attribute(&e, "childAccess")
+                        .and_then(|v| v.trim().parse::<i32>().ok())
+                        .unwrap_or(0);
+                    table.rights.add_level(level, child);
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -512,6 +560,10 @@ impl StaticData for DatapackData {
         self.access.get(level)
     }
 
+    fn admin_rights(&self) -> Option<&AdminRights> {
+        Some(self.access.rights())
+    }
+
     fn safe_fall_height(&self, player: &PlayerData) -> i32 {
         self.datapack
             .player_templates
@@ -551,6 +603,8 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         grid_neighbor_turnoff_secs: config.general.grid_neighbor_turnoff_time,
         gm_hero_aura: config.general.gm_hero_aura,
         log_chat: config.general.log_chat,
+        gm_audit: config.general.gmaudit,
+        gm_startup_builder_hide: config.general.gm_startup_builder_hide,
         zones: ZoneSettings {
             peace_zone_mode: config.general.peace_zone_mode,
             jail_is_pvp: config.general.jail_is_pvp,
@@ -726,6 +780,67 @@ mod tests {
         assert_eq!(levels.get(-5), levels.get(-1));
         assert_eq!(levels.get(55), AccessLevelStatic::UNREGISTERED);
         assert!(!levels.get(55).is_gm);
+    }
+
+    #[test]
+    fn admin_rights_come_from_the_two_config_files() {
+        let mut table = AccessLevels::from_xml(
+            r#"<list>
+	<access level="0" name="User" isGM="false" />
+	<access level="30" name="General GM" childAccess="20" isGM="false" />
+	<access level="70" name="Admin" childAccess="30" isGM="true" />
+	<access level="100" name="Master" childAccess="70" isGM="true" />
+</list>"#,
+        );
+        table.add_commands_xml(
+            r#"<list>
+	<admin command="admin" description="Open main Admin menu." accessLevel="30" />
+	<admin command="kill" description="Kill." />
+	<admin command="recall_char_menu" accessLevel="100" confirmDlg="true" />
+</list>"#,
+        );
+        let rights = table.rights();
+        assert_eq!((rights.level_count(), rights.command_count()), (4, 3));
+        assert!(rights.has_access("admin_admin", 100));
+        assert!(rights.has_access("admin_admin", 30));
+        assert!(!rights.has_access("admin_admin", 0));
+        // `accessLevel` defaults to 100.
+        assert!(rights.has_access("admin_kill", 100));
+        assert!(!rights.has_access("admin_kill", 70));
+        assert!(rights.requires_confirm("admin_recall_char_menu", 100));
+        assert!(!rights.requires_confirm("admin_kill", 100));
+    }
+
+    #[test]
+    fn the_shipped_admin_files_give_a_master_every_listed_command() {
+        let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        let config = root.join("config");
+        if !config.join(AccessLevels::COMMANDS_FILE).is_file() {
+            eprintln!("skipped: {} has no admin config", config.display());
+            return;
+        }
+        let table = AccessLevels::load(&config);
+        let rights = table.rights();
+        assert_eq!(rights.level_count(), 10);
+        assert!(rights.command_count() > 400);
+        // Master (100) reaches Admin (70) down to General GM (30); the plain user nothing.
+        for command in [
+            "admin_admin",
+            "admin_spawn",
+            "admin_move_to",
+            "admin_kill",
+            "admin_heal",
+        ] {
+            assert!(rights.has_access(command, 100), "{command}");
+            assert!(!rights.has_access(command, 0), "{command}");
+        }
+        assert!(rights.has_access("admin_goto", 70));
+        assert!(!rights.has_access("admin_kill", 70));
+        // Only Admin (70) and Master (100) are GMs.
+        assert!(table.get(70).is_gm && table.get(100).is_gm);
+        assert!(!table.get(60).is_gm);
     }
 
     #[test]
