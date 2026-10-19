@@ -38,6 +38,7 @@ pub mod region;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod skills;
 pub mod snapshot;
 pub mod stats;
 pub mod status;
