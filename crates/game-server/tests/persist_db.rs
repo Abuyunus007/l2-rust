@@ -321,6 +321,66 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     db.drop_db().await;
 }
 
+/// A level up (M4-EXP-01): the skills it teaches are written at once like Java's `storeSkill`
+/// (`REPLACE` for a new skill, `UPDATE` of the level for a known one), a skill it takes is
+/// deleted, and the next full store agrees. `expBeforeDeath` is written from the snapshot.
+#[tokio::test]
+async fn skill_changes_and_exp_before_death_are_written_like_java() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let skills = SkillRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let owner = ObjectId(CHAR_ID);
+    let mut store = DbStore::new(pool.clone());
+    let skill = |skill_id, skill_level| SkillData {
+        skill_id,
+        skill_level,
+    };
+    let learned = |rows: Vec<l2_db::SkillLevel>| {
+        let mut rows: Vec<(i32, i32)> = rows.iter().map(|s| (s.skill_id, s.skill_level)).collect();
+        rows.sort_unstable();
+        rows
+    };
+
+    store
+        .store_skill_changes(owner, &[skill(239, 1), skill(1216, 1)], &[])
+        .await
+        .unwrap();
+    assert_eq!(
+        learned(skills.skills_of(CHAR_ID, 0).await.unwrap()),
+        vec![(239, 1), (1216, 1)]
+    );
+    // The next level raises one and takes the other.
+    store
+        .store_skill_changes(owner, &[skill(239, 2)], &[1216])
+        .await
+        .unwrap();
+    assert_eq!(
+        learned(skills.skills_of(CHAR_ID, 0).await.unwrap()),
+        vec![(239, 2)]
+    );
+
+    // The full store of the same state writes nothing different, and carries the exp column.
+    let mut data = player_data();
+    data.items = vec![];
+    data.shortcuts = vec![];
+    data.skills = vec![skill(239, 2)];
+    data.profile.exp_before_death = 987_654;
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        learned(skills.skills_of(CHAR_ID, 0).await.unwrap()),
+        vec![(239, 2)]
+    );
+    let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.exp_before_death, Some(987_654));
+    assert_eq!((row.level, row.exp, row.sp), (Some(5), Some(1234), 56));
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
 #[tokio::test]
 async fn item_changes_are_written_at_once_with_javas_columns() {
     let Some((db, pool)) = setup().await else {

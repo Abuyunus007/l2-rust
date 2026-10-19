@@ -133,6 +133,11 @@ pub trait StaticData: Send + Sync {
     fn access_level_allows_fixed_res(&self, _level: i32) -> bool {
         false
     }
+
+    /// Java `AccessLevel.canGainExp()` (`gainExp` of `AccessLevels.xml`, default true).
+    fn access_level_can_gain_exp(&self, _level: i32) -> bool {
+        true
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -178,6 +183,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level_allows_fixed_res(&self, level: i32) -> bool {
         (**self).access_level_allows_fixed_res(level)
+    }
+
+    fn access_level_can_gain_exp(&self, level: i32) -> bool {
+        (**self).access_level_can_gain_exp(level)
     }
 }
 
@@ -290,6 +299,8 @@ pub struct WorldSettings {
     pub inventory: crate::inventory::InventorySettings,
     /// The values dying and coming back read (M4-DEATH-01).
     pub death: crate::death::DeathSettings,
+    /// The values exp, SP and levels read (M4-EXP-01).
+    pub exp: crate::rewards::exp::ExpSettings,
 }
 
 impl Default for WorldSettings {
@@ -329,6 +340,7 @@ impl Default for WorldSettings {
             combat: crate::combat::CombatSettings::default(),
             inventory: crate::inventory::InventorySettings::default(),
             death: crate::death::DeathSettings::default(),
+            exp: crate::rewards::exp::ExpSettings::default(),
         }
     }
 }

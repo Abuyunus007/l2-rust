@@ -18,6 +18,7 @@ pub mod html;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod item;
+pub mod level_tables;
 pub mod loader;
 pub mod map_region;
 pub mod npc;
@@ -47,6 +48,7 @@ pub use initial_shortcuts::{
     InitialShortcut, InitialShortcuts, MacroCommand, MacroPreset, MacroType, ShortcutType,
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
+pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
@@ -68,6 +70,10 @@ pub struct Datapack {
     pub root: PathBuf,
     /// `data/stats/players/classList.xml`.
     pub class_list: Arc<ClassList>,
+    /// `data/stats/players/experienceLoss.xml`: the share of a level a death costs.
+    pub experience_loss: Arc<ExperienceLoss>,
+    /// `data/stats/players/karmaLoss.xml`: the karma modifier per level.
+    pub karma_loss: Arc<KarmaLoss>,
     /// `data/stats/players/experience.xml`.
     pub experience: Arc<ExperienceTable>,
     /// `data/stats/players/initialEquipment.xml`.
@@ -193,6 +199,8 @@ impl Datapack {
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
+            experience_loss: Arc::new(ExperienceLoss::load(root)),
+            karma_loss: Arc::new(KarmaLoss::load(root)),
             experience: Arc::new(experience),
             initial_equipment: Arc::new(InitialEquipments::load(root)),
             initial_shortcuts: Arc::new(InitialShortcuts::load(root)),

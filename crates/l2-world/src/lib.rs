@@ -35,6 +35,7 @@ pub mod player;
 mod player_view;
 pub mod region;
 pub mod respawn;
+pub mod rewards;
 pub mod runner;
 pub mod snapshot;
 pub mod stats;
@@ -72,6 +73,7 @@ pub use player::{
     ShortcutData, SkillData,
 };
 pub use region::{RegionId, region_of};
+pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

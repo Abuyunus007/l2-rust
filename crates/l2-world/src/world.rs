@@ -91,6 +91,8 @@ pub struct World {
     /// Spawn counters, corpses waiting to decay, NPCs waiting to respawn, pending revives
     /// (M4-DEATH-01, `death.rs`, `respawn.rs`).
     pub(crate) death: crate::death::DeathWorld,
+    /// The experience tables and skill trees exp and levels read (M4-EXP-01, `rewards/exp.rs`).
+    pub(crate) rewards: crate::rewards::exp::ExpWorld,
 }
 
 impl World {
@@ -133,6 +135,7 @@ impl World {
             statuses: HashMap::new(),
             regen: RegenSettings::default(),
             death: crate::death::DeathWorld::default(),
+            rewards: crate::rewards::exp::ExpWorld::default(),
         }
     }
 
