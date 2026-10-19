@@ -38,6 +38,10 @@ pub enum TimerKind {
     SkillList(ObjectId),
     /// Java `Player.sendItemList`'s 250 ms task.
     ItemList(ObjectId),
+    /// Java `CreatureStatus`'s regeneration task (every 3 s) of one creature, see `status.rs`.
+    Regeneration(ObjectId),
+    /// Java `Player.broadcastStatusUpdate`'s 50 ms task: a player's own vitals, see `status.rs`.
+    SelfStatusUpdate(ObjectId),
 }
 
 #[derive(Debug, Default)]

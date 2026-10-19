@@ -174,7 +174,8 @@ impl Default for ServerManual {
 }
 
 /// `PlayerConfig` fields that the generator could not port (`config/Player.ini`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+// Java: PlayerConfig.java:261-263 (the regeneration multipliers, `getDouble(key, 100) / 100`)
+#[derive(Debug, Clone, PartialEq)]
 pub struct PlayerManual {
     /// Java `FORBIDDEN_NAMES`: `ForbiddenNames`, default `""`.
     ///
@@ -183,6 +184,12 @@ pub struct PlayerManual {
     /// Java `MAX_SP`: `MaxSp`, default `50000000000`. A negative value means no limit
     /// (`Long.MAX_VALUE`).
     pub max_sp: i64,
+    /// Java `HP_REGEN_MULTIPLIER`: `HpRegenMultiplier` / 100, default 100 (so 1.0).
+    pub hp_regen_multiplier: f64,
+    /// Java `MP_REGEN_MULTIPLIER`: `MpRegenMultiplier` / 100, default 100 (so 1.0).
+    pub mp_regen_multiplier: f64,
+    /// Java `CP_REGEN_MULTIPLIER`: `CpRegenMultiplier` / 100, default 100 (so 1.0).
+    pub cp_regen_multiplier: f64,
 }
 
 impl PlayerManual {
@@ -199,6 +206,9 @@ impl PlayerManual {
         Self {
             forbidden_names,
             max_sp: if max_sp >= 0 { max_sp } else { i64::MAX },
+            hp_regen_multiplier: ini.get_double("HpRegenMultiplier", 100.0) / 100.0,
+            mp_regen_multiplier: ini.get_double("MpRegenMultiplier", 100.0) / 100.0,
+            cp_regen_multiplier: ini.get_double("CpRegenMultiplier", 100.0) / 100.0,
         }
     }
 }
@@ -207,6 +217,33 @@ impl Default for PlayerManual {
     /// Every key missing: the Java defaults.
     fn default() -> Self {
         Self::from_ini(&IniFile::empty("Player.ini"))
+    }
+}
+
+/// `NpcConfig` fields that the generator could not port (`config/NPC.ini`).
+// Java: NpcConfig.java:163-164 (`getDouble(key, 100) / 100`)
+#[derive(Debug, Clone, PartialEq)]
+pub struct NpcManual {
+    /// Java `RAID_HP_REGEN_MULTIPLIER`: `RaidHpRegenMultiplier` / 100, default 100 (so 1.0).
+    pub raid_hp_regen_multiplier: f64,
+    /// Java `RAID_MP_REGEN_MULTIPLIER`: `RaidMpRegenMultiplier` / 100, default 100 (so 1.0).
+    pub raid_mp_regen_multiplier: f64,
+}
+
+impl NpcManual {
+    /// Reads the keys like `NpcConfig.load()`.
+    pub fn from_ini(ini: &IniFile) -> Self {
+        Self {
+            raid_hp_regen_multiplier: ini.get_double("RaidHpRegenMultiplier", 100.0) / 100.0,
+            raid_mp_regen_multiplier: ini.get_double("RaidMpRegenMultiplier", 100.0) / 100.0,
+        }
+    }
+}
+
+impl Default for NpcManual {
+    /// Every key missing: the Java defaults.
+    fn default() -> Self {
+        Self::from_ini(&IniFile::empty("NPC.ini"))
     }
 }
 
@@ -313,10 +350,11 @@ fn parse_location(
 }
 
 /// The hand-ported fields of every game config class that needs them.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GameManual {
     pub server: ServerManual,
     pub player: PlayerManual,
+    pub npc: NpcManual,
     pub faction_system: FactionSystemManual,
 }
 
@@ -325,11 +363,13 @@ impl GameManual {
     pub fn from_inis(
         server: &IniFile,
         player: &IniFile,
+        npc: &IniFile,
         faction_system: &IniFile,
     ) -> Result<Self, ConfigError> {
         Ok(Self {
             server: ServerManual::from_ini(server),
             player: PlayerManual::from_ini(player),
+            npc: NpcManual::from_ini(npc),
             faction_system: FactionSystemManual::from_ini(faction_system)?,
         })
     }
@@ -571,5 +611,24 @@ mod tests {
         assert_eq!(config.manual.faction_system, FactionSystemManual::default());
         // General.ini: DefaultPunishParam = 0 -> the one hundred years default.
         assert_eq!(config.effective_default_punish_param(), 3_155_695_200);
+        // Player.ini and NPC.ini: the regeneration multipliers, 100 -> 1.0.
+        assert_eq!(config.manual.player.hp_regen_multiplier, 1.0);
+        assert_eq!(config.manual.npc.raid_mp_regen_multiplier, 1.0);
+    }
+
+    #[test]
+    fn regen_multipliers_are_the_java_values_over_one_hundred() {
+        assert_eq!(PlayerManual::default().mp_regen_multiplier, 1.0);
+        assert_eq!(NpcManual::default().raid_hp_regen_multiplier, 1.0);
+        let player = PlayerManual::from_ini(&ini("HpRegenMultiplier = 150
+MpRegenMultiplier = 25.5
+"));
+        assert_eq!(player.hp_regen_multiplier, 1.5);
+        assert_eq!(player.mp_regen_multiplier, 0.255);
+        assert_eq!(player.cp_regen_multiplier, 1.0);
+        let npc = NpcManual::from_ini(&ini("RaidHpRegenMultiplier = 200
+"));
+        assert_eq!(npc.raid_hp_regen_multiplier, 2.0);
+        assert_eq!(npc.raid_mp_regen_multiplier, 1.0);
     }
 }

@@ -17,7 +17,7 @@
 //   `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{StatusUpdate, SystemMessage, visibility::status};
+use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 use tracing::{debug, info, warn};
 
@@ -890,73 +890,30 @@ fn handle_heal(world: &mut World, gm: ObjectId, param: Option<&str>) {
     }
 }
 
-/// `setCurrentHpMp(getMaxHp(), getMaxMp())`, and for a player `setCurrentCp(getMaxCp())` and
-/// `updateUserInfo()`. A creature without hit points counts as dead and is left alone (death and
-/// revival are M4); doors and static objects have no mana to restore.
+/// Java `AdminHeal`: `setCurrentHpMp(getMaxHp(), getMaxMp())`, then for a player
+/// `setCurrentCp(getMaxCp())` and `updateUserInfo()`. The setters send the status updates: a
+/// player's own 50 ms later, an NPC's to the players who target it. A creature without hit points
+/// counts as dead and is left alone (death is M4-DEATH-01, which will set the dead flag, and then
+/// the setters refuse by themselves); doors and static objects have no mana to restore.
 fn heal_creature(world: &mut World, id: ObjectId) {
+    let Some(view) = world.stats(id) else {
+        return;
+    };
+    let alike_dead = view.core().cur_hp < 0.5;
+    let (max_hp, max_mp, max_cp) = (
+        f64::from(view.max_hp()),
+        f64::from(view.max_mp()),
+        f64::from(view.max_cp()),
+    );
     match world.objects.get(&id).map(|e| e.kind) {
         Some(ObjectKind::Player) => {
-            let Some(player) = world.players.get_mut(&id) else {
-                return;
-            };
-            let core = &mut player.core;
-            let dead = core.cur_hp < 0.5;
-            let mut changed = false;
-            if !dead {
-                let (hp, mp, cp) = (core.cur_hp, core.cur_mp, core.cur_cp);
-                core.cur_hp = core.max_hp;
-                core.cur_mp = core.max_mp;
-                core.cur_cp = core.max_cp;
-                // Java compares the old value as an int with the new double.
-                changed = f64::from(hp as i32) != core.cur_hp
-                    || f64::from(mp as i32) != core.cur_mp
-                    || f64::from(cp as i32) != core.cur_cp;
+            if !alike_dead {
+                world.set_current_hp_mp(id, max_hp, max_mp);
+                world.set_current_cp(id, max_cp, true);
             }
-            let mut update = StatusUpdate::new(id.0);
-            update.add_attribute(status::MAX_HP, core.max_hp as i32);
-            update.add_attribute(status::CUR_HP, core.cur_hp as i32);
-            update.add_attribute(status::MAX_MP, core.max_mp as i32);
-            update.add_attribute(status::CUR_MP, core.cur_mp as i32);
-            update.add_attribute(status::MAX_CP, core.max_cp as i32);
-            update.add_attribute(status::CUR_CP, core.cur_cp as i32);
             world.send_user_info(id);
-            // `Player.broadcastStatusUpdate` goes out 50 ms later, so after `UserInfo`.
-            if changed {
-                world.send(id, &update);
-            }
         }
-        Some(ObjectKind::Npc) => {
-            let Some(npc) = world.npcs.get_mut(&id) else {
-                return;
-            };
-            let core = &mut npc.core;
-            if core.cur_hp < 0.5 {
-                return;
-            }
-            let (hp, mp) = (core.cur_hp, core.cur_mp);
-            core.cur_hp = core.max_hp;
-            core.cur_mp = core.max_mp;
-            let changed = f64::from(hp as i32) != core.cur_hp || f64::from(mp as i32) != core.cur_mp;
-            if !changed {
-                return;
-            }
-            let mut update = StatusUpdate::new(id.0);
-            update.add_attribute(status::MAX_HP, core.max_hp as i32);
-            update.add_attribute(status::CUR_HP, core.cur_hp as i32);
-            // `Creature.broadcastStatusUpdate`: the players who have it targeted (its status
-            // listeners). NOTE: Java also skips the update while `needHpUpdate()` says the bar
-            // would not move; the world sends it whenever hit points changed.
-            let mut watchers: Vec<ObjectId> = world
-                .players
-                .iter()
-                .filter(|(_, p)| p.target == Some(id))
-                .map(|(watcher, _)| *watcher)
-                .collect();
-            watchers.sort_unstable();
-            for watcher in watchers {
-                world.send(watcher, &update);
-            }
-        }
+        Some(ObjectKind::Npc) if !alike_dead => world.set_current_hp_mp(id, max_hp, max_mp),
         _ => {}
     }
 }

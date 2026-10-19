@@ -218,6 +218,23 @@ fn names(batch: &[Vec<u8>]) -> Vec<String> {
     names_of(batch)
 }
 
+/// Drops the `StatusUpdate` that tells a character about its own HP, MP and CP. Java sends it
+/// every regeneration period while one of them is not full: `PlayerStatus.doRegeneration` ends
+/// with `broadcastStatusUpdate`, a 50 ms task (`Player.java`). The recorded Java session
+/// (`fixtures/captures/java-gs-session.jsonl`) has those packets about every 3 s. Every other
+/// packet is still compared strictly.
+fn without_own_status(me: i32, batch: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
+    batch
+        .into_iter()
+        .filter(|body| {
+            let own = body
+                .get(1..5)
+                .is_some_and(|id| i32::from_le_bytes(id.try_into().unwrap()) == me);
+            !(own && packet_name(body) == "STATUS_UPDATE")
+        })
+        .collect()
+}
+
 /// `wanted` appears in `names` in this order (other packets may be in between).
 fn assert_in_order(names: &[String], wanted: &[&str]) {
     let mut rest = names.iter();
@@ -436,7 +453,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
         m3_data::START
     );
     assert_eq!(one::<NpcInfo>(&entered_b, "NPC_INFO").object_id, npc_id);
-    let seen_by_a = h.collect(Who::A, "CHAR_INFO", 1).await;
+    let seen_by_a = without_own_status(h.object_id(Who::A), h.collect(Who::A, "CHAR_INFO", 1).await);
     let char_info_of_b: CharInfo = one(&seen_by_a, "CHAR_INFO");
     assert_eq!(
         (char_info_of_b.object_id, char_info_of_b.name.as_str()),
@@ -450,17 +467,29 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     // ---- A tries to walk into the wall: refused, and B hears nothing ------------------------
     h.move_to(Who::A, m3_data::inside_the_wall(), m3_data::START)
         .await;
-    assert_eq!(names(&h.collect(Who::A, "ACTION_FAIL", 1).await), ["ACTION_FAIL"]);
+    assert_eq!(
+        names(&without_own_status(
+            h.object_id(Who::A),
+            h.collect(Who::A, "ACTION_FAIL", 1).await
+        )),
+        ["ACTION_FAIL"]
+    );
     assert!(
-        h.collect_quiet(Who::B).await.is_empty(),
+        without_own_status(h.object_id(Who::B), h.collect_quiet(Who::B).await).is_empty(),
         "B sees nothing of a refused walk"
     );
 
     // ---- A walks east towards a spot behind the wall: it stops in front of the wall ---------
     h.move_to(Who::A, m3_data::behind_the_wall(), m3_data::START)
         .await;
-    let moves_a = h.collect(Who::A, "MOVE_TO_LOCATION", 2).await;
-    let moves_b = h.collect(Who::B, "MOVE_TO_LOCATION", 2).await;
+    let moves_a = without_own_status(
+        h.object_id(Who::A),
+        h.collect(Who::A, "MOVE_TO_LOCATION", 2).await,
+    );
+    let moves_b = without_own_status(
+        h.object_id(Who::B),
+        h.collect(Who::B, "MOVE_TO_LOCATION", 2).await,
+    );
     let stop = m3_data::last_free_spot();
     for (who_sees, batch) in [("A", &moves_a), ("B", &moves_b)] {
         let moves: Vec<MoveToLocation> = all(batch, "MOVE_TO_LOCATION");
@@ -495,27 +524,27 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     assert_eq!(walk_bytes(&moves_a), walk_bytes(&moves_b));
     // The client agrees with where the server put it: nothing is corrected, nobody hears more.
     h.validate_position(Who::A, stop, 0).await;
-    assert!(h.collect_quiet(Who::A).await.is_empty());
-    assert!(h.collect_quiet(Who::B).await.is_empty());
+    assert!(without_own_status(h.object_id(Who::A), h.collect_quiet(Who::A).await).is_empty());
+    assert!(without_own_status(h.object_id(Who::B), h.collect_quiet(Who::B).await).is_empty());
     assert_java_answers(&java, "MOVE_TO_LOCATION", "MOVE_TO_LOCATION");
 
     // ---- general chat reaches the neighbour --------------------------------------------------
     h.say(Who::A, "hello neighbour").await;
     let line = echo(a, NAME_A, "hello neighbour");
     assert_eq!(
-        h.collect(Who::A, "SAY2", 1).await,
+        without_own_status(h.object_id(Who::A), h.collect(Who::A, "SAY2", 1).await),
         std::slice::from_ref(&line),
         "the speaker gets the line back"
     );
     assert_eq!(
-        h.collect(Who::B, "SAY2", 1).await,
+        without_own_status(h.object_id(Who::B), h.collect(Who::B, "SAY2", 1).await),
         [line],
         "and so does B, 100 units away"
     );
 
     // ---- the gatekeeper: click to target, click to talk -------------------------------------
     h.click(Who::A, npc_id).await;
-    let target_a = h.collect(Who::A, "ACTION_FAIL", 1).await;
+    let target_a = without_own_status(h.object_id(Who::A), h.collect(Who::A, "ACTION_FAIL", 1).await);
     let target_names = [
         "VALIDATE_LOCATION",
         "MY_TARGET_SELECTED",
@@ -530,7 +559,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     // The same four packets are what Java sent for a first click.
     assert_java_has_run(&strings(&target_names), &java_names);
     assert_java_answers(&java, "ACTION", "VALIDATE_LOCATION");
-    let target_b = h.collect(Who::B, "TARGET_SELECTED", 1).await;
+    let target_b = without_own_status(h.object_id(Who::B), h.collect(Who::B, "TARGET_SELECTED", 1).await);
     let seen: TargetSelected = one(&target_b, "TARGET_SELECTED");
     assert_eq!(
         (seen.object_id, seen.target_id),
@@ -539,7 +568,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     );
 
     h.click(Who::A, npc_id).await;
-    let talk = h.collect(Who::A, "ACTION_FAIL", 2).await;
+    let talk = without_own_status(h.object_id(Who::A), h.collect(Who::A, "ACTION_FAIL", 2).await);
     assert_eq!(
         names(&talk),
         ["MOVE_TO_PAWN", "NPC_HTML_MESSAGE", "ACTION_FAIL", "ACTION_FAIL"],
@@ -559,12 +588,12 @@ async fn play<H: Harness>(h: &mut H) -> Played {
         page.html
     );
     assert!(
-        h.collect_quiet(Who::B).await.is_empty(),
+        without_own_status(h.object_id(Who::B), h.collect_quiet(Who::B).await).is_empty(),
         "B hears nothing of the dialog"
     );
 
     h.bypass(Who::A, &show_teleports).await;
-    let list = h.collect(Who::A, "ACTION_FAIL", 1).await;
+    let list = without_own_status(h.object_id(Who::A), h.collect(Who::A, "ACTION_FAIL", 1).await);
     assert_eq!(names(&list), ["NPC_HTML_MESSAGE", "ACTION_FAIL"]);
     let page: NpcHtmlMessage = one(&list, "NPC_HTML_MESSAGE");
     let teleport_first = format!("npc_{npc_id}_teleport NORMAL 0");
@@ -582,7 +611,10 @@ async fn play<H: Harness>(h: &mut H) -> Played {
 
     // ---- the teleport: the fee, TeleportToLocation, then Appearing at the new place ---------
     h.bypass(Who::A, &teleport_first).await;
-    let leaving = h.collect(Who::A, "INVENTORY_UPDATE", 1).await;
+    let leaving = without_own_status(
+        h.object_id(Who::A),
+        h.collect(Who::A, "INVENTORY_UPDATE", 1).await,
+    );
     assert_in_order(
         &names(&leaving),
         &[
@@ -628,7 +660,10 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     );
 
     // B watched A vanish: the target is dropped, A is deleted, and the teleport is announced.
-    let gone = h.collect(Who::B, "TELEPORT_TO_LOCATION", 1).await;
+    let gone = without_own_status(
+        h.object_id(Who::B),
+        h.collect(Who::B, "TELEPORT_TO_LOCATION", 1).await,
+    );
     assert_in_order(
         &names(&gone),
         &["TARGET_UNSELECTED", "DELETE_OBJECT", "TELEPORT_TO_LOCATION"],
@@ -637,7 +672,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
 
     // The client has loaded the place and says so: the player is in the world there.
     h.appearing(Who::A).await;
-    let arrived = h.collect(Who::A, "USER_INFO", 1).await;
+    let arrived = without_own_status(h.object_id(Who::A), h.collect(Who::A, "USER_INFO", 1).await);
     let info: UserInfo = all(&arrived, "USER_INFO").remove(0);
     assert_eq!(
         (info.x, info.y, info.z),
@@ -649,21 +684,27 @@ async fn play<H: Harness>(h: &mut H) -> Played {
         "nobody is near the destination"
     );
     assert!(
-        h.collect_quiet(Who::B).await.is_empty(),
+        without_own_status(h.object_id(Who::B), h.collect_quiet(Who::B).await).is_empty(),
         "B, 10000 units away, hears no more of A"
     );
 
     // ---- out of reach: chat does not cross the distance --------------------------------------
     h.say(Who::A, "is anybody there?").await;
     let line = echo(a, NAME_A, "is anybody there?");
-    assert_eq!(h.collect(Who::A, "SAY2", 1).await, [line]);
+    assert_eq!(
+        without_own_status(h.object_id(Who::A), h.collect(Who::A, "SAY2", 1).await),
+        [line]
+    );
     assert!(
-        h.collect_quiet(Who::B).await.is_empty(),
+        without_own_status(h.object_id(Who::B), h.collect_quiet(Who::B).await).is_empty(),
         "B is beyond the 1250 of general chat"
     );
     h.say(Who::B, "hello?").await;
-    assert_eq!(h.collect(Who::B, "SAY2", 1).await, [echo(b, NAME_B, "hello?")]);
-    assert!(h.collect_quiet(Who::A).await.is_empty());
+    assert_eq!(
+        without_own_status(h.object_id(Who::B), h.collect(Who::B, "SAY2", 1).await),
+        [echo(b, NAME_B, "hello?")]
+    );
+    assert!(without_own_status(h.object_id(Who::A), h.collect_quiet(Who::A).await).is_empty());
 
     // ---- both log out; what is stored is final ------------------------------------------------
     let left_a = h.leave(Who::A).await;

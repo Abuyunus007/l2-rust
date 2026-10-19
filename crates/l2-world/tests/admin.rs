@@ -1123,8 +1123,9 @@ fn heal_restores_hp_mp_and_cp_of_the_target() {
     s.cmd(GM, "heal");
     let core = s.world.player(ObjectId(USER)).unwrap().core.clone();
     assert_eq!((core.cur_hp, core.cur_mp, core.cur_cp), (100.0, 50.0, 10.0));
-    let out = s.log.take();
     // `updateUserInfo()` at once, the `StatusUpdate` of `broadcastStatusUpdate()` 50 ms later.
+    s.world.tick();
+    let out = s.log.take();
     assert_eq!(
         names_to(&out, USER),
         ["USER_INFO", "EX_BR_EXTRA_USER_INFO", "STATUS_UPDATE"]
