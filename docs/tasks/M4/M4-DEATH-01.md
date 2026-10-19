@@ -43,4 +43,7 @@
 
 ## Notes from the orchestrator
 - Read `docs/design/m4-combat.md`, `docs/design/world-loop.md`, `docs/design/m3-world.md` first, then CLAUDE.md safety rules.
+- Merged APIs to use (M4-COMBAT-01, M4-REGEN-01): fill `World::do_die` in `crates/l2-world/src/combat/damage.rs` (the `// M4-DEATH-01:` marker: Die packet, Npc/Attackable/Player overrides, decay, respawn); the dead flag is `status.rs`'s `set_dead`/`is_dead` (the only one); regen start/stop in `status.rs`; revive must clear the dead flag and restart regen like Java's `doRevive`.
+- Rewards (exp/sp, drops) are M4-EXP-01 / M4-DROP-01: leave `// M4-EXP-01:` / `// M4-DROP-01:` markers where Java calls `calculateRewards` / `doItemDrop`.
+- M4-AI-01 runs at the same time (NPC AI + NPC movement in `ai/`, `movement.rs`): keep your changes to shared files (`npc.rs`, `world.rs`, `timer.rs`, `lib.rs`) additive.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
