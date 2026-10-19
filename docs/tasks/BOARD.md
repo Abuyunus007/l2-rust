@@ -208,17 +208,17 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-GPROTO-07](M4/M4-GPROTO-07.md) | Combat, death and item packets | haiku | spot | none | in-progress |
 | [M4-DATA-11](M4/M4-DATA-11.md) | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | ready |
 | [M4-STAT-01](M4/M4-STAT-01.md) | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | ready |
-| M4-INV-01 | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | card pending |
-| M4-REGEN-01 | HP/MP/CP regeneration | haiku | spot | STAT-01 | card pending |
-| M4-COMBAT-01 | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | card pending |
-| M4-AI-01 | NPC AI: attackable core | sonnet | full | COMBAT-01 | card pending |
-| M4-AI-02 | NPC AI: idle behaviour | haiku | spot | AI-01 | card pending |
-| M4-DEATH-01 | Death, respawn, corpses | sonnet | full | COMBAT-01 | card pending |
-| M4-EXP-01 | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | card pending |
-| M4-DROP-01 | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | card pending |
-| M4-ADMIN-02 | Admin commands for combat testing | haiku | spot | DEATH-01 | card pending |
-| M4-E2E-01 | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | card pending |
-| M4-RUN-01 | Runbook and milestone checks | opus | full | E2E-01 | card pending |
+| [M4-INV-01](M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | ready (refined when deps merge) |
+| [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | ready (refined when deps merge) |
+| [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | ready (refined when deps merge) |
+| [M4-AI-01](M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | ready (refined when deps merge) |
+| [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | ready (refined when deps merge) |
+| [M4-DEATH-01](M4/M4-DEATH-01.md) | Death, respawn, corpses | sonnet | full | COMBAT-01 | ready (refined when deps merge) |
+| [M4-EXP-01](M4/M4-EXP-01.md) | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | ready (refined when deps merge) |
+| [M4-DROP-01](M4/M4-DROP-01.md) | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | ready (refined when deps merge) |
+| [M4-ADMIN-02](M4/M4-ADMIN-02.md) | Admin commands for combat testing | haiku | spot | DEATH-01 | ready (refined when deps merge) |
+| [M4-E2E-01](M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | ready (refined when deps merge) |
+| [M4-RUN-01](M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
 
 ## Milestone test results
 
