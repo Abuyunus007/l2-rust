@@ -1,19 +1,24 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The combat admin commands (M4-ADMIN-02): `//res`, `//res_monster`, `//kill`, `//kill_monster`
-//! and the exp/sp handlers, with a fake GM, a fake player and a fake monster.
-//! Java: scripts/handlers/chat/commands/admin/{AdminRes,AdminKill,AdminExpSp}.java.
+//! and the exp/sp handlers, and the item and level commands (M4-ADMIN-03), with a fake GM, a fake
+//! player and a fake monster.
+//! Java: scripts/handlers/chat/commands/admin/{AdminRes,AdminKill,AdminExpSp,AdminCreateItem,
+//! AdminLevel}.java.
 //!
 //! The harness is the one of `admin.rs` (the framework and the core commands).
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
-use l2_data::{HtmCache, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions};
+use l2_data::{
+    ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions, NpcTemplates,
+    SkillTrees, SpawnData, SpawnLoadOptions,
+};
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{Die, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{Die, NpcHtmlMessage, SystemMessage, SystemMessageParam};
 use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
@@ -99,6 +104,12 @@ fn rights() -> AdminRights {
         ("invul", 30, false),
         ("setinvul", 100, false),
         ("heal", 100, false),
+        ("itemcreate", 100, false),
+        ("create_item", 100, false),
+        ("create_coin", 100, false),
+        ("give_item_target", 100, true),
+        ("give_item_to_all", 100, true),
+        ("add_level", 100, false),
     ] {
         rights.add_command(command, level, confirm);
     }
@@ -121,6 +132,16 @@ impl Fake {
 
 /// The class template of the test characters (class 0, level 40): 100 HP, 50 MP and 10 CP, the
 /// values their character rows store. No `statBonus.xml`: every bonus is 1.
+/// The item templates of the item commands: stackable money and etc items, a bracelet (equippable,
+/// not enchantable) and a blade that can be enchanted.
+const ITEMS: &str = r#"<list>
+<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
+<item id="5575" type="EtcItem" name="Ancient Adena"><set name="is_stackable" val="true" /></item>
+<item id="23" type="EtcItem" name="Pile"><set name="is_stackable" val="true" /><set name="weight" val="2" /></item>
+<item id="12" type="Armor" name="Bracelet"><set name="bodypart" val="rbracelet" /><set name="weight" val="1" /></item>
+<item id="24" type="EtcItem" name="Blade"><set name="enchant_enabled" val="true" /><set name="weight" val="1" /></item>
+</list>"#;
+
 fn class_data() -> StatData {
     let mut levels = String::new();
     for level in 1..=40 {
@@ -141,6 +162,7 @@ fn class_data() -> StatData {
     );
     StatData {
         player_templates: Arc::new(l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()),
+        items: Arc::new(ItemTemplates::from_xml(ITEMS).unwrap()),
         ..StatData::default()
     }
 }
@@ -171,6 +193,12 @@ impl StaticData for Fake {
     }
     fn stat_data(&self) -> Option<&StatData> {
         Some(&self.stats)
+    }
+    fn item_name(&self, item_id: i32) -> Option<String> {
+        self.stats.items.get(item_id).map(|t| t.name.clone())
+    }
+    fn item_stackable(&self, item_id: i32) -> bool {
+        self.stats.items.get(item_id).is_some_and(|t| t.stackable)
     }
 }
 
@@ -216,6 +244,57 @@ fn system_ids_to(out: &Sent, to: i32) -> Vec<SystemMessageId> {
         .filter(|m| m.id != SystemMessageId::S12)
         .map(|m| m.id)
         .collect()
+}
+
+/// The admin pages (`NPC_HTML_MESSAGE`) sent to `to`.
+fn html_to(out: &Sent, to: i32) -> Vec<NpcHtmlMessage> {
+    decoded::<NpcHtmlMessage>(out, to, "NPC_HTML_MESSAGE")
+}
+
+/// An item row of a character (`items` table): one item in the given location.
+fn item_row(object_id: i32, item_id: i32, count: i64, loc: &str, loc_data: i32) -> ItemData {
+    ItemData {
+        object_id: ObjectId(object_id),
+        item_id,
+        count,
+        enchant_level: 0,
+        loc: loc.into(),
+        loc_data,
+        custom_type1: 0,
+        custom_type2: 0,
+        mana_left: -1,
+        time: -1,
+    }
+}
+
+/// The item rows of a character as `(item id, count, location)`, in the order the list has them.
+fn items_of(s: &Setup, id: i32) -> Vec<(i32, i64, String)> {
+    s.world
+        .player(ObjectId(id))
+        .unwrap()
+        .data
+        .items
+        .iter()
+        .map(|i| (i.item_id, i.count, i.loc.clone()))
+        .collect()
+}
+
+/// `experience.xml` for levels 1 to 85: a level needs more exp than the one before it.
+fn experience_table() -> Arc<ExperienceTable> {
+    let rows: String = (1..=85)
+        .map(|level| {
+            format!(
+                r#"<experience level="{level}" tolevel="{}" />"#,
+                level * level * 1000
+            )
+        })
+        .collect();
+    Arc::new(
+        ExperienceTable::from_xml(&format!(
+            r#"<table maxLevel="85" maxPetLevel="85">{rows}</table>"#
+        ))
+        .unwrap(),
+    )
 }
 
 const X: i32 = -71_338;
@@ -272,6 +351,10 @@ impl Root {
             "<html><body>Teleport panel</body></html>",
         );
         write("data/html/admin/move.htm", "<html><body>Move panel</body></html>");
+        write(
+            "data/html/admin/itemcreation.htm",
+            "<html><body>Item creation</body></html>",
+        );
         Self(dir)
     }
 
@@ -896,4 +979,306 @@ fn spawnat_comes_back_after_sixty_seconds() {
     assert!(run_until(&mut s, 2000, |w| w.npc(rat).is_none()).is_some());
     let waited = run_until(&mut s, 5000, |w| w.npc(rat).is_some());
     assert_eq!(waited, Some(ticks_of_seconds(60)));
+}
+
+// ------------------------------------------------------------------- item and level (ADMIN-03)
+
+#[test]
+fn create_item_gives_the_gm_the_item_and_tells_them_so() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    s.cmd(GM, "create_item 12");
+    let out = s.log.take();
+    assert_eq!(
+        texts_to(&out, GM),
+        ["You have spawned 1 Bracelet(12) in P100 inventory."]
+    );
+    // The item page is shown after the command, as Java does.
+    assert_eq!(html_to(&out, GM).len(), 1);
+    assert_eq!(items_of(&s, GM), [(12, 1, "INVENTORY".to_owned())]);
+}
+
+#[test]
+fn create_item_stacks_and_refuses_a_count_over_ten_for_a_non_stackable_item() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    s.cmd(GM, "create_item 23 5");
+    s.cmd(GM, "create_item 23 3");
+    // One row: the second creation joined the first stack.
+    assert_eq!(items_of(&s, GM), [(23, 8, "INVENTORY".to_owned())]);
+
+    s.log.take();
+    s.cmd(GM, "create_item 12 11");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["This item does not stack - Creation aborted."]
+    );
+    assert_eq!(items_of(&s, GM).len(), 1);
+
+    s.cmd(GM, "create_item 999");
+    assert_eq!(texts_to(&s.log.take(), GM), ["This item doesn't exist."]);
+}
+
+#[test]
+fn create_item_with_bad_numbers_says_so_and_still_shows_the_page() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    for command in ["create_item x", "create_item 12 y", "create_item 12 1 z"] {
+        s.cmd(GM, command);
+        let out = s.log.take();
+        assert_eq!(texts_to(&out, GM), ["Specify a valid number."], "{command}");
+        assert_eq!(html_to(&out, GM).len(), 1, "{command}");
+    }
+    assert!(items_of(&s, GM).is_empty());
+}
+
+#[test]
+fn create_item_with_an_enchant_applies_no_enchant_to_a_plain_item_and_refuses_an_enchantable_one() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    // The bracelet is not enchantable: the item is made and Java's message says so.
+    s.cmd(GM, "create_item 12 1 5");
+    let out = s.log.take();
+    assert_eq!(
+        texts_to(&out, GM),
+        [
+            "This item is not enchantable, no enchant applied.",
+            "You have spawned 1 Bracelet(12) in P100 inventory.",
+        ]
+    );
+    assert_eq!(items_of(&s, GM), [(12, 1, "INVENTORY".to_owned())]);
+
+    // The blade is enchantable, which needs `EnchantItemGroupsData` (not ported): nothing is made.
+    s.cmd(GM, "create_item 24 1 5");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Enchanting an item with //create_item is not available yet."]
+    );
+    assert_eq!(items_of(&s, GM).len(), 1);
+}
+
+#[test]
+fn create_coin_knows_the_coin_names_and_only_those() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    s.cmd(GM, "create_coin adena 500");
+    assert_eq!(items_of(&s, GM), [(57, 500, "INVENTORY".to_owned())]);
+
+    s.cmd(GM, "create_coin ANCIENTADENA");
+    assert!(items_of(&s, GM).contains(&(5575, 1, "INVENTORY".to_owned())));
+
+    // An unknown coin with an amount makes nothing and says nothing, but the page is shown.
+    s.log.take();
+    s.cmd(GM, "create_coin nothing 5");
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    assert_eq!(html_to(&out, GM).len(), 1);
+    assert_eq!(items_of(&s, GM).len(), 2);
+
+    // An unknown coin alone is an item id 0: "This item doesn't exist.".
+    s.cmd(GM, "create_coin nothing");
+    assert_eq!(texts_to(&s.log.take(), GM), ["This item doesn't exist."]);
+}
+
+#[test]
+fn give_item_target_needs_a_player_target_and_gives_the_item_to_it() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    // `confirmDlg="true"`: the command asks first, the dialog is not ported (FOLLOW-UP), so it
+    // does not run from `//` or from a bypass.
+    s.cmd(GM, "give_item_target 23 2");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["The command 'give_item_target' needs a confirmation dialog, which is not available yet."]
+    );
+
+    // The command as it runs after the dialog said yes (`onCommand(.., false)`).
+    // No target: "Invalid target." and no page (Java returns first).
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_target 23 2", false);
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, GM), ["Invalid target."]);
+    assert!(html_to(&out, GM).is_empty());
+
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_target 23 2", false);
+    let out = s.log.take();
+    assert_eq!(items_of(&s, USER), [(23, 2, "INVENTORY".to_owned())]);
+    assert!(items_of(&s, GM).is_empty());
+    assert_eq!(texts_to(&out, USER), ["Admin spawned 2 Pile in your inventory."]);
+    assert_eq!(
+        texts_to(&out, GM),
+        ["You have spawned 2 Pile(23) in P1 inventory."]
+    );
+    assert_eq!(html_to(&out, GM).len(), 1);
+}
+
+#[test]
+fn give_item_to_all_rewards_every_online_player_but_the_gm() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.enter(2, 200);
+    s.log.take();
+
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_to_all 23 3", false);
+    let out = s.log.take();
+    assert_eq!(items_of(&s, USER), [(23, 3, "INVENTORY".to_owned())]);
+    assert_eq!(items_of(&s, 2), [(23, 3, "INVENTORY".to_owned())]);
+    assert!(items_of(&s, GM).is_empty());
+    assert_eq!(texts_to(&out, USER), ["Admin spawned 3 Pile in your inventory."]);
+    assert_eq!(texts_to(&out, GM), ["2 players rewarded with Pile"]);
+
+    s.log.take();
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_to_all 12 11", false);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["This item does not stack - Creation aborted."]
+    );
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_to_all 999", false);
+    assert_eq!(texts_to(&s.log.take(), GM), ["This item doesn't exist."]);
+    // A bad number is not caught by the handler: the dispatcher reports the exception.
+    s.world
+        .admin_command(ObjectId(GM), "admin_give_item_to_all x", false);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_give_item_to_all x': java.lang.NumberFormatException: For input string: \"x\""
+        ]
+    );
+}
+
+#[test]
+fn delete_item_destroys_the_count_or_the_whole_item_of_its_owner() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    let mut data = player(USER, 0, 100);
+    data.items = vec![item_row(500, 23, 5, "INVENTORY", 0)];
+    s.enter_with(data);
+    // The bypasses need the page that offers them (`validateHtmlAction`).
+    s.log.take();
+
+    // Two of the five; one token means one.
+    s.world
+        .admin_command(ObjectId(GM), "admin_delete_item 500 2", false);
+    assert_eq!(items_of(&s, USER), [(23, 3, "INVENTORY".to_owned())]);
+    assert_eq!(texts_to(&s.log.take(), GM), ["Item deleted."]);
+    s.world
+        .admin_command(ObjectId(GM), "admin_delete_item 500", false);
+    assert_eq!(items_of(&s, USER), [(23, 2, "INVENTORY".to_owned())]);
+
+    // An amount of 0 takes the whole item.
+    s.world
+        .admin_command(ObjectId(GM), "admin_delete_item 500 0", false);
+    assert!(items_of(&s, USER).is_empty());
+
+    // No such object: Java's NullPointerException, reported by the dispatcher.
+    s.log.take();
+    s.world
+        .admin_command(ObjectId(GM), "admin_delete_item 999", false);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Exception during execution of  'admin_delete_item 999': java.lang.NullPointerException"]
+    );
+}
+
+#[test]
+fn use_item_equips_an_equippable_item_of_its_owner() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    let mut data = player(USER, 0, 100);
+    data.items = vec![item_row(600, 12, 1, "INVENTORY", 0)];
+    s.enter_with(data);
+    s.log.take();
+
+    s.world.admin_command(ObjectId(GM), "admin_use_item 600", false);
+    assert_eq!(items_of(&s, USER), [(12, 1, "PAPERDOLL".to_owned())]);
+
+    // Java's `substring(15)` of the bare command, and the number of the command.
+    s.log.take();
+    s.world.admin_command(ObjectId(GM), "admin_use_item", false);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_use_item': java.lang.StringIndexOutOfBoundsException: begin 15, end 14, length 14"
+        ]
+    );
+    s.world.admin_command(ObjectId(GM), "admin_use_item 999", false);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Exception during execution of  'admin_use_item 999': java.lang.NullPointerException"]
+    );
+}
+
+#[test]
+fn add_level_raises_the_targeted_player_and_reads_a_byte() {
+    let mut s = setup();
+    // `add_level` needs the experience table (`ExperienceData`); the other tests do not.
+    s.world.set_exp_data(
+        experience_table(),
+        Arc::new(ExperienceLoss::from_xml(r#"<list><experience level="5" val="9.5" /></list>"#).unwrap()),
+        Arc::new(KarmaLoss::from_xml(r#"<list><modifier level="10" val="2.0" /></list>"#).unwrap()),
+        Arc::new(SkillTrees::from_xml("<list></list>").unwrap()),
+    );
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    // No target: nothing, not even the number is looked at.
+    s.cmd(GM, "add_level 300");
+    assert!(texts_to(&s.log.take(), GM).is_empty());
+
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.cmd(GM, "add_level 1");
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().core.level, 41);
+
+    // `Byte.parseByte`: a number out of a byte is "Wrong Number Format".
+    s.log.take();
+    s.cmd(GM, "add_level 300");
+    s.cmd(GM, "add_level x");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Wrong Number Format", "Wrong Number Format"]
+    );
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().core.level, 41);
+}
+
+#[test]
+fn add_exp_sp_caps_the_sp_at_max_sp() {
+    let mut settings = WorldSettings::default();
+    settings.exp.max_sp = 100;
+    let mut s = setup_with(settings);
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    // Java: `Math.min(sp, MAX_SP)`, and the messages carry the capped number.
+    s.cmd(GM, "add_exp_sp 0 500");
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, USER), ["Admin is adding you 0 xp and 100 sp."]);
+    assert_eq!(texts_to(&out, GM), ["Added 0 xp and 100 sp to P1."]);
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.sp, 100);
+
+    // At the cap nothing more is added, and the message still says what the admin asked for.
+    s.cmd(GM, "add_exp_sp 0 50");
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.sp, 100);
 }

@@ -8,9 +8,11 @@
 //       (reduceHp)
 //
 // # Left out (each has its card)
-// - Effects (M5): invulnerability, reflect/absorb come from effects and passives, so they are read
-//   from the stat engine (passive funcs do apply); stun breaking, `stopEffectsOnDamage`, fake death,
-//   trigger skills, the weapon's on-critical skill, the raid curse (skill 4515).
+// - Effects (M5): the invulnerability *effect* (`EffectFlag.INVUL`) and reflect/absorb come from
+//   effects and passives, so they are read from the stat engine (passive funcs do apply). The
+//   invulnerability flag itself (`//invul`, `Creature.setInvul`) is honoured by `status.rs`; stun
+//   breaking, `stopEffectsOnDamage`, fake death, trigger skills, the weapon's on-critical skill,
+//   the raid curse (skill 4515).
 // - Summons (damage transfer), mana shield messages, duels, olympiad, offline traders, the
 //   tutorial quest: not ported yet.
 // - Minions calling for help (`MinionList.onAssist`), `addAttackerToAttackByList`, the aggro-range
@@ -140,7 +142,8 @@ impl World {
                 })
                 .is_some_and(|t| matches!(t, WeaponType::Bow | WeaponType::CrossBow));
             let mut reflected_damage = 0;
-            // Do not reflect if weapon is of type bow or target is invulnerable (M5).
+            // Do not reflect if weapon is of type bow or target is invulnerable. FOLLOW-UP(M4): the
+            // `!target.isInvul()` half is not checked here yet, so an invulnerable target reflects.
             if !is_bow {
                 // Quick fix for no drop from raid if boss attack high-level char with damage
                 // reflection.
@@ -257,7 +260,8 @@ impl World {
         }
         // Olympiad damage counting: not ported.
         let target_kind = self.objects.get(&target).map(|e| e.kind);
-        // M5: `target.isInvul() && !target.isNpc()` sends THE_ATTACK_HAS_BEEN_BLOCKED.
+        // FOLLOW-UP(M4): `target.isInvul() && !target.isNpc()` sends THE_ATTACK_HAS_BEEN_BLOCKED
+        // to the attacker; the invulnerable target itself takes no damage (`status.rs`).
         if target_kind == Some(ObjectKind::Door) {
             // (and `ControlTower`, a siege NPC: M5)
             let message = SystemMessage::new(SystemMessageId::YouHitForS1Damage)
