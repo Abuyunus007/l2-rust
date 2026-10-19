@@ -245,7 +245,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | M5-FORM-02 | Skill formulas as pure functions | sonnet | full | JV-03 | card pending |
 | [M5-EFFECT-01](M5/M5-EFFECT-01.md) | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 (icons only) | in-progress |
 | M5-CAST-01 | Casting | opus | full | EFFECT-01, FORM-02 | card pending |
-| M5-TARGET-01 | The 34 target handlers | sonnet | full | CAST-01 | card pending |
+| [M5-TARGET-01](M5/M5-TARGET-01.md) | The 34 target handlers | sonnet | full | none (CAST-01 calls it) | in-progress |
 | M5-EFX-01 | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | card pending |
 | M5-EFX-02 | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | card pending |
 | M5-EFX-03 | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | card pending |
