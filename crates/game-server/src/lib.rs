@@ -228,6 +228,12 @@ impl Server {
             let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
             let (html, teleporters) = (Arc::clone(&datapack.html), Arc::clone(&datapack.teleporters));
             let hit_condition_bonus = Arc::clone(&datapack.hit_condition_bonus);
+            let exp_tables = (
+                Arc::clone(&datapack.experience),
+                Arc::clone(&datapack.experience_loss),
+                Arc::clone(&datapack.karma_loss),
+                Arc::clone(&datapack.skill_trees),
+            );
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -249,6 +255,9 @@ impl Server {
                     world.set_teleporter_data(teleporters);
                     // Java: HitConditionBonusData (the attack's height, side and night bonus).
                     world.set_hit_condition_bonus(hit_condition_bonus);
+                    // Java: ExperienceData, ExperienceLossData, KarmaLossData, SkillTreeData.
+                    let (experience, experience_loss, karma_loss, skill_trees) = exp_tables;
+                    world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
