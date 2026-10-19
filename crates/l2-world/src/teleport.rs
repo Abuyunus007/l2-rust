@@ -131,6 +131,13 @@ impl World {
 
     /// Java `Player.setTeleporting(value, true)`: the flag, and the watchdog that completes a
     /// teleport whose client never answers (`TeleportWatchdogTimeout`).
+    /// Java `Player.broadcastPacket(packet)` for packets other than `CharInfo`: the player first,
+    /// then everybody who can see it.
+    pub(crate) fn broadcast_to_self_and_visible(&self, id: ObjectId, packet: &impl l2_net::Encode) {
+        self.send(id, packet);
+        self.broadcast_packet(id, packet);
+    }
+
     fn set_teleporting(&mut self, id: ObjectId, value: bool) {
         let timeout = self.settings.teleport.teleport_watchdog_timeout;
         let Some(player) = self.players.get_mut(&id) else {
