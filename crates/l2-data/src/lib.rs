@@ -25,6 +25,7 @@ pub mod player_template;
 pub mod skill_tree;
 pub mod spawn;
 pub mod static_object;
+pub mod stats;
 pub mod teleporter;
 pub mod zone;
 
@@ -52,6 +53,7 @@ pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerT
 pub use skill_tree::{SkillLearn, SkillTrees};
 pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
+pub use stats::{Condition, FuncKind, FuncTemplate, Stat};
 pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
