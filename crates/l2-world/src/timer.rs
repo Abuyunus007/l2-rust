@@ -60,6 +60,8 @@ pub enum TimerKind {
     /// Java `SpawnGroupTaskManager`: a spawn group materialises the unit it reserved when one of
     /// its units died (`group` and `entry` are indices into the spawn data).
     GroupSpawn { group: usize, entry: usize },
+    /// Java `RandomAnimationTaskManager`: the NPC's next random animation check, see `ai/idle.rs`.
+    RandomAnimation(ObjectId),
 }
 
 #[derive(Debug, Default)]

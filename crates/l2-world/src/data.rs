@@ -95,8 +95,8 @@ pub trait StaticData: Send + Sync {
     fn access_level(&self, level: i32) -> AccessLevelStatic;
 
     /// `AccessLevel.canTakeAggro()` (`takeAggro` of `AccessLevels.xml`, default true): whether
-    /// monsters aggress a player of this level.
-    // FOLLOW-UP: the game server does not read `takeAggro` yet, so every level is aggressed.
+    /// monsters aggress a player of this level. The default (no access file) takes aggro; the
+    /// game server reads `takeAggro` over the datapack.
     fn can_take_aggro(&self, _level: i32) -> bool {
         true
     }

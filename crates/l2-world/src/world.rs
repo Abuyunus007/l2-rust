@@ -476,6 +476,8 @@ impl World {
             TimerKind::Decay(id) => self.on_decay_timer(id),
             TimerKind::Respawn(id) => self.on_respawn_timer(id),
             TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
+            // Java: RandomAnimationTaskManager.run (for one NPC)
+            TimerKind::RandomAnimation(id) => self.on_random_animation_timer(id),
         }
     }
 

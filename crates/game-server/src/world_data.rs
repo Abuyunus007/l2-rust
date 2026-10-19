@@ -105,6 +105,9 @@ pub struct AccessLevels {
     levels: BTreeMap<i32, AccessLevelStatic>,
     /// The levels with `allowFixedRes="true"` (Java `AccessLevel.allowFixedRes()`).
     fixed_res: std::collections::BTreeSet<i32>,
+    /// The levels with `takeAggro="false"`: monsters do not aggress their players (Java
+    /// `AccessLevel.canTakeAggro()`). A level not listed takes aggro.
+    no_take_aggro: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -191,6 +194,11 @@ impl AccessLevels {
                     if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
                         table.fixed_res.insert(level);
                     }
+                    // Java: `set.getBoolean("takeAggro", true)`, which is `Boolean.parseBoolean`
+                    // for a present value: anything but "true" is false.
+                    if attribute(&e, "takeAggro").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
+                        table.no_take_aggro.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -211,6 +219,12 @@ impl AccessLevels {
     pub fn allows_fixed_res(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         self.fixed_res.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).canTakeAggro()`.
+    pub fn can_take_aggro(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        !self.no_take_aggro.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -327,6 +341,10 @@ impl StaticData for DatapackData {
 
     fn access_level_allows_fixed_res(&self, level: i32) -> bool {
         self.access.allows_fixed_res(level)
+    }
+
+    fn can_take_aggro(&self, level: i32) -> bool {
+        self.access.can_take_aggro(level)
     }
 }
 
@@ -816,6 +834,31 @@ mod tests {
         assert_eq!(levels.get(-5), levels.get(-1));
         assert_eq!(levels.get(55), AccessLevelStatic::UNREGISTERED);
         assert!(!levels.get(55).is_gm);
+    }
+
+    #[test]
+    fn take_aggro_is_false_only_where_the_file_says_so() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" takeAggro="false" />
+	<access level="0" name="User" takeAggro="true" />
+	<access level="20" name="Test GM" takeAggro="false" />
+	<access level="30" name="General GM" takeAggro="False" />
+	<access level="70" name="Admin" />
+	<access level="100" name="Master" takeAggro="yes" />
+</list>"#,
+        );
+        // `takeAggro` true, or absent (Java's default true), takes aggro.
+        assert!(levels.can_take_aggro(0));
+        assert!(levels.can_take_aggro(70));
+        // Java `Boolean.parseBoolean`: "False" is false, "yes" is not "true".
+        assert!(!levels.can_take_aggro(-1));
+        assert!(!levels.can_take_aggro(-5));
+        assert!(!levels.can_take_aggro(20));
+        assert!(!levels.can_take_aggro(30));
+        assert!(!levels.can_take_aggro(100));
+        // A level the file does not list is Java's default AccessLevel, which takes aggro.
+        assert!(levels.can_take_aggro(55));
     }
 
     #[test]

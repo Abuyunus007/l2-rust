@@ -44,6 +44,11 @@ pub fn npc_settings(config: &GameConfig, config_dir: &Path) -> NpcSettings {
         random_monster_spawns: random.enable_random_monster_spawns,
         mob_max_spawn_range: random.mob_max_spawn_range,
         mobs_not_random,
+        // GeneralConfig: `MinNpcAnimation` and co., read by the random animation (`ai/idle.rs`).
+        min_npc_animation: config.general.min_npc_animation,
+        max_npc_animation: config.general.max_npc_animation,
+        min_monster_animation: config.general.min_monster_animation,
+        max_monster_animation: config.general.max_monster_animation,
     }
 }
 
