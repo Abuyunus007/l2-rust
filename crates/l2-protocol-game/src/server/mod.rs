@@ -41,8 +41,8 @@ pub use enterworld::{
     ValidateLocation,
 };
 pub use entry::{
-    ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
-    ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
+    ExBrExtraUserInfo, ExNevitAdventEffect, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,
+    ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
 pub use ground_item::{DropItem, GetItem, SpawnItem};

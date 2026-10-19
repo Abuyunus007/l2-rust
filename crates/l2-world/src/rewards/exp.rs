@@ -23,9 +23,9 @@
 // # What is left out, with the system that brings it
 // - Parties (`distributeXpAndSp`, `RatePartyXp`): there are no parties yet. Every damage dealer is
 //   rewarded alone, which is Java's branch for a player without a party.
-// - Vitality and Nevit (`getVitalityMultiplier`, `getNevitHourglassMultiplier`, `startAdventTask`,
-//   `Nevit.addPoints`, `updateVitalityPoints`, PC cafe points): their own card. Their bonuses are
-//   1.0 here, so a player Java gives a vitality bonus gets less exp until then.
+// - PC cafe points (`PcCafePointsManager`). Vitality and Nevit are in `vitality.rs` and `nevit.rs`
+//   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
+//   `Attackable.calculateRewards` do.
 // - Summons and pets (`getExpMultiplier`, the pet's share), the over-hit bonus (a skill effect,
 //   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
 //   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), subclasses
@@ -115,6 +115,10 @@ pub struct ExpWorld {
     skill_trees: Arc<SkillTrees>,
     /// `AutoLearnSkills = True` was announced once.
     warned_auto_learn: bool,
+    /// The vitality points and level of every player (M4-VIT-01).
+    pub(crate) vitality: super::vitality::VitalityWorld,
+    /// The Nevit tasks of every player (M4-VIT-01).
+    pub(crate) nevit: super::nevit::NevitWorld,
 }
 
 /// What a batch of skill changes writes: `character_skills` rows (Java `storeSkill`).
@@ -134,13 +138,12 @@ impl World {
         karma_loss: Arc<KarmaLoss>,
         skill_trees: Arc<SkillTrees>,
     ) {
-        self.rewards = ExpWorld {
-            experience,
-            experience_loss,
-            karma_loss,
-            skill_trees,
-            warned_auto_learn: false,
-        };
+        // The vitality and Nevit state of players already in the world stays.
+        self.rewards.experience = experience;
+        self.rewards.experience_loss = experience_loss;
+        self.rewards.karma_loss = karma_loss;
+        self.rewards.skill_trees = skill_trees;
+        self.rewards.warned_auto_learn = false;
     }
 
     /// Java `ExperienceData.getExpForLevel(level)`; `None` without a table.
@@ -180,7 +183,7 @@ impl World {
     }
 
     /// Java `Npc.getExpReward(level)`: `(long) (template exp * RATE_XP)`.
-    fn npc_exp_reward(&self, npc: ObjectId) -> i64 {
+    pub(crate) fn npc_exp_reward(&self, npc: ObjectId) -> i64 {
         let exp = self.npc_template_exp_sp(npc).0;
         (exp * f64::from(self.settings.exp.rate_xp)) as i64
     }
@@ -303,8 +306,16 @@ impl World {
             let add_exp = java_round(view.calc_stat(Stat::ExpspRate, exp, None, None));
             let add_sp = view.calc_stat(Stat::ExpspRate, sp, None, None) as i32;
             // Premium rates: `PremiumSystemEnabled` is off by default.
-            self.add_exp_and_sp(attacker, add_exp as f64, f64::from(add_sp), true);
-            // `updateVitalityPoints` and the PC cafe points: see the module comment.
+            // NOTE(java-quirk): `useVitalityRate()` is the `useBonuses` flag, so a raid boss kill
+            // (`RaidbossUseVitality = False` in the shipped config) gets no bonus of any kind,
+            // not even the `BONUS_EXP` skills.
+            let use_vitality = self.use_vitality_rate(dying);
+            self.add_exp_and_sp(attacker, add_exp as f64, f64::from(add_sp), use_vitality);
+            if add_exp > 0 && use_vitality {
+                let points = self.kill_vitality_points(dying, level, damage);
+                self.update_vitality_points(attacker, points, true, false);
+                // `PcCafePointsManager.givePcCafePoint`: see the module comment.
+            }
         }
     }
 
@@ -317,11 +328,24 @@ impl World {
             .is_some_and(|p| self.data.access_level_can_gain_exp(p.data.access_level))
     }
 
-    /// Java `PlayerStat.getExpBonusMultiplier()` / `getSpBonusMultiplier()` without vitality and
-    /// Nevit: the `BONUS_EXP` / `BONUS_SP` stat, capped by `MaxExpBonus` / `MaxSpBonus`.
+    /// Java `PlayerStat.getExpBonusMultiplier()` / `getSpBonusMultiplier()`: 1 plus what the
+    /// vitality level, the Nevit hourglass and the `BONUS_EXP` / `BONUS_SP` stat add above 1,
+    /// capped by `MaxExpBonus` / `MaxSpBonus`.
     fn exp_sp_bonus_multiplier(&self, id: ObjectId, stat: Stat, max_bonus: f64) -> f64 {
         let mut bonus = 1.0;
+        // Bonus from Vitality System.
+        let vitality = self.vitality_multiplier(id);
+        // Bonus from Nevit's Blessing.
+        let nevits = self.nevit_hourglass_multiplier(id);
+        // Bonus from Nevit's Hunting: a `TODO` in Java.
+        // Bonus exp from skills.
         let skill_bonus = 1.0 + self.stats(id).map_or(0.0, |v| v.calc_stat(stat, 0.0, None, None)) / 100.0;
+        if vitality > 1.0 {
+            bonus += vitality - 1.0;
+        }
+        if nevits > 1.0 {
+            bonus += nevits - 1.0;
+        }
         if skill_bonus > 1.0 {
             bonus += skill_bonus - 1.0;
         }
@@ -349,11 +373,13 @@ impl World {
         let base_exp = add_to_exp;
         let base_sp = add_to_sp;
         let (mut bonus_exp, mut bonus_sp) = (1.0, 1.0);
-        // Nevit's Hourglass and advent task: see the module comment.
+        // Start Nevit's Hourglass.
+        self.nevit_on_exp_gain_start_hourglass(id, add_to_exp);
         if use_bonuses {
             bonus_exp = self.exp_sp_bonus_multiplier(id, Stat::BonusExp, self.settings.exp.max_bonus_exp);
             bonus_sp = self.exp_sp_bonus_multiplier(id, Stat::BonusSp, self.settings.exp.max_bonus_sp);
         }
+        self.nevit_on_exp_gain_start_advent(id, add_to_exp);
         let add_to_exp = add_to_exp * bonus_exp;
         let add_to_sp = add_to_sp * bonus_sp;
         // The pet's share: no pets yet.
@@ -707,12 +733,10 @@ impl World {
         // Send a Server->Client packet UserInfo to the Player.
         self.send_user_info(id);
 
-        // Nevit System: `Nevit.addPoints(2000)` is not modelled (see the module comment).
-        if self.settings.nevit_enabled
-            && let Some(player) = self.players.get(&id)
-        {
-            let packet = crate::enter::vote_system_info(player);
-            self.send(id, &packet);
+        // Nevit System.
+        if self.settings.nevit_enabled {
+            self.send_vote_system_info(id);
+            self.nevit_add_points(id, super::nevit::LEVEL_UP_POINTS);
         }
         level_increased
     }
@@ -905,7 +929,7 @@ impl World {
     // ------------------------------------------------------------------ death
 
     /// Java `Player.isLucky()`: below level 10 and under the passive skill Lucky.
-    fn is_lucky(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_lucky(&self, id: ObjectId) -> bool {
         self.players
             .get(&id)
             .is_some_and(|p| p.core.level <= 9 && p.core.passives.iter().any(|(s, _)| *s == LUCKY_SKILL_ID))
@@ -922,10 +946,13 @@ impl World {
     /// puts around the call (`Delevel`, Lucky, Nevit's advent blessing, events). The zone check is
     /// the caller's.
     pub(crate) fn player_calculate_death_exp_penalty(&mut self, id: ObjectId, killer: ObjectId) {
-        if !self.settings.exp.player_delevel || self.is_lucky(id) {
+        // `!_nevitSystem.isAdventBlessingActive()` is part of the same `doDie` condition; inside
+        // `calculateDeathExpPenalty` Java sets the loss to 0 for it as well, which comes to the
+        // same.
+        if !self.settings.exp.player_delevel || self.is_lucky(id) || self.is_advent_blessing_active(id) {
             return;
         }
-        // Advent blessing (Nevit) and events: not modelled. `atWar` needs clans (M5).
+        // Events: not modelled. `atWar` needs clans (M5).
         let (Some(max_level), Some(player)) = (self.java_max_level(), self.players.get(&id)) else {
             return;
         };

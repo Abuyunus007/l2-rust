@@ -27,32 +27,18 @@ use l2_protocol_game::server::enterworld::{
     SkillCoolTime, SkillList, SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
-    ActionFailed, ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,
-    ExRotation, ExShowContactList, ItemInfo, ItemList, MacroCommandEntry, MacroEntry, MacroList,
-    SystemMessage, UserInfo,
+    ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ExShowContactList, ItemInfo, ItemList,
+    MacroCommandEntry, MacroEntry, MacroList, SystemMessage, UserInfo,
 };
 use l2_util::ObjectId;
 use tracing::debug;
 
 use crate::data::{ItemStatic, RACE_DWARF, StaticData, WorldSettings};
 use crate::player::{ItemData, MacroData, Player, PlayerData, ShortcutData};
+use crate::rewards::nevit::{
+    NEVIT_HOURGLASS_ACTIVE, NEVIT_HOURGLASS_MAINTAIN, NEVIT_HOURGLASS_PAUSED, hourglass_bonus,
+};
 use crate::world::World;
-
-/// Java `Player.NEVIT_HOURGLASS_BONUS`.
-const NEVIT_HOURGLASS_BONUS: [[i32; 10]; 9] = [
-    [25, 50, 50, 50, 50, 50, 50, 50, 50, 50],
-    [16, 33, 50, 50, 50, 50, 50, 50, 50, 50],
-    [12, 25, 37, 50, 50, 50, 50, 50, 50, 50],
-    [10, 20, 30, 40, 50, 50, 50, 50, 50, 50],
-    [8, 16, 25, 33, 41, 50, 50, 50, 50, 50],
-    [7, 14, 21, 28, 35, 42, 50, 50, 50, 50],
-    [6, 12, 18, 25, 31, 37, 43, 50, 50, 50],
-    [5, 11, 16, 22, 27, 33, 38, 44, 50, 50],
-    [5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-];
-/// Java `NEVIT_HOURGLASS_ACTIVE` / `_MAINTAIN`.
-const NEVIT_HOURGLASS_ACTIVE: i32 = 0;
-const NEVIT_HOURGLASS_MAINTAIN: i32 = 10;
 
 /// Java `Inventory` item location names of equipped items (`ItemLocation.PAPERDOLL`, `PET_EQUIP`).
 const LOC_PAPERDOLL: &str = "PAPERDOLL";
@@ -328,15 +314,14 @@ pub fn storage_max_count(player: &PlayerData, is_gm: bool, settings: &WorldSetti
     }
 }
 
-/// Java `new ExVoteSystemInfo(player)`.
-pub fn vote_system_info(player: &Player) -> ExVoteSystemInfo {
-    let time = (player.hourglass_ms / 1000).clamp(0, i64::from(i32::MAX)) as i32;
-    let active = time > 0;
+/// Java `new ExVoteSystemInfo(player)`, for an hourglass with `hourglass_secs` seconds left
+/// (`Player.getNevitHourglassTime`), `paused` when the player stands in a peace zone
+/// (`PlayerStat.hasPausedNevitHourglass`).
+pub fn vote_system_info(player: &Player, hourglass_secs: i32, paused: bool) -> ExVoteSystemInfo {
+    let time = hourglass_secs.max(0);
     // Java `getNevitHourglassBonus`: only while online with recommendations and an active hourglass.
-    let bonus = if player.recom_have != 0 && active {
-        let level_row = usize::try_from(player.core.level / 10).unwrap_or(0).min(8);
-        let column = usize::try_from((player.recom_have.min(100) - 1) / 10).unwrap_or(0);
-        NEVIT_HOURGLASS_BONUS[level_row][column.min(9)]
+    let bonus = if player.recom_have != 0 && (time > 0 || paused) {
+        hourglass_bonus(player.core.level, player.recom_have)
     } else {
         0
     };
@@ -345,7 +330,9 @@ pub fn vote_system_info(player: &Player) -> ExVoteSystemInfo {
         recom_have: player.recom_have,
         bonus_time: time,
         bonus_value: bonus,
-        bonus_type: if active {
+        bonus_type: if paused {
+            NEVIT_HOURGLASS_PAUSED
+        } else if time > 0 {
             NEVIT_HOURGLASS_ACTIVE
         } else {
             NEVIT_HOURGLASS_MAINTAIN
@@ -422,6 +409,8 @@ impl World {
         {
             self.set_invul(id, true);
         }
+        // `new Player(...)` -> `startVitalityTask()`.
+        self.start_vitality_task(id);
 
         // player.sendPacket(new UserInfo(player)), without ExBrExtraUserInfo. The
         // recommendations are not loaded yet (`checkRecoBonusTask` below), so this one shows 0,
@@ -430,13 +419,15 @@ impl World {
             self.send(id, &info);
         }
 
+        // `if (ENABLE_VITALITY && RECOVER_VITALITY_ON_RECONNECT)`: the time offline gives vitality
+        // back (quietly, after the first `UserInfo`).
+        self.recover_vitality_on_reconnect(id, now_ms);
+
         // `if (PlayerConfig.NEVIT_ENABLED) player.checkRecoBonusTask()`: loads the
-        // recommendations and sends `ExVoteSystemInfo`.
-        // NOTE(java-quirk): Java also stores them again (`REPLACE INTO character_reco_bonus`).
-        // That write is not made here: it would write back what was just read.
+        // recommendations, starts the hourglass (`ExVoteSystemInfo`) and stores them. The store is
+        // the next one of the persistence task (`PlayerProfile::reco_store`).
         if self.settings.nevit_enabled {
-            self.load_recommendations(id);
-            self.send_vote_system_info(id);
+            self.check_reco_bonus_task(id);
         }
 
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
@@ -464,10 +455,7 @@ impl World {
         self.send(id, &ExShowContactList::default());
         if self.settings.nevit_enabled {
             // Nevit.onPlayerLogin: the hunting points and time are player variables.
-            let points = self.player_variable(id, "hunting_points");
-            let time = self.player_variable(id, "hunting_time");
-            self.send(id, &ExNevitAdventPointInfo { points });
-            self.send(id, &ExNevitAdventTimeChange::new(time, true));
+            self.nevit_on_player_login(id);
         }
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
@@ -498,28 +486,13 @@ impl World {
         debug!("enter-world packets sent to {id}");
     }
 
-    /// Java `Player.loadRecommendations` (the database part is the session's job).
-    fn load_recommendations(&mut self, id: ObjectId) {
-        if let Some(p) = self.players.get_mut(&id) {
-            p.recom_have = p.data.profile.recom_have;
-            p.recom_left = p.data.profile.recom_left;
-            p.hourglass_ms = p.data.profile.recom_time_left_ms;
-        }
-    }
-
-    fn send_vote_system_info(&self, id: ObjectId) {
+    /// Java `player.sendPacket(new ExVoteSystemInfo(player))`: the recommendations and the state of
+    /// the Nevit hourglass now.
+    pub(crate) fn send_vote_system_info(&self, id: ObjectId) {
         if let Some(p) = self.players.get(&id) {
-            self.send(id, &vote_system_info(p));
+            let packet = vote_system_info(p, self.nevit_hourglass_time(id), self.nevit_hourglass_paused(id));
+            self.send(id, &packet);
         }
-    }
-
-    /// An integer player variable; 0 when it is missing or not a number (`getInt(name, 0)`).
-    fn player_variable(&self, id: ObjectId, name: &str) -> i32 {
-        self.players
-            .get(&id)
-            .and_then(|p| p.data.profile.variables.get(name))
-            .and_then(|v| v.parse::<i32>().ok())
-            .unwrap_or(0)
     }
 
     /// Java `new HennaInfo(player)`: the six dye bonuses from the stat engine (`Player.getHennaStat*`),

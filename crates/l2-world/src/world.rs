@@ -448,6 +448,8 @@ impl World {
             // Java: PlayerAutoSaveTaskManager.run -> Player.autoSave, then due again after
             // CHAR_DATA_STORE_INTERVAL. A player who left has no timer any more.
             TimerKind::Autosave(id) => {
+                // Java `autoSave`: `storeRecommendations(false)`, written with the same snapshot.
+                self.nevit_on_autosave(id);
                 if let Some(player) = self.players.get(&id) {
                     let snapshot = snapshot_for_store(player, self.tick);
                     self.outbox
@@ -492,6 +494,11 @@ impl World {
             TimerKind::SaveGroundItems => self.on_save_ground_items_timer(),
             // Java: RandomAnimationTaskManager.run (for one NPC)
             TimerKind::RandomAnimation(id) => self.on_random_animation_timer(id),
+            // Java: VitalityTask, Nevit.AdventTask, Nevit.NevitEffectEnd, RecoBonusTaskEnd
+            TimerKind::Vitality(id) => self.on_vitality_timer(id),
+            TimerKind::NevitAdvent(id) => self.on_nevit_advent_timer(id),
+            TimerKind::NevitEffectEnd(id) => self.on_nevit_effect_end(id),
+            TimerKind::NevitHourglassEnd(id) => self.on_nevit_hourglass_end(id),
         }
     }
 

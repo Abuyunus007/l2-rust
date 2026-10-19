@@ -71,6 +71,14 @@ pub enum TimerKind {
     SaveGroundItems,
     /// Java `RandomAnimationTaskManager`: the NPC's next random animation check, see `ai/idle.rs`.
     RandomAnimation(ObjectId),
+    /// Java `VitalityTask` (every 60 s, `Player.startVitalityTask`): see `rewards/vitality.rs`.
+    Vitality(ObjectId),
+    /// Java `Nevit.AdventTask` (30 s): see `rewards/nevit.rs`.
+    NevitAdvent(ObjectId),
+    /// Java `Nevit.NevitEffectEnd`: the end of Nevit's blessing.
+    NevitEffectEnd(ObjectId),
+    /// Java `RecoBonusTaskEnd`: the end of the Nevit hourglass.
+    NevitHourglassEnd(ObjectId),
 }
 
 #[derive(Debug, Default)]
