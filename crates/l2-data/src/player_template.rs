@@ -9,7 +9,8 @@
 //!
 //! Not loaded (character creation and UserInfo do not use them, and Java only keeps them in its
 //! generic `StatSet`): `baseAtkType` (the schema only allows `FIST`), `baseCanPenetrate`,
-//! `baseDamRange`, the per-slot paperdoll defence (only the sums are kept).
+//! `baseDamRange`. The per-slot paperdoll defence is kept both summed and per slot
+//! ([`PlayerTemplate::base_def_by_slot`], read by the stat engine's `FuncPDefMod`/`FuncMDefMod`).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -72,6 +73,9 @@ pub struct PlayerTemplate {
     pub p_def: i32,
     /// Magical defence: rear ear + left ear + right finger + right finger + neck.
     pub m_def: i32,
+    /// Java `_baseSlotDef`: the defence of each paperdoll slot while it is empty, indexed by the
+    /// `Inventory.PAPERDOLL_*` slot (0 for a slot Java does not list).
+    pub base_slot_def: [i32; PAPERDOLL_TOTAL_SLOTS],
     /// Base physical attack speed.
     pub p_atk_spd: i32,
     /// Base magical attack speed. Not in the XML: Java's `CreatureTemplate` default.
@@ -114,7 +118,15 @@ pub struct PlayerTemplate {
     cp_regen: Vec<f64>,
 }
 
+/// Java `Inventory.PAPERDOLL_TOTALSLOTS`.
+pub const PAPERDOLL_TOTAL_SLOTS: usize = 25;
+
 impl PlayerTemplate {
+    /// Java `getBaseDefBySlot(slotId)`: `getOrDefault(slotId, 0)`.
+    pub fn base_def_by_slot(&self, slot: usize) -> i32 {
+        self.base_slot_def.get(slot).copied().unwrap_or(0)
+    }
+
     /// Java `getBaseHpMax(level)`; `None` above the loaded max level (Java throws).
     pub fn base_hp_max(&self, level: usize) -> Option<f32> {
         self.hp.get(level).copied()
@@ -216,6 +228,7 @@ impl PlayerTemplates {
                 + s.base_m_def.rfinger
                 + s.base_m_def.rfinger
                 + s.base_m_def.neck,
+            base_slot_def: base_slot_def(&s.base_p_def, &s.base_m_def),
             p_atk_spd: s.base_p_atk_spd,
             m_atk_spd: 333,
             crit_rate: s.base_crit_rate,
@@ -387,6 +400,28 @@ struct RawStaticData {
     collision_male: RawCollisionMale,
     #[serde(rename = "collisionFemale")]
     collision_female: RawCollisionFemale,
+}
+
+/// Java `PlayerTemplate` constructor: `_baseSlotDef.put(Inventory.PAPERDOLL_*, ...)`.
+fn base_slot_def(p: &RawPDef, m: &RawMDef) -> [i32; PAPERDOLL_TOTAL_SLOTS] {
+    let mut slots = [0; PAPERDOLL_TOTAL_SLOTS];
+    // PAPERDOLL_CHEST 6, LEGS 11, HEAD 1, FEET 12, GLOVES 10, UNDER 0, CLOAK 23
+    slots[6] = p.chest;
+    slots[11] = p.legs;
+    slots[1] = p.head;
+    slots[12] = p.feet;
+    slots[10] = p.gloves;
+    slots[0] = p.underwear;
+    slots[23] = p.cloak;
+    // PAPERDOLL_REAR 8, LEAR 9, RFINGER 13, LFINGER 14, NECK 4
+    slots[8] = m.rear;
+    slots[9] = m.lear;
+    slots[13] = m.rfinger;
+    // NOTE(java-quirk): the left finger slot is filled from `baseMDefrfinger`, so `lfinger` of the
+    // XML is never read.
+    slots[14] = m.rfinger;
+    slots[4] = m.neck;
+    slots
 }
 
 fn default_p_atk_spd() -> i32 {
@@ -599,6 +634,24 @@ mod tests {
         let table = PlayerTemplates::from_xml(&xml(31, 1), 85).unwrap();
         // rear 9 + lear 8 + rfinger 5 + rfinger 5 + neck 13 (lfinger 4 is ignored)
         assert_eq!(table.get(ClassId(31)).unwrap().m_def, 40);
+    }
+
+    #[test]
+    fn slot_defence_follows_the_paperdoll_slots_like_java() {
+        let table = PlayerTemplates::from_xml(&xml(31, 1), 85).unwrap();
+        let t = table.get(ClassId(31)).unwrap();
+        // chest 6, legs 11, head 1, feet 12, gloves 10, underwear 0, cloak 23
+        let p: Vec<i32> = [6, 11, 1, 12, 10, 0, 23]
+            .iter()
+            .map(|&s| t.base_def_by_slot(s))
+            .collect();
+        assert_eq!(p, [31, 18, 12, 7, 8, 3, 1]);
+        // rear 8, lear 9, rfinger 13, lfinger 14 (the rfinger value), neck 4
+        let m: Vec<i32> = [8, 9, 13, 14, 4].iter().map(|&s| t.base_def_by_slot(s)).collect();
+        assert_eq!(m, [9, 8, 5, 5, 13]);
+        // Slots Java does not list, and slots past the paperdoll.
+        assert_eq!(t.base_def_by_slot(5), 0);
+        assert_eq!(t.base_def_by_slot(99), 0);
     }
 
     #[test]

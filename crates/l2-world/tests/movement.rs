@@ -131,8 +131,48 @@ fn player(id: i32, x: i32, y: i32, z: i32) -> PlayerData {
     }
 }
 
+/// The class template of the test character (class 0): only its collision, 9 x 23 like the
+/// Human Fighter's; everything else keeps Java's template defaults (run 120, walk 50).
+struct ClassData(StatData);
+
+impl ClassData {
+    fn new() -> Self {
+        let templates = l2_data::PlayerTemplates::from_xml(
+            r#"<list><classId>0</classId><staticData>
+<collisionMale><radius>9.0</radius><height>23.0</height></collisionMale>
+<collisionFemale><radius>8.0</radius><height>23.5</height></collisionFemale>
+</staticData><lvlUpgainData><level val="1"><hp>100</hp><mp>50</mp><cp>10</cp></level></lvlUpgainData></list>"#,
+            85,
+        )
+        .unwrap();
+        Self(StatData {
+            player_templates: Arc::new(templates),
+            ..StatData::default()
+        })
+    }
+}
+
+impl StaticData for ClassData {
+    fn item(&self, _item_id: i32) -> Option<ItemStatic> {
+        None
+    }
+    fn skill_is_passive(&self, _skill_id: i32) -> bool {
+        false
+    }
+    fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
+        0.0
+    }
+    fn access_level(&self, _level: i32) -> AccessLevelStatic {
+        AccessLevelStatic::USER
+    }
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.0)
+    }
+}
+
 fn new_world() -> World {
     let mut world = World::new(WorldRng::from_seed(1), Box::new(RecOutbox));
+    world.set_static_data(Box::new(ClassData::new()));
     world.set_settings(WorldSettings {
         // Every region is active, so the geodata checks run without waiting for the neighbour timer.
         grids_always_on: true,
@@ -897,8 +937,10 @@ struct Heavy;
 
 impl StaticData for Heavy {
     fn item(&self, item_id: i32) -> Option<ItemStatic> {
+        // Two of them weigh more than the 69000 a character without class data can carry
+        // (Java `getMaxLoad()`: floor(CON bonus 1 * 69000 * AltWeightLimit 1)).
         Some(ItemStatic {
-            weight: 100,
+            weight: 50_000,
             ..ItemStatic::unknown(item_id)
         })
     }
@@ -909,13 +951,6 @@ impl StaticData for Heavy {
 
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
-    }
-
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats {
-            max_load: 150,
-            ..DerivedStats::default()
-        }
     }
 
     fn access_level(&self, _level: i32) -> AccessLevelStatic {

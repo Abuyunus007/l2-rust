@@ -4,7 +4,6 @@
 //! and the recorded Java session (both skipped when the reference folders are missing).
 //! Java: data/xml/SpawnData.java, entity/spawns/*.java, network/serverpackets/AbstractNpcInfo.java.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
@@ -44,12 +43,12 @@ impl Outbox for NullOutbox {
 
 /// `statBonus.xml` for the tests that need the real multipliers.
 #[derive(Default)]
-struct Bonus(HashMap<(BaseStat, i32), f64>);
+struct Bonus(StatData);
 
 impl Bonus {
     fn load(root: &Path) -> Self {
         let text = std::fs::read_to_string(root.join("data/stats/statBonus.xml")).unwrap();
-        let mut table = HashMap::new();
+        let mut table = BaseStatBonus::loaded();
         let mut section = None;
         for line in text.lines() {
             let line = line.trim();
@@ -65,10 +64,13 @@ impl Bonus {
             if let (Some(stat), Some(rest)) = (section, line.strip_prefix("<stat value=\"")) {
                 let (value, rest) = rest.split_once('"').unwrap();
                 let bonus = rest.split("bonus=\"").nth(1).unwrap().split('"').next().unwrap();
-                table.insert((stat, value.parse().unwrap()), bonus.parse().unwrap());
+                assert!(table.set(stat, value.parse().unwrap(), bonus.parse().unwrap()));
             }
         }
-        Self(table)
+        Self(StatData {
+            base_stat_bonus: Arc::new(table),
+            ..StatData::default()
+        })
     }
 }
 
@@ -82,14 +84,11 @@ impl StaticData for Bonus {
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
     }
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats::default()
-    }
     fn access_level(&self, _level: i32) -> AccessLevelStatic {
         AccessLevelStatic::USER
     }
-    fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
-        self.0.get(&(stat, value)).copied().unwrap_or(0.0)
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.0)
     }
 }
 

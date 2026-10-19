@@ -69,11 +69,36 @@ impl Outbox for RecOutbox {
     }
 }
 
-/// A datapack view with a few items and one GM level.
+/// A datapack view with a few items, one GM level and the class template of the test character.
 #[derive(Default)]
 struct FakeData {
     items: HashMap<i32, ItemStatic>,
     passive: HashSet<i32>,
+    stats: StatData,
+}
+
+/// Class 10 (the test character) with 100 HP, 50 MP and 10 CP at level 30, the values the
+/// character table stores for it. No `statBonus.xml`: every bonus is 1.
+fn class_templates() -> l2_data::PlayerTemplates {
+    let mut levels = String::new();
+    for level in 1..=30 {
+        let (hp, mp, cp) = if level == 30 {
+            (100, 50, 10)
+        } else {
+            (level, level, level)
+        };
+        levels.push_str(&format!(
+            "<level val=\"{level}\"><hp>{hp}</hp><mp>{mp}</mp><cp>{cp}</cp></level>"
+        ));
+    }
+    let xml = format!(
+        r#"<list><classId>10</classId><staticData>
+<baseINT>41</baseINT><baseSTR>22</baseSTR><baseCON>27</baseCON><baseMEN>39</baseMEN><baseDEX>21</baseDEX><baseWIT>20</baseWIT>
+<collisionMale><radius>7.5</radius><height>22.8</height></collisionMale>
+<collisionFemale><radius>6.5</radius><height>22.5</height></collisionFemale>
+</staticData><lvlUpgainData>{levels}</lvlUpgainData></list>"#
+    );
+    l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()
 }
 
 impl StaticData for FakeData {
@@ -86,17 +111,14 @@ impl StaticData for FakeData {
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.25
     }
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats {
-            max_load: 1_000,
-            ..DerivedStats::default()
-        }
-    }
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         AccessLevelStatic {
             is_gm: level >= 100,
             ..AccessLevelStatic::USER
         }
+    }
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.stats)
     }
 }
 
@@ -166,7 +188,13 @@ fn player(id: i32, account: &str, name: &str) -> PlayerData {
 }
 
 fn data() -> FakeData {
-    let mut data = FakeData::default();
+    let mut data = FakeData {
+        stats: StatData {
+            player_templates: Arc::new(class_templates()),
+            ..StatData::default()
+        },
+        ..FakeData::default()
+    };
     data.items.insert(6, item_static(6, 0, false, 10));
     data.items.insert(57, item_static(57, 4, false, 0));
     data.items.insert(1235, item_static(1235, 3, true, 1));
@@ -362,7 +390,8 @@ fn user_info_describes_the_character_and_the_second_one_knows_the_recommendation
     assert_eq!(a.paperdoll_object_ids[paperdoll::CHEST], 0);
     // 10 (wand) + 5 (item 736 x2 = 10) + 1 (quest item x3 = 3), warehouse ignored.
     assert_eq!(a.current_load, 10 + 3 + 10);
-    assert_eq!(a.max_load, 1_000);
+    // Java `getMaxLoad()`: floor(CON bonus * 69000 * AltWeightLimit), the bonus is 1 here.
+    assert_eq!(a.max_load, 69_000);
     assert_eq!(a.inventory_limit, 80);
     // Java: the first UserInfo is built before the recommendations are loaded, and before the
     // player has "entered": it still lets the client equip a cloak.

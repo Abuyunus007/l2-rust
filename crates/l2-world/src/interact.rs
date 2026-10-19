@@ -260,10 +260,7 @@ impl World {
         let (Some(me), Some(pos)) = (self.position_of(id), self.position_of(target)) else {
             return false;
         };
-        let my_radius = self
-            .players
-            .get(&id)
-            .map_or(0, |p| p.stats.collision_radius as i32);
+        let my_radius = self.stats(id).map_or(0, |s| s.collision_radius() as i32);
         let mut offset_with_collision = offset_value + my_radius;
         let creature = self.objects.get(&target).is_some_and(|e| e.kind.is_creature());
         if creature {
@@ -313,10 +310,7 @@ impl World {
     /// `getTemplate().getCollisionRadius()` of a creature that is not the player.
     fn collision_radius_of(&self, id: ObjectId) -> i32 {
         match self.objects.get(&id).map(|e| e.kind) {
-            Some(ObjectKind::Player) => self
-                .players
-                .get(&id)
-                .map_or(0, |p| p.stats.collision_radius as i32),
+            Some(ObjectKind::Player) => self.stats(id).map_or(0, |s| s.collision_radius() as i32),
             Some(ObjectKind::Npc) => self
                 .npcs
                 .get(&id)

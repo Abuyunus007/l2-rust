@@ -34,7 +34,6 @@ use l2_protocol_game::server::NpcInfo;
 use l2_util::ObjectId;
 use tracing::{debug, info, warn};
 
-use crate::data::{BaseStat, StaticData};
 use crate::ids::IdFactory;
 use crate::objects::{Npc, ObjectKind};
 use crate::player::CreatureCore;
@@ -747,11 +746,6 @@ impl World {
                 return None;
             }
         };
-        // Java `Creature.getMaxHp()/getMaxMp()`: the template value times the CON / MEN bonus.
-        let con = self.data.base_stat_bonus(BaseStat::Con, template.base_con);
-        let men = self.data.base_stat_bonus(BaseStat::Men, template.base_men);
-        let max_hp = f64::from(positive(f64::from(template.base_hp_max) * con) as i32);
-        let max_mp = f64::from(positive(f64::from(template.base_mp_max) * men) as i32);
         let (x, y, z) = position;
         let npc = Npc {
             core: CreatureCore {
@@ -761,12 +755,17 @@ impl World {
                 z,
                 heading,
                 level: i32::from(template.level),
-                cur_hp: max_hp,
-                max_hp,
-                cur_mp: max_mp,
-                max_mp,
+                // Set from the stat engine right below (`init_npc_stats`).
+                cur_hp: 0.0,
+                max_hp: 0.0,
+                cur_mp: 0.0,
+                max_mp: 0.0,
                 cur_cp: 0.0,
                 max_cp: 0.0,
+                // Java: `_calculators = NPC_STD_CALCULATOR`.
+                calculators: self.npc_calculators(),
+                skills: Vec::new(),
+                passives: Vec::new(),
             },
             npc_id: template.id,
             class,
@@ -780,6 +779,11 @@ impl World {
             display_effect: 0,
         };
         self.npcs.insert(id, npc);
+        // Java's constructor: the template's skills (passive effects copy the calculators).
+        self.add_npc_template_skills(id);
+        // Java `onSpawn`: full HP and MP (`getMaxHp()`: the template value through the standard
+        // NPC calculators, so times the CON / MEN bonus).
+        self.init_npc_stats(id);
         self.register_object(id, ObjectKind::Npc);
         self.spawn_at(id, x, y, z);
         if !self.npcs.contains_key(&id) {
@@ -856,7 +860,11 @@ impl World {
             return None;
         }
         let settings = &self.npc_world.settings;
-        let stats = NpcStats::of(&*self.data, template, npc.in_water);
+        let stats = self.stats(subject)?;
+        // `getMovementSpeedMultiplier()` and the speeds divided by it, `(int) Math.round(...)`.
+        let move_multiplier = stats.movement_speed_multiplier();
+        let speed = |value: f64| crate::stats::java_round(value / move_multiplier) as i32;
+        let (run_speed, walk_speed) = (speed(stats.run_speed()), speed(stats.walk_speed()));
         let viewer_karma = self.players.get(&viewer).map_or(0, |p| p.data.karma);
 
         let name = if template.using_server_side_name {
@@ -904,16 +912,16 @@ impl World {
             y: npc.core.y,
             z: npc.core.z,
             heading: npc.core.heading,
-            m_atk_spd: stats.m_atk_spd,
-            p_atk_spd: stats.p_atk_spd,
-            run_speed: stats.run_speed,
-            walk_speed: stats.walk_speed,
-            swim_run_speed: stats.swim_run_speed,
-            swim_walk_speed: stats.swim_walk_speed,
-            fly_run_speed: if template.flying { stats.run_speed } else { 0 },
-            fly_walk_speed: if template.flying { stats.walk_speed } else { 0 },
-            move_multiplier: stats.move_multiplier,
-            attack_speed_multiplier: stats.attack_speed_multiplier,
+            m_atk_spd: stats.m_atk_spd(),
+            p_atk_spd: stats.p_atk_spd() as i32,
+            run_speed,
+            walk_speed,
+            swim_run_speed: speed(stats.swim_run_speed()),
+            swim_walk_speed: speed(stats.swim_walk_speed()),
+            fly_run_speed: if template.flying { run_speed } else { 0 },
+            fly_walk_speed: if template.flying { walk_speed } else { 0 },
+            move_multiplier,
+            attack_speed_multiplier: stats.attack_speed_multiplier(),
             collision_radius: template.collision_radius,
             collision_height: template.collision_height,
             right_hand: npc.right_hand,
@@ -950,82 +958,6 @@ impl World {
     /// `NpcInfo` as bytes, for tools and tests.
     pub fn npc_info_bytes(&self, subject: ObjectId, viewer: ObjectId) -> Option<Vec<u8>> {
         self.npc_info(subject, viewer).map(|info| info.to_bytes())
-    }
-}
-
-/// Java `calcStat`'s "avoid some troubles with negative stats": a value of 0 or less becomes 1.
-fn positive(value: f64) -> f64 {
-    if value <= 0.0 { 1.0 } else { value }
-}
-
-/// Java `Math.round(double)` cast to `int`: floor(x + 0.5) as a long (NaN is 0, infinities
-/// saturate), then the low 32 bits.
-fn java_round_to_int(value: f64) -> i32 {
-    java_round(value) as i32
-}
-
-fn java_round(value: f64) -> i64 {
-    if value.is_nan() {
-        0
-    } else {
-        (value + 0.5).floor() as i64
-    }
-}
-
-/// The numbers of `AbstractNpcInfo`'s constructor that Java gets from the stat system, for an
-/// NPC without effects: the template value times the DEX or WIT bonus (`FuncPAtkSpeed`,
-/// `FuncMAtkSpeed`, `FuncMoveSpeed` of `NPC_STD_CALCULATOR`).
-#[derive(Debug, Clone, PartialEq)]
-struct NpcStats {
-    m_atk_spd: i32,
-    p_atk_spd: i32,
-    run_speed: i32,
-    walk_speed: i32,
-    swim_run_speed: i32,
-    swim_walk_speed: i32,
-    move_multiplier: f64,
-    attack_speed_multiplier: f32,
-}
-
-impl NpcStats {
-    fn of(data: &dyn StaticData, t: &NpcTemplate, in_water: bool) -> Self {
-        /// `PlayerConfig.MAX_MATK_SPEED` default (`MaxMAtkSpeed`).
-        const MAX_MATK_SPEED: f64 = 1999.0;
-        let dex = data.base_stat_bonus(BaseStat::Dex, t.base_dex);
-        let wit = data.base_stat_bonus(BaseStat::Wit, t.base_wit);
-
-        // `getBaseMAtkSpd() * bonusSpdAtk` is int * float in Java.
-        let m_atk_spd = positive(f64::from(t.base_m_atk_spd as f32) * wit).min(MAX_MATK_SPEED) as i32;
-        let p_atk_spd = java_round(positive(f64::from(t.base_p_atk_spd as f32) * dex)) as f64;
-
-        // calcStat(MOVE_SPEED, base * gmSpeedMultiplier): no clamp for this stat.
-        let moved = |base: f64| if base <= 0.0 { 0.0 } else { base * dex };
-        let swim_run = moved(t.swim_run_speed);
-        let swim_walk = moved(t.swim_walk_speed);
-        // NOTE(java-quirk): in water getRunSpeed()/getWalkSpeed() take the already modified
-        // swim speed as their base, so the DEX bonus is applied twice.
-        let run = moved(if in_water { swim_run } else { t.run_speed });
-        let walk = moved(if in_water { swim_walk } else { t.walk_speed });
-
-        // getMovementSpeedMultiplier(): NPCs walk (`_isRunning` is false).
-        let (base_speed, speed) = if in_water {
-            (t.swim_walk_speed, swim_walk)
-        } else {
-            (t.walk_speed, walk)
-        };
-        let move_multiplier = speed * (1.0 / base_speed);
-
-        Self {
-            m_atk_spd,
-            p_atk_spd: p_atk_spd as i32,
-            run_speed: java_round_to_int(run / move_multiplier),
-            walk_speed: java_round_to_int(walk / move_multiplier),
-            swim_run_speed: java_round_to_int(swim_run / move_multiplier),
-            swim_walk_speed: java_round_to_int(swim_walk / move_multiplier),
-            move_multiplier,
-            // CreatureStat.getAttackSpeedMultiplier(): (float) ((1.1 * getPAtkSpd()) / basePAtkSpd)
-            attack_speed_multiplier: ((1.1 * p_atk_spd) / f64::from(t.base_p_atk_spd)) as f32,
-        }
     }
 }
 

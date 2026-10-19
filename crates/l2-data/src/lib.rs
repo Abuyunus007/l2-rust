@@ -50,7 +50,9 @@ pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
-pub use player_template::{Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PlayerTemplate, PlayerTemplates};
+pub use player_template::{
+    Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
+};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
 pub use spawn::{SpawnData, SpawnLoadOptions};
@@ -134,6 +136,9 @@ pub struct DatapackOptions {
     /// `General.ini` `CheckHtmlEncoding` (default true): log html files with non ASCII text
     /// outside `data/lang`.
     pub check_html_encoding: bool,
+    /// The skill loader's options (`CustomSkillsLoad`, the abnormal success rates,
+    /// `SkillDurationList` / `SkillReuseList`).
+    pub skills: SkillLoadOptions,
 }
 
 impl Default for DatapackOptions {
@@ -149,6 +154,7 @@ impl Default for DatapackOptions {
             default_corpse_time: npc.default_corpse_time,
             htm_cache: true,
             check_html_encoding: true,
+            skills: SkillLoadOptions::default(),
         }
     }
 }
@@ -211,7 +217,7 @@ impl Datapack {
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             hennas: Arc::new(Hennas::load(root)),
-            skills: Arc::new(SkillTemplates::load(root, &SkillLoadOptions::default())),
+            skills: Arc::new(SkillTemplates::load(root, &options.skills)),
         })
     }
 }

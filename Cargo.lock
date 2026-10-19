@@ -2554,6 +2554,7 @@ dependencies = [
  "l2-geo",
  "l2-net",
  "l2-protocol-game",
+ "l2-testkit",
  "l2-util",
  "serde_json",
  "tempfile",

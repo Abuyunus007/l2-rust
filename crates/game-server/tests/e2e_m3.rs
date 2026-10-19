@@ -820,7 +820,7 @@ impl BareWorld {
         let config = GameConfig::load(&config_dir).unwrap();
         let datapack = Arc::new(Datapack::load(&data_root).unwrap());
         let static_data: Arc<dyn StaticData> =
-            Arc::new(DatapackData::load(Arc::clone(&datapack), &config, &config_dir));
+            Arc::new(DatapackData::load(Arc::clone(&datapack), &config_dir));
         let settings = world_settings(&config, &config_dir);
         let geo_settings = geo::GeoSettings::load(&config, &config_dir, &data_root);
         let engine = geo::load_engine(&geo_settings);

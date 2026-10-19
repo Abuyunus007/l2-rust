@@ -7,7 +7,8 @@
 //! The character of the recording is rebuilt from the packets Java sent for it (its `UserInfo`,
 //! `ItemList`, `SkillList`, `ShortcutInit`), the world is asked to enter it, and the packets
 //! that come out must have the same order and, where nothing but the character decides them,
-//! the same bytes.
+//! the same bytes. The stats of `UserInfo` come from the stat engine over the few datapack
+//! entries the character uses (`capture_stat_data`), so they are checked against Java too.
 //!
 //! What the recording has and the world does not send yet, with the reason:
 //! - `NPC_INFO` (57 of them): visibility, M3
@@ -110,7 +111,7 @@ fn name_of(body: &[u8]) -> String {
 struct CaptureData {
     items: HashMap<i32, ItemStatic>,
     passive: Vec<i32>,
-    stats: DerivedStats,
+    stats: StatData,
     exp_percent: f64,
 }
 
@@ -124,11 +125,96 @@ impl StaticData for CaptureData {
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         self.exp_percent
     }
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        self.stats.clone()
-    }
     fn access_level(&self, _level: i32) -> AccessLevelStatic {
         AccessLevelStatic::USER
+    }
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.stats)
+    }
+}
+
+/// The datapack parts the stat engine reads for the recorded character, written out as the
+/// XML of the real datapack (only the entries this character uses), so the test runs without
+/// the reference folders: the Elven Mystic class template, the items it wears and the
+/// `statBonus.xml` rows of its base stats. With them, every number of `UserInfo` comes from the
+/// stat engine and must equal what Java sent.
+fn capture_stat_data() -> StatData {
+    // `data/stats/items/00000-00099.xml` and `00400-00499.xml`, only the stat-related lines.
+    let items = l2_data::ItemTemplates::from_xml(
+        r#"<list>
+	<item id="6" type="Weapon" name="Apprentice's Wand">
+		<set name="weapon_type" val="BLUNT" />
+		<set name="bodypart" val="rhand" />
+		<set name="is_magic_weapon" val="true" />
+		<stats>
+			<stat type="pAtk">5</stat>
+			<stat type="mAtk">7</stat>
+			<stat type="critRate">4</stat>
+			<stat type="accCombat">4.75</stat>
+			<stat type="pAtkSpd">379</stat>
+			<stat type="randomDamage">20</stat>
+			<stat type="pAtkRange">40</stat>
+		</stats>
+	</item>
+	<item id="425" type="Armor" name="Apprentice's Tunic">
+		<set name="armor_type" val="MAGIC" />
+		<set name="bodypart" val="chest" />
+		<stats>
+			<stat type="pDef">17</stat>
+			<stat type="maxMp">19</stat>
+		</stats>
+	</item>
+	<item id="461" type="Armor" name="Apprentice's Stockings">
+		<set name="armor_type" val="MAGIC" />
+		<set name="bodypart" val="legs" />
+		<stats>
+			<stat type="pDef">10</stat>
+			<stat type="maxMp">10</stat>
+		</stats>
+	</item>
+</list>"#,
+    )
+    .unwrap();
+    // `data/stats/players/templates/StartingClass/ElvenMystic.xml`, level 1 only.
+    let templates = l2_data::PlayerTemplates::from_xml(
+        r#"<list>
+	<classId>25</classId>
+	<staticData>
+		<baseINT>37</baseINT><baseSTR>21</baseSTR><baseCON>25</baseCON>
+		<baseMEN>40</baseMEN><baseDEX>24</baseDEX><baseWIT>23</baseWIT>
+		<basePAtk>3</basePAtk><baseCritRate>4</baseCritRate><basePAtkSpd>300</basePAtkSpd>
+		<basePDef><chest>15</chest><legs>8</legs><head>12</head><feet>7</feet><gloves>8</gloves><underwear>3</underwear><cloak>1</cloak></basePDef>
+		<baseMAtk>6</baseMAtk>
+		<baseMDef><rear>9</rear><lear>9</lear><rfinger>5</rfinger><lfinger>5</lfinger><neck>13</neck></baseMDef>
+		<baseAtkRange>20</baseAtkRange>
+		<baseMoveSpd><walk>85</walk><run>122</run><slowSwim>50</slowSwim><fastSwim>50</fastSwim></baseMoveSpd>
+		<collisionMale><radius>7.5</radius><height>24</height></collisionMale>
+		<collisionFemale><radius>7.5</radius><height>23</height></collisionFemale>
+	</staticData>
+	<lvlUpgainData>
+		<level val="1"><hp>104.0</hp><mp>40.0</mp><cp>52.0</cp></level>
+	</lvlUpgainData>
+</list>"#,
+        85,
+    )
+    .unwrap();
+    // `data/stats/statBonus.xml`, the rows of the character's base stats.
+    let mut bonus = BaseStatBonus::loaded();
+    for (stat, value, b) in [
+        (BaseStat::Str, 21, 0.61),
+        (BaseStat::Int, 37, 1.12),
+        (BaseStat::Dex, 24, 1.04),
+        (BaseStat::Wit, 23, 1.16),
+        (BaseStat::Con, 25, 0.93),
+        (BaseStat::Men, 40, 1.49),
+    ] {
+        assert!(bonus.set(stat, value, b));
+    }
+    StatData {
+        items: Arc::new(items),
+        player_templates: Arc::new(templates),
+        base_stat_bonus: Arc::new(bonus),
+        ..StatData::default()
     }
 }
 
@@ -292,32 +378,7 @@ fn rebuild(records: &[Record]) -> Rebuilt {
             ..PlayerProfile::default()
         },
     };
-    let stats = DerivedStats {
-        str: first_info.str,
-        dex: first_info.dex,
-        con: first_info.con,
-        int: first_info.int,
-        wit: first_info.wit,
-        men: first_info.men,
-        p_atk: first_info.p_atk,
-        p_atk_spd: first_info.p_atk_spd,
-        p_def: first_info.p_def,
-        evasion: first_info.evasion,
-        accuracy: first_info.accuracy,
-        critical: first_info.critical,
-        m_atk: first_info.m_atk,
-        m_atk_spd: first_info.m_atk_spd,
-        m_def: first_info.m_def,
-        run_speed: first_info.run_speed,
-        walk_speed: first_info.walk_speed,
-        swim_run_speed: first_info.swim_run_speed,
-        swim_walk_speed: first_info.swim_walk_speed,
-        move_multiplier: first_info.move_multiplier,
-        attack_speed_multiplier: first_info.attack_speed_multiplier,
-        collision_radius: first_info.collision_radius,
-        collision_height: first_info.collision_height,
-        max_load: first_info.max_load,
-    };
+    let stats = capture_stat_data();
     Rebuilt {
         player,
         data: CaptureData {
