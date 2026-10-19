@@ -214,7 +214,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | merged |
 | [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | merged |
 | [M4-AI-01](M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | merged |
-| [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | ready (refined when deps merge) |
+| [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | merged |
 | [M4-DEATH-01](M4/M4-DEATH-01.md) | Death, respawn, corpses | sonnet | full | COMBAT-01 | merged |
 | [M4-EXP-01](M4/M4-EXP-01.md) | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | merged |
 | [M4-VIT-01](M4/M4-VIT-01.md) | Vitality and Nevit (Java gives 1.5x-3x kill exp with the shipped config) | sonnet | full | EXP-01 | in-progress |
@@ -265,4 +265,5 @@ M2 follow-ups carried into M3: `CheckHtmlEncoding` gating in the html loader; re
 | Check | Result |
 |---|---|
 | CP-M4a part 1: a geared character on Kain shows the same P.Atk, P.Def, M.Atk, M.Def, accuracy, evasion, crit, speeds and max HP/MP/CP as on Sieghardt (enchants, armor sets, passive skills) | ✅ passed (2026-10-19) |
-| CP-M4a part 2: equip/unequip changes the numbers like on Sieghardt | ⏳ after M4-INV-01 |
+| CP-M4a part 2: equip/unequip changes the numbers like on Sieghardt | ⏳ to confirm |
+| CP-M4b (first test, 2026-10-20): fighting works, drops land and adena is picked up; herbs drop and vanish on pickup without their effect (herb skills are M5) | ✅ partly (no vitality, herbs M5) |
