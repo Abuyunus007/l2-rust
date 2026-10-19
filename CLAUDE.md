@@ -12,6 +12,7 @@ A Lineage 2 H5 private server (login + game server + admin tools) ported from Ja
 ## Safety rules (absolute)
 - **Never connect to any database on this machine.** The owner's real game database runs locally. DB tests only run when `L2_TEST_DATABASE_URL` is set (CI's throwaway MariaDB). Don't probe local ports or try credentials.
 - Never start servers that bind the owner's real ports (2106, 9013/9014, 7777) except in tests that use port 0.
+- Never kill processes by name (`Stop-Process -Name java`, `taskkill /IM java.exe`, `pkill java`, ...): the owner's Java game server is a `java.exe`. Stop only processes you started, by their PID, after checking the command line.
 - Never put credentials, account names or IPs into committed files or captures.
 
 ## Reference material (read-only, never modify, never copy into the repo wholesale)
