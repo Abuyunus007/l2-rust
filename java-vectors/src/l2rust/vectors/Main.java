@@ -89,6 +89,24 @@ public final class Main
 					System.exit(1);
 				}
 			}
+			case "skill-formulas" ->
+			{
+				// Like stats / formulas: the working directory is the game server root and the output path is absolute (M5-JV-03).
+				if (!out.isAbsolute())
+				{
+					System.err.println("usage: Main skill-formulas <absolute outDir>   (working directory = game server root)");
+					System.exit(2);
+				}
+				try
+				{
+					SkillFormulaVectors.generate(out);
+				}
+				catch (Throwable t)
+				{
+					t.printStackTrace();
+					System.exit(1);
+				}
+			}
 			case "login-packets" -> LoginPacketVectors.generate(out);
 			case "all" ->
 			{
