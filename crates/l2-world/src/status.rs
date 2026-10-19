@@ -253,6 +253,14 @@ impl World {
         Some((cur, f64::from(self.stats(id)?.max_cp())))
     }
 
+    /// Whether HP, MP or CP of a player is below its maximum (what the setters' flags record).
+    fn any_vital_below_max(&self, id: ObjectId) -> bool {
+        [self.hp_and_max(id), self.mp_and_max(id), self.cp_and_max(id)]
+            .into_iter()
+            .flatten()
+            .any(|(cur, max)| cur < max)
+    }
+
     // ------------------------------------------------------------------ setters
 
     /// Java `CreatureStatus.setCurrentHp(newHp, broadcastPacket)`: sets the HP (capped at the
@@ -453,6 +461,13 @@ impl World {
         if !self.is_tracked(id) {
             // The creature left the world; its task must not outlive it.
             self.forget_status(id);
+            return;
+        }
+        if self.is_player(id) && !self.any_vital_below_max(id) {
+            // Java stops the task through the setters, which see the last vital reach its maximum.
+            // Something that wrote the vitals directly (an admin heal) can leave it running, so the
+            // tick checks it: nothing below its maximum, no task and no packet.
+            self.stop_hp_mp_regeneration(id);
             return;
         }
         if self.is_player(id) {
