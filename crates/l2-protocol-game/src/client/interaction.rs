@@ -139,3 +139,59 @@ impl Decode for RequestLinkHtml {
         Ok(Self { link: r.string() })
     }
 }
+
+// Java: gameserver/network/clientpackets/SendBypassBuildCmd.java
+/// A GM command typed with two slashes (`//spawn 20101`): the text after the slashes. The
+/// client sends it as this packet, not as chat.
+///
+/// Java `readImpl` trims the string (`String.trim()`: everything up to U+0020). `decode` does
+/// the same; the world adds the `admin_` prefix.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SendBypassBuildCmd {
+    pub command: String,
+}
+
+impl SendBypassBuildCmd {
+    pub const OPCODE: ClientOpcode = ClientOpcode::SendBypassBuildCmd;
+}
+
+impl Encode for SendBypassBuildCmd {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.string(&self.command);
+    }
+}
+
+impl Decode for SendBypassBuildCmd {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let text = r.string();
+        // Java `String.trim()` removes every character <= U+0020, not only white space.
+        Ok(Self {
+            command: text.trim_matches(|c: char| c <= ' ').to_owned(),
+        })
+    }
+}
+
+// Java: gameserver/network/clientpackets/BypassUserCmd.java
+/// A user command such as `/loc` (command id 0), picked from the client's command list.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BypassUserCmd {
+    pub command: i32,
+}
+
+impl BypassUserCmd {
+    pub const OPCODE: ClientOpcode = ClientOpcode::BypassUserCmd;
+}
+
+impl Encode for BypassUserCmd {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.command);
+    }
+}
+
+impl Decode for BypassUserCmd {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self { command: r.i32()? })
+    }
+}

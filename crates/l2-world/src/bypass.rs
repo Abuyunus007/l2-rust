@@ -14,9 +14,11 @@
 // ignored, as Java does.
 //
 // # What is left out, with the system that brings it
-// - `admin_` commands (`AdminCommandHandler`), the community board, `come_here`, `item_` item
-//   scripts, `_match`, `_diary`, `_olympiad`, `manor_menu_select`, `report` (captcha): later
-//   cards. They are accepted by the validation and then only logged.
+// - The community board, `come_here`, `item_` item scripts, `_match`, `_diary`, `_olympiad`,
+//   `manor_menu_select`, `report` (captcha): later cards. They are accepted by the validation
+//   and then only logged.
+// - `admin_` commands do not use this registry: they go to the `admin` module
+//   ([`World::admin_command`]), as Java hands them to `AdminCommandHandler`.
 // - The flood protectors (`canUseServerBypass`) and the `ON_PLAYER_BYPASS` script event.
 
 use std::collections::HashMap;
@@ -229,8 +231,7 @@ impl World {
         // FOLLOW-UP: `canUseServerBypass` flood protector.
 
         if command.starts_with("admin_") {
-            // FOLLOW-UP(admin): `AdminCommandHandler.onCommand`.
-            debug!("{id}: admin command {command}: the admin command handlers are not ported yet");
+            self.admin_command(id, command, true);
         } else if command == "come_here" && self.is_gm(id) {
             // FOLLOW-UP(M4): the target NPC walks to the GM (`setIntentionMoveTo`).
             debug!("{id}: come_here needs NPC movement (M4)");

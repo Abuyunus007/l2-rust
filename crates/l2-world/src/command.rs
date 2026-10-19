@@ -57,6 +57,11 @@ pub enum ClientInput {
     Bypass { command: String },
     /// Java `RequestLinkHtml`: the raw path of a linked html page.
     LinkHtml { link: String },
+    /// Java `SendBypassBuildCmd`: a GM command typed as `//command args`. `command` is the text
+    /// after the slashes, already trimmed.
+    BuildCmd { command: String },
+    /// Java `BypassUserCmd`: a user command such as `/loc` (id 0).
+    UserCommand { id: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

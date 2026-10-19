@@ -8,10 +8,10 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
-    Action, Appearing, AuthLogin, CannotMoveAnymore, CharacterCreate, CharacterDelete, CharacterRestore,
-    CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter, ProtocolVersion,
+    Action, Appearing, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate, CharacterDelete,
+    CharacterRestore, CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter, ProtocolVersion,
     RequestBypassToServer, RequestGotoLobby, RequestKeyMapping, RequestLinkHtml, RequestNetPing,
-    RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2, ValidatePosition,
+    RequestRestart, RequestSkillCoolTime, RequestTargetCanceld, Say2, SendBypassBuildCmd, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -37,6 +37,8 @@ pub enum ClientPacket {
     RequestTargetCanceld(RequestTargetCanceld),
     RequestBypassToServer(RequestBypassToServer),
     RequestLinkHtml(RequestLinkHtml),
+    SendBypassBuildCmd(SendBypassBuildCmd),
+    BypassUserCmd(BypassUserCmd),
     MoveToLocation(MoveToLocation),
     ValidatePosition(ValidatePosition),
     CannotMoveAnymore(CannotMoveAnymore),
@@ -92,6 +94,8 @@ pub fn decode_client(
             ClientPacket::RequestBypassToServer(RequestBypassToServer::decode(reader)?)
         }
         RequestLinkHtml::OPCODE => ClientPacket::RequestLinkHtml(RequestLinkHtml::decode(reader)?),
+        SendBypassBuildCmd::OPCODE => ClientPacket::SendBypassBuildCmd(SendBypassBuildCmd::decode(reader)?),
+        BypassUserCmd::OPCODE => ClientPacket::BypassUserCmd(BypassUserCmd::decode(reader)?),
         MoveToLocation::OPCODE => ClientPacket::MoveToLocation(MoveToLocation::decode(reader)?),
         ValidatePosition::OPCODE => ClientPacket::ValidatePosition(ValidatePosition::decode(reader)?),
         CannotMoveAnymore::OPCODE => ClientPacket::CannotMoveAnymore(CannotMoveAnymore::decode(reader)?),

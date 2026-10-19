@@ -206,6 +206,11 @@ impl NpcWorld {
     pub(crate) fn template(&self, npc_id: i32) -> Option<&NpcTemplate> {
         self.templates.as_ref()?.get(npc_id)
     }
+
+    /// Java `NpcData.getTemplateByName(name)`.
+    pub(crate) fn template_by_name(&self, name: &str) -> Option<&NpcTemplate> {
+        self.templates.as_ref()?.get_by_name(name)
+    }
 }
 
 /// What [`World::spawn_all_npcs`] did.
@@ -259,6 +264,11 @@ impl World {
     /// An NPC by object id.
     pub fn npc(&self, id: ObjectId) -> Option<&Npc> {
         self.npcs.get(&id)
+    }
+
+    /// An NPC by object id, to change it.
+    pub fn npc_mut(&mut self, id: ObjectId) -> Option<&mut Npc> {
+        self.npcs.get_mut(&id)
     }
 
     /// The object ids of all NPCs, in ascending order.

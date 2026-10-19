@@ -682,7 +682,7 @@ impl World {
 
 /// Java `Race.name()` of a player race ordinal (`Race.java`: HUMAN, ELF, DARK_ELF, ORC, DWARF,
 /// KAMAEL). `None` for an ordinal that is no player race; Java would fail the lookup too.
-fn race_name(race: i32) -> Option<&'static str> {
+pub(crate) fn race_name(race: i32) -> Option<&'static str> {
     match race {
         0 => Some("HUMAN"),
         1 => Some("ELF"),
