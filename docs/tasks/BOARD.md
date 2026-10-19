@@ -204,7 +204,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 |---|---|---|---|---|---|
 | [M4-DATA-10](M4/M4-DATA-10.md) | Stat enum, function templates, conditions, item stat data | sonnet | full | M2-DATA-04 | merged |
 | [M4-DATA-12](M4/M4-DATA-12.md) | Armor sets, enchant HP bonus, hit condition bonus, hennas | haiku | spot | none | merged |
-| [M4-JV-01](M4/M4-JV-01.md) | Java vectors for the stat engine and Formulas | sonnet | full | none | in-progress |
+| [M4-JV-01](M4/M4-JV-01.md) | Java vectors for the stat engine and Formulas | sonnet | full | none | merged |
 | [M4-GPROTO-07](M4/M4-GPROTO-07.md) | Combat, death and item packets | haiku | spot | none | merged |
 | [M4-DATA-11](M4/M4-DATA-11.md) | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | merged |
 | [M4-STAT-01](M4/M4-STAT-01.md) | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | in-progress (phase 1) |
