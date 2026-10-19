@@ -21,7 +21,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use crate::teleport::TeleportTarget;
-use crate::world::{World, unix_ms_now};
+use crate::world::World;
 
 impl World {
     /// Java `Teleporter.onBypassFeedback(player, command)`.
@@ -210,7 +210,8 @@ impl World {
                 .settings
                 .talk
                 .clock_override_unix_ms
-                .unwrap_or_else(unix_ms_now);
+                // Java `Calendar.getInstance()`: the server's local time, not UTC.
+                .unwrap_or_else(l2_util::time::local_now_millis);
             let hour = now.div_euclid(3_600_000).rem_euclid(24);
             // 1970-01-01 was a Thursday; 0 = Monday.
             let weekday = now.div_euclid(86_400_000).wrapping_add(3).rem_euclid(7);

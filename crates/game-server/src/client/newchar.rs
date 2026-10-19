@@ -787,7 +787,9 @@ pub fn build_plan(
     // Player.create + createDb: level 1, nothing equipped, no skills.
     let mut level = 1;
     let (max_hp, max_mp, max_cp) = hp_mp_cp(level, 0.0)?;
-    let create_date = CalendarDate::from_unix_millis_utc(now_ms);
+    // Java writes `new Date(System.currentTimeMillis())` to a DATE column: the JDBC driver keeps
+    // the JVM's local date, so a character made just after local midnight has today's date.
+    let create_date = CalendarDate::from_unix_millis_utc(now_ms + l2_util::time::local_offset_millis(now_ms));
     let sex = i32::from(request.is_female);
     let title_color = 0x00EC_F9A2; // PlayerAppearance.DEFAULT_TITLE_COLOR
     let insert = NewCharacter {

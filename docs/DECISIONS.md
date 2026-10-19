@@ -67,3 +67,4 @@ Background for each decision: `docs/analysis/`.
 | D-45 | Planning state lives in the repo (`docs/`, `CLAUDE.md`, task cards), never only in a conversation. |
 | D-46 | The Java reference (`C:\l2-rust\l2jmobius`) and the geodata folders are read-only and git-ignored. Agents reference them by absolute path. |
 | D-47 | The user (a Rust beginner) tests in-game at milestones. Opus does the code reviews. |
+| D-48 | **Local time like Java:** where Java reads calendar fields in the JVM's default zone (`Calendar.getInstance()`, `java.sql.Date` written to `DATE` columns), Rust uses the machine's local zone through `l2_util::time::{local_offset_millis, local_now_millis}` (crate `chrono`, `clock` feature only). Epoch timestamps (`System.currentTimeMillis()`) stay UTC milliseconds. |

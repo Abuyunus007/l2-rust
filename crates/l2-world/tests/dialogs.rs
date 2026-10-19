@@ -255,7 +255,12 @@ fn setup() -> Setup {
     setup_with(WorldSettings::default())
 }
 
-fn setup_with(settings: WorldSettings) -> Setup {
+/// A Wednesday noon: no Monday/Tuesday evening teleport discount, whatever the real clock says.
+const WEDNESDAY_NOON: i64 = 6 * 86_400_000 + 12 * 3_600_000;
+
+fn setup_with(mut settings: WorldSettings) -> Setup {
+    // Fees must not depend on when the tests run (Java halves them Monday/Tuesday from 20:00).
+    settings.talk.clock_override_unix_ms.get_or_insert(WEDNESDAY_NOON);
     let root = Root::new();
     let log = Log::default();
     let stored = Stored::default();
@@ -1443,6 +1448,9 @@ fn roxxy_of_the_real_datapack() {
     let stored = Stored::default();
     let mut world = World::new(WorldRng::from_seed(3), Box::new(RecordingOutbox(stored.clone())));
     world.set_static_data(Box::new(Items));
+    let mut settings = WorldSettings::default();
+    settings.talk.clock_override_unix_ms = Some(WEDNESDAY_NOON);
+    world.set_settings(settings);
     world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
     world.set_npc_data(npcs, spawns);
     world.set_html_cache(Arc::new(HtmCache::load(&root, false)));

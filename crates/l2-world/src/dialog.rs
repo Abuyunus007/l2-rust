@@ -78,8 +78,9 @@ pub struct TalkSettings {
     pub gm_debug_html_paths: bool,
     /// `NpcConfig.LIST_PET_RENT_NPC` (`ListPetRentNpc`).
     pub list_pet_rent_npc: HashSet<i32>,
-    /// Test hook: the wall clock (Unix ms) the Monday/Tuesday teleport discount reads. `None` =
-    /// the system clock.
+    /// Test hook: the local wall clock (milliseconds counted like Unix time, but in the server's
+    /// local zone; see `l2_util::time::local_now_millis`) the Monday/Tuesday teleport discount
+    /// reads. `None` = the system clock.
     pub clock_override_unix_ms: Option<i64>,
 }
 

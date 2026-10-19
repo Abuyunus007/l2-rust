@@ -173,6 +173,20 @@ fn write_datapack(root: &Path) {
 // ------------------------------------------------------------------------------------------
 
 /// Decodes the fields after the opcode (the opcode and, for 0xFE, the ex id are skipped).
+/// The gatekeeper fee the server asks right now: Java `TeleportHolder.calculateFee` halves it on
+/// Monday and Tuesday from 20:00 server-local time, so the expectation follows the same clock.
+fn teleport_fee() -> i64 {
+    let now = l2_util::time::local_now_millis();
+    let hour = now.div_euclid(3_600_000).rem_euclid(24);
+    // 1970-01-01 was a Thursday; 0 = Monday.
+    let weekday = now.div_euclid(86_400_000).wrapping_add(3).rem_euclid(7);
+    if hour >= 20 && weekday <= 1 {
+        m3_data::TELEPORT_FEE / 2
+    } else {
+        m3_data::TELEPORT_FEE
+    }
+}
+
 fn decode_any<P: Decode>(body: &[u8]) -> P {
     let skip = if body[0] == 0xFE { 3 } else { 1 };
     P::decode(&mut PacketReader::new(&body[skip..])).unwrap_or_else(|e| {
@@ -561,7 +575,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     );
     assert!(
         page.html
-            .contains(&format!("Test Village - {} Adena", m3_data::TELEPORT_FEE)),
+            .contains(&format!("Test Village - {} Adena", teleport_fee())),
         "the price is in the list: {}",
         page.html
     );
@@ -582,10 +596,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
     );
     let fee: SystemMessage = all(&leaving, "SYSTEM_MESSAGE").remove(0);
     assert_eq!(fee.id, SystemMessageId::S1AdenaDisappeared);
-    assert_eq!(
-        fee.params,
-        [SystemMessageParam::LongNumber(m3_data::TELEPORT_FEE)]
-    );
+    assert_eq!(fee.params, [SystemMessageParam::LongNumber(teleport_fee())]);
     let deleted: Vec<i32> = all::<DeleteObject>(&leaving, "DELETE_OBJECT")
         .iter()
         .map(|d| d.object_id)
@@ -613,11 +624,7 @@ async fn play<H: Harness>(h: &mut H) -> Played {
             update.updates[0].item.item_id,
             update.updates[0].item.count
         ),
-        (
-            InventoryUpdate::MODIFIED,
-            ADENA_ID,
-            START_ADENA - m3_data::TELEPORT_FEE
-        )
+        (InventoryUpdate::MODIFIED, ADENA_ID, START_ADENA - teleport_fee())
     );
 
     // B watched A vanish: the target is dropped, A is deleted, and the teleport is announced.
@@ -674,7 +681,7 @@ fn assert_played(played: &Played) {
         played.left_a,
         Left {
             position: played.teleported_to,
-            adena: START_ADENA - m3_data::TELEPORT_FEE,
+            adena: START_ADENA - teleport_fee(),
             forgot: vec![],
         },
         "A is stored where the gatekeeper sent it, with the fee paid; nothing is near it to forget"
