@@ -434,10 +434,13 @@ async fn play<H: Harness>(h: &mut H) -> Played {
             .any(|m| m.id == SystemMessageId::YourLevelHasIncreased),
         "the level went up"
     );
+    // Only the hunter's own animations: NPCs in view may play their random animation
+    // (RandomAnimationTaskManager, M4-AI-02) at any time.
     let animation = all::<SocialAction>(&fight, "SOCIAL_ACTION");
     assert_eq!(
         animation
             .iter()
+            .filter(|s| s.object_id == a)
             .map(|s| (s.object_id, s.action_id))
             .collect::<Vec<_>>(),
         [(a, LEVEL_UP_ACTION)]
