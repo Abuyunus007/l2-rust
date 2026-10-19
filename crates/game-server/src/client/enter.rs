@@ -297,6 +297,8 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             vitality_points: i32::from(row.vitality_points).clamp(1, 20_000),
             bookmark_slot: i32::from(row.bookmarkslot),
             death_penalty_level: i32::from(row.death_penalty_level),
+            // Java `setLastAccess(rset.getLong("lastAccess"))`
+            last_access: i64::try_from(row.last_access).unwrap_or(i64::MAX),
             ..PlayerProfile::default()
         },
     }
@@ -649,7 +651,7 @@ mod tests {
             onlinetime: Some(3_600),
             char_slot: Some(0),
             newbie: Some(0),
-            last_access: 0,
+            last_access: 1_700_000_000_000,
             clan_privs: Some(0),
             wantspeace: Some(0),
             isin7sdungeon: 0,
@@ -702,6 +704,8 @@ mod tests {
             ),
             (15_000, 9, 3)
         );
+        // Java `_lastAccess`, in milliseconds.
+        assert_eq!(profile.last_access, 1_700_000_000_000);
     }
 
     #[test]

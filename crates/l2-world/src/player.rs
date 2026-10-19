@@ -98,9 +98,11 @@ pub struct MacroData {
     pub commands: Vec<MacroCmdData>,
 }
 
-/// The load-only part of a character: values the enter-world packets show, read from tables the
-/// Java game server also owns (D-39). The persistence task never writes any of it, so it only
-/// travels database -> world.
+/// The part of a character that lives in tables the Java game server also owns (D-39): values the
+/// enter-world packets show, read from them at load. The persistence task writes back only what
+/// the world models: `vitality_points`, the Nevit variables and the hourglass time
+/// (`variables_changed`, `variables_removed`, `reco_store`, M4-VIT-01) and `exp_before_death`;
+/// everything else only travels database -> world.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerProfile {
     /// `characters.fame`.
@@ -130,6 +132,17 @@ pub struct PlayerProfile {
     /// `character_hennas`: the dye id (`symbol_id`) of slots 1 to 3 of the active class, 0 for an
     /// empty slot (Java `restoreHenna`).
     pub hennas: [i32; 3],
+    /// `characters.lastAccess` as loaded (Java `_lastAccess`): milliseconds of the last logout.
+    pub last_access: i64,
+    /// The variables the world set since the character was loaded (Java `AbstractVariables`
+    /// `_added` and `_modified`): the persistence task upserts them with every store. Idempotent,
+    /// so they are never cleared.
+    pub variables_changed: std::collections::BTreeSet<String>,
+    /// The variables the world removed since the load (Java `_deleted`): deleted with every store.
+    pub variables_removed: std::collections::BTreeSet<String>,
+    /// The world keeps `character_reco_bonus` (Nevit is on): a store writes `recom_have`,
+    /// `recom_left` and `recom_time_left_ms` (Java `storeRecommendations`).
+    pub reco_store: bool,
 }
 
 impl Default for PlayerProfile {
@@ -148,6 +161,10 @@ impl Default for PlayerProfile {
             macros: Vec::new(),
             variables: BTreeMap::new(),
             hennas: [0; 3],
+            last_access: 0,
+            variables_changed: std::collections::BTreeSet::new(),
+            variables_removed: std::collections::BTreeSet::new(),
+            reco_store: false,
         }
     }
 }

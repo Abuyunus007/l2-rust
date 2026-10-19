@@ -14,8 +14,9 @@ use std::path::PathBuf;
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::client::RequestSkillCoolTime;
 use l2_protocol_game::server::{
-    ActionFailed, ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,
-    ExRotation, ExShowContactList, InventoryBlock, ItemInfo, MacroCommandEntry, MacroEntry, MacroList,
+    ActionFailed, ExBrExtraUserInfo, ExNevitAdventEffect, ExNevitAdventPointInfo, ExNevitAdventTimeChange,
+    ExQuestItemList, ExRotation, ExShowContactList, ExVitalityPointInfo, InventoryBlock, ItemInfo,
+    MacroCommandEntry, MacroEntry, MacroList,
 };
 use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
 
@@ -249,6 +250,27 @@ fn nevit_packets_layout() {
     check_round_trip(
         &ExNevitAdventTimeChange::new(99_999, false),
         &Bytes::default().byte(0xFE).short(0xE1).byte(1).int(14_400).done(),
+        3,
+    );
+}
+
+#[test]
+fn nevit_effect_and_vitality_packets_layout() {
+    // Java ExNevitAdventEffect: EX_NAVIT_ADVENT_EFFECT (0xFE 0xE0), the seconds left.
+    check_round_trip(
+        &ExNevitAdventEffect { time_left: 180 },
+        &Bytes::default().byte(0xFE).short(0xE0).int(180).done(),
+        3,
+    );
+    check_round_trip(
+        &ExNevitAdventEffect { time_left: 0 },
+        &Bytes::default().byte(0xFE).short(0xE0).int(0).done(),
+        3,
+    );
+    // Java ExVitalityPointInfo: EX_VITALITY_POINT_INFO (0xFE 0xA0), the points.
+    check_round_trip(
+        &ExVitalityPointInfo { points: 20_000 },
+        &Bytes::default().byte(0xFE).short(0xA0).int(20_000).done(),
         3,
     );
 }

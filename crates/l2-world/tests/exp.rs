@@ -506,6 +506,12 @@ impl Scene {
                 ..DeathSettings::default()
             },
             exp: config.exp,
+            // These tests are about the plain exp. A character with `lastAccess` 0 would be given
+            // all its vitality back at login (M4-VIT-01 has its own tests).
+            vitality: VitalitySettings {
+                enable_vitality: false,
+                ..VitalitySettings::default()
+            },
             ..WorldSettings::default()
         });
         world.set_static_data(Box::new(Data(synthetic_stats())));
@@ -630,6 +636,11 @@ fn a_kill_is_shared_by_damage_with_java_integer_arithmetic() {
             .cloned()
             .collect::<Vec<_>>(),
         vec![
+            // `PlayerStat.addExpAndSp` (M4-VIT-01): the hourglass starts again because the
+            // character has no `character_reco_bonus` time (`startNevitHourglassTask` ->
+            // `ExVoteSystemInfo`), and the advent task starts (`ExNevitAdventTimeChange`).
+            "EX_VOTE_SYSTEM_INFO",
+            "EX_NAVIT_ADVENT_TIME_CHANGE",
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
             "STATUS_UPDATE",
@@ -835,11 +846,15 @@ fn levelling_up_from_1_to_2_to_5_learns_the_skills_of_the_levels() {
 
     let sent = s.log.take();
     // The order of `PlayerStat.addLevel`: HP and MP full (PlayableStat), CP full, the
-    // `SocialAction` for everybody, the message, the new maxima, `UserInfo`, `ExVoteSystemInfo`;
-    // then `addExp`'s own `UserInfo` and `addSp`'s `StatusUpdate`.
+    // `SocialAction` for everybody, the message, the new maxima, `UserInfo`, `ExVoteSystemInfo`,
+    // and (M4-VIT-01) `Nevit.addPoints(2000)`'s `ExNevitAdventPointInfo`;
+    // then `addExp`'s own `UserInfo` and `addSp`'s `StatusUpdate`. Before all of it comes what
+    // `PlayerStat.addExpAndSp` does for Nevit (see `a_kill_is_shared_by_damage...`).
     assert_eq!(
         names(&sent, ME),
         vec![
+            "EX_VOTE_SYSTEM_INFO",
+            "EX_NAVIT_ADVENT_TIME_CHANGE",
             // HP, MP and CP full: the vitals go out 50 ms later, once (`broadcastStatusUpdate`);
             // the HP crossing 30% of the maximum is a `UserInfo` now (`setCurrentHp`).
             "USER_INFO",
@@ -850,6 +865,7 @@ fn levelling_up_from_1_to_2_to_5_learns_the_skills_of_the_levels() {
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
             "EX_VOTE_SYSTEM_INFO",
+            "EX_NAVIT_ADVENT_POINT_INFO",
             "USER_INFO",
             "EX_BR_EXTRA_USER_INFO",
             "STATUS_UPDATE",  // SP

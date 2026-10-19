@@ -60,6 +60,14 @@ pub enum TimerKind {
     /// Java `SpawnGroupTaskManager`: a spawn group materialises the unit it reserved when one of
     /// its units died (`group` and `entry` are indices into the spawn data).
     GroupSpawn { group: usize, entry: usize },
+    /// Java `VitalityTask` (every 60 s, `Player.startVitalityTask`): see `rewards/vitality.rs`.
+    Vitality(ObjectId),
+    /// Java `Nevit.AdventTask` (30 s): see `rewards/nevit.rs`.
+    NevitAdvent(ObjectId),
+    /// Java `Nevit.NevitEffectEnd`: the end of Nevit's blessing.
+    NevitEffectEnd(ObjectId),
+    /// Java `RecoBonusTaskEnd`: the end of the Nevit hourglass.
+    NevitHourglassEnd(ObjectId),
 }
 
 #[derive(Debug, Default)]

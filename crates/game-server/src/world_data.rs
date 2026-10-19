@@ -379,6 +379,39 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
     settings
 }
 
+/// The values vitality reads (Java `PlayerConfig`, `RatesConfig`).
+pub fn vitality_settings(config: &GameConfig) -> l2_world::VitalitySettings {
+    let r = &config.rates;
+    let p = &config.player;
+    l2_world::VitalitySettings {
+        enable_vitality: p.enable_vitality,
+        recover_vitality_on_reconnect: p.recover_vitality_on_reconnect,
+        raidboss_use_vitality: p.raidboss_use_vitality,
+        rate_vitality_level: [
+            r.rate_vitality_level_1,
+            r.rate_vitality_level_2,
+            r.rate_vitality_level_3,
+            r.rate_vitality_level_4,
+        ],
+        rate_vitality_gain: r.rate_vitality_gain,
+        rate_vitality_lost: r.rate_vitality_lost,
+        rate_recovery_vitality_peace_zone: r.rate_recovery_vitality_peace_zone,
+        rate_recovery_on_reconnect: r.rate_recovery_on_reconnect,
+    }
+}
+
+/// The values Nevit's blessing reads (Java `PlayerConfig`; `NevitEnabled` is
+/// `WorldSettings::nevit_enabled`).
+pub fn nevit_settings(config: &GameConfig) -> l2_world::NevitSettings {
+    let p = &config.player;
+    l2_world::NevitSettings {
+        max_points: p.nevit_max_points,
+        bonus_effect_time: p.nevit_bonus_effect_time,
+        advent_time: p.nevit_advent_time,
+        ignore_advent_time: p.nevit_ignore_advent_time,
+    }
+}
+
 /// The values dying and reviving read. `RespawnRestoreCP/HP/MP` are `()` placeholders in the
 /// generated config (Java divides them by 100 after reading), so they come from `Player.ini`.
 pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
@@ -457,6 +490,8 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         combat: combat_settings(config, config_dir),
         death: death_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
+        vitality: vitality_settings(config),
+        nevit: nevit_settings(config),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
@@ -1046,5 +1081,34 @@ mod tests {
         let wand = data.item(6).unwrap();
         assert!(wand.weapon && wand.type2 == 0);
         assert_eq!(wand.body_part, 0x0080);
+    }
+
+    /// The vitality and Nevit settings carry the Java defaults of the generated config.
+    #[test]
+    fn the_vitality_and_nevit_settings_are_the_java_defaults() {
+        let config = GameConfig::default();
+        assert_eq!(vitality_settings(&config), l2_world::VitalitySettings::default());
+        assert_eq!(nevit_settings(&config), l2_world::NevitSettings::default());
+    }
+
+    /// The shipped `Rates.ini` / `Player.ini` reach the world: `RateVitalityLost = 0.6`,
+    /// `RaidbossUseVitality = False`.
+    #[test]
+    fn the_shipped_vitality_values_are_read() {
+        let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        let config_dir = root.join("config");
+        if !config_dir.join("Rates.ini").is_file() {
+            eprintln!("skipped: {} has no Rates.ini", config_dir.display());
+            return;
+        }
+        let config = GameConfig::load(&config_dir).unwrap();
+        let v = vitality_settings(&config);
+        assert!(v.enable_vitality && v.recover_vitality_on_reconnect);
+        assert!(!v.raidboss_use_vitality);
+        assert_eq!(v.rate_vitality_level, [1.5, 2.0, 2.5, 3.0]);
+        assert_eq!((v.rate_vitality_gain, v.rate_vitality_lost), (1.0, 0.6));
+        assert_eq!(v.rate_recovery_on_reconnect, 4.0);
     }
 }

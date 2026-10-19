@@ -1,6 +1,6 @@
 //! More server packets of the enter-world sequence: the macro list, the quest item list, the
-//! rotation, the contact list, `ExBrExtraUserInfo` and the two Nevit packets (`ActionFailed`
-//! lives in [`super::interaction`]).
+//! rotation, the contact list, `ExBrExtraUserInfo`, the Nevit packets and `ExVitalityPointInfo`
+//! (`ActionFailed` lives in [`super::interaction`]).
 //!
 //! Same rules as [`super::enterworld`]: values only, the caller prepares them.
 
@@ -275,6 +275,54 @@ impl Encode for ExNevitAdventPointInfo {
 }
 
 impl Decode for ExNevitAdventPointInfo {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self { points: r.i32()? })
+    }
+}
+
+// Java: gameserver/network/serverpackets/ExNevitAdventEffect.java
+/// The seconds Nevit's blessing lasts (`EX_NAVIT_ADVENT_EFFECT`); 0 ends the effect.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExNevitAdventEffect {
+    pub time_left: i32,
+}
+
+impl ExNevitAdventEffect {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExNavitAdventEffect;
+}
+
+impl Encode for ExNevitAdventEffect {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.time_left);
+    }
+}
+
+impl Decode for ExNevitAdventEffect {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self { time_left: r.i32()? })
+    }
+}
+
+// Java: gameserver/network/serverpackets/ExVitalityPointInfo.java
+/// The vitality points (`EX_VITALITY_POINT_INFO`), 0 to 20000.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExVitalityPointInfo {
+    pub points: i32,
+}
+
+impl ExVitalityPointInfo {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExVitalityPointInfo;
+}
+
+impl Encode for ExVitalityPointInfo {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.points);
+    }
+}
+
+impl Decode for ExVitalityPointInfo {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         Ok(Self { points: r.i32()? })
     }

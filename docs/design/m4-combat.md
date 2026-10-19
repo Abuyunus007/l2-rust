@@ -83,8 +83,24 @@ memory only); the stat engine comes first (CP-M4a), combat after it.
 - A player's `exp`, `sp`, `level` and `expBeforeDeath` live in `PlayerData` / `PlayerProfile`; the
   `characters` row is written by the normal store. Skills a level teaches or takes are also sent
   at once as `PersistCommand::SkillChanges` (Java's `storeSkill` / `removeSkill`).
-- Not yet (own cards): parties, vitality and Nevit bonuses, pets/summons, the over-hit bonus,
-  `AutoLearnSkills = True`.
+- Not yet (own cards): parties, pets/summons, the over-hit bonus, `AutoLearnSkills = True`.
+
+## Vitality and Nevit (M4-VIT-01)
+- `rewards/vitality.rs`: `PlayerStat`'s vitality (float points, level, multiplier), the points a
+  kill uses (`Attackable.getVitalityPoints`, bosses override it), the 60 s `VitalityTask`
+  (`TimerKind::Vitality`) and the recovery at login. The state is in `ExpWorld::vitality`; the
+  whole number is mirrored into `PlayerProfile::vitality_points`, which `UserInfo` shows and the
+  store writes to `characters.vitality_points` (Java stores `(int)` of the float).
+- `rewards/nevit.rs`: `Nevit.java` (points, 30 s advent task, the 180 s blessing) and the
+  hourglass of `Player.java` (`character_reco_bonus.time_left`). Timers: `NevitAdvent`,
+  `NevitEffectEnd`, `NevitHourglassEnd`. The peace zone pauses them (`zones.rs`).
+- Stored values (D-39): `hunting_points`, `hunting_time`, `nevit_b` are `character_variables`
+  rows. The world records the names it set or removed in `PlayerProfile::variables_changed` /
+  `variables_removed`; with every store the persistence task upserts and deletes exactly those
+  (Java's `saveNowSync` statements). `character_reco_bonus` is written with every store of a
+  Nevit-enabled player (`reco_store`), the hourglass time being what is left of the timer.
+- Left out: the glow (`AbnormalVisualEffect.NAVIT_ADVENT`, effects are M5), `RecoGiveTask` and the
+  recommendation votes, the daily reset (`DailyResetManager.resetNevit`), parties.
 
 ## Not in M4
 - Active skills and their effects (cast, buffs, debuffs, heals): M5. Only passive skill stat

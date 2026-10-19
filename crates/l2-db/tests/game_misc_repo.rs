@@ -627,5 +627,28 @@ async fn macros_clans_and_recommendations() {
         vec![("UI_KEY_MAPPING".to_owned(), "1	2".to_owned())]
     );
     assert!(vars.variables_of(12_345).await.unwrap().is_empty());
+
+    // Java's upsert and delete (Nevit's variables): an insert, an update of the same row, a
+    // delete, and nothing for a variable that is not there. Other rows stay.
+    vars.upsert_variable(ALICE, "hunting_points", "72").await.unwrap();
+    vars.upsert_variable(ALICE, "hunting_points", "144")
+        .await
+        .unwrap();
+    vars.upsert_variable(ALICE, "nevit_b", "180").await.unwrap();
+    vars.delete_variable(ALICE, "nevit_b").await.unwrap();
+    vars.delete_variable(ALICE, "never_set").await.unwrap();
+    let mut alice = vars.variables_of(ALICE).await.unwrap();
+    alice.sort();
+    assert_eq!(
+        alice,
+        vec![
+            ("UI_KEY_MAPPING".to_owned(), "1	2".to_owned()),
+            ("hunting_points".to_owned(), "144".to_owned()),
+        ]
+    );
+    assert_eq!(
+        vars.variables_of(BOB).await.unwrap(),
+        vec![("x".to_owned(), "y".to_owned())]
+    );
     db.drop_database().await;
 }

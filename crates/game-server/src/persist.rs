@@ -16,6 +16,8 @@
 // database. This task only ever writes
 // - `characters` through Java's own `UPDATE_CHARACTER` and `UPDATE_ONLINE_STATUS`,
 // - `items`, `character_skills`, `character_shortcuts` of the character it stores,
+// - `character_reco_bonus` (the Nevit hourglass time) and the `character_variables` rows the
+//   world changed (Nevit's points; M4-VIT-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup.
 //
 // Item rows reach the database two ways, like in Java: `PersistCommand::ItemChanges` carries the
@@ -23,8 +25,8 @@
 // once; the full store (`StorePlayer`) writes what differs from the last write, which covers
 // everything Java only writes later (a lower count, new items). The baseline of a character
 // follows both, so neither writes a row twice or inserts a row that exists.
-// `UPDATE_CHARACTER` writes every column, including ones M2 does not model (clan, nobless,
-// vitality...). Those are read from the row first and written back unchanged, so a store never
+// `UPDATE_CHARACTER` writes every column, including ones M2 does not model (clan, nobless...).
+// (`vitality_points` is modelled since M4-VIT-01 and comes from the snapshot.) Those are read from the row first and written back unchanged, so a store never
 // changes what the Java side owns. The account may be on one game server at a time (the login
 // server enforces it), so nobody else changes the row between that read and the write.
 
@@ -37,7 +39,8 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, ItemLocation, ItemRepository, ItemUpdate, NewItem,
-    NewShortcut, Pool, ShortcutRepository, SkillLevel, SkillRepository,
+    NewShortcut, Pool, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
+    VariableRepository,
 };
 use l2_world::{ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
@@ -332,6 +335,8 @@ pub struct DbStore {
     items: ItemRepository,
     skills: SkillRepository,
     shortcuts: ShortcutRepository,
+    reco: RecommendationRepository,
+    variables: VariableRepository,
     baselines: HashMap<ObjectId, Baseline>,
 }
 
@@ -341,9 +346,40 @@ impl DbStore {
             characters: CharacterRepository::new(pool.clone()),
             items: ItemRepository::new(pool.clone()),
             skills: SkillRepository::new(pool.clone()),
-            shortcuts: ShortcutRepository::new(pool),
+            shortcuts: ShortcutRepository::new(pool.clone()),
+            reco: RecommendationRepository::new(pool.clone()),
+            variables: VariableRepository::new(pool),
             baselines: HashMap::new(),
         }
+    }
+
+    /// Java `Player.storeRecommendations` and `PlayerVariables.saveNowSync`: the Nevit rows the
+    /// world changed (M4-VIT-01). Only what the snapshot says it changed is written.
+    async fn store_nevit_rows(&self, player: &PlayerData) -> Result<(), PersistError> {
+        let char_id = player.object_id.0;
+        let profile = &player.profile;
+        // `REPLACE INTO character_reco_bonus (charId,rec_have,rec_left,time_left)`.
+        if profile.reco_store {
+            self.reco
+                .replace_reco_bonus(
+                    char_id,
+                    profile.recom_have,
+                    profile.recom_left,
+                    profile.recom_time_left_ms,
+                )
+                .await?;
+        }
+        // The deletes first, then the upserts, both by name (Java sorts them).
+        for name in &profile.variables_removed {
+            self.variables.delete_variable(char_id, name).await?;
+        }
+        for name in &profile.variables_changed {
+            // Java: `if (value != null)`.
+            if let Some(value) = profile.variables.get(name) {
+                self.variables.upsert_variable(char_id, name, value).await?;
+            }
+        }
+        Ok(())
     }
 
     /// The baseline of a character that was not stored since the server started: its rows as
@@ -736,7 +772,13 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         char_name: player.name.clone(),
         death_penalty_level: i64::from(row.death_penalty_level),
         bookmark_slot: i32::from(row.bookmarkslot),
-        vitality_points: i32::from(row.vitality_points),
+        // Java stores `(int) _vitalityPoints`. The world keeps the number in the profile; 0 (never
+        // a real value, the minimum is 1) means a snapshot that does not carry it.
+        vitality_points: if player.profile.vitality_points >= 1 {
+            player.profile.vitality_points
+        } else {
+            i32::from(row.vitality_points)
+        },
         language: row.language.clone(),
         faction: i32::from(row.faction),
         pccafe_points: row.pccafe_points,
@@ -758,6 +800,8 @@ impl PlayerStore for DbStore {
         self.characters
             .update_character(char_id, &build_character_update(player, &row))
             .await?;
+        // Java: Player.store -> getVariables().storeMe(); autoSave / deleteMe -> storeRecommendations.
+        self.store_nevit_rows(player).await?;
 
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);

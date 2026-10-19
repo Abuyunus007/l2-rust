@@ -51,6 +51,13 @@ impl World {
     /// Removes a player: final store, then `PlayerLeft`, the last packet of this way out, and
     /// finally the session hears about it.
     pub(crate) fn leave(&mut self, id: ObjectId, reason: LeaveReason) {
+        if !self.players.contains_key(&id) {
+            return;
+        }
+        // Java `deleteMe`: the Nevit logout listener and `storeRecommendations(false)` come before
+        // the store, `stopAllTimers` ends the vitality task.
+        self.nevit_on_leave(id);
+        self.forget_vitality(id);
         let Some(player) = self.players.remove(&id) else {
             return;
         };

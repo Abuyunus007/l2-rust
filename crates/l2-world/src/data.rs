@@ -312,6 +312,10 @@ pub struct WorldSettings {
     pub death: crate::death::DeathSettings,
     /// The values exp, SP and levels read (M4-EXP-01).
     pub exp: crate::rewards::exp::ExpSettings,
+    /// The values vitality reads (M4-VIT-01).
+    pub vitality: crate::rewards::vitality::VitalitySettings,
+    /// The values Nevit's blessing reads besides `nevit_enabled` (M4-VIT-01).
+    pub nevit: crate::rewards::nevit::NevitSettings,
 }
 
 impl Default for WorldSettings {
@@ -352,6 +356,8 @@ impl Default for WorldSettings {
             inventory: crate::inventory::InventorySettings::default(),
             death: crate::death::DeathSettings::default(),
             exp: crate::rewards::exp::ExpSettings::default(),
+            vitality: crate::rewards::vitality::VitalitySettings::default(),
+            nevit: crate::rewards::nevit::NevitSettings::default(),
         }
     }
 }

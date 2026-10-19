@@ -23,8 +23,6 @@
 // `FlagPvPZone`, `RespawnZone` (restart points only).
 //
 // What Java does in these zones that is left out, with the system that brings it:
-// - `PeaceZone.onEnter`: pausing the Nevit advent task and hourglass, which stores the
-//   recommendations (`storeRecommendations`): Nevit state, M4
 // - `NoLandingZone`: dismounting a wyvern, the GM notice: mounts, M4
 // - `JailZone.onExit`: pulling a jailed player back: jail system, M5
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
@@ -449,6 +447,8 @@ impl World {
             // NOTE(java-quirk): Java skips the flags of a siege participant when
             // `PeaceZoneMode == 1`; nobody takes part in a siege before M5.
             ZoneKind::Peace => {
+                // "Nevit Turn Off on Peace Zone" (before the flag, like Java).
+                self.nevit_on_peace_zone_enter(id);
                 if peace_mode != 2 {
                     self.set_inside(id, ZoneId::Peace, true);
                 }

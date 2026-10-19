@@ -13,13 +13,15 @@ use game_server::persist::{DbStore, LsNotice, PersistError, PlayerStore, RetryPo
 use game_server::runtime::OutboxMessage;
 use l2_db::{
     CalendarDate, CharacterRepository, ItemLocation, ItemRepository, NewCharacter, NewItem, Pool,
-    ShortcutRepository, SkillRepository, connect_with,
+    RecommendationRepository, ShortcutRepository, SkillRepository, VariableRepository, connect_with,
 };
 use l2_testkit::test_db::TestDb;
 use l2_world::{ItemData, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 5] = [
+const SCHEMA: [&str; 7] = [
+    include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
+    include_str!("../../l2-db/sql/game/character_variables.sql"),
     include_str!("../../l2-db/sql/game/characters.sql"),
     include_str!("../../l2-db/sql/game/items.sql"),
     include_str!("../../l2-db/sql/game/character_skills.sql"),
@@ -376,6 +378,95 @@ async fn skill_changes_and_exp_before_death_are_written_like_java() {
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
     assert_eq!(row.exp_before_death, Some(987_654));
     assert_eq!((row.level, row.exp, row.sp), (Some(5), Some(1234), 56));
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// M4-VIT-01: the vitality column is the whole number of the points, the Nevit variables are
+/// upserted and deleted by name like `PlayerVariables.saveNowSync`, and `character_reco_bonus`
+/// is replaced like `Player.storeRecommendations`. Rows of other variables stay.
+#[tokio::test]
+async fn vitality_nevit_variables_and_the_hourglass_are_written_like_java() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let variables = VariableRepository::new(pool.clone());
+    let reco = RecommendationRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    // A variable the Java game server owns, and one the world will remove.
+    variables
+        .upsert_variable(CHAR_ID, "UI_KEY_MAPPING", "1\t2")
+        .await
+        .unwrap();
+    variables
+        .upsert_variable(CHAR_ID, "nevit_b", "100")
+        .await
+        .unwrap();
+
+    let mut store = DbStore::new(pool.clone());
+    let mut data = player_data();
+    data.items = vec![];
+    data.shortcuts = vec![];
+    data.skills = vec![];
+    data.profile.vitality_points = 14_962;
+    data.profile.reco_store = true;
+    data.profile.recom_have = 3;
+    data.profile.recom_left = 17;
+    data.profile.recom_time_left_ms = 3_590_000;
+    for (name, value) in [("hunting_points", "72"), ("hunting_time", "30")] {
+        data.profile.variables.insert(name.into(), value.into());
+        data.profile.variables_changed.insert(name.into());
+    }
+    data.profile.variables_removed.insert("nevit_b".into());
+    store.store_player(&data).await.unwrap();
+
+    let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.vitality_points, 14_962);
+    let bonus = reco.reco_bonus_of(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(
+        (bonus.rec_have, bonus.rec_left, bonus.time_left),
+        (3, 17, 3_590_000)
+    );
+    let mut stored = variables.variables_of(CHAR_ID).await.unwrap();
+    stored.sort();
+    assert_eq!(
+        stored,
+        vec![
+            ("UI_KEY_MAPPING".to_owned(), "1\t2".to_owned()),
+            ("hunting_points".to_owned(), "72".to_owned()),
+            ("hunting_time".to_owned(), "30".to_owned()),
+        ]
+    );
+
+    // A second store with a new value and the same sets is the same upsert, not a second row.
+    data.profile
+        .variables
+        .insert("hunting_points".into(), "144".into());
+    data.profile.recom_time_left_ms = 3_000_000;
+    store.store_player(&data).await.unwrap();
+    let stored = variables.variables_of(CHAR_ID).await.unwrap();
+    assert_eq!(stored.len(), 3);
+    assert!(stored.contains(&("hunting_points".to_owned(), "144".to_owned())));
+    assert_eq!(
+        reco.reco_bonus_of(CHAR_ID).await.unwrap().unwrap().time_left,
+        3_000_000
+    );
+
+    // A snapshot that does not carry the vitality (0) and does not track the recommendations
+    // leaves the column and the row as they are.
+    let mut plain = player_data();
+    plain.items = vec![];
+    plain.shortcuts = vec![];
+    plain.skills = vec![];
+    store.store_player(&plain).await.unwrap();
+    let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.vitality_points, 14_962);
+    assert_eq!(
+        reco.reco_bonus_of(CHAR_ID).await.unwrap().unwrap().time_left,
+        3_000_000
+    );
 
     pool.close().await;
     db.drop_db().await;
