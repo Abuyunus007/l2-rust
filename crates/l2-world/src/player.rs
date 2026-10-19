@@ -32,6 +32,11 @@ pub struct CreatureCore {
     pub max_cp: f64,
     /// Java `_calculators`: the stat functions (see `stats/`).
     pub calculators: Calculators,
+    /// Java `_skills`: every skill the creature knows as `(id, level)`, one per id, in the order
+    /// they were added (learned skills, item and armor set skills, penalty skills).
+    pub skills: Vec<(i32, i32)>,
+    /// Java `EffectList._passives`: the passive skills whose effects are applied.
+    pub passives: Vec<(i32, i32)>,
 }
 
 /// One item of a player (inventory or worn). Mirrors the `items` table row.
@@ -220,6 +225,11 @@ pub struct Player {
     pub talk: crate::dialog::PlayerTalk,
     /// Java `_inventoryUpdate` waiting for its 100 ms timer (see `item_ops.rs`).
     pub pending_inventory: crate::item_ops::PendingInventoryUpdate,
+    /// Java `_curWeightPenalty` (`refreshOverloaded`).
+    pub weight_penalty: i32,
+    /// Java `_expertiseWeaponPenalty` / `_expertiseArmorPenalty` (`refreshExpertisePenalty`).
+    pub expertise_weapon_penalty: i32,
+    pub expertise_armor_penalty: i32,
 }
 
 impl Player {
@@ -239,6 +249,8 @@ impl Player {
             max_cp: data.max_cp,
             // The world builds the calculators when the player enters (`init_player_stats`).
             calculators: Calculators::default(),
+            skills: Vec::new(),
+            passives: Vec::new(),
         };
         let movement = crate::movement::MovementState::at(data.x, data.y, data.z);
         Self {
@@ -258,6 +270,9 @@ impl Player {
             target: None,
             talk: crate::dialog::PlayerTalk::default(),
             pending_inventory: crate::item_ops::PendingInventoryUpdate::default(),
+            weight_penalty: 0,
+            expertise_weapon_penalty: 0,
+            expertise_armor_penalty: 0,
         }
     }
 

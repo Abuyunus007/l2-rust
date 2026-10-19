@@ -405,22 +405,14 @@ impl<'w> StatView<'w> {
     }
 
     /// The skills a creature knows as `(id, level)` (Java `getAllSkills()`).
-    pub(crate) fn skills(&self) -> Box<dyn Iterator<Item = (i32, i32)> + 'w> {
-        match self.who {
-            Who::Player(p) => Box::new(p.data.skills.iter().map(|s| (s.skill_id, s.skill_level))),
-            Who::Npc(_) => match self.npc_template() {
-                Some(t) => Box::new(t.skills.iter().map(|s| (s.id, s.level))),
-                None => Box::new(std::iter::empty()),
-            },
-        }
+    pub(crate) fn skills(&self) -> impl Iterator<Item = (i32, i32)> + 'w {
+        self.core().skills.iter().copied()
     }
 
     /// Java `getSkillLevel(id)`: 0 for a skill the creature does not know.
     pub fn skill_level(&self, id: i32) -> i32 {
-        // Java keeps one skill per id in a map; a list with the id twice holds the later one.
         self.skills()
-            .filter(|(skill, _)| *skill == id)
-            .last()
+            .find(|(skill, _)| *skill == id)
             .map_or(0, |(_, level)| level)
     }
 

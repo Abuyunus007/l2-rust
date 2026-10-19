@@ -107,6 +107,7 @@ fn stat_data() -> StatData {
             .unwrap(),
         ),
         base_stat_bonus: Arc::new(BaseStatBonus::default()),
+        skills: Arc::new(l2_data::SkillTemplates::default()),
     }
 }
 
@@ -283,7 +284,7 @@ fn unequip_removes_the_items_functions() {
     let mut world = world_with(stat_data(), player(vec![item(10, 2, paperdoll::RHAND, 0)]));
     assert_eq!(world.stats(ME).unwrap().p_atk(None), 50.0 * 0.9);
     assert_eq!(
-        world.on_unequip(ME, ObjectId(10)),
+        world.on_unequip(ME, &item(10, 2, paperdoll::RHAND, 0), paperdoll::RHAND),
         [
             Stat::PowerAttack,
             Stat::PowerAttack,
@@ -293,7 +294,11 @@ fn unequip_removes_the_items_functions() {
         ]
     );
     assert_eq!(world.stats(ME).unwrap().p_atk(None), 4.0 * 0.9);
-    assert!(world.on_unequip(ME, ObjectId(10)).is_empty());
+    assert!(
+        world
+            .on_unequip(ME, &item(10, 2, paperdoll::RHAND, 0), paperdoll::RHAND)
+            .is_empty()
+    );
     let sword = item(10, 2, paperdoll::RHAND, 0);
     assert_eq!(world.on_equip(ME, &sword).len(), 5);
     assert_eq!(world.stats(ME).unwrap().p_atk(None), 50.0 * 0.9);
@@ -394,4 +399,161 @@ fn npcs_share_the_standard_calculators() {
     assert!(a.is_shared() && b.is_shared());
     assert_eq!(a, b);
     assert_eq!(a.set().len(), 13);
+}
+
+// ------------------------------------------------------------------ skills (phase 2)
+
+/// Two passive skills like the datapack's: 142 Armor Mastery (`add pDef`, and `add rEvas` only in
+/// light armor) and 4408-like HP multiplier, plus a set skill.
+const SKILLS: &str = r##"<list>
+<skill id="142" levels="2" name="Armor Mastery">
+	<table name="#pDef">10 20</table>
+	<operateType>P</operateType>
+	<targetType>SELF</targetType>
+	<effects>
+		<effect name="Buff">
+			<add stat="pDef">#pDef</add>
+			<add stat="rEvas" val="3"><using kind="LIGHT"/></add>
+		</effect>
+	</effects>
+</skill>
+<skill id="4408" levels="1" name="HP">
+	<operateType>P</operateType>
+	<targetType>SELF</targetType>
+	<effects><effect name="Buff"><mul stat="maxHp" val="2"/></effect></effects>
+</skill>
+<skill id="3006" levels="1" name="Set">
+	<operateType>P</operateType>
+	<targetType>SELF</targetType>
+	<effects><effect name="Buff"><add stat="mDef" val="7"/></effect></effects>
+</skill>
+<skill id="1001" levels="1" name="Active">
+	<operateType>A1</operateType>
+	<targetType>SELF</targetType>
+	<effects><effect name="Buff"><add stat="pAtk" val="1000"/></effect></effects>
+</skill>
+<skill id="9000" levels="1" name="Level gated">
+	<operateType>P</operateType>
+	<targetType>SELF</targetType>
+	<conditions><player level="50"/></conditions>
+	<effects><effect name="Buff"><add stat="pAtk" val="1000"/></effect></effects>
+</skill>
+</list>"##;
+
+fn with_skills() -> StatData {
+    StatData {
+        skills: Arc::new(l2_data::SkillTemplates::from_xml(
+            SKILLS,
+            &l2_data::skill::EnchantSkillGroups::default(),
+            &l2_data::SkillLoadOptions::default(),
+        )),
+        armor_sets: Arc::new(
+            ArmorSets::from_xml(
+                r#"<list><set id="1"><chest id="3" /><legs id="4" /><skill id="3006" level="1" /><str val="2" /></set></list>"#,
+            )
+            .unwrap(),
+        ),
+        ..stat_data()
+    }
+}
+
+fn skill(id: i32, level: i32) -> crate::player::SkillData {
+    crate::player::SkillData {
+        skill_id: id,
+        skill_level: level,
+    }
+}
+
+#[test]
+fn passive_skills_apply_their_effect_functions_at_enter_world() {
+    let mut p = player(vec![item(10, 8, paperdoll::CHEST, 0)]);
+    p.skills = vec![skill(142, 2), skill(4408, 1), skill(1001, 1), skill(9000, 1)];
+    let world = world_with(with_skills(), p);
+    let s = world.stats(ME).unwrap();
+    // 142 lv 2: + 20 P. Def. at order 30, after FuncPDefMod: (80 - 31 + 20) * 0.9 + 20.
+    assert_eq!(s.p_def(None), (80.0 - 31.0 + 20.0) * 0.9 + 20.0);
+    // The light top alone is not "LIGHT" (chest and legs must match), so no evasion bonus.
+    assert_eq!(s.evasion_rate(None), 34);
+    // 4408: MaxHp * 2 at order 20, after FuncMaxHpMul (order 1): 100 * 1 * 2.
+    assert_eq!(s.max_hp(), 200);
+    // Active skills and passives whose conditions fail add nothing.
+    assert_eq!(s.p_atk(None), 4.0 * 0.9);
+    let core = &world.player(ME).unwrap().core;
+    assert_eq!(core.passives, [(142, 2), (4408, 1)]);
+    assert_eq!(core.skills.len(), 4);
+    assert_eq!(
+        core.calculators.funcs(Stat::PowerDefence).last().unwrap().owner,
+        FuncOwner::Skill { id: 142, level: 2 }
+    );
+}
+
+#[test]
+fn a_new_level_replaces_the_old_one_and_removal_takes_the_functions() {
+    let mut p = player(vec![]);
+    p.skills = vec![skill(142, 1)];
+    let mut world = world_with(with_skills(), p);
+    assert_eq!(world.stats(ME).unwrap().p_def(None), 80.0 * 0.9 + 10.0);
+    assert!(world.add_skill(ME, 142, 2));
+    assert_eq!(world.stats(ME).unwrap().p_def(None), 80.0 * 0.9 + 20.0);
+    assert_eq!(
+        world
+            .player(ME)
+            .unwrap()
+            .core
+            .calculators
+            .funcs(Stat::PowerDefence)
+            .len(),
+        2
+    );
+    assert!(world.remove_skill(ME, 142, true));
+    assert_eq!(world.stats(ME).unwrap().p_def(None), 80.0 * 0.9);
+    assert!(world.player(ME).unwrap().core.passives.is_empty());
+    assert!(!world.add_skill(ME, 5555, 1), "unknown skill");
+}
+
+#[test]
+fn a_complete_armor_set_gives_its_skill_and_loses_it_when_a_part_comes_off() {
+    let chest = item(10, 3, paperdoll::CHEST, 0);
+    let legs = item(11, 4, paperdoll::LEGS, 0);
+    let mut world = world_with(with_skills(), player(vec![chest, legs.clone()]));
+    let s = world.stats(ME).unwrap();
+    assert_eq!(s.skill_level(3006), 1);
+    assert_eq!(s.m_def(None, None), 40.0 * 0.9 + 7.0);
+    // INV-01 takes the legs out of the slot, then calls the hook.
+    world
+        .player_mut(ME)
+        .unwrap()
+        .data
+        .items
+        .retain(|i| i.object_id != legs.object_id);
+    world.on_unequip(ME, &legs, paperdoll::LEGS);
+    let s = world.stats(ME).unwrap();
+    assert_eq!(s.skill_level(3006), 0);
+    assert_eq!(s.m_def(None, None), 40.0 * 0.9);
+    assert_eq!(s.str(), 40);
+}
+
+#[test]
+fn grade_penalties_follow_the_expertise_skill() {
+    // A D-grade chest without Expertise (skill 239): armor penalty 1 (D = level 1).
+    let world = world_with(with_skills(), player(vec![item(10, 3, paperdoll::CHEST, 0)]));
+    let p = world.player(ME).unwrap();
+    assert_eq!((p.expertise_weapon_penalty, p.expertise_armor_penalty), (0, 1));
+    // The penalty skill is not in this skill table, so it is known as nothing (Java skips it).
+    assert_eq!(world.etc_status_update(ME).unwrap().expertise_armor_penalty, 1);
+}
+
+#[test]
+fn java_hash_map_order_of_integer_keys() {
+    use super::skills::java_hash_map_order;
+    // Capacity 16: buckets 0, 8, 13.
+    assert_eq!(java_hash_map_order(&[4045, 4416, 4408]), [4416, 4408, 4045]);
+    // Same bucket: insertion order.
+    assert_eq!(java_hash_map_order(&[20, 4]), [20, 4]);
+    // 13 keys make the table 32 wide: 16 and 48 share bucket 16, 1 is bucket 1.
+    let keys = [48, 16, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13];
+    assert_eq!(
+        java_hash_map_order(&keys),
+        [1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 48, 16]
+    );
 }

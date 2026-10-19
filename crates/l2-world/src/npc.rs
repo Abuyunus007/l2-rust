@@ -764,6 +764,8 @@ impl World {
                 max_cp: 0.0,
                 // Java: `_calculators = NPC_STD_CALCULATOR`.
                 calculators: self.npc_calculators(),
+                skills: Vec::new(),
+                passives: Vec::new(),
             },
             npc_id: template.id,
             class,
@@ -777,6 +779,8 @@ impl World {
             display_effect: 0,
         };
         self.npcs.insert(id, npc);
+        // Java's constructor: the template's skills (passive effects copy the calculators).
+        self.add_npc_template_skills(id);
         // Java `onSpawn`: full HP and MP (`getMaxHp()`: the template value through the standard
         // NPC calculators, so times the CON / MEN bonus).
         self.init_npc_stats(id);

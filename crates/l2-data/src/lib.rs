@@ -136,6 +136,9 @@ pub struct DatapackOptions {
     /// `General.ini` `CheckHtmlEncoding` (default true): log html files with non ASCII text
     /// outside `data/lang`.
     pub check_html_encoding: bool,
+    /// The skill loader's options (`CustomSkillsLoad`, the abnormal success rates,
+    /// `SkillDurationList` / `SkillReuseList`).
+    pub skills: SkillLoadOptions,
 }
 
 impl Default for DatapackOptions {
@@ -151,6 +154,7 @@ impl Default for DatapackOptions {
             default_corpse_time: npc.default_corpse_time,
             htm_cache: true,
             check_html_encoding: true,
+            skills: SkillLoadOptions::default(),
         }
     }
 }
@@ -213,7 +217,7 @@ impl Datapack {
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             hennas: Arc::new(Hennas::load(root)),
-            skills: Arc::new(SkillTemplates::load(root, &SkillLoadOptions::default())),
+            skills: Arc::new(SkillTemplates::load(root, &options.skills)),
         })
     }
 }

@@ -22,21 +22,27 @@
 //   load nothing) every template value is Java's `CreatureTemplate` default and every base stat
 //   bonus is 1.
 //
-// Not here yet: passive skill functions (phase 2 of M4-STAT-01, needs the skill tables), effects
-// (M5), transformations (hooks are `None`), summons and pets.
+// - Skills ([`skills`]): `Creature.addSkill` replaces a skill of the same id; a passive skill
+//   applies the stat functions of its passive effects (owned by the skill). Players get them at
+//   enter world (item and armor set skills while the items are equipped, then the learned
+//   skills, then the weight and grade penalties), NPCs from their template at spawn.
+//
+// Not here yet: effects other than passive stat functions (M5), transformations (hooks are
+// `None`), summons and pets.
 
 pub mod calculators;
 pub mod conditions;
 pub mod creature_stat;
 pub mod npc_stat;
 pub mod player_stat;
+pub mod skills;
 pub mod std_funcs;
 #[cfg(test)]
 mod world_tests;
 
 use std::sync::Arc;
 
-use l2_data::{ArmorSets, EnchantHpBonus, Hennas, ItemTemplates, PlayerTemplates};
+use l2_data::{ArmorSets, EnchantHpBonus, Hennas, ItemTemplates, PlayerTemplates, SkillTemplates};
 
 pub use calculators::{CalcSet, Calculators, Func, FuncCalc, FuncOwner};
 pub use creature_stat::{MoveType, StatView};
@@ -162,6 +168,8 @@ pub struct StatData {
     pub hennas: Arc<Hennas>,
     /// `statBonus.xml`.
     pub base_stat_bonus: Arc<BaseStatBonus>,
+    /// The skill templates (passive skill effects, item and armor set skills).
+    pub skills: Arc<SkillTemplates>,
 }
 
 /// The skill a stat is calculated for (Java's `Skill skill` argument of `calcStat`): the parts
@@ -268,6 +276,11 @@ pub struct StatSettings {
     pub dusk_gates_mdef_mult: f64,
     /// `Custom/ClassBalance.ini`.
     pub class_balance: ClassBalance,
+    /// `GeneralConfig.GM_SKILL_RESTRICTION` (`GMSkillRestriction`): when off, a GM's passive
+    /// skills ignore their conditions.
+    pub gm_skill_restriction: bool,
+    /// `PlayerConfig.EXPERTISE_PENALTY` (`ExpertisePenalty`).
+    pub expertise_penalty: bool,
 }
 
 impl Default for StatSettings {
@@ -296,6 +309,8 @@ impl Default for StatSettings {
             dawn_gates_mdef_mult: 1.1,
             dusk_gates_mdef_mult: 0.8,
             class_balance: ClassBalance::default(),
+            gm_skill_restriction: true,
+            expertise_penalty: true,
         }
     }
 }

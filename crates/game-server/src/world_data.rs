@@ -8,7 +8,7 @@
 // The stat engine itself is `l2_world::stats` (M4-STAT-01); this file only hands it the tables
 // (`StatData`) and the settings (`StatSettings`).
 
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -96,85 +96,6 @@ fn attribute(element: &BytesStart<'_>, key: &str) -> Option<String> {
                 .ok()
                 .map(std::borrow::Cow::into_owned)
         })
-}
-
-/// The ids of the passive skills (`operateType` `P`) in `data/stats/skills/*.xml`.
-///
-/// The skills are not loaded as such yet (M4). `SkillList` only needs this one flag, so the files
-/// are scanned for it.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct PassiveSkills {
-    ids: HashSet<i32>,
-}
-
-impl PassiveSkills {
-    /// Scans `<root>/data/stats/skills`. A missing folder gives no passives (every skill is then
-    /// listed as active).
-    pub fn load(root: &Path) -> Self {
-        let dir = root.join("data/stats/skills");
-        let mut table = Self::default();
-        let Ok(entries) = std::fs::read_dir(&dir) else {
-            warn!("Directory not found: {}", dir.display());
-            return table;
-        };
-        let mut files: Vec<_> = entries
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("xml")))
-            .collect();
-        files.sort();
-        for file in files {
-            match std::fs::read(&file) {
-                Ok(bytes) => table.add_xml(&String::from_utf8_lossy(&bytes)),
-                Err(e) => warn!("Cannot read {}: {e}", file.display()),
-            }
-        }
-        info!("SkillData: found {} passive skills.", table.ids.len());
-        table
-    }
-
-    /// Adds the passive skills of one file's text.
-    pub fn add_xml(&mut self, xml: &str) {
-        let mut reader = Reader::from_str(xml);
-        let mut current: Option<i32> = None;
-        let mut in_operate_type = false;
-        loop {
-            match reader.read_event() {
-                Ok(Event::Start(e)) => match e.name().as_ref() {
-                    "skill" => current = attribute(&e, "id").and_then(|v| v.trim().parse().ok()),
-                    "operateType" => in_operate_type = true,
-                    _ => {}
-                },
-                Ok(Event::Empty(e)) if e.name().as_ref() == "skill" => current = None,
-                Ok(Event::Text(t)) if in_operate_type => {
-                    if t.xml10_content().trim() == "P"
-                        && let Some(id) = current
-                    {
-                        self.ids.insert(id);
-                    }
-                }
-                Ok(Event::End(e)) => match e.name().as_ref() {
-                    "skill" => current = None,
-                    "operateType" => in_operate_type = false,
-                    _ => {}
-                },
-                Ok(Event::Eof) | Err(_) => break,
-                Ok(_) => {}
-            }
-        }
-    }
-
-    pub fn contains(&self, skill_id: i32) -> bool {
-        self.ids.contains(&skill_id)
-    }
-
-    pub fn len(&self) -> usize {
-        self.ids.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.ids.is_empty()
-    }
 }
 
 /// `config/AccessLevels.xml` and `config/AdminCommands.xml` (Java `AdminData`).
@@ -294,19 +215,13 @@ impl AccessLevels {
 /// [`StaticData`] over the loaded datapack.
 pub struct DatapackData {
     datapack: Arc<Datapack>,
-    passive: PassiveSkills,
     access: AccessLevels,
     /// The tables of the stat engine (shared with the datapack).
     stats: StatData,
 }
 
 impl DatapackData {
-    pub fn new(
-        datapack: Arc<Datapack>,
-        bonus: BaseStatBonus,
-        passive: PassiveSkills,
-        access: AccessLevels,
-    ) -> Self {
+    pub fn new(datapack: Arc<Datapack>, bonus: BaseStatBonus, access: AccessLevels) -> Self {
         let stats = StatData {
             items: Arc::clone(&datapack.items),
             player_templates: Arc::clone(&datapack.player_templates),
@@ -314,10 +229,10 @@ impl DatapackData {
             enchant_hp_bonus: Arc::clone(&datapack.enchant_hp_bonus),
             hennas: Arc::clone(&datapack.hennas),
             base_stat_bonus: Arc::new(bonus),
+            skills: Arc::clone(&datapack.skills),
         };
         Self {
             datapack,
-            passive,
             access,
             stats,
         }
@@ -326,9 +241,8 @@ impl DatapackData {
     /// Loads the extra tables from the datapack folder and the config folder.
     pub fn load(datapack: Arc<Datapack>, config_dir: &Path) -> Self {
         let bonus = load_stat_bonus(&datapack.root);
-        let passive = PassiveSkills::load(&datapack.root);
         let access = AccessLevels::load(config_dir);
-        Self::new(datapack, bonus, passive, access)
+        Self::new(datapack, bonus, access)
     }
 }
 
@@ -351,8 +265,14 @@ impl StaticData for DatapackData {
         })
     }
 
+    // Java `SkillList`: `skill.isPassive()` (operate type `P`). The list only has ids here, and a
+    // skill's operate type is the same at every level, so level 1 (or the highest) is asked.
     fn skill_is_passive(&self, skill_id: i32) -> bool {
-        self.passive.contains(skill_id)
+        let skills = &self.datapack.skills;
+        skills
+            .get(skill_id, 1)
+            .or_else(|| skills.get(skill_id, skills.max_level(skill_id)))
+            .is_some_and(l2_data::SkillTemplate::is_passive)
     }
 
     fn item_name(&self, item_id: i32) -> Option<String> {
@@ -477,6 +397,65 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     settings
 }
 
+/// The skill loader's options (Java `GeneralConfig.CUSTOM_SKILLS_LOAD`, `PlayerConfig`'s abnormal
+/// success rates and the duration / reuse override lists). The two lists are post-processed in
+/// Java (the generated config has placeholders), so they are read from `Player.ini` here.
+pub fn skill_load_options(config: &GameConfig, config_dir: &Path) -> l2_data::SkillLoadOptions {
+    use l2_config::IniFile;
+
+    let p = &config.player;
+    let mut options = l2_data::SkillLoadOptions {
+        custom_skills_load: config.general.custom_skills_load,
+        min_abnormal_state_success_rate: p.min_abnormal_state_success_rate,
+        max_abnormal_state_success_rate: p.max_abnormal_state_success_rate,
+        enable_modify_skill_duration: p.enable_modify_skill_duration,
+        enable_modify_skill_reuse: p.enable_modify_skill_reuse,
+        ..l2_data::SkillLoadOptions::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        // Java reads each list only when its switch is on.
+        if options.enable_modify_skill_duration {
+            options.skill_duration_list =
+                skill_id_list("SkillDurationList", &ini.get_string("SkillDurationList", ""));
+        }
+        if options.enable_modify_skill_reuse {
+            options.skill_reuse_list = skill_id_list("SkillReuseList", &ini.get_string("SkillReuseList", ""));
+        }
+    }
+    options
+}
+
+/// Java's `id,value;id,value` lists: `split(";")` (trailing empty parts dropped), then
+/// `split(",")` into exactly two numbers; a bad entry is logged and skipped.
+fn skill_id_list(key: &str, text: &str) -> std::collections::HashMap<i32, i32> {
+    let mut parts: Vec<&str> = text.split(';').collect();
+    while parts.last().is_some_and(|p| p.is_empty()) {
+        parts.pop();
+    }
+    let mut map = std::collections::HashMap::new();
+    for skill in parts {
+        let split: Vec<&str> = skill.split(',').collect();
+        if split.len() != 2 {
+            warn!("[{key}]: invalid config property -> {key} {skill}");
+            continue;
+        }
+        match (split[0].parse::<i32>(), split[1].parse::<i32>()) {
+            (Ok(id), Ok(value)) => {
+                map.insert(id, value);
+            }
+            _ => {
+                if !skill.is_empty() {
+                    warn!(
+                        "[{key}]: invalid config property -> SkillList \"{}\"{}",
+                        split[0], split[1]
+                    );
+                }
+            }
+        }
+    }
+    map
+}
+
 /// The caps and multipliers the stat getters read. The raid multipliers and the class balance
 /// arrays are post-processed in Java (the generated config has placeholders for them), so they
 /// are read from `NPC.ini` and `Custom/ClassBalance.ini` here.
@@ -503,6 +482,8 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
         dusk_gates_pdef_mult: config.feature.alt_siege_dusk_gates_pdef_mult,
         dawn_gates_mdef_mult: config.feature.alt_siege_dawn_gates_mdef_mult,
         dusk_gates_mdef_mult: config.feature.alt_siege_dusk_gates_mdef_mult,
+        gm_skill_restriction: config.general.gm_skill_restriction,
+        expertise_penalty: p.expertise_penalty,
         ..StatSettings::default()
     };
     // Java: `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;` ...
@@ -675,27 +656,6 @@ mod tests {
     }
 
     #[test]
-    fn passive_skills_are_found_by_operate_type() {
-        let mut table = PassiveSkills::default();
-        table.add_xml(
-            r#"<list>
-	<skill id="141" levels="3" name="Weapon Mastery">
-		<!-- <operateType>P</operateType> in a comment is not a skill -->
-		<operateType>P</operateType>
-	</skill>
-	<skill id="1177" levels="2" name="Wind Strike"><operateType>A1</operateType></skill>
-	<skill id="5" levels="1" name="Empty"/>
-	<skill id="7" levels="1" name="Late"><effects/><operateType> P </operateType></skill>
-</list>"#,
-        );
-        assert!(table.contains(141));
-        assert!(table.contains(7));
-        assert!(!table.contains(1177));
-        assert!(!table.contains(5));
-        assert_eq!(table.len(), 2);
-    }
-
-    #[test]
     fn access_levels_use_the_hex_colors_and_the_java_default() {
         let levels = AccessLevels::from_xml(
             r#"<list>
@@ -791,14 +751,7 @@ mod tests {
         ] {
             assert!(bonus.set(stat, value, b));
         }
-        let data = || {
-            DatapackData::new(
-                Arc::clone(&datapack),
-                bonus.clone(),
-                PassiveSkills::default(),
-                AccessLevels::default(),
-            )
-        };
+        let data = || DatapackData::new(Arc::clone(&datapack), bonus.clone(), AccessLevels::default());
         let mut player = test_player();
         // Human fighter of the test datapack: STR 40 CON 43 DEX 30 INT 21 WIT 11 MEN 25, P. Atk. 4.
         player.class_id = 0;
@@ -841,7 +794,6 @@ mod tests {
             DatapackData::new(
                 Arc::clone(&datapack),
                 load_stat_bonus(&root),
-                PassiveSkills::load(&root),
                 AccessLevels::from_xml(
                     &std::fs::read_to_string(root.join("config/AccessLevels.xml")).unwrap(),
                 ),

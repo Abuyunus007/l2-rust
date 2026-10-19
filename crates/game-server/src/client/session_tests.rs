@@ -27,7 +27,7 @@ use super::enter::{LoadError, PlayerLoader};
 use super::newchar::NewCharacterPlan;
 use super::*;
 use crate::runtime::{OutboxMessage, WorldRuntime};
-use crate::world_data::{AccessLevels, DatapackData, PassiveSkills};
+use crate::world_data::{AccessLevels, DatapackData};
 use l2_config::GameConfig;
 use l2_util::WorldRng;
 use l2_world::{IdFactory, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
@@ -319,7 +319,6 @@ async fn start_with(
     let static_data: Arc<dyn l2_world::StaticData> = Arc::new(DatapackData::new(
         Arc::clone(&datapack),
         l2_world::BaseStatBonus::default(),
-        PassiveSkills::default(),
         AccessLevels::default(),
     ));
     let settings = l2_world::WorldSettings::default();

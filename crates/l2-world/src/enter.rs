@@ -574,8 +574,8 @@ impl World {
         packets
     }
 
-    /// Java `new EtcStatusUpdate(player)`: the weight penalty, the death penalty and the danger
-    /// icon of the zone the player stands in. Charges, souls, the expertise penalties and the
+    /// Java `new EtcStatusUpdate(player)`: the weight penalty, the grade penalties, the death
+    /// penalty and the danger icon of the zone the player stands in. Charges, souls and the
     /// refusal flags are 0 until the systems behind them exist.
     pub(crate) fn etc_status_update(&self, id: ObjectId) -> Option<EtcStatusUpdate> {
         let player = self.players.get(&id)?;
@@ -586,6 +586,8 @@ impl World {
                 self.stats(id).map_or(0, |s| s.max_load()),
             ),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
+            expertise_weapon_penalty: player.expertise_weapon_penalty,
+            expertise_armor_penalty: player.expertise_armor_penalty,
             death_penalty_level: data.profile.death_penalty_level,
             ..EtcStatusUpdate::default()
         })
@@ -657,7 +659,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         paperdoll_object_ids: object_ids,
         paperdoll_item_ids: item_ids,
         paperdoll_augmentation_ids: [0; paperdoll::TOTAL_SLOTS],
-        talisman_slots: 0,
+        talisman_slots: view.talisman_slots(),
         // `PlayerStat.canEquipCloak()`: true until the player has entered the world.
         can_equip_cloak: view.can_equip_cloak(),
         // `(int) getPAtk(null)`, `(int) getPAtkSpd()`, ...

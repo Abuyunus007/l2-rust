@@ -183,14 +183,14 @@ impl Server {
         );
         let datapack = {
             let root = datapack_root.clone();
-            let options = options_from_config(&config);
+            let options = options_from_config(&config, &paths.config_dir);
             tokio::task::spawn_blocking(move || Datapack::load_with(&root, &options))
                 .await
                 .map_err(|e| StartupError::Internal(format!("datapack loader: {e}")))??
         };
         let datapack = Arc::new(datapack);
-        // The stat engine tables (statBonus.xml and the datapack parts), the passive skill flags
-        // and the access levels (see `world_data`), and the config values the world reads.
+        // The stat engine tables (statBonus.xml and the datapack parts, skills included) and the
+        // access levels (see `world_data`), and the config values the world reads.
         let static_data: Arc<dyn StaticData> = {
             let (datapack, config_dir) = (Arc::clone(&datapack), paths.config_dir.clone());
             Arc::new(
@@ -466,8 +466,9 @@ fn resolve_datapack_root(root: &Path, value: &str) -> PathBuf {
 /// `CheckHtmlEncoding`.
 // Java: GeneralConfig.java:258, 355, 358; NpcConfig.java:142, 145; FakePlayersConfig.java:50;
 // the NoSpawns read in DevelopmentConfig; HtmCache.java:140 (CHECK_HTML_ENCODING).
-fn options_from_config(config: &GameConfig) -> DatapackOptions {
+fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOptions {
     DatapackOptions {
+        skills: world_data::skill_load_options(config, config_dir),
         custom_items_load: config.general.custom_items_load,
         custom_npc_data: config.general.custom_npc_data,
         fake_players_enabled: config.fake_players.fake_players_enabled,
@@ -612,9 +613,12 @@ mod tests {
     fn options_from_an_empty_config_are_java_defaults() {
         let dir = tempfile::tempdir().unwrap();
         let config = GameConfig::load(dir.path()).unwrap();
-        assert_eq!(options_from_config(&config), DatapackOptions::default());
         assert_eq!(
-            options_from_config(&GameConfig::default()),
+            options_from_config(&config, dir.path()),
+            DatapackOptions::default()
+        );
+        assert_eq!(
+            options_from_config(&GameConfig::default(), dir.path()),
             DatapackOptions::default()
         );
     }
@@ -630,13 +634,25 @@ mod tests {
             return;
         }
         let config = GameConfig::load(&dir).unwrap();
-        let options = options_from_config(&config);
+        let options = options_from_config(&config, &dir);
         assert!(options.custom_items_load);
         assert!(options.custom_npc_data);
         assert!(!options.htm_cache);
         assert!(options.check_html_encoding);
         assert!(!options.no_spawns);
         assert_eq!(options.max_aggro_range, 450);
+        // Player.ini: EnableModifySkillDuration = True with the dance and song list.
+        let skills = &options.skills;
+        assert_eq!(
+            (
+                skills.min_abnormal_state_success_rate,
+                skills.max_abnormal_state_success_rate
+            ),
+            (10, 90)
+        );
+        if skills.enable_modify_skill_duration {
+            assert_eq!(skills.skill_duration_list.get(&264), Some(&3660));
+        }
     }
 
     /// Each key reaches its option: EnableFakePlayers, NoSpawns, MaxAggroRange and
@@ -648,7 +664,7 @@ mod tests {
         std::fs::create_dir_all(&custom).unwrap();
         std::fs::write(
             dir.path().join("General.ini"),
-            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\n",
+            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\nCustomSkillsLoad = True\n",
         )
         .unwrap();
         std::fs::write(
@@ -658,8 +674,15 @@ mod tests {
         .unwrap();
         std::fs::write(dir.path().join("Development.ini"), "NoSpawns = True\n").unwrap();
         std::fs::write(custom.join("FakePlayers.ini"), "EnableFakePlayers = True\n").unwrap();
+        std::fs::write(
+            dir.path().join("Player.ini"),
+            "MinAbnormalStateSuccessRate = 5\nMaxAbnormalStateSuccessRate = 95\n\
+             EnableModifySkillDuration = True\nSkillDurationList = 264,3660;265,x;bad;\n\
+             EnableModifySkillReuse = True\nSkillReuseList = 1,2\n",
+        )
+        .unwrap();
 
-        let options = options_from_config(&GameConfig::load(dir.path()).unwrap());
+        let options = options_from_config(&GameConfig::load(dir.path()).unwrap(), dir.path());
         assert_eq!(
             options,
             DatapackOptions {
@@ -671,6 +694,15 @@ mod tests {
                 default_corpse_time: 3,
                 htm_cache: false,
                 check_html_encoding: false,
+                skills: l2_data::SkillLoadOptions {
+                    custom_skills_load: true,
+                    min_abnormal_state_success_rate: 5,
+                    max_abnormal_state_success_rate: 95,
+                    enable_modify_skill_duration: true,
+                    skill_duration_list: [(264, 3660)].into_iter().collect(),
+                    enable_modify_skill_reuse: true,
+                    skill_reuse_list: [(1, 2)].into_iter().collect(),
+                },
             }
         );
     }

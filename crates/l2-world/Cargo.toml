@@ -20,7 +20,10 @@ tracing.workspace = true
 
 # Only the tests read the Java capture fixtures.
 [dev-dependencies]
-serde_json.workspace = true
+l2-testkit.workspace = true
+# `float_roundtrip`: the Java vectors print doubles as shortest round-trip text; the default
+# parser can be one ulp off.
+serde_json = { workspace = true, features = ["float_roundtrip"] }
 hex.workspace = true
 tempfile.workspace = true
 

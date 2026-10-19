@@ -13,6 +13,7 @@ use l2_data::item::{BodyPart, CrystalType};
 use l2_data::{FuncKind, FuncTemplate, Henna, ItemTemplate, PlayerTemplate, Stat};
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_util::ObjectId;
+use tracing::warn;
 
 use super::calculators::{CalcSet, Calculators, Func, FuncOwner};
 use super::creature_stat::{StatView, Who};
@@ -262,15 +263,7 @@ impl<'w> StatView<'w> {
         let Some(set) = self.stat_data().and_then(|d| d.armor_sets.get(chest.item_id)) else {
             return 0;
         };
-        // `ArmorSet.containAll(player)`: an empty slot is item id 0.
-        let id = |slot| self.paperdoll(slot).map_or(0, |i| i.item_id);
-        let part = |ids: &[i32], slot| ids.is_empty() || ids.contains(&id(slot));
-        let complete = (set.chest_id == 0 || set.chest_id == chest.item_id)
-            && part(&set.legs, paperdoll::LEGS)
-            && part(&set.head, paperdoll::HEAD)
-            && part(&set.gloves, paperdoll::GLOVES)
-            && part(&set.feet, paperdoll::FEET);
-        if !complete {
+        if !self.armor_set_complete(set) {
             return 0;
         }
         match stat {
@@ -335,11 +328,11 @@ impl<'w> StatView<'w> {
         base + self.calc(Stat::InvLim, 0.0) as i32
     }
 
-    /// Java `PlayerStat.canEquipCloak()`: always before the player entered the world.
-    // `_cloakSlot` is set by the cloak skills of armors (phase 2 of M4-STAT-01, passive skills);
-    // until then it is false.
+    /// Java `PlayerStat.canEquipCloak()`: always before the player entered the world, then
+    /// `_cloakSlot` (an `EnableCloak` passive effect).
     pub fn can_equip_cloak(&self) -> bool {
-        self.player().is_some_and(|p| !p.entered_world)
+        self.player()
+            .is_some_and(|p| !p.entered_world || self.cloak_slot())
     }
 
     /// Java `isSubClassActive()` (`_classIndex > 0`).
@@ -404,17 +397,38 @@ impl World {
             return;
         };
         player.core.calculators = Calculators::own(CalcSet::std_player());
-        let mut worn: Vec<ItemData> = player
+        player.core.skills.clear();
+        player.core.passives.clear();
+        // The session loads the items `ORDER BY loc_data`, like `Inventory.restore`.
+        let worn: Vec<ItemData> = player
             .data
             .items
             .iter()
             .filter(|i| i.loc == LOC_PAPERDOLL)
             .cloned()
             .collect();
-        worn.sort_by_key(|i| i.loc_data);
+        let learned: Vec<(i32, i32)> = player
+            .data
+            .skills
+            .iter()
+            .map(|s| (s.skill_id, s.skill_level))
+            .collect();
         for item in worn {
             self.on_equip(id, &item);
         }
+        // `restoreSkills()`: every stored skill (`SkillData.getSkill`, a missing one is skipped).
+        // `rewardSkills()` (auto-get / auto-learn skills not stored yet) is the skill learning of M5.
+        for (skill_id, level) in learned {
+            if !self.add_skill(id, skill_id, level) {
+                warn!(
+                    "Skipped null skill Id: {skill_id} Level: {level} while restoring player skills for playerObjId: {id}"
+                );
+            }
+        }
+        // `refreshOverloaded()`, `refreshExpertisePenalty()` (Java sends nothing for them here: the
+        // character is not in the world yet).
+        self.refresh_overloaded(id);
+        self.refresh_expertise_penalty(id);
         // Java `setCurrentCp/Hp/Mp(stored)` after the inventory: clamped to the new maxima.
         self.refresh_max_vitals(id, true);
     }
@@ -427,6 +441,8 @@ impl World {
     // add skills (phase 2 of M4-STAT-01), `BowCrossRodListener` and `BraceletListener` move items
     // (M4-INV-01). The armor set *stat* bonus is `FuncArmorSet`, which reads the paperdoll.
     pub fn on_equip(&mut self, id: ObjectId, item: &ItemData) -> Vec<Stat> {
+        // `ArmorSetListener`, then `ItemSkillsListener` (they come before `StatsListener`).
+        self.equip_item_skills(id, item);
         let funcs = match self.stats(id) {
             Some(view) => item_funcs(&view, item),
             None => return Vec::new(),
@@ -437,13 +453,19 @@ impl World {
         player.core.calculators.add_all(funcs)
     }
 
-    /// Java `StatsListener.notifyUnequiped`: `removeStatsOwner(item)`. Returns the stats that
-    /// changed.
-    pub fn on_unequip(&mut self, id: ObjectId, item: ObjectId) -> Vec<Stat> {
+    /// Java's paperdoll listeners on unequip: the armor set and item skills go
+    /// (`ArmorSetListener`, `ItemSkillsListener`), then `StatsListener`'s
+    /// `removeStatsOwner(item)`. `item` has already left `slot` (INV-01 clears the slot first,
+    /// like `setPaperdollItem`). Returns the stats `removeStatsOwner` changed.
+    pub fn on_unequip(&mut self, id: ObjectId, item: &ItemData, slot: usize) -> Vec<Stat> {
+        self.unequip_item_skills(id, item, slot);
         let Some(player) = self.players.get_mut(&id) else {
             return Vec::new();
         };
-        player.core.calculators.remove_owner(FuncOwner::Item(item))
+        player
+            .core
+            .calculators
+            .remove_owner(FuncOwner::Item(item.object_id))
     }
 
     /// The max HP/MP/CP of a player or NPC into its `CreatureCore`, and the current values
