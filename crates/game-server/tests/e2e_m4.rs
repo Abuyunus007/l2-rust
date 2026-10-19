@@ -133,9 +133,13 @@ fn game_server_ini(ls_port: u16) -> String {
 fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::create_dir_all(config_dir).unwrap();
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
+    // EnableVitality = False: a new character has full vitality (Java answers lastAccess 0 with
+    // the maximum), which triples the exp of a kill; M4-VIT-01's own tests cover vitality.
     std::fs::write(
         config_dir.join("Player.ini"),
-        format!("ForbiddenNames = annou\nStartingAdena = {START_ADENA}\nDisconnectAfterDeath = False\n"),
+        format!(
+            "ForbiddenNames = annou\nStartingAdena = {START_ADENA}\nDisconnectAfterDeath = False\nEnableVitality = False\n"
+        ),
     )
     .unwrap();
     std::fs::write(
