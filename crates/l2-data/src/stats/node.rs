@@ -13,11 +13,18 @@
 //!   `DocumentBase.parse*Condition` loops over `attrs.item(i)`, so the order in which the
 //!   attributes of one `<player ...>` element become `and` terms is the alphabetical one, not the
 //!   order in the file.
+//! - Whether the element's **first DOM child is a text node** is kept in [`XmlNode::leading_text`],
+//!   but only by [`parse_dom`] (the serde path cannot see whitespace). Java's `parseTemplate` looks
+//!   at `getFirstChild()` without skipping text, see the field.
 //! - The text of the element itself is kept (`$text` pieces concatenated); [`XmlNode::text_content`]
 //!   adds the text of the descendants, like `Node.getTextContent()`.
 
 use std::fmt;
 
+use quick_xml::XmlVersion;
+use quick_xml::escape::resolve_predefined_entity;
+use quick_xml::events::{BytesStart, Event};
+use quick_xml::reader::Reader;
 use serde::Deserialize;
 use serde::de::{self, MapAccess, Visitor};
 
@@ -33,6 +40,17 @@ pub struct XmlNode {
     pub text: String,
     /// Element children in document order.
     pub children: Vec<XmlNode>,
+    /// True when the first DOM child of this element is a text node (any character data before
+    /// the first child element, whitespace included; comments do not count because Java's parser
+    /// drops them). Filled by [`parse_dom`]; always `false` for nodes made by serde or by hand.
+    ///
+    /// NOTE(java-quirk): `DocumentBase.parse()` uses a non-validating `DocumentBuilderFactory`
+    /// that only ignores comments, so the indentation between tags stays in the DOM as text
+    /// nodes. `parseTemplate` then tests `node.getFirstChild()` for `<conditions>` without
+    /// skipping text: in an indented file the first child is whitespace, the `<conditions>` is not
+    /// taken as the template condition, and the loop below it has no case for it. Only a
+    /// `<conditions>` written directly after the opening tag counts.
+    pub leading_text: bool,
 }
 
 impl XmlNode {
@@ -43,6 +61,7 @@ impl XmlNode {
             attrs: attrs.iter().map(|&(k, v)| (k.to_owned(), v.to_owned())).collect(),
             text: String::new(),
             children,
+            leading_text: false,
         };
         node.attrs.sort_by(|a, b| a.0.cmp(&b.0));
         node
@@ -152,6 +171,100 @@ pub fn parse_xml(xml: &str) -> Result<XmlNode, quick_xml::DeError> {
     Ok(doc.children.into_iter().next().unwrap_or_default())
 }
 
+/// Why [`parse_dom`] failed (malformed XML, or a reference that is not a predefined entity).
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[error("{0}")]
+pub struct DomError(pub String);
+
+fn dom_error(error: impl fmt::Display) -> DomError {
+    DomError(error.to_string())
+}
+
+/// Parses a document into the tree Java's `DocumentBuilder` would build, as far as the skill
+/// loader needs it: comments are dropped, text is kept, and [`XmlNode::leading_text`] records
+/// whether an element starts with a text node. Returns the document element.
+///
+/// Unlike the serde path this keeps whitespace, so text is never trimmed here. Attribute values
+/// are normalized like Xerces does (tabs and line breaks become spaces, predefined entities and
+/// character references are resolved). DTD-defined entities are not supported (Java would need the
+/// DTD; the datapack has none).
+pub fn parse_dom(xml: &str) -> Result<XmlNode, DomError> {
+    let xml = xml.strip_prefix('\u{feff}').unwrap_or(xml);
+    let mut reader = Reader::from_str(xml);
+    let mut stack: Vec<XmlNode> = Vec::new();
+    let mut root: Option<XmlNode> = None;
+
+    fn close(node: XmlNode, stack: &mut [XmlNode], root: &mut Option<XmlNode>) {
+        match stack.last_mut() {
+            Some(parent) => parent.children.push(node),
+            None => {
+                // Only the first top level element is the document element.
+                root.get_or_insert(node);
+            }
+        }
+    }
+
+    fn add_text(stack: &mut [XmlNode], text: &str) {
+        if text.is_empty() {
+            return;
+        }
+        if let Some(top) = stack.last_mut() {
+            if top.children.is_empty() {
+                top.leading_text = true;
+            }
+            top.text.push_str(text);
+        }
+    }
+
+    loop {
+        match reader.read_event().map_err(dom_error)? {
+            Event::Start(e) => stack.push(element(&e)?),
+            Event::Empty(e) => {
+                let node = element(&e)?;
+                close(node, &mut stack, &mut root);
+            }
+            Event::End(_) => {
+                let node = stack.pop().ok_or_else(|| dom_error("unexpected end tag"))?;
+                close(node, &mut stack, &mut root);
+            }
+            Event::Text(t) => add_text(&mut stack, &t.xml_content(XmlVersion::Implicit1_0)),
+            Event::CData(t) => add_text(&mut stack, &t.xml_content(XmlVersion::Implicit1_0)),
+            Event::GeneralRef(r) => {
+                let mut buffer = [0u8; 4];
+                let text: &str = match r.resolve_char_ref().map_err(dom_error)? {
+                    Some(c) => c.encode_utf8(&mut buffer),
+                    None => resolve_predefined_entity(&r)
+                        .ok_or_else(|| dom_error(format!("unknown entity &{};", &*r)))?,
+                };
+                add_text(&mut stack, text);
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+    }
+    if !stack.is_empty() {
+        return Err(dom_error("unclosed element"));
+    }
+    root.ok_or_else(|| dom_error("no document element"))
+}
+
+fn element(start: &BytesStart<'_>) -> Result<XmlNode, DomError> {
+    let mut node = XmlNode {
+        name: start.name().as_ref().to_owned(),
+        ..XmlNode::default()
+    };
+    for attribute in start.attributes() {
+        let attribute = attribute.map_err(dom_error)?;
+        let value = attribute
+            .normalized_value(XmlVersion::Implicit1_0)
+            .map_err(dom_error)?;
+        node.attrs
+            .push((attribute.key.as_ref().to_owned(), value.into_owned()));
+    }
+    node.attrs.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(node)
+}
+
 fn strip_prolog(xml: &str) -> &str {
     let trimmed = xml.trim_start();
     if let Some(rest) = trimmed.strip_prefix("<?xml") {
@@ -206,6 +319,40 @@ mod tests {
         assert_eq!(root.text_content(), "123");
         let root = parse_xml("<add stat=\"x\"> 5 </add>").unwrap();
         assert_eq!(root.text_content().trim(), "5");
+    }
+
+    #[test]
+    fn dom_marks_elements_that_start_with_text() {
+        let root = parse_dom(
+            "<?xml version=\"1.0\"?>\n<!-- c --><skill id=\"1\">\n\t<!-- c --><effects><conditions><player level=\"1\"/></conditions>\
+             <effect name=\"A\"/></effects>\n\t<other> <!-- c --> <x/></other><e2><!-- only a comment --></e2>\n</skill>",
+        )
+        .unwrap();
+        assert_eq!(root.name, "skill");
+        // Whitespace before the first child element.
+        assert!(root.leading_text);
+        let effects = root.child("effects").unwrap();
+        // Written back to back: the first child is the <conditions> element itself.
+        assert!(!effects.leading_text);
+        assert_eq!(effects.children[0].name, "conditions");
+        assert!(!effects.children[0].leading_text);
+        // Text, comment, text: still text first.
+        assert!(root.child("other").unwrap().leading_text);
+        // A comment alone leaves no child at all.
+        let e2 = root.child("e2").unwrap();
+        assert!(!e2.leading_text && e2.children.is_empty() && e2.text.is_empty());
+        // The serde path does not know and says false.
+        assert!(!parse_xml("<a> <b/></a>").unwrap().leading_text);
+    }
+
+    #[test]
+    fn dom_keeps_text_decodes_entities_and_normalizes_attributes() {
+        let root = parse_dom("<a v=\"x &amp; y\tz\"> 1 &lt; 2 &#65;<![CDATA[<b>]]></a>").unwrap();
+        assert_eq!(root.attr("v"), Some("x & y z"));
+        assert_eq!(root.text, " 1 < 2 A<b>");
+        assert!(parse_dom("<a><b></a>").is_err());
+        assert!(parse_dom("<a>&nope;</a>").is_err());
+        assert!(parse_dom("   ").is_err());
     }
 
     #[test]
