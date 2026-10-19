@@ -6,10 +6,14 @@
 //! Tables are plain data behind `Arc`, so the world loop and the network tasks can share them
 //! without locks (D-10: nothing here is mutable game state).
 
+pub mod armor_set;
 pub mod class_list;
 pub mod door;
+pub mod enchant_hp_bonus;
 pub mod experience;
 pub mod fence;
+pub mod henna;
+pub mod hit_condition_bonus;
 pub mod html;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
@@ -27,10 +31,14 @@ pub mod zone;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+pub use armor_set::{ArmorSet, ArmorSets};
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
 pub use door::{DoorTemplate, DoorTemplates};
+pub use enchant_hp_bonus::EnchantHpBonus;
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
+pub use henna::{Henna, Hennas};
+pub use hit_condition_bonus::HitConditionBonus;
 pub use html::HtmCache;
 pub use initial_equipment::{InitialEquipment, InitialEquipments};
 pub use initial_shortcuts::{
@@ -84,6 +92,14 @@ pub struct Datapack {
     pub fences: Arc<FenceTemplates>,
     /// `data/StaticObjects.xml`.
     pub static_objects: Arc<StaticObjectTemplates>,
+    /// `data/stats/armorsets/*.xml`: armor set pieces, set skills and stat bonuses.
+    pub armor_sets: Arc<ArmorSets>,
+    /// `data/stats/enchantHPBonus.xml`: HP bonus per enchant level and crystal grade.
+    pub enchant_hp_bonus: Arc<EnchantHpBonus>,
+    /// `data/stats/hitConditionBonus.xml`: the hit percentages for height, side, night and rain.
+    pub hit_condition_bonus: Arc<HitConditionBonus>,
+    /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
+    pub hennas: Arc<Hennas>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -185,6 +201,10 @@ impl Datapack {
             doors: Arc::new(DoorTemplates::load(root)),
             fences: Arc::new(FenceTemplates::load(root)),
             static_objects: Arc::new(StaticObjectTemplates::load(root)),
+            armor_sets: Arc::new(ArmorSets::load(root)),
+            enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
+            hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
+            hennas: Arc::new(Hennas::load(root)),
         })
     }
 }
@@ -284,5 +304,8 @@ mod tests {
         assert!(pack.player_templates.is_empty());
         assert!(pack.items.is_empty());
         assert!(pack.npcs.is_empty());
+        assert!(pack.armor_sets.is_empty());
+        assert!(pack.enchant_hp_bonus.is_empty());
+        assert!(pack.hennas.is_empty());
     }
 }
