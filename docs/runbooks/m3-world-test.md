@@ -63,9 +63,22 @@ NPCs have **no AI** in M3 (they stand at their spawn) and nothing can be attacke
    within ~1250 range), and disappearing on logout.
 
 ### CP-M3c — milestone
-Walk the world with geodata, NPCs and doors, a second player, gatekeepers, and the admin commands
-(a GM account, `accesslevel` > 0 in `characters`): `//admin`, `//spawn <npcId>`,
-`//teleport <x> <y> <z>`, `//loc`, `//kill`, `//heal`.
+Walk the world with geodata, NPCs and doors, a second player, gatekeepers, and the admin commands.
+
+Admin commands need a GM character: its `accesslevel` in the `characters` table must be a GM level
+of `config/AccessLevels.xml` (e.g. 100 = master; set it yourself in the DB while the character is
+offline — the server never changes access levels). Then on Kain:
+
+| Command | What it does |
+|---|---|
+| `//admin` | the admin panel (its buttons work too) |
+| `//spawn <npcId or name> [count]` | spawn an NPC at your target or at you |
+| `//teleport <x> <y> <z>` / `//move_to <x> <y> <z>` | teleport yourself |
+| `//recall <name>` / `//teleportto <name>` | bring a player to you / go to a player |
+| `//goto <npc name>` | go to an NPC's spawn |
+| `//kill` | an NPC target is removed (death comes in M4) |
+| `//heal` | full HP/MP/CP for the target |
+| `/loc` | your position (a normal user command; Java has no `//loc`) |
 
 ## 4. Known limits in M3
 - No NPC AI, no combat, no death, no respawn, no drops (M4).
