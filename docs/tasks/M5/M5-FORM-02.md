@@ -39,4 +39,5 @@ The skill parts of `Formulas` as pure functions over plain inputs plus the `Rnd`
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules: no local DB, no real ports, never kill processes by name), `docs/design/m4-combat.md`, `docs/design/m5-skills.md` first.
+- `calc_effect_success` and the mastery/resist parts of `calc_effect_abnormal_time` in `crates/l2-world/src/effects/apply.rs` are stubs marked `// M5-FORM-02:`: wire your functions into them (inputs from the stat engine), keep the rest of that file as it is. JV-03 note: `calcMagicAffected` uses `nextGaussian`; replay the recorded `returned` value (the harness Rnd is not a real Gaussian).
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).

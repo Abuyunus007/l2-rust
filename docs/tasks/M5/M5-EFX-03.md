@@ -36,4 +36,5 @@ DispelAll, DispelByCategory, DispelBySlot, DispelBySlotProbability, StealAbnorma
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules: no local DB, no real ports, never kill processes by name), `docs/design/m4-combat.md`, `docs/design/m5-skills.md` first.
+- Effect engine API (M5-EFFECT-01, merged): add a handler as `crates/l2-world/src/effects/handlers/<name>.rs` (struct + `fn create(&EffectTemplate) -> Result<Box<dyn EffectHandler>, String>` parsing the params, only the hooks Java overrides: `effect_type`, `effect_flags`, `is_instant`, `calc_success`, `can_start`, `on_start`, `on_action_time`, `on_exit`, `check_condition`), plus `mod x;` and one `registry.register("JavaName", X::create)` line in `effects/handlers/mod.rs`. `handlers/buff.rs` is the reference. All 165 names exist as `Unported` stand-ins; yours replace them. World API: `apply_effects*`, `activate_skill`, `stop_*`, `is_affected(flag)`, `is_affected_by_abnormal_type`, `effect_list(id)`, `abnormal visual effects` (see `effects/mod.rs`).
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
