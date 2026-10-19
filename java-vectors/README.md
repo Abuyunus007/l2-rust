@@ -31,6 +31,7 @@ NO_RUN=1 ./java-vectors/build.sh         # compile only
 |---|---|---|
 | `L2J_SRC` | Java source root of L2JMobius (contains `org/`) | `C:\l2-rust\l2jmobius\java` on Windows |
 | `L2J_LIBS` | folder with the third-party jars (`dist/libs`) | `<L2J_SRC>/../dist/libs` |
+| `L2J_GAME_ROOT` | game server root with `config/` and `data/` (`stats`, `formulas` only) | `<L2J_SRC>/../dist/game` |
 
 Compiled classes go to `java-vectors/build/` (git-ignored). Running the script twice gives
 byte-identical JSON: there is no clock and no unseeded randomness anywhere.
@@ -41,13 +42,19 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path
-    Json.java                tiny JSON writer (no dependencies)
+    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path, stats, formulas
+    Json.java                tiny JSON writer (no dependencies; `Json.compact` writes a map/list on one line)
     CryptoVectors.java       one generator = one class
     LoginPacketVectors.java  login / LS<->GS packet payloads
     GeoVectors.java          region-level geodata queries (geo_<set>_<region>.json)
     GeoEngineVectors.java    GeoEngine: coordinates, line iterators, height, LOS, movement (geo_engine_*.json)
     GeoPathVectors.java      PathFinding.findPath on the whole-world engine (geo_path_*.json)
+    Bootstrap.java           minimal in-process server start (configs, datapack loaders, no DB, no network) + player/NPC builders
+    StatVectors.java         UserInfo/NpcInfo numbers from the real stat engine (stats_*.json)
+    FormulaVectors.java      Formulas.* with scripted Rnd draws (formulas_*.json)
+  src/org/l2jmobius/...      harness replacements that sit before the L2JMobius sources on the class path
+                             (commons/util/Rnd, commons/database/DatabaseFactory, gameserver/managers/IdManager,
+                              gameserver/taskmanagers/GameTimeTaskManager); the Java tree itself is never changed
   out/*.json                 committed output
 ```
 
@@ -153,6 +160,64 @@ How it is driven: the first `GeoEngine.getInstance()` loads the first set; the s
 the protected constructor by reflection (the region table is static, so the singleton sees it). `PathFinding`
 reads the weights in its constructor and `NodeBuffer` when a thread-local buffer is allocated, so every config
 variant gets a fresh `PathFinding` by reflection after the `GeoEngineConfig` statics are set.
+
+## Files (stat engine and formulas, M4-JV-01)
+
+Run by hand (not part of `all`: they read the game server root, `C:\l2-rust\l2jmobius\dist\game`, as the working directory, which `build.ps1` / `build.sh` set up):
+
+```powershell
+.\java-vectors\build.ps1 stats        # stats_*.json   (about 10 s)
+.\java-vectors\build.ps1 formulas     # formulas_*.json (about 10 s)
+```
+
+Nothing is written into the Java tree or the game root: configs and the datapack are only read.
+
+| File | Java source | Contents |
+|---|---|---|
+| `stats_players_naked.json` | `PlayerStat`, `CreatureStat`, `Calculator`, `Func*` | 236 players without gear: the 11 starting classes at level 1 (both sexes), 20 first, 22 second and 18 third professions at levels 20/40/52/76/85, each with and without the class's auto-get (passive) skills. |
+| `stats_players_gear.json` | same + item stat funcs, `ArmorSetData`, `Inventory.equipItem` | 64 players with gear: heavy A-grade set + sword + shield + jewels (3 classes), light set + bow (2), robe set + mace (2), light set + dagger (1), each at enchant +0/+3/+6/+16, with and without skills. |
+| `stats_npcs.json` | `NpcStat`, `CreatureStat`, `Calculator`, NPC skills | 36 NPCs as spawned (monsters of many levels, archers, raid and grand bosses, guards incl. 31033, gatekeepers, merchant, trainer, village master, folk). |
+| `stats_base_bonus.json` | `BaseStat` (`statBonus.xml`) | the six bonus tables (index = stat value 0..99) |
+| `stats_func_trace.json` | `Creature.getCalculators()` | for 9 creatures the ordered function list of every stat (class, order, value, owner item/skill/effect, condition class). A debugging aid for the Rust stat engine. |
+| `formulas_creatures.json` | `StatVectors` | the 17 creatures the formula vectors use (input + expected stats), the 30 attacker/target pairs, the config values the formulas read (level-penalty arrays, shield and regen rates, ...) |
+| `formulas_hit_miss.json` | `Formulas.calcHitMiss` + `HitConditionBonusData` | 1080 cases: 30 pairs x front/side/back, day/night, high/low ground, 6 draws each (boundary draws around the chance) |
+| `formulas_crit.json` | `Formulas.calcCrit` | 390 cases: 30 pairs x 13 draws (a sweep and the boundary around the rate) |
+| `formulas_shield.json` | `Formulas.calcShldUse` | 402 cases: targets with a shield, attacker in front / behind, 20 draw pairs (no block, block, perfect block); targets without a shield return 0 |
+| `formulas_phys_dam.json` | `Formulas.calcPhysDam` (normal attack) | 1050 cases: 30 pairs x shield result 0/1/2 x crit x soulshot x 3 random-damage draws, front/side/back for the first 6 pairs |
+| `formulas_attack_hit.json` | `Formulas.calcHitMiss`, `calcShldUse`, `calcCrit`, `calcPhysDam` in the order of `Creature.doAttackHitSimple` | 240 cases: 30 pairs x 8 seeded scripts (miss, shield, crit, damage) |
+| `formulas_attack_timing.json` | `Creature.calculateTimeBetweenAttacks`, `calculateReuseTime`, `Formulas.calcPAtkSpd`, `calcAtkSpd` | per creature the attack time / hit time / reuse, 15 `calcPAtkSpd` rates, 32 `calcAtkSpd` skill times |
+| `formulas_atk_break.json` | `Formulas.calcAtkBreak` | 162 cases: targets casting / bow-attacking / idle, 6 damages, 3 draws |
+| `formulas_regen.json` | `Formulas.calcHpRegen`, `calcMpRegen`, `calcCpRegen` | 393 cases: the 17 formula creatures standing / sitting / running / walking, and every creature of the `stats_*.json` files standing |
+| `formulas_lvl_bonus.json` | `Formulas.calcLvlBonusMod` | 270 cases: 30 pairs x 9 skills (different magic levels and lvlBonusRate, one with magic level 0) |
+
+### The bootstrap (`Bootstrap.java`)
+
+The smallest start of the real server that makes the stat code run, in this order (all read-only):
+
+1. `ConfigLoader.init()`: every `./config/*.ini` (the real keys and defaults), then `ThreadPool.init()`.
+2. `handlers.EffectMasterHandler.main()`: registers the effect classes. The sources come from `dist/game/data/scripts` through a second `-sourcepath` root (the server compiles them at runtime with its script engine, which the harness does not start).
+3. The datapack loaders: `ExperienceData`, `SkillTreeData`, `SkillData`, `ItemData`, `EnchantItemHPBonusData`, `ArmorSetData`, `HennaData`, `HitConditionBonusData`, `PlayerTemplateData`, `NpcData`.
+4. `ThreadPool.shutdown()`: from here on no scheduled task may run (they would race with the generators and make the output depend on timing).
+
+Not started: the real `DatabaseFactory` and `IdManager`, `World.init()`, `ZoneManager`, the script engine, geodata, spawns, quests, clans, castles.
+The classes the server loads by name (`Func*`, the NPC instance types `entity.actor.instance.<type>`, item types) are compiled explicitly by the build scripts, because `javac -sourcepath` only finds classes that are referenced statically.
+
+A player is built like `Player.restore` does it, without SQL (`Bootstrap.newPlayer`): the private constructor by reflection, `setExp`, `setLevel`, `setFistsWeaponItem`, `setBaseClass`, `_activeClass`; gear through the real `Inventory.equipItem` (all paperdoll listeners run: item stat functions, armor set skills, item skills); then the auto-get skills like `rewardSkills()` (see below); then `refreshExpertisePenalty()` and `refreshOverloaded()`. NPCs are built by the real class named by the template type, like `Spawn` does.
+
+**Harness replacements** (in `src/org/...`, compiled first, the Java tree is untouched):
+
+- `Rnd`: the same API. With a script armed (`Rnd.arm`) the draws of the calling thread come from the script (unit values in [0,1)) and are recorded (method, bound, returned value); otherwise it does exactly what the original does (`ThreadLocalRandom`), so the other generators are unaffected.
+- `DatabaseFactory`: no pool, no driver, no address. `getConnection()` returns an in-memory fake that answers every query with zero rows and every update with 0 changed rows, and remembers the SQL text. The constructors of `Player`, `BlockList`, `ContactList` and the singletons `CharInfoTable`, `SevenSigns`, `TerritoryWarManager` read tables when they start; they get empty tables, like on a fresh database. **No JDBC connection is ever opened.** The generators print how many statements were answered (stats: 6 distinct SELECTs, formulas: 10).
+- `IdManager`: the real one cleans and scans the database in its constructor. The stub hands out ids from `0x10000000`.
+- `GameTimeTaskManager`: the real one derives day/night from the wall clock in a thread (night gives -10 % hit chance in `HitConditionBonusData`). The stub has a fixed time and a flag the generator sets, so the day and night cases are reproducible.
+
+**How the Rnd draws are stored.** Every case with random draws has `script` (the unit values that were consumed) and `rnd` (every draw in order: `method`, `bound`, `returned`). `get_int` with bound `b` returns `floor(u*b)`; `get_int_range` with `"o,b"` returns `o + floor(u*(b-o+1))`. Calls that draw nothing (`Rnd.get(0)`, `Rnd.get(5, 5)`) are not recorded. The Rust side replays the `returned` values in order and checks method and bound; that also pins the number and order of the draws.
+
+**Skills of a player.** `Player.restore` loads the skills of earlier level-ups from the database first, so `rewardSkills()` only adds higher levels. Without a database one pass of `giveAvailableAutoGetSkills()` adds every level of a multi-level skill in map order and the last one wins, so the generator repeats the pass until nothing more is added (every skill ends at its highest level). `input.skills` lists them in the order their functions stay in the calculators; `input.derived_skills` are the skills the player knows on top (armor set, shield, enchant +6 set, item skills, grade and weight penalty). Gear is equipped before the skills, like the login order.
+
+**Geometry.** Attacker and target positions are written straight into the objects' own `Location` (`Creature.setXYZ` would go through `ZoneManager`). The target stands at a fixed spot with heading 16384; the attacker stands 40 units away at the first of 32 spots where the real `isInFrontOf` / `isOnSideOf` / `isBehind` give the wanted relation. The spots are in the `geometry` header of each file and are the same for every pair.
+
+**Not covered** (no vector, say so before relying on it): henna, augmentation, elemental attributes, enchant options (`EnchantItemOptionsData` is not loaded), transformations, summons and pets, buffs and any active skill effect, zones (water, mother tree, peace), clan hall / castle / fort regeneration functions, festival and siege regeneration modifiers, champion monsters, subclasses, `AutoLearnSkills=True`, hero/noble, cursed weapons, the vitality system, weight penalty cases above 50 % load, the `ClassBalance.ini` multipliers (the generator checks they are all 1.0 and writes the list of arrays that are not into `formulas_creatures.json`). Magic damage, blow, backstab and skill hit formulas are out of scope of this set.
 
 ## Writing a new generator
 
