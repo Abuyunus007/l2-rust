@@ -209,9 +209,9 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M4-DATA-11](M4/M4-DATA-11.md) | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | merged |
 | [M4-STAT-01](M4/M4-STAT-01.md) | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | merged |
 | [M4-FORM-01](M4/M4-FORM-01.md) | Combat and regen formulas as pure functions (split out of COMBAT-01) | sonnet | full | JV-01 | merged |
-| [M4-HENNA-01](M4/M4-HENNA-01.md) | Load the character's dyes and show them | haiku | spot | STAT-01, DATA-12 | in-progress |
-| [M4-INV-01](M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | in-progress |
-| [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | in-progress |
+| [M4-HENNA-01](M4/M4-HENNA-01.md) | Load the character's dyes and show them | haiku | spot | STAT-01, DATA-12 | merged |
+| [M4-INV-01](M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | merged |
+| [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | merged |
 | [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | in-progress |
 | [M4-AI-01](M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | ready (refined when deps merge) |
 | [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | ready (refined when deps merge) |
@@ -257,3 +257,9 @@ Findings during the tests:
 - The owner's Java GS runs without geodata (`data/geodata` is empty); the Rust GS uses `C:\l2-rust\geodata-converted` for now (decision at CP-M3a).
 
 M2 follow-ups carried into M3: `CheckHtmlEncoding` gating in the html loader; regex support for name templates (`CnameTemplate`); clan data (pledge packets) and the remaining enter-world packets (quests, friends, hennas).
+
+### M4 (in progress)
+| Check | Result |
+|---|---|
+| CP-M4a part 1: a geared character on Kain shows the same P.Atk, P.Def, M.Atk, M.Def, accuracy, evasion, crit, speeds and max HP/MP/CP as on Sieghardt (enchants, armor sets, passive skills) | ✅ passed (2026-10-19) |
+| CP-M4a part 2: equip/unequip changes the numbers like on Sieghardt | ⏳ after M4-INV-01 |

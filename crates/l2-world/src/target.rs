@@ -170,6 +170,8 @@ impl World {
                 }
                 return;
             }
+            // Java `oldTarget.removeStatusListener(this)`.
+            self.remove_status_listener(old, id);
         }
 
         if let Some(target) = new_target
@@ -186,6 +188,8 @@ impl World {
                 id,
                 &MyTargetSelected::new(target.0, level, self.level_of(target), auto_attackable),
             );
+            // Register target to listen for hp changes (Java `target.addStatusListener(this)`).
+            self.add_status_listener(target, id);
             // Send max/current hp.
             let (max_hp, cur_hp) = self.hp_of(target);
             self.send_target_hp(id, target, max_hp, cur_hp);

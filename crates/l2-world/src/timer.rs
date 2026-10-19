@@ -39,8 +39,19 @@ pub enum TimerKind {
     ReadyToAct(ObjectId),
     /// Java `AttackStanceTaskManager`'s 1 s run: ends the combat stances older than 15 s.
     AttackStanceCheck,
-    /// Java `Player.broadcastStatusUpdate`'s 50 ms task (one pending per player).
-    PlayerStatusUpdate(ObjectId),
+    /// Java `UseItem`'s `ThreadPool.schedule(() -> player.useEquippableItem(item, false), ...)`:
+    /// an item used during an attack is put on (or off) when the attack animation ends.
+    EquipAfterAttack { player: ObjectId, item: ObjectId },
+    /// Java `Player.broadcastCharInfo`'s 100 ms task.
+    CharInfo(ObjectId),
+    /// Java `Player.sendSkillList`'s 300 ms task.
+    SkillList(ObjectId),
+    /// Java `Player.sendItemList`'s 250 ms task.
+    ItemList(ObjectId),
+    /// Java `CreatureStatus`'s regeneration task (every 3 s) of one creature, see `status.rs`.
+    Regeneration(ObjectId),
+    /// Java `Player.broadcastStatusUpdate`'s 50 ms task: a player's own vitals, see `status.rs`.
+    SelfStatusUpdate(ObjectId),
 }
 
 #[derive(Debug, Default)]

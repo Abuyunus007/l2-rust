@@ -15,8 +15,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use l2_db::{
-    CharacterRepository, CharacterRow, ItemLocation, ItemRepository, MacroRepository, Pool,
-    RecommendationRepository, ShortcutRepository, SkillRepository, SubclassRepository, VariableRepository,
+    CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
+    MacroRepository, Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SubclassRepository,
+    VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -77,6 +78,7 @@ pub struct DbPlayerLoader {
     items: ItemRepository,
     skills: SkillRepository,
     shortcuts: ShortcutRepository,
+    hennas: HennaRepository,
     subclasses: SubclassRepository,
     macros: MacroRepository,
     reco: RecommendationRepository,
@@ -90,6 +92,7 @@ impl DbPlayerLoader {
             items: ItemRepository::new(pool.clone()),
             skills: SkillRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
+            hennas: HennaRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -193,6 +196,9 @@ impl DbPlayerLoader {
             })
             .collect();
 
+        // Java: restoreHenna (the active class index, like the skills and shortcuts)
+        data.profile.hennas = henna_slots(&self.hennas.hennas_of(char_id, class_index).await?);
+
         // Java: Player.loadRecommendations (called from `checkRecoBonusTask` at EnterWorld)
         match self.reco.reco_bonus_of(char_id).await? {
             Some(reco) => {
@@ -218,6 +224,28 @@ impl PlayerLoader for DbPlayerLoader {
     ) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
         Box::pin(self.load(account, char_id))
     }
+}
+
+/// The dye ids of slots 1 to 3 from the `character_hennas` rows (Java `restoreHenna`): a row
+/// outside slots 1 to 3 is skipped, and so is a symbol of 0 (or NULL, which Java reads as 0).
+/// The slot keeps its 0 then, which is an empty slot. A dye id the datapack does not know is
+/// kept here and dropped when the world uses it.
+// Java: Player.restoreHenna
+fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
+    let mut slots = [0; 3];
+    for row in rows {
+        if !(1..=3).contains(&row.slot) {
+            continue;
+        }
+        let symbol_id = row.symbol_id.unwrap_or(0);
+        if symbol_id == 0 {
+            continue;
+        }
+        if let Some(slot) = slots.get_mut((row.slot - 1) as usize) {
+            *slot = symbol_id;
+        }
+    }
+    slots
 }
 
 /// The columns of the `characters` row as a [`PlayerData`] without items, skills, shortcuts and
@@ -471,6 +499,25 @@ impl ClientSession {
                 object_id: p.object_id,
                 attack_id: p.attack_id,
             },
+            ClientPacket::UseItem(p) => ClientInput::UseItem {
+                object_id: p.object_id,
+                ctrl_pressed: p.ctrl_pressed,
+            },
+            ClientPacket::RequestUnEquipItem(p) => ClientInput::UnEquipItem {
+                paperdoll_slot: p.paperdoll_slot,
+            },
+            ClientPacket::RequestDestroyItem(p) => ClientInput::DestroyItem {
+                object_id: p.object_id,
+                count: p.count,
+            },
+            ClientPacket::RequestDropItem(p) => ClientInput::DropItem {
+                object_id: p.object_id,
+                count: p.count,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            },
+            ClientPacket::RequestItemList(_) => ClientInput::ItemList,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
@@ -696,5 +743,140 @@ mod tests {
         p.profile.variables.insert(RESTORE_LOCATION.into(), "1;2".into());
         apply_restore_location(&mut p);
         assert_eq!((p.x, p.y, p.z), (83_597, 147_915, -3_405));
+    }
+
+    fn henna_row(slot: i32, symbol_id: Option<i32>) -> HennaRow {
+        HennaRow { slot, symbol_id }
+    }
+
+    #[test]
+    fn hennas_fill_the_slots_like_restore_henna() {
+        assert_eq!(henna_slots(&[]), [0, 0, 0]);
+        assert_eq!(henna_slots(&[henna_row(2, Some(7))]), [0, 7, 0]);
+        assert_eq!(
+            henna_slots(&[
+                henna_row(1, Some(1)),
+                henna_row(2, Some(2)),
+                henna_row(3, Some(3))
+            ]),
+            [1, 2, 3]
+        );
+        // A slot outside 1..=3, a symbol of 0 and a NULL symbol (read as 0) are skipped.
+        assert_eq!(
+            henna_slots(&[
+                henna_row(0, Some(5)),
+                henna_row(4, Some(6)),
+                henna_row(1, Some(0)),
+                henna_row(2, None),
+                henna_row(3, Some(9)),
+            ]),
+            [0, 0, 9]
+        );
+    }
+
+    /// The game tables the loader reads and `create_character` writes (the same list as
+    /// `charscreen_db_tests`).
+    const LOADER_SCHEMA: [&str; 24] = [
+        include_str!("../../../l2-db/sql/game/characters.sql"),
+        include_str!("../../../l2-db/sql/game/items.sql"),
+        include_str!("../../../l2-db/sql/game/item_attributes.sql"),
+        include_str!("../../../l2-db/sql/game/character_skills.sql"),
+        include_str!("../../../l2-db/sql/game/character_skills_save.sql"),
+        include_str!("../../../l2-db/sql/game/character_shortcuts.sql"),
+        include_str!("../../../l2-db/sql/game/character_macroses.sql"),
+        include_str!("../../../l2-db/sql/game/character_reco_bonus.sql"),
+        include_str!("../../../l2-db/sql/game/character_contacts.sql"),
+        include_str!("../../../l2-db/sql/game/character_friends.sql"),
+        include_str!("../../../l2-db/sql/game/character_hennas.sql"),
+        include_str!("../../../l2-db/sql/game/character_quests.sql"),
+        include_str!("../../../l2-db/sql/game/character_recipebook.sql"),
+        include_str!("../../../l2-db/sql/game/character_subclasses.sql"),
+        include_str!("../../../l2-db/sql/game/heroes.sql"),
+        include_str!("../../../l2-db/sql/game/olympiad_nobles.sql"),
+        include_str!("../../../l2-db/sql/game/seven_signs.sql"),
+        include_str!("../../../l2-db/sql/game/pets.sql"),
+        include_str!("../../../l2-db/sql/game/merchant_lease.sql"),
+        include_str!("../../../l2-db/sql/game/character_raid_points.sql"),
+        include_str!("../../../l2-db/sql/game/character_instance_time.sql"),
+        include_str!("../../../l2-db/sql/game/character_variables.sql"),
+        include_str!("../../../l2-db/sql/game/mods_wedding.sql"),
+        include_str!("../../../l2-db/sql/game/clan_data.sql"),
+    ];
+
+    /// A throwaway database with the game tables; `None` without `L2_TEST_DATABASE_URL`.
+    async fn loader_setup() -> Option<(l2_testkit::test_db::TestDb, l2_db::Pool)> {
+        let db = l2_testkit::test_db::TestDb::create("henna").await?;
+        for file in LOADER_SCHEMA {
+            let text: String = file
+                .lines()
+                .filter(|line| !line.trim_start().starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n");
+            for statement in text.split(';').map(str::trim).filter(|s| !s.is_empty()) {
+                db.exec(statement).await;
+            }
+        }
+        let (user, password, host, port) = db.parts();
+        let mut options = sqlx::mysql::MySqlConnectOptions::new()
+            .host(&host)
+            .port(port)
+            .username(&user)
+            .database(db.name());
+        if !password.is_empty() {
+            options = options.password(&password);
+        }
+        let pool = l2_db::connect_with(options, 5).await.unwrap();
+        Some((db, pool))
+    }
+
+    #[tokio::test]
+    async fn the_loader_reads_the_hennas_of_the_active_class_index() {
+        let Some((db, pool)) = loader_setup().await else {
+            return;
+        };
+        let (_dir, pack) = crate::client::testdata::datapack();
+        let screen = crate::client::charscreen::CharScreen::new(
+            Arc::new(crate::client::charscreen::DbCharScreen::new(pool.clone())),
+            pack,
+            Arc::new(l2_config::GameConfig::default()),
+            Arc::new(l2_world::IdFactory::new([]).unwrap()),
+            0,
+        );
+        let create = l2_protocol_game::client::CharacterCreate {
+            name: "Dyer".to_owned(),
+            race: 0,
+            is_female: true,
+            class_id: 10,
+            int: 0,
+            str: 0,
+            con: 0,
+            men: 0,
+            dex: 0,
+            wit: 0,
+            hair_style: 2,
+            hair_color: 1,
+            face: 1,
+        };
+        let mut rng = l2_util::WorldRng::from_seed(7);
+        let id = crate::client::charscreen::create_character(&screen, "acc", &create, &mut rng)
+            .await
+            .unwrap()
+            .char_id;
+        // Slots 1 and 2 hold dyes, slot 3 has symbol 0, slot 4 is not a slot. Class index 1 has a
+        // dye of its own, which a base-class character does not load.
+        db.exec(&format!(
+            "INSERT INTO character_hennas (charId, symbol_id, slot, class_index) VALUES \
+             ({id}, 1, 1, 0), ({id}, 2, 2, 0), ({id}, 0, 3, 0), ({id}, 3, 4, 0), ({id}, 4, 1, 1)"
+        ))
+        .await;
+
+        let loaded = DbPlayerLoader::new(pool.clone())
+            .load_player("acc", id)
+            .await
+            .unwrap();
+        assert_eq!(loaded.profile.hennas, [1, 2, 0]);
+
+        pool.close().await;
+        db.drop_db().await;
     }
 }

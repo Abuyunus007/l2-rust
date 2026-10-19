@@ -25,7 +25,6 @@ use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::combat::{HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS};
 use l2_protocol_game::server::{ActionFailed, Attack, AttackHit, SetupGauge, SystemMessage};
 use l2_util::ObjectId;
-use tracing::debug;
 
 use super::HitTask;
 use super::hit::{
@@ -606,7 +605,7 @@ impl World {
                 }
                 // If Player have enough MP, the bow consumes it.
                 if mp_consume > 0 {
-                    self.vitals_reduce_mp(id, f64::from(mp_consume));
+                    self.reduce_mp(id, f64::from(mp_consume));
                 }
                 // Set the period of bow no re-use.
                 self.combat_state_mut(id).disable_bow_attack_end_time =
@@ -652,41 +651,44 @@ impl World {
         true
     }
 
-    /// `Inventory.setPaperdollItem(PAPERDOLL_LHAND, arrows)` and `sendItemList(false)`.
-    // M4-INV-01: equipping belongs to the inventory card; this moves the item into the left hand,
-    // runs the stat listener and sends the item lists, which is what Java's call does for arrows
-    // (no other paperdoll listener reacts to them). Replace with INV-01's equip when it lands.
+    /// `Inventory.setPaperdollItem(PAPERDOLL_LHAND, arrows)` and `sendItemList(false)` (the
+    /// inventory's paperdoll path: listeners, the database row, the delayed item list).
     fn equip_arrows(&mut self, id: ObjectId, arrow: ObjectId) {
-        let item = {
-            let Some(p) = self.players.get_mut(&id) else {
-                return;
-            };
-            let Some(item) = p.data.items.iter_mut().find(|i| i.object_id == arrow) else {
-                return;
-            };
-            item.loc = "PAPERDOLL".into();
-            item.loc_data = i32::try_from(paperdoll::LHAND).unwrap_or(7);
-            item.clone()
-        };
-        self.on_equip(id, &item);
-        let now_ms = crate::world::unix_ms_now();
-        if let Some(p) = self.players.get(&id) {
-            let list = crate::enter::item_list(&p.data, &*self.data, now_ms);
-            let quest = crate::enter::quest_item_list(&p.data, &*self.data, now_ms);
-            self.send(id, &list);
-            self.send(id, &quest);
-        }
+        let mut changed = Vec::new();
+        self.set_paperdoll_item(id, paperdoll::LHAND, Some(arrow), &mut changed);
+        // Send a Server->Client packet ItemList to this Player to update left hand equipment.
+        self.send_item_list(id, false);
     }
 
-    /// Java `Player.reduceArrowCount(bolts)`.
-    // M4-INV-01: consumption is a hook only in M4-COMBAT-01 (the card's scope); the inventory card
-    // changes the count, destroys the last arrow and sends `InventoryUpdate` / `ItemList`.
+    /// Java `Player.reduceArrowCount(bolts)`: one arrow (bolt) less; the last one is destroyed and
+    /// leaves the left hand.
+    // Java clears `_arrowItem` / `_boltItem` here; the left hand is the only record of them in
+    // Rust, so `bolts` changes nothing.
     fn reduce_arrow_count(&mut self, id: ObjectId, bolts: bool) {
-        if self.is_player(id) {
-            debug!(
-                "{id}: one {} would be consumed (M4-INV-01)",
-                if bolts { "bolt" } else { "arrow" }
-            );
+        let _ = bolts;
+        if !self.is_player(id) {
+            return;
+        }
+        let Some(arrows) = self.paperdoll_object(id, paperdoll::LHAND) else {
+            let mut changed = Vec::new();
+            self.set_paperdoll_item(id, paperdoll::LHAND, None, &mut changed);
+            self.send_item_list(id, false);
+            return;
+        };
+        let count = self.inventory_item(id, arrows).map_or(0, |i| i.count);
+        if count > 1 {
+            // Adjust item quantity: `changeCount(-1)` (written with the next store, like Java's
+            // `changeCount`), `refreshWeight()`, then the `InventoryUpdate`.
+            self.destroy_inventory_item(id, arrows, 1);
+            if let Some(entry) = self.modified_entry(id, arrows) {
+                self.send_inventory_update(id, entry);
+            }
+        } else {
+            // Destroy entire item and save to database.
+            self.destroy_inventory_item(id, arrows, count);
+            let mut changed = Vec::new();
+            self.set_paperdoll_item(id, paperdoll::LHAND, None, &mut changed);
+            self.send_item_list(id, false);
         }
     }
 

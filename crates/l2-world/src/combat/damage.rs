@@ -206,14 +206,14 @@ impl World {
             let max_can_absorb = (f64::from(max_hp) - cur_hp) as i32;
             let absorb = (((hp_percent / 100.0) * f64::from(damage)) as i32).min(max_can_absorb);
             if absorb > 0 {
-                self.vitals_set_hp(id, cur_hp + f64::from(absorb), true);
+                self.set_current_hp(id, cur_hp + f64::from(absorb), true);
             }
         }
         if mp_percent > 0.0 {
             let max_can_absorb = (f64::from(max_mp) - cur_mp) as i32;
             let absorb = (((mp_percent / 100.0) * f64::from(damage)) as i32).min(max_can_absorb);
             if absorb > 0 {
-                self.vitals_set_mp(id, cur_mp + f64::from(absorb), true);
+                self.set_current_mp(id, cur_mp + f64::from(absorb), true);
             }
         }
     }
@@ -293,84 +293,8 @@ impl World {
             // Champions are not rolled (`ChampionMonstersConfig`), so the HP is not divided.
             // AttackableStatus.reduceHp: over-hit is a skill effect (M5).
         }
-        // NpcStatus.reduceHp: duels (M5); M4-AI-01: `addAttackerToAttackByList(attacker)`.
-        self.creature_reduce_hp(target, amount, attacker);
-    }
-
-    /// Java `CreatureStatus.reduceHp(value, attacker, awake = true, isDOT = false,
-    /// isHPConsumption = false)`.
-    fn creature_reduce_hp(&mut self, id: ObjectId, value: f64, attacker: Option<ObjectId>) {
-        if self.is_dead(id) {
-            return;
-        }
-        // M5: invulnerability; a GM without `giveDamage` rights (access level flags are not
-        // loaded: every access level may give damage).
-        // M5: `stopEffectsOnDamage(awake)` and the stun break (no draw without a stun).
-        if value > 0.0 {
-            let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
-            self.vitals_set_hp(id, (current - value).max(0.0), true);
-        }
-        // `isMortal()`: nothing makes a creature immortal before scripts.
-        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
-            self.abort_attack(id);
-            // M5: `abortCast()`.
-            self.do_die(id, attacker);
-        }
-    }
-
-    /// Java `PlayerStatus.reduceHp(value, attacker, awake = true, isDOT = false,
-    /// isHPConsumption = false, ignoreCP = false)`.
-    fn player_reduce_hp(&mut self, id: ObjectId, value: f64, attacker: Option<ObjectId>) {
-        if self.is_dead(id) {
-            return;
-        }
-        // Offline traders, invulnerability (M5).
-        // M5: `stopEffectsOnDamage(awake)`. Crafting, private stores and sitting (stand up):
-        // not modelled yet. Stun break: M5.
-        let mut amount = value;
-        let full_value = amount as i32;
-        if let Some(attacker) = attacker.filter(|a| *a != id) {
-            // GM `giveDamage` rights and duels: M5.
-            // Summon damage transfer, mana shield and damage transfer to a party member: M5
-            // (effects and summons; their stats are 0 without them).
-            if self.is_player(attacker) {
-                // `attacker.isPlayable() || attacker.isFakePlayer()`: CP takes the hit first.
-                let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
-                if cp >= amount {
-                    // Set Cp to diff of Cp vs value.
-                    self.vitals_set_cp(id, cp - amount, true);
-                    // No need to subtract anything from Hp.
-                    amount = 0.0;
-                } else {
-                    // Get diff from value vs Cp; will apply diff to Hp.
-                    amount -= cp;
-                    self.vitals_set_cp(id, 0.0, false);
-                }
-            }
-            if full_value > 0 {
-                // Send a System Message to the Player.
-                let message = SystemMessage::new(SystemMessageId::C1HasReceivedS3DamageFromC2)
-                    .with(SystemMessageParam::Text(self.creature_name(id)))
-                    .with(SystemMessageParam::Text(self.creature_name(attacker)))
-                    .with(SystemMessageParam::IntNumber(full_value));
-                self.send(id, &message);
-            }
-        }
-        if amount > 0.0 {
-            let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
-            let mut new_hp = current - amount;
-            if new_hp <= 0.0 {
-                // Duels end at 1 HP: M5.
-                new_hp = 0.0;
-            }
-            self.vitals_set_hp(id, new_hp, true);
-        }
-
-        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
-            self.abort_attack(id);
-            // M5: `abortCast()`; olympiad matches end without death.
-            self.do_die(id, attacker);
-        }
+        // `CreatureStatus` / `NpcStatus` / `AttackableStatus.reduceHp` (`status.rs`).
+        self.reduce_hp(target, amount, attacker);
     }
 
     /// Java `Attackable.addDamage(attacker, damage, skill)` and `addDamageHate`: the AI hears
@@ -481,21 +405,25 @@ impl World {
     /// what makes the creature stop fighting: its attack and its AI's targets are dropped.
     pub fn do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
         // Killing is only possible one time.
-        if self.combat.creatures.get(&id).is_some_and(|c| c.dead) {
+        if self.is_dead(id) {
             return false;
         }
-        // Now reset currentHp to zero.
-        self.vitals_set_hp(id, 0.0, true);
-        self.combat_state_mut(id).dead = true;
+        // Now reset currentHp to zero (the dead flag is `status.rs`'s, the only one).
+        self.set_current_hp(id, 0.0, true);
+        self.set_dead(id, true);
         // The attack in its animation ends with the creature.
-        self.combat_state_mut(id).attack_end_ms = 0;
+        if let Some(state) = self.combat.creatures.get_mut(&id) {
+            state.attack_end_ms = 0;
+        }
         // M4-DEATH-01: ON_CREATURE_DEATH / ON_CREATURE_KILLED events, rewards (`calculateRewards`
         // of the main damage dealer: M4-EXP-01, M4-DROP-01), `setTarget(null)`, `stopMove(null)`,
-        // the regeneration stop (M4-REGEN-01), effects, the clan help call on kill (M4-AI-01),
+        // then the regeneration stop below, effects, the clan help call on kill (M4-AI-01),
         // `broadcastStatusUpdate()`, the zones' `onDeath`, the attack-by list, then the overrides
         // (`Npc`/`Attackable`/`Player.doDie`: decay, respawn, death penalty, karma drops).
         // `getAI().notifyActionDeath()` without the `Die` packet, which DEATH-01 sends.
         let _ = killer;
+        // Stop HP/MP/CP Regeneration task.
+        self.stop_hp_mp_regeneration(id);
         self.notify_action_death(id);
         true
     }

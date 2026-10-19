@@ -20,15 +20,15 @@
 // # The per-creature state
 // [`CombatState`] lives in a side table keyed by object id (D-11), made on first use and dropped
 // when a player leaves (`World::forget_combat`). It holds what Java keeps in `Creature` fields:
-// `_attackEndTime`, `_disableBowAttackEndTime`, `_isDead`, the `needHpUpdate` checks and, for
-// attackable NPCs, the damage part of the aggro list.
+// `_attackEndTime`, `_disableBowAttackEndTime` and, for attackable NPCs, the damage part of the
+// aggro list. HP/MP/CP, the dead flag, the status listeners and the `StatusUpdate` broadcasts are
+// `status.rs`'s (M4-REGEN-01): this module changes vitals only through its setters and its
+// `reduce_hp` / `player_reduce_hp` / `reduce_mp`.
 //
 // # Hooks left for other cards (grep the markers)
 // - `// M4-DEATH-01:` `World::do_die` only marks the creature dead, stops its attack and resets
 //   its AI; the `Die` packet, decay, respawn, rewards are DEATH-01's.
 // - `// M4-AI-01:` what an attackable NPC does when attacked, its thinking and its aggro list use.
-// - `// M4-REGEN-01:` where Java starts/stops the regeneration task when HP/MP/CP change.
-// - `// M4-INV-01:` equipping arrows from the inventory, arrow consumption.
 // - `// M5:` soulshots, skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
 
 pub mod attack;
@@ -36,7 +36,6 @@ pub mod damage;
 pub mod hit;
 pub mod request;
 pub mod stance;
-mod vitals;
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -108,15 +107,6 @@ impl Default for CombatSettings {
     }
 }
 
-/// Java `Creature.needHpUpdate()`'s fields (`_hpUpdateIncCheck`, `_hpUpdateDecCheck`,
-/// `_hpUpdateInterval`).
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct HpUpdateChecks {
-    pub inc_check: f64,
-    pub dec_check: f64,
-    pub interval: f64,
-}
-
 /// The combat fields of one creature (Java `Creature`).
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct CombatState {
@@ -124,10 +114,6 @@ pub struct CombatState {
     pub attack_end_ms: i64,
     /// Java `_disableBowAttackEndTime`, in game ticks ([`World::game_ticks`]).
     pub disable_bow_attack_end_time: i32,
-    /// Java `_isDead`.
-    pub dead: bool,
-    /// `needHpUpdate`'s state; made from the maximum HP the first time it is needed.
-    pub hp_update: Option<HpUpdateChecks>,
     /// Java `Attackable._aggroList`, in the order attackers were first added (only the damage
     /// and hate this card adds; M4-AI-01 reads and extends it).
     pub aggro: Vec<AggroInfo>,
@@ -142,8 +128,6 @@ pub struct CombatWorld {
     pub(crate) stances: HashMap<ObjectId, i64>,
     /// The pending 1 s stance check, while any stance exists.
     pub(crate) stance_timer: Option<TimerId>,
-    /// Java `Player._broadcastStatusUpdateTask`.
-    pub(crate) status_update_timers: HashMap<ObjectId, TimerId>,
     /// `data/stats/hitConditionBonus.xml` (Java `HitConditionBonusData`).
     pub(crate) hit_condition_bonus: Arc<HitConditionBonus>,
 }
@@ -167,19 +151,7 @@ impl World {
     pub(crate) fn forget_combat(&mut self, id: ObjectId) {
         self.combat.creatures.remove(&id);
         self.combat.stances.remove(&id);
-        if let Some(timer) = self.combat.status_update_timers.remove(&id) {
-            self.timers.cancel(timer);
-        }
         self.ai.creatures.remove(&id);
-    }
-
-    /// Java `Creature.isDead()`. A player loaded with less than 0.5 HP counts as dead too, as
-    /// Java's restore marks it.
-    pub fn is_dead(&self, id: ObjectId) -> bool {
-        if self.combat.creatures.get(&id).is_some_and(|c| c.dead) {
-            return true;
-        }
-        self.players.get(&id).is_some_and(|p| p.core.cur_hp < 0.5)
     }
 
     /// Java `Creature.isAttackingNow()`: an attack is still in its animation.
@@ -237,26 +209,6 @@ impl World {
         } else if let Some(n) = self.npcs.get_mut(&id) {
             n.core.heading = heading;
         }
-    }
-
-    /// The `CreatureCore` of a player or NPC.
-    pub(crate) fn core_of(&self, id: ObjectId) -> Option<&crate::player::CreatureCore> {
-        if let Some(p) = self.players.get(&id) {
-            return Some(&p.core);
-        }
-        self.npcs.get(&id).map(|n| &n.core)
-    }
-
-    pub(crate) fn core_of_mut(&mut self, id: ObjectId) -> Option<&mut crate::player::CreatureCore> {
-        if let Some(p) = self.players.get_mut(&id) {
-            return Some(&mut p.core);
-        }
-        self.npcs.get_mut(&id).map(|n| &mut n.core)
-    }
-
-    /// Java `isPlayer()`.
-    pub(crate) fn is_player(&self, id: ObjectId) -> bool {
-        self.players.contains_key(&id)
     }
 
     /// Java `isNpc()`.

@@ -15,7 +15,7 @@
 // - zones: `ExSetCompassZoneCode` and the zone messages
 // - clans, sieges, Seven Signs (the period message), announcements, the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
-// - friends, contacts, hennas, teleport bookmarks, the mail check, premium items
+// - friends, contacts, teleport bookmarks, the mail check, premium items
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty), `Die` for a
 //   character stored dead
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
@@ -510,6 +510,43 @@ impl World {
             .unwrap_or(0)
     }
 
+    /// Java `new HennaInfo(player)`: the six dye bonuses from the stat engine (`Player.getHennaStat*`),
+    /// 3 slots, and the dye ids of the slots in use. A dye id the datapack does not know is an
+    /// empty slot (Java's `HennaData.getHenna` gives null for it), so it is neither sent nor
+    /// counted.
+    pub(crate) fn henna_info(&self, id: ObjectId) -> HennaInfo {
+        let Some(player) = self.players.get(&id) else {
+            return HennaInfo::default();
+        };
+        let known = |dye_id: i32| {
+            self.data
+                .stat_data()
+                .is_some_and(|d| dye_id != 0 && d.hennas.get(dye_id).is_some())
+        };
+        let dye_ids: Vec<i32> = player
+            .data
+            .profile
+            .hennas
+            .iter()
+            .copied()
+            .filter(|dye_id| known(*dye_id))
+            .collect();
+        let stats = self
+            .stats(id)
+            .and_then(|view| view.henna_stats())
+            .unwrap_or_default();
+        // Java `writeByte`: each value goes out as its low byte (the dye bonuses fit in one).
+        HennaInfo {
+            int: stats.int as i8,
+            str: stats.str as i8,
+            con: stats.con as i8,
+            men: stats.men as i8,
+            dex: stats.dex as i8,
+            wit: stats.wit as i8,
+            dye_ids,
+        }
+    }
+
     /// The encoded packets from the macro list to `QuestList`, which Java sends before
     /// `spawnMe`.
     fn enter_packets(&self, id: ObjectId, now_ms: i64) -> Vec<Vec<u8>> {
@@ -538,8 +575,8 @@ impl World {
         );
         packets.push(shortcut_init(data, st).to_bytes());
         packets.push(ExBasicActionList::default_list().to_bytes());
-        // HennaInfo, QuestList: not loaded (no henna and no quest system yet).
-        packets.push(HennaInfo::default().to_bytes());
+        // HennaInfo, then QuestList: not loaded (no quest system yet).
+        packets.push(self.henna_info(id).to_bytes());
         packets.push(QuestList::default().to_bytes());
         packets
     }

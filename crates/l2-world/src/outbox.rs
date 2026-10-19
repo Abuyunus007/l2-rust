@@ -5,7 +5,7 @@
 //! they hand the value to a queue and return.
 
 use crate::command::LeaveReason;
-use crate::player::PlayerData;
+use crate::player::{ItemData, PlayerData};
 use l2_util::ObjectId;
 
 /// One player's connection.
@@ -32,6 +32,16 @@ pub enum PersistCommand {
         account: String,
         object_id: ObjectId,
         logout: bool,
+    },
+    /// Java `Item.updateDatabase()`: item rows of one character that changed, written when they
+    /// change (equip, unequip, destroy, drop) and not only at the next full store. `upserts` are
+    /// the whole rows (an `UPDATE` when the row exists, else an `INSERT`, like Java's
+    /// `_existsInDb`), `removed` are rows Java deletes (`removeFromDb`). Applied in order with
+    /// the character's other commands.
+    ItemChanges {
+        owner: ObjectId,
+        upserts: Vec<ItemData>,
+        removed: Vec<ObjectId>,
     },
 }
 

@@ -321,16 +321,15 @@ fn player_kills_a_weak_monster() {
     assert_eq!(s.world.intention_of(ObjectId(ME)), Intention::Attack);
     assert_eq!(s.world.attack_target_of(ObjectId(ME)), Some(npc));
 
-    let max_hp = 300.0;
     let sent = s.run_until(2000, |w| w.is_dead(npc));
     let mut all = first;
     all.extend(sent);
-    // Every landed hit of the attacks, in order, from the Attack packets.
+    // Every landed hit of the attacks, in order, from the Attack packets (the run stops at the
+    // death, so every attack sent so far has landed).
     let attacks: Vec<Attack> = of(&all, ME, "ATTACK")
         .iter()
         .map(|raw| decode::<Attack>(raw))
         .collect();
-    let mut total = 0;
     let mut landed = Vec::new();
     for a in &attacks {
         assert_eq!(a.attacker_id, ME);
@@ -341,28 +340,13 @@ fn player_kills_a_weak_monster() {
             assert_eq!(hit.damage, 0, "a miss does no damage");
         } else {
             landed.push(hit.damage);
-            total += hit.damage;
-        }
-        if f64::from(total) >= max_hp {
-            break;
         }
     }
-    assert!(!landed.is_empty());
-    let normal = landed.iter().copied().min().unwrap();
-    // Killed in exactly the number of landed hits the damage needs.
-    let needed: usize = landed
-        .iter()
-        .scan(0, |sum, d| {
-            *sum += d;
-            Some(*sum)
-        })
-        .position(|sum| f64::from(sum) >= max_hp)
-        .unwrap()
-        + 1;
-    assert_eq!(landed.len(), needed, "hits: {landed:?}");
-    assert!(landed.len() >= 2, "300 HP takes more than one hit of {normal}");
+    assert!(landed.len() >= 2, "300 HP takes more than one hit: {landed:?}");
 
-    // The HP bar (StatusUpdate to the targeting player) went down with each landed hit.
+    // The HP bar (StatusUpdate to the targeting player, a status listener) goes down by each
+    // landed hit and up by the monster's regeneration in between (it starts with the first
+    // damage); the last landed hit takes it to 0.
     let bars: Vec<(i32, i32)> = of(&all, ME, "STATUS_UPDATE")
         .iter()
         .map(|raw| decode::<StatusUpdate>(raw))
@@ -370,12 +354,21 @@ fn player_kills_a_weak_monster() {
         .map(|u| (u.attributes[0].1, u.attributes[1].1))
         .collect();
     let mut hp = 300;
-    let mut expected = Vec::new();
-    for d in &landed {
-        hp = (hp - d).max(0);
-        expected.push((300, hp));
+    let mut hits = landed.iter();
+    for (max, value) in &bars {
+        assert_eq!(*max, 300);
+        if *value > hp {
+            assert!(value - hp <= 10, "regeneration, not a jump: {bars:?}");
+        } else {
+            let d = hits
+                .next()
+                .unwrap_or_else(|| panic!("a drop without a hit: {bars:?}"));
+            assert_eq!(*value, (hp - d).max(0), "{bars:?}");
+        }
+        hp = *value;
     }
-    assert_eq!(bars, expected);
+    assert!(hits.next().is_none(), "every landed hit moved the bar: {bars:?}");
+    assert_eq!(hp, 0);
 
     // Damage messages: one per landed hit, "went astray" per miss.
     let messages: Vec<SystemMessage> = of(&all, ME, "SYSTEM_MESSAGE")
@@ -578,21 +571,114 @@ fn bows_need_arrows() {
     s.click(ME, npc);
     let sent = s.log.take();
     let me = names(&sent, ME);
-    let list = me.iter().position(|n| n == "ITEM_LIST").unwrap();
-    let gauge = me.iter().position(|n| n == "SETUP_GAUGE").unwrap();
-    let attack = me.iter().position(|n| n == "ATTACK").unwrap();
-    assert!(list < gauge && gauge < attack, "{me:?}");
+    assert_eq!(me, ["SETUP_GAUGE", "ATTACK", "ACTION_FAIL"]);
     let g = decode::<SetupGauge>(of(&sent, ME, "SETUP_GAUGE")[0]);
     assert_eq!(g.color, SetupGauge::RED);
-    let p = s.world.player(ObjectId(ME)).unwrap();
-    let left = p
-        .data
-        .items
-        .iter()
-        .find(|i| i.loc == "PAPERDOLL" && i.loc_data == paperdoll::LHAND as i32)
-        .unwrap();
-    assert_eq!(left.item_id, 17);
+    // The arrows went to the left hand (`setPaperdollItem`) and one was shot (`reduceArrowCount`).
+    let left = |s: &Scene| {
+        s.world
+            .player(ObjectId(ME))
+            .unwrap()
+            .data
+            .items
+            .iter()
+            .find(|i| i.loc == "PAPERDOLL" && i.loc_data == paperdoll::LHAND as i32)
+            .cloned()
+    };
+    let arrows = left(&s).unwrap();
+    assert_eq!((arrows.item_id, arrows.count), (17, 99));
     assert!(s.world.is_range_attacking_now(ObjectId(ME)));
+    // The count goes out in an `InventoryUpdate` (100 ms), the item list after 250 ms
+    // (`sendItemList(false)`).
+    s.ticks(5);
+    let later = names(&s.log.take(), ME);
+    let update = later.iter().position(|n| n == "INVENTORY_UPDATE").unwrap();
+    let list = later.iter().position(|n| n == "ITEM_LIST").unwrap();
+    assert!(update < list, "{later:?}");
+}
+
+/// The last arrow is destroyed and leaves the left hand; the next shot is refused.
+#[test]
+fn the_last_arrow_is_used_up() {
+    let bow = item(0x3000_0010, 13, "PAPERDOLL", paperdoll::RHAND, 1);
+    let arrow = item(0x3000_0011, 17, "PAPERDOLL", paperdoll::LHAND, 1);
+    let mut s = Scene::new();
+    s.enter(ME, "Archer", (X, Y, Z), vec![bow, arrow]);
+    let npc = s.world.spawn_npc_at(9001, X + 200, Y, Z, 0).unwrap();
+    s.click(ME, npc);
+    s.click(ME, npc);
+    let sent = s.log.take();
+    assert!(!of(&sent, ME, "ATTACK").is_empty());
+    let p = s.world.player(ObjectId(ME)).unwrap();
+    assert!(
+        p.data.items.iter().all(|i| i.item_id != 17),
+        "the last arrow is gone"
+    );
+    // The bow can shoot again after its reuse: then there are no arrows left.
+    let later = s.run_until(200, |w| w.intention_of(ObjectId(ME)) == Intention::Idle);
+    let msgs: Vec<SystemMessageId> = of(&later, ME, "SYSTEM_MESSAGE")
+        .iter()
+        .map(|r| message_id(r))
+        .collect();
+    assert!(msgs.contains(&SystemMessageId::YouHaveRunOutOfArrows), "{msgs:?}");
+}
+
+/// An item used during the attack animation is equipped when the attack ends (Java `UseItem`),
+/// and taking an item off during the animation is refused (`RequestUnEquipItem`).
+#[test]
+fn equipping_waits_for_the_attack_end() {
+    let mut s = Scene::new();
+    let spare = item(0x3000_0002, 2, "INVENTORY", 0, 1);
+    let mut items = sword();
+    items.push(spare);
+    s.enter(ME, "Hero", (X, Y, Z), items);
+    let npc = s.world.spawn_npc_at(9001, X + 40, Y, Z, 0).unwrap();
+    s.click(ME, npc);
+    s.click(ME, npc);
+    assert!(s.world.is_attacking_now(ObjectId(ME)));
+    s.log.take();
+    s.input(
+        ME,
+        ClientInput::UnEquipItem {
+            paperdoll_slot: paperdoll::RHAND as i32,
+        },
+    );
+    let msgs: Vec<SystemMessageId> = of(&s.log.take(), ME, "SYSTEM_MESSAGE")
+        .iter()
+        .map(|r| message_id(r))
+        .collect();
+    assert_eq!(msgs, vec![SystemMessageId::YouCannotChangeWeaponsDuringAnAttack]);
+
+    s.input(
+        ME,
+        ClientInput::UseItem {
+            object_id: 0x3000_0002,
+            ctrl_pressed: false,
+        },
+    );
+    let worn = |s: &Scene| s.world.paperdoll_object(ObjectId(ME), paperdoll::RHAND);
+    assert_eq!(
+        worn(&s),
+        Some(ObjectId(0x3000_0001)),
+        "not before the attack ends"
+    );
+    // The player keeps attacking (the next attack starts on the tick the last one ends), so the
+    // time is the end of the attack that was running, not a pause.
+    let end_ms = s.world.combat_state(ObjectId(ME)).unwrap().attack_end_ms;
+    while s.world.world_ms() < end_ms - 50 {
+        s.world.tick();
+        assert_eq!(
+            worn(&s),
+            Some(ObjectId(0x3000_0001)),
+            "not before the attack ends"
+        );
+    }
+    s.ticks(1);
+    assert_eq!(
+        worn(&s),
+        Some(ObjectId(0x3000_0002)),
+        "equipped when the attack ended"
+    );
 }
 
 /// A move asked while the attack animation runs is refused (`ActionFailed`) and replayed when

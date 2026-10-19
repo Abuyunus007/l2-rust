@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+chrono.workspace = true
 rand.workspace = true
 rand_chacha.workspace = true
 serde.workspace = true

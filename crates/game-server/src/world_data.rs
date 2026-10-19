@@ -17,8 +17,8 @@ use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
     AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, CombatSettings, ItemStatic,
-    PlayerData, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings,
-    ZoneSettings,
+    PlayerData, RegenSettings, StatData, StatSettings, StaticData, TalkSettings, TeleportSettings,
+    WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -308,6 +308,18 @@ impl StaticData for DatapackData {
     }
 }
 
+/// The regeneration multipliers the world reads (Java `PlayerConfig` and `NpcConfig`, after the
+/// `/ 100` of their post-processing; see `l2_config::GameManual`).
+pub fn regen_settings(config: &GameConfig) -> RegenSettings {
+    RegenSettings {
+        hp_regen_multiplier: config.manual.player.hp_regen_multiplier,
+        mp_regen_multiplier: config.manual.player.mp_regen_multiplier,
+        cp_regen_multiplier: config.manual.player.cp_regen_multiplier,
+        raid_hp_regen_multiplier: config.manual.npc.raid_hp_regen_multiplier,
+        raid_mp_regen_multiplier: config.manual.npc.raid_mp_regen_multiplier,
+    }
+}
+
 /// The values the world reads from the configuration (Java `PlayerConfig`, `GeneralConfig`).
 ///
 /// `GlobalChat` and `TradeChat` are enum placeholders in the generated config, so they are read
@@ -363,6 +375,13 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             max_npc_animation: config.general.max_npc_animation,
             gm_debug_html_paths: config.general.gm_debug_html_paths,
             ..TalkSettings::default()
+        },
+        inventory: l2_world::InventorySettings {
+            allow_discard_item: config.general.allow_discarditem,
+            destroy_all_items: config.general.destroy_all_items,
+            gm_trade_restricted_items: config.general.gm_trade_restricted_items,
+            gm_item_restriction: config.general.gm_item_restriction,
+            auto_loot_slot_limit: p.auto_loot_slot_limit,
         },
         ..WorldSettings::default()
     };

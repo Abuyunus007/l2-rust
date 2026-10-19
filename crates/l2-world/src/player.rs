@@ -230,6 +230,8 @@ pub struct Player {
     /// Java `_expertiseWeaponPenalty` / `_expertiseArmorPenalty` (`refreshExpertisePenalty`).
     pub expertise_weapon_penalty: i32,
     pub expertise_armor_penalty: i32,
+    /// The delayed sends of the inventory code (see `inventory/notify.rs`).
+    pub inv_tasks: crate::inventory::InventoryTasks,
 }
 
 impl Player {
@@ -273,6 +275,7 @@ impl Player {
             weight_penalty: 0,
             expertise_weapon_penalty: 0,
             expertise_armor_penalty: 0,
+            inv_tasks: crate::inventory::InventoryTasks::default(),
         }
     }
 

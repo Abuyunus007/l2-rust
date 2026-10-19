@@ -19,6 +19,7 @@ use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
 use crate::region::RegionGrid;
 use crate::snapshot::snapshot_for_store;
+use crate::status::{CreatureStatus, RegenSettings, STATUS_SWEEP_TICKS};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 
 /// One world tick (D-12).
@@ -83,6 +84,10 @@ pub struct World {
     pub(crate) combat: crate::combat::CombatWorld,
     /// The AI state of every creature that has one (M4-COMBAT-01, `ai/`).
     pub(crate) ai: crate::ai::AiWorld,
+    /// HP, MP and CP regeneration and the status listeners, per creature (`status.rs`).
+    pub(crate) statuses: HashMap<ObjectId, CreatureStatus>,
+    /// The multipliers the regeneration formulas read (`status.rs`).
+    pub(crate) regen: RegenSettings,
 }
 
 impl World {
@@ -122,6 +127,8 @@ impl World {
             std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators::default(),
             combat: crate::combat::CombatWorld::default(),
             ai: crate::ai::AiWorld::default(),
+            statuses: HashMap::new(),
+            regen: RegenSettings::default(),
         }
     }
 
@@ -269,6 +276,9 @@ impl World {
         for (_, kind) in self.timers.take_due(self.tick) {
             self.on_timer(kind);
         }
+        if self.tick % STATUS_SWEEP_TICKS == 0 {
+            self.sweep_statuses();
+        }
         // Java: MovementTaskManager.
         self.update_movement();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
@@ -313,6 +323,8 @@ impl World {
             );
             self.leave(id, LeaveReason::Kicked);
         }
+        // A new Java object starts with no regeneration task and no listeners.
+        self.forget_status(id);
         let account = data.account.clone();
         info!("{} ({account}) entered the world.", data.name);
         let mut player = Player::from_data(data, self.tick);
@@ -322,6 +334,8 @@ impl World {
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
+        // Java `Player.restore`'s setCurrentCp/Hp/Mp: starts the regeneration of what is not full.
+        self.restore_player_vitals(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -387,6 +401,23 @@ impl World {
             ClientInput::UserCommand { id: command } => self.on_user_command(id, command),
             // Java: AttackRequest (the origin and the shift flag are never used)
             ClientInput::AttackRequest { object_id, .. } => self.on_attack_request(id, object_id),
+            // Java: UseItem, RequestUnEquipItem, RequestDestroyItem, RequestDropItem, RequestItemList
+            ClientInput::UseItem {
+                object_id,
+                ctrl_pressed,
+            } => self.on_use_item(id, object_id, ctrl_pressed),
+            ClientInput::UnEquipItem { paperdoll_slot } => self.on_request_unequip_item(id, paperdoll_slot),
+            ClientInput::DestroyItem { object_id, count } => {
+                self.on_request_destroy_item(id, object_id, count)
+            }
+            ClientInput::DropItem {
+                object_id,
+                count,
+                x,
+                y,
+                z,
+            } => self.on_request_drop_item(id, object_id, count, x, y, z),
+            ClientInput::ItemList => self.on_request_item_list(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -419,7 +450,17 @@ impl World {
                 }
             }
             TimerKind::AttackStanceCheck => self.on_attack_stance_check(),
-            TimerKind::PlayerStatusUpdate(id) => self.on_player_status_update_timer(id),
+            // Java: UseItem's delayed useEquippableItem(item, false)
+            TimerKind::EquipAfterAttack { player, item } => {
+                if self.players.contains_key(&player) {
+                    self.use_equippable_item(player, item, false);
+                }
+            }
+            TimerKind::CharInfo(id) => self.on_char_info_timer(id),
+            TimerKind::SkillList(id) => self.on_skill_list_timer(id),
+            TimerKind::ItemList(id) => self.on_item_list_timer(id),
+            TimerKind::Regeneration(id) => self.on_regeneration_timer(id),
+            TimerKind::SelfStatusUpdate(id) => self.on_self_update_timer(id),
         }
     }
 

@@ -200,6 +200,7 @@ impl Server {
             )
         };
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
+        let regen_settings = world_data::regen_settings(&config);
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -239,6 +240,7 @@ impl Server {
                 move |world| {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
+                    world.set_regen_settings(regen_settings);
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);

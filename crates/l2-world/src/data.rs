@@ -267,6 +267,8 @@ pub struct WorldSettings {
     pub stats: StatSettings,
     /// The values the attack code reads (M4-COMBAT-01).
     pub combat: crate::combat::CombatSettings,
+    /// The values equipping, destroying and dropping items read.
+    pub inventory: crate::inventory::InventorySettings,
 }
 
 impl Default for WorldSettings {
@@ -304,6 +306,7 @@ impl Default for WorldSettings {
             talk: crate::dialog::TalkSettings::default(),
             stats: StatSettings::default(),
             combat: crate::combat::CombatSettings::default(),
+            inventory: crate::inventory::InventorySettings::default(),
         }
     }
 }
