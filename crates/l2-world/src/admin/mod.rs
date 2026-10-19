@@ -17,7 +17,9 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod combat;
 pub mod commands;
+pub mod exp_sp;
 pub mod rights;
 
 use std::collections::HashMap;
@@ -93,6 +95,8 @@ impl Default for AdminWorld {
     fn default() -> Self {
         let mut handlers = AdminHandlers::default();
         commands::register_core(&mut handlers);
+        combat::register(&mut handlers);
+        exp_sp::register(&mut handlers);
         Self { handlers }
     }
 }
