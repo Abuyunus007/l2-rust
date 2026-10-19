@@ -257,3 +257,9 @@ Findings during the tests:
 - The owner's Java GS runs without geodata (`data/geodata` is empty); the Rust GS uses `C:\l2-rust\geodata-converted` for now (decision at CP-M3a).
 
 M2 follow-ups carried into M3: `CheckHtmlEncoding` gating in the html loader; regex support for name templates (`CnameTemplate`); clan data (pledge packets) and the remaining enter-world packets (quests, friends, hennas).
+
+### M4 (in progress)
+| Check | Result |
+|---|---|
+| CP-M4a part 1: a geared character on Kain shows the same P.Atk, P.Def, M.Atk, M.Def, accuracy, evasion, crit, speeds and max HP/MP/CP as on Sieghardt (enchants, armor sets, passive skills) | ✅ passed (2026-10-19) |
+| CP-M4a part 2: equip/unequip changes the numbers like on Sieghardt | ⏳ after M4-INV-01 |
