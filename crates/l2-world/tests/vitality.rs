@@ -322,7 +322,9 @@ fn player_data(level: i32, profile: PlayerProfile) -> PlayerData {
 fn profile(points: i32) -> PlayerProfile {
     PlayerProfile {
         vitality_points: points,
-        last_access: now_ms(),
+        // An hour ahead: no RecoverVitalityOnReconnect points at enter. With "now" the
+        // milliseconds until the enter (Java's formula) can push 240 to 240.0001, which is level 1.
+        last_access: now_ms() + 3_600_000,
         ..PlayerProfile::default()
     }
 }
