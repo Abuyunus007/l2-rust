@@ -206,6 +206,12 @@ pub struct Player {
     pub zones: crate::zones::PlayerZones,
     /// Java `isTeleporting()` and the teleport watchdog (see `teleport.rs`).
     pub tele: crate::teleport::TeleportState,
+    /// Java `getTarget()`: the object the player has selected (see `target.rs`).
+    pub target: Option<ObjectId>,
+    /// The dialogs the player was shown and the NPC it clicked last (see `dialog.rs`).
+    pub talk: crate::dialog::PlayerTalk,
+    /// Java `_inventoryUpdate` waiting for its 100 ms timer (see `item_ops.rs`).
+    pub pending_inventory: crate::item_ops::PendingInventoryUpdate,
 }
 
 impl Player {
@@ -240,6 +246,9 @@ impl Player {
             movement,
             zones: crate::zones::PlayerZones::default(),
             tele: crate::teleport::TeleportState::default(),
+            target: None,
+            talk: crate::dialog::PlayerTalk::default(),
+            pending_inventory: crate::item_ops::PendingInventoryUpdate::default(),
         }
     }
 

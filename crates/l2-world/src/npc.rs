@@ -142,7 +142,7 @@ impl NpcClass {
     /// Java `isAutoAttackable(player)` for a player outside any siege, arena or faction war.
     // Siege NPCs (`Defender`, `FortCommander`, `TerritoryWard`) are only attackable while a siege
     // runs, `Guard` only with the faction system on: all false here until sieges exist.
-    fn auto_attackable_by(self, viewer_karma: i32) -> bool {
+    pub(crate) fn auto_attackable_by(self, viewer_karma: i32) -> bool {
         match self {
             Self::Monster | Self::RaidBoss | Self::GrandBoss => true,
             Self::FriendlyMob => viewer_karma > 0,
@@ -199,6 +199,13 @@ pub(crate) struct NpcWorld {
     night: Vec<usize>,
     /// Java `Spawn.getLastSpawn()` of the day and night spawns.
     last_spawned: HashMap<usize, ObjectId>,
+}
+
+impl NpcWorld {
+    /// The template of an NPC id, if the templates are loaded and know it.
+    pub(crate) fn template(&self, npc_id: i32) -> Option<&NpcTemplate> {
+        self.templates.as_ref()?.get(npc_id)
+    }
 }
 
 /// What [`World::spawn_all_npcs`] did.

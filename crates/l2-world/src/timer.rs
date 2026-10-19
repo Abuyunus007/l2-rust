@@ -28,6 +28,10 @@ pub enum TimerKind {
     RegionNeighborsOff(crate::region::RegionId),
     /// Java `TeleportWatchdogTask`: completes a teleport whose client never sent `Appearing`.
     TeleportWatchdog(ObjectId),
+    /// Java `Player.sendInventoryUpdate`'s 100 ms send task.
+    InventoryUpdate(ObjectId),
+    /// Java `CreatureFollowTaskManager`'s 500 ms follow task, for one player.
+    Follow(ObjectId),
 }
 
 #[derive(Debug, Default)]

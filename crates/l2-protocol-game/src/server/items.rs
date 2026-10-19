@@ -256,3 +256,39 @@ impl Decode for ItemList {
         })
     }
 }
+
+// Java: gameserver/network/serverpackets/InventoryUpdate.java
+/// Changes to the inventory (`INVENTORY_UPDATE`): the entries of [`write_item_updates`].
+///
+/// Java keeps the entries in a `HashMap<objectId, ItemInfo>`; the caller passes them in the order
+/// it wants (see the quirk note on [`write_item_updates`]).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct InventoryUpdate {
+    pub updates: Vec<ItemUpdate>,
+}
+
+impl InventoryUpdate {
+    pub const OPCODE: ServerOpcode = ServerOpcode::InventoryUpdate;
+
+    /// Java `ItemInfo(item, 1)`.
+    pub const ADDED: i16 = 1;
+    /// Java `ItemInfo(item, 2)`.
+    pub const MODIFIED: i16 = 2;
+    /// Java `ItemInfo(item, 3)`.
+    pub const REMOVED: i16 = 3;
+}
+
+impl Encode for InventoryUpdate {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        write_item_updates(w, &self.updates);
+    }
+}
+
+impl Decode for InventoryUpdate {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            updates: read_item_updates(r)?,
+        })
+    }
+}

@@ -53,6 +53,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
+    pub(crate) talk: crate::dialog::TalkWorld,
     pub(crate) doors: HashMap<ObjectId, Door>,
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
@@ -93,6 +95,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            talk: crate::dialog::TalkWorld::default(),
             doors: HashMap::new(),
             geo: None,
             path_requests: None,
@@ -323,6 +326,11 @@ impl World {
             | ClientInput::CannotMoveAnymore { .. }) => self.on_movement_input(id, input),
             // Java: Appearing -> onTeleported (when teleporting), then updateUserInfo
             ClientInput::Appearing => self.on_appearing(id),
+            // Java: Action, RequestTargetCanceld, RequestBypassToServer, RequestLinkHtml
+            ClientInput::Action { object_id, action_id } => self.on_action(id, object_id, action_id),
+            ClientInput::TargetCanceled { unselect } => self.on_target_canceled(id, unselect),
+            ClientInput::Bypass { command } => self.on_bypass_to_server(id, &command),
+            ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -344,6 +352,8 @@ impl World {
             TimerKind::Marker(n) => debug!("timer marker {n}"),
             TimerKind::RegionNeighborsOn(_) | TimerKind::RegionNeighborsOff(_) => self.on_region_timer(kind),
             TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
+            TimerKind::InventoryUpdate(id) => self.on_inventory_update_timer(id),
+            TimerKind::Follow(id) => self.on_follow_timer(id),
         }
     }
 

@@ -394,10 +394,6 @@ impl World {
         }
     }
 
-    /// `if (creature.getTarget() == other) creature.setTarget(null)`. Targets arrive with
-    /// M3-TALK-01; until then nobody has one.
-    fn clear_target_if(&mut self, _creature: ObjectId, _other: ObjectId) {}
-
     /// Java `sendInfo(player)`: what `viewer` gets when `subject` comes into view.
     pub(crate) fn send_info(&mut self, subject: ObjectId, viewer: ObjectId) {
         let Some(kind) = self.objects.get(&subject).map(|e| e.kind) else {

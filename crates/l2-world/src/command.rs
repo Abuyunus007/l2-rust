@@ -48,6 +48,15 @@ pub enum ClientInput {
     CannotMoveAnymore { x: i32, y: i32, z: i32, heading: i32 },
     /// Java `Appearing`: the client has loaded the target of a teleport.
     Appearing,
+    /// Java `Action`: a click on an object (`action_id` 0 = click, 1 = shift click). The origin
+    /// the client sends is read and never used by Java.
+    Action { object_id: i32, action_id: i8 },
+    /// Java `RequestTargetCanceld` (`unselect` 0 = Escape key).
+    TargetCanceled { unselect: i16 },
+    /// Java `RequestBypassToServer`: the raw command of an html link.
+    Bypass { command: String },
+    /// Java `RequestLinkHtml`: the raw path of a linked html page.
+    LinkHtml { link: String },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

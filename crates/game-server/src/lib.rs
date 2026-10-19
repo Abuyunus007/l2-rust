@@ -226,6 +226,7 @@ impl Server {
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
             let geo_engine = Arc::clone(&geo_engine);
             let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
+            let (html, teleporters) = (Arc::clone(&datapack.html), Arc::clone(&datapack.teleporters));
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -241,6 +242,9 @@ impl Server {
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);
+                    // The pages of NPC dialogs and the gatekeeper lists (always preloaded).
+                    world.set_html_cache(html);
+                    world.set_teleporter_data(teleporters);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);

@@ -68,6 +68,8 @@ pub enum Intention {
     Idle,
     Rest,
     MoveTo,
+    /// Walking up to a clicked object (see `interact.rs`).
+    Interact,
 }
 
 /// Java `Creature.MoveData`: one walk to a destination.
@@ -191,6 +193,8 @@ pub struct MovementState {
     /// Java `_fallingTimestamp` in world milliseconds.
     falling_timestamp_ms: i64,
     pending: Option<PendingPath>,
+    /// The AI fields of the pawn moves and the follow task (see `interact.rs`).
+    pub pawn: crate::interact::PawnState,
 }
 
 impl MovementState {
@@ -210,6 +214,7 @@ impl MovementState {
             not_move_until_ms: 0,
             falling_timestamp_ms: 0,
             pending: None,
+            pawn: crate::interact::PawnState::default(),
         }
     }
 
@@ -560,19 +565,26 @@ impl World {
 
     /// Java `PlayerAI.setIntentionMoveTo`.
     pub(crate) fn set_intention_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
-        let Some(player) = self.players.get_mut(&id) else {
+        if !self.players.contains_key(&id) {
             return;
-        };
-        if player.movement.intention == Intention::Rest {
+        }
+        if self
+            .players
+            .get(&id)
+            .is_some_and(|p| p.movement.intention == Intention::Rest)
+        {
             self.send(id, &ActionFailed);
             return;
         }
         // Java also refuses while the duel state is "dead", while all skills are disabled, while
         // casting and while attacking (saving the move for later): none of it exists yet.
 
-        // Java `stopFollow()`, `clearSavedIntention()`, `clientStopAutoAttack()`, `abortAttack()`
-        // have nothing to do without followers and combat.
-        player.movement.intention = Intention::MoveTo;
+        // Java `stopFollow()`; `clearSavedIntention()`, `clientStopAutoAttack()`, `abortAttack()`
+        // have nothing to do without combat.
+        self.stop_follow(id);
+        if let Some(player) = self.players.get_mut(&id) {
+            player.movement.intention = Intention::MoveTo;
+        }
         self.ai_move_to(id, x, y, z);
     }
 
@@ -582,6 +594,10 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
+        // Set AI movement data: this is not a move to a pawn.
+        if let Some(p) = self.players.get_mut(&id) {
+            p.movement.pawn.client_moving_to_pawn_offset = 0;
+        }
         match self.move_to_location(id, x, y, z, 0) {
             MoveStep::Finished => self.broadcast_move_to_location(id, false),
             MoveStep::WaitingForPath => {}
@@ -590,6 +606,7 @@ impl World {
 
     /// Java `PlayerAI.setIntentionIdle` (`setIntentionActive` is the same for players).
     pub(crate) fn set_intention_idle(&mut self, id: ObjectId) {
+        self.stop_follow(id);
         if let Some(p) = self.players.get_mut(&id) {
             p.movement.intention = Intention::Idle;
         }
@@ -602,6 +619,9 @@ impl World {
     pub(crate) fn client_stop_moving(&mut self, id: ObjectId, loc: Option<(i32, i32, i32, i32)>) {
         if self.is_moving(id) {
             self.stop_move(id, loc);
+        }
+        if let Some(p) = self.players.get_mut(&id) {
+            p.movement.pawn.client_moving_to_pawn_offset = 0;
         }
     }
 
@@ -618,6 +638,7 @@ impl World {
             return;
         }
         // `clientStoppedMoving` only matters after `MoveToPawn`.
+        self.client_stopped_moving(id);
         // If the Intention was MOVE_TO, set the Intention to ACTIVE.
         if self
             .players
@@ -626,7 +647,8 @@ impl World {
         {
             self.set_intention_idle(id);
         }
-        // `notifyActionThink` does nothing for a player without attack/cast/pick-up/interact.
+        // Launch actions corresponding to the Action Think. (Attack, cast and pick-up: M4.)
+        self.notify_action_think(id);
     }
 
     /// Java `CreatureAI.notifyActionArrivedBlocked` (the client's `CannotMoveAnymore`).
@@ -1212,10 +1234,20 @@ impl World {
             Some(pending) if pending.request_id == request_id => {
                 let path = result.path.ok();
                 self.complete_move(requester, pending.calc, Some(path));
-                if let Some(p) = self.players.get_mut(&requester) {
-                    p.movement.intention = Intention::MoveTo;
+                let pawn = self.players.get(&requester).and_then(|p| {
+                    (p.movement.intention == Intention::Interact)
+                        .then_some(p.movement.pawn.ai_target)
+                        .flatten()
+                });
+                if let Some(pawn) = pawn {
+                    // The move was a `moveToPawn` (a click on something far away).
+                    self.broadcast_pawn_move(requester, pawn);
+                } else {
+                    if let Some(p) = self.players.get_mut(&requester) {
+                        p.movement.intention = Intention::MoveTo;
+                    }
+                    self.broadcast_move_to_location(requester, false);
                 }
-                self.broadcast_move_to_location(requester, false);
             }
             other => {
                 // Not the request this player waits for (or none): put a newer one back.
@@ -1352,7 +1384,7 @@ impl World {
 
     /// Java `Creature.isMovementDisabled()` (stun, root, sleep, paralysis and immobilization are
     /// effects: M5).
-    fn is_movement_disabled(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_movement_disabled(&self, id: ObjectId) -> bool {
         self.players
             .get(&id)
             .is_none_or(|p| self.is_overloaded(p) || p.core.cur_hp < 0.5 || p.movement.teleporting)

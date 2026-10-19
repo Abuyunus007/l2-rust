@@ -236,6 +236,49 @@ fn door_info_layout() {
 }
 
 #[test]
+fn social_action_layout() {
+    let packet = l2_protocol_game::server::SocialAction {
+        object_id: 0x1000_0010,
+        action_id: 5,
+    };
+    let expected = Bytes::default().byte(0x27).int(0x1000_0010).int(5).done();
+    check_round_trip(&packet, &expected, 1);
+}
+
+#[test]
+fn show_town_map_layout() {
+    let packet = l2_protocol_game::server::ShowTownMap {
+        texture: "town_map.gludio".into(),
+        x: 17_000,
+        y: -9_000,
+    };
+    let expected = Bytes::default()
+        .byte(0xEA)
+        .text("town_map.gludio")
+        .int(17_000)
+        .int(-9_000)
+        .done();
+    check_round_trip(&packet, &expected, 1);
+}
+
+#[test]
+fn inventory_update_layout() {
+    use l2_protocol_game::server::{InventoryUpdate, ItemInfo, ItemUpdate};
+    let item = ItemInfo::plain(0x6000_0001, 57, 1234);
+    let packet = InventoryUpdate {
+        updates: vec![ItemUpdate {
+            change: InventoryUpdate::MODIFIED,
+            item,
+        }],
+    };
+    let bytes = packet.to_bytes();
+    // Opcode, entry count (short), change (short), then the item.
+    assert_eq!(&bytes[..5], &[0x21, 1, 0, 2, 0]);
+    let decoded = InventoryUpdate::decode(&mut PacketReader::new(&bytes[1..])).unwrap();
+    assert_eq!(decoded, packet);
+}
+
+#[test]
 fn door_status_update_layout() {
     let packet = DoorStatusUpdate {
         object_id: 1,
