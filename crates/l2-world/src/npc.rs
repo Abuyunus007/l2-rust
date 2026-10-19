@@ -683,10 +683,14 @@ impl World {
     ) {
         // `MinionList.countSpawnedMinionsById`: a master that comes back from its death (respawn)
         // still has the minions that survived it, so only the missing ones are made.
+        // Through the master -> minions index, not a scan of every NPC (see `delete_npc`).
         let mut spawned_by_id: HashMap<i32, i32> = HashMap::new();
-        for minion in self.npcs.values() {
-            if minion.leader == Some(master) && !self.is_dead(minion.core.object_id) {
-                *spawned_by_id.entry(minion.npc_id).or_insert(0) += 1;
+        for &minion in self.minions_of(master) {
+            if let Some(npc) = self.npcs.get(&minion)
+                && npc.leader == Some(master)
+                && !self.is_dead(minion)
+            {
+                *spawned_by_id.entry(npc.npc_id).or_insert(0) += 1;
             }
         }
         for holder in master_template.minion_list("Privates") {
@@ -898,12 +902,9 @@ impl World {
         if !self.npcs.contains_key(&id) {
             return false;
         }
-        let minions: Vec<ObjectId> = self
-            .npcs
-            .iter()
-            .filter(|(_, n)| n.leader == Some(id))
-            .map(|(minion, _)| *minion)
-            .collect();
+        // The master -> minions index (`MinionList`), not a scan of every NPC: the day/night
+        // switch deletes hundreds of NPCs in one tick, and a scan made each delete cost ~0.5 ms.
+        let minions: Vec<ObjectId> = self.minions_of(id).to_vec();
         for minion in minions {
             self.delete_npc(minion);
         }

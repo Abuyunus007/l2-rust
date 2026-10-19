@@ -375,7 +375,18 @@ impl World {
         {
             list.retain(|m| *m != id);
         }
-        self.ai.attackable.minions.remove(&id);
+        // Java's `MinionList` belongs to the master object and outlives its death and decay: a
+        // master that respawns still has the minions that survived it. Drop the list only when
+        // none of them is left in the world.
+        let any_alive = self
+            .ai
+            .attackable
+            .minions
+            .get(&id)
+            .is_some_and(|list| list.iter().any(|m| self.npcs.contains_key(m)));
+        if !any_alive {
+            self.ai.attackable.minions.remove(&id);
+        }
     }
 
     /// Java `MinionList.onMinionSpawn`: the minion joins its master's list.
