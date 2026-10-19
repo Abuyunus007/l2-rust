@@ -12,7 +12,7 @@ import java.util.Map;
  * Tiny JSON writer for vector files (no dependency).
  * <ul>
  * <li>Objects are {@link LinkedHashMap}s: keys keep insertion order, so output is stable.</li>
- * <li>Supported values: {@code Map}, {@code List}, {@code String}, {@code Integer}, {@code Long}, {@code Boolean}, {@code byte[]} (written as a lowercase hex string) and {@code null}.</li>
+ * <li>Supported values: {@code Map}, {@code List}, {@code String}, {@code Integer}, {@code Long}, {@code Double}, {@code Float}, {@code Boolean}, {@code byte[]} (written as a lowercase hex string) and {@code null}.</li>
  * <li>Output is pretty-printed with 2 spaces, LF line endings, UTF-8, one trailing newline. Same input gives byte-identical output.</li>
  * </ul>
  */
@@ -68,11 +68,63 @@ public final class Json
 		}
 	}
 
+	/** Marks a value that is written on one line (no newlines, {@code ", "} and {@code ": "} separators) inside the pretty-printed file. */
+	public static final class Compact
+	{
+		final Object value;
+
+		Compact(Object value)
+		{
+			this.value = value;
+		}
+	}
+
+	/** Wraps a map or list so it is written on a single line; keeps big vector files readable and small. */
+	public static Compact compact(Object value)
+	{
+		return new Compact(value);
+	}
+
+	private static void inline(StringBuilder sb, Object v)
+	{
+		if (v instanceof Map<?, ?> m)
+		{
+			sb.append('{');
+			int n = 0;
+			for (Map.Entry<?, ?> e : m.entrySet())
+			{
+				string(sb, String.valueOf(e.getKey()));
+				sb.append(": ");
+				inline(sb, e.getValue());
+				sb.append(++n < m.size() ? ", " : "");
+			}
+			sb.append('}');
+		}
+		else if (v instanceof List<?> l)
+		{
+			sb.append('[');
+			for (int i = 0; i < l.size(); i++)
+			{
+				inline(sb, l.get(i));
+				sb.append((i + 1) < l.size() ? ", " : "");
+			}
+			sb.append(']');
+		}
+		else
+		{
+			value(sb, v, 0);
+		}
+	}
+
 	private static void value(StringBuilder sb, Object v, int level)
 	{
 		if (v == null)
 		{
 			sb.append("null");
+		}
+		else if (v instanceof Compact c)
+		{
+			inline(sb, c.value);
 		}
 		else if (v instanceof byte[] b)
 		{
@@ -85,6 +137,30 @@ public final class Json
 		else if ((v instanceof Boolean) || (v instanceof Integer) || (v instanceof Long))
 		{
 			sb.append(v);
+		}
+		else if (v instanceof Double d)
+		{
+			// Double.toString is the shortest text that parses back to the same double ("1.0E10" is valid JSON). NaN and infinities have no JSON form: written as strings.
+			if (Double.isNaN(d) || Double.isInfinite(d))
+			{
+				string(sb, d.toString());
+			}
+			else
+			{
+				sb.append(d);
+			}
+		}
+		else if (v instanceof Float f)
+		{
+			// Float.toString is the shortest text that parses back to the same float; read it as f32 on the Rust side.
+			if (Float.isNaN(f) || Float.isInfinite(f))
+			{
+				string(sb, f.toString());
+			}
+			else
+			{
+				sb.append(f);
+			}
 		}
 		else if (v instanceof Map<?, ?> m)
 		{

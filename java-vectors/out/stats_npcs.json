@@ -1,0 +1,1236 @@
+{
+  "source": "NpcInfo values: CreatureStat/NpcStat + Calculator + Func* (NPCs as spawned)",
+  "generated_by": "java-vectors",
+  "note": "Each case: input (what to build) and expected (user_info = the ints the packet carries, raw = the full doubles and the probes). Players are built like Player.restore + rewardSkills: gear equipped first (Inventory.equipItem, armor set and item skills run), then the auto-get skills (repeated until every skill is at its highest level), then refreshExpertisePenalty and refreshOverloaded. input.skills = the auto-get skills in the order their functions stay in the calculators; input.derived_skills = skills the player knows on top of them (armor set, item, grade penalty). probes = Creature.calcStat(stat, init) with the init value the formulas use, key 'stat@init'. Doubles are Java's shortest round-trip text; read run/walk speeds and p_atk as f64.",
+  "config": {
+    "AutoLearnSkills": false,
+    "ExpertisePenalty": true
+  },
+  "cases": [
+    {
+      "id": "npc_20001",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20001,
+        "npc_name": "",
+        "npc_type": "Monster",
+        "level": 1
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 62, "max_mp": 48, "p_atk": 8, "p_atk_spd": 278, "p_def": 39, "evasion": 34, "accuracy": 34, "critical": 44, "m_atk": 2, "m_atk_spd": 333, "m_def": 31, "run_speed": 50, "walk_speed": 20, "swim_run_speed": 50, "swim_walk_speed": 20, "attack_range": 40},
+        "raw": {
+          "p_atk": 8.64,
+          "p_atk_spd": 278.0,
+          "p_def": 39.6,
+          "m_atk": 2.6572050000000007,
+          "m_def": 31.842000000000002,
+          "run_speed": 55.00000000000001,
+          "walk_speed": 22.0,
+          "swim_run_speed": 55.00000000000001,
+          "swim_walk_speed": 22.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 0.9,
+          "level": 1,
+          "collision_radius": 10.0,
+          "collision_height": 15.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20003",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20003,
+        "npc_name": "Goblin",
+        "npc_type": "Monster",
+        "level": 5
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 126, "max_mp": 84, "p_atk": 13, "p_atk_spd": 278, "p_def": 47, "evasion": 38, "accuracy": 38, "critical": 11, "m_atk": 4, "m_atk_spd": 333, "m_def": 38, "run_speed": 110, "walk_speed": 40, "swim_run_speed": 110, "swim_walk_speed": 40, "attack_range": 0},
+        "raw": {
+          "p_atk": 13.535999999999998,
+          "p_atk_spd": 278.0,
+          "p_def": 47.94,
+          "m_atk": 4.637839680000001,
+          "m_def": 38.99119999999999,
+          "run_speed": 121.00000000000001,
+          "walk_speed": 44.0,
+          "swim_run_speed": 121.00000000000001,
+          "swim_walk_speed": 44.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 0.94,
+          "level": 5,
+          "collision_radius": 10.0,
+          "collision_height": 16.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20006",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20006,
+        "npc_name": "Orc Archer",
+        "npc_type": "Monster",
+        "level": 8
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 197, "max_mp": 113, "p_atk": 41, "p_atk_spd": 248, "p_def": 55, "evasion": 41, "accuracy": 41, "critical": 88, "m_atk": 6, "m_atk_spd": 333, "m_def": 44, "run_speed": 110, "walk_speed": 45, "swim_run_speed": 110, "swim_walk_speed": 45, "attack_range": 0},
+        "raw": {
+          "p_atk": 41.34528,
+          "p_atk_spd": 248.0,
+          "p_def": 55.29,
+          "m_atk": 6.790569390000001,
+          "m_def": 44.9692,
+          "run_speed": 121.00000000000001,
+          "walk_speed": 49.50000000000001,
+          "swim_run_speed": 121.00000000000001,
+          "swim_walk_speed": 49.50000000000001,
+          "movement_speed_multiplier": 1.1000000000000003,
+          "attack_speed_multiplier": 1.0782609,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 0.97,
+          "level": 8,
+          "collision_radius": 14.0,
+          "collision_height": 25.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20013",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20013,
+        "npc_name": "Dryad",
+        "npc_type": "Monster",
+        "level": 13
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 339, "max_mp": 161, "p_atk": 27, "p_atk_spd": 278, "p_def": 76, "evasion": 46, "accuracy": 46, "critical": 44, "m_atk": 9, "m_atk_spd": 333, "m_def": 61, "run_speed": 110, "walk_speed": 40, "swim_run_speed": 110, "swim_walk_speed": 40, "attack_range": 40},
+        "raw": {
+          "p_atk": 27.846000000000004,
+          "p_atk_spd": 278.0,
+          "p_def": 76.296,
+          "m_atk": 9.631576868400002,
+          "m_def": 61.5978,
+          "run_speed": 121.00000000000001,
+          "walk_speed": 44.0,
+          "swim_run_speed": 121.00000000000001,
+          "swim_walk_speed": 44.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.02,
+          "level": 13,
+          "collision_radius": 9.0,
+          "collision_height": 20.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20017",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20017,
+        "npc_name": "Vuku Orc Fighter",
+        "npc_type": "Monster",
+        "level": 17
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 446, "max_mp": 202, "p_atk": 47, "p_atk_spd": 278, "p_def": 75, "evasion": 50, "accuracy": 50, "critical": 44, "m_atk": 20, "m_atk_spd": 333, "m_def": 61, "run_speed": 110, "walk_speed": 45, "swim_run_speed": 110, "swim_walk_speed": 45, "attack_range": 0},
+        "raw": {
+          "p_atk": 47.5728,
+          "p_atk_spd": 278.0,
+          "p_def": 75.23880000000001,
+          "m_atk": 20.516107906800006,
+          "m_def": 61.194224,
+          "run_speed": 121.00000000000001,
+          "walk_speed": 49.50000000000001,
+          "swim_run_speed": 121.00000000000001,
+          "swim_walk_speed": 49.50000000000001,
+          "movement_speed_multiplier": 1.1000000000000003,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.06,
+          "level": 17,
+          "collision_radius": 12.0,
+          "collision_height": 22.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20103",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20103,
+        "npc_name": "Giant Spider",
+        "npc_type": "Monster",
+        "level": 15
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 390, "max_mp": 182, "p_atk": 39, "p_atk_spd": 278, "p_def": 69, "evasion": 48, "accuracy": 48, "critical": 44, "m_atk": 17, "m_atk_spd": 333, "m_def": 55, "run_speed": 130, "walk_speed": 72, "swim_run_speed": 130, "swim_walk_speed": 72, "attack_range": 40},
+        "raw": {
+          "p_atk": 39.81120000000001,
+          "p_atk_spd": 278.0,
+          "p_def": 69.08720000000001,
+          "m_atk": 17.173233792000005,
+          "m_def": 55.42118400000001,
+          "run_speed": 143.0,
+          "walk_speed": 79.2,
+          "swim_run_speed": 143.0,
+          "swim_walk_speed": 79.2,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.04,
+          "level": 15,
+          "collision_radius": 26.0,
+          "collision_height": 25.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20120",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20120,
+        "npc_name": "Wolf",
+        "npc_type": "Monster",
+        "level": 4
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 107, "max_mp": 75, "p_atk": 12, "p_atk_spd": 278, "p_def": 45, "evasion": 37, "accuracy": 37, "critical": 44, "m_atk": 3, "m_atk_spd": 333, "m_def": 37, "run_speed": 110, "walk_speed": 24, "swim_run_speed": 110, "swim_walk_speed": 24, "attack_range": 40},
+        "raw": {
+          "p_atk": 12.276,
+          "p_atk_spd": 278.0,
+          "p_def": 45.57,
+          "m_atk": 3.9722262300000013,
+          "m_def": 37.4418,
+          "run_speed": 121.00000000000001,
+          "walk_speed": 26.400000000000002,
+          "swim_run_speed": 121.00000000000001,
+          "swim_walk_speed": 26.400000000000002,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 0.93,
+          "level": 4,
+          "collision_radius": 13.0,
+          "collision_height": 9.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20201",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20201,
+        "npc_name": "Ghoul",
+        "npc_type": "Monster",
+        "level": 32
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 1056, "max_mp": 437, "p_atk": 169, "p_atk_spd": 278, "p_def": 137, "evasion": 65, "accuracy": 65, "critical": 44, "m_atk": 83, "m_atk_spd": 333, "m_def": 237, "run_speed": 15, "walk_speed": 15, "swim_run_speed": 15, "swim_walk_speed": 15, "attack_range": 40},
+        "raw": {
+          "p_atk": 169.30319999999998,
+          "p_atk_spd": 278.0,
+          "p_def": 137.63750000000002,
+          "m_atk": 83.6871243912,
+          "m_def": 237.69772399999997,
+          "run_speed": 16.5,
+          "walk_speed": 16.5,
+          "swim_run_speed": 16.5,
+          "swim_walk_speed": 16.5,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.21,
+          "level": 32,
+          "collision_radius": 13.0,
+          "collision_height": 21.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20239",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20239,
+        "npc_name": "Cave Servant Captain",
+        "npc_type": "Monster",
+        "level": 49
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 2168, "max_mp": 878, "p_atk": 437, "p_atk_spd": 278, "p_def": 296, "evasion": 82, "accuracy": 82, "critical": 44, "m_atk": 205, "m_atk_spd": 333, "m_def": 240, "run_speed": 174, "walk_speed": 60, "swim_run_speed": 174, "swim_walk_speed": 60, "attack_range": 0},
+        "raw": {
+          "p_atk": 437.0184,
+          "p_atk_spd": 278.0,
+          "p_def": 296.01,
+          "m_atk": 205.3390238856,
+          "m_def": 240.7548,
+          "run_speed": 191.4,
+          "walk_speed": 66.0,
+          "swim_run_speed": 191.4,
+          "swim_walk_speed": 66.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.38,
+          "level": 49,
+          "collision_radius": 11.0,
+          "collision_height": 27.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20677",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20677,
+        "npc_name": "Tulben",
+        "npc_type": "Monster",
+        "level": 66
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3546, "max_mp": 1488, "p_atk": 1121, "p_atk_spd": 278, "p_def": 427, "evasion": 99, "accuracy": 99, "critical": 44, "m_atk": 649, "m_atk_spd": 333, "m_def": 347, "run_speed": 174, "walk_speed": 60, "swim_run_speed": 174, "swim_walk_speed": 60, "attack_range": 40},
+        "raw": {
+          "p_atk": 1121.5800000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 427.8,
+          "m_atk": 649.4274630000002,
+          "m_def": 347.944,
+          "run_speed": 191.4,
+          "walk_speed": 66.0,
+          "swim_run_speed": 191.4,
+          "swim_walk_speed": 66.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.55,
+          "level": 66,
+          "collision_radius": 10.0,
+          "collision_height": 33.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_20780",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20780,
+        "npc_name": "Bloody Axe Elite",
+        "npc_type": "Monster",
+        "level": 35
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 1220, "max_mp": 491, "p_atk": 174, "p_atk_spd": 278, "p_def": 185, "evasion": 68, "accuracy": 68, "critical": 44, "m_atk": 73, "m_atk_spd": 333, "m_def": 151, "run_speed": 174, "walk_speed": 50, "swim_run_speed": 174, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 174.67631999999998,
+          "p_atk_spd": 278.0,
+          "p_def": 185.504,
+          "m_atk": 73.68416605440001,
+          "m_def": 151.43128,
+          "run_speed": 191.4,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 191.4,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.24,
+          "level": 35,
+          "collision_radius": 14.0,
+          "collision_height": 27.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_21001",
+      "input": {
+        "kind": "npc",
+        "npc_id": 21001,
+        "npc_name": "Wretched Archer",
+        "npc_type": "Monster",
+        "level": 55
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 2643, "max_mp": 1085, "p_atk": 1637, "p_atk_spd": 248, "p_def": 292, "evasion": 88, "accuracy": 88, "critical": 132, "m_atk": 436, "m_atk_spd": 333, "m_def": 236, "run_speed": 174, "walk_speed": 40, "swim_run_speed": 174, "swim_walk_speed": 40, "attack_range": 0},
+        "raw": {
+          "p_atk": 1637.2730880000001,
+          "p_atk_spd": 248.0,
+          "p_def": 292.2192,
+          "m_atk": 436.24078502400005,
+          "m_def": 236.60582399999998,
+          "run_speed": 191.4,
+          "walk_speed": 44.0,
+          "swim_run_speed": 191.4,
+          "swim_walk_speed": 44.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.0782609,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.44,
+          "level": 55,
+          "collision_radius": 11.0,
+          "collision_height": 27.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.25, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_21090",
+      "input": {
+        "kind": "npc",
+        "npc_id": 21090,
+        "npc_name": "Bloody Guardian",
+        "npc_type": "Monster",
+        "level": 75
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 12687, "max_mp": 1839, "p_atk": 1718, "p_atk_spd": 278, "p_def": 476, "evasion": 116, "accuracy": 114, "critical": 66, "m_atk": 1157, "m_atk_spd": 333, "m_def": 385, "run_speed": 174, "walk_speed": 100, "swim_run_speed": 174, "swim_walk_speed": 100, "attack_range": 0},
+        "raw": {
+          "p_atk": 1718.8512,
+          "p_atk_spd": 278.0,
+          "p_def": 476.0756,
+          "m_atk": 1157.2905069792,
+          "m_def": 385.994336,
+          "run_speed": 191.4,
+          "walk_speed": 110.00000000000001,
+          "swim_run_speed": 191.4,
+          "swim_walk_speed": 110.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.64,
+          "level": 75,
+          "collision_radius": 15.0,
+          "collision_height": 45.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.25, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 300.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_21166",
+      "input": {
+        "kind": "npc",
+        "npc_id": 21166,
+        "npc_name": "Lith Scout",
+        "npc_type": "Monster",
+        "level": 21
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 2302, "max_mp": 250, "p_atk": 65, "p_atk_spd": 317, "p_def": 69, "evasion": 64, "accuracy": 54, "critical": 88, "m_atk": 37, "m_atk_spd": 333, "m_def": 65, "run_speed": 130, "walk_speed": 53, "swim_run_speed": 130, "swim_walk_speed": 53, "attack_range": 0},
+        "raw": {
+          "p_atk": 65.30950800000001,
+          "p_atk_spd": 317.0,
+          "p_def": 69.06845,
+          "m_atk": 37.09012032000001,
+          "m_def": 65.71774,
+          "run_speed": 143.0,
+          "walk_speed": 58.300000000000004,
+          "swim_run_speed": 143.0,
+          "swim_walk_speed": 58.300000000000004,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.3782609,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.1,
+          "level": 21,
+          "collision_radius": 12.0,
+          "collision_height": 33.599998474121094,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 400.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_21321",
+      "input": {
+        "kind": "npc",
+        "npc_id": 21321,
+        "npc_name": "Hot Springs Atrox",
+        "npc_type": "Monster",
+        "level": 76
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 8595, "max_mp": 1879, "p_atk": 2226, "p_atk_spd": 198, "p_def": 532, "evasion": 122, "accuracy": 116, "critical": 66, "m_atk": 993, "m_atk_spd": 333, "m_def": 707, "run_speed": 175, "walk_speed": 105, "swim_run_speed": 175, "swim_walk_speed": 105, "attack_range": 40},
+        "raw": {
+          "p_atk": 2226.9059999999995,
+          "p_atk_spd": 198.0,
+          "p_def": 532.9499999999999,
+          "m_atk": 993.1451310000001,
+          "m_def": 707.7063840000001,
+          "run_speed": 192.50000000000003,
+          "walk_speed": 115.50000000000001,
+          "swim_run_speed": 192.50000000000003,
+          "swim_walk_speed": 115.50000000000001,
+          "movement_speed_multiplier": 1.1000000000000003,
+          "attack_speed_multiplier": 0.8608696,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.65,
+          "level": 76,
+          "collision_radius": 45.0,
+          "collision_height": 39.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.25, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 200.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_22100",
+      "input": {
+        "kind": "npc",
+        "npc_id": 22100,
+        "npc_name": "Freya's Gardener",
+        "npc_type": "Monster",
+        "level": 58
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 23114, "max_mp": 1192, "p_atk": 1668, "p_atk_spd": 278, "p_def": 400, "evasion": 81, "accuracy": 91, "critical": 66, "m_atk": 428, "m_atk_spd": 333, "m_def": 733, "run_speed": 130, "walk_speed": 70, "swim_run_speed": 130, "swim_walk_speed": 70, "attack_range": 40},
+        "raw": {
+          "p_atk": 1668.53232,
+          "p_atk_spd": 278.0,
+          "p_def": 400.64849999999996,
+          "m_atk": 428.16547998000004,
+          "m_def": 733.32126,
+          "run_speed": 143.0,
+          "walk_speed": 77.0,
+          "swim_run_speed": 143.0,
+          "swim_walk_speed": 77.0,
+          "movement_speed_multiplier": 1.0999999999999999,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.47,
+          "level": 58,
+          "collision_radius": 15.0,
+          "collision_height": 30.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.25, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 800.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_18120",
+      "input": {
+        "kind": "npc",
+        "npc_id": 18120,
+        "npc_name": "Halisha's Officer",
+        "npc_type": "Monster",
+        "level": 78
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 28205, "max_mp": 2126, "p_atk": 2322, "p_atk_spd": 278, "p_def": 544, "evasion": 122, "accuracy": 122, "critical": 44, "m_atk": 1795, "m_atk_spd": 333, "m_def": 401, "run_speed": 150, "walk_speed": 39, "swim_run_speed": 150, "swim_walk_speed": 39, "attack_range": 0},
+        "raw": {
+          "p_atk": 2322.636,
+          "p_atk_spd": 278.0,
+          "p_def": 544.42,
+          "m_atk": 1795.0311414900002,
+          "m_def": 401.3678,
+          "run_speed": 165.0,
+          "walk_speed": 42.900000000000006,
+          "swim_run_speed": 165.0,
+          "swim_walk_speed": 42.900000000000006,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.67,
+          "level": 78,
+          "collision_radius": 9.0,
+          "collision_height": 36.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 600.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_18366",
+      "input": {
+        "kind": "npc",
+        "npc_id": 18366,
+        "npc_name": "Witch Warder",
+        "npc_type": "Monster",
+        "level": 82
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 23319, "max_mp": 2126, "p_atk": 1910, "p_atk_spd": 278, "p_def": 596, "evasion": 130, "accuracy": 134, "critical": 44, "m_atk": 1220, "m_atk_spd": 333, "m_def": 531, "run_speed": 170, "walk_speed": 30, "swim_run_speed": 170, "swim_walk_speed": 30, "attack_range": 40},
+        "raw": {
+          "p_atk": 1910.412,
+          "p_atk_spd": 278.0,
+          "p_def": 596.79,
+          "m_atk": 1220.1672783600002,
+          "m_def": 531.9809999999999,
+          "run_speed": 187.00000000000003,
+          "walk_speed": 33.0,
+          "swim_run_speed": 187.00000000000003,
+          "swim_walk_speed": 33.0,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.71,
+          "level": 82,
+          "collision_radius": 14.0,
+          "collision_height": 14.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.25, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 500.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_18597",
+      "input": {
+        "kind": "npc",
+        "npc_id": 18597,
+        "npc_name": "Begrudged Maid",
+        "npc_type": "Monster",
+        "level": 84
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 6381, "max_mp": 2210, "p_atk": 2374, "p_atk_spd": 278, "p_def": 426, "evasion": 134, "accuracy": 140, "critical": 44, "m_atk": 1533, "m_atk_spd": 333, "m_def": 418, "run_speed": 160, "walk_speed": 50, "swim_run_speed": 160, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 2374.944,
+          "p_atk_spd": 278.0,
+          "p_def": 426.1509,
+          "m_atk": 1533.6041598900003,
+          "m_def": 418.65861600000005,
+          "run_speed": 176.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 176.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.73,
+          "level": 84,
+          "collision_radius": 25.0,
+          "collision_height": 32.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_25001",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25001,
+        "npc_name": "Greyclaw Kutus",
+        "npc_type": "RaidBoss",
+        "level": 23
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 95986, "max_mp": 514, "p_atk": 168, "p_atk_spd": 410, "p_def": 320, "evasion": 74, "accuracy": 74, "critical": 65, "m_atk": 22, "m_atk_spd": 1999, "m_def": 345, "run_speed": 170, "walk_speed": 50, "swim_run_speed": 170, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 168.7392,
+          "p_atk_spd": 410.0,
+          "p_def": 320.32000000000005,
+          "m_atk": 22.038804480000003,
+          "m_def": 345.60960000000006,
+          "run_speed": 275.40000000000003,
+          "walk_speed": 81.0,
+          "swim_run_speed": 275.40000000000003,
+          "swim_walk_speed": 81.0,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.12,
+          "level": 23,
+          "collision_radius": 21.0,
+          "collision_height": 43.5,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_25010",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25010,
+        "npc_name": "Furious Thieles",
+        "npc_type": "RaidBoss",
+        "level": 55
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 624464, "max_mp": 1975, "p_atk": 3996, "p_atk_spd": 410, "p_def": 964, "evasion": 106, "accuracy": 106, "critical": 65, "m_atk": 3934, "m_atk_spd": 1999, "m_def": 1045, "run_speed": 50, "walk_speed": 12, "swim_run_speed": 50, "swim_walk_speed": 12, "attack_range": 40},
+        "raw": {
+          "p_atk": 3996.0864000000006,
+          "p_atk_spd": 410.0,
+          "p_def": 964.8,
+          "m_atk": 3934.60125696,
+          "m_def": 1045.3536000000001,
+          "run_speed": 81.0,
+          "walk_speed": 19.44,
+          "swim_run_speed": 81.0,
+          "swim_walk_speed": 19.44,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.44,
+          "level": 55,
+          "collision_radius": 23.0,
+          "collision_height": 90.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_25051",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25051,
+        "npc_name": "Rahha",
+        "npc_type": "RaidBoss",
+        "level": 65
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 818959, "max_mp": 2639, "p_atk": 6792, "p_atk_spd": 410, "p_def": 1255, "evasion": 116, "accuracy": 116, "critical": 65, "m_atk": 8416, "m_atk_spd": 1999, "m_def": 1357, "run_speed": 190, "walk_speed": 60, "swim_run_speed": 190, "swim_walk_speed": 60, "attack_range": 40},
+        "raw": {
+          "p_atk": 6792.093000000002,
+          "p_atk_spd": 410.0,
+          "p_def": 1255.1000000000001,
+          "m_atk": 8416.757173439999,
+          "m_def": 1357.2636,
+          "run_speed": 307.8,
+          "walk_speed": 97.2,
+          "swim_run_speed": 307.8,
+          "swim_walk_speed": 97.2,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.54,
+          "level": 65,
+          "collision_radius": 11.0,
+          "collision_height": 34.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_25125",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25125,
+        "npc_name": "Fierce Tiger King Angel",
+        "npc_type": "RaidBoss",
+        "level": 65
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 1637918, "max_mp": 2639, "p_atk": 13587, "p_atk_spd": 410, "p_def": 1255, "evasion": 116, "accuracy": 116, "critical": 65, "m_atk": 33680, "m_atk_spd": 1999, "m_def": 1357, "run_speed": 170, "walk_speed": 60, "swim_run_speed": 170, "swim_walk_speed": 60, "attack_range": 40},
+        "raw": {
+          "p_atk": 13587.9282,
+          "p_atk_spd": 410.0,
+          "p_def": 1255.1000000000001,
+          "m_atk": 33680.917732,
+          "m_def": 1357.2636,
+          "run_speed": 275.40000000000003,
+          "walk_speed": 97.2,
+          "swim_run_speed": 275.40000000000003,
+          "swim_walk_speed": 97.2,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.54,
+          "level": 65,
+          "collision_radius": 72.0,
+          "collision_height": 87.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_25283",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25283,
+        "npc_name": "Lilith",
+        "npc_type": "RaidBoss",
+        "level": 80
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 1639146, "max_mp": 3718, "p_atk": 15987, "p_atk_spd": 410, "p_def": 1730, "evasion": 144, "accuracy": 146, "critical": 65, "m_atk": 10537, "m_atk_spd": 1999, "m_def": 1872, "run_speed": 200, "walk_speed": 45, "swim_run_speed": 200, "swim_walk_speed": 45, "attack_range": 40},
+        "raw": {
+          "p_atk": 15987.3831,
+          "p_atk_spd": 410.0,
+          "p_def": 1730.56,
+          "m_atk": 10537.672345199997,
+          "m_def": 1872.1482000000003,
+          "run_speed": 324.0,
+          "walk_speed": 72.9,
+          "swim_run_speed": 324.0,
+          "swim_walk_speed": 72.9,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.69,
+          "level": 80,
+          "collision_radius": 42.5,
+          "collision_height": 55.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_29001",
+      "input": {
+        "kind": "npc",
+        "npc_id": 29001,
+        "npc_name": "Queen Ant",
+        "npc_type": "GrandBoss",
+        "level": 40
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 229898, "max_mp": 667, "p_atk": 329, "p_atk_spd": 410, "p_def": 1615, "evasion": 91, "accuracy": 91, "critical": 65, "m_atk": 77, "m_atk_spd": 1999, "m_def": 655, "run_speed": 230, "walk_speed": 80, "swim_run_speed": 230, "swim_walk_speed": 80, "attack_range": 40},
+        "raw": {
+          "p_atk": 329.1435,
+          "p_atk_spd": 410.0,
+          "p_def": 1615.0800000000002,
+          "m_atk": 77.96508192,
+          "m_def": 655.8102000000001,
+          "run_speed": 372.6,
+          "walk_speed": 129.60000000000002,
+          "swim_run_speed": 372.6,
+          "swim_walk_speed": 129.60000000000002,
+          "movement_speed_multiplier": 1.6200000000000003,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.29,
+          "level": 40,
+          "collision_radius": 45.0,
+          "collision_height": 53.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_29019",
+      "input": {
+        "kind": "npc",
+        "npc_id": 29019,
+        "npc_name": "Antharas",
+        "npc_type": "GrandBoss",
+        "level": 79
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 17850000, "max_mp": 39960, "p_atk": 20003, "p_atk_spd": 410, "p_def": 6451, "evasion": 142, "accuracy": 143, "critical": 65, "m_atk": 42149, "m_atk_spd": 1999, "m_def": 3076, "run_speed": 186, "walk_speed": 50, "swim_run_speed": 186, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 20003.76,
+          "p_atk_spd": 410.0,
+          "p_def": 6451.2,
+          "m_atk": 42149.21356799999,
+          "m_def": 3076.92,
+          "run_speed": 301.32,
+          "walk_speed": 81.0,
+          "swim_run_speed": 301.32,
+          "swim_walk_speed": 81.0,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.68,
+          "level": 79,
+          "collision_radius": 300.0,
+          "collision_height": 300.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_29028",
+      "input": {
+        "kind": "npc",
+        "npc_id": 29028,
+        "npc_name": "Valakas",
+        "npc_type": "GrandBoss",
+        "level": 85
+      },
+      "expected": {
+        "user_info": {"str": 60, "dex": 73, "con": 57, "int": 76, "wit": 70, "men": 80, "max_hp": 93455545, "max_mp": 4497143, "p_atk": 49093, "p_atk_spd": 410, "p_def": 6622, "evasion": 154, "accuracy": 161, "critical": 16, "m_atk": 85285, "m_atk_spd": 1999, "m_def": 3990, "run_speed": 300, "walk_speed": 120, "swim_run_speed": 300, "swim_walk_speed": 120, "attack_range": 40},
+        "raw": {
+          "p_atk": 49093.63020000001,
+          "p_atk_spd": 410.0,
+          "p_def": 6622.44,
+          "m_atk": 85285.3242384,
+          "m_def": 3990.2724000000003,
+          "run_speed": 486.00000000000006,
+          "walk_speed": 194.4,
+          "swim_run_speed": 486.00000000000006,
+          "swim_walk_speed": 194.4,
+          "movement_speed_multiplier": 1.62,
+          "attack_speed_multiplier": 1.7826087,
+          "m_critical": 200,
+          "shield_def": 0,
+          "level_mod": 1.74,
+          "level": 85,
+          "collision_radius": 190.0,
+          "collision_height": 335.0,
+          "base_stat_bonus": {"str": 2.43, "dex": 1.62, "con": 2.38, "int": 2.42, "wit": 11.47, "men": 2.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_30039",
+      "input": {
+        "kind": "npc",
+        "npc_id": 30039,
+        "npc_name": "Gilbert",
+        "npc_type": "Guard",
+        "level": 80
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 5198, "max_mp": 2043, "p_atk": 3167, "p_atk_spd": 278, "p_def": 927, "evasion": 126, "accuracy": 128, "critical": 44, "m_atk": 3212, "m_atk_spd": 333, "m_def": 826, "run_speed": 160, "walk_speed": 50, "swim_run_speed": 160, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 3167.1276,
+          "p_atk_spd": 278.0,
+          "p_def": 927.8269,
+          "m_atk": 3212.9295325218,
+          "m_def": 826.5550020000001,
+          "run_speed": 176.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 176.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.69,
+          "level": 80,
+          "collision_radius": 8.0,
+          "collision_height": 24.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_31032",
+      "input": {
+        "kind": "npc",
+        "npc_id": 31032,
+        "npc_name": "Guard",
+        "npc_type": "Guard",
+        "level": 80
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 5198, "max_mp": 2043, "p_atk": 7031, "p_atk_spd": 248, "p_def": 927, "evasion": 126, "accuracy": 128, "critical": 88, "m_atk": 3212, "m_atk_spd": 333, "m_def": 826, "run_speed": 160, "walk_speed": 50, "swim_run_speed": 160, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 7031.023272,
+          "p_atk_spd": 248.0,
+          "p_def": 927.8269,
+          "m_atk": 3212.9295325218,
+          "m_def": 826.5550020000001,
+          "run_speed": 176.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 176.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.0782609,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.69,
+          "level": 80,
+          "collision_radius": 8.0,
+          "collision_height": 24.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_31033",
+      "input": {
+        "kind": "npc",
+        "npc_id": 31033,
+        "npc_name": "Sentinel",
+        "npc_type": "Guard",
+        "level": 80
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 5198, "max_mp": 2043, "p_atk": 7031, "p_atk_spd": 248, "p_def": 927, "evasion": 126, "accuracy": 128, "critical": 88, "m_atk": 3212, "m_atk_spd": 333, "m_def": 826, "run_speed": 160, "walk_speed": 50, "swim_run_speed": 160, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 7031.023272,
+          "p_atk_spd": 248.0,
+          "p_def": 927.8269,
+          "m_atk": 3212.9295325218,
+          "m_def": 826.5550020000001,
+          "run_speed": 176.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 176.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.0782609,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.69,
+          "level": 80,
+          "collision_radius": 8.0,
+          "collision_height": 23.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_30006",
+      "input": {
+        "kind": "npc",
+        "npc_id": 30006,
+        "npc_name": "Roxxy",
+        "npc_type": "Teleporter",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 8.0,
+          "collision_height": 23.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_30080",
+      "input": {
+        "kind": "npc",
+        "npc_id": 30080,
+        "npc_name": "Clarissa",
+        "npc_type": "Teleporter",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 8.0,
+          "collision_height": 23.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_30001",
+      "input": {
+        "kind": "npc",
+        "npc_id": 30001,
+        "npc_name": "Lector",
+        "npc_type": "Merchant",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 10.0,
+          "collision_height": 24.0,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_30300",
+      "input": {
+        "kind": "npc",
+        "npc_id": 30300,
+        "npc_name": "Pushkin",
+        "npc_type": "Trainer",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 0},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 7.0,
+          "collision_height": 16.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_31314",
+      "input": {
+        "kind": "npc",
+        "npc_id": 31314,
+        "npc_name": "Donal",
+        "npc_type": "VillageMasterDwarf",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 8.0,
+          "collision_height": 17.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    },
+    {
+      "id": "npc_32030",
+      "input": {
+        "kind": "npc",
+        "npc_id": 32030,
+        "npc_name": "Garden Sculpture",
+        "npc_type": "Folk",
+        "level": 70
+      },
+      "expected": {
+        "user_info": {"str": 40, "dex": 30, "con": 43, "int": 21, "wit": 20, "men": 20, "max_hp": 3862, "max_mp": 1641, "p_atk": 1312, "p_atk_spd": 278, "p_def": 469, "evasion": 106, "accuracy": 104, "critical": 44, "m_atk": 779, "m_atk_spd": 333, "m_def": 418, "run_speed": 120, "walk_speed": 50, "swim_run_speed": 120, "swim_walk_speed": 50, "attack_range": 40},
+        "raw": {
+          "p_atk": 1312.7040000000002,
+          "p_atk_spd": 278.0,
+          "p_def": 469.05,
+          "m_atk": 779.5826127000003,
+          "m_def": 418.9968,
+          "run_speed": 132.0,
+          "walk_speed": 55.00000000000001,
+          "swim_run_speed": 132.0,
+          "swim_walk_speed": 55.00000000000001,
+          "movement_speed_multiplier": 1.1,
+          "attack_speed_multiplier": 1.2086957,
+          "m_critical": 100,
+          "shield_def": 0,
+          "level_mod": 1.59,
+          "level": 70,
+          "collision_radius": 16.0,
+          "collision_height": 20.5,
+          "base_stat_bonus": {"str": 1.2, "dex": 1.1, "con": 1.58, "int": 0.81, "wit": 1.0, "men": 1.22},
+          "probes": {"critical_damage@1": 1.0, "critical_damage_pos@1": 1.0, "critical_damage_add@0": 0.0, "defence_critical_damage@1": 1.0, "defence_critical_damage_add@0": 0.0, "defence_critical_rate@100": 100.0, "defence_critical_rate_add@0": 0.0, "critical_rate_pos@100": 100.0, "shield_rate@0": 0.0, "shield_defence_angle@0": 0.0, "random_damage@0": 0.0, "attack_cancel@50": 50.0, "regenerate_hp_rate@100": 100.0, "regenerate_mp_rate@100": 100.0, "regenerate_cp_rate@100": 100.0, "pve_physical_dmg@1": 1.0, "pve_bow_dmg@1": 1.0, "pvp_physical_dmg@1": 1.0, "pvp_physical_def@1": 1.0, "pvp_phys_skill_dmg@1": 1.0, "power_attack_range@0": 0.0, "atk_reuse@1": 1.0, "magic_crit_dmg@1": 1.0, "p_skill_evasion@0": 0.0, "magic_success_res@1": 1.0, "weight_limit@1": 1.0, "weight_penalty@1": 1.0, "blow_rate@0": 0.0, "skill_mastery@0": 0.0, "max_recoverable_hp@0": 0.0, "max_recoverable_mp@0": 0.0}
+        }
+      }
+    }
+  ],
+  "skipped": []
+}

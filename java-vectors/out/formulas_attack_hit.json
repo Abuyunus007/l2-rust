@@ -1,0 +1,2413 @@
+{
+  "source": "Creature.doAttackHitSimple order: calcHitMiss, then (if not missed) calcShldUse, calcCrit and (int) calcPhysDam",
+  "generated_by": "java-vectors",
+  "note": "The four calls are made in the order doAttackHitSimple makes them, with one script per case, so the order of draws is pinned. result = { miss, shld, crit, damage (int, 0 when missed) }. Every case has 'script' (the unit values u in [0,1) that were consumed) and 'rnd' (every Rnd call in order: method, bound, returned value; get_int bound b returns floor(u*b), get_int_range o,b returns o+floor(u*(b-o+1)), nextBoolean is u>=0.5). Calls that draw nothing (get with bound <= 0, get(origin, bound) with origin >= bound) are not recorded. Replay the returned values in order and check method and bound.",
+  "creatures_file": "formulas_creatures.json",
+  "geometry": {
+    "target": {"x": 100000, "y": 100000, "z": 0, "heading": 16384},
+    "attacker_xy_by_relation": {"front": "100022,100033", "side": "100040,100000", "back": "99978,99967"},
+    "note": "The target stands at 'target'. The attacker has heading 0 and z = target z + z_diff, and stands at attacker_xy_by_relation[relation] (found by trying 32 spots 40 units away until the real isInFrontOf / isOnSideOf / isBehind agree)."
+  },
+  "cases": [
+    {
+      "id": "hit_seq_newbie1>npc_20001_0",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8401421725269037],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "840"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_1",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8400525907546987],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "840"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_2",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8403213360713137],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "840"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_3",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8402317542991087],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "840"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_4",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.839783860339245],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "839"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_5",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8396942636658788],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "839"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_6",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8399630089824938],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "839"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20001_7",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8398734272102888],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "839"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_0",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8541168693862345],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "854"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_1",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8540272727128684],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "854"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_2",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8542960180294833],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "854"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_3",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8542064511584395],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "854"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_4",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8537585422974147],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "853"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_5",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8536689456240485],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "853"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_6",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8539377058418246],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "853"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_newbie1>npc_20103_7",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8538481240696196],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "853"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_0",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8680915513444042, 0.1293285129377182],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "868"}, {"method": "get_int", "bound": "1000", "returned": "129"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 5}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_1",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8680019695721992, 0.298872908758434],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "868"}, {"method": "get_int", "bound": "1000", "returned": "298"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 11}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_2",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8682707148888141, 0.7902397361974479],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "868"}, {"method": "get_int", "bound": "1000", "returned": "790"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 5}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_3",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8681811331166092, 0.9597841171170024],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "868"}, {"method": "get_int", "bound": "1000", "returned": "959"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 11}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_4",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8705998260649822, 0.38208541505651616],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "870"}, {"method": "get_int", "bound": "1000", "returned": "382"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 5}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_5",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8705102442927772, 0.551629825778393],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "870"}, {"method": "get_int", "bound": "1000", "returned": "551"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 11}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_6",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8707789896093922, 0.04299662341508459],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "870"}, {"method": "get_int", "bound": "1000", "returned": "42"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 11}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20103_7",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8706894078371872, 0.21254101923580038],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "870"}, {"method": "get_int", "bound": "1000", "returned": "212"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 11}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_0",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8620000206367885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "862"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_1",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8619104388645835],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "861"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_2",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8621791841811984],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "862"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_3",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8620896024089935],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "862"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_4",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8616416935479686],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "861"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_5",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8615521117757636],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "861"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_6",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8618208570923785],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "861"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_warrior20>npc_20201_7",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8617312902213348],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "861"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_0",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7842434297930638],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "784"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_1",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7841538480208589],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "784"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_2",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7844225784363126],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "784"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_3",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7843329966641076],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "784"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_4",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7838851027042439],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "783"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_5",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7837955060308778],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "783"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_6",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7840642513474927],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "784"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20239_7",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7839746844764489],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "783"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_0",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7982181117512335],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "798"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_1",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7981285299790285],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "798"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_2",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7983972752956434],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "798"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_3",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7983076935234384],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "798"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_4",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7978597846624136],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "797"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_5",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7977702028902086],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "797"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_6",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7980389482068235],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "798"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>npc_20677_7",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7979493664346186],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "797"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_0",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8121928086105644, 0.9250317881864055, 0.9687907781893919, 0.4394029764110955],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "812"}, {"method": "get_int", "bound": "1000", "returned": "925"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 86}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_1",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8121032119371983, 0.0945761840071212, 0.5390881941490007, 0.22168299745065045],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "812"}, {"method": "get_int", "bound": "1000", "returned": "94"}, {"method": "get_int_range", "bound": "-10,10", "returned": "1"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-6"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 150}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_2",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8123719572538132, 0.5859430114461351, 0.8281959313690131, 0.8748428896285021],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "812"}, {"method": "get_int", "bound": "1000", "returned": "585"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 91}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_3",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8122823754816082, 0.7554873923656897, 0.39849336222978304, 0.6571229255692181],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "812"}, {"method": "get_int", "bound": "1000", "returned": "755"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 159}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_4",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8089678648111854, 0.028630052633333514, 0.49949796135156455, 0.6014843596838436],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "808"}, {"method": "get_int", "bound": "1000", "returned": "28"}, {"method": "get_int_range", "bound": "-10,10", "returned": "0"}, {"method": "get_int_range", "bound": "-10,10", "returned": "2"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 161}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_5",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8088782979401417, 0.1981744484540492, 0.06979537731117336, 0.3837643956245598],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "808"}, {"method": "get_int", "bound": "1000", "returned": "198"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-9"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 141}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_6",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8091470432567566, 0.6895412758930632, 0.35890311453118584, 0.03692427290125011],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "809"}, {"method": "get_int", "bound": "1000", "returned": "689"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-3"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-10"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 69}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20239_7",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8090574465833904, 0.8590856568126177, 0.9292005304907947, 0.8192043237431275],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "809"}, {"method": "get_int", "bound": "1000", "returned": "859"}, {"method": "get_int_range", "bound": "-10,10", "returned": "9"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 184}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_0",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8233008887593362, 0.9015266468130084, 0.2519105137444885, 0.4366781919367483],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "901"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-5"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 51}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_1",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8232113069871312, 0.0710710575348853, 0.8222079297040973, 0.21895824277862563],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "71"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-6"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 220}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_2",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8234800523037461, 0.5624378551715769, 0.11131568182527096, 0.872118120055316],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-8"}, {"method": "get_int_range", "bound": "-10,10", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 54}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_3",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8233904556303799, 0.7319822509922926, 0.6816130977848798, 0.6543981559960321],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "731"}, {"method": "get_int_range", "bound": "-10,10", "returned": "4"}, {"method": "get_int_range", "bound": "-10,10", "returned": "3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 117}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_4",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8229425616705163, 0.5797042300958714, 0.533100207385246, 0.565798350600774],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "822"}, {"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int_range", "bound": "-10,10", "returned": "1"}, {"method": "get_int_range", "bound": "-10,10", "returned": "1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 55}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_5",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8228529798983113, 0.7492486259165871, 0.1033976233448548, 0.34807838654149015],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "822"}, {"method": "get_int", "bound": "1000", "returned": "749"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-8"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 97}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_6",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8231217252149262, 0.24061545335560108, 0.3925053605648673, 0.00123827871934179],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "240"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-10"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 48}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_20677_7",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.82303212854156, 0.41015984917631676, 0.9628027765244761, 0.7835182997588968],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "823"}, {"method": "get_int", "bound": "1000", "returned": "410"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "6"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 127}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_0",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8143427413411614],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_1",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8142531744701176],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_2",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8145219197867325],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_3",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8144323231133663],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_4",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8139844291535027],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "813"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_5",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8138948473812977],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "813"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_6",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.8141635926979126],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_21090_7",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.8140739960245464],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "814"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_0",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7365861504974367],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_1",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7364965687252317],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_2",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7367653140418466],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_3",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7366757322696417],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_4",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.736227838309778],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_5",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7361382416364118],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_6",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7364069869530268],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18120_7",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7363174051808218],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "736"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_0",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7505608473567675],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "750"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_1",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7504712506834014],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "750"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_2",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7507399960000163],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "750"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_3",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7506504291289725],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "750"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_4",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7530691220773456],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "753"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_5",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7529795403051406],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "752"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_6",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7532482856217555],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "753"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_18366_7",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7531586889483893],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "753"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_0",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7674021311243351, 0.6972299220616957, 0.11750151470860148, 0.5794222282690266],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "697"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-8"}, {"method": "get_int_range", "bound": "-10,10", "returned": "2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 22}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_1",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7673125493521301, 0.8667743327835726, 0.6877989455693715, 0.3617022642097427],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "866"}, {"method": "get_int_range", "bound": "-10,10", "returned": "4"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 49}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_2",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.767581294668745, 0.3581411304202642, 0.976906682789384, 0.01486215638759436],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "358"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-10"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 24}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_3",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7674917128965401, 0.52768552624098, 0.5472040987489927, 0.7971422072294717],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "527"}, {"method": "get_int_range", "bound": "-10,10", "returned": "1"}, {"method": "get_int_range", "bound": "-10,10", "returned": "6"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 52}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_4",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7670438040355152, 0.3754075053445587, 0.3986911934481978, 0.7085423869330524],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "375"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 24}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_5",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7669542222633102, 0.5449519011652744, 0.968988639210129, 0.49082242287376854],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "766"}, {"method": "get_int", "bound": "1000", "returned": "544"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "0"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 53}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_6",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7672229675799251, 0.03631872860428842, 0.2580963615289803, 0.14398231505162007],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "36"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-5"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-7"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 42}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_25010_7",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7671333858077202, 0.2058631244250041, 0.828393777488589, 0.926262336091175],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "767"}, {"method": "get_int", "bound": "1000", "returned": "205"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "9"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 56}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_0",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7584439986073215],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_1",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7583544168351165],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_2",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7586231621517314],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_3",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7585335803795265],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_4",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7580856715185016],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_5",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7579960897462966],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "757"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_6",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7582648350629115],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_duelist76>npc_31033_7",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7581752681918678],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_0",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7724186805654911],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_1",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7723290987932862],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_2",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7725978441099011],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_3",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7725082772388573],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_4",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7720603534766712],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_5",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7719707866056275],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "771"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_6",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.7722395319222424],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_21090_7",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.7721499501500374],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "772"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_0",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5938866521862612],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "593"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_1",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5937970853152175],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "593"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_2",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5940658157306712],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "594"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_3",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5939762339584662],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "593"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_4",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5906617232880434],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "590"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_5",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5905721415158385],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "590"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_6",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5908408868324534],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "590"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>npc_18366_7",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5907513199614096],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "590"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_0",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.604994732335033, 0.7053160223313527, 0.29684263647395803, 0.44520210771314317],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "705"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-8"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 39}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_1",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6049051654639892, 0.8748604330532296, 0.8671400673347279, 0.22748214365385933],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "874"}, {"method": "get_int_range", "bound": "-20,20", "returned": "15"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-11"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 90}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_2",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6051739107806041, 0.36622723068992125, 0.1562478045547404, 0.8806420358317109],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "605"}, {"method": "get_int", "bound": "1000", "returned": "366"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-14"}, {"method": "get_int_range", "bound": "-20,20", "returned": "16"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 44}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_3",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6050843290083991, 0.5357716265106369, 0.7265452205143492, 0.6629220568712658],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "605"}, {"method": "get_int", "bound": "1000", "returned": "535"}, {"method": "get_int_range", "bound": "-20,20", "returned": "9"}, {"method": "get_int_range", "bound": "-20,20", "returned": "7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 103}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_4",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6046364052462131, 0.38349360561421564, 0.5780323152135542, 0.5743222663771689],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "383"}, {"method": "get_int_range", "bound": "-20,20", "returned": "3"}, {"method": "get_int_range", "bound": "-20,20", "returned": "3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 47}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_5",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6045468383751693, 0.5530380014349314, 0.14832976097548545, 0.35660230231788503],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "553"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-14"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-6"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 71}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_6",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6048155836917842, 0.044404813972784174, 0.43743748329433674, 0.009762194495736676],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "44"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-3"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-20"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 34}
+    },
+    {
+      "id": "hit_seq_archmage76>npc_20677_7",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6047259870184181, 0.21394920979349996, 0.0077348992539455486, 0.7920422155352915],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "604"}, {"method": "get_int", "bound": "1000", "returned": "213"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-20"}, {"method": "get_int_range", "bound": "-20,20", "returned": "12"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 79}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_0",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6189694291943639, 0.25639019979389055, 0.3304448974088007, 0.40951609863007354],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "256"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-2"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 8}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_1",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.618879847422159, 0.42593461051576753, 0.9007423133684094, 0.1917961345707897],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "425"}, {"method": "get_int_range", "bound": "-6,6", "returned": "5"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 18}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_2",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6191485927387739, 0.9173014081524591, 0.18985005058842186, 0.8449560118474801],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "619"}, {"method": "get_int", "bound": "1000", "returned": "917"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-4"}, {"method": "get_int_range", "bound": "-6,6", "returned": "4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 9}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_3",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6190590109665689, 0.08684580397317476, 0.7601474814491919, 0.6272360626893575],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "619"}, {"method": "get_int", "bound": "1000", "returned": "86"}, {"method": "get_int_range", "bound": "-6,6", "returned": "3"}, {"method": "get_int_range", "bound": "-6,6", "returned": "2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 19}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_4",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.618611102105544, 0.9345677830767536, 0.6116345761483969, 0.5386362423929382],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "934"}, {"method": "get_int_range", "bound": "-6,6", "returned": "1"}, {"method": "get_int_range", "bound": "-6,6", "returned": "1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 9}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_5",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6185215203333391, 0.10411217889746927, 0.1819319921080057, 0.3209162932348154],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "104"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-4"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 17}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_6",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.618790265649954, 0.5954790063364832, 0.4710397293280182, 0.9740761705115059],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "595"}, {"method": "get_int_range", "bound": "-6,6", "returned": "0"}, {"method": "get_int_range", "bound": "-6,6", "returned": "6"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 9}
+    },
+    {
+      "id": "hit_seq_npc_20001>newbie1_7",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.618700683877749, 0.765023402157199, 0.04133716018878819, 0.7563562213533832],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "618"}, {"method": "get_int", "bound": "1000", "returned": "765"}, {"method": "get_int_range", "bound": "-6,6", "returned": "-6"}, {"method": "get_int_range", "bound": "-6,6", "returned": "3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 17}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_0",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6100112966773503, 0.21082982656894855, 0.3601870447126426, 0.6375199460214276],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "610"}, {"method": "get_int", "bound": "1000", "returned": "210"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-2"}, {"method": "get_int_range", "bound": "-8,8", "returned": "2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 34}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_1",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6099217149051454, 0.38037423729082553, 0.9304844606722513, 0.41979999686330494],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "609"}, {"method": "get_int", "bound": "1000", "returned": "380"}, {"method": "get_int_range", "bound": "-8,8", "returned": "7"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 73}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_2",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6101904602217603, 0.8717410498286783, 0.2195921978922638, 0.07295987413999527],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "610"}, {"method": "get_int", "bound": "1000", "returned": "871"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-5"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 30}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_3",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6101008784495553, 0.041285430748232876, 0.7898896138518726, 0.8552399100807114],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "610"}, {"method": "get_int", "bound": "1000", "returned": "41"}, {"method": "get_int_range", "bound": "-8,8", "returned": "5"}, {"method": "get_int_range", "bound": "-8,8", "returned": "6"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 154}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_4",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6096529695885304, 0.8890074247529728, 0.6413767234522388, 0.7666401046854533],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "609"}, {"method": "get_int", "bound": "1000", "returned": "889"}, {"method": "get_int_range", "bound": "-8,8", "returned": "2"}, {"method": "get_int_range", "bound": "-8,8", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 37}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_5",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6095633878163255, 0.05855180567252727, 0.21167413941184765, 0.5489201406261695],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "609"}, {"method": "get_int", "bound": "1000", "returned": "58"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-5"}, {"method": "get_int_range", "bound": "-8,8", "returned": "1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 66}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_6",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6098321331329404, 0.5499186331115413, 0.5007818915330213, 0.2020800179028598],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "609"}, {"method": "get_int", "bound": "1000", "returned": "549"}, {"method": "get_int_range", "bound": "-8,8", "returned": "0"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 32}
+    },
+    {
+      "id": "hit_seq_npc_20103>warrior20_7",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6097425513607354, 0.719463028932257, 0.07107930749263014, 0.9843600687447371],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "609"}, {"method": "get_int", "bound": "1000", "returned": "719"}, {"method": "get_int_range", "bound": "-8,8", "returned": "-7"}, {"method": "get_int_range", "bound": "-8,8", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 69}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_0",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.62398597863552, 0.7619040040314865, 0.39378929074632407, 0.601833936938358],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "623"}, {"method": "get_int", "bound": "1000", "returned": "761"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 152}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_1",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.623896396863315, 0.9314484147533634, 0.9640867067059328, 0.3841139728790741],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "623"}, {"method": "get_int", "bound": "1000", "returned": "931"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 328}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_2",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6241651421799299, 0.42281522729121623, 0.25319444392594526, 0.03727386505692576],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "624"}, {"method": "get_int", "bound": "1000", "returned": "422"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-5"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-10"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 130}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_3",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6240755753088861, 0.5923596231119319, 0.8234918598855541, 0.8195539009976418],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "624"}, {"method": "get_int", "bound": "1000", "returned": "592"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 348}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_4",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6264942682572592, 0.014660921051445674, 0.4254614948656663, 0.6979928560925002],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "626"}, {"method": "get_int", "bound": "1000", "returned": "14"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "4"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 310}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_5",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.6264046864850542, 0.18420531687216135, 0.9957589108252751, 0.4802728920332163],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "626"}, {"method": "get_int", "bound": "1000", "returned": "184"}, {"method": "get_int_range", "bound": "-10,10", "returned": "10"}, {"method": "get_int_range", "bound": "-10,10", "returned": "0"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 334}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_6",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.6266734169005079, 0.6755721294100141, 0.2848666331441264, 0.13343278421106786],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "626"}, {"method": "get_int", "bound": "1000", "returned": "675"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-5"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 133}
+    },
+    {
+      "id": "hit_seq_npc_20201>warrior20_7",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.626583835128303, 0.8451165252307299, 0.8551640789060575, 0.915712820151784],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "626"}, {"method": "get_int", "bound": "1000", "returned": "845"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "9"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 354}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_0",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5490959896011932, 0.5010193124812012, 0.16243365233923213, 0.5879461440454214],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "549"}, {"method": "get_int", "bound": "100", "returned": "50"}, {"method": "get_int", "bound": "100", "returned": "16"}, {"method": "get_int", "bound": "1000", "returned": "587"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 42}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_1",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5490064078289882, 0.6705637083019169, 0.7327310682988409, 0.3702261799861376],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "549"}, {"method": "get_int", "bound": "100", "returned": "67"}, {"method": "get_int", "bound": "100", "returned": "73"}, {"method": "get_int", "bound": "1000", "returned": "370"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 119}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_2",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5492751531456032, 0.16193050593860847, 0.02183880551885342, 0.023386072163989247],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "549"}, {"method": "get_int", "bound": "100", "returned": "16"}, {"method": "get_int", "bound": "100", "returned": "2"}, {"method": "get_int", "bound": "1000", "returned": "23"}],
+      "result": {"miss": false, "shld": 1, "crit": true, "damage": 84}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_3",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5491855713733982, 0.33147490175932426, 0.5921362214784622, 0.8056661081047053],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "549"}, {"method": "get_int", "bound": "100", "returned": "33"}, {"method": "get_int", "bound": "100", "returned": "59"}, {"method": "get_int", "bound": "1000", "returned": "805"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 119}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_4",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5487376625123733, 0.17919688086290297, 0.44362333107882845, 0.7170663027094473],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "548"}, {"method": "get_int", "bound": "100", "returned": "17"}, {"method": "get_int", "bound": "100", "returned": "44"}, {"method": "get_int", "bound": "1000", "returned": "717"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 59}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_5",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5486480807401684, 0.34874129158477996, 0.013920747038437264, 0.4993463386501633],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "548"}, {"method": "get_int", "bound": "100", "returned": "34"}, {"method": "get_int", "bound": "100", "returned": "1"}, {"method": "get_int", "bound": "1000", "returned": "499"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 84}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_6",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5489168260567833, 0.8401080892214715, 0.30302848425844975, 0.15250623082801495],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "548"}, {"method": "get_int", "bound": "100", "returned": "84"}, {"method": "get_int", "bound": "100", "returned": "30"}, {"method": "get_int", "bound": "1000", "returned": "152"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 59}
+    },
+    {
+      "id": "hit_seq_npc_20239>gladiator40_7",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5488272442845783, 0.009652485042187187, 0.8733259002180584, 0.9347862667687311],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "548"}, {"method": "get_int", "bound": "100", "returned": "0"}, {"method": "get_int", "bound": "100", "returned": "87"}, {"method": "get_int", "bound": "1000", "returned": "934"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 119}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_0",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5630706715593629, 0.05209348994373908, 0.19603589837291358, 0.5522601349623519, 0.24611853995114774, 0.46771181478764023],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "563"}, {"method": "get_int", "bound": "100", "returned": "5"}, {"method": "get_int", "bound": "100", "returned": "19"}, {"method": "get_int", "bound": "1000", "returned": "552"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-7"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-1"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 69}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_1",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5629810897871579, 0.22163788576445476, 0.7663333143325224, 0.3345401858042293, 0.6163291566769055, 0.14061059757675176],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int", "bound": "100", "returned": "22"}, {"method": "get_int", "bound": "100", "returned": "76"}, {"method": "get_int", "bound": "1000", "returned": "334"}, {"method": "get_int_range", "bound": "-13,13", "returned": "3"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-10"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 179}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_2",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5632498351037728, 0.7130046834011464, 0.055441066453696064, 0.9877000481797584, 0.5056972915984711, 0.12191423430825599],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "563"}, {"method": "get_int", "bound": "100", "returned": "71"}, {"method": "get_int", "bound": "100", "returned": "5"}, {"method": "get_int", "bound": "1000", "returned": "987"}, {"method": "get_int_range", "bound": "-13,13", "returned": "0"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-10"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 68}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_3",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.563160268232729, 0.8825490792218621, 0.6257384824133049, 0.7699800990216358, 0.8759079083242288, 0.7948130319985287],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "563"}, {"method": "get_int", "bound": "100", "returned": "88"}, {"method": "get_int", "bound": "100", "returned": "62"}, {"method": "get_int", "bound": "1000", "returned": "769"}, {"method": "get_int_range", "bound": "-13,13", "returned": "10"}, {"method": "get_int_range", "bound": "-13,13", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 230}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_4",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.562712344470543, 0.7302710583254408, 0.4772255771125099, 0.6813802936263776, 0.7269610217553397, 0.15930694594408645],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int", "bound": "100", "returned": "73"}, {"method": "get_int", "bound": "100", "returned": "47"}, {"method": "get_int", "bound": "1000", "returned": "681"}, {"method": "get_int_range", "bound": "-13,13", "returned": "6"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-9"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 93}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_5",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.562622762698338, 0.8998154690473178, 0.04752299307211871, 0.4636603295670938, 0.09717165338225864, 0.832205728733198],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int", "bound": "100", "returned": "89"}, {"method": "get_int", "bound": "100", "returned": "4"}, {"method": "get_int", "bound": "1000", "returned": "463"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-11"}, {"method": "get_int_range", "bound": "-13,13", "returned": "9"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 147}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_6",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5628915229161141, 0.39118228158517054, 0.3366307451932924, 0.11682020684378414, 0.9865397883038244, 0.8135093803658634],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int", "bound": "100", "returned": "39"}, {"method": "get_int", "bound": "100", "returned": "33"}, {"method": "get_int", "bound": "1000", "returned": "116"}, {"method": "get_int_range", "bound": "-13,13", "returned": "13"}, {"method": "get_int_range", "bound": "-13,13", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 118}
+    },
+    {
+      "id": "hit_seq_npc_20677>duelist76_7",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5628019411439091, 0.5607266774058863, 0.9069281611529011, 0.8991002576856615, 0.356750405029582, 0.4864081631549749],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "562"}, {"method": "get_int", "bound": "100", "returned": "56"}, {"method": "get_int", "bound": "100", "returned": "90"}, {"method": "get_int", "bound": "1000", "returned": "899"}, {"method": "get_int_range", "bound": "-13,13", "returned": "-4"}, {"method": "get_int_range", "bound": "-13,13", "returned": "0"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 185}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_0",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5541125390423493, 0.006533101817635889, 0.22577804567675552, 0.7802639823537059],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "554"}, {"method": "get_int", "bound": "100", "returned": "0"}, {"method": "get_int", "bound": "100", "returned": "22"}, {"method": "get_int", "bound": "1000", "returned": "780"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 119}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_1",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5540229572701443, 0.17607751253951287, 0.7960754765375255, 0.562544018294422],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "554"}, {"method": "get_int", "bound": "100", "returned": "17"}, {"method": "get_int", "bound": "100", "returned": "79"}, {"method": "get_int", "bound": "1000", "returned": "562"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 306}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_2",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5542917025867592, 0.6674443250773656, 0.08518319885637682, 0.21570391047227355],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "554"}, {"method": "get_int", "bound": "100", "returned": "66"}, {"method": "get_int", "bound": "100", "returned": "8"}, {"method": "get_int", "bound": "1000", "returned": "215"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 119}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_3",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5542021357157154, 0.8369887059969202, 0.6554806148159856, 0.9979839613141509],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "554"}, {"method": "get_int", "bound": "100", "returned": "83"}, {"method": "get_int", "bound": "100", "returned": "65"}, {"method": "get_int", "bound": "1000", "returned": "997"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 306}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_4",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5537542119535294, 0.6847107000016601, 0.5069677244163519, 0.9093841410177316],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "553"}, {"method": "get_int", "bound": "100", "returned": "68"}, {"method": "get_int", "bound": "100", "returned": "50"}, {"method": "get_int", "bound": "1000", "returned": "909"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 153}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_5",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5536646301813244, 0.8542550809212146, 0.07726515527712186, 0.6916641769584477],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "553"}, {"method": "get_int", "bound": "100", "returned": "85"}, {"method": "get_int", "bound": "100", "returned": "7"}, {"method": "get_int", "bound": "1000", "returned": "691"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 239}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_6",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5539333754979393, 0.34562190836022855, 0.36637289249713434, 0.34482406913629937],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "553"}, {"method": "get_int", "bound": "100", "returned": "34"}, {"method": "get_int", "bound": "100", "returned": "36"}, {"method": "get_int", "bound": "1000", "returned": "344"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 153}
+    },
+    {
+      "id": "hit_seq_npc_21090>duelist76_7",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5538438086268955, 0.5151663041809443, 0.936670308456743, 0.12710409017585433],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "553"}, {"method": "get_int", "bound": "100", "returned": "51"}, {"method": "get_int", "bound": "100", "returned": "93"}, {"method": "get_int", "bound": "1000", "returned": "127"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 306}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_0",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5680872210005189, 0.5576072941813349, 0.25938029171043697, 0.7445779881717975, 0.5143236307796865, 0.7853797848822979],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "568"}, {"method": "get_int", "bound": "100", "returned": "55"}, {"method": "get_int", "bound": "100", "returned": "25"}, {"method": "get_int", "bound": "1000", "returned": "744"}, {"method": "get_int_range", "bound": "-14,14", "returned": "0"}, {"method": "get_int_range", "bound": "-14,14", "returned": "8"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 139}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_1",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5679976541294751, 0.7271516900020507, 0.8296777076700458, 0.5268580092113524, 0.8845342624066053, 0.4582785676714094],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "567"}, {"method": "get_int", "bound": "100", "returned": "72"}, {"method": "get_int", "bound": "100", "returned": "82"}, {"method": "get_int", "bound": "1000", "returned": "526"}, {"method": "get_int_range", "bound": "-14,14", "returned": "11"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 362}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_2",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.56826639944609, 0.21851850253990346, 0.11878544489005827, 0.18001790138920404, 0.7739023824270098, 0.4395822193040747],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "568"}, {"method": "get_int", "bound": "100", "returned": "21"}, {"method": "get_int", "bound": "100", "returned": "11"}, {"method": "get_int", "bound": "1000", "returned": "180"}, {"method": "get_int_range", "bound": "-14,14", "returned": "8"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-2"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 136}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_3",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5681768176738851, 0.38806289836061925, 0.6890828757508283, 0.9622979373299202, 0.14411301405392873, 0.11248100209318623],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "568"}, {"method": "get_int", "bound": "100", "returned": "38"}, {"method": "get_int", "bound": "100", "returned": "68"}, {"method": "get_int", "bound": "1000", "returned": "962"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-10"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-11"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 264}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_4",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5648623070034623, 0.661205558628263, 0.7900874748726097, 0.9066593565433844, 0.8419060564243817, 0.009736084499603281],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "564"}, {"method": "get_int", "bound": "100", "returned": "66"}, {"method": "get_int", "bound": "100", "returned": "79"}, {"method": "get_int", "bound": "1000", "returned": "906"}, {"method": "get_int_range", "bound": "-14,14", "returned": "10"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-14"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 156}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_5",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5647727103300961, 0.8307499544489787, 0.3603848908322185, 0.6889394073852617, 0.21211670295246177, 0.682634882189876],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "564"}, {"method": "get_int", "bound": "100", "returned": "83"}, {"method": "get_int", "bound": "100", "returned": "36"}, {"method": "get_int", "bound": "1000", "returned": "688"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-8"}, {"method": "get_int_range", "bound": "-14,14", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 318}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_6",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.565041455646711, 0.32211676698683145, 0.649492628052231, 0.34209928466195216, 0.10148482297286632, 0.6639385189213801],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "565"}, {"method": "get_int", "bound": "100", "returned": "32"}, {"method": "get_int", "bound": "100", "returned": "64"}, {"method": "get_int", "bound": "1000", "returned": "342"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-12"}, {"method": "get_int_range", "bound": "-14,14", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 152}
+    },
+    {
+      "id": "hit_seq_npc_18366>duelist76_7",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5649518887756673, 0.49166116280754724, 0.21979004401183977, 0.1243793355038294, 0.47169543969862404, 0.33683730171049164],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "564"}, {"method": "get_int", "bound": "100", "returned": "49"}, {"method": "get_int", "bound": "100", "returned": "21"}, {"method": "get_int", "bound": "1000", "returned": "124"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-1"}, {"method": "get_int_range", "bound": "-14,14", "returned": "-5"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 243}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_0",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5791953160504518, 0.5341021528079378, 0.5425000272655337, 0.7418532036974502, 0.6082063372218653, 0.3459303316022744],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int", "bound": "100", "returned": "53"}, {"method": "get_int", "bound": "100", "returned": "54"}, {"method": "get_int", "bound": "1000", "returned": "741"}, {"method": "get_int_range", "bound": "-12,12", "returned": "3"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 341}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_1",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.579105749179408, 0.7036465486286536, 0.1127974432251424, 0.5241332396381664, 0.9784169688487843, 0.018829114391385904],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int", "bound": "100", "returned": "70"}, {"method": "get_int", "bound": "100", "returned": "11"}, {"method": "get_int", "bound": "1000", "returned": "524"}, {"method": "get_int_range", "bound": "-12,12", "returned": "12"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-12"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 533}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_2",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5793744795948618, 0.19501336116650636, 0.4019051804451549, 0.17729313181601802, 0.86778510377035, 1.3276602405121185E-4],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int", "bound": "100", "returned": "19"}, {"method": "get_int", "bound": "100", "returned": "40"}, {"method": "get_int", "bound": "1000", "returned": "177"}, {"method": "get_int_range", "bound": "-12,12", "returned": "9"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-12"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 331}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_3",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5792848978226568, 0.36455777188838334, 0.9722026113059249, 0.959573152855573, 0.23799572049610762, 0.6730315488131627],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int", "bound": "100", "returned": "36"}, {"method": "get_int", "bound": "100", "returned": "97"}, {"method": "get_int", "bound": "1000", "returned": "959"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-7"}, {"method": "get_int_range", "bound": "-12,12", "returned": "4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 667}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_4",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5788369889616319, 0.21227975099196206, 0.8236897209062912, 0.870973362361476, 0.08904883392721852, 0.03752547765988179],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "578"}, {"method": "get_int", "bound": "100", "returned": "21"}, {"method": "get_int", "bound": "100", "returned": "82"}, {"method": "get_int", "bound": "1000", "returned": "870"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-10"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-12"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 273}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_5",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.578747407189427, 0.38182414681267773, 0.3939871368658999, 0.6532533983021921, 0.45925945065297624, 0.7104242604489933],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "578"}, {"method": "get_int", "bound": "100", "returned": "38"}, {"method": "get_int", "bound": "100", "returned": "39"}, {"method": "get_int", "bound": "1000", "returned": "653"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-1"}, {"method": "get_int_range", "bound": "-12,12", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 717}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_6",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5790161525060419, 0.8731909444493694, 0.6830948591847512, 0.30641327557888254, 0.348627585574542, 0.6917279120816586],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "579"}, {"method": "get_int", "bound": "100", "returned": "87"}, {"method": "get_int", "bound": "100", "returned": "68"}, {"method": "get_int", "bound": "1000", "returned": "306"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-4"}, {"method": "get_int_range", "bound": "-12,12", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 347}
+    },
+    {
+      "id": "hit_seq_npc_25010>duelist76_7",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5789265707338369, 0.042735340270085076, 0.2533922900455212, 0.0886933115195987, 0.7188382172014609, 0.36462669487077015],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "578"}, {"method": "get_int", "bound": "100", "returned": "4"}, {"method": "get_int", "bound": "100", "returned": "25"}, {"method": "get_int", "bound": "1000", "returned": "88"}, {"method": "get_int_range", "bound": "-12,12", "returned": "5"}, {"method": "get_int_range", "bound": "-12,12", "returned": "-3"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 550}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_0",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.501438710305566],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_1",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5013491434345222],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_2",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5016178887511371],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_3",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5015283069789321],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_4",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5010803832167461],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_5",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5009908163457023],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "500"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_6",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5012595616623172],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_21001>sagittarius76_7",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.501169964988951],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "501"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_0",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5154134071648968, 0.24971230498309427],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "249"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 969}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_1",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5153238253926918, 0.41925670080381006],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "419"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 1939}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_2",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5155925707093068, 0.9106235133416628],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "910"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 969}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_3",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5155029889371018, 0.08016790916237859],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "80"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 3878}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_4",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5150550800760769, 0.9278898882659573],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "927"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 969}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_5",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.514965498303872, 0.09743428408667298],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "514"}, {"method": "get_int", "bound": "1000", "returned": "97"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 1939}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_6",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5152342436204869, 0.5888010966245257],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "588"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 969}
+    },
+    {
+      "id": "hit_seq_npc_31033>archmage76_7",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5151446618482819, 0.7583454924452415],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "515"}, {"method": "get_int", "bound": "1000", "returned": "758"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 1939}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_0",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5064552746478832, 0.20415193175815238, 0.6240062568162192, 0.9532444886226817, 0.21923245315282902, 0.739744534261741],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "506"}, {"method": "get_int", "bound": "100", "returned": "20"}, {"method": "get_int", "bound": "100", "returned": "62"}, {"method": "get_int", "bound": "1000", "returned": "953"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-6"}, {"method": "get_int_range", "bound": "-10,10", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 40}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_1",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5063656928756782, 0.37369632757886806, 0.19430370257815033, 0.7355245096622367, 0.5894430698785867, 0.41264331705085255],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "506"}, {"method": "get_int", "bound": "100", "returned": "37"}, {"method": "get_int", "bound": "100", "returned": "19"}, {"method": "get_int", "bound": "1000", "returned": "735"}, {"method": "get_int_range", "bound": "-10,10", "returned": "2"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 57}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_2",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5066344381922931, 0.8650631401167208, 0.4834114248970016, 0.38868440184008823, 0.4788111898989913, 0.393946968683518],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "506"}, {"method": "get_int", "bound": "100", "returned": "86"}, {"method": "get_int", "bound": "100", "returned": "48"}, {"method": "get_int", "bound": "1000", "returned": "388"}, {"method": "get_int_range", "bound": "-10,10", "returned": "0"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 40}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_3",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5065448564200882, 0.034607535937436595, 0.05370884085661043, 0.1709644377808044, 0.8490218215259101, 0.0668457514726295],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "506"}, {"method": "get_int", "bound": "100", "returned": "3"}, {"method": "get_int", "bound": "100", "returned": "5"}, {"method": "get_int", "bound": "1000", "returned": "170"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-9"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 56}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_4",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5089635493684612, 0.45690883387695025, 0.6556784758367227, 0.04940340777682395, 0.853335006017679, 0.8985785267596504],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "508"}, {"method": "get_int", "bound": "100", "returned": "45"}, {"method": "get_int", "bound": "100", "returned": "65"}, {"method": "get_int", "bound": "1000", "returned": "49"}, {"method": "get_int_range", "bound": "-10,10", "returned": "7"}, {"method": "get_int_range", "bound": "-10,10", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 94}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_5",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5088739824974174, 0.626453229697666, 0.22597589179633149, 0.8316834288163788, 0.2235456227434367, 0.571477309548762],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "508"}, {"method": "get_int", "bound": "100", "returned": "62"}, {"method": "get_int", "bound": "100", "returned": "22"}, {"method": "get_int", "bound": "1000", "returned": "831"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-6"}, {"method": "get_int_range", "bound": "-10,10", "returned": "2"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 55}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_6",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5091427129128712, 0.11782004223551878, 0.515083629016344, 0.48484332099423044, 0.11291374276384114, 0.5527809611814273],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "509"}, {"method": "get_int", "bound": "100", "returned": "11"}, {"method": "get_int", "bound": "100", "returned": "51"}, {"method": "get_int", "bound": "1000", "returned": "484"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-8"}, {"method": "get_int_range", "bound": "-10,10", "returned": "1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 38}
+    },
+    {
+      "id": "hit_seq_duelist76>gladiator40_7",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5090531311406662, 0.28736445295739577, 0.08538105987711386, 0.2671233569349466, 0.48312437439076006, 0.22567974397053892],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "509"}, {"method": "get_int", "bound": "100", "returned": "28"}, {"method": "get_int", "bound": "100", "returned": "8"}, {"method": "get_int", "bound": "1000", "returned": "267"}, {"method": "get_int_range", "bound": "-10,10", "returned": "0"}, {"method": "get_int_range", "bound": "-10,10", "returned": "-6"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 54}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_0",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5232965584154508],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_1",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.523206991544407],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_2",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5234757219598607],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_3",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5233861401876557],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_4",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5229382462277921],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "522"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_5",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5228486644555871],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "522"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_6",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5231173948710408],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_gladiator40>duelist76_7",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5230278130988358],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "523"}],
+      "result": {"miss": true, "shld": 0, "crit": false, "damage": 0}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_0",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5372712552747817, 0.8808796204203242, 0.44169328916448924, 0.848911230946659],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "880"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-1"}, {"method": "get_int_range", "bound": "-5,5", "returned": "4"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 163}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_1",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5371816735025767, 0.05042400133987879, 0.011990705124098056, 0.6311912668873751],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "50"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-5"}, {"method": "get_int_range", "bound": "-5,5", "returned": "1"}],
+      "result": {"miss": false, "shld": 0, "crit": true, "damage": 608}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_2",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5374504039180305, 0.5417908138777315, 0.30109844234411054, 0.2843511441640655],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "541"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-2"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-2"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 152}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_3",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5373608370469867, 0.7113352245996085, 0.8713958583037194, 0.06663119500594283],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "711"}, {"method": "get_int_range", "bound": "-5,5", "returned": "4"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 313}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_4",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5369129281859618, 0.5590572037031872, 0.7228829679040856, 0.9780313896106847],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "536"}, {"method": "get_int", "bound": "1000", "returned": "559"}, {"method": "get_int_range", "bound": "-5,5", "returned": "2"}, {"method": "get_int_range", "bound": "-5,5", "returned": "5"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 169}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_5",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5368233464137568, 0.728601599523903, 0.2931803838636944, 0.7603114106502397],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "536"}, {"method": "get_int", "bound": "1000", "returned": "728"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-2"}, {"method": "get_int_range", "bound": "-5,5", "returned": "3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 320}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_6",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.5370920917303718, 0.21996839716059458, 0.5822881210837069, 0.4134713028280913],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "219"}, {"method": "get_int_range", "bound": "-5,5", "returned": "1"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-1"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 158}
+    },
+    {
+      "id": "hit_seq_sagittarius76>archmage76_7",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.5370025099581668, 0.38951279298131025, 0.15258553704331568, 0.19575135366996865],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "537"}, {"method": "get_int", "bound": "1000", "returned": "389"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-4"}, {"method": "get_int_range", "bound": "-5,5", "returned": "-3"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 295}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_0",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.45951464952989574, 0.0454155951329428, 0.4598551253776515, 0.8679846775636061, 0.2095990447169409, 0.338708384686248],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "4"}, {"method": "get_int", "bound": "100", "returned": "45"}, {"method": "get_int", "bound": "1000", "returned": "867"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-12"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 17}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_1",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.45942506775769076, 0.2149599760524974, 0.03015255623842139, 0.6502646986031609, 0.5798096614426986, 0.011607167475359503],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "21"}, {"method": "get_int", "bound": "100", "returned": "3"}, {"method": "get_int", "bound": "1000", "returned": "650"}, {"method": "get_int_range", "bound": "-20,20", "returned": "3"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-20"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 27}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_2",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.4596938130743057, 0.7063267885903501, 0.3192602785572727, 0.3034245907810126, 0.4691777963642644, 0.9929108042068636],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "70"}, {"method": "get_int", "bound": "100", "returned": "31"}, {"method": "get_int", "bound": "1000", "returned": "303"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-1"}, {"method": "get_int_range", "bound": "-20,20", "returned": "20"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 25}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_3",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.4596042462032619, 0.8758711844110658, 0.8895577094180427, 0.08570462672172874, 0.8393884279911832, 0.6658095869959753],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "87"}, {"method": "get_int", "bound": "100", "returned": "88"}, {"method": "get_int", "bound": "1000", "returned": "85"}, {"method": "get_int_range", "bound": "-20,20", "returned": "14"}, {"method": "get_int_range", "bound": "-20,20", "returned": "7"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 52}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_4",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.45915632244107585, 0.7235931635146445, 0.7410448190184089, 0.9971048213264706, 0.6904415414222941, 0.03030353074385539],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "72"}, {"method": "get_int", "bound": "100", "returned": "74"}, {"method": "get_int", "bound": "1000", "returned": "997"}, {"method": "get_int_range", "bound": "-20,20", "returned": "8"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-19"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 18}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_5",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.4590667406688709, 0.8931375593353603, 0.3113422349780177, 0.7793848572671868, 0.060652158148051805, 0.7032023135329669],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "89"}, {"method": "get_int", "bound": "100", "returned": "31"}, {"method": "get_int", "bound": "1000", "returned": "779"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-18"}, {"method": "get_int_range", "bound": "-20,20", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 38}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_6",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": false,
+      "script": [0.459335500886647, 0.38450437187321307, 0.6004499721980302, 0.4325447494450383, 0.9500202930696175, 0.684505950264471],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "38"}, {"method": "get_int", "bound": "100", "returned": "60"}, {"method": "get_int", "bound": "1000", "returned": "432"}, {"method": "get_int_range", "bound": "-20,20", "returned": "18"}, {"method": "get_int_range", "bound": "-20,20", "returned": "8"}],
+      "result": {"miss": false, "shld": 0, "crit": false, "damage": 27}
+    },
+    {
+      "id": "hit_seq_archmage76>duelist76_7",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "ss": true,
+      "script": [0.459245919114442, 0.5540487676939289, 0.170747388157639, 0.21482478538575445, 0.3202309097953753, 0.35740474795474375],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "459"}, {"method": "get_int", "bound": "100", "returned": "55"}, {"method": "get_int", "bound": "100", "returned": "17"}, {"method": "get_int", "bound": "1000", "returned": "214"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-7"}, {"method": "get_int_range", "bound": "-20,20", "returned": "-6"}],
+      "result": {"miss": false, "shld": 1, "crit": false, "damage": 29}
+    }
+  ]
+}

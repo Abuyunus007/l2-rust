@@ -1,0 +1,1633 @@
+{
+  "source": "Formulas.calcAtkBreak(target, damage)",
+  "generated_by": "java-vectors",
+  "note": "state: 'cast' = target.setCastingNow(true), 'bow_attack' = target is attacking now with a bow (attack end time in the future), 'idle' = neither (returns false without a draw). Needs AltGameCancelByHit (config) to include cast / bow. Every case has 'script' (the unit values u in [0,1) that were consumed) and 'rnd' (every Rnd call in order: method, bound, returned value; get_int bound b returns floor(u*b), get_int_range o,b returns o+floor(u*(b-o+1)), nextBoolean is u>=0.5). Calls that draw nothing (get with bound <= 0, get(origin, bound) with origin >= bound) are not recorded. Replay the returned values in order and check method and bound.",
+  "creatures_file": "formulas_creatures.json",
+  "geometry": {
+    "target": {"x": 100000, "y": 100000, "z": 0, "heading": 16384},
+    "attacker_xy_by_relation": {"front": "100022,100033", "side": "100040,100000", "back": "99978,99967"},
+    "note": "The target stands at 'target'. The attacker has heading 0 and z = target z + z_diff, and stands at attacker_xy_by_relation[relation] (found by trying 32 spots 40 units away until the real isInFrontOf / isOnSideOf / isBehind agree)."
+  },
+  "cases": [
+    {
+      "id": "atkbreak_duelist76_idle_d1_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_idle_d25_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_idle_d100_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_idle_d400_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_idle_d1500_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_idle_d8000_r0",
+      "target": "duelist76",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d25_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d25_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d25_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d100_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d100_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d100_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d400_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d400_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d400_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1500_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1500_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d1500_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d8000_r0",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d8000_r1",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_duelist76_cast_d8000_r2",
+      "target": "duelist76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.28, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d1_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d25_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d100_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d400_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d1500_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_idle_d8000_r0",
+      "target": "archmage76",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d25_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d25_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d25_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d100_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d100_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d100_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d400_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d400_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d400_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1500_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1500_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d1500_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d8000_r0",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d8000_r1",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_archmage76_cast_d8000_r2",
+      "target": "archmage76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.49, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d1_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d25_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d100_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d400_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d1500_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_idle_d8000_r0",
+      "target": "sagittarius76",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d25_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d25_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d25_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d100_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d100_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d100_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d400_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d400_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d400_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1500_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1500_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d1500_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d8000_r0",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d8000_r1",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_sagittarius76_cast_d8000_r2",
+      "target": "sagittarius76",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d25_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d25_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d25_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d100_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d100_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d100_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d400_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d400_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d400_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1500_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1500_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d1500_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d8000_r0",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d8000_r1",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_sagittarius76_bow_attack_d8000_r2",
+      "target": "sagittarius76",
+      "state": "bow_attack",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.31, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d1_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d25_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d100_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d400_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d1500_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_idle_d8000_r0",
+      "target": "npc_20677",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d25_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d25_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d25_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d100_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d100_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d100_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d400_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d400_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d400_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1500_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1500_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d1500_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d8000_r0",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d8000_r1",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_20677_cast_d8000_r2",
+      "target": "npc_20677",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d1_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d25_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d100_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d400_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d1500_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_idle_d8000_r0",
+      "target": "npc_25010",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d25_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d25_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d25_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d100_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d100_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d100_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d400_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d400_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d400_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1500_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1500_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d1500_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d8000_r0",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d8000_r1",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_25010_cast_d8000_r2",
+      "target": "npc_25010",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 2.22, "attack_cancel_probe": 50.0, "is_raid": true, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d1_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d25_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d100_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d400_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d1500_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_idle_d8000_r0",
+      "target": "npc_31033",
+      "state": "idle",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [],
+      "rnd": [],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d25_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d25_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d25_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 25.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d100_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d100_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d100_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 100.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d400_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d400_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d400_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 400.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1500_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1500_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d1500_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 1500.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d8000_r0",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d8000_r1",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.5],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "50"}],
+      "result": true
+    },
+    {
+      "id": "atkbreak_npc_31033_cast_d8000_r2",
+      "target": "npc_31033",
+      "state": "cast",
+      "damage": 8000.0,
+      "intermediate": {"men_bonus": 1.22, "attack_cancel_probe": 50.0, "is_raid": false, "is_invul": false},
+      "script": [0.99],
+      "rnd": [{"method": "get_int", "bound": "100", "returned": "99"}],
+      "result": false
+    }
+  ]
+}

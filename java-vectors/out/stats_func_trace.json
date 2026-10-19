@@ -1,0 +1,993 @@
+{
+  "source": "Creature.getCalculators(): the function lists behind the numbers",
+  "generated_by": "java-vectors",
+  "note": "Per creature and stat, the functions of its Calculator in evaluation order (Calculator.addFunc keeps them sorted by order, equal orders in insertion order). class = the Func* class, owner = item:<id> (item stat functions), skill:<id>:<level> (functions of the skill itself), skill:<id>:<level>/<Effect> (functions made by a passive skill effect), or null (the standard formula functions every creature gets), cond = class of the apply condition or null. Debugging aid for the stat engine; the numbers to match are in the stats_*.json files.",
+  "cases": [
+    {
+      "id": "trace_newbie_c0_l1",
+      "input": {
+        "kind": "player",
+        "class_id": 0,
+        "female": false,
+        "level": 1,
+        "items": [],
+        "skills": [],
+        "derived_skills": []
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_naked_c88_l76_skills",
+      "input": {
+        "kind": "player",
+        "class_id": 88,
+        "female": false,
+        "level": 76,
+        "items": [],
+        "skills": [
+          {"id": 1322, "level": 1},
+          {"id": 194, "level": 1},
+          {"id": 239, "level": 5},
+          {"id": 1320, "level": 9}
+        ],
+        "derived_skills": []
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_heavy_c88_l76_e6_skills",
+      "input": {
+        "kind": "player",
+        "class_id": 88,
+        "female": false,
+        "level": 76,
+        "items": [
+          {"item_id": 148, "enchant": 6},
+          {"item_id": 365, "enchant": 6},
+          {"item_id": 388, "enchant": 6},
+          {"item_id": 512, "enchant": 6},
+          {"item_id": 5765, "enchant": 6},
+          {"item_id": 5777, "enchant": 6},
+          {"item_id": 641, "enchant": 6},
+          {"item_id": 858, "enchant": 6},
+          {"item_id": 858, "enchant": 6},
+          {"item_id": 920, "enchant": 6},
+          {"item_id": 889, "enchant": 6},
+          {"item_id": 889, "enchant": 6}
+        ],
+        "skills": [
+          {"id": 1322, "level": 1},
+          {"id": 194, "level": 1},
+          {"id": 239, "level": 5},
+          {"id": 1320, "level": 9}
+        ],
+        "derived_skills": [
+          {"id": 3006, "level": 1},
+          {"id": 3530, "level": 1},
+          {"id": 3550, "level": 1},
+          {"id": 3620, "level": 1}
+        ]
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:365", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:388", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:512", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:641", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 42.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncAdd", "order": 30, "value": 2.43, "owner": "skill:3620:1/Buff", "cond": null}
+        ],
+        "HEAL_EFFECT": [
+          {"class": "FuncMul", "order": 20, "value": 1.04, "owner": "skill:3530:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 171.0, "owner": "item:365", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:365", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 107.0, "owner": "item:388", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:388", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 69.0, "owner": "item:512", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:512", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 50.0, "owner": "skill:3620:1/Buff", "cond": "ConditionUsingItemType"}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 95.0, "owner": "item:920", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 140.0, "owner": "item:148", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:148", "cond": null},
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 122.0, "owner": "item:148", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:148", "cond": null},
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncSet", "order": 0, "value": 379.0, "owner": "item:148", "cond": null},
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "SHIELD_DEFENCE": [
+          {"class": "FuncSet", "order": 0, "value": 243.0, "owner": "item:641", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:641", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAdd", "order": 0, "value": -8.0, "owner": "item:641", "cond": null},
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "SHIELD_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 20.0, "owner": "item:641", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.18, "owner": "skill:3550:1/Buff", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 8.0, "owner": "item:148", "cond": null},
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_RANGE": [
+          {"class": "FuncSet", "order": 0, "value": 40.0, "owner": "item:148", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "RANDOM_DAMAGE": [
+          {"class": "FuncAdd", "order": 0, "value": 10.0, "owner": "item:148", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_heavy_c88_l76_e16_skills",
+      "input": {
+        "kind": "player",
+        "class_id": 88,
+        "female": false,
+        "level": 76,
+        "items": [
+          {"item_id": 148, "enchant": 16},
+          {"item_id": 365, "enchant": 16},
+          {"item_id": 388, "enchant": 16},
+          {"item_id": 512, "enchant": 16},
+          {"item_id": 5765, "enchant": 16},
+          {"item_id": 5777, "enchant": 16},
+          {"item_id": 641, "enchant": 16},
+          {"item_id": 858, "enchant": 16},
+          {"item_id": 858, "enchant": 16},
+          {"item_id": 920, "enchant": 16},
+          {"item_id": 889, "enchant": 16},
+          {"item_id": 889, "enchant": 16}
+        ],
+        "skills": [
+          {"id": 1322, "level": 1},
+          {"id": 194, "level": 1},
+          {"id": 239, "level": 5},
+          {"id": 1320, "level": 9}
+        ],
+        "derived_skills": [
+          {"id": 3006, "level": 1},
+          {"id": 3530, "level": 1},
+          {"id": 3550, "level": 1},
+          {"id": 3620, "level": 1}
+        ]
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:365", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:388", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:512", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:641", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 42.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncAdd", "order": 30, "value": 2.43, "owner": "skill:3620:1/Buff", "cond": null}
+        ],
+        "HEAL_EFFECT": [
+          {"class": "FuncMul", "order": 20, "value": 1.04, "owner": "skill:3530:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 171.0, "owner": "item:365", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:365", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 107.0, "owner": "item:388", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:388", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 69.0, "owner": "item:512", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:512", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5765", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5777", "cond": null},
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 50.0, "owner": "skill:3620:1/Buff", "cond": "ConditionUsingItemType"}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 95.0, "owner": "item:920", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 140.0, "owner": "item:148", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:148", "cond": null},
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 122.0, "owner": "item:148", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:148", "cond": null},
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncSet", "order": 0, "value": 379.0, "owner": "item:148", "cond": null},
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "SHIELD_DEFENCE": [
+          {"class": "FuncSet", "order": 0, "value": 243.0, "owner": "item:641", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:641", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAdd", "order": 0, "value": -8.0, "owner": "item:641", "cond": null},
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "SHIELD_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 20.0, "owner": "item:641", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.18, "owner": "skill:3550:1/Buff", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 8.0, "owner": "item:148", "cond": null},
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_RANGE": [
+          {"class": "FuncSet", "order": 0, "value": 40.0, "owner": "item:148", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "RANDOM_DAMAGE": [
+          {"class": "FuncAdd", "order": 0, "value": 10.0, "owner": "item:148", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_robe_c94_l76_e3_skills",
+      "input": {
+        "kind": "player",
+        "class_id": 94,
+        "female": false,
+        "level": 76,
+        "items": [
+          {"item_id": 6579, "enchant": 3},
+          {"item_id": 2409, "enchant": 3},
+          {"item_id": 2419, "enchant": 3},
+          {"item_id": 5776, "enchant": 3},
+          {"item_id": 5788, "enchant": 3},
+          {"item_id": 862, "enchant": 3},
+          {"item_id": 862, "enchant": 3},
+          {"item_id": 924, "enchant": 3},
+          {"item_id": 893, "enchant": 3},
+          {"item_id": 893, "enchant": 3}
+        ],
+        "skills": [
+          {"id": 1322, "level": 1},
+          {"id": 163, "level": 1},
+          {"id": 118, "level": 1},
+          {"id": 1177, "level": 1},
+          {"id": 194, "level": 1},
+          {"id": 239, "level": 5},
+          {"id": 1216, "level": 1},
+          {"id": 214, "level": 1},
+          {"id": 1320, "level": 9}
+        ],
+        "derived_skills": [
+          {"id": 3006, "level": 1},
+          {"id": 3541, "level": 1}
+        ]
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:2409", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:2419", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5776", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5788", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncAdd", "order": 0, "value": 718.0, "owner": "item:2409", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 25.0, "owner": "item:862", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 25.0, "owner": "item:862", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 33.0, "owner": "item:924", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 17.0, "owner": "item:893", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 17.0, "owner": "item:893", "cond": null},
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 240.0, "owner": "skill:3541:1/Buff", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.08, "owner": "skill:3541:1/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.2, "owner": "skill:214:1/Buff", "cond": "ConditionUsingItemType"}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 147.0, "owner": "item:2409", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:2409", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 73.0, "owner": "item:2419", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:2419", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 49.0, "owner": "item:5776", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5776", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 49.0, "owner": "item:5788", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5788", "cond": null},
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 63.0, "owner": "item:862", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:862", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 63.0, "owner": "item:862", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:862", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 85.0, "owner": "item:924", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:924", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 42.0, "owner": "item:893", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:893", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 42.0, "owner": "item:893", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:893", "cond": null},
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 225.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 175.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncSet", "order": 0, "value": 379.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 0.8, "owner": "skill:118:1/Buff", "cond": "ConditionLogicNot"}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.15, "owner": "skill:3541:1/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 0.5, "owner": "skill:163:1/Buff", "cond": "ConditionLogicNot"}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 4.0, "owner": "item:6579", "cond": null},
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAdd", "order": 0, "value": 4.75, "owner": "item:6579", "cond": null},
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_RANGE": [
+          {"class": "FuncSet", "order": 0, "value": 40.0, "owner": "item:6579", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "RANDOM_DAMAGE": [
+          {"class": "FuncAdd", "order": 0, "value": 20.0, "owner": "item:6579", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_bow_c92_l76_e0_skills",
+      "input": {
+        "kind": "player",
+        "class_id": 92,
+        "female": false,
+        "level": 76,
+        "items": [
+          {"item_id": 7575, "enchant": 0},
+          {"item_id": 2393, "enchant": 0},
+          {"item_id": 547, "enchant": 0},
+          {"item_id": 5769, "enchant": 0},
+          {"item_id": 5781, "enchant": 0},
+          {"item_id": 858, "enchant": 0},
+          {"item_id": 858, "enchant": 0},
+          {"item_id": 920, "enchant": 0},
+          {"item_id": 889, "enchant": 0},
+          {"item_id": 889, "enchant": 0}
+        ],
+        "skills": [
+          {"id": 1322, "level": 1},
+          {"id": 194, "level": 1},
+          {"id": 239, "level": 5},
+          {"id": 1320, "level": 9}
+        ],
+        "derived_skills": [
+          {"id": 3006, "level": 1},
+          {"id": 3533, "level": 1}
+        ]
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:2393", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:547", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5769", "cond": null},
+          {"class": "FuncEnchantHp", "order": 40, "value": 0.0, "owner": "item:5781", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 31.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 42.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 21.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 222.0, "owner": "skill:3533:1/Buff", "cond": null}
+        ],
+        "MAX_CP": [
+          {"class": "FuncMaxCpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.08, "owner": "skill:3533:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 209.0, "owner": "item:2393", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:2393", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 69.0, "owner": "item:547", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:547", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5769", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5769", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 46.0, "owner": "item:5781", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:5781", "cond": null},
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 71.0, "owner": "item:858", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:858", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 95.0, "owner": "item:920", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:920", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncAdd", "order": 0, "value": 48.0, "owner": "item:889", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:889", "cond": null},
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 581.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncSet", "order": 0, "value": 132.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncEnchant", "order": 0, "value": 0.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncSet", "order": 0, "value": 293.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncSet", "order": 0, "value": 12.0, "owner": "item:7575", "cond": null},
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAdd", "order": 0, "value": -3.75, "owner": "item:7575", "cond": null},
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "POWER_ATTACK_RANGE": [
+          {"class": "FuncSet", "order": 0, "value": 500.0, "owner": "item:7575", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_STR": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_CON": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_DEX": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_INT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_WIT": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "STAT_MEN": [
+          {"class": "FuncHenna", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncArmorSet", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "RANDOM_DAMAGE": [
+          {"class": "FuncAdd", "order": 0, "value": 5.0, "owner": "item:7575", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_npc_20677",
+      "input": {
+        "kind": "npc",
+        "npc_id": 20677,
+        "npc_name": "Tulben",
+        "npc_type": "Monster",
+        "level": 66
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "REGENERATE_HP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4412:11/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4413:11/Buff", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4410:11/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4415:3/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4411:11/Buff", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4415:3/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 0.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_npc_31033",
+      "input": {
+        "kind": "npc",
+        "npc_id": 31033,
+        "npc_name": "Sentinel",
+        "npc_type": "Guard",
+        "level": 80
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "REGENERATE_HP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.61, "owner": "skill:4412:16/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.61, "owner": "skill:4413:16/Buff", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.61, "owner": "skill:4410:16/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 2.22, "owner": "skill:4415:9/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 2.59, "owner": "skill:4411:16/Buff", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 0.89, "owner": "skill:4415:9/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 0.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ]
+      }
+    },
+    {
+      "id": "trace_npc_25010",
+      "input": {
+        "kind": "npc",
+        "npc_id": 25010,
+        "npc_name": "Furious Thieles",
+        "npc_type": "RaidBoss",
+        "level": 55
+      },
+      "calculators": {
+        "MAX_HP": [
+          {"class": "FuncMaxHpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "MAX_MP": [
+          {"class": "FuncMaxMpMul", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "REGENERATE_HP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4408:1/Buff", "cond": null}
+        ],
+        "REGENERATE_MP_RATE": [
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4409:1/Buff", "cond": null}
+        ],
+        "POWER_DEFENCE": [
+          {"class": "FuncPDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4412:11/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "MAGIC_DEFENCE": [
+          {"class": "FuncMDefMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4413:11/Buff", "cond": null}
+        ],
+        "POWER_ATTACK": [
+          {"class": "FuncPAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4410:11/Buff", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4415:3/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK": [
+          {"class": "FuncMAtkMod", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4411:11/Buff", "cond": null}
+        ],
+        "POWER_ATTACK_SPEED": [
+          {"class": "FuncPAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncMul", "order": 20, "value": 1.0, "owner": "skill:4415:3/Buff", "cond": null}
+        ],
+        "MAGIC_ATTACK_SPEED": [
+          {"class": "FuncMAtkSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "EVASION_RATE": [
+          {"class": "FuncAtkEvasion", "order": 1, "value": 0.0, "owner": "null", "cond": null},
+          {"class": "FuncAdd", "order": 30, "value": 0.0, "owner": "skill:4414:2/Buff", "cond": null}
+        ],
+        "CRITICAL_RATE": [
+          {"class": "FuncAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MCRITICAL_RATE": [
+          {"class": "FuncMAtkCritical", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "ACCURACY_COMBAT": [
+          {"class": "FuncAtkAccuracy", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ],
+        "MOVE_SPEED": [
+          {"class": "FuncMoveSpeed", "order": 1, "value": 0.0, "owner": "null", "cond": null}
+        ]
+      }
+    }
+  ]
+}
