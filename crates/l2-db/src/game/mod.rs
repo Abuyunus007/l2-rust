@@ -6,6 +6,7 @@
 
 mod characters;
 mod clans;
+mod hennas;
 mod ids;
 mod items;
 mod macros;
@@ -21,6 +22,7 @@ pub use characters::{
     NewCharacter,
 };
 pub use clans::ClanRepository;
+pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
 pub use items::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
 pub use macros::{MacroRepository, MacroRow, NewMacro};
