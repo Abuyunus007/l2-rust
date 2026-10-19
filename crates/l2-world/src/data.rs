@@ -325,6 +325,8 @@ pub struct WorldSettings {
     pub nevit: crate::rewards::nevit::NevitSettings,
     /// The buff slot limits and the effect tick length (M5-EFFECT-01).
     pub effects: crate::effects::EffectSettings,
+    /// The values learning skills reads (M5-LEARN-01).
+    pub learn: crate::skills::learn::LearnSettings,
 }
 
 impl Default for WorldSettings {
@@ -371,6 +373,7 @@ impl Default for WorldSettings {
             vitality: crate::rewards::vitality::VitalitySettings::default(),
             nevit: crate::rewards::nevit::NevitSettings::default(),
             effects: crate::effects::EffectSettings::default(),
+            learn: crate::skills::learn::LearnSettings::default(),
         }
     }
 }

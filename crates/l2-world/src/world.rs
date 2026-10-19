@@ -441,6 +441,17 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            ClientInput::AcquireSkillInfo {
+                id: skill_id,
+                level,
+                skill_type,
+            } => self.on_request_acquire_skill_info(id, skill_id, level, skill_type),
+            ClientInput::AcquireSkill {
+                id: skill_id,
+                level,
+                skill_type,
+                ..
+            } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {

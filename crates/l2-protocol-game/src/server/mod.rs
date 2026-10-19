@@ -37,8 +37,8 @@ pub use combat::{
 };
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
-    ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, SkillCoolTime, SkillList,
-    ValidateLocation,
+    ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, ShortcutRegister,
+    SkillCoolTime, SkillList, ValidateLocation,
 };
 pub use entry::{
     ExBrExtraUserInfo, ExNevitAdventEffect, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList,

@@ -106,6 +106,9 @@ pub struct PlayerTalk {
     last_origin: i32,
     /// Java `getLastFolkNPC()`: the NPC the player clicked last.
     pub last_folk_npc: Option<ObjectId>,
+    /// Java `getLearningClass()`: the class whose skill tree the player was last shown by a
+    /// trainer. `None` is the player's own class (Java's field starts as `getPlayerClass()`).
+    pub learning_class: Option<l2_data::ClassId>,
 }
 
 impl PlayerTalk {
@@ -232,6 +235,8 @@ pub fn build_html_action_cache(talk: &mut PlayerTalk, scope: HtmlActionScope, np
 pub(crate) struct TalkWorld {
     pub html: Option<Arc<HtmCache>>,
     pub teleporters: Option<Arc<TeleporterData>>,
+    /// Java `SkillLearnData`: the classes each trainer teaches.
+    pub skill_learn: Option<Arc<l2_data::SkillLearnData>>,
     pub bypass_handlers: crate::bypass::BypassHandlers,
 }
 
@@ -286,6 +291,11 @@ impl World {
     /// Hands the world the gatekeeper lists (Java `TeleporterData`). Call before players enter.
     pub fn set_teleporter_data(&mut self, data: Arc<TeleporterData>) {
         self.talk.teleporters = Some(data);
+    }
+
+    /// Hands the world the trainer lists (Java `SkillLearnData`). Call before players enter.
+    pub fn set_skill_learn_data(&mut self, data: Arc<l2_data::SkillLearnData>) {
+        self.talk.skill_learn = Some(data);
     }
 
     /// Registers a bypass command handler (Java `BypassHandler.registerHandler`). The command is

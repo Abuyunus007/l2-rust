@@ -520,6 +520,17 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
+                id: p.id,
+                level: p.level,
+                skill_type: p.skill_type,
+            },
+            ClientPacket::RequestAcquireSkill(p) => ClientInput::AcquireSkill {
+                id: p.id,
+                level: p.level,
+                skill_type: p.skill_type,
+                sub_type: p.sub_type,
+            },
             // Java: RequestRestartPoint
             ClientPacket::RequestRestartPoint(p) => ClientInput::RestartPoint {
                 point_type: p.requested_point_type,

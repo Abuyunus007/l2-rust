@@ -22,8 +22,10 @@ pub mod level_tables;
 pub mod loader;
 pub mod map_region;
 pub mod npc;
+pub mod player_class;
 pub mod player_template;
 pub mod skill;
+pub mod skill_learn;
 pub mod skill_tree;
 pub mod spawn;
 pub mod static_object;
@@ -56,7 +58,8 @@ pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
-pub use skill_tree::{SkillLearn, SkillTrees};
+pub use skill_learn::SkillLearnData;
+pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees};
 pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use stats::{Condition, FuncKind, FuncTemplate, Stat};
@@ -84,6 +87,8 @@ pub struct Datapack {
     pub player_templates: Arc<PlayerTemplates>,
     /// `data/stats/players/skillTrees/**`.
     pub skill_trees: Arc<SkillTrees>,
+    /// `data/SkillLearn.xml`: the classes each trainer NPC teaches.
+    pub skill_learn: Arc<SkillLearnData>,
     /// `data/stats/items/*.xml`.
     pub items: Arc<ItemTemplates>,
     /// `data/stats/npcs/*.xml`.
@@ -206,6 +211,7 @@ impl Datapack {
             initial_shortcuts: Arc::new(InitialShortcuts::load(root)),
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             skill_trees: Arc::new(SkillTrees::load(root)),
+            skill_learn: Arc::new(SkillLearnData::load(root)),
             items: Arc::new(ItemTemplates::load(root, options.custom_items_load)),
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
