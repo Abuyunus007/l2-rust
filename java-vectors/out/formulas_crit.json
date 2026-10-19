@@ -1,0 +1,3913 @@
+{
+  "source": "Formulas.calcCrit(attacker, target) (normal attack)",
+  "generated_by": "java-vectors",
+  "note": "result = true means a critical hit. Every case has 'script' (the unit values u in [0,1) that were consumed) and 'rnd' (every Rnd call in order: method, bound, returned value; get_int bound b returns floor(u*b), get_int_range o,b returns o+floor(u*(b-o+1)), nextBoolean is u>=0.5). Calls that draw nothing (get with bound <= 0, get(origin, bound) with origin >= bound) are not recorded. Replay the returned values in order and check method and bound. intermediate.rate is the generator's own copy of the rate before the target's defence stats.",
+  "creatures_file": "formulas_creatures.json",
+  "geometry": {
+    "target": {"x": 100000, "y": 100000, "z": 0, "heading": 16384},
+    "attacker_xy_by_relation": {"front": "100022,100033", "side": "100040,100000", "back": "99978,99967"},
+    "note": "The target stands at 'target'. The attacker has heading 0 and z = target z + z_diff, and stands at attacker_xy_by_relation[relation] (found by trying 32 spots 40 units away until the real isInFrontOf / isOnSideOf / isBehind agree)."
+  },
+  "cases": [
+    {
+      "id": "crit_newbie1>npc_20001_d0",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d1",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d2",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d3",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d4",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d5",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d6",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d7",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d8",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d9",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d10",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d11",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20001_d12",
+      "attacker": "newbie1",
+      "target": "npc_20001",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d0",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d1",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d2",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d3",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d4",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d5",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d6",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d7",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d8",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d9",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d10",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d11",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_newbie1>npc_20103_d12",
+      "attacker": "newbie1",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d0",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d1",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d2",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d3",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d4",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d5",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d6",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d7",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d8",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d9",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d10",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d11",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20103_d12",
+      "attacker": "warrior20",
+      "target": "npc_20103",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d0",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d1",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d2",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d3",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d4",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d5",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d6",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d7",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d8",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d9",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d10",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d11",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_warrior20>npc_20201_d12",
+      "attacker": "warrior20",
+      "target": "npc_20201",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d0",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d1",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d2",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d3",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d4",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d5",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d6",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d7",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d8",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d9",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d10",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0785],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "78"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d11",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0795],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "79"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20239_d12",
+      "attacker": "gladiator40",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0805],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "80"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d0",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d1",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d2",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d3",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d4",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d5",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d6",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d7",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d8",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d9",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d10",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0785],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "78"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d11",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0795],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "79"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>npc_20677_d12",
+      "attacker": "gladiator40",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0805],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "80"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d0",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d1",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d2",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d3",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d4",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d5",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d6",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d7",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d8",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d9",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d10",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d11",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20239_d12",
+      "attacker": "duelist76",
+      "target": "npc_20239",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d0",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d1",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d2",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d3",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d4",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d5",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d6",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d7",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d8",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d9",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d10",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d11",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_20677_d12",
+      "attacker": "duelist76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d0",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d1",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d2",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d3",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d4",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d5",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d6",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d7",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d8",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d9",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d10",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d11",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_21090_d12",
+      "attacker": "duelist76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d0",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d1",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d2",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d3",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d4",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d5",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d6",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d7",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d8",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d9",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d10",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d11",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18120_d12",
+      "attacker": "duelist76",
+      "target": "npc_18120",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d0",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d1",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d2",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d3",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d4",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d5",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d6",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d7",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d8",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d9",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d10",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d11",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_18366_d12",
+      "attacker": "duelist76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d0",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d1",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d2",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d3",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d4",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d5",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d6",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d7",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d8",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d9",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d10",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d11",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_25010_d12",
+      "attacker": "duelist76",
+      "target": "npc_25010",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d0",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d1",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d2",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d3",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d4",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d5",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d6",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d7",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d8",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d9",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d10",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d11",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>npc_31033_d12",
+      "attacker": "duelist76",
+      "target": "npc_31033",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d0",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d1",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d2",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d3",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d4",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d5",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d6",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d7",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d8",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d9",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d10",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1315],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "131"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d11",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1325],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "132"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_21090_d12",
+      "attacker": "sagittarius76",
+      "target": "npc_21090",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1335],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "133"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d0",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d1",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d2",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d3",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d4",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d5",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d6",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d7",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d8",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d9",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d10",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1315],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "131"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d11",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1325],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "132"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>npc_18366_d12",
+      "attacker": "sagittarius76",
+      "target": "npc_18366",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1335],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "133"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d0",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d1",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d2",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d3",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d4",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d5",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d6",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d7",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d8",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d9",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d10",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0395],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "39"}],
+      "result": true
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d11",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0405],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>npc_20677_d12",
+      "attacker": "archmage76",
+      "target": "npc_20677",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0415],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "41"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d0",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d1",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d2",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d3",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d4",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d5",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d6",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d7",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d8",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d9",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d10",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d11",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20001>newbie1_d12",
+      "attacker": "npc_20001",
+      "target": "newbie1",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d0",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d1",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d2",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d3",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d4",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d5",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d6",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d7",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d8",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d9",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d10",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d11",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20103>warrior20_d12",
+      "attacker": "npc_20103",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d0",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d1",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d2",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d3",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d4",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d5",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d6",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d7",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d8",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d9",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d10",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d11",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20201>warrior20_d12",
+      "attacker": "npc_20201",
+      "target": "warrior20",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d0",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d1",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d2",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d3",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d4",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d5",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d6",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d7",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d8",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d9",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d10",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d11",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20239>gladiator40_d12",
+      "attacker": "npc_20239",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d0",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d1",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d2",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d3",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d4",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d5",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d6",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d7",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d8",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d9",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d10",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d11",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_20677>duelist76_d12",
+      "attacker": "npc_20677",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d0",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d1",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d2",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d3",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d4",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d5",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d6",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d7",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d8",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d9",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d10",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.0655],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "65"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d11",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.0665],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "66"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21090>duelist76_d12",
+      "attacker": "npc_21090",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 66.0, "limit": 66.0},
+      "script": [0.0675],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "67"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d0",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d1",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d2",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d3",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d4",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d5",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d6",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d7",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d8",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d9",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d10",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0435],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "43"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d11",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0445],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "44"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_18366>duelist76_d12",
+      "attacker": "npc_18366",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 44.0, "limit": 44.0},
+      "script": [0.0455],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "45"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d0",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d1",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d2",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d3",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d4",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d5",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d6",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d7",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d8",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d9",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d10",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.0645],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "64"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d11",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.0655],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "65"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_25010>duelist76_d12",
+      "attacker": "npc_25010",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 65.0, "limit": 65.0},
+      "script": [0.0665],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "66"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d0",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d1",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d2",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d3",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d4",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d5",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d6",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d7",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d8",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d9",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d10",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1315],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "131"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d11",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1325],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "132"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_21001>sagittarius76_d12",
+      "attacker": "npc_21001",
+      "target": "sagittarius76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1335],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "133"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d0",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d1",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d2",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d3",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d4",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d5",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d6",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d7",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d8",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d9",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d10",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d11",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_npc_31033>archmage76_d12",
+      "attacker": "npc_31033",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d0",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d1",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d2",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d3",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d4",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d5",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d6",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d7",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d8",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d9",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d10",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0875],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "87"}],
+      "result": true
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d11",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0885],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "88"}],
+      "result": false
+    },
+    {
+      "id": "crit_duelist76>gladiator40_d12",
+      "attacker": "duelist76",
+      "target": "gladiator40",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 88.0, "limit": 88.0},
+      "script": [0.0895],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "89"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d0",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d1",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d2",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d3",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d4",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d5",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d6",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d7",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d8",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d9",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d10",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0785],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "78"}],
+      "result": true
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d11",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0795],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "79"}],
+      "result": false
+    },
+    {
+      "id": "crit_gladiator40>duelist76_d12",
+      "attacker": "gladiator40",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 79.0, "limit": 79.0},
+      "script": [0.0805],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "80"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d0",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d1",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d2",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d3",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d4",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d5",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d6",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d7",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d8",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d9",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d10",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1315],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "131"}],
+      "result": true
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d11",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1325],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "132"}],
+      "result": false
+    },
+    {
+      "id": "crit_sagittarius76>archmage76_d12",
+      "attacker": "sagittarius76",
+      "target": "archmage76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 132.0, "limit": 132.0},
+      "script": [0.1335],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "133"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d0",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "0"}],
+      "result": true
+    },
+    {
+      "id": "crit_archmage76>duelist76_d1",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.04],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d2",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.1],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "100"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d3",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.2],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "200"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d4",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.3],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "300"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d5",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.45],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "450"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d6",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.6],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "600"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d7",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.8],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "800"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d8",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.95],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "950"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d9",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.999],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "999"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d10",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0395],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "39"}],
+      "result": true
+    },
+    {
+      "id": "crit_archmage76>duelist76_d11",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0405],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "40"}],
+      "result": false
+    },
+    {
+      "id": "crit_archmage76>duelist76_d12",
+      "attacker": "archmage76",
+      "target": "duelist76",
+      "placement": {"relation": "front", "z_diff": 0},
+      "intermediate": {"rate": 40.0, "limit": 40.0},
+      "script": [0.0415],
+      "rnd": [{"method": "get_int", "bound": "1000", "returned": "41"}],
+      "result": false
+    }
+  ]
+}

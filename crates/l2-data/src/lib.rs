@@ -22,6 +22,7 @@ pub mod loader;
 pub mod map_region;
 pub mod npc;
 pub mod player_template;
+pub mod skill;
 pub mod skill_tree;
 pub mod spawn;
 pub mod static_object;
@@ -52,6 +53,7 @@ pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
+pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_tree::{SkillLearn, SkillTrees};
 pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
@@ -104,6 +106,8 @@ pub struct Datapack {
     pub hit_condition_bonus: Arc<HitConditionBonus>,
     /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
     pub hennas: Arc<Hennas>,
+    /// `data/stats/skills/*.xml`: every skill and enchant level as a template (M4-DATA-11).
+    pub skills: Arc<SkillTemplates>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -209,6 +213,7 @@ impl Datapack {
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             hennas: Arc::new(Hennas::load(root)),
+            skills: Arc::new(SkillTemplates::load(root, &SkillLoadOptions::default())),
         })
     }
 }
@@ -311,5 +316,6 @@ mod tests {
         assert!(pack.armor_sets.is_empty());
         assert!(pack.enchant_hp_bonus.is_empty());
         assert!(pack.hennas.is_empty());
+        assert!(pack.skills.is_empty());
     }
 }

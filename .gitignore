@@ -6,6 +6,7 @@
 /l2jmobius/
 /geodata-download/
 /geodata-converted/
+/PACKET_DOCS/
 
 # Output of java-vectors/build.* (the generated JSON in java-vectors/out/ is committed)
 /java-vectors/build/

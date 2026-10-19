@@ -11,9 +11,10 @@ import java.nio.file.Paths;
  * java l2rust.vectors.Main geo [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * java l2rust.vectors.Main geo-engine [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * java l2rust.vectors.Main geo-path [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
+ * (cwd = game server root, absolute outDir) java l2rust.vectors.Main stats|formulas &lt;absolute outDir&gt;
  * </pre>
  *
- * Generators: {@code crypto}, {@code login-packets}, {@code geo}, {@code geo-engine} and {@code geo-path} (the last three need the two geodata folders as arguments, so {@code all} does not run them).<br>
+ * Generators: {@code crypto}, {@code login-packets}, {@code geo}, {@code geo-engine} and {@code geo-path} (the last three need the two geodata folders as arguments, so {@code all} does not run them), {@code stats} and {@code formulas} (need the game server root as working directory, so {@code all} does not run them either).<br>
  * {@code outDir} defaults to {@code java-vectors/out} (relative to the working directory).
  */
 public final class Main
@@ -61,6 +62,32 @@ public final class Main
 					System.exit(2);
 				}
 				GeoPathVectors.generate(out, Paths.get(args[2]), Paths.get(args[3]));
+			}
+			case "stats", "formulas" ->
+			{
+				// The working directory is the game server root (config/ and data/ are read from it); a relative outDir would end up there.
+				if (!out.isAbsolute())
+				{
+					System.err.println("usage: Main " + args[0] + " <absolute outDir>   (working directory = game server root)");
+					System.exit(2);
+				}
+				try
+				{
+					if (args[0].equals("stats"))
+					{
+						StatVectors.generate(out);
+					}
+					else
+					{
+						FormulaVectors.generate(out);
+					}
+				}
+				catch (Throwable t)
+				{
+					// The server's thread pools are not daemon threads: without an explicit exit a failed run would hang.
+					t.printStackTrace();
+					System.exit(1);
+				}
 			}
 			case "login-packets" -> LoginPacketVectors.generate(out);
 			case "all" ->
