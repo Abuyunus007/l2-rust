@@ -15,27 +15,39 @@
 //! with a warning, the rest of the file still loads. Booleans use `Boolean.parseBoolean`, so only
 //! `true` (any case) is true: `1` is false.
 //!
+//! # Stat functions, conditions and skills (M4-DATA-10)
+//! `<stats>` becomes [`ItemTemplate::funcs`] (the `switch` of `DocumentItem`: which stat becomes
+//! `set`, `add` or `mul`, anything else is skipped with `Unhandled stat type`), followed for
+//! weapons and armor by the automatic `enchant` functions. `<conditions>` becomes
+//! [`ItemTemplate::conditions`] (with `msg`/`msgId`/`addName`), `<skills>` becomes
+//! [`ItemTemplate::skills`] (ids and levels only). Nothing is evaluated here. The parsers are in
+//! [`crate::stats`]; the item side is `item/funcs.rs` and `item/skills.rs`.
+//!
 //! # Not loaded (later cards)
-//! `<stats>`, `<skills>`, `<conditions>`, `<capsuled_items>` are parsed without errors but not kept
-//! (stat funcs, item skills, equip conditions and extractables are M4/M5), and so are the plain
-//! `<set>`s only those read (`item_skill`-related, `equip_condition`, `use_condition`, ...). The Java
-//! order rule is kept: a `<set>` or `<table>` after `<stats>`, `<conditions>` or `<capsuled_items>`
-//! fails the item (Java: "Item created but set node found!").
+//! `<capsuled_items>` is parsed without errors but not kept (extractables are M5), and so are the
+//! plain `<set>`s only those read (`equip_condition`, `use_condition`, ...). The Java order rule
+//! is kept: a `<set>` or `<table>` after `<stats>`, `<conditions>` or `<capsuled_items>` fails the
+//! item (Java: "Item created but set node found!"); `<skills>` does not create the item.
 //!
 //! NOTE(java-quirk): Java also treats an attribute-less text-only element such as
 //! `<weight>5</weight>` as a `<set>`. No shipped item file uses that form, so it is not supported
 //! here (the element is ignored).
 
+mod funcs;
+mod skills;
 pub mod types;
 
 use std::collections::{BTreeMap, HashMap};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 use tracing::{info, warn};
 
-use crate::loader::{DataError, load_dir, log_loaded};
+use crate::loader::{DataError, load_file, log_loaded};
+use crate::stats::{ConditionParser, FuncTemplate, MessagedCondition, XmlNode};
+pub use funcs::{Element, ElementalValue};
+pub use skills::{ChanceSkill, ItemSkillType, ItemSkills, SkillRef};
 pub use types::{
     ActionType, ArmorType, BodyPart, CrystalType, EtcItemType, ItemGrade, MaterialType, WeaponType,
 };
@@ -211,6 +223,16 @@ pub struct ItemTemplate {
     pub type2: i32,
     /// The class-specific part.
     pub kind: ItemKind,
+    /// Java `_funcTemplates`: the stat functions worn/wielded by this item, in Java's order of
+    /// attachment (`<stats>` in document order, then the automatic enchant functions).
+    pub funcs: Vec<FuncTemplate>,
+    /// Java `_elementals`: the base elements that elemental stats set (`fireRes`, `waterPower`, ...).
+    pub elementals: Vec<ElementalValue>,
+    /// Java `_preConditions`: the `<conditions>` blocks that must hold to use/equip the item.
+    /// Blocks without a recognised condition are left out (Java stores `null` and skips it).
+    pub conditions: Vec<MessagedCondition>,
+    /// The skills the item carries (Java `getSkills`, `getUnequipSkill`, enchant4/on-crit/on-magic).
+    pub skills: ItemSkills,
 }
 
 impl ItemTemplate {
@@ -364,6 +386,21 @@ impl ItemTemplate {
     pub fn is_pet_item(&self) -> bool {
         self.etc().is_some_and(|e| e.etc_type == EtcItemType::PetCollar)
     }
+
+    /// Java `isConditionAttached()`.
+    pub fn is_condition_attached(&self) -> bool {
+        !self.conditions.is_empty()
+    }
+
+    /// Java `hasSkills()`: the item has an `item_skill` entry.
+    pub fn has_skills(&self) -> bool {
+        self.skills.item_skills.is_some()
+    }
+
+    /// Java `toString()`: `name(id)`, as used in Java's log lines.
+    pub fn label(&self) -> String {
+        format!("{}({})", self.name, self.id)
+    }
 }
 
 /// All item templates, immutable after loading. Java `ItemData`.
@@ -383,10 +420,18 @@ impl ItemTemplates {
         let dirs =
             std::iter::once("data/stats/items").chain(custom_items.then_some("data/stats/items/custom"));
         for dir in dirs {
-            load_dir(&root.join(dir), false, |doc: RawItemFile| {
-                table.add_file(doc);
-                Ok(())
-            });
+            // Java `parseDatapackDirectory`, spelled out here because the condition parser's log
+            // lines name the file (`load_dir` does not hand the path to its closure).
+            for path in xml_files(&root.join(dir)) {
+                let file = path
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                load_file(&path, |doc: RawItemFile| {
+                    table.add_file(doc, &file);
+                    Ok(())
+                });
+            }
         }
         table.log_counts();
         table
@@ -399,18 +444,18 @@ impl ItemTemplates {
             source,
         })?;
         let mut table = Self::default();
-        table.add_file(doc);
+        table.add_file(doc, "<inline>");
         Ok(table)
     }
 
     /// Java `DocumentItem.parseDocument` for one file.
-    fn add_file(&mut self, doc: RawItemFile) {
+    fn add_file(&mut self, doc: RawItemFile, file: &str) {
         // Java keeps the `<table>`s per file and only clears them after an item succeeded, so a
         // failed item leaves its tables for the next one.
         let mut tables = Tables::new();
         for raw in doc.items {
             let label = raw.id.clone().unwrap_or_default();
-            match build_item(raw, &mut tables) {
+            match build_item(raw, &mut tables, file) {
                 Ok(item) => {
                     tables.clear();
                     self.items.insert(item.id, item);
@@ -482,6 +527,29 @@ impl ItemTemplates {
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
+}
+
+/// The `.xml` files directly inside `dir`, sorted by path (same order and rules as
+/// `loader::load_dir` without recursion).
+fn xml_files(dir: &Path) -> Vec<PathBuf> {
+    if !dir.is_dir() {
+        warn!("Directory not found: {}", dir.display());
+        return Vec::new();
+    }
+    let entries = match std::fs::read_dir(dir) {
+        Ok(entries) => entries,
+        Err(error) => {
+            warn!("Cannot list {}: {error}", dir.display());
+            return Vec::new();
+        }
+    };
+    let mut files: Vec<PathBuf> = entries
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| path.is_file() && path.extension().is_some_and(|e| e.eq_ignore_ascii_case("xml")))
+        .collect();
+    files.sort();
+    files
 }
 
 // ---- building one item from its <set>s (Java DocumentItem + the ItemTemplate constructors) ----
@@ -597,7 +665,7 @@ fn apply_table(raw: &RawTable, tables: &mut Tables) -> Result<(), DataError> {
 }
 
 /// Java `DocumentItem.parseItem` + `makeItem`.
-fn build_item(raw: RawItem, tables: &mut Tables) -> Result<ItemTemplate, DataError> {
+fn build_item(raw: RawItem, tables: &mut Tables, file: &str) -> Result<ItemTemplate, DataError> {
     let missing = |what: &str| DataError::Invalid(format!("item without {what}"));
     let id_text = raw.id.as_deref().ok_or_else(|| missing("id"))?;
     let item_id = parse_int(id_text.trim())?;
@@ -630,14 +698,36 @@ fn build_item(raw: RawItem, tables: &mut Tables) -> Result<ItemTemplate, DataErr
                 apply_table(t, tables)?;
             }
             RawChild::Stats(_) | RawChild::Conditions(_) | RawChild::CapsuledItems(_) => created = true,
-            RawChild::Skills(_) | RawChild::Other => {}
+            // `<skills>` only writes `item_skill` & co. into the set; it does not create the item.
+            RawChild::Skills(node) => skills::apply_skills_node(node, &mut set)?,
+            RawChild::Other => {}
         }
     }
 
-    match class {
-        "Weapon" | "Armor" | "EtcItem" => build_template(class, &set),
-        other => Err(DataError::Invalid(format!("unknown item class {other}"))),
+    let mut item = match class {
+        "Weapon" | "Armor" | "EtcItem" => build_template(class, &set)?,
+        other => return Err(DataError::Invalid(format!("unknown item class {other}"))),
+    };
+    item.skills = skills::build_skills(&set, class, &item.label())?;
+
+    // Java attaches while walking the children, so keep the document order of `<stats>` and
+    // `<conditions>` (they share nothing, but the order is the order of `funcs`).
+    // Items have no `#table` values in conditions: `getValue(value, item)` throws for them.
+    let parser = ConditionParser::new(file, &|_| None);
+    for child in &raw.children {
+        match child {
+            RawChild::Stats(node) => funcs::apply_stats_node(&mut item, node)?,
+            RawChild::Conditions(node) => {
+                let block = parser
+                    .parse_conditions_block(node)
+                    .map_err(|error| DataError::Invalid(error.to_string()))?;
+                // Java attaches a null condition too, and skips it when testing.
+                item.conditions.extend(block);
+            }
+            _ => {}
+        }
     }
+    Ok(item)
 }
 
 /// Java `ItemTemplate.set` followed by the subclass' `set`.
@@ -695,6 +785,10 @@ fn build_template(class: &str, set: &ItemSet) -> Result<ItemTemplate, DataError>
         kind: ItemKind::Armor(ArmorInfo {
             armor_type: ArmorType::None,
         }),
+        funcs: Vec::new(),
+        elementals: Vec::new(),
+        conditions: Vec::new(),
+        skills: ItemSkills::default(),
     };
 
     match class {
@@ -872,12 +966,13 @@ enum RawChild {
     Set(RawSet),
     #[serde(rename = "table")]
     Table(RawTable),
+    // Free-form blocks: the stat and condition parsers walk the whole subtree.
     #[serde(rename = "stats")]
-    Stats(IgnoredAny),
+    Stats(XmlNode),
     #[serde(rename = "skills")]
-    Skills(IgnoredAny),
+    Skills(XmlNode),
     #[serde(rename = "conditions")]
-    Conditions(IgnoredAny),
+    Conditions(XmlNode),
     #[serde(rename = "capsuled_items")]
     CapsuledItems(IgnoredAny),
     #[serde(other)]

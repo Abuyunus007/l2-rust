@@ -44,6 +44,9 @@ macro_rules! java_enum {
     };
 }
 
+// Also used by the name-only enums of the condition parser (`stats/enums.rs`).
+pub(crate) use java_enum;
+
 java_enum! {
     /// Java `WeaponType`.
     WeaponType {
