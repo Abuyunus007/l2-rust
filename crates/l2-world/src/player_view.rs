@@ -56,7 +56,7 @@ impl World {
     /// `new CharInfo(player, gmSeeInvis)` as `viewer` gets it.
     pub fn char_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<CharInfo> {
         let player = self.players.get(&subject)?;
-        let ui = build_user_info(player, &*self.data, &self.settings);
+        let ui = build_user_info(self, player);
         let invisible = self.objects.get(&subject).is_some_and(|e| e.invisible);
         let gm_sees_invisible = invisible && self.is_visible_for(subject, viewer);
         Some(CharInfo {

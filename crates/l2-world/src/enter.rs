@@ -384,7 +384,7 @@ impl World {
     /// Java `new UserInfo(player)` for the player's current state.
     pub fn user_info(&self, id: ObjectId) -> Option<UserInfo> {
         let player = self.players.get(&id)?;
-        Some(build_user_info(player, &*self.data, &self.settings))
+        Some(build_user_info(self, player))
     }
 
     /// Java `Player.updateUserInfo()`: `UserInfo` and `ExBrExtraUserInfo`.
@@ -581,7 +581,10 @@ impl World {
         let player = self.players.get(&id)?;
         let data = &player.data;
         Some(EtcStatusUpdate {
-            weight_penalty: weight_penalty(current_load(data, &*self.data), player.stats.max_load),
+            weight_penalty: weight_penalty(
+                current_load(data, &*self.data),
+                self.stats(id).map_or(0, |s| s.max_load()),
+            ),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             death_penalty_level: data.profile.death_penalty_level,
             ..EtcStatusUpdate::default()
@@ -596,10 +599,14 @@ impl World {
     }
 }
 
-/// Java `new UserInfo(player)`.
-pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSettings) -> UserInfo {
+/// Java `new UserInfo(player)`. Every number Java takes from the stat system comes from the stat
+/// engine (`World::stats`).
+pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
+    let st = &*world.data;
+    let settings = &world.settings;
     let data = &player.data;
     let core = &player.core;
+    let view = crate::stats::StatView::of_player(world, player);
     let access = st.access_level(data.access_level);
     let slots = paperdoll_items(data);
     let mut object_ids = [0; paperdoll::TOTAL_SLOTS];
@@ -611,7 +618,11 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
             item_ids[slot] = item_static(st, item).display_id;
         }
     }
-    let stats = &player.stats;
+    // `getMovementSpeedMultiplier()` and the speeds divided by it, `(int) Math.round(...)`.
+    let move_multiplier = view.movement_speed_multiplier();
+    let speed = |value: f64| crate::stats::java_round(value / move_multiplier) as i32;
+    let attack_element = view.attack_element();
+    let defense = |element: i8| view.defense_element_value(element) as i16;
     let enchant_effect = slots[paperdoll::RHAND].map_or(0, |w| w.enchant_level.min(127));
     UserInfo {
         x: core.x,
@@ -626,20 +637,20 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         level: core.level,
         exp: data.exp,
         exp_percent: st.exp_percent(data.exp, core.level),
-        str: stats.str,
-        dex: stats.dex,
-        con: stats.con,
-        int: stats.int,
-        wit: stats.wit,
-        men: stats.men,
-        max_hp: core.max_hp as i32,
+        str: view.str(),
+        dex: view.dex(),
+        con: view.con(),
+        int: view.int(),
+        wit: view.wit(),
+        men: view.men(),
+        max_hp: view.max_hp(),
         // `(int) Math.round(getCurrentHp())`
         current_hp: core.cur_hp.round() as i32,
-        max_mp: core.max_mp as i32,
+        max_mp: view.max_mp(),
         current_mp: core.cur_mp.round() as i32,
         sp: data.sp as i32,
         current_load: current_load(data, st),
-        max_load: stats.max_load,
+        max_load: view.max_load(),
         // NOTE(java-quirk): `getActiveWeaponItem()` returns the fists weapon for an unarmed
         // character, never null, so Java always writes 40.
         weapon_equipped: true,
@@ -648,28 +659,30 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         paperdoll_augmentation_ids: [0; paperdoll::TOTAL_SLOTS],
         talisman_slots: 0,
         // `PlayerStat.canEquipCloak()`: true until the player has entered the world.
-        can_equip_cloak: !player.entered_world,
-        p_atk: stats.p_atk,
-        p_atk_spd: stats.p_atk_spd,
-        p_def: stats.p_def,
-        evasion: stats.evasion,
-        accuracy: stats.accuracy,
-        critical: stats.critical,
-        m_atk: stats.m_atk,
-        m_atk_spd: stats.m_atk_spd,
-        m_def: stats.m_def,
+        can_equip_cloak: view.can_equip_cloak(),
+        // `(int) getPAtk(null)`, `(int) getPAtkSpd()`, ...
+        p_atk: view.p_atk(None) as i32,
+        p_atk_spd: view.p_atk_spd() as i32,
+        p_def: view.p_def(None) as i32,
+        evasion: view.evasion_rate(None),
+        accuracy: view.accuracy(),
+        critical: view.critical_hit(None, None),
+        m_atk: view.m_atk(None, None) as i32,
+        m_atk_spd: view.m_atk_spd(),
+        m_def: view.m_def(None, None) as i32,
         pvp_flag: 0,
         karma: data.karma,
-        run_speed: stats.run_speed,
-        walk_speed: stats.walk_speed,
-        swim_run_speed: stats.swim_run_speed,
-        swim_walk_speed: stats.swim_walk_speed,
+        run_speed: speed(view.run_speed()),
+        walk_speed: speed(view.walk_speed()),
+        swim_run_speed: speed(view.swim_run_speed()),
+        swim_walk_speed: speed(view.swim_walk_speed()),
+        // `isFlying() ? run : 0`: nothing flies yet.
         fly_run_speed: 0,
         fly_walk_speed: 0,
-        move_multiplier: stats.move_multiplier,
-        attack_speed_multiplier: stats.attack_speed_multiplier,
-        collision_radius: stats.collision_radius,
-        collision_height: stats.collision_height,
+        move_multiplier,
+        attack_speed_multiplier: view.attack_speed_multiplier(),
+        collision_radius: view.collision_radius(),
+        collision_height: view.collision_height(),
         hair_style: data.hair_style,
         hair_color: data.hair_color,
         face: data.face,
@@ -697,9 +710,9 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         recom_left: player.recom_left as i16,
         recom_have: player.recom_have as i16,
         mount_npc_id: 0,
-        inventory_limit: inventory_limit(data, access.is_gm, settings) as i16,
+        inventory_limit: view.inventory_limit() as i16,
         class_id: data.class_id,
-        max_cp: core.max_cp as i32,
+        max_cp: view.max_cp(),
         current_cp: core.cur_cp as i32,
         enchant_effect: enchant_effect as u8,
         team: 0,
@@ -712,7 +725,7 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         fish_y: 0,
         fish_z: 0,
         name_color: access.name_color,
-        running: true,
+        running: view.is_running(),
         // Restore: no clan gives 5 for a noble (hero 8 once heroes are loaded), else 0.
         pledge_class: if data.profile.noble { 5 } else { 0 },
         pledge_type: 0,
@@ -723,14 +736,14 @@ pub fn build_user_info(player: &Player, st: &dyn StaticData, settings: &WorldSet
         },
         cursed_weapon_level: 0,
         transformation_display_id: 0,
-        attack_element: -2,
-        attack_element_value: 0,
-        defense_fire: 0,
-        defense_water: 0,
-        defense_wind: 0,
-        defense_earth: 0,
-        defense_holy: 0,
-        defense_dark: 0,
+        attack_element: i16::from(attack_element),
+        attack_element_value: view.attack_element_value(attack_element) as i16,
+        defense_fire: defense(0),
+        defense_water: defense(1),
+        defense_wind: defense(2),
+        defense_earth: defense(3),
+        defense_holy: defense(4),
+        defense_dark: defense(5),
         agathion_id: 0,
         fame: data.profile.fame,
         minimap_allowed: false,

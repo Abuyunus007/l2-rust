@@ -1,13 +1,12 @@
-//! The datapack as the world sees it ([`l2_world::StaticData`]), the base stat formulas of
-//! `UserInfo`, and the settings the world reads from the configuration.
-// Java: mechanics/stats/BaseStat.java + functions/formulas/Func*.java (the base formulas)
-// Java: entity/actor/Creature.java (getMaxLoad, getLevelMod), stat/CreatureStat.java
+//! The datapack as the world sees it ([`l2_world::StaticData`], including the stat engine's
+//! tables), and the settings the world reads from the configuration.
+// Java: mechanics/stats/BaseStat.java (the statBonus.xml loader)
 // Java: data/xml/{AdminData,SkillData}.java, data/holders/AccessLevel.java
+// Java: config/{PlayerConfig,NpcConfig,ChampionMonstersConfig,OlympiadConfig,FeatureConfig}.java,
+//       config/custom/ClassBalanceConfig.java (the values the stat getters read)
 //
-// What Java computes with its stat system (`Calculator` chains of base formulas, equipment
-// functions, passive skills, effects) is only available here as the base formulas: the numbers
-// are those of an unequipped character without skills or buffs (so a weapon's P. Atk. or armor's
-// P. Def. are missing from the `UserInfo` window). The stat system itself is M4.
+// The stat engine itself is `l2_world::stats` (M4-STAT-01); this file only hands it the tables
+// (`StatData`) and the settings (`StatSettings`).
 
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
@@ -17,115 +16,74 @@ use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_data::ItemKind;
 use l2_world::{
-    AccessLevelStatic, AdminRights, BaseStat, ChatBroadcast, DerivedStats, ItemStatic, PlayerData,
-    StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
+    AccessLevelStatic, AdminRights, BaseStat, BaseStatBonus, ChatBroadcast, ItemStatic, PlayerData, StatData,
+    StatSettings, StaticData, TalkSettings, TeleportSettings, WorldSettings, ZoneSettings,
 };
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
 use tracing::{info, warn};
 
-/// `BaseStat.MAX_STAT_VALUE`.
-const MAX_STAT_VALUE: usize = 100;
-/// `CommonSkill.CREATE_DWARVEN` and friends are not needed here; weights use `ALT_WEIGHT_LIMIT`.
-const WEIGHT_BASE: f64 = 69_000.0;
-
-/// All six columns of `data/stats/statBonus.xml` (Java `BaseStat`).
-#[derive(Debug, Clone, PartialEq)]
-pub struct BaseStatBonus {
-    str: Vec<f64>,
-    int: Vec<f64>,
-    dex: Vec<f64>,
-    wit: Vec<f64>,
-    con: Vec<f64>,
-    men: Vec<f64>,
-}
-
-impl Default for BaseStatBonus {
-    /// Java's arrays start at 0.0 and the file fills them in.
-    fn default() -> Self {
-        let zeros = vec![0.0; MAX_STAT_VALUE];
-        Self {
-            str: zeros.clone(),
-            int: zeros.clone(),
-            dex: zeros.clone(),
-            wit: zeros.clone(),
-            con: zeros.clone(),
-            men: zeros,
+/// Reads `<root>/data/stats/statBonus.xml` (Java `BaseStat`'s static block). A missing file
+/// leaves every bonus at 0 (Java throws and the server does not start).
+pub fn load_stat_bonus(root: &Path) -> BaseStatBonus {
+    let path = root.join("data/stats/statBonus.xml");
+    match std::fs::read(&path) {
+        Ok(bytes) => stat_bonus_from_xml(&String::from_utf8_lossy(&bytes)),
+        Err(e) => {
+            warn!("[BaseStats] Could not read {}: {e}", path.display());
+            BaseStatBonus::loaded()
         }
     }
 }
 
-impl BaseStatBonus {
-    /// Reads `<root>/data/stats/statBonus.xml`. A missing file leaves every bonus at 0 (Java
-    /// throws and the server does not start).
-    pub fn load(root: &Path) -> Self {
-        let path = root.join("data/stats/statBonus.xml");
-        match std::fs::read(&path) {
-            Ok(bytes) => Self::from_xml(&String::from_utf8_lossy(&bytes)),
+/// Parses the text of `statBonus.xml`. A broken value is skipped like Java's "Invalid stats
+/// value", an unknown section like its "Invalid stats name".
+pub fn stat_bonus_from_xml(xml: &str) -> BaseStatBonus {
+    let mut table = BaseStatBonus::loaded();
+    let mut reader = Reader::from_str(xml);
+    let mut section: Option<String> = None;
+    loop {
+        match reader.read_event() {
+            Ok(Event::Start(e)) => {
+                let name = e.name().as_ref().to_owned();
+                if name != "list" && name != "stat" {
+                    section = Some(name);
+                }
+            }
+            Ok(Event::End(e)) => {
+                if section.as_deref().is_some_and(|s| s == e.name().as_ref()) {
+                    section = None;
+                }
+            }
+            Ok(Event::Empty(e)) if e.name().as_ref() == "stat" => {
+                let (Some(value), Some(bonus)) = (attribute(&e, "value"), attribute(&e, "bonus")) else {
+                    continue;
+                };
+                let (Ok(value), Ok(bonus)) = (value.parse::<usize>(), bonus.parse::<f64>()) else {
+                    warn!("[BaseStats] Invalid stats value, skipping");
+                    continue;
+                };
+                match section.as_deref().and_then(BaseStat::from_section) {
+                    Some(stat) => {
+                        if !table.set(stat, value, bonus) {
+                            warn!("[BaseStats] Invalid stats value: {value}, skipping");
+                        }
+                    }
+                    None => warn!(
+                        "[BaseStats] Invalid stats name: {}, skipping",
+                        section.as_deref().unwrap_or("")
+                    ),
+                }
+            }
+            Ok(Event::Eof) => break,
+            Ok(_) => {}
             Err(e) => {
-                warn!("[BaseStats] Could not read {}: {e}", path.display());
-                Self::default()
+                warn!("[BaseStats] Could not parse statBonus.xml: {e}");
+                break;
             }
         }
     }
-
-    /// Parses the file text. A broken value is skipped like Java's "Invalid stats value".
-    pub fn from_xml(xml: &str) -> Self {
-        let mut table = Self::default();
-        let mut reader = Reader::from_str(xml);
-        let mut section: Option<String> = None;
-        loop {
-            match reader.read_event() {
-                Ok(Event::Start(e)) => {
-                    let name = e.name().as_ref().to_owned();
-                    if name != "list" && name != "stat" {
-                        section = Some(name);
-                    }
-                }
-                Ok(Event::End(e)) => {
-                    if section.as_deref().is_some_and(|s| s == e.name().as_ref()) {
-                        section = None;
-                    }
-                }
-                Ok(Event::Empty(e)) if e.name().as_ref() == "stat" => {
-                    let (Some(value), Some(bonus)) = (attribute(&e, "value"), attribute(&e, "bonus")) else {
-                        continue;
-                    };
-                    let (Ok(value), Ok(bonus)) = (value.parse::<usize>(), bonus.parse::<f64>()) else {
-                        warn!("[BaseStats] Invalid stats value, skipping");
-                        continue;
-                    };
-                    let target = match section.as_deref().map(str::to_ascii_uppercase).as_deref() {
-                        Some("STR") => Some(&mut table.str),
-                        Some("INT") => Some(&mut table.int),
-                        Some("DEX") => Some(&mut table.dex),
-                        Some("WIT") => Some(&mut table.wit),
-                        Some("CON") => Some(&mut table.con),
-                        Some("MEN") => Some(&mut table.men),
-                        _ => None,
-                    };
-                    if let Some(slot) = target.and_then(|t| t.get_mut(value)) {
-                        *slot = bonus;
-                    }
-                }
-                Ok(Event::Eof) => break,
-                Ok(_) => {}
-                Err(e) => {
-                    warn!("[BaseStats] Could not parse statBonus.xml: {e}");
-                    break;
-                }
-            }
-        }
-        table
-    }
-
-    fn at(table: &[f64], value: i32) -> f64 {
-        usize::try_from(value)
-            .ok()
-            .and_then(|v| table.get(v))
-            .copied()
-            .unwrap_or(0.0)
-    }
+    table
 }
 
 fn attribute(element: &BytesStart<'_>, key: &str) -> Option<String> {
@@ -333,42 +291,13 @@ impl AccessLevels {
     }
 }
 
-/// The limits of `PlayerConfig` that cap the stats `UserInfo` shows.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct StatLimits {
-    pub max_patk: i32,
-    pub max_matk: i32,
-    pub max_pcrit_rate: i32,
-    pub max_evasion: i32,
-    pub max_patk_speed: i32,
-    pub max_matk_speed: i32,
-    pub max_run_speed: i32,
-    pub alt_weight_limit: f64,
-}
-
-impl StatLimits {
-    pub fn from_config(config: &GameConfig) -> Self {
-        let p = &config.player;
-        Self {
-            max_patk: p.max_patk,
-            max_matk: p.max_matk,
-            max_pcrit_rate: p.max_pcrit_rate,
-            max_evasion: p.max_evasion,
-            max_patk_speed: p.max_patk_speed,
-            max_matk_speed: p.max_matk_speed,
-            max_run_speed: p.max_run_speed,
-            alt_weight_limit: p.alt_weight_limit,
-        }
-    }
-}
-
 /// [`StaticData`] over the loaded datapack.
 pub struct DatapackData {
     datapack: Arc<Datapack>,
-    bonus: BaseStatBonus,
     passive: PassiveSkills,
     access: AccessLevels,
-    limits: StatLimits,
+    /// The tables of the stat engine (shared with the datapack).
+    stats: StatData,
 }
 
 impl DatapackData {
@@ -377,29 +306,30 @@ impl DatapackData {
         bonus: BaseStatBonus,
         passive: PassiveSkills,
         access: AccessLevels,
-        limits: StatLimits,
     ) -> Self {
+        let stats = StatData {
+            items: Arc::clone(&datapack.items),
+            player_templates: Arc::clone(&datapack.player_templates),
+            armor_sets: Arc::clone(&datapack.armor_sets),
+            enchant_hp_bonus: Arc::clone(&datapack.enchant_hp_bonus),
+            hennas: Arc::clone(&datapack.hennas),
+            base_stat_bonus: Arc::new(bonus),
+        };
         Self {
             datapack,
-            bonus,
             passive,
             access,
-            limits,
+            stats,
         }
     }
 
     /// Loads the extra tables from the datapack folder and the config folder.
-    pub fn load(datapack: Arc<Datapack>, config: &GameConfig, config_dir: &Path) -> Self {
-        let bonus = BaseStatBonus::load(&datapack.root);
+    pub fn load(datapack: Arc<Datapack>, config_dir: &Path) -> Self {
+        let bonus = load_stat_bonus(&datapack.root);
         let passive = PassiveSkills::load(&datapack.root);
         let access = AccessLevels::load(config_dir);
-        Self::new(datapack, bonus, passive, access, StatLimits::from_config(config))
+        Self::new(datapack, bonus, passive, access)
     }
-}
-
-/// Java `Creature.getLevelMod()`.
-fn level_mod(level: i32) -> f64 {
-    f64::from(level + 89) / 100.0
 }
 
 impl StaticData for DatapackData {
@@ -433,127 +363,12 @@ impl StaticData for DatapackData {
         self.datapack.items.get(item_id).is_some_and(|t| t.stackable)
     }
 
-    // Java: BaseStat.calcBonus (STRbonus[value] ...). A value outside the table is a Java
-    // ArrayIndexOutOfBounds; 0 here, as `BaseStatBonus::at` does everywhere else.
-    fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
-        let b = &self.bonus;
-        let table = match stat {
-            BaseStat::Str => &b.str,
-            BaseStat::Int => &b.int,
-            BaseStat::Dex => &b.dex,
-            BaseStat::Wit => &b.wit,
-            BaseStat::Con => &b.con,
-            BaseStat::Men => &b.men,
-        };
-        BaseStatBonus::at(table, value)
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.stats)
     }
 
     fn exp_percent(&self, exp: i64, level: i32) -> f64 {
         self.datapack.experience.exp_percent(exp, level).unwrap_or(0.0)
-    }
-
-    fn derive_stats(&self, player: &PlayerData) -> DerivedStats {
-        let Some(t) = self.datapack.player_templates.get_by_id(player.class_id) else {
-            warn!(
-                "No class template for class {}: using default stats.",
-                player.class_id
-            );
-            return DerivedStats::default();
-        };
-        let b = &self.bonus;
-        let l = &self.limits;
-        let level = player.level;
-        let lvl = level_mod(level);
-        let (str, dex, con, int, wit, men) = (
-            t.base_str, t.base_dex, t.base_con, t.base_int, t.base_wit, t.base_men,
-        );
-        let str_b = BaseStatBonus::at(&b.str, str);
-        let int_b = BaseStatBonus::at(&b.int, int);
-        let dex_b = BaseStatBonus::at(&b.dex, dex);
-        let wit_b = BaseStatBonus::at(&b.wit, wit);
-        let con_b = BaseStatBonus::at(&b.con, con);
-        let men_b = BaseStatBonus::at(&b.men, men);
-        let gm = self.access.get(player.access_level).is_gm;
-
-        // FuncPAtkMod, FuncMAtkMod, FuncPDefMod / FuncMDefMod (nothing equipped)
-        let p_atk = (f64::from(t.p_atk) * str_b * lvl).min(f64::from(l.max_patk));
-        let m_atk = (f64::from(t.m_atk) * (int_b * lvl).powi(2)).min(f64::from(l.max_matk));
-        let p_def = f64::from(t.p_def) * lvl;
-        let m_def = f64::from(t.m_def) * men_b * lvl;
-
-        // FuncAtkAccuracy (no weapon bonus)
-        let mut accuracy = f64::from(dex).sqrt() * 6.0 + f64::from(level);
-        if level > 77 {
-            accuracy += f64::from(level - 76);
-        }
-        if level > 69 {
-            accuracy += f64::from(level - 69);
-        }
-        // FuncAtkEvasion (player branch)
-        let mut evasion = f64::from(dex).sqrt() * 6.0 + f64::from(level);
-        let mut diff = f64::from(level - 69);
-        if level >= 78 {
-            diff *= 1.2;
-        }
-        if level >= 70 {
-            evasion += diff;
-        }
-        let evasion = (evasion.round() as i32).min(l.max_evasion);
-        // FuncAtkCritical, then CreatureStat.getCriticalHit
-        let critical = (f64::from(t.crit_rate) * dex_b * 10.0).min(f64::from(l.max_pcrit_rate));
-        // FuncPAtkSpeed / FuncMAtkSpeed
-        let mut p_atk_spd = (f64::from(t.p_atk_spd) * dex_b).round();
-        if !gm && p_atk_spd > f64::from(l.max_patk_speed) {
-            p_atk_spd = f64::from(l.max_patk_speed);
-        }
-        let m_atk_spd = (f64::from(t.m_atk_spd) * wit_b).min(f64::from(l.max_matk_speed));
-
-        // FuncMoveSpeed: every speed is multiplied by the DEX bonus, and `UserInfo` divides the
-        // movement multiplier out again, so the numbers shown are the template speeds.
-        let move_multiplier = dex_b;
-        let speed = |base: f64| (base * dex_b / move_multiplier).round() as i32;
-        let female = player.sex != 0;
-        let collision = if female {
-            t.collision_female
-        } else {
-            t.collision_male
-        };
-
-        // Creature.getMaxLoad: floor(CON bonus * 69000 * AltWeightLimit)
-        let max_load = (con_b * WEIGHT_BASE * l.alt_weight_limit).floor() as i32;
-
-        let mut stats = DerivedStats {
-            str,
-            dex,
-            con,
-            int,
-            wit,
-            men,
-            // `(int)` casts truncate
-            p_atk: p_atk as i32,
-            p_atk_spd: p_atk_spd as i32,
-            p_def: p_def as i32,
-            evasion,
-            accuracy: accuracy.round() as i32,
-            critical: (critical + 0.5) as i32,
-            m_atk: m_atk as i32,
-            m_atk_spd: m_atk_spd as i32,
-            m_def: m_def as i32,
-            run_speed: speed(t.run_speed),
-            walk_speed: speed(t.walk_speed),
-            swim_run_speed: speed(t.fast_swim_speed),
-            swim_walk_speed: speed(t.slow_swim_speed),
-            move_multiplier,
-            // CreatureStat.getAttackSpeedMultiplier: (float) ((1.1 * getPAtkSpd()) / basePAtkSpd)
-            attack_speed_multiplier: ((1.1 * p_atk_spd) / f64::from(t.p_atk_spd)) as f32,
-            collision_radius: collision.radius,
-            collision_height: collision.height,
-            max_load,
-        };
-        if !gm && stats.run_speed > l.max_run_speed {
-            stats.run_speed = l.max_run_speed;
-        }
-        stats
     }
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
@@ -616,6 +431,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             random_respawn_in_town_enabled: p.random_respawn_in_town_enabled,
             teleport_watchdog_timeout: p.teleport_watchdog_timeout,
         },
+        stats: stat_settings(config, config_dir),
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
             karma_player_can_use_gk: p.alt_game_karma_player_can_use_gk,
@@ -659,6 +475,97 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         }
     }
     settings
+}
+
+/// The caps and multipliers the stat getters read. The raid multipliers and the class balance
+/// arrays are post-processed in Java (the generated config has placeholders for them), so they
+/// are read from `NPC.ini` and `Custom/ClassBalance.ini` here.
+pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
+    use l2_config::IniFile;
+
+    let p = &config.player;
+    let mut s = StatSettings {
+        max_patk: p.max_patk,
+        max_matk: p.max_matk,
+        max_pcrit_rate: p.max_pcrit_rate,
+        max_mcrit_rate: p.max_mcrit_rate,
+        max_evasion: p.max_evasion,
+        max_patk_speed: p.max_patk_speed,
+        max_matk_speed: p.max_matk_speed,
+        max_run_speed: p.max_run_speed,
+        run_spd_boost: p.run_spd_boost,
+        alt_weight_limit: p.alt_weight_limit,
+        champion_enable: config.champion_monsters.champion_enable,
+        champion_atk: config.champion_monsters.champion_atk,
+        champion_spd_atk: config.champion_monsters.champion_spd_atk,
+        olympiad_enchant_limit: config.olympiad.olympiad_enchant_limit,
+        dawn_gates_pdef_mult: config.feature.alt_siege_dawn_gates_pdef_mult,
+        dusk_gates_pdef_mult: config.feature.alt_siege_dusk_gates_pdef_mult,
+        dawn_gates_mdef_mult: config.feature.alt_siege_dawn_gates_mdef_mult,
+        dusk_gates_mdef_mult: config.feature.alt_siege_dusk_gates_mdef_mult,
+        ..StatSettings::default()
+    };
+    // Java: `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;` ...
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
+        s.raid_pdefence_multiplier = ini.get_double("RaidPDefenceMultiplier", 100.0) / 100.0;
+        s.raid_mdefence_multiplier = ini.get_double("RaidMDefenceMultiplier", 100.0) / 100.0;
+        s.raid_pattack_multiplier = ini.get_double("RaidPAttackMultiplier", 100.0) / 100.0;
+        s.raid_mattack_multiplier = ini.get_double("RaidMAttackMultiplier", 100.0) / 100.0;
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
+        let cb = &mut s.class_balance;
+        for (key, table) in [
+            (
+                "PvpPhysicalAttackDefenceMultipliers",
+                &mut cb.pvp_physical_attack_defence,
+            ),
+            (
+                "PvePhysicalAttackDefenceMultipliers",
+                &mut cb.pve_physical_attack_defence,
+            ),
+            (
+                "PveMagicalSkillDefenceMultipliers",
+                &mut cb.pve_magical_skill_defence,
+            ),
+            (
+                "PvePhysicalSkillDefenceMultipliers",
+                &mut cb.pve_physical_skill_defence,
+            ),
+            (
+                "PvpMagicalSkillCriticalChanceMultipliers",
+                &mut cb.pvp_magical_skill_critical_chance,
+            ),
+            (
+                "PveMagicalSkillCriticalChanceMultipliers",
+                &mut cb.pve_magical_skill_critical_chance,
+            ),
+        ] {
+            parse_class_multipliers(key, &ini.get_string(key, ""), table);
+        }
+    }
+    s
+}
+
+/// Java `ClassBalanceConfig.load` for one key: `id*multiplier;id*multiplier...`.
+// NOTE: Java also accepts a `PlayerClass` enum constant name instead of the numeric id; the Rust
+// side has no table of those names yet, so such an entry is skipped with a warning (Java would
+// apply it, or throw for a name it does not know).
+fn parse_class_multipliers(key: &str, text: &str, table: &mut [f32]) {
+    for info in text.trim().split(';') {
+        let class_info: Vec<&str> = info.trim().split('*').collect();
+        if class_info.len() != 2 {
+            continue;
+        }
+        let id = class_info[0].trim();
+        let (Ok(id), Ok(value)) = (id.parse::<usize>(), class_info[1].trim().parse::<f32>()) else {
+            warn!("{key}: cannot read the class multiplier '{info}'; skipped.");
+            continue;
+        };
+        match table.get_mut(id) {
+            Some(slot) => *slot = value,
+            None => warn!("{key}: class id {id} is outside the table; skipped."),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -705,20 +612,37 @@ mod tests {
         }
     }
 
-    const LIMITS: StatLimits = StatLimits {
-        max_patk: 99_999,
-        max_matk: 99_999,
-        max_pcrit_rate: 500,
-        max_evasion: 250,
-        max_patk_speed: 1_500,
-        max_matk_speed: 1_999,
-        max_run_speed: 250,
-        alt_weight_limit: 1.0,
-    };
+    struct NoSink;
+
+    impl l2_world::PacketSink for NoSink {
+        fn send(&self, _bytes: Vec<u8>) {}
+        fn left_world(&self, _reason: l2_world::LeaveReason) {}
+    }
+
+    struct NoOutbox;
+
+    impl l2_world::Outbox for NoOutbox {
+        fn persist(&mut self, _command: l2_world::PersistCommand) {}
+        fn ls_event(&mut self, _event: l2_world::LsEvent) {}
+    }
+
+    /// The `UserInfo` the world builds for `player` over `data`.
+    fn user_info(data: DatapackData, player: PlayerData) -> l2_protocol_game::server::UserInfo {
+        let mut world = l2_world::World::new(l2_world::WorldRng::from_seed(1), Box::new(NoOutbox));
+        world.set_static_data(Box::new(data));
+        let id = player.object_id;
+        world.handle(l2_world::WorldCommand::EnterWorld {
+            session: l2_world::SessionId(1),
+            player: Box::new(player),
+            sink: Box::new(NoSink),
+            ip: None,
+        });
+        world.user_info(id).unwrap()
+    }
 
     #[test]
     fn stat_bonus_reads_every_section_by_name() {
-        let table = BaseStatBonus::from_xml(
+        let table = stat_bonus_from_xml(
             r#"<list>
 	<STR><stat value="40" bonus="1.2" /></STR>
 	<INT><stat value="2" bonus="0.5" /></INT>
@@ -726,18 +650,28 @@ mod tests {
 	<MEN><stat value="3" bonus="2" /></MEN>
 	<DEX><stat value="24" bonus="1.04" /><stat value="100" bonus="9" /></DEX>
 	<WIT><stat value="23" bonus="1.26" /></WIT>
+	<LUC><stat value="1" bonus="3" /></LUC>
 </list>"#,
         );
-        assert_eq!(BaseStatBonus::at(&table.str, 40), 1.2);
-        assert_eq!(BaseStatBonus::at(&table.int, 2), 0.5);
-        assert_eq!(BaseStatBonus::at(&table.con, 24), 0.9);
-        assert_eq!(BaseStatBonus::at(&table.men, 3), 2.0);
-        assert_eq!(BaseStatBonus::at(&table.dex, 24), 1.04);
-        assert_eq!(BaseStatBonus::at(&table.wit, 23), 1.26);
+        assert_eq!(table.bonus(BaseStat::Str, 40), 1.2);
+        assert_eq!(table.bonus(BaseStat::Int, 2), 0.5);
+        assert_eq!(table.bonus(BaseStat::Con, 24), 0.9);
+        assert_eq!(table.bonus(BaseStat::Men, 3), 2.0);
+        assert_eq!(table.bonus(BaseStat::Dex, 24), 1.04);
+        assert_eq!(table.bonus(BaseStat::Wit, 23), 1.26);
         // Unlisted, out of range and negative values are 0 (Java's arrays start at 0).
-        assert_eq!(BaseStatBonus::at(&table.str, 41), 0.0);
-        assert_eq!(BaseStatBonus::at(&table.dex, 100), 0.0);
-        assert_eq!(BaseStatBonus::at(&table.dex, -1), 0.0);
+        assert_eq!(table.bonus(BaseStat::Str, 41), 0.0);
+        assert_eq!(table.bonus(BaseStat::Dex, 100), 0.0);
+        assert_eq!(table.bonus(BaseStat::Dex, -1), 0.0);
+    }
+
+    #[test]
+    fn class_balance_entries_are_id_star_multiplier() {
+        let mut table = vec![1.0_f32; 137];
+        parse_class_multipliers("K", " 0*1.5; 88*0.9;bad;Duelist*2;500*3;7*x ", &mut table);
+        assert_eq!((table[0], table[88], table[1]), (1.5, 0.9, 1.0));
+        parse_class_multipliers("K", "", &mut table);
+        assert_eq!(table[0], 1.5);
     }
 
     #[test]
@@ -846,30 +780,35 @@ mod tests {
     #[test]
     fn stats_follow_the_base_formulas() {
         let (_dir, datapack) = crate::client::testdata::datapack();
-        let mut bonus = BaseStatBonus::default();
-        bonus.str[40] = 1.2;
-        bonus.int[21] = 1.0;
-        bonus.dex[30] = 1.5;
-        bonus.wit[11] = 0.5;
-        bonus.con[43] = 1.5;
-        bonus.men[25] = 1.28;
-        let data = DatapackData::new(
-            datapack,
-            bonus,
-            PassiveSkills::default(),
-            AccessLevels::default(),
-            LIMITS,
-        );
+        let mut bonus = BaseStatBonus::loaded();
+        for (stat, value, b) in [
+            (BaseStat::Str, 40, 1.2),
+            (BaseStat::Int, 21, 1.0),
+            (BaseStat::Dex, 30, 1.5),
+            (BaseStat::Wit, 11, 0.5),
+            (BaseStat::Con, 43, 1.5),
+            (BaseStat::Men, 25, 1.28),
+        ] {
+            assert!(bonus.set(stat, value, b));
+        }
+        let data = || {
+            DatapackData::new(
+                Arc::clone(&datapack),
+                bonus.clone(),
+                PassiveSkills::default(),
+                AccessLevels::default(),
+            )
+        };
         let mut player = test_player();
         // Human fighter of the test datapack: STR 40 CON 43 DEX 30 INT 21 WIT 11 MEN 25, P. Atk. 4.
         player.class_id = 0;
         player.level = 11;
-        let s = data.derive_stats(&player);
+        let s = user_info(data(), player.clone());
         assert_eq!(
             (s.str, s.dex, s.con, s.int, s.wit, s.men),
             (40, 30, 43, 21, 11, 25)
         );
-        // (4 * 1.2 * levelMod 1.0) truncated
+        // FuncPAtkMod: (4 * 1.2 * levelMod 1.0) truncated
         assert_eq!(s.p_atk, 4);
         // weight limit: floor(1.5 * 69000)
         assert_eq!(s.max_load, 103_500);
@@ -878,10 +817,10 @@ mod tests {
         assert_eq!(s.accuracy, 44);
         assert_eq!(s.collision_radius, 9.0);
         player.sex = 1;
-        assert_eq!(data.derive_stats(&player).collision_radius, 8.0);
+        assert_eq!(user_info(data(), player.clone()).collision_radius, 8.0);
         // Above level 69/77 the accuracy and evasion get their extra points.
         player.level = 80;
-        let s = data.derive_stats(&player);
+        let s = user_info(data(), player);
         // accuracy: sqrt(30)*6 + 80 + (80-76) + (80-69) = 127.86; evasion: + (80-69)*1.2 = 126.06
         assert_eq!((s.accuracy, s.evasion), (128, 126));
     }
@@ -898,13 +837,17 @@ mod tests {
             return;
         }
         let datapack = Arc::new(Datapack::load(&root).unwrap());
-        let data = DatapackData::new(
-            Arc::clone(&datapack),
-            BaseStatBonus::load(&root),
-            PassiveSkills::load(&root),
-            AccessLevels::from_xml(&std::fs::read_to_string(root.join("config/AccessLevels.xml")).unwrap()),
-            LIMITS,
-        );
+        let load = || {
+            DatapackData::new(
+                Arc::clone(&datapack),
+                load_stat_bonus(&root),
+                PassiveSkills::load(&root),
+                AccessLevels::from_xml(
+                    &std::fs::read_to_string(root.join("config/AccessLevels.xml")).unwrap(),
+                ),
+            )
+        };
+        let data = load();
 
         // The passive flags against the SKILL_LIST Java sent (194, 163, 118, 214 are passive).
         for (id, passive) in [
@@ -923,7 +866,10 @@ mod tests {
         player.class_id = 25;
         player.base_class = 25;
         player.level = 1;
-        let s = data.derive_stats(&player);
+        player.cur_hp = 1_000.0;
+        player.cur_mp = 1_000.0;
+        player.cur_cp = 1_000.0;
+        let s = user_info(load(), player);
         assert_eq!(
             (s.str, s.dex, s.con, s.int, s.wit, s.men),
             (21, 24, 25, 37, 23, 40)
@@ -933,11 +879,23 @@ mod tests {
             (s.run_speed, s.walk_speed, s.swim_run_speed, s.swim_walk_speed),
             (122, 85, 50, 50)
         );
-        assert_eq!(s.move_multiplier, 1.04);
+        // `getMoveSpeed() * (1. / baseSpeed)`: (122 * DEX 24 bonus 1.04) * (1 / 122).
+        assert_eq!(s.move_multiplier, (122.0 * 1.04) * (1.0 / 122.0));
         assert_eq!(s.max_load, 64_170);
         assert_eq!(s.evasion, 30);
         assert_eq!((s.collision_radius, s.collision_height), (7.5, 24.0));
         assert_eq!(s.critical, 42);
+        // Hand-checked from the Java formulas (to be confirmed by the M4-JV-01 vectors), naked:
+        // max HP (int) (104 * CON 25 bonus 0.93) = 96, MP (int) (40 * MEN 1.49) = 59,
+        // CP (int) (52 * 0.93) = 48 (the stored 1000 is clamped to these);
+        // P. Atk. 3 * STR 0.61 * 0.9 = 1.647, M. Atk. 6 * 1.12^2 * 0.9^2 = 6.096,
+        // P. Def. 54 * 0.9 = 48.6, M. Def. 41 * 1.49 * 0.9 = 54.98,
+        // accuracy round(sqrt(24) * 6 + 1) = 30, Atk. Spd. round(300 * 1.04) = 312,
+        // Casting Spd. (int) (333 * WIT 1.16) = 386.
+        assert_eq!((s.max_hp, s.max_mp, s.max_cp), (96, 59, 48));
+        assert_eq!((s.current_hp, s.current_mp, s.current_cp), (96, 59, 48));
+        assert_eq!((s.p_atk, s.m_atk, s.p_def, s.m_def), (1, 6, 48, 54));
+        assert_eq!((s.accuracy, s.p_atk_spd, s.m_atk_spd), (30, 312, 386));
         // The exp bar of level 1 with no exp.
         assert_eq!(data.exp_percent(0, 1), 0.0);
         // Items: the Apprentice's Wand (6) is a weapon, the Tutorial Guide (5588) is no quest item.

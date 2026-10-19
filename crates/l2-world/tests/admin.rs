@@ -109,6 +109,42 @@ fn rights() -> AdminRights {
 
 struct Fake {
     rights: AdminRights,
+    stats: StatData,
+}
+
+impl Fake {
+    fn new(rights: AdminRights) -> Self {
+        Self {
+            rights,
+            stats: class_data(),
+        }
+    }
+}
+
+/// The class template of the test characters (class 0, level 40): 100 HP, 50 MP and 10 CP, the
+/// values their character rows store. No `statBonus.xml`: every bonus is 1.
+fn class_data() -> StatData {
+    let mut levels = String::new();
+    for level in 1..=40 {
+        let (hp, mp, cp) = if level == 40 {
+            (100, 50, 10)
+        } else {
+            (level, level, level)
+        };
+        levels.push_str(&format!(
+            "<level val=\"{level}\"><hp>{hp}</hp><mp>{mp}</mp><cp>{cp}</cp></level>"
+        ));
+    }
+    let xml = format!(
+        r#"<list><classId>0</classId><staticData>
+<collisionMale><radius>9.0</radius><height>23.0</height></collisionMale>
+<collisionFemale><radius>8.0</radius><height>23.5</height></collisionFemale>
+</staticData><lvlUpgainData>{levels}</lvlUpgainData></list>"#
+    );
+    StatData {
+        player_templates: Arc::new(l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()),
+        ..StatData::default()
+    }
 }
 
 impl StaticData for Fake {
@@ -120,9 +156,6 @@ impl StaticData for Fake {
     }
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
-    }
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats::default()
     }
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         if level >= 70 {
@@ -137,6 +170,9 @@ impl StaticData for Fake {
     }
     fn admin_rights(&self) -> Option<&AdminRights> {
         Some(&self.rights)
+    }
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.stats)
     }
 }
 
@@ -268,7 +304,7 @@ fn setup_with(mut settings: WorldSettings) -> Setup {
     let root = Root::new();
     let log = Log::default();
     let mut world = World::new(WorldRng::from_seed(11), Box::new(NullOutbox));
-    world.set_static_data(Box::new(Fake { rights: rights() }));
+    world.set_static_data(Box::new(Fake::new(rights())));
     world.set_settings(settings);
     world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
     let npcs = Arc::new(NpcTemplates::from_xml(NPC_TEMPLATES, &NpcLoadOptions::default()).unwrap());

@@ -81,9 +81,6 @@ impl StaticData for Items {
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
     }
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats::default()
-    }
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         if level >= 100 {
             AccessLevelStatic {

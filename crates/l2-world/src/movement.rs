@@ -749,6 +749,7 @@ impl World {
         let game_ticks = self.game_ticks();
         let speed = self.move_speed(id);
         let instance = self.instance_id_of(id);
+        let collision = f64::from(self.stats(id).map_or(0.0, |s| s.collision_radius()));
         let Some(player) = self.players.get_mut(&id) else {
             return true;
         };
@@ -762,7 +763,6 @@ impl World {
         let (x_prev, y_prev, z_prev) = (player.core.x, player.core.y, player.core.z);
         let heading = player.core.heading;
         let cursor = player.movement.cursor_key_movement;
-        let collision = f64::from(player.stats.collision_radius);
 
         // Check if this is the first update.
         if mv.move_timestamp == 0 {
@@ -1364,24 +1364,17 @@ impl World {
 
     // ------------------------------------------------------------------ helpers
 
-    /// Java `PlayerStat.getMoveSpeed()`: the run or walk speed of the stats. `DerivedStats` holds
-    /// the template speed and the multiplier (`speed * multiplier` is what Java's `calcStat`
-    /// returns).
-    // NOTE: buffs and the GM speed multiplier arrive with the effect system (M5).
+    /// Java `getMoveSpeed()` of the stat engine: the run or walk (or swim) speed.
     pub fn move_speed(&self, id: ObjectId) -> f64 {
-        self.players.get(&id).map_or(0.0, |p| {
-            let base = if p.movement.running {
-                p.stats.run_speed
-            } else {
-                p.stats.walk_speed
-            };
-            f64::from(base) * p.stats.move_multiplier
-        })
+        if !self.players.contains_key(&id) {
+            return 0.0;
+        }
+        self.stats(id).map_or(0.0, |s| s.move_speed())
     }
 
     /// Java `Player.isOverloaded()`: carrying more than the maximum load.
     fn is_overloaded(&self, player: &Player) -> bool {
-        let max_load = player.stats.max_load;
+        let max_load = self.stats(player.core.object_id).map_or(0, |s| s.max_load());
         max_load > 0 && current_load(&player.data, &*self.data) > max_load
     }
 

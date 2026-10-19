@@ -189,13 +189,12 @@ impl Server {
                 .map_err(|e| StartupError::Internal(format!("datapack loader: {e}")))??
         };
         let datapack = Arc::new(datapack);
-        // The base stat bonuses, the passive skill flags and the access levels the packets need
-        // (see `world_data`), and the config values the world reads.
+        // The stat engine tables (statBonus.xml and the datapack parts), the passive skill flags
+        // and the access levels (see `world_data`), and the config values the world reads.
         let static_data: Arc<dyn StaticData> = {
-            let (datapack, config, config_dir) =
-                (Arc::clone(&datapack), config.clone(), paths.config_dir.clone());
+            let (datapack, config_dir) = (Arc::clone(&datapack), paths.config_dir.clone());
             Arc::new(
-                tokio::task::spawn_blocking(move || DatapackData::load(datapack, &config, &config_dir))
+                tokio::task::spawn_blocking(move || DatapackData::load(datapack, &config_dir))
                     .await
                     .map_err(|e| StartupError::Internal(format!("data loader: {e}")))?,
             )

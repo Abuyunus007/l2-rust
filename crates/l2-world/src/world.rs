@@ -77,6 +77,8 @@ pub struct World {
     pub(crate) door_index: DoorIndex,
     /// The door view handed to path workers; `None` after a door or fence changed.
     pub(crate) door_snapshot: Option<Arc<DoorSnapshot>>,
+    /// Java `NPC_STD_CALCULATOR`: the calculators every NPC shares until it gets its own.
+    pub(crate) std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators,
 }
 
 impl World {
@@ -113,6 +115,7 @@ impl World {
             static_objects: HashMap::new(),
             door_index: DoorIndex::default(),
             door_snapshot: None,
+            std_npc_calculators: crate::stats::npc_stat::StdNpcCalculators::default(),
         }
     }
 
@@ -297,10 +300,12 @@ impl World {
         let account = data.account.clone();
         info!("{} ({account}) entered the world.", data.name);
         let mut player = Player::from_data(data, self.tick);
-        player.stats = self.data.derive_stats(&player.data);
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Java `Player` constructor + `restore`: the standard functions, the equipped items'
+        // functions, then the current HP/MP/CP clamped to the maxima.
+        self.init_player_stats(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);

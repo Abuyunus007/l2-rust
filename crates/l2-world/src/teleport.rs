@@ -228,7 +228,7 @@ impl World {
 
         // "Adjust position a bit."
         if self.settings.teleport.offset_on_teleport_enabled || random_offset > 0 {
-            let radius = self.players.get(&id).map_or(0.0, |p| p.stats.collision_radius);
+            let radius = self.stats(id).map_or(0.0, |s| s.collision_radius());
             let ro = random_offset;
             x = x_value + self.rng().get(-ro, ro);
             y = y_value + self.rng().get(-ro, ro);

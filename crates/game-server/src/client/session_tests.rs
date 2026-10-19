@@ -27,7 +27,7 @@ use super::enter::{LoadError, PlayerLoader};
 use super::newchar::NewCharacterPlan;
 use super::*;
 use crate::runtime::{OutboxMessage, WorldRuntime};
-use crate::world_data::{AccessLevels, BaseStatBonus, DatapackData, PassiveSkills, StatLimits};
+use crate::world_data::{AccessLevels, DatapackData, PassiveSkills};
 use l2_config::GameConfig;
 use l2_util::WorldRng;
 use l2_world::{IdFactory, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, ShortcutData, SkillData};
@@ -318,19 +318,9 @@ async fn start_with(
     let outbox: Arc<Mutex<Vec<OutboxMessage>>> = Arc::default();
     let static_data: Arc<dyn l2_world::StaticData> = Arc::new(DatapackData::new(
         Arc::clone(&datapack),
-        BaseStatBonus::default(),
+        l2_world::BaseStatBonus::default(),
         PassiveSkills::default(),
         AccessLevels::default(),
-        StatLimits {
-            max_patk: 99_999,
-            max_matk: 99_999,
-            max_pcrit_rate: 500,
-            max_evasion: 250,
-            max_patk_speed: 1_500,
-            max_matk_speed: 1_999,
-            max_run_speed: 250,
-            alt_weight_limit: 1.0,
-        },
     ));
     let settings = l2_world::WorldSettings::default();
     let left_acks = crate::persist::LeftAcks::default();

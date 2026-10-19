@@ -71,10 +71,6 @@ impl StaticData for GmData {
         0.0
     }
 
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats::default()
-    }
-
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         if level == 100 {
             AccessLevelStatic {

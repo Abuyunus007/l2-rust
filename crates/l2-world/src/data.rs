@@ -1,5 +1,5 @@
 //! What the world needs to know about the datapack and the configuration, without owning
-//! either: [`StaticData`] (item templates, skills, class templates, access levels) and
+//! either: [`StaticData`] (item templates, skills, the stat engine's tables, access levels) and
 //! [`WorldSettings`] (the `.ini` values the enter-world and chat code reads).
 //!
 //! `l2-world` has no XML or config loaders (MODULE_MAP): the game server implements
@@ -9,6 +9,7 @@
 
 use crate::admin::AdminRights;
 use crate::player::PlayerData;
+use crate::stats::{StatData, StatSettings};
 
 /// Java `Race.DWARF.ordinal()`.
 pub const RACE_DWARF: i32 = 4;
@@ -77,96 +78,6 @@ impl AccessLevelStatic {
 /// `PlayerAppearance.DEFAULT_TITLE_COLOR`, `0xECF9A2`).
 pub const DEFAULT_TITLE_COLOR: i32 = 0x00EC_F9A2;
 
-/// The numbers `UserInfo` prints that Java computes from the stat system (`Calculator`,
-/// templates, equipment, skills, effects).
-///
-/// The stat system is not ported yet (M4): [`StaticData::derive_stats`] returns the values of an
-/// unequipped, buff-less character built from the class template (see the game server's
-/// implementation for exactly what is applied).
-#[derive(Debug, Clone, PartialEq)]
-pub struct DerivedStats {
-    pub str: i32,
-    pub dex: i32,
-    pub con: i32,
-    pub int: i32,
-    pub wit: i32,
-    pub men: i32,
-    /// `(int) getPAtk(null)`.
-    pub p_atk: i32,
-    /// `(int) getPAtkSpd()`.
-    pub p_atk_spd: i32,
-    /// `(int) getPDef(null)`.
-    pub p_def: i32,
-    /// `getEvasionRate(null)`.
-    pub evasion: i32,
-    /// `getAccuracy()`.
-    pub accuracy: i32,
-    /// `getCriticalHit(null, null)`.
-    pub critical: i32,
-    /// `(int) getMAtk(null, null)`.
-    pub m_atk: i32,
-    /// `getMAtkSpd()`.
-    pub m_atk_spd: i32,
-    /// `(int) getMDef(null, null)`.
-    pub m_def: i32,
-    /// `Math.round(getRunSpeed() / moveMultiplier)` and the other three speeds.
-    pub run_speed: i32,
-    pub walk_speed: i32,
-    pub swim_run_speed: i32,
-    pub swim_walk_speed: i32,
-    /// `getMovementSpeedMultiplier()`.
-    pub move_multiplier: f64,
-    /// `getAttackSpeedMultiplier()` (a Java `float`).
-    pub attack_speed_multiplier: f32,
-    /// `getCollisionRadius()` / `getCollisionHeight()` (Java `float`s).
-    pub collision_radius: f32,
-    pub collision_height: f32,
-    /// `getMaxLoad()`.
-    pub max_load: i32,
-}
-
-impl Default for DerivedStats {
-    fn default() -> Self {
-        Self {
-            str: 40,
-            dex: 30,
-            con: 43,
-            int: 21,
-            wit: 11,
-            men: 25,
-            p_atk: 4,
-            p_atk_spd: 300,
-            p_def: 80,
-            evasion: 0,
-            accuracy: 0,
-            critical: 40,
-            m_atk: 6,
-            m_atk_spd: 333,
-            m_def: 41,
-            run_speed: 120,
-            walk_speed: 80,
-            swim_run_speed: 50,
-            swim_walk_speed: 50,
-            move_multiplier: 1.0,
-            attack_speed_multiplier: 1.0,
-            collision_radius: 9.0,
-            collision_height: 23.0,
-            max_load: 69_000,
-        }
-    }
-}
-
-/// Java `BaseStat`: the stats whose value picks a multiplier out of `statBonus.xml`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum BaseStat {
-    Str,
-    Int,
-    Dex,
-    Wit,
-    Con,
-    Men,
-}
-
 /// Everything static the world reads. Implemented over the datapack by the game server.
 pub trait StaticData: Send + Sync {
     /// The template of an item, `None` if the item id is unknown.
@@ -179,9 +90,6 @@ pub trait StaticData: Send + Sync {
     /// way `UserInfo` does it (see `exp_percent` in `l2-protocol-game`).
     fn exp_percent(&self, exp: i64, level: i32) -> f64;
 
-    /// The stats shown in `UserInfo` for this character (see [`DerivedStats`]).
-    fn derive_stats(&self, player: &PlayerData) -> DerivedStats;
-
     /// The access level with this id. An id the file does not list gives Java's default
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
@@ -192,11 +100,11 @@ pub trait StaticData: Send + Sync {
         333
     }
 
-    /// Java `BaseStat.calcBonus`: the `statBonus.xml` multiplier of `stat` at `value`. NPC speeds,
-    /// attack speeds and hit points are their template values times these. The default is
-    /// "nothing loaded": no bonus (1.0), as Java does for a null actor.
-    fn base_stat_bonus(&self, _stat: BaseStat, _value: i32) -> f64 {
-        1.0
+    /// The datapack tables of the stat engine (item functions, class templates, armor sets,
+    /// `statBonus.xml`, ...). The default is "nothing loaded": every template value is Java's
+    /// `CreatureTemplate` default and every base stat bonus is 1.
+    fn stat_data(&self) -> Option<&StatData> {
+        None
     }
 
     /// Java `ItemTemplate.getName()`, `None` for an unknown item.
@@ -229,10 +137,6 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
         (**self).exp_percent(exp, level)
     }
 
-    fn derive_stats(&self, player: &PlayerData) -> DerivedStats {
-        (**self).derive_stats(player)
-    }
-
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
     }
@@ -241,8 +145,8 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
         (**self).safe_fall_height(player)
     }
 
-    fn base_stat_bonus(&self, stat: BaseStat, value: i32) -> f64 {
-        (**self).base_stat_bonus(stat, value)
+    fn stat_data(&self) -> Option<&StatData> {
+        (**self).stat_data()
     }
 
     fn item_name(&self, item_id: i32) -> Option<String> {
@@ -273,10 +177,6 @@ impl StaticData for NoData {
 
     fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
         0.0
-    }
-
-    fn derive_stats(&self, _player: &PlayerData) -> DerivedStats {
-        DerivedStats::default()
     }
 
     fn access_level(&self, _level: i32) -> AccessLevelStatic {
@@ -363,6 +263,8 @@ pub struct WorldSettings {
     pub teleport: crate::teleport::TeleportSettings,
     /// The values NPC dialogs and gatekeepers read.
     pub talk: crate::dialog::TalkSettings,
+    /// The caps and multipliers the stat getters read.
+    pub stats: StatSettings,
 }
 
 impl Default for WorldSettings {
@@ -398,6 +300,7 @@ impl Default for WorldSettings {
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),
+            stats: StatSettings::default(),
         }
     }
 }

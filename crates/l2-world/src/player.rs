@@ -1,14 +1,15 @@
 //! Players and the data shared by every creature (D-17: data structs, no inheritance).
 //!
 //! Java: `entity/actor/Creature.java`, `Playable.java`, `Player.java`. Only what M2 needs is
-//! here; later milestones add fields (stats, effects, target, AI state…).
+//! here; later milestones add fields (effects, AI state…).
 
 use std::collections::BTreeMap;
 use std::net::IpAddr;
 
 use l2_util::ObjectId;
 
-use crate::data::{DEFAULT_TITLE_COLOR, DerivedStats};
+use crate::data::DEFAULT_TITLE_COLOR;
+use crate::stats::Calculators;
 
 /// What every creature has (players now, NPCs in M3).
 #[derive(Debug, Clone, PartialEq)]
@@ -20,11 +21,17 @@ pub struct CreatureCore {
     pub heading: i32,
     pub level: i32,
     pub cur_hp: f64,
+    /// The last `getMaxHp()` of the stat engine (Java `PlayerStat._oldMaxHp`, the "stats watch"):
+    /// refreshed when the stats change (`World::refresh_max_vitals`), read by `StatusUpdate`.
     pub max_hp: f64,
     pub cur_mp: f64,
+    /// The last `getMaxMp()` (see `max_hp`).
     pub max_mp: f64,
     pub cur_cp: f64,
+    /// The last `getMaxCp()` (see `max_hp`).
     pub max_cp: f64,
+    /// Java `_calculators`: the stat functions (see `stats/`).
+    pub calculators: Calculators,
 }
 
 /// One item of a player (inventory or worn). Mirrors the `items` table row.
@@ -111,6 +118,9 @@ pub struct PlayerProfile {
     pub macros: Vec<MacroData>,
     /// `character_variables` (Java `PlayerVariables`).
     pub variables: BTreeMap<String, String>,
+    /// `character_hennas`: the dye id (`symbol_id`) of slots 1 to 3 of the active class, 0 for an
+    /// empty slot (Java `restoreHenna`).
+    pub hennas: [i32; 3],
 }
 
 impl Default for PlayerProfile {
@@ -127,6 +137,7 @@ impl Default for PlayerProfile {
             recom_time_left_ms: 0,
             macros: Vec::new(),
             variables: BTreeMap::new(),
+            hennas: [0; 3],
         }
     }
 }
@@ -193,9 +204,6 @@ pub struct Player {
     pub recom_have: i32,
     pub recom_left: i32,
     pub hourglass_ms: i64,
-    /// What `UserInfo` prints that the stat system will compute (see [`DerivedStats`]); set when
-    /// the player enters.
-    pub stats: DerivedStats,
     /// Java `getKnownRelations()`: the relation (mask, auto-attackable) each viewer was last told
     /// about this player, so `RelationChanged` only goes out when it changes.
     pub known_relations: std::collections::HashMap<ObjectId, (i32, bool)>,
@@ -229,6 +237,8 @@ impl Player {
             max_mp: data.max_mp,
             cur_cp: data.cur_cp,
             max_cp: data.max_cp,
+            // The world builds the calculators when the player enters (`init_player_stats`).
+            calculators: Calculators::default(),
         };
         let movement = crate::movement::MovementState::at(data.x, data.y, data.z);
         Self {
@@ -241,7 +251,6 @@ impl Player {
             recom_have: 0,
             recom_left: 0,
             hourglass_ms: 0,
-            stats: DerivedStats::default(),
             known_relations: std::collections::HashMap::new(),
             movement,
             zones: crate::zones::PlayerZones::default(),
@@ -264,6 +273,10 @@ impl Player {
         data.cur_hp = c.cur_hp;
         data.cur_mp = c.cur_mp;
         data.cur_cp = c.cur_cp;
+        // Java `storeCharBase` writes `getMaxHp()` ...: the stat engine's values.
+        data.max_hp = c.max_hp;
+        data.max_mp = c.max_mp;
+        data.max_cp = c.max_cp;
         data
     }
 }
