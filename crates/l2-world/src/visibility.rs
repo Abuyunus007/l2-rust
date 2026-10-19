@@ -6,9 +6,11 @@
 // Java: org/l2jmobius/gameserver/entity/WorldRegion.java (addVisibleObject, removeVisibleObject,
 //       setActive, startActivation, startDeactivation, areNeighborsEmpty)
 //
-// What Java does on top that is not here yet, with its card:
-// - AI hooks (`describeStateToPlayer`, `setIntentionActive`, `notifyActionForgetObject`,
-//   `switchAI`): M4.
+// The AI hooks of Java are here (M4-AI-01): `wake_npc_in_view` (`getAI()`,
+// `describeStateToPlayer`, `setIntentionActive` of an idle monster) where objects come into view,
+// `notifyActionForgetObject` through `forget_each_other`, `switchAI` in `set_region_active`, and
+// `Attackable.onSpawn` after `spawn`.
+//
 // - Doors, fences and static objects are in `door.rs`; NPCs in `npc.rs`.
 
 use l2_net::Encode;
@@ -120,6 +122,8 @@ impl World {
         self.world_add_visible(id, region);
         // Java `onSpawn()`.
         self.on_spawn(id);
+        // Java `Attackable.onSpawn()`.
+        self.npc_on_spawn(id);
     }
 
     /// Java `WorldObject.decayMe()`: out of view for everybody, out of the world table.
@@ -306,9 +310,12 @@ impl World {
             };
             if kind == ObjectKind::Player && self.is_visible_for(wo, id) {
                 self.send_info(wo, id);
+                // `wo.getAI().describeStateToPlayer(object)`; a monster that is idle wakes up.
+                self.wake_npc_in_view(wo, id);
             }
             if wo_kind == ObjectKind::Player && self.is_visible_for(id, wo) {
                 self.send_info(id, wo);
+                self.wake_npc_in_view(id, wo);
             }
         }
     }
@@ -363,9 +370,11 @@ impl World {
                 };
                 if kind == ObjectKind::Player && self.is_visible_for(wo, id) {
                     self.send_info(wo, id);
+                    self.wake_npc_in_view(wo, id);
                 }
                 if wo_kind == ObjectKind::Player && self.is_visible_for(id, wo) {
                     self.send_info(id, wo);
+                    self.wake_npc_in_view(id, wo);
                 }
             }
         }
@@ -493,11 +502,9 @@ impl World {
             n.active_neighbors += if value { 1 } else { -1 };
             self.regions.compact(r);
         }
-        // Java `switchAI(value)`: the regeneration of the attackables starts when the region
-        // turns on (`status.rs`). The NPC AI and random animation parts come with M4-AI-01.
-        if value {
-            self.start_regeneration_in_region(region);
-        }
+        // Java `switchAI(value)`: on, the attackables regenerate; off, they go home and stop
+        // thinking (`ai/attackable.rs`).
+        self.switch_ai(region, value);
         self.regions.compact(region);
     }
 

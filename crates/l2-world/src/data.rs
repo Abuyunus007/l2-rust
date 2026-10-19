@@ -94,6 +94,13 @@ pub trait StaticData: Send + Sync {
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
 
+    /// `AccessLevel.canTakeAggro()` (`takeAggro` of `AccessLevels.xml`, default true): whether
+    /// monsters aggress a player of this level.
+    // FOLLOW-UP: the game server does not read `takeAggro` yet, so every level is aggressed.
+    fn can_take_aggro(&self, _level: i32) -> bool {
+        true
+    }
+
     /// `PlayerTemplate.getSafeFallHeight()` (`baseSafeFall`) of the player's class; Java's default
     /// when the template does not set it is 333.
     fn safe_fall_height(&self, _player: &PlayerData) -> i32 {
@@ -150,6 +157,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
+    }
+
+    fn can_take_aggro(&self, level: i32) -> bool {
+        (**self).can_take_aggro(level)
     }
 
     fn safe_fall_height(&self, player: &PlayerData) -> i32 {

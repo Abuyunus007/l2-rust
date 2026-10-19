@@ -14,22 +14,22 @@
 //   NPC, the first damage); `has_ai` is Java's `hasAI()`.
 //
 // # How an NPC AI plugs in (M4-AI-01)
-// - The NPC side is in [`npc`]: `npc_notify_think` (Java `AttackableAI.notifyActionThink` /
-//   `onEvtThink`, a no-op for now) and `npc_notify_attacked` (`AttackableAI.notifyActionAttacked`:
-//   for now only "into the aggro list, attack intention", then `CreatureAI`'s part) are the two
-//   hooks. AI-01 replaces their bodies, adds its fields to [`AiState`] (or its own table), and
-//   drives `set_intention_attack`, `World::do_attack` and the chase from its think loop.
-//   Everything else here already works for NPCs: the intention setters,
-//   `notify_action_ready_to_act` (called when an NPC's attack ends), the auto attack stance, the
-//   aggro list's damage and hate (`World::add_damage_hate`, `World::aggro_list`), `do_attack`.
-// - NPC movement (Java `moveToPawn` for NPCs) does not exist yet: `movement.rs` moves players
-//   only. AI-01's chase needs it (`MoveToPawn` broadcasts of NPCs are in Java's `AbstractAI`).
+// - [`attackable`] is `AttackableAI` (think loop, aggro list, minions, faction call, region
+//   switch); [`npc`] is the `CreatureAI` part the NPCs share (`ACTIVE` / `IDLE`, the hooks the
+//   intention machine calls). The AI fields are in [`AiState`]; an attackable's think state and
+//   the think set are [`attackable::AttackableWorld`].
+// - NPC movement is `movement.rs` (the code players use, with the NPC branches of Java's
+//   `Creature.moveToLocation` / `updatePosition`); the NPC's move fields are
+//   `Npc::movement`.
 //
 // # Left out
+// - Skills in the NPC AI (`AISkillScope`), scripts reacting to AI events: M5 / D-05, see
+//   `attackable.rs`.
 // - `NextAction` (callbacks run on AI events): only the client packets of skills and pick up set
 //   one (M5); nothing in M4 does.
 // - Cast, follow, pick up intentions (M5 / M4 ground items).
 
+pub mod attackable;
 pub mod npc;
 pub mod player;
 
@@ -41,8 +41,8 @@ use l2_util::ObjectId;
 use crate::movement::Intention;
 use crate::world::World;
 
-/// The AI fields of one creature (Java `AbstractAI` and `PlayerAI`).
-#[derive(Debug, Clone, Default, PartialEq)]
+/// The AI fields of one creature (Java `AbstractAI`, `PlayerAI` and `AttackableAI`).
+#[derive(Debug, Clone, PartialEq)]
 pub struct AiState {
     /// Java `_intention` of an NPC (a player's is in `MovementState::intention`).
     pub intention: Intention,
@@ -53,12 +53,41 @@ pub struct AiState {
     /// `PlayerAI._savedIntention == MOVE_TO` and `_savedMoveTo`: a move asked during an attack,
     /// replayed when the attack is over.
     pub saved_move_to: Option<(i32, i32, i32)>,
+    /// `AttackableAI._attackTimeout`, in game ticks (`i32::MAX` = none).
+    pub attack_timeout: i32,
+    /// `AttackableAI._globalAggro`.
+    pub global_aggro: i32,
+    /// `AttackableAI._thinking`: `notifyActionThink` does not run inside itself.
+    pub(crate) thinking: bool,
+    /// `AttackableAI._chaosTime`.
+    pub chaos_time: i32,
+    /// `AttackableAI._minionLeashTime`, in world ms (0 = not started).
+    pub minion_leash_ms: i64,
+}
+
+impl Default for AiState {
+    fn default() -> Self {
+        Self {
+            intention: Intention::Idle,
+            attack_target: None,
+            client_auto_attacking: false,
+            saved_move_to: None,
+            // `AttackableAI`'s constructor: `_attackTimeout = Integer.MAX_VALUE`.
+            attack_timeout: i32::MAX,
+            global_aggro: 0,
+            thinking: false,
+            chaos_time: 0,
+            minion_leash_ms: 0,
+        }
+    }
 }
 
 /// The AI table of the world.
 #[derive(Debug, Default)]
 pub struct AiWorld {
     pub(crate) creatures: HashMap<ObjectId, AiState>,
+    /// The think set, the minion lists and the settings of the attackable AI.
+    pub(crate) attackable: attackable::AttackableWorld,
 }
 
 impl World {
@@ -68,13 +97,20 @@ impl World {
     }
 
     pub(crate) fn ai_state_mut(&mut self, id: ObjectId) -> &mut AiState {
+        // `getAI()` makes an NPC's AI (an attackable's rolls its aggro timeout).
+        self.wake_ai(id);
         self.ai.creatures.entry(id).or_default()
     }
 
     /// Java `getAI()` for an NPC: the AI exists from now on.
     pub(crate) fn wake_ai(&mut self, id: ObjectId) {
-        if self.is_npc(id) {
-            self.ai.creatures.entry(id).or_default();
+        if self.is_npc(id) && !self.ai.creatures.contains_key(&id) {
+            let mut state = AiState::default();
+            if self.is_attackable_npc(id) {
+                // The `AttackableAI` constructor: `rollGlobalAggro()`.
+                state.global_aggro = self.roll_global_aggro(id);
+            }
+            self.ai.creatures.insert(id, state);
         }
     }
 
@@ -146,8 +182,23 @@ impl World {
 
     // ------------------------------------------------------------------ intentions
 
-    /// Java `CreatureAI.setIntentionAttack(target)` (with `PlayableAI`'s checks).
+    /// Java `setIntentionAttack(target)`: `AttackableAI`'s (the attack timeout, the AI task) around
+    /// `CreatureAI`'s.
     pub fn set_intention_attack(&mut self, id: ObjectId, target: ObjectId) {
+        let attackable = self.is_attackable_npc(id);
+        if attackable {
+            // Calculate the attack timeout.
+            self.wake_ai(id);
+            self.renew_attack_timeout(id);
+        }
+        self.creature_set_intention_attack(id, target);
+        if attackable {
+            self.start_ai_task(id);
+        }
+    }
+
+    /// Java `CreatureAI.setIntentionAttack(target)` (with `PlayableAI`'s checks).
+    fn creature_set_intention_attack(&mut self, id: ObjectId, target: ObjectId) {
         // `target.asCreature()`: fences and unknown ids are no creatures.
         if !self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) {
             self.client_action_failed(id);
@@ -159,8 +210,6 @@ impl World {
             self.client_action_failed(id);
             return;
         }
-        // M4-AI-01: `AttackableAI.setIntentionAttack` sets the attack timeout and starts the AI
-        // task first.
         if self.intention_of(id) == Intention::Attack {
             // Check if the AI already targets the Creature.
             if self.attack_target_of(id) != Some(target) {
@@ -189,31 +238,13 @@ impl World {
         if !self.is_npc(id) {
             return;
         }
-        // `stopFollow()`: NPCs do not follow before M4-AI-01.
-        if self.intention_of(id) == Intention::Active {
-            return;
+        // `getAI()` makes the AI.
+        self.wake_ai(id);
+        if self.is_attackable_npc(id) {
+            self.attackable_set_intention_active(id);
+        } else {
+            self.creature_set_intention_active(id);
         }
-        self.set_intention_value(id, Intention::Active);
-        // Check if region and its neighbors are active.
-        if !self.are_region_neighbors_active(id) {
-            return;
-        }
-        // Init cast and attack target.
-        self.set_attack_target(id, None);
-        // `clientStopMoving(null)`: NPCs do not move yet.
-        self.client_stop_auto_attack(id);
-        self.notify_action_think(id);
-    }
-
-    /// Java `CreatureAI.setIntentionIdle()` for an NPC (players: `World::set_intention_idle`).
-    pub(crate) fn npc_set_intention_idle(&mut self, id: ObjectId) {
-        if !self.is_npc(id) {
-            return;
-        }
-        self.set_intention_value(id, Intention::Idle);
-        self.set_attack_target(id, None);
-        // `clientStopMoving(null)`: NPCs do not move yet.
-        self.client_stop_auto_attack(id);
     }
 
     // ------------------------------------------------------------------ events
@@ -231,7 +262,8 @@ impl World {
                 self.set_intention_move_to(id, x, y, z);
             }
         }
-        // M4-AI-01: `AttackableAI.notifyActionReadyToAct` renews the attack timeout first.
+        // `AttackableAI.notifyActionReadyToAct` renews the attack timeout first.
+        self.attackable_ready_to_act(id);
         if !self.can_handle_action(id) {
             return;
         }
@@ -279,8 +311,8 @@ impl World {
         if !self.can_handle_action(id) {
             return;
         }
-        // `stopAITask()`.
-        self.stop_follow(id);
+        // `stopAITask()` (an attackable leaves the think set).
+        self.stop_ai_task(id);
         // `_actor.asNpc().setDisplayEffect(0)`: `ExChangeNpcState` is not ported, and no NPC has
         // a display effect before scripts (D-05).
         if let Some(npc) = self.npcs.get_mut(&id) {
@@ -297,11 +329,13 @@ impl World {
         self.broadcast_creature_packet(id, &die);
         if let Some(p) = self.players.get_mut(&id) {
             p.movement.pawn.ai_target = None;
+        } else if let Some(pawn) = self.pawn_mut(id) {
+            // AbstractAI.clientNotifyDead: `_target = null`.
+            pawn.ai_target = None;
         }
         self.set_intention_value(id, Intention::Idle);
         self.set_attack_target(id, None);
         self.stop_follow(id);
-        // `setWalking()` of an NPC: NPCs walk until their AI runs (M4-AI-01).
     }
 
     /// Java `notifyActionThink()`: players think in `interact.rs` (`PlayerAI`), NPCs in [`npc`].

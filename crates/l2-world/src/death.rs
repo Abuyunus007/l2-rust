@@ -28,7 +28,7 @@
 use std::collections::{HashMap, HashSet};
 
 use l2_protocol_game::server::visibility::status as attr;
-use l2_protocol_game::server::{Die, Revive, StatusUpdate, StopMove};
+use l2_protocol_game::server::{Die, Revive, StatusUpdate};
 use l2_util::ObjectId;
 use tracing::{debug, warn};
 
@@ -111,22 +111,8 @@ impl World {
     /// Java `Creature.stopMove(null)` for a creature that is dead: the movement ends and every
     /// player who sees it gets `StopMove`.
     fn stop_move_on_death(&mut self, id: ObjectId) {
-        if self.is_player(id) {
-            self.stop_move(id, None);
-            return;
-        }
-        // M4-AI-01: NPC movement state (`_move = null`); `World::stop_move` moves players only.
-        let (Some(core), true) = (self.core_of(id), self.is_npc(id)) else {
-            return;
-        };
-        let packet = StopMove {
-            object_id: id.0,
-            x: core.x,
-            y: core.y,
-            z: core.z,
-            heading: core.heading,
-        };
-        self.broadcast_packet(id, &packet);
+        // `stop_move` clears the movement state of a player or an NPC and broadcasts `StopMove`.
+        self.stop_move(id, None);
     }
 
     /// Java `Creature.doDie(killer)` for an NPC. `false` when it was dead already.
@@ -147,8 +133,8 @@ impl World {
         self.stop_hp_mp_regeneration(id);
 
         // M5: `stopAllEffects()` (a spawn that respawns) or `stopAllEffectsWithoutExclusions`.
-        // M4-AI-01: for an attackable killed by a player that is not a GM, the clan help range
-        // aggro on kill (`called.getAI().notifyActionAggression(killer, 1)`).
+        // Clan help range aggro on kill.
+        self.clan_help_on_kill(id, killer);
 
         // Send the Server->Client packet StatusUpdate with current HP and MP to all other Player
         // to inform.
@@ -160,7 +146,7 @@ impl World {
         }
 
         // `ZoneManager.getRegion(this).onDeath(this)`: no zone type reacts to a death.
-        // M4-AI-01: `getAttackByList().clear()`.
+        self.attack_by_clear(id);
         // `isChannelized()` (M5) and the boss defeat announcements (Custom/BossAnnouncements.ini,
         // off by default) are not ported.
         true
@@ -225,12 +211,9 @@ impl World {
     /// Java `Attackable.doDie(killer)` after `Npc.doDie`.
     fn attackable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
         // ON_ATTACKABLE_KILL: script event (D-05).
-        let _ = (id, killer);
-        // M4-AI-01: "Notify to minions if there are": `leader.getMinionList().onMinionDie(mob,
-        // respawnTime)` (a raid minion comes back after `RaidMinionRespawnTime`) and
-        // `mob.getMinionList().onMasterDie(false)` (a raid boss' minions are deleted). Raid bosses
-        // are not spawned from the spawn files, and the minions of other monsters neither
-        // respawn nor go.
+        let _ = killer;
+        // Notify to minions if there are.
+        self.minions_on_die(id);
     }
 
     /// Java `Player.doDie(killer)` after `Playable.doDie`.

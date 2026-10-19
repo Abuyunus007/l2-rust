@@ -419,8 +419,12 @@ impl World {
         }
         // M5: invulnerability; a GM without `giveDamage` rights (access level flags are not
         // loaded: every access level may give damage); `stopEffectsOnDamage(awake)` and the
-        // stun break (no draw without a stun). NpcStatus: duels (M5); M4-AI-01:
-        // `addAttackerToAttackByList(attacker)`. AttackableStatus: over-hit is a skill effect (M5).
+        // stun break (no draw without a stun). NpcStatus: duels (M5); the attack-by list is below.
+        // AttackableStatus: over-hit is a skill effect (M5).
+        // Add attackers to npc's attacker list.
+        if let Some(attacker) = attacker {
+            self.add_attacker_to_attack_by_list(id, attacker);
+        }
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);

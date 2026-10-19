@@ -613,10 +613,12 @@ fn deleting_an_npc_respawns_it_unless_the_spawn_was_stopped() {
     assert_eq!(s.world.npc_count(), 1);
 }
 
-/// A folk NPC killed by a GM command dies without the AI that sends `Die`: Java only sends the
-/// packet through `notifyActionDeath`, which needs an AI (`hasAI()`).
+/// `Die` goes through `notifyActionDeath`, which needs an AI (`hasAI()`). An NPC in view of a
+/// player has one since M4-AI-01 (Java's `addVisibleObject` calls `getAI()` on everything the
+/// player sees), so the folk NPC's death is announced; one nobody sees dies silently (nobody
+/// is there to be told).
 #[test]
-fn an_npc_without_an_ai_dies_without_the_die_packet() {
+fn an_npc_in_view_has_an_ai_and_its_death_is_announced() {
     let mut s = Scene::new(
         "npc-folk",
         5,
@@ -628,7 +630,7 @@ fn an_npc_without_an_ai_dies_without_the_die_packet() {
     s.kill(npc, Some(ObjectId(ME)));
     let me = names(&s.log.take(), ME);
     assert!(me.contains(&"STOP_MOVE".to_owned()), "{me:?}");
-    assert!(!me.contains(&"DIE".to_owned()), "{me:?}");
+    assert!(me.contains(&"DIE".to_owned()), "{me:?}");
     assert!(s.world.is_dead(npc));
     s.run_until(1000, |w| w.npc(npc).is_none());
     s.run_until(1000, |w| w.npc(npc).is_some());
@@ -798,8 +800,12 @@ fn a_dead_player_cannot_act() {
     );
     s.ticks(5);
     let sent = s.log.take();
-    let me = names(&sent, ME);
-    assert!(!me.contains(&"MOVE_TO_LOCATION".to_owned()), "{me:?}");
+    // (A monster that walks around sends its own `MoveToLocation`.)
+    let own_moves = of(&sent, ME, "MOVE_TO_LOCATION")
+        .iter()
+        .filter(|raw| decode::<l2_protocol_game::server::MoveToLocation>(raw).object_id == ME)
+        .count();
+    assert_eq!(own_moves, 0, "{:?}", names(&sent, ME));
     assert!(!s.world.is_moving(ObjectId(ME)));
     // Use the sword: refused.
     s.input(

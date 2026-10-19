@@ -216,6 +216,7 @@ impl World {
         // `WorldObject.decayMe`: out of view for everybody, out of the object table.
         self.cancel_decay_task(id);
         self.decay(id);
+        self.forget_npc_ai(id);
         self.forget_combat(id);
         self.forget_status(id);
         // `ZoneRegion.removeFromZones`: NPCs have no zone state.

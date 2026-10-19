@@ -126,6 +126,9 @@ pub enum TeleportWhereType {
 impl World {
     /// Java `Creature.isTeleporting()`.
     pub fn is_teleporting(&self, id: ObjectId) -> bool {
+        if let Some(n) = self.npcs.get(&id) {
+            return n.movement.teleporting;
+        }
         self.players.get(&id).is_some_and(|p| p.tele.teleporting)
     }
 
@@ -139,6 +142,11 @@ impl World {
     }
 
     fn set_teleporting(&mut self, id: ObjectId, value: bool) {
+        // An NPC has no client to wait for: just the flag.
+        if let Some(npc) = self.npcs.get_mut(&id) {
+            npc.movement.teleporting = value;
+            return;
+        }
         let timeout = self.settings.teleport.teleport_watchdog_timeout;
         let Some(player) = self.players.get_mut(&id) else {
             return;
@@ -179,11 +187,12 @@ impl World {
         }
     }
 
-    /// Java `Creature.teleToLocation(x, y, z, heading, instanceId, randomOffset)` for a player.
-    /// Does nothing for a player who is not online.
+    /// Java `Creature.teleToLocation(x, y, z, heading, instanceId, randomOffset)` for a player or
+    /// an NPC. Does nothing for a player who is not online.
     pub fn tele_to_location(&mut self, id: ObjectId, target: TeleportTarget) {
+        let is_npc = self.npcs.contains_key(&id);
         // "Prevent teleporting for players that disconnected unexpectedly."
-        if !self.players.contains_key(&id) || !self.sinks.contains_key(&id) {
+        if !is_npc && (!self.players.contains_key(&id) || !self.sinks.contains_key(&id)) {
             return;
         }
         let TeleportTarget {
@@ -300,14 +309,17 @@ impl World {
         self.set_position(id, x, y, z);
 
         // "Also adjust heading."
-        if heading != 0
-            && let Some(player) = self.players.get_mut(&id)
-        {
-            player.core.heading = heading;
+        // NOTE(java-quirk): a spawn's heading of -1 (random) is set as it is by an NPC that
+        // teleports to its spawn.
+        if heading != 0 {
+            self.set_heading(id, heading);
         }
 
         // Java completes the teleport right here only for a detached client; everybody else
-        // waits for `Appearing`.
+        // waits for `Appearing`. An NPC has no client: `onTeleported()` at once.
+        if is_npc {
+            self.on_teleported(id);
+        }
 
         self.revalidate_zone(id, true);
     }
@@ -355,6 +367,11 @@ impl World {
         };
         self.spawn_at(id, x, y, z);
         self.set_teleporting(id, false);
+        if self.npcs.contains_key(&id) {
+            // Monster.onTeleported: the minions follow their master.
+            self.on_master_teleported(id);
+            return;
+        }
 
         // Player.onTeleported
         // `setLastServerPosition(x, y, z)`: the position `ValidatePosition` compares against.

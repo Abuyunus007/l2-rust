@@ -326,13 +326,14 @@ fn player_kills_a_weak_monster() {
     all.extend(sent);
     // Every landed hit of the attacks, in order, from the Attack packets (the run stops at the
     // death, so every attack sent so far has landed).
+    // (The monster hits back since M4-AI-01: its own `Attack` packets are not counted here.)
     let attacks: Vec<Attack> = of(&all, ME, "ATTACK")
         .iter()
         .map(|raw| decode::<Attack>(raw))
+        .filter(|a| a.attacker_id == ME)
         .collect();
     let mut landed = Vec::new();
     for a in &attacks {
-        assert_eq!(a.attacker_id, ME);
         assert!(a.other_hits.is_empty(), "a sword hits once");
         let hit = a.first_hit;
         assert_eq!(hit.target_id, npc.0);
@@ -426,6 +427,8 @@ fn attack_stance_starts_on_the_hit_and_ends_after_15_seconds() {
     assert_eq!(starts, vec![npc.0, ME]);
     assert!(s.world.has_attack_stance_task(ObjectId(ME)));
 
+    // The monster fights back since M4-AI-01 and would keep the stance alive: it goes away.
+    s.world.delete_npc(npc);
     // Stop attacking: walk away (a move during the attack animation waits for its end).
     s.input(
         ME,

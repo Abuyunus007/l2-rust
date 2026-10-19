@@ -253,6 +253,12 @@ impl World {
     /// `removeVisibleObject` / `switchRegion` loops that runs when `other` leaves `creature`'s
     /// view, plus the AI's `notifyActionForgetObject`.
     pub(crate) fn clear_target_if(&mut self, creature: ObjectId, other: ObjectId) {
+        if self.npcs.contains_key(&creature) {
+            // `ai.notifyActionForgetObject(other)`; an NPC's own `_target` is only set by its
+            // skills (M5).
+            self.npc_notify_forget_object(creature, other);
+            return;
+        }
         if !self.players.contains_key(&creature) {
             return;
         }
