@@ -17,6 +17,12 @@
 // - `characters` through Java's own `UPDATE_CHARACTER` and `UPDATE_ONLINE_STATUS`,
 // - `items`, `character_skills`, `character_shortcuts` of the character it stores,
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup.
+//
+// Item rows reach the database two ways, like in Java: `PersistCommand::ItemChanges` carries the
+// rows of one `Item.updateDatabase()` (an equip, an unequip, a destroyed item) and is written at
+// once; the full store (`StorePlayer`) writes what differs from the last write, which covers
+// everything Java only writes later (a lower count, new items). The baseline of a character
+// follows both, so neither writes a row twice or inserts a row that exists.
 // `UPDATE_CHARACTER` writes every column, including ones M2 does not model (clan, nobless,
 // vitality...). Those are read from the row first and written back unchanged, so a store never
 // changes what the Java side owns. The account may be on one game server at a time (the login
@@ -78,6 +84,15 @@ pub trait PlayerStore: Send + 'static {
     fn player_offline(
         &mut self,
         object_id: ObjectId,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Item rows that changed (Java `Item.updateDatabase()`): written at once, not with the next
+    /// full store. `upserts` become an `UPDATE` when the row is known, else an `INSERT`.
+    fn store_item_changes(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[ItemData],
+        removed: &[ObjectId],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
 }
 
@@ -196,6 +211,28 @@ async fn run<S: PlayerStore>(
                     let _ = notices.send(LsNotice::PlayerLogout { account });
                 }
                 acks.ack(object_id);
+            }
+            OutboxMessage::Persist(PersistCommand::ItemChanges {
+                owner,
+                upserts,
+                removed,
+            }) => {
+                let mut result = store.store_item_changes(owner, &upserts, &removed).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store item changes of {} (try {} of {attempts}): {e}",
+                        owner.0,
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_item_changes(owner, &upserts, &removed).await;
+                }
+                // A lost item write is caught by the next full store, which compares the whole
+                // item list against what was last written.
+                if let Err(e) = result {
+                    error!("Item changes of {} could NOT be stored: {e}", owner.0);
+                }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
@@ -321,6 +358,82 @@ impl DbStore {
         Ok(baseline)
     }
 
+    /// Java `Item.updateInDb` (the row exists) or `Item.insertIntoDb`. `Ok(false)` when the item
+    /// is in a location the schema does not know (nothing is written).
+    async fn write_item(&self, char_id: i32, item: &ItemData, exists: bool) -> Result<bool, PersistError> {
+        let id = item.object_id.0;
+        let Some(loc) = ItemLocation::from_db_str(&item.loc) else {
+            warn!(
+                "Item {id} of character {char_id} has the unknown location {:?}; not stored.",
+                item.loc
+            );
+            return Ok(false);
+        };
+        if exists {
+            self.items
+                .update_item(
+                    id,
+                    &ItemUpdate {
+                        owner_id: char_id,
+                        count: item.count,
+                        loc,
+                        loc_data: item.loc_data,
+                        enchant_level: item.enchant_level,
+                        custom_type1: item.custom_type1,
+                        custom_type2: item.custom_type2,
+                        mana_left: item.mana_left,
+                        time: item.time,
+                    },
+                )
+                .await?;
+        } else {
+            self.items
+                .insert_item(&NewItem {
+                    owner_id: char_id,
+                    item_id: item.item_id,
+                    count: item.count,
+                    loc,
+                    loc_data: item.loc_data,
+                    enchant_level: item.enchant_level,
+                    object_id: id,
+                    custom_type1: item.custom_type1,
+                    custom_type2: item.custom_type2,
+                    mana_left: item.mana_left,
+                    time: item.time,
+                })
+                .await?;
+        }
+        Ok(true)
+    }
+
+    /// The writes of `store_item_changes`; the baseline follows each successful statement.
+    async fn apply_item_changes(
+        &self,
+        char_id: i32,
+        upserts: &[ItemData],
+        removed: &[ObjectId],
+        baseline: &mut Baseline,
+    ) -> Result<(), PersistError> {
+        for item in upserts {
+            let id = item.object_id.0;
+            if !self
+                .write_item(char_id, item, baseline.items.contains_key(&id))
+                .await?
+            {
+                continue;
+            }
+            baseline.items.insert(id, item.clone());
+        }
+        for object_id in removed {
+            // Java `removeFromDb` only runs for a row that exists.
+            if baseline.items.contains_key(&object_id.0) {
+                self.items.delete_item(object_id.0).await?;
+                baseline.items.remove(&object_id.0);
+            }
+        }
+        Ok(())
+    }
+
     /// Writes what differs between `player` and the baseline, and updates the baseline after
     /// every successful statement, so a failure half way leaves it accurate for the next try.
     async fn sync_children(
@@ -340,46 +453,11 @@ impl DbStore {
             if baseline.items.get(&id) == Some(item) {
                 continue;
             }
-            let Some(loc) = ItemLocation::from_db_str(&item.loc) else {
-                warn!(
-                    "Item {id} of character {char_id} has the unknown location {:?}; not stored.",
-                    item.loc
-                );
+            if !self
+                .write_item(char_id, item, baseline.items.contains_key(&id))
+                .await?
+            {
                 continue;
-            };
-            if baseline.items.contains_key(&id) {
-                self.items
-                    .update_item(
-                        id,
-                        &ItemUpdate {
-                            owner_id: char_id,
-                            count: item.count,
-                            loc,
-                            loc_data: item.loc_data,
-                            enchant_level: item.enchant_level,
-                            custom_type1: item.custom_type1,
-                            custom_type2: item.custom_type2,
-                            mana_left: item.mana_left,
-                            time: item.time,
-                        },
-                    )
-                    .await?;
-            } else {
-                self.items
-                    .insert_item(&NewItem {
-                        owner_id: char_id,
-                        item_id: item.item_id,
-                        count: item.count,
-                        loc,
-                        loc_data: item.loc_data,
-                        enchant_level: item.enchant_level,
-                        object_id: id,
-                        custom_type1: item.custom_type1,
-                        custom_type2: item.custom_type2,
-                        mana_left: item.mana_left,
-                        time: item.time,
-                    })
-                    .await?;
             }
             baseline.items.insert(id, item.clone());
         }
@@ -623,6 +701,34 @@ impl PlayerStore for DbStore {
         result
     }
 
+    async fn store_item_changes(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[ItemData],
+        removed: &[ObjectId],
+    ) -> Result<(), PersistError> {
+        let char_id = owner.0;
+        // The rows this character is known to have: from its last store, else from the database
+        // (once; the baseline then follows every write).
+        let mut baseline = match self.baselines.remove(&owner) {
+            Some(baseline) => baseline,
+            None => {
+                let row = self
+                    .characters
+                    .restore_character(char_id)
+                    .await?
+                    .ok_or(PersistError::NoSuchCharacter(char_id))?;
+                let class_index = (row.classid == Some(row.base_class)).then_some(0);
+                self.load_baseline(char_id, class_index).await?
+            }
+        };
+        let result = self
+            .apply_item_changes(char_id, upserts, removed, &mut baseline)
+            .await;
+        self.baselines.insert(owner, baseline);
+        result
+    }
+
     async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
         self.baselines.remove(&object_id);
         let now_ms = SystemTime::now()
@@ -647,6 +753,8 @@ mod tests {
     enum Call {
         Store(String),
         Offline(i32),
+        /// Item changes: owner, object ids written, object ids deleted.
+        Items(i32, Vec<i32>, Vec<i32>),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -671,6 +779,20 @@ mod tests {
 
         async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Offline(object_id.0));
+            Ok(())
+        }
+
+        async fn store_item_changes(
+            &mut self,
+            owner: ObjectId,
+            upserts: &[ItemData],
+            removed: &[ObjectId],
+        ) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Items(
+                owner.0,
+                upserts.iter().map(|i| i.object_id.0).collect(),
+                removed.iter().map(|i| i.0).collect(),
+            ));
             Ok(())
         }
     }
@@ -785,6 +907,46 @@ mod tests {
         assert_eq!(calls.lock().unwrap().first(), Some(&Call::Store("Alpha".into())));
         drop(tx);
         task.await.unwrap();
+    }
+
+    fn item_msg(owner: i32, upserts: &[i32], removed: &[i32]) -> OutboxMessage {
+        let item = |object_id: i32| ItemData {
+            object_id: ObjectId(object_id),
+            item_id: 57,
+            count: 1,
+            enchant_level: 0,
+            loc: "INVENTORY".into(),
+            loc_data: 0,
+            custom_type1: 0,
+            custom_type2: 0,
+            mana_left: -1,
+            time: -1,
+        };
+        OutboxMessage::Persist(PersistCommand::ItemChanges {
+            owner: ObjectId(owner),
+            upserts: upserts.iter().map(|o| item(*o)).collect(),
+            removed: removed.iter().map(|o| ObjectId(*o)).collect(),
+        })
+    }
+
+    #[tokio::test]
+    async fn item_changes_are_applied_in_order_between_the_stores() {
+        let messages = vec![
+            item_msg(1, &[10], &[]),
+            store_msg(1, "A1"),
+            item_msg(1, &[11, 12], &[10]),
+            left_msg(1),
+        ];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Items(1, vec![10], vec![]),
+                Call::Store("A1".into()),
+                Call::Items(1, vec![11, 12], vec![10]),
+                Call::Offline(1),
+            ]
+        );
     }
 
     #[tokio::test]

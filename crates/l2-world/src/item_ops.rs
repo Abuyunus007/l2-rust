@@ -60,7 +60,7 @@ impl World {
     }
 
     /// `new ItemInfo(item, change)` as the update packet carries it.
-    fn update_entry(&self, item: &ItemData, change: i16) -> ItemUpdate {
+    pub(crate) fn update_entry(&self, item: &ItemData, change: i16) -> ItemUpdate {
         ItemUpdate {
             change,
             item: item_info(item, &self.item_static_of(item), unix_ms_now()),
@@ -186,21 +186,15 @@ impl World {
     /// when it is all of it. `None` when the item has less than `count` (Java returns null).
     /// Returns the update entry for the client.
     fn take_from_item(&mut self, player: ObjectId, object_id: ObjectId, count: i64) -> Option<ItemUpdate> {
-        let p = self.players.get_mut(&player)?;
-        let index = p.data.items.iter().position(|i| i.object_id == object_id)?;
-        let have = p.data.items[index].count;
-        if have > count {
-            p.data.items[index].count -= count;
-            let item = p.data.items[index].clone();
-            Some(self.update_entry(&item, InventoryUpdate::MODIFIED))
-        } else if have == count {
-            let mut item = p.data.items.remove(index);
-            // `ItemManager.destroyItem`: the destroyed item has no count left.
-            item.count = 0;
-            Some(self.update_entry(&item, InventoryUpdate::REMOVED))
+        // The container operation is the inventory module's (M4-INV-01): it also takes a worn
+        // item off, drops the shortcut, deletes the row and refreshes the weight.
+        let removed = self.destroy_inventory_item(player, object_id, count)?;
+        let change = if removed.count == 0 {
+            InventoryUpdate::REMOVED
         } else {
-            None
-        }
+            InventoryUpdate::MODIFIED
+        };
+        Some(self.update_entry(&removed, change))
     }
 
     /// Java `Player.sendInventoryUpdate(iu)`: the entries join the pending update, which goes out
@@ -239,6 +233,6 @@ impl World {
         };
         p.pending_inventory.timer = None;
         let updates = std::mem::take(&mut p.pending_inventory.entries);
-        self.send(player, &InventoryUpdate { updates });
+        self.send_inventory_update_now(player, updates);
     }
 }

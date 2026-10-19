@@ -21,6 +21,7 @@ pub mod enter;
 pub mod formulas;
 pub mod ids;
 pub mod interact;
+pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod movement;
@@ -52,6 +53,7 @@ pub use data::{
 pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
+pub use inventory::InventorySettings;
 pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{Intention, MoveData, MovementState, PathRequests, object_of_requester, requester_of};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};

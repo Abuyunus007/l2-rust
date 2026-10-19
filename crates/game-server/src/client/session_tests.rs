@@ -927,7 +927,8 @@ async fn a_refused_session_key_gets_login_fail() {
 // ---- entering the world, chat, logout and restart ----------------------------------------------
 
 use l2_protocol_game::client::{
-    Appearing, EnterWorld, RequestKeyMapping, RequestNetPing, RequestRestart, Say2,
+    Appearing, EnterWorld, RequestDestroyItem, RequestItemList, RequestKeyMapping, RequestNetPing,
+    RequestRestart, Say2,
 };
 use l2_protocol_game::server::enterworld::{ExUiSetting, SkillList};
 use l2_protocol_game::server::{
@@ -1152,6 +1153,27 @@ async fn unknown_in_game_packets_are_ignored_and_the_net_ping_is_answered() {
     assert_eq!(name_of(&body), "NET_PING");
     let ping = NetPing::decode(&mut l2_net::PacketReader::new(&body[1..])).unwrap();
     assert!((0..1440).contains(&ping.game_time));
+}
+
+#[tokio::test]
+async fn the_inventory_packets_reach_the_world() {
+    // M4-INV-01: RequestItemList is answered 250 ms later (ItemList, then ExQuestItemList);
+    // RequestDestroyItem of an object the player does not have is answered with a system message.
+    let h = start(true).await;
+    let mut client = in_world(&h).await;
+    client
+        .send(
+            RequestDestroyItem {
+                object_id: 12345,
+                count: 1,
+            }
+            .to_bytes(),
+        )
+        .await;
+    assert_eq!(name_of(&client.recv().await.unwrap()), "SYSTEM_MESSAGE");
+    client.send(RequestItemList.to_bytes()).await;
+    assert_eq!(name_of(&client.recv().await.unwrap()), "ITEM_LIST");
+    assert_eq!(name_of(&client.recv().await.unwrap()), "EX_QUEST_ITEM_LIST");
 }
 
 #[tokio::test]

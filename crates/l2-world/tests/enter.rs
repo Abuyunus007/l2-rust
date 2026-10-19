@@ -1039,6 +1039,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
             .map(|o| match o {
                 Out::Persist(PersistCommand::StorePlayer(_)) => "store",
                 Out::Persist(PersistCommand::PlayerLeft { .. }) => "left",
+                Out::Persist(PersistCommand::ItemChanges { .. }) => "items",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

@@ -362,6 +362,13 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             gm_debug_html_paths: config.general.gm_debug_html_paths,
             ..TalkSettings::default()
         },
+        inventory: l2_world::InventorySettings {
+            allow_discard_item: config.general.allow_discarditem,
+            destroy_all_items: config.general.destroy_all_items,
+            gm_trade_restricted_items: config.general.gm_trade_restricted_items,
+            gm_item_restriction: config.general.gm_item_restriction,
+            auto_loot_slot_limit: p.auto_loot_slot_limit,
+        },
         ..WorldSettings::default()
     };
     // `ListPetRentNpc` is a post-processed list in the generated config, so it is read from

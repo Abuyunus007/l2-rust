@@ -466,6 +466,25 @@ impl ClientSession {
             ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
             ClientPacket::SendBypassBuildCmd(p) => ClientInput::BuildCmd { command: p.command },
             ClientPacket::BypassUserCmd(p) => ClientInput::UserCommand { id: p.command },
+            ClientPacket::UseItem(p) => ClientInput::UseItem {
+                object_id: p.object_id,
+                ctrl_pressed: p.ctrl_pressed,
+            },
+            ClientPacket::RequestUnEquipItem(p) => ClientInput::UnEquipItem {
+                paperdoll_slot: p.paperdoll_slot,
+            },
+            ClientPacket::RequestDestroyItem(p) => ClientInput::DestroyItem {
+                object_id: p.object_id,
+                count: p.count,
+            },
+            ClientPacket::RequestDropItem(p) => ClientInput::DropItem {
+                object_id: p.object_id,
+                count: p.count,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            },
+            ClientPacket::RequestItemList(_) => ClientInput::ItemList,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
