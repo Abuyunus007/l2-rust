@@ -11,10 +11,10 @@ import java.nio.file.Paths;
  * java l2rust.vectors.Main geo [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * java l2rust.vectors.Main geo-engine [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
  * java l2rust.vectors.Main geo-path [outDir] &lt;geodataDownloadDir&gt; &lt;geodataConvertedDir&gt;
- * (cwd = game server root, absolute outDir) java l2rust.vectors.Main stats|formulas &lt;absolute outDir&gt;
+ * (cwd = game server root, absolute outDir) java l2rust.vectors.Main stats|formulas|drops &lt;absolute outDir&gt;
  * </pre>
  *
- * Generators: {@code crypto}, {@code login-packets}, {@code geo}, {@code geo-engine} and {@code geo-path} (the last three need the two geodata folders as arguments, so {@code all} does not run them), {@code stats} and {@code formulas} (need the game server root as working directory, so {@code all} does not run them either).<br>
+ * Generators: {@code crypto}, {@code login-packets}, {@code geo}, {@code geo-engine} and {@code geo-path} (the last three need the two geodata folders as arguments, so {@code all} does not run them), {@code stats}, {@code formulas} and {@code drops} (need the game server root as working directory, so {@code all} does not run them either).<br>
  * {@code outDir} defaults to {@code java-vectors/out} (relative to the working directory).
  */
 public final class Main
@@ -63,7 +63,7 @@ public final class Main
 				}
 				GeoPathVectors.generate(out, Paths.get(args[2]), Paths.get(args[3]));
 			}
-			case "stats", "formulas" ->
+			case "stats", "formulas", "drops" ->
 			{
 				// The working directory is the game server root (config/ and data/ are read from it); a relative outDir would end up there.
 				if (!out.isAbsolute())
@@ -76,6 +76,10 @@ public final class Main
 					if (args[0].equals("stats"))
 					{
 						StatVectors.generate(out);
+					}
+					else if (args[0].equals("drops"))
+					{
+						DropVectors.generate(out);
 					}
 					else
 					{
