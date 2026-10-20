@@ -262,6 +262,11 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-FIX-03](M5/M5-FIX-03.md) | Follow-ups: item reuse save, ClassBalance skill tables, old corpses, maps | sonnet | spot | ITEM-01, EFX-04, SAVE-01 | merged |
 | [M5-E2E-01](M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | merged |
 | [M5-RUN-01](M5/M5-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M5a..d with the owner |
+| [M5-FU-01](M5/M5-FU-01.md) | Admin pages, confirm dialogs, GM item list | sonnet | spot | M5 | in-progress |
+| [M5-FU-02](M5/M5-FU-02.md) | Guards and defenders, raid minion respawn, NPC fear | sonnet | full | M5 | in-progress |
+| [M5-FU-03](M5/M5-FU-03.md) | Daily resets and recommendations | sonnet | full | M5 | in-progress |
+| [M5-FU-04](M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | in-progress |
+| [M5-FU-05](M5/M5-FU-05.md) | Item elements, augments and item rows | sonnet | full | M5 | in-progress |
 
 ## Milestone test results
 
