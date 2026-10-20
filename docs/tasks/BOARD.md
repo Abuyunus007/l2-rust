@@ -283,7 +283,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M6-GPROTO-09](M6/M6-GPROTO-09.md) | Party, PvP, trade, clan and summon packets | haiku | spot | none | in-progress |
+| [M6-GPROTO-09](M6/M6-GPROTO-09.md) | Party, PvP, trade, clan and summon packets | haiku | spot | none | merged |
 | [M6-PVP-01](M6/M6-PVP-01.md) | PvP flag, karma, PK, relations | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
 | [M6-PARTY-01](M6/M6-PARTY-01.md) | Parties | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
 | [M6-TRADE-01](M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
