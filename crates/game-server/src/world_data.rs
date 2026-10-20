@@ -438,6 +438,10 @@ pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
     let mut s = DeathSettings {
         disconnect_after_death: config.player.disconnect_after_death,
         default_corpse_time: config.npc.default_corpse_time,
+        spoiled_corpse_extend_time: config.npc.spoiled_corpse_extend_time,
+        corpse_consume_skill_allowed_time_before_decay: config
+            .npc
+            .corpse_consume_skill_allowed_time_before_decay,
         ..DeathSettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
@@ -947,6 +951,8 @@ pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings
         karma_player_can_be_killed_in_peacezone: p.alt_game_karma_player_can_be_killed_in_peacezone,
         min_npc_level_dmg_penalty: config.npc.min_npc_level_dmg_penalty,
         alt_attackable_npcs: config.npc.alt_attackable_npcs,
+        calculate_magic_success_by_skill_magic_level: p.calculate_magic_success_by_skill_magic_level,
+        min_npc_level_magic_penalty: config.npc.min_npc_level_magic_penalty,
         ..CombatSettings::default()
     };
     // Java: `ALT_GAME_CANCEL_BOW = AltGameCancelByHit is "bow" or "all"`, `ALT_GAME_CANCEL_CAST`
@@ -966,6 +972,11 @@ pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings
             "CritDmgPenaltyForLvLDifferences",
             &ini.get_string("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58"),
             &s.npc_crit_dmg_penalty,
+        );
+        s.npc_skill_chance_penalty = float_list(
+            "SkillChancePenaltyForLvLDifferences",
+            &ini.get_string("SkillChancePenaltyForLvLDifferences", "2.5, 3.0, 3.25, 3.5"),
+            &s.npc_skill_chance_penalty,
         );
     }
     s
@@ -1336,6 +1347,41 @@ mod tests {
         let wand = data.item(6).unwrap();
         assert!(wand.weapon && wand.type2 == 0);
         assert_eq!(wand.body_part, 0x0080);
+    }
+
+    /// The spoil and magic success keys (M5-SPOIL-01) reach the world settings: with no config
+    /// files the Java defaults, with `NPC.ini` / `Player.ini` their values.
+    #[test]
+    fn the_spoil_and_magic_success_settings_are_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let combat = combat_settings(&config, dir.path());
+        assert!(combat.calculate_magic_success_by_skill_magic_level);
+        assert_eq!(combat.min_npc_level_magic_penalty, 78);
+        assert_eq!(combat.npc_skill_chance_penalty, [2.5, 3.0, 3.25, 3.5]);
+        let death = death_settings(&config, dir.path());
+        assert_eq!(death.spoiled_corpse_extend_time, 10);
+        assert_eq!(death.corpse_consume_skill_allowed_time_before_decay, 2000);
+
+        std::fs::write(
+            dir.path().join("NPC.ini"),
+            "SkillChancePenaltyForLvLDifferences = 1.5, 2.5\nMinNPCLevelForMagicPenalty = 70\n\
+             SpoiledCorpseExtendTime = 33\nCorpseConsumeSkillAllowedTimeBeforeDecay = 1234\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("Player.ini"),
+            "CalculateMagicSuccessBySkillMagicLevel = False\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let combat = combat_settings(&config, dir.path());
+        assert!(!combat.calculate_magic_success_by_skill_magic_level);
+        assert_eq!(combat.min_npc_level_magic_penalty, 70);
+        assert_eq!(combat.npc_skill_chance_penalty, [1.5, 2.5]);
+        let death = death_settings(&config, dir.path());
+        assert_eq!(death.spoiled_corpse_extend_time, 33);
+        assert_eq!(death.corpse_consume_skill_allowed_time_before_decay, 1234);
     }
 
     /// The vitality and Nevit settings carry the Java defaults of the generated config.

@@ -54,6 +54,13 @@ pub struct DeathSettings {
     /// `NpcConfig.DEFAULT_CORPSE_TIME` (`DefaultCorpseTime`), seconds: the corpse time of a
     /// creature that has no NPC template.
     pub default_corpse_time: i32,
+    /// `NpcConfig.SPOILED_CORPSE_EXTEND_TIME` (`SpoiledCorpseExtendTime`, default 10), seconds
+    /// added to the corpse time of a spoiled (or seeded) monster.
+    pub spoiled_corpse_extend_time: i32,
+    /// `NpcConfig.CORPSE_CONSUME_SKILL_ALLOWED_TIME_BEFORE_DECAY`
+    /// (`CorpseConsumeSkillAllowedTimeBeforeDecay`, default 2000), milliseconds: a corpse with
+    /// less time left than this is too old to sweep.
+    pub corpse_consume_skill_allowed_time_before_decay: i32,
 }
 
 impl Default for DeathSettings {
@@ -64,6 +71,8 @@ impl Default for DeathSettings {
             respawn_restore_mp: 0.0,
             disconnect_after_death: true,
             default_corpse_time: 7,
+            spoiled_corpse_extend_time: 10,
+            corpse_consume_skill_allowed_time_before_decay: 2000,
         }
     }
 }
@@ -84,6 +93,12 @@ pub struct DeathWorld {
     pub(crate) respawns: HashMap<ObjectId, PendingRespawn>,
     /// Java `Creature._isPendingRevive`.
     pub(crate) pending_revive: HashSet<ObjectId>,
+    /// The world tick each entry of `decay` is due at: the timer wheel does not say, and
+    /// `DecayTaskManager.getRemainingTime` (the sweep's old corpse check) needs it.
+    pub(crate) decay_due: HashMap<ObjectId, u64>,
+    /// Java `Attackable._spoilerObjectId` and `_sweepItems` of the monsters that have either (see
+    /// `rewards/drop.rs`). A monster without an entry is not spoiled and has nothing to sweep.
+    pub(crate) spoil: HashMap<ObjectId, crate::rewards::drop::SpoilState>,
 }
 
 impl World {
@@ -380,8 +395,8 @@ impl World {
     /// `new Die(creature)` as Java builds and writes it.
     ///
     /// The four clan buttons (clan hall, castle, siege headquarters, fortress) need clans and
-    /// sieges (M5); Java writes zeros for a creature without them. The blue sweep glow is the
-    /// spoil of M4-DROP-01 (`isSweepActive`).
+    /// sieges (M5); Java writes zeros for a creature without them. The blue sweep glow is
+    /// `isSweepActive` (M5-SPOIL-01).
     pub fn die_packet(&self, id: ObjectId) -> Die {
         let can_teleport = self.can_revive(id) && !self.is_pending_revive(id);
         // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()`: neither exists yet.
@@ -395,7 +410,8 @@ impl World {
             to_clan_hall: false,
             to_castle: false,
             to_siege_hq: false,
-            sweepable: false,
+            // Java `creature.isSweepActive()`: only an attackable with something left to sweep.
+            sweepable: self.is_sweep_active(id),
             fixed_res,
             to_fortress: false,
         }

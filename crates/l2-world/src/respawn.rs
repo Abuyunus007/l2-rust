@@ -198,13 +198,18 @@ impl World {
     /// Adding again replaces the old due time.
     pub(crate) fn add_decay_task(&mut self, id: ObjectId) {
         let delay_secs: i64 = if let Some(npc) = self.npcs.get(&id) {
-            // NOTE: `isSpoiled() || isSeeded()` adds `SpoiledCorpseExtendTime` (M4-DROP-01 for
-            // the spoil, M5 for seeds).
-            self.npc_world
+            let mut delay = self
+                .npc_world
                 .template(npc.npc_id)
                 .map_or(i64::from(self.settings.death.default_corpse_time), |t| {
                     i64::from(t.corpse_time)
-                })
+                });
+            // `isAttackable() && (isSpoiled() || isSeeded())` adds `SpoiledCorpseExtendTime`
+            // (seeds: the manor, later).
+            if self.is_attackable_npc(id) && self.is_spoiled(id) {
+                delay += i64::from(self.settings.death.spoiled_corpse_extend_time);
+            }
+            delay
         } else if self.players.contains_key(&id) {
             // Offline play: not ported.
             if self.settings.death.disconnect_after_death {
@@ -219,13 +224,28 @@ impl World {
         let ms = u64::try_from(delay_secs.saturating_mul(1000)).unwrap_or(0);
         let due = self.tick + TimerWheel::ms_to_ticks(ms);
         let timer = self.timers.schedule_at(due, TimerKind::Decay(id));
+        self.death.decay_due.insert(id, due);
         if let Some(old) = self.death.decay.insert(id, timer) {
             self.timers.cancel(old);
         }
     }
 
+    /// Java `DecayTaskManager.getRemainingTime(creature)`, in milliseconds: the time left of the
+    /// decay task, negative when it is overdue, `i64::MAX` (`Long.MAX_VALUE`) without a task.
+    pub fn decay_remaining_ms(&self, id: ObjectId) -> i64 {
+        match self.death.decay_due.get(&id) {
+            Some(&due) => {
+                let ticks =
+                    i64::try_from(due).unwrap_or(i64::MAX) - i64::try_from(self.tick).unwrap_or(i64::MAX);
+                ticks.saturating_mul(i64::try_from(crate::world::TICK.as_millis()).unwrap_or(50))
+            }
+            None => i64::MAX,
+        }
+    }
+
     /// Java `DecayTaskManager.cancel(creature)`.
     pub(crate) fn cancel_decay_task(&mut self, id: ObjectId) -> bool {
+        self.death.decay_due.remove(&id);
         match self.death.decay.remove(&id) {
             Some(timer) => {
                 self.timers.cancel(timer);
@@ -243,6 +263,7 @@ impl World {
     /// A decay timer fired: Java `creature.onDecay()`.
     pub(crate) fn on_decay_timer(&mut self, id: ObjectId) {
         self.death.decay.remove(&id);
+        self.death.decay_due.remove(&id);
         if self.players.contains_key(&id) {
             self.on_player_decay(id);
         } else {
@@ -285,6 +306,9 @@ impl World {
         self.cancel_decay_task(id);
         self.decay(id);
         self.forget_npc_ai(id);
+        // The spoiler and the sweep items go with the corpse; the object id comes back on
+        // respawn (`Attackable.onSpawn` clears them).
+        self.death.spoil.remove(&id);
         self.forget_combat(id);
         self.forget_status(id);
         // `ZoneRegion.removeFromZones`: NPCs have no zone state.

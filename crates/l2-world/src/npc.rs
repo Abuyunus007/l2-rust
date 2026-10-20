@@ -877,6 +877,9 @@ impl World {
             spawn_time_ms: 0,
         };
         self.npcs.insert(id, npc);
+        // Java `Attackable.onSpawn`: "Clear mob spoil, seed" and `_sweepItems.set(null)`. A respawn
+        // reuses the object id, so the spoil table must not remember the last life.
+        self.death.spoil.remove(&id);
         // A new Java object has a new effect list (a respawn re-creates the NPC with its old id).
         self.forget_effects(id);
         // Java's constructor: the template's skills (passive effects copy the calculators).

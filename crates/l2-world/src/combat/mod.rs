@@ -88,6 +88,13 @@ pub struct CombatSettings {
     pub npc_crit_dmg_penalty: Vec<f32>,
     /// `NpcConfig.ALT_ATTACKABLE_NPCS` (`AltAttackableNpcs`): `Npc.canBeAttacked()`.
     pub alt_attackable_npcs: bool,
+    /// `PlayerConfig.CALCULATE_MAGIC_SUCCESS_BY_SKILL_MAGIC_LEVEL`
+    /// (`CalculateMagicSuccessBySkillMagicLevel`, default true).
+    pub calculate_magic_success_by_skill_magic_level: bool,
+    /// `NpcConfig.MIN_NPC_LEVEL_MAGIC_PENALTY` (`MinNPCLevelForMagicPenalty`).
+    pub min_npc_level_magic_penalty: i32,
+    /// `NpcConfig.NPC_SKILL_CHANCE_PENALTY` (`SkillChancePenaltyForLvLDifferences`).
+    pub npc_skill_chance_penalty: Vec<f32>,
 }
 
 impl Default for CombatSettings {
@@ -104,6 +111,9 @@ impl Default for CombatSettings {
             npc_dmg_penalty: vec![0.7, 0.6, 0.6, 0.55],
             npc_crit_dmg_penalty: vec![0.75, 0.65, 0.6, 0.58],
             alt_attackable_npcs: true,
+            calculate_magic_success_by_skill_magic_level: true,
+            min_npc_level_magic_penalty: 78,
+            npc_skill_chance_penalty: vec![2.5, 3.0, 3.25, 3.5],
         }
     }
 }

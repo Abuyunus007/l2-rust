@@ -217,12 +217,29 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         | Condition::PlayerCanResurrect { .. }
         | Condition::PlayerCanSummon { .. }
         | Condition::PlayerCanSummonSiegeGolem { .. }
-        | Condition::PlayerCanSweep { .. }
         | Condition::PlayerCanTakeCastle
         | Condition::PlayerCanTakeFort { .. }
         | Condition::PlayerCanTransform { .. }
         | Condition::PlayerCanUntransform { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
+        }
+        // Java `ConditionPlayerCanSweep`: `_value == canSweep`. Like Java's `testImpl` it tells
+        // the sweeper why it cannot (one message per failed check).
+        Condition::PlayerCanSweep { value } => {
+            let world = a.world();
+            let can_sweep = env
+                .skill
+                .and_then(|s| {
+                    let skills = world.skill_table()?;
+                    let template = skills.get(s.id, s.level)?;
+                    let check = world.can_sweep_check(a.object_id(), template);
+                    for id in &check.messages {
+                        world.send(a.object_id(), &l2_protocol_game::server::SystemMessage::new(*id));
+                    }
+                    Some(check.can_sweep)
+                })
+                .unwrap_or(false);
+            *value == can_sweep
         }
         Condition::PlayerInsideZoneId { zones } => a
             .player()
