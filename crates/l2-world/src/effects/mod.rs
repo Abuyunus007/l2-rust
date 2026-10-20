@@ -31,13 +31,15 @@
 //   `isInstant`/`getEffectType`/`canStart` and does nothing (logged once per name).
 //
 // Not here: parties (`PartySpelled`), summons, olympiad (`ExOlympiadSpelledInfo`), the formulas
-// (M5-FORM-02 fills `apply.rs`' hooks), the handlers (M5-EFX-01..03), saving buffs (M5-SAVE-01).
+// (M5-FORM-02 fills `apply.rs`' hooks), the handlers (M5-EFX-01..03). Saving the buffs over a
+// logout is `save.rs` (`character_skills_save`).
 
 pub mod apply;
 pub mod buff_info;
 mod handlers;
 pub mod list;
 pub mod registry;
+mod save;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -50,6 +52,7 @@ use tracing::warn;
 pub use buff_info::{ActiveEffect, BuffInfo};
 pub use list::{EffectList, IconEntry, ListKind};
 pub use registry::{EffectCtor, EffectCx, EffectHandler, EffectRegistry, EffectType, effect_flag};
+pub use save::SavedEffect;
 
 use crate::timer::TimerId;
 use crate::world::World;
@@ -102,6 +105,13 @@ pub struct EffectSettings {
     /// `GeneralConfig.DEBUFF_DURATION_USES_RESISTS` (`DebuffDurationUsesResists`), for M5-FORM-02's
     /// abnormal time.
     pub debuff_duration_uses_resists: bool,
+    /// `PlayerConfig.STORE_SKILL_COOLTIME` (`StoreSkillCooltime`): the buffs are saved at logout and
+    /// restored at enter world.
+    pub store_skill_cooltime: bool,
+    /// `PlayerConfig.ALT_STORE_TOGGLES` (`AltStoreToggles`).
+    pub alt_store_toggles: bool,
+    /// `PlayerConfig.ALT_STORE_DANCES` (`AltStoreDances`).
+    pub alt_store_dances: bool,
 }
 
 impl Default for EffectSettings {
@@ -113,6 +123,9 @@ impl Default for EffectSettings {
             effect_tick_ratio: 666,
             show_effect_messages_on_login: false,
             debuff_duration_uses_resists: true,
+            store_skill_cooltime: true,
+            alt_store_toggles: false,
+            alt_store_dances: false,
         }
     }
 }
