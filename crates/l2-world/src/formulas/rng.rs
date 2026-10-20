@@ -173,6 +173,56 @@ pub(crate) mod testing {
 }
 
 #[cfg(test)]
+pub(crate) mod testing_gaussian {
+    use super::Rnd;
+
+    /// A scripted [`Rnd`] whose only draw is `next_gaussian`, always the given value.
+    pub(crate) struct Gaussian(pub(crate) f64);
+
+    impl Rnd for Gaussian {
+        fn next_boolean(&mut self) -> bool {
+            unreachable!("next_boolean")
+        }
+        fn next_bytes(&mut self, _bytes: &mut [u8]) {
+            unreachable!("next_bytes")
+        }
+        fn get_int(&mut self, _bound: i32) -> i32 {
+            unreachable!("get_int")
+        }
+        fn get_int_range(&mut self, _origin: i32, _bound: i32) -> i32 {
+            unreachable!("get_int_range")
+        }
+        fn next_int(&mut self) -> i32 {
+            unreachable!("next_int")
+        }
+        fn get_long(&mut self, _bound: i64) -> i64 {
+            unreachable!("get_long")
+        }
+        fn get_long_range(&mut self, _origin: i64, _bound: i64) -> i64 {
+            unreachable!("get_long_range")
+        }
+        fn next_long(&mut self) -> i64 {
+            unreachable!("next_long")
+        }
+        fn next_float(&mut self) -> f32 {
+            unreachable!("next_float")
+        }
+        fn get_double(&mut self, _bound: f64) -> f64 {
+            unreachable!("get_double")
+        }
+        fn get_double_range(&mut self, _origin: f64, _bound: f64) -> f64 {
+            unreachable!("get_double_range")
+        }
+        fn next_double(&mut self) -> f64 {
+            unreachable!("next_double")
+        }
+        fn next_gaussian(&mut self) -> f64 {
+            self.0
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

@@ -1,4 +1,9 @@
-//! Combat and regeneration formulas as pure functions (M4-FORM-01).
+//! Combat, regeneration and skill formulas as pure functions (M4-FORM-01, M5-FORM-02).
+//!
+//! The skill formulas (M5-FORM-02) are in [`skill`] (physical skills, blows, crit, evasion, cast
+//! and reuse time), [`magic`] (magic and mana damage, magic success, magic crit), [`effect`]
+//! (effect landing, skill mastery, abnormal time), [`heal`] (the Heal effect's amount) and
+//! [`traits`] (trait and element bonuses of skills).
 //!
 //! Java: `gameserver/mechanics/stats/Formulas.java` (+ `HitConditionBonusData.getConditionBonus`,
 //! `Creature.calculateTimeBetweenAttacks` / `calculateReuseTime` / `getRandomDamageMultiplier`).
@@ -21,30 +26,56 @@
 //!   The world's seedable RNG ([`WorldRng`](crate::WorldRng)) implements [`Rnd`].
 //! - Quirks stay: marked `// NOTE(java-quirk):`.
 //!
-//! Tests: unit tests next to each function, and `tests/formula_vectors.rs` for the Java vectors.
+//! Tests: unit tests next to each function, and `tests/formula_vectors.rs` (normal attacks) and
+//! `tests/skill_formula_vectors.rs` (skills) for the Java vectors.
 
 pub mod damage;
+pub mod effect;
+pub mod heal;
 pub mod hit;
+pub mod magic;
 pub mod regen;
 pub mod rng;
+pub mod skill;
 pub mod speed;
+pub mod traits;
 
 pub use damage::{
     PhysDamClassBalance, PhysDamInput, TraitInput, calc_attack_trait_bonus, calc_attribute_bonus,
     calc_lvl_bonus_mod, calc_phys_dam, random_damage_multiplier,
 };
+pub use effect::{
+    AbnormalTimeInput, AbnormalTimeResists, EffectSuccessInput, SkillMasteryInput, calc_effect_abnormal_time,
+    calc_effect_success, calc_probability, calc_skill_mastery,
+};
+pub use heal::{HealInput, HealWeaponGrade, calc_heal_amount};
 pub use hit::{
     AtkBreakInput, CritInput, HitMissInput, ShieldInput, calc_atk_break, calc_crit, calc_hit_miss,
     calc_shld_use, condition_bonus,
+};
+pub use magic::{
+    MCriticalHitInput, MagicAffectedInput, MagicDamClassBalance, MagicDamInput, MagicDamResult, MagicFailure,
+    MagicSuccessInput, ManaDamInput, ManaDamResult, calc_m_critical_hit, calc_magic_affected, calc_magic_dam,
+    calc_magic_success, calc_mana_dam, calc_mcrit,
 };
 pub use regen::{
     CpRegenInput, HpRegenInput, MpRegenInput, RegenKind, RegenPosture, calc_cp_regen, calc_hp_regen,
     calc_mp_regen, get_regenerate_period,
 };
 pub use rng::Rnd;
+pub use skill::{
+    BlowClassBalance, BlowInput, BlowSuccessInput, SkillCastTimeInput, SkillCritInput,
+    SkillPhysDamClassBalance, SkillPhysDamInput, SkillPower, SkillReuseInput, calc_backstab_damage,
+    calc_blow_damage, calc_blow_success, calc_physical_skill_evasion, calc_skill_cast_time, calc_skill_crit,
+    calc_skill_phys_dam, calc_skill_reuse_delay, calculate_skill_resurrect_restore_percent,
+};
 pub use speed::{
     ReuseAttackType, ReuseInput, calc_atk_spd, calc_p_atk_spd, calculate_reuse_time,
     calculate_time_between_attacks,
+};
+pub use traits::{
+    TraitKind, attribute_element, calc_attribute_bonus_skill, calc_general_trait_bonus,
+    calc_weapon_trait_bonus,
 };
 
 /// Java `Formulas.SHIELD_DEFENSE_FAILED`: no shield defence.

@@ -127,7 +127,7 @@ pub fn random_damage_multiplier(
 }
 
 /// Java `MathUtil.pow(double, int)` (exponentiation by squaring, the same rounding as Java).
-fn pow_int(mut base: f64, mut exp: i32) -> f64 {
+pub(crate) fn pow_int(mut base: f64, mut exp: i32) -> f64 {
     if exp == 0 {
         return 1.0;
     }
@@ -177,15 +177,7 @@ pub struct TraitInput {
 
 /// Java `Formulas.calcGeneralTraitBonus` for a type-2 trait with `ignoreResistance = true`.
 fn general_trait_bonus(t: &TraitInput) -> f64 {
-    if t.target_invul {
-        return 0.0;
-    }
-    if !t.attacker_has_attack_trait || !t.target_has_defence_trait {
-        return 1.0;
-    }
-    // float - float stays a float in Java, only the `+ 1.0` widens it.
-    let result = f64::from(t.attack_trait - t.defence_trait) + 1.0;
-    result.clamp(0.05, 2.0)
+    super::traits::calc_general_trait_bonus(super::traits::TraitKind::Weakness, t, true)
 }
 
 /// Java `Formulas.calcAttackTraitBonus(attacker, target)`.
@@ -232,7 +224,7 @@ pub fn calc_lvl_bonus_mod(
 
 /// `penalties[level_diff]`, or the last entry when `level_diff` is past the end (Java's three
 /// `NPC_*_DMG_PENALTY` lookups). An empty array would throw in Java; here it changes nothing.
-fn level_penalty(penalties: &[f32], level_diff: i32) -> f64 {
+pub(crate) fn level_penalty(penalties: &[f32], level_diff: i32) -> f64 {
     let Some(last) = penalties.last() else {
         return 1.0;
     };
