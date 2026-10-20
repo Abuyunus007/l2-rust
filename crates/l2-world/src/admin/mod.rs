@@ -24,6 +24,7 @@ pub mod exp_sp;
 pub mod invul;
 pub mod level;
 pub mod rights;
+pub mod skills;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -103,6 +104,7 @@ impl Default for AdminWorld {
         invul::register(&mut handlers);
         create_item::register(&mut handlers);
         level::register(&mut handlers);
+        skills::register(&mut handlers);
         Self { handlers }
     }
 }
