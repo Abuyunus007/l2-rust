@@ -504,6 +504,8 @@ impl World {
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
         self.send(id, &skill_list(&p.data, &*self.data));
         debug!("enter-world packets sent to {id}");
+        // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
+        self.punishment_on_player_login(id);
     }
 
     /// Java `player.sendPacket(new ExVoteSystemInfo(player))`: the recommendations and the state of
@@ -635,6 +637,9 @@ impl World {
             ),
             charges: self.charges_of(id),
             charged_souls: self.charged_souls_of(id),
+            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`: the refusal and the
+            // silence mode are not modelled.
+            chat_blocked: self.is_chat_banned(id),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,

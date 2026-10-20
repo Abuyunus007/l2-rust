@@ -153,6 +153,7 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("BlockAbnormalSlot", block::BlockAbnormalSlot::create);
     registry.register("BlockAction", block::BlockAction::create);
     registry.register("BlockChat", block::BlockChat::create);
+    registry.register("BlockParty", block::BlockParty::create);
     registry.register("BlockResurrection", flags::BlockResurrection::create);
     registry.register("Bluff", misc::Bluff::create);
     registry.register("ChameleonRest", relax::ChameleonRest::create);

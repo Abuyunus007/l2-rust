@@ -1051,6 +1051,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     | PersistCommand::ResetRecommends
                     | PersistCommand::PlayerVariables { .. },
                 ) => "reco",
+                Out::Persist(
+                    PersistCommand::StorePunishment(_)
+                    | PersistCommand::EndPunishment { .. }
+                    | PersistCommand::CharAccessLevel { .. },
+                ) => "punishment",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

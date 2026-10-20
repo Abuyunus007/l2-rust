@@ -45,12 +45,13 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewShortcut, NewSkillSave, Pool,
-    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
+    ItemRepository, ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewPunishment, NewShortcut,
+    NewSkillSave, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel,
+    SkillRepository, VariableRepository,
 };
 use l2_world::{
-    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, SavedEffect, SavedItemReuse,
-    ShortcutData, SkillData,
+    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, PunishmentAffect,
+    PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData, StoredPunishment,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -71,6 +72,8 @@ pub enum LsNotice {
     /// Java `LoginServerThread.sendLogout` -> `PlayerLogout`. Only sent after the character's
     /// final store finished (or failed for good, which is logged).
     PlayerLogout { account: String },
+    /// Java `LoginServerThread.sendAccessLevel` -> `ChangeAccessLevel` (a ban is -1, its end 0).
+    AccessLevel { account: String, level: i32 },
 }
 
 /// Why a store failed.
@@ -145,6 +148,36 @@ pub trait PlayerStore: Send + 'static {
         upserts: &[(String, String)],
         removed: &[String],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
+    /// Java `PunishmentTask.onStart`: `INSERT INTO punishments`. The store keeps the id the
+    /// database gave the row to find it again in [`end_punishment`](Self::end_punishment).
+    fn store_punishment(
+        &mut self,
+        _punishment: &StoredPunishment,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// Java `PunishmentTask.onEnd`: the row's `expiration` becomes `ended_at`. `id` is 0 for a
+    /// punishment this store inserted itself (found again by key, affect and type).
+    fn end_punishment(
+        &mut self,
+        _id: i32,
+        _key: &str,
+        _affect: PunishmentAffect,
+        _kind: PunishmentType,
+        _ended_at: i64,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// Java `PunishmentManager.changeCharAccessLevel`.
+    fn change_char_access_level(
+        &mut self,
+        _char_id: i32,
+        _level: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
 }
 
 /// How often a failed store is tried again before it is given up (and logged as lost).
@@ -372,12 +405,107 @@ async fn run<S: PlayerStore>(
                     error!("The variables of {} could NOT be stored: {e}", owner.0);
                 }
             }
+
+            OutboxMessage::Persist(PersistCommand::StorePunishment(punishment)) => {
+                let mut result = store.store_punishment(&punishment).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the punishment of {} (try {} of {attempts}): {e}",
+                        punishment.key,
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_punishment(&punishment).await;
+                }
+                // Java logs it and goes on: the punishment is active, it is only not stored.
+                if let Err(e) = result {
+                    error!("The punishment of {} could NOT be stored: {e}", punishment.key);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::EndPunishment {
+                id,
+                key,
+                affect,
+                kind,
+                ended_at,
+            }) => {
+                let mut result = store.end_punishment(id, &key, affect, kind, ended_at).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not end the punishment of {key} (try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.end_punishment(id, &key, affect, kind, ended_at).await;
+                }
+                if let Err(e) = result {
+                    error!("The end of the punishment of {key} could NOT be stored: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::CharAccessLevel { char_id, level }) => {
+                let mut result = store.change_char_access_level(char_id, level).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not set the access level of character {char_id} (try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.change_char_access_level(char_id, level).await;
+                }
+                if let Err(e) = result {
+                    error!("The access level of character {char_id} could NOT be stored: {e}");
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
+            }
+            OutboxMessage::Ls(LsEvent::AccessLevel { account, level }) => {
+                let _ = notices.send(LsNotice::AccessLevel { account, level });
             }
         }
     }
     debug!("Outbox closed, persistence task done.");
+}
+
+/// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
+/// error is logged and the server goes on without punishments, like Java. The world sorts out
+/// the unknown and the expired ones (`World::load_punishments`).
+pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
+    match PunishmentRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| PunishmentRecord {
+                id: i32::try_from(row.id).unwrap_or(0),
+                key: row.key,
+                affect: row.affect,
+                kind: row.kind,
+                expiration: row.expiration,
+                reason: row.reason,
+                punished_by: row.punished_by,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("PunishmentManager: Error while loading punishments: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `CharInfoTable`'s constructor, the database half: the id and name of every character.
+pub async fn load_char_names(pool: &Pool) -> Vec<(i32, String)> {
+    match CharacterRepository::new(pool.clone()).all_names().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| (i32::try_from(row.char_id).unwrap_or(0), row.char_name))
+            .collect(),
+        Err(e) => {
+            warn!("CharInfoTable: Failed to load character names: {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `ItemsOnGroundManager`'s constructor, the database half (`load()`): what is in
@@ -564,6 +692,9 @@ pub struct DbStore {
     shortcuts: ShortcutRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
+    punishments: PunishmentRepository,
+    /// The ids the database gave the punishments this store inserted, by (key, affect, type).
+    punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
 }
 
@@ -577,7 +708,9 @@ impl DbStore {
             item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
-            variables: VariableRepository::new(pool),
+            variables: VariableRepository::new(pool.clone()),
+            punishments: PunishmentRepository::new(pool),
+            punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
         }
     }
@@ -1237,6 +1370,59 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_punishment(&mut self, punishment: &StoredPunishment) -> Result<(), PersistError> {
+        let id = self
+            .punishments
+            .insert(&NewPunishment {
+                key: punishment.key.clone(),
+                affect: punishment.affect.name().to_owned(),
+                kind: punishment.kind.name().to_owned(),
+                expiration: punishment.expiration,
+                reason: punishment.reason.clone(),
+                punished_by: punishment.punished_by.clone(),
+            })
+            .await?;
+        if let Ok(id) = u32::try_from(id) {
+            self.punishment_ids.insert(
+                (
+                    punishment.key.clone(),
+                    punishment.affect.name(),
+                    punishment.kind.name(),
+                ),
+                id,
+            );
+        }
+        Ok(())
+    }
+
+    async fn end_punishment(
+        &mut self,
+        id: i32,
+        key: &str,
+        affect: PunishmentAffect,
+        kind: PunishmentType,
+        ended_at: i64,
+    ) -> Result<(), PersistError> {
+        let known = self
+            .punishment_ids
+            .remove(&(key.to_owned(), affect.name(), kind.name()));
+        let Some(id) = u32::try_from(id).ok().filter(|id| *id > 0).or(known) else {
+            // The insert failed (it was logged): there is no row to update.
+            warn!(
+                "No stored row for the punishment {} of {key}; nothing to end.",
+                kind.name()
+            );
+            return Ok(());
+        };
+        self.punishments.update_expiration(id, ended_at).await?;
+        Ok(())
+    }
+
+    async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
+        self.characters.update_access_level(char_id, level).await?;
+        Ok(())
+    }
+
     async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
         self.baselines.remove(&object_id);
         let now_ms = SystemTime::now()
@@ -1273,6 +1459,12 @@ mod tests {
         ResetRecommends,
         /// Variables: owner, (name, value) written, names deleted.
         Variables(i32, Vec<(String, String)>, Vec<String>),
+        /// A stored punishment: key, affect and type names.
+        Punishment(String, &'static str, &'static str),
+        /// An ended punishment: row id, key, affect and type names, time.
+        EndPunishment(i32, String, &'static str, &'static str, i64),
+        /// `changeCharAccessLevel`: character, level.
+        AccessLevel(i32, i32),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -1364,6 +1556,38 @@ mod tests {
                 .lock()
                 .unwrap()
                 .push(Call::Variables(owner.0, upserts.to_vec(), removed.to_vec()));
+            Ok(())
+        }
+
+        async fn store_punishment(&mut self, punishment: &StoredPunishment) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Punishment(
+                punishment.key.clone(),
+                punishment.affect.name(),
+                punishment.kind.name(),
+            ));
+            Ok(())
+        }
+
+        async fn end_punishment(
+            &mut self,
+            id: i32,
+            key: &str,
+            affect: PunishmentAffect,
+            kind: PunishmentType,
+            ended_at: i64,
+        ) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::EndPunishment(
+                id,
+                key.to_owned(),
+                affect.name(),
+                kind.name(),
+                ended_at,
+            ));
+            Ok(())
+        }
+
+        async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::AccessLevel(char_id, level));
             Ok(())
         }
     }
@@ -1595,6 +1819,60 @@ mod tests {
                 Call::Store("A1".into()),
                 Call::Items(1, vec![11, 12], vec![10]),
                 Call::Offline(1),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn punishment_writes_keep_their_order_and_the_login_server_hears_the_ban() {
+        let messages = vec![
+            OutboxMessage::Persist(PersistCommand::StorePunishment(StoredPunishment {
+                key: "7".into(),
+                affect: PunishmentAffect::Character,
+                kind: PunishmentType::Ban,
+                expiration: 0,
+                reason: "r".into(),
+                punished_by: "GM".into(),
+            })),
+            store_msg(7, "Seven"),
+            left_msg(7),
+            OutboxMessage::Persist(PersistCommand::CharAccessLevel {
+                char_id: 7,
+                level: -1,
+            }),
+            OutboxMessage::Ls(LsEvent::AccessLevel {
+                account: "acc7".into(),
+                level: -1,
+            }),
+            OutboxMessage::Persist(PersistCommand::EndPunishment {
+                id: 0,
+                key: "7".into(),
+                affect: PunishmentAffect::Character,
+                kind: PunishmentType::Ban,
+                ended_at: 123,
+            }),
+        ];
+        let (calls, notices) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Punishment("7".into(), "CHARACTER", "BAN"),
+                Call::Store("Seven".into()),
+                Call::Offline(7),
+                Call::AccessLevel(7, -1),
+                Call::EndPunishment(0, "7".into(), "CHARACTER", "BAN", 123),
+            ]
+        );
+        assert_eq!(
+            notices,
+            vec![
+                LsNotice::PlayerLogout {
+                    account: "acc7".into()
+                },
+                LsNotice::AccessLevel {
+                    account: "acc7".into(),
+                    level: -1
+                },
             ]
         );
     }

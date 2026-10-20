@@ -42,8 +42,9 @@ use l2_net::{
     FrameHandler, PacketReader, spawn_connection,
 };
 use l2_protocol_login::link::{
-    AuthResponse, BlowFishKey, GameServerAuth, InitLS, LsPacket, PROTOCOL_REV, PlayerAuthRequest,
-    PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, ServerStatus, decode_from_ls,
+    AuthResponse, BlowFishKey, ChangeAccessLevel, GameServerAuth, InitLS, LsPacket, PROTOCOL_REV,
+    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, ServerStatus,
+    decode_from_ls,
 };
 use rand::Rng;
 use tokio::net::TcpStream;
@@ -336,6 +337,10 @@ enum Command {
     PlayerLogout {
         account: String,
     },
+    AccessLevel {
+        account: String,
+        level: i32,
+    },
     ReplyCharacters {
         account: String,
         chars: u8,
@@ -456,6 +461,16 @@ impl LsLink {
     pub async fn player_logout(&self, account: &str) {
         self.send_command(Command::PlayerLogout {
             account: account.to_owned(),
+        });
+    }
+
+    /// Tells the login server to change the access level of an account: -1 bans it, 0 lifts the
+    /// ban.
+    // Java: LoginServerThread.sendAccessLevel
+    pub async fn send_access_level(&self, account: &str, level: i32) {
+        self.send_command(Command::AccessLevel {
+            account: account.to_owned(),
+            level,
         });
     }
 
@@ -843,6 +858,9 @@ impl Actor {
                 self.in_game.insert(account);
             }
             Command::PlayerLogout { account } => self.logout(&account),
+            Command::AccessLevel { account, level } => {
+                self.send(&ChangeAccessLevel { account, level });
+            }
             Command::ReplyCharacters {
                 account,
                 chars,

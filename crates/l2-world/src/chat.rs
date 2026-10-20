@@ -5,11 +5,11 @@
 //
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
-// `GLOBAL` to everybody. Left out because the systems do not exist: chat bans, jail, cursed
-// weapons, block lists, factions, the say filter (`UseChatFilter`), voiced commands, fake
-// players, the global-chat flood protector, and the party, clan, alliance, petition and room
-// channels (their messages are dropped with a debug line, like Java does for a channel without
-// handler).
+// `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
+// out because the systems do not exist: cursed weapons, block lists, factions, the say filter
+// (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
+// party, clan, alliance, petition and room channels (their messages are dropped with a debug
+// line, like Java does for a channel without handler).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, ChatType, CreatureSay, SayBody, SenderField, SystemMessage};
@@ -65,8 +65,8 @@ impl World {
             return;
         }
 
-        // `player.isChatBanned()`: the bot report debuffs ban the chat (the punishment system is
-        // not ported). A `.` starts a voiced command and is let through.
+        // `player.isChatBanned()`: a chat ban punishment (the bot report debuffs start one). A `.`
+        // starts a voiced command and is let through.
         if self.is_chat_banned(id) && !text.starts_with('.') {
             if self.is_affected_by_effect_type(id, crate::effects::EffectType::ChatBlock) {
                 self.send(
@@ -75,20 +75,23 @@ impl World {
                         SystemMessageId::YouHaveBeenReportedAsAnIllegalProgramUserSoChattingIsNotAllowed,
                     ),
                 );
-            } else if matches!(
-                chat_type,
-                ChatType::General
-                    | ChatType::Shout
-                    | ChatType::Trade
-                    | ChatType::HeroVoice
-                    | ChatType::Whisper
-            ) {
-                // `BanChatChannels` (the shipped `General.ini` value; the key is not read yet).
+            } else if self.punishment_settings().ban_chat_channels.contains(&chat_type) {
                 self.send(
                     id,
                     &SystemMessage::new(SystemMessageId::ChattingIsCurrentlyProhibited),
                 );
             }
+            return;
+        }
+
+        if self.is_jailed(id)
+            && self.punishment_settings().jail_disable_chat
+            && matches!(
+                chat_type,
+                ChatType::Whisper | ChatType::Shout | ChatType::Trade | ChatType::HeroVoice
+            )
+        {
+            self.send_message(id, "You can not chat with players outside of the jail.");
             return;
         }
 
@@ -191,6 +194,29 @@ impl World {
         true
     }
 
+    /// The first lines of the channel handlers: `isChatBanned() && BAN_CHAT_CHANNELS.contains(type)`
+    /// ("chatting is prohibited") and, with `jail` (every channel but general), `JAIL_DISABLE_CHAT &&
+    /// isJailed() && !isGM()`. `true` when the message must not go out.
+    fn channel_refuses(&self, id: ObjectId, chat_type: ChatType, jail: bool) -> bool {
+        if self.is_chat_banned(id) && self.punishment_settings().ban_chat_channels.contains(&chat_type) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::ChattingIsCurrentlyProhibitedIfYouTryToChatBeforeTheProhibitionIsRemovedTheProhibitionTimeWillIncreaseEvenFurther,
+                ),
+            );
+            return true;
+        }
+        if jail && self.punishment_settings().jail_disable_chat && self.is_jailed(id) && !self.is_gm(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::ChattingIsCurrentlyProhibited),
+            );
+            return true;
+        }
+        false
+    }
+
     /// Java `Player.sendMessage(String)`.
     pub(crate) fn send_message(&self, to: ObjectId, text: &str) {
         self.send(to, &SystemMessage::text(text));
@@ -215,11 +241,14 @@ impl World {
         }
     }
 
-    // Java: ChatGeneral.onChat (without voiced commands, chat ban and block list)
+    // Java: ChatGeneral.onChat (without voiced commands and block list)
     fn chat_general(&self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
+        if self.channel_refuses(id, ChatType::General, false) {
+            return;
+        }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         if player.core.level < self.settings.minimum_chat_level && !is_gm {
             self.send_message(
@@ -246,6 +275,9 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
+        if self.channel_refuses(id, ChatType::Shout, true) {
+            return;
+        }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         if player.core.level < self.settings.minimum_chat_level && !is_gm {
             self.send_message(
@@ -266,6 +298,9 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
+        if self.channel_refuses(id, ChatType::Trade, true) {
+            return;
+        }
         if player.core.level < TRADE_CHAT_LEVEL {
             self.send_message(id, "Players can use Trade chat after Lv. 20.");
             return;
@@ -322,6 +357,9 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
+        if self.channel_refuses(id, ChatType::Whisper, true) {
+            return;
+        }
         // "Return if no target is set."
         let Some(target) = target else {
             return;
@@ -337,6 +375,21 @@ impl World {
         };
         match receiver {
             Some(receiver) => {
+                let receiver_id = receiver.core.object_id;
+                if self.punishment_settings().jail_disable_chat
+                    && self.is_jailed(receiver_id)
+                    && !self.is_gm(id)
+                {
+                    self.send_message(id, "Player is in jail.");
+                    return;
+                }
+                if self.is_chat_banned(receiver_id) {
+                    self.send(
+                        id,
+                        &SystemMessage::new(SystemMessageId::ThatPersonIsInMessageRefusalMode),
+                    );
+                    return;
+                }
                 let to_receiver = self.say_packet(id, ChatType::Whisper, &player.data.name, text);
                 let to_sender =
                     self.say_packet(id, ChatType::Whisper, &format!("->{}", receiver.data.name), text);
@@ -354,6 +407,9 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
+        if self.channel_refuses(id, ChatType::HeroVoice, true) {
+            return;
+        }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         if !is_gm {
             self.send_message(id, "Only Heroes can enter the Hero channel.");

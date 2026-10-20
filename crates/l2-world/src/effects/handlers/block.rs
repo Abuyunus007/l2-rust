@@ -14,6 +14,7 @@ use l2_data::stats::jnum::{java_split, parse_int};
 
 use super::status_params::{int_or, required_str};
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
+use crate::punishments::{NewPunishment, PunishmentAffect, PunishmentType};
 use crate::world::World;
 
 /// `BotReportTable.PARTY_ACTION_BLOCK_ID`.
@@ -23,9 +24,8 @@ const CHAT_BLOCK_ID: i32 = -5;
 
 /// Java `BlockAction`: the bot report debuff. It blocks party actions and chat for as long as it
 /// lasts.
-// NOTE: Java starts a stored `PunishmentTask` (`PARTY_BAN`, `CHAT_BAN`, saved in the `punishments`
-// table). The punishment system is not ported, so the bans are flags of the player's control
-// state: they end with the effect and are not saved.
+// Java starts a `PunishmentTask` (`PARTY_BAN`, `CHAT_BAN`) marked as stored: it lives in the
+// punishment manager (`punishments.rs`) for as long as the effect lasts, without a table row.
 #[derive(Debug, Clone)]
 pub(crate) struct BlockAction {
     blocked_actions: BTreeSet<i32>,
@@ -55,28 +55,36 @@ impl EffectHandler for BlockAction {
     }
 
     fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
-        if self.blocked_actions.contains(&PARTY_ACTION_BLOCK_ID)
-            && let Some(c) = world.control_mut(cx.effected)
-        {
-            c.party_banned = false;
+        if self.blocked_actions.contains(&PARTY_ACTION_BLOCK_ID) {
+            world.stop_punishment(
+                &cx.effected.0.to_string(),
+                PunishmentAffect::Character,
+                PunishmentType::PartyBan,
+            );
         }
-        if self.blocked_actions.contains(&CHAT_BLOCK_ID)
-            && let Some(c) = world.control_mut(cx.effected)
-        {
-            c.chat_banned = false;
+        if self.blocked_actions.contains(&CHAT_BLOCK_ID) {
+            world.stop_punishment(
+                &cx.effected.0.to_string(),
+                PunishmentAffect::Character,
+                PunishmentType::ChatBan,
+            );
         }
     }
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        if self.blocked_actions.contains(&PARTY_ACTION_BLOCK_ID)
-            && let Some(c) = world.control_mut(cx.effected)
-        {
-            c.party_banned = true;
+        if self.blocked_actions.contains(&PARTY_ACTION_BLOCK_ID) {
+            world.start_punishment(NewPunishment::in_memory(
+                cx.effected.0,
+                PunishmentType::PartyBan,
+                "block action debuff",
+            ));
         }
-        if self.blocked_actions.contains(&CHAT_BLOCK_ID)
-            && let Some(c) = world.control_mut(cx.effected)
-        {
-            c.chat_banned = true;
+        if self.blocked_actions.contains(&CHAT_BLOCK_ID) {
+            world.start_punishment(NewPunishment::in_memory(
+                cx.effected.0,
+                PunishmentType::ChatBan,
+                "block action debuff",
+            ));
         }
     }
 }
@@ -101,15 +109,51 @@ impl EffectHandler for BlockChat {
     }
 
     fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
-        if let Some(c) = world.control_mut(cx.effected) {
-            c.chat_banned = false;
-        }
+        world.stop_punishment(
+            &cx.effected.0.to_string(),
+            PunishmentAffect::Character,
+            PunishmentType::ChatBan,
+        );
     }
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        if let Some(c) = world.control_mut(cx.effected) {
-            c.chat_banned = true;
-        }
+        world.start_punishment(NewPunishment::in_memory(
+            cx.effected.0,
+            PunishmentType::ChatBan,
+            "Chat banned bot report",
+        ));
+    }
+}
+
+/// Java `BlockParty`: the party ban of a bot report.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct BlockParty;
+
+impl BlockParty {
+    pub(crate) fn create(_template: &EffectTemplate) -> Result<Box<dyn EffectHandler>, String> {
+        Ok(Box::new(BlockParty))
+    }
+}
+
+impl EffectHandler for BlockParty {
+    fn can_start(&self, world: &World, cx: &EffectCx<'_>) -> bool {
+        world.is_player(cx.effected)
+    }
+
+    fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
+        world.stop_punishment(
+            &cx.effected.0.to_string(),
+            PunishmentAffect::Character,
+            PunishmentType::PartyBan,
+        );
+    }
+
+    fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
+        world.start_punishment(NewPunishment::in_memory(
+            cx.effected.0,
+            PunishmentType::PartyBan,
+            "Party banned by bot report",
+        ));
     }
 }
 

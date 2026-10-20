@@ -24,7 +24,6 @@
 //
 // What Java does in these zones that is left out, with the system that brings it:
 // - `NoLandingZone`: dismounting a wyvern, the GM notice: mounts, M4
-// - `JailZone.onExit`: pulling a jailed player back: jail system, M5
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
 //   `characters.lastAccess`; the login hook is not called
 // - `isAffected`: the `affectedClassType` check (needs the class list), the instance template
@@ -554,6 +553,8 @@ impl World {
                     self.set_inside(id, ZoneId::Pvp, false);
                     self.send(id, &SystemMessage::new(YouHaveLeftACombatZone));
                 }
+                // When a player wants to exit jail even if he is still jailed, teleport him back.
+                self.jail_zone_exit(id);
                 if self.settings.zones.jail_disable_transaction {
                     self.set_inside(id, ZoneId::NoStore, false);
                 }
