@@ -843,6 +843,7 @@ fn mp_and_item_costs() {
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     };
     let mut s = Scene::with_items(vec![ore]);
     s.use_skill(ORE_SKILL, false, false);

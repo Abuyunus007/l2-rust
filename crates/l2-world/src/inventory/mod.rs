@@ -30,8 +30,9 @@
 // # Left out on purpose (each has a marker where it belongs)
 // - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
 //   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
-// - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations, the
-//   olympiad, augmentations and element attributes: not modelled yet, treated as "not active".
+// - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations and the
+//   olympiad: not modelled yet, treated as "not active". (Augmentations and element attributes
+//   are on the item: `effects/item_extras.rs`; their stat side is in `stats/skills.rs`.)
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 
@@ -80,6 +81,12 @@ pub struct InventorySettings {
     pub auto_loot_slot_limit: bool,
     /// `RatesConfig.RATE_EXTRACTABLE` (`RateExtractable`): the amounts a box gives.
     pub rate_extractable: f32,
+    /// `PlayerConfig.ALT_ALLOW_AUGMENT_TRADE` (`AltAllowAugmentTrade`): an augmented item may be
+    /// dropped (`Item.isDropable`), traded and sold.
+    pub alt_allow_augment_trade: bool,
+    /// `PlayerConfig.ALT_ALLOW_AUGMENT_DESTROY` (`AltAllowAugmentDestroy`): an augmented item may
+    /// be destroyed (`Item.isDestroyable`).
+    pub alt_allow_augment_destroy: bool,
 }
 
 impl Default for InventorySettings {
@@ -91,6 +98,8 @@ impl Default for InventorySettings {
             gm_item_restriction: true,
             auto_loot_slot_limit: false,
             rate_extractable: 1.0,
+            alt_allow_augment_trade: false,
+            alt_allow_augment_destroy: true,
         }
     }
 }

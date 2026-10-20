@@ -1,15 +1,14 @@
-//! The `items` table and the augmentation rows of `item_attributes`: what an inventory,
-//! warehouse, pet or the paperdoll restores, and what an item writes when it changes.
+//! The `items` table, the augmentation rows of `item_attributes` and the element rows of
+//! `item_elementals`: what an inventory, warehouse, pet or the paperdoll restores, and what an
+//! item writes when it changes.
 // Java: org/l2jmobius/gameserver/entity/item/instance/Item.java (restoreFromDb, insertIntoDb,
-// Java: updateInDb, removeFromDb, restoreAttributes, updateItemAttributes, removeAugmentation),
+// Java: updateInDb, removeFromDb, restoreAttributes, updateItemAttributes, updateItemElements,
+// Java: clearElementAttr, removeAugmentation),
 // Java: entity/itemcontainer/ItemContainer.restore, Inventory.restore,
 // Java: PlayerInventory.restoreVisibleInventory, entity/item/enums/ItemLocation.java
 //
 // Same layout as characters.rs: verbatim SQL constants, one method per statement, row and write
 // structs that mirror the Java parameter lists.
-//
-// NOTE(gap): Java's Item.removeFromDb also deletes `item_elementals` and `item_variables` rows.
-// Neither table has a schema file in sql/game yet, so those deletes are not ported.
 
 use sqlx::FromRow;
 
@@ -32,6 +31,20 @@ const UPDATE_ITEM: &str = "UPDATE items SET owner_id=?,count=?,loc=?,loc_data=?,
 const DELETE_ITEM: &str = "DELETE FROM items WHERE object_id = ?";
 // Java: Item.removeFromDb, Item.removeAugmentation
 const DELETE_ITEM_ATTRIBUTES: &str = "DELETE FROM item_attributes WHERE itemId = ?";
+// Java: Item.removeFromDb, Item.updateItemElements, Item.clearElementAttr (element -1)
+const DELETE_ITEM_ELEMENTALS: &str = "DELETE FROM item_elementals WHERE itemId = ?";
+// Java: Item.clearElementAttr (one element)
+const DELETE_ITEM_ELEMENTAL: &str = "DELETE FROM item_elementals WHERE itemId = ? AND elemType = ?";
+// Java: Item.removeFromDb
+const DELETE_ITEM_VARIABLES: &str = "DELETE FROM item_variables WHERE id = ?";
+// Java: Item.updateItemElements
+const INSERT_ITEM_ELEMENTAL: &str = "INSERT INTO item_elementals VALUES(?,?,?)";
+// Java: Item.restoreAttributes
+const SELECT_ITEM_ELEMENTALS: &str = "SELECT elemType,elemValue FROM item_elementals WHERE itemId=?";
+// Java: Item.restoreAttributes, for every item of an owner at once (the rows `restoreAttributes`
+// reads one item at a time, here in the order of the primary key).
+const SELECT_AUGMENTATIONS_OF_OWNER: &str = "SELECT a.itemId, a.augAttributes FROM item_attributes a INNER JOIN items i ON i.object_id=a.itemId WHERE i.owner_id=?";
+const SELECT_ELEMENTALS_OF_OWNER: &str = "SELECT e.itemId, e.elemType, e.elemValue FROM item_elementals e INNER JOIN items i ON i.object_id=e.itemId WHERE i.owner_id=? ORDER BY e.itemId, e.elemType";
 // Java: Item.updateItemAttributes
 const REPLACE_ITEM_ATTRIBUTES: &str = "REPLACE INTO item_attributes VALUES(?,?)";
 // Java: Item.restoreAttributes
@@ -181,6 +194,43 @@ pub struct PaperdollItemRow {
     pub enchant_level: Option<i32>,
 }
 
+/// A row of `item_elementals` (Java `Elementals`): the element id (`Elementals.FIRE` 0 to
+/// `DARK` 5) and its value.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromRow)]
+pub struct ItemElementalRow {
+    /// `elemType`.
+    #[sqlx(rename = "elemType")]
+    pub elem_type: i8,
+    /// `elemValue`.
+    #[sqlx(rename = "elemValue")]
+    pub elem_value: i32,
+}
+
+/// A row of `item_elementals` with the item it belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromRow)]
+pub struct OwnerElementalRow {
+    /// `itemId`.
+    #[sqlx(rename = "itemId")]
+    pub item_id: i32,
+    /// `elemType`.
+    #[sqlx(rename = "elemType")]
+    pub elem_type: i8,
+    /// `elemValue`.
+    #[sqlx(rename = "elemValue")]
+    pub elem_value: i32,
+}
+
+/// A row of `item_attributes` with the item it belongs to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromRow)]
+pub struct OwnerAugmentationRow {
+    /// `itemId`.
+    #[sqlx(rename = "itemId")]
+    pub item_id: i32,
+    /// `augAttributes`: the augmentation id, -1 for "none" (Java skips such a row).
+    #[sqlx(rename = "augAttributes")]
+    pub aug_attributes: i32,
+}
+
 /// The values of a new item, in the order of `INSERT_ITEM`'s columns.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewItem {
@@ -231,7 +281,7 @@ pub struct ItemUpdate {
     pub time: i64,
 }
 
-/// Every query on `items` and `item_attributes` that M2 needs.
+/// Every query on `items`, `item_attributes` and `item_elementals` the game server needs.
 #[derive(Debug, Clone)]
 pub struct ItemRepository {
     pool: Pool,
@@ -321,16 +371,24 @@ impl ItemRepository {
         Ok(())
     }
 
-    /// Deletes the item and its augmentation row, in Java's order.
+    /// Deletes the item and its augmentation, element and variable rows, in Java's order.
     // Java: Item.removeFromDb
     pub async fn delete_item(&self, object_id: i32) -> Result<()> {
-        // Java runs both statements on one connection.
+        // Java runs all four statements on one connection.
         let mut conn = self.pool.acquire().await?;
         sqlx::query(DELETE_ITEM)
             .bind(object_id)
             .execute(&mut *conn)
             .await?;
         sqlx::query(DELETE_ITEM_ATTRIBUTES)
+            .bind(object_id)
+            .execute(&mut *conn)
+            .await?;
+        sqlx::query(DELETE_ITEM_ELEMENTALS)
+            .bind(object_id)
+            .execute(&mut *conn)
+            .await?;
+        sqlx::query(DELETE_ITEM_VARIABLES)
             .bind(object_id)
             .execute(&mut *conn)
             .await?;
@@ -357,6 +415,76 @@ impl ItemRepository {
             .fetch_optional(&self.pool)
             .await?;
         Ok(aug)
+    }
+
+    /// The element rows of the item in primary key order (`elemType` ascending), including the
+    /// rows Java skips (`elemType` -1 or `elemValue` -1; the caller checks).
+    // Java: Item.restoreAttributes
+    pub async fn elementals_of(&self, object_id: i32) -> Result<Vec<ItemElementalRow>> {
+        let rows = sqlx::query_as::<_, ItemElementalRow>(SELECT_ITEM_ELEMENTALS)
+            .bind(object_id)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows)
+    }
+
+    /// The augmentation rows of every item of the owner, whatever its location.
+    // Java: Item.restoreAttributes (all items of an owner in one query)
+    pub async fn augmentations_of_owner(&self, owner_id: i32) -> Result<Vec<OwnerAugmentationRow>> {
+        let rows = sqlx::query_as::<_, OwnerAugmentationRow>(SELECT_AUGMENTATIONS_OF_OWNER)
+            .bind(owner_id)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows)
+    }
+
+    /// The element rows of every item of the owner, whatever its location, ordered by item and
+    /// element.
+    // Java: Item.restoreAttributes (all items of an owner in one query)
+    pub async fn elementals_of_owner(&self, owner_id: i32) -> Result<Vec<OwnerElementalRow>> {
+        let rows = sqlx::query_as::<_, OwnerElementalRow>(SELECT_ELEMENTALS_OF_OWNER)
+            .bind(owner_id)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows)
+    }
+
+    /// Writes the item's elements: all its rows are deleted, then one row is inserted per
+    /// element (an empty list only deletes).
+    // Java: Item.updateItemElements
+    pub async fn replace_elementals(&self, object_id: i32, elementals: &[ItemElementalRow]) -> Result<()> {
+        let mut conn = self.pool.acquire().await?;
+        sqlx::query(DELETE_ITEM_ELEMENTALS)
+            .bind(object_id)
+            .execute(&mut *conn)
+            .await?;
+        for e in elementals {
+            sqlx::query(INSERT_ITEM_ELEMENTAL)
+                .bind(object_id)
+                .bind(e.elem_type)
+                .bind(e.elem_value)
+                .execute(&mut *conn)
+                .await?;
+        }
+        Ok(())
+    }
+
+    /// Removes one element of the item, or all of them for `elem_type` -1.
+    // Java: Item.clearElementAttr
+    pub async fn delete_elemental(&self, object_id: i32, elem_type: i8) -> Result<()> {
+        if elem_type == -1 {
+            sqlx::query(DELETE_ITEM_ELEMENTALS)
+                .bind(object_id)
+                .execute(&self.pool)
+                .await?;
+        } else {
+            sqlx::query(DELETE_ITEM_ELEMENTAL)
+                .bind(object_id)
+                .bind(elem_type)
+                .execute(&self.pool)
+                .await?;
+        }
+        Ok(())
     }
 
     /// Removes the augmentation row of the item.
@@ -386,6 +514,13 @@ mod tests {
         assert_eq!(placeholders(UPDATE_ITEM), 10);
         assert_eq!(placeholders(DELETE_ITEM), 1);
         assert_eq!(placeholders(REPLACE_ITEM_ATTRIBUTES), 2);
+        assert_eq!(placeholders(DELETE_ITEM_ELEMENTALS), 1);
+        assert_eq!(placeholders(DELETE_ITEM_ELEMENTAL), 2);
+        assert_eq!(placeholders(DELETE_ITEM_VARIABLES), 1);
+        assert_eq!(placeholders(INSERT_ITEM_ELEMENTAL), 3);
+        assert_eq!(placeholders(SELECT_ITEM_ELEMENTALS), 1);
+        assert_eq!(placeholders(SELECT_AUGMENTATIONS_OF_OWNER), 1);
+        assert_eq!(placeholders(SELECT_ELEMENTALS_OF_OWNER), 1);
     }
 
     #[test]

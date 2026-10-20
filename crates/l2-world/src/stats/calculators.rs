@@ -32,6 +32,12 @@ pub enum FuncOwner {
     Skill { id: i32, level: i32 },
     /// An armor set's own functions, by chest item id.
     ArmorSet(i32),
+    /// The element attribute bonus of an equipped item (Java: the item's `Elementals` bonus
+    /// object), by the item's object id.
+    ItemElement(ObjectId),
+    /// An augmentation option (Java: the `Options` object, shared by every item that has the
+    /// option), by option id.
+    AugmentationOption(i32),
     /// An effect (Java: the `AbstractEffect` object, which one skill level shares between all
     /// its buff infos): the effect `index` of `scope` of the skill (M5-EFFECT-01).
     Effect {

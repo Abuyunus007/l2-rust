@@ -222,6 +222,7 @@ fn equip(items: &mut Vec<ItemData>, t: &Tables, object_id: i32, item_id: i32, en
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     });
 }
 
@@ -567,6 +568,10 @@ fn function_lists_match_the_java_trace() {
                         ),
                         FuncOwner::Skill { id, level } => format!("skill:{id}:{level}"),
                         FuncOwner::ArmorSet(chest) => format!("set:{chest}"),
+                        // Items without augmentation or elements (the trace has none).
+                        FuncOwner::ItemElement(_) | FuncOwner::AugmentationOption(_) => {
+                            "item_attribute".to_owned()
+                        }
                         // Java prints an effect owner as its skill and its handler name.
                         FuncOwner::Effect {
                             skill_id,

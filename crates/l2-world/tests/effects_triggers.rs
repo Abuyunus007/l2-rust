@@ -485,6 +485,7 @@ fn sword() -> Vec<ItemData> {
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }]
 }
 
@@ -1255,7 +1256,7 @@ fn convert_item_swaps_the_weapon_and_keeps_enchant_and_element() {
 #[test]
 fn convert_item_leaves_the_other_weapons_alone() {
     let mut s = Scene::new();
-    s.world.set_item_augmented(OLD_SWORD, true);
+    s.world.set_item_augmentation(OLD_SWORD, Some(0x0001_0002));
     s.apply(OTHER, ME, 9372);
     s.run(200);
     assert_eq!(s.world.paperdoll_object(ME, paperdoll::RHAND), Some(OLD_SWORD));

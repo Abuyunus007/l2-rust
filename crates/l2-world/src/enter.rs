@@ -19,6 +19,7 @@
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
 
+use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
@@ -74,11 +75,17 @@ fn item_static(st: &dyn StaticData, item: &ItemData) -> ItemStatic {
         .unwrap_or_else(|| ItemStatic::unknown(item.item_id))
 }
 
+/// The datapack template of an item, for the fields that need more than [`ItemStatic`].
+fn item_template<'a>(st: &'a dyn StaticData, item: &ItemData) -> Option<&'a ItemTemplate> {
+    st.stat_data().and_then(|d| d.items.get(item.item_id))
+}
+
 /// Java `new ItemInfo(item)` as `AbstractItemPacket.writeItem` reads it.
 ///
-/// Not loaded yet, so written as for a plain item: augmentation and the element attributes
-/// (`item_attributes`).
-pub fn item_info(item: &ItemData, st: &ItemStatic, now_ms: i64) -> ItemInfo {
+/// `template` is the item's template when the datapack has it: the element fields
+/// (`getAttackElementType`, `getAttackElementPower`, `getElementDefAttr`) read the template
+/// first and the instance (`item_elementals`) second.
+pub fn item_info(item: &ItemData, st: &ItemStatic, template: Option<&ItemTemplate>, now_ms: i64) -> ItemInfo {
     ItemInfo {
         object_id: item.object_id.0,
         item_id: st.display_id,
@@ -91,7 +98,13 @@ pub fn item_info(item: &ItemData, st: &ItemStatic, now_ms: i64) -> ItemInfo {
         body_part: st.body_part,
         enchant: item.enchant_level as i16,
         custom_type2: item.custom_type2 as i16,
-        augmentation: 0,
+        // `item.isAugmented() ? item.getAugmentation().getAugmentationId() : 0`
+        augmentation: item.augmentation.unwrap_or(0),
+        attack_element_type: item.attack_element_type(template) as i16,
+        attack_element_power: item.attack_element_power(template) as i16,
+        element_defense: std::array::from_fn(|element| {
+            item.element_def_attr(element as i32, template) as i16
+        }),
         mana: item.mana_left,
         // `isTimeLimitedItem() ? (int) (getRemainingTime() / 1000) : -9999`
         time: if item.time > 0 {
@@ -108,7 +121,7 @@ pub fn item_list(data: &PlayerData, st: &dyn StaticData, now_ms: i64) -> ItemLis
     let items = inventory_items(data)
         .filter_map(|item| {
             let stat = item_static(st, item);
-            (!stat.quest_item).then(|| item_info(item, &stat, now_ms))
+            (!stat.quest_item).then(|| item_info(item, &stat, item_template(st, item), now_ms))
         })
         .collect();
     ItemList {
@@ -123,7 +136,8 @@ pub fn quest_item_list(data: &PlayerData, st: &dyn StaticData, now_ms: i64) -> E
     let items = inventory_items(data)
         .filter_map(|item| {
             let stat = item_static(st, item);
-            stat.quest_item.then(|| item_info(item, &stat, now_ms))
+            stat.quest_item
+                .then(|| item_info(item, &stat, item_template(st, item), now_ms))
         })
         .collect();
     ExQuestItemList { items, block: None }

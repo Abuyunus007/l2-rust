@@ -465,6 +465,63 @@ pub fn autosave_interval(config_dir: &std::path::Path) -> Duration {
     Duration::from_millis(u64::try_from(millis).unwrap_or(1000))
 }
 
+/// Java `Item.restoreAttributes` for the items of one owner: the augmentation and the element
+/// attributes the `item_attributes` and `item_elementals` rows give them. Java reads the two
+/// tables one item at a time; this reads them once for the owner (same rows, same order).
+// Java: Item.restoreAttributes
+pub async fn restore_item_attributes<'a>(
+    repo: &ItemRepository,
+    owner_id: i32,
+    items: impl IntoIterator<Item = &'a mut ItemData>,
+) -> Result<(), l2_db::DbError> {
+    let mut items: Vec<&mut ItemData> = items.into_iter().collect();
+    if items.is_empty() {
+        return Ok(());
+    }
+    let augmentations = repo.augmentations_of_owner(owner_id).await?;
+    let elementals = repo.elementals_of_owner(owner_id).await?;
+    apply_item_attribute_rows(&mut items, &augmentations, &elementals);
+    Ok(())
+}
+
+/// The rule part of [`restore_item_attributes`]: the rows of the augmentation `-1` and of an
+/// element with type or value `-1` are skipped (the table's "nothing" default).
+fn apply_item_attribute_rows(
+    items: &mut [&mut ItemData],
+    augmentations: &[l2_db::OwnerAugmentationRow],
+    elementals: &[l2_db::OwnerElementalRow],
+) {
+    for item in items.iter_mut() {
+        let id = item.object_id.0;
+        for row in augmentations.iter().filter(|r| r.item_id == id) {
+            if row.aug_attributes != -1 {
+                item.augmentation = Some(row.aug_attributes);
+            }
+        }
+        for row in elementals.iter().filter(|r| r.item_id == id) {
+            if row.elem_type != -1 && row.elem_value != -1 {
+                item.apply_attribute(i32::from(row.elem_type), row.elem_value);
+            }
+        }
+    }
+}
+
+/// The element rows an item writes (`Item.updateItemElements`), ordered by element so two lists
+/// with the same elements compare equal.
+fn element_rows(item: &ItemData) -> Vec<l2_db::ItemElementalRow> {
+    let mut rows: Vec<l2_db::ItemElementalRow> = item
+        .elementals
+        .iter()
+        .map(|e| l2_db::ItemElementalRow {
+            // The column is a `tinyint`; `Elementals.getElement()` is a Java `byte`.
+            elem_type: e.element as i8,
+            elem_value: e.value,
+        })
+        .collect();
+    rows.sort_by_key(|r| r.elem_type);
+    rows
+}
+
 // ---------------------------------------------------------------------------------------
 // The database store
 // ---------------------------------------------------------------------------------------
@@ -627,10 +684,13 @@ impl DbStore {
                     custom_type2: row.custom_type2.unwrap_or(0),
                     mana_left: row.mana_left,
                     time: row.time,
+                    ..Default::default()
                 };
                 baseline.items.insert(row.object_id, item);
             }
         }
+        // Java `Item.restoreAttributes`: the augmentation and elements the rows hold now.
+        restore_item_attributes(&self.items, char_id, baseline.items.values_mut()).await?;
         if let Some(class_index) = class_index {
             for skill in self.skills.skills_of(char_id, class_index).await? {
                 baseline.skills.insert(skill.skill_id, skill.skill_level);
@@ -651,10 +711,18 @@ impl DbStore {
         Ok(baseline)
     }
 
-    /// Java `Item.updateInDb` (the row exists) or `Item.insertIntoDb`. `Ok(false)` when the item
-    /// is in a location the schema does not know (nothing is written).
-    async fn write_item(&self, char_id: i32, item: &ItemData, exists: bool) -> Result<bool, PersistError> {
+    /// Java `Item.updateInDb` (the row exists, `old` is what was written before) or
+    /// `Item.insertIntoDb` (`old` is `None`), then the augmentation and element rows if they
+    /// differ from `old` (Java writes them when they are set, and with an insert). `Ok(false)`
+    /// when the item is in a location the schema does not know (nothing is written).
+    async fn write_item(
+        &self,
+        char_id: i32,
+        item: &ItemData,
+        old: Option<&ItemData>,
+    ) -> Result<bool, PersistError> {
         let id = item.object_id.0;
+        let exists = old.is_some();
         let Some(loc) = ItemLocation::from_db_str(&item.loc) else {
             warn!(
                 "Item {id} of character {char_id} has the unknown location {:?}; not stored.",
@@ -696,6 +764,19 @@ impl DbStore {
                 })
                 .await?;
         }
+        // Java: updateItemAttributes (REPLACE) / removeAugmentation (DELETE), updateItemElements
+        // (DELETE all, INSERT each).
+        let old_augmentation = old.and_then(|o| o.augmentation);
+        if item.augmentation != old_augmentation {
+            match item.augmentation {
+                Some(augmentation) => self.items.set_augmentation(id, augmentation).await?,
+                None => self.items.delete_augmentation(id).await?,
+            }
+        }
+        let rows = element_rows(item);
+        if rows != old.map(element_rows).unwrap_or_default() {
+            self.items.replace_elementals(id, &rows).await?;
+        }
         Ok(true)
     }
 
@@ -709,10 +790,7 @@ impl DbStore {
     ) -> Result<(), PersistError> {
         for item in upserts {
             let id = item.object_id.0;
-            if !self
-                .write_item(char_id, item, baseline.items.contains_key(&id))
-                .await?
-            {
+            if !self.write_item(char_id, item, baseline.items.get(&id)).await? {
                 continue;
             }
             baseline.items.insert(id, item.clone());
@@ -787,10 +865,7 @@ impl DbStore {
             if baseline.items.get(&id) == Some(item) {
                 continue;
             }
-            if !self
-                .write_item(char_id, item, baseline.items.contains_key(&id))
-                .await?
-            {
+            if !self.write_item(char_id, item, baseline.items.get(&id)).await? {
                 continue;
             }
             baseline.items.insert(id, item.clone());
@@ -1417,12 +1492,91 @@ mod tests {
             custom_type2: 0,
             mana_left: -1,
             time: -1,
+            ..Default::default()
         };
         OutboxMessage::Persist(PersistCommand::ItemChanges {
             owner: ObjectId(owner),
             upserts: upserts.iter().map(|o| item(*o)).collect(),
             removed: removed.iter().map(|o| ObjectId(*o)).collect(),
         })
+    }
+
+    /// `Item.restoreAttributes`: the rows with -1 are the table's "nothing"; elements keep the
+    /// order of the rows; an item without rows stays plain.
+    #[test]
+    fn restored_attribute_rows_follow_javas_rules() {
+        use l2_db::{OwnerAugmentationRow, OwnerElementalRow};
+        use l2_world::effects::item_extras::ItemElemental;
+
+        let plain = |id: i32| ItemData {
+            object_id: ObjectId(id),
+            item_id: 57,
+            ..ItemData::default()
+        };
+        let (mut a, mut b, mut c) = (plain(1), plain(2), plain(3));
+        let augmentations = [
+            OwnerAugmentationRow {
+                item_id: 1,
+                aug_attributes: 0x0002_0001,
+            },
+            OwnerAugmentationRow {
+                item_id: 2,
+                aug_attributes: -1,
+            },
+        ];
+        let elementals = [
+            OwnerElementalRow {
+                item_id: 1,
+                elem_type: 2,
+                elem_value: 30,
+            },
+            OwnerElementalRow {
+                item_id: 1,
+                elem_type: 4,
+                elem_value: 10,
+            },
+            OwnerElementalRow {
+                item_id: 2,
+                elem_type: -1,
+                elem_value: 5,
+            },
+            OwnerElementalRow {
+                item_id: 2,
+                elem_type: 3,
+                elem_value: -1,
+            },
+        ];
+        apply_item_attribute_rows(&mut [&mut a, &mut b, &mut c], &augmentations, &elementals);
+        assert_eq!(a.augmentation, Some(0x0002_0001));
+        assert_eq!(
+            a.elementals,
+            [
+                ItemElemental {
+                    element: 2,
+                    value: 30
+                },
+                ItemElemental {
+                    element: 4,
+                    value: 10
+                }
+            ]
+        );
+        assert_eq!((b.augmentation, b.elementals.len()), (None, 0));
+        assert_eq!((c.augmentation, c.elementals.len()), (None, 0));
+    }
+
+    /// The element rows a store writes do not depend on the order the item holds them in, so a
+    /// reordered list alone writes nothing.
+    #[test]
+    fn element_rows_are_ordered_by_element() {
+        let mut item = ItemData::default();
+        item.apply_attribute(4, 10);
+        item.apply_attribute(1, 20);
+        let rows: Vec<_> = element_rows(&item)
+            .iter()
+            .map(|r| (r.elem_type, r.elem_value))
+            .collect();
+        assert_eq!(rows, [(1, 20), (4, 10)]);
     }
 
     #[tokio::test]

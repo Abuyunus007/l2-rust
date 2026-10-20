@@ -975,6 +975,7 @@ fn an_overloaded_player_cannot_walk() {
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }];
     enter(&mut world, &log, data);
     log.take();

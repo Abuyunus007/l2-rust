@@ -710,6 +710,21 @@ fn available_skills(
     level: i32,
     known: &BTreeMap<i32, i32>,
 ) -> Vec<(i32, i32)> {
+    available_skills_with(datapack, config, class, level, known, false, true)
+}
+
+/// Java `SkillTreeData.getAvailableSkills(player, class, includeByFs, includeAutoGet = true,
+/// includeRequiredItems, existingSkills)`: the 4-argument version above is `includeByFs` off and
+/// `includeRequiredItems` on.
+fn available_skills_with(
+    datapack: &Datapack,
+    config: &GameConfig,
+    class: ClassId,
+    level: i32,
+    known: &BTreeMap<i32, i32>,
+    include_by_fs: bool,
+    include_required_items: bool,
+) -> Vec<(i32, i32)> {
     let mut result = Vec::new();
     for skill in datapack.skill_trees.complete_class_tree(class) {
         if skill.skill_id == l2_data::skill_tree::DIVINE_INSPIRATION_ID
@@ -717,7 +732,13 @@ fn available_skills(
         {
             continue;
         }
-        if (!skill.auto_get && !skill.learned_by_npc) || level < skill.get_level {
+        if (!skill.auto_get && !skill.learned_by_npc && (!include_by_fs || !skill.learned_by_fs))
+            || level < skill.get_level
+        {
+            continue;
+        }
+        // "Forgotten Scroll requirements checked above."
+        if !include_required_items && !skill.required_items.is_empty() && !skill.learned_by_fs {
             continue;
         }
         match known.get(&skill.skill_id) {
@@ -725,6 +746,44 @@ fn available_skills(
             None if skill.skill_level == 1 => result.push((skill.skill_id, skill.skill_level)),
             _ => {}
         }
+    }
+    result
+}
+
+/// Java `SkillTreeData.getAllAvailableSkills(.., includeAutoGet = true, ..)`: the skills `known`
+/// plus everything the class tree lets a character of `level` learn, level after level until
+/// nothing new turns up (skill id to the highest level reached).
+// NOTE: Java first keeps only the known skills `isSkillAllowed` accepts; a new character knows
+// none yet.
+fn all_available_skills(
+    datapack: &Datapack,
+    config: &GameConfig,
+    class: ClassId,
+    level: i32,
+    known: &BTreeMap<i32, i32>,
+) -> BTreeMap<i32, i32> {
+    let include_by_fs = config.player.auto_learn_fs_skills;
+    let include_required_items = config.player.auto_learn_skills_without_items;
+    let mut result = known.clone();
+    let mut previous: Option<Vec<(i32, i32)>> = None;
+    loop {
+        let learnable = available_skills_with(
+            datapack,
+            config,
+            class,
+            level,
+            &result,
+            include_by_fs,
+            include_required_items,
+        );
+        // Keep learning skills until no more are available, or nothing changed since the last round.
+        if learnable.is_empty() || previous.as_ref() == Some(&learnable) {
+            break;
+        }
+        for &(id, skill_level) in &learnable {
+            result.insert(id, skill_level);
+        }
+        previous = Some(learnable);
     }
     result
 }
@@ -920,18 +979,23 @@ pub fn build_plan(
             cur_hp = f64::from(hp);
             cur_mp = f64::from(mp);
             cur_cp = f64::from(cp);
-            // Player.rewardSkills -> giveAvailableAutoGetSkills (store = true).
-            // NOTE: Java walks a HashMap, so for a skill with several levels the one it ends up
-            // with depends on the iteration order; the highest level is used here.
-            // AutoLearnSkills (giveAvailableSkills) is not ported and acts like the default.
+            // Player.rewardSkills
             if config.player.auto_learn_skills {
-                warn!(
-                    "AutoLearnSkills with StartingLevel above 1 is not supported; only auto-get skills are given."
-                );
-            }
-            for (id, skill_level) in available_auto_get_skills(datapack, class_id, level, &skills) {
-                let entry = skills.entry(id).or_insert(skill_level);
-                *entry = (*entry).max(skill_level);
+                // -> giveAvailableSkills(AutoLearnForgottenScrollSkills, true,
+                //    AutoLearnSkillsWithoutItems): every skill the class tree gives at this level,
+                //    each stored with its highest level. (The shortcut update, `ShortcutInit` and
+                //    "You have learned N new skills." are for a character in the world.)
+                for (id, skill_level) in all_available_skills(datapack, config, class_id, level, &skills) {
+                    skills.insert(id, skill_level);
+                }
+            } else {
+                // -> giveAvailableAutoGetSkills (store = true).
+                // NOTE: Java walks a HashMap, so for a skill with several levels the one it ends up
+                // with depends on the iteration order; the highest level is used here.
+                for (id, skill_level) in available_auto_get_skills(datapack, class_id, level, &skills) {
+                    let entry = skills.entry(id).or_insert(skill_level);
+                    *entry = (*entry).max(skill_level);
+                }
             }
         }
     }

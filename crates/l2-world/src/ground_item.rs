@@ -258,6 +258,7 @@ impl World {
             } else {
                 unix_ms_now().wrapping_add(template.time.wrapping_mul(60 * 1000))
             },
+            ..Default::default()
         }
     }
 

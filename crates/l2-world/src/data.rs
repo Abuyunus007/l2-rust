@@ -145,6 +145,12 @@ pub trait StaticData: Send + Sync {
     fn access_level_can_gain_exp(&self, _level: i32) -> bool {
         true
     }
+
+    /// Java `OptionData.getOptions(id)`: the augmentation option with this id. The default (no
+    /// datapack) knows none, so an augmented item gives no bonus.
+    fn augmentation_option(&self, _id: i32) -> Option<&l2_data::AugmentationOption> {
+        None
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -198,6 +204,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         (**self).access_level_can_gain_exp(level)
+    }
+
+    fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
+        (**self).augmentation_option(id)
     }
 }
 

@@ -183,7 +183,10 @@ impl World {
 
         // Cursed weapons are not modelled.
         let gm = self.is_gm(id);
-        if !self.settings.inventory.destroy_all_items && (!gm && !template.destroyable) {
+        // `Item.isDestroyable()`: the template, and for an augmented item `AltAllowAugmentDestroy`.
+        let destroyable = template.destroyable
+            && (!item.is_augmented() || self.settings.inventory.alt_allow_augment_destroy);
+        if !self.settings.inventory.destroy_all_items && (!gm && !destroyable) {
             if template.is_hero_item() {
                 self.send(
                     id,
@@ -313,15 +316,27 @@ impl World {
         let refused = template.is_none()
             || count == 0
             || (!settings.allow_discard_item && !gm)
-            || (template.is_some_and(|t| !t.dropable) && !(gm && settings.gm_trade_restricted_items))
+            // `Item.isDropable()`: the template, and for an augmented item `AltAllowAugmentTrade`.
+            || (!(template.is_some_and(|t| t.dropable)
+                && item
+                    .as_ref()
+                    .is_none_or(|i| !i.is_augmented() || settings.alt_allow_augment_trade))
+                && !(gm && settings.gm_trade_restricted_items))
             || self.is_inside_zone(id, ZoneId::NoItemDrop);
         let (Some(item), Some(template)) = (item, template) else {
             self.send(id, &discard_refused);
             return;
         };
         if refused {
-            // An augmented item has its own message; augmentations are not modelled.
-            self.send(id, &discard_refused);
+            // An augmented item has its own message.
+            if item.is_augmented() {
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::TheAugmentedItemCannotBeDiscarded),
+                );
+            } else {
+                self.send(id, &discard_refused);
+            }
             return;
         }
 

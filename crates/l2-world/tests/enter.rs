@@ -146,6 +146,7 @@ fn item(object_id: i32, item_id: i32, count: i64, loc: &str, loc_data: i32) -> I
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }
 }
 

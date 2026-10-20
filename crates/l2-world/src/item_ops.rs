@@ -63,7 +63,12 @@ impl World {
     pub(crate) fn update_entry(&self, item: &ItemData, change: i16) -> ItemUpdate {
         ItemUpdate {
             change,
-            item: item_info(item, &self.item_static_of(item), unix_ms_now()),
+            item: item_info(
+                item,
+                &self.item_static_of(item),
+                self.data.stat_data().and_then(|d| d.items.get(item.item_id)),
+                unix_ms_now(),
+            ),
         }
     }
 

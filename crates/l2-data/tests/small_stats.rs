@@ -254,3 +254,25 @@ fn henna_with_the_same_dye_id_replaces_the_earlier_one() {
     assert_eq!(hennas.len(), 1);
     assert_eq!(hennas.get(3).unwrap().dye_item_id, 2);
 }
+
+/// `data/stats/augmentation/options`: 24985 `<option>` elements with unique ids; option 1 adds
+/// 15.45 P. Def., option 14561 gives the active skill 3203, option 14568 a chance skill.
+#[test]
+fn augmentation_options_match_the_xml() {
+    let Some(dir) = game_dir() else { return };
+    let pack = Datapack::load(&dir).unwrap();
+    let options = &pack.augmentation_options;
+    assert_eq!(options.len(), 24985);
+    let first = options.get(1).unwrap();
+    assert_eq!(first.funcs.len(), 1);
+    assert_eq!(first.funcs[0].stat, l2_data::Stat::PowerDefence);
+    assert_eq!(first.funcs[0].value, 15.45);
+    assert_eq!(
+        options.get(14561).unwrap().active_skill.map(|s| (s.id, s.level)),
+        Some((3203, 1))
+    );
+    let chance = &options.get(14568).unwrap().activation_skills;
+    assert_eq!(chance.len(), 1);
+    assert_eq!((chance[0].skill.id, chance[0].chance), (3081, 1.0));
+    assert!(options.get(0).is_none());
+}
