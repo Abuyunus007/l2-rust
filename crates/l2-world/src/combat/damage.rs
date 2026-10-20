@@ -310,7 +310,7 @@ impl World {
 
     /// Java `Attackable.addDamage(attacker, damage, skill)` and `addDamageHate`: the AI hears
     /// about the attack, the attacker's damage and hate grow.
-    fn attackable_add_damage(&mut self, npc: ObjectId, attacker: ObjectId, damage: i32) {
+    pub(crate) fn attackable_add_damage(&mut self, npc: ObjectId, attacker: ObjectId, damage: i32) {
         if self.is_dead(npc) {
             return;
         }

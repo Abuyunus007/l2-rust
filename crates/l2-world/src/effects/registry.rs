@@ -552,8 +552,8 @@ mod tests {
         let registry = EffectRegistry::new();
         assert_eq!(registry.len(), 165);
         assert!(registry.is_ported("Buff"));
-        assert!(registry.contains("Heal"));
-        assert!(!registry.is_ported("Heal"));
+        assert!(registry.contains("Stun"));
+        assert!(!registry.is_ported("Stun"));
         assert!(!registry.contains("NoSuchEffect"));
         let mut names: Vec<&str> = JAVA_EFFECTS.iter().map(|e| e.0).collect();
         names.sort_unstable();
