@@ -24,8 +24,7 @@
 //! [`crate::stats`]; the item side is `item/funcs.rs` and `item/skills.rs`.
 //!
 //! # Not loaded (later cards)
-//! `<capsuled_items>` is parsed without errors but not kept (extractables are M5), and so are the
-//! plain `<set>`s only those read (`equip_condition`, `use_condition`, ...). The Java order rule
+//! The plain `<set>`s only some handlers read (`equip_condition`, `use_condition`, ...). The Java order rule
 //! is kept: a `<set>` or `<table>` after `<stats>`, `<conditions>` or `<capsuled_items>` fails the
 //! item (Java: "Item created but set node found!"); `<skills>` does not create the item.
 //!
@@ -33,6 +32,7 @@
 //! `<weight>5</weight>` as a `<set>`. No shipped item file uses that form, so it is not supported
 //! here (the element is ignored).
 
+mod capsule;
 mod funcs;
 mod skills;
 pub mod types;
@@ -41,11 +41,11 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
 use serde::Deserialize;
-use serde::de::IgnoredAny;
 use tracing::{info, warn};
 
 use crate::loader::{DataError, load_file, log_loaded};
 use crate::stats::{ConditionParser, FuncTemplate, MessagedCondition, XmlNode};
+pub use capsule::ExtractableProduct;
 pub use funcs::{Element, ElementalValue};
 pub use skills::{ChanceSkill, ItemSkillType, ItemSkills, SkillRef};
 pub use types::{
@@ -131,6 +131,9 @@ pub struct EtcInfo {
     pub extractable_count_min: i32,
     /// `extractableCountMax`.
     pub extractable_count_max: i32,
+    /// `<capsuled_items>`: what the box can give, in document order. Empty is Java's `null`
+    /// (`getExtractableItems()` before any `addCapsuledItem`).
+    pub extractable_items: Vec<ExtractableProduct>,
     /// `blessed`, or a blessed soulshot/spiritshot by name.
     pub blessed: bool,
 }
@@ -724,6 +727,14 @@ fn build_item(raw: RawItem, tables: &mut Tables, file: &str) -> Result<ItemTempl
                 // Java attaches a null condition too, and skips it when testing.
                 item.conditions.extend(block);
             }
+            RawChild::CapsuledItems(node) => {
+                // `ItemTemplate.addCapsuledItem` does nothing for weapons and armor.
+                let etc = match &mut item.kind {
+                    ItemKind::Etc(etc) => Some(etc),
+                    _ => None,
+                };
+                capsule::apply_capsuled_items(node, etc)?;
+            }
             _ => {}
         }
     }
@@ -934,6 +945,7 @@ fn build_etc(item: &mut ItemTemplate, set: &ItemSet) -> Result<(), DataError> {
         handler: set.string("handler").map(str::to_owned),
         extractable_count_min,
         extractable_count_max,
+        extractable_items: Vec::new(),
         blessed: set.boolean("blessed", false) || blessed_shot,
     });
     Ok(())
@@ -974,7 +986,7 @@ enum RawChild {
     #[serde(rename = "conditions")]
     Conditions(XmlNode),
     #[serde(rename = "capsuled_items")]
-    CapsuledItems(IgnoredAny),
+    CapsuledItems(XmlNode),
     #[serde(other)]
     Other,
 }
@@ -1163,6 +1175,36 @@ mod tests {
         assert_eq!(t.get(1).unwrap().body_part, BodyPart::Chest);
         // The <item> inside capsuled_items must not be mistaken for an item.
         assert_eq!(t.len(), 1);
+    }
+
+    #[test]
+    fn capsuled_items_of_an_etc_item_are_kept() {
+        let t = load(
+            r#"<item id="1" type="EtcItem" name="Box">
+                <set name="extractableCountMin" val="1" /><set name="extractableCountMax" val="2" />
+                <capsuled_items>
+                    <item id="57" min="1" max="2" chance="50" />
+                    <item id="1060" min="5" max="5" chance="0.5" minEnchant="1" maxEnchant="2" />
+                </capsuled_items>
+            </item>
+            <item id="2" type="EtcItem" name="Empty"><capsuled_items /></item>
+            <item id="3" type="EtcItem" name="Broken"><capsuled_items><item id="57" min="1" max="2" /></capsuled_items></item>"#,
+        );
+        let etc = t.get(1).unwrap().etc().unwrap();
+        assert_eq!((etc.extractable_count_min, etc.extractable_count_max), (1, 2));
+        assert_eq!(etc.extractable_items.len(), 2);
+        assert_eq!(etc.extractable_items[0].chance, 50_000);
+        assert_eq!(etc.extractable_items[1].chance, 500);
+        assert_eq!(
+            (
+                etc.extractable_items[1].min_enchant,
+                etc.extractable_items[1].max_enchant
+            ),
+            (1, 2)
+        );
+        assert!(t.get(2).unwrap().etc().unwrap().extractable_items.is_empty());
+        // Java unboxes the missing `chance`: the item fails.
+        assert!(t.get(3).is_none());
     }
 
     #[test]

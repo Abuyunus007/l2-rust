@@ -15,6 +15,7 @@
 // - `paperdoll.rs`: `Inventory.setPaperdollItem` and `equipItem` with Java's listener order
 //   (armor set, bow/crossbow/rod, item skills, bracelet, stats, recorder), the body part tables.
 // - `use_item.rs`: `UseItem`, `Player.useEquippableItem`, `RequestUnEquipItem`.
+// - `handlers/`: the item handlers (potions, scrolls, herbs, boxes) and the item reuse (M5-ITEM-01).
 // - `destroy.rs`: `RequestDestroyItem`, `RequestDropItem` (the inventory side), `RequestItemList`.
 // - `notify.rs`: `broadcastUserInfo`, `broadcastModifiedStats`, the delayed `sendSkillList` /
 //   `sendItemList`, `refreshWeight`.
@@ -29,7 +30,6 @@
 // # Left out on purpose (each has a marker where it belongs)
 // - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
 //   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
-// - Item handlers other than the shots (potions, scrolls), item reuse timestamps (M5-ITEM-01).
 // - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations, the
 //   olympiad, augmentations and element attributes: not modelled yet, treated as "not active".
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).
@@ -66,7 +66,7 @@ pub const LOC_PAPERDOLL: &str = "PAPERDOLL";
 
 /// The values of `General.ini` / `Player.ini` this module reads. `Default` is the Java default
 /// of each key.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct InventorySettings {
     /// `GeneralConfig.ALLOW_DISCARDITEM` (`AllowDiscardItem`).
     pub allow_discard_item: bool,
@@ -78,6 +78,8 @@ pub struct InventorySettings {
     pub gm_item_restriction: bool,
     /// `PlayerConfig.AUTO_LOOT_SLOT_LIMIT` (`AutoLootSlotLimit`).
     pub auto_loot_slot_limit: bool,
+    /// `RatesConfig.RATE_EXTRACTABLE` (`RateExtractable`): the amounts a box gives.
+    pub rate_extractable: f32,
 }
 
 impl Default for InventorySettings {
@@ -88,6 +90,7 @@ impl Default for InventorySettings {
             gm_trade_restricted_items: false,
             gm_item_restriction: true,
             auto_loot_slot_limit: false,
+            rate_extractable: 1.0,
         }
     }
 }

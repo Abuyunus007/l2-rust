@@ -83,6 +83,8 @@ pub(crate) struct ReuseState {
     disabled: HashMap<i32, i64>,
     /// `_allSkillsDisabled`.
     pub(crate) all_skills_disabled: bool,
+    /// `_reuseTimeStampsItems`: the item reuse stamps (`inventory/handlers/reuse.rs`).
+    pub(crate) item_stamps: Vec<crate::inventory::handlers::ItemStamp>,
 }
 
 impl ReuseState {
