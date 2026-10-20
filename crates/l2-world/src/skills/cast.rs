@@ -922,6 +922,7 @@ impl World {
 
     /// Java `Formulas.calcSkillMastery(actor, skill)`.
     fn calc_skill_mastery_for(&mut self, actor: ObjectId, skill: &SkillTemplate) -> bool {
+        let mastery_multipliers = &self.settings.stats.class_balance.skill_mastery_chance;
         let Some(input) = self.stats(actor).map(|v| SkillMasteryInput {
             actor_is_player: v.is_player(),
             skill_is_static: skill.is_static(),
@@ -929,9 +930,10 @@ impl World {
             str_bonus: v.bonus(BaseStat::Str),
             int_bonus: v.bonus(BaseStat::Int),
             skill_mastery_rate: v.calc(Stat::SkillMasteryRate, 1.0),
-            // `SKILL_MASTERY_CHANCE_MULTIPLIERS` is not in the class balance settings yet (the
-            // same gap as `effects/apply.rs`); the default is 1.
-            class_balance_multiplier: 1.0,
+            class_balance_multiplier: ClassBalance::of(
+                mastery_multipliers,
+                v.player().map_or(-1, |p| p.data.class_id),
+            ),
         }) else {
             return false;
         };

@@ -12,20 +12,21 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use l2_db::{
-    ClanRepository, ItemLocation, ItemRepository, ItemUpdate, MacroRepository, NewItem, NewMacro,
-    NewShortcut, NewSkillSave, Pool, RecommendationRepository, ShortcutRepository, ShortcutRow, SkillLevel,
-    SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues, VariableRepository,
-    connect_with,
+    ClanRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemReuseRow, ItemUpdate,
+    MacroRepository, NewItem, NewItemReuse, NewMacro, NewShortcut, NewSkillSave, Pool,
+    RecommendationRepository, ShortcutRepository, ShortcutRow, SkillLevel, SkillRepository, SkillSaveRow,
+    SubclassRepository, SubclassRow, SubclassValues, VariableRepository, connect_with,
 };
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 /// The tables of the item, skill, shortcut and subclass repositories.
-const SCHEMA: [&str; 10] = [
+const SCHEMA: [&str; 11] = [
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/item_attributes.sql"),
     include_str!("../sql/game/character_skills.sql"),
     include_str!("../sql/game/character_skills_save.sql"),
+    include_str!("../sql/game/character_item_reuse_save.sql"),
     include_str!("../sql/game/character_shortcuts.sql"),
     include_str!("../sql/game/character_subclasses.sql"),
     include_str!("../sql/game/character_macroses.sql"),
@@ -349,6 +350,48 @@ async fn skills_and_skill_effects_are_kept_per_class_index() {
     assert!(repo.skill_effects_of(ALICE, 1).await.unwrap().is_empty());
     repo.delete_skill_effects(ALICE, 0).await.unwrap();
     assert!(repo.skill_effects_of(ALICE, 0).await.unwrap().is_empty());
+
+    db.drop_database().await;
+}
+
+#[tokio::test]
+async fn item_reuse_timers_are_saved_read_and_deleted_per_character() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = ItemReuseRepository::new(db.pool.clone());
+    let timer = |item_id, item_obj_id| NewItemReuse {
+        item_id,
+        item_obj_id,
+        reuse_delay: 10_000,
+        systime: NOW + 10_000,
+    };
+    repo.add_item_reuse(ALICE, &[timer(728, 11), timer(1060, 12)])
+        .await
+        .unwrap();
+    repo.add_item_reuse(BOB, &[timer(728, 13)]).await.unwrap();
+
+    let mut rows = repo.item_reuse_of(ALICE).await.unwrap();
+    rows.sort_by_key(|r| r.item_obj_id);
+    assert_eq!(rows.len(), 2);
+    assert_eq!(
+        rows[0],
+        ItemReuseRow {
+            item_id: 728,
+            item_obj_id: 11,
+            reuse_delay: 10_000,
+            systime: (NOW + 10_000) as u64,
+        }
+    );
+    assert_eq!(rows[1].item_id, 1060);
+
+    // The primary key is (charId, itemId, itemObjId): the same row twice is refused.
+    assert!(repo.add_item_reuse(ALICE, &[timer(728, 11)]).await.is_err());
+
+    // Deleting a character's timers leaves the others alone.
+    repo.delete_item_reuse(ALICE).await.unwrap();
+    assert!(repo.item_reuse_of(ALICE).await.unwrap().is_empty());
+    assert_eq!(repo.item_reuse_of(BOB).await.unwrap().len(), 1);
 
     db.drop_database().await;
 }

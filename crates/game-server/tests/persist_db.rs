@@ -12,20 +12,24 @@ use std::time::Duration;
 use game_server::persist::{DbStore, LsNotice, PersistError, PlayerStore, RetryPolicy, spawn};
 use game_server::runtime::OutboxMessage;
 use l2_db::{
-    CalendarDate, CharacterRepository, ItemLocation, ItemRepository, NewCharacter, NewItem, Pool,
-    RecommendationRepository, ShortcutRepository, SkillRepository, VariableRepository, connect_with,
+    CalendarDate, CharacterRepository, ItemLocation, ItemRepository, ItemReuseRepository, NewCharacter,
+    NewItem, Pool, RecommendationRepository, ShortcutRepository, SkillRepository, VariableRepository,
+    connect_with,
 };
 use l2_testkit::test_db::TestDb;
-use l2_world::{ItemData, ObjectId, PersistCommand, PlayerData, SavedEffect, ShortcutData, SkillData};
+use l2_world::{
+    ItemData, ObjectId, PersistCommand, PlayerData, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
+};
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 8] = [
+const SCHEMA: [&str; 9] = [
     include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
     include_str!("../../l2-db/sql/game/character_variables.sql"),
     include_str!("../../l2-db/sql/game/characters.sql"),
     include_str!("../../l2-db/sql/game/items.sql"),
     include_str!("../../l2-db/sql/game/character_skills.sql"),
     include_str!("../../l2-db/sql/game/character_skills_save.sql"),
+    include_str!("../../l2-db/sql/game/character_item_reuse_save.sql"),
     include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
     // Deleting an item also deletes its augmentation row, as Java's Item.removeFromDb does.
     include_str!("../../l2-db/sql/game/item_attributes.sql"),
@@ -389,6 +393,64 @@ async fn saved_buffs_are_written_like_java_and_read_back_in_order() {
     data.profile.effects_to_store = Some(vec![]);
     store.store_player(&data).await.unwrap();
     assert!(skills.skill_effects_of(CHAR_ID, 0).await.unwrap().is_empty());
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// M5-FIX-03: `Player.storeItemReuseDelay` replaces the character's `character_item_reuse_save`
+/// rows with the timers that still run (DELETE, then the batch), and `restoreItemReuse`' read
+/// (`item_reuse_of`) gets them back. A snapshot without timers (`None`) leaves the rows alone.
+#[tokio::test]
+async fn item_reuse_timers_are_written_like_java_and_read_back() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let reuse = ItemReuseRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    let timer = |item_id, item_obj_id| SavedItemReuse {
+        item_id,
+        item_obj_id,
+        reuse_delay: 10_000,
+        systime: NOW + 10_000,
+    };
+    let shape = |mut rows: Vec<l2_db::ItemReuseRow>| {
+        rows.sort_by_key(|r| r.item_obj_id);
+        rows.iter()
+            .map(|r| (r.item_id, r.item_obj_id, i64::from(r.reuse_delay), r.systime))
+            .collect::<Vec<_>>()
+    };
+
+    let mut data = player_data();
+    data.items = vec![];
+    data.shortcuts = vec![];
+    data.skills = vec![];
+    data.profile.item_reuse_to_store = Some(vec![timer(728, 101), timer(1060, 102)]);
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(reuse.item_reuse_of(CHAR_ID).await.unwrap()),
+        vec![
+            (728, 101, 10_000, (NOW + 10_000) as u64),
+            (1060, 102, 10_000, (NOW + 10_000) as u64)
+        ]
+    );
+
+    // The next store replaces the rows.
+    data.profile.item_reuse_to_store = Some(vec![timer(728, 101)]);
+    store.store_player(&data).await.unwrap();
+    assert_eq!(shape(reuse.item_reuse_of(CHAR_ID).await.unwrap()).len(), 1);
+
+    // No timers in the snapshot: the table is not touched.
+    data.profile.item_reuse_to_store = None;
+    store.store_player(&data).await.unwrap();
+    assert_eq!(shape(reuse.item_reuse_of(CHAR_ID).await.unwrap()).len(), 1);
+
+    // An empty list clears the rows, like Java's DELETE with no batch.
+    data.profile.item_reuse_to_store = Some(vec![]);
+    store.store_player(&data).await.unwrap();
+    assert!(reuse.item_reuse_of(CHAR_ID).await.unwrap().is_empty());
 
     pool.close().await;
     db.drop_db().await;

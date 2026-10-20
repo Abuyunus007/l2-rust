@@ -25,7 +25,7 @@ use crate::formulas::{
 use crate::inventory::handlers::shots::ShotType;
 use crate::stats::conditions::{self, CondEnv};
 use crate::stats::skills::calc_skill;
-use crate::stats::{BaseStat, Stat, StatView};
+use crate::stats::{BaseStat, ClassBalance, Stat, StatView};
 use crate::world::World;
 
 /// The options of Java's six-argument `Skill.applyEffects`.
@@ -508,9 +508,10 @@ impl World {
                     str_bonus: cv.bonus(BaseStat::Str),
                     int_bonus: cv.bonus(BaseStat::Int),
                     skill_mastery_rate: cv.calc(Stat::SkillMasteryRate, 1.0),
-                    // M5: `SKILL_MASTERY_CHANCE_MULTIPLIERS` is not in the class balance settings
-                    // yet; the default is 1.
-                    class_balance_multiplier: 1.0,
+                    class_balance_multiplier: ClassBalance::of(
+                        &world.settings.stats.class_balance.skill_mastery_chance,
+                        cv.player().map_or(-1, |p| p.data.class_id),
+                    ),
                 },
                 resists,
             };

@@ -20,6 +20,7 @@ pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
+pub mod map_windows;
 pub mod movement;
 pub mod regen;
 pub mod skills;
@@ -59,6 +60,7 @@ pub use items::{
     read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
     write_item_updates,
 };
+pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 pub use regen::ExRegenMax;
 pub use skills::{

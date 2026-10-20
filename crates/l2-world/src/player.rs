@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 
 use crate::data::DEFAULT_TITLE_COLOR;
 use crate::effects::SavedEffect;
+use crate::inventory::handlers::SavedItemReuse;
 use crate::stats::Calculators;
 
 /// What every creature has (players now, NPCs in M3).
@@ -150,6 +151,13 @@ pub struct PlayerProfile {
     /// the rows replace the character's `character_skills_save` rows. `None` leaves them alone
     /// (`StoreSkillCooltime` is off, or the snapshot carries no effects).
     pub effects_to_store: Option<Vec<SavedEffect>>,
+    /// The `character_item_reuse_save` rows of the last logout (Java `restoreItemReuse` reads
+    /// them). The world takes them at enter world (`inventory/handlers/reuse.rs`).
+    pub item_reuse_to_restore: Vec<SavedItemReuse>,
+    /// The item reuse timers the persistence task writes with this store (Java
+    /// `storeItemReuseDelay`): the rows replace the character's `character_item_reuse_save` rows.
+    /// `None` leaves them alone.
+    pub item_reuse_to_store: Option<Vec<SavedItemReuse>>,
     /// Java `_classIndex`: the class index the saved buffs are stored under (0 for the base class).
     pub class_index: i32,
 }
@@ -176,6 +184,8 @@ impl Default for PlayerProfile {
             reco_store: false,
             effects_to_restore: Vec::new(),
             effects_to_store: None,
+            item_reuse_to_restore: Vec::new(),
+            item_reuse_to_store: None,
             class_index: 0,
         }
     }

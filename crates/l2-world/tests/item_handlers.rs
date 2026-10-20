@@ -16,7 +16,8 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    ExUseSharedGroupItem, InventoryUpdate, NpcHtmlMessage, SystemMessage, SystemMessageParam,
+    ExUseSharedGroupItem, InventoryUpdate, NpcHtmlMessage, ShowCalculator, ShowMiniMap, SystemMessage,
+    SystemMessageParam,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
@@ -48,6 +49,32 @@ struct NoPersist;
 impl Outbox for NoPersist {
     fn persist(&mut self, _command: PersistCommand) {}
     fn ls_event(&mut self, _event: LsEvent) {}
+}
+
+/// Keeps what the world persists (the item reuse tests read the stores).
+#[derive(Clone, Default)]
+struct Persisted(Arc<Mutex<Vec<PersistCommand>>>);
+
+impl Outbox for Persisted {
+    fn persist(&mut self, command: PersistCommand) {
+        self.0.lock().unwrap().push(command);
+    }
+    fn ls_event(&mut self, _event: LsEvent) {}
+}
+
+impl Persisted {
+    /// The last full store of a character.
+    fn last_store(&self) -> PlayerData {
+        let commands = self.0.lock().unwrap();
+        commands
+            .iter()
+            .rev()
+            .find_map(|c| match c {
+                PersistCommand::StorePlayer(data) => Some((**data).clone()),
+                _ => None,
+            })
+            .expect("a store")
+    }
 }
 
 const TEMPLATE: &str = r#"<list><classId>0</classId><staticData>
@@ -121,6 +148,14 @@ const ITEMS: &str = r#"<list>
 	<set name="ex_immediate_effect" val="true" />
 	<set name="handler" val="ItemSkills" />
 	<skills><skill id="2278" level="1" /></skills>
+</item>
+<item id="1665" type="EtcItem" name="Map of Gludin">
+	<set name="immediate_effect" val="true" />
+	<set name="handler" val="Maps" />
+</item>
+<item id="4393" type="EtcItem" name="Calculator">
+	<set name="default_action" val="CALC" />
+	<set name="handler" val="Calculator" />
 </item>
 <item id="9100" type="EtcItem" name="Everything Box">
 	<set name="default_action" val="PEEL" />
@@ -320,6 +355,8 @@ fn player_data(items: Vec<ItemData>) -> PlayerData {
 struct Scene {
     world: World,
     me: Log,
+    /// What the character was sent while it entered (the log is emptied after that).
+    entered: Vec<Vec<u8>>,
     /// Keeps the html folder of `with_help_page` alive.
     _html: Option<tempfile::TempDir>,
 }
@@ -334,7 +371,16 @@ impl Scene {
     }
 
     fn build(me_data: PlayerData, settings: WorldSettings, html: Option<tempfile::TempDir>) -> Self {
-        let mut world = World::new(WorldRng::from_seed(7), Box::new(NoPersist));
+        Self::build_with(me_data, settings, html, Box::new(NoPersist))
+    }
+
+    fn build_with(
+        me_data: PlayerData,
+        settings: WorldSettings,
+        html: Option<tempfile::TempDir>,
+        outbox: Box<dyn Outbox>,
+    ) -> Self {
+        let mut world = World::new(WorldRng::from_seed(7), outbox);
         world.set_static_data(Box::new(data()));
         world.set_settings(settings);
         world.set_regen_settings(RegenSettings {
@@ -360,10 +406,11 @@ impl Scene {
         let mut scene = Self {
             world,
             me,
+            entered: Vec::new(),
             _html: html,
         };
         scene.advance(1000);
-        scene.me.take();
+        scene.entered = scene.me.take();
         scene
     }
 
@@ -806,6 +853,37 @@ fn a_box_is_refused_when_the_inventory_is_nearly_full() {
 
 /// `Book`: the page `data/html/help/<itemId>.htm` as an `NpcHtmlMessage` of the item, then
 /// `ActionFailed`; without the file Java shows a "My Text is missing" page.
+/// Java `Maps.onItemUse` and `Calculator.onItemUse`: the item's id goes to the client, which opens
+/// the window. Neither item has a reuse delay or is used up.
+#[test]
+fn a_map_and_a_calculator_open_their_windows() {
+    let mut s = Scene::new(vec![item(0x100, 1665, 1), item(0x101, 4393, 1)]);
+    s.me.take();
+
+    s.use_item(0x100);
+    let sent = s.me.take();
+    let maps = of(&sent, ServerOpcode::ShowMinimap);
+    assert_eq!(maps.len(), 1, "{:?}", names(&sent));
+    assert_eq!(
+        decode::<ShowMiniMap>(maps[0]),
+        ShowMiniMap {
+            map_id: 1665,
+            seven_signs_period: 0
+        }
+    );
+
+    s.use_item(0x101);
+    let sent = s.me.take();
+    let calc = of(&sent, ServerOpcode::ShowCalc);
+    assert_eq!(calc.len(), 1, "{:?}", names(&sent));
+    assert_eq!(
+        decode::<ShowCalculator>(calc[0]),
+        ShowCalculator { calculator_id: 4393 }
+    );
+
+    assert_eq!(s.inventory(), [(1665, 1), (4393, 1)]);
+}
+
 #[test]
 fn a_book_shows_its_help_page() {
     let dir = tempfile::tempdir().unwrap();
@@ -846,6 +924,140 @@ fn an_item_with_an_unknown_handler_does_nothing() {
     s.use_item(0x100);
     assert!(s.me.take().is_empty());
     assert_eq!(s.count_of(5001), 1);
+}
+
+// ---- item reuse over a logout (M5-FIX-03) -----------------------------------------------------
+
+fn wall_ms() -> i64 {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap();
+    i64::try_from(now.as_millis()).unwrap()
+}
+
+fn saved(item_id: i32, item_obj_id: i32, reuse_delay: i64, systime: i64) -> SavedItemReuse {
+    SavedItemReuse {
+        item_id,
+        item_obj_id,
+        reuse_delay,
+        systime,
+    }
+}
+
+/// Java `storeItemReuseDelay`: the timers that still run are saved with the item id, the object
+/// id, the full delay and the wall clock time they end (`TimeStamp.getStamp()`).
+#[test]
+fn an_item_in_reuse_is_saved_with_its_end_time() {
+    let persisted = Persisted::default();
+    let mut s = Scene::build_with(
+        player_data(vec![item(0x100, 1060, 3), item(0x101, 1061, 3)]),
+        WorldSettings::default(),
+        None,
+        Box::new(persisted.clone()),
+    );
+    s.use_item(0x100);
+    s.advance(4_000);
+    let before = wall_ms();
+    s.world.handle(WorldCommand::Disconnected {
+        session: SessionId(1),
+    });
+    let after = wall_ms();
+
+    // Only the item that was used has a timer; it ends 10 s after the use (about 6 s left).
+    let rows = persisted.last_store().profile.item_reuse_to_store.unwrap();
+    assert_eq!(rows.len(), 1, "{rows:?}");
+    assert_eq!(
+        (rows[0].item_id, rows[0].item_obj_id, rows[0].reuse_delay),
+        (1060, 0x100, 10_000)
+    );
+    assert!(
+        (before + 5_800..=after + 6_100).contains(&rows[0].systime),
+        "{} not in {before}+6000",
+        rows[0].systime
+    );
+}
+
+/// A timer that ran out is not saved (`currentTime < ts.getStamp()`), but the store still
+/// replaces the rows (an empty list, not `None`).
+#[test]
+fn a_finished_timer_is_not_saved() {
+    let persisted = Persisted::default();
+    let mut s = Scene::build_with(
+        player_data(vec![item(0x100, 1060, 3)]),
+        WorldSettings::default(),
+        None,
+        Box::new(persisted.clone()),
+    );
+    s.use_item(0x100);
+    s.advance(11_000);
+    s.world.handle(WorldCommand::Disconnected {
+        session: SessionId(1),
+    });
+    assert_eq!(persisted.last_store().profile.item_reuse_to_store, Some(vec![]));
+}
+
+/// Java `restoreItemReuse`: a saved timer with time left is a stamp again, so the item is refused
+/// with the time left, and a shared-group item tells the client's timer (`ExUseSharedGroupItem`).
+#[test]
+fn a_saved_timer_comes_back_after_a_relog() {
+    let mut data = player_data(vec![item(0x100, 1060, 3), item(0x101, 1061, 3)]);
+    data.profile.item_reuse_to_restore = vec![
+        saved(1060, 0x100, 10_000, wall_ms() + 6_900),
+        saved(1061, 0x101, 10_000, wall_ms() + 7_900),
+    ];
+    let mut s = Scene::build(data, WorldSettings::default(), None);
+
+    let group: Vec<ExUseSharedGroupItem> = of(&s.entered, ServerOpcode::ExUseSharedGroupItem)
+        .into_iter()
+        .map(|p| decode(p))
+        .collect();
+    // Only the group item (1061, group 4) is announced; the 1 s the scene ran after the enter is
+    // not in the packet.
+    assert_eq!(group.len(), 1, "{group:?}");
+    assert_eq!(
+        (group[0].item_id, group[0].group_id, group[0].total_secs),
+        (1061, 4, 10)
+    );
+    assert!((6..=7).contains(&group[0].remaining_secs), "{group:?}");
+
+    // Both are still in reuse: using them is refused and costs nothing.
+    s.use_item(0x100);
+    s.use_item(0x101);
+    let sent = s.me.take();
+    assert_eq!(s.count_of(1060), 3);
+    assert_eq!(s.count_of(1061), 3);
+    assert_eq!(
+        message_ids(&sent),
+        [
+            SystemMessageId::ThereAreS2SecondSRemainingInS1SReUseTime,
+            SystemMessageId::ThereAreS2SecondSRemainingInS1SReUseTime
+        ]
+    );
+
+    // Once the time has passed the item works.
+    s.advance(8_000);
+    s.me.take();
+    s.use_item(0x100);
+    assert_eq!(s.count_of(1060), 2);
+}
+
+/// `restoreItemReuse` keeps only a timer of an item the character has, whose template has a reuse
+/// delay, and with more than 10 ms left.
+#[test]
+fn a_timer_that_does_not_apply_is_dropped_on_restore() {
+    let mut data = player_data(vec![item(0x100, 1060, 3), item(0x101, 57, 10)]);
+    data.profile.item_reuse_to_restore = vec![
+        // Almost over (10 ms or less left; the second the scene runs has passed anyway).
+        saved(1060, 0x100, 10_000, wall_ms() + 5),
+        // The character does not have this item.
+        saved(1061, 0x200, 10_000, wall_ms() + 60_000),
+        // Adena has no reuse delay.
+        saved(57, 0x101, 10_000, wall_ms() + 60_000),
+    ];
+    let mut s = Scene::build(data, WorldSettings::default(), None);
+    assert!(of(&s.entered, ServerOpcode::ExUseSharedGroupItem).is_empty());
+    s.use_item(0x100);
+    assert_eq!(s.count_of(1060), 2);
 }
 
 // ---- the datapack ------------------------------------------------------------------------------

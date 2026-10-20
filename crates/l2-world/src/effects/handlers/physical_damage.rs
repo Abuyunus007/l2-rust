@@ -18,7 +18,7 @@ use super::params;
 use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::{Rnd, SHIELD_DEFENSE_PERFECT_BLOCK, SHIELD_DEFENSE_SUCCEED};
-use crate::stats::BaseStat;
+use crate::stats::{BaseStat, ClassBalance};
 use crate::world::World;
 
 /// `S1_CANNOT_BE_USED_DUE_TO_UNSUITABLE_TERMS` with the skill name, to the effector.
@@ -328,7 +328,20 @@ impl EffectHandler for EnergyDamage {
                     .stats(effected)
                     .map_or(1.0, |t| t.calc(Stat::PvpPhysSkillDef, 1.0));
             }
-            // M5-CFG: `PVP/PVE_ENERGY_SKILL_DEFENCE_MULTIPLIERS` (1.0) for a playable target.
+            // `defence *= attacker.isPlayable() ? PVP_ENERGY_SKILL_DEFENCE[effected class] :
+            // PVE_ENERGY_SKILL_DEFENCE[effected class]` for a playable target.
+            if let Some(t) = world.stats(effected).filter(|t| t.is_playable()) {
+                let cb = &world.settings.stats.class_balance;
+                let table = if world.stats(attacker).is_some_and(|a| a.is_playable()) {
+                    &cb.pvp_energy_skill_defence
+                } else {
+                    &cb.pve_energy_skill_defence
+                };
+                defence *= f64::from(ClassBalance::of(
+                    table,
+                    t.player().map_or(-1, |p| p.data.class_id),
+                ));
+            }
 
             damage = attack / defence;
             damage *= damage_multiplier;
@@ -356,7 +369,20 @@ impl EffectHandler for EnergyDamage {
                     t.calc_stat(Stat::DefenceCriticalDamageAdd, 0.0, Some(effected), Some(&ctx))
                 });
             }
-            // M5-CFG: `PVP/PVE_ENERGY_SKILL_DAMAGE_MULTIPLIERS` (1.0) for a playable attacker.
+            // `damage *= effected.isPlayable() ? PVP_ENERGY_SKILL_DAMAGE[attacker class] :
+            // PVE_ENERGY_SKILL_DAMAGE[attacker class]` for a playable attacker.
+            if let Some(a) = world.stats(attacker).filter(|a| a.is_playable()) {
+                let cb = &world.settings.stats.class_balance;
+                let table = if world.stats(effected).is_some_and(|t| t.is_playable()) {
+                    &cb.pvp_energy_skill_damage
+                } else {
+                    &cb.pve_energy_skill_damage
+                };
+                damage *= f64::from(ClassBalance::of(
+                    table,
+                    a.player().map_or(-1, |p| p.data.class_id),
+                ));
+            }
         }
 
         if damage > 0.0 {

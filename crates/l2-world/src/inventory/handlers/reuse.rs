@@ -5,6 +5,7 @@
 // Java: entity/actor/holders/creature/TimeStamp.java (the item constructor, getRemaining)
 // Java: network/clientpackets/UseItem.java (reuseData, sendSharedGroupUpdate and the reuse check)
 // Java: network/serverpackets/ExUseSharedGroupItem.java
+// Java: entity/actor/Player.java (storeItemReuseDelay, restoreItemReuse), M5-FIX-03
 //
 // # Time
 // Like the skill stamps (`skills/reuse.rs`), item stamps use the world clock (`World::world_ms`)
@@ -24,6 +25,10 @@ use crate::world::World;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct ItemStamp {
     object_id: ObjectId,
+    /// `getItemId()`.
+    item_id: i32,
+    /// `getReuse()`: the full delay in milliseconds.
+    reuse_ms: i64,
     /// `getSharedReuseGroup()` of the item when the stamp was made.
     group: i32,
     stamp_ms: i64,
@@ -37,6 +42,21 @@ impl ItemStamp {
         }
         (self.stamp_ms - now).max(0)
     }
+}
+
+/// One row of `character_item_reuse_save` as the world keeps it (Java `storeItemReuseDelay`
+/// writes `TimeStamp.getItemId/getItemObjectId/getReuse/getStamp`). `systime` is on the wall clock,
+/// like the column.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SavedItemReuse {
+    /// `itemId`.
+    pub item_id: i32,
+    /// `itemObjId`.
+    pub item_obj_id: i32,
+    /// `reuseDelay`: the full delay in milliseconds.
+    pub reuse_delay: i64,
+    /// `systime`: the wall clock millisecond at which the timer ends.
+    pub systime: i64,
 }
 
 /// The "re-use time" message of `UseItem.reuseData` and `ItemSkillsTemplate.checkReuse`: `name`
@@ -72,13 +92,108 @@ impl World {
         let now = self.world_ms();
         let stamp = ItemStamp {
             object_id: item.object_id,
+            item_id: item.item_id,
+            reuse_ms,
             group: template.shared_reuse_group,
             stamp_ms: if reuse_ms != 0 { now + reuse_ms } else { 0 },
         };
+        self.put_item_stamp(id, stamp);
+    }
+
+    /// `_reuseTimeStampsItems.put(objectId, stamp)`: a known item keeps its place.
+    fn put_item_stamp(&mut self, id: ObjectId, stamp: ItemStamp) {
         let stamps = &mut self.cast_state_mut(id).reuse.item_stamps;
-        match stamps.iter_mut().find(|s| s.object_id == item.object_id) {
+        match stamps.iter_mut().find(|s| s.object_id == stamp.object_id) {
             Some(existing) => *existing = stamp,
             None => stamps.push(stamp),
+        }
+    }
+
+    /// Java `Player.storeItemReuseDelay`: the rows the item reuse stamps are saved as, the ones
+    /// that still have time left (`currentTime < ts.getStamp()`). The world clock stamp becomes
+    /// the wall clock one Java keeps in `systime`.
+    pub(crate) fn saved_item_reuse(&self, id: ObjectId) -> Vec<SavedItemReuse> {
+        let now = self.world_ms();
+        let now_wall = crate::world::unix_ms_now();
+        let Some(state) = self.cast_state(id) else {
+            return Vec::new();
+        };
+        state
+            .reuse
+            .item_stamps
+            .iter()
+            .filter(|s| now < s.stamp_ms)
+            .map(|s| SavedItemReuse {
+                item_id: s.item_id,
+                item_obj_id: s.object_id.0,
+                reuse_delay: s.reuse_ms,
+                systime: now_wall + (s.stamp_ms - now),
+            })
+            .collect()
+    }
+
+    /// Java `Player.restoreItemReuse`: the rows of the last logout become stamps again. Called
+    /// once when the character enters; the rows are taken from the profile.
+    // NOTE(java-quirk): the item is looked up by its template id, not by the saved object id, so
+    // two saved stamps of one template (two objects) both land on the first such item, the later
+    // row replacing the earlier.
+    // The warehouse fallback of Java (`getWarehouse().getItemByItemId`) is left out: the world
+    // does not hold the warehouse, so a timer of an item stored there is dropped.
+    pub(crate) fn restore_item_reuse(&mut self, id: ObjectId) {
+        let Some(player) = self.players.get_mut(&id) else {
+            return;
+        };
+        let rows = std::mem::take(&mut player.data.profile.item_reuse_to_restore);
+        if rows.is_empty() {
+            return;
+        }
+        let Some(templates) = self.item_templates() else {
+            return;
+        };
+        let now_wall = crate::world::unix_ms_now();
+        let now = self.world_ms();
+        for row in rows {
+            let item = self.players.get(&id).and_then(|p| {
+                p.data
+                    .items
+                    .iter()
+                    .find(|i| i.item_id == row.item_id && (i.loc == "INVENTORY" || i.loc == "PAPERDOLL"))
+                    .cloned()
+            });
+            let Some(item) = item else {
+                continue;
+            };
+            let Some(template) = templates.get(item.item_id) else {
+                continue;
+            };
+            if template.reuse_delay <= 0 {
+                continue;
+            }
+            let remaining = row.systime - now_wall;
+            if remaining <= 10 {
+                continue;
+            }
+            // `addTimeStampItem(item, reuseDelay, systime)`: the stamp ends `remaining` from now.
+            self.put_item_stamp(
+                id,
+                ItemStamp {
+                    object_id: item.object_id,
+                    item_id: item.item_id,
+                    reuse_ms: row.reuse_delay,
+                    group: template.shared_reuse_group,
+                    stamp_ms: now + remaining,
+                },
+            );
+            if template.etc().is_some() {
+                // `ExUseSharedGroupItem` (nothing is sent when the group is 0).
+                self.send_shared_group_update(
+                    id,
+                    item.item_id,
+                    template.shared_reuse_group,
+                    remaining,
+                    i32::try_from(row.reuse_delay).unwrap_or(i32::MAX),
+                );
+            }
         }
     }
 
@@ -202,6 +317,8 @@ mod tests {
     fn a_passed_stamp_has_nothing_left() {
         let stamp = ItemStamp {
             object_id: ObjectId(1),
+            item_id: 0,
+            reuse_ms: 0,
             group: 0,
             stamp_ms: 5_000,
         };

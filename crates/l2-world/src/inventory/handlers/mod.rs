@@ -11,6 +11,7 @@
 // - `item_skills.rs`: `ItemSkillsTemplate` / `ItemSkills` / `Elixir` (potions, scrolls, herbs).
 // - `extractable.rs`: `ExtractableItems` (boxes and packs: `<capsuled_items>`).
 // - `book.rs`: `Book` (the help page of an item).
+// - `windows.rs`: `Maps` and `Calculator` (they open a client window).
 // - `reuse.rs`: the item reuse stamps (`Creature.addTimeStampItem` and friends), the
 //   "remaining re-use time" message and `ExUseSharedGroupItem`.
 // - `consume.rs`: `Player.destroyItem(process, objectId, count, ...)`.
@@ -18,13 +19,9 @@
 //   them first.
 //
 // # Left out on purpose
-// - `Maps` and `Calculator` need the `ShowMiniMap` and `ShowCalculator` packets, which the
-//   protocol crate does not have yet.
 // - Pets: `Playable` is a player here (summons and pets are M6), so every `isPet()` branch is
 //   dead and left out.
 // - Events (`isOnEvent`) and the olympiad (`isInOlympiadMode`) are not modelled.
-// - The item reuse stamps are not saved (`character_item_reuse_save`, Java `storeItemReuseDelay` /
-//   `restoreItemReuse`): a relog forgets them.
 
 mod book;
 mod consume;
@@ -32,8 +29,10 @@ mod extractable;
 mod item_skills;
 mod registry;
 mod reuse;
+mod windows;
 
 pub mod shots;
 
 pub(crate) use registry::ItemHandlerKind;
 pub(crate) use reuse::ItemStamp;
+pub use reuse::SavedItemReuse;

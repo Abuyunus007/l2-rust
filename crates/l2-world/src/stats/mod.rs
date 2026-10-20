@@ -214,6 +214,49 @@ pub struct ClassBalance {
     pub pvp_physical_attack_damage: Vec<f32>,
     /// `PvePhysicalAttackDamageMultipliers`.
     pub pve_physical_attack_damage: Vec<f32>,
+    // The skill tables (M5-FIX-03: the formulas of M5-FORM-02 and the effects of M5-EFX-04).
+    /// `PveMagicalSkillDamageMultipliers` (M5-FIX-03): `calcMagicDam` / `calcManaDam`, by the attacker's class.
+    pub pve_magical_skill_damage: Vec<f32>,
+    /// `PvpMagicalSkillDamageMultipliers` (M5-FIX-03): `calcMagicDam`, by the attacker's class.
+    pub pvp_magical_skill_damage: Vec<f32>,
+    /// `PvpMagicalSkillDefenceMultipliers` (M5-FIX-03): `calcMagicDam`, by the target's class.
+    pub pvp_magical_skill_defence: Vec<f32>,
+    /// `PveMagicalSkillCriticalDamageMultipliers` (M5-FIX-03): `calcMagicDam`, by the attacker's class.
+    pub pve_magical_skill_critical_damage: Vec<f32>,
+    /// `PvpMagicalSkillCriticalDamageMultipliers` (M5-FIX-03): `calcMagicDam`, by the attacker's class.
+    pub pvp_magical_skill_critical_damage: Vec<f32>,
+    /// `PvePhysicalSkillDamageMultipliers` (M5-FIX-03): `calcPhysDam` of a skill, by the attacker's class.
+    pub pve_physical_skill_damage: Vec<f32>,
+    /// `PvpPhysicalSkillDamageMultipliers` (M5-FIX-03): `calcPhysDam` of a skill, `calcBackstabDamage` and a non-magic `calcMagicDam`, by the attacker's class.
+    pub pvp_physical_skill_damage: Vec<f32>,
+    /// `PvePhysicalSkillCriticalChanceMultipliers` (M5-FIX-03): `calcCrit` of a skill, by the attacker's class.
+    pub pve_physical_skill_critical_chance: Vec<f32>,
+    /// `PvpPhysicalSkillCriticalChanceMultipliers` (M5-FIX-03): `calcCrit` of a skill, by the attacker's class.
+    pub pvp_physical_skill_critical_chance: Vec<f32>,
+    /// `PvePhysicalSkillCriticalDamageMultipliers` (M5-FIX-03): `calcPhysDam` of a skill, by the attacker's class.
+    pub pve_physical_skill_critical_damage: Vec<f32>,
+    /// `PvpPhysicalSkillCriticalDamageMultipliers` (M5-FIX-03): `calcPhysDam` of a skill, by the attacker's class.
+    pub pvp_physical_skill_critical_damage: Vec<f32>,
+    /// `PveBlowSkillDamageMultipliers` (M5-FIX-03): `calcBlowDamage`, by the attacker's class.
+    pub pve_blow_skill_damage: Vec<f32>,
+    /// `PvpBlowSkillDamageMultipliers` (M5-FIX-03): `calcBlowDamage`, by the attacker's class.
+    pub pvp_blow_skill_damage: Vec<f32>,
+    /// `PveBlowSkillDefenceMultipliers` (M5-FIX-03): `calcBlowDamage`, by the target's class.
+    pub pve_blow_skill_defence: Vec<f32>,
+    /// `PvpBlowSkillDefenceMultipliers` (M5-FIX-03): `calcBlowDamage`, by the target's class.
+    pub pvp_blow_skill_defence: Vec<f32>,
+    /// `PveEnergySkillDamageMultipliers` (M5-FIX-03): `EnergyDamage`, by the attacker's class.
+    pub pve_energy_skill_damage: Vec<f32>,
+    /// `PvpEnergySkillDamageMultipliers` (M5-FIX-03): `EnergyDamage`, by the attacker's class.
+    pub pvp_energy_skill_damage: Vec<f32>,
+    /// `PveEnergySkillDefenceMultipliers` (M5-FIX-03): `EnergyDamage`, by the target's class.
+    pub pve_energy_skill_defence: Vec<f32>,
+    /// `PvpEnergySkillDefenceMultipliers` (M5-FIX-03): `EnergyDamage`, by the target's class.
+    pub pvp_energy_skill_defence: Vec<f32>,
+    /// `PlayerHealingSkillMultipliers` (M5-FIX-03): `Heal`, by the healer's class.
+    pub player_healing_skill: Vec<f32>,
+    /// `SkillMasteryChanceMultipliers` (M5-FIX-03): `calcSkillMastery`, by the actor's class.
+    pub skill_mastery_chance: Vec<f32>,
 }
 
 impl ClassBalance {
@@ -248,7 +291,28 @@ impl Default for ClassBalance {
             pvp_physical_attack_critical_damage: ones.clone(),
             pve_physical_attack_critical_damage: ones.clone(),
             pvp_physical_attack_damage: ones.clone(),
-            pve_physical_attack_damage: ones,
+            pve_physical_attack_damage: ones.clone(),
+            pve_magical_skill_damage: ones.clone(),
+            pvp_magical_skill_damage: ones.clone(),
+            pvp_magical_skill_defence: ones.clone(),
+            pve_magical_skill_critical_damage: ones.clone(),
+            pvp_magical_skill_critical_damage: ones.clone(),
+            pve_physical_skill_damage: ones.clone(),
+            pvp_physical_skill_damage: ones.clone(),
+            pve_physical_skill_critical_chance: ones.clone(),
+            pvp_physical_skill_critical_chance: ones.clone(),
+            pve_physical_skill_critical_damage: ones.clone(),
+            pvp_physical_skill_critical_damage: ones.clone(),
+            pve_blow_skill_damage: ones.clone(),
+            pvp_blow_skill_damage: ones.clone(),
+            pve_blow_skill_defence: ones.clone(),
+            pvp_blow_skill_defence: ones.clone(),
+            pve_energy_skill_damage: ones.clone(),
+            pvp_energy_skill_damage: ones.clone(),
+            pve_energy_skill_defence: ones.clone(),
+            pvp_energy_skill_defence: ones.clone(),
+            player_healing_skill: ones.clone(),
+            skill_mastery_chance: ones,
         }
     }
 }

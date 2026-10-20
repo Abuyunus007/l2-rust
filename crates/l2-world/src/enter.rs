@@ -430,6 +430,9 @@ impl World {
             self.check_reco_bonus_task(id);
         }
 
+        // Java `Player.load` -> `restoreItemReuse()`: the item reuse timers of the last logout.
+        self.restore_item_reuse(id);
+
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
         // storage limits, friends, the welcome message and the skill cool times.
         for bytes in self.enter_packets(id, now_ms) {

@@ -46,6 +46,8 @@ impl World {
         let player = self.players.get(&id)?;
         let mut snapshot = snapshot_for_store(player, self.tick);
         snapshot.profile.effects_to_store = self.saved_effects(id);
+        // Java `Player.store` -> `storeItemReuseDelay()` runs on every store, with no setting.
+        snapshot.profile.item_reuse_to_store = Some(self.saved_item_reuse(id));
         Some(snapshot)
     }
 

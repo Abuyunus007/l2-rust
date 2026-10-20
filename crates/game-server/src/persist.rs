@@ -16,6 +16,7 @@
 // database. This task only ever writes
 // - `characters` through Java's own `UPDATE_CHARACTER` and `UPDATE_ONLINE_STATUS`,
 // - `items`, `character_skills`, `character_shortcuts` of the character it stores,
+// - `character_skills_save` and `character_item_reuse_save` (the buffs and reuse timers),
 // - `character_reco_bonus` (the Nevit hourglass time) and the `character_variables` rows the
 //   world changed (Nevit's points; M4-VIT-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup.
@@ -39,12 +40,12 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
-    ItemRepository, ItemUpdate, NewItem, NewShortcut, NewSkillSave, Pool, RecommendationRepository,
-    ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
+    ItemRepository, ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewShortcut, NewSkillSave, Pool,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
 };
 use l2_world::{
-    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, SavedEffect, ShortcutData,
-    SkillData,
+    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, SavedEffect, SavedItemReuse,
+    ShortcutData, SkillData,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -426,6 +427,7 @@ pub struct DbStore {
     items: ItemRepository,
     ground_items: GroundItemRepository,
     skills: SkillRepository,
+    item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
@@ -439,6 +441,7 @@ impl DbStore {
             items: ItemRepository::new(pool.clone()),
             ground_items: GroundItemRepository::new(pool.clone()),
             skills: SkillRepository::new(pool.clone()),
+            item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool),
@@ -502,6 +505,30 @@ impl DbStore {
         self.skills.delete_skill_effects(char_id, class_index).await?;
         self.skills.add_skill_effects(char_id, class_index, &rows).await?;
         Ok(())
+    }
+
+    /// M5-FIX-03: Java `Player.storeItemReuseDelay` replaces the character's
+    /// `character_item_reuse_save` rows with the timers that still run. Java catches a failure and
+    /// logs it ("Could not store char item reuse data"), so a failure here does not fail the store.
+    // Java: Player.storeItemReuseDelay (DELETE_ITEM_REUSE_SAVE, ADD_ITEM_REUSE_SAVE)
+    async fn store_item_reuse(&self, char_id: i32, rows: &[SavedItemReuse]) {
+        let rows: Vec<NewItemReuse> = rows
+            .iter()
+            .map(|r| NewItemReuse {
+                item_id: r.item_id,
+                item_obj_id: r.item_obj_id,
+                reuse_delay: r.reuse_delay,
+                systime: r.systime,
+            })
+            .collect();
+        let result = async {
+            self.item_reuse.delete_item_reuse(char_id).await?;
+            self.item_reuse.add_item_reuse(char_id, &rows).await
+        }
+        .await;
+        if let Err(e) = result {
+            warn!("Could not store char item reuse data: {e}");
+        }
     }
 
     /// The baseline of a character that was not stored since the server started: its rows as
@@ -928,6 +955,11 @@ impl PlayerStore for DbStore {
         if let Some(effects) = &player.profile.effects_to_store {
             self.store_effects(char_id, player.profile.class_index, effects)
                 .await?;
+        }
+
+        // Java: Player.store -> storeItemReuseDelay.
+        if let Some(rows) = &player.profile.item_reuse_to_store {
+            self.store_item_reuse(char_id, rows).await;
         }
 
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).

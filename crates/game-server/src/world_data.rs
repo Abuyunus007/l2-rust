@@ -887,65 +887,131 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
         s.raid_mattack_multiplier = ini.get_double("RaidMAttackMultiplier", 100.0) / 100.0;
     }
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
-        let cb = &mut s.class_balance;
-        for (key, table) in [
-            (
-                "PvpPhysicalAttackDefenceMultipliers",
-                &mut cb.pvp_physical_attack_defence,
-            ),
-            (
-                "PvePhysicalAttackDefenceMultipliers",
-                &mut cb.pve_physical_attack_defence,
-            ),
-            (
-                "PveMagicalSkillDefenceMultipliers",
-                &mut cb.pve_magical_skill_defence,
-            ),
-            (
-                "PvePhysicalSkillDefenceMultipliers",
-                &mut cb.pve_physical_skill_defence,
-            ),
-            (
-                "PvpMagicalSkillCriticalChanceMultipliers",
-                &mut cb.pvp_magical_skill_critical_chance,
-            ),
-            (
-                "PveMagicalSkillCriticalChanceMultipliers",
-                &mut cb.pve_magical_skill_critical_chance,
-            ),
-            (
-                "PvpPhysicalSkillDefenceMultipliers",
-                &mut cb.pvp_physical_skill_defence,
-            ),
-            (
-                "PvpPhysicalAttackCriticalChanceMultipliers",
-                &mut cb.pvp_physical_attack_critical_chance,
-            ),
-            (
-                "PvePhysicalAttackCriticalChanceMultipliers",
-                &mut cb.pve_physical_attack_critical_chance,
-            ),
-            (
-                "PvpPhysicalAttackCriticalDamageMultipliers",
-                &mut cb.pvp_physical_attack_critical_damage,
-            ),
-            (
-                "PvePhysicalAttackCriticalDamageMultipliers",
-                &mut cb.pve_physical_attack_critical_damage,
-            ),
-            (
-                "PvpPhysicalAttackDamageMultipliers",
-                &mut cb.pvp_physical_attack_damage,
-            ),
-            (
-                "PvePhysicalAttackDamageMultipliers",
-                &mut cb.pve_physical_attack_damage,
-            ),
-        ] {
-            parse_class_multipliers(key, &ini.get_string(key, ""), table);
-        }
+        load_class_balance(&ini, &mut s.class_balance);
     }
     s
+}
+
+/// Java `ClassBalanceConfig.load`: every `*Multipliers` key of `Custom/ClassBalance.ini` that the
+/// stat settings hold (`SkillReuseMultipliers` is in `CastSettings`, the Exp/Sp amounts belong to
+/// the party). Each table starts at 1.0 and the entries of the key replace it.
+fn load_class_balance(ini: &l2_config::IniFile, cb: &mut l2_world::stats::ClassBalance) {
+    for (key, table) in [
+        (
+            "PvpPhysicalAttackDefenceMultipliers",
+            &mut cb.pvp_physical_attack_defence,
+        ),
+        (
+            "PvePhysicalAttackDefenceMultipliers",
+            &mut cb.pve_physical_attack_defence,
+        ),
+        (
+            "PveMagicalSkillDefenceMultipliers",
+            &mut cb.pve_magical_skill_defence,
+        ),
+        (
+            "PvePhysicalSkillDefenceMultipliers",
+            &mut cb.pve_physical_skill_defence,
+        ),
+        (
+            "PvpMagicalSkillCriticalChanceMultipliers",
+            &mut cb.pvp_magical_skill_critical_chance,
+        ),
+        (
+            "PveMagicalSkillCriticalChanceMultipliers",
+            &mut cb.pve_magical_skill_critical_chance,
+        ),
+        (
+            "PvpPhysicalSkillDefenceMultipliers",
+            &mut cb.pvp_physical_skill_defence,
+        ),
+        (
+            "PvpPhysicalAttackCriticalChanceMultipliers",
+            &mut cb.pvp_physical_attack_critical_chance,
+        ),
+        (
+            "PvePhysicalAttackCriticalChanceMultipliers",
+            &mut cb.pve_physical_attack_critical_chance,
+        ),
+        (
+            "PvpPhysicalAttackCriticalDamageMultipliers",
+            &mut cb.pvp_physical_attack_critical_damage,
+        ),
+        (
+            "PvePhysicalAttackCriticalDamageMultipliers",
+            &mut cb.pve_physical_attack_critical_damage,
+        ),
+        (
+            "PvpPhysicalAttackDamageMultipliers",
+            &mut cb.pvp_physical_attack_damage,
+        ),
+        (
+            "PvePhysicalAttackDamageMultipliers",
+            &mut cb.pve_physical_attack_damage,
+        ),
+        (
+            "PveMagicalSkillDamageMultipliers",
+            &mut cb.pve_magical_skill_damage,
+        ),
+        (
+            "PvpMagicalSkillDamageMultipliers",
+            &mut cb.pvp_magical_skill_damage,
+        ),
+        (
+            "PvpMagicalSkillDefenceMultipliers",
+            &mut cb.pvp_magical_skill_defence,
+        ),
+        (
+            "PveMagicalSkillCriticalDamageMultipliers",
+            &mut cb.pve_magical_skill_critical_damage,
+        ),
+        (
+            "PvpMagicalSkillCriticalDamageMultipliers",
+            &mut cb.pvp_magical_skill_critical_damage,
+        ),
+        (
+            "PvePhysicalSkillDamageMultipliers",
+            &mut cb.pve_physical_skill_damage,
+        ),
+        (
+            "PvpPhysicalSkillDamageMultipliers",
+            &mut cb.pvp_physical_skill_damage,
+        ),
+        (
+            "PvePhysicalSkillCriticalChanceMultipliers",
+            &mut cb.pve_physical_skill_critical_chance,
+        ),
+        (
+            "PvpPhysicalSkillCriticalChanceMultipliers",
+            &mut cb.pvp_physical_skill_critical_chance,
+        ),
+        (
+            "PvePhysicalSkillCriticalDamageMultipliers",
+            &mut cb.pve_physical_skill_critical_damage,
+        ),
+        (
+            "PvpPhysicalSkillCriticalDamageMultipliers",
+            &mut cb.pvp_physical_skill_critical_damage,
+        ),
+        ("PveBlowSkillDamageMultipliers", &mut cb.pve_blow_skill_damage),
+        ("PvpBlowSkillDamageMultipliers", &mut cb.pvp_blow_skill_damage),
+        ("PveBlowSkillDefenceMultipliers", &mut cb.pve_blow_skill_defence),
+        ("PvpBlowSkillDefenceMultipliers", &mut cb.pvp_blow_skill_defence),
+        ("PveEnergySkillDamageMultipliers", &mut cb.pve_energy_skill_damage),
+        ("PvpEnergySkillDamageMultipliers", &mut cb.pvp_energy_skill_damage),
+        (
+            "PveEnergySkillDefenceMultipliers",
+            &mut cb.pve_energy_skill_defence,
+        ),
+        (
+            "PvpEnergySkillDefenceMultipliers",
+            &mut cb.pvp_energy_skill_defence,
+        ),
+        ("PlayerHealingSkillMultipliers", &mut cb.player_healing_skill),
+        ("SkillMasteryChanceMultipliers", &mut cb.skill_mastery_chance),
+    ] {
+        parse_class_multipliers(key, &ini.get_string(key, ""), table);
+    }
 }
 
 /// The values the attack code reads (M4-COMBAT-01). `AltGameCancelByHit` and the NPC damage
@@ -1141,6 +1207,46 @@ mod tests {
         assert_eq!((table[0], table[88], table[1]), (1.5, 0.9, 1.0));
         parse_class_multipliers("K", "", &mut table);
         assert_eq!(table[0], 1.5);
+    }
+
+    /// M5-FIX-03: every skill table of `ClassBalanceConfig` is read from its own key, the others
+    /// stay at Java's `Arrays.fill(.., 1f)`.
+    #[test]
+    fn class_balance_skill_tables_are_read_from_their_keys() {
+        let ini = l2_config::IniFile::parse("ClassBalance.ini", "PveMagicalSkillDamageMultipliers = 3*2.5\nPvpMagicalSkillDamageMultipliers = 3*0.5\nPvpMagicalSkillDefenceMultipliers = 3*1.5\nPveMagicalSkillCriticalDamageMultipliers = 3*1.25\nPvpMagicalSkillCriticalDamageMultipliers = 3*1.75\nPvePhysicalSkillDamageMultipliers = 3*2\nPvpPhysicalSkillDamageMultipliers = 3*3\nPvePhysicalSkillCriticalChanceMultipliers = 3*4\nPvpPhysicalSkillCriticalChanceMultipliers = 3*5\nPvePhysicalSkillCriticalDamageMultipliers = 3*6\nPvpPhysicalSkillCriticalDamageMultipliers = 3*7\nPveBlowSkillDamageMultipliers = 3*8\nPvpBlowSkillDamageMultipliers = 3*9\nPveBlowSkillDefenceMultipliers = 3*10\nPvpBlowSkillDefenceMultipliers = 3*11\nPveEnergySkillDamageMultipliers = 3*12\nPvpEnergySkillDamageMultipliers = 3*13\nPveEnergySkillDefenceMultipliers = 3*14\nPvpEnergySkillDefenceMultipliers = 3*15\nPlayerHealingSkillMultipliers = 3*16\nSkillMasteryChanceMultipliers = 3*17\nPvpPhysicalAttackDamageMultipliers = 3*18\n").unwrap();
+        let mut cb = l2_world::stats::ClassBalance::default();
+        load_class_balance(&ini, &mut cb);
+        let at3 = [
+            (&cb.pve_magical_skill_damage, 2.5_f32),
+            (&cb.pvp_magical_skill_damage, 0.5_f32),
+            (&cb.pvp_magical_skill_defence, 1.5_f32),
+            (&cb.pve_magical_skill_critical_damage, 1.25_f32),
+            (&cb.pvp_magical_skill_critical_damage, 1.75_f32),
+            (&cb.pve_physical_skill_damage, 2_f32),
+            (&cb.pvp_physical_skill_damage, 3_f32),
+            (&cb.pve_physical_skill_critical_chance, 4_f32),
+            (&cb.pvp_physical_skill_critical_chance, 5_f32),
+            (&cb.pve_physical_skill_critical_damage, 6_f32),
+            (&cb.pvp_physical_skill_critical_damage, 7_f32),
+            (&cb.pve_blow_skill_damage, 8_f32),
+            (&cb.pvp_blow_skill_damage, 9_f32),
+            (&cb.pve_blow_skill_defence, 10_f32),
+            (&cb.pvp_blow_skill_defence, 11_f32),
+            (&cb.pve_energy_skill_damage, 12_f32),
+            (&cb.pvp_energy_skill_damage, 13_f32),
+            (&cb.pve_energy_skill_defence, 14_f32),
+            (&cb.pvp_energy_skill_defence, 15_f32),
+            (&cb.player_healing_skill, 16_f32),
+            (&cb.skill_mastery_chance, 17_f32),
+            (&cb.pvp_physical_attack_damage, 18_f32),
+        ];
+        for (index, (table, expected)) in at3.into_iter().enumerate() {
+            assert_eq!(table[3], expected, "table {index}");
+            assert_eq!(table[2], 1.0, "table {index}");
+            assert_eq!(table.len(), 137);
+        }
+        // A table whose key is not in the file stays at 1.0.
+        assert!(cb.pve_physical_attack_damage.iter().all(|v| *v == 1.0));
     }
 
     #[test]
