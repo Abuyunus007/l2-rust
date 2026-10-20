@@ -77,12 +77,13 @@ const ADENA_ID: i32 = 57;
 
 /// Every table of the game schema (the files of `crates/l2-db/sql/game`), so the game server
 /// finds whatever it reads or writes.
-const GAME_SCHEMA: [&str; 26] = [
+const GAME_SCHEMA: [&str; 27] = [
     include_str!("../../l2-db/sql/game/characters.sql"),
     include_str!("../../l2-db/sql/game/items.sql"),
     include_str!("../../l2-db/sql/game/item_attributes.sql"),
     include_str!("../../l2-db/sql/game/character_skills.sql"),
     include_str!("../../l2-db/sql/game/character_skills_save.sql"),
+    include_str!("../../l2-db/sql/game/character_item_reuse_save.sql"),
     include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
     include_str!("../../l2-db/sql/game/character_macroses.sql"),
     include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
