@@ -41,6 +41,11 @@ use l2_protocol_game::server::interaction::{
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+use l2_protocol_game::server::party::{
+    AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
+    PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
+    PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
+};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
@@ -183,6 +188,11 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
+        ClientPacket::RequestJoinParty(p) => object!(p => name, party_distribution_type_id),
+        ClientPacket::RequestAnswerJoinParty(p) => object!(p => response),
+        ClientPacket::RequestWithDrawalParty(_) => json!({}),
+        ClientPacket::RequestOustPartyMember(p) => object!(p => name),
+        ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -288,6 +298,31 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PartySpelled => decoded::<PartySpelled>(&mut r, party_spelled_fields),
         ServerOpcode::ConfirmDlg => decoded::<ConfirmDlg>(&mut r, confirm_dlg_fields),
         ServerOpcode::FlyToLocation => decoded::<FlyToLocation>(&mut r, fly_to_location_fields),
+        ServerOpcode::AskJoinParty => decoded::<AskJoinParty>(&mut r, ask_join_party_fields),
+        ServerOpcode::JoinParty => decoded::<JoinParty>(&mut r, join_party_fields),
+        ServerOpcode::PartySmallWindowAll => {
+            decoded::<PartySmallWindowAll>(&mut r, party_small_window_all_fields)
+        }
+        ServerOpcode::PartySmallWindowAdd => {
+            decoded::<PartySmallWindowAdd>(&mut r, party_small_window_add_fields)
+        }
+        ServerOpcode::PartySmallWindowDeleteAll => decoded::<PartySmallWindowDeleteAll>(&mut r, no_fields),
+        ServerOpcode::PartySmallWindowDelete => {
+            decoded::<PartySmallWindowDelete>(&mut r, party_small_window_delete_fields)
+        }
+        ServerOpcode::PartySmallWindowUpdate => {
+            decoded::<PartySmallWindowUpdate>(&mut r, party_small_window_update_fields)
+        }
+        ServerOpcode::PartyMemberPosition => {
+            decoded::<PartyMemberPosition>(&mut r, party_member_position_fields)
+        }
+        ServerOpcode::ExPartyPetWindowAdd => decoded::<ExPartyPetWindowAdd>(&mut r, pet_window_add_fields),
+        ServerOpcode::ExPartyPetWindowUpdate => {
+            decoded::<ExPartyPetWindowUpdate>(&mut r, pet_window_update_fields)
+        }
+        ServerOpcode::ExPartyPetWindowDelete => {
+            decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -851,6 +886,83 @@ fn party_spelled_fields(p: &PartySpelled) -> Value {
     fields
 }
 
+fn ask_join_party_fields(p: &AskJoinParty) -> Value {
+    let mut fields = object!(p => requestor_name);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields
+}
+
+fn join_party_fields(p: &JoinParty) -> Value {
+    object!(p => response)
+}
+
+fn party_vitals_fields(v: &PartyMemberVitals) -> Value {
+    object!(v => object_id, name, cp, max_cp, hp, max_hp, mp, max_mp, level, class_id)
+}
+
+fn party_summon_fields(s: &PartySummon) -> Value {
+    object!(s => object_id, display_id, summon_type, name, hp, max_hp, mp, max_mp, level)
+}
+
+fn party_small_window_all_fields(p: &PartySmallWindowAll) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|m| {
+            let mut fields = party_vitals_fields(&m.vitals);
+            fields["race"] = json!(m.race);
+            fields["summon"] = m.summon.as_ref().map_or(Value::Null, party_summon_fields);
+            fields
+        })
+        .collect();
+    let mut fields = object!(p => leader_object_id);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields["members"] = json!(members);
+    fields
+}
+
+fn party_small_window_add_fields(p: &PartySmallWindowAdd) -> Value {
+    let mut fields = object!(p => leader_object_id);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields["member"] = party_vitals_fields(&p.member);
+    fields
+}
+
+fn party_small_window_delete_fields(p: &PartySmallWindowDelete) -> Value {
+    object!(p => object_id, name)
+}
+
+fn party_small_window_update_fields(p: &PartySmallWindowUpdate) -> Value {
+    party_vitals_fields(&p.member)
+}
+
+fn party_member_position_fields(p: &PartyMemberPosition) -> Value {
+    let locations: Vec<Value> = p
+        .locations
+        .iter()
+        .map(|l| object!(l => object_id, x, y, z))
+        .collect();
+    json!({ "locations": locations })
+}
+
+fn pet_window_fields(w: &PartyPetWindow) -> Value {
+    let mut fields = party_summon_fields(&w.summon);
+    fields["owner_object_id"] = json!(w.owner_object_id);
+    fields
+}
+
+fn pet_window_add_fields(p: &ExPartyPetWindowAdd) -> Value {
+    pet_window_fields(&p.window)
+}
+
+fn pet_window_update_fields(p: &ExPartyPetWindowUpdate) -> Value {
+    pet_window_fields(&p.window)
+}
+
+fn pet_window_delete_fields(p: &ExPartyPetWindowDelete) -> Value {
+    object!(p => summon_object_id, owner_object_id, summon_name)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -965,6 +1077,17 @@ mod tests {
         ServerOpcode::PartySpelled,
         ServerOpcode::ConfirmDlg,
         ServerOpcode::FlyToLocation,
+        ServerOpcode::AskJoinParty,
+        ServerOpcode::JoinParty,
+        ServerOpcode::PartySmallWindowAll,
+        ServerOpcode::PartySmallWindowAdd,
+        ServerOpcode::PartySmallWindowDeleteAll,
+        ServerOpcode::PartySmallWindowDelete,
+        ServerOpcode::PartySmallWindowUpdate,
+        ServerOpcode::PartyMemberPosition,
+        ServerOpcode::ExPartyPetWindowAdd,
+        ServerOpcode::ExPartyPetWindowUpdate,
+        ServerOpcode::ExPartyPetWindowDelete,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -2293,6 +2416,118 @@ mod tests {
         );
     }
 
+    #[test]
+    fn party_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
+            RequestWithDrawalParty,
+        };
+        use l2_protocol_game::server::party::{PartyDistributionType, PartyWindowMember};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestJoinParty {
+                    name: "Bob".into(),
+                    party_distribution_type_id: 1
+                }
+                .to_bytes()
+            ),
+            json!({ "name": "Bob", "party_distribution_type_id": 1 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestAnswerJoinParty { response: -1 }.to_bytes()),
+            json!({ "response": -1 })
+        );
+        assert_eq!(c2s_fields(in_game, &RequestWithDrawalParty.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(in_game, &RequestOustPartyMember { name: "Eve".into() }.to_bytes()),
+            json!({ "name": "Eve" })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestChangePartyLeader { name: "Eve".into() }.to_bytes()
+            ),
+            json!({ "name": "Eve" })
+        );
+
+        assert_eq!(
+            s2c_fields(
+                &AskJoinParty {
+                    requestor_name: "Ann".into(),
+                    distribution_type: PartyDistributionType::ByTurn
+                }
+                .to_bytes()
+            ),
+            json!({ "requestor_name": "Ann", "distribution_type": 3 })
+        );
+        assert_eq!(
+            s2c_fields(&JoinParty { response: 1 }.to_bytes()),
+            json!({ "response": 1 })
+        );
+        let vitals = PartyMemberVitals {
+            object_id: 7,
+            name: "Cy".into(),
+            cp: 1,
+            max_cp: 2,
+            hp: 3,
+            max_hp: 4,
+            mp: 5,
+            max_mp: 6,
+            level: 40,
+            class_id: 18,
+        };
+        let all = PartySmallWindowAll {
+            leader_object_id: 7,
+            distribution_type: PartyDistributionType::Random,
+            members: vec![PartyWindowMember {
+                vitals: vitals.clone(),
+                race: 2,
+                summon: Some(PartySummon {
+                    object_id: 9,
+                    display_id: 14_000,
+                    summon_type: 1,
+                    name: "Pet".into(),
+                    hp: 1,
+                    max_hp: 2,
+                    mp: 3,
+                    max_mp: 4,
+                    level: 5,
+                }),
+            }],
+        };
+        let fields = s2c_fields(&all.to_bytes());
+        assert_eq!(fields["members"][0]["name"], "Cy");
+        assert_eq!(fields["members"][0]["race"], 2);
+        assert_eq!(fields["members"][0]["summon"]["display_id"], 14_000);
+        assert_eq!(
+            s2c_fields(&PartySmallWindowUpdate { member: vitals }.to_bytes())["max_hp"],
+            4
+        );
+        assert_eq!(s2c_fields(&PartySmallWindowDeleteAll.to_bytes()), json!({}));
+        assert_eq!(
+            s2c_fields(
+                &PartySmallWindowDelete {
+                    object_id: 7,
+                    name: "Cy".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 7, "name": "Cy" })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExPartyPetWindowDelete {
+                    summon_object_id: 9,
+                    owner_object_id: 7,
+                    summon_name: "Pet".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "summon_object_id": 9, "owner_object_id": 7, "summon_name": "Pet" })
+        );
+    }
     /// Every server packet of the committed Java captures with a decoder must have fields, and
     /// no other server packet may have any. A decode error here means a `Decode` impl does not
     /// match what Java sends.

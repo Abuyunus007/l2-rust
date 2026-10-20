@@ -11,10 +11,11 @@ use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
     NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse,
-    RequestAutoSoulShot, RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem,
-    RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse,
-    RequestNetPing, RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg,
-    RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, Say2, SendBypassBuildCmd, UseItem,
+    RequestAnswerJoinParty, RequestAutoSoulShot, RequestBypassToServer, RequestChangePartyLeader,
+    RequestDestroyItem, RequestDispel, RequestDropItem, RequestGotoLobby, RequestItemList, RequestJoinParty,
+    RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse, RequestNetPing, RequestOustPartyMember,
+    RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg, RequestSkillCoolTime,
+    RequestTargetCanceld, RequestUnEquipItem, RequestWithDrawalParty, Say2, SendBypassBuildCmd, UseItem,
     ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
@@ -66,6 +67,12 @@ pub enum ClientPacket {
     RequestAutoSoulShot(RequestAutoSoulShot),
     /// `EX_REQUEST_DISPEL` (`0xD0` 0x004B), an ex packet.
     RequestDispel(RequestDispel),
+    RequestJoinParty(RequestJoinParty),
+    RequestAnswerJoinParty(RequestAnswerJoinParty),
+    RequestWithDrawalParty(RequestWithDrawalParty),
+    RequestOustPartyMember(RequestOustPartyMember),
+    /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
+    RequestChangePartyLeader(RequestChangePartyLeader),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -147,6 +154,16 @@ pub fn decode_client(
         RequestShortCutReg::OPCODE => ClientPacket::RequestShortCutReg(RequestShortCutReg::decode(reader)?),
         RequestShortCutDel::OPCODE => ClientPacket::RequestShortCutDel(RequestShortCutDel::decode(reader)?),
         DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
+        RequestJoinParty::OPCODE => ClientPacket::RequestJoinParty(RequestJoinParty::decode(reader)?),
+        RequestAnswerJoinParty::OPCODE => {
+            ClientPacket::RequestAnswerJoinParty(RequestAnswerJoinParty::decode(reader)?)
+        }
+        RequestWithDrawalParty::OPCODE => {
+            ClientPacket::RequestWithDrawalParty(RequestWithDrawalParty::decode(reader)?)
+        }
+        RequestOustPartyMember::OPCODE => {
+            ClientPacket::RequestOustPartyMember(RequestOustPartyMember::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -172,6 +189,9 @@ fn decode_ex_client(
             ClientPacket::RequestAutoSoulShot(RequestAutoSoulShot::decode(reader)?)
         }
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
+        RequestChangePartyLeader::EX_OPCODE => {
+            ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
+        }
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))

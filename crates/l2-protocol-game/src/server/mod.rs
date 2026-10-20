@@ -5,7 +5,7 @@
 //! `impl Decode` (fields after the opcode, for the proxy and test clients). Data that Java reads
 //! from the database or from game objects is passed in as plain values: no logic in here.
 
-use l2_net::PacketWriter;
+use l2_net::{PacketError, PacketReader, PacketWriter};
 
 use crate::generated::opcodes::ServerOpcode;
 
@@ -22,6 +22,7 @@ pub mod interaction;
 pub mod items;
 pub mod map_windows;
 pub mod movement;
+pub mod party;
 pub mod regen;
 pub mod skills;
 pub mod system_message;
@@ -62,6 +63,12 @@ pub use items::{
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use party::{
+    AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
+    PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
+    PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowDeleteAll,
+    PartySmallWindowUpdate, PartySummon, PartyWindowMember,
+};
 pub use regen::ExRegenMax;
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
@@ -73,6 +80,12 @@ pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
 };
+
+/// Reads an int count, which Java never writes negative. Anything negative is an error.
+pub(crate) fn read_count(r: &mut PacketReader, field: &'static str) -> Result<usize, PacketError> {
+    let count = r.i32()?;
+    usize::try_from(count).map_err(|_| PacketError::invalid(field, format!("negative count {count}")))
+}
 
 /// Writes a server packet's id the way Java `ServerPackets.writeId` does: the id byte, then the
 /// `u16` ex id for ex packets (id byte `0xFE`).
