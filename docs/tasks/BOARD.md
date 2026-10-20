@@ -251,7 +251,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-EFX-03](M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | 26/44 merged; rest in EFX-04/05 |
 | [M5-EFX-04](M5/M5-EFX-04.md) | Effect handlers: damage, Heal, hate chances (rest of EFX-01/03) | sonnet | full | FORM-02 | merged |
 | [M5-EFX-05](M5/M5-EFX-05.md) | Effect handlers needing casting or new world parts (rest of EFX-03) | sonnet | full | CAST-01 | in-progress |
-| [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | in-progress |
+| [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | merged |
 | [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | merged |
 | [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | sonnet | full | EFX-03, FORM-02 | merged |
 | [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | merged |
