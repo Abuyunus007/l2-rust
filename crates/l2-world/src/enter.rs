@@ -155,7 +155,7 @@ pub fn gm_view_item_list(
         player_name: data.name.clone(),
         limit,
         items: inventory_items(data)
-            .map(|item| item_info(item, &item_static(st, item), now_ms))
+            .map(|item| item_info(item, &item_static(st, item), item_template(st, item), now_ms))
             .collect(),
     }
 }
