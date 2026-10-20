@@ -56,9 +56,11 @@ mod relax;
 mod restoration;
 mod set_skill;
 mod silent_move;
+mod spoil;
 mod statset;
 mod status_params;
 mod steal_abnormal;
+mod sweeper;
 mod teleport;
 mod teleport_to_target;
 mod throw_up;
@@ -177,4 +179,7 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Stun", hold::Stun::create);
     registry.register("TalismanSlot", player_slots::TalismanSlot::create);
     registry.register("TargetCancel", misc::TargetCancel::create);
+    // M5-SPOIL-01.
+    registry.register("Spoil", spoil::Spoil::create);
+    registry.register("Sweeper", sweeper::Sweeper::create);
 }
