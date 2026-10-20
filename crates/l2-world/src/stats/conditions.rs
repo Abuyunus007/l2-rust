@@ -7,9 +7,10 @@
 // # What is decided
 // A kind is evaluated when the world models the state it reads. Some state cannot exist in the
 // world yet and is therefore known: nobody is transformed, mounted, flying, in a vehicle, in the
-// olympiad, sitting, PvP-flagged, in an instance, or has charges, souls, an agathion or a summon.
+// olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
+// the charges and the souls are the world's (`effects/`, M5-EFX-02).
 // Kinds that read state the Java server has but the world does not model (clans and their
-// halls, castles and forts, sieges and territory wars, heroes, effects and abnormals, parties,
+// halls, castles and forts, sieges and territory wars, heroes, parties,
 // categories, the instance type tree, the `Can...` checks, random chance in a read-only stat
 // calculation, positions relative to the target's heading) evaluate to `false` and log one
 // warning per kind: a stat bonus never applies by accident.
@@ -50,12 +51,8 @@ enum NotModelled {
     ClanHall,
     Fort,
     Castle,
-    ActiveEffect,
-    CheckAbnormal,
     Category,
     CanAction,
-    TargetActiveEffect,
-    TargetAbnormal,
     TargetNpcType,
     MyPartyExceptMe,
     GameChance,
@@ -105,8 +102,10 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerIsHero { .. } => {
             a.is_player() && not_modelled(NotModelled::Hero, "player isHero (the heroes table)")
         }
-        // The PvP flag is only set by PvP combat (M4/M5), so it is 0.
-        Condition::PlayerIsPvpFlagged { value } => a.is_player() && !*value,
+        // `player != null && (player.getPvpFlag() > 0) == value`.
+        Condition::PlayerIsPvpFlagged { value } => {
+            a.is_player() && (a.world().pvp_flag_of(a.object_id()) > 0) == *value
+        }
         // Nobody is transformed: `getTransformationId()` is 0.
         Condition::PlayerTransformationId { id } => a.is_player() && *id == 0,
         // Nobody is mounted (`getMountType()` is NONE).
@@ -123,8 +122,12 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerSiegeSide { .. } => {
             a.is_player() && not_modelled(NotModelled::SiegeSide, "player siegeSide")
         }
-        Condition::PlayerCharges { charges } => a.is_player() && 0 >= *charges,
-        Condition::PlayerSouls { souls } => a.is_player() && 0 >= *souls,
+        Condition::PlayerCharges { charges } => {
+            a.is_player() && a.world().charges_of(a.object_id()) >= *charges
+        }
+        Condition::PlayerSouls { souls } => {
+            a.is_player() && a.world().charged_souls_of(a.object_id()) >= *souls
+        }
         Condition::PlayerWeight { weight } => match a.player() {
             Some(_) if a.max_load() > 0 => {
                 let proc = (a.current_load() - a.bonus_weight_penalty()) * 100 / a.max_load();
@@ -161,9 +164,11 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             Some(p) => p.zones.is_inside(ZoneId::Landing) == *value,
             None => not_modelled(NotModelled::NpcZones, "landingZone of an NPC (NPC zones)"),
         },
-        Condition::PlayerActiveEffectId { .. } => {
-            not_modelled(NotModelled::ActiveEffect, "player active_effect_id (effects)")
-        }
+        // `getBuffInfoBySkillId(id)` found, and its level at least `effect_lvl` (or any).
+        Condition::PlayerActiveEffectId {
+            effect_id,
+            effect_lvl,
+        } => active_effect(a.world(), a.object_id(), *effect_id, *effect_lvl),
         Condition::PlayerActiveSkillId {
             skill_id,
             skill_level,
@@ -222,17 +227,24 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerInsideZoneId { zones } => a
             .player()
             .is_some_and(|p| p.zones.members().iter().any(|(id, _)| zones.contains(id))),
-        Condition::PlayerCheckAbnormal { .. } => {
-            not_modelled(NotModelled::CheckAbnormal, "player checkAbnormal (effects)")
-        }
+        // `getBuffInfoByAbnormalType(type)` found, and `level` at least its abnormal level.
+        Condition::PlayerCheckAbnormal { abnormal_type, level } => a
+            .world()
+            .effect_list(a.object_id())
+            .and_then(|l| l.info_by_abnormal_type(*abnormal_type))
+            .is_some_and(|info| *level == -1 || *level >= info.facts.abnormal_level),
         Condition::CategoryType { .. } => not_modelled(NotModelled::Category, "categoryType (CategoryData)"),
 
         // ---- <target ...> ----
         Condition::TargetAggro { is_aggro } => match target(env) {
             Some(t) => match t.npc() {
-                // `Monster.isAggressive()`: the template flag, unless a PASSIVE effect (M5).
+                // `Monster.isAggressive()`: the template flag, unless a PASSIVE effect.
                 Some(npc) if npc.class.is_monster() => {
-                    t.npc_template().is_some_and(|tpl| tpl.is_aggressive) == *is_aggro
+                    (t.npc_template().is_some_and(|tpl| tpl.is_aggressive)
+                        && !a
+                            .world()
+                            .is_affected(t.object_id(), crate::effects::effect_flag::PASSIVE))
+                        == *is_aggro
                 }
                 Some(_) => false,
                 None => t.player().is_some_and(|p| p.data.karma > 0),
@@ -252,10 +264,14 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::TargetClassIdRestriction { class_ids } => target(env)
             .and_then(|t| t.player().map(|p| p.data.class_id))
             .is_some_and(|class| class_ids.contains(&class)),
-        Condition::TargetActiveEffectId { .. } => not_modelled(
-            NotModelled::TargetActiveEffect,
-            "target active_effect_id (effects)",
-        ),
+        // `effected.getEffectList().getBuffInfoBySkillId(id)`.
+        Condition::TargetActiveEffectId {
+            effect_id,
+            effect_lvl,
+        } => match env.target {
+            Some(t) => active_effect(a.world(), t, *effect_id, *effect_lvl),
+            None => not_modelled(NotModelled::TargetMissing, "target ... without a target"),
+        },
         Condition::TargetActiveSkillId {
             skill_id,
             skill_level,
@@ -265,10 +281,11 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
                 .any(|(id, level)| id == *skill_id && (*skill_level == -1 || *skill_level <= level)),
             None => not_modelled(NotModelled::TargetMissing, "target ... without a target"),
         },
-        Condition::TargetAbnormal { .. } => not_modelled(
-            NotModelled::TargetAbnormal,
-            "target abnormal (abnormal visual effects)",
-        ),
+        // `(effected.getAbnormalVisualEffects() & abnormalId) != 0`.
+        Condition::TargetAbnormal { abnormal_id } => match env.target {
+            Some(t) => a.world().abnormal_visual_effects(t).0 & *abnormal_id != 0,
+            None => not_modelled(NotModelled::TargetMissing, "target ... without a target"),
+        },
         // `calculateDistance3D >= distance && GeoEngine.canSeeTarget(effector, effected)`: the
         // creature-to-creature line of sight (eye heights, doors) comes with combat.
         Condition::MinDistance { .. } => match target(env) {
@@ -362,10 +379,18 @@ fn target<'w>(env: &CondEnv<'_, 'w>) -> Option<StatView<'w>> {
 }
 
 /// `ConditionPlayerState`.
+/// `ConditionPlayerActiveEffectId` / `ConditionTargetActiveEffectId`: the creature has the skill
+/// as an effect, at least at the level asked for (`-1`: any).
+fn active_effect(world: &crate::world::World, id: ObjectId, effect_id: i32, effect_lvl: i32) -> bool {
+    world
+        .effect_list(id)
+        .and_then(|l| l.info_by_skill_id(effect_id))
+        .is_some_and(|info| effect_lvl == -1 || effect_lvl <= info.skill().level)
+}
+
 fn player_state(check: PlayerState, required: bool, env: &CondEnv<'_, '_>) -> bool {
     let a = env.actor;
-    // Sitting is not modelled: nobody sits.
-    let sitting = false;
+    let sitting = a.world().is_sitting(a.object_id());
     match check {
         PlayerState::Resting => {
             if a.is_player() {

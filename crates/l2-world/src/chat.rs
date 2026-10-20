@@ -65,6 +65,33 @@ impl World {
             return;
         }
 
+        // `player.isChatBanned()`: the bot report debuffs ban the chat (the punishment system is
+        // not ported). A `.` starts a voiced command and is let through.
+        if self.is_chat_banned(id) && !text.starts_with('.') {
+            if self.is_affected_by_effect_type(id, crate::effects::EffectType::ChatBlock) {
+                self.send(
+                    id,
+                    &SystemMessage::new(
+                        SystemMessageId::YouHaveBeenReportedAsAnIllegalProgramUserSoChattingIsNotAllowed,
+                    ),
+                );
+            } else if matches!(
+                chat_type,
+                ChatType::General
+                    | ChatType::Shout
+                    | ChatType::Trade
+                    | ChatType::HeroVoice
+                    | ChatType::Whisper
+            ) {
+                // `BanChatChannels` (the shipped `General.ini` value; the key is not read yet).
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::ChattingIsCurrentlyProhibited),
+                );
+            }
+            return;
+        }
+
         if chat_type == ChatType::PetitionPlayer && is_gm {
             chat_type = ChatType::PetitionGm;
         }

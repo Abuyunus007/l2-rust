@@ -442,8 +442,9 @@ impl World {
             if self.is_dead(owner) && !passive {
                 continue;
             }
-            if template.ticks > 0 {
-                self.start_effect_tick(owner, info_id, at, template.ticks);
+            let ticks = effect.handler.ticks(template.ticks);
+            if ticks > 0 {
+                self.start_effect_tick(owner, info_id, at, ticks);
             }
             // NOTE(java-quirk): Java adds the functions even when `onStart` removed the info
             // again; they then stay until the skill's functions are removed by owner.

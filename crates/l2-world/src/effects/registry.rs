@@ -154,6 +154,12 @@ pub trait EffectHandler: Send + Sync + fmt::Debug {
         false
     }
 
+    /// Java `getTicks()`: the ticks of the effect. `template_ticks` is the base class' value (the
+    /// `ticks` attribute); `Fear` overrides it with a constant.
+    fn ticks(&self, template_ticks: i32) -> i32 {
+        template_ticks
+    }
+
     /// Java `calcSuccess(effector, effected, skill)`: whether an instant effect lands.
     fn calc_success(&self, _world: &mut World, _cx: &EffectCx<'_>) -> bool {
         true

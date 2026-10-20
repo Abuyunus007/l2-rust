@@ -36,7 +36,8 @@ pub mod player;
 
 use std::collections::HashMap;
 
-use l2_protocol_game::server::{ActionFailed, AutoAttackStart, AutoAttackStop};
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{ActionFailed, AutoAttackStart, AutoAttackStop, SystemMessage};
 use l2_util::ObjectId;
 
 use crate::movement::Intention;
@@ -205,9 +206,17 @@ impl World {
             self.client_action_failed(id);
             return;
         }
-        // PlayableAI: newbie protection and cursed weapon checks between players (M5).
-        // M5: `isAllSkillsDisabled()`, `isCastingNow()`, `isControlBlocked()`.
-        if self.intention_of(id) == Intention::Rest {
+        // PlayableAI: the newbie protection between players (cursed weapons are not modelled).
+        if self.is_player(id) && self.is_player(target) && self.protection_blessing_refuses(id, target) {
+            self.send(id, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
+            self.client_action_failed(id);
+            return;
+        }
+        if self.intention_of(id) == Intention::Rest
+            || self.is_all_skills_disabled(id)
+            || self.is_casting_now_for_effects(id)
+            || self.is_control_blocked(id)
+        {
             self.client_action_failed(id);
             return;
         }

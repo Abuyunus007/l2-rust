@@ -89,6 +89,8 @@ pub enum TimerKind {
     EffectIcons(ObjectId),
     /// Java `Player.updateAndBroadcastStatus`'s 50 ms task.
     UpdateAndBroadcastStatus(ObjectId),
+    /// Sitting, standing, charges, souls and the fear of an NPC, see `effects/control.rs`.
+    Control(crate::effects::control::ControlTimer),
 }
 
 #[derive(Debug, Default)]

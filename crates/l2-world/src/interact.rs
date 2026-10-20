@@ -228,7 +228,9 @@ impl World {
 
     /// Java `PlayerAI.thinkInteract`.
     pub(crate) fn think_interact(&mut self, id: ObjectId) {
-        // FOLLOW-UP(M4): `isAllSkillsDisabled() || isCastingNow()` returns here.
+        if self.is_all_skills_disabled(id) || self.is_casting_now_for_effects(id) {
+            return;
+        }
         let target = self.players.get(&id).and_then(|p| p.movement.pawn.ai_target);
         // `checkTargetLost`: the target is gone.
         let Some(target) = target.filter(|t| self.objects.contains_key(t)) else {

@@ -36,10 +36,14 @@
 
 pub mod apply;
 pub mod buff_info;
+mod charges;
+pub mod control;
 mod handlers;
 pub mod list;
+mod probability;
 pub mod registry;
 mod save;
+pub(crate) mod traits;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -105,6 +109,13 @@ pub struct EffectSettings {
     /// `GeneralConfig.DEBUFF_DURATION_USES_RESISTS` (`DebuffDurationUsesResists`), for M5-FORM-02's
     /// abnormal time.
     pub debuff_duration_uses_resists: bool,
+    /// `PlayerConfig.PLAYER_FAKEDEATH_UP_PROTECTION` (`PlayerFakeDeathUpProtection`): seconds the
+    /// monsters leave a player alone after it got up from fake death.
+    pub fake_death_up_protection: i32,
+    /// `PlayerConfig.FAKE_DEATH_UNTARGET` (`FakeDeathUntarget`).
+    pub fake_death_untarget: bool,
+    /// `PlayerConfig.FAKE_DEATH_DAMAGE_STAND` (`FakeDeathDamageStand`).
+    pub fake_death_damage_stand: bool,
     /// `PlayerConfig.STORE_SKILL_COOLTIME` (`StoreSkillCooltime`): the buffs are saved at logout and
     /// restored at enter world.
     pub store_skill_cooltime: bool,
@@ -123,6 +134,9 @@ impl Default for EffectSettings {
             effect_tick_ratio: 666,
             show_effect_messages_on_login: false,
             debuff_duration_uses_resists: true,
+            fake_death_up_protection: 0,
+            fake_death_untarget: false,
+            fake_death_damage_stand: true,
             store_skill_cooltime: true,
             alt_store_toggles: false,
             alt_store_dances: false,
@@ -150,6 +164,8 @@ pub struct EffectsWorld {
     /// The handler names already logged (unported or unknown), so each is logged once.
     logged: HashSet<String>,
     next_info: u64,
+    /// What effects change on a creature besides its effect list (see `control.rs`).
+    pub(crate) control: control::ControlTable,
     /// Java `Player._updateAndBroadcastStatusTask`.
     pub(crate) status_tasks: HashMap<ObjectId, TimerId>,
     /// Java `Playable._transferDmgTo` (`TransferDamage`): the player who takes part of the
@@ -287,6 +303,7 @@ impl World {
     /// login is a new `Player`).
     pub(crate) fn forget_effects(&mut self, id: ObjectId) {
         self.effects.transfer_damage_to.remove(&id);
+        self.forget_control(id);
         if let Some(task) = self.effects.status_tasks.remove(&id) {
             self.timers.cancel(task);
         }

@@ -383,7 +383,7 @@ impl World {
             id,
             &ExBrExtraUserInfo {
                 object_id: id.0,
-                abnormal_visual_effects_event: 0,
+                abnormal_visual_effects_event: self.abnormal_visual_effects(id).2,
                 lecture_mark: 1,
             },
         );
@@ -605,8 +605,8 @@ impl World {
     }
 
     /// Java `new EtcStatusUpdate(player)`: the weight penalty, the grade penalties, the death
-    /// penalty and the danger icon of the zone the player stands in. Charges, souls and the
-    /// refusal flags are 0 until the systems behind them exist.
+    /// penalty and the danger icon of the zone the player stands in. The charges and the souls
+    /// are the effects' (`effects/charges.rs`); the refusal flags are 0 until their systems exist.
     pub(crate) fn etc_status_update(&self, id: ObjectId) -> Option<EtcStatusUpdate> {
         let player = self.players.get(&id)?;
         let data = &player.data;
@@ -615,6 +615,8 @@ impl World {
                 current_load(data, &*self.data),
                 self.stats(id).map_or(0, |s| s.max_load()),
             ),
+            charges: self.charges_of(id),
+            charged_souls: self.charged_souls_of(id),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,
@@ -640,6 +642,10 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
     let core = &player.core;
     let view = crate::stats::StatView::of_player(world, player);
     let access = st.access_level(data.access_level);
+    // `Creature.getAbnormalVisualEffects()` and the special mask; an invisible player also
+    // shows the stealth effect to itself.
+    let (visual_effects, visual_effects_special, _) = world.abnormal_visual_effects(core.object_id);
+    let invisible = world.objects.get(&core.object_id).is_some_and(|e| e.invisible);
     let slots = paperdoll_items(data);
     let mut object_ids = [0; paperdoll::TOTAL_SLOTS];
     let mut item_ids = [0; paperdoll::TOTAL_SLOTS];
@@ -702,7 +708,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         m_atk: view.m_atk(None, None) as i32,
         m_atk_spd: view.m_atk_spd(),
         m_def: view.m_def(None, None) as i32,
-        pvp_flag: 0,
+        pvp_flag: world.pvp_flag_of(core.object_id),
         karma: data.karma,
         run_speed: speed(view.run_speed()),
         walk_speed: speed(view.walk_speed()),
@@ -736,7 +742,11 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         pvp_kills: data.pvp_kills,
         cubics: Vec::new(),
         in_party_match_room: false,
-        abnormal_visual_effects: 0,
+        abnormal_visual_effects: if invisible {
+            visual_effects | crate::player_view::STEALTH_MASK
+        } else {
+            visual_effects
+        },
         water_or_flying: 0,
         clan_privileges: 0,
         recom_left: player.recom_left as i16,
@@ -780,6 +790,6 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         fame: data.profile.fame,
         minimap_allowed: false,
         vitality_points: data.profile.vitality_points,
-        abnormal_visual_effect_special: 0,
+        abnormal_visual_effect_special: visual_effects_special,
     }
 }

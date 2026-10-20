@@ -22,8 +22,6 @@
 // - An NPC whose region is off, or that left the world (a corpse that decayed), has no timer. Its
 //   entry stays, as Java's does: a respawn comes back as the same object (`Spawn.respawnNpc`), and
 //   Java's entry then animates it again when its region is on ([`World::resume_random_animation`]).
-// - Stun, sleep and paralysis (the checks of Java's `RandomAnimationTaskManager.run`) are M5
-//   effects; nothing has them yet.
 
 use l2_data::npc::AiType;
 use l2_protocol_game::server::SocialAction;
@@ -210,8 +208,15 @@ impl World {
         if !active {
             return;
         }
-        // Java: `!isDead() && !isInCombat() && !isMoving()` (stun, sleep and paralysis are M5).
-        if !self.is_dead(id) && !self.is_in_combat(id) && !self.is_moving(id) {
+        // Java: `!isDead() && !isInCombat() && !isMoving() && !isStunned() && !isSleeping() &&
+        // !isParalyzed()`.
+        if !self.is_dead(id)
+            && !self.is_in_combat(id)
+            && !self.is_moving(id)
+            && !self.is_stunned(id)
+            && !self.is_sleeping(id)
+            && !self.is_paralyzed(id)
+        {
             let animation = self.rng().get(2, 3);
             self.npc_on_random_animation(id, animation);
         }
