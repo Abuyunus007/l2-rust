@@ -146,6 +146,12 @@ pub trait StaticData: Send + Sync {
         true
     }
 
+    /// Java `AccessLevel.allowTransaction()` (`allowTransaction` of `AccessLevels.xml`, default
+    /// true): whether a player of this level may trade.
+    fn access_level_allows_transaction(&self, _level: i32) -> bool {
+        true
+    }
+
     /// Java `OptionData.getOptions(id)`: the augmentation option with this id. The default (no
     /// datapack) knows none, so an augmented item gives no bonus.
     fn augmentation_option(&self, _id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -204,6 +210,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         (**self).access_level_can_gain_exp(level)
+    }
+
+    fn access_level_allows_transaction(&self, level: i32) -> bool {
+        (**self).access_level_allows_transaction(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {

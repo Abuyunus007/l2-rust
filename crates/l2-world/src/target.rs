@@ -8,9 +8,8 @@
 // Java: entity/World.java (removeVisibleObject, switchRegion: the targets they clear)
 //
 // # What is left out, with the system that brings it
-// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, a pending
-//   trade/party request (`getActiveRequester`), spawn protection (`onActionRequest`): none of them
-//   exist yet.
+// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, spawn
+//   protection (`onActionRequest`): none of them exist yet.
 // - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
@@ -307,7 +306,14 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // FOLLOW-UP: `getActiveRequester()` (trade, party and friend requests), `onActionRequest()`.
+        // Check if the target is valid, if the player haven't a shop or isn't the requester of a
+        // transaction (ex: FriendInvite, JoinAlly, JoinParty...). A player who was asked for a trade
+        // cannot click until the request is answered or has run out.
+        if self.active_requester(id).is_some() {
+            self.send(id, &ActionFailed);
+            return;
+        }
+        // FOLLOW-UP: `onActionRequest()` (spawn protection).
 
         match action_id {
             0 => self.on_action_object(id, obj, true),

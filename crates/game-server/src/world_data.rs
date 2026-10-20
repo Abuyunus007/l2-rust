@@ -110,6 +110,9 @@ pub struct AccessLevels {
     no_take_aggro: std::collections::BTreeSet<i32>,
     /// The levels with `gainExp="false"` (Java `AccessLevel.canGainExp()`, default true).
     no_gain_exp: std::collections::BTreeSet<i32>,
+    /// The levels with `allowTransaction="false"` (Java `AccessLevel.allowTransaction()`, default
+    /// true).
+    no_transaction: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -204,6 +207,10 @@ impl AccessLevels {
                     if attribute(&e, "gainExp").is_some_and(|v| v.eq_ignore_ascii_case("false")) {
                         table.no_gain_exp.insert(level);
                     }
+                    // Java: `set.getBoolean("allowTransaction", true)`: anything but "true" is false.
+                    if attribute(&e, "allowTransaction").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
+                        table.no_transaction.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -236,6 +243,12 @@ impl AccessLevels {
     pub fn can_gain_exp(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         !self.no_gain_exp.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).allowTransaction()`.
+    pub fn allows_transaction(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        !self.no_transaction.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -360,6 +373,10 @@ impl StaticData for DatapackData {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         self.access.can_gain_exp(level)
+    }
+
+    fn access_level_allows_transaction(&self, level: i32) -> bool {
+        self.access.allows_transaction(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -859,6 +876,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             rate_extractable: config.rates.rate_extractable,
             alt_allow_augment_trade: p.alt_allow_augment_trade,
             alt_allow_augment_destroy: p.alt_allow_augment_destroy,
+            alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
         cast: l2_world::CastSettings {
@@ -1526,6 +1544,26 @@ mod tests {
         assert!(!levels.can_take_aggro(100));
         // A level the file does not list is Java's default AccessLevel, which takes aggro.
         assert!(levels.can_take_aggro(55));
+    }
+
+    #[test]
+    fn allow_transaction_is_false_only_where_the_file_says_so() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" allowTransaction="false" />
+	<access level="0" name="User" allowTransaction="true" />
+	<access level="20" name="Test GM" allowTransaction="false" />
+	<access level="70" name="Admin" />
+</list>"#,
+        );
+        // `set.getBoolean("allowTransaction", true)`: absent is true.
+        assert!(levels.allows_transaction(0));
+        assert!(levels.allows_transaction(70));
+        assert!(!levels.allows_transaction(-1));
+        assert!(!levels.allows_transaction(-5));
+        assert!(!levels.allows_transaction(20));
+        // A level the file does not list is Java's default AccessLevel, which may trade.
+        assert!(levels.allows_transaction(55));
     }
 
     #[test]

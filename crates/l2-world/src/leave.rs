@@ -64,6 +64,8 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
+        self.cancel_transaction_on_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

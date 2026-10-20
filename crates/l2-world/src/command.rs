@@ -126,6 +126,18 @@ pub enum ClientInput {
     },
     /// Java `RequestShortcutDel`: the wire slot (`slot + page * 12`).
     ShortcutDel { slot: i32 },
+    /// Java `TradeRequest`: ask the player with this object id to trade.
+    TradeRequest { object_id: i32 },
+    /// Java `AnswerTradeRequest` (1 = accept).
+    AnswerTradeRequest { response: i32 },
+    /// Java `AddTradeItem`: put an item into the trade window.
+    AddTradeItem {
+        trade_id: i32,
+        object_id: i32,
+        count: i64,
+    },
+    /// Java `TradeDone` (1 = confirm, anything else = cancel).
+    TradeDone { response: i32 },
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },

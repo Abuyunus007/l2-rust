@@ -50,6 +50,7 @@ pub mod target;
 pub mod teleport;
 pub mod teleporter;
 pub mod timer;
+pub mod trade;
 pub mod user_command;
 mod visibility;
 pub mod world;
@@ -109,5 +110,6 @@ pub use stats::{
 pub use status::RegenSettings;
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
+pub use trade::{AddItemRules, TradeItem, TradeList, TradeState};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

@@ -586,6 +586,17 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientPacket::TradeRequest(p) => ClientInput::TradeRequest {
+                object_id: p.object_id,
+            },
+            ClientPacket::AnswerTradeRequest(p) => ClientInput::AnswerTradeRequest { response: p.response },
+            ClientPacket::AddTradeItem(p) => ClientInput::AddTradeItem {
+                trade_id: p.trade_id,
+                object_id: p.object_id,
+                count: p.count,
+            },
+            ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
             // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,
