@@ -237,6 +237,7 @@ impl Server {
                 Arc::clone(&datapack.karma_loss),
                 Arc::clone(&datapack.skill_trees),
             );
+            let skill_learn = Arc::clone(&datapack.skill_learn);
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -261,6 +262,8 @@ impl Server {
                     // Java: ExperienceData, ExperienceLossData, KarmaLossData, SkillTreeData.
                     let (experience, experience_loss, karma_loss, skill_trees) = exp_tables;
                     world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
+                    // Java: SkillLearnData (the classes each trainer teaches).
+                    world.set_skill_learn_data(skill_learn);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the

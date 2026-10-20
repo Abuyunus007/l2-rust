@@ -205,6 +205,51 @@ impl Decode for ShortcutInit {
     }
 }
 
+// Java: gameserver/network/serverpackets/ShortcutRegister.java
+/// A skill shortcut changed (`SHORT_CUT_REGISTER`): `Shortcuts.updateShortcuts` sends it for every
+/// skill shortcut when the skill's level changes. Java's packet also carries item, action, macro,
+/// recipe and bookmark shortcuts; nothing sends those yet, so only the skill form exists.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ShortcutRegister {
+    /// The wire slot (`slot + page * 12`).
+    pub slot: i32,
+    pub skill_id: i32,
+    pub level: i32,
+}
+
+impl ShortcutRegister {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ShortCutRegister;
+}
+
+impl Encode for ShortcutRegister {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        // The layout of the skill entry of `ShortcutInit` after its type and slot.
+        ShortcutEntry::Skill {
+            slot: self.slot,
+            id: self.skill_id,
+            level: self.level,
+        }
+        .write(w);
+    }
+}
+
+impl Decode for ShortcutRegister {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        match ShortcutEntry::read(r)? {
+            ShortcutEntry::Skill { slot, id, level } => Ok(Self {
+                slot,
+                skill_id: id,
+                level,
+            }),
+            other => Err(PacketError::invalid(
+                "shortcut type",
+                format!("only skill shortcuts are supported: {other:?}"),
+            )),
+        }
+    }
+}
+
 // Java: gameserver/network/serverpackets/QuestList.java
 /// One quest of [`QuestList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

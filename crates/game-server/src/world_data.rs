@@ -691,6 +691,16 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             effect_tick_ratio: p.effect_tick_ratio,
             show_effect_messages_on_login: p.show_effect_messages_on_login,
             debuff_duration_uses_resists: config.general.debuff_duration_uses_resists,
+            store_skill_cooltime: p.store_skill_cooltime,
+            alt_store_toggles: p.alt_store_toggles,
+            alt_store_dances: p.alt_store_dances,
+        },
+        learn: l2_world::LearnSettings {
+            alt_game_skill_learn: p.alt_game_skill_learn,
+            divine_sp_book_needed: p.divine_sp_book_needed,
+            auto_learn_skills_without_items: p.auto_learn_skills_without_items,
+            auto_learn_fs_skills: p.auto_learn_fs_skills,
+            auto_learn_divine_inspiration: p.auto_learn_divine_inspiration,
         },
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,

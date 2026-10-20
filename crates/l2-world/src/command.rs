@@ -3,6 +3,8 @@
 use std::fmt;
 use std::net::IpAddr;
 
+use l2_protocol_game::server::AcquireSkillType;
+
 use crate::outbox::PacketSink;
 use crate::player::{OnlinePlayer, PlayerData};
 
@@ -81,6 +83,20 @@ pub enum ClientInput {
     },
     /// Java `RequestItemList`.
     ItemList,
+    /// Java `RequestAcquireSkillInfo`: the details of a skill a trainer teaches.
+    AcquireSkillInfo {
+        id: i32,
+        level: i32,
+        skill_type: AcquireSkillType,
+    },
+    /// Java `RequestAcquireSkill`: learn a skill from the trainer. `sub_type` is the squad of a
+    /// sub-pledge skill (0 for every other type).
+    AcquireSkill {
+        id: i32,
+        level: i32,
+        skill_type: AcquireSkillType,
+        sub_type: i32,
+    },
     /// Java `RequestRestartPoint`: the raw `_requestedPointType` (0 village, 1 clan hall, 2
     /// castle, 3 fortress, 4 siege headquarters, 5 fixed, 27 jail).
     RestartPoint { point_type: i32 },

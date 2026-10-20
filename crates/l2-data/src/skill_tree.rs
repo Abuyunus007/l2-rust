@@ -15,15 +15,23 @@ use std::path::Path;
 use serde::Deserialize;
 use tracing::warn;
 
-use crate::class_list::ClassId;
+use crate::class_list::{ClassId, Race};
 use crate::loader::{DataError, load_dir, log_loaded};
 
 /// Java `CommonSkill.DIVINE_INSPIRATION`. Auto-learn skips it unless `AutoLearnDivineInspiration`
 /// is enabled in `config/Player.ini` (default `False`).
 pub const DIVINE_INSPIRATION_ID: i32 = 1405;
 
-/// One line of a skill tree. Java `mechanics/skill/holders/SkillLearn`, without the item, race,
-/// pre-requisite, social class, residence and sub-class parts (not needed for character creation).
+/// An item a skill costs when it is learned. Java `ItemHolder` in `SkillLearn.getRequiredItems`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SkillLearnItem {
+    pub item_id: i32,
+    /// Java `long getCount()`.
+    pub count: i64,
+}
+
+/// One line of a skill tree. Java `mechanics/skill/holders/SkillLearn`, without the social class,
+/// residence and sub-class parts (clan and sub-class trees are not loaded).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SkillLearn {
     /// Java `getSkillId()`.
@@ -36,6 +44,17 @@ pub struct SkillLearn {
     pub auto_get: bool,
     /// Java `isLearnedByNpc()`.
     pub learned_by_npc: bool,
+    /// Java `isLearnedByFS()`: learned with a Forgotten Scroll.
+    pub learned_by_fs: bool,
+    /// Java `getLevelUpSp()`: the SP the skill costs (clan reputation in the pledge trees).
+    pub level_up_sp: i32,
+    /// Java `getRequiredItems()`, in file order. Java keeps them in a `HashSet`, so its order is
+    /// arbitrary; no shipped skill has more than one.
+    pub required_items: Vec<SkillLearnItem>,
+    /// Java `getPreReqSkills()`: `(skill id, skill level)` the player must know.
+    pub pre_req_skills: Vec<(i32, i32)>,
+    /// Java `getRaces()`: empty means every race.
+    pub races: Vec<Race>,
 }
 
 /// All class skill trees, immutable after loading. Java `SkillTreeData`, class part only.
@@ -45,6 +64,9 @@ pub struct SkillTrees {
     /// the skills of the class and its ancestors (a skill of the same id and level defined lower in
     /// the chain replaces the one above it).
     complete: BTreeMap<ClassId, BTreeMap<(i32, i32), SkillLearn>>,
+    /// The keys of `complete` in the order Java's `LinkedHashMap` lists them (see
+    /// [`SkillTrees::complete_class_tree_java_order`]).
+    java_order: BTreeMap<ClassId, Vec<(i32, i32)>>,
 }
 
 impl SkillTrees {
@@ -82,18 +104,51 @@ impl SkillTrees {
     }
 
     fn build(gathered: Gathered) -> Self {
-        let Gathered { parents, common, own } = gathered;
+        let Gathered {
+            parents,
+            common,
+            common_order,
+            own,
+            own_order,
+        } = gathered;
         let mut complete = BTreeMap::new();
+        let mut java_order = BTreeMap::new();
         for &class in own.keys() {
             let mut tree = common.clone();
+            // `skillTree.putAll(_commonSkillTree)`, then `putAll(_classSkillTrees.get(cid))` for the
+            // class chain, root first. A key that is already in the map keeps its place.
+            let mut order: Vec<(i32, i32)> = Vec::new();
+            let place = |keys: &[(i32, i32)], order: &mut Vec<(i32, i32)>| {
+                for key in java_hash_map_order(keys) {
+                    if !order.contains(&key) {
+                        order.push(key);
+                    }
+                }
+            };
+            place(&common_order, &mut order);
             for ancestor in class_chain(&parents, class) {
                 if let Some(own_tree) = own.get(&ancestor) {
                     tree.extend(own_tree.clone());
+                    if let Some(keys) = own_order.get(&ancestor) {
+                        place(keys, &mut order);
+                    }
                 }
             }
             complete.insert(class, tree);
+            java_order.insert(class, order);
         }
-        Self { complete }
+        Self { complete, java_order }
+    }
+
+    /// [`Self::complete_class_tree`] in the order Java lists it: the iteration order of the
+    /// `LinkedHashMap` that `getCompleteClassSkillTree` returns, which `getAvailableSkills` follows
+    /// (so the skill lists a trainer shows). Each class tree is a `HashMap` keyed by
+    /// `skillId * 1021 + skillLevel`, so the order looks shuffled; it is the same on every run.
+    pub fn complete_class_tree_java_order(&self, class: ClassId) -> Vec<&SkillLearn> {
+        let (Some(tree), Some(order)) = (self.complete.get(&class), self.java_order.get(&class)) else {
+            return Vec::new();
+        };
+        order.iter().filter_map(|key| tree.get(key)).collect()
     }
 
     /// Java `getCompleteClassSkillTree(playerClass)`: every skill the class can have, in id and
@@ -126,6 +181,11 @@ impl SkillTrees {
             .collect()
     }
 
+    /// Java `getClassSkill(id, level, playerClass)`: the line of the complete tree of `class`.
+    pub fn class_skill(&self, class: ClassId, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.complete.get(&class)?.get(&(skill_id, skill_level))
+    }
+
     /// Number of classes that have a complete tree.
     pub fn len(&self) -> usize {
         self.complete.len()
@@ -135,6 +195,30 @@ impl SkillTrees {
     pub fn is_empty(&self) -> bool {
         self.complete.is_empty()
     }
+}
+
+/// The order Java's `HashMap<Integer, _>` iterates keys that were put in the order `keys` (all
+/// different) with `SkillData.getSkillHashCode` as the key: by bucket `(h ^ (h >>> 16)) & (cap - 1)`
+/// of the final table size, then by insertion inside a bucket (a resize splits a bucket without
+/// reordering it).
+// NOTE: a bucket of 8 or more keys in a table of 64 or more becomes a tree in Java, which can change
+// the order inside that bucket; the shipped trees have no bucket that full.
+fn java_hash_map_order(keys: &[(i32, i32)]) -> Vec<(i32, i32)> {
+    let mut capacity: usize = 16;
+    while keys.len() > capacity * 3 / 4 {
+        capacity *= 2;
+    }
+    let bucket = |&(skill_id, skill_level): &(i32, i32)| {
+        let h = skill_id.wrapping_mul(1021).wrapping_add(skill_level) as u32;
+        ((h ^ (h >> 16)) as usize) & (capacity - 1)
+    };
+    let mut indexed: Vec<(usize, usize, (i32, i32))> = keys
+        .iter()
+        .enumerate()
+        .map(|(index, key)| (bucket(key), index, *key))
+        .collect();
+    indexed.sort_unstable();
+    indexed.into_iter().map(|(_, _, key)| key).collect()
 }
 
 /// The class and its ancestors, root first. Java `getCompleteClassSkillTree` walks the same chain.
@@ -170,8 +254,13 @@ struct Gathered {
     parents: BTreeMap<ClassId, Option<ClassId>>,
     /// Java `_commonSkillTree`: `classSkillTree` entries without a `classId`.
     common: BTreeMap<(i32, i32), SkillLearn>,
+    /// The keys of `common` in the order they were first added.
+    common_order: Vec<(i32, i32)>,
     /// Java `_classSkillTrees`: the own tree of every class.
     own: BTreeMap<ClassId, BTreeMap<(i32, i32), SkillLearn>>,
+    /// The keys of each `own` tree in the order they were first added (the `HashMap`'s
+    /// insertion order, which decides the order inside one bucket).
+    own_order: BTreeMap<ClassId, Vec<(i32, i32)>>,
 }
 
 impl Gathered {
@@ -195,7 +284,10 @@ impl Gathered {
             if class_id <= -1 {
                 for skill in tree.skills {
                     let learn = skill.into_learn();
-                    self.common.insert((learn.skill_id, learn.skill_level), learn);
+                    let key = (learn.skill_id, learn.skill_level);
+                    if self.common.insert(key, learn).is_none() {
+                        self.common_order.push(key);
+                    }
                 }
                 continue;
             }
@@ -204,9 +296,13 @@ impl Gathered {
                 continue;
             };
             let own = self.own.entry(class).or_default();
+            let order = self.own_order.entry(class).or_default();
             for skill in tree.skills {
                 let learn = skill.into_learn();
-                own.insert((learn.skill_id, learn.skill_level), learn);
+                let key = (learn.skill_id, learn.skill_level);
+                if own.insert(key, learn).is_none() {
+                    order.push(key);
+                }
             }
         }
     }
@@ -250,6 +346,45 @@ struct RawSkill {
     auto_get: bool,
     #[serde(rename = "@learnedByNpc", default)]
     learned_by_npc: bool,
+    #[serde(rename = "@learnedByFS", default)]
+    learned_by_fs: bool,
+    #[serde(rename = "@levelUpSp", default)]
+    level_up_sp: i32,
+    #[serde(rename = "item", default)]
+    items: Vec<RawItem>,
+    #[serde(rename = "preRequisiteSkill", default)]
+    pre_req_skills: Vec<RawPreReq>,
+    #[serde(rename = "race", default)]
+    races: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct RawItem {
+    #[serde(rename = "@id")]
+    id: i32,
+    #[serde(rename = "@count")]
+    count: i64,
+}
+
+#[derive(Deserialize)]
+struct RawPreReq {
+    #[serde(rename = "@id")]
+    id: i32,
+    #[serde(rename = "@lvl")]
+    level: i32,
+}
+
+/// Java `Race.valueOf(text)` for the playable races. `None` for a name Java would throw on.
+fn race_from_name(name: &str) -> Option<Race> {
+    Some(match name.trim() {
+        "HUMAN" => Race::Human,
+        "ELF" => Race::Elf,
+        "DARK_ELF" => Race::DarkElf,
+        "ORC" => Race::Orc,
+        "DWARF" => Race::Dwarf,
+        "KAMAEL" => Race::Kamael,
+        _ => return None,
+    })
 }
 
 impl RawSkill {
@@ -260,6 +395,31 @@ impl RawSkill {
             get_level: self.get_level,
             auto_get: self.auto_get,
             learned_by_npc: self.learned_by_npc,
+            learned_by_fs: self.learned_by_fs,
+            level_up_sp: self.level_up_sp,
+            required_items: self
+                .items
+                .into_iter()
+                .map(|item| SkillLearnItem {
+                    item_id: item.id,
+                    count: item.count,
+                })
+                .collect(),
+            pre_req_skills: self.pre_req_skills.into_iter().map(|r| (r.id, r.level)).collect(),
+            races: self
+                .races
+                .iter()
+                .filter_map(|name| {
+                    let race = race_from_name(name);
+                    if race.is_none() {
+                        warn!(
+                            "SkillTreeData: unknown race {name:?} on skill {} skipped.",
+                            self.skill_id
+                        );
+                    }
+                    race
+                })
+                .collect(),
         }
     }
 }
@@ -387,6 +547,117 @@ mod tests {
 		</list>"#;
         let trees = SkillTrees::from_xml(xml).unwrap();
         assert!(trees.is_empty());
+    }
+
+    #[test]
+    fn learn_costs_items_and_requirements_are_read() {
+        let xml = r#"<list><skillTree type="classSkillTree" classId="0">
+			<skill skillName="Book" skillId="1405" skillLevel="1" getLevel="52" levelUpSp="9000" learnedByNpc="true">
+				<preRequisiteSkill id="10" lvl="2" />
+				<item id="8618" count="1" />
+				<item id="57" count="150" />
+			</skill>
+			<skill skillName="FS" skillId="818" skillLevel="1" getLevel="74" learnedByFS="true">
+				<race>DWARF</race>
+				<race>NOPE</race>
+			</skill>
+		</skillTree></list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        let book = trees.class_skill(ClassId(0), 1405, 1).unwrap();
+        assert_eq!(book.level_up_sp, 9000);
+        assert!(book.learned_by_npc && !book.learned_by_fs);
+        assert_eq!(book.pre_req_skills, vec![(10, 2)]);
+        assert_eq!(
+            book.required_items,
+            vec![
+                SkillLearnItem {
+                    item_id: 8618,
+                    count: 1
+                },
+                SkillLearnItem {
+                    item_id: 57,
+                    count: 150
+                }
+            ]
+        );
+        let fs = trees.class_skill(ClassId(0), 818, 1).unwrap();
+        assert!(fs.learned_by_fs);
+        assert_eq!(fs.level_up_sp, 0);
+        // An unknown race name is skipped (Java would throw).
+        assert_eq!(fs.races, vec![Race::Dwarf]);
+        assert!(trees.class_skill(ClassId(0), 818, 2).is_none());
+        assert!(trees.class_skill(ClassId(1), 818, 1).is_none());
+    }
+
+    #[test]
+    fn java_hash_map_order_is_bucket_then_insertion() {
+        // Worked out by hand: bucket = (h ^ (h >>> 16)) & 15 with h = id * 1021 + level, so
+        // (194,1) -> 8, (205,1) -> 9, (239,1) -> 7, (100,1) -> 4, (100,2) -> 7, (1405,1) -> 15,
+        // (300,1) -> 9, (410,1) -> 5, (411,1) -> 6. Nine keys fit the 16 buckets of a new HashMap.
+        let keys = [
+            (194, 1),
+            (205, 1),
+            (239, 1),
+            (100, 1),
+            (100, 2),
+            (1405, 1),
+            (300, 1),
+            (410, 1),
+            (411, 1),
+        ];
+        assert_eq!(
+            java_hash_map_order(&keys),
+            vec![
+                (100, 1),
+                (410, 1),
+                (411, 1),
+                (239, 1),
+                (100, 2),
+                (194, 1),
+                (205, 1),
+                (300, 1),
+                (1405, 1)
+            ]
+        );
+    }
+
+    #[test]
+    fn complete_tree_in_java_order_lists_each_class_tree_in_hash_order_root_first() {
+        let xml = r#"<list>
+			<skillTree type="classSkillTree" classId="0">
+				<skill skillId="194" skillLevel="1" getLevel="1" />
+				<skill skillId="205" skillLevel="1" getLevel="1" />
+				<skill skillId="239" skillLevel="1" getLevel="1" />
+			</skillTree>
+			<skillTree type="classSkillTree" classId="1" parentClassId="0">
+				<skill skillId="300" skillLevel="1" getLevel="1" />
+				<skill skillId="239" skillLevel="1" getLevel="5" />
+				<skill skillId="100" skillLevel="1" getLevel="1" />
+			</skillTree>
+		</list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        // Class 0: buckets 239 -> 7, 194 -> 8, 205 -> 9.
+        assert_eq!(
+            keys(&trees.complete_class_tree_java_order(ClassId(0))),
+            vec![(239, 1), (194, 1), (205, 1)]
+        );
+        // Class 1: the parent's tree first in its own order, then the child's keys that are new in
+        // the child's hash order (100 -> 4, 300 -> 9). 239 keeps its first place, with the child's line.
+        let order = trees.complete_class_tree_java_order(ClassId(1));
+        assert_eq!(
+            keys(&order),
+            vec![(239, 1), (194, 1), (205, 1), (100, 1), (300, 1)]
+        );
+        assert_eq!(order[0].get_level, 5);
+        // The sorted view is unchanged.
+        assert_eq!(
+            trees
+                .complete_class_tree(ClassId(1))
+                .map(|s| (s.skill_id, s.skill_level))
+                .collect::<Vec<_>>(),
+            vec![(100, 1), (194, 1), (205, 1), (239, 1), (300, 1)]
+        );
+        assert!(trees.complete_class_tree_java_order(ClassId(2)).is_empty());
     }
 
     #[test]
