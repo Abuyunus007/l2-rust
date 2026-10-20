@@ -37,4 +37,5 @@ Spoil and Sweeper effects, the spoil roll (M4-DROP-01's calculator already rolls
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules: no local DB, no real ports, never kill processes by name), `docs/design/m4-combat.md`, `docs/design/m5-skills.md` first.
+- Merged APIs: the effect handler pattern (`crates/l2-world/src/effects/handlers/`, register in `handlers/mod.rs`, EFX-03's `params.rs` for parameters), M4-DROP-01's `rewards/drop.rs` (`calculate_drops` already rolls the SPOIL list), `death.rs` (`die_packet` sweepable, `add_decay_task` with the `// M4-DROP-01:` SpoiledCorpseExtendTime marker), `inventory/add.rs` (`inventory_add_item_by_id` / Player.addItem for the sweep rewards). Spoil's success uses `effects/probability.rs` / `formulas/effect.rs` like the other chance handlers. M5-CAST-01 and M5-EFX-04 run at the same time: keep `handlers/mod.rs` changes to added lines.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).

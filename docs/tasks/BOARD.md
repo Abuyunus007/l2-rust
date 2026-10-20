@@ -253,7 +253,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-EFX-05](M5/M5-EFX-05.md) | Effect handlers needing casting or new world parts (rest of EFX-03) | sonnet | full | CAST-01 | ready |
 | [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | ready (refined when deps merge) |
 | [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | ready (refined when deps merge) |
-| [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | haiku | spot | EFX-03 | ready (refined when deps merge) |
+| [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | haiku | spot | EFX-03 | in-progress |
 | [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | ready (refined when deps merge) |
 | [M5-LEARN-01](M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | merged |
 | [M5-SAVE-01](M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | merged |
