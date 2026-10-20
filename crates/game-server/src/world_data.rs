@@ -721,8 +721,26 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             gm_item_restriction: config.general.gm_item_restriction,
             auto_loot_slot_limit: p.auto_loot_slot_limit,
         },
+        cast: l2_world::CastSettings {
+            alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
+            dance_consume_additional_mp: p.dance_consume_additional_mp,
+            raid_disable_curse: config.npc.raid_disable_curse,
+            disable_raidboss_heal_from_players: config.grand_boss.disable_raidboss_heal_from_players,
+            disable_raidboss_buff_from_players: config.grand_boss.disable_raidboss_buff_from_players,
+            ..l2_world::CastSettings::default()
+        },
         ..WorldSettings::default()
     };
+    // `SkillReuseMultipliers` is a post-processed list in the generated config, read from
+    // `ClassBalance.ini` like the other class multipliers.
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
+        let key = "SkillReuseMultipliers";
+        parse_class_multipliers(
+            key,
+            &ini.get_string(key, ""),
+            &mut settings.cast.skill_reuse_multipliers,
+        );
+    }
     // `ListPetRentNpc` is a post-processed list in the generated config, so it is read from
     // `NPC.ini` directly (Java: `Integer.parseInt` of each comma separated id).
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {

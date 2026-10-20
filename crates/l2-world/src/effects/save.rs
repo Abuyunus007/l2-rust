@@ -61,6 +61,17 @@ impl World {
         }
         let mut rows = Vec::new();
         let mut stored: HashSet<SkillKey> = HashSet::new();
+        // The reuse timers live on the world clock; the row keeps Java's wall-clock stamp
+        // (`currentTime < getStamp()` is "time left").
+        let now_wall = crate::world::unix_ms_now();
+        let reuse = self.skill_reuse_time_stamps(id);
+        let running = |key: SkillKey| {
+            let hash = l2_data::SkillTemplates::hash_code(key.id, key.level);
+            reuse
+                .iter()
+                .find(|t| t.hash_code == hash && t.remaining_ms > 0)
+                .map_or((0, 0), |t| (t.reuse_ms, now_wall + t.remaining_ms))
+        };
         if let Some(list) = self.effect_list(id) {
             for info in list.effects() {
                 // Do not save heals.
@@ -78,19 +89,33 @@ impl World {
                 if !stored.insert(info.skill) {
                     continue;
                 }
+                let (reuse_delay, systime) = running(info.skill);
                 rows.push(SavedEffect {
                     skill_id: info.skill.id,
                     skill_level: info.skill.level,
                     remaining_time: info.time(self.tick),
-                    reuse_delay: 0,
-                    systime: 0,
+                    reuse_delay,
+                    systime,
                     restore_type: 0,
                 });
             }
         }
-        // M5-CAST-01: Java then writes every reuse timer that still runs and whose skill is not
-        // stored above, as a row with `remaining_time` -1, `restore_type` 1 and the timer's
-        // `reuse`/`stamp` (`getSkillReuseTimeStamps`). The reuse timers come with casting.
+        // Skills under reuse ('restore_type' = 1), in the reuse map's order.
+        for t in &reuse {
+            let key = SkillKey::new(t.skill_id, t.skill_level);
+            if stored.contains(&key) || t.remaining_ms <= 0 {
+                continue;
+            }
+            stored.insert(key);
+            rows.push(SavedEffect {
+                skill_id: t.skill_id,
+                skill_level: t.skill_level,
+                remaining_time: -1,
+                reuse_delay: t.reuse_ms,
+                systime: now_wall + t.remaining_ms,
+                restore_type: 1,
+            });
+        }
         Some(rows)
     }
 
@@ -109,13 +134,19 @@ impl World {
         let Some(skills) = self.skill_table() else {
             return;
         };
+        let now_wall = crate::world::unix_ms_now();
         for row in rows {
             // A skill the datapack does not have any more is dropped (Java `skill == null`).
-            if skills.get(row.skill_id, row.skill_level).is_none() {
+            let Some(skill) = skills.get(row.skill_id, row.skill_level) else {
                 continue;
+            };
+            // The reuse timer comes back when it has more than 10 ms left, for rows of both
+            // restore types.
+            let time = row.systime - now_wall;
+            if time > 10 {
+                self.disable_skill(id, skill, time);
+                self.restore_time_stamp(id, skill, row.reuse_delay, time);
             }
-            // M5-CAST-01: Java first restores the reuse timer when it has more than 10 ms left
-            // (`disableSkill` and `addTimeStamp`), for rows of both restore types.
             // A reuse-only row ends there: the buff itself was gone at logout.
             if row.restore_type > 0 {
                 continue;

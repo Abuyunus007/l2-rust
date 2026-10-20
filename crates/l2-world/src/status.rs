@@ -454,8 +454,11 @@ impl World {
             return;
         }
         // M5: a GM without `giveDamage` rights (access level flags are not loaded: every access
-        // level may give damage); `stopEffectsOnDamage(awake)`. NpcStatus: duels (M5).
-        // AttackableStatus: over-hit is a skill effect (M5).
+        // level may give damage). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill
+        // effect (M5).
+        // `!isDOT && !isHPConsumption`: neither reaches this function yet.
+        self.stop_effects_on_damage(id, true);
+        // The stun break (`isStunned() && Rnd.get(10) == 0` -> `stopStunning(true)`).
         self.break_states_on_damage(id);
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
@@ -464,7 +467,7 @@ impl World {
         // `isMortal()`: nothing makes a creature immortal before scripts.
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
-            // M5: `abortCast()`.
+            self.abort_cast(id);
             self.do_die(id, attacker);
         }
     }
@@ -482,8 +485,10 @@ impl World {
             return;
         }
         // Offline traders (M5).
-        // M5: `stopEffectsOnDamage(awake)`. Crafting and private stores (stand up): not modelled
-        // yet.
+        // `!isHPConsumption`: HP consumption does not reach this function yet.
+        self.stop_effects_on_damage(id, true);
+        // Crafting and private stores (stand up): not modelled yet. Sitting players stand up,
+        // a stun may break.
         self.break_states_on_damage(id);
         let mut amount = value;
         let full_value = amount as i32;
@@ -532,7 +537,8 @@ impl World {
 
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
-            // M5: `abortCast()`; olympiad matches end without death.
+            self.abort_cast(id);
+            // Olympiad matches end without death (M6).
             self.do_die(id, attacker);
         }
     }

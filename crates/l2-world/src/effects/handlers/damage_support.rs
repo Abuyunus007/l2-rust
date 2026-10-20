@@ -112,7 +112,7 @@ impl World {
         // `isMortal()`: nothing makes a creature immortal before scripts.
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
-            // M5-CAST-01: `abortCast()`.
+            self.abort_cast(id);
             self.do_die(id, attacker);
         }
     }
@@ -172,7 +172,8 @@ impl World {
         }
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && !is_hp_consumption {
             self.abort_attack(id);
-            // M5-CAST-01: `abortCast()`; olympiad matches end without death.
+            self.abort_cast(id);
+            // Olympiad matches end without death (M6).
             self.do_die(id, attacker);
         }
     }
@@ -184,7 +185,7 @@ impl World {
         if !self.is_raid(target) && self.with_rng(|world, rng| calc_atk_break_for(world, target, damage, rng))
         {
             self.break_attack(target);
-            // M5-CAST-01: `breakCast()`.
+            self.break_cast(target);
         }
     }
 }

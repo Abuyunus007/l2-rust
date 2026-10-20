@@ -178,6 +178,8 @@ impl World {
         self.combat.creatures.remove(&id);
         self.combat.stances.remove(&id);
         self.ai.creatures.remove(&id);
+        // The cast state and the reuse stamps go with the object (M5-CAST-01).
+        self.forget_cast(id);
     }
 
     /// Java `Creature.isAttackingNow()`: an attack is still in its animation.

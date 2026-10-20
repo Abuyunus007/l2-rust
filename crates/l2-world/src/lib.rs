@@ -90,6 +90,7 @@ pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
 pub use skills::learn::LearnSettings;
+pub use skills::{CastSettings, CastTimer, MagicUseTask, ReuseTimeStamp, SkillUse};
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

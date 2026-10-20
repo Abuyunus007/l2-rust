@@ -190,7 +190,7 @@ impl World {
                 && self.with_rng(|world, rng| calc_atk_break_for(world, target, f64::from(damage), rng))
             {
                 self.break_attack(target);
-                // M5: `breakCast()`.
+                self.break_cast(target);
             }
             // M5: trigger skills (`_triggerSkills`) and the weapon's on-critical skill.
         }
@@ -366,7 +366,7 @@ impl World {
 
     /// Java `Attackable.getHateRatio(attacker)`: `SetHateGroup`, `SetHateOccupation` and
     /// `SetHateRace` of the template's AI parameters.
-    fn hate_ratio(&self, npc: ObjectId, attacker: ObjectId) -> f64 {
+    pub(crate) fn hate_ratio(&self, npc: ObjectId, attacker: ObjectId) -> f64 {
         let Some(player) = self.players.get(&attacker) else {
             return 1.0;
         };

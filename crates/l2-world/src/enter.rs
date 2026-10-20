@@ -24,7 +24,7 @@ use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExStorageMaxCount, ExUiSetting,
     ExVoteSystemInfo, FriendList, HennaInfo, OtherShortcut, QuestList, ShortcutEntry, ShortcutInit,
-    SkillCoolTime, SkillList, SkillListEntry, ValidateLocation,
+    SkillList, SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
     ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ExShowContactList, ItemInfo, ItemList,
@@ -599,8 +599,9 @@ impl World {
         if self.is_alike_dead(id) {
             packets.push(self.die_packet(id).to_bytes());
         }
-        // SkillCoolTime: the reuse timers are not restored.
-        packets.push(SkillCoolTime::default().to_bytes());
+        // SkillCoolTime: the reuse timers come back later (`onPlayerEnter` -> `restoreEffects`),
+        // so this list is empty, as in Java.
+        packets.push(self.skill_cool_time(id).to_bytes());
         packets
     }
 
