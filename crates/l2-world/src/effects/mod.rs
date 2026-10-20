@@ -139,6 +139,9 @@ pub struct EffectsWorld {
     next_info: u64,
     /// Java `Player._updateAndBroadcastStatusTask`.
     pub(crate) status_tasks: HashMap<ObjectId, TimerId>,
+    /// Java `Playable._transferDmgTo` (`TransferDamage`): the player who takes part of the
+    /// damage, by the id of the one who is hit.
+    pub(crate) transfer_damage_to: HashMap<ObjectId, ObjectId>,
 }
 
 impl EffectsWorld {
@@ -204,6 +207,24 @@ impl World {
         handler
     }
 
+    /// Java `Playable.getTransferingDamageTo()`: who takes part of this player's damage (set by
+    /// the `TransferDamage` effect; the damage code reads it for a player with a party, M6).
+    pub fn transfer_damage_to(&self, id: ObjectId) -> Option<ObjectId> {
+        self.effects.transfer_damage_to.get(&id).copied()
+    }
+
+    /// Java `Playable.setTransferDamageTo(player)`.
+    pub(crate) fn set_transfer_damage_to(&mut self, id: ObjectId, to: Option<ObjectId>) {
+        match to {
+            Some(to) => {
+                self.effects.transfer_damage_to.insert(id, to);
+            }
+            None => {
+                self.effects.transfer_damage_to.remove(&id);
+            }
+        }
+    }
+
     /// The effect list of a creature, if anything was ever put on it.
     pub fn effect_list(&self, id: ObjectId) -> Option<&EffectList> {
         self.effects.lists.get(&id)
@@ -252,6 +273,7 @@ impl World {
     /// creature's object is gone (an NPC whose corpse decayed is made anew at its respawn, a new
     /// login is a new `Player`).
     pub(crate) fn forget_effects(&mut self, id: ObjectId) {
+        self.effects.transfer_damage_to.remove(&id);
         if let Some(task) = self.effects.status_tasks.remove(&id) {
             self.timers.cancel(task);
         }

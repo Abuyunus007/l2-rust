@@ -20,6 +20,7 @@ pub mod handshake;
 pub mod interaction;
 pub mod items;
 pub mod movement;
+pub mod regen;
 pub mod skills;
 pub mod system_message;
 pub mod userinfo;
@@ -57,6 +58,7 @@ pub use items::{
     write_item_updates,
 };
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use regen::ExRegenMax;
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
