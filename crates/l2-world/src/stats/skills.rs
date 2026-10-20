@@ -209,7 +209,14 @@ impl World {
             return false;
         };
         let (_, level) = core.skills.remove(at);
-        // Stopping a cast of this skill (`abortCast`) is M5-CAST-01's.
+        // Stop casting if this skill is used right now (the normal or the simultaneous cast).
+        let casting = self.cast_state(id).is_some_and(|c| {
+            (c.casting_now && c.last_skill_cast.is_some_and(|s| s.id == skill_id))
+                || (c.casting_simultaneously_now && c.last_simultaneous_skill_cast.is_some_and(|s| s.id == skill_id))
+        });
+        if casting {
+            self.abort_cast(id);
+        }
         let (toggle, passive) = self
             .skill_templates()
             .and_then(|d| d.skills.get(skill_id, level))

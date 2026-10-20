@@ -19,7 +19,7 @@
 // revalidated for real, `broadcastInfo`), then `UserInfo`.
 //
 // # What is left out, with the system that brings it
-// - `abortCast`: skills (M5). `stopMove`, `abortAttack`, `getAI().setIntentionActive()` and the
+// - `stopMove`, `abortAttack`, `abortCast`, `getAI().setIntentionActive()` and the
 //   `doRevive` of a pending revive (a restart point, M4-DEATH-01) are in. `setTarget(null)` is
 //   in (M3-TALK-01).
 // - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
@@ -222,7 +222,7 @@ impl World {
         // broadcast.
         self.stop_move(id, None);
         self.abort_attack(id);
-        // FOLLOW-UP(M5): `abortCast()`.
+        self.abort_cast(id);
         // `setTarget(null)`: TargetUnselected to everybody if it had a target.
         self.set_target(id, None);
 

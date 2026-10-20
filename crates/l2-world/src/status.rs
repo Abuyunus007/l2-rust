@@ -452,8 +452,11 @@ impl World {
             return;
         }
         // M5: a GM without `giveDamage` rights (access level flags are not loaded: every access
-        // level may give damage); `stopEffectsOnDamage(awake)` and the stun break (no draw without
-        // a stun). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill effect (M5).
+        // level may give damage). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill
+        // effect (M5).
+        // `!isDOT && !isHPConsumption`: neither reaches this function yet.
+        self.stop_effects_on_damage(id, true);
+        // M5-EFX-02: the stun break (`isStunned() && Rnd.get(10) == 0` -> `stopStunning(true)`).
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
@@ -461,7 +464,7 @@ impl World {
         // `isMortal()`: nothing makes a creature immortal before scripts.
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
-            // M5: `abortCast()`.
+            self.abort_cast(id);
             self.do_die(id, attacker);
         }
     }
@@ -479,8 +482,10 @@ impl World {
             return;
         }
         // Offline traders (M5).
-        // M5: `stopEffectsOnDamage(awake)`. Crafting, private stores and sitting (stand up): not
-        // modelled yet. Stun break: M5.
+        // `!isHPConsumption`: HP consumption does not reach this function yet.
+        self.stop_effects_on_damage(id, true);
+        // Crafting, private stores and sitting (stand up): not modelled yet.
+        // M5-EFX-02: the stun break (`!isDOT && isStunned() && Rnd.get(10) == 0`).
         let mut amount = value;
         let full_value = amount as i32;
         if let Some(attacker) = attacker.filter(|a| *a != id) {
@@ -528,7 +533,8 @@ impl World {
 
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
-            // M5: `abortCast()`; olympiad matches end without death.
+            self.abort_cast(id);
+            // Olympiad matches end without death (M6).
             self.do_die(id, attacker);
         }
     }

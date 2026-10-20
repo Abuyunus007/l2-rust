@@ -520,6 +520,12 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            // Java: RequestMagicSkillUse
+            ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
+                magic_id: p.magic_id,
+                ctrl_pressed: p.ctrl_pressed,
+                shift_pressed: p.shift_pressed,
+            },
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

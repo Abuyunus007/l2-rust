@@ -15,7 +15,7 @@
 // - Soulshots (M5): `isChargedShot` is false, so no hit has the soulshot flag; the grade is still
 //   passed like Java.
 // - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, cursed weapons, observer mode,
-//   siege friends, transformations, effects (`stopEffectsOnAction`, `POLEARM_SINGLE_TARGET`),
+//   siege friends, transformations, effects (`POLEARM_SINGLE_TARGET`),
 //   PvP flagging (`updatePvPStatus`, M5): hooks marked where Java calls them.
 
 use l2_data::Stat;
@@ -132,7 +132,7 @@ impl World {
             return;
         }
 
-        // M5: `stopEffectsOnAction()`.
+        self.stop_effects_on_action(id);
 
         // GeoData Los Check here (or dz > 1000).
         if !self.can_see_target(id, target) {

@@ -7,7 +7,6 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_net::Encode;
 use l2_protocol_game::server::NetPing;
-use l2_protocol_game::server::enterworld::SkillCoolTime;
 use l2_util::{ObjectId, WorldRng};
 use tracing::{debug, info, warn};
 
@@ -99,6 +98,8 @@ pub struct World {
     pub(crate) rewards: crate::rewards::exp::ExpWorld,
     /// Every creature's effect list and the effect handlers (M5-EFFECT-01, `effects/`).
     pub(crate) effects: crate::effects::EffectsWorld,
+    /// Every creature's cast state and skill reuse (M5-CAST-01, `skills/cast.rs`).
+    pub(crate) cast: crate::skills::cast::CastWorld,
 }
 
 impl World {
@@ -145,6 +146,7 @@ impl World {
             ground: crate::ground_item::GroundWorld::default(),
             rewards: crate::rewards::exp::ExpWorld::default(),
             effects: crate::effects::EffectsWorld::default(),
+            cast: crate::skills::cast::CastWorld::default(),
         }
     }
 
@@ -397,10 +399,10 @@ impl World {
                 let game_time = game_time_minutes(unix_ms_now());
                 self.send(id, &NetPing { game_time });
             }
-            // Java: RequestSkillCoolTime -> SkillCoolTime(player). The reuse timers are not
-            // modelled yet, so the list is empty.
+            // Java: RequestSkillCoolTime -> SkillCoolTime(player)
             ClientInput::SkillCoolTime => {
-                self.send(id, &SkillCoolTime::default());
+                let packet = self.skill_cool_time(id);
+                self.send(id, &packet);
             }
             // Java: RequestKeyMapping -> ExUISetting(player) when StoreCharUiSettings is on.
             ClientInput::KeyMapping => {
@@ -452,6 +454,12 @@ impl World {
                 skill_type,
                 ..
             } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
+            // Java: RequestMagicSkillUse
+            ClientInput::MagicSkillUse {
+                magic_id,
+                ctrl_pressed,
+                shift_pressed,
+            } => self.on_request_magic_skill_use(id, magic_id, ctrl_pressed, shift_pressed),
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -522,6 +530,8 @@ impl World {
             TimerKind::EffectTick(task) => self.on_effect_tick(task),
             TimerKind::EffectIcons(id) => self.on_effect_icons_timer(id),
             TimerKind::UpdateAndBroadcastStatus(id) => self.on_update_and_broadcast_status_timer(id),
+            // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
+            TimerKind::Cast(timer) => self.on_cast_timer(timer),
         }
     }
 

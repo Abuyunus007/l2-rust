@@ -327,6 +327,8 @@ pub struct WorldSettings {
     pub effects: crate::effects::EffectSettings,
     /// The values learning skills reads (M5-LEARN-01).
     pub learn: crate::skills::learn::LearnSettings,
+    /// The values casting reads (M5-CAST-01).
+    pub cast: crate::skills::cast::CastSettings,
 }
 
 impl Default for WorldSettings {
@@ -374,6 +376,7 @@ impl Default for WorldSettings {
             nevit: crate::rewards::nevit::NevitSettings::default(),
             effects: crate::effects::EffectSettings::default(),
             learn: crate::skills::learn::LearnSettings::default(),
+            cast: crate::skills::cast::CastSettings::default(),
         }
     }
 }
