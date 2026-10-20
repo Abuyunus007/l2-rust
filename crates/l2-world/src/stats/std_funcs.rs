@@ -152,16 +152,20 @@ fn p_def_mod(view: &StatView<'_>, init: f64) -> f64 {
     let mut value = init;
     if let Some(template) = view.player_template() {
         let worn = |slot: usize| view.paperdoll(slot).is_some();
-        // Transformations are not modelled; Java's `p.isTransformed() ? ... :` takes the second
-        // branch.
         if worn(paperdoll::CHEST) {
-            value -= f64::from(template.base_def_by_slot(paperdoll::CHEST));
+            // A form's chest defence is subtracted as it is; the other slots use it as a slot
+            // number (`def_mod_slot_key`).
+            value -= if view.is_transformed() {
+                f64::from(view.transform_def_by_slot(paperdoll::CHEST))
+            } else {
+                f64::from(template.base_def_by_slot(paperdoll::CHEST))
+            };
         }
         let full_armor = view
             .paperdoll_template(paperdoll::CHEST)
             .is_some_and(|t| t.body_part == BodyPart::FullArmor);
         if worn(paperdoll::LEGS) || (worn(paperdoll::CHEST) && full_armor) {
-            value -= f64::from(template.base_def_by_slot(paperdoll::LEGS));
+            value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(paperdoll::LEGS)));
         }
         for slot in [
             paperdoll::HEAD,
@@ -171,7 +175,7 @@ fn p_def_mod(view: &StatView<'_>, init: f64) -> f64 {
             paperdoll::CLOAK,
         ] {
             if worn(slot) {
-                value -= f64::from(template.base_def_by_slot(slot));
+                value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(slot)));
             }
         }
     }
@@ -190,7 +194,7 @@ fn m_def_mod(view: &StatView<'_>, init: f64) -> f64 {
             paperdoll::NECK,
         ] {
             if view.paperdoll(slot).is_some() {
-                value -= f64::from(template.base_def_by_slot(slot));
+                value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(slot)));
             }
         }
     }

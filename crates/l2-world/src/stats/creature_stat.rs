@@ -351,8 +351,15 @@ impl<'w> StatView<'w> {
         }
     }
 
-    /// Java `Creature.getLevelMod()` (`Player.getLevelMod` adds the transformation's, none yet).
+    /// Java `Creature.getLevelMod()`; `Player.getLevelMod` takes the transformation's when it has
+    /// one for the level.
     pub fn level_mod(&self) -> f64 {
+        if self.is_transformed() {
+            let level_mod = self.transform_level_mod();
+            if level_mod > -1.0 {
+                return level_mod;
+            }
+        }
         f64::from(self.level() + 89) / 100.0
     }
 
@@ -396,8 +403,13 @@ impl<'w> StatView<'w> {
             .map_or(0, |e| e.instance_id)
     }
 
-    /// Java `getAttackType()`: the weapon's type, else the template's (no transformations yet).
+    /// Java `getAttackType()`: a form's, else the weapon's type, else the template's.
     pub fn attack_type(&self) -> WeaponType {
+        if self.is_transformed()
+            && let Some(template) = self.transform_template()
+        {
+            return template.base_attack_type;
+        }
         match self.active_weapon_item().and_then(|t| t.weapon()) {
             Some(w) => w.weapon_type,
             None => self.base().attack_type,
@@ -439,9 +451,15 @@ impl<'w> StatView<'w> {
             );
             return init;
         }
-        // Java applies the transformation's base value here (`transform.getStat`): none yet.
         let view = self.child();
+        // Apply transformation stats.
         let mut value = init;
+        if self.transformation().is_some() {
+            let transformed = self.transform_stat(stat);
+            if transformed > 0.0 {
+                value = transformed;
+            }
+        }
         for func in funcs {
             value = std_funcs::apply(func, &view, target, skill, value);
         }
@@ -702,7 +720,11 @@ impl<'w> StatView<'w> {
         // NOTE(java-quirk): with any weapon, the fists of an unarmed player included, the base is
         // 0 and the range comes from the weapon's `pAtkRange` function alone; the fists are never
         // equipped, so an unarmed player has range 0.
-        let base = if self.active_weapon_item().is_none() {
+        let base = if self.transformation().is_some() {
+            // `Transform.getBaseAttackRange`: the template's, else the class template's.
+            self.transform_template()
+                .map_or(self.base().atk_range, |t| t.base_attack_range)
+        } else if self.active_weapon_item().is_none() {
             self.base().atk_range
         } else {
             0
@@ -723,9 +745,14 @@ impl<'w> StatView<'w> {
 
     // ------------------------------------------------------------------ speeds
 
-    /// Java `getBaseMoveSpeed(type)` (`PlayerStat` would use the transformation's or the
-    /// mount's; neither exists yet).
+    /// Java `getBaseMoveSpeed(type)`: `PlayerStat` takes a form's speeds (the mount's speeds
+    /// come with the mounts).
     pub fn base_move_speed(&self, kind: MoveType) -> f64 {
+        if self.is_transformed()
+            && let Some(template) = self.transform_template()
+        {
+            return Self::transform_move_speed(template, kind);
+        }
         self.base().speed(kind)
     }
 
@@ -851,6 +878,9 @@ impl<'w> StatView<'w> {
     /// template).
     pub fn collision_radius(&self) -> f32 {
         match self.who {
+            Who::Player(_) if self.is_transformed() => self
+                .transform_template()
+                .map_or_else(|| self.player_collision().0, |t| t.collision_radius),
             Who::Player(_) => self.player_collision().0,
             Who::Npc(_) => self.npc_template().map_or(0.0, |t| t.collision_radius),
         }
@@ -859,6 +889,9 @@ impl<'w> StatView<'w> {
     /// Java `getCollisionHeight()`.
     pub fn collision_height(&self) -> f32 {
         match self.who {
+            Who::Player(_) if self.is_transformed() => self
+                .transform_template()
+                .map_or_else(|| self.player_collision().1, |t| t.collision_height),
             Who::Player(_) => self.player_collision().1,
             Who::Npc(_) => self.npc_template().map_or(0.0, |t| t.collision_height),
         }

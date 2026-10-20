@@ -33,6 +33,7 @@
 // - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
 //   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
 // - Private stores (trade is `trade/`), mounts, summons, fishing, cursed weapons, transformations and the
+// - Trade, private stores, mounts, summons, fishing, cursed weapons and the
 //   olympiad: not modelled yet, treated as "not active". (Augmentations and element attributes
 //   are on the item: `effects/item_extras.rs`; their stat side is in `stats/skills.rs`.)
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).

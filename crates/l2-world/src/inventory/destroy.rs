@@ -219,7 +219,10 @@ impl World {
             return;
         }
 
-        // `canManipulateWithItemId` is always true here.
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send_message(id, "You cannot use this item.");
+            return;
+        }
 
         let mut count = count;
         if count > item.count {
@@ -423,7 +426,10 @@ impl World {
             return;
         }
 
-        // `canManipulateWithItemId` is always true here.
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send_message(id, "You cannot use this item.");
+            return;
+        }
 
         if item.loc == LOC_PAPERDOLL {
             let unequipped =

@@ -719,6 +719,8 @@ impl World {
         // Give AutoGet skills and all normal skills if Auto-Learn is activated.
         self.reward_skills(id);
 
+        // Transformations: the additional skills of the new level (`Transform.onLevelUp`).
+        self.transformation_level_up(id);
         // Clan member list, the party level, transformations, the pet's level: not modelled.
         let (level, max_cp, max_hp, max_mp) = match (self.core_of(id), self.stats(id)) {
             (Some(core), Some(view)) => (core.level, view.max_cp(), view.max_hp(), view.max_mp()),

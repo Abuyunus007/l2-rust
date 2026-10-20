@@ -52,7 +52,13 @@ impl World {
             return;
         };
         player.inv_tasks.char_info = None;
-        self.broadcast_info(id);
+        // Java's task sends the `CharInfo` (and the relation) to everyone who sees the player;
+        // unlike `sendInfo` it has no second `CharInfo` for a transformed player.
+        for viewer in self.visible_players(id) {
+            if self.is_visible_for(id, viewer) {
+                self.send_player_info_as(id, viewer, false);
+            }
+        }
     }
 
     /// Java `Creature.broadcastModifiedStats(stats)` for a player, called by `addStatFuncs` /
@@ -117,20 +123,38 @@ impl World {
         player.inv_tasks.skill_list = None;
         // `getAllSkills()` is a `ConcurrentHashMap` of skill id to skill.
         let known = &player.core.skills;
+        let transformed = player.transform.transformation.is_some();
         let keys: Vec<i32> = known.iter().map(|(skill_id, _)| *skill_id).collect();
-        let skills = java_concurrent_map_order(&keys)
+        let mut skills: Vec<SkillListEntry> = java_concurrent_map_order(&keys)
             .into_iter()
             .filter_map(|skill_id| known.iter().find(|(s, _)| *s == skill_id).copied())
-            .map(|(skill_id, level)| SkillListEntry {
+            .map(|(skill_id, level)| (skill_id, level, self.data.skill_is_passive(skill_id)))
+            // A transformed player keeps its passive skills only, and not those the form also has.
+            .filter(|&(skill_id, _, passive)| {
+                !((transformed && !passive) || (passive && player.transform.skills.contains_key(&skill_id)))
+            })
+            .map(|(skill_id, level, passive)| SkillListEntry {
                 id: skill_id,
                 level,
-                passive: self.data.skill_is_passive(skill_id),
+                passive,
                 // Clan skills of a clan with negative reputation and enchantable skills need the
                 // clan and the skill enchant tables.
                 disabled: false,
                 enchanted: false,
             })
             .collect();
+        // The skills of the form, by skill id.
+        skills.extend(
+            self.transformation_skill_list(id)
+                .into_iter()
+                .map(|(skill_id, level)| SkillListEntry {
+                    id: skill_id,
+                    level,
+                    passive: false,
+                    disabled: false,
+                    enchanted: false,
+                }),
+        );
         self.send(id, &SkillList { skills });
     }
 
@@ -164,7 +188,9 @@ impl World {
         };
         let mut list = item_list(&player.data, &*self.data, now_ms);
         list.show_window = open;
-        let quest: ExQuestItemList = quest_item_list(&player.data, &*self.data, now_ms);
+        list.block = self.inventory_block_packet(id);
+        let mut quest: ExQuestItemList = quest_item_list(&player.data, &*self.data, now_ms);
+        quest.block = self.inventory_block_packet(id);
         self.send(id, &list);
         // `ItemList.runImpl` sends the quest items after the list.
         self.send(id, &quest);

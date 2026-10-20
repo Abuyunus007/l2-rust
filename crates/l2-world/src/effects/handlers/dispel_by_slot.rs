@@ -69,9 +69,16 @@ impl EffectHandler for DispelBySlot {
             return;
         };
         for (&abnormal, &value) in &self.dispel {
-            // NOTE: Java stops a transformation here (`stopTransformation(true)`) and then skips
-            // the entry. Transformations are M6, so the entry is skipped without stopping anything.
+            // Dispel transformations (buff and by GM): Java stops the transformation and skips
+            // the entry.
+            // NOTE(java-quirk): the condition is `isTransformed() || (isPlayer() || (value ==
+            // asPlayer().getTransformationId()) || value < 0)`, true for every player; for a
+            // creature that is no player Java's `asPlayer()` is null and the call throws, so the
+            // entry is skipped here.
             if abnormal == AbnormalType::Transform {
+                if world.is_player(cx.effected) {
+                    world.stop_transformation(cx.effected, true);
+                }
                 continue;
             }
             let Some(info_skill) = world

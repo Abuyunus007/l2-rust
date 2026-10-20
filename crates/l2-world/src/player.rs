@@ -308,6 +308,9 @@ pub struct Player {
     pub inv_tasks: crate::inventory::InventoryTasks,
     /// The trade list, the open request and the trade refusal (see `trade/`).
     pub trade: crate::trade::TradeState,
+    /// Java `_transformation`, `_transformSkills`, the visible name and title, the inventory
+    /// block of a transformation (see `transform/`).
+    pub transform: crate::transform::TransformState,
 }
 
 impl Player {
@@ -352,6 +355,7 @@ impl Player {
             expertise_armor_penalty: 0,
             inv_tasks: crate::inventory::InventoryTasks::default(),
             trade: crate::trade::TradeState::default(),
+            transform: crate::transform::TransformState::default(),
         }
     }
 

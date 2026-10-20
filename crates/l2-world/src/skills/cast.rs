@@ -352,9 +352,12 @@ impl World {
             }
         }
 
-        // Get the level of the used skill. Custom and transformation skills (by display id) do
-        // not exist yet.
-        let Some(key) = self.known_skill(player, magic_id) else {
+        // Get the level of the used skill. Custom skills (by display id) do not exist yet; the
+        // skills of a transformation are looked up when the player does not know the skill.
+        let Some(key) = self
+            .known_skill(player, magic_id)
+            .or_else(|| self.transform_skill(player, magic_id))
+        else {
             self.send(player, &ActionFailed);
             return;
         };
@@ -365,7 +368,15 @@ impl World {
         let Some(skill) = table.get(key.id, key.level) else {
             return;
         };
-        // Airships, transformations: none.
+        // Airships: none. Do not cast non transform skills when transformed.
+        if self.stats(player).is_some_and(|view| {
+            view.transformation()
+                .is_some_and(|form| !form.can_use_weapon_stats())
+        }) && !self.has_transform_skill(player, key.id)
+        {
+            self.send(player, &ActionFailed);
+            return;
+        }
 
         // If alternate rule Karma punishment is set to true, forbid teleport to player with Karma.
         let karma = self.players.get(&player).map_or(0, |p| p.data.karma);

@@ -100,7 +100,15 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Transformations that cannot attack: M5.
+        // Transformations that cannot attack (a player only).
+        if !self.is_alike_dead(id)
+            && self
+                .stats(id)
+                .is_some_and(|v| v.is_transformed() && v.transformation().is_some_and(|t| !t.can_attack))
+        {
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Check if attacker's weapon can attack.
         let weapon = self.stats(id).and_then(|s| s.active_weapon_item().cloned());
@@ -286,8 +294,7 @@ impl World {
         calculate_reuse_time(&ReuseInput {
             p_atk_spd: view.p_atk_spd(),
             weapon_reuse_delay: weapon.map(|t| t.reuse_delay),
-            // Transformations: M5.
-            is_transformed: false,
+            is_transformed: view.is_transformed(),
             attack_type: match view.attack_type() {
                 WeaponType::Bow => ReuseAttackType::Bow,
                 WeaponType::CrossBow => ReuseAttackType::Crossbow,
@@ -562,7 +569,10 @@ impl World {
 
     /// Java `Creature.canUseRangeWeapon()`.
     fn can_use_range_weapon(&mut self, id: ObjectId) -> bool {
-        // Transformations: M5 (they may always shoot).
+        // Transformations may always shoot.
+        if self.is_transformed(id) {
+            return true;
+        }
         let game_ticks = self.game_ticks();
         let disabled_until = self
             .combat

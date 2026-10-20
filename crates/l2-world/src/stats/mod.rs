@@ -27,8 +27,11 @@
 //   enter world (item and armor set skills while the items are equipped, then the learned
 //   skills, then the weight and grade penalties), NPCs from their template at spawn.
 //
-// Not here yet: effects other than passive stat functions (M5), transformations (hooks are
-// `None`), summons and pets.
+// - Transformations (`transform/`, M6-TRANS-01) hook in at `calc_stat` (the form's value is the
+//   start value), the attack range, base speeds, level modifier, attack type, collision and
+//   `FuncPDefMod`/`FuncMDefMod`.
+//
+// Not here yet: summons and pets.
 
 pub mod calculators;
 pub mod conditions;
