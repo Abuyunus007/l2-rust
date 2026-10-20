@@ -41,4 +41,9 @@
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Packets: `RelationChanged` and the user/char info fields exist; PvP has no new client packets.
+- Replace `pvp_flag_of` (`effects/control.rs:1050`, today a side-table placeholder) with the real flag state in `pvp.rs`; keep the function name so callers stay.
+- Replace the stubs `relation()` / `is_auto_attackable()` in `player_view.rs:151-157` and wire `combat/request.rs::is_auto_attackable_for` for players.
+- Your markers: `skills/cast.rs` 1547-1579 (flag on raid/champion, attacking own pet, non-offensive cast on flagged/karma players), `skills/targets.rs` 350/371 (karma/flag checks). Leave party/clan/duel/olympiad/summon markers to their cards.
+- PARTY-01 and TRADE-01 run at the same time. Touch only the lines above in `targets.rs`/`cast.rs`/`death.rs` to keep merges small.
+- `PvpFlagTaskManager` = a timer on the wheel per flagged player, not a thread.

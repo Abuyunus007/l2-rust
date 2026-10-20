@@ -41,4 +41,8 @@ Player-to-player trade: request/answer, both trade lists, lock/confirm, the item
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Packets are merged (GPROTO-09): client `TradeRequest`, `AnswerTradeRequest`, `AddTradeItem`, `TradeDone` (`l2_protocol_game::client::trade`); server `SendTradeRequest`, `TradeStart`, `TradeOwnAdd`, `TradeOtherAdd`, `TradeUpdate`, `TradeOtherDone`, `TradeDone` (`server::trade`). Dispatch arms exist; route them in `enter.rs`.
+- Write the transfer helper so STORE-01 (private stores, next card) can reuse it: `TradeList` with `TradeItem`s, `transfer_items(from, to, list)` doing Java's `TradeList.validate`/`doExchange` checks.
+- Split stacks take new object ids from the Rust id range (D-39); item rows written like Java's `Item.updateDatabase` (owner_id/count/loc changes) through the existing persistence queue.
+- Cancel on move/teleport/death/logout/attack exactly where Java calls `cancelActiveTrade`.
+- PVP-01 and PARTY-01 run at the same time; touch `leave.rs`/`death.rs` only to add the cancel call.

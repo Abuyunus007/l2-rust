@@ -40,4 +40,8 @@ Party invite/accept/leave/kick/leader change, loot distribution types, the party
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Packets are merged (GPROTO-09): client `RequestJoinParty`, `RequestAnswerJoinParty`, `RequestWithDrawalParty`, `RequestOustPartyMember`, `RequestChangePartyLeader` in `l2-protocol-game::client::party`; server `AskJoinParty`, `JoinParty`, `PartySmallWindow{All,Add,Delete,DeleteAll,Update}`, `PartyMemberPosition`, `PartyPetWindow*` in `l2_protocol_game::server::party` (`PartySpelled` is in `server::skills`). Dispatch arms exist in `dispatch.rs`; route them in `enter.rs`.
+- Party state: `World` side table `parties: HashMap<PartyId, Party>` + `party_of(ObjectId) -> Option<PartyId>`; the pending invite (`setActiveRequester`, 15 s `REQUEST_TIMEOUT`) is a timer on the wheel.
+- Your markers: party lines in `skills/targets.rs` (358, 744, 843, 965, 1025, 1185, 1196, 1208, 1214, 1285) and `effects/handlers/misc_damage.rs:74` (HP rebalance). Summon parts of those lines stay `// M6:` for SUMMON-01; command channel stays a marker (no CC yet).
+- Rewards: `distributeXpAndSp` hooks into the rewards module where M4 gives solo exp; party drop distribution into M4-DROP-01's pickup/auto-loot path; party sweep into SPOIL-01.
+- PVP-01 and TRADE-01 run at the same time. Keep edits in shared files (`targets.rs`, `cast.rs`, `death.rs`, `leave.rs`) to your lines.
