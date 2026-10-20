@@ -52,6 +52,8 @@ use crate::player::ItemData;
 pub const REQUEST_TIMEOUT: i32 = 15;
 /// Java `GameTimeTaskManager.TICKS_PER_SECOND`.
 pub(crate) const GAME_TICKS_PER_SECOND: i32 = 10;
+/// [`GAME_TICKS_PER_SECOND`] as a `long`.
+pub(crate) const GAME_TICKS_PER_SECOND_I64: i64 = 10;
 /// Java `BotReportTable.TRADE_ACTION_BLOCK_ID`.
 pub(crate) const TRADE_ACTION_BLOCK_ID: i32 = -2;
 /// `TradeRequest`: the farthest two players may stand apart (`calculateDistance3D(partner) > 150`)

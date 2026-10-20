@@ -359,6 +359,8 @@ pub struct WorldSettings {
     pub learn: crate::skills::learn::LearnSettings,
     /// The values casting reads (M5-CAST-01).
     pub cast: crate::skills::cast::CastSettings,
+    /// The values parties read (M6-PARTY-01).
+    pub party: crate::party::PartySettings,
     /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
     pub pvp: crate::pvp::PvpSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
@@ -413,6 +415,7 @@ impl Default for WorldSettings {
             effects: crate::effects::EffectSettings::default(),
             learn: crate::skills::learn::LearnSettings::default(),
             cast: crate::skills::cast::CastSettings::default(),
+            party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
             daily_reset_database_writes: false,
         }

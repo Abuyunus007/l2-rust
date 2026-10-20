@@ -54,7 +54,6 @@ enum NotModelled {
     Category,
     CanAction,
     TargetNpcType,
-    MyPartyExceptMe,
     GameChance,
     Behind,
     Front,
@@ -281,9 +280,17 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             let level = t.level();
             level >= levels[0] && level <= levels[1]
         }),
-        Condition::TargetMyPartyExceptMe { .. } => {
-            // Java also sends the player a system message from here; parties are M5.
-            not_modelled(NotModelled::MyPartyExceptMe, "target myPartyExceptMe (parties)")
+        Condition::TargetMyPartyExceptMe { value } => {
+            // The effector is a player, the target another player of its party.
+            // FOLLOW-UP: Java also sends the effector `YOU_CANNOT_USE_THIS_ON_YOURSELF` or
+            // `S1_CANNOT_BE_USED_DUE_TO_UNSUITABLE_TERMS` from here; a condition cannot send.
+            let is_party_member = a.is_player()
+                && target(env).is_some_and(|t| {
+                    t.is_player()
+                        && t.object_id() != a.object_id()
+                        && a.world().is_in_party_with(a.object_id(), t.object_id())
+                });
+            *value == is_party_member
         }
         Condition::TargetPlayable => target(env).is_some_and(|t| t.is_player()),
         Condition::TargetClassIdRestriction { class_ids } => target(env)

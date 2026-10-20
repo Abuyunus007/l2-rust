@@ -103,6 +103,8 @@ pub enum TimerKind {
     Cast(crate::skills::cast::CastTimer),
     /// Sitting, standing, charges, souls and the fear of an NPC, see `effects/control.rs`.
     Control(crate::effects::control::ControlTimer),
+    /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
+    PartyPosition(crate::party::PartyId),
     /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
     /// see `punishments.rs`.
     Punishment(crate::punishments::PunishmentTimer),

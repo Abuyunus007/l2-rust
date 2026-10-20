@@ -141,6 +141,17 @@ pub enum ClientInput {
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
+    /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
+    /// of the packet (the world checks it).
+    JoinParty { name: String, distribution_type_id: i32 },
+    /// Java `RequestAnswerJoinParty`: 1 accept, 0 decline, -1 the client refuses party requests.
+    AnswerJoinParty { response: i32 },
+    /// Java `RequestWithDrawalParty`: leave the party.
+    WithdrawParty,
+    /// Java `RequestOustPartyMember`: the leader expels `name`.
+    OustPartyMember { name: String },
+    /// Java `RequestChangePartyLeader`: the leader hands the party to `name`.
+    ChangePartyLeader { name: String },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

@@ -26,8 +26,8 @@
 //
 // # Relations
 // [`relation_mask`] is `Player.getRelation` over plain inputs ([`RelationInput`]); the world fills
-// the inputs from what exists. Parties, clans, wars and sieges are other cards: until they exist
-// their inputs are empty (`// M6-PARTY:`, `// M6-CLAN:`, `// M7:` in [`World::relation_input`]),
+// the inputs from what exists. Clans, wars and sieges are other cards: until they exist their
+// inputs are empty (`// M6-CLAN:`, `// M7:` in [`World::relation_input`]),
 // so those bits stay 0 and the card that adds the state only has to fill the input.
 
 use std::collections::HashMap;
@@ -686,13 +686,21 @@ impl World {
     }
 
     /// The inputs of [`relation_mask`] from the world.
-    fn relation_input(&self, _subject: ObjectId, _viewer: ObjectId) -> RelationInput {
-        // M6-PARTY: `party_index` (the subject's index in the party it shares with the viewer).
+    fn relation_input(&self, subject: ObjectId, viewer: ObjectId) -> RelationInput {
+        // `getParty() == target.getParty()`: the subject's place in the party it shares with the
+        // viewer.
+        let party_index = self
+            .party_of(subject)
+            .filter(|party| Some(*party) == self.party_of(viewer))
+            .and_then(|party| self.party_members(party).iter().position(|m| *m == subject));
         // M6-CLAN: `has_clan`, `same_clan`, `has_ally`, `is_clan_leader` and, with M6-CLAN-02, the
         //          war between the clans.
         // M7: `siege_state`, `siege_state_differs` and the territory wars.
         // The Handy's Block Checker arena (an event) adds INSIEGE/ENEMY/ALLY/ATTACKER: M8.
-        RelationInput::default()
+        RelationInput {
+            party_index,
+            ..RelationInput::default()
+        }
     }
 
     /// Java `Player.isAutoAttackable(attacker)`: can `attacker` (a player or an NPC) hit the player
@@ -720,8 +728,11 @@ impl World {
         }
         let attacker_is_player = self.players.contains_key(&attacker);
         // M6-DUEL: both in the same duel, which is still going on (`DUELSTATE_DUELLING`).
-        // M6-PARTY: the attacker is in the subject's party (party checks go before the olympiad
-        //           ones, so party members do not auto attack in the olympiad).
+        // The attacker is in the subject's party (party checks go before the olympiad ones, so
+        // party members do not auto attack in the olympiad).
+        if self.is_in_party_with(subject, attacker) {
+            return false;
+        }
         // M8: the attacker is in the olympiad (`isInOlympiadMode`) and the game started.
         // Events (`isOnEvent`): not modelled.
         // Check if the attacker is a Playable.

@@ -143,8 +143,8 @@ impl World {
         let mut new_target = new_target;
 
         if let Some(target) = new_target {
-            // FOLLOW-UP(M5): a party member is exempt from both checks (`isInParty`).
-            let in_party = false;
+            // A member of the player's own party is exempt from both checks.
+            let in_party = self.is_in_party_with(id, target);
             // Prevents /target exploiting.
             if !in_party
                 && self

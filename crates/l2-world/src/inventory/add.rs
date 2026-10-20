@@ -409,13 +409,9 @@ impl World {
     }
 
     /// Java `Player.doAutoLoot(target, itemId, itemCount)`: the loot goes straight into the killer's
-    /// inventory (a party shares it: M5).
-    pub(crate) fn do_auto_loot(&mut self, player: ObjectId, _npc: ObjectId, item_id: i32, count: i64) {
-        if item_id == ADENA_ID {
-            self.add_adena(player, count, true);
-        } else {
-            self.add_item(player, item_id, count, true);
-        }
+    /// inventory, or is shared by the party (`party/loot.rs`).
+    pub(crate) fn do_auto_loot(&mut self, player: ObjectId, npc: ObjectId, item_id: i32, count: i64) {
+        self.do_auto_loot_for(player, npc, item_id, count);
     }
 
     // ------------------------------------------------------------------ dropping

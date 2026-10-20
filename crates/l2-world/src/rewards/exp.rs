@@ -21,8 +21,9 @@
 //     `add_sp`        PlayerStat.addSp         (the SP StatusUpdate)
 //
 // # What is left out, with the system that brings it
-// - Parties (`distributeXpAndSp`, `RatePartyXp`): there are no parties yet. Every damage dealer is
-//   rewarded alone, which is Java's branch for a player without a party.
+// - Parties: `reward_party_share` is the party branch of `calculateRewards`;
+//   `Party.distributeXpAndSp` itself is `party/rewards.rs` (M6-PARTY-01). The command channel's
+//   members and level are missing, and the servitor penalty.
 // - PC cafe points (`PcCafePointsManager`). Vitality and Nevit are in `vitality.rs` and `nevit.rs`
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
@@ -288,8 +289,18 @@ impl World {
         }
 
         // `getMustRewardExpSP()` is true unless a script switched it off (D-05).
-        // Party shares: no parties yet (see the module comment).
-        for (attacker, damage) in rewards {
+        // Java walks `rewards.values()` while a party's pass removes its members from the map, so
+        // a member who was already rewarded with its party is not visited again.
+        let order = rewards.clone();
+        for (attacker, damage) in order {
+            if !rewards.iter().any(|(who, _)| *who == attacker) {
+                continue;
+            }
+            // If there's a party in progress: share with its members.
+            if let Some(party) = self.party_of(attacker) {
+                self.reward_party_share(dying, party, at, total_damage, &mut rewards);
+                continue;
+            }
             // Penalty applied to the attacker's XP by a servitor: none without summons.
             if !self.is_in_surrounding_region(dying, attacker) {
                 continue;
@@ -319,6 +330,69 @@ impl World {
                 self.update_vitality_points(attacker, points, true, false);
                 // `PcCafePointsManager.givePcCafePoint`: see the module comment.
             }
+        }
+    }
+
+    /// The party branch of `Attackable.calculateRewards` for the party of one attacker: the
+    /// members in range are rewarded together by `Party.distributeXpAndSp`, and their entries
+    /// leave `rewards`.
+    fn reward_party_share(
+        &mut self,
+        dying: ObjectId,
+        party: crate::party::PartyId,
+        at: (i32, i32, i32),
+        total_damage: i64,
+        rewards: &mut Vec<(ObjectId, i64)>,
+    ) {
+        let range = f64::from(self.settings.exp.alt_party_range);
+        // Share with party members.
+        let mut party_damage: i64 = 0;
+        let mut party_level = 0;
+        // Get all Creature that can be rewarded in the party.
+        let mut rewarded_members: Vec<ObjectId> = Vec::new();
+        // Go through all Player in the party. (The command channel's members would be these when
+        // the party is in one: no command channels yet.)
+        for member in self.party_members(party) {
+            if self.is_dead(member) {
+                continue;
+            }
+            let near = self
+                .position_of(member)
+                .is_some_and(|p| distance_3d(at, p) < range);
+            let level = self.core_of(member).map_or(0, |c| c.level);
+            // Get the RewardInfo of this Player from the Attackable rewards.
+            if let Some(index) = rewards.iter().position(|(who, _)| *who == member) {
+                // If the Player is in the Attackable rewards add its damages to party damages.
+                if near {
+                    party_damage = party_damage.wrapping_add(rewards[index].1);
+                    rewarded_members.push(member);
+                    party_level = party_level.max(level);
+                }
+                // Remove the Player from the Attackable rewards.
+                rewards.remove(index);
+            } else if near {
+                rewarded_members.push(member);
+                party_level = party_level.max(level);
+            }
+        }
+
+        // If the party didn't killed this Attackable alone.
+        let party_mul = if party_damage < total_damage {
+            party_damage as f64 / total_damage as f64
+        } else {
+            1.0
+        };
+        // Calculate Exp and SP rewards.
+        // NOTE(java-quirk): `calculateExpAndSp` already takes `partyDmg / totalDamage` of the
+        // reward, and `partyMul` takes the same share once more.
+        let (mut exp, mut sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
+        // Champions and the over-hit bonus: see the module comment.
+        exp *= party_mul;
+        sp *= party_mul;
+        // Distribute Experience and SP rewards to Player Party members in the known area of the
+        // last attacker.
+        if party_damage > 0 {
+            self.party_distribute_xp_and_sp(exp, sp, &rewarded_members, party_level, party_damage, dying);
         }
     }
 
@@ -721,7 +795,9 @@ impl World {
 
         // Transformations: the additional skills of the new level (`Transform.onLevelUp`).
         self.transformation_level_up(id);
-        // Clan member list, the party level, transformations, the pet's level: not modelled.
+        // The party level.
+        self.recalculate_party_level_of(id);
+        // Clan member list, the pet's level: not modelled.
         let (level, max_cp, max_hp, max_mp) = match (self.core_of(id), self.stats(id)) {
             (Some(core), Some(view)) => (core.level, view.max_cp(), view.max_hp(), view.max_mp()),
             _ => return level_increased,
