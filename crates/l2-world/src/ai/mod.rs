@@ -25,8 +25,8 @@
 //   `Npc::movement`.
 //
 // # Left out
-// - Skills in the NPC AI (`AISkillScope`), scripts reacting to AI events: M5 / D-05, see
-//   `attackable.rs`.
+// - Scripts reacting to AI events: D-05, see `attackable.rs`. The NPC's skill use
+//   (`AISkillScope`) is `npc_skills.rs` (M5-AI-03).
 // - `NextAction` (callbacks run on AI events): only the client packets of skills and pick up set
 //   one (M5); nothing in M4 does.
 // - The follow intention of a player (M6 summons and party follow).
@@ -34,6 +34,7 @@
 pub mod attackable;
 pub mod idle;
 pub mod npc;
+pub mod npc_skills;
 pub mod player;
 
 use std::collections::HashMap;
@@ -545,6 +546,10 @@ impl World {
         let Some(template) = table.get(skill.id, skill.level) else {
             return;
         };
+        // AttackableAI.setIntentionCast: the target first.
+        if self.is_attackable_npc(id) {
+            self.attackable_before_intention_cast(id, target);
+        }
         // Forget next if it's not cast or it's cast and skill is toggle.
         if self.is_player(id) && !template.is_toggle() && self.intention_of(id) != Intention::Cast {
             // New non-toggle cast: remember the current intention.
@@ -584,6 +589,10 @@ impl World {
         } else {
             self.change_intention_to_cast(id, skill, target);
         }
+        // AttackableAI.setIntentionCast: the think task after.
+        if self.is_attackable_npc(id) {
+            self.start_ai_task(id);
+        }
     }
 
     /// Java `CreatureAI.changeIntentionToCast(skill, target)`.
@@ -608,6 +617,8 @@ impl World {
     /// Java `notifyActionFinishCasting()`: `PlayerAI` goes back to what the player did before
     /// the cast (or idle). `NextAction` callbacks are not ported.
     pub fn notify_action_finish_casting(&mut self, id: ObjectId) {
+        // `AttackableAI`: a finished cast keeps the fight alive.
+        self.attackable_finish_casting(id);
         if self.is_player(id) && self.intention_of(id) == Intention::Cast {
             // Run interrupted or next intention.
             match self.next_intention(id) {
