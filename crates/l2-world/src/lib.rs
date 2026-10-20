@@ -68,7 +68,7 @@ pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use effects::apply::ApplyMode;
 pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
-    SkillFinishType, SkillKey, effect_flag,
+    SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
@@ -89,6 +89,7 @@ pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
+pub use skills::learn::LearnSettings;
 pub use snapshot::snapshot_for_store;
 pub use stats::{
     BaseStat, BaseStatBonus, CalcSkill, Calculators, ClassBalance, FuncOwner, StatData, StatSettings,

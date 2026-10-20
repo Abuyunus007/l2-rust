@@ -65,9 +65,18 @@ impl EffectHandler for EnemyCharge {
         let y = cur_y.wrapping_add(((distance - f64::from(offset)) * sin) as i32);
         let z = target_z;
         let instance = world.objects.get(&effector).map_or(0, |e| e.instance_id);
-        let destination =
-            world.geo_valid_location(Location::new(cur_x, cur_y, cur_z), Location::new(x, y, z), instance);
-        world.fly_to_location(effector, destination.x, destination.y, destination.z, FlyType::Charge);
+        let destination = world.geo_valid_location(
+            Location::new(cur_x, cur_y, cur_z),
+            Location::new(x, y, z),
+            instance,
+        );
+        world.fly_to_location(
+            effector,
+            destination.x,
+            destination.y,
+            destination.z,
+            FlyType::Charge,
+        );
         world.set_xyz(effector, destination.x, destination.y, destination.z);
         if let Some((px, py, pz)) = world.position_of(effector) {
             let heading = world.heading_of(effector);

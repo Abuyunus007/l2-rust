@@ -15,7 +15,7 @@ use l2_util::ObjectId;
 use crate::enter::build_user_info;
 
 /// Java `AbnormalVisualEffect.STEALTH.getMask()`.
-const STEALTH_MASK: i32 = 0x0010_0000;
+pub(crate) const STEALTH_MASK: i32 = 0x0010_0000;
 use crate::world::World;
 
 impl World {
@@ -29,7 +29,7 @@ impl World {
             viewer,
             &ExBrExtraUserInfo {
                 object_id: subject.0,
-                abnormal_visual_effects_event: 0,
+                abnormal_visual_effects_event: self.abnormal_visual_effects(subject).2,
                 lecture_mark: 1,
             },
         );
@@ -47,7 +47,7 @@ impl World {
                 relation,
                 auto_attackable,
                 karma: player.data.karma,
-                pvp_flag: 0,
+                pvp_flag: self.pvp_flag_of(subject),
             };
             self.send(viewer, &RelationChanged::single(entry));
         }
@@ -59,6 +59,9 @@ impl World {
         let ui = build_user_info(self, player);
         let invisible = self.objects.get(&subject).is_some_and(|e| e.invisible);
         let gm_sees_invisible = invisible && self.is_visible_for(subject, viewer);
+        // `Creature.getAbnormalVisualEffects()` and the special mask, without the stealth bit
+        // `UserInfo` adds for an invisible player.
+        let (visual_effects, visual_effects_special, _) = self.abnormal_visual_effects(subject);
         Some(CharInfo {
             x: ui.x,
             y: ui.y,
@@ -100,7 +103,7 @@ impl World {
             clan_crest_id: ui.clan_crest_id,
             ally_id: ui.ally_id,
             ally_crest_id: ui.ally_crest_id,
-            sitting: false,
+            sitting: self.is_sitting(subject),
             running: ui.running,
             in_combat: false,
             // Java: `!_player.isInOlympiadMode() && _player.isAlikeDead()`.
@@ -113,9 +116,9 @@ impl World {
             in_party_match_room: ui.in_party_match_room,
             // Java: a GM viewer gets `AbnormalVisualEffect.STEALTH` on top.
             abnormal_visual_effects: if gm_sees_invisible {
-                ui.abnormal_visual_effects | STEALTH_MASK
+                visual_effects | STEALTH_MASK
             } else {
-                ui.abnormal_visual_effects
+                visual_effects
             },
             water_or_flying: ui.water_or_flying,
             recom_have: ui.recom_have,
@@ -139,7 +142,7 @@ impl World {
             clan_reputation_score: 0,
             transformation_display_id: ui.transformation_display_id,
             agathion_id: 0,
-            abnormal_visual_effect_special: 0,
+            abnormal_visual_effect_special: visual_effects_special,
         })
     }
 

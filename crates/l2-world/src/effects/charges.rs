@@ -33,7 +33,10 @@ impl World {
             return;
         }
         if self.charges_of(id) >= max {
-            self.send(id, &SystemMessage::new(SystemMessageId::YourForceHasReachedMaximumCapacity));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourForceHasReachedMaximumCapacity),
+            );
             return;
         }
         // Charge clear task should be reset every time a charge is increased.
@@ -46,7 +49,10 @@ impl World {
             if let Some(c) = self.control_mut(id) {
                 c.charges = max;
             }
-            self.send(id, &SystemMessage::new(SystemMessageId::YourForceHasReachedMaximumCapacity));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourForceHasReachedMaximumCapacity),
+            );
         } else {
             self.send(
                 id,
@@ -99,7 +105,11 @@ impl World {
 
     /// Java `Player.stopChargeTask()`.
     pub fn stop_charge_task(&mut self, id: ObjectId) {
-        let timer = self.effects.control.get_mut(&id).and_then(|c| c.charge_timer.take());
+        let timer = self
+            .effects
+            .control
+            .get_mut(&id)
+            .and_then(|c| c.charge_timer.take());
         if let Some(timer) = timer {
             self.timers.cancel(timer);
         }
@@ -162,7 +172,11 @@ impl World {
 
     /// Java `Player.stopSoulTask()`.
     pub fn stop_soul_task(&mut self, id: ObjectId) {
-        let timer = self.effects.control.get_mut(&id).and_then(|c| c.soul_timer.take());
+        let timer = self
+            .effects
+            .control
+            .get_mut(&id)
+            .and_then(|c| c.soul_timer.take());
         if let Some(timer) = timer {
             self.timers.cancel(timer);
         }

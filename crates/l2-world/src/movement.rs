@@ -573,8 +573,11 @@ impl World {
         // NOTE: Java's `getTeleMode()` (the admin "//tele" click-to-teleport mode) is not ported;
         // it belongs to the admin commands.
 
-        // Can't move if character is confused (`isOutOfControl`): confusion and fear are not
-        // modelled yet.
+        // Can't move if character is confused (`isOutOfControl`).
+        if self.is_out_of_control(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Can't move if character is trying to move a huge distance.
         let (px, py) = self.position_of(id).map_or((px, py), |(x, y, _)| (x, y));
@@ -1758,7 +1761,7 @@ impl World {
 
     /// Java `Creature.isMovementDisabled()`: stunned, rooted, asleep, overloaded, paralyzed,
     /// immobilized, (alike) dead or teleporting.
-    pub(crate) fn is_movement_disabled(&self, id: ObjectId) -> bool {
+    pub fn is_movement_disabled(&self, id: ObjectId) -> bool {
         if self.is_stunned(id)
             || self.is_rooted(id)
             || self.is_sleeping(id)

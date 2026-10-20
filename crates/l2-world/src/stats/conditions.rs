@@ -241,7 +241,9 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
                 // `Monster.isAggressive()`: the template flag, unless a PASSIVE effect.
                 Some(npc) if npc.class.is_monster() => {
                     (t.npc_template().is_some_and(|tpl| tpl.is_aggressive)
-                        && !a.world().is_affected(t.object_id(), crate::effects::effect_flag::PASSIVE))
+                        && !a
+                            .world()
+                            .is_affected(t.object_id(), crate::effects::effect_flag::PASSIVE))
                         == *is_aggro
                 }
                 Some(_) => false,

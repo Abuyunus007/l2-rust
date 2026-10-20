@@ -52,7 +52,9 @@ impl EffectHandler for Relax {
         if world.is_player(effected) && !world.is_sitting(effected) {
             return false;
         }
-        let (hp, mp) = world.core_of(effected).map_or((0.0, 0.0), |c| (c.cur_hp, c.cur_mp));
+        let (hp, mp) = world
+            .core_of(effected)
+            .map_or((0.0, 0.0), |c| (c.cur_hp, c.cur_mp));
         let max_hp = world.stats(effected).map_or(0, |v| v.max_recoverable_hp());
         if (hp + 1.0) > f64::from(max_hp) && cx.skill.is_toggle() {
             world.send(

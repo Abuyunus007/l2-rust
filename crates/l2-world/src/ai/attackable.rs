@@ -482,7 +482,9 @@ impl World {
         }
         // A player in silent move is not seen by the monsters that cannot see through it (only
         // scripts make an NPC see through, and a raid boss always does).
-        if is_player && !self.is_raid_or_minion(me) && self.is_affected(target, crate::effects::effect_flag::SILENT_MOVE)
+        if is_player
+            && !self.is_raid_or_minion(me)
+            && self.is_affected(target, crate::effects::effect_flag::SILENT_MOVE)
         {
             return false;
         }
@@ -826,6 +828,11 @@ impl World {
 
     /// Java `AttackableAI.thinkAttack()`.
     fn attackable_think_attack(&mut self, id: ObjectId) {
+        // `DistrustAI`: the monster fights the creature it was turned against.
+        if let Some(forced) = self.control(id).and_then(|c| c.distrust) {
+            self.distrust_think_attack(id, forced);
+            return;
+        }
         // M5: `npc.isCastingNow()` returns here.
         let settings = self.ai.attackable.settings.clone();
         let Some(class) = self.npcs.get(&id).map(|n| n.class) else {

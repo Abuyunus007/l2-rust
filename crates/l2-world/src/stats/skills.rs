@@ -85,7 +85,9 @@ impl<'w> StatView<'w> {
 
     /// `PlayerStat._cloakSlot`: set by an `EnableCloak` passive effect.
     pub(crate) fn cloak_slot(&self) -> bool {
-        self.world().control(self.object_id()).is_some_and(|c| c.cloak_slot)
+        self.world()
+            .control(self.object_id())
+            .is_some_and(|c| c.cloak_slot)
     }
 
     /// `PlayerStat.getTalismanSlots()`: the `slots` of every `TalismanSlot` passive effect.
@@ -93,7 +95,9 @@ impl<'w> StatView<'w> {
         if !self.is_player() {
             return 0;
         }
-        self.world().control(self.object_id()).map_or(0, |c| c.talisman_slots)
+        self.world()
+            .control(self.object_id())
+            .map_or(0, |c| c.talisman_slots)
     }
 
     /// `Player._expertisePenaltyBonus`: the `grade` of the `CrystalGradeModify` effect.

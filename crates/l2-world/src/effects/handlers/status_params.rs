@@ -17,9 +17,7 @@ pub(super) fn int_or(template: &EffectTemplate, key: &str, default: i32) -> Resu
 pub(super) fn double_or(template: &EffectTemplate, key: &str, default: f64) -> Result<f64, String> {
     match template.param(key) {
         None => Ok(default),
-        Some(text) => {
-            parse_double(text).ok_or_else(|| format!("Double value required, but found: {text}"))
-        }
+        Some(text) => parse_double(text).ok_or_else(|| format!("Double value required, but found: {text}")),
     }
 }
 

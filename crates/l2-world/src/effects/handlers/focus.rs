@@ -68,9 +68,9 @@ impl EffectHandler for FocusMaxEnergy {
         if !world.is_player(player) {
             return;
         }
-        let (sonic, focus) = world
-            .stats(player)
-            .map_or((0, 0), |v| (v.skill_level(SONIC_MASTERY), v.skill_level(FOCUS_MASTERY)));
+        let (sonic, focus) = world.stats(player).map_or((0, 0), |v| {
+            (v.skill_level(SONIC_MASTERY), v.skill_level(FOCUS_MASTERY))
+        });
         let max_charge = if sonic > 0 {
             sonic
         } else if focus > 0 {
@@ -114,7 +114,11 @@ impl EffectHandler for FocusSouls {
             let amount = self.charge;
             let charged = world.charged_souls_of(target);
             if charged < max {
-                let count = if charged + amount <= max { amount } else { max - charged };
+                let count = if charged + amount <= max {
+                    amount
+                } else {
+                    max - charged
+                };
                 world.increase_souls(target, count);
             } else {
                 world.send(

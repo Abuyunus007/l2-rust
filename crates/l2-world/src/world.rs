@@ -18,7 +18,6 @@ use crate::objects::{Npc, ObjectEntry, ObjectKind};
 use crate::outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 use crate::player::{OnlinePlayer, Player, PlayerData};
 use crate::region::RegionGrid;
-use crate::snapshot::snapshot_for_store;
 use crate::status::{CreatureStatus, RegenSettings, STATUS_SWEEP_TICKS};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 
@@ -441,6 +440,17 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            ClientInput::AcquireSkillInfo {
+                id: skill_id,
+                level,
+                skill_type,
+            } => self.on_request_acquire_skill_info(id, skill_id, level, skill_type),
+            ClientInput::AcquireSkill {
+                id: skill_id,
+                level,
+                skill_type,
+                ..
+            } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -456,8 +466,7 @@ impl World {
             TimerKind::Autosave(id) => {
                 // Java `autoSave`: `storeRecommendations(false)`, written with the same snapshot.
                 self.nevit_on_autosave(id);
-                if let Some(player) = self.players.get(&id) {
-                    let snapshot = snapshot_for_store(player, self.tick);
+                if let Some(snapshot) = self.store_snapshot(id) {
                     self.outbox
                         .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
                     self.schedule_autosave(id);

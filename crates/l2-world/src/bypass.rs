@@ -2,7 +2,7 @@
 //! registry they go through.
 // Java: network/clientpackets/{RequestBypassToServer,RequestLinkHtml}.java
 // Java: handler/BypassHandler.java (the registry: first word, lower case)
-// Java: dist/game/data/scripts/handlers/bypass/npc/{Link,ChatLink}.java
+// Java: dist/game/data/scripts/handlers/bypass/npc/{Link,ChatLink,SkillList}.java
 // Java: entity/actor/Npc.java (onBypassFeedback)
 // Java: util/LocationUtil.java (isInsideRangeOfObjectId)
 //
@@ -62,11 +62,13 @@ impl BypassHandlers {
 }
 
 impl Default for BypassHandlers {
-    /// The handlers the dialog flow needs: `Link` and `Chat`.
+    /// The handlers the dialog flow needs: `Link`, `Chat` and `SkillList`.
     fn default() -> Self {
         let mut handlers = Self::empty();
         handlers.register("Link", link_handler);
         handlers.register("Chat", chat_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/SkillList.java
+        handlers.register("SkillList", crate::skills::learn::skill_list_handler);
         handlers
     }
 }

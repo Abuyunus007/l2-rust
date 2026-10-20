@@ -6,8 +6,8 @@
 // the alphabetical order of `EffectMasterHandler.EFFECTS`. See `effects/registry.rs` for the
 // pattern; `buff.rs` is the reference handler.
 
-mod buff;
 mod block;
+mod buff;
 mod confuse;
 mod disarm;
 mod distrust;

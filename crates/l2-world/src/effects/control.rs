@@ -22,12 +22,14 @@ use std::collections::HashMap;
 
 use l2_data::skill::AbnormalVisualEffect;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{AutoAttackStop, ChangeMoveType, ChangeWaitType, DeleteObject, Revive, SystemMessage};
+use l2_protocol_game::server::{
+    AutoAttackStop, ChangeMoveType, ChangeWaitType, DeleteObject, Revive, SystemMessage,
+};
 use l2_util::ObjectId;
 
 use super::registry::{EffectType, effect_flag};
-use crate::formulas::Rnd;
 use super::traits::TraitStats;
+use crate::formulas::Rnd;
 use crate::movement::{Intention, heading_to_degree};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
@@ -343,7 +345,11 @@ impl World {
         let blocked = self
             .effect_list(id)
             .and_then(|l| l.info_by_abnormal_type(AbnormalType::BotPenalty))
-            .is_some_and(|info| info.effects().iter().any(|e| !e.handler.check_condition(action_block_id)));
+            .is_some_and(|info| {
+                info.effects()
+                    .iter()
+                    .any(|e| !e.handler.check_condition(action_block_id))
+            });
         if blocked {
             self.send(
                 id,
@@ -369,6 +375,97 @@ impl World {
         let blessed = |id| self.is_affected(id, effect_flag::PROTECTION_BLESSING);
         (blessed(target) && p.core.level - t.core.level >= 10 && p.data.karma > 0)
             || (blessed(player) && t.core.level - p.core.level >= 10 && t.data.karma > 0)
+    }
+
+    /// Java `getStat().getAttackTrait(type)`.
+    pub fn attack_trait(&self, id: ObjectId, t: l2_data::skill::TraitType) -> f32 {
+        self.control(id).map_or(1.0, |c| c.traits.attack_trait(t))
+    }
+
+    /// Java `getStat().getDefenceTrait(type)`.
+    pub fn defence_trait(&self, id: ObjectId, t: l2_data::skill::TraitType) -> f32 {
+        self.control(id).map_or(1.0, |c| c.traits.defence_trait(t))
+    }
+
+    /// Java `getStat().isTraitInvul(type)`.
+    pub fn is_trait_invul(&self, id: ObjectId, t: l2_data::skill::TraitType) -> bool {
+        self.control(id).is_some_and(|c| c.traits.is_trait_invul(t))
+    }
+
+    /// The creature a `Distrust`ed monster is forced to fight (`DistrustAI._forcedTarget`).
+    pub fn distrust_target(&self, id: ObjectId) -> Option<ObjectId> {
+        self.control(id).and_then(|c| c.distrust)
+    }
+
+    /// `AttackableAI._fearTime`.
+    pub fn fear_time(&self, id: ObjectId) -> i32 {
+        self.control(id).and_then(|c| c.fear).map_or(0, |f| f.time)
+    }
+
+    /// `getFirstEffect(type) != null`.
+    pub(crate) fn is_affected_by_effect_type(&self, id: ObjectId, effect_type: EffectType) -> bool {
+        self.effect_list(id)
+            .is_some_and(|l| l.first_effect(effect_type).is_some())
+    }
+
+    /// `SoulEating.onExperienceReceived`, for every `SoulEating` effect of the player: a soul for
+    /// an experience gain of at least `expNeeded`.
+    pub(crate) fn soul_eating_on_exp_changed(&mut self, id: ObjectId, exp: i64) {
+        let needed: Vec<i32> = match self.control(id) {
+            Some(c) if !c.soul_eating.is_empty() => c.soul_eating.iter().map(|(_, n)| *n).collect(),
+            _ => return,
+        };
+        for exp_needed in needed {
+            if !self.is_player(id) || exp < i64::from(exp_needed) {
+                continue;
+            }
+            let max_souls = self
+                .stats(id)
+                .map_or(0, |v| v.calc(crate::stats::Stat::MaxSouls, 0.0) as i32);
+            if self.charged_souls_of(id) >= max_souls {
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::SoulCannotBeAbsorbedAnymore),
+                );
+                continue;
+            }
+            self.increase_souls(id, 1);
+            if let Some(npc) = self.target_of(id).filter(|t| self.npcs.contains_key(t)) {
+                self.broadcast_creature_packet(
+                    id,
+                    &l2_protocol_game::server::ExSpawnEmitter {
+                        player_object_id: id.0,
+                        npc_object_id: npc.0,
+                    },
+                );
+            }
+        }
+    }
+
+    /// `DistrustAI.thinkAttack()`: the monster attacks the creature it was forced onto, or goes
+    /// back to being active when that is dead.
+    pub(crate) fn distrust_think_attack(&mut self, id: ObjectId, forced: ObjectId) {
+        if !self.objects.contains_key(&forced) || self.is_dead(forced) {
+            self.set_creature_target(id, None);
+            self.set_intention_active(id);
+            return;
+        }
+        self.set_creature_target(id, Some(forced));
+        self.set_intention_attack(id, forced);
+        let range =
+            self.stats(id).map_or(0, |s| s.physical_attack_range()) + self.collision_radius_of(forced);
+        let distance = match (self.position_of(id), self.position_of(forced)) {
+            (Some(a), Some(b)) => crate::target::distance_3d(a, b),
+            _ => f64::MAX,
+        };
+        if distance > f64::from(range) {
+            self.move_to_pawn(id, forced, range);
+            return;
+        }
+        if !self.can_see_target(id, forced) {
+            return;
+        }
+        self.do_attack(id, forced);
     }
 
     /// Java `Player.isChatBanned()` for the bans effects start.
@@ -644,7 +741,7 @@ impl World {
 
     /// Java `Creature.notifyDamageReceived(damage, ...)`: an auto attack makes a fake dead player
     /// stand up (script events: D-05).
-    pub(crate) fn notify_damage_received(&mut self, id: ObjectId, damage: f64) {
+    pub fn notify_damage_received(&mut self, id: ObjectId, damage: f64) {
         if self.is_fake_death(id) && self.settings.effects.fake_death_damage_stand && damage > 0.0 {
             self.stop_fake_death(id, true);
         }
@@ -996,6 +1093,9 @@ impl World {
 
     /// "Your skill was deactivated due to lack of MP." for the toggles that ran dry.
     pub(crate) fn send_lack_of_mp(&self, id: ObjectId) {
-        self.send(id, &SystemMessage::new(SystemMessageId::YourSkillWasDeactivatedDueToLackOfMp));
+        self.send(
+            id,
+            &SystemMessage::new(SystemMessageId::YourSkillWasDeactivatedDueToLackOfMp),
+        );
     }
 }

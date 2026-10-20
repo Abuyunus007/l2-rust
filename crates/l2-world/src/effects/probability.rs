@@ -30,7 +30,8 @@ impl World {
         };
         let (attack_attribute, defence_attribute) = if skill.element != -1 {
             (
-                a.attack_element_value(skill.element).wrapping_add(skill.element_power),
+                a.attack_element_value(skill.element)
+                    .wrapping_add(skill.element_power),
                 t.defense_element_value(skill.element),
             )
         } else {

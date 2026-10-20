@@ -246,15 +246,15 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-EFFECT-01](M5/M5-EFFECT-01.md) | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 (icons only) | merged |
 | [M5-CAST-01](M5/M5-CAST-01.md) | Casting | opus | full | EFFECT-01, FORM-02 | in-progress |
 | [M5-TARGET-01](M5/M5-TARGET-01.md) | The 34 target handlers | sonnet | full | none (CAST-01 calls it) | merged |
-| [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | ready (refined when deps merge) |
+| [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | in-progress |
 | [M5-EFX-02](M5/M5-EFX-02.md) | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | in-progress |
 | [M5-EFX-03](M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | in-progress |
 | [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | ready (refined when deps merge) |
 | [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | ready (refined when deps merge) |
 | [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | haiku | spot | EFX-03 | ready (refined when deps merge) |
 | [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | ready (refined when deps merge) |
-| [M5-LEARN-01](M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | in-progress |
-| [M5-SAVE-01](M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | ready (refined when deps merge) |
+| [M5-LEARN-01](M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | merged |
+| [M5-SAVE-01](M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | merged |
 | [M5-ADMIN-04](M5/M5-ADMIN-04.md) | Admin commands for skills | haiku | spot | CAST-01 | ready (refined when deps merge) |
 | [M5-E2E-01](M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | ready (refined when deps merge) |
 | [M5-RUN-01](M5/M5-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |

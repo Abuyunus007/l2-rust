@@ -141,8 +141,8 @@ fn regen_period_ticks() -> u64 {
     TimerWheel::ms_to_ticks(u64::try_from(get_regenerate_period(false)).unwrap_or(0))
 }
 
-/// Java's movement branches of `calcHpRegen` and `calcCpRegen`: `isSitting()` (not modelled, so
-/// never), then `!isMoving()`, then `isRunning()`.
+/// Java's movement branches of `calcHpRegen` and `calcCpRegen` after `isSitting()` (see
+/// `regen_posture`): `!isMoving()`, then `isRunning()`.
 fn posture_of(moving: bool, running: bool) -> RegenPosture {
     match (moving, running) {
         (false, _) => RegenPosture::Standing,
@@ -672,8 +672,11 @@ impl World {
 
     // ------------------------------------------------------------------ regeneration per period
 
-    /// Sitting is not modelled, so a player is standing, walking or running.
+    /// Sitting, else standing, walking or running.
     fn regen_posture(&self, id: ObjectId) -> RegenPosture {
+        if self.is_sitting(id) {
+            return RegenPosture::Sitting;
+        }
         self.stats(id).map_or(RegenPosture::Standing, |v| {
             posture_of(v.is_moving(), v.is_running())
         })

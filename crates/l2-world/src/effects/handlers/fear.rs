@@ -6,8 +6,8 @@ use l2_data::npc::NpcRace;
 use l2_data::skill::EffectTemplate;
 
 use super::status_params::int_or;
-use crate::formulas::Rnd;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType, effect_flag};
+use crate::formulas::Rnd;
 use crate::world::World;
 
 /// Java `Fear`.

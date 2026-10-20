@@ -23,7 +23,10 @@ impl StartRotation {
 impl Encode for StartRotation {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        w.i32(self.object_id).i32(self.degree).i32(self.side).i32(self.speed);
+        w.i32(self.object_id)
+            .i32(self.degree)
+            .i32(self.side)
+            .i32(self.speed);
     }
 }
 
