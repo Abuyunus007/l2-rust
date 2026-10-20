@@ -26,6 +26,7 @@ use l2_util::ObjectId;
 use tracing::{debug, warn};
 
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::effects::control::ACTION_BLOCK_ID;
 use crate::objects::ObjectKind;
 use crate::world::World;
 
@@ -55,9 +56,9 @@ impl World {
         self.objects.get(&id).filter(|e| e.spawned).map(|_| id)
     }
 
-    /// Java `isAlikeDead()`: dead (fake death is an effect, M5). See `World::is_dead`.
+    /// Java `isAlikeDead()`: dead, or (`Player.isAlikeDead`) playing dead. See `World::is_dead`.
     pub fn is_alike_dead(&self, id: ObjectId) -> bool {
-        self.is_dead(id)
+        self.is_dead(id) || self.is_fake_death(id)
     }
 
     /// Java `WorldObject.isTargetable()`.
@@ -271,7 +272,11 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP: flood protection, observer mode, the bot-penalty effect.
+        // FOLLOW-UP: flood protection, observer mode.
+        // `BOT_PENALTY` effects (`BlockAction`) refuse the click (`checkCondition(-4)`).
+        if !self.check_bot_penalty(id, ACTION_BLOCK_ID) {
+            return;
+        }
         let wanted = ObjectId(object_id);
         let obj = if self.target_of(id) == Some(wanted) {
             Some(wanted)

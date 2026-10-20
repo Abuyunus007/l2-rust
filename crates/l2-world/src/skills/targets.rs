@@ -402,12 +402,6 @@ impl World {
         self.objects.get(&id).is_some_and(|e| e.kind == ObjectKind::Door)
     }
 
-    /// `Player.getPvpFlag()`: PvP flags do not exist in the world yet (M5), so 0.
-    // M5: read the flag when the flagging system lands.
-    fn pvp_flag_of(&self, _id: ObjectId) -> i32 {
-        0
-    }
-
     fn karma_of(&self, id: ObjectId) -> i32 {
         self.players.get(&id).map_or(0, |p| p.data.karma)
     }

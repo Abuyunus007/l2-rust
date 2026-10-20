@@ -176,9 +176,13 @@ impl World {
     }
 
     /// Java `Creature.isDisabled()`: AI disabled, (alike) dead, attack muted, stunned, asleep,
-    /// paralyzed. The effects are M5, so only death counts.
+    /// paralyzed (`_disabledAI` is only set by scripts).
     pub fn is_disabled(&self, id: ObjectId) -> bool {
-        self.is_dead(id)
+        self.is_alike_dead(id)
+            || self.is_physical_attack_muted(id)
+            || self.is_stunned(id)
+            || self.is_sleeping(id)
+            || self.is_paralyzed(id)
     }
 
     /// Java `Creature.isAttackDisabled()`.

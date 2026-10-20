@@ -511,6 +511,7 @@ impl World {
             TimerKind::EffectTick(task) => self.on_effect_tick(task),
             TimerKind::EffectIcons(id) => self.on_effect_icons_timer(id),
             TimerKind::UpdateAndBroadcastStatus(id) => self.on_update_and_broadcast_status_timer(id),
+            TimerKind::Control(timer) => self.on_control_timer(timer),
         }
     }
 

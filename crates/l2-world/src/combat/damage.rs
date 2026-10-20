@@ -166,9 +166,11 @@ impl World {
 
             // Reduce targets HP.
             self.reduce_current_hp(target, f64::from(damage), Some(id));
-            // `notifyDamageReceived`: fake death (M5) and script events (D-05).
+            // `notifyDamageReceived`: a fake dead player stands up (script events: D-05).
+            self.notify_damage_received(target, f64::from(damage));
             if reflected_damage > 0 {
                 self.reduce_current_hp(id, f64::from(reflected_damage), Some(target));
+                self.notify_damage_received(id, f64::from(reflected_damage));
             }
 
             // Do not absorb if weapon is of type bow.

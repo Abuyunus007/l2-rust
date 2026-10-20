@@ -12,6 +12,7 @@ use crate::generated::opcodes::ServerOpcode;
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
+pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -45,6 +46,7 @@ pub use entry::{
     ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{

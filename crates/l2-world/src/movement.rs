@@ -652,13 +652,15 @@ impl World {
         // Check out of sync.
         let move_speed = self.move_speed(id);
         if self.distance_3d_to(id, x, y, z) > move_speed {
-            // Java: `isBlinkActive()` (a skill effect) delays the correction; not modelled.
-            let new_z = if real_z > z {
-                self.geo_height(x, y, real_z)
-            } else {
-                z
-            };
-            self.set_xyz(id, x, y, new_z);
+            // `isBlinkActive()`: a charge or blink just moved the player, the correction waits.
+            if !self.consume_blink(id) {
+                let new_z = if real_z > z {
+                    self.geo_height(x, y, real_z)
+                } else {
+                    z
+                };
+                self.set_xyz(id, x, y, new_z);
+            }
         }
 
         let instance = self.instance_id_of(id);
@@ -707,8 +709,8 @@ impl World {
             return;
         }
         // Java also refuses while the duel state is "dead" (M5).
-        // M5: `isAllSkillsDisabled()`, `isCastingNow()`.
-        if self.is_attacking_now(id) {
+        if self.is_all_skills_disabled(id) || self.is_casting_now_for_effects(id) || self.is_attacking_now(id)
+        {
             self.send(id, &ActionFailed);
             // Save the move-to as the next intention to replay once ready.
             self.ai_state_mut(id).saved_move_to = Some((x, y, z));
@@ -1754,14 +1756,22 @@ impl World {
         max_load > 0 && current_load(&player.data, &*self.data) > max_load
     }
 
-    /// Java `Creature.isMovementDisabled()` (stun, root, sleep, paralysis and immobilization are
-    /// effects: M5).
+    /// Java `Creature.isMovementDisabled()`: stunned, rooted, asleep, overloaded, paralyzed,
+    /// immobilized, (alike) dead or teleporting.
     pub(crate) fn is_movement_disabled(&self, id: ObjectId) -> bool {
+        if self.is_stunned(id)
+            || self.is_rooted(id)
+            || self.is_sleeping(id)
+            || self.is_paralyzed(id)
+            || self.is_immobilized(id)
+        {
+            return true;
+        }
         if let Some(n) = self.npcs.get(&id) {
-            return self.is_dead(id) || n.movement.teleporting;
+            return self.is_alike_dead(id) || n.movement.teleporting;
         }
         self.players.get(&id).is_none_or(|p| {
-            self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_dead(id) || p.movement.teleporting
+            self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_alike_dead(id) || p.movement.teleporting
         })
     }
 
@@ -1796,7 +1806,7 @@ impl World {
         self.objects.get(&id).map_or(0, |e| e.instance_id)
     }
 
-    fn pathfinding_enabled(&self) -> bool {
+    pub(crate) fn pathfinding_enabled(&self) -> bool {
         self.geo.as_ref().is_some_and(|g| g.options().pathfinding > 0)
     }
 

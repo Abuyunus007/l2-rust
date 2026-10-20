@@ -398,10 +398,12 @@ impl World {
     }
 
     /// Java `Creature.isInvul()`: `_isInvul || _isTeleporting || isAffected(EffectFlag.INVUL)`.
-    /// The effect flag is M5. `Player.isInvul()` also adds `isTeleportProtected()` (spawn
-    /// protection), which is not modelled.
+    /// `Player.isInvul()` also adds `isTeleportProtected()` (spawn protection), which is not
+    /// modelled.
     pub fn is_invul(&self, id: ObjectId) -> bool {
-        self.invul_flag(id) || self.is_teleporting(id)
+        self.invul_flag(id)
+            || self.is_teleporting(id)
+            || self.is_affected(id, crate::effects::effect_flag::INVUL)
     }
 
     /// Java `_isInvul` alone (the field that `setInvul` writes).
@@ -452,8 +454,9 @@ impl World {
             return;
         }
         // M5: a GM without `giveDamage` rights (access level flags are not loaded: every access
-        // level may give damage); `stopEffectsOnDamage(awake)` and the stun break (no draw without
-        // a stun). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill effect (M5).
+        // level may give damage); `stopEffectsOnDamage(awake)`. NpcStatus: duels (M5).
+        // AttackableStatus: over-hit is a skill effect (M5).
+        self.break_states_on_damage(id);
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
@@ -479,8 +482,9 @@ impl World {
             return;
         }
         // Offline traders (M5).
-        // M5: `stopEffectsOnDamage(awake)`. Crafting, private stores and sitting (stand up): not
-        // modelled yet. Stun break: M5.
+        // M5: `stopEffectsOnDamage(awake)`. Crafting and private stores (stand up): not modelled
+        // yet.
+        self.break_states_on_damage(id);
         let mut amount = value;
         let full_value = amount as i32;
         if let Some(attacker) = attacker.filter(|a| *a != id) {

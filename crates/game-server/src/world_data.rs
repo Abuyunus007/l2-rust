@@ -691,6 +691,9 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             effect_tick_ratio: p.effect_tick_ratio,
             show_effect_messages_on_login: p.show_effect_messages_on_login,
             debuff_duration_uses_resists: config.general.debuff_duration_uses_resists,
+            fake_death_up_protection: p.player_fakedeath_up_protection,
+            fake_death_untarget: p.fake_death_untarget,
+            fake_death_damage_stand: p.fake_death_damage_stand,
         },
         talk: TalkSettings {
             karma_player_can_shop: p.alt_game_karma_player_can_shop,
