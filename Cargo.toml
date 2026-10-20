@@ -89,6 +89,12 @@ all = { level = "warn", priority = -1 }
 unwrap_used = "warn"
 expect_used = "warn"
 
+[profile.dev]
+# Line numbers in panics and backtraces are enough here. Full debug info made every build folder
+# (one per worktree) 10-20 GB on the owner's disk.
+debug = "line-tables-only"
+
 [profile.dev.package."*"]
 # Dependencies (crypto, RSA keygen) are slow unoptimized; our own crates stay debuggable.
 opt-level = 2
+debug = false
