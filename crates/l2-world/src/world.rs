@@ -102,6 +102,8 @@ pub struct World {
     /// The charge of weapons and NPCs and the automatic shots of players (M5-SHOT-01,
     /// `inventory/handlers/shots.rs`).
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
+    /// The parties, who is in one, and the pending invitations (M6-PARTY-01, `party/`).
+    pub(crate) party: crate::party::PartyWorld,
 }
 
 impl World {
@@ -150,6 +152,7 @@ impl World {
             effects: crate::effects::EffectsWorld::default(),
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
+            party: crate::party::PartyWorld::default(),
         }
     }
 
@@ -487,6 +490,16 @@ impl World {
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
+            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
+            // RequestOustPartyMember, RequestChangePartyLeader
+            ClientInput::JoinParty {
+                name,
+                distribution_type_id,
+            } => self.on_request_join_party(id, &name, distribution_type_id),
+            ClientInput::AnswerJoinParty { response } => self.on_request_answer_join_party(id, response),
+            ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
+            ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
+            ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -560,6 +573,8 @@ impl World {
             // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
             TimerKind::Control(timer) => self.on_control_timer(timer),
+            // Java: Party's position broadcast task
+            TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
         }
     }
 

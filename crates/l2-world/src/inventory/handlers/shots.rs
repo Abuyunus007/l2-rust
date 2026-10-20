@@ -444,8 +444,8 @@ impl World {
 
     /// Java `RequestAutoSoulShot.runImpl`.
     pub(crate) fn on_request_auto_soul_shot(&mut self, id: ObjectId, item_id: i32, shot_type: i32) {
-        // `!isInStoreMode() && getActiveRequester() == null`: no stores or requests yet.
-        if self.is_dead(id) {
+        // `!isInStoreMode() && getActiveRequester() == null`: no stores yet.
+        if self.active_requester(id).is_some() || self.is_dead(id) {
             return;
         }
         let Some(item) = self.first_item_with_id(id, item_id) else {

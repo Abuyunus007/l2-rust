@@ -625,6 +625,16 @@ impl ClientSession {
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
             },
+            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
+            // RequestOustPartyMember, RequestChangePartyLeader
+            ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
+                name: p.name,
+                distribution_type_id: p.party_distribution_type_id,
+            },
+            ClientPacket::RequestAnswerJoinParty(p) => ClientInput::AnswerJoinParty { response: p.response },
+            ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
+            ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
+            ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

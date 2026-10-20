@@ -401,6 +401,73 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
     settings
 }
 
+/// The values parties read (Java `PlayerConfig`, `RatesConfig`, `ClassBalanceConfig`). The cut-off
+/// method and its two lists are placeholders in the generated config, so they come from
+/// `Player.ini`; the exp and SP amount multipliers from `Custom/ClassBalance.ini`.
+pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PartySettings {
+    use l2_config::IniFile;
+    use l2_world::{PartyExpType, PartySettings};
+
+    let r = &config.rates;
+    let p = &config.player;
+    let mut settings = PartySettings {
+        alt_party_range: p.alt_party_range,
+        alt_leave_party_leader: p.alt_leave_party_leader,
+        rate_party_xp: r.rate_party_xp,
+        rate_party_sp: r.rate_party_sp,
+        xp_cutoff_percent: p.party_xp_cutoff_percent,
+        xp_cutoff_level: p.party_xp_cutoff_level,
+        ..PartySettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
+        let method = ini.get_string("PartyXpCutoffMethod", "LEVEL");
+        match PartyExpType::from_name(&method) {
+            Some(method) => settings.xp_cutoff_method = method,
+            None => warn!("PartyXpCutoffMethod = {method} is not a party exp type; using LEVEL."),
+        }
+        let gaps = ini.get_string("PartyXpCutoffGaps", "0,9;10,14;15,99");
+        match parse_party_gaps(&gaps) {
+            Some(gaps) => settings.xp_cutoff_gaps = gaps,
+            None => warn!("PartyXpCutoffGaps = {gaps} is not a list of level pairs; using the default."),
+        }
+        let percents = ini.get_string("PartyXpCutoffGapPercent", "100;30;0");
+        match parse_party_percents(&percents) {
+            Some(percents) => settings.xp_cutoff_gap_percents = percents,
+            None => {
+                warn!("PartyXpCutoffGapPercent = {percents} is not a list of numbers; using the default.")
+            }
+        }
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
+        for (key, table) in [
+            ("ExpAmountMultipliers", &mut settings.exp_amount_multipliers),
+            ("SpAmountMultipliers", &mut settings.sp_amount_multipliers),
+        ] {
+            parse_class_multipliers(key, &ini.get_string(key, ""), table);
+        }
+    }
+    settings
+}
+
+/// Java `PARTY_XP_CUTOFF_GAPS`: `"0,9;10,14;15,99"` is three level ranges. `None` where Java's
+/// `Integer.parseInt` would throw.
+fn parse_party_gaps(text: &str) -> Option<Vec<[i32; 2]>> {
+    text.split(';')
+        .map(|gap| {
+            let mut parts = gap.split(',');
+            let low = parts.next()?.parse().ok()?;
+            let high = parts.next()?.parse().ok()?;
+            Some([low, high])
+        })
+        .collect()
+}
+
+/// Java `PARTY_XP_CUTOFF_GAP_PERCENTS`: `"100;30;0"`.
+fn parse_party_percents(text: &str) -> Option<Vec<i32>> {
+    text.split(';').map(|percent| percent.parse().ok()).collect()
+}
+
 /// The values vitality reads (Java `PlayerConfig`, `RatesConfig`).
 pub fn vitality_settings(config: &GameConfig) -> l2_world::VitalitySettings {
     let r = &config.rates;
@@ -690,6 +757,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         ground: ground_item_settings(config, config_dir),
         drops: drop_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
+        party: party_settings(config, config_dir),
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
         effects: l2_world::EffectSettings {
@@ -1256,6 +1324,68 @@ mod tests {
             ip: None,
         });
         world.user_info(id).unwrap()
+    }
+
+    /// Java `PlayerConfig`: `PartyXpCutoffGaps` is `low,high` pairs split by `;`, the percents are
+    /// numbers split by `;`; a bad number is a Java exception (here the default stays).
+    #[test]
+    fn the_party_cutoff_lists_parse_like_java() {
+        assert_eq!(
+            parse_party_gaps("0,9;10,14;15,99"),
+            Some(vec![[0, 9], [10, 14], [15, 99]])
+        );
+        assert_eq!(parse_party_gaps("1,2"), Some(vec![[1, 2]]));
+        assert_eq!(parse_party_gaps("1;2,3"), None);
+        assert_eq!(parse_party_gaps("a,2"), None);
+        assert_eq!(parse_party_percents("100;30;0"), Some(vec![100, 30, 0]));
+        assert_eq!(parse_party_percents("100;x"), None);
+    }
+
+    /// The party settings come from `Player.ini`, `Rates.ini` and `Custom/ClassBalance.ini`; the
+    /// defaults of a missing file are Java's.
+    #[test]
+    fn party_settings_read_the_config_files() {
+        use l2_world::PartyExpType;
+
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let defaults = party_settings(&config, dir.path());
+        assert_eq!(defaults, l2_world::PartySettings::default());
+
+        std::fs::write(
+            dir.path().join(l2_config::game::PlayerConfig::FILE),
+            "AltPartyRange = 900\nAltLeavePartyLeader = True\nPartyXpCutoffMethod = highfive\n\
+             PartyXpCutoffPercent = 4.5\nPartyXpCutoffLevel = 7\nPartyXpCutoffGaps = 0,4;5,9\n\
+             PartyXpCutoffGapPercent = 100;50\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::RatesConfig::FILE),
+            "RatePartyXp = 1.5\nRatePartySp = 2\n",
+        )
+        .unwrap();
+        let custom = dir.path().join("Custom");
+        std::fs::create_dir_all(&custom).unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::ClassBalanceConfig::FILE),
+            "ExpAmountMultipliers = 0*0.5;18*2\nSpAmountMultipliers = 1*3\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = party_settings(&config, dir.path());
+        assert_eq!(settings.alt_party_range, 900);
+        assert!(settings.alt_leave_party_leader);
+        assert_eq!(settings.rate_party_xp, 1.5);
+        assert_eq!(settings.rate_party_sp, 2.0);
+        assert_eq!(settings.xp_cutoff_method, PartyExpType::HighFive);
+        assert_eq!(settings.xp_cutoff_percent, 4.5);
+        assert_eq!(settings.xp_cutoff_level, 7);
+        assert_eq!(settings.xp_cutoff_gaps, vec![[0, 4], [5, 9]]);
+        assert_eq!(settings.xp_cutoff_gap_percents, vec![100, 50]);
+        assert_eq!(settings.exp_amount_multipliers[0], 0.5);
+        assert_eq!(settings.exp_amount_multipliers[18], 2.0);
+        assert_eq!(settings.exp_amount_multipliers[1], 1.0);
+        assert_eq!(settings.sp_amount_multipliers[1], 3.0);
     }
 
     #[test]

@@ -30,7 +30,7 @@
 //   registers but Rust has not ported yet gets an `Unported` stand-in that keeps Java's
 //   `isInstant`/`getEffectType`/`canStart` and does nothing (logged once per name).
 //
-// Not here: parties (`PartySpelled`), summons, olympiad (`ExOlympiadSpelledInfo`), the formulas
+// Not here: summons, olympiad (`ExOlympiadSpelledInfo`), the formulas
 // (M5-FORM-02 fills `apply.rs`' hooks), the handlers (M5-EFX-01..03). Saving the buffs over a
 // logout is `save.rs` (`character_skills_save`).
 

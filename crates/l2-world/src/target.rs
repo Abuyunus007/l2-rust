@@ -144,8 +144,8 @@ impl World {
         let mut new_target = new_target;
 
         if let Some(target) = new_target {
-            // FOLLOW-UP(M5): a party member is exempt from both checks (`isInParty`).
-            let in_party = false;
+            // A member of the player's own party is exempt from both checks.
+            let in_party = self.is_in_party_with(id, target);
             // Prevents /target exploiting.
             if !in_party
                 && self
@@ -307,7 +307,13 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // FOLLOW-UP: `getActiveRequester()` (trade, party and friend requests), `onActionRequest()`.
+        // Check if the target is valid, if the player is not the target of a transaction request
+        // (party invitations; the trade and friend requests will join them).
+        if self.active_requester(id).is_some() {
+            self.send(id, &ActionFailed);
+            return;
+        }
+        // FOLLOW-UP: `onActionRequest()` (spawn protection).
 
         match action_id {
             0 => self.on_action_object(id, obj, true),

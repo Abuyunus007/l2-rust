@@ -64,6 +64,10 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `deleteMe`: "If a Party is in progress, leave it", and a sudden exit in the middle of a
+        // transaction ends the request.
+        self.leave_party(id);
+        self.forget_requests(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

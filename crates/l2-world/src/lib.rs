@@ -33,6 +33,7 @@ pub mod movement;
 pub mod npc;
 pub mod objects;
 pub mod outbox;
+pub mod party;
 pub mod player;
 mod player_view;
 pub mod region;
@@ -83,6 +84,7 @@ pub use movement::{
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
+pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,
