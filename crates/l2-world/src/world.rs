@@ -102,6 +102,8 @@ pub struct World {
     /// The charge of weapons and NPCs and the automatic shots of players (M5-SHOT-01,
     /// `inventory/handlers/shots.rs`).
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
+    /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
+    pub(crate) punishments: crate::punishments::PunishmentWorld,
 }
 
 impl World {
@@ -150,6 +152,7 @@ impl World {
             effects: crate::effects::EffectsWorld::default(),
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
+            punishments: crate::punishments::PunishmentWorld::default(),
         }
     }
 
@@ -343,6 +346,24 @@ impl World {
             return;
         }
         let id = data.object_id;
+        // Java `CharacterSelect`: "Banned?" (the character, the account or the IP address). The
+        // client is closed before the character enters; the account is released like at any
+        // logout.
+        let ip_text = ip.map(|ip| ip.to_string());
+        if self.is_banned_at_entry(id, &data.account, ip_text.as_deref()) {
+            info!(
+                "{} ({}) is banned; not entering the world.",
+                data.name, data.account
+            );
+            sink.send(Encode::to_bytes(&l2_protocol_game::server::ServerClose));
+            self.outbox.persist(PersistCommand::PlayerLeft {
+                account: data.account.clone(),
+                object_id: id,
+                logout: true,
+            });
+            sink.left_world(LeaveReason::Kicked);
+            return;
+        }
         if self.players.contains_key(&id) {
             // Java: the old instance is disconnected (e.g. a stale session after a crash).
             warn!(
@@ -555,6 +576,8 @@ impl World {
             // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
             TimerKind::Control(timer) => self.on_control_timer(timer),
+            // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
+            TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
         }
     }
 

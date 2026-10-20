@@ -12,8 +12,7 @@
 // - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml and
 //   `RaidBossSpawnManager` into `raidboss_spawnlist`; here the spawn lives until the server stops
 //   (its respawn is ported, `respawn.rs`), but it is not written anywhere (FOLLOW-UP).
-// - Jail (`Player.isJailed`), instances, effects (`stopAllEffects`), the DB update of
-//   `//recall <offline player>`.
+// - Instances, effects (`stopAllEffects`), the DB update of `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -538,7 +537,18 @@ fn teleport_character_to_coords(world: &mut World, gm: ObjectId, coords: &str) -
 
 /// `AdminTeleport.teleportCharacter(player, loc, activeChar)`.
 fn recall_player(world: &mut World, player: ObjectId, place: TeleportTarget, gm: Option<ObjectId>) {
-    // FOLLOW-UP: `player.isJailed()` ("Sorry, player X is in Jail.") needs the punishment system.
+    // Check for jail.
+    if world.is_jailed(player) {
+        let name = world
+            .players
+            .get(&player)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
+        if let Some(gm) = gm {
+            world.send_sys_message(gm, &format!("Sorry, player {name} is in Jail."));
+        }
+        return;
+    }
     if let Some(gm) = gm {
         // `player.setInstanceId(activeChar.getInstanceId())` is part of the teleport target.
         let name = world

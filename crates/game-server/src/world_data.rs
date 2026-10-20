@@ -452,6 +452,70 @@ pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
     s
 }
 
+/// The names of Java's `ChatType`, in the order of its ids.
+const CHAT_TYPE_NAMES: [&str; 24] = [
+    "GENERAL",
+    "SHOUT",
+    "WHISPER",
+    "PARTY",
+    "CLAN",
+    "GM",
+    "PETITION_PLAYER",
+    "PETITION_GM",
+    "TRADE",
+    "ALLIANCE",
+    "ANNOUNCEMENT",
+    "BOAT",
+    "FRIEND",
+    "MSNCHAT",
+    "PARTYMATCH_ROOM",
+    "PARTYROOM_COMMANDER",
+    "PARTYROOM_ALL",
+    "HERO_VOICE",
+    "CRITICAL_ANNOUNCE",
+    "SCREEN_ANNOUNCE",
+    "BATTLEFIELD",
+    "MPCC_ROOM",
+    "NPC_GENERAL",
+    "NPC_SHOUT",
+];
+
+/// The values punishments read (Java `GeneralConfig`): `DefaultPunish`, `DefaultPunishParam`,
+/// `JailDisableChat` and `BanChatChannels`. The first and the last are post-processed in Java
+/// (placeholders in the generated config), so they are read from `General.ini` here.
+pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PunishmentSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+    use l2_world::{IllegalActionPunishment, PunishmentSettings};
+
+    let mut settings = PunishmentSettings {
+        default_punish_param: config.effective_default_punish_param(),
+        jail_disable_chat: config.general.jail_disable_chat,
+        ..PunishmentSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        settings.default_punish =
+            IllegalActionPunishment::find_by_name(&ini.get_string("DefaultPunish", "KICK"));
+        // Java: `Enum.valueOf(ChatType.class, name)` throws for a bad name; the channel is skipped.
+        let text = ini.get_string("BanChatChannels", "GENERAL;SHOUT;TRADE;HERO_VOICE;WHISPER");
+        let mut channels = Vec::new();
+        for name in text.trim().split(';') {
+            match CHAT_TYPE_NAMES.iter().position(|n| *n == name) {
+                Some(index) => {
+                    if let Some(chat_type) = l2_protocol_game::server::ChatType::from_client_id(index as i32)
+                        && !channels.contains(&chat_type)
+                    {
+                        channels.push(chat_type);
+                    }
+                }
+                None => warn!("BanChatChannels: \"{name}\" is not a chat type; skipped."),
+            }
+        }
+        settings.ban_chat_channels = channels;
+    }
+    settings
+}
+
 /// Java `Integer.parseInt` of every piece of a comma separated list; a piece that is not a number
 /// is skipped with a warning (Java throws while it loads the configuration).
 fn parse_int_list(key: &str, text: &str) -> Vec<i32> {
@@ -1247,6 +1311,34 @@ mod tests {
         }
         // A table whose key is not in the file stays at 1.0.
         assert!(cb.pve_physical_attack_damage.iter().all(|v| *v == 1.0));
+    }
+
+    /// M5-FU-04: `DefaultPunish`, `DefaultPunishParam`, `JailDisableChat` and `BanChatChannels`.
+    #[test]
+    fn punishment_settings_are_read_from_general_ini() {
+        use l2_protocol_game::server::ChatType;
+        use l2_world::IllegalActionPunishment;
+
+        // Java defaults: a missing file keeps the shipped values (KICK, one hundred years).
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = punishment_settings(&config, dir.path());
+        assert_eq!(settings.default_punish, IllegalActionPunishment::Kick);
+        assert_eq!(settings.default_punish_param, 3_155_695_200);
+        assert!(settings.jail_disable_chat);
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "DefaultPunish = kickban\nDefaultPunishParam = 90\nJailDisableChat = False\nBanChatChannels = SHOUT;PARTY;BOGUS;SHOUT\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = punishment_settings(&config, dir.path());
+        assert_eq!(settings.default_punish, IllegalActionPunishment::KickBan);
+        assert_eq!(settings.default_punish_param, 90);
+        assert!(!settings.jail_disable_chat);
+        // A name Java would throw on is skipped; a channel listed twice counts once.
+        assert_eq!(settings.ban_chat_channels, [ChatType::Shout, ChatType::Party]);
     }
 
     #[test]

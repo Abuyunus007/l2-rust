@@ -518,7 +518,7 @@ impl World {
     ///
     /// Not modelled, so those branches do what Java does for a player without them: clans,
     /// castles, fortresses, sieges, clan halls (the "To clanhall / castle / fortress / siege HQ"
-    /// buttons are refused), events, fake death, festival participants, jail.
+    /// buttons are refused), events, fake death, festival participants.
     pub(crate) fn on_request_restart_point(&mut self, id: ObjectId, point_type: i32) {
         if !self.players.contains_key(&id) {
             return;
@@ -543,8 +543,8 @@ impl World {
             .get(&id)
             .map(|p| p.data.name.clone())
             .unwrap_or_default();
-        // `player.isJailed()` forces 27 and `isFestivalParticipant()` forces 5: neither is
-        // modelled.
+        // `player.isJailed()` forces 27; `isFestivalParticipant()` would force 5 (not modelled).
+        let point_type = if self.is_jailed(id) { 27 } else { point_type };
         let mut instance = 0;
         let location: Option<(i32, i32, i32)> = match point_type {
             // To clanhall.
@@ -597,8 +597,13 @@ impl World {
             }
             // TODO(java): agathion ress.
             6 => None,
-            // To jail: only a jailed player (jail is not modelled).
-            27 => return,
+            // To jail: only a jailed player.
+            27 => {
+                if !self.is_jailed(id) {
+                    return;
+                }
+                Some(crate::punishments::JAIL_IN)
+            }
             // To town.
             _ => match self.get_tele_to_location(id, TeleportWhereType::Town) {
                 Some(location) => Some(location),

@@ -56,6 +56,22 @@ pub enum PersistCommand {
         upserts: Vec<SkillData>,
         removed: Vec<i32>,
     },
+    /// Java `PunishmentTask.onStart`: `INSERT INTO punishments`. The persistence task keeps the
+    /// id the database gave the row, to find it again at `EndPunishment`.
+    StorePunishment(crate::punishments::StoredPunishment),
+    /// Java `PunishmentTask.onEnd`: `UPDATE punishments SET expiration = <ended_at> WHERE id = ?`.
+    /// `id` is the row id of a punishment loaded at startup, 0 for one this server stored (the
+    /// persistence task finds the row by `key`, `affect` and `kind`).
+    EndPunishment {
+        id: i32,
+        key: String,
+        affect: crate::punishments::PunishmentAffect,
+        kind: crate::punishments::PunishmentType,
+        ended_at: i64,
+    },
+    /// Java `PunishmentManager.changeCharAccessLevel`: `UPDATE characters SET accessLevel=? WHERE
+    /// charId=?`.
+    CharAccessLevel { char_id: i32, level: i32 },
 }
 
 /// Messages for the login server link.
@@ -63,6 +79,8 @@ pub enum PersistCommand {
 pub enum LsEvent {
     /// Java `LoginServerThread.sendLogin` → `PlayerInGame`.
     PlayerInGame { account: String },
+    /// Java `LoginServerThread.sendAccessLevel` → `ChangeAccessLevel` (a ban is -1, its end 0).
+    AccessLevel { account: String, level: i32 },
 }
 
 /// Everything the world produces that is not a packet for a player.

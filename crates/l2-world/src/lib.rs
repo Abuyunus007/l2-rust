@@ -35,6 +35,7 @@ pub mod objects;
 pub mod outbox;
 pub mod player;
 mod player_view;
+pub mod punishments;
 pub mod region;
 pub mod respawn;
 pub mod rewards;
@@ -86,6 +87,10 @@ pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,
+};
+pub use punishments::{
+    IllegalActionPunishment, NewPunishment, PunishmentAffect, PunishmentRecord, PunishmentSettings,
+    PunishmentType, StoredPunishment,
 };
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};

@@ -24,6 +24,7 @@ pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};

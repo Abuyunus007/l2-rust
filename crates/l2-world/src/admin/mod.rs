@@ -23,6 +23,7 @@ pub mod create_item;
 pub mod exp_sp;
 pub mod invul;
 pub mod level;
+pub mod punishments;
 pub mod rights;
 pub mod skills;
 
@@ -105,6 +106,7 @@ impl Default for AdminWorld {
         create_item::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
+        punishments::register(&mut handlers);
         Self { handlers }
     }
 }

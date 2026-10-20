@@ -651,8 +651,10 @@ impl ClientSession {
             return;
         };
         // NOTE: not ported yet because their systems do not exist: SecondaryAuth, a character that
-        // is already in the world (offline traders), PunishmentManager bans, dual-box limits and the
-        // faction balance. The RESTORE_LOCATION variable is applied by the loader.
+        // is already in the world (offline traders), dual-box limits and the faction balance. The
+        // RESTORE_LOCATION variable is applied by the loader. The "Banned?" check of the
+        // punishment manager (character, account, IP) is the world's, at enter world
+        // (`World::enter`): the punishments live there.
         if info.access_level < 0 {
             // "Selected character is banned (compatibility with previous versions)."
             ctl.send_and_close(ServerClose.to_bytes());

@@ -155,9 +155,9 @@ impl World {
                 &SystemMessage::new(SystemMessageId::YouCannotDestroyItBecauseTheNumberIsIncorrect),
             );
             if count < 0 {
-                // `PunishmentManager.handleIllegalPlayerAction`.
                 self.illegal_action(
                     id,
+                    "RequestDestroyItem",
                     &format!("tried to destroy item with oid {object_id} but has count < 0!"),
                 );
             }
@@ -198,6 +198,7 @@ impl World {
         if !template.stackable && count > 1 {
             self.illegal_action(
                 id,
+                "RequestDestroyItem",
                 &format!(
                     "tried to destroy a non-stackable item with oid {} but has count > 1!",
                     object_id.0
@@ -266,20 +267,16 @@ impl World {
         self.send(id, &update);
     }
 
-    /// Java `AdminData.broadcastMessageToGMs(message)`: `sendMessage` to every GM online.
-    fn broadcast_message_to_gms(&self, text: &str) {
-        let mut gms: Vec<ObjectId> = self.players.keys().copied().filter(|p| self.is_gm(*p)).collect();
-        gms.sort_unstable_by_key(|p| p.0);
-        for gm in gms {
-            self.send_message(gm, text);
-        }
-    }
-
-    /// `PunishmentManager.handleIllegalPlayerAction` with `DefaultPunish`: the punishment system
-    /// does not exist, the attempt is logged.
-    fn illegal_action(&self, id: ObjectId, what: &str) {
+    /// `PunishmentManager.handleIllegalPlayerAction(player, "[<packet>] Character <name> of account
+    /// <account> <what>", DEFAULT_PUNISH)`.
+    fn illegal_action(&mut self, id: ObjectId, packet: &str, what: &str) {
         let name = self.players.get(&id).map_or("?", |p| p.data.name.as_str());
-        warn!("Illegal action by character {name} ({id}): {what}");
+        let message = format!(
+            "[{packet}] Character {name} of account {} {what}",
+            self.account_of(id)
+        );
+        let punishment = self.default_punish();
+        self.handle_illegal_player_action(id, &message, punishment);
     }
 
     /// Java `RequestDropItem.runImpl`, up to the point where the item would leave the inventory.
@@ -339,6 +336,7 @@ impl World {
         if count < 0 {
             self.illegal_action(
                 id,
+                "RequestDropItem",
                 &format!("tried to drop item with oid {} but has count < 0!", object_id.0),
             );
             return;
@@ -347,6 +345,7 @@ impl World {
         if !template.stackable && count > 1 {
             self.illegal_action(
                 id,
+                "RequestDropItem",
                 &format!(
                     "tried to drop non-stackable item with oid {} but has count > 1!",
                     object_id.0
@@ -355,7 +354,8 @@ impl World {
             return;
         }
 
-        if self.settings.zones.jail_disable_transaction && self.is_inside_zone(id, ZoneId::Jail) {
+        // NOTE(java-quirk): `isJailed()` is the punishment, not the zone.
+        if self.settings.zones.jail_disable_transaction && self.is_jailed(id) {
             self.send_message(id, "You cannot drop items in Jail.");
             return;
         }

@@ -122,9 +122,6 @@ pub(crate) struct CreatureControl {
     pub traits: TraitStats,
     /// `Disarm._disarmedPlayers`: the weapon the player has to get back.
     pub disarmed_item: Option<ObjectId>,
-    /// The chat ban and the party ban of the bot report debuffs (`BlockChat`, `BlockAction`).
-    pub chat_banned: bool,
-    pub party_banned: bool,
     /// The `SoulEating` listeners of the player: (skill id, level) and `expNeeded`.
     pub soul_eating: Vec<((i32, i32), i32)>,
     /// `Player._blinkActive`.
@@ -476,16 +473,6 @@ impl World {
             return;
         }
         self.do_attack(id, forced);
-    }
-
-    /// Java `Player.isChatBanned()` for the bans effects start.
-    pub fn is_chat_banned(&self, id: ObjectId) -> bool {
-        self.control(id).is_some_and(|c| c.chat_banned)
-    }
-
-    /// Java `Player.isPartyBanned()` for the bans effects start.
-    pub fn is_party_banned(&self, id: ObjectId) -> bool {
-        self.control(id).is_some_and(|c| c.party_banned)
     }
 
     // ------------------------------------------------------------------ the AI notifications
