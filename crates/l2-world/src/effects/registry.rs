@@ -558,8 +558,9 @@ mod tests {
         let registry = EffectRegistry::new();
         assert_eq!(registry.len(), 165);
         assert!(registry.is_ported("Buff"));
-        assert!(registry.contains("Stun"));
-        assert!(!registry.is_ported("Stun"));
+        // Summons are M6: this one stays a stand-in until then.
+        assert!(registry.contains("SummonCubic"));
+        assert!(!registry.is_ported("SummonCubic"));
         assert!(!registry.contains("NoSuchEffect"));
         let mut names: Vec<&str> = JAVA_EFFECTS.iter().map(|e| e.0).collect();
         names.sort_unstable();

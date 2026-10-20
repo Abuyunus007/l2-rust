@@ -552,8 +552,9 @@ fn a_toggle_ticks_and_stops_when_its_tick_says_so() {
     advance(&mut world, 300);
     assert_eq!(last_icons(&log.take()), [(9030, 1, -61)]);
 
-    // `Relax` is not ported: its `onActionTime` is the default `false`, so the toggle ends at
-    // its first tick, 5 * 666 ms = 3330 ms later (67 ticks).
+    // `Relax.onActionTime` (M5-EFX-02) at full HP says "deactivated as HP was fully recovered"
+    // and returns false, so the toggle ends at its first tick, 5 * 666 ms = 3330 ms later
+    // (67 ticks), with the end message after it.
     buff(&mut world, 9031, 1);
     log.take();
     for _ in 0..66 {
@@ -562,7 +563,13 @@ fn a_toggle_ticks_and_stops_when_its_tick_says_so() {
     assert_eq!(queue(&world, ListKind::Toggles), [9030, 9031]);
     world.tick();
     assert_eq!(queue(&world, ListKind::Toggles), [9030]);
-    assert_eq!(message_ids(&log.take()), [SystemMessageId::S1HasBeenAborted]);
+    assert_eq!(
+        message_ids(&log.take()),
+        [
+            SystemMessageId::ThatSkillHasBeenDeActivatedAsHpWasFullyRecovered,
+            SystemMessageId::S1HasBeenAborted
+        ]
+    );
 }
 
 #[test]
@@ -659,7 +666,7 @@ fn the_registry_has_every_java_handler_and_buff_is_ported() {
     let registry = world.effect_registry();
     assert_eq!(registry.len(), 165);
     assert!(registry.is_ported("Buff"));
-    assert!(registry.contains("Stun") && !registry.is_ported("Stun"));
+    assert!(registry.contains("SummonCubic") && !registry.is_ported("SummonCubic"));
 }
 
 // ---- the real datapack ----------------------------------------------------------------------------
