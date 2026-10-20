@@ -19,6 +19,7 @@
 // - `destroy.rs`: `RequestDestroyItem`, `RequestDropItem` (the inventory side), `RequestItemList`.
 // - `notify.rs`: `broadcastUserInfo`, `broadcastModifiedStats`, the delayed `sendSkillList` /
 //   `sendItemList`, `refreshWeight`.
+// - `handlers/`: item handlers; `shots.rs` has the soulshots and spiritshots (M5-SHOT-01).
 // - `db.rs`: `Item.updateDatabase()` as `PersistCommand::ItemChanges`.
 // - `capacity.rs`: `validateCapacity` / `validateWeight` (checked when items are added).
 //
@@ -38,7 +39,7 @@ mod add;
 mod capacity;
 mod db;
 mod destroy;
-pub(crate) mod handlers;
+pub mod handlers;
 mod notify;
 mod paperdoll;
 mod use_item;

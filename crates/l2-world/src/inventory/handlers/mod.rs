@@ -14,6 +14,8 @@
 // - `reuse.rs`: the item reuse stamps (`Creature.addTimeStampItem` and friends), the
 //   "remaining re-use time" message and `ExUseSharedGroupItem`.
 // - `consume.rs`: `Player.destroyItem(process, objectId, count, ...)`.
+// - `shots.rs`: the soulshot and spiritshot handlers (M5-SHOT-01); `use_item_with_handler` tries
+//   them first.
 //
 // # Left out on purpose
 // - `Maps` and `Calculator` need the `ShowMiniMap` and `ShowCalculator` packets, which the
@@ -30,6 +32,8 @@ mod extractable;
 mod item_skills;
 mod registry;
 mod reuse;
+
+pub mod shots;
 
 pub(crate) use registry::ItemHandlerKind;
 pub(crate) use reuse::ItemStamp;

@@ -239,8 +239,11 @@ impl crate::world::World {
                     SystemMessage::new(SystemMessageId::YouHaveEquippedYourS1).with(name)
                 };
                 self.send(id, &message);
-                // M5: `item.decreaseMana(false)` (shadow items) and, for a weapon,
-                // `rechargeShots(true, true)`; the `ON_PLAYER_ITEM_EQUIP` script event.
+                // M5: `item.decreaseMana(false)` (shadow items); the `ON_PLAYER_ITEM_EQUIP` script
+                // event.
+                if matches!(template.body_part, BodyPart::RightHand | BodyPart::BothHands) {
+                    self.recharge_shots(id, true, true);
+                }
             } else {
                 self.send(
                     id,

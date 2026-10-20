@@ -22,6 +22,7 @@ use crate::formulas::{
     AbnormalTimeInput, AbnormalTimeResists, EffectSuccessInput, Rnd, SkillMasteryInput, attribute_element,
     calc_attribute_bonus_skill, calc_effect_abnormal_time, calc_effect_success, calc_lvl_bonus_mod,
 };
+use crate::inventory::handlers::shots::ShotType;
 use crate::stats::conditions::{self, CondEnv};
 use crate::stats::skills::calc_skill;
 use crate::stats::{BaseStat, Stat, StatView};
@@ -199,7 +200,8 @@ impl World {
             }
             self.apply_effects_with(caster, caster, key, ApplyMode::SELF);
         }
-        // M5-SHOT-01: the spiritshot / soulshot charge is used up here (`setChargedShot`).
+        // No cubic casts yet (M6), so the shots the skill uses are used up here.
+        self.discharge_skill_shots(caster, skill);
         if skill.is_suicide_attack {
             self.do_die(caster, Some(caster));
         }
@@ -432,8 +434,8 @@ impl World {
                 ),
                 skill_is_magic: skill.is_magic(),
                 attacker_m_atk: av.m_atk(None, None),
-                // M5-SHOT-01: `isChargedShot(BLESSED_SPIRITSHOTS)` (no shot is charged yet).
-                attacker_blessed_spiritshot_charged: false,
+                attacker_blessed_spiritshot_charged: world
+                    .is_charged_shot(attacker, ShotType::BlessedSpiritshots),
                 target_m_def: tv.m_def(None, None),
                 min_chance: skill.min_chance,
                 max_chance: skill.max_chance,

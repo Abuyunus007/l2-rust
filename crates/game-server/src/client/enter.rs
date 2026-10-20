@@ -551,6 +551,11 @@ impl ClientSession {
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
             },
+            // Java: RequestAutoSoulShot
+            ClientPacket::RequestAutoSoulShot(p) => ClientInput::AutoSoulShot {
+                item_id: p.item_id,
+                shot_type: p.shot_type,
+            },
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

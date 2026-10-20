@@ -7,6 +7,7 @@ use l2_data::item::ItemTemplate;
 use l2_util::ObjectId;
 use tracing::warn;
 
+use super::shots::ShotHandler;
 use crate::player::ItemData;
 use crate::world::World;
 
@@ -79,6 +80,13 @@ impl World {
     ) {
         // M6: the fishing rod branch (a lure goes to `PAPERDOLL_LHAND` while a rod is held)
         // needs fishing, which is not modelled.
+
+        // The shot handlers (M5-SHOT-01) have no item reuse delay, so the stamp below is not
+        // needed for them.
+        if let Some(shot) = ShotHandler::of_template(template) {
+            self.use_shot_item(id, item, shot);
+            return;
+        }
 
         let Some(kind) = ItemHandlerKind::of_template(template) else {
             if let Some(name) = template.etc().and_then(|e| e.handler.as_deref()) {
