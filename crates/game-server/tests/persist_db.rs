@@ -211,9 +211,12 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
 
     let mut store = DbStore::new(pool.clone());
     let mut data = player_data();
+    // Java writes `getAppearance().getTitleColor()`, which the PvP title colours change (M6-PVP-01).
+    data.profile.title_color = 0x009C_9C9C;
     store.store_player(&data).await.unwrap();
 
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.title_color, 0x009C_9C9C);
     assert_eq!(row.level, Some(5));
     assert_eq!(
         (row.x, row.y, row.z, row.heading),

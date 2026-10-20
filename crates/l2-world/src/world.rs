@@ -104,6 +104,8 @@ pub struct World {
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
     /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
     pub(crate) punishments: crate::punishments::PunishmentWorld,
+    /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
+    pub(crate) pvp: crate::pvp::PvpWorld,
 }
 
 impl World {
@@ -153,6 +155,7 @@ impl World {
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
+            pvp: crate::pvp::PvpWorld::default(),
         }
     }
 
@@ -585,6 +588,8 @@ impl World {
             TimerKind::Control(timer) => self.on_control_timer(timer),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
+            // Java: PvpFlagTaskManager.run (for one player)
+            TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }
     }
 

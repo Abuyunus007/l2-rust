@@ -520,6 +520,63 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
     settings
 }
 
+/// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
+/// (`Custom/PvpTitleColor.ini`). `AntiFeedInterval` (seconds, Java keeps ms) and the five
+/// `ColorForAmountN` (`Integer.decode("0x" + text)`) are post-processed in Java (placeholders in
+/// the generated config), so they are read from the files here.
+pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSettings {
+    use l2_config::IniFile;
+    use l2_world::{PvpSettings, PvpTitleColorSettings};
+
+    let p = &config.pvp;
+    let t = &config.pvp_title_color;
+    let mut s = PvpSettings {
+        pvp_normal_time_ms: p.pvp_normal_time,
+        pvp_pvp_time_ms: p.pvp_pvp_time,
+        flag_player_on_raid_attack: p.flag_player_on_raid_attack,
+        flag_player_on_champion_attack: p.flag_player_on_champion_attack,
+        flag_player_on_summon_pet_raid_champion_attack: p.flag_player_on_summon_pet_raid_champion_attack,
+        karma_award_pk_kill: p.karma_award_pk_kill,
+        antifeed_enable: p.antifeed_enable,
+        antifeed_dualbox: p.antifeed_dualbox,
+        antifeed_disconnected_as_dualbox: p.antifeed_disconnected_as_dualbox,
+        faction_system_enabled: config.faction_system.faction_system_enabled,
+        title_color: PvpTitleColorSettings {
+            enabled: t.pvp_color_system_enabled,
+            amounts: [
+                t.pvp_amount1,
+                t.pvp_amount2,
+                t.pvp_amount3,
+                t.pvp_amount4,
+                t.pvp_amount5,
+            ],
+            titles: [
+                t.title_for_pvp_amount1.clone(),
+                t.title_for_pvp_amount2.clone(),
+                t.title_for_pvp_amount3.clone(),
+                t.title_for_pvp_amount4.clone(),
+                t.title_for_pvp_amount5.clone(),
+            ],
+            ..PvpTitleColorSettings::default()
+        },
+        ..PvpSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpConfig::FILE)) {
+        s.antifeed_interval_ms = i64::from(ini.get_int("AntiFeedInterval", 120)).saturating_mul(1000);
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpTitleColorConfig::FILE)) {
+        for (i, color) in s.title_color.colors.iter_mut().enumerate() {
+            let key = format!("ColorForAmount{}", i + 1);
+            let text = ini.get_string(&key, "00FF00");
+            match i32::from_str_radix(text.trim(), 16) {
+                Ok(value) => *color = value,
+                Err(_) => warn!("{key} = {text} is not a hex colour; using 00FF00."),
+            }
+        }
+    }
+    s
+}
+
 /// Java `Integer.parseInt` of every piece of a comma separated list; a piece that is not a number
 /// is skipped with a warning (Java throws while it loads the configuration).
 fn parse_int_list(key: &str, text: &str) -> Vec<i32> {
@@ -803,6 +860,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_allow_augment_trade: p.alt_allow_augment_trade,
             alt_allow_augment_destroy: p.alt_allow_augment_destroy,
         },
+        pvp: pvp_settings(config, config_dir),
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,
@@ -1712,5 +1770,52 @@ mod tests {
         assert_eq!(v.rate_vitality_level, [1.5, 2.0, 2.5, 3.0]);
         assert_eq!((v.rate_vitality_gain, v.rate_vitality_lost), (1.0, 0.6));
         assert_eq!(v.rate_recovery_on_reconnect, 4.0);
+    }
+
+    /// `PVP.ini` and `Custom/PvpTitleColor.ini` (M6-PVP-01): the Java defaults without files, and
+    /// the post-processed keys (`AntiFeedInterval` in seconds, `ColorForAmountN` as hex) from them.
+    #[test]
+    fn the_pvp_settings_are_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!(s, l2_world::PvpSettings::default());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (120_000, 60_000));
+        assert_eq!(s.antifeed_interval_ms, 120_000);
+
+        std::fs::write(
+            dir.path().join("PVP.ini"),
+            "PvPVsNormalTime = 5000
+PvPVsPvPTime = 2500
+AntiFeedEnable = True
+AntiFeedInterval = 30
+             FlagPlayerOnRaidAttack = False
+AwardPKKillPVPPoint = True
+",
+        )
+        .unwrap();
+        std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+        std::fs::write(
+            dir.path().join("Custom").join("PvpTitleColor.ini"),
+            "EnablePvPColorSystem = True
+PvpAmount1 = 7
+ColorForAmount1 = 9C9C9C
+ColorForAmount2 = nonsense
+             PvPTitleForAmount1 = Sergeant
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (5_000, 2_500));
+        assert!(s.antifeed_enable && s.karma_award_pk_kill && !s.flag_player_on_raid_attack);
+        assert_eq!(s.antifeed_interval_ms, 30_000);
+        assert!(s.title_color.enabled);
+        assert_eq!(s.title_color.amounts[0], 7);
+        assert_eq!(s.title_color.titles[0], "Sergeant");
+        // `Integer.decode("0x" + text)`.
+        assert_eq!(s.title_color.colors[0], 0x009C_9C9C);
+        // Java would throw for a bad colour; the default stays.
+        assert_eq!(s.title_color.colors[1], 0x0000_FF00);
     }
 }

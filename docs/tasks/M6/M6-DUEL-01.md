@@ -26,6 +26,8 @@ Duel request/answer, 1:1 and party duels, the duel countdown and end conditions,
 2. Single-owner world, ids not references, timers on the wheel, world RNG; no unwrap/expect on external data.
 3. Resolve the `// M6:` markers in your area; list the ones you leave.
 
+- From M6-PVP-01: wire `FlagPvPZone` in `zones.rs` (Java `FlagZone.onEnter/onExit`: `updatePvPFlag(1)` / `updatePvPFlag(0)`); fill the `M6-DUEL` markers in `pvp.rs` (`updatePvPStatus`, `isAutoAttackable`, `onKillUpdatePvPKarma`). `NicknameChanged` exists now (`server::visibility`).
+
 ## Out of scope
 - Sieges/castles/fortresses/clan halls (M7), Olympiad/Seven Signs (M8), quests (later).
 

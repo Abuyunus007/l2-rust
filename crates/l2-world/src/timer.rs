@@ -106,6 +106,8 @@ pub enum TimerKind {
     /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
     /// see `punishments.rs`.
     Punishment(crate::punishments::PunishmentTimer),
+    /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
+    PvpFlag(ObjectId),
 }
 
 #[derive(Debug, Default)]

@@ -36,6 +36,7 @@ pub mod outbox;
 pub mod player;
 mod player_view;
 pub mod punishments;
+pub mod pvp;
 pub mod region;
 pub mod respawn;
 pub mod rewards;
@@ -92,6 +93,7 @@ pub use punishments::{
     IllegalActionPunishment, NewPunishment, PunishmentAffect, PunishmentRecord, PunishmentSettings,
     PunishmentType, StoredPunishment,
 };
+pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
