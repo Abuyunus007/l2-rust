@@ -403,6 +403,44 @@ fn corpse_mob_needs_a_dead_attackable() {
     }
 }
 
+/// Java `CorpseMob`: a skill with an `HP_DRAIN` effect refuses a corpse that has less than
+/// `CorpseConsumeSkillAllowedTimeBeforeDecay` (2 s) left before it decays, and tells the caster.
+/// Other corpse skills do not care.
+#[test]
+fn corpse_mob_with_hp_drain_refuses_an_old_corpse() {
+    let mut s = Scene::new();
+    s.me();
+    let corpse = s.npc(9001, 100, 0);
+    // A kill starts the decay task (7 s for a monster that is not spoiled).
+    s.world.reduce_current_hp(corpse, 1_000_000.0, Some(ME));
+    assert!(s.world.has_decay_task(corpse));
+    let drain = skill(
+        "CORPSE_MOB",
+        "",
+        r#"<effect name="HpDrain"><power>10</power></effect>"#,
+    );
+    let other = skill("CORPSE_MOB", "", "");
+
+    let fresh = s.cast(&drain, ME, false, Some(corpse));
+    assert_eq!(fresh.targets, vec![corpse]);
+    assert!(fresh.messages.is_empty());
+
+    // 5.1 s later 1.9 s are left.
+    for _ in 0..102 {
+        s.world.tick();
+    }
+    assert!(s.world.decay_remaining_ms(corpse) < 2_000);
+    let old = s.cast(&drain, ME, false, Some(corpse));
+    assert!(old.targets.is_empty());
+    assert_eq!(
+        old.messages,
+        vec![TargetMessage::System(
+            SystemMessageId::TheCorpseIsTooOldTheSkillCannotBeUsed
+        )]
+    );
+    assert_eq!(s.cast(&other, ME, false, Some(corpse)).targets, vec![corpse]);
+}
+
 #[test]
 fn pc_body_needs_a_dead_player() {
     let mut s = Scene::new();

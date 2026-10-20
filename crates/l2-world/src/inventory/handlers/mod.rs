@@ -11,6 +11,7 @@
 // - `item_skills.rs`: `ItemSkillsTemplate` / `ItemSkills` / `Elixir` (potions, scrolls, herbs).
 // - `extractable.rs`: `ExtractableItems` (boxes and packs: `<capsuled_items>`).
 // - `book.rs`: `Book` (the help page of an item).
+// - `windows.rs`: `Maps` and `Calculator` (they open a client window).
 // - `reuse.rs`: the item reuse stamps (`Creature.addTimeStampItem` and friends), the
 //   "remaining re-use time" message and `ExUseSharedGroupItem`.
 // - `consume.rs`: `Player.destroyItem(process, objectId, count, ...)`.
@@ -28,6 +29,7 @@ mod extractable;
 mod item_skills;
 mod registry;
 mod reuse;
+mod windows;
 
 pub mod shots;
 

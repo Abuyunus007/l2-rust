@@ -16,7 +16,8 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    ExUseSharedGroupItem, InventoryUpdate, NpcHtmlMessage, SystemMessage, SystemMessageParam,
+    ExUseSharedGroupItem, InventoryUpdate, NpcHtmlMessage, ShowCalculator, ShowMiniMap, SystemMessage,
+    SystemMessageParam,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
@@ -147,6 +148,14 @@ const ITEMS: &str = r#"<list>
 	<set name="ex_immediate_effect" val="true" />
 	<set name="handler" val="ItemSkills" />
 	<skills><skill id="2278" level="1" /></skills>
+</item>
+<item id="1665" type="EtcItem" name="Map of Gludin">
+	<set name="immediate_effect" val="true" />
+	<set name="handler" val="Maps" />
+</item>
+<item id="4393" type="EtcItem" name="Calculator">
+	<set name="default_action" val="CALC" />
+	<set name="handler" val="Calculator" />
 </item>
 <item id="9100" type="EtcItem" name="Everything Box">
 	<set name="default_action" val="PEEL" />
@@ -844,6 +853,37 @@ fn a_box_is_refused_when_the_inventory_is_nearly_full() {
 
 /// `Book`: the page `data/html/help/<itemId>.htm` as an `NpcHtmlMessage` of the item, then
 /// `ActionFailed`; without the file Java shows a "My Text is missing" page.
+/// Java `Maps.onItemUse` and `Calculator.onItemUse`: the item's id goes to the client, which opens
+/// the window. Neither item has a reuse delay or is used up.
+#[test]
+fn a_map_and_a_calculator_open_their_windows() {
+    let mut s = Scene::new(vec![item(0x100, 1665, 1), item(0x101, 4393, 1)]);
+    s.me.take();
+
+    s.use_item(0x100);
+    let sent = s.me.take();
+    let maps = of(&sent, ServerOpcode::ShowMinimap);
+    assert_eq!(maps.len(), 1, "{:?}", names(&sent));
+    assert_eq!(
+        decode::<ShowMiniMap>(maps[0]),
+        ShowMiniMap {
+            map_id: 1665,
+            seven_signs_period: 0
+        }
+    );
+
+    s.use_item(0x101);
+    let sent = s.me.take();
+    let calc = of(&sent, ServerOpcode::ShowCalc);
+    assert_eq!(calc.len(), 1, "{:?}", names(&sent));
+    assert_eq!(
+        decode::<ShowCalculator>(calc[0]),
+        ShowCalculator { calculator_id: 4393 }
+    );
+
+    assert_eq!(s.inventory(), [(1665, 1), (4393, 1)]);
+}
+
 #[test]
 fn a_book_shows_its_help_page() {
     let dir = tempfile::tempdir().unwrap();

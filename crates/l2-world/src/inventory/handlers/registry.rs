@@ -25,6 +25,10 @@ pub(crate) enum ItemHandlerKind {
     ExtractableItems,
     /// `Book`: shows the help page of the item.
     Book,
+    /// `Maps`: opens the mini map (M5-FIX-03).
+    Maps,
+    /// `Calculator`: opens the calculator (M5-FIX-03).
+    Calculator,
 }
 
 impl ItemHandlerKind {
@@ -36,6 +40,8 @@ impl ItemHandlerKind {
             "Elixir" => Self::Elixir,
             "ExtractableItems" => Self::ExtractableItems,
             "Book" => Self::Book,
+            "Maps" => Self::Maps,
+            "Calculator" => Self::Calculator,
             _ => return None,
         })
     }
@@ -66,6 +72,8 @@ impl World {
             }
             ItemHandlerKind::ExtractableItems => self.extractable_items_on_use(id, item, template),
             ItemHandlerKind::Book => self.book_on_use(id, item),
+            ItemHandlerKind::Maps => self.maps_on_use(id, item),
+            ItemHandlerKind::Calculator => self.calculator_on_use(id, item),
         }
     }
 
@@ -124,6 +132,11 @@ mod tests {
         assert_eq!(
             ItemHandlerKind::from_name("Elixir"),
             Some(ItemHandlerKind::Elixir)
+        );
+        assert_eq!(ItemHandlerKind::from_name("Maps"), Some(ItemHandlerKind::Maps));
+        assert_eq!(
+            ItemHandlerKind::from_name("Calculator"),
+            Some(ItemHandlerKind::Calculator)
         );
         assert_eq!(ItemHandlerKind::from_name("itemskills"), None);
         // Registered in Java, not ported here (a later card adds its own).

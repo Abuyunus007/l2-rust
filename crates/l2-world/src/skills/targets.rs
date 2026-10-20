@@ -19,7 +19,6 @@
 //   is followed: party = only the caster, clan = only the caster, summon targets find nothing.
 // - PvP flags (`Player.getPvpFlag()`): the world has none, they read as 0.
 // - NPCs have no zone flags in the world, so `isInsideZone` is false for them.
-// - `Attackable.isOldCorpse` (needs the decay timer's remaining time): see `corpse_mob`.
 //
 // # Quirks kept
 // - `getTargetList` filters players out of a monster's non-negative skill only when the handler
@@ -138,6 +137,8 @@ pub struct TargetContext {
 enum EffectKind {
     /// `MAGICAL_ATTACK`, `HP_DRAIN`, `PHYSICAL_ATTACK`, `PHYSICAL_ATTACK_HP_LINK`: `Skill.isDamage()`.
     Damage,
+    /// `HP_DRAIN` alone (`HpDrain`), not the other damage types.
+    HpDrain,
     StealAbnormal,
     Resurrection,
     SummonNpc,
@@ -161,6 +162,7 @@ impl EffectKind {
                     | "PhysicalSoulDamage"
                     | "SoulBlow"
             ),
+            Self::HpDrain => effect_name == "HpDrain",
             Self::StealAbnormal => effect_name == "StealAbnormal",
             Self::Resurrection => effect_name == "Resurrection",
             Self::SummonNpc => effect_name == "SummonNpc",
@@ -1030,10 +1032,17 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         };
         // `hasEffectType(SUMMON) && target.isServitor()`: no effect class has the SUMMON type.
-        // M5: `hasEffectType(HP_DRAIN) && attackable.isOldCorpse(player, CorpseConsumeSkillAllowed
-        // TimeBeforeDecay (2000 ms), true)` returns an empty list and sends
-        // THE_CORPSE_IS_TOO_OLD_THE_SKILL_CANNOT_BE_USED. It needs the remaining time of the
-        // corpse's decay timer, which the timer wheel does not expose (see the report).
+        // `hasEffectType(HP_DRAIN) && attackable.isOldCorpse(player, CorpseConsumeSkillAllowed
+        // TimeBeforeDecay, true)`: a corpse about to decay cannot be drained. The list is empty
+        // and a player caster is told (`attacker != null` in `isOldCorpse`).
+        if has_effect(self.skill, EffectKind::HpDrain) && self.w.is_old_corpse(target) {
+            if self.caster_is_player() {
+                self.out.messages.push(TargetMessage::System(
+                    SystemMessageId::TheCorpseIsTooOldTheSkillCannotBeUsed,
+                ));
+            }
+            return;
+        }
         self.push(target);
     }
 
