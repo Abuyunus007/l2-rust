@@ -66,7 +66,7 @@ pub use skills::{
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
-pub use system_message::{SystemMessage, SystemMessageParam};
+pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,

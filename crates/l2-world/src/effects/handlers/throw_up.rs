@@ -2,7 +2,7 @@
 //! the height difference, and stunned while it flies.
 // Java: dist/game/data/scripts/handlers/skill/effects/ThrowUp.java
 
-use l2_data::skill::EffectTemplate;
+use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;
 use tracing::info;
 
@@ -67,7 +67,13 @@ impl EffectHandler for ThrowUp {
             Location::new(cur_x, cur_y, cur_z),
             Location::new(x, y, cur_z),
         );
-        // NOTE: Java broadcasts `FlyToLocation` (`THROW_UP`) here (see `fly.rs`).
+        world.fly_to_location(
+            cx.effected,
+            destination.x,
+            destination.y,
+            destination.z,
+            FlyType::ThrowUp,
+        );
         set_position_validated(world, cx.effected, destination);
     }
 }

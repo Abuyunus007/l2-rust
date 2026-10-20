@@ -36,14 +36,18 @@
 
 pub mod apply;
 pub mod buff_info;
+mod cancel_return;
 mod charges;
 pub mod control;
 mod handlers;
+pub mod item_extras;
 pub mod list;
 mod probability;
 pub mod registry;
+mod revive;
 mod save;
 pub(crate) mod traits;
+pub(crate) mod triggers;
 
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -94,7 +98,7 @@ impl SkillKey {
 }
 
 /// The configuration values the effect engine reads. `Default` is Java's default of each key.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct EffectSettings {
     /// `PlayerConfig.BUFFS_MAX_AMOUNT` (`MaxBuffAmount`, a byte).
     pub buffs_max_amount: i32,
@@ -123,6 +127,19 @@ pub struct EffectSettings {
     pub alt_store_toggles: bool,
     /// `PlayerConfig.ALT_STORE_DANCES` (`AltStoreDances`).
     pub alt_store_dances: bool,
+    /// `PlayerConfig.ALT_VALIDATE_TRIGGER_SKILLS` (`AltValidateTriggerSkills`): a triggered skill
+    /// between two playables goes through `checkPvpSkill` first (`makeTriggerCast`).
+    pub alt_validate_trigger_skills: bool,
+    /// `CancelReturnConfig.CANCEL_RETURN_ON` (`CancelReturn`).
+    pub cancel_return_on: bool,
+    /// `CancelReturnConfig.CANCEL_RETURN_MOB` (`ReturnMonster`).
+    pub cancel_return_mob: bool,
+    /// `CancelReturnConfig.CANCEL_RETURN_PLAYER` (`ReturnPlayer`).
+    pub cancel_return_player: bool,
+    /// `CancelReturnConfig.CANCEL_RETURN_PLAYER_OLYS` (`ReturnPlayerOlys`).
+    pub cancel_return_player_olys: bool,
+    /// `CancelReturnConfig.TIME_TO_RETURN` (`TimeToReturn` seconds, Java keeps milliseconds).
+    pub cancel_return_time_ms: i32,
 }
 
 impl Default for EffectSettings {
@@ -140,6 +157,12 @@ impl Default for EffectSettings {
             store_skill_cooltime: true,
             alt_store_toggles: false,
             alt_store_dances: false,
+            alt_validate_trigger_skills: false,
+            cancel_return_on: false,
+            cancel_return_mob: true,
+            cancel_return_player: true,
+            cancel_return_player_olys: false,
+            cancel_return_time_ms: 10_000,
         }
     }
 }
@@ -171,6 +194,13 @@ pub struct EffectsWorld {
     /// Java `Playable._transferDmgTo` (`TransferDamage`): the player who takes part of the
     /// damage, by the id of the one who is hit.
     pub(crate) transfer_damage_to: HashMap<ObjectId, ObjectId>,
+    /// The event listeners the trigger skill effects register (see `triggers.rs`).
+    pub(crate) listeners: triggers::ListenerTable,
+    /// Augmentation and element of item instances (see `item_extras.rs`).
+    pub(crate) item_extras: item_extras::ItemExtrasTable,
+    /// The buffs the dispel effects will give back (see `cancel_return.rs`).
+    pub(crate) pending_returns: cancel_return::ReturnTable,
+    pub(crate) next_return: u64,
 }
 
 impl EffectsWorld {
@@ -303,6 +333,7 @@ impl World {
     /// login is a new `Player`).
     pub(crate) fn forget_effects(&mut self, id: ObjectId) {
         self.effects.transfer_damage_to.remove(&id);
+        self.effects.listeners.remove(&id);
         self.forget_control(id);
         if let Some(task) = self.effects.status_tasks.remove(&id) {
             self.timers.cancel(task);

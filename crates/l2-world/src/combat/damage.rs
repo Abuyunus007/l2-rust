@@ -123,7 +123,8 @@ impl World {
             if self.has_ai(target) {
                 self.notify_action_evaded(target, id);
             }
-            // `notifyAttackAvoid`: the ON_CREATURE_ATTACK_AVOID script event (D-05).
+            // `notifyAttackAvoid`: the ON_CREATURE_ATTACK_AVOID event (`TriggerSkillByAvoid`).
+            self.notify_attack_avoid(id, target, false);
         }
 
         // Send message about damage/crit or miss.
@@ -170,11 +171,18 @@ impl World {
 
             // Reduce targets HP.
             self.reduce_current_hp(target, f64::from(damage), Some(id));
-            // `notifyDamageReceived`: a fake dead player stands up (script events: D-05).
-            self.notify_damage_received(target, f64::from(damage));
+            // `notifyDamageReceived`: a fake dead player stands up, the damage listeners hear it.
+            self.notify_damage_received_by(target, f64::from(damage), Some(id), None, crit, false);
             if reflected_damage > 0 {
                 self.reduce_current_hp(id, f64::from(reflected_damage), Some(target));
-                self.notify_damage_received(id, f64::from(reflected_damage));
+                self.notify_damage_received_by(
+                    id,
+                    f64::from(reflected_damage),
+                    Some(target),
+                    None,
+                    crit,
+                    false,
+                );
             }
 
             // Do not absorb if weapon is of type bow.

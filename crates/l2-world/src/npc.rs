@@ -748,8 +748,12 @@ impl World {
             (m.core.x, m.core.y, m.core.z, m.core.heading)
         };
         let spawn_radius = SPAWN_OFFSET_RADIUS;
-        // `(int) master.getCollisionRadius()`.
-        let minimum_radius = f64::from(master_template.collision_radius) as i32 + MINIMUM_SPAWN_RADIUS;
+        // `(int) master.getCollisionRadius()`: the master's current radius (`Grow` changes it).
+        let master_radius = self.npcs.get(&master).map_or_else(
+            || f64::from(master_template.collision_radius),
+            |m| m.collision_radius,
+        );
+        let minimum_radius = master_radius as i32 + MINIMUM_SPAWN_RADIUS;
         let mut new_x = self.rng().get(minimum_radius * 2, spawn_radius * 2);
         let mut new_y = self.rng().get(new_x, spawn_radius * 2);
         new_y = (f64::from(new_y * new_y - new_x * new_x)).sqrt() as i32;
@@ -872,6 +876,9 @@ impl World {
             left_hand: template.lhand_id,
             enchant_effect: enchant,
             display_effect: 0,
+            collision_radius: f64::from(template.collision_radius),
+            must_reward_exp_sp: true,
+            special_drop: false,
             movement: crate::movement::NpcMovement::default(),
             spawn_point: spawn_point.unwrap_or_default(),
             spawn_time_ms: 0,

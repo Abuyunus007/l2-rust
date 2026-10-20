@@ -176,9 +176,10 @@ impl SystemMessage {
     }
 }
 
-impl Encode for SystemMessage {
-    fn encode(&self, w: &mut PacketWriter) {
-        write_opcode(w, Self::OPCODE);
+impl SystemMessage {
+    /// The id, the parameter count and the parameters: what follows the opcode of a
+    /// `SystemMessage` and of a `ConfirmDlg`.
+    fn encode_body(&self, w: &mut PacketWriter) {
         // Java writes `_params.length`: the declared count of the id, or more when the caller
         // added more parameters than declared. Parameters that were never added are not written,
         // which is the Java behaviour too.
@@ -187,6 +188,78 @@ impl Encode for SystemMessage {
         for param in &self.params {
             param.write(w);
         }
+    }
+}
+
+impl Encode for SystemMessage {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        self.encode_body(w);
+    }
+}
+
+// Java: gameserver/network/serverpackets/ConfirmDlg.java
+/// A yes/no question (`CONFIRM_DLG`): a system message with its parameters, a time limit and the
+/// id of whoever asks. The answer comes back as `DlgAnswer` with the same message id.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfirmDlg {
+    pub message: SystemMessage,
+    /// Java `addTime`: milliseconds the dialog stays (0 = no limit).
+    pub time: i32,
+    /// Java `addRequesterId`.
+    pub requester_id: i32,
+}
+
+impl ConfirmDlg {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ConfirmDlg;
+
+    /// Java `ConfirmDlg(SystemMessageId)`: no time limit, no requester.
+    pub fn new(id: SystemMessageId) -> Self {
+        Self {
+            message: SystemMessage::new(id),
+            time: 0,
+            requester_id: 0,
+        }
+    }
+
+    /// Java `addTime(time)`.
+    #[must_use]
+    pub fn with_time(mut self, time: i32) -> Self {
+        self.time = time;
+        self
+    }
+
+    /// Java `addRequesterId(id)`.
+    #[must_use]
+    pub fn with_requester_id(mut self, id: i32) -> Self {
+        self.requester_id = id;
+        self
+    }
+
+    /// Appends a parameter to the message (Java `getSystemMessage().addXxx(..)`).
+    #[must_use]
+    pub fn with(mut self, param: SystemMessageParam) -> Self {
+        self.message = self.message.with(param);
+        self
+    }
+}
+
+impl Encode for ConfirmDlg {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        self.message.encode_body(w);
+        w.i32(self.time).i32(self.requester_id);
+    }
+}
+
+impl Decode for ConfirmDlg {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let message = SystemMessage::decode(r)?;
+        Ok(Self {
+            message,
+            time: r.i32()?,
+            requester_id: r.i32()?,
+        })
     }
 }
 

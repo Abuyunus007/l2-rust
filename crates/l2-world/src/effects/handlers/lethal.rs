@@ -7,6 +7,7 @@ use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 
 use super::params;
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler};
 use crate::formulas::Rnd;
 use crate::world::World;
@@ -53,14 +54,28 @@ impl EffectHandler for Lethal {
         if f64::from(world.rng().get_int(100)) < (f64::from(self.full_lethal) * chance_multiplier) {
             // for Players CP and HP is set to 1.
             if world.is_player(effected) {
-                world.notify_damage_received(effected, current_hp - 1.0);
+                world.notify_damage_received_by(
+                    effected,
+                    current_hp - 1.0,
+                    Some(effector),
+                    Some(SkillKey::of(skill)),
+                    true,
+                    false,
+                );
                 world.set_current_cp(effected, 1.0, true);
                 world.set_current_hp(effected, 1.0, true);
                 world.send(effected, &SystemMessage::new(SystemMessageId::LethalStrike));
             }
             // For Monsters HP is set to 1 (summons: M6).
             else if world.is_monster(effected) {
-                world.notify_damage_received(effected, current_hp - 1.0);
+                world.notify_damage_received_by(
+                    effected,
+                    current_hp - 1.0,
+                    Some(effector),
+                    Some(SkillKey::of(skill)),
+                    true,
+                    false,
+                );
                 world.set_current_hp(effected, 1.0, true);
             }
             world.send(
@@ -81,7 +96,14 @@ impl EffectHandler for Lethal {
             }
             // For Monsters HP is set to 50%.
             else if world.is_monster(effected) {
-                world.notify_damage_received(effected, current_hp * 0.5);
+                world.notify_damage_received_by(
+                    effected,
+                    current_hp * 0.5,
+                    Some(effector),
+                    Some(SkillKey::of(skill)),
+                    true,
+                    false,
+                );
                 world.set_current_hp(effected, current_hp * 0.5, true);
             }
             world.send(effector, &SystemMessage::new(SystemMessageId::HalfKill));

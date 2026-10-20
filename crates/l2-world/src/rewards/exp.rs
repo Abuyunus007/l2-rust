@@ -249,6 +249,10 @@ impl World {
         if !self.is_attackable_npc(dying) {
             return;
         }
+        // `if (!getMustRewardExpSP()) return;` (`OpenChest` unlocked the chest: no exp).
+        if self.npcs.get(&dying).is_some_and(|n| !n.must_reward_exp_sp) {
+            return;
+        }
         let Some(at) = self.position_of(dying) else {
             return;
         };

@@ -18,7 +18,7 @@ use l2_protocol_game::server::enterworld::{
     SkillList, SkillListEntry, TOP_CENTER, TeleportBookmark, ValidateLocation, remaining_seconds,
     reuse_seconds,
 };
-use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ConfirmDlg, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ClientPacket, ConnectionState, NpcStringId, SystemMessageId, decode_client};
 
 /// Independent little-endian builder.
@@ -574,6 +574,34 @@ fn system_message_layouts() {
         .text("hello")
         .done();
     check_round_trip(&text, &expected, 1);
+}
+
+#[test]
+fn confirm_dlg_layout() {
+    // Java ConfirmDlg.writeImpl: the SystemMessage body (id, count, typed params), then the time
+    // and the requester id. The resurrection question (id 1510) takes a player name and a string.
+    let dlg = ConfirmDlg::new(
+        SystemMessageId::C1IsMakingAnAttemptToResurrectYouIfYouChooseThisPathS2ExperiencePointsWillBeReturnedToYouDoYouWantToBeResurrected,
+    )
+    .with(SystemMessageParam::PlayerName("Cleric".into()))
+    .with(SystemMessageParam::Text("1234".into()));
+    let expected = Bytes::default()
+        .byte(0xF3)
+        .ints(&[1510, 2, 12])
+        .text("Cleric")
+        .int(0)
+        .text("1234")
+        .ints(&[0, 0])
+        .done();
+    check_round_trip(&dlg, &expected, 1);
+
+    // The charm of courage question carries a 60 s limit and no parameters.
+    let charm =
+        ConfirmDlg::new(SystemMessageId::YourCharmOfCourageIsTryingToResurrectYouWouldYouLikeToResurrectNow)
+            .with_time(60_000)
+            .with_requester_id(5);
+    let expected = Bytes::default().byte(0xF3).ints(&[2306, 0, 60_000, 5]).done();
+    check_round_trip(&charm, &expected, 1);
 }
 
 #[test]

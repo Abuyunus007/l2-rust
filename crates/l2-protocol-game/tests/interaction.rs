@@ -11,7 +11,8 @@ use std::path::PathBuf;
 
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::client::{
-    Action, BypassUserCmd, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld, SendBypassBuildCmd,
+    Action, BypassUserCmd, DlgAnswer, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld,
+    SendBypassBuildCmd,
 };
 use l2_protocol_game::server::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
@@ -418,6 +419,24 @@ fn request_target_canceld_layout() {
 }
 
 #[test]
+fn dlg_answer_layout() {
+    // Java: DlgAnswer reads messageId, answer and requesterId (three ints).
+    let yes = DlgAnswer {
+        message_id: 1510,
+        answer: 1,
+        requester_id: 0,
+    };
+    check_round_trip(&yes, &[0xC6, 0xE6, 0x05, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], 1);
+    let no = DlgAnswer {
+        message_id: 1510,
+        answer: 0,
+        requester_id: 77,
+    };
+    // After the opcode and the message id: the answer, then the requester.
+    assert_eq!(no.to_bytes()[5..], [0, 0, 0, 0, 77, 0, 0, 0]);
+}
+
+#[test]
 fn request_bypass_keeps_the_raw_command() {
     let packet = RequestBypassToServer {
         command: "npc_12345_Chat 1".into(),
@@ -573,6 +592,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestTargetCanceld(p) => p.to_bytes(),
             ClientPacket::RequestBypassToServer(p) => p.to_bytes(),
             ClientPacket::RequestLinkHtml(p) => p.to_bytes(),
+            ClientPacket::DlgAnswer(p) => p.to_bytes(),
             _ => return None,
         };
         // The client may pad a packet, so the recorded bytes may be longer than ours.
