@@ -23,6 +23,7 @@ use l2_protocol_game::server::combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, Revive,
 };
+use l2_protocol_game::server::effect_packets::FlyToLocation;
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -45,7 +46,7 @@ use l2_protocol_game::server::skills::{
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
     SkillPosition,
 };
-use l2_protocol_game::server::system_message::{SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
@@ -179,6 +180,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             fields
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
+        ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -281,6 +283,8 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::AcquireSkillInfo => decoded::<AcquireSkillInfo>(&mut r, acquire_skill_info_fields),
         ServerOpcode::AcquireSkillDone => decoded::<AcquireSkillDone>(&mut r, no_fields),
         ServerOpcode::PartySpelled => decoded::<PartySpelled>(&mut r, party_spelled_fields),
+        ServerOpcode::ConfirmDlg => decoded::<ConfirmDlg>(&mut r, confirm_dlg_fields),
+        ServerOpcode::FlyToLocation => decoded::<FlyToLocation>(&mut r, fly_to_location_fields),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -435,6 +439,17 @@ fn param_fields(param: &SystemMessageParam) -> Value {
         SystemMessageParam::LongNumber(v) => json!({ "type": "long", "value": v }),
         SystemMessageParam::ZoneName { x, y, z } => json!({ "type": "zone_name", "x": x, "y": y, "z": z }),
     }
+}
+
+fn confirm_dlg_fields(p: &ConfirmDlg) -> Value {
+    let mut fields = system_message_fields(&p.message);
+    fields["time"] = json!(p.time);
+    fields["requester_id"] = json!(p.requester_id);
+    fields
+}
+
+fn fly_to_location_fields(p: &FlyToLocation) -> Value {
+    object!(p => object_id, dest_x, dest_y, dest_z, org_x, org_y, org_z, fly_type)
 }
 
 fn restart_response_fields(p: &RestartResponse) -> Value {
@@ -912,6 +927,8 @@ mod tests {
         ServerOpcode::AcquireSkillInfo,
         ServerOpcode::AcquireSkillDone,
         ServerOpcode::PartySpelled,
+        ServerOpcode::ConfirmDlg,
+        ServerOpcode::FlyToLocation,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -2033,6 +2050,44 @@ mod tests {
                 .to_bytes()
             ),
             json!({ "object_id": 9, "skill_id": 1204, "skill_level": 2 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &l2_protocol_game::client::DlgAnswer {
+                    message_id: 1510,
+                    answer: 1,
+                    requester_id: 0,
+                }
+                .to_bytes()
+            ),
+            json!({ "message_id": 1510, "answer": 1, "requester_id": 0 })
+        );
+    }
+
+    #[test]
+    fn confirm_dlg_and_fly_to_location_show_their_fields() {
+        let dlg = ConfirmDlg::new(
+            SystemMessageId::YourCharmOfCourageIsTryingToResurrectYouWouldYouLikeToResurrectNow,
+        )
+        .with_time(60_000);
+        let fields = s2c_fields(&dlg.to_bytes());
+        assert_eq!(fields["id"], 2306);
+        assert_eq!(fields["time"], 60_000);
+        assert_eq!(fields["requester_id"], 0);
+        let fly = FlyToLocation {
+            object_id: 1,
+            dest_x: 2,
+            dest_y: 3,
+            dest_z: 4,
+            org_x: 5,
+            org_y: 6,
+            org_z: 7,
+            fly_type: 2,
+        };
+        assert_eq!(
+            s2c_fields(&fly.to_bytes()),
+            json!({ "object_id": 1, "dest_x": 2, "dest_y": 3, "dest_z": 4, "org_x": 5, "org_y": 6, "org_z": 7, "fly_type": 2 })
         );
     }
 

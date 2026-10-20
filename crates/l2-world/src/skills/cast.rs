@@ -629,7 +629,8 @@ impl World {
             return;
         };
         let key = SkillKey::of(skill);
-        // ON_CREATURE_SKILL_USE script listeners: D-05.
+        // ON_CREATURE_SKILL_USE: the `TriggerSkillBySkill` listeners (scripts: D-05).
+        self.notify_skill_use(caster, key, target);
 
         // TODO (Java): Unhardcode using event listeners!
         if self.skill_has_effect_type(skill, &[EffectType::Resurrection])

@@ -419,6 +419,12 @@ impl World {
             // Java: Action, RequestTargetCanceld, RequestBypassToServer, RequestLinkHtml
             ClientInput::Action { object_id, action_id } => self.on_action(id, object_id, action_id),
             ClientInput::TargetCanceled { unselect } => self.on_target_canceled(id, unselect),
+            // Java: DlgAnswer
+            ClientInput::DlgAnswer {
+                message_id,
+                answer,
+                requester_id,
+            } => self.on_dlg_answer(id, message_id, answer, requester_id),
             ClientInput::Bypass { command } => self.on_bypass_to_server(id, &command),
             ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
             ClientInput::BuildCmd { command } => self.on_build_cmd(id, &command),

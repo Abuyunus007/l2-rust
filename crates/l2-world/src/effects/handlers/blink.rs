@@ -2,7 +2,7 @@
 //! of the skill, as far as the geodata lets it.
 // Java: dist/game/data/scripts/handlers/skill/effects/Blink.java
 
-use l2_data::skill::EffectTemplate;
+use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;
 
 use super::fly::{set_position_validated, valid_location};
@@ -46,7 +46,13 @@ impl EffectHandler for Blink {
             Location::new(x + x1, y + y1, z),
         );
         world.set_intention_idle(cx.effected);
-        // NOTE: Java broadcasts `FlyToLocation` here (see `fly.rs`).
+        world.fly_to_location(
+            cx.effected,
+            destination.x,
+            destination.y,
+            destination.z,
+            FlyType::Dummy,
+        );
         world.abort_attack(cx.effected);
         world.abort_cast(cx.effected);
         set_position_validated(world, cx.effected, destination);

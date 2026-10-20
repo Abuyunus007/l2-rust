@@ -697,6 +697,14 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             store_skill_cooltime: p.store_skill_cooltime,
             alt_store_toggles: p.alt_store_toggles,
             alt_store_dances: p.alt_store_dances,
+            alt_validate_trigger_skills: p.alt_validate_trigger_skills,
+            rate_extractable: config.rates.rate_extractable,
+            cancel_return_on: config.cancel_return.cancel_return_on,
+            cancel_return_mob: config.cancel_return.cancel_return_mob,
+            cancel_return_player: config.cancel_return.cancel_return_player,
+            cancel_return_player_olys: config.cancel_return.cancel_return_player_olys,
+            // `TimeToReturn` is post-processed (seconds -> ms): read from the file below.
+            ..l2_world::EffectSettings::default()
         },
         learn: l2_world::LearnSettings {
             alt_game_skill_learn: p.alt_game_skill_learn,
@@ -750,6 +758,10 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             Ok(ids) => settings.talk.list_pet_rent_npc = ids.into_iter().collect(),
             Err(_) => warn!("ListPetRentNpc = {text} is not a list of ids; using 30827."),
         }
+    }
+    // `TimeToReturn` (seconds, Java keeps ms) is a hand-port placeholder in the generated config.
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::CancelReturnConfig::FILE)) {
+        settings.effects.cancel_return_time_ms = ini.get_int("TimeToReturn", 10).saturating_mul(1000);
     }
     // `NpcTalkBlockingTime` is post-processed (seconds -> ms) in the generated config, so it is
     // read from `Player.ini` directly.

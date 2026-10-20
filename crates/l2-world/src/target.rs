@@ -16,7 +16,8 @@
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
 // - The GM shift click (`NpcShiftClick`, `npcinfo.htm`) and `AltGameViewNpc`: the GM gets the
 //   target and `ActionFailed`.
-// - Locked targets (aggression effects), `isOutOfControl`, vehicles, parties: M4/M5.
+// - `isOutOfControl`, vehicles, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
+//   `on_target_canceled`.)
 
 use l2_protocol_game::server::{
     ActionFailed, MoveToPawn, MyTargetSelected, NpcHtmlMessage, ShowTownMap, TargetSelected,
@@ -354,7 +355,18 @@ impl World {
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
-        // `npc.canTarget(player)`: `isOutOfControl` and locked targets are not modelled.
+        // `npc.canTarget(player)`: `isOutOfControl` is not modelled. A locked target (`TargetMe`)
+        // cannot be changed; the `ActionFailed` Java sends here is the one `on_action_object`
+        // sends after every click.
+        if self.is_locked_target(player) && self.locked_target(player) != Some(npc) {
+            self.send(
+                player,
+                &l2_protocol_game::server::SystemMessage::new(
+                    l2_protocol_game::SystemMessageId::FailedToChangeAttackTarget,
+                ),
+            );
+            return;
+        }
         if let Some(p) = self.players.get_mut(&player) {
             p.talk.last_folk_npc = Some(npc);
         }
@@ -516,8 +528,17 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP(M4): `isLockedTarget()` (FAILED_TO_DISABLE_ATTACK_TARGET) and, for Escape
-        // (`unselect == 0`), aborting the cast the player is in before the target goes.
+        if self.is_locked_target(id) {
+            self.send(
+                id,
+                &l2_protocol_game::server::SystemMessage::new(
+                    l2_protocol_game::SystemMessageId::FailedToDisableAttackTarget,
+                ),
+            );
+            return;
+        }
+        // FOLLOW-UP(M4): for Escape (`unselect == 0`), aborting the cast the player is in before
+        // the target goes.
         let _ = unselect;
         if self.target_of(id).is_some() {
             self.set_target(id, None);

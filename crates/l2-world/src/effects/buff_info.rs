@@ -25,7 +25,7 @@ use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
 
 /// World ticks per second (Java `GameTimeTaskManager.TICKS_PER_SECOND` counts 100 ms ticks).
-const TICKS_PER_SECOND: u64 = 20;
+pub(crate) const TICKS_PER_SECOND: u64 = 20;
 
 /// Java `EffectTickTask`: which effect of which buff info ticks.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

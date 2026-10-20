@@ -224,9 +224,17 @@ impl World {
             npc.right_hand = right;
             npc.left_hand = left;
         }
-        // `_currentCollisionHeight/Radius` are the template's already (no transformation of NPCs
-        // yet). `_killingBlowWeaponId` is read by scripts only (D-05). Fake players are not
-        // ported.
+        // `_currentCollisionRadius` goes back to the template's (`Grow` may have changed it).
+        // `_currentCollisionHeight` is the template's already. `_killingBlowWeaponId` is read by
+        // scripts only (D-05). Fake players are not ported.
+        let radius = self
+            .npcs
+            .get(&id)
+            .and_then(|n| self.npc_world.template(n.npc_id))
+            .map(|t| f64::from(t.collision_radius));
+        if let (Some(npc), Some(radius)) = (self.npcs.get_mut(&id), radius) {
+            npc.collision_radius = radius;
+        }
         let _ = killer;
         self.add_decay_task(id);
     }
@@ -449,6 +457,12 @@ impl World {
                 self.update_effect_icons(id, false);
             }
             self.send_etc_status_update(id);
+            // `_revivePet = false; _reviveRequested = 0; _revivePower = 0;`
+            if let Some(control) = self.effects.control.get_mut(&id) {
+                control.revive_pet = false;
+                control.revive_requested = false;
+                control.revive_power = 0.0;
+            }
             // The pet revive request, a summon next to its owner in a peace zone, the mount's
             // food, the dimensional rift and the instance's eject timer: not modelled.
         }

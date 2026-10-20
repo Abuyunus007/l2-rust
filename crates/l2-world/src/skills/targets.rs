@@ -203,10 +203,43 @@ impl World {
         target: Option<ObjectId>,
         ctx: &TargetContext,
     ) -> TargetResult {
+        self.skill_target_list_with_type(rng, skill, skill.target_type, caster, only_first, target, ctx)
+    }
+
+    /// `TargetHandler.getInstance().getHandler(targetType).getTargetList(skill, caster, onlyFirst,
+    /// target)`: the handler of `target_type` runs on `skill`, whatever target type the skill has
+    /// (the trigger skill effects pick the handler from their own `targetType` parameter).
+    pub fn skill_target_list_as(
+        &mut self,
+        skill: &SkillTemplate,
+        target_type: TargetType,
+        caster: ObjectId,
+        only_first: bool,
+        target: Option<ObjectId>,
+        ctx: &TargetContext,
+    ) -> TargetResult {
+        self.with_rng(|world, rng| {
+            world.skill_target_list_with_type(rng, skill, target_type, caster, only_first, target, ctx)
+        })
+    }
+
+    /// [`Self::skill_target_list_as`] with the RNG passed in.
+    #[allow(clippy::too_many_arguments)]
+    pub fn skill_target_list_with_type(
+        &self,
+        rng: &mut impl Rnd,
+        skill: &SkillTemplate,
+        target_type: TargetType,
+        caster: ObjectId,
+        only_first: bool,
+        target: Option<ObjectId>,
+        ctx: &TargetContext,
+    ) -> TargetResult {
         let mut t = Targeting {
             w: self,
             rng,
             skill,
+            target_type,
             caster,
             only_first,
             target,
@@ -460,6 +493,8 @@ struct Targeting<'a, R: Rnd> {
     w: &'a World,
     rng: &'a mut R,
     skill: &'a SkillTemplate,
+    /// The handler to run: the skill's own target type, or the one a trigger effect names.
+    target_type: TargetType,
     caster: ObjectId,
     only_first: bool,
     target: Option<ObjectId>,
@@ -470,7 +505,7 @@ struct Targeting<'a, R: Rnd> {
 impl<R: Rnd> Targeting<'_, R> {
     /// `TargetHandler.getInstance().getHandler(getTargetType())` and the call.
     fn run(&mut self) {
-        match self.skill.target_type {
+        match self.target_type {
             TargetType::Area => self.area(),
             TargetType::AreaCorpseMob => self.area_corpse_mob(),
             TargetType::AreaFriendly => self.area_friendly(),

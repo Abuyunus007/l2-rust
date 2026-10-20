@@ -210,6 +210,21 @@ impl DropKiller {
     }
 }
 
+/// The template id `Chest.doItemDrop` swaps in for a chest nobody unlocked (`id += 3536` for the
+/// first range, a fixed id for each pair after it).
+pub(crate) fn locked_chest_drop_id(id: i32) -> i32 {
+    match id {
+        18265..=18286 => id + 3536,
+        18287 | 18288 => 21671,
+        18289 | 18290 => 21694,
+        18291 | 18292 => 21717,
+        18293 | 18294 => 21740,
+        18295 | 18296 => 21763,
+        18297 | 18298 => 21786,
+        _ => id,
+    }
+}
+
 /// Java `MathUtil.scaleToRange(double, double, double, double, double)`.
 fn scale_to_range(value: f64, source_min: f64, source_max: f64, target_min: f64, target_max: f64) -> f64 {
     let clamped = value.min(source_max).max(source_min);
@@ -876,6 +891,26 @@ impl World {
         }
     }
 
+    /// The template whose drop list `doItemDrop` rolls: the NPC's own, except for a `Chest` nobody
+    /// unlocked (`Chest.doItemDrop`), which drops as the template its id maps to.
+    // NOTE: Java passes `NpcData.getTemplate(id)` on, which is `null` for an id without a
+    // template (and then fails); the chest's own template is used in that case.
+    fn chest_drop_template_id(&self, dying: ObjectId, npc_id: i32) -> i32 {
+        let is_chest = self
+            .npc_world
+            .template(npc_id)
+            .is_some_and(|t| t.is_type("Chest"));
+        if !is_chest || self.npcs.get(&dying).is_some_and(|n| n.special_drop) {
+            return npc_id;
+        }
+        let mapped = locked_chest_drop_id(npc_id);
+        if self.npc_world.template(mapped).is_some() {
+            mapped
+        } else {
+            npc_id
+        }
+    }
+
     /// Java `Attackable.doItemDrop(mainDamageDealer)`.
     pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
         let Some(dealer) = main_damage_dealer else {
@@ -922,8 +957,9 @@ impl World {
             seeded: false,
         };
         let settings = self.settings.drops.clone();
+        let drop_template_id = self.chest_drop_template_id(dying, npc_id);
         let death_items = self.with_rng(|world, rng| {
-            world.npc_world.template(npc_id).map(|npc_template| {
+            world.npc_world.template(drop_template_id).map(|npc_template| {
                 calculate_drops(
                     &settings,
                     &templates,
@@ -967,5 +1003,28 @@ impl World {
                 self.broadcast_packet(dying, &message);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod chest_tests {
+    use super::locked_chest_drop_id;
+
+    /// The id table of `Chest.doItemDrop`.
+    #[test]
+    fn locked_chests_drop_as_the_template_their_id_maps_to() {
+        assert_eq!(locked_chest_drop_id(18265), 21801);
+        assert_eq!(locked_chest_drop_id(18286), 21822);
+        assert_eq!(locked_chest_drop_id(18287), 21671);
+        assert_eq!(locked_chest_drop_id(18288), 21671);
+        assert_eq!(locked_chest_drop_id(18289), 21694);
+        assert_eq!(locked_chest_drop_id(18292), 21717);
+        assert_eq!(locked_chest_drop_id(18294), 21740);
+        assert_eq!(locked_chest_drop_id(18296), 21763);
+        assert_eq!(locked_chest_drop_id(18298), 21786);
+        // Not a chest of the table: itself.
+        assert_eq!(locked_chest_drop_id(18264), 18264);
+        assert_eq!(locked_chest_drop_id(18299), 18299);
+        assert_eq!(locked_chest_drop_id(9003), 9003);
     }
 }

@@ -35,7 +35,8 @@
 // - `RecoGiveTask` (10 recommendations after 2 h online, 1 an hour after that) and the
 //   recommendation votes: the recommendation system. The counters are loaded and stored as they
 //   are.
-// - `EffectType.NEVITS_HOURGLASS` (an effect that keeps the hourglass paused): effects, M5.
+// - `EffectType.NEVITS_HOURGLASS` (an effect that keeps the hourglass paused) is the
+//   `NevitsHourglass` handler (`effects/handlers/nevits_hourglass.rs`, M5-EFX-05).
 // - The daily reset (`DailyResetManager.resetNevit` / `resetRecommends`): the daily reset task.
 // - The "hunting" exp bonus is a `TODO` in Java too.
 
@@ -644,10 +645,18 @@ impl World {
     pub(crate) fn nevit_on_exp_gain_start_hourglass(&mut self, id: ObjectId, add_to_exp: f64) {
         if self.settings.nevit_enabled && add_to_exp > 0.0 && !self.is_inside_zone(id, ZoneId::Peace) {
             self.start_nevit_hourglass_task(id);
-            // `getEffectList().getFirstEffect(EffectType.NEVITS_HOURGLASS) == null`: effects are M5,
-            // so there is never one.
-            self.nevit_mut(id).paused = false;
+            // `getEffectList().getFirstEffect(EffectType.NEVITS_HOURGLASS) == null`.
+            if !self.is_affected_by_effect_type(id, crate::effects::EffectType::NevitsHourglass) {
+                self.nevit_mut(id).paused = false;
+            }
         }
+    }
+
+    /// Java `PlayerStat.setPausedNevitHourglassStatus(value)`: the value, then `ExVoteSystemInfo`
+    /// (the `NevitsHourglass` effect pauses the hourglass while it lasts).
+    pub(crate) fn set_nevit_hourglass_paused(&mut self, id: ObjectId, value: bool) {
+        self.nevit_mut(id).paused = value;
+        self.send_vote_system_info(id);
     }
 
     /// The Nevit part of Java's `PlayerStat.addExpAndSp` after the bonuses.

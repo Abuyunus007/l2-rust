@@ -1,8 +1,11 @@
-//! The `DispelAll` effect: every buff, dance, toggle and debuff of the creature goes.
+//! The `DispelAll` effect: every buff, dance, toggle and debuff of the creature goes (and comes
+//! back later when `CancelReturn` is on).
 // Java: dist/game/data/scripts/handlers/skill/effects/DispelAll.java
 
 use l2_data::skill::EffectTemplate;
 
+use crate::effects::SkillFinishType;
+use crate::effects::cancel_return::TakenBuff;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::world::World;
 
@@ -26,10 +29,19 @@ impl EffectHandler for DispelAll {
         true
     }
 
-    // NOTE: Java gives the taken effects back after `CancelReturnConfig.TIME_TO_RETURN` when
-    // `CancelReturn` is on. That config is not in the effect settings, so the world always takes
-    // the effects for good, which is Java's answer with the default (`CancelReturn=false`).
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        world.stop_all_effects(cx.effected);
+        if !world.cancel_returns(cx.effector, cx.effected) {
+            world.stop_all_effects(cx.effected);
+            return;
+        }
+        let taken: Vec<TakenBuff> = world
+            .effect_list(cx.effected)
+            .map(|list| list.effects().map(TakenBuff::of).collect())
+            .unwrap_or_default();
+        for buff in &taken {
+            world.stop_skill_effects(cx.effected, SkillFinishType::Removed, buff.skill.id);
+        }
+        // A monster gets its buffs back too.
+        world.schedule_cancel_return(cx.effected, true, taken);
     }
 }
