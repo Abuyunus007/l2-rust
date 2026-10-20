@@ -13,7 +13,6 @@ use super::hate::reduce_hate;
 use super::params;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::Rnd;
-use crate::skills::TargetContext;
 use crate::world::World;
 
 /// Java `Formulas.calcProbability(_chance, effector, effected, skill)`.
@@ -230,8 +229,11 @@ impl EffectHandler for TargetMeProbability {
         let player = world.is_player(effector).then_some(effector);
         let allowed = match player {
             None => true,
-            // M5-CAST-01: `_currentSkill.isCtrlPressed()` is not known here.
-            Some(player) => world.check_pvp_skill(player, effected, cx.skill, &TargetContext::default()),
+            // `_currentSkill.isCtrlPressed()` of the caster's cast in progress.
+            Some(player) => {
+                let ctx = world.cast_target_context(player);
+                world.check_pvp_skill(player, effected, cx.skill, &ctx)
+            }
         };
         if allowed {
             // Target is different.
