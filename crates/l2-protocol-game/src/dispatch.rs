@@ -13,8 +13,9 @@ use crate::client::{
     NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse,
     RequestAutoSoulShot, RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem,
     RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse,
-    RequestNetPing, RequestRestart, RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld,
-    RequestUnEquipItem, Say2, SendBypassBuildCmd, UseItem, ValidatePosition,
+    RequestNetPing, RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg,
+    RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, Say2, SendBypassBuildCmd, UseItem,
+    ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -58,6 +59,8 @@ pub enum ClientPacket {
     RequestMagicSkillUse(RequestMagicSkillUse),
     RequestAcquireSkill(RequestAcquireSkill),
     RequestAcquireSkillInfo(RequestAcquireSkillInfo),
+    RequestShortCutReg(RequestShortCutReg),
+    RequestShortCutDel(RequestShortCutDel),
     DlgAnswer(DlgAnswer),
     /// `EX_REQUEST_AUTO_SOULSHOT` (`0xD0` 0x000D), an ex packet.
     RequestAutoSoulShot(RequestAutoSoulShot),
@@ -141,6 +144,8 @@ pub fn decode_client(
         RequestAcquireSkillInfo::OPCODE => {
             ClientPacket::RequestAcquireSkillInfo(RequestAcquireSkillInfo::decode(reader)?)
         }
+        RequestShortCutReg::OPCODE => ClientPacket::RequestShortCutReg(RequestShortCutReg::decode(reader)?),
+        RequestShortCutDel::OPCODE => ClientPacket::RequestShortCutDel(RequestShortCutDel::decode(reader)?),
         DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
@@ -432,6 +437,27 @@ mod tests {
                 skill_type: AcquireSkillType::Transform,
             }))
         );
+        assert_eq!(
+            decode(
+                InGame,
+                0x3D,
+                &[2, 0, 0, 0, 14, 0, 0, 0, 0xB4, 0x04, 0, 0, 7, 0, 0, 0, 1, 0, 0, 0]
+            )
+            .unwrap(),
+            Some(ClientPacket::RequestShortCutReg(RequestShortCutReg {
+                type_id: 2,
+                slot: 14,
+                id: 1204,
+                level: 7,
+                character_type: 1,
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x3F, &[13, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestShortCutDel(RequestShortCutDel { slot: 13 }))
+        );
+        // The shortcut bar only exists in game.
+        assert_eq!(decode(Authenticated, 0x3F, &[13, 0, 0, 0]).unwrap(), None);
         // Ex packets: the dispatcher consumes the ex id (0x000D soulshot, 0x004B dispel).
         assert_eq!(
             decode(InGame, 0xD0, &[0x0D, 0x00, 7, 0, 0, 0, 1, 0, 0, 0]).unwrap(),
@@ -472,6 +498,8 @@ mod tests {
             (Entering, 0x11, 103),
             (Authenticated, 0xD0, 1),
             (InGame, 0x49, 2),
+            (InGame, 0x3D, 19),
+            (InGame, 0x3F, 3),
         ] {
             assert!(
                 decode(state, opcode, &ZEROS[..len]).is_err(),

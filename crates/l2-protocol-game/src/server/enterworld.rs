@@ -103,9 +103,9 @@ pub enum OtherShortcut {
 }
 
 impl ShortcutEntry {
-    const TYPE_NONE: i32 = 0;
-    const TYPE_ITEM: i32 = 1;
-    const TYPE_SKILL: i32 = 2;
+    pub(crate) const TYPE_NONE: i32 = 0;
+    pub(crate) const TYPE_ITEM: i32 = 1;
+    pub(crate) const TYPE_SKILL: i32 = 2;
 
     fn write(&self, w: &mut PacketWriter) {
         match *self {
@@ -206,15 +206,37 @@ impl Decode for ShortcutInit {
 }
 
 // Java: gameserver/network/serverpackets/ShortcutRegister.java
-/// A skill shortcut changed (`SHORT_CUT_REGISTER`): `Shortcuts.updateShortcuts` sends it for every
-/// skill shortcut when the skill's level changes. Java's packet also carries item, action, macro,
-/// recipe and bookmark shortcuts; nothing sends those yet, so only the skill form exists.
+/// A shortcut was put on the bar (`SHORT_CUT_REGISTER`). `RequestShortcutReg` answers with it, and
+/// `Shortcuts.updateShortcuts` sends it for every skill shortcut when the skill's level changes.
+///
+/// `slot` is the wire slot (`slot + page * 12`). `character_type` is what the client sent (1 player,
+/// 2 summon); `updateShortcuts` always sends 1. [`ShortcutInit`] writes a constant 1 instead.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ShortcutRegister {
-    /// The wire slot (`slot + page * 12`).
-    pub slot: i32,
-    pub skill_id: i32,
-    pub level: i32,
+pub enum ShortcutRegister {
+    /// `ShortcutType.NONE` (Java maps an unknown type id of the client to it): type and slot only.
+    Empty { slot: i32 },
+    /// `ShortcutType.ITEM`: the item's object id and its shared reuse group (-1 when the item was
+    /// not found).
+    Item {
+        slot: i32,
+        id: i32,
+        character_type: i32,
+        shared_reuse_group: i32,
+    },
+    /// `ShortcutType.SKILL`: the skill id and level.
+    Skill {
+        slot: i32,
+        id: i32,
+        level: i32,
+        character_type: i32,
+    },
+    /// Action, macro, recipe or bookmark: the id only.
+    Other {
+        kind: OtherShortcut,
+        slot: i32,
+        id: i32,
+        character_type: i32,
+    },
 }
 
 impl ShortcutRegister {
@@ -224,28 +246,90 @@ impl ShortcutRegister {
 impl Encode for ShortcutRegister {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // The layout of the skill entry of `ShortcutInit` after its type and slot.
-        ShortcutEntry::Skill {
-            slot: self.slot,
-            id: self.skill_id,
-            level: self.level,
+        match *self {
+            Self::Empty { slot } => {
+                w.i32(ShortcutEntry::TYPE_NONE).i32(slot);
+            }
+            Self::Item {
+                slot,
+                id,
+                character_type,
+                shared_reuse_group,
+            } => {
+                w.i32(ShortcutEntry::TYPE_ITEM).i32(slot);
+                // Java: id, character type, shared reuse group, two "unknown" zeros, the item
+                // augment id (0).
+                w.i32(id).i32(character_type).i32(shared_reuse_group);
+                w.i32(0).i32(0).i32(0);
+            }
+            Self::Skill {
+                slot,
+                id,
+                level,
+                character_type,
+            } => {
+                w.i32(ShortcutEntry::TYPE_SKILL).i32(slot);
+                w.i32(id).i32(level).u8(0).i32(character_type); // Java: "C5" zero byte
+            }
+            Self::Other {
+                kind,
+                slot,
+                id,
+                character_type,
+            } => {
+                w.i32(kind as i32).i32(slot).i32(id).i32(character_type);
+            }
         }
-        .write(w);
     }
 }
 
 impl Decode for ShortcutRegister {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        match ShortcutEntry::read(r)? {
-            ShortcutEntry::Skill { slot, id, level } => Ok(Self {
-                slot,
-                skill_id: id,
-                level,
-            }),
-            other => Err(PacketError::invalid(
-                "shortcut type",
-                format!("only skill shortcuts are supported: {other:?}"),
-            )),
+        let kind = r.i32()?;
+        let slot = r.i32()?;
+        match kind {
+            ShortcutEntry::TYPE_NONE => Ok(Self::Empty { slot }),
+            ShortcutEntry::TYPE_ITEM => {
+                let id = r.i32()?;
+                let character_type = r.i32()?;
+                let shared_reuse_group = r.i32()?;
+                r.skip(4 + 4 + 4)?;
+                Ok(Self::Item {
+                    slot,
+                    id,
+                    character_type,
+                    shared_reuse_group,
+                })
+            }
+            ShortcutEntry::TYPE_SKILL => {
+                let id = r.i32()?;
+                let level = r.i32()?;
+                r.skip(1)?;
+                let character_type = r.i32()?;
+                Ok(Self::Skill {
+                    slot,
+                    id,
+                    level,
+                    character_type,
+                })
+            }
+            3..=6 => {
+                let other = match kind {
+                    3 => OtherShortcut::Action,
+                    4 => OtherShortcut::Macro,
+                    5 => OtherShortcut::Recipe,
+                    _ => OtherShortcut::Bookmark,
+                };
+                let id = r.i32()?;
+                let character_type = r.i32()?;
+                Ok(Self::Other {
+                    kind: other,
+                    slot,
+                    id,
+                    character_type,
+                })
+            }
+            other => Err(PacketError::invalid("shortcut type", format!("unknown: {other}"))),
         }
     }
 }

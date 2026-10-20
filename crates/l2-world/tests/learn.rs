@@ -739,10 +739,11 @@ fn learning_a_skill_takes_the_sp_and_stores_the_row() {
     let register: Vec<ShortcutRegister> = decoded(&sent, ME, "SHORT_CUT_REGISTER");
     assert_eq!(
         register,
-        vec![ShortcutRegister {
+        vec![ShortcutRegister::Skill {
             slot: 15,
-            skill_id: 3,
-            level: 1
+            id: 3,
+            level: 1,
+            character_type: 1
         }]
     );
     let skill_list: Vec<SkillList> = decoded(&sent, ME, "SKILL_LIST");
@@ -1031,7 +1032,7 @@ fn auto_learn_gives_every_available_skill_without_books() {
     let register: Vec<ShortcutRegister> = decoded(&sent, ME, "SHORT_CUT_REGISTER");
     // Java learns the final level of each skill in one go (the map holds Power Strike 2 only).
     assert_eq!(register.len(), 1);
-    assert_eq!(register[0].level, 2);
+    assert!(matches!(register[0], ShortcutRegister::Skill { level: 2, .. }));
     let skill_list: Vec<SkillList> = decoded(&sent, ME, "SKILL_LIST");
     assert_eq!(skill_list.len(), 1);
 }

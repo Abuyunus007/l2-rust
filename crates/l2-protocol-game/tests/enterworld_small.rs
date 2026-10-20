@@ -157,12 +157,13 @@ fn shortcut_init_layout() {
 }
 
 #[test]
-fn shortcut_register_layout() {
-    // Java: type SKILL (2), slot + page * 12, skill id, level, zero byte, 1.
-    let packet = ShortcutRegister {
+fn shortcut_register_skill_layout() {
+    // Java: type SKILL (2), slot + page * 12, skill id, level, zero byte, character type.
+    let packet = ShortcutRegister::Skill {
         slot: 14,
-        skill_id: 1204,
+        id: 1204,
         level: 7,
+        character_type: 1,
     };
     let expected = Bytes::default()
         .byte(0x44)
@@ -180,6 +181,66 @@ fn shortcut_register_layout() {
         }],
     };
     assert_eq!(init.to_bytes()[1 + 4..], packet.to_bytes()[1..]);
+    // The character type is what the client sent.
+    let summon = ShortcutRegister::Skill {
+        slot: 14,
+        id: 1204,
+        level: 7,
+        character_type: 2,
+    };
+    assert_eq!(summon.to_bytes()[summon.to_bytes().len() - 4..], [2, 0, 0, 0]);
+}
+
+#[test]
+fn shortcut_register_item_layout() {
+    // Java: type ITEM (1), slot, object id, character type, shared reuse group, 0, 0, augment 0.
+    let packet = ShortcutRegister::Item {
+        slot: 3,
+        id: 0x1000_0042,
+        character_type: 1,
+        shared_reuse_group: -1,
+    };
+    let expected = Bytes::default()
+        .byte(0x44)
+        .ints(&[1, 3, 0x1000_0042, 1, -1, 0, 0, 0])
+        .done();
+    check_round_trip(&packet, &expected, 1);
+    // ShortcutInit writes the same bytes after the opcode, but a constant 1 as character type and
+    // two shorts instead of the last int.
+    let init = ShortcutInit {
+        shortcuts: vec![ShortcutEntry::Item {
+            slot: 3,
+            id: 0x1000_0042,
+            shared_reuse_group: -1,
+        }],
+    };
+    assert_eq!(init.to_bytes()[1 + 4..], packet.to_bytes()[1..]);
+}
+
+#[test]
+fn shortcut_register_other_and_empty_layout() {
+    // ACTION, MACRO, RECIPE and BOOKMARK: id, character type.
+    for (kind, ordinal) in [
+        (OtherShortcut::Action, 3),
+        (OtherShortcut::Macro, 4),
+        (OtherShortcut::Recipe, 5),
+        (OtherShortcut::Bookmark, 6),
+    ] {
+        let packet = ShortcutRegister::Other {
+            kind,
+            slot: 25,
+            id: 9,
+            character_type: 2,
+        };
+        let expected = Bytes::default().byte(0x44).ints(&[ordinal, 25, 9, 2]).done();
+        check_round_trip(&packet, &expected, 1);
+    }
+    // NONE: type and slot only.
+    let empty = ShortcutRegister::Empty { slot: 5 };
+    check_round_trip(&empty, &Bytes::default().byte(0x44).ints(&[0, 5]).done(), 1);
+    // An unknown type is a bad packet.
+    let bad = Bytes::default().byte(0x44).ints(&[9, 5]).done();
+    assert!(ShortcutRegister::decode(&mut PacketReader::new(&bad[1..])).is_err());
 }
 
 #[test]

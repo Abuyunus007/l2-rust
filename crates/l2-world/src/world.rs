@@ -473,6 +473,16 @@ impl World {
             ClientInput::AutoSoulShot { item_id, shot_type } => {
                 self.on_request_auto_soul_shot(id, item_id, shot_type)
             }
+            // Java: RequestShortcutReg
+            ClientInput::ShortcutReg {
+                type_id,
+                slot,
+                id: shortcut_id,
+                level,
+                character_type,
+            } => self.on_request_shortcut_reg(id, type_id, slot, shortcut_id, level, character_type),
+            // Java: RequestShortcutDel
+            ClientInput::ShortcutDel { slot } => self.on_request_shortcut_del(id, slot),
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {

@@ -115,6 +115,17 @@ pub enum ClientInput {
     },
     /// Java `RequestAutoSoulShot`: switch the automatic use of a shot on (`shot_type` 1) or off (0).
     AutoSoulShot { item_id: i32, shot_type: i32 },
+    /// Java `RequestShortcutReg`: the raw wire values (type id, `slot + page * 12`, id, level,
+    /// character type). The world maps them like Java does.
+    ShortcutReg {
+        type_id: i32,
+        slot: i32,
+        id: i32,
+        level: i32,
+        character_type: i32,
+    },
+    /// Java `RequestShortcutDel`: the wire slot (`slot + page * 12`).
+    ShortcutDel { slot: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

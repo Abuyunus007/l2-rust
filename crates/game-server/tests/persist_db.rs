@@ -717,3 +717,109 @@ async fn the_task_stores_before_it_announces_the_logout() {
     pool.close().await;
     db.drop_db().await;
 }
+
+/// M5-SHORTCUT-01: the rows of `RequestShortcutReg` and `RequestShortcutDel`, as
+/// `Shortcuts.registerShortcutInDb` / `deleteShortcutFromDb` leave the table: one row per
+/// (slot, page) with the type ordinal, id and level; a replaced place keeps one row; a deleted
+/// place has none; rows of another class index stay.
+#[tokio::test]
+async fn shortcut_registrations_and_deletions_write_the_rows() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let shortcuts = ShortcutRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    let sc = |slot, page, kind, shortcut_id, level| ShortcutData {
+        slot,
+        page,
+        kind,
+        shortcut_id,
+        level,
+    };
+    let rows = |rows: Vec<l2_db::ShortcutRow>| {
+        let mut shape: Vec<(i32, i32, i32, i64, i32)> = rows
+            .iter()
+            .map(|r| {
+                (
+                    r.slot,
+                    r.page,
+                    r.kind.unwrap(),
+                    r.shortcut_id.unwrap(),
+                    r.level.unwrap(),
+                )
+            })
+            .collect();
+        shape.sort_unstable();
+        shape
+    };
+    // A bar of another class index, as the Java server may have written it.
+    shortcuts
+        .replace_shortcut(
+            CHAR_ID,
+            1,
+            &l2_db::NewShortcut {
+                slot: 0,
+                page: 0,
+                kind: 2,
+                shortcut_id: 5,
+                level: 1,
+            },
+        )
+        .await
+        .unwrap();
+
+    let mut data = player_data();
+    data.items = vec![];
+    data.skills = vec![];
+    // A skill, an item, an action, a macro, a recipe; the last page and slot; a NONE row.
+    data.shortcuts = vec![
+        sc(0, 0, 2, 1204, 7),
+        sc(1, 0, 1, 0x6000_1001, 0),
+        sc(2, 0, 3, 5, 0),
+        sc(3, 1, 4, 12, 0),
+        sc(11, 10, 5, 77, 0),
+        sc(4, 0, 0, 0, 0),
+    ];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        rows(shortcuts.shortcuts_of(CHAR_ID, 0).await.unwrap()),
+        vec![
+            (0, 0, 2, 1204, 7),
+            (1, 0, 1, 0x6000_1001, 0),
+            (2, 0, 3, 5, 0),
+            (3, 1, 4, 12, 0),
+            (4, 0, 0, 0, 0),
+            (11, 10, 5, 77, 0),
+        ]
+    );
+
+    // A skill level change (`updateShortcuts`), a shortcut that replaces another, one deleted.
+    data.shortcuts = vec![
+        sc(0, 0, 2, 1204, 8),
+        sc(1, 0, 3, 9, 0),
+        sc(3, 1, 4, 12, 0),
+        sc(11, 10, 5, 77, 0),
+        sc(4, 0, 0, 0, 0),
+    ];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        rows(shortcuts.shortcuts_of(CHAR_ID, 0).await.unwrap()),
+        vec![
+            (0, 0, 2, 1204, 8),
+            (1, 0, 3, 9, 0),
+            (3, 1, 4, 12, 0),
+            (4, 0, 0, 0, 0),
+            (11, 10, 5, 77, 0),
+        ]
+    );
+
+    // The other class index is not touched.
+    assert_eq!(
+        rows(shortcuts.shortcuts_of(CHAR_ID, 1).await.unwrap()),
+        vec![(0, 0, 2, 5, 1)]
+    );
+    pool.close().await;
+    db.drop_db().await;
+}

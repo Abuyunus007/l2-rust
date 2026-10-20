@@ -1240,3 +1240,46 @@ fn a_lost_level_takes_the_skills_it_no_longer_allows() {
         "{changes:?}"
     );
 }
+
+/// `Player.removeSkill` deletes the shortcuts of a skill that goes (`deleteShortcut`, which sends
+/// the list again); a skill that only drops a level keeps its shortcut.
+#[test]
+fn a_skill_that_goes_takes_its_shortcuts() {
+    let mut s = Scene::new("skills-down-shortcuts");
+    let mut data = player_data(ME, "Hero", 10);
+    data.exp = EXP[9] + 10;
+    data.skills = vec![
+        SkillData {
+            skill_id: 1005,
+            skill_level: 1,
+        },
+        SkillData {
+            skill_id: 1006,
+            skill_level: 2,
+        },
+    ];
+    let shortcut = |slot, page, kind, shortcut_id| ShortcutData {
+        slot,
+        page,
+        kind,
+        shortcut_id,
+        level: 1,
+    };
+    data.shortcuts = vec![
+        shortcut(0, 0, 2, 1005),
+        shortcut(1, 0, 2, 1006),
+        // Not a skill: the id only happens to be the same.
+        shortcut(2, 0, 3, 1005),
+        shortcut(3, 1, 2, 1005),
+    ];
+    s.enter(data);
+    s.log.take();
+    die_to_monster(&mut s);
+    // 1005 goes (2 shortcuts, a list each), 1006 is replaced by its level 1.
+    assert_eq!(
+        s.me().data.shortcuts,
+        vec![shortcut(1, 0, 2, 1006), shortcut(2, 0, 3, 1005)]
+    );
+    let sent = s.log.take();
+    assert_eq!(of(&sent, ME, "SHORT_CUT_INIT").len(), 2);
+}
