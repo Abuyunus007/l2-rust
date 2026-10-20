@@ -7,8 +7,9 @@
 //! message when something else arrives, because they only run inside tests.
 //!
 //! In the world it can walk (`MoveToLocation`, `ValidatePosition`), click (`Action`), attack
-//! (`AttackRequest`), follow a link of an html page (`RequestBypassToServer`), pick a button of the
-//! death window (`RequestRestartPoint`) and answer a teleport (`Appearing`); the
+//! (`AttackRequest`), use a skill, an item or the automatic shots (`use_skill`, `use_item`,
+//! `auto_soulshot`, `skill_cool_time`), follow a link of an html page (`RequestBypassToServer`),
+//! pick a button of the death window (`RequestRestartPoint`) and answer a teleport (`Appearing`); the
 //! `skip_until`, `expect_later` and `read_quiet` helpers collect what the world sends on its own.
 //!
 //! Every packet that is sent or received is also written to a log of `(direction, packet name)`
@@ -32,6 +33,7 @@ use l2_protocol_game::client::{
     MoveToLocation, NewCharacter, ProtocolVersion, RequestBypassToServer, RequestGotoLobby, RequestRestart,
     RequestRestartPoint, Say2, ValidatePosition,
 };
+use l2_protocol_game::client::{RequestAutoSoulShot, RequestMagicSkillUse, RequestSkillCoolTime, UseItem};
 use l2_protocol_game::server::{
     CharCreateFail, CharCreateOk, CharSelected, CharSelectionInfo, KeyPacket, NewCharacterSuccess,
     RestartResponse,
@@ -447,6 +449,48 @@ impl FakeGameClient {
             "the restart is allowed"
         );
         self.char_selection_info().await
+    }
+}
+
+// ---- skills and items (M5) ----------------------------------------------------------------------
+
+impl FakeGameClient {
+    /// `RequestMagicSkillUse`: use the skill `magic_id` on the current target (`ctrl` is the
+    /// force-use key). Does not wait for the answer.
+    pub async fn use_skill(&mut self, magic_id: i32, ctrl_pressed: bool) {
+        self.send_packet(&RequestMagicSkillUse {
+            magic_id,
+            ctrl_pressed,
+            shift_pressed: false,
+        })
+        .await;
+    }
+
+    /// `UseItem`: use the inventory item `object_id`. Does not wait for the answer.
+    pub async fn use_item(&mut self, object_id: i32) {
+        self.send_packet(&UseItem {
+            object_id,
+            ctrl_pressed: false,
+        })
+        .await;
+    }
+
+    /// `RequestAutoSoulShot`: switch the automatic use of the shot `item_id` on or off.
+    pub async fn auto_soulshot(&mut self, item_id: i32, on: bool) {
+        self.send_packet(&RequestAutoSoulShot {
+            item_id,
+            shot_type: if on {
+                RequestAutoSoulShot::ON
+            } else {
+                RequestAutoSoulShot::OFF
+            },
+        })
+        .await;
+    }
+
+    /// `RequestSkillCoolTime`: the client asks for the skills under reuse.
+    pub async fn skill_cool_time(&mut self) {
+        self.send_packet(&RequestSkillCoolTime).await;
     }
 }
 
