@@ -268,6 +268,38 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-FU-04](M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | in-progress |
 | [M5-FU-05](M5/M5-FU-05.md) | Item elements, augments and item rows | sonnet | full | M5 | in-progress |
 
+## M6: Parties, PvP, trade, clans, companions (approved 2026-10-20)
+
+16 cards (draft: [M6/DRAFT.md](M6/DRAFT.md)). Design: [docs/design/m6-social.md](../design/m6-social.md). Owner decisions: sieges/castles/clan halls in M7, Olympiad/Seven Signs in M8, quests after that; order inside M6: party/PvP/trade, then clans, then summons/pets/cubics/transformations.
+
+### Checkpoints
+| Checkpoint | You test |
+|---|---|
+| 🎮 **CP-M6a** | Two players: party with shared exp/loot and party buffs, a trade, PvP flag and karma. |
+| 🎮 **CP-M6b** | Clan: create, invite, ranks, crest, clan skills; the same clan on Sieghardt. |
+| 🎮 **CP-M6c** | Servitor, pet, cubics, a transformation. |
+| 🎮 **CP-M6d** | Milestone: a party session with summons and a clan on Kain, then on Sieghardt. |
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M6-GPROTO-09](M6/M6-GPROTO-09.md) | Party, PvP, trade, clan and summon packets | haiku | spot | none | in-progress |
+| [M6-PVP-01](M6/M6-PVP-01.md) | PvP flag, karma, PK, relations | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
+| [M6-PARTY-01](M6/M6-PARTY-01.md) | Parties | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
+| [M6-TRADE-01](M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | ready (refined when deps merge) |
+| [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | ready (refined when deps merge) |
+| [M6-CLAN-01](M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | ready (refined when deps merge) |
+| [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | ready (refined when deps merge) |
+| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills, clan warehouse, academy | sonnet | full | CLAN-01 | ready (refined when deps merge) |
+| [M6-SUMMON-01](M6/M6-SUMMON-01.md) | Summons: servitors | opus | full | GPROTO-09 | ready (refined when deps merge) |
+| [M6-PET-01](M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
+| [M6-CUBIC-01](M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
+| [M6-TRANS-01](M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | ready (refined when deps merge) |
+| [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | haiku | spot | PARTY-01, PVP-01 | ready (refined when deps merge) |
+| [M6-ADMIN-05](M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | ready (refined when deps merge) |
+| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01 | ready (refined when deps merge) |
+| [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
