@@ -692,6 +692,9 @@ fn nevit_points_come_from_the_player_variables() {
     let mut p = equipped(1, "Hero");
     p.profile.variables.insert("hunting_points".into(), "2000".into());
     p.profile.variables.insert("hunting_time".into(), "99999".into());
+    // A real last logout: with `lastAccess` 0 Java's daily reset (milliseconds compared with
+    // seconds, see `nevit_on_player_login`) clears the time on every login after 06:30 local.
+    p.profile.last_access = l2_util::time::now_millis();
     enter_player(&mut w, &log, 1, p);
     let packets = log.packets(1);
     let points: l2_protocol_game::server::ExNevitAdventPointInfo =
