@@ -1,0 +1,124 @@
+//! The item handler table and the handler branch of `UseItem`.
+// Java: handler/ItemHandler.java (getHandler)
+// Java: dist/game/data/scripts/handlers/MasterHandler.java (the names registered)
+// Java: network/clientpackets/UseItem.java (the `else` branch of `if (item.isEquipable())`)
+
+use l2_data::item::ItemTemplate;
+use l2_util::ObjectId;
+use tracing::warn;
+
+use crate::player::ItemData;
+use crate::world::World;
+
+/// The handlers this server has. Java registers a class per name; the name is the `handler` set
+/// of the item (`<set name="handler" val="ItemSkills" />`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ItemHandlerKind {
+    /// `ItemSkills`: the item casts its skills (not in the olympiad).
+    ItemSkills,
+    /// `ItemSkillsTemplate`: the same without the olympiad rule.
+    ItemSkillsTemplate,
+    /// `Elixir`: `ItemSkills` for players only.
+    Elixir,
+    /// `ExtractableItems`: opens a box.
+    ExtractableItems,
+    /// `Book`: shows the help page of the item.
+    Book,
+}
+
+impl ItemHandlerKind {
+    /// Java `ItemHandler._datatable.get(name)`: the names are case sensitive.
+    pub(crate) fn from_name(name: &str) -> Option<Self> {
+        Some(match name {
+            "ItemSkills" => Self::ItemSkills,
+            "ItemSkillsTemplate" => Self::ItemSkillsTemplate,
+            "Elixir" => Self::Elixir,
+            "ExtractableItems" => Self::ExtractableItems,
+            "Book" => Self::Book,
+            _ => return None,
+        })
+    }
+
+    /// Java `ItemHandler.getHandler(etcItem)`: `None` for weapons and armor, for an etc item
+    /// without a handler name and for a name nothing is registered under.
+    pub(crate) fn of_template(template: &ItemTemplate) -> Option<Self> {
+        Self::from_name(template.etc()?.handler.as_deref()?)
+    }
+}
+
+impl World {
+    /// Java `IItemHandler.onItemUse(player, item, forceUse)`. `item` does not have to be in the
+    /// inventory: a herb is used from the ground. `true` when the item was used.
+    pub(crate) fn run_item_handler(
+        &mut self,
+        kind: ItemHandlerKind,
+        id: ObjectId,
+        item: &ItemData,
+        template: &ItemTemplate,
+        force_use: bool,
+    ) -> bool {
+        match kind {
+            // `ItemSkills` only adds the olympiad rule, and `Elixir` the pet check ("your pet
+            // cannot carry this item"); neither applies yet.
+            ItemHandlerKind::ItemSkills | ItemHandlerKind::ItemSkillsTemplate | ItemHandlerKind::Elixir => {
+                self.item_skills_on_use(id, item, template, force_use)
+            }
+            ItemHandlerKind::ExtractableItems => self.extractable_items_on_use(id, item, template),
+            ItemHandlerKind::Book => self.book_on_use(id, item),
+        }
+    }
+
+    /// The end of `UseItem.runImpl`: the item is not equipable, so its handler runs, and when it
+    /// used the item the reuse delay starts.
+    pub(crate) fn use_item_with_handler(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        template: &ItemTemplate,
+        ctrl_pressed: bool,
+    ) {
+        // M6: the fishing rod branch (a lure goes to `PAPERDOLL_LHAND` while a rod is held)
+        // needs fishing, which is not modelled.
+
+        let Some(kind) = ItemHandlerKind::of_template(template) else {
+            if let Some(name) = template.etc().and_then(|e| e.handler.as_deref()) {
+                warn!("Unmanaged Item handler: {name} for Item Id: {}!", item.item_id);
+            }
+            return;
+        };
+
+        // Item reuse time should be added if the item is successfully used. Skill reuse delay is
+        // added by `beginCast` when the cast actually starts.
+        if self.run_item_handler(kind, id, item, template, ctrl_pressed) && template.reuse_delay > 0 {
+            let reuse_delay = template.reuse_delay;
+            self.add_time_stamp_item(id, item, template, i64::from(reuse_delay));
+            self.send_shared_group_update(
+                id,
+                item.item_id,
+                template.shared_reuse_group,
+                i64::from(reuse_delay),
+                reuse_delay,
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn names_are_exact() {
+        assert_eq!(
+            ItemHandlerKind::from_name("ItemSkills"),
+            Some(ItemHandlerKind::ItemSkills)
+        );
+        assert_eq!(
+            ItemHandlerKind::from_name("Elixir"),
+            Some(ItemHandlerKind::Elixir)
+        );
+        assert_eq!(ItemHandlerKind::from_name("itemskills"), None);
+        // Registered in Java, not ported here (a later card adds its own).
+        assert_eq!(ItemHandlerKind::from_name("Recipes"), None);
+    }
+}

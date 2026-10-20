@@ -720,6 +720,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             gm_trade_restricted_items: config.general.gm_trade_restricted_items,
             gm_item_restriction: config.general.gm_item_restriction,
             auto_loot_slot_limit: p.auto_loot_slot_limit,
+            rate_extractable: config.rates.rate_extractable,
         },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,

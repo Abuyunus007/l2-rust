@@ -26,6 +26,7 @@ use l2_protocol_game::server::{ActionFailed, GetItem, StopMove, SystemMessage, S
 use l2_util::ObjectId;
 use tracing::warn;
 
+use crate::inventory::handlers::ItemHandlerKind;
 use crate::inventory::item_name_param;
 use crate::movement::Intention;
 use crate::objects::ObjectKind;
@@ -221,8 +222,13 @@ impl World {
 
         // Auto use herbs - pick up.
         if template.ex_immediate_effect {
-            // M5: the item handler (`handler.onItemUse(this, target, false)`) casts the herb's
-            // skills.
+            match ItemHandlerKind::of_template(template) {
+                // The herb is used from the ground: it never enters the inventory.
+                Some(kind) => {
+                    self.run_item_handler(kind, id, &taken.data, template, false);
+                }
+                None => warn!("No item handler registered for item ID: {item_id}."),
+            }
             // `ItemManager.destroyItem(NONE, target, this, null)`.
             self.release_item_id(taken.data.object_id);
             return;
