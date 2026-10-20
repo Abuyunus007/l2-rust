@@ -117,6 +117,8 @@ pub struct ExpWorld {
     pub(crate) vitality: super::vitality::VitalityWorld,
     /// The Nevit tasks of every player (M4-VIT-01).
     pub(crate) nevit: super::nevit::NevitWorld,
+    /// The recommendation tasks and the daily reset (M5-FU-03).
+    pub(crate) reco: super::recommendations::RecoWorld,
 }
 
 /// What a batch of skill changes writes: `character_skills` rows (Java `storeSkill`).

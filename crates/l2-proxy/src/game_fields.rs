@@ -182,6 +182,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             fields
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
+        ClientPacket::RequestVoteNew(p) => object!(p => target_id),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
@@ -2139,6 +2140,16 @@ mod tests {
                 .to_bytes()
             ),
             json!({ "object_id": 9, "skill_id": 1204, "skill_level": 2 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &l2_protocol_game::client::RequestVoteNew {
+                    target_id: 268_435_456
+                }
+                .to_bytes()
+            ),
+            json!({ "target_id": 268_435_456 })
         );
         assert_eq!(
             c2s_fields(

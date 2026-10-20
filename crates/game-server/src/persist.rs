@@ -19,7 +19,11 @@
 // - `character_skills_save` and `character_item_reuse_save` (the buffs and reuse timers),
 // - `character_reco_bonus` (the Nevit hourglass time) and the `character_variables` rows the
 //   world changed (Nevit's points; M4-VIT-01),
-// with the statements the repositories copied from Java. It never runs bulk updates or cleanup.
+// - `character_reco_bonus` again for a vote or `RecoGiveTask` (`storeRecommendationValues`) and
+//   for Java's daily reset (`resetRecommends`: the two `UPDATE`s over every row, M5-FU-03),
+// with the statements the repositories copied from Java. It never runs bulk updates or cleanup
+// on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
+// runs the same ones every day.
 //
 // Item rows reach the database two ways, like in Java: `PersistCommand::ItemChanges` carries the
 // rows of one `Item.updateDatabase()` (an equip, an unequip, a destroyed item) and is written at
@@ -117,6 +121,28 @@ pub trait PlayerStore: Send + 'static {
         owner: ObjectId,
         upserts: &[SkillData],
         removed: &[i32],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Java `Player.storeRecommendationValues`: `REPLACE INTO character_reco_bonus
+    /// (charId,rec_have,rec_left)`; `time_left` falls back to the column default (0).
+    fn store_reco_values(
+        &mut self,
+        owner: ObjectId,
+        rec_have: i32,
+        rec_left: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Java `DailyResetManager.resetRecommends`, the database half: the two `UPDATE`s of every
+    /// `character_reco_bonus` row.
+    fn reset_recommends(&mut self) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Java `PlayerVariables.storeMe`: the `character_variables` rows one character changed
+    /// (deletes first, then upserts).
+    fn store_player_variables(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[(String, String)],
+        removed: &[String],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
 }
 
@@ -294,6 +320,55 @@ async fn run<S: PlayerStore>(
                 // skill list against what was last written.
                 if let Err(e) = result {
                     error!("Skill changes of {} could NOT be stored: {e}", owner.0);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::RecoValues {
+                owner,
+                rec_have,
+                rec_left,
+            }) => {
+                let mut result = store.store_reco_values(owner, rec_have, rec_left).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the recommendations of {} (try {} of {attempts}): {e}",
+                        owner.0,
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_reco_values(owner, rec_have, rec_left).await;
+                }
+                // Java logs it and goes on; the next full store writes the counters again.
+                if let Err(e) = result {
+                    error!("The recommendations of {} could NOT be stored: {e}", owner.0);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ResetRecommends) => {
+                // Java: "Could not reset Recommendations System", logged, no retry.
+                if let Err(e) = store.reset_recommends().await {
+                    error!("Could not reset Recommendations System: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::PlayerVariables {
+                owner,
+                upserts,
+                removed,
+            }) => {
+                let mut result = store.store_player_variables(owner, &upserts, &removed).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the variables of {} (try {} of {attempts}): {e}",
+                        owner.0,
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_player_variables(owner, &upserts, &removed).await;
+                }
+                // The variables stay marked as changed in the world: the next full store writes
+                // them again.
+                if let Err(e) = result {
+                    error!("The variables of {} could NOT be stored: {e}", owner.0);
                 }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
@@ -1055,6 +1130,37 @@ impl PlayerStore for DbStore {
         result
     }
 
+    async fn store_reco_values(
+        &mut self,
+        owner: ObjectId,
+        rec_have: i32,
+        rec_left: i32,
+    ) -> Result<(), PersistError> {
+        self.reco.replace_reco_values(owner.0, rec_have, rec_left).await?;
+        Ok(())
+    }
+
+    async fn reset_recommends(&mut self) -> Result<(), PersistError> {
+        self.reco.reset_recommends().await?;
+        Ok(())
+    }
+
+    async fn store_player_variables(
+        &mut self,
+        owner: ObjectId,
+        upserts: &[(String, String)],
+        removed: &[String],
+    ) -> Result<(), PersistError> {
+        // The deletes first, then the upserts (`PlayerVariables.saveNowSync`).
+        for name in removed {
+            self.variables.delete_variable(owner.0, name).await?;
+        }
+        for (name, value) in upserts {
+            self.variables.upsert_variable(owner.0, name, value).await?;
+        }
+        Ok(())
+    }
+
     async fn player_offline(&mut self, object_id: ObjectId) -> Result<(), PersistError> {
         self.baselines.remove(&object_id);
         let now_ms = SystemTime::now()
@@ -1085,6 +1191,12 @@ mod tests {
         GroundItems(Vec<i32>),
         /// Skill changes: owner, (skill id, level) written, skill ids deleted.
         Skills(i32, Vec<(i32, i32)>, Vec<i32>),
+        /// Recommendation counters: owner, rec_have, rec_left.
+        RecoValues(i32, i32, i32),
+        /// The daily reset of `character_reco_bonus`.
+        ResetRecommends,
+        /// Variables: owner, (name, value) written, names deleted.
+        Variables(i32, Vec<(String, String)>, Vec<String>),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -1145,6 +1257,37 @@ mod tests {
                 upserts.iter().map(|s| (s.skill_id, s.skill_level)).collect(),
                 removed.to_vec(),
             ));
+            Ok(())
+        }
+
+        async fn store_reco_values(
+            &mut self,
+            owner: ObjectId,
+            rec_have: i32,
+            rec_left: i32,
+        ) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::RecoValues(owner.0, rec_have, rec_left));
+            Ok(())
+        }
+
+        async fn reset_recommends(&mut self) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::ResetRecommends);
+            Ok(())
+        }
+
+        async fn store_player_variables(
+            &mut self,
+            owner: ObjectId,
+            upserts: &[(String, String)],
+            removed: &[String],
+        ) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::Variables(owner.0, upserts.to_vec(), removed.to_vec()));
             Ok(())
         }
     }
@@ -1329,6 +1472,40 @@ mod tests {
                 Call::Skills(1, vec![(239, 1)], vec![]),
                 Call::Store("A1".into()),
                 Call::Skills(1, vec![(239, 2), (1216, 1)], vec![3]),
+                Call::Offline(1),
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn recommendation_writes_are_applied_in_order_with_the_stores() {
+        let messages = vec![
+            OutboxMessage::Persist(PersistCommand::RecoValues {
+                owner: ObjectId(1),
+                rec_have: 4,
+                rec_left: 19,
+            }),
+            store_msg(1, "A1"),
+            OutboxMessage::Persist(PersistCommand::ResetRecommends),
+            OutboxMessage::Persist(PersistCommand::PlayerVariables {
+                owner: ObjectId(1),
+                upserts: vec![("hunting_time".into(), "0".into())],
+                removed: vec!["nevit_b".into()],
+            }),
+            left_msg(1),
+        ];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::RecoValues(1, 4, 19),
+                Call::Store("A1".into()),
+                Call::ResetRecommends,
+                Call::Variables(
+                    1,
+                    vec![("hunting_time".into(), "0".into())],
+                    vec!["nevit_b".into()]
+                ),
                 Call::Offline(1),
             ]
         );

@@ -126,6 +126,9 @@ pub enum ClientInput {
     },
     /// Java `RequestShortcutDel`: the wire slot (`slot + page * 12`).
     ShortcutDel { slot: i32 },
+    /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
+    /// client thinks it selected).
+    VoteNew { target_id: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

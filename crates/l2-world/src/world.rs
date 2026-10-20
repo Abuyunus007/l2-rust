@@ -485,6 +485,8 @@ impl World {
             ClientInput::ShortcutDel { slot } => self.on_request_shortcut_del(id, slot),
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
+            // Java: RequestVoteNew
+            ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -546,6 +548,9 @@ impl World {
             TimerKind::NevitAdvent(id) => self.on_nevit_advent_timer(id),
             TimerKind::NevitEffectEnd(id) => self.on_nevit_effect_end(id),
             TimerKind::NevitHourglassEnd(id) => self.on_nevit_hourglass_end(id),
+            // Java: RecoGiveTask, DailyResetManager.onReset
+            TimerKind::RecoGive(id) => self.on_reco_give_timer(id),
+            TimerKind::DailyReset => self.on_daily_reset_timer(),
             // Java: BuffFinishTask, EffectTickTask, EffectList's icon task,
             // Player.updateAndBroadcastStatus
             TimerKind::BuffFinish(id) => self.on_buff_finish_timer(id),

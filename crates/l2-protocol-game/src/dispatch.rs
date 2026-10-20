@@ -14,8 +14,8 @@ use crate::client::{
     RequestAutoSoulShot, RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem,
     RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse,
     RequestNetPing, RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg,
-    RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, Say2, SendBypassBuildCmd, UseItem,
-    ValidatePosition,
+    RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, RequestVoteNew, Say2, SendBypassBuildCmd,
+    UseItem, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -66,6 +66,8 @@ pub enum ClientPacket {
     RequestAutoSoulShot(RequestAutoSoulShot),
     /// `EX_REQUEST_DISPEL` (`0xD0` 0x004B), an ex packet.
     RequestDispel(RequestDispel),
+    /// `REQUEST_NEW_VOTE_SYSTEM` (`0xD0` 0x007E), an ex packet.
+    RequestVoteNew(RequestVoteNew),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -172,6 +174,7 @@ fn decode_ex_client(
             ClientPacket::RequestAutoSoulShot(RequestAutoSoulShot::decode(reader)?)
         }
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
+        RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))
@@ -474,6 +477,11 @@ mod tests {
                 skill_level: 2,
             }))
         );
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x7E, 0x00, 9, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestVoteNew(RequestVoteNew { target_id: 9 }))
+        );
+        assert_eq!(decode(Entering, 0xD0, &[0x7E, 0x00, 9, 0, 0, 0]).unwrap(), None);
         // The state check comes first: these are IN_GAME only.
         assert_eq!(decode(Authenticated, 0x39, &ZEROS).unwrap(), None);
         assert_eq!(decode(Entering, 0xD0, &[0x4B, 0x00]).unwrap(), None);

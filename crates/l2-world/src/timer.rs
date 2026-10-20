@@ -79,6 +79,12 @@ pub enum TimerKind {
     NevitEffectEnd(ObjectId),
     /// Java `RecoBonusTaskEnd`: the end of the Nevit hourglass.
     NevitHourglassEnd(ObjectId),
+    /// Java `RecoGiveTask`: recommendations to give out, 2 h after the login and then every hour,
+    /// see `rewards/recommendations.rs`.
+    RecoGive(ObjectId),
+    /// Java `DailyResetManager`'s daily run at 6:30 (server local time), see
+    /// `rewards/recommendations.rs`.
+    DailyReset,
     /// Java `BuffFinishTask`'s 1 s run for one creature: its timed buffs count down, see
     /// `effects/list.rs`.
     BuffFinish(ObjectId),
