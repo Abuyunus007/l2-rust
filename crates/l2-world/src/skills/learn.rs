@@ -454,10 +454,11 @@ impl World {
         for slot in slots {
             self.send(
                 id,
-                &ShortcutRegister {
+                &ShortcutRegister::Skill {
                     slot,
-                    skill_id,
+                    id: skill_id,
                     level,
+                    character_type: 1,
                 },
             );
         }

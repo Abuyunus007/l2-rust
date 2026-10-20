@@ -19,7 +19,6 @@
 // ground (`ground_item.rs`).
 
 use l2_data::item::TYPE2_QUEST;
-use l2_data::item::types::EtcItemType;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::visibility::status;
 use l2_protocol_game::server::{
@@ -28,8 +27,8 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 use tracing::warn;
 
-use super::{LOC_PAPERDOLL, etc_type, item_name_param};
-use crate::enter::{current_load, shortcut_init};
+use super::{LOC_PAPERDOLL, item_name_param};
+use crate::enter::current_load;
 use crate::player::ItemData;
 use crate::stats::skills::java_hash_map_order;
 use crate::world::World;
@@ -73,45 +72,9 @@ impl World {
     }
 
     /// Java `Player.removeItemFromShortcut(objectId)`: the first shortcut that points to the item
-    /// goes, and the client gets the whole shortcut list again.
-    // NOTE: Java also deletes the `character_shortcuts` row at once; here the row goes with the
-    // next store, which compares the shortcut list.
+    /// goes, and the client gets the whole shortcut list again (`shortcuts.rs`).
     fn remove_item_from_shortcut(&mut self, id: ObjectId, object_id: ObjectId) {
-        let Some(player) = self.players.get_mut(&id) else {
-            return;
-        };
-        // `ShortcutType.ITEM` is ordinal 1.
-        let Some(index) = player
-            .data
-            .shortcuts
-            .iter()
-            .position(|s| s.kind == 1 && s.shortcut_id == object_id.0)
-        else {
-            return;
-        };
-        player.data.shortcuts.remove(index);
-        // A shortcut to a shot item ends its automatic use (`ExAutoSoulShot`, M5-SHOT-01).
-        let item = player
-            .data
-            .items
-            .iter()
-            .find(|i| i.object_id == object_id)
-            .map(|i| i.item_id);
-        if let Some(item_id) = item {
-            let is_shot = self
-                .item_templates()
-                .as_deref()
-                .and_then(|t| t.get(item_id))
-                .is_some_and(|t| etc_type(t) == Some(EtcItemType::Shot));
-            self.shortcut_removed_for_item(id, item_id, is_shot);
-        }
-        let Some(player) = self.players.get(&id) else {
-            return;
-        };
-        let list = shortcut_init(&player.data, &*self.data);
-        self.send(id, &list);
-        // The automatic shots are announced again after the list.
-        self.resend_auto_soul_shots(id);
+        self.delete_shortcut_by_object_id(id, object_id);
     }
 
     /// Java `PlayerInventory.removeItem(item)`: the shortcut goes, a worn item comes off, the item

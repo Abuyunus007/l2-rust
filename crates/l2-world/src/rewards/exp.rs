@@ -848,10 +848,13 @@ impl World {
     }
 
     /// Java `Player.removeSkill(skill, true)`: the skill goes, its row is deleted.
-    // NOTE: Java also deletes the shortcuts of the skill (`deleteShortcut`, and the client's
-    // `ShortCutDelete`); shortcuts are not modelled yet.
+    // NOTE(java-quirk): the shortcuts of the skill go whether or not the skill was known
+    // (`Player.removeSkill` deletes them for any non-null `Skill`); there is no `ShortCutDelete`
+    // packet, `deleteShortcut` resends the list.
     fn forget_skill(&mut self, id: ObjectId, skill_id: i32, writes: &mut SkillWrites) {
-        if !self.remove_skill(id, skill_id, true) {
+        let removed = self.remove_skill(id, skill_id, true);
+        self.delete_skill_shortcuts(id, skill_id);
+        if !removed {
             return;
         }
         if let Some(player) = self.players.get_mut(&id) {

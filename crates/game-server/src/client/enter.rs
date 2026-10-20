@@ -556,6 +556,15 @@ impl ClientSession {
                 item_id: p.item_id,
                 shot_type: p.shot_type,
             },
+            // Java: RequestShortcutReg, RequestShortcutDel
+            ClientPacket::RequestShortCutReg(p) => ClientInput::ShortcutReg {
+                type_id: p.type_id,
+                slot: p.slot,
+                id: p.id,
+                level: p.level,
+                character_type: p.character_type,
+            },
+            ClientPacket::RequestShortCutDel(p) => ClientInput::ShortcutDel { slot: p.slot },
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

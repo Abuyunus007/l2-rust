@@ -26,7 +26,7 @@ use l2_protocol_game::server::combat::{
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
-    SkillCoolTime, SkillList, ValidateLocation,
+    ShortcutRegister, SkillCoolTime, SkillList, ValidateLocation,
 };
 use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
@@ -168,6 +168,8 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestItemList(_) => json!({}),
         ClientPacket::RequestMagicSkillUse(p) => object!(p => magic_id, ctrl_pressed, shift_pressed),
         ClientPacket::RequestAutoSoulShot(p) => object!(p => item_id, shot_type),
+        ClientPacket::RequestShortCutReg(p) => object!(p => type_id, slot, id, level, character_type),
+        ClientPacket::RequestShortCutDel(p) => object!(p => slot),
         ClientPacket::RequestAcquireSkill(p) => {
             let mut fields = object!(p => id, level, sub_type);
             fields["skill_type"] = json!(p.skill_type.id());
@@ -206,6 +208,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ItemList => decoded::<ItemList>(&mut r, item_list_fields),
         ServerOpcode::UserInfo => decoded::<UserInfo>(&mut r, user_info_fields),
         ServerOpcode::ShortCutInit => decoded::<ShortcutInit>(&mut r, shortcut_init_fields),
+        ServerOpcode::ShortCutRegister => decoded::<ShortcutRegister>(&mut r, shortcut_register_fields),
         ServerOpcode::SkillList => decoded::<SkillList>(&mut r, skill_list_fields),
         ServerOpcode::SystemMessage => decoded::<SystemMessage>(&mut r, system_message_fields),
         ServerOpcode::RestartResponse => decoded::<RestartResponse>(&mut r, restart_response_fields),
@@ -394,6 +397,37 @@ fn shortcut_fields(shortcut: &ShortcutEntry) -> Value {
         ShortcutEntry::Other { kind, slot, id } => {
             json!({ "kind": "other", "type": kind as i32, "slot": slot, "id": id })
         }
+    }
+}
+
+fn shortcut_register_fields(p: &ShortcutRegister) -> Value {
+    match *p {
+        ShortcutRegister::Empty { slot } => json!({ "kind": "empty", "slot": slot }),
+        ShortcutRegister::Item {
+            slot,
+            id,
+            character_type,
+            shared_reuse_group,
+        } => json!({
+            "kind": "item", "slot": slot, "id": id,
+            "character_type": character_type, "shared_reuse_group": shared_reuse_group,
+        }),
+        ShortcutRegister::Skill {
+            slot,
+            id,
+            level,
+            character_type,
+        } => json!({
+            "kind": "skill", "slot": slot, "id": id, "level": level, "character_type": character_type,
+        }),
+        ShortcutRegister::Other {
+            kind,
+            slot,
+            id,
+            character_type,
+        } => json!({
+            "kind": "other", "type": kind as i32, "slot": slot, "id": id, "character_type": character_type,
+        }),
     }
 }
 
@@ -816,7 +850,8 @@ mod tests {
         EnterWorld, Logout, NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo,
         RequestActionUse, RequestAutoSoulShot, RequestDestroyItem, RequestDispel, RequestDropItem,
         RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestMagicSkillUse, RequestNetPing,
-        RequestRestart, RequestRestartPoint, RequestUnEquipItem, Say2, UseItem,
+        RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg, RequestUnEquipItem,
+        Say2, UseItem,
     };
     use l2_protocol_game::server::chat::{ChatType, CreatureSay, SayBody, SenderField};
     use l2_protocol_game::server::combat::{HITFLAG_CRIT, HITFLAG_MISS};
@@ -847,6 +882,7 @@ mod tests {
         ServerOpcode::ItemList,
         ServerOpcode::UserInfo,
         ServerOpcode::ShortCutInit,
+        ServerOpcode::ShortCutRegister,
         ServerOpcode::SkillList,
         ServerOpcode::SystemMessage,
         ServerOpcode::RestartResponse,
@@ -1244,6 +1280,41 @@ mod tests {
         assert_eq!(
             fields["shortcuts"][3],
             json!({ "kind": "other", "type": 4, "slot": 3, "id": 4 })
+        );
+
+        let register = ShortcutRegister::Skill {
+            slot: 14,
+            id: 1204,
+            level: 7,
+            character_type: 1,
+        };
+        assert_eq!(
+            s2c_fields(&register.to_bytes()),
+            json!({ "kind": "skill", "slot": 14, "id": 1204, "level": 7, "character_type": 1 })
+        );
+        let register = ShortcutRegister::Item {
+            slot: 2,
+            id: 77,
+            character_type: 1,
+            shared_reuse_group: -1,
+        };
+        assert_eq!(
+            s2c_fields(&register.to_bytes()),
+            json!({ "kind": "item", "slot": 2, "id": 77, "character_type": 1, "shared_reuse_group": -1 })
+        );
+        let register = ShortcutRegister::Other {
+            kind: OtherShortcut::Recipe,
+            slot: 3,
+            id: 4,
+            character_type: 2,
+        };
+        assert_eq!(
+            s2c_fields(&register.to_bytes()),
+            json!({ "kind": "other", "type": 5, "slot": 3, "id": 4, "character_type": 2 })
+        );
+        assert_eq!(
+            s2c_fields(&ShortcutRegister::Empty { slot: 9 }.to_bytes()),
+            json!({ "kind": "empty", "slot": 9 })
         );
 
         let skills = SkillList {
@@ -2002,6 +2073,24 @@ mod tests {
                 .to_bytes()
             ),
             json!({ "item_id": 1463, "shot_type": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestShortCutReg {
+                    type_id: 2,
+                    slot: 14,
+                    id: 1204,
+                    level: 7,
+                    character_type: 1,
+                }
+                .to_bytes()
+            ),
+            json!({ "type_id": 2, "slot": 14, "id": 1204, "level": 7, "character_type": 1 })
+        );
+        assert_eq!(
+            c2s_fields(InGame, &RequestShortCutDel { slot: 14 }.to_bytes()),
+            json!({ "slot": 14 })
         );
         let learn = RequestAcquireSkill {
             id: 3,

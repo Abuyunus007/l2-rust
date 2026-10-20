@@ -20,7 +20,7 @@
 //   `//getbuffs_ps`, `//viewskilleffects`, `//viewblockedeffects`, `//removereuse` and
 //   `//switch_gm_buffs` are not in this card.
 // - The `gmaudit` line of each command is written by the framework (`admin/mod.rs`).
-// - Shortcuts of a removed skill (`deleteShortcut`) are not modelled, as in `rewards/exp.rs`.
+// - Shortcuts of a removed skill (`deleteShortcut`) go with `World::delete_skill_shortcuts`.
 
 use l2_data::SkillTemplate;
 use l2_protocol_game::SystemMessageId;
@@ -116,13 +116,14 @@ fn known_level(world: &World, id: ObjectId, skill_id: i32) -> i32 {
 /// Java `Player.removeSkill(skill)` (store = true) for each id: the skill leaves the creature
 /// (`removeSkill(id, true)`, its effects too), its rows leave `character_skills` in one
 /// `SkillChanges` command.
-// NOTE(java-quirk): Java also deletes the shortcuts of each skill; shortcuts are not modelled yet.
+// `Player.removeSkill` deletes the shortcuts of each skill, one list sent per shortcut.
 fn forget_skills(world: &mut World, player: ObjectId, skill_ids: &[i32]) {
     let mut removed = Vec::new();
     for &skill_id in skill_ids {
         if world.remove_skill(player, skill_id, true) {
             removed.push(skill_id);
         }
+        world.delete_skill_shortcuts(player, skill_id);
     }
     if removed.is_empty() {
         return;

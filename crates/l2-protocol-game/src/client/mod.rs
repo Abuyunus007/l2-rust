@@ -24,6 +24,7 @@ pub mod ingame;
 pub mod interaction;
 pub mod item;
 pub mod movement;
+pub mod shortcut;
 pub mod skills;
 
 pub use charscreen::{
@@ -38,6 +39,7 @@ pub use interaction::{
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
+pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,
 };

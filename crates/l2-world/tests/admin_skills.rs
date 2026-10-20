@@ -18,7 +18,7 @@ use l2_data::{
     SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
-use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ShortcutInit, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::*;
 
@@ -630,6 +630,47 @@ fn remove_all_skills_removes_every_skill_and_stores_the_rows() {
     let out = s.log.take();
     assert_eq!(texts_to(&out, GM), ["You have removed all skills from P1."]);
     assert_eq!(texts_to(&out, USER), ["Admin removed all skills from you."]);
+}
+
+/// `Player.removeSkill` deletes the shortcuts of the skill: one `ShortcutInit` for each. The
+/// skills 3080 to 3259 keep theirs (the condition in Java).
+#[test]
+fn remove_skill_deletes_the_shortcuts_of_the_skill() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    let mut user = player(USER, 0, 100);
+    user.skills = vec![known(1020, 1), known(3100, 2)];
+    let sc = |slot, page, kind, shortcut_id| ShortcutData {
+        slot,
+        page,
+        kind,
+        shortcut_id,
+        level: 1,
+    };
+    user.shortcuts = vec![
+        sc(0, 0, 2, 1020),
+        sc(1, 0, 2, 3100),
+        sc(2, 0, 4, 1020),
+        sc(0, 1, 2, 1020),
+    ];
+    s.enter_with(user);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    s.cmd(GM, "remove_skill 1020");
+    let out = s.log.take();
+    // Two skill shortcuts of 1020, a list for each; the macro with the same id stays.
+    assert_eq!(decoded::<ShortcutInit>(&out, USER, "SHORT_CUT_INIT").len(), 2);
+    assert_eq!(
+        s.world.player(ObjectId(USER)).unwrap().data.shortcuts,
+        [sc(1, 0, 2, 3100), sc(2, 0, 4, 1020)]
+    );
+
+    // 3100 is in the range 3080..=3259: the shortcut stays.
+    s.cmd(GM, "remove_skill 3100");
+    let out = s.log.take();
+    assert!(decoded::<ShortcutInit>(&out, USER, "SHORT_CUT_INIT").is_empty());
+    assert_eq!(s.world.player(ObjectId(USER)).unwrap().data.shortcuts.len(), 2);
 }
 
 // ------------------------------------------------------------------------------ //skill_list
