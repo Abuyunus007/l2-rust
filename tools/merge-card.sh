@@ -34,6 +34,10 @@ case "$summary" in *" 0 failed") rm -f "$log" ;; *) grep -E "panicked at|^test .
 git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null
 # The incremental cache of the main checkout only grows (it reached 62 GB): drop it after each merge.
 rm -rf target/debug/incremental
+# The owner's disk is shared by every worktree: keep the main build folder small. Over 20 GB it is
+# dropped completely; the next merge rebuilds what it needs.
+size_kb=$(du -sk target/debug 2>/dev/null | cut -f1)
+if [ "${size_kb:-0}" -gt 20000000 ]; then rm -rf target/debug; echo "target/debug was over 20 GB: removed"; fi
 git branch -q -D "$branch" 2>/dev/null
 
 sed -i "s/| \(\[$card\][^|]*|[^|]*|[^|]*|[^|]*|[^|]*| \)[^|]* |/| \1merged |/" docs/tasks/BOARD.md
