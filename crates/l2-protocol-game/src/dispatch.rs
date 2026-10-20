@@ -31,6 +31,9 @@ use crate::client::{
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
 use crate::client::{
+    RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
+};
+use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
@@ -149,6 +152,11 @@ pub enum ClientPacket {
     RequestDismissAlly(RequestDismissAlly),
     RequestAllyCrest(RequestAllyCrest),
     RequestAllyInfo(RequestAllyInfo),
+    RequestPetGetItem(RequestPetGetItem),
+    RequestGetItemFromPet(RequestGetItemFromPet),
+    RequestGiveItemToPet(RequestGiveItemToPet),
+    RequestPetUseItem(RequestPetUseItem),
+    RequestChangePetName(RequestChangePetName),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -326,6 +334,17 @@ pub fn decode_client(
         RequestDismissAlly::OPCODE => ClientPacket::RequestDismissAlly(RequestDismissAlly::decode(reader)?),
         RequestAllyCrest::OPCODE => ClientPacket::RequestAllyCrest(RequestAllyCrest::decode(reader)?),
         RequestAllyInfo::OPCODE => ClientPacket::RequestAllyInfo(RequestAllyInfo::decode(reader)?),
+        RequestPetGetItem::OPCODE => ClientPacket::RequestPetGetItem(RequestPetGetItem::decode(reader)?),
+        RequestGetItemFromPet::OPCODE => {
+            ClientPacket::RequestGetItemFromPet(RequestGetItemFromPet::decode(reader)?)
+        }
+        RequestGiveItemToPet::OPCODE => {
+            ClientPacket::RequestGiveItemToPet(RequestGiveItemToPet::decode(reader)?)
+        }
+        RequestPetUseItem::OPCODE => ClientPacket::RequestPetUseItem(RequestPetUseItem::decode(reader)?),
+        RequestChangePetName::OPCODE => {
+            ClientPacket::RequestChangePetName(RequestChangePetName::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -550,10 +569,11 @@ mod tests {
 
     #[test]
     fn known_but_unported_packets_are_reported() {
-        // RequestGetItemFromPet (0x2C, a pet packet) is accepted in IN_GAME, but has no struct yet.
+        // RequestPartyMatchConfig (0x7F, party matching) is accepted in IN_GAME, but has no struct
+        // yet.
         assert_eq!(
-            decode(InGame, 0x2C, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::RequestGetItemFromPet))
+            decode(InGame, 0x7F, &[]).unwrap(),
+            Some(ClientPacket::Unported(ClientOpcode::RequestPartyMatchConfig))
         );
         // RequestManorList (ex id 0x0001): the id is consumed, the body is left alone.
         let mut r = PacketReader::new(&[0x01, 0x00, 0xAA]);

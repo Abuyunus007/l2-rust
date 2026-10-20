@@ -64,6 +64,9 @@ use l2_protocol_game::server::store::{
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
     SellStoreEntry, StoreCandidate,
 };
+use l2_protocol_game::server::summon::{
+    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+};
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::trade::{
     SendTradeRequest, TradeDone as ServerTradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone,
@@ -296,6 +299,11 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         | ClientPacket::AllyLeave(_)
         | ClientPacket::RequestDismissAlly(_)
         | ClientPacket::RequestAllyInfo(_) => json!({}),
+        ClientPacket::RequestPetGetItem(p) => object!(p => object_id),
+        ClientPacket::RequestGetItemFromPet(p) => object!(p => object_id, amount, unknown),
+        ClientPacket::RequestGiveItemToPet(p) => object!(p => object_id, amount),
+        ClientPacket::RequestPetUseItem(p) => object!(p => object_id),
+        ClientPacket::RequestChangePetName(p) => object!(p => name),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -504,6 +512,17 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::AskJoinAlliance => decoded::<AskJoinAlly>(&mut r, ask_join_ally_fields),
         ServerOpcode::AllianceInfo => decoded::<AllianceInfo>(&mut r, alliance_info_fields),
+        ServerOpcode::PetInfo => decoded::<PetInfo>(&mut r, pet_info_fields),
+        ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
+        ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
+        ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::SetSummonRemainTime => {
+            decoded::<SetSummonRemainTime>(&mut r, set_summon_remain_time_fields)
+        }
+        ServerOpcode::PetItemList => decoded::<PetItemList>(&mut r, pet_item_list_fields),
+        ServerOpcode::PetInventoryUpdate => {
+            decoded::<PetInventoryUpdate>(&mut r, pet_inventory_update_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -1388,6 +1407,51 @@ fn alliance_info_fields(p: &AllianceInfo) -> Value {
     fields
 }
 
+fn pet_info_fields(p: &PetInfo) -> Value {
+    object!(
+        p => summon_type, object_id, display_id, x, y, z, heading, m_atk_spd, p_atk_spd, run_speed, walk_speed,
+        swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier,
+        attack_speed_multiplier, collision_radius, collision_height, weapon, armor, has_owner, running,
+        in_combat, alike_dead, spawn_state, name, title, pvp_flag, karma, cur_fed, max_fed, cur_hp, max_hp,
+        cur_mp, max_mp, sp, level, exp, exp_for_this_level, exp_for_next_level, weight, max_load, p_atk,
+        p_def, m_atk, m_def, accuracy, evasion, critical, move_speed, atk_speed, casting_speed,
+        abnormal_visual_effects, mountable, water_or_flying, team_id, soul_shots_per_hit,
+        spirit_shots_per_hit, form_id, abnormal_visual_effect_special
+    )
+}
+
+fn pet_status_show_fields(p: &PetStatusShow) -> Value {
+    object!(p => summon_type)
+}
+
+fn pet_status_update_fields(p: &PetStatusUpdate) -> Value {
+    object!(
+        p => summon_type, object_id, x, y, z, title, cur_fed, max_fed, cur_hp, max_hp, cur_mp, max_mp, level,
+        exp, exp_for_this_level, exp_for_next_level
+    )
+}
+
+fn pet_delete_fields(p: &PetDelete) -> Value {
+    object!(p => pet_type, pet_object_id)
+}
+
+fn set_summon_remain_time_fields(p: &SetSummonRemainTime) -> Value {
+    object!(p => max_time, remaining_time)
+}
+
+fn pet_item_list_fields(p: &PetItemList) -> Value {
+    json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() })
+}
+
+fn pet_inventory_update_fields(p: &PetInventoryUpdate) -> Value {
+    let updates: Vec<Value> = p
+        .updates
+        .iter()
+        .map(|u| json!({ "change": u.change, "item": item_fields(&u.item) }))
+        .collect();
+    json!({ "updates": updates })
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -1555,6 +1619,13 @@ mod tests {
         ServerOpcode::SurrenderPledgeWar,
         ServerOpcode::AskJoinAlliance,
         ServerOpcode::AllianceInfo,
+        ServerOpcode::PetInfo,
+        ServerOpcode::PetStatusShow,
+        ServerOpcode::PetStatusUpdate,
+        ServerOpcode::PetDelete,
+        ServerOpcode::SetSummonRemainTime,
+        ServerOpcode::PetItemList,
+        ServerOpcode::PetInventoryUpdate,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -3312,6 +3383,99 @@ mod tests {
         };
         assert_eq!(s2c_fields(&info.to_bytes())["allies"][0]["online"], 4);
         assert_eq!(s2c_fields(&PledgeShowMemberListDeleteAll.to_bytes()), json!({}));
+    }
+    #[test]
+    fn summon_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem,
+            RequestPetUseItem,
+        };
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestPetGetItem { object_id: 4 }.to_bytes()),
+            json!({ "object_id": 4 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestGetItemFromPet {
+                    object_id: 4,
+                    amount: 5,
+                    unknown: 0
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 4, "amount": 5, "unknown": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestGiveItemToPet {
+                    object_id: 4,
+                    amount: 5
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 4, "amount": 5 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestPetUseItem { object_id: 4 }.to_bytes()),
+            json!({ "object_id": 4 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestChangePetName { name: "Rex".into() }.to_bytes()),
+            json!({ "name": "Rex" })
+        );
+
+        assert_eq!(
+            s2c_fields(&PetStatusShow { summon_type: 2 }.to_bytes()),
+            json!({ "summon_type": 2 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &PetDelete {
+                    pet_type: 1,
+                    pet_object_id: 9
+                }
+                .to_bytes()
+            ),
+            json!({ "pet_type": 1, "pet_object_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &SetSummonRemainTime {
+                    max_time: 1200,
+                    remaining_time: 600
+                }
+                .to_bytes()
+            ),
+            json!({ "max_time": 1200, "remaining_time": 600 })
+        );
+        let list = PetItemList {
+            items: vec![ItemInfo::plain(1, 57, 7)],
+        };
+        assert_eq!(s2c_fields(&list.to_bytes())["items"][0]["count"], 7);
+        let status = PetStatusUpdate {
+            summon_type: 2,
+            object_id: 9,
+            x: 1,
+            y: 2,
+            z: 3,
+            title: "Owner".into(),
+            cur_fed: 100,
+            max_fed: 200,
+            cur_hp: 10,
+            max_hp: 20,
+            cur_mp: 30,
+            max_mp: 40,
+            level: 15,
+            exp: 5_000_000_000,
+            exp_for_this_level: 4_000_000_000,
+            exp_for_next_level: 6_000_000_000,
+        };
+        let fields = s2c_fields(&status.to_bytes());
+        assert_eq!(fields["title"], "Owner");
+        assert_eq!(fields["exp"], 5_000_000_000_i64);
     }
     /// Every server packet of the committed Java captures with a decoder must have fields, and
     /// no other server packet may have any. A decode error here means a `Decode` impl does not

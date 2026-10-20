@@ -409,6 +409,11 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestDismissAlly(_)
             | ClientPacket::RequestAllyCrest(_)
             | ClientPacket::RequestAllyInfo(_)
+            | ClientPacket::RequestPetGetItem(_)
+            | ClientPacket::RequestGetItemFromPet(_)
+            | ClientPacket::RequestGiveItemToPet(_)
+            | ClientPacket::RequestPetUseItem(_)
+            | ClientPacket::RequestChangePetName(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

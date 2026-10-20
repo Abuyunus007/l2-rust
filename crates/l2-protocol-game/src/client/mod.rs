@@ -175,6 +175,7 @@ pub mod pledge;
 pub mod shortcut;
 pub mod skills;
 pub mod store;
+pub mod summon;
 pub mod trade;
 
 pub use charscreen::{
@@ -214,6 +215,9 @@ pub use store::{
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SellListEntry,
     SetPrivateStoreListBuy, SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell,
     SetPrivateStoreWholeMsg, StoreBuyRequestEntry, StoreSellRequestEntry,
+};
+pub use summon::{
+    RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
 

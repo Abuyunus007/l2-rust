@@ -1779,8 +1779,426 @@ mod pledge_server {
     }
 }
 
-// Silence the unused-helper warnings of the builder methods the later groups use.
-#[allow(dead_code)]
-fn _builder_is_complete(b: Bytes) -> Vec<u8> {
-    b.long(0).raw(&[]).done()
+// ---------------------------------------------------------------------------------------------
+// Summons and pets
+// ---------------------------------------------------------------------------------------------
+
+mod summon {
+    use super::*;
+    use l2_protocol_game::client::{
+        RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem,
+        RequestPetUseItem,
+    };
+    use l2_protocol_game::server::items::{ItemInfo, ItemUpdate};
+    use l2_protocol_game::server::summon::{
+        PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate,
+        SetSummonRemainTime,
+    };
+
+    trait DoubleBytes {
+        fn double(self, v: f64) -> Self;
+    }
+
+    impl DoubleBytes for Bytes {
+        fn double(mut self, v: f64) -> Self {
+            self.0.extend(v.to_le_bytes());
+            self
+        }
+    }
+
+    #[test]
+    fn client_packets() {
+        check_round_trip(
+            &RequestPetGetItem {
+                object_id: 0x1000_0020,
+            },
+            &Bytes::default().byte(0x98).int(0x1000_0020).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestGetItemFromPet {
+                object_id: 0x1000_0020,
+                amount: 5_000_000_000,
+                unknown: 0,
+            },
+            &Bytes::default()
+                .byte(0x2C)
+                .int(0x1000_0020)
+                .long(5_000_000_000)
+                .int(0)
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &RequestGiveItemToPet {
+                object_id: 0x1000_0020,
+                amount: 3,
+            },
+            &Bytes::default().byte(0x95).int(0x1000_0020).long(3).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestPetUseItem {
+                object_id: 0x1000_0020,
+            },
+            &Bytes::default().byte(0x94).int(0x1000_0020).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestChangePetName { name: "Rex".into() },
+            &Bytes::default().byte(0x93).string("Rex").done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn small_server_packets() {
+        check_round_trip(
+            &PetStatusShow { summon_type: 2 },
+            &Bytes::default().byte(0xB1).int(2).done(),
+            1,
+        );
+        check_round_trip(
+            &PetDelete {
+                pet_type: 1,
+                pet_object_id: 0x6000_0001,
+            },
+            &Bytes::default().byte(0xB7).int(1).int(0x6000_0001).done(),
+            1,
+        );
+        check_round_trip(
+            &SetSummonRemainTime {
+                max_time: 1_200_000,
+                remaining_time: 600_000,
+            },
+            &Bytes::default().byte(0xD1).int(1_200_000).int(600_000).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn status_update() {
+        let packet = PetStatusUpdate {
+            summon_type: 2,
+            object_id: 0x6000_0001,
+            x: -1,
+            y: 2,
+            z: -3,
+            title: "Owner".into(),
+            cur_fed: 100,
+            max_fed: 200,
+            cur_hp: 10,
+            max_hp: 20,
+            cur_mp: 30,
+            max_mp: 40,
+            level: 15,
+            exp: 5_000_000_000,
+            exp_for_this_level: 4_000_000_000,
+            exp_for_next_level: 6_000_000_000,
+        };
+        let expected = Bytes::default()
+            .byte(0xB6)
+            .int(2)
+            .int(0x6000_0001)
+            .int(-1)
+            .int(2)
+            .int(-3)
+            .string("Owner")
+            .int(100)
+            .int(200)
+            .int(10)
+            .int(20)
+            .int(30)
+            .int(40)
+            .int(15)
+            .long(5_000_000_000)
+            .long(4_000_000_000)
+            .long(6_000_000_000)
+            .done();
+        check_round_trip(&packet, &expected, 1);
+    }
+
+    #[test]
+    fn pet_inventory() {
+        let items = vec![ItemInfo::plain(1, 57, 10), ItemInfo::plain(2, 1060, 3)];
+        let mut expected = Bytes::default().byte(0xB3).short(2);
+        expected = plain_item_bytes(expected, 1, 57, 10);
+        expected = plain_item_bytes(expected, 2, 1060, 3);
+        check_round_trip(&PetItemList { items }, &expected.done(), 1);
+
+        let update = PetInventoryUpdate {
+            updates: vec![ItemUpdate {
+                change: 1,
+                item: ItemInfo::plain(1, 57, 10),
+            }],
+        };
+        let expected = plain_item_bytes(Bytes::default().byte(0xB4).short(1).short(1), 1, 57, 10).done();
+        check_round_trip(&update, &expected, 1);
+    }
+
+    fn pet_info() -> PetInfo {
+        PetInfo {
+            summon_type: 2,
+            object_id: 0x6000_0001,
+            display_id: 12_077,
+            x: 1,
+            y: 2,
+            z: 3,
+            heading: 4,
+            m_atk_spd: 5,
+            p_atk_spd: 6,
+            run_speed: 7,
+            walk_speed: 8,
+            swim_run_speed: 9,
+            swim_walk_speed: 10,
+            fly_run_speed: 11,
+            fly_walk_speed: 12,
+            move_multiplier: 1.5,
+            attack_speed_multiplier: 1.25,
+            collision_radius: 8.0,
+            collision_height: 25.5,
+            weapon: 13,
+            armor: 14,
+            has_owner: true,
+            running: true,
+            in_combat: false,
+            alike_dead: true,
+            spawn_state: 2,
+            name: "Rex".into(),
+            title: "Owner".into(),
+            pvp_flag: 0,
+            karma: 15,
+            cur_fed: 16,
+            max_fed: 17,
+            cur_hp: 18,
+            max_hp: 19,
+            cur_mp: 20,
+            max_mp: 21,
+            sp: 22,
+            level: 23,
+            exp: 1_000,
+            exp_for_this_level: 500,
+            exp_for_next_level: 2_000,
+            weight: 24,
+            max_load: 25,
+            p_atk: 26,
+            p_def: 27,
+            m_atk: 28,
+            m_def: 29,
+            accuracy: 30,
+            evasion: 31,
+            critical: 32,
+            move_speed: 33,
+            atk_speed: 34,
+            casting_speed: 35,
+            abnormal_visual_effects: 36,
+            mountable: true,
+            water_or_flying: 1,
+            team_id: 2,
+            soul_shots_per_hit: 37,
+            spirit_shots_per_hit: 38,
+            form_id: 39,
+            abnormal_visual_effect_special: 40,
+        }
+    }
+
+    fn pet_info_bytes(exp_this_level_written: i64) -> Vec<u8> {
+        Bytes::default()
+            .byte(0xB2)
+            .int(2)
+            .int(0x6000_0001)
+            .int(1_012_077) // display id + 1000000
+            .int(0) // attackable
+            .int(1)
+            .int(2)
+            .int(3)
+            .int(4)
+            .int(0)
+            .int(5)
+            .int(6)
+            .int(7)
+            .int(8)
+            .int(9)
+            .int(10)
+            .int(11)
+            .int(12)
+            .int(11)
+            .int(12)
+            .double(1.5)
+            .double(1.25)
+            .double(8.0)
+            .double(25.5)
+            .int(13)
+            .int(14)
+            .int(0) // left hand
+            .byte(1)
+            .byte(1)
+            .byte(0)
+            .byte(1)
+            .byte(2)
+            .int(-1)
+            .string("Rex")
+            .int(-1)
+            .string("Owner")
+            .int(1)
+            .int(0)
+            .int(15)
+            .int(16)
+            .int(17)
+            .int(18)
+            .int(19)
+            .int(20)
+            .int(21)
+            .int(22)
+            .int(23)
+            .long(1_000)
+            .long(exp_this_level_written)
+            .long(2_000)
+            .int(24)
+            .int(25)
+            .int(26)
+            .int(27)
+            .int(28)
+            .int(29)
+            .int(30)
+            .int(31)
+            .int(32)
+            .int(33)
+            .int(34)
+            .int(35)
+            .int(36)
+            .short(1) // mountable
+            .byte(1) // water
+            .short(0)
+            .byte(2) // team
+            .int(37)
+            .int(38)
+            .int(39)
+            .int(40)
+            .done()
+    }
+
+    #[test]
+    fn pet_info_layout() {
+        check_round_trip(&pet_info(), &pet_info_bytes(500), 1);
+    }
+
+    #[test]
+    fn pet_info_never_writes_a_level_start_above_the_experience() {
+        // NOTE(java-quirk): Java writes `exp` instead when `expForThisLevel > exp`.
+        let packet = PetInfo {
+            exp: 1_000,
+            exp_for_this_level: 1_500,
+            ..pet_info()
+        };
+        assert_eq!(packet.to_bytes(), pet_info_bytes(1_000));
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Dispatch
+// ---------------------------------------------------------------------------------------------
+
+mod dispatch {
+    use super::*;
+    use l2_protocol_game::client::*;
+    use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
+
+    /// What the dispatcher makes of the bytes an encoder wrote: the right variant in game, and
+    /// nothing in the character screen states (Java checks the state before it reads a field).
+    fn dispatches<P: Encode>(packet: &P, expected: ClientPacket) {
+        let bytes = packet.to_bytes();
+        let decode = |state| decode_client(state, bytes[0], &mut PacketReader::new(&bytes[1..])).unwrap();
+        assert_eq!(decode(ConnectionState::InGame), Some(expected));
+        assert_eq!(decode(ConnectionState::Authenticated), None);
+        assert_eq!(decode(ConnectionState::Connected), None);
+    }
+
+    #[test]
+    fn party_and_trade_packets() {
+        let p = RequestJoinParty {
+            name: "Ann".into(),
+            party_distribution_type_id: 2,
+        };
+        dispatches(&p, ClientPacket::RequestJoinParty(p.clone()));
+        let p = RequestAnswerJoinParty { response: 1 };
+        dispatches(&p, ClientPacket::RequestAnswerJoinParty(p));
+        let p = RequestOustPartyMember { name: "Bob".into() };
+        dispatches(&p, ClientPacket::RequestOustPartyMember(p.clone()));
+        let p = TradeRequest { object_id: 5 };
+        dispatches(&p, ClientPacket::TradeRequest(p));
+        let p = AnswerTradeRequest { response: 1 };
+        dispatches(&p, ClientPacket::AnswerTradeRequest(p));
+        let p = AddTradeItem {
+            trade_id: 1,
+            object_id: 2,
+            count: 3,
+        };
+        dispatches(&p, ClientPacket::AddTradeItem(p));
+        let p = TradeDone { response: 1 };
+        dispatches(&p, ClientPacket::TradeDone(p));
+    }
+
+    #[test]
+    fn store_packets() {
+        let p = SetPrivateStoreMsgSell {
+            store_msg: "x".into(),
+        };
+        dispatches(&p, ClientPacket::SetPrivateStoreMsgSell(p.clone()));
+        let p = RequestPrivateStoreBuy {
+            store_player_id: 1,
+            items: None,
+        };
+        dispatches(&p, ClientPacket::RequestPrivateStoreBuy(p.clone()));
+    }
+
+    #[test]
+    fn pledge_and_pet_packets() {
+        let p = RequestJoinPledge {
+            target: 1,
+            pledge_type: 0,
+        };
+        dispatches(&p, ClientPacket::RequestJoinPledge(p.clone()));
+        let p = RequestGetItemFromPet {
+            object_id: 1,
+            amount: 2,
+            unknown: 0,
+        };
+        dispatches(&p, ClientPacket::RequestGetItemFromPet(p.clone()));
+    }
+
+    #[test]
+    fn ex_social_packets() {
+        // Ex packets: the dispatcher consumes the u16 ex id, so the whole 0xD0 packet goes in.
+        for (packet, expected) in [
+            (
+                RequestChangePartyLeader { name: "Bob".into() }.to_bytes(),
+                ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader { name: "Bob".into() }),
+            ),
+            (
+                SetPrivateStoreWholeMsg { msg: "pack".into() }.to_bytes(),
+                ClientPacket::SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg { msg: "pack".into() }),
+            ),
+            (
+                RequestPledgePowerGradeList.to_bytes(),
+                ClientPacket::RequestPledgePowerGradeList(RequestPledgePowerGradeList),
+            ),
+            (
+                RequestExSetPledgeCrestLarge {
+                    length: 1,
+                    data: Some(vec![3]),
+                }
+                .to_bytes(),
+                ClientPacket::RequestExSetPledgeCrestLarge(RequestExSetPledgeCrestLarge {
+                    length: 1,
+                    data: Some(vec![3]),
+                }),
+            ),
+        ] {
+            let decode =
+                |state| decode_client(state, packet[0], &mut PacketReader::new(&packet[1..])).unwrap();
+            assert_eq!(decode(ConnectionState::InGame), Some(expected));
+            assert_eq!(decode(ConnectionState::Connected), None);
+        }
+    }
 }
