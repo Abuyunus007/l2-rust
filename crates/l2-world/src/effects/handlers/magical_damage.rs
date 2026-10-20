@@ -19,6 +19,7 @@ use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 
 use super::params;
 use super::skill_calc::MagicFlags;
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::Rnd;
 use crate::stats::skills::calc_skill;
@@ -38,10 +39,24 @@ fn land_magic_hit(world: &mut World, cx: &EffectCx<'_>, damage: i32, mcrit: bool
     });
     if deflect > f64::from(world.rng().get_int(100)) {
         world.reduce_current_hp_by_skill(effector, f64::from(damage), Some(effected), skill);
-        world.notify_damage_received(effector, f64::from(damage));
+        world.notify_damage_received_by(
+            effector,
+            f64::from(damage),
+            Some(effected),
+            Some(SkillKey::of(skill)),
+            mcrit,
+            false,
+        );
     } else {
         world.reduce_current_hp_by_skill(effected, f64::from(damage), Some(effector), skill);
-        world.notify_damage_received(effected, f64::from(damage));
+        world.notify_damage_received_by(
+            effected,
+            f64::from(damage),
+            Some(effector),
+            Some(SkillKey::of(skill)),
+            mcrit,
+            false,
+        );
         world.send_damage_message(effector, effected, damage, mcrit, false, false);
     }
 }
@@ -263,7 +278,14 @@ impl EffectHandler for HpDrain {
             world.skill_atk_break(effected, f64::from(damage));
             world.send_damage_message(effector, effected, damage, mcrit, false, false);
             world.reduce_current_hp_by_skill(effected, f64::from(damage), Some(effector), skill);
-            world.notify_damage_received(effected, f64::from(damage));
+            world.notify_damage_received_by(
+                effected,
+                f64::from(damage),
+                Some(effector),
+                Some(SkillKey::of(skill)),
+                mcrit,
+                false,
+            );
         }
     }
 }

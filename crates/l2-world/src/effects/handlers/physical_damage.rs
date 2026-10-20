@@ -15,6 +15,7 @@ use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 
 use super::params;
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::{Rnd, SHIELD_DEFENSE_PERFECT_BLOCK, SHIELD_DEFENSE_SUCCEED};
 use crate::stats::BaseStat;
@@ -51,7 +52,14 @@ fn soul_boosted(world: &World, effector: ObjectId, skill: &SkillTemplate, damage
 fn land_hit(world: &mut World, cx: &EffectCx<'_>, damage: i32, crit: bool) {
     world.send_damage_message(cx.effector, cx.effected, damage, false, crit, false);
     world.reduce_current_hp_by_skill(cx.effected, f64::from(damage), Some(cx.effector), cx.skill);
-    world.notify_damage_received(cx.effected, f64::from(damage));
+    world.notify_damage_received_by(
+        cx.effected,
+        f64::from(damage),
+        Some(cx.effector),
+        Some(SkillKey::of(cx.skill)),
+        crit,
+        false,
+    );
     // Check if damage should be reflected.
     world.calc_damage_reflected_for(cx.effector, cx.effected, cx.skill, crit);
 }
@@ -354,7 +362,14 @@ impl EffectHandler for EnergyDamage {
         if damage > 0.0 {
             world.send_damage_message(attacker, effected, damage as i32, false, critical, false);
             world.reduce_current_hp_by_skill(effected, damage, Some(attacker), skill);
-            world.notify_damage_received(effected, damage);
+            world.notify_damage_received_by(
+                effected,
+                damage,
+                Some(attacker),
+                Some(SkillKey::of(skill)),
+                critical,
+                false,
+            );
             // Check if damage should be reflected.
             world.calc_damage_reflected_for(attacker, effected, skill, critical);
         }

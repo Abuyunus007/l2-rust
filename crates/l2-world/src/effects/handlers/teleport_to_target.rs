@@ -2,7 +2,7 @@
 //! geodata lets it.
 // Java: dist/game/data/scripts/handlers/skill/effects/TeleportToTarget.java
 
-use l2_data::skill::EffectTemplate;
+use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;
 
 use super::fly::{set_position_validated, valid_location};
@@ -55,9 +55,15 @@ impl EffectHandler for TeleportToTarget {
             Location::new(x, y, z),
         );
         world.set_intention_idle(cx.effector);
-        // NOTE: Java broadcasts `FlyToLocation` here (see `fly.rs`).
+        world.fly_to_location(
+            cx.effector,
+            destination.x,
+            destination.y,
+            destination.z,
+            FlyType::Dummy,
+        );
         world.abort_attack(cx.effector);
-        // NOTE: Java also `abortCast()` (see `blink.rs`).
+        world.abort_cast(cx.effector);
         set_position_validated(world, cx.effector, destination);
     }
 }

@@ -10,6 +10,7 @@ use l2_data::stats::AbnormalType;
 use super::dispel_by_slot::java_split;
 use super::params;
 use crate::effects::SkillFinishType;
+use crate::effects::cancel_return::TakenBuff;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::Rnd;
 use crate::world::World;
@@ -49,11 +50,13 @@ impl EffectHandler for DispelBySlotProbability {
         true
     }
 
-    // NOTE: the `CancelReturn` branch is not ported, see `DispelAll`; this is the default branch.
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
         if self.dispel.is_empty() || world.is_raid(cx.effected) {
             return;
         }
+        // `CancelReturn`: the taken buffs come back later.
+        let returns = world.cancel_returns(cx.effector, cx.effected);
+        let mut taken = Vec::new();
         for &abnormal in &self.dispel {
             if world.rng().get_int(100) >= self.rate {
                 continue;
@@ -62,10 +65,17 @@ impl EffectHandler for DispelBySlotProbability {
             // of the type is taken. Transformations are M6; only the buff is taken.
             let present = world
                 .effect_list(cx.effected)
-                .is_some_and(|list| list.info_by_abnormal_type(abnormal).is_some());
-            if present {
+                .and_then(|list| list.info_by_abnormal_type(abnormal))
+                .map(TakenBuff::of);
+            if let Some(buff) = present {
+                if returns {
+                    taken.push(buff);
+                }
                 world.stop_skill_effects_by_abnormal(cx.effected, SkillFinishType::Removed, abnormal);
             }
+        }
+        if returns && !taken.is_empty() {
+            world.schedule_cancel_return(cx.effected, false, taken);
         }
     }
 }

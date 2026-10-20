@@ -63,6 +63,9 @@ pub enum ControlTimer {
     Fear(ObjectId),
     /// Java `ThreadPool.schedule(() -> player.setBlinkActive(false), 100)` of `ValidatePosition`.
     BlinkOff(ObjectId),
+    /// The task of the dispel effects that gives the taken buffs back (`CancelReturn`): the id of
+    /// the pending return (`cancel_return.rs`).
+    CancelReturn(u64),
 }
 
 /// The fear of an NPC (Java `AttackableAI._fearTime`, `_fearTask`).
@@ -126,6 +129,12 @@ pub(crate) struct CreatureControl {
     pub soul_eating: Vec<((i32, i32), i32)>,
     /// `Player._blinkActive`.
     pub blink_active: bool,
+    /// `Playable._lockedTarget` (`TargetMe`).
+    pub locked_target: Option<ObjectId>,
+    /// `Player._reviveRequested == 1`, `_revivePower`, `_revivePet` (see `revive.rs`).
+    pub revive_requested: bool,
+    pub revive_power: f64,
+    pub revive_pet: bool,
 }
 
 impl CreatureControl {
@@ -740,12 +749,12 @@ impl World {
         true
     }
 
-    /// Java `Creature.notifyDamageReceived(damage, ...)`: an auto attack makes a fake dead player
-    /// stand up (script events: D-05).
+    /// Java `Creature.notifyDamageReceived(damage, null, null, false, false)`: the damage came from
+    /// nobody the listeners know about. Hits and damage effects call
+    /// [`World::notify_damage_received_by`] (`triggers.rs`) with who did it, which also tells the
+    /// trigger skill listeners.
     pub fn notify_damage_received(&mut self, id: ObjectId, damage: f64) {
-        if self.is_fake_death(id) && self.settings.effects.fake_death_damage_stand && damage > 0.0 {
-            self.stop_fake_death(id, true);
-        }
+        self.notify_damage_received_by(id, damage, None, None, false, false);
     }
 
     /// What `CreatureStatus.reduceHp` / `PlayerStatus.reduceHp` do after `stopEffectsOnDamage`
@@ -1000,6 +1009,24 @@ impl World {
         }
     }
 
+    /// Java `Playable.getLockedTarget()` (`TargetMe`): the creature the playable has to keep as
+    /// its target.
+    pub fn locked_target(&self, id: ObjectId) -> Option<ObjectId> {
+        self.control(id).and_then(|c| c.locked_target)
+    }
+
+    /// Java `Playable.isLockedTarget()`.
+    pub fn is_locked_target(&self, id: ObjectId) -> bool {
+        self.locked_target(id).is_some()
+    }
+
+    /// Java `Playable.setLockedTarget(creature)`.
+    pub fn set_locked_target(&mut self, id: ObjectId, target: Option<ObjectId>) {
+        if let Some(c) = self.control_mut(id) {
+            c.locked_target = target;
+        }
+    }
+
     /// Java `WorldObject.setInvisible(invisible)`: those who may no longer see the object get a
     /// `DeleteObject`, then the object is announced to those who may.
     pub fn set_invisible(&mut self, id: ObjectId, invisible: bool) {
@@ -1078,6 +1105,7 @@ impl World {
                     c.blink_active = false;
                 }
             }
+            ControlTimer::CancelReturn(id) => self.on_cancel_return_timer(id),
         }
     }
 

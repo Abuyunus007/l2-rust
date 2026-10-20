@@ -333,6 +333,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestLinkHtml(_)
             | ClientPacket::SendBypassBuildCmd(_)
             | ClientPacket::BypassUserCmd(_)
+            | ClientPacket::DlgAnswer(_)
             | ClientPacket::MoveToLocation(_)
             | ClientPacket::ValidatePosition(_)
             | ClientPacket::CannotMoveAnymore(_)
