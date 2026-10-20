@@ -60,8 +60,8 @@ impl World {
         if self.target_of(id) != Some(target) {
             // `target.onAction(player)`.
             self.on_action_object(id, target, true);
-        } else if target != id {
-            // Private stores and pending requests (`getActiveRequester`) would refuse: M5.
+        } else if target != id && self.active_requester(id).is_none() {
+            // Private stores (`isInStoreMode`) would refuse as well: M6-STORE-01.
             self.on_forced_attack(target, id);
         } else {
             self.send(id, &ActionFailed);

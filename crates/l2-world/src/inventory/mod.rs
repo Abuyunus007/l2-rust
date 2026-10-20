@@ -20,6 +20,8 @@
 // - `notify.rs`: `broadcastUserInfo`, `broadcastModifiedStats`, the delayed `sendSkillList` /
 //   `sendItemList`, `refreshWeight`.
 // - `handlers/`: item handlers; `shots.rs` has the soulshots and spiritshots (M5-SHOT-01).
+// - `transfer.rs`: `ItemContainer.transferItem` between two players (trade, private stores) and
+//   `Player.checkItemManipulation` (M6-TRADE-01).
 // - `db.rs`: `Item.updateDatabase()` as `PersistCommand::ItemChanges`.
 // - `capacity.rs`: `validateCapacity` / `validateWeight` (checked when items are added).
 //
@@ -30,7 +32,7 @@
 // # Left out on purpose (each has a marker where it belongs)
 // - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
 //   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
-// - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations and the
+// - Private stores (trade is `trade/`), mounts, summons, fishing, cursed weapons, transformations and the
 //   olympiad: not modelled yet, treated as "not active". (Augmentations and element attributes
 //   are on the item: `effects/item_extras.rs`; their stat side is in `stats/skills.rs`.)
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).
@@ -43,6 +45,7 @@ mod destroy;
 pub mod handlers;
 mod notify;
 mod paperdoll;
+mod transfer;
 mod use_item;
 
 pub(crate) use paperdoll::body_part_of_worn_item;
@@ -87,6 +90,9 @@ pub struct InventorySettings {
     /// `PlayerConfig.ALT_ALLOW_AUGMENT_DESTROY` (`AltAllowAugmentDestroy`): an augmented item may
     /// be destroyed (`Item.isDestroyable`).
     pub alt_allow_augment_destroy: bool,
+    /// `PlayerConfig.ALT_GAME_KARMA_PLAYER_CAN_TRADE` (`AltKarmaPlayerCanTrade`): a chaotic
+    /// player may trade (read by `TradeRequest`).
+    pub alt_game_karma_player_can_trade: bool,
 }
 
 impl Default for InventorySettings {
@@ -100,6 +106,7 @@ impl Default for InventorySettings {
             rate_extractable: 1.0,
             alt_allow_augment_trade: false,
             alt_allow_augment_destroy: true,
+            alt_game_karma_player_can_trade: true,
         }
     }
 }

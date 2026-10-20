@@ -47,7 +47,7 @@ fn in_inventory(item: &ItemData) -> bool {
 
 impl World {
     /// Java `ItemContainer.getItemByItemId(itemId)` on a player's inventory: the first row.
-    fn inventory_item_by_item_id(&self, player: ObjectId, item_id: i32) -> Option<&ItemData> {
+    pub(crate) fn inventory_item_by_item_id(&self, player: ObjectId, item_id: i32) -> Option<&ItemData> {
         self.players
             .get(&player)?
             .data
@@ -90,7 +90,12 @@ impl World {
 
     /// Java `Item.changeCount(process, count, ...)`: adena stops at `MaxAdena`, nothing goes
     /// below 0.
-    fn change_item_count(&mut self, player: ObjectId, object_id: ObjectId, count: i64) -> Option<ItemData> {
+    pub(super) fn change_item_count(
+        &mut self,
+        player: ObjectId,
+        object_id: ObjectId,
+        count: i64,
+    ) -> Option<ItemData> {
         let max_adena = self.settings.ground.max_adena;
         let p = self.players.get_mut(&player)?;
         let item = p.data.items.iter_mut().find(|i| i.object_id == object_id)?;

@@ -452,6 +452,15 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientInput::TradeRequest { object_id } => self.on_trade_request(id, object_id),
+            ClientInput::AnswerTradeRequest { response } => self.on_answer_trade_request(id, response),
+            ClientInput::AddTradeItem {
+                trade_id,
+                object_id,
+                count,
+            } => self.on_add_trade_item(id, trade_id, object_id, count),
+            ClientInput::TradeDone { response } => self.on_trade_done(id, response),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
