@@ -42,4 +42,8 @@ Clans per `docs/design/m6-social.md`: load all clans at startup (`ClanTable`), c
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Packets are merged (GPROTO-09): client `l2_protocol_game::client::pledge` (RequestJoinPledge ... RequestPledgeReorganizeMember, ally and war packets), server `server::pledge`. Dispatch arms exist; route them in `enter.rs`. Ally/war handlers belong to CLAN-02/03: route them to a `not ported` stub there, but load the ally/war columns.
+- Clan markers: `skills/targets.rs` 313, 363, 1032, 1185 (clan halves; party halves are PARTY-01's).
+- Repositories in `l2-db` with sqlx like the existing `l2-db/src/game/*.rs`; DB tests skip without `L2_TEST_DATABASE_URL`.
+- Five other M6 workers run at the same time (PVP-01, PARTY-01, TRADE-01 and two of CLAN-01/SUMMON-01/TRANS-01). In shared files (`skills/targets.rs`, `skills/cast.rs`, `death.rs`, `leave.rs`, `player_view.rs`, `enter.rs`) change only the lines of your markers and add new calls; no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load).
