@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 
 use crate::data::DEFAULT_TITLE_COLOR;
 use crate::effects::SavedEffect;
+use crate::effects::item_extras::ItemElemental;
 use crate::inventory::handlers::SavedItemReuse;
 use crate::stats::Calculators;
 
@@ -57,6 +58,35 @@ pub struct ItemData {
     pub mana_left: i32,
     /// `items.time` (limited-time items), -1 = none.
     pub time: i64,
+    /// Java `Item._augmentation`: the augmentation id (`item_attributes.augAttributes`), `None`
+    /// for an item that is not augmented. Two option ids are packed in it (see
+    /// `l2_data::augmentation`).
+    pub augmentation: Option<i32>,
+    /// Java `Item._elementals`: the element attributes of the instance (`item_elementals`), in the
+    /// order Java keeps them (empty = Java's `null`). See `effects/item_extras.rs`.
+    pub elementals: Vec<ItemElemental>,
+}
+
+impl Default for ItemData {
+    /// A plain item: no owner object, no count, not worn, no shadow mana (-1), no lifetime (-1),
+    /// no augmentation, no elements. Build items as `ItemData { .., ..Default::default() }` so a
+    /// field added later does not break the literal.
+    fn default() -> Self {
+        Self {
+            object_id: ObjectId(0),
+            item_id: 0,
+            count: 0,
+            enchant_level: 0,
+            loc: String::new(),
+            loc_data: 0,
+            custom_type1: 0,
+            custom_type2: 0,
+            mana_left: -1,
+            time: -1,
+            augmentation: None,
+            elementals: Vec::new(),
+        }
+    }
 }
 
 /// One learned skill (`character_skills`).

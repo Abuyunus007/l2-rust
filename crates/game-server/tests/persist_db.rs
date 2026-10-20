@@ -22,7 +22,7 @@ use l2_world::{
 };
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 9] = [
+const SCHEMA: [&str; 11] = [
     include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
     include_str!("../../l2-db/sql/game/character_variables.sql"),
     include_str!("../../l2-db/sql/game/characters.sql"),
@@ -33,6 +33,8 @@ const SCHEMA: [&str; 9] = [
     include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
     // Deleting an item also deletes its augmentation row, as Java's Item.removeFromDb does.
     include_str!("../../l2-db/sql/game/item_attributes.sql"),
+    include_str!("../../l2-db/sql/game/item_elementals.sql"),
+    include_str!("../../l2-db/sql/game/item_variables.sql"),
 ];
 
 const CHAR_ID: i32 = 0x6000_0001;
@@ -118,6 +120,7 @@ fn item(id: i32, item_id: i32, count: i64, loc: &str, loc_data: i32) -> ItemData
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }
 }
 
@@ -693,6 +696,92 @@ async fn item_changes_are_written_at_once_with_javas_columns() {
             .len(),
         1
     );
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+#[tokio::test]
+async fn augmentations_and_elements_are_written_read_back_and_deleted_with_the_item() {
+    use l2_world::effects::item_extras::ItemElemental;
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let items = ItemRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let owner = ObjectId(CHAR_ID);
+    let mut store = DbStore::new(pool.clone());
+    let sword_id = 0x6000_1001;
+    let helmet_id = 0x6000_1002;
+
+    // A new item with an augmentation and two elements: `insertIntoDb` writes the item, then
+    // `updateItemAttributes` and `updateItemElements`.
+    let mut sword = item(sword_id, 2, 1, "INVENTORY", 0);
+    sword.augmentation = Some(0x0003_0002);
+    sword.apply_attribute(3, 30);
+    sword.apply_attribute(1, 20);
+    store
+        .store_item_changes(owner, &[sword.clone()], &[])
+        .await
+        .unwrap();
+    assert_eq!(items.augmentation_of(sword_id).await.unwrap(), Some(0x0003_0002));
+    let rows = items.elementals_of(sword_id).await.unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|r| (r.elem_type, r.elem_value))
+            .collect::<Vec<_>>(),
+        [(1, 20), (3, 30)]
+    );
+
+    // The login restore reads them back: the same item, elements in the table's order.
+    let mut restored = item(sword_id, 2, 1, "INVENTORY", 0);
+    game_server::persist::restore_item_attributes(&items, CHAR_ID, [&mut restored])
+        .await
+        .unwrap();
+    assert_eq!(restored.augmentation, Some(0x0003_0002));
+    assert_eq!(
+        restored.elementals,
+        [
+            ItemElemental {
+                element: 1,
+                value: 20
+            },
+            ItemElemental {
+                element: 3,
+                value: 30
+            }
+        ]
+    );
+
+    // A change of the element, and the augmentation taken off (`removeAugmentation`).
+    sword.augmentation = None;
+    sword.apply_attribute(1, 25);
+    store
+        .store_item_changes(owner, &[sword.clone()], &[])
+        .await
+        .unwrap();
+    assert_eq!(items.augmentation_of(sword_id).await.unwrap(), None);
+    let rows = items.elementals_of(sword_id).await.unwrap();
+    assert_eq!(
+        rows.iter()
+            .map(|r| (r.elem_type, r.elem_value))
+            .collect::<Vec<_>>(),
+        [(1, 25), (3, 30)]
+    );
+
+    // A full store of an item with no attributes leaves another item's rows alone, and an item
+    // that is gone takes all its rows with it (`removeFromDb`).
+    let mut helmet = item(helmet_id, 6, 1, "INVENTORY", 0);
+    helmet.apply_attribute(4, 11);
+    store.store_item_changes(owner, &[helmet], &[]).await.unwrap();
+    store
+        .store_item_changes(owner, &[], &[ObjectId(sword_id)])
+        .await
+        .unwrap();
+    assert!(items.elementals_of(sword_id).await.unwrap().is_empty());
+    assert_eq!(items.elementals_of(helmet_id).await.unwrap().len(), 1);
 
     pool.close().await;
     db.drop_db().await;

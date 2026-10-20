@@ -249,6 +249,7 @@ fn item(object_id: ObjectId, item_id: i32, loc: &str, slot: usize, count: i64) -
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }
 }
 

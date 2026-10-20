@@ -16,13 +16,14 @@
 // What other M5 cards bring: skill reuse timestamps of active item skills, `SkillList` updates,
 // skills of summons.
 
-use l2_data::SkillTemplate;
+use l2_data::item::ItemTemplate;
 use l2_data::item::{CrystalType, EtcItemType};
+use l2_data::{FuncKind, FuncTemplate, SkillTemplate, Stat};
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_util::ObjectId;
 use tracing::warn;
 
-use super::calculators::FuncOwner;
+use super::calculators::{Func, FuncOwner};
 use super::creature_stat::StatView;
 use super::{CalcSkill, StatData};
 use crate::effects::apply::ApplyMode;
@@ -254,17 +255,61 @@ impl World {
         }
     }
 
+    /// What the instance of `item` brings besides its template: the functions and skills of its
+    /// augmentation options (`Options.apply`, low option id first), then the element attribute
+    /// bonuses (`Item.updateElementAttrBonus`).
+    fn item_instance_bonuses(&self, item: &ItemData, template: Option<&ItemTemplate>) -> InstanceBonuses {
+        let mut out = InstanceBonuses::default();
+        if let Some(augmentation) = item.augmentation {
+            for option_id in l2_data::augmentation::augmentation_option_ids(augmentation) {
+                // "Couldn't find option" is logged by Java's `Augmentation` constructor.
+                let Some(option) = self.data.augmentation_option(option_id) else {
+                    warn!("AugmentationStatBonus: Couldn't find option: {option_id}");
+                    continue;
+                };
+                let owner = FuncOwner::AugmentationOption(option.id);
+                out.funcs
+                    .extend(option.funcs.iter().map(|t| Func::from_template(t, owner)));
+                out.skills
+                    .extend(option.active_skill.iter().map(|s| (s.id, s.level)));
+                out.skills
+                    .extend(option.passive_skill.iter().map(|s| (s.id, s.level)));
+                // The chance skills (`addTriggerSkill`) need the option triggers of the effect
+                // engine: not modelled yet.
+            }
+        }
+        let armor = template.is_some_and(ItemTemplate::is_armor);
+        for elemental in &item.elementals {
+            if let Some(stat) = element_stat(elemental.element, armor) {
+                // FuncAdd(stat, 0x40, bonus, value, null)
+                let func = FuncTemplate::with_kind(
+                    None,
+                    None,
+                    FuncKind::Add,
+                    0x40,
+                    stat,
+                    f64::from(elemental.value),
+                );
+                out.funcs
+                    .push(Func::from_template(&func, FuncOwner::ItemElement(item.object_id)));
+            }
+        }
+        out
+    }
+
     /// The skill parts of `ArmorSetListener.notifyEquiped` and `ItemSkillsListener.notifyEquiped`
-    /// for `item` in paperdoll `slot`.
-    pub(crate) fn equip_item_skills(&mut self, id: ObjectId, item: &ItemData) {
+    /// for `item` in paperdoll `slot`, with the augmentation and element bonuses the latter
+    /// applies first. Returns the stats whose functions were added.
+    pub(crate) fn equip_item_skills(&mut self, id: ObjectId, item: &ItemData) -> Vec<Stat> {
         let slot = usize::try_from(item.loc_data).unwrap_or(usize::MAX);
         let mut add: Vec<(i32, i32)> = Vec::new();
+        let bonuses: InstanceBonuses;
         {
             let Some(view) = self.stats(id) else {
-                return;
+                return Vec::new();
             };
             let Some(data) = view.stat_data() else {
-                return;
+                return Vec::new();
             };
             // ArmorSetListener: the set of the worn chest.
             if let Some(chest) = view.paperdoll(paperdoll::CHEST)
@@ -288,9 +333,13 @@ impl World {
                 }
             }
             // ItemSkillsListener: the +4 skill, then the item's own skills.
+            // Augmentation bonuses and element attributes come first.
+            bonuses = view
+                .world()
+                .item_instance_bonuses(item, data.items.get(item.item_id));
+            add.extend(bonuses.skills.iter().copied());
             if let Some(template) = data.items.get(item.item_id) {
-                // Augmentation bonuses, element attributes and enchant options (`applyEnchantStats`)
-                // are not loaded yet.
+                // The enchant options (`applyEnchantStats`) are not loaded yet.
                 if item.enchant_level >= 4
                     && let Some(s) = template.skills.enchant4_skill
                 {
@@ -301,24 +350,31 @@ impl World {
                 }
             }
         }
+        let stats = match self.players.get_mut(&id) {
+            Some(player) => player.core.calculators.add_all(bonuses.funcs),
+            None => Vec::new(),
+        };
         for (skill_id, level) in add {
             if !self.add_skill(id, skill_id, level) {
                 warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
             }
         }
+        stats
     }
 
     /// The skill parts of `ArmorSetListener.notifyUnequiped` and `ItemSkillsListener
     /// .notifyUnequiped`. `item` has already left its slot (Java clears the slot first).
-    pub(crate) fn unequip_item_skills(&mut self, id: ObjectId, item: &ItemData, slot: usize) {
+    pub(crate) fn unequip_item_skills(&mut self, id: ObjectId, item: &ItemData, slot: usize) -> Vec<Stat> {
         let mut remove: Vec<(i32, i32)> = Vec::new();
         let mut readd: Vec<(i32, i32)> = Vec::new();
+        let option_ids: Vec<i32>;
+        let element_bonus: bool;
         {
             let Some(view) = self.stats(id) else {
-                return;
+                return Vec::new();
             };
             let Some(data) = view.stat_data() else {
-                return;
+                return Vec::new();
             };
             // ArmorSetListener.
             let set = if slot == paperdoll::CHEST {
@@ -339,7 +395,23 @@ impl World {
                     remove.extend(shield());
                 }
             }
-            // ItemSkillsListener.
+            // ItemSkillsListener: the augmentation and element bonuses go first.
+            let bonuses = view
+                .world()
+                .item_instance_bonuses(item, data.items.get(item.item_id));
+            remove.extend(bonuses.skills.iter().copied());
+            option_ids = bonuses
+                .funcs
+                .iter()
+                .filter_map(|f| match f.owner {
+                    FuncOwner::AugmentationOption(o) => Some(o),
+                    _ => None,
+                })
+                .collect();
+            element_bonus = bonuses
+                .funcs
+                .iter()
+                .any(|f| matches!(f.owner, FuncOwner::ItemElement(_)));
             if let Some(template) = data.items.get(item.item_id) {
                 if item.enchant_level >= 4
                     && let Some(s) = template.skills.enchant4_skill
@@ -368,6 +440,29 @@ impl World {
                 }
             }
         }
+        // `Options.remove`: `removeStatsOwner(option)`, then the skills below.
+        // NOTE(java-quirk): the owner of an option's functions is the shared `Options` object, so
+        // taking off one augmented item also strips the functions of that option from any other
+        // worn item that has it. Kept: the owner here is the option id.
+        let mut stats = Vec::new();
+        if let Some(player) = self.players.get_mut(&id) {
+            for option_id in option_ids {
+                stats.extend(
+                    player
+                        .core
+                        .calculators
+                        .remove_owner(FuncOwner::AugmentationOption(option_id)),
+                );
+            }
+            if element_bonus {
+                stats.extend(
+                    player
+                        .core
+                        .calculators
+                        .remove_owner(FuncOwner::ItemElement(item.object_id)),
+                );
+            }
+        }
         for (skill_id, level) in remove {
             self.remove_skill_of(id, skill_id, level);
         }
@@ -377,6 +472,17 @@ impl World {
             }
         }
         // The unequip skill (`activateSkill`) is an active skill: M5.
+        stats
+    }
+
+    /// Whether `Options.apply` / `Options.remove` run for `item`, each of which sends the skill
+    /// list: it is augmented with at least one option the datapack knows.
+    pub(crate) fn augmentation_sends_skill_list(&self, item: &ItemData) -> bool {
+        item.augmentation.is_some_and(|augmentation| {
+            l2_data::augmentation::augmentation_option_ids(augmentation)
+                .into_iter()
+                .any(|option| self.data.augmentation_option(option).is_some())
+        })
     }
 
     /// Java `Player.refreshOverloaded()`, the skill part: the weight penalty skill of the load.
@@ -484,6 +590,34 @@ impl World {
 /// `CrystalType.getLevel()`.
 fn crystal_level(grade: CrystalType) -> i32 {
     grade.level()
+}
+
+/// The functions and skills the instance of an item brings (see `World::item_instance_bonuses`).
+#[derive(Debug, Default)]
+struct InstanceBonuses {
+    funcs: Vec<Func>,
+    /// `(id, level)`: an option's active skill, then its passive skill, option by option.
+    skills: Vec<(i32, i32)>,
+}
+
+/// `Elementals.ElementalStatBonus.applyBonus`: the stat an element of an item raises, the
+/// resistance of an armor or the power of a weapon. `None` for a value that is no element.
+fn element_stat(element: i32, armor: bool) -> Option<Stat> {
+    Some(match (element, armor) {
+        (0, true) => Stat::FireRes,
+        (0, false) => Stat::FirePower,
+        (1, true) => Stat::WaterRes,
+        (1, false) => Stat::WaterPower,
+        (2, true) => Stat::WindRes,
+        (2, false) => Stat::WindPower,
+        (3, true) => Stat::EarthRes,
+        (3, false) => Stat::EarthPower,
+        (4, true) => Stat::HolyRes,
+        (4, false) => Stat::HolyPower,
+        (5, true) => Stat::DarkRes,
+        (5, false) => Stat::DarkPower,
+        _ => return None,
+    })
 }
 
 /// `ArmorSet.containItem(slot, itemId)`.

@@ -123,6 +123,7 @@ fn item(object_id: i32, item_id: i32, slot: usize, enchant: i32) -> ItemData {
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }
 }
 

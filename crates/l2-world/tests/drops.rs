@@ -827,6 +827,7 @@ fn item(object_id: i32, item_id: i32, loc: &str, slot: i32, count: i64) -> ItemD
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }
 }
 

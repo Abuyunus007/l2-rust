@@ -22,7 +22,10 @@ pub use game::{
 };
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
-pub use game::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
+pub use game::{
+    ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
+    OwnerElementalRow, PaperdollItemRow,
+};
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};

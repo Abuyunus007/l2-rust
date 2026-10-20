@@ -152,6 +152,7 @@ fn test_player(char_id: i32, name: &str) -> PlayerData {
                 custom_type2: 0,
                 mana_left: -1,
                 time: -1,
+                ..Default::default()
             },
             ItemData {
                 object_id: ObjectId(0x2000_0010 + char_id % 16),
@@ -164,6 +165,7 @@ fn test_player(char_id: i32, name: &str) -> PlayerData {
                 custom_type2: 0,
                 mana_left: -1,
                 time: -1,
+                ..Default::default()
             },
         ],
         skills: vec![

@@ -28,7 +28,10 @@ pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
-pub use items::{ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, PaperdollItemRow};
+pub use items::{
+    ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
+    OwnerElementalRow, PaperdollItemRow,
+};
 pub use macros::{MacroRepository, MacroRow, NewMacro};
 pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};

@@ -153,7 +153,19 @@ impl DbPlayerLoader {
                 custom_type2: r.custom_type2.unwrap_or(0),
                 mana_left: r.mana_left,
                 time: r.time,
+                ..Default::default()
             });
+        }
+
+        // Java: Item.restoreFromDb -> restoreAttributes (item_attributes, item_elementals). Java
+        // catches a failed read and logs it; the items then have no augmentation or elements.
+        if let Err(e) =
+            crate::persist::restore_item_attributes(&self.items, char_id, data.items.iter_mut()).await
+        {
+            warn!(
+                "Could not restore augmentation and elemental data for the items of {}: {e}",
+                data.name
+            );
         }
 
         // Java: restoreSkills
@@ -892,10 +904,12 @@ mod tests {
 
     /// The game tables the loader reads and `create_character` writes (the same list as
     /// `charscreen_db_tests`).
-    const LOADER_SCHEMA: [&str; 25] = [
+    const LOADER_SCHEMA: [&str; 27] = [
         include_str!("../../../l2-db/sql/game/characters.sql"),
         include_str!("../../../l2-db/sql/game/items.sql"),
         include_str!("../../../l2-db/sql/game/item_attributes.sql"),
+        include_str!("../../../l2-db/sql/game/item_elementals.sql"),
+        include_str!("../../../l2-db/sql/game/item_variables.sql"),
         include_str!("../../../l2-db/sql/game/character_skills.sql"),
         include_str!("../../../l2-db/sql/game/character_skills_save.sql"),
         include_str!("../../../l2-db/sql/game/character_item_reuse_save.sql"),
@@ -992,6 +1006,123 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(loaded.profile.hennas, [1, 2, 0]);
+
+        pool.close().await;
+        db.drop_db().await;
+    }
+
+    /// `Item.restoreAttributes` at login: the augmentation and elements of the character's items;
+    /// the `-1` rows mean nothing, and another character's items are not touched.
+    #[tokio::test]
+    async fn the_loader_restores_item_augmentations_and_elements() {
+        let Some((db, pool)) = loader_setup().await else {
+            return;
+        };
+        let (_dir, pack) = crate::client::testdata::datapack();
+        let screen = crate::client::charscreen::CharScreen::new(
+            Arc::new(crate::client::charscreen::DbCharScreen::new(pool.clone())),
+            pack,
+            Arc::new(l2_config::GameConfig::default()),
+            Arc::new(l2_world::IdFactory::new([]).unwrap()),
+            0,
+        );
+        let create = l2_protocol_game::client::CharacterCreate {
+            name: "Augur".to_owned(),
+            race: 0,
+            is_female: false,
+            class_id: 0,
+            int: 0,
+            str: 0,
+            con: 0,
+            men: 0,
+            dex: 0,
+            wit: 0,
+            hair_style: 0,
+            hair_color: 0,
+            face: 0,
+        };
+        let mut rng = l2_util::WorldRng::from_seed(7);
+        let id = crate::client::charscreen::create_character(&screen, "acc", &create, &mut rng)
+            .await
+            .unwrap()
+            .char_id;
+        let items = ItemRepository::new(pool.clone());
+        let new_item = |object_id: i32| l2_db::NewItem {
+            owner_id: id,
+            item_id: 57,
+            count: 1,
+            loc: ItemLocation::Inventory,
+            loc_data: 0,
+            enchant_level: 0,
+            object_id,
+            custom_type1: 0,
+            custom_type2: 0,
+            mana_left: -1,
+            time: -1,
+        };
+        for object_id in [0x6100_0001, 0x6100_0002, 0x6100_0003] {
+            items.insert_item(&new_item(object_id)).await.unwrap();
+        }
+        items.set_augmentation(0x6100_0001, 0x0003_0002).await.unwrap();
+        items
+            .replace_elementals(
+                0x6100_0001,
+                &[
+                    l2_db::ItemElementalRow {
+                        elem_type: 4,
+                        elem_value: 20,
+                    },
+                    l2_db::ItemElementalRow {
+                        elem_type: 1,
+                        elem_value: 10,
+                    },
+                ],
+            )
+            .await
+            .unwrap();
+        // "Nothing" rows: augmentation -1, element type -1.
+        items.set_augmentation(0x6100_0002, -1).await.unwrap();
+        items
+            .replace_elementals(
+                0x6100_0002,
+                &[l2_db::ItemElementalRow {
+                    elem_type: -1,
+                    elem_value: 5,
+                }],
+            )
+            .await
+            .unwrap();
+
+        let loaded = DbPlayerLoader::new(pool.clone())
+            .load_player("acc", id)
+            .await
+            .unwrap();
+        let find = |object_id: i32| {
+            loaded
+                .items
+                .iter()
+                .find(|i| i.object_id == ObjectId(object_id))
+                .unwrap()
+        };
+        let first = find(0x6100_0001);
+        assert_eq!(first.augmentation, Some(0x0003_0002));
+        assert_eq!(
+            first.elementals,
+            [
+                l2_world::effects::item_extras::ItemElemental {
+                    element: 1,
+                    value: 10
+                },
+                l2_world::effects::item_extras::ItemElemental {
+                    element: 4,
+                    value: 20
+                },
+            ]
+        );
+        for object_id in [0x6100_0002, 0x6100_0003] {
+            let plain = find(object_id);
+            assert_eq!((plain.augmentation, plain.elementals.len()), (None, 0));
+        }
 
         pool.close().await;
         db.drop_db().await;

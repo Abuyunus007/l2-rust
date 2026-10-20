@@ -196,8 +196,6 @@ pub struct EffectsWorld {
     pub(crate) transfer_damage_to: HashMap<ObjectId, ObjectId>,
     /// The event listeners the trigger skill effects register (see `triggers.rs`).
     pub(crate) listeners: triggers::ListenerTable,
-    /// Augmentation and element of item instances (see `item_extras.rs`).
-    pub(crate) item_extras: item_extras::ItemExtrasTable,
     /// The buffs the dispel effects will give back (see `cancel_return.rs`).
     pub(crate) pending_returns: cancel_return::ReturnTable,
     pub(crate) next_return: u64,

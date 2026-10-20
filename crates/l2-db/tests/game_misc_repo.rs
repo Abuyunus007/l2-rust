@@ -12,18 +12,21 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use l2_db::{
-    ClanRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemReuseRow, ItemUpdate,
-    MacroRepository, NewItem, NewItemReuse, NewMacro, NewShortcut, NewSkillSave, Pool,
-    RecommendationRepository, ShortcutRepository, ShortcutRow, SkillLevel, SkillRepository, SkillSaveRow,
-    SubclassRepository, SubclassRow, SubclassValues, VariableRepository, connect_with,
+    ClanRepository, ItemElementalRow, ItemLocation, ItemRepository, ItemReuseRepository, ItemReuseRow,
+    ItemUpdate, MacroRepository, NewItem, NewItemReuse, NewMacro, NewShortcut, NewSkillSave,
+    OwnerAugmentationRow, OwnerElementalRow, Pool, RecommendationRepository, ShortcutRepository, ShortcutRow,
+    SkillLevel, SkillRepository, SkillSaveRow, SubclassRepository, SubclassRow, SubclassValues,
+    VariableRepository, connect_with,
 };
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 /// The tables of the item, skill, shortcut and subclass repositories.
-const SCHEMA: [&str; 11] = [
+const SCHEMA: [&str; 13] = [
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/item_attributes.sql"),
+    include_str!("../sql/game/item_elementals.sql"),
+    include_str!("../sql/game/item_variables.sql"),
     include_str!("../sql/game/character_skills.sql"),
     include_str!("../sql/game/character_skills_save.sql"),
     include_str!("../sql/game/character_item_reuse_save.sql"),
@@ -248,11 +251,81 @@ async fn items_round_trip_by_location_and_owner() {
     repo.delete_augmentation(OBJ_SWORD).await.unwrap();
     assert_eq!(repo.augmentation_of(OBJ_SWORD).await.unwrap(), None);
 
-    // Deleting an item removes its augmentation row too.
+    // Element rows: written as a whole (delete + insert), read in element order, one removable.
+    let element = |elem_type, elem_value| ItemElementalRow {
+        elem_type,
+        elem_value,
+    };
+    assert!(repo.elementals_of(OBJ_SWORD).await.unwrap().is_empty());
+    repo.replace_elementals(OBJ_SWORD, &[element(3, 30), element(1, 20)])
+        .await
+        .unwrap();
+    assert_eq!(
+        repo.elementals_of(OBJ_SWORD).await.unwrap(),
+        [element(1, 20), element(3, 30)]
+    );
+    repo.replace_elementals(OBJ_SWORD, &[element(2, 40)])
+        .await
+        .unwrap();
+    assert_eq!(repo.elementals_of(OBJ_SWORD).await.unwrap(), [element(2, 40)]);
+    repo.replace_elementals(OBJ_SWORD, &[element(0, 10), element(5, 50)])
+        .await
+        .unwrap();
+    repo.delete_elemental(OBJ_SWORD, 0).await.unwrap();
+    assert_eq!(repo.elementals_of(OBJ_SWORD).await.unwrap(), [element(5, 50)]);
+    repo.delete_elemental(OBJ_SWORD, -1).await.unwrap();
+    assert!(repo.elementals_of(OBJ_SWORD).await.unwrap().is_empty());
+
+    // The rows of all items of an owner come in one go; Bob's item is not among them.
+    repo.set_augmentation(OBJ_SWORD, 7).await.unwrap();
+    repo.replace_elementals(OBJ_SWORD, &[element(4, 60), element(2, 20)])
+        .await
+        .unwrap();
+    repo.set_augmentation(OBJ_BOB, 9).await.unwrap();
+    assert_eq!(
+        repo.augmentations_of_owner(ALICE).await.unwrap(),
+        [OwnerAugmentationRow {
+            item_id: OBJ_SWORD,
+            aug_attributes: 7
+        }]
+    );
+    assert_eq!(
+        repo.elementals_of_owner(ALICE).await.unwrap(),
+        [
+            OwnerElementalRow {
+                item_id: OBJ_SWORD,
+                elem_type: 2,
+                elem_value: 20
+            },
+            OwnerElementalRow {
+                item_id: OBJ_SWORD,
+                elem_type: 4,
+                elem_value: 60
+            },
+        ]
+    );
+    repo.delete_item(OBJ_SWORD).await.unwrap();
+    repo.delete_augmentation(OBJ_BOB).await.unwrap();
+
+    // Deleting an item removes its augmentation, element and variable rows too (Java
+    // `Item.removeFromDb`).
     repo.set_augmentation(OBJ_CHEST, 5).await.unwrap();
+    repo.replace_elementals(OBJ_CHEST, &[element(1, 25)])
+        .await
+        .unwrap();
+    sqlx::query(AssertSqlSafe(format!(
+        "INSERT INTO item_variables (id, var, val) VALUES ({OBJ_CHEST}, 'k', 'v'), ({OBJ_ADENA}, 'k', 'v')"
+    )))
+    .execute(&db.pool)
+    .await
+    .unwrap();
     repo.delete_item(OBJ_CHEST).await.unwrap();
     assert_eq!(db.count("items", "object_id", OBJ_CHEST).await, 0);
     assert_eq!(db.count("item_attributes", "itemId", OBJ_CHEST).await, 0);
+    assert_eq!(db.count("item_elementals", "itemId", OBJ_CHEST).await, 0);
+    assert_eq!(db.count("item_variables", "id", OBJ_CHEST).await, 0);
+    // Another item's variables stay.
+    assert_eq!(db.count("item_variables", "id", OBJ_ADENA).await, 1);
     // Bob's item is untouched.
     assert_eq!(db.count("items", "owner_id", BOB).await, 1);
 

@@ -361,6 +361,10 @@ impl StaticData for DatapackData {
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         self.access.can_gain_exp(level)
     }
+
+    fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
+        self.datapack.augmentation_options.get(id)
+    }
 }
 
 /// The values exp, SP and levels read (Java `RatesConfig`, `PlayerConfig`). `MaxSp` is a `long`
@@ -732,6 +736,8 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             gm_item_restriction: config.general.gm_item_restriction,
             auto_loot_slot_limit: p.auto_loot_slot_limit,
             rate_extractable: config.rates.rate_extractable,
+            alt_allow_augment_trade: p.alt_allow_augment_trade,
+            alt_allow_augment_destroy: p.alt_allow_augment_destroy,
         },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,

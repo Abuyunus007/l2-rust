@@ -439,6 +439,7 @@ fn sword() -> Vec<ItemData> {
         custom_type2: 0,
         mana_left: -1,
         time: -1,
+        ..Default::default()
     }]
 }
 

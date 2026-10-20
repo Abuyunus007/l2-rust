@@ -214,15 +214,12 @@ impl<'w> StatView<'w> {
         }
     }
 
-    /// `Item.getAttackElementType()` of the right hand item: the template's first element.
-    // The element attributes of the `item_elementals` table are not loaded yet.
+    /// `Item.getAttackElementType()` of the right hand item: the template's first element, else
+    /// the first element attribute of the instance.
     pub(crate) fn weapon_attack_element(&self) -> Option<i8> {
         let item = self.active_weapon_instance()?;
         let template = self.item_template(item.item_id)?;
-        if !template.is_weapon() {
-            return Some(-2);
-        }
-        Some(template.elementals.first().map_or(-2, |e| e.element as i8))
+        Some(item.attack_element_type(Some(template)) as i8)
     }
 
     /// Java `Inventory.getWearedMask()`: the item masks of everything worn.
@@ -443,15 +440,18 @@ impl World {
     // (M4-INV-01). The armor set *stat* bonus is `FuncArmorSet`, which reads the paperdoll.
     pub fn on_equip(&mut self, id: ObjectId, item: &ItemData) -> Vec<Stat> {
         // `ArmorSetListener`, then `ItemSkillsListener` (they come before `StatsListener`).
-        self.equip_item_skills(id, item);
+        // The augmentation and element bonuses are applied by `ItemSkillsListener`, so their
+        // stats come first.
+        let mut stats = self.equip_item_skills(id, item);
         let funcs = match self.stats(id) {
             Some(view) => item_funcs(&view, item),
-            None => return Vec::new(),
+            None => return stats,
         };
         let Some(player) = self.players.get_mut(&id) else {
-            return Vec::new();
+            return stats;
         };
-        player.core.calculators.add_all(funcs)
+        stats.extend(player.core.calculators.add_all(funcs));
+        stats
     }
 
     /// Java's paperdoll listeners on unequip: the armor set and item skills go
@@ -459,14 +459,17 @@ impl World {
     /// `removeStatsOwner(item)`. `item` has already left `slot` (INV-01 clears the slot first,
     /// like `setPaperdollItem`). Returns the stats `removeStatsOwner` changed.
     pub fn on_unequip(&mut self, id: ObjectId, item: &ItemData, slot: usize) -> Vec<Stat> {
-        self.unequip_item_skills(id, item, slot);
+        let mut stats = self.unequip_item_skills(id, item, slot);
         let Some(player) = self.players.get_mut(&id) else {
-            return Vec::new();
+            return stats;
         };
-        player
-            .core
-            .calculators
-            .remove_owner(FuncOwner::Item(item.object_id))
+        stats.extend(
+            player
+                .core
+                .calculators
+                .remove_owner(FuncOwner::Item(item.object_id)),
+        );
+        stats
     }
 
     /// The max HP/MP/CP of a player or NPC into its `CreatureCore`, and the current values

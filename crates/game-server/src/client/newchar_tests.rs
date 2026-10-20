@@ -216,6 +216,76 @@ fn starting_values_follow_the_config() {
     assert_eq!(skills, [(3, 1), (194, 1), (1322, 1)]);
 }
 
+fn skills_of(p: &NewCharacterPlan) -> Vec<(i32, i32)> {
+    p.skills.iter().map(|s| (s.skill_id, s.skill_level)).collect()
+}
+
+/// `AutoLearnSkills` (Java `Player.rewardSkills` -> `giveAvailableSkills`): every level of the
+/// class tree the character level allows, not just level 1 of the learned-by-NPC skills.
+#[test]
+fn auto_learn_skills_gives_every_level_the_tree_allows() {
+    let env = env();
+    let mut config = GameConfig::default();
+    config.player.starting_level = 3;
+    // Off: Power Strike 1 only (the tail of the plan), Expertise is not out yet.
+    let p = plan_with(&env, &env.pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(3, 1), (194, 1), (1322, 1)]);
+
+    config.player.auto_learn_skills = true;
+    let p = plan_with(&env, &env.pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(3, 2), (194, 1), (1322, 1)]);
+
+    // Level 5: Expertise D (level 4) and C (level 5) follow each other round by round.
+    config.player.starting_level = 5;
+    let p = plan_with(&env, &env.pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(3, 2), (194, 1), (239, 2), (1322, 1)]);
+
+    config.player.auto_learn_skills = false;
+    let p = plan_with(&env, &env.pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(3, 1), (194, 1), (239, 2), (1322, 1)]);
+}
+
+/// `AutoLearnSkillsWithoutItems` and `AutoLearnForgottenScrollSkills` decide about the skills
+/// that need items (`SkillTreeData.getAvailableSkills`).
+#[test]
+fn auto_learn_skills_honours_the_item_and_forgotten_scroll_flags() {
+    let env = env();
+    let mut pack = (*env.pack).clone();
+    pack.skill_trees = Arc::new(
+        l2_data::SkillTrees::from_xml(
+            r#"<list><skillTree type="classSkillTree" classId="0">
+			<skill skillName="Plain" skillId="10" skillLevel="1" getLevel="1" learnedByNpc="true" />
+			<skill skillName="Book" skillId="11" skillLevel="1" getLevel="1" learnedByNpc="true"><item id="8618" count="1" /></skill>
+			<skill skillName="Book2" skillId="11" skillLevel="2" getLevel="1" learnedByNpc="true"><item id="8618" count="1" /></skill>
+			<skill skillName="Scroll" skillId="12" skillLevel="1" getLevel="1" learnedByFS="true"><item id="8619" count="1" /></skill>
+			<skill skillName="TooHigh" skillId="13" skillLevel="1" getLevel="4" learnedByNpc="true" />
+		</skillTree></list>"#,
+        )
+        .unwrap(),
+    );
+    let mut config = GameConfig::default();
+    config.player.starting_level = 3;
+    config.player.auto_learn_skills = true;
+
+    // Items required and no forgotten scrolls: the auto learn gives the plain skill only; the
+    // tail of the plan (`getAvailableSkills`, items allowed) adds level 1 of the book.
+    let p = plan_with(&env, &pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(10, 1), (11, 1)]);
+
+    config.player.auto_learn_skills_without_items = true;
+    let p = plan_with(&env, &pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(10, 1), (11, 2)]);
+
+    config.player.auto_learn_fs_skills = true;
+    let p = plan_with(&env, &pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(10, 1), (11, 2), (12, 1)]);
+
+    // A forgotten scroll skill needs no `WithoutItems`.
+    config.player.auto_learn_skills_without_items = false;
+    let p = plan_with(&env, &pack, &config, 0, false).unwrap();
+    assert_eq!(skills_of(&p), [(10, 1), (11, 1), (12, 1)]);
+}
+
 #[test]
 fn a_starting_level_above_the_maximum_changes_nothing() {
     let env = env();

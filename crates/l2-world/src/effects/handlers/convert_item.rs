@@ -96,7 +96,6 @@ impl EffectHandler for ConvertItem {
         let Some(destroyed) = world.destroy_inventory_item(player, wpn, old.count) else {
             return;
         };
-        world.forget_item_extras(wpn);
         // `addItem(TRANSFER, newItemId, 1, player, destroyItem)`.
         let Some(added) = world.inventory_add_item_by_id(player, new_item_id, 1) else {
             return;

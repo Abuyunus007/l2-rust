@@ -15,7 +15,7 @@ use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 /// `characters` plus every table `delete_character` touches.
-const SCHEMA: [&str; 23] = [
+const SCHEMA: [&str; 25] = [
     include_str!("../sql/game/characters.sql"),
     include_str!("../sql/game/character_contacts.sql"),
     include_str!("../sql/game/character_friends.sql"),
@@ -32,6 +32,8 @@ const SCHEMA: [&str; 23] = [
     include_str!("../sql/game/seven_signs.sql"),
     include_str!("../sql/game/pets.sql"),
     include_str!("../sql/game/item_attributes.sql"),
+    include_str!("../sql/game/item_elementals.sql"),
+    include_str!("../sql/game/item_variables.sql"),
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/merchant_lease.sql"),
     include_str!("../sql/game/character_raid_points.sql"),

@@ -309,6 +309,7 @@ fn rebuild(records: &[Record]) -> Rebuilt {
             custom_type2: i32::from(i.custom_type2),
             mana_left: i.mana,
             time: -1,
+            ..Default::default()
         });
         templates.insert(
             i.item_id,

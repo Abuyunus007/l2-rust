@@ -174,7 +174,9 @@ impl World {
         // BowCrossRodListener
         self.bow_cross_rod_equipped(id, slot, item, changed);
         // ArmorSetListener, ItemSkillsListener, StatsListener
-        let skills_listed = self.skill_list_changes_on_equip(id, slot, item);
+        // `Options.apply` sends the skill list for every option of an augmented item.
+        let skills_listed =
+            self.skill_list_changes_on_equip(id, slot, item) || self.augmentation_sends_skill_list(item);
         let stats = self.on_equip(id, item);
         self.broadcast_modified_stats(id, &stats);
         self.refresh_max_vitals(id, false);
@@ -193,6 +195,7 @@ impl World {
         let templates = self.item_templates();
         let template = templates.as_deref().and_then(|t| t.get(item.item_id));
         let mut skills_listed = set_removal
+            || self.augmentation_sends_skill_list(item)
             || template.is_some_and(|t| {
                 (item.enchant_level >= 4 && t.skills.enchant4_skill.is_some())
                     || t.skills.item_skills.iter().flatten().next().is_some()

@@ -7,6 +7,7 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod armor_set;
+pub mod augmentation;
 pub mod class_list;
 pub mod door;
 pub mod enchant_hp_bonus;
@@ -37,6 +38,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use armor_set::{ArmorSet, ArmorSets};
+pub use augmentation::{AugmentationOption, AugmentationOptions};
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant_hp_bonus::EnchantHpBonus;
@@ -119,6 +121,8 @@ pub struct Datapack {
     pub hennas: Arc<Hennas>,
     /// `data/stats/skills/*.xml`: every skill and enchant level as a template (M4-DATA-11).
     pub skills: Arc<SkillTemplates>,
+    /// `data/stats/augmentation/options/*.xml`: what the two option ids of an augmentation give.
+    pub augmentation_options: Arc<AugmentationOptions>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -201,6 +205,8 @@ impl Datapack {
             no_spawns: options.no_spawns,
         };
         let spawns = SpawnData::load(root, &npcs, &spawn_options);
+        let skills = Arc::new(SkillTemplates::load(root, &options.skills));
+        let augmentation_options = Arc::new(AugmentationOptions::load(root, &skills));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -231,7 +237,8 @@ impl Datapack {
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             hennas: Arc::new(Hennas::load(root)),
-            skills: Arc::new(SkillTemplates::load(root, &options.skills)),
+            skills,
+            augmentation_options,
         })
     }
 }
