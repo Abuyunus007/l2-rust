@@ -37,4 +37,5 @@ Java `Player.storeEffect`/`restoreEffects` (`character_skills_save`: buffs with 
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules: no local DB, no real ports, never kill processes by name), `docs/design/m4-combat.md`, `docs/design/m5-skills.md` first.
+- Effect engine (M5-EFFECT-01) is merged: snapshot the effect list in `leave.rs` (the snapshot is taken before the effects are removed) and restore through `apply_effects_timed(.., false, remaining_time)` as Java's `restoreEffects` does. Reuse timestamps belong to casting (M5-CAST-01, running now): do the buffs first; merge main for the reuse part when CAST-01 has landed, or leave a `// M5-CAST-01:` marker and report.
 - The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).

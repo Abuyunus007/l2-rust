@@ -14,8 +14,9 @@ use l2_protocol_game::client::{EnterWorld, RequestKeyMapping};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, FriendListEntry, HennaInfo, OtherShortcut, QuestList,
-    QuestListEntry, ShortcutEntry, ShortcutInit, SkillCoolTime, SkillCoolTimeEntry, SkillList,
-    SkillListEntry, TOP_CENTER, TeleportBookmark, ValidateLocation, remaining_seconds, reuse_seconds,
+    QuestListEntry, ShortcutEntry, ShortcutInit, ShortcutRegister, SkillCoolTime, SkillCoolTimeEntry,
+    SkillList, SkillListEntry, TOP_CENTER, TeleportBookmark, ValidateLocation, remaining_seconds,
+    reuse_seconds,
 };
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ClientPacket, ConnectionState, NpcStringId, SystemMessageId, decode_client};
@@ -153,6 +154,32 @@ fn shortcut_init_layout() {
         .ints(&[6, 3, 9, 1])
         .done();
     check_round_trip(&packet, &expected, 1);
+}
+
+#[test]
+fn shortcut_register_layout() {
+    // Java: type SKILL (2), slot + page * 12, skill id, level, zero byte, 1.
+    let packet = ShortcutRegister {
+        slot: 14,
+        skill_id: 1204,
+        level: 7,
+    };
+    let expected = Bytes::default()
+        .byte(0x44)
+        .ints(&[2, 14, 1204, 7])
+        .byte(0)
+        .int(1)
+        .done();
+    check_round_trip(&packet, &expected, 1);
+    // The ShortcutInit entry of the same skill has the same bytes after the opcode.
+    let init = ShortcutInit {
+        shortcuts: vec![ShortcutEntry::Skill {
+            slot: 14,
+            id: 1204,
+            level: 7,
+        }],
+    };
+    assert_eq!(init.to_bytes()[1 + 4..], packet.to_bytes()[1..]);
 }
 
 #[test]
