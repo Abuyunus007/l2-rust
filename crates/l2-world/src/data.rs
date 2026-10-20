@@ -114,6 +114,12 @@ pub trait StaticData: Send + Sync {
         None
     }
 
+    /// The transformations of the datapack (`data/stats/transformations`, M6-TRANS-01); none
+    /// loaded by default.
+    fn transforms(&self) -> Option<&std::sync::Arc<l2_data::Transforms>> {
+        None
+    }
+
     /// Java `ItemTemplate.getName()`, `None` for an unknown item.
     fn item_name(&self, _item_id: i32) -> Option<String> {
         None
@@ -180,6 +186,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn stat_data(&self) -> Option<&StatData> {
         (**self).stat_data()
+    }
+
+    fn transforms(&self) -> Option<&std::sync::Arc<l2_data::Transforms>> {
+        (**self).transforms()
     }
 
     fn item_name(&self, item_id: i32) -> Option<String> {

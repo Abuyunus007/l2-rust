@@ -214,9 +214,12 @@ impl World {
 
     /// The end of Java `Player.removeSkill(skill)`: every skill shortcut of the skill goes, one
     /// `deleteShortcut` (and one list) each. The skills 3080 to 3259 keep theirs.
-    // FOLLOW-UP(transform): Java returns before this when `getTransformationId() > 0` or a cursed
-    // weapon is equipped; neither state exists yet, so the shortcuts always go.
-    pub(crate) fn delete_skill_shortcuts(&mut self, id: ObjectId, skill_id: i32) {
+    // Java returns before this when `getTransformationId() > 0` or a cursed weapon is equipped
+    // (cursed weapons are M8).
+    pub fn delete_skill_shortcuts(&mut self, id: ObjectId, skill_id: i32) {
+        if self.transformation_id(id) > 0 {
+            return;
+        }
         if (3080..=3259).contains(&skill_id) {
             return;
         }

@@ -324,6 +324,10 @@ impl StaticData for DatapackData {
         Some(&self.stats)
     }
 
+    fn transforms(&self) -> Option<&Arc<l2_data::Transforms>> {
+        Some(&self.datapack.transforms)
+    }
+
     fn exp_percent(&self, exp: i64, level: i32) -> f64 {
         self.datapack.experience.exp_percent(exp, level).unwrap_or(0.0)
     }

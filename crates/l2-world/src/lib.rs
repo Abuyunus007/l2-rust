@@ -49,6 +49,7 @@ pub mod target;
 pub mod teleport;
 pub mod teleporter;
 pub mod timer;
+pub mod transform;
 pub mod user_command;
 mod visibility;
 pub mod world;

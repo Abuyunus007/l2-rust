@@ -25,7 +25,7 @@
 //   scope), so those requests find no `SkillLearn` and are ignored, which is what Java does for a
 //   skill that is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are
 //   therefore silent too.
-// - `isTransformed()`/`isMounted()` (M6).
+// - `isMounted()` (M6: the mounts).
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
@@ -310,7 +310,7 @@ impl World {
     /// Java `SkillTreeData.isSkillAllowed(player, skill)`, for the trees that are loaded: a skill
     /// excluded from the check, or a line of the class tree of the player's class (the level
     /// counts as at most the skill's highest level).
-    fn is_skill_allowed(&self, player: ObjectId, skill_id: i32, level: i32) -> bool {
+    pub(crate) fn is_skill_allowed(&self, player: ObjectId, skill_id: i32, level: i32) -> bool {
         let Some(data) = self.data.stat_data() else {
             return false;
         };
@@ -693,8 +693,16 @@ impl World {
         if !self.players.contains_key(&player) {
             return;
         }
-        // FOLLOW-UP(M6): `isTransformed() || isMounted()` answers with the skill enhancing
-        // message.
+        // `|| player.isMounted()`: mounts are not modelled.
+        if self.is_transformed(player) {
+            self.send(
+                player,
+                &SystemMessage::new(
+                    SystemMessageId::YouCannotUseTheSkillEnhancingFunctionInThisClassYouCanUseTheSkillEnhancingFunctionUnderOffBattleStatusAndCannotUseTheFunctionWhileTransformingBattlingAndOnBoard,
+                ),
+            );
+            return;
+        }
 
         if !(1..=1000).contains(&level) || skill_id < 1 {
             let punishment = self.default_punish();

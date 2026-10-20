@@ -459,7 +459,10 @@ impl World {
         };
         // Disabling blessed spiritshots in the olympiad: no olympiad yet.
         if shot_type == ExAutoSoulShot::ON {
-            // `canManipulateWithItemId` is always true (no inventory block is modelled).
+            if !self.can_manipulate_with_item_id(id, item.item_id) {
+                self.send_message(id, "Cannot use this item.");
+                return;
+            }
             // Fishing shots are not automatic on retail.
             if (6535..=6540).contains(&item_id) {
                 return;
