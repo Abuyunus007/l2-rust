@@ -26,6 +26,7 @@ pub mod item;
 pub mod movement;
 pub mod shortcut;
 pub mod skills;
+pub mod vote;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
@@ -44,6 +45,7 @@ pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,
 };
+pub use vote::RequestVoteNew;
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

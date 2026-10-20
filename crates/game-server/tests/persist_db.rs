@@ -885,3 +885,103 @@ async fn shortcut_registrations_and_deletions_write_the_rows() {
     pool.close().await;
     db.drop_db().await;
 }
+
+// ------------------------------------------------------------------ M5-FU-03: recommendations
+
+/// Java `storeRecommendationValues` is `REPLACE INTO character_reco_bonus (charId,rec_have,rec_left)`:
+/// the old row is dropped, so `time_left` falls back to the column default 0.
+#[tokio::test]
+async fn reco_values_replace_the_row_and_reset_the_time_left() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let reco = RecommendationRepository::new(pool.clone());
+    reco.replace_reco_bonus(CHAR_ID, 3, 17, 3_590_000).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    store.store_reco_values(ObjectId(CHAR_ID), 4, 16).await.unwrap();
+    let bonus = reco.reco_bonus_of(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!((bonus.rec_have, bonus.rec_left, bonus.time_left), (4, 16, 0));
+
+    // A character without a row gets one.
+    store
+        .store_reco_values(ObjectId(CHAR_ID + 1), 0, 20)
+        .await
+        .unwrap();
+    let bonus = reco.reco_bonus_of(CHAR_ID + 1).await.unwrap().unwrap();
+    assert_eq!((bonus.rec_have, bonus.rec_left, bonus.time_left), (0, 20, 0));
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// `DailyResetManager.resetRecommends`: up to 20 recommendations received go to 0, more lose 20;
+/// everybody gets 20 to give and an hour of hourglass.
+#[tokio::test]
+async fn the_daily_reset_updates_every_reco_row_like_java() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let reco = RecommendationRepository::new(pool.clone());
+    // (rec_have before, rec_have after)
+    let cases = [(0, 0), (5, 0), (20, 0), (21, 1), (45, 25), (255, 235)];
+    for (i, (have, _)) in cases.iter().enumerate() {
+        let char_id = CHAR_ID + i32::try_from(i).unwrap();
+        reco.replace_reco_bonus(char_id, *have, 3, 12_345).await.unwrap();
+    }
+    let mut store = DbStore::new(pool.clone());
+    store.reset_recommends().await.unwrap();
+    for (i, (_, after)) in cases.iter().enumerate() {
+        let char_id = CHAR_ID + i32::try_from(i).unwrap();
+        let bonus = reco.reco_bonus_of(char_id).await.unwrap().unwrap();
+        assert_eq!(
+            (bonus.rec_have, bonus.rec_left, bonus.time_left),
+            (*after, 20, 3_600_000),
+            "row {i}"
+        );
+    }
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// `PlayerVariables.storeMe` through `store_player_variables`: deletes, then upserts.
+#[tokio::test]
+async fn player_variables_are_upserted_and_deleted() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let variables = VariableRepository::new(pool.clone());
+    variables
+        .upsert_variable(CHAR_ID, "nevit_b", "100")
+        .await
+        .unwrap();
+    variables
+        .upsert_variable(CHAR_ID, "hunting_time", "500")
+        .await
+        .unwrap();
+    variables
+        .upsert_variable(CHAR_ID, "UI_KEY_MAPPING", "1")
+        .await
+        .unwrap();
+    let mut store = DbStore::new(pool.clone());
+    store
+        .store_player_variables(
+            ObjectId(CHAR_ID),
+            &[("hunting_time".to_owned(), "0".to_owned())],
+            &["nevit_b".to_owned()],
+        )
+        .await
+        .unwrap();
+    let mut stored = variables.variables_of(CHAR_ID).await.unwrap();
+    stored.sort();
+    assert_eq!(
+        stored,
+        vec![
+            ("UI_KEY_MAPPING".to_owned(), "1".to_owned()),
+            ("hunting_time".to_owned(), "0".to_owned()),
+        ]
+    );
+
+    pool.close().await;
+    db.drop_db().await;
+}

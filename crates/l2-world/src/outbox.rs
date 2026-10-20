@@ -56,6 +56,28 @@ pub enum PersistCommand {
         upserts: Vec<SkillData>,
         removed: Vec<i32>,
     },
+    /// Java `Player.storeRecommendationValues()` (a vote, `RecoGiveTask`):
+    /// `REPLACE INTO character_reco_bonus (charId,rec_have,rec_left) VALUES (?,?,?)`. The
+    /// `REPLACE` drops the old row, so `time_left` falls back to the column default 0 (a Java
+    /// quirk the Rust side keeps). Applied in order with the character's other commands.
+    RecoValues {
+        owner: ObjectId,
+        rec_have: i32,
+        rec_left: i32,
+    },
+    /// Java `DailyResetManager.resetRecommends()`, the database half: the two `UPDATE`s of
+    /// `character_reco_bonus` for every character (`rec_left` 20, `time_left` one hour,
+    /// `rec_have` lowered by 20, not below 0). D-39: the Java game server runs the same
+    /// statements on its own daily reset.
+    ResetRecommends,
+    /// Java `PlayerVariables.storeMe()`: the `character_variables` rows of one online character
+    /// that changed, written now instead of with the next store (the daily reset does this for
+    /// every player). `upserts` are `(var, value)` pairs, `removed` the names Java deletes.
+    PlayerVariables {
+        owner: ObjectId,
+        upserts: Vec<(String, String)>,
+        removed: Vec<String>,
+    },
 }
 
 /// Messages for the login server link.

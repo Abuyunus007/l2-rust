@@ -609,6 +609,10 @@ impl ClientSession {
             ClientPacket::RequestRestartPoint(p) => ClientInput::RestartPoint {
                 point_type: p.requested_point_type,
             },
+            // Java: RequestVoteNew
+            ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
+                target_id: p.target_id,
+            },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

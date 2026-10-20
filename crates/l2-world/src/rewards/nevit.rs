@@ -32,13 +32,12 @@
 // # What is left out
 // - The visual aura (`AbnormalVisualEffect.NAVIT_ADVENT`): abnormal visual effects belong to the
 //   effect system (M5), so the blessing works but nobody sees its glow.
-// - `RecoGiveTask` (10 recommendations after 2 h online, 1 an hour after that) and the
-//   recommendation votes: the recommendation system. The counters are loaded and stored as they
-//   are.
 // - `EffectType.NEVITS_HOURGLASS` (an effect that keeps the hourglass paused) is the
 //   `NevitsHourglass` handler (`effects/handlers/nevits_hourglass.rs`, M5-EFX-05).
-// - The daily reset (`DailyResetManager.resetNevit` / `resetRecommends`): the daily reset task.
 // - The "hunting" exp bonus is a `TODO` in Java too.
+//
+// The recommendations (`RecoGiveTask`, `RequestVoteNew`) and the daily reset
+// (`DailyResetManager.resetNevit` / `resetRecommends`) are in `recommendations.rs` (M5-FU-03).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -216,6 +215,15 @@ impl World {
                 profile.variables_removed.insert(name.to_owned());
             }
         }
+    }
+
+    // ------------------------------------------------------------------ DailyResetManager
+
+    /// The per-player part of Java `DailyResetManager.resetNevit`: `hunting_time` back to 0 and
+    /// the client is told. A running advent task is left alone, like Java.
+    pub(crate) fn nevit_reset_advent_time(&mut self, id: ObjectId) {
+        self.set_player_variable(id, HUNTING_TIME, 0);
+        self.send(id, &ExNevitAdventTimeChange::new(0, true));
     }
 
     // ------------------------------------------------------------------ Nevit.java: reads
@@ -542,13 +550,27 @@ impl World {
             .map_or(0, |p| p.data.profile.recom_time_left_ms)
     }
 
+    /// Java `Player.stopNevitHourglassTask`.
+    pub(crate) fn nevit_stop_hourglass_task(&mut self, id: ObjectId) {
+        if let Some(hourglass) = self.nevit_mut(id).hourglass.take()
+            && let Some(timer) = hourglass.timer
+        {
+            self.timers.cancel(timer);
+        }
+    }
+
     /// Java `Player.startNevitHourglassTask`: starts the hourglass with the time the database
     /// holds, unless there is one, and tells the client.
     pub(crate) fn start_nevit_hourglass_task(&mut self, id: ObjectId) {
         if self.nevit_mut(id).hourglass.is_some() {
             return;
         }
-        // Load data.
+        // Load data. `loadRecommendations` also sets the counters of the player from the row (the
+        // daily reset relies on it: the row says 20 to give).
+        if let Some(player) = self.players.get_mut(&id) {
+            player.recom_have = player.data.profile.recom_have.clamp(0, 255);
+            player.recom_left = player.data.profile.recom_left.clamp(0, 255);
+        }
         let task_time = self.stored_hourglass_ms(id);
         if task_time > 0 {
             // If player have some timeleft, start bonus task.
@@ -596,7 +618,10 @@ impl World {
         }
         let paused = self.nevit_hourglass_paused(id);
         if let Some(player) = self.players.get_mut(&id) {
+            let (rec_have, rec_left) = (player.recom_have, player.recom_left);
             let profile = &mut player.data.profile;
+            profile.recom_have = rec_have;
+            profile.recom_left = rec_left;
             profile.recom_time_left_ms = if paused {
                 profile.recom_time_left_ms
             } else {
@@ -618,7 +643,8 @@ impl World {
         }
         // Create bonus task.
         self.start_nevit_hourglass_task(id);
-        // `RecoGiveTask` (10 recommendations after 2 h, then 1 an hour): see the module comment.
+        // Create task to give new recommendations.
+        self.start_reco_give_task(id);
         // Store new data.
         self.store_recommendations(id, false);
     }
@@ -676,6 +702,8 @@ impl World {
             // Recommendations must be saved before task (timer) is canceled.
             self.store_recommendations(id, false);
         }
+        // `stopAllTimers` -> `stopRecoGiveTask`.
+        self.stop_reco_give_task(id);
         if let Some(nevit) = self.rewards.nevit.players.remove(&id) {
             for timer in [
                 nevit.advent,

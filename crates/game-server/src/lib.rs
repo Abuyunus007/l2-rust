@@ -275,6 +275,8 @@ impl Server {
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
                     // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
                     world.load_ground_items(ground_items);
+                    // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).
+                    world.start_daily_reset_task();
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
