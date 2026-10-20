@@ -15,8 +15,8 @@ use l2_protocol_game::client::{Appearing, CannotMoveAnymore, ValidatePosition};
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::visibility::{compass_zone, relation, status};
 use l2_protocol_game::server::{
-    CharInfo, DeleteObject, ExSetCompassZoneCode, MoveToPawn, NpcInfo, RelationChanged, RelationEntry,
-    StatusUpdate, StopMove, TeleportToLocation, ValidateLocation,
+    CharInfo, DeleteObject, ExSetCompassZoneCode, MoveToPawn, NicknameChanged, NpcInfo, RelationChanged,
+    RelationEntry, StatusUpdate, StopMove, TeleportToLocation, ValidateLocation,
 };
 use l2_protocol_game::{ClientOpcode, ConnectionState, ServerOpcode, decode_client};
 use l2_protocol_game::{ClientPacket, client, server};
@@ -416,6 +416,21 @@ fn relation_changed_single_and_list_share_a_layout() {
     // A negative count is invalid, a count larger than the data is truncated.
     assert!(RelationChanged::decode(&mut PacketReader::new(&(-1_i32).to_le_bytes())).is_err());
     assert!(RelationChanged::decode(&mut PacketReader::new(&2_i32.to_le_bytes())).is_err());
+}
+
+#[test]
+fn nickname_changed_is_the_object_id_and_the_title() {
+    let title = "\u{AE} General \u{AE}";
+    let p = NicknameChanged {
+        object_id: 7,
+        title: title.to_string(),
+    };
+    let expected = Bytes::default().byte(0xCC).int(7).text(title).0;
+    assert_eq!(p.to_bytes(), expected);
+    assert_eq!(
+        NicknameChanged::decode(&mut PacketReader::new(&expected[1..])).unwrap(),
+        p
+    );
 }
 
 #[test]

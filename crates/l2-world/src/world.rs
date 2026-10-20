@@ -104,6 +104,10 @@ pub struct World {
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
     /// The parties, who is in one, and the pending invitations (M6-PARTY-01, `party/`).
     pub(crate) party: crate::party::PartyWorld,
+    /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
+    pub(crate) punishments: crate::punishments::PunishmentWorld,
+    /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
+    pub(crate) pvp: crate::pvp::PvpWorld,
 }
 
 impl World {
@@ -153,6 +157,8 @@ impl World {
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
             party: crate::party::PartyWorld::default(),
+            punishments: crate::punishments::PunishmentWorld::default(),
+            pvp: crate::pvp::PvpWorld::default(),
         }
     }
 
@@ -346,6 +352,24 @@ impl World {
             return;
         }
         let id = data.object_id;
+        // Java `CharacterSelect`: "Banned?" (the character, the account or the IP address). The
+        // client is closed before the character enters; the account is released like at any
+        // logout.
+        let ip_text = ip.map(|ip| ip.to_string());
+        if self.is_banned_at_entry(id, &data.account, ip_text.as_deref()) {
+            info!(
+                "{} ({}) is banned; not entering the world.",
+                data.name, data.account
+            );
+            sink.send(Encode::to_bytes(&l2_protocol_game::server::ServerClose));
+            self.outbox.persist(PersistCommand::PlayerLeft {
+                account: data.account.clone(),
+                object_id: id,
+                logout: true,
+            });
+            sink.left_world(LeaveReason::Kicked);
+            return;
+        }
         if self.players.contains_key(&id) {
             // Java: the old instance is disconnected (e.g. a stale session after a crash).
             warn!(
@@ -455,6 +479,15 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientInput::TradeRequest { object_id } => self.on_trade_request(id, object_id),
+            ClientInput::AnswerTradeRequest { response } => self.on_answer_trade_request(id, response),
+            ClientInput::AddTradeItem {
+                trade_id,
+                object_id,
+                count,
+            } => self.on_add_trade_item(id, trade_id, object_id, count),
+            ClientInput::TradeDone { response } => self.on_trade_done(id, response),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -547,6 +580,8 @@ impl World {
             // Java: DecayTaskManager, RespawnTaskManager, SpawnGroupTaskManager
             TimerKind::Decay(id) => self.on_decay_timer(id),
             TimerKind::Respawn(id) => self.on_respawn_timer(id),
+            // Java: MinionList.MinionRespawnTask
+            TimerKind::MinionRespawn(id) => self.on_minion_respawn_timer(id),
             TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
             // Java: ItemManager.ResetOwner, DropProtection, ItemsAutoDestroyTaskManager,
             // ItemsOnGroundManager
@@ -575,6 +610,10 @@ impl World {
             TimerKind::Control(timer) => self.on_control_timer(timer),
             // Java: Party's position broadcast task
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
+            // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
+            TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
+            // Java: PvpFlagTaskManager.run (for one player)
+            TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }
     }
 

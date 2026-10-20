@@ -14,7 +14,7 @@
 //
 // # Left out
 // - Merc tickets (`MercTicketManager`): the castle lord rule of `ItemClick`.
-// - Trade (`getActiveTradeList`), fake death, combat flags, cursed weapons.
+// - Fake death, combat flags, cursed weapons.
 // - The auto equip of bolts for a crossbow: `World::check_and_equip_arrows` is the shared (and
 //   arrow-only) helper of the attack code.
 
@@ -104,7 +104,14 @@ impl World {
         if self.is_alike_dead(id) {
             return;
         }
-        // `getActiveTradeList() != null`: there are no trades yet.
+        if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotPickUpOrUseItemsWhileTrading),
+            );
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Set the AI Intention to IDLE.
         self.set_intention_idle(id);

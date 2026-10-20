@@ -23,6 +23,8 @@
 // - NPC movement is `movement.rs` (the code players use, with the NPC branches of Java's
 //   `Creature.moveToLocation` / `updatePosition`); the NPC's move fields are
 //   `Npc::movement`.
+// - Guards and siege defenders are `guards.rs`; a master's minions after the first spawn are
+//   `minions.rs`; the fear of an NPC (`notifyActionAfraid`) is `effects/control.rs`.
 //
 // # Left out
 // - Scripts reacting to AI events: D-05, see `attackable.rs`. The NPC's skill use
@@ -32,7 +34,9 @@
 // - The follow intention of a player (M6 summons and party follow).
 
 pub mod attackable;
+pub mod guards;
 pub mod idle;
+pub mod minions;
 pub mod npc;
 pub mod npc_skills;
 pub mod player;
@@ -315,7 +319,8 @@ impl World {
         self.client_start_auto_attack(id);
     }
 
-    /// Java `notifyActionEvaded(attacker)`: nothing in `CreatureAI` (M4-AI-01 may react).
+    /// Java `notifyActionEvaded(attacker)`: nothing in `CreatureAI` or `AttackableAI`; only
+    /// `SummonAI` reacts (M6).
     pub fn notify_action_evaded(&mut self, id: ObjectId, attacker: ObjectId) {
         let _ = (id, attacker);
     }

@@ -76,6 +76,7 @@ pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
+pub mod gm_view;
 pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
@@ -114,6 +115,7 @@ pub use entry::{
     ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{
@@ -163,7 +165,8 @@ pub use trade::{
 };
 pub use userinfo::UserInfo;
 pub use visibility::{
-    CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
+    CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
+    StatusUpdate,
 };
 
 /// Reads an int count, which Java never writes negative. Anything negative is an error.

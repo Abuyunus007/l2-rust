@@ -146,6 +146,12 @@ pub trait StaticData: Send + Sync {
         true
     }
 
+    /// Java `AccessLevel.allowTransaction()` (`allowTransaction` of `AccessLevels.xml`, default
+    /// true): whether a player of this level may trade.
+    fn access_level_allows_transaction(&self, _level: i32) -> bool {
+        true
+    }
+
     /// Java `OptionData.getOptions(id)`: the augmentation option with this id. The default (no
     /// datapack) knows none, so an augmented item gives no bonus.
     fn augmentation_option(&self, _id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -204,6 +210,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         (**self).access_level_can_gain_exp(level)
+    }
+
+    fn access_level_allows_transaction(&self, level: i32) -> bool {
+        (**self).access_level_allows_transaction(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -341,6 +351,8 @@ pub struct WorldSettings {
     pub cast: crate::skills::cast::CastSettings,
     /// The values parties read (M6-PARTY-01).
     pub party: crate::party::PartySettings,
+    /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
+    pub pvp: crate::pvp::PvpSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -394,6 +406,7 @@ impl Default for WorldSettings {
             learn: crate::skills::learn::LearnSettings::default(),
             cast: crate::skills::cast::CastSettings::default(),
             party: crate::party::PartySettings::default(),
+            pvp: crate::pvp::PvpSettings::default(),
             daily_reset_database_writes: false,
         }
     }

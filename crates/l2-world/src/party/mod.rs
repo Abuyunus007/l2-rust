@@ -18,7 +18,8 @@
 //   the packets they send, and the 12 s position broadcast on the timer wheel.
 // - `invite.rs`: the five client packets (`RequestJoinParty` ...) and `Player.leaveParty` at
 //   logout.
-// - `request.rs`: `Player.onTransactionRequest` and friends (the pending invitation).
+// - `request.rs`: the pending invitation of a party (the request between two players is
+//   `trade/request.rs`).
 // - `loot.rs`: `distributeItem`, `distributeAdena` and the looter choice of the loot types.
 // - `rewards.rs`: `distributeXpAndSp`, the party bonus and the level cut-offs.
 // - `buffs.rs`: `RebalanceHP` and the damage `TransferDamage` passes to a party member.
@@ -135,9 +136,9 @@ pub(crate) struct Party {
     pub(crate) distribution_type: PartyDistributionType,
     /// Java `_itemLastLoot`: the index of the member who got the last item in the by-turn modes.
     pub(crate) item_last_loot: usize,
-    /// Java `_pendingInvitation` and `_pendingInviteTimeout` (a game tick, here a world tick).
+    /// Java `_pendingInvitation` and `_pendingInviteTimeout` (a game tick).
     pub(crate) pending_invitation: bool,
-    pub(crate) pending_invite_timeout: u64,
+    pub(crate) pending_invite_timeout: i64,
     /// Java `_positionBroadcastTask`.
     pub(crate) position_timer: Option<TimerId>,
     /// Java `_disbanding`.
@@ -172,8 +173,6 @@ pub struct PartyWorld {
     /// Java `Player._party`.
     pub(crate) of_player: HashMap<ObjectId, PartyId>,
     next_id: u64,
-    /// The pending transactions (`Player._activeRequester`, `_requestExpireTime`).
-    pub(crate) requests: request::Requests,
     /// Java `Player._partyDistributionType`: the loot rule an inviter chose for the party it is
     /// about to create.
     pub(crate) chosen_distribution: HashMap<ObjectId, PartyDistributionType>,
@@ -265,36 +264,6 @@ impl World {
         self.party_of(id)
             .and_then(|party| self.party_leader(party))
             .is_some_and(|leader| leader == id)
-    }
-
-    /// The party part of Java `Player.getRelation(target)`: `RELATION_HAS_PARTY` and the bit that
-    /// tells which place `subject` has in the party, when `viewer` is in the same party. The
-    /// player view (`player_view.rs`, PVP-01) ORs it into the relation mask.
-    pub fn party_relation_bits(&self, subject: ObjectId, viewer: ObjectId) -> i32 {
-        use l2_protocol_game::server::visibility::relation as r;
-        let Some(party) = self
-            .party_of(subject)
-            .filter(|p| Some(*p) == self.party_of(viewer))
-        else {
-            return 0;
-        };
-        let mut result = r::HAS_PARTY;
-        let members = self.party_members(party);
-        if let Some(index) = members.iter().position(|m| *m == subject) {
-            result |= match index {
-                0 => r::PARTYLEADER,
-                1 => r::PARTY4,
-                2 => r::PARTY3 + r::PARTY2 + r::PARTY1,
-                3 => r::PARTY3 + r::PARTY2,
-                4 => r::PARTY3 + r::PARTY1,
-                5 => r::PARTY3,
-                6 => r::PARTY2 + r::PARTY1,
-                7 => r::PARTY2,
-                8 => r::PARTY1,
-                _ => 0,
-            };
-        }
-        result
     }
 }
 

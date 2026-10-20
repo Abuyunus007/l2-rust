@@ -15,7 +15,7 @@ use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ChatType, CreatureSay, NpcHtmlMessage, SayBody, SenderField, StatusUpdate, SystemMessage,
+    ChatType, ConfirmDlg, CreatureSay, NpcHtmlMessage, SayBody, SenderField, StatusUpdate, SystemMessage,
     SystemMessageParam, TeleportToLocation, visibility::status,
 };
 use l2_world::*;
@@ -380,6 +380,18 @@ impl Setup {
         });
     }
 
+    /// `DlgAnswer`.
+    fn answer(&mut self, player: i32, message_id: i32, answer: i32) {
+        self.input(
+            player,
+            ClientInput::DlgAnswer {
+                message_id,
+                answer,
+                requester_id: 0,
+            },
+        );
+    }
+
     /// `//command`.
     fn cmd(&mut self, player: i32, command: &str) {
         self.input(
@@ -510,17 +522,51 @@ fn an_unknown_command_is_named_back() {
     );
 }
 
+static CONFIRMED_RUNS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// Java `AdminCommandHandler.onCommand` with `useConfirm`: a `confirmDlg="true"` command asks
+/// first (`ConfirmDlg` of `S1_3`), runs on a yes (once, without asking again) and is forgotten on a
+/// no.
 #[test]
-fn a_command_that_needs_a_confirmation_does_not_run() {
+fn a_command_that_needs_a_confirmation_asks_and_runs_on_a_yes() {
+    use std::sync::atomic::Ordering;
+
     let mut s = setup();
     s.enter(GM, 0);
     s.world
-        .register_admin_handler("admin_sendhome", |_world, _gm, _command| panic!("must not run"));
+        .register_admin_handler("admin_sendhome", |_world, _gm, _command| {
+            CONFIRMED_RUNS.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        });
     s.log.take();
-    s.cmd(GM, "sendhome");
+
+    s.cmd(GM, "sendhome 5");
     let out = s.log.take();
-    assert_eq!(texts_to(&out, GM).len(), 1);
-    assert!(texts_to(&out, GM)[0].contains("confirmation"));
+    assert_eq!(CONFIRMED_RUNS.load(Ordering::SeqCst), 0);
+    let dialogs = decoded::<ConfirmDlg>(&out, GM, "CONFIRM_DLG");
+    assert_eq!(dialogs.len(), 1);
+    assert_eq!(dialogs[0].message.id, SystemMessageId::S13);
+    assert_eq!(
+        dialogs[0].message.params,
+        [SystemMessageParam::Text(
+            "Are you sure you want execute command 'sendhome' ?".to_owned()
+        )]
+    );
+    assert_eq!((dialogs[0].time, dialogs[0].requester_id), (0, 0));
+
+    // A no forgets the command, and a later yes finds nothing to run.
+    s.answer(GM, SystemMessageId::S13.id(), 0);
+    s.answer(GM, SystemMessageId::S13.id(), 1);
+    assert_eq!(CONFIRMED_RUNS.load(Ordering::SeqCst), 0);
+
+    // A yes runs it once, with no new question.
+    s.cmd(GM, "sendhome 5");
+    s.log.take();
+    s.answer(GM, SystemMessageId::S13.id(), 1);
+    assert_eq!(CONFIRMED_RUNS.load(Ordering::SeqCst), 1);
+    assert!(decoded::<ConfirmDlg>(&s.log.take(), GM, "CONFIRM_DLG").is_empty());
+    s.answer(GM, SystemMessageId::S13.id(), 1);
+    assert_eq!(CONFIRMED_RUNS.load(Ordering::SeqCst), 1);
 }
 
 #[test]

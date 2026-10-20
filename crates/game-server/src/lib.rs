@@ -204,6 +204,11 @@ impl Server {
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
         // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
         let ground_items = persist::restore_ground_items(&pool, &config.general).await;
+        // Java: PunishmentManager.getInstance (the `punishments` table) and CharInfoTable (the
+        // names the punishment commands look up).
+        let punishments = persist::load_punishments(&pool).await;
+        let char_names = persist::load_char_names(&pool).await;
+        let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -238,6 +243,7 @@ impl Server {
                 Arc::clone(&datapack.skill_trees),
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
+            let class_list = Arc::clone(&datapack.class_list);
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -264,6 +270,8 @@ impl Server {
                     world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
                     // Java: SkillLearnData (the classes each trainer teaches).
                     world.set_skill_learn_data(skill_learn);
+                    // Java: ClassListData (the class names of the admin pages).
+                    world.set_class_list(class_list);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
@@ -277,6 +285,10 @@ impl Server {
                     world.load_ground_items(ground_items);
                     // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).
                     world.start_daily_reset_task();
+                    // Java: PunishmentManager, CharInfoTable.
+                    world.set_punishment_settings(punishment_settings);
+                    world.load_char_names(char_names);
+                    world.load_punishments(punishments);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
@@ -342,6 +354,9 @@ impl Server {
                     match notice {
                         LsNotice::PlayerInGame { account } => link.player_in_game(&account).await,
                         LsNotice::PlayerLogout { account } => link.player_logout(&account).await,
+                        LsNotice::AccessLevel { account, level } => {
+                            link.send_access_level(&account, level).await
+                        }
                     }
                 }
             });

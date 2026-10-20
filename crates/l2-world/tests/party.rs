@@ -326,10 +326,10 @@ fn a_party_of_nine_is_full() {
     );
     // The place in the party decides the relation bits: leader, then the 8 other places.
     let bits: Vec<i32> = (1..=9)
-        .map(|i| s.world.party_relation_bits(id(0x2000_0000 + i), id(P1)))
+        .map(|i| s.world.relation(id(0x2000_0000 + i), id(P1)))
         .collect();
     assert_eq!(bits, vec![0x30, 0x28, 0x27, 0x26, 0x25, 0x24, 0x23, 0x22, 0x21]);
-    assert_eq!(s.world.party_relation_bits(id(0x2000_000A), id(P1)), 0);
+    assert_eq!(s.world.relation(id(0x2000_000A), id(P1)), 0);
 }
 
 /// While a player is asked to join a party, clicking on things is refused
@@ -1036,5 +1036,24 @@ fn partyinfo_lists_the_loot_rule_and_the_leader() {
     assert_eq!(
         message_ids(&s.log.take(), P3),
         vec![SystemMessageId::PartyInformation, SystemMessageId::Empty3]
+    );
+}
+
+/// A party member is never auto attackable by another member, and the relation mask names the
+/// place in the party.
+#[test]
+fn party_members_are_not_auto_attackable_and_show_their_place() {
+    let mut s = trio();
+    assert!(!s.world.is_auto_attackable(id(P2), id(P1)));
+    assert!(!s.world.is_auto_attackable(id(P1), id(P3)));
+    // Leader: party + leader bit; the second place: party + 0x8; the third: party + 0x7.
+    assert_eq!(s.world.relation(id(P1), id(P2)), 0x20 | 0x10);
+    assert_eq!(s.world.relation(id(P2), id(P1)), 0x20 | 0x08);
+    assert_eq!(s.world.relation(id(P3), id(P1)), 0x20 | 0x07);
+    s.enter(P4, "Delta");
+    assert_eq!(
+        s.world.relation(id(P1), id(P4)),
+        0,
+        "an outsider sees no party bits"
     );
 }

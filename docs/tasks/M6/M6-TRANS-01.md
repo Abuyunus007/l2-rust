@@ -40,4 +40,8 @@ Transformation data, the `Transformation` effect and `TransformDispel`, transfor
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- No dependency on the other M6 cards; avoid `skills/targets.rs` entirely.
+- The stat engine's transform hooks are the `None` placeholders M4-STAT-01 left (grep `transform` in `crates/l2-world/src/stats/`).
+- `UserInfo`/`CharInfo` already carry a transform id field (grep `transform` in `l2-protocol-game/src/server/userinfo.rs`/`visibility.rs`); fill it from your state.
+- Five other M6 workers run at the same time (PVP-01, PARTY-01, TRADE-01 and two of CLAN-01/SUMMON-01/TRANS-01). In shared files (`skills/targets.rs`, `skills/cast.rs`, `death.rs`, `leave.rs`, `player_view.rs`, `enter.rs`) change only the lines of your markers and add new calls; no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load).

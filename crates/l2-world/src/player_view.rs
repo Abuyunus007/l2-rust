@@ -1,6 +1,6 @@
 //! What other players see of a player: `CharInfo`, `ExBrExtraUserInfo` and `RelationChanged`.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (sendInfo, getRelation,
-//       isAutoAttackable, getKnownRelations)
+// Java: org/l2jmobius/gameserver/entity/actor/Player.java (sendInfo, getKnownRelations; the
+//       relation and isAutoAttackable are in `pvp.rs`)
 // Java: org/l2jmobius/gameserver/network/serverpackets/CharInfo.java
 //
 // The values come from the same computation as the player's own `UserInfo`
@@ -144,17 +144,5 @@ impl World {
             agathion_id: 0,
             abnormal_visual_effect_special: visual_effects_special,
         })
-    }
-
-    /// Java `Player.getRelation(target)`: clans, parties, sieges, PvP flags and karma. None of
-    /// those are modelled in M3, so the mask is empty.
-    fn relation(&self, _subject: ObjectId, _viewer: ObjectId) -> i32 {
-        0
-    }
-
-    /// Java `Player.isAutoAttackable(attacker)` between two players: karma, PvP flag, duels,
-    /// olympiad and siege rules. Without them (M4/M5) nobody is auto-attackable.
-    pub(crate) fn is_auto_attackable(&self, _subject: ObjectId, _viewer: ObjectId) -> bool {
-        false
     }
 }

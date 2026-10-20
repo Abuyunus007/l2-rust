@@ -7,6 +7,8 @@
 // `manual`. The `effective_*` accessors on `GameConfig` are the Java values after the
 // post-processing statements of `load()` (the generated fields hold the raw getter result).
 
+use std::collections::HashMap;
+
 use regex::Regex;
 use tracing::warn;
 
@@ -228,6 +230,9 @@ pub struct NpcManual {
     pub raid_hp_regen_multiplier: f64,
     /// Java `RAID_MP_REGEN_MULTIPLIER`: `RaidMpRegenMultiplier` / 100, default 100 (so 1.0).
     pub raid_mp_regen_multiplier: f64,
+    /// Java `MINIONS_RESPAWN_TIME`: `CustomMinionsRespawnTime`, `minionId,seconds;...`, default
+    /// empty. Minion NPC id -> respawn time in seconds (0: never respawns).
+    pub minions_respawn_time: HashMap<i32, i32>,
 }
 
 impl NpcManual {
@@ -236,8 +241,42 @@ impl NpcManual {
         Self {
             raid_hp_regen_multiplier: ini.get_double("RaidHpRegenMultiplier", 100.0) / 100.0,
             raid_mp_regen_multiplier: ini.get_double("RaidMpRegenMultiplier", 100.0) / 100.0,
+            minions_respawn_time: parse_minions_respawn_time(&ini.get_string("CustomMinionsRespawnTime", "")),
         }
     }
+}
+
+/// Java `NpcConfig`'s `CustomMinionsRespawnTime` loop: `split(";")`, each piece `split(",")`
+/// into two `Integer.parseInt` values (not trimmed).
+// NOTE(java-quirk): a piece with more than two values warns and uses the first two. A piece with
+// one value warns and then throws `ArrayIndexOutOfBoundsException` in Java (the server does not
+// start); here it is skipped. The empty default makes Java warn once and then swallow the
+// `NumberFormatException`; here an empty piece is skipped without a warning.
+fn parse_minions_respawn_time(text: &str) -> HashMap<i32, i32> {
+    let mut table = HashMap::new();
+    for prop in java_split(text, ';') {
+        if prop.is_empty() {
+            continue;
+        }
+        let pieces = java_split(prop, ',');
+        if pieces.len() != 2 {
+            warn!(
+                "[CustomMinionsRespawnTime]: invalid config property -> CustomMinionsRespawnTime \"{prop}\""
+            );
+        }
+        let (Some(id), Some(seconds)) = (pieces.first(), pieces.get(1)) else {
+            continue;
+        };
+        match (id.parse::<i32>(), seconds.parse::<i32>()) {
+            (Ok(id), Ok(seconds)) => {
+                table.insert(id, seconds);
+            }
+            _ => warn!(
+                "[CustomMinionsRespawnTime]: invalid config property -> CustomMinionsRespawnTime \"{prop}\""
+            ),
+        }
+    }
+    table
 }
 
 impl Default for NpcManual {
@@ -630,5 +669,34 @@ MpRegenMultiplier = 25.5
 "));
         assert_eq!(npc.raid_hp_regen_multiplier, 2.0);
         assert_eq!(npc.raid_mp_regen_multiplier, 1.0);
+    }
+
+    #[test]
+    fn custom_minions_respawn_time_is_an_id_to_seconds_table() {
+        // Java default: the key is empty.
+        assert!(NpcManual::default().minions_respawn_time.is_empty());
+        let npc = NpcManual::from_ini(&ini("CustomMinionsRespawnTime = 22450,30;22371,120;22543,0
+"));
+        assert_eq!(
+            npc.minions_respawn_time,
+            HashMap::from([(22450, 30), (22371, 120), (22543, 0)])
+        );
+        // A bad piece is dropped (a one-value piece crashes Java, a word is a NumberFormatException)
+        // and the others stay; a third value is ignored, the last of equal ids wins.
+        let npc = NpcManual::from_ini(&ini("CustomMinionsRespawnTime = 1,2;x,3;4;5, 6;7,8,9;1,10;
+"));
+        assert_eq!(npc.minions_respawn_time, HashMap::from([(1, 10), (7, 8)]));
+    }
+
+    /// The shipped `NPC.ini` table (the file the Java server runs with).
+    #[test]
+    fn shipped_minions_respawn_table() {
+        let ini = ini(
+            "CustomMinionsRespawnTime = 22450,30;22371,120;22543,0;25545,0;22424,30;25608,0
+",
+        );
+        let table = NpcManual::from_ini(&ini).minions_respawn_time;
+        assert_eq!(table.len(), 6);
+        assert_eq!(table.get(&25545), Some(&0));
     }
 }

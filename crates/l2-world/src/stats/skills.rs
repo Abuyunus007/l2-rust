@@ -77,6 +77,7 @@ impl<'w> StatView<'w> {
                     | "Block"
                     | "FriendlyMob"
                     | "Guard"
+                    | "QuestGuard"
                     | "Defender"
                     | "FortCommander"
                     | "TerritoryWard"

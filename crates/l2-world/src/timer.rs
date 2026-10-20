@@ -57,6 +57,9 @@ pub enum TimerKind {
     Decay(ObjectId),
     /// Java `RespawnTaskManager`: the NPC (by its old object id) comes back at its spawn.
     Respawn(ObjectId),
+    /// Java `MinionList.MinionRespawnTask`: a dead minion (by its old object id) comes back near
+    /// its master, see `ai/minions.rs`.
+    MinionRespawn(ObjectId),
     /// Java `SpawnGroupTaskManager`: a spawn group materialises the unit it reserved when one of
     /// its units died (`group` and `entry` are indices into the spawn data).
     GroupSpawn { group: usize, entry: usize },
@@ -102,6 +105,11 @@ pub enum TimerKind {
     Control(crate::effects::control::ControlTimer),
     /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
     PartyPosition(crate::party::PartyId),
+    /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
+    /// see `punishments.rs`.
+    Punishment(crate::punishments::PunishmentTimer),
+    /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
+    PvpFlag(ObjectId),
 }
 
 #[derive(Debug, Default)]

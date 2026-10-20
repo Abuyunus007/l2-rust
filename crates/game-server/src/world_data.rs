@@ -110,6 +110,9 @@ pub struct AccessLevels {
     no_take_aggro: std::collections::BTreeSet<i32>,
     /// The levels with `gainExp="false"` (Java `AccessLevel.canGainExp()`, default true).
     no_gain_exp: std::collections::BTreeSet<i32>,
+    /// The levels with `allowTransaction="false"` (Java `AccessLevel.allowTransaction()`, default
+    /// true).
+    no_transaction: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -204,6 +207,10 @@ impl AccessLevels {
                     if attribute(&e, "gainExp").is_some_and(|v| v.eq_ignore_ascii_case("false")) {
                         table.no_gain_exp.insert(level);
                     }
+                    // Java: `set.getBoolean("allowTransaction", true)`: anything but "true" is false.
+                    if attribute(&e, "allowTransaction").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
+                        table.no_transaction.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -236,6 +243,12 @@ impl AccessLevels {
     pub fn can_gain_exp(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         !self.no_gain_exp.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).allowTransaction()`.
+    pub fn allows_transaction(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        !self.no_transaction.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -360,6 +373,10 @@ impl StaticData for DatapackData {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         self.access.can_gain_exp(level)
+    }
+
+    fn access_level_allows_transaction(&self, level: i32) -> bool {
+        self.access.allows_transaction(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -519,6 +536,127 @@ pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
         s.respawn_restore_cp = ini.get_double("RespawnRestoreCP", 0.0) / 100.0;
         s.respawn_restore_hp = ini.get_double("RespawnRestoreHP", 65.0) / 100.0;
         s.respawn_restore_mp = ini.get_double("RespawnRestoreMP", 0.0) / 100.0;
+    }
+    s
+}
+
+/// The names of Java's `ChatType`, in the order of its ids.
+const CHAT_TYPE_NAMES: [&str; 24] = [
+    "GENERAL",
+    "SHOUT",
+    "WHISPER",
+    "PARTY",
+    "CLAN",
+    "GM",
+    "PETITION_PLAYER",
+    "PETITION_GM",
+    "TRADE",
+    "ALLIANCE",
+    "ANNOUNCEMENT",
+    "BOAT",
+    "FRIEND",
+    "MSNCHAT",
+    "PARTYMATCH_ROOM",
+    "PARTYROOM_COMMANDER",
+    "PARTYROOM_ALL",
+    "HERO_VOICE",
+    "CRITICAL_ANNOUNCE",
+    "SCREEN_ANNOUNCE",
+    "BATTLEFIELD",
+    "MPCC_ROOM",
+    "NPC_GENERAL",
+    "NPC_SHOUT",
+];
+
+/// The values punishments read (Java `GeneralConfig`): `DefaultPunish`, `DefaultPunishParam`,
+/// `JailDisableChat` and `BanChatChannels`. The first and the last are post-processed in Java
+/// (placeholders in the generated config), so they are read from `General.ini` here.
+pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PunishmentSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+    use l2_world::{IllegalActionPunishment, PunishmentSettings};
+
+    let mut settings = PunishmentSettings {
+        default_punish_param: config.effective_default_punish_param(),
+        jail_disable_chat: config.general.jail_disable_chat,
+        ..PunishmentSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        settings.default_punish =
+            IllegalActionPunishment::find_by_name(&ini.get_string("DefaultPunish", "KICK"));
+        // Java: `Enum.valueOf(ChatType.class, name)` throws for a bad name; the channel is skipped.
+        let text = ini.get_string("BanChatChannels", "GENERAL;SHOUT;TRADE;HERO_VOICE;WHISPER");
+        let mut channels = Vec::new();
+        for name in text.trim().split(';') {
+            match CHAT_TYPE_NAMES.iter().position(|n| *n == name) {
+                Some(index) => {
+                    if let Some(chat_type) = l2_protocol_game::server::ChatType::from_client_id(index as i32)
+                        && !channels.contains(&chat_type)
+                    {
+                        channels.push(chat_type);
+                    }
+                }
+                None => warn!("BanChatChannels: \"{name}\" is not a chat type; skipped."),
+            }
+        }
+        settings.ban_chat_channels = channels;
+    }
+    settings
+}
+
+/// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
+/// (`Custom/PvpTitleColor.ini`). `AntiFeedInterval` (seconds, Java keeps ms) and the five
+/// `ColorForAmountN` (`Integer.decode("0x" + text)`) are post-processed in Java (placeholders in
+/// the generated config), so they are read from the files here.
+pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSettings {
+    use l2_config::IniFile;
+    use l2_world::{PvpSettings, PvpTitleColorSettings};
+
+    let p = &config.pvp;
+    let t = &config.pvp_title_color;
+    let mut s = PvpSettings {
+        pvp_normal_time_ms: p.pvp_normal_time,
+        pvp_pvp_time_ms: p.pvp_pvp_time,
+        flag_player_on_raid_attack: p.flag_player_on_raid_attack,
+        flag_player_on_champion_attack: p.flag_player_on_champion_attack,
+        flag_player_on_summon_pet_raid_champion_attack: p.flag_player_on_summon_pet_raid_champion_attack,
+        karma_award_pk_kill: p.karma_award_pk_kill,
+        antifeed_enable: p.antifeed_enable,
+        antifeed_dualbox: p.antifeed_dualbox,
+        antifeed_disconnected_as_dualbox: p.antifeed_disconnected_as_dualbox,
+        faction_system_enabled: config.faction_system.faction_system_enabled,
+        title_color: PvpTitleColorSettings {
+            enabled: t.pvp_color_system_enabled,
+            amounts: [
+                t.pvp_amount1,
+                t.pvp_amount2,
+                t.pvp_amount3,
+                t.pvp_amount4,
+                t.pvp_amount5,
+            ],
+            titles: [
+                t.title_for_pvp_amount1.clone(),
+                t.title_for_pvp_amount2.clone(),
+                t.title_for_pvp_amount3.clone(),
+                t.title_for_pvp_amount4.clone(),
+                t.title_for_pvp_amount5.clone(),
+            ],
+            ..PvpTitleColorSettings::default()
+        },
+        ..PvpSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpConfig::FILE)) {
+        s.antifeed_interval_ms = i64::from(ini.get_int("AntiFeedInterval", 120)).saturating_mul(1000);
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpTitleColorConfig::FILE)) {
+        for (i, color) in s.title_color.colors.iter_mut().enumerate() {
+            let key = format!("ColorForAmount{}", i + 1);
+            let text = ini.get_string(&key, "00FF00");
+            match i32::from_str_radix(text.trim(), 16) {
+                Ok(value) => *color = value,
+                Err(_) => warn!("{key} = {text} is not a hex colour; using 00FF00."),
+            }
+        }
     }
     s
 }
@@ -806,7 +944,9 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             rate_extractable: config.rates.rate_extractable,
             alt_allow_augment_trade: p.alt_allow_augment_trade,
             alt_allow_augment_destroy: p.alt_allow_augment_destroy,
+            alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
+        pvp: pvp_settings(config, config_dir),
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,
@@ -1462,6 +1602,34 @@ mod tests {
         assert!(cb.pve_physical_attack_damage.iter().all(|v| *v == 1.0));
     }
 
+    /// M5-FU-04: `DefaultPunish`, `DefaultPunishParam`, `JailDisableChat` and `BanChatChannels`.
+    #[test]
+    fn punishment_settings_are_read_from_general_ini() {
+        use l2_protocol_game::server::ChatType;
+        use l2_world::IllegalActionPunishment;
+
+        // Java defaults: a missing file keeps the shipped values (KICK, one hundred years).
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = punishment_settings(&config, dir.path());
+        assert_eq!(settings.default_punish, IllegalActionPunishment::Kick);
+        assert_eq!(settings.default_punish_param, 3_155_695_200);
+        assert!(settings.jail_disable_chat);
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "DefaultPunish = kickban\nDefaultPunishParam = 90\nJailDisableChat = False\nBanChatChannels = SHOUT;PARTY;BOGUS;SHOUT\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = punishment_settings(&config, dir.path());
+        assert_eq!(settings.default_punish, IllegalActionPunishment::KickBan);
+        assert_eq!(settings.default_punish_param, 90);
+        assert!(!settings.jail_disable_chat);
+        // A name Java would throw on is skipped; a channel listed twice counts once.
+        assert_eq!(settings.ban_chat_channels, [ChatType::Shout, ChatType::Party]);
+    }
+
     #[test]
     fn access_levels_use_the_hex_colors_and_the_java_default() {
         let levels = AccessLevels::from_xml(
@@ -1506,6 +1674,26 @@ mod tests {
         assert!(!levels.can_take_aggro(100));
         // A level the file does not list is Java's default AccessLevel, which takes aggro.
         assert!(levels.can_take_aggro(55));
+    }
+
+    #[test]
+    fn allow_transaction_is_false_only_where_the_file_says_so() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" allowTransaction="false" />
+	<access level="0" name="User" allowTransaction="true" />
+	<access level="20" name="Test GM" allowTransaction="false" />
+	<access level="70" name="Admin" />
+</list>"#,
+        );
+        // `set.getBoolean("allowTransaction", true)`: absent is true.
+        assert!(levels.allows_transaction(0));
+        assert!(levels.allows_transaction(70));
+        assert!(!levels.allows_transaction(-1));
+        assert!(!levels.allows_transaction(-5));
+        assert!(!levels.allows_transaction(20));
+        // A level the file does not list is Java's default AccessLevel, which may trade.
+        assert!(levels.allows_transaction(55));
     }
 
     #[test]
@@ -1750,5 +1938,52 @@ mod tests {
         assert_eq!(v.rate_vitality_level, [1.5, 2.0, 2.5, 3.0]);
         assert_eq!((v.rate_vitality_gain, v.rate_vitality_lost), (1.0, 0.6));
         assert_eq!(v.rate_recovery_on_reconnect, 4.0);
+    }
+
+    /// `PVP.ini` and `Custom/PvpTitleColor.ini` (M6-PVP-01): the Java defaults without files, and
+    /// the post-processed keys (`AntiFeedInterval` in seconds, `ColorForAmountN` as hex) from them.
+    #[test]
+    fn the_pvp_settings_are_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!(s, l2_world::PvpSettings::default());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (120_000, 60_000));
+        assert_eq!(s.antifeed_interval_ms, 120_000);
+
+        std::fs::write(
+            dir.path().join("PVP.ini"),
+            "PvPVsNormalTime = 5000
+PvPVsPvPTime = 2500
+AntiFeedEnable = True
+AntiFeedInterval = 30
+             FlagPlayerOnRaidAttack = False
+AwardPKKillPVPPoint = True
+",
+        )
+        .unwrap();
+        std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+        std::fs::write(
+            dir.path().join("Custom").join("PvpTitleColor.ini"),
+            "EnablePvPColorSystem = True
+PvpAmount1 = 7
+ColorForAmount1 = 9C9C9C
+ColorForAmount2 = nonsense
+             PvPTitleForAmount1 = Sergeant
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (5_000, 2_500));
+        assert!(s.antifeed_enable && s.karma_award_pk_kill && !s.flag_player_on_raid_attack);
+        assert_eq!(s.antifeed_interval_ms, 30_000);
+        assert!(s.title_color.enabled);
+        assert_eq!(s.title_color.amounts[0], 7);
+        assert_eq!(s.title_color.titles[0], "Sergeant");
+        // `Integer.decode("0x" + text)`.
+        assert_eq!(s.title_color.colors[0], 0x009C_9C9C);
+        // Java would throw for a bad colour; the default stays.
+        assert_eq!(s.title_color.colors[1], 0x0000_FF00);
     }
 }

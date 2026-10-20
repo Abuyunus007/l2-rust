@@ -960,10 +960,13 @@ fn requests_without_a_trainer_in_reach_do_nothing() {
     let npc = s.talk_to(ME, 1100);
     s.skill_list(ME, npc);
     s.log.take();
-    // Out of range values.
+    // Out of range values: `handleIllegalPlayerAction(..., DEFAULT_PUNISH)` (KICK) tells the
+    // player, once per request; the kick comes five seconds later (tests/punishments.rs).
     s.learn(3, 0);
     s.learn(3, 1001);
     s.learn(0, 1);
+    let sent = s.log.take();
+    assert_eq!(names(&sent, ME), vec!["SYSTEM_MESSAGE"; 3]);
     // A skill that does not exist.
     s.learn(3, 9);
     // Other trees are not ported: ignored like a skill that is not in a tree.

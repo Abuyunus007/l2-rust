@@ -8,9 +8,8 @@
 // Java: entity/World.java (removeVisibleObject, switchRegion: the targets they clear)
 //
 // # What is left out, with the system that brings it
-// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, a pending
-//   trade/party request (`getActiveRequester`), spawn protection (`onActionRequest`): none of them
-//   exist yet.
+// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, spawn
+//   protection (`onActionRequest`): none of them exist yet.
 // - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
@@ -307,8 +306,9 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Check if the target is valid, if the player is not the target of a transaction request
-        // (party invitations; the trade and friend requests will join them).
+        // Check if the target is valid, if the player haven't a shop or isn't the requester of a
+        // transaction (ex: FriendInvite, JoinAlly, JoinParty...). A player who was asked for a trade
+        // cannot click until the request is answered or has run out.
         if self.active_requester(id).is_some() {
             self.send(id, &ActionFailed);
             return;
@@ -387,6 +387,10 @@ impl World {
                 self.wake_ai(npc);
             }
         } else if interact {
+            // `Guard.onAction` and `Defender.onAction` do not call `Npc.onAction`.
+            if self.guard_second_click(player, npc) {
+                return;
+            }
             let attackable = self.is_auto_attackable_by(npc, player);
             // Check if the player is attackable (without a forced attack) and isn't dead.
             if attackable && !self.is_alike_dead(npc) {

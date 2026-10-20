@@ -25,8 +25,7 @@
 //   scope), so those requests find no `SkillLearn` and are ignored, which is what Java does for a
 //   skill that is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are
 //   therefore silent too.
-// - `isTransformed()`/`isMounted()` (M6) and `PunishmentManager.handleIllegalPlayerAction` (only
-//   logged; the punishment manager is not ported).
+// - `isTransformed()`/`isMounted()` (M6).
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
@@ -46,6 +45,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 use tracing::{debug, info, warn};
 
+use crate::punishments::IllegalActionPunishment;
 use crate::rewards::exp::SkillWrites;
 use crate::world::World;
 
@@ -697,7 +697,8 @@ impl World {
         // message.
 
         if !(1..=1000).contains(&level) || skill_id < 1 {
-            // Java: `PunishmentManager.handleIllegalPlayerAction(player, ..., DEFAULT_PUNISH)`.
+            let punishment = self.default_punish();
+            self.handle_illegal_player_action(player, "Wrong Packet Data in Aquired Skill", punishment);
             warn!("Recived Wrong Packet Data in Aquired Skill - id: {skill_id} level: {level} for {player}");
             return;
         }
@@ -729,8 +730,13 @@ impl World {
                     player,
                     &SystemMessage::new(SystemMessageId::ThePreviousLevelSkillHasNotBeenLearned),
                 );
-                warn!(
-                    "{player} is requesting skill Id: {skill_id} level {level} without knowing it's previous level!"
+                let text = self.player_text(player);
+                self.handle_illegal_player_action(
+                    player,
+                    &format!(
+                        "{text} is requesting skill Id: {skill_id} level {level} without knowing it's previous level!"
+                    ),
+                    IllegalActionPunishment::None,
                 );
                 return;
             }
@@ -781,9 +787,14 @@ impl World {
                 player,
                 &SystemMessage::new(SystemMessageId::YouDoNotMeetTheSkillLevelRequirements),
             );
-            warn!(
-                "{player}, level {player_level} is requesting skill Id: {} level {} without having minimum required level, {}!",
-                learn.skill_id, learn.skill_level, learn.get_level
+            let text = self.player_text(player);
+            self.handle_illegal_player_action(
+                player,
+                &format!(
+                    "{text}, level {player_level} is requesting skill Id: {} level {} without having minimum required level, {}!",
+                    learn.skill_id, learn.skill_level, learn.get_level
+                ),
+                IllegalActionPunishment::None,
             );
             return false;
         }
@@ -844,10 +855,14 @@ impl World {
             // If the player has all required items, they are consumed.
             for item in &learn.required_items {
                 if !self.destroy_item_by_item_id(player, item.item_id, item.count, true) {
-                    // Java: handleIllegalPlayerAction(..., NONE).
-                    warn!(
-                        "Somehow {player}, level {player_level} lose required item Id: {} to learn skill while learning skill Id: {} level {}!",
-                        item.item_id, learn.skill_id, learn.skill_level
+                    let text = self.player_text(player);
+                    self.handle_illegal_player_action(
+                        player,
+                        &format!(
+                            "Somehow {text}, level {player_level} lose required item Id: {} to learn skill while learning skill Id: {} level {}!",
+                            item.item_id, learn.skill_id, learn.skill_level
+                        ),
+                        IllegalActionPunishment::None,
                     );
                 }
             }

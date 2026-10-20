@@ -2,7 +2,7 @@
 //! restart point a dead player picks (`RequestRestartPoint`).
 // Java: entity/actor/Creature.java (doDie, doRevive, isPendingRevive, canRevive)
 // Java: entity/actor/Playable.java (doDie)
-// Java: entity/actor/Player.java (doDie, doRevive, onDieDropItem's call site, setKarma)
+// Java: entity/actor/Player.java (doDie, doRevive, onDieDropItem's call site)
 // Java: entity/actor/Npc.java (doDie)
 // Java: entity/actor/Attackable.java (doDie)
 // Java: network/clientpackets/RequestRestartPoint.java
@@ -21,14 +21,13 @@
 // - `// M4-EXP-01:` [`World::calculate_rewards`] (exp and sp of the main damage dealer),
 //   [`World::calculate_death_exp_penalty`], [`World::restore_exp`].
 // - `// M4-DROP-01:` [`World::calculate_rewards`] (`doItemDrop`), [`World::on_die_drop_item`].
-// - `// M4-AI-01:` what an attackable NPC's AI does around its death (clan help call, the
-//   attack-by list, minions).
-// - `// M5:` effects, PvP flags and karma gain of the killer, clans, sieges.
+// - What an attackable NPC's AI does around its death (clan help call, the attack-by list, the
+//   minions and their respawn) is `ai/attackable.rs` and `ai/minions.rs`.
+// - `// M5:` clans, sieges. The PvP kill and karma gain of the killer is `pvp.rs`.
 
 use std::collections::{HashMap, HashSet};
 
-use l2_protocol_game::server::visibility::status as attr;
-use l2_protocol_game::server::{Die, Revive, StatusUpdate};
+use l2_protocol_game::server::{Die, Revive};
 use l2_util::ObjectId;
 use tracing::{debug, warn};
 
@@ -149,7 +148,7 @@ impl World {
         self.calculate_rewards(id, main_damage_dealer.or(killer));
 
         // Set target to null and cancel Attack or Cast: an NPC's target belongs to its AI
-        // (M4-AI-01).
+        // (`notify_action_death`).
         self.stop_move_on_death(id);
 
         // Stop HP/MP/CP Regeneration task.
@@ -216,9 +215,11 @@ impl World {
         // `ZoneManager.getRegion(this).onDeath(this)`: no zone type reacts to a death. Quests
         // that asked to hear about the death (scripts: D-05), the instance (no instances yet).
 
-        // M5: `killerPlayer.onKillUpdatePvPKarma(this)`: PvP kills, PK kills and the karma the
-        // killer gains. It needs the PvP flag state, which does not exist yet.
-        let _ = killer;
+        // `killerPlayer.onKillUpdatePvPKarma(this)`: PvP kills, PK kills and the karma the killer
+        // gains (`pvp.rs`). M6-SUMMON: a summon's owner is the killer player.
+        if let Some(killer) = killer.filter(|k| self.players.contains_key(k)) {
+            self.on_kill_update_pvp_karma(killer, id);
+        }
 
         // Notify Creature AI (`Die` is its packet).
         self.notify_action_death(id);
@@ -295,6 +296,9 @@ impl World {
         // Cubics, channeling, dimensional rift, agathion: not modelled.
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
         // Summons (`cancelAction`), rent pets, the water task, `AntiFeedManager`: not modelled.
+
+        // `AntiFeedManager.setLastDeathTime(getObjectId())`.
+        self.set_last_death_time(id);
 
         // FIXME: Karma reduction tempfix.
         let karma = self.players.get(&id).map_or(0, |p| p.data.karma);
@@ -491,34 +495,13 @@ impl World {
         self.restore_exp(id, revive_power);
     }
 
-    // ------------------------------------------------------------------ karma
-
-    /// Java `Player.setKarma(value)`: the value (never negative), then `broadcastKarma()`.
-    // M5: the guards waking up when a player turns chaotic, and the `RelationChanged` to the
-    // players around (relations are not modelled, see `player_view.rs`); `setKarmaFlag()` when
-    // the karma ends is `UserInfo`.
-    pub(crate) fn set_karma(&mut self, id: ObjectId, value: i32) {
-        let karma = value.max(0);
-        let old = self.players.get(&id).map_or(0, |p| p.data.karma);
-        if let Some(player) = self.players.get_mut(&id) {
-            player.data.karma = karma;
-        }
-        if old > 0 && karma == 0 {
-            // Send a Server->Client StatusUpdate packet with Karma and PvP Flag to the Player.
-            self.send_user_info(id);
-        }
-        let mut update = StatusUpdate::new(id.0);
-        update.add_attribute(attr::KARMA, karma);
-        self.send(id, &update);
-    }
-
     // ------------------------------------------------------------------ RequestRestartPoint
 
     /// Java `RequestRestartPoint.runImpl` + `portPlayer`.
     ///
     /// Not modelled, so those branches do what Java does for a player without them: clans,
     /// castles, fortresses, sieges, clan halls (the "To clanhall / castle / fortress / siege HQ"
-    /// buttons are refused), events, fake death, festival participants, jail.
+    /// buttons are refused), events, fake death, festival participants.
     pub(crate) fn on_request_restart_point(&mut self, id: ObjectId, point_type: i32) {
         if !self.players.contains_key(&id) {
             return;
@@ -543,8 +526,8 @@ impl World {
             .get(&id)
             .map(|p| p.data.name.clone())
             .unwrap_or_default();
-        // `player.isJailed()` forces 27 and `isFestivalParticipant()` forces 5: neither is
-        // modelled.
+        // `player.isJailed()` forces 27; `isFestivalParticipant()` would force 5 (not modelled).
+        let point_type = if self.is_jailed(id) { 27 } else { point_type };
         let mut instance = 0;
         let location: Option<(i32, i32, i32)> = match point_type {
             // To clanhall.
@@ -597,8 +580,13 @@ impl World {
             }
             // TODO(java): agathion ress.
             6 => None,
-            // To jail: only a jailed player (jail is not modelled).
-            27 => return,
+            // To jail: only a jailed player.
+            27 => {
+                if !self.is_jailed(id) {
+                    return;
+                }
+                Some(crate::punishments::JAIL_IN)
+            }
             // To town.
             _ => match self.get_tele_to_location(id, TeleportWhereType::Town) {
                 Some(location) => Some(location),

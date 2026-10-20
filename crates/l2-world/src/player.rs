@@ -306,6 +306,8 @@ pub struct Player {
     pub expertise_armor_penalty: i32,
     /// The delayed sends of the inventory code (see `inventory/notify.rs`).
     pub inv_tasks: crate::inventory::InventoryTasks,
+    /// The trade list, the open request and the trade refusal (see `trade/`).
+    pub trade: crate::trade::TradeState,
 }
 
 impl Player {
@@ -349,6 +351,7 @@ impl Player {
             expertise_weapon_penalty: 0,
             expertise_armor_penalty: 0,
             inv_tasks: crate::inventory::InventoryTasks::default(),
+            trade: crate::trade::TradeState::default(),
         }
     }
 

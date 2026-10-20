@@ -1,7 +1,7 @@
 //! What the status effects do to a creature outside its effect list: the checks that read the
 //! effect flags (`isStunned`, `isMovementDisabled`, ...), the AI notifications the handlers call,
 //! and the creature state Java keeps on `Creature`/`Player` that effects change (fake death,
-//! sitting, immobilization, the PvP flag, invisibility, an NPC's target, charges and souls).
+//! sitting, immobilization, invisibility, an NPC's target, charges and souls).
 // Java: entity/actor/Creature.java (isStunned, isSleeping, isRooted, isParalyzed, isMuted,
 //       isPhysicalMuted, isPhysicalAttackMuted, isConfused, isControlBlocked, isOutOfControl,
 //       isAllSkillsDisabled, isDisabled, isImmobilized, startStunning, stopStunning, startParalyze,
@@ -9,7 +9,7 @@
 // Java: ai/CreatureAI.java (notifyActionStunned, ...Paralyzed, ...Sleeping, ...Rooted, ...Confused,
 //       ...Muted, ...FakeDeath, ...Afraid)
 // Java: ai/AttackableAI.java (notifyActionAfraid: the fear task)
-// Java: entity/actor/Player.java (sitDown, standUp, isFakeDeath, isRecentFakeDeath, updatePvPFlag,
+// Java: entity/actor/Player.java (sitDown, standUp, isFakeDeath, isRecentFakeDeath,
 //       increaseCharges, decreaseCharges, increaseSouls, ...)
 // Java: entity/actor/tasks/player/{SitDownTask,StandUpTask}.java
 // Java: entity/WorldObject.java (setInvisible)
@@ -100,8 +100,6 @@ pub(crate) struct CreatureControl {
     /// `Player._sittingInProgress`.
     pub sitting_in_progress: bool,
     pub sit_timer: Option<TimerId>,
-    /// `Player._pvpFlag`.
-    pub pvp_flag: i32,
     /// `Player._charges` and its reset task.
     pub charges: i32,
     pub charge_timer: Option<TimerId>,
@@ -122,9 +120,6 @@ pub(crate) struct CreatureControl {
     pub traits: TraitStats,
     /// `Disarm._disarmedPlayers`: the weapon the player has to get back.
     pub disarmed_item: Option<ObjectId>,
-    /// The chat ban and the party ban of the bot report debuffs (`BlockChat`, `BlockAction`).
-    pub chat_banned: bool,
-    pub party_banned: bool,
     /// The `SoulEating` listeners of the player: (skill id, level) and `expNeeded`.
     pub soul_eating: Vec<((i32, i32), i32)>,
     /// `Player._blinkActive`.
@@ -476,16 +471,6 @@ impl World {
             return;
         }
         self.do_attack(id, forced);
-    }
-
-    /// Java `Player.isChatBanned()` for the bans effects start.
-    pub fn is_chat_banned(&self, id: ObjectId) -> bool {
-        self.control(id).is_some_and(|c| c.chat_banned)
-    }
-
-    /// Java `Player.isPartyBanned()` for the bans effects start.
-    pub fn is_party_banned(&self, id: ObjectId) -> bool {
-        self.control(id).is_some_and(|c| c.party_banned)
     }
 
     // ------------------------------------------------------------------ the AI notifications
@@ -1044,25 +1029,6 @@ impl World {
         }
         // Broadcast information regarding the object to those which are suppose to see.
         self.broadcast_info(id);
-    }
-
-    /// Java `Player.getPvpFlag()`.
-    pub fn pvp_flag_of(&self, id: ObjectId) -> i32 {
-        self.control(id).map_or(0, |c| c.pvp_flag)
-    }
-
-    /// Java `Player.updatePvPFlag(value)`: the new flag goes to the player and to everybody who
-    /// sees it.
-    // NOTE: the relation masks and `isAutoAttackable` of the `RelationChanged` are still the
-    // M3 stubs (`player_view.rs`); only the PvP flag in `UserInfo` and `CharInfo` changes.
-    pub fn update_pvp_flag(&mut self, id: ObjectId, value: i32) {
-        if !self.is_player(id) || self.pvp_flag_of(id) == value {
-            return;
-        }
-        if let Some(c) = self.control_mut(id) {
-            c.pvp_flag = value;
-        }
-        self.broadcast_user_info(id);
     }
 
     // ------------------------------------------------------------------ the timers

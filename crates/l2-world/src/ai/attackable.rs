@@ -28,9 +28,13 @@
 // # Left out (each with its card)
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
-// - Fake players, the faction system, dimensional rifts, festival monsters, siege guards,
+// - Fake players, the faction system, dimensional rifts, festival monsters,
 //   `WalkingManager` (nothing is a walker), champions.
-// - `Guard` is not an attackable class in `NpcClass` yet, so guards have no `AttackableAI`.
+// - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): see `guards.rs`.
+//
+// # Guards and minions
+// The `Guard` branches of the think are here (`isAggressiveTowards`, `targetReconsider`), what a
+// guard adds to an `Attackable` is `guards.rs`, the life of a master's minions is `minions.rs`.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -95,6 +99,16 @@ pub struct AiSettings {
     pub raid_chaos_time: i32,
     pub grand_chaos_time: i32,
     pub minion_chaos_time: i32,
+    /// `GUARD_ATTACK_AGGRO_MOB` (`GuardAttackAggroMob`): guards attack aggressive monsters.
+    pub guard_attack_aggro_mob: bool,
+    /// `RAID_MINION_RESPAWN_TIMER` (`RaidMinionRespawnTime`), ms: how long a raid boss' minion
+    /// stays dead.
+    pub raid_minion_respawn_timer: i32,
+    /// `MINIONS_RESPAWN_TIME` (`CustomMinionsRespawnTime`): minion NPC id -> respawn time in
+    /// seconds (0: never).
+    pub minions_respawn_time: HashMap<i32, i32>,
+    /// `FORCE_DELETE_MINIONS` (`ForceDeleteMinions`): any master takes its minions with it.
+    pub force_delete_minions: bool,
 }
 
 impl Default for AiSettings {
@@ -112,6 +126,10 @@ impl Default for AiSettings {
             raid_chaos_time: 10,
             grand_chaos_time: 10,
             minion_chaos_time: 10,
+            guard_attack_aggro_mob: false,
+            raid_minion_respawn_timer: 300_000,
+            minions_respawn_time: HashMap::new(),
+            force_delete_minions: false,
         }
     }
 }
@@ -124,8 +142,11 @@ pub struct AttackableWorld {
     buckets: [BTreeSet<ObjectId>; THINK_PERIOD_TICKS as usize],
     /// Which bucket an attackable is in.
     members: HashMap<ObjectId, usize>,
-    /// Java `Monster.getMinionList().getSpawnedMinions()`, by master.
-    minions: HashMap<ObjectId, Vec<ObjectId>>,
+    /// Java `Monster.getMinionList().getSpawnedMinions()`, by master. A master has an entry once
+    /// it had a minion (Java `hasMinions()`), see `minions.rs`.
+    pub(super) minions: HashMap<ObjectId, Vec<ObjectId>>,
+    /// The `MinionRespawnTask`s that wait (`minions.rs`).
+    pub(super) minion_respawns: super::minions::MinionRespawns,
     /// The AI skill lists of the NPC templates, built on first use (`npc_skills.rs`).
     pub(crate) ai_skills: super::npc_skills::AiSkillCache,
 }
@@ -211,7 +232,7 @@ impl World {
     }
 
     /// Java `Monster.isAggressive()`.
-    fn is_aggressive_npc(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_aggressive_npc(&self, id: ObjectId) -> bool {
         self.npcs.get(&id).is_some_and(|n| n.class.is_monster())
             && self.npc_template(id).is_some_and(|t| t.is_aggressive)
             && !self.is_affected(id, crate::effects::effect_flag::PASSIVE)
@@ -325,6 +346,20 @@ impl World {
         })
     }
 
+    /// The creatures `thinkActive` offers to `isAggressiveTowards`: the players in view, and for a
+    /// guard that attacks aggressive monsters (`GuardAttackAggroMob`) the monsters in view.
+    fn aggro_candidates(&self, id: ObjectId) -> Vec<ObjectId> {
+        let mut candidates = self.players_in_view(id);
+        if self.ai.attackable.settings.guard_attack_aggro_mob && self.is_guard(id) {
+            candidates.extend(
+                self.visible_objects(id)
+                    .into_iter()
+                    .filter(|o| self.is_monster(*o)),
+            );
+        }
+        candidates
+    }
+
     // ------------------------------------------------------------------ the AI object
 
     /// The `AttackableAI` constructor's `rollGlobalAggro()`.
@@ -436,6 +471,11 @@ impl World {
         if self.ai.creatures.get(&id).is_none_or(|a| a.thinking) {
             return;
         }
+        // A siege defender runs `SiegeGuardAI` / `FortSiegeGuardAI`, which are not ported (see
+        // `guards.rs`): it stands where it is, and does not wander like a monster.
+        if self.npcs.get(&id).is_some_and(|n| n.class.is_defender()) {
+            return;
+        }
         // Check if region and its neighbors are active.
         if !self.are_region_neighbors_active(id) {
             return;
@@ -516,7 +556,23 @@ impl World {
             }
             return false;
         }
-        // The `Guard` branch is not here: guards are not attackable in `NpcClass` yet.
+        // Check if the actor is a GuardInstance.
+        if class.is_some_and(crate::npc::NpcClass::is_guard) {
+            // Check if the Player target has karma (=PK).
+            if self.players.get(&target).is_some_and(|p| p.data.karma > 0) {
+                return self.can_see_target(me, target); // Los Check
+            }
+            // Check if the Monster target is aggressive.
+            // NOTE(java-quirk): the aggro range was only checked for playables above, so a
+            // monster anywhere in the guard's surrounding regions counts.
+            if kind == ObjectKind::Npc
+                && self.is_monster(target)
+                && self.ai.attackable.settings.guard_attack_aggro_mob
+            {
+                return self.is_aggressive_npc(target) && self.can_see_target(me, target);
+            }
+            return false;
+        }
         if kind == ObjectKind::Npc {
             // Java: `if (target.isAttackable()) { if (!target.isAutoAttackable(me)) return false;
             // if (me.isChaos() ...) ... }` and then `if (target.isAttackable() || target
@@ -590,10 +646,10 @@ impl World {
         // damage and 1 hate. An Attackable isn't aggressive during 10s after its spawn because
         // _globalAggro is set to -10.
         if global_aggro >= 0 {
-            // Only players can be aggressed (see `is_aggressive_towards`), and they are far fewer
-            // than the objects around the NPC.
+            // Only players can be aggressed (see `is_aggressive_towards`; a guard may also
+            // aggress monsters), and they are far fewer than the objects around the NPC.
             let targets: Vec<ObjectId> = self
-                .players_in_view(id)
+                .aggro_candidates(id)
                 .into_iter()
                 .filter(|target| self.is_aggressive_towards(id, *target))
                 .collect();
@@ -641,7 +697,9 @@ impl World {
         }
 
         // Check if the mob should not return to spawn point.
-        // (`canReturnToSpawnPoint()` is only turned off by scripts.)
+        if !self.can_return_to_spawn_point(id) {
+            return;
+        }
 
         // Order this attackable to return to its spawn because there's no target to attack.
         let target = self.ai_target_of(id);
@@ -1178,10 +1236,11 @@ impl World {
                 }
             }
             // `target.isAutoAttackable(npc)`: a monster attacks players (not other monsters or
-            // NPCs).
+            // NPCs), a guard players with karma and monsters, a monster guards.
             // (A door is not attackable by a monster.)
-            let auto_attackable = kind == ObjectKind::Player;
-            if !auto_attackable {
+            if !matches!(kind, ObjectKind::Player | ObjectKind::Npc)
+                || !self.is_auto_attackable_for(target, id)
+            {
                 return false;
             }
         }
@@ -1295,7 +1354,10 @@ impl World {
                 }
             }
         }
-        // (`!(actor instanceof Guard)`: guards are not attackable here.)
+        if self.is_guard(id) {
+            // `if (!(actor instanceof Guard))`: a guard only picks from its hate list.
+            return;
+        }
         let candidates = self.visible_objects(id);
         let current = self.attack_target_of(id);
         for obj in candidates {
@@ -1419,7 +1481,11 @@ impl World {
     }
 
     /// Java `Attackable.returnHome()`.
-    pub(crate) fn return_home(&mut self, id: ObjectId) {
+    pub fn return_home(&mut self, id: ObjectId) {
+        // `Defender.returnHome` and `FortCommander.returnHome` replace it.
+        if self.defender_return_home(id) {
+            return;
+        }
         self.aggro_clear(id);
         if self.has_ai(id)
             && let Some(npc) = self.npcs.get(&id)
@@ -1686,29 +1752,6 @@ impl World {
         }
     }
 
-    /// `Attackable.doDie`'s minion part: `leader.getMinionList().onMinionDie(mob, respawnTime)`
-    /// and `mob.getMinionList().onMasterDie(false)`.
-    pub(crate) fn minions_on_die(&mut self, id: ObjectId) {
-        // onMinionDie: the dead minion leaves its master's list. (A minion comes back only for a
-        // raid master, `RaidMinionRespawnTimer`, or with `MinionsRespawnTime`: raid bosses are not
-        // spawned from the spawn files, and the per-NPC respawn table is not ported.)
-        if let Some(master) = self.leader_of(id)
-            && let Some(list) = self.ai.attackable.minions.get_mut(&master)
-        {
-            list.retain(|m| *m != id);
-        }
-        // onMasterDie(false): only a raid boss' minions go (`FORCE_DELETE_MINIONS` is not ported).
-        if self.is_raid(id) {
-            let minions = self.ai.attackable.minions.remove(&id).unwrap_or_default();
-            for minion in minions {
-                if let Some(npc) = self.npcs.get_mut(&minion) {
-                    npc.leader = None;
-                }
-                self.delete_npc(minion);
-            }
-        }
-    }
-
     /// Java `AttackableAI.notifyActionAggression(target, aggro)`.
     pub(crate) fn notify_action_aggression(&mut self, id: ObjectId, target: ObjectId, aggro: i64) {
         if !self.is_attackable_npc(id) {
@@ -1866,6 +1909,8 @@ impl World {
                 self.stop_ai_task(id);
             }
         }
+        // `Guard.onSpawn` goes on from here.
+        self.guard_on_spawn(id);
     }
 
     /// Java `WorldRegion.switchAI(isOn)`.
@@ -1875,6 +1920,8 @@ impl World {
             self.start_regeneration_in_region(region);
             // Java: RandomAnimationTaskManager.add for each NPC of the region (`ai/idle.rs`).
             self.start_random_animation_in_region(region);
+            // The guards that were waiting for a region around them to turn on (`guards.rs`).
+            self.wake_guards_around(region);
             return;
         }
         // Java: RandomAnimationTaskManager.remove for each NPC of the region (`ai/idle.rs`).

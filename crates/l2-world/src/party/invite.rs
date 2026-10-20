@@ -199,6 +199,13 @@ impl World {
         let Some(requestor) = self.active_requester(player) else {
             return;
         };
+        // NOTE: Java keeps the stale requester object of a player who logged out and goes on:
+        // `new Party(requestor, ...)` then builds a party around an offline leader. The request
+        // ends here instead.
+        if !self.players.contains_key(&requestor) {
+            self.set_active_requester(player, None);
+            return;
+        }
         self.send(requestor, &JoinParty { response });
 
         match response {

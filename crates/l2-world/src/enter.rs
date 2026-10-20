@@ -143,6 +143,23 @@ pub fn quest_item_list(data: &PlayerData, st: &dyn StaticData, now_ms: i64) -> E
     ExQuestItemList { items, block: None }
 }
 
+/// Java `new GMViewItemList(player)`: every inventory item, quest items included, with the
+/// character's name and inventory limit (`getInventoryLimit()`).
+pub fn gm_view_item_list(
+    data: &PlayerData,
+    limit: i32,
+    st: &dyn StaticData,
+    now_ms: i64,
+) -> l2_protocol_game::server::GmViewItemList {
+    l2_protocol_game::server::GmViewItemList {
+        player_name: data.name.clone(),
+        limit,
+        items: inventory_items(data)
+            .map(|item| item_info(item, &item_static(st, item), item_template(st, item), now_ms))
+            .collect(),
+    }
+}
+
 /// Java `Player.sendSkillList()` for a character without transformation or clan.
 pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
     SkillList {
@@ -433,6 +450,12 @@ impl World {
             self.send(id, &info);
         }
 
+        // `if (!player.isGM()) player.updatePvpTitleAndColor(false)`: the custom title for the
+        // PvP kills of the character (`Custom/PvpTitleColor.ini`).
+        if !self.is_gm(id) {
+            self.update_pvp_title_and_color(id, false);
+        }
+
         // `if (ENABLE_VITALITY && RECOVER_VITALITY_ON_RECONNECT)`: the time offline gives vitality
         // back (quietly, after the first `UserInfo`).
         self.recover_vitality_on_reconnect(id, now_ms);
@@ -504,6 +527,8 @@ impl World {
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
         self.send(id, &skill_list(&p.data, &*self.data));
         debug!("enter-world packets sent to {id}");
+        // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
+        self.punishment_on_player_login(id);
     }
 
     /// Java `player.sendPacket(new ExVoteSystemInfo(player))`: the recommendations and the state of
@@ -635,6 +660,9 @@ impl World {
             ),
             charges: self.charges_of(id),
             charged_souls: self.charged_souls_of(id),
+            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`: the refusal and the
+            // silence mode are not modelled.
+            chat_blocked: self.is_chat_banned(id),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,

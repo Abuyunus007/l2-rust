@@ -300,6 +300,8 @@ impl World {
     /// Java `Player.leaveParty()` (logout): `removePartyMember(this, DISCONNECTED)`, then
     /// `_party = null`.
     pub(crate) fn leave_party(&mut self, player: ObjectId) {
+        // The loot rule an inviter chose is only kept until the party exists.
+        self.party.chosen_distribution.remove(&player);
         let Some(party) = self.party_of(player) else {
             return;
         };

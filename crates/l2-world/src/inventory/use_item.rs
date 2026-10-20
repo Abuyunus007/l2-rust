@@ -43,8 +43,17 @@ impl crate::world::World {
             return;
         };
 
-        // The trade list and private store checks (`getActiveTradeList`, `isInStoreMode`) need the
-        // trade and store systems, which do not exist yet.
+        // Pet Collar exclusion. This is handled in SummonItems handler.
+        let is_pet_collar = super::etc_type(template) == Some(l2_data::item::types::EtcItemType::PetCollar);
+        if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) && !is_pet_collar {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotPickUpOrUseItemsWhileTrading),
+            );
+            return;
+        }
+        // M6-STORE-01: `isInStoreMode() && !isPetCollar` -> YOU_MAY_NOT_USE_ITEMS_IN_A_PRIVATE_STORE...
+        // + ActionFailed.
 
         if template.type2 == TYPE2_QUEST {
             self.send(id, &SystemMessage::new(SystemMessageId::YouCannotUseQuestItems));
