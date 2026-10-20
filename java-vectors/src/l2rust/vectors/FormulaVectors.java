@@ -457,6 +457,7 @@ public final class FormulaVectors
 		writeAtkBreak(outDir);
 		writeRegen(outDir);
 		writeLvlBonus(outDir);
+		writeKarmaGain(outDir);
 		System.out.println("formulas: database access answered by the harness fake: " + DatabaseFactory.connections() + " fake connections, " + DatabaseFactory.statements().size() + " distinct statements");
 	}
 
@@ -1213,5 +1214,51 @@ public final class FormulaVectors
 		}
 
 		writePlain(out, "formulas_lvl_bonus.json", root, cases);
+	}
+
+	// -- karma gain ----------------------------------------------------------------------------------------------------------------------------------------
+
+	private static void writeKarmaGain(Path out) throws Exception
+	{
+		final Map<String, Object> root = Json.header("Formulas.calculateKarmaGain(pkCount, isSummon)");
+		root.put("note", "Karma a killer gains per playable kill (M6-PVP-01). Pure integer arithmetic, no draws. NOTE: for a summon the first value is overwritten by the pkCount branches below it unless pkCount >= 180.");
+		final List<Object> cases = new ArrayList<>();
+		final int[] counts =
+		{
+			0,
+			1,
+			2,
+			3,
+			5,
+			10,
+			25,
+			50,
+			98,
+			99,
+			100,
+			150,
+			179,
+			180,
+			181,
+			250,
+			1000
+		};
+		for (boolean summon : new boolean[]
+		{
+			false,
+			true
+		})
+		{
+			for (int pk : counts)
+			{
+				final Map<String, Object> m = Json.obj();
+				m.put("pk_count", pk);
+				m.put("is_summon", summon);
+				m.put("result", Formulas.calculateKarmaGain(pk, summon));
+				cases.add(Json.compact(m));
+			}
+		}
+
+		writePlain(out, "formulas_karma_gain.json", root, cases);
 	}
 }

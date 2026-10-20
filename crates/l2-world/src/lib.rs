@@ -35,6 +35,7 @@ pub mod objects;
 pub mod outbox;
 pub mod player;
 mod player_view;
+pub mod pvp;
 pub mod region;
 pub mod respawn;
 pub mod rewards;
@@ -87,6 +88,7 @@ pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,
 };
+pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};

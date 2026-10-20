@@ -433,6 +433,12 @@ impl World {
             self.send(id, &info);
         }
 
+        // `if (!player.isGM()) player.updatePvpTitleAndColor(false)`: the custom title for the
+        // PvP kills of the character (`Custom/PvpTitleColor.ini`).
+        if !self.is_gm(id) {
+            self.update_pvp_title_and_color(id, false);
+        }
+
         // `if (ENABLE_VITALITY && RECOVER_VITALITY_ON_RECONNECT)`: the time offline gives vitality
         // back (quietly, after the first `UserInfo`).
         self.recover_vitality_on_reconnect(id, now_ms);

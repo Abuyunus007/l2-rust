@@ -1051,7 +1051,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         class_id: player.class_id,
         delete_time: clamp_i64(row.deletetime),
         title,
-        title_color: clamp_i32(u64::from(row.title_color)),
+        // Java writes `getAppearance().getTitleColor()`: the PvP title colours change it.
+        title_color: player.profile.title_color,
         access_level: player.access_level,
         // The snapshot is of a player in the world; `PlayerLeft` marks it offline afterwards.
         online: 1,

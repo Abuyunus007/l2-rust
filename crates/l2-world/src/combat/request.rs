@@ -153,8 +153,9 @@ impl World {
     }
 
     /// Java `target.isAutoAttackable(attacker)` for any attacker: a player's view is
-    /// `World::is_auto_attackable_by`; an NPC attacker sees players as enemies when it is a
-    /// monster and other NPCs never (`Player.isAutoAttackable`, `Monster.isAutoAttackable`).
+    /// `World::is_auto_attackable_by`; for an NPC attacker a player target answers with
+    /// `Player.isAutoAttackable` (`pvp.rs`: monsters are enemies, friendly mobs never, guards of
+    /// players with karma) and other NPCs are never enemies.
     pub(crate) fn is_auto_attackable_for(&self, target: ObjectId, attacker: ObjectId) -> bool {
         if self.is_player(attacker) {
             return self.is_auto_attackable_by(target, attacker);
@@ -163,10 +164,8 @@ impl World {
             return false;
         }
         match self.objects.get(&target).map(|e| e.kind) {
-            // Friendly mobs do not attack players; monsters do. M4-AI-01: guards against players
-            // with karma, the faction rules.
-            Some(ObjectKind::Player) => self.is_monster(attacker),
-            // A monster is not an enemy of a monster; guards and siege NPCs: M4-AI-01 / M5.
+            Some(ObjectKind::Player) => self.is_auto_attackable(target, attacker),
+            // A monster is not an enemy of a monster; siege NPCs: M7.
             _ => false,
         }
     }

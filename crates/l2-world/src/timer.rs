@@ -100,6 +100,8 @@ pub enum TimerKind {
     Cast(crate::skills::cast::CastTimer),
     /// Sitting, standing, charges, souls and the fear of an NPC, see `effects/control.rs`.
     Control(crate::effects::control::ControlTimer),
+    /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
+    PvpFlag(ObjectId),
 }
 
 #[derive(Debug, Default)]

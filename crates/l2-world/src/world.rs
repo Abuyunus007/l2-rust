@@ -102,6 +102,8 @@ pub struct World {
     /// The charge of weapons and NPCs and the automatic shots of players (M5-SHOT-01,
     /// `inventory/handlers/shots.rs`).
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
+    /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
+    pub(crate) pvp: crate::pvp::PvpWorld,
 }
 
 impl World {
@@ -150,6 +152,7 @@ impl World {
             effects: crate::effects::EffectsWorld::default(),
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
+            pvp: crate::pvp::PvpWorld::default(),
         }
     }
 
@@ -560,6 +563,8 @@ impl World {
             // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
             TimerKind::Control(timer) => self.on_control_timer(timer),
+            // Java: PvpFlagTaskManager.run (for one player)
+            TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }
     }
 

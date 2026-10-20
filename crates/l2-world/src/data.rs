@@ -339,6 +339,8 @@ pub struct WorldSettings {
     pub learn: crate::skills::learn::LearnSettings,
     /// The values casting reads (M5-CAST-01).
     pub cast: crate::skills::cast::CastSettings,
+    /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
+    pub pvp: crate::pvp::PvpSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -391,6 +393,7 @@ impl Default for WorldSettings {
             effects: crate::effects::EffectSettings::default(),
             learn: crate::skills::learn::LearnSettings::default(),
             cast: crate::skills::cast::CastSettings::default(),
+            pvp: crate::pvp::PvpSettings::default(),
             daily_reset_database_writes: false,
         }
     }
