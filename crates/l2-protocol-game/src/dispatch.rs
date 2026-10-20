@@ -18,6 +18,12 @@ use crate::client::{
     RequestTargetCanceld, RequestUnEquipItem, RequestWithDrawalParty, Say2, SendBypassBuildCmd, UseItem,
     ValidatePosition,
 };
+use crate::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+use crate::client::{
+    RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
+    RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
+    SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
+};
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
 /// A decoded client packet.
@@ -73,6 +79,23 @@ pub enum ClientPacket {
     RequestOustPartyMember(RequestOustPartyMember),
     /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
     RequestChangePartyLeader(RequestChangePartyLeader),
+    TradeRequest(TradeRequest),
+    AnswerTradeRequest(AnswerTradeRequest),
+    AddTradeItem(AddTradeItem),
+    /// The client's `TRADE_DONE` (confirm or cancel the trade window).
+    TradeDone(TradeDone),
+    RequestPrivateStoreManageSell(RequestPrivateStoreManageSell),
+    RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy),
+    RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell),
+    RequestPrivateStoreQuitBuy(RequestPrivateStoreQuitBuy),
+    SetPrivateStoreMsgSell(SetPrivateStoreMsgSell),
+    SetPrivateStoreMsgBuy(SetPrivateStoreMsgBuy),
+    SetPrivateStoreListSell(SetPrivateStoreListSell),
+    SetPrivateStoreListBuy(SetPrivateStoreListBuy),
+    RequestPrivateStoreBuy(RequestPrivateStoreBuy),
+    RequestPrivateStoreSell(RequestPrivateStoreSell),
+    /// `SET_PRIVATE_STORE_WHOLE_MSG` (`0xD0` 0x0049), an ex packet.
+    SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -164,6 +187,40 @@ pub fn decode_client(
         RequestOustPartyMember::OPCODE => {
             ClientPacket::RequestOustPartyMember(RequestOustPartyMember::decode(reader)?)
         }
+        TradeRequest::OPCODE => ClientPacket::TradeRequest(TradeRequest::decode(reader)?),
+        AnswerTradeRequest::OPCODE => ClientPacket::AnswerTradeRequest(AnswerTradeRequest::decode(reader)?),
+        AddTradeItem::OPCODE => ClientPacket::AddTradeItem(AddTradeItem::decode(reader)?),
+        TradeDone::OPCODE => ClientPacket::TradeDone(TradeDone::decode(reader)?),
+        RequestPrivateStoreManageSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreManageSell(RequestPrivateStoreManageSell::decode(reader)?)
+        }
+        RequestPrivateStoreManageBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy::decode(reader)?)
+        }
+        RequestPrivateStoreQuitSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell::decode(reader)?)
+        }
+        RequestPrivateStoreQuitBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreQuitBuy(RequestPrivateStoreQuitBuy::decode(reader)?)
+        }
+        SetPrivateStoreMsgSell::OPCODE => {
+            ClientPacket::SetPrivateStoreMsgSell(SetPrivateStoreMsgSell::decode(reader)?)
+        }
+        SetPrivateStoreMsgBuy::OPCODE => {
+            ClientPacket::SetPrivateStoreMsgBuy(SetPrivateStoreMsgBuy::decode(reader)?)
+        }
+        SetPrivateStoreListSell::OPCODE => {
+            ClientPacket::SetPrivateStoreListSell(SetPrivateStoreListSell::decode(reader)?)
+        }
+        SetPrivateStoreListBuy::OPCODE => {
+            ClientPacket::SetPrivateStoreListBuy(SetPrivateStoreListBuy::decode(reader)?)
+        }
+        RequestPrivateStoreBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreBuy(RequestPrivateStoreBuy::decode(reader)?)
+        }
+        RequestPrivateStoreSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreSell(RequestPrivateStoreSell::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -191,6 +248,9 @@ fn decode_ex_client(
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
         RequestChangePartyLeader::EX_OPCODE => {
             ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
+        }
+        SetPrivateStoreWholeMsg::EX_OPCODE => {
+            ClientPacket::SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

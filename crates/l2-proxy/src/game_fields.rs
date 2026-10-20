@@ -51,7 +51,16 @@ use l2_protocol_game::server::skills::{
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
     SkillPosition,
 };
+use l2_protocol_game::server::store::{
+    BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
+    PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
+    SellStoreEntry, StoreCandidate,
+};
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::trade::{
+    SendTradeRequest, TradeDone as ServerTradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone,
+    TradeOwnAdd, TradeStart, TradeUpdate,
+};
 use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
@@ -193,6 +202,49 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestWithDrawalParty(_) => json!({}),
         ClientPacket::RequestOustPartyMember(p) => object!(p => name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::TradeRequest(p) => object!(p => object_id),
+        ClientPacket::AnswerTradeRequest(p) => object!(p => response),
+        ClientPacket::AddTradeItem(p) => object!(p => trade_id, object_id, count),
+        ClientPacket::TradeDone(p) => object!(p => response),
+        ClientPacket::RequestPrivateStoreManageSell(_)
+        | ClientPacket::RequestPrivateStoreManageBuy(_)
+        | ClientPacket::RequestPrivateStoreQuitSell(_)
+        | ClientPacket::RequestPrivateStoreQuitBuy(_) => json!({}),
+        ClientPacket::SetPrivateStoreMsgSell(p) => object!(p => store_msg),
+        ClientPacket::SetPrivateStoreMsgBuy(p) => object!(p => store_msg),
+        ClientPacket::SetPrivateStoreWholeMsg(p) => object!(p => msg),
+        ClientPacket::SetPrivateStoreListSell(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "package_sale": p.package_sale, "items": items })
+        }
+        ClientPacket::SetPrivateStoreListBuy(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "items": items })
+        }
+        ClientPacket::RequestPrivateStoreBuy(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "store_player_id": p.store_player_id, "items": items })
+        }
+        ClientPacket::RequestPrivateStoreSell(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "store_player_id": p.store_player_id, "items": items })
+        }
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -322,6 +374,26 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        ServerOpcode::TradeRequest => decoded::<SendTradeRequest>(&mut r, send_trade_request_fields),
+        ServerOpcode::TradeStart => decoded::<TradeStart>(&mut r, trade_start_fields),
+        ServerOpcode::TradeOwnAdd => decoded::<TradeOwnAdd>(&mut r, trade_own_add_fields),
+        ServerOpcode::TradeOtherAdd => decoded::<TradeOtherAdd>(&mut r, trade_other_add_fields),
+        ServerOpcode::TradeUpdate => decoded::<TradeUpdate>(&mut r, trade_update_fields),
+        ServerOpcode::TradePressOtherOk => decoded::<TradeOtherDone>(&mut r, no_fields),
+        ServerOpcode::TradeDone => decoded::<ServerTradeDone>(&mut r, server_trade_done_fields),
+        ServerOpcode::PrivateStoreSellManageList => {
+            decoded::<PrivateStoreManageListSell>(&mut r, store_manage_sell_fields)
+        }
+        ServerOpcode::PrivateStoreBuyManageList => {
+            decoded::<PrivateStoreManageListBuy>(&mut r, store_manage_buy_fields)
+        }
+        ServerOpcode::PrivateStoreSellList => decoded::<PrivateStoreListSell>(&mut r, store_list_sell_fields),
+        ServerOpcode::PrivateStoreBuyList => decoded::<PrivateStoreListBuy>(&mut r, store_list_buy_fields),
+        ServerOpcode::PrivateStoreSellMsg => decoded::<PrivateStoreMsgSell>(&mut r, store_msg_sell_fields),
+        ServerOpcode::PrivateStoreBuyMsg => decoded::<PrivateStoreMsgBuy>(&mut r, store_msg_buy_fields),
+        ServerOpcode::ExPrivateStorePackageMsg => {
+            decoded::<ExPrivateStoreSetWholeMsg>(&mut r, store_whole_msg_fields)
         }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
@@ -963,6 +1035,103 @@ fn pet_window_delete_fields(p: &ExPartyPetWindowDelete) -> Value {
     object!(p => summon_object_id, owner_object_id, summon_name)
 }
 
+fn send_trade_request_fields(p: &SendTradeRequest) -> Value {
+    object!(p => sender_id)
+}
+
+fn trade_item_fields(item: &TradeItemInfo) -> Value {
+    object!(
+        item => type1, object_id, item_id, count, type2, custom_type1, body_part, enchant, custom_type2,
+        attack_element_type, attack_element_power, element_defense, enchant_options
+    )
+}
+
+fn trade_start_fields(p: &TradeStart) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    json!({ "partner_object_id": p.partner_object_id, "items": items })
+}
+
+fn trade_own_add_fields(p: &TradeOwnAdd) -> Value {
+    json!({ "item": trade_item_fields(&p.item) })
+}
+
+fn trade_other_add_fields(p: &TradeOtherAdd) -> Value {
+    json!({ "item": trade_item_fields(&p.item) })
+}
+
+fn trade_update_fields(p: &TradeUpdate) -> Value {
+    json!({ "change": p.change, "item": trade_item_fields(&p.item) })
+}
+
+fn server_trade_done_fields(p: &ServerTradeDone) -> Value {
+    object!(p => num)
+}
+
+fn store_candidate_fields(c: &StoreCandidate) -> Value {
+    json!({ "item": item_fields(&c.item), "reference_price": c.reference_price })
+}
+
+fn sell_store_entry_fields(e: &SellStoreEntry) -> Value {
+    json!({ "item": item_fields(&e.item), "price": e.price, "reference_price": e.reference_price })
+}
+
+fn buy_store_entry_fields(e: &BuyStoreEntry) -> Value {
+    json!({
+        "item": item_fields(&e.item),
+        "price": e.price,
+        "reference_price": e.reference_price,
+        "count": e.count,
+    })
+}
+
+fn store_manage_sell_fields(p: &PrivateStoreManageListSell) -> Value {
+    json!({
+        "object_id": p.object_id,
+        "package_sale": p.package_sale,
+        "player_adena": p.player_adena,
+        "item_list": p.item_list.iter().map(store_candidate_fields).collect::<Vec<_>>(),
+        "sell_list": p.sell_list.iter().map(sell_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_manage_buy_fields(p: &PrivateStoreManageListBuy) -> Value {
+    json!({
+        "object_id": p.object_id,
+        "player_adena": p.player_adena,
+        "item_list": p.item_list.iter().map(store_candidate_fields).collect::<Vec<_>>(),
+        "buy_list": p.buy_list.iter().map(buy_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_list_sell_fields(p: &PrivateStoreListSell) -> Value {
+    json!({
+        "seller_object_id": p.seller_object_id,
+        "package_sale": p.package_sale,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(sell_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_list_buy_fields(p: &PrivateStoreListBuy) -> Value {
+    json!({
+        "store_object_id": p.store_object_id,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(buy_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_msg_sell_fields(p: &PrivateStoreMsgSell) -> Value {
+    object!(p => object_id, message)
+}
+
+fn store_msg_buy_fields(p: &PrivateStoreMsgBuy) -> Value {
+    object!(p => object_id, message)
+}
+
+fn store_whole_msg_fields(p: &ExPrivateStoreSetWholeMsg) -> Value {
+    object!(p => object_id, message)
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -1088,6 +1257,20 @@ mod tests {
         ServerOpcode::ExPartyPetWindowAdd,
         ServerOpcode::ExPartyPetWindowUpdate,
         ServerOpcode::ExPartyPetWindowDelete,
+        ServerOpcode::TradeRequest,
+        ServerOpcode::TradeStart,
+        ServerOpcode::TradeOwnAdd,
+        ServerOpcode::TradeOtherAdd,
+        ServerOpcode::TradeUpdate,
+        ServerOpcode::TradePressOtherOk,
+        ServerOpcode::TradeDone,
+        ServerOpcode::PrivateStoreSellManageList,
+        ServerOpcode::PrivateStoreBuyManageList,
+        ServerOpcode::PrivateStoreSellList,
+        ServerOpcode::PrivateStoreBuyList,
+        ServerOpcode::PrivateStoreSellMsg,
+        ServerOpcode::PrivateStoreBuyMsg,
+        ServerOpcode::ExPrivateStorePackageMsg,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -2527,6 +2710,166 @@ mod tests {
             ),
             json!({ "summon_object_id": 9, "owner_object_id": 7, "summon_name": "Pet" })
         );
+    }
+    #[test]
+    fn trade_packets_show_their_fields() {
+        use l2_protocol_game::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &TradeRequest { object_id: 5 }.to_bytes()),
+            json!({ "object_id": 5 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &AnswerTradeRequest { response: 1 }.to_bytes()),
+            json!({ "response": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &AddTradeItem {
+                    trade_id: 1,
+                    object_id: 2,
+                    count: 3
+                }
+                .to_bytes()
+            ),
+            json!({ "trade_id": 1, "object_id": 2, "count": 3 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &TradeDone { response: 0 }.to_bytes()),
+            json!({ "response": 0 })
+        );
+
+        assert_eq!(
+            s2c_fields(&SendTradeRequest { sender_id: 9 }.to_bytes()),
+            json!({ "sender_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(&ServerTradeDone { num: 1 }.to_bytes()),
+            json!({ "num": 1 })
+        );
+        assert_eq!(s2c_fields(&TradeOtherDone.to_bytes()), json!({}));
+        let item = TradeItemInfo {
+            type1: 4,
+            object_id: 77,
+            item_id: 57,
+            count: 1_000,
+            ..TradeItemInfo::default()
+        };
+        let fields = s2c_fields(&TradeOwnAdd { item: item.clone() }.to_bytes());
+        assert_eq!(fields["item"]["item_id"], 57);
+        assert_eq!(fields["item"]["count"], 1_000);
+        assert_eq!(
+            s2c_fields(&TradeUpdate { change: 3, item }.to_bytes())["change"],
+            3
+        );
+        let start = TradeStart {
+            partner_object_id: 11,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        let fields = s2c_fields(&start.to_bytes());
+        assert_eq!(fields["partner_object_id"], 11);
+        assert_eq!(fields["items"][0]["count"], 5);
+    }
+    #[test]
+    fn private_store_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestPrivateStoreBuy, RequestPrivateStoreManageSell, SellListEntry, SetPrivateStoreListSell,
+            SetPrivateStoreMsgSell, StoreBuyRequestEntry,
+        };
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestPrivateStoreManageSell.to_bytes()),
+            json!({})
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &SetPrivateStoreMsgSell {
+                    store_msg: "cheap".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "store_msg": "cheap" })
+        );
+        let list = SetPrivateStoreListSell {
+            package_sale: true,
+            items: Some(vec![SellListEntry {
+                item_id: 7,
+                count: 2,
+                price: 100,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &list.to_bytes()),
+            json!({ "package_sale": true, "items": [{ "item_id": 7, "count": 2, "price": 100 }] })
+        );
+        // A list Java drops (count 0) shows as null items.
+        let dropped = SetPrivateStoreListSell {
+            package_sale: false,
+            items: None,
+        };
+        assert_eq!(
+            c2s_fields(in_game, &dropped.to_bytes()),
+            json!({ "package_sale": false, "items": null })
+        );
+        let buy = RequestPrivateStoreBuy {
+            store_player_id: 3,
+            items: Some(vec![StoreBuyRequestEntry {
+                object_id: 4,
+                count: 5,
+                price: 6,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &buy.to_bytes()),
+            json!({ "store_player_id": 3, "items": [{ "object_id": 4, "count": 5, "price": 6 }] })
+        );
+
+        assert_eq!(
+            s2c_fields(
+                &PrivateStoreMsgBuy {
+                    object_id: 8,
+                    message: "wanted".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 8, "message": "wanted" })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExPrivateStoreSetWholeMsg {
+                    object_id: 8,
+                    message: "pack".into()
+                }
+                .to_bytes()
+            )["message"],
+            "pack"
+        );
+        let sell = PrivateStoreListSell {
+            seller_object_id: 9,
+            package_sale: false,
+            player_adena: 1_000,
+            items: vec![SellStoreEntry {
+                item: ItemInfo::plain(5, 57, 3),
+                price: 10,
+                reference_price: 20,
+            }],
+        };
+        let fields = s2c_fields(&sell.to_bytes());
+        assert_eq!(fields["items"][0]["item"]["object_id"], 5);
+        assert_eq!(fields["items"][0]["price"], 10);
+        let buy_list = PrivateStoreListBuy {
+            store_object_id: 9,
+            player_adena: 1_000,
+            items: vec![BuyStoreEntry {
+                item: ItemInfo::plain(5, 57, 3),
+                price: 10,
+                reference_price: 20,
+                count: 4,
+            }],
+        };
+        assert_eq!(s2c_fields(&buy_list.to_bytes())["items"][0]["count"], 4);
     }
     /// Every server packet of the committed Java captures with a decoder must have fields, and
     /// no other server packet may have any. A decode error here means a `Decode` impl does not

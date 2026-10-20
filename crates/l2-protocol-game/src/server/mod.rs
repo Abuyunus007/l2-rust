@@ -25,7 +25,9 @@ pub mod movement;
 pub mod party;
 pub mod regen;
 pub mod skills;
+pub mod store;
 pub mod system_message;
+pub mod trade;
 pub mod userinfo;
 pub mod visibility;
 
@@ -75,7 +77,16 @@ pub use skills::{
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
+pub use store::{
+    BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
+    PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
+    SellStoreEntry, StoreCandidate,
+};
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+pub use trade::{
+    SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
+    TradeUpdate,
+};
 pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
