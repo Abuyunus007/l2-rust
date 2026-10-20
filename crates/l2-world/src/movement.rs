@@ -1347,8 +1347,13 @@ impl World {
         let mut need_path = false;
         let geo_checks = !mv.disregarding_geodata && !in_water && !cursor;
         if geo_checks {
-            // Movement checks.
-            if self.pathfinding_enabled() {
+            // Movement checks. (`!(this instanceof QuestGuard)`: a quest guard never searches paths.)
+            if self.pathfinding_enabled()
+                && !self
+                    .npcs
+                    .get(&id)
+                    .is_some_and(|n| n.class == crate::npc::NpcClass::QuestGuard)
+            {
                 original = (x, y, z);
                 original_distance = distance;
                 gtx = original.0.wrapping_sub(WORLD_X_MIN) >> 4;

@@ -25,7 +25,7 @@
 // `HashMap`). An NPC id without skills costs one template lookup per think.
 //
 // # Left out
-// - Guards (`Guard` is not an attackable class in `NpcClass` yet) and summons (M6) as targets.
+// - Summons (M6) as targets.
 // - Scripts: the NPC AI parameters that only scripts read (D-05).
 
 use std::collections::BTreeMap;
@@ -650,7 +650,10 @@ impl World {
             }
         }
 
-        // (`!(actor instanceof Guard)`: guards are not attackable here.)
+        if self.is_guard(actor) {
+            // `if (!(actor instanceof Guard))`: a guard only looks at its hate list.
+            return None;
+        }
         let chaos = self.is_chaos(actor);
         for obj in self.ai_visible_creatures(actor) {
             let Some(attack_target) = attack_target else {

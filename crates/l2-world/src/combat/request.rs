@@ -163,10 +163,12 @@ impl World {
             return false;
         }
         match self.objects.get(&target).map(|e| e.kind) {
-            // Friendly mobs do not attack players; monsters do. M4-AI-01: guards against players
-            // with karma, the faction rules.
-            Some(ObjectKind::Player) => self.is_monster(attacker),
-            // A monster is not an enemy of a monster; guards and siege NPCs: M4-AI-01 / M5.
+            // Friendly mobs do not attack players; monsters do; guards attack players with karma
+            // (the faction rules are a Custom config, off).
+            Some(ObjectKind::Player) => self.player_auto_attackable_by_npc(target, attacker),
+            // A monster is not an enemy of a monster; guards, monsters and the rest see each
+            // other as `Monster.isAutoAttackable` and `Guard.isAutoAttackable` say.
+            Some(ObjectKind::Npc) => self.npc_auto_attackable_by_npc(target, attacker),
             _ => false,
         }
     }

@@ -68,6 +68,11 @@ pub fn ai_settings(config: &GameConfig) -> AiSettings {
         raid_chaos_time: npc.raid_chaos_time,
         grand_chaos_time: npc.grand_chaos_time,
         minion_chaos_time: npc.minion_chaos_time,
+        guard_attack_aggro_mob: npc.guard_attack_aggro_mob,
+        // Java reads the key as an int into a double and casts it back where it is used.
+        raid_minion_respawn_timer: npc.raid_minion_respawn_timer as i32,
+        minions_respawn_time: config.manual.npc.minions_respawn_time.clone(),
+        force_delete_minions: npc.force_delete_minions,
     }
 }
 
