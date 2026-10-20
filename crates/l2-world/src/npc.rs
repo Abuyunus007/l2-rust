@@ -3,7 +3,8 @@
 // Java: org/l2jmobius/gameserver/data/xml/SpawnData.java (the startup part: counts, logs)
 // Java: org/l2jmobius/gameserver/entity/spawns/{Spawn,SpawnGroup,SpawnGroupEntry}.java
 // Java: org/l2jmobius/gameserver/managers/DayNightSpawnManager.java
-// Java: org/l2jmobius/gameserver/entity/actor/holders/npc/MinionList.java (first spawn only)
+// Java: org/l2jmobius/gameserver/entity/actor/holders/npc/MinionList.java (spawnMinions,
+//       initializeNpc; the rest of the list is `ai/minions.rs`)
 // Java: org/l2jmobius/gameserver/entity/actor/Npc.java (constructor, sendInfo, deleteMe)
 // Java: org/l2jmobius/gameserver/network/serverpackets/AbstractNpcInfo.java (NpcInfo)
 //
@@ -57,6 +58,16 @@ pub enum NpcClass {
     Block,
     /// `FriendlyMob`: attackable only for players with karma.
     FriendlyMob,
+    /// `Guard`: an `Attackable` that fights players with karma (and, with `GuardAttackAggroMob`,
+    /// aggressive monsters). Not `isMonster()`. See `ai/guards.rs`.
+    Guard,
+    /// `QuestGuard` (extends `Guard`): a guard scripts drive. See `ai/guards.rs`.
+    QuestGuard,
+    /// `Defender` (siege guard): an `Attackable` that only fights during a siege. Sieges are not
+    /// ported, so it never attacks or gets attacked. See `ai/guards.rs`.
+    Defender,
+    /// `FortCommander` (extends `Defender`).
+    FortCommander,
 }
 
 impl NpcClass {
@@ -75,6 +86,10 @@ impl NpcClass {
             "GrandBoss" => Self::GrandBoss,
             "Block" => Self::Block,
             "FriendlyMob" => Self::FriendlyMob,
+            "Guard" => Self::Guard,
+            "QuestGuard" => Self::QuestGuard,
+            "Defender" => Self::Defender,
+            "FortCommander" => Self::FortCommander,
             "Adventurer"
             | "Artefact"
             | "Auctioneer"
@@ -84,7 +99,6 @@ impl NpcClass {
             | "ClanHallManager"
             | "ControlTower"
             | "DawnPriest"
-            | "Defender"
             | "Doorman"
             | "DungeonGatekeeper"
             | "DuskPriest"
@@ -93,17 +107,14 @@ impl NpcClass {
             | "FlameTower"
             | "FlyTerrainObject"
             | "Folk"
-            | "FortCommander"
             | "FortDoorman"
             | "FortLogistics"
             | "FortManager"
-            | "Guard"
             | "KrateisCubeManager"
             | "KrateisMatchManager"
             | "Merchant"
             | "OlympiadManager"
             | "PetManager"
-            | "QuestGuard"
             | "RaceManager"
             | "SchemeBuffer"
             | "SignsPriest"
@@ -139,14 +150,30 @@ impl NpcClass {
         matches!(self, Self::RaidBoss | Self::GrandBoss)
     }
 
+    /// Java `instanceof Guard` (`QuestGuard` extends it).
+    pub fn is_guard(self) -> bool {
+        matches!(self, Self::Guard | Self::QuestGuard)
+    }
+
+    /// Java `instanceof Defender` (`FortCommander` extends it).
+    pub fn is_defender(self) -> bool {
+        matches!(self, Self::Defender | Self::FortCommander)
+    }
+
     /// Java `isAutoAttackable(player)` for a player outside any siege, arena or faction war.
     // Siege NPCs (`Defender`, `FortCommander`, `TerritoryWard`) are only attackable while a siege
-    // runs, `Guard` only with the faction system on: all false here until sieges exist.
+    // runs, `Guard` only with the faction system on (`QuestGuard` never for a player): all false
+    // here until sieges exist.
     pub(crate) fn auto_attackable_by(self, viewer_karma: i32) -> bool {
         match self {
             Self::Monster | Self::RaidBoss | Self::GrandBoss => true,
             Self::FriendlyMob => viewer_karma > 0,
-            Self::Block | Self::Npc => false,
+            Self::Block
+            | Self::Npc
+            | Self::Guard
+            | Self::QuestGuard
+            | Self::Defender
+            | Self::FortCommander => false,
         }
     }
 }
@@ -219,6 +246,11 @@ impl NpcWorld {
     /// The template of an NPC id, if the templates are loaded and know it.
     pub(crate) fn template(&self, npc_id: i32) -> Option<&NpcTemplate> {
         self.templates.as_ref()?.get(npc_id)
+    }
+
+    /// The NPC templates, if they were handed over.
+    pub(crate) fn templates_arc(&self) -> Option<Arc<NpcTemplates>> {
+        self.templates.clone()
     }
 
     /// The spawn list (`SpawnData`), if one was handed over.
@@ -693,6 +725,22 @@ impl World {
         Some(id)
     }
 
+    /// Java `master.getMinionList().spawnMinions(template.getParameters().getMinionList("Privates"))`
+    /// for a master that is in the world: the missing minions are made. Returns how many were
+    /// created. (`Spawn.initializeNpc` calls this for a spawn; this is the entry for the rest of
+    /// Java's callers, the raid boss spawn manager and the scripts.)
+    pub fn spawn_minions_of(&mut self, master: ObjectId) -> usize {
+        let Some(templates) = self.npc_world.templates.clone() else {
+            return 0;
+        };
+        let Some(master_template) = self.npcs.get(&master).and_then(|n| templates.get(n.npc_id)) else {
+            return 0;
+        };
+        let mut report = SpawnReport::default();
+        self.spawn_minions(master, master_template, &templates, &mut report);
+        report.minions
+    }
+
     /// Java `MinionList.spawnMinions(template.getParameters().getMinionList("Privates"))` for a
     /// master that has none yet.
     fn spawn_minions(
@@ -741,6 +789,25 @@ impl World {
         master_template: &NpcTemplate,
         template: &NpcTemplate,
     ) -> Option<ObjectId> {
+        let enchant = if self.npc_world.settings.enable_random_enchant_effect {
+            self.rng().get(4, 21)
+        } else {
+            template.weapon_enchant
+        };
+        self.place_minion(master, master_template, template, None, enchant)
+    }
+
+    /// Java `MinionList.initializeNpc(master, minion)`: the minion is placed on a random point
+    /// around its master, which is where `spawnMe` puts it. `reuse` is a minion that died and
+    /// comes back with its object id (`MinionRespawnTask`: Java re-initialises the same object).
+    pub(crate) fn place_minion(
+        &mut self,
+        master: ObjectId,
+        master_template: &NpcTemplate,
+        template: &NpcTemplate,
+        reuse: Option<ObjectId>,
+        enchant: i32,
+    ) -> Option<ObjectId> {
         const SPAWN_OFFSET_RADIUS: i32 = 200;
         const MINIMUM_SPAWN_RADIUS: i32 = 30;
         let (mx, my, mz, heading) = {
@@ -768,12 +835,8 @@ impl World {
             (my - new_y) + minimum_radius
         };
         let in_water = self.npc_world.water.as_ref().is_some_and(|f| f(new_x, new_y, mz));
-        let enchant = if self.npc_world.settings.enable_random_enchant_effect {
-            self.rng().get(4, 21)
-        } else {
-            template.weapon_enchant
-        };
-        self.create_npc(
+        self.create_npc_with_id(
+            reuse,
             template,
             NpcClass::Monster,
             None,
@@ -934,14 +997,18 @@ impl World {
         if !self.npcs.contains_key(&id) {
             return false;
         }
-        // The master -> minions index (`MinionList`), not a scan of every NPC: the day/night
-        // switch deletes hundreds of NPCs in one tick, and a scan made each delete cost ~0.5 ms.
-        let minions: Vec<ObjectId> = self.minions_of(id).to_vec();
-        for minion in minions {
-            self.delete_npc(minion);
+        // `Monster.deleteMe`: the minions go with their master (`onMasterDie(true)`), and a minion
+        // tells its master (`onMinionDie(this, 0)`: no respawn). Through the master -> minions
+        // index, not a scan of every NPC: the day/night switch deletes hundreds of NPCs in one
+        // tick, and a scan made each delete cost ~0.5 ms.
+        if self.has_minions(id) {
+            self.minion_list_on_master_die(id, true);
         }
-        // A minion that is deleted tells its master (`onMinionDie(this, 0)`): no respawn of it,
-        // and the master's list is derived from `leader`, so nothing to do.
+        if let Some(master) = self.leader_of(id)
+            && self.has_minions(master)
+        {
+            self.minion_list_on_minion_die(master, id, 0);
+        }
         self.on_npc_decay(id);
         true
     }

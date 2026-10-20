@@ -381,6 +381,10 @@ impl World {
                 self.wake_ai(npc);
             }
         } else if interact {
+            // `Guard.onAction` and `Defender.onAction` do not call `Npc.onAction`.
+            if self.guard_second_click(player, npc) {
+                return;
+            }
             let attackable = self.is_auto_attackable_by(npc, player);
             // Check if the player is attackable (without a forced attack) and isn't dead.
             if attackable && !self.is_alike_dead(npc) {

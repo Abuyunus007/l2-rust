@@ -21,8 +21,8 @@
 // - `// M4-EXP-01:` [`World::calculate_rewards`] (exp and sp of the main damage dealer),
 //   [`World::calculate_death_exp_penalty`], [`World::restore_exp`].
 // - `// M4-DROP-01:` [`World::calculate_rewards`] (`doItemDrop`), [`World::on_die_drop_item`].
-// - `// M4-AI-01:` what an attackable NPC's AI does around its death (clan help call, the
-//   attack-by list, minions).
+// - What an attackable NPC's AI does around its death (clan help call, the attack-by list, the
+//   minions and their respawn) is `ai/attackable.rs` and `ai/minions.rs`.
 // - `// M5:` effects, PvP flags and karma gain of the killer, clans, sieges.
 
 use std::collections::{HashMap, HashSet};
@@ -149,7 +149,7 @@ impl World {
         self.calculate_rewards(id, main_damage_dealer.or(killer));
 
         // Set target to null and cancel Attack or Cast: an NPC's target belongs to its AI
-        // (M4-AI-01).
+        // (`notify_action_death`).
         self.stop_move_on_death(id);
 
         // Stop HP/MP/CP Regeneration task.

@@ -532,6 +532,8 @@ impl World {
             // Java: DecayTaskManager, RespawnTaskManager, SpawnGroupTaskManager
             TimerKind::Decay(id) => self.on_decay_timer(id),
             TimerKind::Respawn(id) => self.on_respawn_timer(id),
+            // Java: MinionList.MinionRespawnTask
+            TimerKind::MinionRespawn(id) => self.on_minion_respawn_timer(id),
             TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
             // Java: ItemManager.ResetOwner, DropProtection, ItemsAutoDestroyTaskManager,
             // ItemsOnGroundManager

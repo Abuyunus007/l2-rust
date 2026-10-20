@@ -33,6 +33,10 @@ const INTERACT_MOVE_OFFSET: i32 = 60;
 const INTERACT_THINK_OFFSET: i32 = 36;
 /// `CreatureFollowTaskManager`'s attack-follow task runs every 500 ms.
 const FOLLOW_INTERVAL_MS: u64 = 500;
+/// `AbstractAI.startFollow(target)` passes `-1`: the normal follow, which has its own task that
+/// runs every second.
+const NORMAL_FOLLOW_RANGE: i32 = -1;
+const NORMAL_FOLLOW_INTERVAL_MS: u64 = 1000;
 /// `1000 / GameTimeTaskManager.MILLIS_IN_TICK`: the pawn move timeout, in game ticks.
 const MOVE_TO_PAWN_TIMEOUT_TICKS: i32 = 10;
 
@@ -341,34 +345,40 @@ impl World {
 
     /// Java `AbstractAI.isFollowing()`.
     pub(crate) fn is_following(&self, id: ObjectId) -> bool {
-        self.players
-            .get(&id)
-            .is_some_and(|p| p.movement.pawn.follow.is_some())
+        self.pawn_of(id).is_some_and(|p| p.follow.is_some())
     }
 
-    /// Java `AbstractAI.startFollow(target, range)` with a range (the attack-follow task). The
-    /// task runs once at once, then every 500 ms.
-    fn start_follow(&mut self, id: ObjectId, target: ObjectId, range: i32) {
+    /// Java `getAI().getFollowTarget()`.
+    pub fn follow_target_of(&self, id: ObjectId) -> Option<ObjectId> {
+        self.pawn_of(id).and_then(|p| p.follow.as_ref().map(|f| f.target))
+    }
+
+    /// Java `AbstractAI.startFollow(target, range)`. A `range` is the attack-follow task (run
+    /// once at once, then every 500 ms); `-1` is the normal follow of `startFollow(target)`
+    /// (once at once, then every second, a random 50 to 100 away from the target).
+    pub(crate) fn start_follow(&mut self, id: ObjectId, target: ObjectId, range: i32) {
         self.stop_follow(id);
-        let timer = self.schedule_follow(id);
-        if let Some(p) = self.players.get_mut(&id) {
-            p.movement.pawn.follow = Some(Follow { target, range, timer });
+        let timer = self.schedule_follow(id, range);
+        if let Some(pawn) = self.pawn_mut(id) {
+            pawn.follow = Some(Follow { target, range, timer });
         }
         self.follow(id);
     }
 
-    fn schedule_follow(&mut self, id: ObjectId) -> TimerId {
-        let ticks = TimerWheel::ms_to_ticks(FOLLOW_INTERVAL_MS);
+    fn schedule_follow(&mut self, id: ObjectId, range: i32) -> TimerId {
+        let interval = if range == NORMAL_FOLLOW_RANGE {
+            NORMAL_FOLLOW_INTERVAL_MS
+        } else {
+            FOLLOW_INTERVAL_MS
+        };
+        let ticks = TimerWheel::ms_to_ticks(interval);
         let due = self.tick + ticks;
         self.timers.schedule_at(due, TimerKind::Follow(id))
     }
 
     /// Java `AbstractAI.stopFollow()`.
     pub(crate) fn stop_follow(&mut self, id: ObjectId) {
-        let follow = self
-            .players
-            .get_mut(&id)
-            .and_then(|p| p.movement.pawn.follow.take());
+        let follow = self.pawn_mut(id).and_then(|p| p.follow.take());
         if let Some(follow) = follow {
             self.timers.cancel(follow.timer);
         }
@@ -376,15 +386,11 @@ impl World {
 
     /// The timer of the follow task.
     pub(crate) fn on_follow_timer(&mut self, id: ObjectId) {
-        if !self.is_following(id) {
+        let Some(range) = self.pawn_of(id).and_then(|p| p.follow.as_ref().map(|f| f.range)) else {
             return;
-        }
-        let timer = self.schedule_follow(id);
-        if let Some(follow) = self
-            .players
-            .get_mut(&id)
-            .and_then(|p| p.movement.pawn.follow.as_mut())
-        {
+        };
+        let timer = self.schedule_follow(id, range);
+        if let Some(follow) = self.pawn_mut(id).and_then(|p| p.follow.as_mut()) {
             follow.timer = timer;
         }
         self.follow(id);
@@ -392,7 +398,7 @@ impl World {
 
     /// Java `CreatureFollowTaskManager.follow(creature, range)`.
     fn follow(&mut self, id: ObjectId) {
-        let Some(follow) = self.players.get(&id).and_then(|p| p.movement.pawn.follow.clone()) else {
+        let Some(follow) = self.pawn_of(id).and_then(|p| p.follow.clone()) else {
             // The follow target is gone: `ai.setIntentionIdle()`.
             self.set_intention_idle(id);
             return;
@@ -401,14 +407,20 @@ impl World {
             self.set_intention_idle(id);
             return;
         };
+        // `range == -1 ? Rnd.get(50, 100) : range`.
+        let range = if follow.range == NORMAL_FOLLOW_RANGE {
+            self.rng().get(50, 100)
+        } else {
+            follow.range
+        };
         let distance = distance_3d(me, pos);
-        if distance >= f64::from(follow.range) {
+        if distance >= f64::from(range) {
             if distance >= 3000.0 {
                 // If the target is too far (maybe also teleported).
                 self.set_intention_idle(id);
                 return;
             }
-            self.move_to_pawn(id, follow.target, follow.range);
+            self.move_to_pawn(id, follow.target, range);
             // GeoEngine can reject or truncate a route without ever raising ARRIVED. Revalidate
             // rather than leave the action waiting on an event that never comes.
             if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {

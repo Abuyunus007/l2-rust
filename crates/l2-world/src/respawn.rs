@@ -26,6 +26,9 @@
 // 4. [`World::on_respawn_timer`] (Java `Spawn.respawnNpc`): the same object id comes back
 //    (Java re-initialises the same `Npc` object), at a fresh place of its territory when it has one.
 //
+// A minion that is not part of a spawn comes back through `MinionList.MinionRespawnTask`
+// instead (`ai/minions.rs`, `TimerKind::MinionRespawn`).
+//
 // NOTE(java-quirk): Java keeps the `Npc` object between its death and its respawn. Here the
 // entry in `World::npcs` is removed when the corpse decays and a new one is made at the respawn;
 // what lives on is the object id (and the weapon enchant effect the constructor rolled).

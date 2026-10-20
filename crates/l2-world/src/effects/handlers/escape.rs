@@ -56,7 +56,7 @@ impl EffectHandler for Escape {
         let is_guard = world
             .stats(cx.effected)
             .and_then(|v| v.npc_template())
-            .is_some_and(|t| t.npc_type == "Guard");
+            .is_some_and(|t| matches!(t.npc_type.as_str(), "Guard" | "QuestGuard"));
         if is_guard {
             // Java `Guard`: back to the spawn point, with the spawn heading.
             let spawn = world

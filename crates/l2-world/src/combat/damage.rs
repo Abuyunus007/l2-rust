@@ -340,11 +340,17 @@ impl World {
         // `addDamageHate(attacker, damage, (int) hateValue)`: the int cast keeps the low 32 bits.
         self.add_damage_hate(npc, attacker, i64::from(damage), i64::from(hate_value as i32));
         // ON_ATTACKABLE_ATTACK: script event (D-05).
+        // `Guard.addDamage` goes on from here: the guards near it come too.
+        self.guard_add_damage(npc, attacker);
     }
 
     /// Java `Attackable.addDamageHate(attacker, damage, aggroValue)`.
     pub fn add_damage_hate(&mut self, npc: ObjectId, attacker: ObjectId, damage: i64, aggro_value: i64) {
         if attacker == npc {
+            return;
+        }
+        // The overrides of `Defender`, `FortCommander` and `QuestGuard` (`ai/guards.rs`).
+        if self.npc_refuses_hate(npc, attacker) {
             return;
         }
         let attacker_is_player = self.is_player(attacker);

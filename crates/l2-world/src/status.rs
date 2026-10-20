@@ -161,6 +161,10 @@ fn is_attackable(class: NpcClass) -> bool {
             | NpcClass::GrandBoss
             | NpcClass::Block
             | NpcClass::FriendlyMob
+            | NpcClass::Guard
+            | NpcClass::QuestGuard
+            | NpcClass::Defender
+            | NpcClass::FortCommander
     )
 }
 
