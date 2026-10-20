@@ -107,6 +107,8 @@ pub enum ClientInput {
         ctrl_pressed: bool,
         shift_pressed: bool,
     },
+    /// Java `RequestAutoSoulShot`: switch the automatic use of a shot on (`shot_type` 1) or off (0).
+    AutoSoulShot { item_id: i32, shot_type: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

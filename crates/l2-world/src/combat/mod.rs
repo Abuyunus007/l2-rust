@@ -30,7 +30,7 @@
 //   respawn, the death penalty hooks. Rewards and drops are marked `// M4-EXP-01:` and
 //   `// M4-DROP-01:` there.
 // - `// M4-AI-01:` what an attackable NPC does when attacked, its thinking and its aggro list use.
-// - `// M5:` soulshots, skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
+// - `// M5:` skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
 
 pub mod attack;
 pub mod damage;
@@ -157,6 +157,8 @@ impl World {
         self.ai.creatures.remove(&id);
         // The cast state and the reuse stamps go with the object (M5-CAST-01).
         self.forget_cast(id);
+        // The charges and the automatic shots (M5-SHOT-01).
+        self.forget_shots(id);
     }
 
     /// Java `Creature.isAttackingNow()`: an attack is still in its animation.
