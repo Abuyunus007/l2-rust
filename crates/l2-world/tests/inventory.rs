@@ -1166,9 +1166,15 @@ fn destroy_refusals() {
         system_messages(&log.packets())[0].id,
         SystemMessageId::YouCannotDestroyItBecauseTheNumberIsIncorrect
     );
-    // A non-stackable item with count 2 is an exploit attempt: logged, nothing sent.
+    // A non-stackable item with count 2 is an exploit attempt: `handleIllegalPlayerAction` with
+    // the default punishment (KICK) tells the player; the kick itself comes five seconds later
+    // (see tests/punishments.rs).
     destroy(&mut world, 101, 2);
-    assert!(log.take().is_empty());
+    let messages = system_messages(&log.packets());
+    assert_eq!(messages.len(), 1);
+    assert!(
+        format!("{:?}", messages[0].params).contains("You will be kicked for illegal action, GM informed.")
+    );
     assert_eq!(world.player(ME).unwrap().data.items.len(), 2);
 }
 
