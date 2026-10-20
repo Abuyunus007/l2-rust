@@ -5,16 +5,14 @@
 // The handler's own part is here: the target check, the two numbers, the messages to the target
 // and to the GM. The change of the target's exp and sp is `Player.addExpAndSp` (M4-EXP-01,
 // `World::add_exp_and_sp`), and `//add_exp_sp` clamps the sp to `MaxSp` (`settings.exp.max_sp`).
-//
-// # Left out, with the system that brings it
-// - The menu `data/html/admin/expsp.htm` that Java shows after every command of this handler:
-//   its `%class%` needs `ClassListData`, which is not in the world's static data yet (FOLLOW-UP).
-//   Only the target check of that menu is ported (`INVALID_TARGET` for a missing target).
+// The menu `data/html/admin/expsp.htm` follows every command of this handler, with the class name
+// of `ClassListData` (`World::set_class_list`).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 
+use super::skills::player_class_name;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens};
 use crate::world::World;
 
@@ -56,8 +54,7 @@ fn admin_exp_sp(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             world.send_sys_message(gm, "Usage: //remove_exp_sp exp sp");
         }
     }
-    show_menu(world, gm);
-    Ok(())
+    show_menu(world, gm)
 }
 
 /// The target of the handler: a player, or Java's `INVALID_TARGET` (and `false`).
@@ -137,8 +134,23 @@ fn remove_exp_sp(world: &mut World, gm: ObjectId, exp_sp: &str) -> bool {
     true
 }
 
-/// Java `AdminExpSp.addExpSp(activeChar)`: the menu of the target, or `INVALID_TARGET`.
-// FOLLOW-UP(M4): the page `data/html/admin/expsp.htm` with `%class%` from `ClassListData`.
-fn show_menu(world: &mut World, gm: ObjectId) {
-    let _ = target_player(world, gm);
+/// Java `AdminExpSp.addExpSp(activeChar)`: the menu of the target (`expsp.htm`), or
+/// `INVALID_TARGET`. A class the class list lacks is Java's `NullPointerException`.
+fn show_menu(world: &mut World, gm: ObjectId) -> Outcome {
+    let Some(player) = target_player(world, gm) else {
+        return Ok(());
+    };
+    let name = world.object_name(player).unwrap_or_default();
+    let (level, exp, sp) = world
+        .player(player)
+        .map_or((0, 0, 0), |p| (p.data.level, p.data.exp, p.data.sp));
+    let class = player_class_name(world, player)?;
+    let mut html = world.admin_html_file(gm, "data/html/admin/expsp.htm");
+    html.replace("%name%", &name);
+    html.replace("%level%", &level.to_string());
+    html.replace("%xp%", &exp.to_string());
+    html.replace("%sp%", &sp.to_string());
+    html.replace("%class%", &class);
+    world.send_admin_html(gm, &html);
+    Ok(())
 }

@@ -1,52 +1,77 @@
 //! The skill and buff admin commands: `//add_skill <skill_id> [level]`, `//remove_skill <skill_id>`,
-//! `//give_all_skills`, `//remove_all_skills`, `//skill_list`, `//getbuffs [name [page]]`,
-//! `//stopbuff <objectId> <skillId>`, `//stopallbuffs <objectId>` and `//areacancel <radius>`.
+//! `//give_all_skills`, `//remove_all_skills`, `//show_skills`, `//remove_skills <page>`,
+//! `//skill_list`, `//skill_race`, `//skill_class`, `//skill_add_list`, `//skill_index`,
+//! `//getbuffs [name [page]]`, `//getbuffs_ps`, `//stopbuff <objectId> <skillId>`,
+//! `//stopallbuffs <objectId>`, `//viewskilleffects`, `//viewblockedeffects` and
+//! `//areacancel <radius>`, with the admin pages they show.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSkill.java
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminBuffs.java
+// Java: gameserver/data/xml/ClassListData.java (the class names of the pages)
+// Java: dist/game/data/html/admin/{charskills,charskills_add,charskills_race,charskills_class,
+// Java: charskills_add_list,getbuff_skills,getbuff_effects}.htm
 //
 // The command words are the ones `AdminCommands.xml` and the handlers register (`admin_add_skill`
 // is `//add_skill`).
 //
+// # Pages
+// Every list page goes through [`build_page`] (Java's `PageBuilder`, seven rows per page). The
+// class names come from `ClassListData` (`World::set_class_list`); a class missing from it is a
+// `NullPointerException` of the command, as in Java. Java keeps the skills of a page in a
+// `HashSet`/`HashMap` keyed by the identity of the `Skill` object, whose order differs from run to
+// run; here a class' skills are listed by skill id and a creature's buffs in the order of its
+// effect list.
+//
 // # Left out, with the system that brings it
-// - The admin pages. `//skill_list` shows `charskills_add.htm` (the races of the classes with a
-//   skill tree, from `ClassListData`); `//add_skill`, `//remove_skill` and `//getbuffs` end with
-//   the page of the target (`showMainPage`, `removeSkillsPage`, `showBuffs`). `ClassListData` is
-//   not in the static data and there is no `PageBuilder` (pager) yet, so no page is sent. The
-//   checks that come before each page are as Java.
 // - `//add_clan_skill` and `//give_clan_skills`: clans are M6.
-// - `//stopallbuffs` has `confirmDlg="true"` in `AdminCommands.xml`. The framework holds it back
-//   until the ConfirmDlg card; the handler here is the part that runs after the dialog.
 // - `//give_all_skills_fs`, `//setskill`, `//get_skills`, `//reset_skills`, `//buff`,
-//   `//getbuffs_ps`, `//viewskilleffects`, `//viewblockedeffects`, `//removereuse` and
-//   `//switch_gm_buffs` are not in this card.
-// - The `gmaudit` line of each command is written by the framework (`admin/mod.rs`).
+//   `//removereuse` and `//switch_gm_buffs` are not in this card (the buttons of the main page
+//   that call them answer "The command '...' does not exist!").
+// - The `gmaudit` line of each command is written by the framework (`admin/mod.rs`); the extra
+//   lines of `showBuffs`, `//stopbuff`, `//stopallbuffs` and `//viewblockedeffects` are here.
 // - Shortcuts of a removed skill (`deleteShortcut`) go with `World::delete_skill_shortcuts`.
 
-use l2_data::SkillTemplate;
+use std::fmt::Write as _;
+
+use l2_data::{ClassId, Race, SkillTemplate};
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
-use tracing::warn;
+use tracing::{info, warn};
 
+use super::html::{AdminHtml, build_page};
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
-use crate::effects::SkillFinishType;
+use crate::effects::{BuffInfo, SkillFinishType, SkillKey};
+use crate::inventory::java_concurrent_map_order;
 use crate::outbox::PersistCommand;
 use crate::rewards::exp::SkillWrites;
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
 
+/// `AdminSkill.PAGE_LIMIT` and `AdminBuffs.PAGE_LIMIT`.
+const PAGE_LIMIT: i32 = 7;
+
 /// Java `AdminSkill` and `AdminBuffs` registrations (the words the command list has).
 pub(crate) fn register(handlers: &mut AdminHandlers) {
     let table: &[(&str, AdminHandler)] = &[
+        ("admin_show_skills", admin_show_skills),
+        ("admin_remove_skills", admin_remove_skills),
+        ("admin_skill_list", admin_skill_list),
+        ("admin_skill_race", admin_skill_race),
+        ("admin_skill_class", admin_skill_class),
+        ("admin_skill_add_list", admin_skill_add_list),
+        ("admin_skill_index", admin_skill_index),
         ("admin_add_skill", admin_add_skill),
         ("admin_remove_skill", admin_remove_skill),
-        ("admin_skill_list", admin_skill_list),
         ("admin_give_all_skills", admin_give_all_skills),
         ("admin_remove_all_skills", admin_remove_all_skills),
         ("admin_getbuffs", admin_getbuffs),
+        ("admin_getbuffs_ps", admin_getbuffs),
         ("admin_stopbuff", admin_stopbuff),
         ("admin_stopallbuffs", admin_stopallbuffs),
+        ("admin_viewblockedeffects", admin_viewblockedeffects),
+        ("admin_viewskilleffects", admin_viewskilleffects),
+        ("admin_viewskilleffects_ps", admin_viewskilleffects),
         ("admin_areacancel", admin_areacancel),
     ];
     for (command, handler) in table {
@@ -62,12 +87,6 @@ fn target_player(world: &World, gm: ObjectId) -> Option<ObjectId> {
         world.send(gm, &SystemMessage::new(SystemMessageId::InvalidTarget));
     }
     target
-}
-
-/// Java `AdminSkill.showMainPage(activeChar)`: the target check, then the page of the target.
-// FOLLOW-UP(M5-ADMIN-04): the page `data/html/admin/charskills.htm` (`%class%` needs `ClassListData`).
-fn show_main_page(world: &World, gm: ObjectId) {
-    let _ = target_player(world, gm);
 }
 
 /// Java `new StringTokenizer(text)` as a list of words.
@@ -113,6 +132,20 @@ fn known_level(world: &World, id: ObjectId, skill_id: i32) -> i32 {
     })
 }
 
+/// Java `Player.getAllSkills()`: the skills of a character as `(id, level)`, in the iteration
+/// order of Java's `ConcurrentHashMap` of skill ids.
+fn all_skills(world: &World, player: ObjectId) -> Vec<(i32, i32)> {
+    let Some(p) = world.player(player) else {
+        return Vec::new();
+    };
+    let known = &p.core.skills;
+    let keys: Vec<i32> = known.iter().map(|(id, _)| *id).collect();
+    java_concurrent_map_order(&keys)
+        .into_iter()
+        .filter_map(|id| known.iter().find(|(s, _)| *s == id).copied())
+        .collect()
+}
+
 /// Java `Player.removeSkill(skill)` (store = true) for each id: the skill leaves the creature
 /// (`removeSkill(id, true)`, its effects too), its rows leave `character_skills` in one
 /// `SkillChanges` command.
@@ -154,22 +187,459 @@ fn target_creature(world: &World, gm: ObjectId) -> Option<ObjectId> {
         .filter(|t| world.objects.get(t).is_some_and(|e| e.kind.is_creature()))
 }
 
+fn null_pointer() -> JavaException {
+    JavaException("java.lang.NullPointerException".to_owned())
+}
+
+// ------------------------------------------------------------------------------ classes
+
+/// Every `PlayerClass`, in the order of the Java enum (by class id).
+fn player_classes() -> impl Iterator<Item = ClassId> {
+    (0u16..=136).map(ClassId).filter(|c| c.is_player_class())
+}
+
+/// Java `Enum.name()` of a playable race.
+fn race_name(race: Race) -> &'static str {
+    match race {
+        Race::Human => "HUMAN",
+        Race::Elf => "ELF",
+        Race::DarkElf => "DARK_ELF",
+        Race::Orc => "ORC",
+        Race::Dwarf => "DWARF",
+        Race::Kamael => "KAMAEL",
+    }
+}
+
+/// The constants of Java's `Race` that are not playable (`Enum.valueOf` accepts them; no class has
+/// them, so their pages are empty).
+const OTHER_RACES: &[&str] = &[
+    "ANIMAL",
+    "BEAST",
+    "BUG",
+    "CASTLE_GUARD",
+    "CONSTRUCT",
+    "DEMONIC",
+    "DIVINE",
+    "DRAGON",
+    "ELEMENTAL",
+    "ETC",
+    "FAIRY",
+    "GIANT",
+    "HUMANOID",
+    "MERCENARY",
+    "NONE",
+    "PLANT",
+    "SIEGE_WEAPON",
+    "UNDEAD",
+];
+
+/// Java `Enum.valueOf(Race.class, name)`: `Some(race)` for a playable race, `None` for another
+/// constant of the enum, Java's `IllegalArgumentException` for any other text.
+fn race_from_name(name: &str) -> Result<(String, Option<Race>), JavaException> {
+    let playable = [
+        Race::Human,
+        Race::Elf,
+        Race::DarkElf,
+        Race::Orc,
+        Race::Dwarf,
+        Race::Kamael,
+    ];
+    if let Some(race) = playable.into_iter().find(|r| race_name(*r) == name) {
+        return Ok((name.to_owned(), Some(race)));
+    }
+    if OTHER_RACES.contains(&name) {
+        return Ok((name.to_owned(), None));
+    }
+    Err(JavaException(format!(
+        "java.lang.IllegalArgumentException: No enum constant org.l2jmobius.gameserver.entity.actor.enums.creature.Race.{name}"
+    )))
+}
+
+/// Java `Enum.valueOf(PlayerClass.class, name)`.
+fn class_from_name(name: &str) -> Result<ClassId, JavaException> {
+    player_classes()
+        .find(|c| c.enum_name() == Some(name))
+        .ok_or_else(|| {
+            JavaException(format!(
+                "java.lang.IllegalArgumentException: No enum constant org.l2jmobius.gameserver.entity.actor.enums.player.PlayerClass.{name}"
+            ))
+        })
+}
+
+/// Java `StringUtil.enumToString(enum)`: `DARK_ELF` is `Dark Elf`.
+fn enum_to_string(name: &str) -> String {
+    let mut out = String::with_capacity(name.len());
+    let mut capitalize_next = true;
+    for c in name.to_lowercase().chars() {
+        if c == '_' {
+            out.push(' ');
+            capitalize_next = true;
+        } else if capitalize_next {
+            out.extend(c.to_uppercase());
+            capitalize_next = false;
+        } else {
+            out.push(c);
+        }
+    }
+    out
+}
+
+/// `SkillTreeData.getCompleteClassSkillTree(playerClass).isEmpty()` is false.
+fn has_class_tree(world: &World, class: ClassId) -> bool {
+    world
+        .rewards
+        .skill_trees
+        .complete_class_tree(class)
+        .next()
+        .is_some()
+}
+
+/// Java `ClassListData.getInstance().getClass(playerClass).getClassName()`; a class the list does
+/// not have is a `NullPointerException`.
+pub(crate) fn class_name(world: &World, class: ClassId) -> Result<String, JavaException> {
+    world
+        .admin
+        .class_list
+        .get(class)
+        .map(|c| c.name.clone())
+        .ok_or_else(null_pointer)
+}
+
+/// `class_name` of the class a character plays (`player.getPlayerClass()`).
+pub(crate) fn player_class_name(world: &World, player: ObjectId) -> Result<String, JavaException> {
+    let class_id = world.player(player).map_or(-1, |p| p.data.class_id);
+    world
+        .admin
+        .class_list
+        .get_by_id(class_id)
+        .map(|c| c.name.clone())
+        .ok_or_else(null_pointer)
+}
+
 // ----------------------------------------------------------------------------- AdminSkill
+
+/// Java `AdminSkill.showMainPage(activeChar)`: the target check, then `charskills.htm` for the
+/// target.
+fn show_main_page(world: &mut World, gm: ObjectId) -> Outcome {
+    let Some(player) = target_player(world, gm) else {
+        return Ok(());
+    };
+    let name = world.object_name(player).unwrap_or_default();
+    let level = world.player(player).map_or(0, |p| p.data.level);
+    let class = player_class_name(world, player)?;
+    let mut html = world.admin_html_file(gm, "data/html/admin/charskills.htm");
+    html.replace("%name%", &name);
+    html.replace("%level%", &level.to_string());
+    html.replace("%class%", &class);
+    world.send_admin_html(gm, &html);
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_show_skills`: only the exact word shows the page.
+fn admin_show_skills(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    if command == "admin_show_skills" {
+        show_main_page(world, gm)?;
+    }
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_remove_skills <page>`: `Integer.parseInt(command.substring(20))`,
+/// a command shorter than that does nothing (`StringIndexOutOfBoundsException` is caught).
+fn admin_remove_skills(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let Some(value) = command.get(20..) else {
+        return Ok(());
+    };
+    remove_skills_page(world, gm, parse_int(value)?)
+}
+
+/// Java `AdminSkill.removeSkillsPage(activeChar, pageValue)`: ten skills of the target per page,
+/// each a link that removes it.
+fn remove_skills_page(world: &mut World, gm: ObjectId, page_value: i32) -> Outcome {
+    let Some(player) = world.target_of(gm).filter(|t| world.is_player(*t)) else {
+        world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
+        return Ok(());
+    };
+    let skills = all_skills(world, player);
+    let count = i32::try_from(skills.len()).unwrap_or(i32::MAX);
+    let max_skills_per_page = 10;
+    let mut max_pages = count / max_skills_per_page;
+    if count > max_skills_per_page * max_pages {
+        max_pages += 1;
+    }
+    let page = page_value.min(max_pages);
+    let skills_start = max_skills_per_page.wrapping_mul(page);
+    let mut skills_end = count;
+    if skills_end - skills_start > max_skills_per_page {
+        skills_end = skills_start + max_skills_per_page;
+    }
+
+    let name = world.object_name(player).unwrap_or_default();
+    let level = world.player(player).map_or(0, |p| p.data.level);
+    let class = player_class_name(world, player)?;
+    let mut html = String::new();
+    html.push_str("<html><body><table width=260><tr><td width=40><button value=\"Main\" action=\"bypass admin_admin\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td><td width=180><center>Character Selection Menu</center></td><td width=40><button value=\"Back\" action=\"bypass -h admin_show_skills\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><br><br><center>Editing <font color=\"LEVEL\">");
+    let _ = write!(
+        html,
+        "{name}</font></center><br><table width=270><tr><td>Lv: {level} {class}</td></tr></table><br><table width=270><tr><td>Note: Do not forget that modifying players skills can</td></tr><tr><td>ruin the game...</td></tr></table><br><center>Click on the skill you wish to remove:</center><br><center><table width=270><tr>"
+    );
+    for x in 0..max_pages {
+        let _ = write!(
+            html,
+            "<td><a action=\"bypass -h admin_remove_skills {x}\">Page {}</a></td>",
+            x + 1
+        );
+    }
+    html.push_str("</tr></table></center><br><table width=270><tr><td width=80>Name:</td><td width=60>Level:</td><td width=40>Id:</td></tr>");
+    for i in skills_start..skills_end {
+        let Some(&(skill_id, skill_level)) = usize::try_from(i).ok().and_then(|at| skills.get(at)) else {
+            // A negative page: Java indexes the array below 0.
+            return Err(JavaException(format!(
+                "java.lang.ArrayIndexOutOfBoundsException: Index {i} out of bounds for length {count}"
+            )));
+        };
+        let skill_name =
+            skill_template(world, skill_id, skill_level).map_or_else(String::new, |s| s.name.clone());
+        let _ = write!(
+            html,
+            "<tr><td width=80><a action=\"bypass -h admin_remove_skill {skill_id}\">{skill_name}</a></td><td width=60>{skill_level}</td><td width=40>{skill_id}</td></tr>"
+        );
+    }
+    html.push_str("</table><br><center><table>Remove skill by ID :<tr><td>Id: </td><td><edit var=\"id_to_remove\" width=110></td></tr></table></center><center><button value=\"Remove skill\" action=\"bypass -h admin_remove_skill $id_to_remove\" width=110 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center><br><center><button value=\"Back\" action=\"bypass -h admin_current_player\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>");
+    world.send_admin_html(gm, &AdminHtml::from_html(&html));
+    Ok(())
+}
+
+/// Java `AdminSkill.adminAddSkills(player)`: `charskills_add.htm` with the races that have a class
+/// with a skill tree.
+fn admin_add_skills(world: &mut World, gm: ObjectId) -> Outcome {
+    let mut races: Vec<Race> = Vec::new();
+    for class in player_classes() {
+        if let Some(race) = class.race()
+            && !races.contains(&race)
+            && has_class_tree(world, class)
+        {
+            races.push(race);
+        }
+    }
+    let mut list = String::new();
+    for race in races {
+        let name = race_name(race);
+        let _ = write!(
+            list,
+            "<tr><td><a action=\"bypass admin_skill_race {name}\">{}</a></td></tr>",
+            enum_to_string(name)
+        );
+    }
+    let mut html = world.admin_html_file(gm, "data/html/admin/charskills_add.htm");
+    html.replace("%racelist%", &list);
+    world.send_admin_html(gm, &html);
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_skill_list`.
+fn admin_skill_list(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    admin_add_skills(world, gm)
+}
+
+/// Java `AdminSkill.onCommand`, `admin_skill_race [race]`: one word after the command is a race
+/// (Java `split(" ")` length 2), anything else the race list.
+fn admin_skill_race(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let split = super::commands::java_split_space(command);
+    if split.len() == 2 {
+        let (name, race) = race_from_name(split[1])?;
+        admin_add_race_skills(world, gm, &name, race)
+    } else {
+        admin_add_skills(world, gm)
+    }
+}
+
+/// Java `AdminSkill.adminAddRaceSkills(player, race)`: `charskills_race.htm` with the classes of
+/// the race that have a skill tree, coloured by class level.
+fn admin_add_race_skills(world: &mut World, gm: ObjectId, name: &str, race: Option<Race>) -> Outcome {
+    let mut list = String::new();
+    for class in player_classes() {
+        if race.is_none() || class.race() != race || !has_class_tree(world, class) {
+            continue;
+        }
+        let color = match class.class_level() {
+            1 => "999999",
+            2 => "F2B705",
+            3 => "F26005",
+            4 => "FF0022",
+            _ => "777777",
+        };
+        let _ = write!(
+            list,
+            "<tr><td><a action=\"bypass admin_skill_class {}\"><font color=\"{color}\">{}</font></a></td></tr>",
+            class.enum_name().unwrap_or_default(),
+            class_name(world, class)?
+        );
+    }
+    let mut html = world.admin_html_file(gm, "data/html/admin/charskills_race.htm");
+    html.replace("%racename%", &enum_to_string(name));
+    html.replace("%classlist%", &list);
+    world.send_admin_html(gm, &html);
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_skill_class <class> [page]`.
+fn admin_skill_class(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let split = super::commands::java_split_space(command);
+    if split.len() > 1 {
+        let class = class_from_name(split[1])?;
+        let page = match split.get(2) {
+            Some(text) => parse_int(text)?,
+            None => 0,
+        };
+        admin_add_class_skills(world, gm, class, page)
+    } else {
+        admin_add_skills(world, gm)
+    }
+}
+
+/// `SkillData.getSkill(id, 1)` of a skill tree line; Java's `null` for a skill without that level
+/// is a `NullPointerException` once the page reads its icon.
+fn first_level_skill(world: &World, skill_id: i32) -> Result<&SkillTemplate, JavaException> {
+    skill_template(world, skill_id, 1).ok_or_else(null_pointer)
+}
+
+/// Java `AdminSkill.adminAddClassSkills(player, playerClass, page)`: `charskills_class.htm` with the
+/// skills of the class tree (each skill once), seven per page.
+fn admin_add_class_skills(world: &mut World, gm: ObjectId, class: ClassId, page: i32) -> Outcome {
+    // NOTE(java-quirk): Java collects the skills in a `HashSet<Skill>` (identity hash), so the
+    // order is arbitrary; here it is the skill id.
+    let mut ids: Vec<i32> = world
+        .rewards
+        .skill_trees
+        .complete_class_tree(class)
+        .map(|learn| learn.skill_id)
+        .collect();
+    ids.sort_unstable();
+    ids.dedup();
+    let mut skills = Vec::new();
+    for id in ids {
+        skills.push(first_level_skill(world, id)?);
+    }
+
+    let class_enum = class.enum_name().unwrap_or_default();
+    let result = build_page(
+        &skills,
+        PAGE_LIMIT,
+        &format!("bypass admin_skill_class {class_enum}"),
+        page,
+        |skill, sb| {
+            // NOTE(java-quirk): `row` is never incremented, every row has the black background.
+            let _ = write!(
+                sb,
+                "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{}\" width=32 height=32></td><td width=190><font color=\"B09878\"><a action=\"bypass admin_skill_add_list {class_enum} {}\">{} ({})</a></font></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>",
+                skill.icon, skill.id, skill.name, skill.id
+            );
+        },
+    );
+    let name = class_name(world, class)?;
+    let mut html = world.admin_html_file(gm, "data/html/admin/charskills_class.htm");
+    html.replace("%classname%", &name);
+    html.replace("%skilllist%", &result.body);
+    html.replace("%pages%", &result.pager_html());
+    world.send_admin_html(gm, &html);
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_skill_add_list <class> [skillId [page]]`.
+fn admin_skill_add_list(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let split = super::commands::java_split_space(command);
+    if split.len() > 1 {
+        let class = class_from_name(split[1])?;
+        let skill_id = match split.get(2) {
+            Some(text) => parse_int(text)?,
+            None => 1,
+        };
+        let page = match split.get(3) {
+            Some(text) => parse_int(text)?,
+            None => 0,
+        };
+        admin_add_class_skill_list(world, gm, class, skill_id, page)
+    } else {
+        admin_add_skills(world, gm)
+    }
+}
+
+/// Java `AdminSkill.adminAddClassSkillList(player, playerClass, skillId, page)`:
+/// `charskills_add_list.htm` with the levels of one skill of the class tree, lowest level first.
+fn admin_add_class_skill_list(
+    world: &mut World,
+    gm: ObjectId,
+    class: ClassId,
+    skill_id: i32,
+    page: i32,
+) -> Outcome {
+    // A `TreeMap<level, Skill>`: one entry per level, ordered by level.
+    let mut levels: Vec<i32> = world
+        .rewards
+        .skill_trees
+        .complete_class_tree(class)
+        .filter(|learn| learn.skill_id == skill_id)
+        .map(|learn| learn.skill_level)
+        .collect();
+    levels.sort_unstable();
+    levels.dedup();
+    let mut skills = Vec::new();
+    for level in levels {
+        skills.push(skill_template(world, skill_id, level).ok_or_else(null_pointer)?);
+    }
+
+    let class_enum = class.enum_name().unwrap_or_default();
+    let result = build_page(
+        &skills,
+        PAGE_LIMIT,
+        &format!("bypass admin_skill_add_list {class_enum} {skill_id}"),
+        page,
+        |skill, sb| {
+            let _ = write!(
+                sb,
+                "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{}\" width=32 height=32></td><td width=190><font color=\"B09878\"><a action=\"bypass admin_add_skill {} {}\">{} ({})</a></font></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>",
+                skill.icon, skill.id, skill.level, skill.name, skill.level
+            );
+        },
+    );
+    let mut html = world.admin_html_file(gm, "data/html/admin/charskills_add_list.htm");
+    html.replace("%skillid%", &skill_id.to_string());
+    html.replace("%skilllist%", &result.body);
+    html.replace("%classId%", class_enum);
+    html.replace("%pages%", &result.pager_html());
+    world.send_admin_html(gm, &html);
+    Ok(())
+}
+
+/// Java `AdminSkill.onCommand`, `admin_skill_index <page>`: `skills/<page>.htm`; a command shorter
+/// than 18 characters does nothing.
+fn admin_skill_index(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    if let Some(value) = command.get(18..) {
+        world.show_admin_html(gm, &format!("skills/{value}.htm"));
+    }
+    Ok(())
+}
 
 /// Java `AdminSkill.onCommand`, `admin_add_skill`: `adminAddSkill(activeChar, command.substring(15))`.
 /// One or two words: the skill id and its level (1 without one). A bad number or an unknown skill
-/// is "Error: there is no such skill.".
+/// is "Error: there is no such skill.". Whatever the method throws (a class the list lacks, for the
+/// page) is the usage line.
 fn admin_add_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let value = command.get(15..).unwrap_or("");
+    if add_skill(world, gm, value).is_err() {
+        world.send_sys_message(gm, "Usage: //add_skill <skill_id> <level>");
+    }
+    Ok(())
+}
+
+fn add_skill(world: &mut World, gm: ObjectId, value: &str) -> Outcome {
     let Some(player) = target_player(world, gm) else {
         // Java: `INVALID_TARGET`, then `showMainPage` says it again.
-        show_main_page(world, gm);
-        return Ok(());
+        return show_main_page(world, gm);
     };
     let words = split_words(value);
     if words.len() != 1 && words.len() != 2 {
-        show_main_page(world, gm);
-        return Ok(());
+        return show_main_page(world, gm);
     }
 
     let skill_id = parse_int(words[0]);
@@ -180,8 +650,7 @@ fn admin_add_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     };
     let Some((skill_id, skill_level, name)) = template else {
         world.send_sys_message(gm, "Error: there is no such skill.");
-        show_main_page(world, gm);
-        return Ok(());
+        return show_main_page(world, gm);
     };
 
     // Player's info, then the admin's.
@@ -195,17 +664,23 @@ fn admin_add_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let player_name = world.object_name(player).unwrap_or_default();
     world.send_sys_message(gm, &format!("You gave the skill {name} to {player_name}."));
     world.send_skill_list(gm);
-    show_main_page(world, gm);
-    Ok(())
+    show_main_page(world, gm) // Back to start
 }
 
 /// Java `AdminSkill.onCommand`, `admin_remove_skill`: `Integer.parseInt(command.substring(19))`, then
-/// `adminRemoveSkill`. A bad number is the usage line.
+/// `adminRemoveSkill`. A bad number is the usage line, and so is whatever the method throws.
 fn admin_remove_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let Some(skill_id) = command.get(19..).and_then(|text| parse_int(text).ok()) else {
         world.send_sys_message(gm, "Usage: //remove_skill <skill_id>");
         return Ok(());
     };
+    if remove_skill(world, gm, skill_id).is_err() {
+        world.send_sys_message(gm, "Usage: //remove_skill <skill_id>");
+    }
+    Ok(())
+}
+
+fn remove_skill(world: &mut World, gm: ObjectId, skill_id: i32) -> Outcome {
     let Some(player) = target_player(world, gm) else {
         return Ok(());
     };
@@ -218,8 +693,7 @@ fn admin_remove_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome
     };
     let Some(name) = name else {
         world.send_sys_message(gm, "Error: there is no such skill.");
-        // Java: `removeSkillsPage(activeChar, 0)`, the page of the target: FOLLOW-UP.
-        return Ok(());
+        return remove_skills_page(world, gm, 0); // Back to previous page
     };
 
     world.send_message(
@@ -230,15 +704,7 @@ fn admin_remove_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome
     let player_name = world.object_name(player).unwrap_or_default();
     world.send_sys_message(gm, &format!("You removed the skill {name} from {player_name}."));
     world.send_skill_list(gm);
-    // Java: `removeSkillsPage(activeChar, 0)`: FOLLOW-UP (the page of the target).
-    Ok(())
-}
-
-/// Java `AdminSkill.onCommand`, `admin_skill_list`: `adminAddSkills`, the race list page. The page
-/// is FOLLOW-UP (`ClassListData`), so nothing is sent yet.
-// FOLLOW-UP(M5-ADMIN-04): `data/html/admin/charskills_add.htm` with `%racelist%`.
-fn admin_skill_list(_world: &mut World, _gm: ObjectId, _command: &str) -> Outcome {
-    Ok(())
+    remove_skills_page(world, gm, 0) // Back to previous page
 }
 
 /// Java `AdminSkill.adminGiveAllSkills(activeChar, false, false)`: `giveAvailableSkills(false, true,
@@ -276,29 +742,129 @@ fn admin_remove_all_skills(world: &mut World, gm: ObjectId, _command: &str) -> O
 
 // ------------------------------------------------------------------------------ AdminBuffs
 
-/// Java `AdminBuffs.onCommand`, `admin_getbuffs [name [page]]`: a name must be an online character
-/// (else "The player X is not online."), a page must be a number (checked only for an online
-/// character, as Java does); without a name the target must be a creature.
+/// `GMAudit.logAction(gm [objectId], action, target, params)`, when `GMAudit` is on. The file
+/// `log/GMAudit/<name>.txt` comes with the logging card (D-25).
+fn gm_audit(world: &World, gm: ObjectId, action: &str, target: &str, params: &str) {
+    if !world.settings.gm_audit {
+        return;
+    }
+    let name = world.object_name(gm).unwrap_or_default();
+    info!(target: "gmaudit", "{name} [{}]>{action}>{target}>{params}", gm.0);
+}
+
+/// `target.getName() + " (" + target.getObjectId() + ")"`, the audit target of the buff commands.
+fn audit_target(world: &World, target: ObjectId) -> String {
+    format!("{} ({})", world.object_name(target).unwrap_or_default(), target.0)
+}
+
+/// Java `AdminBuffs.showBuffs(activeChar, target, page, passive)`: `getbuff_skills.htm` with one row
+/// per skill the creature is affected by (or has as passive), seven per page.
+fn show_buffs(world: &mut World, gm: ObjectId, target: ObjectId, page: i32, passive: bool) {
+    let now = world.tick;
+    // `Map<Skill, Integer>`: the first info of a skill puts its remaining time, a later one of the
+    // same skill the larger of its abnormal time and what is there.
+    // NOTE(java-quirk): the later infos are compared by abnormal time, not by remaining time.
+    let mut skills: Vec<(SkillKey, i32)> = Vec::new();
+    if let Some(list) = world.effect_list(target) {
+        let infos: Vec<&BuffInfo> = if passive {
+            list.passives().iter().collect()
+        } else {
+            list.effects().collect()
+        };
+        for info in infos {
+            let key = info.skill();
+            match skills.iter_mut().find(|(k, _)| *k == key) {
+                Some((_, time)) => *time = info.abnormal_time().max(*time),
+                None => skills.push((key, info.time(now))),
+            }
+        }
+    }
+
+    let target_name = world.object_name(target).unwrap_or_default();
+    let elements: Vec<(&SkillTemplate, i32)> = skills
+        .iter()
+        .filter_map(|(key, time)| skill_template(world, key.id, key.level).map(|s| (s, *time)))
+        .collect();
+    let link = format!(
+        "bypass admin_getbuffs{} {target_name}",
+        if passive { "_ps" } else { "" }
+    );
+    let result = build_page(&elements, PAGE_LIMIT, &link, page, |(skill, time), sb| {
+        // NOTE(java-quirk): `row` is never incremented, every row has the black background.
+        sb.push_str("<table width=\"295\" bgcolor=\"000000\">");
+        let passive_skill = skill.is_passive();
+        let _ = write!(
+            sb,
+            "<tr><td height=40 width=40><img src=\"{}\" width=32 height=32></td><td width={}><font color=\"B09878\"><a action=\"bypass admin_viewskilleffects{} {} {} {}\">{}",
+            skill.icon,
+            if passive_skill { "850" } else { "650" },
+            if passive { "_ps" } else { "" },
+            target.0,
+            skill.id,
+            skill.level,
+            skill.name
+        );
+        if !skill.name.contains("Lv") && !skill.name.contains("Level") {
+            let _ = write!(sb, " Lv. {}", skill.level);
+        }
+        let time_text = if passive_skill {
+            String::new()
+        } else if skill.is_toggle() {
+            "T".to_owned()
+        } else {
+            format!("{time}s")
+        };
+        let _ = write!(
+            sb,
+            " ({})</a></font></td><td fixwidth={} height=32 valign=\"center\" align=\"center\">{time_text}</td><td><table><tr><td height=5></td></tr><tr><td fixwidth=360><button value=\"X\" action=\"bypass admin_stopbuff {} {}\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>",
+            skill.id,
+            if passive_skill { "1" } else { "200" },
+            target.0,
+            skill.id
+        );
+    });
+
+    let mut html = world.admin_html_file(gm, "data/html/admin/getbuff_skills.htm");
+    html.replace("%pages%", &result.pager_html());
+    html.replace(
+        "%buffsText%",
+        if passive { "Hide Passives" } else { "Show Passives" },
+    );
+    html.replace("%passives%", if passive { "" } else { "_ps" });
+    html.replace("%targetName%", &target_name);
+    html.replace("%targetObjId%", &target.0.to_string());
+    html.replace("%buffs%", &result.body);
+    html.replace("%skillSize%", &skills.len().to_string());
+    world.send_admin_html(gm, &html);
+
+    gm_audit(world, gm, "getbuffs", &audit_target(world, target), "");
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_getbuffs [name [page]]` and `admin_getbuffs_ps`: a name must
+/// be an online character (else "The player X is not online."), a page must be a number (checked
+/// only for an online character, as Java does); without a name the target must be a creature.
 fn admin_getbuffs(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let mut st = Tokens::new(command);
-    st.next_token();
+    let word = st.next_token().unwrap_or_default();
+    let passive = word.ends_with("_ps");
     if let Some(name) = st.next_token() {
-        if world.player_by_name(name).is_none() {
+        let Some(player) = world.player_by_name(name) else {
             world.send_sys_message(gm, &format!("The player {name} is not online."));
             return Ok(());
-        }
-        if let Some(page) = st.next_token() {
+        };
+        let page = match st.next_token() {
             // Java `Integer.parseInt(page)` is not caught: it is the exception of the command.
-            parse_int(page)?;
-        }
-        // FOLLOW-UP(M5-ADMIN-04): `showBuffs` (`data/html/admin/getbuff_skills.htm`, `PageBuilder`).
+            Some(page) => parse_int(page)?,
+            None => 0,
+        };
+        show_buffs(world, gm, player, page, passive);
         return Ok(());
     }
-    if target_creature(world, gm).is_none() {
+    let Some(target) = target_creature(world, gm) else {
         world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
         return Ok(());
-    }
-    // FOLLOW-UP(M5-ADMIN-04): `showBuffs` of the target.
+    };
+    show_buffs(world, gm, target, 0, passive);
     Ok(())
 }
 
@@ -318,7 +884,8 @@ fn admin_stopbuff(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 }
 
 /// Java `AdminBuffs.removeBuff(activeChar, objId, skillId)`: the skill's effects go from a creature
-/// that has them. A missing object or a skill id of 0 or less does nothing.
+/// that has them, then the buff page of the creature. A missing object or a skill id of 0 or less
+/// does nothing.
 fn remove_buff(world: &mut World, gm: ObjectId, object_id: i32, skill_id: i32) {
     let Some(target) = creature_by_id(world, object_id) else {
         return;
@@ -334,7 +901,14 @@ fn remove_buff(world: &mut World, gm: ObjectId, object_id: i32, skill_id: i32) {
             &format!("Removed skill ID: {skill_id} effects from {name} ({object_id})."),
         );
     }
-    // FOLLOW-UP(M5-ADMIN-04): `showBuffs` of the target after the change.
+    show_buffs(world, gm, target, 0, false);
+    gm_audit(
+        world,
+        gm,
+        "stopbuff",
+        &audit_target(world, target),
+        &skill_id.to_string(),
+    );
 }
 
 /// Java `AdminBuffs.onCommand`, `admin_stopallbuffs <objectId>` and `removeAllBuffs`.
@@ -351,7 +925,8 @@ fn admin_stopallbuffs(world: &mut World, gm: ObjectId, command: &str) -> Outcome
     Ok(())
 }
 
-/// Java `AdminBuffs.removeAllBuffs(activeChar, objId)`: `stopAllEffects()` of the creature.
+/// Java `AdminBuffs.removeAllBuffs(activeChar, objId)`: `stopAllEffects()` of the creature, then its
+/// buff page.
 fn remove_all_buffs(world: &mut World, gm: ObjectId, object_id: i32) {
     let Some(target) = creature_by_id(world, object_id) else {
         return;
@@ -359,7 +934,192 @@ fn remove_all_buffs(world: &mut World, gm: ObjectId, object_id: i32) {
     world.stop_all_effects(target);
     let name = world.object_name(target).unwrap_or_default();
     world.send_sys_message(gm, &format!("Removed all effects from {name} ({object_id})"));
-    // FOLLOW-UP(M5-ADMIN-04): `showBuffs` of the target after the change.
+    show_buffs(world, gm, target, 0, false);
+    gm_audit(world, gm, "stopallbuffs", &audit_target(world, target), "");
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_viewblockedeffects <objectId>` and `viewBlockedEffects`.
+fn admin_viewblockedeffects(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let mut st = Tokens::new(command);
+    st.next_token();
+    match int_arg(&mut st) {
+        Ok(object_id) => view_blocked_effects(world, gm, object_id),
+        Err(message) => {
+            world.send_sys_message(gm, &format!("Failed viewing blocked effects: {message}"));
+            world.send_sys_message(gm, "Usage: //viewblockedeffects <objectId>");
+        }
+    }
+    Ok(())
+}
+
+/// Java `AdminBuffs.viewBlockedEffects(activeChar, objId)`: the abnormal types the creature is
+/// protected from, as a small page built in code.
+fn view_blocked_effects(world: &mut World, gm: ObjectId, object_id: i32) {
+    let Some(object) = world.find_object(ObjectId(object_id)) else {
+        world.send_sys_message(gm, &format!("Target with object id {object_id} not found."));
+        return;
+    };
+    // `asCreature()` of another object is `null`, and Java does nothing for it.
+    let Some(target) = creature_by_id(world, object.0) else {
+        return;
+    };
+    let name = world.object_name(target).unwrap_or_default();
+    let blocked: Vec<&'static str> = world
+        .effect_list(target)
+        .map(|list| list.blocked_abnormal_types().iter().map(|t| t.name()).collect())
+        .unwrap_or_default();
+
+    let mut html = String::from(
+        "<html><table width=\"100%\"><tr><td width=45><button value=\"Main\" action=\"bypass admin_admin\" width=45 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td><td width=180><center><font color=\"LEVEL\">Blocked effects of ",
+    );
+    let back = if world.is_player(target) {
+        format!(" {name}")
+    } else {
+        String::new()
+    };
+    let _ = write!(
+        html,
+        "{name}</font></td><td width=45><button value=\"Back\" action=\"bypass admin_getbuffs{back}\" width=45 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><br>"
+    );
+    if !blocked.is_empty() {
+        html.push_str("<br>Blocked buff slots: ");
+        for slot in blocked {
+            let _ = write!(html, "<br>{slot}");
+        }
+    }
+    html.push_str("</html>");
+    world.send_admin_html(gm, &AdminHtml::from_html(&html));
+    gm_audit(world, gm, "viewblockedeffects", &audit_target(world, target), "");
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_viewskilleffects[_ps] <objectId> <skillId> <skillLevel>
+/// [page]`: every failure is the same two lines.
+fn admin_viewskilleffects(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let mut st = Tokens::new(command);
+    st.next_token();
+    let args = int_arg(&mut st)
+        .and_then(|object| int_arg(&mut st).map(|skill| (object, skill)))
+        .and_then(|(object, skill)| int_arg(&mut st).map(|level| (object, skill, level)))
+        .and_then(|(object, skill, level)| {
+            let page = if st.has_more() { int_arg(&mut st)? } else { 0 };
+            Ok((object, skill, level, page))
+        });
+    let result = args.and_then(|(object, skill, level, page)| {
+        view_skill_effects(world, gm, object, skill, level, page, command.contains("_ps"))
+    });
+    if let Err(message) = result {
+        world.send_sys_message(gm, &format!("Failed viewing skill effects: {message}"));
+        world.send_sys_message(gm, "Usage: //viewskilleffects <objectId skillId skillLevel>");
+    }
+    Ok(())
+}
+
+/// Java `AdminBuffs.viewSkillEffects(...)`: `getbuff_effects.htm` with one row per effect of the
+/// skill on the creature. `Err` is the message of an exception Java throws.
+fn view_skill_effects(
+    world: &mut World,
+    gm: ObjectId,
+    object_id: i32,
+    skill_id: i32,
+    skill_level: i32,
+    page: i32,
+    passive: bool,
+) -> Result<(), String> {
+    let Some(object) = world.find_object(ObjectId(object_id)) else {
+        world.send_sys_message(gm, &format!("Target with object id {object_id} not found."));
+        return Ok(());
+    };
+    // `asCreature()` of another object is `null`; the `NullPointerException` of its effect list.
+    // NOTE: the JVM's helpful message is not reproduced.
+    let Some(target) = creature_by_id(world, object.0) else {
+        return Err("null".to_owned());
+    };
+
+    let now = world.tick;
+    let mut count = 0i32;
+    // (skill, in use, remaining seconds, effect names)
+    let mut rows: Vec<(&SkillTemplate, bool, i32, Vec<String>)> = Vec::new();
+    if let Some(list) = world.effect_list(target) {
+        let infos: Vec<&BuffInfo> = if passive {
+            list.passives().iter().collect()
+        } else {
+            list.effects().collect()
+        };
+        for info in infos {
+            let key = info.skill();
+            if key.id != skill_id || key.level != skill_level {
+                continue;
+            }
+            let Some(skill) = skill_template(world, key.id, key.level) else {
+                continue;
+            };
+            count = count.saturating_add(i32::try_from(info.effects().len()).unwrap_or(i32::MAX));
+            // `effect.getClass().getSimpleName()` is the `name` of the effect element.
+            let names = info
+                .effects()
+                .iter()
+                .map(|e| {
+                    skill
+                        .effects
+                        .get(e.scope)
+                        .get(e.index)
+                        .map_or_else(String::new, |t| t.name.clone())
+                })
+                .collect();
+            rows.push((skill, info.is_in_use(), info.time(now), names));
+        }
+    }
+
+    let link = format!(
+        "bypass admin_viewskilleffects{} {object_id} {skill_id} {skill_level}",
+        if passive { "_ps" } else { "" }
+    );
+    let result = build_page(
+        &rows,
+        PAGE_LIMIT,
+        &link,
+        page,
+        |(skill, in_use, time, names), sb| {
+            for effect in names {
+                // NOTE(java-quirk): `row` is never incremented, every row has the black background.
+                sb.push_str("<table width=\"295\" bgcolor=\"000000\"><tr><td width=750>");
+                if !in_use {
+                    sb.push_str("<font color=\"FF0000\">");
+                }
+                let time_text = if skill.is_toggle() {
+                    "T".to_owned()
+                } else if skill.is_passive() {
+                    "P".to_owned()
+                } else {
+                    format!("{time}s")
+                };
+                let _ = write!(sb, "{} Lv. {} ({effect})", skill.name, skill.level);
+                if !in_use {
+                    sb.push_str("</font>");
+                }
+                let _ = write!(
+                    sb,
+                    "</td><td width=180><center>{time_text}</center></td><td width=200><button value=\"X\" action=\"bypass admin_stopbuff {object_id} {}\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>",
+                    skill.id
+                );
+            }
+        },
+    );
+
+    let target_name = world.object_name(target).unwrap_or_default();
+    let mut html = world.admin_html_file(gm, "data/html/admin/getbuff_effects.htm");
+    html.replace("%pages%", &result.pager_html());
+    html.replace(
+        "%buffsText%",
+        if passive { "Hide Passives" } else { "Show Passives" },
+    );
+    html.replace("%passives%", if passive { "" } else { "_ps" });
+    html.replace("%targetName%", &target_name);
+    html.replace("%targetObjId%", &target.0.to_string());
+    html.replace("%buffs%", &result.body);
+    html.replace("%effectSize%", &count.to_string());
+    world.send_admin_html(gm, &html);
+    Ok(())
 }
 
 /// Java `AdminBuffs.onCommand`, `admin_areacancel <radius>`: `stopAllEffects()` of every player
@@ -391,4 +1151,33 @@ fn admin_areacancel(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         ),
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enum_to_string_is_java_enum_to_string() {
+        assert_eq!(enum_to_string("HUMAN"), "Human");
+        assert_eq!(enum_to_string("DARK_ELF"), "Dark Elf");
+        assert_eq!(enum_to_string("SIEGE_WEAPON"), "Siege Weapon");
+    }
+
+    #[test]
+    fn race_and_class_names_follow_enum_value_of() {
+        assert_eq!(
+            race_from_name("DARK_ELF").unwrap(),
+            ("DARK_ELF".to_owned(), Some(Race::DarkElf))
+        );
+        assert_eq!(race_from_name("UNDEAD").unwrap().1, None);
+        assert_eq!(
+            race_from_name("Elf").unwrap_err().0,
+            "java.lang.IllegalArgumentException: No enum constant org.l2jmobius.gameserver.entity.actor.enums.creature.Race.Elf"
+        );
+        assert_eq!(class_from_name("GLADIATOR").unwrap(), ClassId(2));
+        assert_eq!(class_from_name("JUDICATOR").unwrap(), ClassId(136));
+        assert!(class_from_name("gladiator").is_err());
+        assert_eq!(player_classes().count(), 103);
+    }
 }

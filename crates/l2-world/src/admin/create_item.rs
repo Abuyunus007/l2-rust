@@ -10,12 +10,12 @@
 // - `//create_item <id> <amount> <enchant>` for an enchantable item: `OverEnchantProtection` clamps
 //   the enchant to `EnchantItemGroupsData`, which is not ported (FOLLOW-UP(M4)). Such a command
 //   creates nothing and logs a warning. The other cases of the form are as Java.
-// - `GMViewItemList` to the GM after `//delete_item` and `//use_item` (refreshes the GM's item
-//   window): the packet is not ported (FOLLOW-UP(M4)).
 // - `//use_item` of an item that is not equippable runs its item handler (potions, scrolls, ...),
 //   which is M5: nothing happens for those items here.
-// - The ConfirmDlg of `confirmDlg` commands (`//give_item_target`, `//give_item_to_all`,
-//   `//delete_item`, `//use_item`): not ported (FOLLOW-UP(M4)); see `admin/mod.rs`.
+//
+// `//delete_item` and `//use_item` end with `GMViewItemList` (the owner's item window) for the GM.
+// `//give_item_target` and `//give_item_to_all` have `confirmDlg="true"` in `AdminCommands.xml`:
+// typed as `//command` they wait for the answer of a `ConfirmDlg` (`admin/mod.rs`).
 
 use l2_util::ObjectId;
 use tracing::warn;
@@ -301,6 +301,19 @@ fn find_item(world: &World, object_id: ObjectId) -> Result<Found, JavaException>
     }
 }
 
+/// Java `activeChar.sendPacket(new GMViewItemList(player))`: the item window of `owner` for the GM.
+fn send_gm_view_item_list(world: &World, gm: ObjectId, owner: ObjectId) {
+    let Some(limit) = world.stats(owner).map(|v| v.inventory_limit()) else {
+        return;
+    };
+    let Some(player) = world.players.get(&owner) else {
+        return;
+    };
+    let list =
+        crate::enter::gm_view_item_list(&player.data, limit, &*world.data, crate::world::unix_ms_now());
+    world.send(gm, &list);
+}
+
 /// Java `admin_delete_item <objectId> [amount]`: destroys the amount (all of it when 0) of an
 /// item of an online player.
 fn admin_delete_item(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
@@ -313,8 +326,8 @@ fn admin_delete_item(world: &mut World, gm: ObjectId, command: &str) -> Outcome 
     match find_item(world, ObjectId(object_id))? {
         Found::Owned { owner, item } => {
             let count = if count == 0 { item.count } else { count };
-            // FOLLOW-UP(M4): `GMViewItemList` to the GM.
             world.destroy_inventory_item(owner, item.object_id, count);
+            send_gm_view_item_list(world, gm, owner);
             world.send_sys_message(gm, "Item deleted.");
         }
         Found::Unowned => world.send_sys_message(gm, "Item doesn't have owner."),
@@ -336,7 +349,8 @@ fn admin_use_item(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 world.use_equippable_item(owner, item.object_id, false);
             }
             // M5: the item handler of an item that is not equippable (`ItemHandler`) is not
-            // ported. FOLLOW-UP(M4): `GMViewItemList` to the GM.
+            // ported.
+            send_gm_view_item_list(world, gm, owner);
         }
         Found::Unowned => world.send_sys_message(gm, "Item doesn't have owner."),
     }

@@ -33,6 +33,7 @@ use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
+use l2_protocol_game::server::gm_view::GmViewItemList;
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
 use l2_protocol_game::server::interaction::{
@@ -208,6 +209,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::CharacterSelected => decoded::<CharSelected>(&mut r, char_selected_fields),
         ServerOpcode::ServerClose => decoded::<ServerClose>(&mut r, no_fields),
         ServerOpcode::ItemList => decoded::<ItemList>(&mut r, item_list_fields),
+        ServerOpcode::GmViewItemList => decoded::<GmViewItemList>(&mut r, gm_view_item_list_fields),
         ServerOpcode::UserInfo => decoded::<UserInfo>(&mut r, user_info_fields),
         ServerOpcode::ShortCutInit => decoded::<ShortcutInit>(&mut r, shortcut_init_fields),
         ServerOpcode::ShortCutRegister => decoded::<ShortcutRegister>(&mut r, shortcut_register_fields),
@@ -366,6 +368,11 @@ fn item_list_fields(p: &ItemList) -> Value {
     let items: Vec<Value> = p.items.iter().map(item_fields).collect();
     let block = p.block.as_ref().map_or(Value::Null, block_fields);
     json!({ "show_window": p.show_window, "items": items, "block": block })
+}
+
+fn gm_view_item_list_fields(p: &GmViewItemList) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    json!({ "player_name": p.player_name, "limit": p.limit, "items": items })
 }
 
 fn user_info_fields(p: &UserInfo) -> Value {
@@ -895,6 +902,7 @@ mod tests {
         ServerOpcode::CharacterSelected,
         ServerOpcode::ServerClose,
         ServerOpcode::ItemList,
+        ServerOpcode::GmViewItemList,
         ServerOpcode::UserInfo,
         ServerOpcode::ShortCutInit,
         ServerOpcode::ShortCutRegister,
@@ -1224,6 +1232,20 @@ mod tests {
         assert_eq!(fields["name"], "Hero");
         assert_eq!(fields["wit"], 19);
         assert!(!fields.to_string().contains("24301"));
+    }
+
+    #[test]
+    fn gm_view_item_list_shows_its_fields() {
+        let list = GmViewItemList {
+            player_name: "Target".into(),
+            limit: 80,
+            items: vec![ItemInfo::plain(0x1000, 57, 100)],
+        };
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["player_name"], "Target");
+        assert_eq!(fields["limit"], 80);
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        assert_eq!(fields["items"][0]["count"], 100);
     }
 
     #[test]

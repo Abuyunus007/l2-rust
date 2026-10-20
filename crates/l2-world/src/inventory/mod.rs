@@ -44,6 +44,7 @@ mod notify;
 mod paperdoll;
 mod use_item;
 
+pub(crate) use notify::java_concurrent_map_order;
 pub(crate) use paperdoll::body_part_of_worn_item;
 
 use std::sync::Arc;
