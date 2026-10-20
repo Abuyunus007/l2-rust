@@ -5,10 +5,9 @@
 // Java: mechanics/stats/Formulas.java (calcEffectSuccess, calcEffectAbnormalTime,
 //       calcBuffDebuffReflection: the parts that need no M5-FORM-02 formula)
 //
-// The formulas M5-FORM-02 ports (vector-checked) are marked `// M5-FORM-02:` here: the landing
-// rate of `calcEffectSuccess`, the skill mastery and debuff resistance parts of
-// `calcEffectAbnormalTime`. Until then a continuous effect whose skill has an activate rate lands
-// without a draw.
+// The formulas M5-FORM-02 ported (vector-checked, `crate::formulas::effect`) are wired in here: the
+// landing rate of `calcEffectSuccess`, the skill mastery and debuff resistance parts of
+// `calcEffectAbnormalTime`. The inputs the stat view cannot give yet are marked `M5:`.
 
 use l2_data::SkillTemplate;
 use l2_data::skill::{BaseStat as SkillBaseStat, EffectScope, TargetType};
@@ -19,10 +18,13 @@ use l2_util::ObjectId;
 use super::buff_info::{BuffInfo, skill_name_param};
 use super::registry::{EffectCx, EffectType};
 use super::{SkillFinishType, SkillKey};
-use crate::formulas::Rnd;
-use crate::stats::Stat;
+use crate::formulas::{
+    AbnormalTimeInput, AbnormalTimeResists, EffectSuccessInput, Rnd, SkillMasteryInput, attribute_element,
+    calc_attribute_bonus_skill, calc_effect_abnormal_time, calc_effect_success, calc_lvl_bonus_mod,
+};
 use crate::stats::conditions::{self, CondEnv};
 use crate::stats::skills::calc_skill;
+use crate::stats::{BaseStat, Stat, StatView};
 use crate::world::World;
 
 /// The options of Java's six-argument `Skill.applyEffects`.
@@ -393,9 +395,55 @@ impl World {
         if activate_rate == -1 || activate_rate > 99 || skill.basic_property == SkillBaseStat::None {
             return true;
         }
-        // M5-FORM-02: the landing rate (magic level, the target's base stat, element, trait,
-        // m. atk and vulnerability mods, `Rnd.get(100)`; "C1 has resisted your S2" on a miss).
-        true
+        // The landing rate (magic level, the target's base stat, element, trait, m. atk and
+        // vulnerability mods, `Rnd.get(100)`).
+        let landed = self.with_rng(|world, rng| {
+            let (Some(av), Some(tv)) = (world.stats(attacker), world.stats(target)) else {
+                // A creature that left the world cannot be rolled against.
+                return true;
+            };
+            let input = EffectSuccessInput {
+                skill_is_debuff: skill.is_debuff,
+                debuff_immunity: tv.calc_stat(Stat::DebuffImmunity, 0.0, Some(attacker), Some(&ctx)),
+                activate_rate,
+                target_base_stat: match skill.basic_property {
+                    SkillBaseStat::Str => Some(tv.str()),
+                    SkillBaseStat::Dex => Some(tv.dex()),
+                    SkillBaseStat::Con => Some(tv.con()),
+                    SkillBaseStat::Int => Some(tv.int()),
+                    SkillBaseStat::Men => Some(tv.men()),
+                    SkillBaseStat::Wit => Some(tv.wit()),
+                    SkillBaseStat::None => None,
+                },
+                skill_magic_level: skill.magic_level,
+                skill_lvl_bonus_rate: skill.lvl_bonus_rate,
+                target_level: tv.level(),
+                element_mod: skill_attribute_bonus(&av, &tv, skill),
+                // M5: the trait tables (`AttackTrait`, `DefenceTrait`, trait invulnerability) are
+                // not in the stat view yet, so no creature has a trait: the bonus is 1.
+                trait_mod: 1.0,
+                buff_debuff_vuln: tv.calc(
+                    if skill.is_debuff {
+                        Stat::DebuffVuln
+                    } else {
+                        Stat::BuffVuln
+                    },
+                    1.0,
+                ),
+                skill_is_magic: skill.is_magic(),
+                attacker_m_atk: av.m_atk(None, None),
+                // M5-SHOT-01: `isChargedShot(BLESSED_SPIRITSHOTS)` (no shot is charged yet).
+                attacker_blessed_spiritshot_charged: false,
+                target_m_def: tv.m_def(None, None),
+                min_chance: skill.min_chance,
+                max_chance: skill.max_chance,
+            };
+            calc_effect_success(&input, rng)
+        });
+        if !landed {
+            self.send_resisted(attacker, target, skill);
+        }
+        landed
     }
 
     /// "$c1 has resisted your $s2." to the attacker.
@@ -410,18 +458,61 @@ impl World {
     /// effect lasts (`-1` for passives and toggles).
     pub(crate) fn calc_effect_abnormal_time(
         &mut self,
-        _caster: ObjectId,
-        _target: ObjectId,
+        caster: ObjectId,
+        target: ObjectId,
         skill: &SkillTemplate,
     ) -> i32 {
-        // The half time of an herb on a servitor needs summons (M6).
-        // M5-FORM-02: `calcSkillMastery` doubles the time (a draw for players with the stat),
-        // and with `DebuffDurationUsesResists` a debuff's time follows the resistances.
-        if skill.is_passive() || skill.is_toggle() {
-            -1
-        } else {
-            skill.abnormal_time
-        }
+        let passive_or_toggle = skill.is_passive() || skill.is_toggle();
+        let uses_resists = self.settings.effects.debuff_duration_uses_resists;
+        self.with_rng(|world, rng| {
+            let (Some(cv), Some(tv)) = (world.stats(caster), world.stats(target)) else {
+                // A creature that left the world: the plain time.
+                return if passive_or_toggle {
+                    -1
+                } else {
+                    skill.abnormal_time
+                };
+            };
+            let resists = (skill.is_debuff && uses_resists).then(|| AbnormalTimeResists {
+                stat_mod: match skill.basic_property {
+                    SkillBaseStat::Str => tv.bonus(BaseStat::Str),
+                    SkillBaseStat::Dex => tv.bonus(BaseStat::Dex),
+                    SkillBaseStat::Con => tv.bonus(BaseStat::Con),
+                    SkillBaseStat::Int => tv.bonus(BaseStat::Int),
+                    SkillBaseStat::Men => tv.bonus(BaseStat::Men),
+                    SkillBaseStat::Wit => tv.bonus(BaseStat::Wit),
+                    SkillBaseStat::None => 1.0,
+                },
+                // M5: no trait tables in the stat view yet (see `calc_effect_success`).
+                res_mod: 1.0,
+                lvl_bonus_mod: calc_lvl_bonus_mod(
+                    skill.magic_level,
+                    skill.lvl_bonus_rate,
+                    cv.level(),
+                    tv.level(),
+                ),
+                element_mod: skill_attribute_bonus(&cv, &tv, skill),
+            });
+            let input = AbnormalTimeInput {
+                skill_is_passive_or_toggle: passive_or_toggle,
+                skill_abnormal_time: skill.abnormal_time,
+                // The half time of an herb on a servitor needs summons (M6).
+                halve_for_servitor: false,
+                mastery: SkillMasteryInput {
+                    actor_is_player: cv.is_player(),
+                    skill_is_static: skill.is_static(),
+                    skill_mastery: cv.calc(Stat::SkillMastery, 0.0),
+                    str_bonus: cv.bonus(BaseStat::Str),
+                    int_bonus: cv.bonus(BaseStat::Int),
+                    skill_mastery_rate: cv.calc(Stat::SkillMasteryRate, 1.0),
+                    // M5: `SKILL_MASTERY_CHANCE_MULTIPLIERS` is not in the class balance settings
+                    // yet; the default is 1.
+                    class_balance_multiplier: 1.0,
+                },
+                resists,
+            };
+            calc_effect_abnormal_time(&input, rng)
+        })
     }
 
     /// Java `Formulas.calcBuffDebuffReflection(target, skill)`.
@@ -440,4 +531,15 @@ impl World {
             .map_or(0.0, |v| v.calc_stat(stat, 0.0, None, Some(&ctx)));
         reflect_chance > f64::from(self.rng().get_int(100))
     }
+}
+
+/// Java `Formulas.calcAttributeBonus(attacker, target, skill)` for a skill.
+fn skill_attribute_bonus(attacker: &StatView<'_>, target: &StatView<'_>, skill: &SkillTemplate) -> f64 {
+    let element = attribute_element(Some(skill.element), attacker.attack_element());
+    let power = (skill.element != -1).then_some(skill.element_power);
+    calc_attribute_bonus_skill(
+        power,
+        attacker.attack_element_value(element),
+        target.defense_element_value(element),
+    )
 }
