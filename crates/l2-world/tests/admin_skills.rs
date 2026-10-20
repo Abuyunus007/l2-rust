@@ -12,13 +12,14 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
+use l2_data::stats::AbnormalType;
 use l2_data::{
-    ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions, NpcTemplates,
-    PlayerTemplates, SkillLearnData, SkillLoadOptions, SkillTemplates, SkillTrees, SpawnData,
+    ClassList, ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions,
+    NpcTemplates, PlayerTemplates, SkillLearnData, SkillLoadOptions, SkillTemplates, SkillTrees, SpawnData,
     SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
-use l2_protocol_game::server::{ShortcutInit, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ConfirmDlg, NpcHtmlMessage, ShortcutInit, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::*;
 
@@ -105,6 +106,16 @@ fn rights() -> AdminRights {
         ("add_skill", 100, false),
         ("remove_skill", 100, false),
         ("skill_list", 100, false),
+        ("show_skills", 100, false),
+        ("remove_skills", 100, false),
+        ("skill_race", 100, false),
+        ("skill_class", 100, false),
+        ("skill_add_list", 100, false),
+        ("skill_index", 100, false),
+        ("getbuffs_ps", 100, false),
+        ("viewskilleffects", 100, false),
+        ("viewskilleffects_ps", 100, false),
+        ("viewblockedeffects", 100, false),
         ("give_all_skills", 100, false),
         ("remove_all_skills", 100, false),
         ("getbuffs", 100, false),
@@ -120,13 +131,13 @@ fn rights() -> AdminRights {
 /// A passive skill (`Power Strike`, 3 levels, the tree of class 0), an auto-get passive (`Lucky`),
 /// a passive with a reflect effect (`Reflect`, 2 levels), and a timed buff (`Might`, 60 seconds).
 const SKILLS: &str = r#"<list>
-<skill id="3" levels="3" name="Power Strike"><operateType>P</operateType><targetType>SELF</targetType>
+<skill id="3" levels="3" name="Power Strike"><icon>icon.skill0003</icon><operateType>P</operateType><targetType>SELF</targetType>
 <effects><effect name="Buff"><add stat="mDef" val="1"/></effect></effects></skill>
 <skill id="1020" levels="1" name="Lucky"><operateType>P</operateType><targetType>SELF</targetType>
 <effects><effect name="Buff"><add stat="mDef" val="1"/></effect></effects></skill>
 <skill id="3100" levels="2" name="Reflect"><operateType>P</operateType><targetType>SELF</targetType>
 <effects><effect name="Buff"><add stat="reflectDam" val="50"/></effect></effects></skill>
-<skill id="9001" levels="1" name="Might"><operateType>A2</operateType><targetType>SELF</targetType>
+<skill id="9001" levels="1" name="Might"><icon>icon.skill9001</icon><operateType>A2</operateType><targetType>SELF</targetType>
 <abnormalTime>60</abnormalTime><abnormalType>PA_UP</abnormalType><abnormalLevel>1</abnormalLevel>
 <effects><effect name="Buff"><mul stat="pAtk" val="1.1"/></effect></effects></skill>
 </list>"#;
@@ -139,6 +150,20 @@ const TREES: &str = r#"<list>
 <skill skillName="Power Strike" skillId="3" skillLevel="3" getLevel="20" levelUpSp="300" learnedByNpc="true" />
 <skill skillName="Lucky" skillId="1020" skillLevel="1" getLevel="1" autoGet="true" />
 </skillTree>
+<skillTree type="classSkillTree" classId="1">
+<skill skillName="Reflect" skillId="3100" skillLevel="1" getLevel="20" levelUpSp="100" learnedByNpc="true" />
+<skill skillName="Reflect" skillId="3100" skillLevel="2" getLevel="30" levelUpSp="100" learnedByNpc="true" />
+</skillTree>
+<skillTree type="classSkillTree" classId="18">
+<skill skillName="Reflect" skillId="3100" skillLevel="1" getLevel="5" levelUpSp="100" learnedByNpc="true" />
+</skillTree>
+</list>"#;
+
+/// `classList.xml` with the classes of the trees above.
+const CLASS_LIST: &str = r#"<list>
+<class classId="0" name="Human Fighter" />
+<class classId="1" name="Warrior" parentClassId="0" />
+<class classId="18" name="Elven Fighter" />
 </list>"#;
 
 const SKILL_LEARN: &str = r#"<list>
@@ -163,11 +188,19 @@ fn class_data() -> StatData {
 <collisionFemale><radius>8.0</radius><height>23.5</height></collisionFemale>
 </staticData><lvlUpgainData>{levels}</lvlUpgainData></list>"#
     );
+    // Twelve passive skills for the paging of the removal page (ids 501 to 512).
+    let mut skills = SKILLS.trim_end_matches("</list>").to_owned();
+    for id in 501..=512 {
+        skills.push_str(&format!(
+            "<skill id=\"{id}\" levels=\"1\" name=\"Filler {id}\"><operateType>P</operateType><targetType>SELF</targetType></skill>"
+        ));
+    }
+    skills.push_str("</list>");
     StatData {
         player_templates: Arc::new(PlayerTemplates::from_xml(&xml, 85).unwrap()),
         items: Arc::new(ItemTemplates::from_xml("<list></list>").unwrap()),
         skills: Arc::new(SkillTemplates::from_xml(
-            SKILLS,
+            &skills,
             &EnchantSkillGroups::default(),
             &SkillLoadOptions::default(),
         )),
@@ -249,6 +282,14 @@ fn texts_to(out: &Sent, to: i32) -> Vec<String> {
         .collect()
 }
 
+/// The html of every admin page (`NPC_HTML_MESSAGE`) sent to `to`.
+fn html_to(out: &Sent, to: i32) -> Vec<String> {
+    decoded::<NpcHtmlMessage>(out, to, "NPC_HTML_MESSAGE")
+        .into_iter()
+        .map(|m| m.html)
+        .collect()
+}
+
 /// The ids of the system messages (those with no string) sent to `to`.
 fn system_ids_to(out: &Sent, to: i32) -> Vec<SystemMessageId> {
     decoded::<SystemMessage>(out, to, "SYSTEM_MESSAGE")
@@ -290,14 +331,61 @@ const NPC_TEMPLATES: &str = r#"<?xml version="1.0"?><list>
   </npc>
 </list>"#;
 
+/// The pages the skill and buff commands fill in (`data/html/admin/*`), with the same placeholders
+/// as the shipped files (a test below checks that against the datapack when it is there).
+const ADMIN_PAGES: &[(&str, &str)] = &[
+    (
+        "charskills.htm",
+        "<html><body>EDIT %name% Lv %level% %class%</body></html>",
+    ),
+    (
+        "charskills_add.htm",
+        "<html><body>ADD<table>%racelist%</table></body></html>",
+    ),
+    (
+        "charskills_race.htm",
+        "<html><title>%racename% Classes</title><body><table>%classlist%</table></body></html>",
+    ),
+    (
+        "charskills_class.htm",
+        "<html><title>%classname% Skills</title><body>%skilllist%<br>%pages%<br></body></html>",
+    ),
+    (
+        "charskills_add_list.htm",
+        "<html><title>Add Skill (%skillid%)</title><body>%classId%|%skilllist%<br>%pages%<br></body></html>",
+    ),
+    (
+        "getbuff_skills.htm",
+        "<html><body>Effects of %targetName% (%targetObjId%)|%buffs%|%pages%|\
+         <button value=\"%buffsText%\" action=\"bypass admin_getbuffs%passives% %targetName%\">|\
+         Total skill count: %skillSize%</body></html>",
+    ),
+    (
+        "getbuff_effects.htm",
+        // The shipped page does not use `%buffsText%` and `%passives%`, though Java replaces them.
+        "<html><body>Effects of %targetName% (%targetObjId%)|%buffs%|%pages%|\
+         Total effect count: %effectSize%</body></html>",
+    ),
+];
+
 struct Root(tempfile::TempDir);
 
 impl Root {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
-        let file = dir.path().join("data/spawns/none.xml");
-        std::fs::create_dir_all(file.parent().unwrap()).unwrap();
-        std::fs::write(file, r#"<?xml version="1.0"?><list enabled="true"></list>"#).unwrap();
+        let write = |path: &str, text: &str| {
+            let file = dir.path().join(path);
+            std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+            std::fs::write(file, text).unwrap();
+        };
+        write(
+            "data/spawns/none.xml",
+            r#"<?xml version="1.0"?><list enabled="true"></list>"#,
+        );
+        // The admin pages of the shipped datapack, cut down to their placeholders.
+        for (name, body) in ADMIN_PAGES {
+            write(&format!("data/html/admin/{name}"), body);
+        }
         Self(dir)
     }
 
@@ -335,6 +423,7 @@ fn setup() -> Setup {
     let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
     world.set_npc_data(npcs, spawns);
     world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+    world.set_class_list(Arc::new(ClassList::from_xml(CLASS_LIST).unwrap()));
     Setup {
         world,
         log,
@@ -416,6 +505,18 @@ impl Setup {
         });
     }
 
+    /// `DlgAnswer`.
+    fn answer(&mut self, player: i32, message_id: i32, answer: i32) {
+        self.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(player).unwrap()),
+            input: ClientInput::DlgAnswer {
+                message_id,
+                answer,
+                requester_id: 0,
+            },
+        });
+    }
+
     /// The skill level of a character (0 for none), through the stat view.
     fn level_of(&self, id: i32, skill_id: i32) -> i32 {
         self.world.stats(ObjectId(id)).unwrap().skill_level(skill_id)
@@ -439,6 +540,54 @@ fn add_skill_gives_the_skill_and_stores_its_row() {
     let out = s.log.take();
     assert_eq!(texts_to(&out, USER), ["Admin gave you the skill Reflect."]);
     assert_eq!(texts_to(&out, GM), ["You gave the skill Reflect to P1."]);
+    // `showMainPage`: `charskills.htm` of the target, with the class name of `ClassListData`.
+    assert_eq!(
+        html_to(&out, GM),
+        ["<html><body>EDIT P1 Lv 40 Human Fighter</body></html>"]
+    );
+}
+
+/// Java catches whatever `adminAddSkill` throws (here the `NullPointerException` of a class the
+/// class list does not have, in `showMainPage`) and prints the usage line.
+#[test]
+fn add_skill_prints_the_usage_when_the_page_throws() {
+    let mut s = setup();
+    s.world.set_class_list(Arc::new(ClassList::default()));
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    s.cmd(GM, "add_skill 3100 2");
+    // The skill was given before the page failed.
+    assert_eq!(s.level_of(USER, 3100), 2);
+    let out = s.log.take();
+    assert_eq!(
+        texts_to(&out, GM),
+        [
+            "You gave the skill Reflect to P1.",
+            "Usage: //add_skill <skill_id> <level>"
+        ]
+    );
+    assert!(html_to(&out, GM).is_empty());
+
+    // `//remove_skill` ends with the page of the removable skills, which also needs the class.
+    s.cmd(GM, "remove_skill 3100");
+    assert_eq!(s.level_of(USER, 3100), 0);
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "You removed the skill Reflect from P1.",
+            "Usage: //remove_skill <skill_id>"
+        ]
+    );
+
+    // `//show_skills` and the menu are not in a `try`: the dispatcher reports the exception.
+    s.cmd(GM, "show_skills");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Exception during execution of  'admin_show_skills': java.lang.NullPointerException"]
+    );
 }
 
 #[test]
@@ -480,11 +629,13 @@ fn add_skill_with_a_bad_skill_says_there_is_no_such_skill() {
     assert_eq!(s.level_of(USER, 3100), 0);
     assert!(s.persisted.skill_changes().is_empty());
 
-    // Three words, or none: Java opens the page of the target, which is not ported; nothing is
-    // given and nothing is sent.
+    // Three words, or none: Java opens the page of the target; nothing is given and no message
+    // is sent.
     s.cmd(GM, "add_skill 3100 1 2");
     s.cmd(GM, "add_skill");
-    assert!(texts_to(&s.log.take(), GM).is_empty());
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    assert_eq!(html_to(&out, GM).len(), 2);
     assert_eq!(s.level_of(USER, 3100), 0);
 }
 
@@ -524,6 +675,95 @@ fn remove_skill_takes_the_skill_and_stores_the_removal() {
         ["Admin removed the skill Reflect from your skills list."]
     );
     assert_eq!(texts_to(&out, GM), ["You removed the skill Reflect from P1."]);
+    // Java: `removeSkillsPage(activeChar, 0)`, the page of the skills the target still has.
+    let pages = html_to(&out, GM);
+    assert_eq!(pages.len(), 1);
+    assert!(pages[0].contains("Editing <font color=\"LEVEL\">P1</font>"));
+    assert!(pages[0].contains("<td>Lv: 40 Human Fighter</td>"));
+}
+
+const REMOVE_PAGE_HEAD: &str = "<html><body><table width=260><tr><td width=40><button value=\"Main\" action=\"bypass admin_admin\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td><td width=180><center>Character Selection Menu</center></td><td width=40><button value=\"Back\" action=\"bypass -h admin_show_skills\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><br><br><center>Editing <font color=\"LEVEL\">P1</font></center><br><table width=270><tr><td>Lv: 40 Human Fighter</td></tr></table><br><table width=270><tr><td>Note: Do not forget that modifying players skills can</td></tr><tr><td>ruin the game...</td></tr></table><br><center>Click on the skill you wish to remove:</center><br><center><table width=270><tr>";
+const REMOVE_PAGE_MID: &str = "</tr></table></center><br><table width=270><tr><td width=80>Name:</td><td width=60>Level:</td><td width=40>Id:</td></tr>";
+const REMOVE_PAGE_TAIL: &str = "</table><br><center><table>Remove skill by ID :<tr><td>Id: </td><td><edit var=\"id_to_remove\" width=110></td></tr></table></center><center><button value=\"Remove skill\" action=\"bypass -h admin_remove_skill $id_to_remove\" width=110 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center><br><center><button value=\"Back\" action=\"bypass -h admin_current_player\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>";
+
+fn remove_row(skill_id: i32) -> String {
+    format!(
+        "<tr><td width=80><a action=\"bypass -h admin_remove_skill {skill_id}\">Filler {skill_id}</a></td><td width=60>1</td><td width=40>{skill_id}</td></tr>"
+    )
+}
+
+/// `//remove_skills <page>`: ten skills a page in the order of Java's `ConcurrentHashMap` of skill
+/// ids (512 lands in bucket 0 of the 32 buckets, before 501), a link per page, and Java's odd
+/// clamps of the page number.
+#[test]
+fn remove_skills_page_lists_ten_skills_per_page() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    let mut user = player(USER, 0, 100);
+    user.skills = (501..=512).map(|id| known(id, 1)).collect();
+    s.enter_with(user);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.log.take();
+
+    let links = "<td><a action=\"bypass -h admin_remove_skills 0\">Page 1</a></td><td><a action=\"bypass -h admin_remove_skills 1\">Page 2</a></td>";
+    let first: String = [512, 501, 502, 503, 504, 505, 506, 507, 508, 509]
+        .into_iter()
+        .map(remove_row)
+        .collect();
+    s.cmd(GM, "remove_skills 0");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "{REMOVE_PAGE_HEAD}{links}{REMOVE_PAGE_MID}{first}{REMOVE_PAGE_TAIL}"
+        )]
+    );
+
+    let second: String = [510, 511].into_iter().map(remove_row).collect();
+    let expected = format!("{REMOVE_PAGE_HEAD}{links}{REMOVE_PAGE_MID}{second}{REMOVE_PAGE_TAIL}");
+    s.cmd(GM, "remove_skills 1");
+    assert_eq!(html_to(&s.log.take(), GM), vec![expected.clone()]);
+    // A page past the last one is the page `maxPages` (2): empty.
+    s.cmd(GM, "remove_skills 9");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "{REMOVE_PAGE_HEAD}{links}{REMOVE_PAGE_MID}{REMOVE_PAGE_TAIL}"
+        )]
+    );
+
+    // A negative page indexes the array below 0 in Java.
+    s.cmd(GM, "remove_skills -1");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_remove_skills -1': java.lang.ArrayIndexOutOfBoundsException: Index -10 out of bounds for length 12"
+        ]
+    );
+    // A command too short for `substring(20)` does nothing; an empty number is an exception.
+    s.cmd(GM, "remove_skills");
+    assert!(s.log.take().is_empty());
+    s.cmd(GM, "remove_skills ");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_remove_skills ': java.lang.NumberFormatException: For input string: \"\""
+        ]
+    );
+}
+
+#[test]
+fn remove_skills_page_needs_a_player_target() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    s.cmd(GM, "remove_skills 0");
+    let out = s.log.take();
+    assert_eq!(
+        system_ids_to(&out, GM),
+        [SystemMessageId::ThatIsAnIncorrectTarget]
+    );
+    assert!(html_to(&out, GM).is_empty());
 }
 
 #[test]
@@ -675,14 +915,177 @@ fn remove_skill_deletes_the_shortcuts_of_the_skill() {
 
 // ------------------------------------------------------------------------------ //skill_list
 
+/// The races of the classes that have a skill tree (human: classes 0 and 1, elf: class 18).
 #[test]
-fn skill_list_is_registered_but_its_page_is_not_ported() {
+fn skill_list_lists_the_races_with_a_skill_tree() {
     let mut s = setup();
     s.enter(GM, 0);
     s.log.take();
 
-    // Java: `charskills_add.htm` with the race list. The page is FOLLOW-UP: nothing is sent.
     s.cmd(GM, "skill_list");
+    let race = |name: &str, text: &str| {
+        format!("<tr><td><a action=\"bypass admin_skill_race {name}\">{text}</a></td></tr>")
+    };
+    let expected = format!(
+        "<html><body>ADD<table>{}{}</table></body></html>",
+        race("HUMAN", "Human"),
+        race("ELF", "Elf")
+    );
+    assert_eq!(html_to(&s.log.take(), GM), vec![expected.clone()]);
+
+    // `skill_race` and `skill_class` without a name (or with too many words for the race) are the
+    // same list.
+    s.cmd(GM, "skill_race");
+    s.cmd(GM, "skill_race HUMAN ELF");
+    s.cmd(GM, "skill_class");
+    s.cmd(GM, "skill_add_list");
+    assert_eq!(html_to(&s.log.take(), GM), vec![expected; 4]);
+}
+
+#[test]
+fn skill_race_lists_the_classes_with_their_level_colour() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    let class = |name: &str, color: &str, text: &str| {
+        format!(
+            "<tr><td><a action=\"bypass admin_skill_class {name}\"><font color=\"{color}\">{text}</font></a></td></tr>"
+        )
+    };
+    // Class level 0 is the grey default, level 1 is 999999.
+    s.cmd(GM, "skill_race HUMAN");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "<html><title>Human Classes</title><body><table>{}{}</table></body></html>",
+            class("FIGHTER", "777777", "Human Fighter"),
+            class("WARRIOR", "999999", "Warrior")
+        )]
+    );
+    s.cmd(GM, "skill_race ELF");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "<html><title>Elf Classes</title><body><table>{}</table></body></html>",
+            class("ELVEN_FIGHTER", "777777", "Elven Fighter")
+        )]
+    );
+    // A race of the enum with no classes: an empty list. `DARK_ELF` shows as `Dark Elf`.
+    s.cmd(GM, "skill_race DARK_ELF");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><title>Dark Elf Classes</title><body><table></table></body></html>"]
+    );
+    s.cmd(GM, "skill_race UNDEAD");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><title>Undead Classes</title><body><table></table></body></html>"]
+    );
+    // Not a constant of the enum: `Enum.valueOf` throws.
+    s.cmd(GM, "skill_race Elf");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_skill_race Elf': java.lang.IllegalArgumentException: No enum constant org.l2jmobius.gameserver.entity.actor.enums.creature.Race.Elf"
+        ]
+    );
+}
+
+fn class_skill_row(icon: &str, class: &str, id: i32, name: &str) -> String {
+    format!(
+        "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{icon}\" width=32 height=32></td><td width=190><font color=\"B09878\"><a action=\"bypass admin_skill_add_list {class} {id}\">{name} ({id})</a></font></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>"
+    )
+}
+
+fn level_row(icon: &str, id: i32, level: i32, name: &str) -> String {
+    format!(
+        "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{icon}\" width=32 height=32></td><td width=190><font color=\"B09878\"><a action=\"bypass admin_add_skill {id} {level}\">{name} ({level})</a></font></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>"
+    )
+}
+
+#[test]
+fn skill_class_and_add_list_show_the_tree_of_a_class() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.log.take();
+
+    // The tree of class 0: `Power Strike` (3 levels) and `Lucky`, each skill once, by skill id.
+    s.cmd(GM, "skill_class FIGHTER");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "<html><title>Human Fighter Skills</title><body>{}{}<br><br></body></html>",
+            class_skill_row("icon.skill0003", "FIGHTER", 3, "Power Strike"),
+            class_skill_row("icon.skill0000", "FIGHTER", 1020, "Lucky"),
+        )]
+    );
+    // The tree of class 1 adds `Reflect`; a page that does not exist is the last one.
+    s.cmd(GM, "skill_class WARRIOR 7");
+    let out = html_to(&s.log.take(), GM);
+    assert_eq!(out.len(), 1);
+    assert!(out[0].contains("<title>Warrior Skills</title>"));
+    assert!(out[0].contains(&class_skill_row("icon.skill0000", "WARRIOR", 3100, "Reflect")));
+
+    // The levels of one skill, lowest first.
+    s.cmd(GM, "skill_add_list FIGHTER 3");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "<html><title>Add Skill (3)</title><body>FIGHTER|{}{}{}<br><br></body></html>",
+            level_row("icon.skill0003", 3, 1, "Power Strike"),
+            level_row("icon.skill0003", 3, 2, "Power Strike"),
+            level_row("icon.skill0003", 3, 3, "Power Strike"),
+        )]
+    );
+    // No skill id: skill 1 (not in the tree), an empty list.
+    s.cmd(GM, "skill_add_list FIGHTER");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><title>Add Skill (1)</title><body>FIGHTER|<br><br></body></html>"]
+    );
+
+    // Names and numbers that Java throws on.
+    s.cmd(GM, "skill_class NOBODY");
+    s.cmd(GM, "skill_class FIGHTER x");
+    s.cmd(GM, "skill_add_list FIGHTER 3 y");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Exception during execution of  'admin_skill_class NOBODY': java.lang.IllegalArgumentException: No enum constant org.l2jmobius.gameserver.entity.actor.enums.player.PlayerClass.NOBODY",
+            "Exception during execution of  'admin_skill_class FIGHTER x': java.lang.NumberFormatException: For input string: \"x\"",
+            "Exception during execution of  'admin_skill_add_list FIGHTER 3 y': java.lang.NumberFormatException: For input string: \"y\"",
+        ]
+    );
+}
+
+#[test]
+fn skill_index_and_show_skills_open_their_pages() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    // `skill_index <name>` is `data/html/admin/skills/<name>.htm`: missing in the test datapack,
+    // so Java's "My text is missing" page. A command too short for `substring(18)` does nothing.
+    s.cmd(GM, "skill_index fighter");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><body>My text is missing:<br>data/html/admin/skills/fighter.htm</body></html>"]
+    );
+    s.cmd(GM, "skill_index");
+    assert!(s.log.take().is_empty());
+
+    // `show_skills` needs a player target; with the exact word only.
+    s.cmd(GM, "show_skills");
+    assert_eq!(system_ids_to(&s.log.take(), GM), [SystemMessageId::InvalidTarget]);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.cmd(GM, "show_skills");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><body>EDIT P1 Lv 40 Human Fighter</body></html>"]
+    );
+    s.cmd(GM, "show_skills now");
     assert!(s.log.take().is_empty());
 }
 
@@ -715,11 +1118,81 @@ fn getbuffs_checks_the_target_and_the_online_name() {
         ]
     );
 
-    // An online name, or a target: the page of the buffs is FOLLOW-UP, so nothing is sent.
+    // An online name, or a target: the page of the buffs, empty here.
     s.cmd(GM, "getbuffs p1");
     s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
     s.cmd(GM, "getbuffs");
-    assert!(texts_to(&s.log.take(), GM).is_empty());
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    assert_eq!(
+        html_to(&out, GM),
+        vec![buffs_page("P1", 1, "", "", "Show Passives", "_ps", 0); 2]
+    );
+}
+
+/// `getbuff_skills.htm` of the test datapack, filled in.
+fn buffs_page(
+    name: &str,
+    object_id: i32,
+    buffs: &str,
+    pages: &str,
+    text: &str,
+    passives: &str,
+    size: usize,
+) -> String {
+    format!(
+        "<html><body>Effects of {name} ({object_id})|{buffs}|{pages}|<button value=\"{text}\" action=\"bypass admin_getbuffs{passives} {name}\">|Total skill count: {size}</body></html>"
+    )
+}
+
+/// One row of the buff page: a skill the creature is affected by, with its remaining seconds.
+fn buff_row(icon: &str, name: &str, object_id: i32, id: i32, level: i32, time: &str) -> String {
+    format!(
+        "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{icon}\" width=32 height=32></td><td width=650><font color=\"B09878\"><a action=\"bypass admin_viewskilleffects {object_id} {id} {level}\">{name} Lv. {level} ({id})</a></font></td><td fixwidth=200 height=32 valign=\"center\" align=\"center\">{time}</td><td><table><tr><td height=5></td></tr><tr><td fixwidth=360><button value=\"X\" action=\"bypass admin_stopbuff {object_id} {id}\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>"
+    )
+}
+
+#[test]
+fn getbuffs_shows_the_buffs_of_a_player_or_the_target() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.world
+        .apply_effects(ObjectId(USER), ObjectId(USER), SkillKey::new(9001, 1));
+    s.log.take();
+
+    let row = buff_row("icon.skill9001", "Might", 1, 9001, 1, "60s");
+    let expected = buffs_page("P1", 1, &row, "", "Show Passives", "_ps", 1);
+    s.cmd(GM, "getbuffs p1");
+    assert_eq!(html_to(&s.log.take(), GM), vec![expected.clone()]);
+
+    // The target, a character: the same page, and a page number that does not exist is the page.
+    s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
+    s.cmd(GM, "getbuffs");
+    s.cmd(GM, "getbuffs P1 5");
+    assert_eq!(html_to(&s.log.take(), GM), [expected.clone(), expected]);
+
+    // `getbuffs_ps` lists the passive skills of the creature instead, with no time.
+    s.cmd(GM, "getbuffs_ps");
+    let out = html_to(&s.log.take(), GM);
+    assert_eq!(out.len(), 1);
+    assert!(out[0].contains("<button value=\"Hide Passives\" action=\"bypass admin_getbuffs P1\">"));
+}
+
+#[test]
+fn getbuffs_target_can_be_a_monster() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    let rat = s.world.spawn_npc_at(2000, X + 50, Y, Z, 0).unwrap();
+    s.world.set_target(ObjectId(GM), Some(rat));
+    s.log.take();
+
+    // A monster without effects: an empty page with its name and object id.
+    s.cmd(GM, "getbuffs");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [buffs_page("Rat", rat.0, "", "", "Show Passives", "_ps", 0)]
+    );
 }
 
 // ---------------------------------------------------------------------------- //stopbuff
@@ -734,19 +1207,29 @@ fn stopbuff_removes_the_effect_of_one_skill_of_the_target() {
     assert!(s.world.is_affected_by_skill(ObjectId(USER), 9001));
     s.log.take();
 
-    // Java: `stopSkillEffects(REMOVED, 9001)` on the object 1 and its message.
+    // Java: `stopSkillEffects(REMOVED, 9001)` on the object 1, its message, then the buff page of
+    // the target (now without the skill).
     s.cmd(GM, "stopbuff 1 9001");
     assert!(!s.world.is_affected_by_skill(ObjectId(USER), 9001));
+    let out = s.log.take();
     assert_eq!(
-        texts_to(&s.log.take(), GM),
+        texts_to(&out, GM),
         ["Removed skill ID: 9001 effects from P1 (1)."]
     );
+    assert_eq!(
+        html_to(&out, GM),
+        [buffs_page("P1", 1, "", "", "Show Passives", "_ps", 0)]
+    );
 
-    // Not affected any more, an object that is not there, or a skill id of 0: nothing is said.
+    // Not affected any more: no message, but the page is shown again. An object that is not
+    // there, or a skill id of 0: nothing at all.
     s.cmd(GM, "stopbuff 1 9001");
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    assert_eq!(html_to(&out, GM).len(), 1);
     s.cmd(GM, "stopbuff 999999 9001");
     s.cmd(GM, "stopbuff 1 0");
-    assert!(texts_to(&s.log.take(), GM).is_empty());
+    assert!(s.log.take().is_empty());
 }
 
 #[test]
@@ -787,10 +1270,16 @@ fn stopallbuffs_stops_every_effect_of_the_target() {
         .apply_effects(ObjectId(USER), ObjectId(USER), SkillKey::new(9001, 1));
     s.log.take();
 
-    // The part that runs after the confirm dialog (the framework does not run the dialog yet).
+    // The part that runs after the confirm dialog said yes.
     s.world.admin_command(ObjectId(GM), "admin_stopallbuffs 1", false);
     assert!(!s.world.is_affected_by_skill(ObjectId(USER), 9001));
-    assert_eq!(texts_to(&s.log.take(), GM), ["Removed all effects from P1 (1)"]);
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, GM), ["Removed all effects from P1 (1)"]);
+    // Then the buff page of the target.
+    assert_eq!(
+        html_to(&out, GM),
+        [buffs_page("P1", 1, "", "", "Show Passives", "_ps", 0)]
+    );
 
     // A missing object id: the Java failure lines (the handler, past the confirm dialog).
     s.world.admin_command(ObjectId(GM), "admin_stopallbuffs", false);
@@ -812,13 +1301,128 @@ fn stopallbuffs_from_the_chat_waits_for_the_confirm_dialog() {
         .apply_effects(ObjectId(USER), ObjectId(USER), SkillKey::new(9001, 1));
     s.log.take();
 
-    // `AdminCommands.xml` has `confirmDlg="true"` for stopallbuffs: the framework tells the GM and
-    // runs nothing until the ConfirmDlg card.
+    // `AdminCommands.xml` has `confirmDlg="true"` for stopallbuffs: the GM is asked first.
     s.cmd(GM, "stopallbuffs 1");
     assert!(s.world.is_affected_by_skill(ObjectId(USER), 9001));
+    let out = s.log.take();
+    let dialogs = decoded::<ConfirmDlg>(&out, GM, "CONFIRM_DLG");
+    assert_eq!(dialogs.len(), 1);
+    assert_eq!(dialogs[0].message.id, SystemMessageId::S13);
+    assert_eq!(
+        dialogs[0].message.params,
+        [SystemMessageParam::Text(
+            "Are you sure you want execute command 'stopallbuffs' ?".to_owned()
+        )]
+    );
+
+    // A no changes nothing.
+    s.answer(GM, SystemMessageId::S13.id(), 0);
+    assert!(s.world.is_affected_by_skill(ObjectId(USER), 9001));
+    s.log.take();
+
+    // A yes runs the command: the effects go, the GM is told and gets the buff page.
+    s.cmd(GM, "stopallbuffs 1");
+    s.log.take();
+    s.answer(GM, SystemMessageId::S13.id(), 1);
+    assert!(!s.world.is_affected_by_skill(ObjectId(USER), 9001));
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, GM), ["Removed all effects from P1 (1)"]);
+    assert_eq!(html_to(&out, GM).len(), 1);
+    assert!(decoded::<ConfirmDlg>(&out, GM, "CONFIRM_DLG").is_empty());
+}
+
+// ------------------------------------------------------- //viewskilleffects, //viewblockedeffects
+
+#[test]
+fn viewskilleffects_shows_the_effects_of_one_skill() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.world
+        .apply_effects(ObjectId(USER), ObjectId(USER), SkillKey::new(9001, 1));
+    s.log.take();
+
+    s.cmd(GM, "viewskilleffects 1 9001 1");
+    let row = "<table width=\"295\" bgcolor=\"000000\"><tr><td width=750>Might Lv. 1 (Buff)</td><td width=180><center>60s</center></td><td width=200><button value=\"X\" action=\"bypass admin_stopbuff 1 9001\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>";
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        [format!(
+            "<html><body>Effects of P1 (1)|{row}||Total effect count: 1</body></html>"
+        )]
+    );
+
+    // Another level of the skill has nothing: an empty list, a count of 0 (and the passives list
+    // is searched with `_ps`, which this buff is not in).
+    s.cmd(GM, "viewskilleffects_ps 1 9001 1 3");
+    assert_eq!(
+        html_to(&s.log.take(), GM),
+        ["<html><body>Effects of P1 (1)|||Total effect count: 0</body></html>"]
+    );
+}
+
+#[test]
+fn viewskilleffects_failures_give_the_java_messages() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    for (command, message) in [
+        ("viewskilleffects 1 9001", "null"),
+        ("viewskilleffects x 9001 1", "For input string: \"x\""),
+        ("viewskilleffects 1 9001 1 z", "For input string: \"z\""),
+    ] {
+        s.cmd(GM, command);
+        assert_eq!(
+            texts_to(&s.log.take(), GM),
+            [
+                format!("Failed viewing skill effects: {message}"),
+                "Usage: //viewskilleffects <objectId skillId skillLevel>".to_owned()
+            ],
+            "{command}"
+        );
+    }
+    // An object that is not in the world.
+    s.cmd(GM, "viewskilleffects 999999 1 1");
     assert_eq!(
         texts_to(&s.log.take(), GM),
-        ["The command 'stopallbuffs' needs a confirmation dialog, which is not available yet."]
+        ["Target with object id 999999 not found."]
+    );
+}
+
+#[test]
+fn viewblockedeffects_lists_the_blocked_abnormal_types() {
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 100);
+    s.log.take();
+
+    let page = |back: &str, slots: &str| {
+        format!(
+            "<html><table width=\"100%\"><tr><td width=45><button value=\"Main\" action=\"bypass admin_admin\" width=45 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td><td width=180><center><font color=\"LEVEL\">Blocked effects of P1</font></td><td width=45><button value=\"Back\" action=\"bypass admin_getbuffs{back}\" width=45 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></td></tr></table><br>{slots}</html>"
+        )
+    };
+    s.cmd(GM, "viewblockedeffects 1");
+    assert_eq!(html_to(&s.log.take(), GM), [page(" P1", "")]);
+
+    s.world
+        .add_blocked_abnormal_types(ObjectId(USER), [AbnormalType::PaUp, AbnormalType::Stun]);
+    s.cmd(GM, "viewblockedeffects 1");
+    let out = html_to(&s.log.take(), GM);
+    assert_eq!(out.len(), 1);
+    assert!(out[0].contains("<br>Blocked buff slots: <br>"));
+    assert!(out[0].contains("<br>PA_UP"));
+    assert!(out[0].contains("<br>STUN"));
+
+    s.cmd(GM, "viewblockedeffects");
+    s.cmd(GM, "viewblockedeffects 999999");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        [
+            "Failed viewing blocked effects: null",
+            "Usage: //viewblockedeffects <objectId>",
+            "Target with object id 999999 not found."
+        ]
     );
 }
 
@@ -858,6 +1462,45 @@ fn areacancel_with_a_bad_radius() {
     assert_eq!(
         texts_to(&s.log.take(), GM),
         ["Usage: //areacancel <radius>", "Invalid radius value."]
+    );
+}
+
+/// The `%word%` placeholders of a page.
+fn placeholders(page: &str) -> std::collections::BTreeSet<String> {
+    let mut found = std::collections::BTreeSet::new();
+    let mut rest = page;
+    while let Some(start) = rest.find('%') {
+        let after = &rest[start + 1..];
+        match after.find('%') {
+            Some(end) if after[..end].chars().all(|c| c.is_ascii_alphanumeric()) && end > 0 => {
+                found.insert(format!("%{}%", &after[..end]));
+                rest = &after[end + 1..];
+            }
+            _ => rest = after,
+        }
+    }
+    found
+}
+
+/// The pages of the test datapack fill the same placeholders as the shipped ones, so the tests
+/// above stand for the real pages. Skips without the reference datapack.
+#[test]
+fn the_test_pages_have_the_placeholders_of_the_shipped_pages() {
+    let dir = Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\html\admin");
+    if !dir.is_dir() {
+        eprintln!("skipped: the reference datapack is not here");
+        return;
+    }
+    for (name, body) in ADMIN_PAGES {
+        let shipped = std::fs::read_to_string(dir.join(name)).unwrap();
+        assert_eq!(placeholders(body), placeholders(&shipped), "{name}");
+    }
+    // `expsp.htm` (admin_combat.rs).
+    let shipped = std::fs::read_to_string(dir.join("expsp.htm")).unwrap();
+    let wanted = ["%name%", "%level%", "%class%", "%xp%", "%sp%"];
+    assert_eq!(
+        placeholders(&shipped),
+        wanted.iter().map(|w| (*w).to_owned()).collect()
     );
 }
 

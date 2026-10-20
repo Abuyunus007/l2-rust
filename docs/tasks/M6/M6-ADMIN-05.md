@@ -24,6 +24,8 @@ The admin handlers for parties, clans, karma/pk, summons and pets as Java regist
 2. Single-owner world, ids not references, timers on the wheel, world RNG; no unwrap/expect on external data.
 3. Resolve the `// M6:` markers in your area; list the ones you leave.
 
+- Also (left over from M5-FU-01): the charskills.htm buttons `//get_skills`, `//reset_skills`, `//give_all_skills_fs`, `//setskill`, `//buff`, `//removereuse`, `//switch_gm_buffs` and the clan skill commands (`AdminSkill.java`); `//kill` on a non-GM player calls `stopAllEffects()` (the marker in `admin/combat.rs`).
+
 ## Out of scope
 - Sieges/castles/fortresses/clan halls (M7), Olympiad/Seven Signs (M8), quests (later).
 

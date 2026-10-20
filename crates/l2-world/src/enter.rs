@@ -143,6 +143,23 @@ pub fn quest_item_list(data: &PlayerData, st: &dyn StaticData, now_ms: i64) -> E
     ExQuestItemList { items, block: None }
 }
 
+/// Java `new GMViewItemList(player)`: every inventory item, quest items included, with the
+/// character's name and inventory limit (`getInventoryLimit()`).
+pub fn gm_view_item_list(
+    data: &PlayerData,
+    limit: i32,
+    st: &dyn StaticData,
+    now_ms: i64,
+) -> l2_protocol_game::server::GmViewItemList {
+    l2_protocol_game::server::GmViewItemList {
+        player_name: data.name.clone(),
+        limit,
+        items: inventory_items(data)
+            .map(|item| item_info(item, &item_static(st, item), now_ms))
+            .collect(),
+    }
+}
+
 /// Java `Player.sendSkillList()` for a character without transformation or clan.
 pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
     SkillList {

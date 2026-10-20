@@ -10,9 +10,15 @@
 // ([`World::admin_command`]): only GMs (`isGM` of the access level), the command must have a
 // handler and the character's level must have the right for it (`AdminData.hasAccess`).
 //
+// # The confirmation dialog
+// A command with `confirmDlg="true"` typed as `//command` does not run at once: the GM gets a
+// `ConfirmDlg` (`S1_3`, "Are you sure you want execute command '...' ?") and the command text
+// waits in `AdminWorld::pending_confirm`. The `DlgAnswer` that comes back with the same message id
+// runs it with the confirmation switched off ([`World::admin_confirm_answer`], called by
+// `World::on_dlg_answer`). The `admin_` bypasses of the html panels ask the same way; only the
+// run after the answer does not ask again.
+//
 // # What is left out, with the system that brings it
-// - The `ConfirmDlg` round trip for commands with `confirmDlg="true"` (none of the ported
-//   commands has it): the GM is told so and nothing runs.
 // - Java runs a command on a pool thread and warns when it took more than five seconds; the
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
@@ -21,6 +27,7 @@ pub mod combat;
 pub mod commands;
 pub mod create_item;
 pub mod exp_sp;
+pub mod html;
 pub mod invul;
 pub mod level;
 pub mod punishments;
@@ -29,8 +36,11 @@ pub mod skills;
 
 use std::collections::HashMap;
 use std::fmt;
+use std::sync::Arc;
 
-use l2_protocol_game::server::{ChatType, CreatureSay, SayBody, SenderField};
+use l2_data::ClassList;
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{ChatType, ConfirmDlg, CreatureSay, SayBody, SenderField, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
@@ -94,6 +104,11 @@ impl AdminHandlers {
 /// start, like `MasterHandler` does).
 pub(crate) struct AdminWorld {
     pub(crate) handlers: AdminHandlers,
+    /// `ClassListData`: the class names the admin pages show.
+    pub(crate) class_list: Arc<ClassList>,
+    /// `Player.getAdminConfirmCmd()` of each GM who waits for the answer of a `ConfirmDlg`
+    /// (Java also sets `PlayerAction.ADMIN_COMMAND`; the entry is that action).
+    pub(crate) pending_confirm: HashMap<ObjectId, String>,
 }
 
 impl Default for AdminWorld {
@@ -107,7 +122,11 @@ impl Default for AdminWorld {
         level::register(&mut handlers);
         skills::register(&mut handlers);
         punishments::register(&mut handlers);
-        Self { handlers }
+        Self {
+            handlers,
+            class_list: Arc::new(ClassList::default()),
+            pending_confirm: HashMap::new(),
+        }
     }
 }
 
@@ -174,6 +193,12 @@ pub(crate) fn is_numeric(text: &str) -> bool {
 }
 
 impl World {
+    /// Installs `ClassListData` (`classList.xml`), whose names the admin pages show. Call before
+    /// players enter; without it a page that names a class is Java's `NullPointerException`.
+    pub fn set_class_list(&mut self, class_list: Arc<ClassList>) {
+        self.admin.class_list = class_list;
+    }
+
     /// Registers an admin command handler (Java `AdminCommandHandler.registerHandler`). `command`
     /// is the full word, `admin_` prefix included. A later registration replaces an earlier one.
     pub fn register_admin_handler(&mut self, command: &str, handler: AdminHandler) {
@@ -259,12 +284,13 @@ impl World {
                 .admin_rights()
                 .is_some_and(|rights| rights.requires_confirm(command, level));
         if needs_confirm {
-            // FOLLOW-UP: `ConfirmDlg` + `RequestDlgAnswer` (`PlayerAction.ADMIN_COMMAND`).
-            warn!("{name}: admin command '{command}' needs a confirmation dialog, which is not ported yet");
-            self.send_message(
-                id,
-                &format!("The command '{command_no_prefix}' needs a confirmation dialog, which is not available yet."),
-            );
+            // Java: `setAdminConfirmCmd`, `ConfirmDlg(S1_3)` with the question as its string,
+            // `addAction(ADMIN_COMMAND)`.
+            self.admin.pending_confirm.insert(id, full_command.to_owned());
+            let dialog = ConfirmDlg::new(SystemMessageId::S13).with(SystemMessageParam::Text(format!(
+                "Are you sure you want execute command '{command_no_prefix}' ?"
+            )));
+            self.send(id, &dialog);
             return;
         }
 
@@ -285,6 +311,20 @@ impl World {
             );
             warn!("Exception during execution of {full_command}: {exception}");
         }
+    }
+
+    /// Java `DlgAnswer.runImpl`, the `S1_3` branch `removeAction(PlayerAction.ADMIN_COMMAND)`: the
+    /// answer to the confirmation of an admin command. A yes runs the command again with the
+    /// confirmation off; a no forgets it. Without a waiting command nothing happens.
+    pub(crate) fn admin_confirm_answer(&mut self, player: ObjectId, answer: i32) {
+        let Some(command) = self.admin.pending_confirm.remove(&player) else {
+            return;
+        };
+        if answer == 0 {
+            return;
+        }
+        // The 'useConfirm' must be disabled here, as we don't want to repeat that process.
+        self.admin_command(player, &command, false);
     }
 
     /// Java `AdminHtml.showAdminHtml(player, path)`: a page of `data/html/admin/`, or Java's

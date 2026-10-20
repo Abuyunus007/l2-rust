@@ -12,13 +12,15 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions, NpcTemplates,
-    SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions,
+    ClassList, ExperienceLoss, ExperienceTable, HtmCache, ItemTemplates, KarmaLoss, NpcLoadOptions,
+    NpcTemplates, SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{Die, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{
+    ConfirmDlg, Die, GmViewItemList, NpcHtmlMessage, SystemMessage, SystemMessageParam,
+};
 use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
@@ -374,6 +376,10 @@ impl Root {
             "data/html/admin/itemcreation.htm",
             "<html><body>Item creation</body></html>",
         );
+        write(
+            "data/html/admin/expsp.htm",
+            "<html><body>%name% Lv %level% %class% Exp %xp% SP %sp% for %name%</body></html>",
+        );
         Self(dir)
     }
 
@@ -406,6 +412,9 @@ fn setup_with(mut settings: WorldSettings) -> Setup {
     let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
     world.set_npc_data(npcs, spawns);
     world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+    world.set_class_list(Arc::new(
+        ClassList::from_xml(r#"<list><class classId="0" name="Human Fighter" /></list>"#).unwrap(),
+    ));
     Setup {
         world,
         log,
@@ -707,9 +716,18 @@ fn add_exp_sp_tells_the_player_and_the_gm() {
     assert_eq!(texts_to(&out, USER), ["Admin is adding you 1000 xp and 5 sp."]);
     assert_eq!(texts_to(&out, GM), ["Added 1000 xp and 5 sp to P1."]);
 
-    // Zero and zero: nothing is said.
+    // Zero and zero: nothing is said, and the menu of the target (`expsp.htm`) follows every
+    // command, with the exp and sp the target has by now and the class name of `ClassListData`.
     s.cmd(GM, "add_exp_sp 0 0");
-    assert!(s.log.take().is_empty());
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty() && texts_to(&out, USER).is_empty());
+    let pages = html_to(&out, GM);
+    assert_eq!(pages.len(), 1);
+    let exp = s.world.player(ObjectId(USER)).unwrap().data.exp;
+    assert_eq!(
+        pages[0].html,
+        format!("<html><body>P1 Lv 40 Human Fighter Exp {exp} SP 5 for P1</body></html>")
+    );
 
     // A sign is a number, and `-0` is zero.
     s.cmd(GM, "add_exp_sp +7 -0");
@@ -1114,12 +1132,18 @@ fn give_item_target_needs_a_player_target_and_gives_the_item_to_it() {
     s.enter(USER, 100);
     s.log.take();
 
-    // `confirmDlg="true"`: the command asks first, the dialog is not ported (FOLLOW-UP), so it
-    // does not run from `//` or from a bypass.
+    // `confirmDlg="true"`: the command asks first and runs after the answer.
     s.cmd(GM, "give_item_target 23 2");
+    let out = s.log.take();
+    assert!(texts_to(&out, GM).is_empty());
+    let dialogs = decoded::<ConfirmDlg>(&out, GM, "CONFIRM_DLG");
+    assert_eq!(dialogs.len(), 1);
+    assert_eq!(dialogs[0].message.id, SystemMessageId::S13);
     assert_eq!(
-        texts_to(&s.log.take(), GM),
-        ["The command 'give_item_target' needs a confirmation dialog, which is not available yet."]
+        dialogs[0].message.params,
+        [SystemMessageParam::Text(
+            "Are you sure you want execute command 'give_item_target' ?".to_owned()
+        )]
     );
 
     // The command as it runs after the dialog said yes (`onCommand(.., false)`).
@@ -1197,7 +1221,25 @@ fn delete_item_destroys_the_count_or_the_whole_item_of_its_owner() {
     s.world
         .admin_command(ObjectId(GM), "admin_delete_item 500 2", false);
     assert_eq!(items_of(&s, USER), [(23, 3, "INVENTORY".to_owned())]);
-    assert_eq!(texts_to(&s.log.take(), GM), ["Item deleted."]);
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, GM), ["Item deleted."]);
+    // `GMViewItemList` of the owner goes to the GM, before the message, with what is left.
+    let lists = decoded::<GmViewItemList>(&out, GM, "GM_VIEW_ITEM_LIST");
+    assert_eq!(lists.len(), 1);
+    assert_eq!(lists[0].player_name, "P1");
+    assert_eq!(
+        lists[0].limit,
+        WorldSettings::default().inventory_maximum_no_dwarf
+    );
+    assert_eq!(lists[0].items.len(), 1);
+    assert_eq!((lists[0].items[0].object_id, lists[0].items[0].count), (500, 3));
+    let names: Vec<String> = out
+        .iter()
+        .filter(|(t, _)| *t == GM)
+        .map(|(_, b)| name_of(b))
+        .collect();
+    let at = |name: &str| names.iter().position(|n| n == name).unwrap();
+    assert!(at("GM_VIEW_ITEM_LIST") < at("SYSTEM_MESSAGE"));
     s.world
         .admin_command(ObjectId(GM), "admin_delete_item 500", false);
     assert_eq!(items_of(&s, USER), [(23, 2, "INVENTORY".to_owned())]);
@@ -1228,6 +1270,11 @@ fn use_item_equips_an_equippable_item_of_its_owner() {
 
     s.world.admin_command(ObjectId(GM), "admin_use_item 600", false);
     assert_eq!(items_of(&s, USER), [(12, 1, "PAPERDOLL".to_owned())]);
+    // The GM's item window shows the owner's inventory after the change.
+    let lists = decoded::<GmViewItemList>(&s.log.take(), GM, "GM_VIEW_ITEM_LIST");
+    assert_eq!(lists.len(), 1);
+    assert_eq!(lists[0].items.len(), 1);
+    assert_eq!(lists[0].items[0].equipped, 1);
 
     // Java's `substring(15)` of the bare command, and the number of the command.
     s.log.take();

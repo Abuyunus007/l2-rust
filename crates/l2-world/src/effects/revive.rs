@@ -130,8 +130,9 @@ impl World {
         }
     }
 
-    /// Java `DlgAnswer.runImpl`: the answers the world handles. The dialogs of the other branches
-    /// (offline commands, engagement, summon requests, gates, admin confirms) are not sent yet.
+    /// Java `DlgAnswer.runImpl`: the answers the world handles (the two resurrection questions and
+    /// the confirmation of an admin command). The dialogs of the other branches (offline
+    /// commands, engagement, summon requests, gates) are not sent yet.
     pub(crate) fn on_dlg_answer(
         &mut self,
         player: ObjectId,
@@ -143,7 +144,11 @@ impl World {
             return;
         }
         // ON_PLAYER_DLG_ANSWER script listeners: D-05.
-        if message_id
+        if message_id == SystemMessageId::S13.id() {
+            // The offline, engagement and zone-builder questions share this id (not sent yet);
+            // the admin command confirmation is the one that is (`admin/mod.rs`).
+            self.admin_confirm_answer(player, answer);
+        } else if message_id
             == SystemMessageId::C1IsMakingAnAttemptToResurrectYouIfYouChooseThisPathS2ExperiencePointsWillBeReturnedToYouDoYouWantToBeResurrected
                 .id()
             || message_id == SystemMessageId::YourCharmOfCourageIsTryingToResurrectYouWouldYouLikeToResurrectNow.id()
