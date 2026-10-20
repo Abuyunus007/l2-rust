@@ -49,9 +49,13 @@ impl crate::world::World {
             return;
         }
 
-        // No UseItem is allowed while the player is in special conditions. Stun, paralysis, sleep
-        // and `isControlBlocked` need the effect system (M5); a dead player counts.
-        if self.is_alike_dead(id) {
+        // No UseItem is allowed while the player is in special conditions.
+        if self.is_stunned(id)
+            || self.is_paralyzed(id)
+            || self.is_sleeping(id)
+            || self.is_control_blocked(id)
+            || self.is_alike_dead(id)
+        {
             return;
         }
 
@@ -91,7 +95,11 @@ impl crate::world::World {
                         self.send(id, &cannot_equip);
                         return;
                     }
-                    // Mounts and `isDisarmed()` (an effect flag) are not modelled.
+                    // Mounts are not modelled.
+                    if self.is_disarmed(id) {
+                        self.send(id, &cannot_equip);
+                        return;
+                    }
 
                     // Don't allow other Race to Wear Kamael exclusive Weapons.
                     if !equipped && template.is_weapon() && !self.is_gm(id) {
@@ -283,6 +291,10 @@ impl crate::world::World {
             return;
         };
 
+        // Prevent player from unequipping items in special conditions.
+        if self.is_stunned(id) || self.is_sleeping(id) || self.is_paralyzed(id) || self.is_alike_dead(id) {
+            return;
+        }
         // The English system message say weapon, but it's applied to any equipped item.
         // M5: `isCastingNow() || isCastingSimultaneouslyNow()` join the check with the casts.
         if self.is_attacking_now(id) {

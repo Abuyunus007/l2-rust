@@ -9,9 +9,9 @@
 // in the effect list's passives, its effects' functions are owned by `FuncOwner::Effect`, like
 // Java's `EffectList._passives` and the `AbstractEffect` owners.
 //
-// The talisman slots, the cloak slot and the expertise penalty bonus are read from the passive
-// effects (`EnableCloak`, `TalismanSlot`, `CrystalGradeModify`) here instead of the handlers'
-// `onStart` / `onExit`, which are not ported yet (M5-EFX-02/03).
+// The talisman slots, the cloak slot and the expertise penalty bonus are set by the handlers
+// `TalismanSlot`, `EnableCloak` and `CrystalGradeModify` (`effects/handlers/player_slots.rs`),
+// as Java's `onStart` / `onExit` do, and read back from `CreatureControl`.
 //
 // What other M5 cards bring: skill reuse timestamps of active item skills, `SkillList` updates,
 // skills of summons.
@@ -83,33 +83,11 @@ impl<'w> StatView<'w> {
         })
     }
 
-    /// The parameter `key` of every effect named `name` of the applied passive skills (Java
-    /// `EffectList._passives`), in the order they were applied.
-    fn passive_effect_params(&self, name: &str, key: &str) -> Vec<i32> {
-        let mut out = Vec::new();
-        let (Some(list), Some(data)) = (self.world().effect_list(self.object_id()), self.stat_data()) else {
-            return out;
-        };
-        for info in list.passives() {
-            let skill = info.skill();
-            let Some(template) = data.skills.get(skill.id, skill.level) else {
-                continue;
-            };
-            for effect in info.effects() {
-                let Some(e) = template.effects.get(effect.scope).get(effect.index) else {
-                    continue;
-                };
-                if e.name == name {
-                    out.push(e.param(key).and_then(|v| v.trim().parse().ok()).unwrap_or(0));
-                }
-            }
-        }
-        out
-    }
-
     /// `PlayerStat._cloakSlot`: set by an `EnableCloak` passive effect.
     pub(crate) fn cloak_slot(&self) -> bool {
-        !self.passive_effect_params("EnableCloak", "").is_empty()
+        self.world()
+            .control(self.object_id())
+            .is_some_and(|c| c.cloak_slot)
     }
 
     /// `PlayerStat.getTalismanSlots()`: the `slots` of every `TalismanSlot` passive effect.
@@ -117,15 +95,16 @@ impl<'w> StatView<'w> {
         if !self.is_player() {
             return 0;
         }
-        self.passive_effect_params("TalismanSlot", "slots").iter().sum()
+        self.world()
+            .control(self.object_id())
+            .map_or(0, |c| c.talisman_slots)
     }
 
-    /// `Player._expertisePenaltyBonus`: the `grade` of the last `CrystalGradeModify` effect.
+    /// `Player._expertisePenaltyBonus`: the `grade` of the `CrystalGradeModify` effect.
     pub fn expertise_penalty_bonus(&self) -> i32 {
-        self.passive_effect_params("CrystalGradeModify", "grade")
-            .last()
-            .copied()
-            .unwrap_or(0)
+        self.world()
+            .control(self.object_id())
+            .map_or(0, |c| c.expertise_penalty_bonus)
     }
 }
 

@@ -232,7 +232,7 @@ impl World {
 
     /// Java `PlayerAI.thinkInteract`.
     pub(crate) fn think_interact(&mut self, id: ObjectId) {
-        if self.is_all_skills_disabled(id) || self.is_casting_now(id) {
+        if self.is_all_skills_disabled(id) || self.is_casting_now_for_effects(id) {
             return;
         }
         let target = self.players.get(&id).and_then(|p| p.movement.pawn.ai_target);

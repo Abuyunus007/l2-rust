@@ -9,7 +9,7 @@
 //
 // # Not modelled (each refuses a cast in Java; none of these states exists yet)
 // Fishing (`_fishing`, only the "no fish to fight" refusal of pumping and reeling is reachable),
-// observer mode, sitting, fake death, duels, olympiad, siege friends and territory wars, event
+// observer mode, duels, olympiad, siege friends and territory wars, event
 // monsters, castle and fort sieges of doors (a door in a siege zone has no castle or fort yet),
 // the access level's `allowPeaceAttack` (not loaded: no level has it), signets in peace zones
 // (`checkEffectRangeInsidePeaceZone`, the channelizer is not ported).
@@ -163,14 +163,10 @@ impl World {
         }
     }
 
-    /// Java `Creature.getTarget()` as a creature (`_target.asCreature()`): a player's selected
-    /// target, an NPC's target set by its AI ([`World::set_npc_target`]).
-    pub fn creature_target(&self, id: ObjectId) -> Option<ObjectId> {
-        let target = if self.players.contains_key(&id) {
-            self.target_of(id)
-        } else {
-            self.cast.creatures.get(&id).and_then(|s| s.npc_target)
-        }?;
+    /// Java `_target.asCreature()`: [`World::creature_target`] (`effects/control.rs`) when it is a
+    /// creature.
+    pub(crate) fn cast_selected_target(&self, id: ObjectId) -> Option<ObjectId> {
+        let target = self.creature_target(id)?;
         self.objects
             .get(&target)
             .filter(|e| e.kind.is_creature())
@@ -350,7 +346,17 @@ impl World {
             return false;
         }
 
-        // Observer mode and sitting: not modelled.
+        // Observer mode: not modelled.
+
+        // Check if the caster is sitting.
+        if self.is_sitting(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotMoveWhileSitting),
+            );
+            self.send(id, &ActionFailed);
+            return false;
+        }
 
         // Check if the skill type is toggle.
         if skill.is_toggle() && self.is_affected_by_skill(id, skill.id) {
@@ -359,7 +365,11 @@ impl World {
             return false;
         }
 
-        // `_isFakeDeath` (M5-EFX-02: the FakeDeath handler sets it): never set yet.
+        // Check if the player uses "Fake Death" skill (not before the toggle reset).
+        if self.is_fake_death(id) {
+            self.send(id, &ActionFailed);
+            return false;
+        }
 
         // ---- Check Target
         let target_type = skill.target_type;

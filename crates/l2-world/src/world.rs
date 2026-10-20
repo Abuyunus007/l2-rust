@@ -530,6 +530,7 @@ impl World {
             TimerKind::UpdateAndBroadcastStatus(id) => self.on_update_and_broadcast_status_timer(id),
             // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
+            TimerKind::Control(timer) => self.on_control_timer(timer),
         }
     }
 

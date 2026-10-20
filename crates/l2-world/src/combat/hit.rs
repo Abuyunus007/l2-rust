@@ -209,9 +209,11 @@ pub fn calc_phys_dam_for(
         defence_critical_damage: t.calc_stat(Stat::DefenceCriticalDamage, 1.0, Some(target), None),
         critical_damage_add: a.calc_stat(Stat::CriticalDamageAdd, 0.0, Some(target), None),
         defence_critical_damage_add: t.calc_stat(Stat::DefenceCriticalDamageAdd, 0.0, Some(target), None),
-        // M5: the attack and defence traits come from effects (`AttackTrait`, `DefenceTrait`), none
-        // of which run before M5, so every trait is Java's default (1.0, no trait set).
-        attack_trait_bonus: calc_attack_trait_bonus(1.0, &[]),
+        // The attack and defence traits come from the effects `AttackTrait` and `DefenceTrait`.
+        attack_trait_bonus: {
+            let (weapon_defence_trait, weaknesses) = world.attack_trait_inputs(attacker, target);
+            calc_attack_trait_bonus(weapon_defence_trait, &weaknesses)
+        },
         attacker_has_active_weapon: a.active_weapon_item().is_some(),
         random_damage: a.calc(Stat::RandomDamage, 0.0) as i32,
         attacker_level: a.level(),
@@ -293,8 +295,7 @@ pub fn calc_atk_break_for(world: &World, target: ObjectId, dmg: f64, rng: &mut i
         is_attacking_now: world.is_attacking_now(target),
         active_weapon_is_bow: weapon_type(&t) == Some(WeaponType::Bow),
         is_raid: t.is_raid(),
-        // M5: invulnerability is an effect (and the GM `//invul` command).
-        is_invul: false,
+        is_invul: world.is_invul(target),
         men_bonus: t.bonus(BaseStat::Men),
         attack_cancel: &cancel,
         alt_game_cancel_cast: world.settings.combat.alt_game_cancel_cast,

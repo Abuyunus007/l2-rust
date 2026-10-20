@@ -241,7 +241,10 @@ impl World {
 
     /// Java `Player.doDie(killer)` after `Playable.doDie`.
     fn player_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
-        // Mounts (`stopFeed`), fake death, Krateis arenas: not modelled.
+        // Mounts (`stopFeed`) and Krateis arenas: not modelled.
+        if self.is_fake_death(id) {
+            self.stop_fake_death(id, true);
+        }
         if let Some(killer) = killer {
             // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05); the PvP/PK reward items and the
             // kill announcements (Custom configs, off by default); fake player karma.
@@ -493,7 +496,10 @@ impl World {
         if !self.can_revive(id) {
             return;
         }
-        // `player.isFakeDeath()` -> `stopFakeDeath(true)`: fake death is an effect (M5).
+        if self.is_fake_death(id) {
+            self.stop_fake_death(id, true);
+            return;
+        }
         if !self.is_dead(id) {
             return;
         }

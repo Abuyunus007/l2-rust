@@ -42,6 +42,8 @@ mod notify;
 mod paperdoll;
 mod use_item;
 
+pub(crate) use paperdoll::body_part_of_worn_item;
+
 use std::sync::Arc;
 
 use l2_data::ItemTemplates;

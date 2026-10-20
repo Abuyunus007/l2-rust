@@ -1033,7 +1033,12 @@ impl World {
             show_summon_animation: false,
             name,
             title,
-            abnormal_visual_effects: 0,
+            // `isInvisible() ? effects | STEALTH : effects`.
+            abnormal_visual_effects: if self.objects.get(&subject).is_some_and(|e| e.invisible) {
+                self.abnormal_visual_effects(subject).0 | crate::player_view::STEALTH_MASK
+            } else {
+                self.abnormal_visual_effects(subject).0
+            },
             clan_id: 0,
             clan_crest_id: 0,
             ally_id: 0,
@@ -1051,7 +1056,7 @@ impl World {
             color_effect: 0,
             targetable: template.targetable,
             show_name: template.show_name,
-            abnormal_visual_effect_special: 0,
+            abnormal_visual_effect_special: self.abnormal_visual_effects(subject).1,
             display_effect: npc.display_effect,
         })
     }

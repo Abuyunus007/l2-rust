@@ -6,12 +6,175 @@
 // the alphabetical order of `EffectMasterHandler.EFFECTS`. See `effects/registry.rs` for the
 // pattern; `buff.rs` is the reference handler.
 
+mod add_hate;
+mod apply_skill_effects;
+mod blink;
+mod block;
 mod buff;
+mod cancel;
+mod change_face;
+mod change_hair_color;
+mod change_hair_style;
+mod confuse;
+mod consume_body;
+mod cp_heal;
+mod damage_over_time;
+mod damage_support;
+mod detect_hidden_objects;
+mod detection;
+mod disarm;
+mod dispel_all;
+mod dispel_by_category;
+mod dispel_by_slot;
+mod dispel_by_slot_probability;
+mod distrust;
+mod enemy_charge;
+mod escape;
+mod fake_death;
+mod fear;
+mod flags;
+mod fly;
+mod focus;
+mod get_agro;
+mod give_sp;
+mod hate;
+mod heal;
+mod hide;
+mod hold;
+mod immobile_buff;
+mod mana_heal;
+mod max_vitals;
+mod misc;
+mod misc_damage;
+mod mp_consume_per_level;
+mod mute;
+mod open_door;
+mod params;
+mod player_slots;
+mod recovery;
+mod relax;
+mod restoration;
+mod set_skill;
+mod silent_move;
+mod statset;
+mod status_params;
+mod steal_abnormal;
+mod teleport;
+mod teleport_to_target;
+mod throw_up;
+mod trait_effects;
+mod vitality_point_up;
+mod vitals;
 
 use super::registry::EffectRegistry;
 
 /// Registers every ported handler (Java `EffectMasterHandler.main`); a name that is not listed
 /// here keeps its `Unported` stand-in.
 pub(crate) fn register_all(registry: &mut EffectRegistry) {
+    registry.register("AddHate", add_hate::AddHate::create);
+    registry.register(
+        "ApplySkillEffects",
+        apply_skill_effects::ApplySkillEffects::create,
+    );
+    registry.register("Blink", blink::Blink::create);
     registry.register("Buff", buff::Buff::create);
+    registry.register("CpDamPercent", damage_over_time::CpDamPercent::create);
+    registry.register("CpHeal", cp_heal::CpHeal::create);
+    registry.register("CpHealOverTime", cp_heal::CpHealOverTime::create);
+    registry.register("CpHealPercent", cp_heal::CpHealPercent::create);
+    registry.register("DamOverTime", damage_over_time::DamOverTime::create);
+    registry.register("DamOverTimePercent", damage_over_time::DamOverTimePercent::create);
+    registry.register("HealOverTime", heal::HealOverTime::create);
+    registry.register("HealPercent", heal::HealPercent::create);
+    registry.register("HpByLevel", heal::HpByLevel::create);
+    registry.register("ManaDamOverTime", damage_over_time::ManaDamOverTime::create);
+    registry.register("ManaHeal", mana_heal::ManaHeal::create);
+    registry.register("ManaHealByLevel", mana_heal::ManaHealByLevel::create);
+    registry.register("ManaHealOverTime", mana_heal::ManaHealOverTime::create);
+    registry.register("ManaHealPercent", mana_heal::ManaHealPercent::create);
+    registry.register("MaxCp", max_vitals::MaxCp::create);
+    registry.register("MaxHp", max_vitals::MaxHp::create);
+    registry.register("RebalanceHP", misc_damage::RebalanceHp::create);
+    registry.register("StaticDamage", misc_damage::StaticDamage::create);
+    registry.register("TransferDamage", misc_damage::TransferDamage::create);
+    registry.register("ChangeFace", change_face::ChangeFace::create);
+    registry.register("ChangeHairColor", change_hair_color::ChangeHairColor::create);
+    registry.register("ChangeHairStyle", change_hair_style::ChangeHairStyle::create);
+    registry.register("ConsumeBody", consume_body::ConsumeBody::create);
+    registry.register(
+        "DetectHiddenObjects",
+        detect_hidden_objects::DetectHiddenObjects::create,
+    );
+    registry.register("Detection", detection::Detection::create);
+    registry.register("DispelAll", dispel_all::DispelAll::create);
+    registry.register("DispelByCategory", dispel_by_category::DispelByCategory::create);
+    registry.register("DispelBySlot", dispel_by_slot::DispelBySlot::create);
+    registry.register(
+        "DispelBySlotProbability",
+        dispel_by_slot_probability::DispelBySlotProbability::create,
+    );
+    registry.register("Escape", escape::Escape::create);
+    registry.register("GetAgro", get_agro::GetAgro::create);
+    registry.register("GiveSp", give_sp::GiveSp::create);
+    registry.register(
+        "MpConsumePerLevel",
+        mp_consume_per_level::MpConsumePerLevel::create,
+    );
+    registry.register("OpenDoor", open_door::OpenDoor::create);
+    registry.register("Recovery", recovery::Recovery::create);
+    registry.register("Restoration", restoration::Restoration::create);
+    registry.register("SetSkill", set_skill::SetSkill::create);
+    registry.register("StealAbnormal", steal_abnormal::StealAbnormal::create);
+    registry.register("Teleport", teleport::Teleport::create);
+    registry.register("TeleportToTarget", teleport_to_target::TeleportToTarget::create);
+    registry.register("ThrowUp", throw_up::ThrowUp::create);
+    registry.register("VitalityPointUp", vitality_point_up::VitalityPointUp::create);
+    // M5-EFX-02: the status handlers.
+    registry.register("AttackTrait", trait_effects::AttackTrait::create);
+    registry.register("Betray", confuse::Betray::create);
+    registry.register("BlockAbnormalSlot", block::BlockAbnormalSlot::create);
+    registry.register("BlockAction", block::BlockAction::create);
+    registry.register("BlockChat", block::BlockChat::create);
+    registry.register("BlockResurrection", flags::BlockResurrection::create);
+    registry.register("Bluff", misc::Bluff::create);
+    registry.register("ChameleonRest", relax::ChameleonRest::create);
+    registry.register("Confuse", confuse::Confuse::create);
+    registry.register("CrystalGradeModify", player_slots::CrystalGradeModify::create);
+    registry.register("Debuff", flags::Debuff::create);
+    registry.register("DefenceTrait", trait_effects::DefenceTrait::create);
+    registry.register("Disarm", disarm::Disarm::create);
+    registry.register("Distrust", distrust::Distrust::create);
+    registry.register("EnableCloak", player_slots::EnableCloak::create);
+    registry.register("EnemyCharge", enemy_charge::EnemyCharge::create);
+    registry.register("EnlargeAbnormalSlot", block::EnlargeAbnormalSlot::create);
+    registry.register("FakeDeath", fake_death::FakeDeath::create);
+    registry.register("Fear", fear::Fear::create);
+    registry.register("Flag", misc::Flag::create);
+    registry.register("FocusEnergy", focus::FocusEnergy::create);
+    registry.register("FocusMaxEnergy", focus::FocusMaxEnergy::create);
+    registry.register("FocusSouls", focus::FocusSouls::create);
+    registry.register("Hide", hide::Hide::create);
+    registry.register("ImmobileBuff", immobile_buff::ImmobileBuff::create);
+    registry.register("Invincible", flags::Invincible::create);
+    registry.register("Lucky", flags::Lucky::create);
+    registry.register("Mute", mute::Mute::create);
+    registry.register("NoblesseBless", flags::NoblesseBless::create);
+    registry.register("Paralyze", hold::Paralyze::create);
+    registry.register("Passive", misc::Passive::create);
+    registry.register("Petrification", hold::Petrification::create);
+    registry.register("PhysicalDamageMute", mute::PhysicalDamageMute::create);
+    registry.register("PhysicalMute", mute::PhysicalMute::create);
+    registry.register("PolearmSingleTarget", flags::PolearmSingleTarget::create);
+    registry.register("ProtectionBlessing", flags::ProtectionBlessing::create);
+    registry.register("Relax", relax::Relax::create);
+    registry.register("ResistSkill", block::ResistSkill::create);
+    registry.register("Root", hold::Root::create);
+    registry.register("RunAway", fear::RunAway::create);
+    registry.register("SilentMove", silent_move::SilentMove::create);
+    registry.register("SkillTurning", misc::SkillTurning::create);
+    registry.register("Sleep", hold::Sleep::create);
+    registry.register("SoulEating", focus::SoulEating::create);
+    registry.register("Stun", hold::Stun::create);
+    registry.register("TalismanSlot", player_slots::TalismanSlot::create);
+    registry.register("TargetCancel", misc::TargetCancel::create);
 }

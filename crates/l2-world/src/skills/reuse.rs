@@ -29,7 +29,6 @@ use l2_protocol_game::server::enterworld::{
 };
 use l2_util::ObjectId;
 
-use crate::effects::effect_flag;
 use crate::world::World;
 
 /// Java `TimeStamp` of a skill. `stamp_ms` is on the world clock; 0 means "passed".
@@ -291,15 +290,10 @@ impl World {
         }
     }
 
-    /// Java `Creature.isAllSkillsDisabled()`: the lock, or stunned, asleep or paralyzed.
-    // NOTE: Java's `isParalyzed()` also reads `_isParalyzed` (`setParalyzed`, used by scripts and
-    // olympiad); nothing sets it in the world, so only the effect flag counts.
-    pub fn is_all_skills_disabled(&self, id: ObjectId) -> bool {
+    /// Java `Creature._allSkillsDisabled` (`disableAllSkills`); `is_all_skills_disabled`
+    /// (`effects/control.rs`) adds the stun, sleep and paralysis.
+    pub fn all_skills_locked(&self, id: ObjectId) -> bool {
         self.reuse_state(id).is_some_and(|r| r.all_skills_disabled)
-            || self.is_affected(
-                id,
-                effect_flag::STUNNED | effect_flag::SLEEP | effect_flag::PARALYZED,
-            )
     }
 }
 

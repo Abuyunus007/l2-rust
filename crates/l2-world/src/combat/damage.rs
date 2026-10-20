@@ -166,9 +166,11 @@ impl World {
 
             // Reduce targets HP.
             self.reduce_current_hp(target, f64::from(damage), Some(id));
-            // `notifyDamageReceived`: fake death (M5) and script events (D-05).
+            // `notifyDamageReceived`: a fake dead player stands up (script events: D-05).
+            self.notify_damage_received(target, f64::from(damage));
             if reflected_damage > 0 {
                 self.reduce_current_hp(id, f64::from(reflected_damage), Some(target));
+                self.notify_damage_received(id, f64::from(reflected_damage));
             }
 
             // Do not absorb if weapon is of type bow.
@@ -310,7 +312,7 @@ impl World {
 
     /// Java `Attackable.addDamage(attacker, damage, skill)` and `addDamageHate`: the AI hears
     /// about the attack, the attacker's damage and hate grow.
-    fn attackable_add_damage(&mut self, npc: ObjectId, attacker: ObjectId, damage: i32) {
+    pub(crate) fn attackable_add_damage(&mut self, npc: ObjectId, attacker: ObjectId, damage: i32) {
         if self.is_dead(npc) {
             return;
         }

@@ -176,7 +176,7 @@ impl World {
         self.ai.attackable.members.contains_key(&id)
     }
 
-    fn npc_template(&self, id: ObjectId) -> Option<&NpcTemplate> {
+    pub(crate) fn npc_template(&self, id: ObjectId) -> Option<&NpcTemplate> {
         self.npcs.get(&id).and_then(|n| self.npc_world.template(n.npc_id))
     }
 
@@ -210,6 +210,7 @@ impl World {
     fn is_aggressive_npc(&self, id: ObjectId) -> bool {
         self.npcs.get(&id).is_some_and(|n| n.class.is_monster())
             && self.npc_template(id).is_some_and(|t| t.is_aggressive)
+            && !self.is_affected(id, crate::effects::effect_flag::PASSIVE)
     }
 
     /// Java `Npc.getAggroRange()`: the template's, or the `aggroRange` of the spawn's `AIData`.
@@ -241,13 +242,13 @@ impl World {
     }
 
     /// Java `Attackable.isRaidMinion()`: set on spawn for a minion of a raid boss.
-    fn is_raid_minion(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_raid_minion(&self, id: ObjectId) -> bool {
         self.leader_of(id)
             .is_some_and(|leader| self.npcs.get(&leader).is_some_and(|n| n.class.is_raid()))
     }
 
     /// Java `Attackable.isRaid()`: a raid boss, and a raid boss's minions (`setIsRaidMinion`).
-    fn is_raid_or_minion(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_raid_or_minion(&self, id: ObjectId) -> bool {
         self.is_raid(id) || self.is_raid_minion(id)
     }
 
@@ -435,7 +436,10 @@ impl World {
         if !self.are_region_neighbors_active(id) {
             return;
         }
-        // M5: `isAllSkillsDisabled()` (stun, sleep, paralysis).
+        // Check if the actor is all skills disabled.
+        if self.is_all_skills_disabled(id) {
+            return;
+        }
         if let Some(state) = self.ai.creatures.get_mut(&id) {
             state.thinking = true;
         }
@@ -456,7 +460,11 @@ impl World {
 
     /// Java `isAggressiveTowards(target)`.
     fn is_aggressive_towards(&self, me: ObjectId, target: ObjectId) -> bool {
-        // M5: invulnerable targets (`EffectInvincible`).
+        // Check if the target isn't invulnerable (an invincible GM is skipped, anybody else is
+        // attacked all the same).
+        if self.is_invul(target) && self.is_player(target) && self.is_gm(target) {
+            return false;
+        }
         let Some(kind) = self.objects.get(&target).map(|e| e.kind) else {
             return false;
         };
@@ -472,14 +480,24 @@ impl World {
         if is_player && self.dist_3d(me, target) >= f64::from(self.aggro_range_of(me)) {
             return false;
         }
-        // M5: a player in silent move is not seen by the monsters that cannot see through it.
+        // A player in silent move is not seen by the monsters that cannot see through it (only
+        // scripts make an NPC see through, and a raid boss always does).
+        if is_player
+            && !self.is_raid_or_minion(me)
+            && self.is_affected(target, crate::effects::effect_flag::SILENT_MOVE)
+        {
+            return false;
+        }
         if is_player {
             let access_level = self.players.get(&target).map_or(0, |p| p.data.access_level);
             // Don't take the aggro if the GM has the access level that doesn't take aggro.
             if !self.data.can_take_aggro(access_level) {
                 return false;
             }
-            // M5: the grace period for JUST getting up from fake death.
+            // Check if the target is within the grace period for JUST getting up from fake death.
+            if self.is_recent_fake_death(target) {
+                return false;
+            }
             // The faction system's guards and the dimensional rift check are custom / M5.
         }
         let class = self.npcs.get(&me).map(|n| n.class);
@@ -583,8 +601,12 @@ impl World {
             }
 
             // Chose a target from its aggroList.
-            // M5: a confused NPC takes its attack target instead.
-            let hated = self.aggro_most_hated(id);
+            // A confused NPC takes its attack target instead.
+            let hated = if self.is_confused(id) {
+                self.attack_target_of(id)
+            } else {
+                self.aggro_most_hated(id)
+            };
 
             // Order to the Attackable to attack the target.
             if let Some(hated) = hated {
@@ -806,6 +828,11 @@ impl World {
 
     /// Java `AttackableAI.thinkAttack()`.
     fn attackable_think_attack(&mut self, id: ObjectId) {
+        // `DistrustAI`: the monster fights the creature it was turned against.
+        if let Some(forced) = self.control(id).and_then(|c| c.distrust) {
+            self.distrust_think_attack(id, forced);
+            return;
+        }
         // M5: `npc.isCastingNow()` returns here.
         let settings = self.ai.attackable.settings.clone();
         let Some(class) = self.npcs.get(&id).map(|n| n.class) else {
@@ -1335,8 +1362,10 @@ impl World {
     pub(crate) fn npc_set_intention_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
         self.wake_ai(id);
         self.stop_follow(id);
-        // M5: `isAllSkillsDisabled()`, `isCastingNow()`.
-        if self.intention_of(id) != Intention::Rest {
+        if self.intention_of(id) != Intention::Rest
+            && !self.is_all_skills_disabled(id)
+            && !self.is_casting_now_for_effects(id)
+        {
             // Set the Intention of this AbstractAI to MOVE_TO.
             self.set_intention_value(id, Intention::MoveTo);
             // Stop the actor auto-attack client side by sending Server->Client packet
@@ -1826,7 +1855,8 @@ impl World {
             if self.is_moving(mob) {
                 self.stop_move(mob, None);
             }
-            // Stop all active skills effects in progress on the Creature (M5).
+            // Stop all active skills effects in progress on the Creature.
+            self.stop_all_effects(mob);
             self.aggro_clear(mob);
             self.attack_by_clear(mob);
             // Teleport to spawn when too far away.

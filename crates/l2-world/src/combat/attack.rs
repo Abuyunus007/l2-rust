@@ -474,7 +474,9 @@ impl World {
         // Perform the main target hit.
         let mut hitted = self.do_attack_hit_simple(attack, id, target, 100.0, s_atk, true);
 
-        // M5: `isAffected(EffectFlag.POLEARM_SINGLE_TARGET)`.
+        if self.is_affected(id, crate::effects::effect_flag::POLEARM_SINGLE_TARGET) {
+            return hitted;
+        }
         let Some(view) = self.stats(id) else {
             return hitted;
         };

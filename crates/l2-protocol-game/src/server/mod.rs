@@ -12,6 +12,7 @@ use crate::generated::opcodes::ServerOpcode;
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
+pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -20,6 +21,7 @@ pub mod handshake;
 pub mod interaction;
 pub mod items;
 pub mod movement;
+pub mod regen;
 pub mod skills;
 pub mod system_message;
 pub mod userinfo;
@@ -35,6 +37,7 @@ pub use combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive, SetupGauge,
 };
+pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, ShortcutRegister,
@@ -57,6 +60,7 @@ pub use items::{
     write_item_updates,
 };
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use regen::ExRegenMax;
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,

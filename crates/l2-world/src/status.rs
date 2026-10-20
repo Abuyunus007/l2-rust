@@ -141,8 +141,8 @@ fn regen_period_ticks() -> u64 {
     TimerWheel::ms_to_ticks(u64::try_from(get_regenerate_period(false)).unwrap_or(0))
 }
 
-/// Java's movement branches of `calcHpRegen` and `calcCpRegen`: `isSitting()` (not modelled, so
-/// never), then `!isMoving()`, then `isRunning()`.
+/// Java's movement branches of `calcHpRegen` and `calcCpRegen` after `isSitting()` (see
+/// `regen_posture`): `!isMoving()`, then `isRunning()`.
 fn posture_of(moving: bool, running: bool) -> RegenPosture {
     match (moving, running) {
         (false, _) => RegenPosture::Standing,
@@ -398,10 +398,12 @@ impl World {
     }
 
     /// Java `Creature.isInvul()`: `_isInvul || _isTeleporting || isAffected(EffectFlag.INVUL)`.
-    /// The effect flag is M5. `Player.isInvul()` also adds `isTeleportProtected()` (spawn
-    /// protection), which is not modelled.
+    /// `Player.isInvul()` also adds `isTeleportProtected()` (spawn protection), which is not
+    /// modelled.
     pub fn is_invul(&self, id: ObjectId) -> bool {
-        self.invul_flag(id) || self.is_teleporting(id)
+        self.invul_flag(id)
+            || self.is_teleporting(id)
+            || self.is_affected(id, crate::effects::effect_flag::INVUL)
     }
 
     /// Java `_isInvul` alone (the field that `setInvul` writes).
@@ -456,7 +458,8 @@ impl World {
         // effect (M5).
         // `!isDOT && !isHPConsumption`: neither reaches this function yet.
         self.stop_effects_on_damage(id, true);
-        // M5-EFX-02: the stun break (`isStunned() && Rnd.get(10) == 0` -> `stopStunning(true)`).
+        // The stun break (`isStunned() && Rnd.get(10) == 0` -> `stopStunning(true)`).
+        self.break_states_on_damage(id);
         if value > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
@@ -484,8 +487,9 @@ impl World {
         // Offline traders (M5).
         // `!isHPConsumption`: HP consumption does not reach this function yet.
         self.stop_effects_on_damage(id, true);
-        // Crafting, private stores and sitting (stand up): not modelled yet.
-        // M5-EFX-02: the stun break (`!isDOT && isStunned() && Rnd.get(10) == 0`).
+        // Crafting and private stores (stand up): not modelled yet. Sitting players stand up,
+        // a stun may break.
+        self.break_states_on_damage(id);
         let mut amount = value;
         let full_value = amount as i32;
         if let Some(attacker) = attacker.filter(|a| *a != id) {
@@ -674,8 +678,11 @@ impl World {
 
     // ------------------------------------------------------------------ regeneration per period
 
-    /// Sitting is not modelled, so a player is standing, walking or running.
+    /// Sitting, else standing, walking or running.
     fn regen_posture(&self, id: ObjectId) -> RegenPosture {
+        if self.is_sitting(id) {
+            return RegenPosture::Sitting;
+        }
         self.stats(id).map_or(RegenPosture::Standing, |v| {
             posture_of(v.is_moving(), v.is_running())
         })

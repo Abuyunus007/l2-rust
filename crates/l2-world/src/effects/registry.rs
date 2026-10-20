@@ -154,6 +154,12 @@ pub trait EffectHandler: Send + Sync + fmt::Debug {
         false
     }
 
+    /// Java `getTicks()`: the ticks of the effect. `template_ticks` is the base class' value (the
+    /// `ticks` attribute); `Fear` overrides it with a constant.
+    fn ticks(&self, template_ticks: i32) -> i32 {
+        template_ticks
+    }
+
     /// Java `calcSuccess(effector, effected, skill)`: whether an instant effect lands.
     fn calc_success(&self, _world: &mut World, _cx: &EffectCx<'_>) -> bool {
         true
@@ -552,8 +558,9 @@ mod tests {
         let registry = EffectRegistry::new();
         assert_eq!(registry.len(), 165);
         assert!(registry.is_ported("Buff"));
-        assert!(registry.contains("Heal"));
-        assert!(!registry.is_ported("Heal"));
+        // Summons are M6: this one stays a stand-in until then.
+        assert!(registry.contains("SummonCubic"));
+        assert!(!registry.is_ported("SummonCubic"));
         assert!(!registry.contains("NoSuchEffect"));
         let mut names: Vec<&str> = JAVA_EFFECTS.iter().map(|e| e.0).collect();
         names.sort_unstable();

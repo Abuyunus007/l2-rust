@@ -25,11 +25,9 @@
 //
 // # Left for other cards (markers)
 // - `// M5-SHOT-01:` soulshots / spiritshots (`isChargedShot`, `rechargeShots`).
-// - `// M5-FORM-02:` skill mastery (`Formulas.calcSkillMastery`).
-// - `// M5-EFX-02:` charges and souls (`decreaseCharges`, `decreaseSouls`), fake death.
 // - `// M5-EFX-03:` `Attackable.reduceHate`.
 // - `// M6:` summons, PvP flags (`updatePvPStatus`), olympiad, transformations, the channelizer
-//   (signets), `FlyToLocation` (no packet struct yet), talisman mana, trigger and weapon skills.
+//   (signets), talisman mana, trigger and weapon skills.
 
 use std::collections::HashMap;
 
@@ -50,9 +48,9 @@ use super::reuse::ReuseState;
 use crate::effects::apply::has_negative_effect;
 use crate::effects::buff_info::skill_name_param;
 use crate::effects::{EffectType, SkillKey, effect_flag};
-use crate::formulas::calc_atk_spd;
+use crate::formulas::{SkillMasteryInput, calc_atk_spd, calc_skill_mastery};
 use crate::movement::Intention;
-use crate::stats::{ClassBalance, Stat};
+use crate::stats::{BaseStat, ClassBalance, Stat};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
 
@@ -67,6 +65,8 @@ const SIMULTANEOUS_RETRY_MS: u64 = 100;
 /// `CommonSkill.RAID_CURSE`, `RAID_CURSE2`.
 const RAID_CURSE: SkillKey = SkillKey { id: 4215, level: 1 };
 const RAID_CURSE2: SkillKey = SkillKey { id: 4515, level: 1 };
+/// `CommonSkill.FAKE_DEATH`.
+const FAKE_DEATH: SkillKey = SkillKey { id: 60, level: 1 };
 /// Fishing (done in `Player.startFishing()`) and Wolf Collar.
 const FISHING_SKILL: i32 = 1312;
 const WOLF_COLLAR: i32 = 2046;
@@ -179,8 +179,6 @@ pub struct CastState {
     pub(crate) queued_skill: Option<SkillUse>,
     /// `Player._currentSkillWorldPosition`: the ground point of a `GROUND` skill.
     pub(crate) current_skill_world_position: Option<(i32, i32, i32)>,
-    /// An NPC's `Creature._target` (a player's is `Player::target`).
-    pub(crate) npc_target: Option<ObjectId>,
     /// The reuse stamps and disabled skills (`reuse.rs`).
     pub(crate) reuse: ReuseState,
 }
@@ -291,12 +289,12 @@ impl World {
     }
 
     /// Java `npc.setTarget(target)`: what an NPC's next `doCast` aims at (M5-AI-03 sets it the
-    /// way `AttackableAI` does, and puts the old one back after the cast).
+    /// way `AttackableAI` does, and puts the old one back after the cast). The same field as
+    /// [`World::set_creature_target`].
     pub fn set_npc_target(&mut self, npc: ObjectId, target: Option<ObjectId>) {
-        if !self.npcs.contains_key(&npc) {
-            return;
+        if self.npcs.contains_key(&npc) {
+            self.set_creature_target(npc, target);
         }
-        self.cast_state_mut(npc).npc_target = target;
     }
 
     /// Drops the cast state of a creature whose object is gone (its timers stop with it).
@@ -335,7 +333,24 @@ impl World {
             self.send(player, &ActionFailed);
             return;
         }
-        // M5-EFX-02: fake death (`isFakeDeath()`) allows only the Fake Death skill.
+        if self.is_fake_death(player) {
+            if magic_id != FAKE_DEATH.id {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::YouCannotMoveWhileSitting),
+                );
+                self.send(player, &ActionFailed);
+                return;
+            }
+            let disabled = self
+                .skill_table()
+                .and_then(|t| t.get(FAKE_DEATH.id, FAKE_DEATH.level).cloned())
+                .is_some_and(|fake_death| self.is_skill_disabled(player, &fake_death));
+            if disabled {
+                self.send(player, &ActionFailed);
+                return;
+            }
+        }
 
         // Get the level of the used skill. Custom and transformation skills (by display id) do
         // not exist yet.
@@ -448,7 +463,7 @@ impl World {
             | TargetType::AuraFriendly => Some(player),
             // Get the first target of the list.
             _ => {
-                let selected = self.creature_target(player);
+                let selected = self.cast_selected_target(player);
                 self.cast_target_list(skill, player, true, selected)
                     .first()
                     .copied()
@@ -479,7 +494,9 @@ impl World {
             return;
         }
         self.begin_cast(caster, skill, false);
-        // `setRecentFakeDeath(false)`: fake death is M5-EFX-02's.
+        if self.is_player(caster) {
+            self.set_recent_fake_death(caster, false);
+        }
     }
 
     /// Java `doSimultaneousCast(skill)`: potions and herbs, cast alongside a normal cast.
@@ -551,7 +568,7 @@ impl World {
         self.stop_effects_on_action(caster);
 
         // Get all possible targets of the skill in a table in function of the skill target type.
-        let selected = self.creature_target(caster);
+        let selected = self.cast_selected_target(caster);
         let targets = self.cast_target_list(skill, caster, false, selected);
         let target = match skill.target_type {
             // We need it to correct facing: the summon (M6), none yet.
@@ -730,7 +747,13 @@ impl World {
         // M6: a playable's talisman loses mana (`getReferenceItemId()` of item skills on a DECO
         // item; the template does not carry the reference id yet).
 
-        // M6: `FlyToLocation` and the move to the target of a fly skill (no packet struct yet).
+        // Broadcast fly effect if needed.
+        if let Some(fly_type) = skill.fly_type
+            && let Some((x, y, z)) = self.position_of(target)
+        {
+            self.fly_to_location(caster, x, y, z, fly_type);
+            self.set_xyz(caster, x, y, z);
+        }
 
         if !skill.is_toggle() {
             // MagicSkillUse with target, displayId, level, skillTime, reuseDelay to the Creature
@@ -892,21 +915,21 @@ impl World {
     }
 
     /// Java `Formulas.calcSkillMastery(actor, skill)`.
-    fn calc_skill_mastery_for(&self, actor: ObjectId, skill: &SkillTemplate) -> bool {
-        // Non players are not affected by Skill Mastery; static skills are not either.
-        if !self.is_player(actor) || skill.is_static() {
+    fn calc_skill_mastery_for(&mut self, actor: ObjectId, skill: &SkillTemplate) -> bool {
+        let Some(input) = self.stats(actor).map(|v| SkillMasteryInput {
+            actor_is_player: v.is_player(),
+            skill_is_static: skill.is_static(),
+            skill_mastery: v.calc(Stat::SkillMastery, 0.0),
+            str_bonus: v.bonus(BaseStat::Str),
+            int_bonus: v.bonus(BaseStat::Int),
+            skill_mastery_rate: v.calc(Stat::SkillMasteryRate, 1.0),
+            // `SKILL_MASTERY_CHANCE_MULTIPLIERS` is not in the class balance settings yet (the
+            // same gap as `effects/apply.rs`); the default is 1.
+            class_balance_multiplier: 1.0,
+        }) else {
             return false;
-        }
-        let val = self
-            .stats(actor)
-            .map_or(0, |v| v.calc_stat(Stat::SkillMastery, 0.0, None, None) as i32);
-        if val == 0 {
-            return false;
-        }
-        // M5-FORM-02: the chance (STR or INT bonus times `SKILL_MASTERY_RATE` and the class's
-        // `SkillMasteryChanceMultipliers`) and its `Rnd.get(100)` draw. Until it lands a creature
-        // with the stat never rolls a mastery.
-        false
+        };
+        calc_skill_mastery(&input, self.rng())
     }
 
     fn schedule_magic_use(&mut self, task: MagicUseTask, delay_ms: i32, slot: Slot) {
@@ -1185,8 +1208,15 @@ impl World {
         }
 
         if self.is_player(caster) {
-            // M5-EFX-02: consume charges (`decreaseCharges(getChargeConsumeCount())`) and souls
-            // (`!decreaseSouls(getMaxSoulConsumeCount())` aborts the cast).
+            // Consume Charges.
+            if skill.charge_consume > 0 {
+                self.decrease_charges(caster, skill.charge_consume);
+            }
+            // Consume Souls if necessary.
+            if skill.soul_max_consume > 0 && !self.decrease_souls(caster, skill.soul_max_consume) {
+                self.abort_cast(caster);
+                return;
+            }
         }
 
         // Launch the magic skill in order to calculate its effects.
@@ -1238,7 +1268,7 @@ impl World {
         let target = task.targets.first().copied();
 
         // Attack target after skill use.
-        let current = self.creature_target(caster);
+        let current = self.cast_selected_target(caster);
         if skill.next_action_is_attack
             && let Some(t) = target
             && current != Some(caster)

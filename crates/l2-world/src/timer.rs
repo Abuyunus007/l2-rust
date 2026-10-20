@@ -92,6 +92,8 @@ pub enum TimerKind {
     /// The casting tasks (`MagicUseTask`, `QueuedMagicUseTask` and the delayed steps of a cast),
     /// see `skills/cast.rs`.
     Cast(crate::skills::cast::CastTimer),
+    /// Sitting, standing, charges, souls and the fear of an NPC, see `effects/control.rs`.
+    Control(crate::effects::control::ControlTimer),
 }
 
 #[derive(Debug, Default)]
