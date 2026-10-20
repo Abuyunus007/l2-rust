@@ -265,7 +265,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-FU-01](M5/M5-FU-01.md) | Admin pages, confirm dialogs, GM item list | sonnet | spot | M5 | in-progress |
 | [M5-FU-02](M5/M5-FU-02.md) | Guards and defenders, raid minion respawn, NPC fear | sonnet | full | M5 | in-progress |
 | [M5-FU-03](M5/M5-FU-03.md) | Daily resets and recommendations | sonnet | full | M5 | merged |
-| [M5-FU-04](M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | in-progress |
+| [M5-FU-04](M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | merged |
 | [M5-FU-05](M5/M5-FU-05.md) | Item elements, augments and item rows | sonnet | full | M5 | merged |
 
 ## M6: Parties, PvP, trade, clans, companions (approved 2026-10-20)
