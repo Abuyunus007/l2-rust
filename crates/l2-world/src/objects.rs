@@ -91,6 +91,12 @@ pub struct Npc {
     pub enchant_effect: i32,
     /// Java `_displayEffect`.
     pub display_effect: i32,
+    /// Java `Npc._currentCollisionRadius`: the template's, or the grown one while `Grow` lasts.
+    pub collision_radius: f64,
+    /// Java `Attackable._mustGiveExpSp` (`mustRewardExpSp()`): `OpenChest` turns it off.
+    pub must_reward_exp_sp: bool,
+    /// Java `Chest._specialDrop`: the chest was unlocked (`OpenChest`).
+    pub special_drop: bool,
     /// The Creature fields an NPC's movement uses: `_move`, `_isRunning`, `_isTeleporting`, the
     /// pending path search and `AbstractAI`'s pawn move fields (M4-AI-01, see `movement.rs`).
     pub movement: crate::movement::NpcMovement,

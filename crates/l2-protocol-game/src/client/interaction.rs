@@ -195,3 +195,37 @@ impl Decode for BypassUserCmd {
         Ok(Self { command: r.i32()? })
     }
 }
+
+// Java: gameserver/network/clientpackets/DlgAnswer.java
+/// The answer to a `ConfirmDlg` (`DLG_ANSWER`): yes or no. The message id says which question it
+/// was (a resurrection, a summon, a gate, ...); the world picks the handler from it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DlgAnswer {
+    /// The `SystemMessageId` id of the question.
+    pub message_id: i32,
+    /// 1 = yes, 0 = no (Java compares with `== 1` or `== 0` only).
+    pub answer: i32,
+    /// The `requesterId` the dialog carried (the summoner of a summon request).
+    pub requester_id: i32,
+}
+
+impl DlgAnswer {
+    pub const OPCODE: ClientOpcode = ClientOpcode::DlgAnswer;
+}
+
+impl Encode for DlgAnswer {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.message_id).i32(self.answer).i32(self.requester_id);
+    }
+}
+
+impl Decode for DlgAnswer {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            message_id: r.i32()?,
+            answer: r.i32()?,
+            requester_id: r.i32()?,
+        })
+    }
+}

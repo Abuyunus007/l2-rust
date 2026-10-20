@@ -12,12 +12,14 @@ mod blink;
 mod block;
 mod blow;
 mod buff;
+mod call_skill;
 mod cancel;
 mod change_face;
 mod change_hair_color;
 mod change_hair_style;
 mod confuse;
 mod consume_body;
+mod convert_item;
 mod cp_heal;
 mod damage_over_time;
 mod damage_support;
@@ -38,6 +40,7 @@ mod fly;
 mod focus;
 mod get_agro;
 mod give_sp;
+mod grow;
 mod hate;
 mod hate_chance;
 mod heal;
@@ -53,6 +56,8 @@ mod misc;
 mod misc_damage;
 mod mp_consume_per_level;
 mod mute;
+mod nevits_hourglass;
+mod open_chest;
 mod open_door;
 mod params;
 mod physical_damage;
@@ -60,6 +65,7 @@ mod player_slots;
 mod recovery;
 mod relax;
 mod restoration;
+mod restoration_random;
 mod resurrection;
 mod set_skill;
 mod silent_move;
@@ -69,10 +75,12 @@ mod statset;
 mod status_params;
 mod steal_abnormal;
 mod sweeper;
+mod target_me;
 mod teleport;
 mod teleport_to_target;
 mod throw_up;
 mod trait_effects;
+pub(crate) mod trigger_skill;
 mod vitality_point_up;
 mod vitals;
 
@@ -187,6 +195,23 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Stun", hold::Stun::create);
     registry.register("TalismanSlot", player_slots::TalismanSlot::create);
     registry.register("TargetCancel", misc::TargetCancel::create);
+    // M5-EFX-05: the handlers that needed casting or new world parts.
+    registry.register("CallSkill", call_skill::CallSkill::create);
+    registry.register("ConvertItem", convert_item::ConvertItem::create);
+    registry.register("Grow", grow::Grow::create);
+    registry.register("NevitsHourglass", nevits_hourglass::NevitsHourglass::create);
+    registry.register("OpenChest", open_chest::OpenChest::create);
+    registry.register("RestorationRandom", restoration_random::RestorationRandom::create);
+    registry.register("Resurrection", resurrection::Resurrection::create);
+    registry.register("ResurrectionSpecial", resurrection::ResurrectionSpecial::create);
+    registry.register("TargetMe", target_me::TargetMe::create);
+    registry.register("TriggerSkillByAvoid", trigger_skill::ByAvoid::create);
+    registry.register("TriggerSkillByDamageDealt", trigger_skill::ByDamageDealt::create);
+    registry.register(
+        "TriggerSkillByDamageReceived",
+        trigger_skill::ByDamageReceived::create,
+    );
+    registry.register("TriggerSkillBySkill", trigger_skill::BySkill::create);
     // M5-SPOIL-01.
     registry.register("Spoil", spoil::Spoil::create);
     registry.register("Sweeper", sweeper::Sweeper::create);
@@ -214,7 +239,6 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     );
     registry.register("PhysicalSoulDamage", physical_damage::PhysicalSoulDamage::create);
     registry.register("RandomizeHate", hate_chance::RandomizeHate::create);
-    registry.register("Resurrection", resurrection::Resurrection::create);
     registry.register("SoulBlow", blow::SoulBlow::create);
     registry.register("TargetMeProbability", hate_chance::TargetMeProbability::create);
     registry.register("TransferHate", hate_chance::TransferHate::create);

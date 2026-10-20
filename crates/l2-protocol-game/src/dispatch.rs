@@ -9,12 +9,12 @@ use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
-    CharacterDelete, CharacterRestore, CharacterSelect, EnterWorld, Logout, MoveToLocation, NewCharacter,
-    ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse, RequestAutoSoulShot,
-    RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem, RequestGotoLobby,
-    RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse, RequestNetPing,
-    RequestRestart, RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem,
-    Say2, SendBypassBuildCmd, UseItem, ValidatePosition,
+    CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
+    NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse,
+    RequestAutoSoulShot, RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem,
+    RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse,
+    RequestNetPing, RequestRestart, RequestRestartPoint, RequestSkillCoolTime, RequestTargetCanceld,
+    RequestUnEquipItem, Say2, SendBypassBuildCmd, UseItem, ValidatePosition,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -58,6 +58,7 @@ pub enum ClientPacket {
     RequestMagicSkillUse(RequestMagicSkillUse),
     RequestAcquireSkill(RequestAcquireSkill),
     RequestAcquireSkillInfo(RequestAcquireSkillInfo),
+    DlgAnswer(DlgAnswer),
     /// `EX_REQUEST_AUTO_SOULSHOT` (`0xD0` 0x000D), an ex packet.
     RequestAutoSoulShot(RequestAutoSoulShot),
     /// `EX_REQUEST_DISPEL` (`0xD0` 0x004B), an ex packet.
@@ -140,6 +141,7 @@ pub fn decode_client(
         RequestAcquireSkillInfo::OPCODE => {
             ClientPacket::RequestAcquireSkillInfo(RequestAcquireSkillInfo::decode(reader)?)
         }
+        DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))

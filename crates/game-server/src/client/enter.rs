@@ -517,6 +517,11 @@ impl ClientSession {
                 action_id: p.action_id,
             },
             ClientPacket::RequestTargetCanceld(p) => ClientInput::TargetCanceled { unselect: p.unselect },
+            ClientPacket::DlgAnswer(p) => ClientInput::DlgAnswer {
+                message_id: p.message_id,
+                answer: p.answer,
+                requester_id: p.requester_id,
+            },
             ClientPacket::RequestBypassToServer(p) => ClientInput::Bypass { command: p.command },
             ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
             ClientPacket::SendBypassBuildCmd(p) => ClientInput::BuildCmd { command: p.command },

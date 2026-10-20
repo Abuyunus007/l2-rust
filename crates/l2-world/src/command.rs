@@ -55,6 +55,12 @@ pub enum ClientInput {
     Action { object_id: i32, action_id: i8 },
     /// Java `RequestTargetCanceld` (`unselect` 0 = Escape key).
     TargetCanceled { unselect: i16 },
+    /// Java `DlgAnswer`: the answer (1 = yes) to the `ConfirmDlg` with this message id.
+    DlgAnswer {
+        message_id: i32,
+        answer: i32,
+        requester_id: i32,
+    },
     /// Java `RequestBypassToServer`: the raw command of an html link.
     Bypass { command: String },
     /// Java `RequestLinkHtml`: the raw path of a linked html page.

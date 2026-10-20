@@ -11,6 +11,7 @@ use l2_protocol_game::server::SystemMessage;
 
 use super::statset::{get_boolean, get_double};
 use super::vitals::Vital;
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::world::World;
 
@@ -40,8 +41,14 @@ fn damage_tick(world: &mut World, cx: &EffectCx<'_>, can_kill: bool, damage_of: 
         }
     }
     world.reduce_current_hp_by_dot(effected, damage, Some(cx.effector), cx.skill);
-    // `notifyDamageReceived(damage, effector, skill, false, true)`: fake death and script events
-    // (M5-EFX-02, D-05).
+    world.notify_damage_received_by(
+        effected,
+        damage,
+        Some(cx.effector),
+        Some(SkillKey::of(cx.skill)),
+        false,
+        true,
+    );
     cx.skill.is_toggle()
 }
 

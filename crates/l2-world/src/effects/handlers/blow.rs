@@ -7,6 +7,7 @@
 
 use l2_data::skill::EffectTemplate;
 
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::world::World;
 
@@ -15,12 +16,17 @@ use crate::world::World;
 ///
 /// NOTE(java-quirk): the damage message always says "critical" (`sendDamageMessage(.., false,
 /// true, false)`), whatever the roll said.
-fn finish_blow(world: &mut World, cx: &EffectCx<'_>, damage: f64) {
+fn finish_blow(world: &mut World, cx: &EffectCx<'_>, damage: f64, critical: bool) {
     let (effector, effected, skill) = (cx.effector, cx.effected, cx.skill);
     world.reduce_current_hp_by_skill(effected, damage, Some(effector), skill);
-    // `notifyDamageReceived(damage, effector, skill, crit, false)`: only the fake death part
-    // exists (the critical flag is for script events).
-    world.notify_damage_received(effected, damage);
+    world.notify_damage_received_by(
+        effected,
+        damage,
+        Some(effector),
+        Some(SkillKey::of(skill)),
+        critical,
+        false,
+    );
 
     // Manage attack or cast break of the target (calculating rate, sending message...)
     world.skill_atk_break(effected, damage);
@@ -70,7 +76,7 @@ impl EffectHandler for FatalBlow {
         if crit {
             damage *= 2.0;
         }
-        finish_blow(world, cx, damage);
+        finish_blow(world, cx, damage, crit);
     }
 }
 
@@ -112,7 +118,7 @@ impl EffectHandler for Backstab {
         if world.calc_skill_crit_for(effector, effected, skill) {
             damage *= 2.0;
         }
-        finish_blow(world, cx, damage);
+        finish_blow(world, cx, damage, true);
     }
 }
 
@@ -156,6 +162,6 @@ impl EffectHandler for SoulBlow {
             let souls = charged.min(skill.soul_max_consume);
             damage *= 1.0 + (f64::from(souls) * 0.048);
         }
-        finish_blow(world, cx, damage);
+        finish_blow(world, cx, damage, false);
     }
 }
