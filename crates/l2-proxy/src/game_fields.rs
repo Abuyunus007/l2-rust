@@ -46,6 +46,14 @@ use l2_protocol_game::server::party::{
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
     PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
 };
+use l2_protocol_game::server::pledge::{
+    AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem, ExSubPledgeSkillAdd,
+    GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo, PledgeMember,
+    PledgePowerGradeList, PledgeReceiveMemberInfo, PledgeReceivePowerInfo, PledgeReceiveSubPledgeCreated,
+    PledgeReceiveWarList, PledgeShowInfoUpdate, PledgeShowMemberListAdd, PledgeShowMemberListAll,
+    PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
+    PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
+};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
@@ -245,6 +253,49 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             });
             json!({ "store_player_id": p.store_player_id, "items": items })
         }
+        ClientPacket::RequestJoinPledge(p) => object!(p => target, pledge_type),
+        ClientPacket::RequestAnswerJoinPledge(p) => object!(p => answer),
+        ClientPacket::RequestOustPledgeMember(p) => object!(p => target),
+        ClientPacket::RequestPledgeInfo(p) => object!(p => clan_id),
+        ClientPacket::RequestPledgeExtendedInfo(p) => object!(p => name),
+        ClientPacket::RequestPledgeCrest(p) => object!(p => crest_id),
+        ClientPacket::RequestExPledgeCrestLarge(p) => object!(p => crest_id),
+        ClientPacket::RequestPledgeMemberPowerInfo(p) => object!(p => unk1, player),
+        ClientPacket::RequestPledgeMemberInfo(p) => object!(p => unk1, player),
+        ClientPacket::RequestPledgeWarList(p) => object!(p => unk1, tab),
+        ClientPacket::RequestPledgeSetAcademyMaster(p) => {
+            object!(p => set, curr_player_name, target_player_name)
+        }
+        ClientPacket::RequestPledgeSetMemberPowerGrade(p) => object!(p => member, power_grade),
+        ClientPacket::RequestPledgeReorganizeMember(p) => {
+            object!(p => is_member_selected, member_name, new_pledge_type, selected_member)
+        }
+        ClientPacket::RequestPledgePower(p) => object!(p => rank, action, privs),
+        ClientPacket::RequestSetPledgeCrest(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestExSetPledgeCrestLarge(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestSetAllyCrest(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestStartPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplyStartPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestStopPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplyStopPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestSurrenderPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplySurrenderPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestJoinAlly(p) => object!(p => id),
+        ClientPacket::RequestAnswerJoinAlly(p) => object!(p => response),
+        ClientPacket::AllyDismiss(p) => object!(p => clan_name),
+        ClientPacket::RequestAllyCrest(p) => object!(p => crest_id),
+        ClientPacket::RequestWithdrawalPledge(_)
+        | ClientPacket::RequestPledgeMemberList(_)
+        | ClientPacket::RequestPledgePowerGradeList(_)
+        | ClientPacket::AllyLeave(_)
+        | ClientPacket::RequestDismissAlly(_)
+        | ClientPacket::RequestAllyInfo(_) => json!({}),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -395,6 +446,64 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExPrivateStorePackageMsg => {
             decoded::<ExPrivateStoreSetWholeMsg>(&mut r, store_whole_msg_fields)
         }
+        ServerOpcode::AskJoinPledge => decoded::<AskJoinPledge>(&mut r, ask_join_pledge_fields),
+        ServerOpcode::JoinPledge => decoded::<JoinPledge>(&mut r, join_pledge_fields),
+        ServerOpcode::PledgeInfo => decoded::<PledgeInfo>(&mut r, pledge_info_fields),
+        ServerOpcode::PledgeCrest => decoded::<PledgeCrest>(&mut r, pledge_crest_fields),
+        ServerOpcode::ExPledgeEmblem => decoded::<ExPledgeEmblem>(&mut r, ex_pledge_emblem_fields),
+        ServerOpcode::AllianceCrest => decoded::<AllyCrest>(&mut r, ally_crest_fields),
+        ServerOpcode::PledgeShowMemberListAll => {
+            decoded::<PledgeShowMemberListAll>(&mut r, pledge_show_member_list_all_fields)
+        }
+        ServerOpcode::PledgeShowMemberListUpdate => {
+            decoded::<PledgeShowMemberListUpdate>(&mut r, pledge_show_member_list_update_fields)
+        }
+        ServerOpcode::PledgeShowMemberListAdd => {
+            decoded::<PledgeShowMemberListAdd>(&mut r, pledge_show_member_list_add_fields)
+        }
+        ServerOpcode::PledgeShowMemberListDelete => {
+            decoded::<PledgeShowMemberListDelete>(&mut r, pledge_show_member_list_delete_fields)
+        }
+        ServerOpcode::PledgeShowMemberListDeleteAll => {
+            decoded::<PledgeShowMemberListDeleteAll>(&mut r, no_fields)
+        }
+        ServerOpcode::PledgeReceiveMemberInfo => {
+            decoded::<PledgeReceiveMemberInfo>(&mut r, pledge_receive_member_info_fields)
+        }
+        ServerOpcode::PledgeReceivePowerInfo => {
+            decoded::<PledgeReceivePowerInfo>(&mut r, pledge_receive_power_info_fields)
+        }
+        ServerOpcode::PledgeReceiveSubPledgeCreated => {
+            decoded::<PledgeReceiveSubPledgeCreated>(&mut r, pledge_receive_sub_pledge_created_fields)
+        }
+        ServerOpcode::PledgeShowInfoUpdate => {
+            decoded::<PledgeShowInfoUpdate>(&mut r, pledge_show_info_update_fields)
+        }
+        ServerOpcode::PledgeStatusChanged => {
+            decoded::<PledgeStatusChanged>(&mut r, pledge_status_changed_fields)
+        }
+        ServerOpcode::GmViewPledgeInfo => decoded::<GmViewPledgeInfo>(&mut r, gm_view_pledge_info_fields),
+        ServerOpcode::PledgePowerGradeList => {
+            decoded::<PledgePowerGradeList>(&mut r, pledge_power_grade_list_fields)
+        }
+        ServerOpcode::ManagePledgePower => decoded::<ManagePledgePower>(&mut r, manage_pledge_power_fields),
+        ServerOpcode::PledgeSkillList => decoded::<PledgeSkillList>(&mut r, pledge_skill_list_fields),
+        ServerOpcode::PledgeSkillListAdd => {
+            decoded::<PledgeSkillListAdd>(&mut r, pledge_skill_list_add_fields)
+        }
+        ServerOpcode::ExSubPledgeSkillAdd => {
+            decoded::<ExSubPledgeSkillAdd>(&mut r, ex_sub_pledge_skill_add_fields)
+        }
+        ServerOpcode::PledgeReceiveWarList => {
+            decoded::<PledgeReceiveWarList>(&mut r, pledge_receive_war_list_fields)
+        }
+        ServerOpcode::StartPledgeWar => decoded::<StartPledgeWar>(&mut r, start_pledge_war_fields),
+        ServerOpcode::StopPledgeWar => decoded::<StopPledgeWar>(&mut r, stop_pledge_war_fields),
+        ServerOpcode::SurrenderPledgeWar => {
+            decoded::<SurrenderPledgeWar>(&mut r, surrender_pledge_war_fields)
+        }
+        ServerOpcode::AskJoinAlliance => decoded::<AskJoinAlly>(&mut r, ask_join_ally_fields),
+        ServerOpcode::AllianceInfo => decoded::<AllianceInfo>(&mut r, alliance_info_fields),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -1132,6 +1241,153 @@ fn store_whole_msg_fields(p: &ExPrivateStoreSetWholeMsg) -> Value {
     object!(p => object_id, message)
 }
 
+fn join_pledge_fields(p: &JoinPledge) -> Value {
+    object!(p => pledge_id)
+}
+
+fn pledge_info_fields(p: &PledgeInfo) -> Value {
+    object!(p => clan_id, clan_name, ally_name)
+}
+
+fn pledge_crest_fields(p: &PledgeCrest) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn ex_pledge_emblem_fields(p: &ExPledgeEmblem) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn ally_crest_fields(p: &AllyCrest) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn pledge_show_member_list_add_fields(p: &PledgeShowMemberListAdd) -> Value {
+    object!(p => name, level, class_id, online_object_id, pledge_type)
+}
+
+fn pledge_show_member_list_delete_fields(p: &PledgeShowMemberListDelete) -> Value {
+    object!(p => player_name)
+}
+
+fn pledge_receive_member_info_fields(p: &PledgeReceiveMemberInfo) -> Value {
+    object!(p => pledge_type, name, title, power_grade, pledge_name, apprentice_or_sponsor_name)
+}
+
+fn pledge_receive_power_info_fields(p: &PledgeReceivePowerInfo) -> Value {
+    object!(p => power_grade, name, privileges)
+}
+
+fn pledge_receive_sub_pledge_created_fields(p: &PledgeReceiveSubPledgeCreated) -> Value {
+    object!(p => id, name, leader_name)
+}
+
+fn pledge_show_info_update_fields(p: &PledgeShowInfoUpdate) -> Value {
+    object!(p => clan_id, crest_id, level, castle_id, hideout_id, fort_id, rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war)
+}
+
+fn pledge_status_changed_fields(p: &PledgeStatusChanged) -> Value {
+    object!(p => leader_id, clan_id, crest_id, ally_id, ally_crest_id)
+}
+
+fn manage_pledge_power_fields(p: &ManagePledgePower) -> Value {
+    object!(p => privileges)
+}
+
+fn pledge_skill_list_add_fields(p: &PledgeSkillListAdd) -> Value {
+    object!(p => id, level)
+}
+
+fn ex_sub_pledge_skill_add_fields(p: &ExSubPledgeSkillAdd) -> Value {
+    object!(p => sub_type, skill_id, skill_level)
+}
+
+fn pledge_receive_war_list_fields(p: &PledgeReceiveWarList) -> Value {
+    object!(p => tab, list_size, clan_names)
+}
+
+fn start_pledge_war_fields(p: &StartPledgeWar) -> Value {
+    object!(p => player_name, pledge_name)
+}
+
+fn stop_pledge_war_fields(p: &StopPledgeWar) -> Value {
+    object!(p => pledge_name, player_name)
+}
+
+fn surrender_pledge_war_fields(p: &SurrenderPledgeWar) -> Value {
+    object!(p => pledge_name, player_name)
+}
+
+fn ask_join_ally_fields(p: &AskJoinAlly) -> Value {
+    object!(p => requestor_object_id, requestor_name)
+}
+
+fn ask_join_pledge_fields(p: &AskJoinPledge) -> Value {
+    object!(p => requestor_object_id, sub_pledge_name, pledge_type, pledge_name)
+}
+
+fn pledge_member_fields(m: &PledgeMember) -> Value {
+    object!(m => name, level, class_id, sex, race, online_object_id, has_sponsor)
+}
+
+fn pledge_show_member_list_all_fields(p: &PledgeShowMemberListAll) -> Value {
+    let members: Vec<Value> = p.members.iter().map(pledge_member_fields).collect();
+    let mut fields = object!(
+        p => main_or_subpledge, clan_id, pledge_type, clan_name, leader_name, crest_id, level, castle_id,
+        hideout_id, fort_id, rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war
+    );
+    fields["members"] = json!(members);
+    fields
+}
+
+fn pledge_show_member_list_update_fields(p: &PledgeShowMemberListUpdate) -> Value {
+    let online = p
+        .online
+        .map(|o| json!({ "object_id": o.object_id, "pledge_type": o.pledge_type }));
+    let mut fields = object!(p => name, level, class_id, female, race, has_sponsor);
+    fields["online"] = json!(online);
+    fields
+}
+
+fn gm_view_pledge_info_fields(p: &GmViewPledgeInfo) -> Value {
+    let members: Vec<Value> = p.members.iter().map(pledge_member_fields).collect();
+    let mut fields = object!(
+        p => player_name, clan_id, clan_name, leader_name, crest_id, level, castle_id, hideout_id, fort_id,
+        rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war
+    );
+    fields["members"] = json!(members);
+    fields
+}
+
+fn pledge_power_grade_list_fields(p: &PledgePowerGradeList) -> Value {
+    let privs: Vec<Value> = p.privs.iter().map(|g| object!(g => rank, privileges)).collect();
+    json!({ "privs": privs })
+}
+
+fn pledge_skill_list_fields(p: &PledgeSkillList) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|s| object!(s => display_id, display_level))
+        .collect();
+    let sub_skills: Vec<Value> = p
+        .sub_skills
+        .iter()
+        .map(|s| object!(s => sub_type, skill_id, skill_level))
+        .collect();
+    json!({ "skills": skills, "sub_skills": sub_skills })
+}
+
+fn alliance_info_fields(p: &AllianceInfo) -> Value {
+    let allies: Vec<Value> = p
+        .allies
+        .iter()
+        .map(|a| object!(a => clan_name, level, leader_name, total, online))
+        .collect();
+    let mut fields = object!(p => name, total, online, leader_clan, leader_player);
+    fields["allies"] = json!(allies);
+    fields
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -1271,6 +1527,34 @@ mod tests {
         ServerOpcode::PrivateStoreSellMsg,
         ServerOpcode::PrivateStoreBuyMsg,
         ServerOpcode::ExPrivateStorePackageMsg,
+        ServerOpcode::AskJoinPledge,
+        ServerOpcode::JoinPledge,
+        ServerOpcode::PledgeInfo,
+        ServerOpcode::PledgeCrest,
+        ServerOpcode::ExPledgeEmblem,
+        ServerOpcode::AllianceCrest,
+        ServerOpcode::PledgeShowMemberListAll,
+        ServerOpcode::PledgeShowMemberListUpdate,
+        ServerOpcode::PledgeShowMemberListAdd,
+        ServerOpcode::PledgeShowMemberListDelete,
+        ServerOpcode::PledgeShowMemberListDeleteAll,
+        ServerOpcode::PledgeReceiveMemberInfo,
+        ServerOpcode::PledgeReceivePowerInfo,
+        ServerOpcode::PledgeReceiveSubPledgeCreated,
+        ServerOpcode::PledgeShowInfoUpdate,
+        ServerOpcode::PledgeStatusChanged,
+        ServerOpcode::GmViewPledgeInfo,
+        ServerOpcode::PledgePowerGradeList,
+        ServerOpcode::ManagePledgePower,
+        ServerOpcode::PledgeSkillList,
+        ServerOpcode::PledgeSkillListAdd,
+        ServerOpcode::ExSubPledgeSkillAdd,
+        ServerOpcode::PledgeReceiveWarList,
+        ServerOpcode::StartPledgeWar,
+        ServerOpcode::StopPledgeWar,
+        ServerOpcode::SurrenderPledgeWar,
+        ServerOpcode::AskJoinAlliance,
+        ServerOpcode::AllianceInfo,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -2870,6 +3154,164 @@ mod tests {
             }],
         };
         assert_eq!(s2c_fields(&buy_list.to_bytes())["items"][0]["count"], 4);
+    }
+    #[test]
+    fn pledge_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            AllyLeave, RequestJoinPledge, RequestPledgePower, RequestPledgeWarList, RequestSetPledgeCrest,
+            RequestStartPledgeWar,
+        };
+        use l2_protocol_game::server::pledge::{AllianceClanInfo, PledgeMemberOnline};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestJoinPledge {
+                    target: 5,
+                    pledge_type: -1
+                }
+                .to_bytes()
+            ),
+            json!({ "target": 5, "pledge_type": -1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestStartPledgeWar {
+                    pledge_name: "Foes".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "pledge_name": "Foes" })
+        );
+        assert_eq!(c2s_fields(in_game, &AllyLeave.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(in_game, &RequestPledgeWarList { unk1: 0, tab: 1 }.to_bytes()),
+            json!({ "unk1": 0, "tab": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPledgePower {
+                    rank: 2,
+                    action: 2,
+                    privs: 0x30
+                }
+                .to_bytes()
+            ),
+            json!({ "rank": 2, "action": 2, "privs": 48 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestSetPledgeCrest {
+                    length: 2,
+                    data: Some(vec![0xAB, 0xCD])
+                }
+                .to_bytes()
+            ),
+            json!({ "length": 2, "data": "abcd" })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestSetPledgeCrest {
+                    length: 300,
+                    data: None
+                }
+                .to_bytes()
+            ),
+            json!({ "length": 300, "data": null })
+        );
+
+        let ask = AskJoinPledge {
+            requestor_object_id: 7,
+            sub_pledge_name: Some("Knights".into()),
+            pledge_type: 100,
+            pledge_name: "Clan".into(),
+        };
+        assert_eq!(
+            s2c_fields(&ask.to_bytes()),
+            json!({
+                "requestor_object_id": 7,
+                "sub_pledge_name": "Knights",
+                "pledge_type": 100,
+                "pledge_name": "Clan",
+            })
+        );
+        assert_eq!(
+            s2c_fields(&JoinPledge { pledge_id: 3 }.to_bytes()),
+            json!({ "pledge_id": 3 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &PledgeCrest {
+                    crest_id: 9,
+                    data: vec![1, 2]
+                }
+                .to_bytes()
+            ),
+            json!({ "crest_id": 9, "data": "0102" })
+        );
+        let list = PledgeShowMemberListAll {
+            main_or_subpledge: 0,
+            clan_id: 3,
+            pledge_type: 0,
+            clan_name: "Clan".into(),
+            leader_name: "Boss".into(),
+            crest_id: 0,
+            level: 5,
+            castle_id: 0,
+            hideout_id: 0,
+            fort_id: 0,
+            rank: 1,
+            reputation_score: 100,
+            ally_id: 0,
+            ally_name: String::new(),
+            ally_crest_id: 0,
+            at_war: false,
+            members: vec![PledgeMember {
+                name: "Boss".into(),
+                level: 40,
+                class_id: 18,
+                sex: 0,
+                race: 1,
+                online_object_id: 11,
+                has_sponsor: false,
+            }],
+        };
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["clan_name"], "Clan");
+        assert_eq!(fields["members"][0]["online_object_id"], 11);
+        let update = PledgeShowMemberListUpdate {
+            name: "Boss".into(),
+            level: 40,
+            class_id: 18,
+            female: false,
+            race: 1,
+            online: Some(PledgeMemberOnline {
+                object_id: 11,
+                pledge_type: 0,
+            }),
+            has_sponsor: false,
+        };
+        assert_eq!(s2c_fields(&update.to_bytes())["online"]["object_id"], 11);
+        let info = AllianceInfo {
+            name: "Ally".into(),
+            total: 10,
+            online: 4,
+            leader_clan: "Clan".into(),
+            leader_player: "Boss".into(),
+            allies: vec![AllianceClanInfo {
+                clan_name: "Clan".into(),
+                level: 5,
+                leader_name: "Boss".into(),
+                total: 10,
+                online: 4,
+            }],
+        };
+        assert_eq!(s2c_fields(&info.to_bytes())["allies"][0]["online"], 4);
+        assert_eq!(s2c_fields(&PledgeShowMemberListDeleteAll.to_bytes()), json!({}));
     }
     /// Every server packet of the committed Java captures with a decoder must have fields, and
     /// no other server packet may have any. A decode error here means a `Decode` impl does not

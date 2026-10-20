@@ -868,6 +868,917 @@ mod store {
     }
 }
 
+// ---------------------------------------------------------------------------------------------
+// Clans, wars and alliances
+// ---------------------------------------------------------------------------------------------
+
+mod pledge_client {
+    use super::*;
+    use l2_protocol_game::client::*;
+
+    /// A plain packet: id byte, then the fields.
+    fn plain(id: u8) -> Bytes {
+        Bytes::default().byte(id)
+    }
+
+    /// An ex packet: 0xD0, then the u16 ex id.
+    fn ex(id: i16) -> Bytes {
+        Bytes::default().byte(0xD0).short(id)
+    }
+
+    #[test]
+    fn join_and_leave() {
+        check_round_trip(
+            &RequestJoinPledge {
+                target: 0x1000_0005,
+                pledge_type: -1,
+            },
+            &plain(0x26).int(0x1000_0005).int(-1).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestAnswerJoinPledge { answer: 1 },
+            &plain(0x27).int(1).done(),
+            1,
+        );
+        check_round_trip(&RequestWithdrawalPledge, &[0x28], 1);
+        check_round_trip(
+            &RequestOustPledgeMember { target: "Bob".into() },
+            &plain(0x29).string("Bob").done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn information_requests() {
+        check_round_trip(&RequestPledgeMemberList, &[0x4D], 1);
+        check_round_trip(&RequestPledgeInfo { clan_id: 77 }, &plain(0x65).int(77).done(), 1);
+        check_round_trip(
+            &RequestPledgeExtendedInfo { name: "Clan".into() },
+            &plain(0x66).string("Clan").done(),
+            1,
+        );
+        check_round_trip(&RequestPledgeCrest { crest_id: 5 }, &plain(0x67).int(5).done(), 1);
+        check_round_trip(
+            &RequestExPledgeCrestLarge { crest_id: 5 },
+            &ex(0x10).int(5).done(),
+            3,
+        );
+        check_round_trip(&RequestPledgePowerGradeList, &ex(0x13).done(), 3);
+        check_round_trip(
+            &RequestPledgeMemberPowerInfo {
+                unk1: 1,
+                player: "Bob".into(),
+            },
+            &ex(0x14).int(1).string("Bob").done(),
+            3,
+        );
+        check_round_trip(
+            &RequestPledgeMemberInfo {
+                unk1: 2,
+                player: "Bob".into(),
+            },
+            &ex(0x16).int(2).string("Bob").done(),
+            3,
+        );
+        check_round_trip(
+            &RequestPledgeWarList { unk1: 0, tab: 1 },
+            &ex(0x17).int(0).int(1).done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn management_requests() {
+        check_round_trip(
+            &RequestPledgeSetAcademyMaster {
+                set: 1,
+                curr_player_name: "Sponsor".into(),
+                target_player_name: "Pupil".into(),
+            },
+            &ex(0x12).int(1).string("Sponsor").string("Pupil").done(),
+            3,
+        );
+        check_round_trip(
+            &RequestPledgeSetMemberPowerGrade {
+                member: "Bob".into(),
+                power_grade: 3,
+            },
+            &ex(0x15).string("Bob").int(3).done(),
+            3,
+        );
+        check_round_trip(
+            &RequestPledgeReorganizeMember {
+                is_member_selected: 1,
+                member_name: "Bob".into(),
+                new_pledge_type: 100,
+                selected_member: "Eve".into(),
+            },
+            &ex(0x2C).int(1).string("Bob").int(100).string("Eve").done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn pledge_power_reads_privileges_only_for_action_two() {
+        check_round_trip(
+            &RequestPledgePower {
+                rank: 3,
+                action: 2,
+                privs: 0x1234,
+            },
+            &plain(0xCC).int(3).int(2).int(0x1234).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestPledgePower {
+                rank: 3,
+                action: 1,
+                privs: 0,
+            },
+            &plain(0xCC).int(3).int(1).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn crest_uploads() {
+        check_round_trip(
+            &RequestSetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3]),
+            },
+            &plain(0x09).int(3).raw(&[1, 2, 3]).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestExSetPledgeCrestLarge {
+                length: 2,
+                data: Some(vec![9, 8]),
+            },
+            &ex(0x11).int(2).raw(&[9, 8]).done(),
+            3,
+        );
+        check_round_trip(
+            &RequestSetAllyCrest {
+                length: 1,
+                data: Some(vec![7]),
+            },
+            &plain(0x91).int(1).raw(&[7]).done(),
+            1,
+        );
+        // Java stops reading above the limit (256, 2176, 192): no data, and bytes may follow.
+        for (limit, over) in [(256, 257), (192, 193)] {
+            let body = Bytes::default().int(over).raw(&[0; 4]).done();
+            let (length, data) = if limit == 256 {
+                let p = RequestSetPledgeCrest::decode(&mut PacketReader::new(&body)).unwrap();
+                (p.length, p.data)
+            } else {
+                let p = RequestSetAllyCrest::decode(&mut PacketReader::new(&body)).unwrap();
+                (p.length, p.data)
+            };
+            assert_eq!((length, data), (over, None));
+        }
+        let body = Bytes::default().int(2177).done();
+        let p = RequestExSetPledgeCrestLarge::decode(&mut PacketReader::new(&body)).unwrap();
+        assert_eq!(p.data, None);
+        // A length of exactly the limit is read in full, and a negative length or one beyond the
+        // packet is Java's BufferUnderflowException: a decode error.
+        let at_limit = Bytes::default().int(256).raw(&[5; 256]).done();
+        let p = RequestSetPledgeCrest::decode(&mut PacketReader::new(&at_limit)).unwrap();
+        assert_eq!(p.data.map(|d| d.len()), Some(256));
+        let negative = Bytes::default().int(-1).done();
+        assert!(RequestSetPledgeCrest::decode(&mut PacketReader::new(&negative)).is_err());
+        let short = Bytes::default().int(10).raw(&[1, 2]).done();
+        assert!(RequestSetPledgeCrest::decode(&mut PacketReader::new(&short)).is_err());
+    }
+
+    #[test]
+    fn war_requests() {
+        check_round_trip(
+            &RequestStartPledgeWar {
+                pledge_name: "Foes".into(),
+            },
+            &plain(0x03).string("Foes").done(),
+            1,
+        );
+        check_round_trip(
+            &RequestReplyStartPledgeWar {
+                req_name: "Foes".into(),
+                answer: 1,
+            },
+            &plain(0x04).string("Foes").int(1).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestStopPledgeWar {
+                pledge_name: "Foes".into(),
+            },
+            &plain(0x05).string("Foes").done(),
+            1,
+        );
+        check_round_trip(
+            &RequestReplyStopPledgeWar {
+                req_name: "Foes".into(),
+                answer: 0,
+            },
+            &plain(0x06).string("Foes").int(0).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestSurrenderPledgeWar {
+                pledge_name: "Foes".into(),
+            },
+            &plain(0x07).string("Foes").done(),
+            1,
+        );
+        check_round_trip(
+            &RequestReplySurrenderPledgeWar {
+                req_name: "Foes".into(),
+                answer: 1,
+            },
+            &plain(0x08).string("Foes").int(1).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn alliance_requests() {
+        check_round_trip(
+            &RequestJoinAlly { id: 0x1000_0009 },
+            &plain(0x8C).int(0x1000_0009).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestAnswerJoinAlly { response: 1 },
+            &plain(0x8D).int(1).done(),
+            1,
+        );
+        check_round_trip(&AllyLeave, &[0x8E], 1);
+        check_round_trip(
+            &AllyDismiss {
+                clan_name: "Clan".into(),
+            },
+            &plain(0x8F).string("Clan").done(),
+            1,
+        );
+        check_round_trip(&RequestDismissAlly, &[0x90], 1);
+        check_round_trip(&RequestAllyCrest { crest_id: 4 }, &plain(0x92).int(4).done(), 1);
+        check_round_trip(&RequestAllyInfo, &[0x2E], 1);
+    }
+}
+
+mod pledge_server {
+    use super::*;
+    use l2_protocol_game::server::pledge::*;
+
+    fn member() -> PledgeMember {
+        PledgeMember {
+            name: "Bob".into(),
+            level: 40,
+            class_id: 18,
+            sex: 1,
+            race: 2,
+            online_object_id: 0x1000_0001,
+            has_sponsor: true,
+        }
+    }
+
+    fn member_bytes(b: Bytes) -> Bytes {
+        b.string("Bob")
+            .int(40)
+            .int(18)
+            .int(1)
+            .int(2)
+            .int(0x1000_0001)
+            .int(1)
+    }
+
+    #[test]
+    fn ask_join_pledge_follows_the_value_dependent_layout() {
+        // Main clan, no sub pledge: requestor, clan name.
+        check_round_trip(
+            &AskJoinPledge {
+                requestor_object_id: 7,
+                sub_pledge_name: None,
+                pledge_type: 0,
+                pledge_name: "Clan".into(),
+            },
+            &Bytes::default().byte(0x2C).int(7).string("Clan").done(),
+            1,
+        );
+        // A type but no sub pledge name: requestor, type, clan name.
+        check_round_trip(
+            &AskJoinPledge {
+                requestor_object_id: 7,
+                sub_pledge_name: None,
+                pledge_type: 100,
+                pledge_name: "Clan".into(),
+            },
+            &Bytes::default().byte(0x2C).int(7).int(100).string("Clan").done(),
+            1,
+        );
+        // Knight unit: the sub pledge name comes first because the type is above 0.
+        check_round_trip(
+            &AskJoinPledge {
+                requestor_object_id: 7,
+                sub_pledge_name: Some("Knights".into()),
+                pledge_type: 100,
+                pledge_name: "Clan".into(),
+            },
+            &Bytes::default()
+                .byte(0x2C)
+                .int(7)
+                .string("Knights")
+                .int(100)
+                .string("Clan")
+                .done(),
+            1,
+        );
+        // Academy (type -1): Java writes the clan name where the sub pledge name would go.
+        check_round_trip(
+            &AskJoinPledge {
+                requestor_object_id: 7,
+                sub_pledge_name: Some("Clan".into()),
+                pledge_type: -1,
+                pledge_name: "Clan".into(),
+            },
+            &Bytes::default()
+                .byte(0x2C)
+                .int(7)
+                .string("Clan")
+                .int(-1)
+                .string("Clan")
+                .done(),
+            1,
+        );
+        // The encoder follows Java even when the sub pledge name would be lost.
+        let lossy = AskJoinPledge {
+            requestor_object_id: 7,
+            sub_pledge_name: Some("Academy".into()),
+            pledge_type: -1,
+            pledge_name: "Clan".into(),
+        };
+        assert_eq!(
+            lossy.to_bytes(),
+            Bytes::default()
+                .byte(0x2C)
+                .int(7)
+                .string("Clan")
+                .int(-1)
+                .string("Clan")
+                .done()
+        );
+        // Bytes that fit no layout are an error, not a guess.
+        assert!(AskJoinPledge::decode(&mut PacketReader::new(&[1, 0, 0, 0, 0xFF])).is_err());
+    }
+
+    #[test]
+    fn simple_packets() {
+        check_round_trip(
+            &JoinPledge { pledge_id: 9 },
+            &Bytes::default().byte(0x2D).int(9).done(),
+            1,
+        );
+        check_round_trip(
+            &PledgeInfo {
+                clan_id: 9,
+                clan_name: "Clan".into(),
+                ally_name: "Ally".into(),
+            },
+            &Bytes::default()
+                .byte(0x89)
+                .int(9)
+                .string("Clan")
+                .string("Ally")
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &PledgeShowMemberListDelete {
+                player_name: "Bob".into(),
+            },
+            &Bytes::default().byte(0x5D).string("Bob").done(),
+            1,
+        );
+        check_round_trip(&PledgeShowMemberListDeleteAll, &[0x88], 1);
+        check_round_trip(
+            &PledgeStatusChanged {
+                leader_id: 1,
+                clan_id: 2,
+                crest_id: 3,
+                ally_id: 4,
+                ally_crest_id: 5,
+            },
+            &Bytes::default()
+                .byte(0xCD)
+                .int(1)
+                .int(2)
+                .int(3)
+                .int(4)
+                .int(5)
+                .int(0)
+                .int(0)
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &AskJoinAlly {
+                requestor_object_id: 3,
+                requestor_name: "Boss".into(),
+            },
+            &Bytes::default().byte(0xBB).int(3).string("Boss").done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn crest_packets() {
+        check_round_trip(
+            &PledgeCrest {
+                crest_id: 5,
+                data: vec![1, 2, 3],
+            },
+            &Bytes::default().byte(0x6A).int(5).int(3).raw(&[1, 2, 3]).done(),
+            1,
+        );
+        // A crest that does not exist is a length of 0.
+        check_round_trip(
+            &PledgeCrest {
+                crest_id: 5,
+                data: vec![],
+            },
+            &Bytes::default().byte(0x6A).int(5).int(0).done(),
+            1,
+        );
+        check_round_trip(
+            &AllyCrest {
+                crest_id: 6,
+                data: vec![4],
+            },
+            &Bytes::default().byte(0xAF).int(6).int(1).raw(&[4]).done(),
+            1,
+        );
+        check_round_trip(
+            &ExPledgeEmblem {
+                crest_id: 7,
+                data: vec![9, 9],
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x1B)
+                .int(0)
+                .int(7)
+                .int(2)
+                .raw(&[9, 9])
+                .done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn member_list_all() {
+        let packet = PledgeShowMemberListAll {
+            main_or_subpledge: 0,
+            clan_id: 0x1000_0050,
+            pledge_type: 0,
+            clan_name: "Clan".into(),
+            leader_name: "Boss".into(),
+            crest_id: 11,
+            level: 5,
+            castle_id: 1,
+            hideout_id: 2,
+            fort_id: 3,
+            rank: 4,
+            reputation_score: 5_000,
+            ally_id: 6,
+            ally_name: "Ally".into(),
+            ally_crest_id: 12,
+            at_war: true,
+            members: vec![member()],
+        };
+        let expected = member_bytes(
+            Bytes::default()
+                .byte(0x5A)
+                .int(0)
+                .int(0x1000_0050)
+                .int(0)
+                .string("Clan")
+                .string("Boss")
+                .int(11)
+                .int(5)
+                .int(1)
+                .int(2)
+                .int(3)
+                .int(4)
+                .int(5_000)
+                .int(0)
+                .int(0)
+                .int(6)
+                .string("Ally")
+                .int(12)
+                .int(1)
+                .int(0) // territory castle id
+                .int(1), // member count
+        )
+        .done();
+        check_round_trip(&packet, &expected, 1);
+    }
+
+    #[test]
+    fn member_list_update_add() {
+        let online = PledgeShowMemberListUpdate {
+            name: "Bob".into(),
+            level: 40,
+            class_id: 18,
+            female: true,
+            race: 2,
+            online: Some(PledgeMemberOnline {
+                object_id: 0x1000_0001,
+                pledge_type: 100,
+            }),
+            has_sponsor: false,
+        };
+        check_round_trip(
+            &online,
+            &Bytes::default()
+                .byte(0x5B)
+                .string("Bob")
+                .int(40)
+                .int(18)
+                .int(1)
+                .int(2)
+                .int(0x1000_0001)
+                .int(100)
+                .int(0)
+                .done(),
+            1,
+        );
+        // Going offline sends 0 for the object id and the pledge type.
+        let offline = PledgeShowMemberListUpdate {
+            online: None,
+            ..online
+        };
+        check_round_trip(
+            &offline,
+            &Bytes::default()
+                .byte(0x5B)
+                .string("Bob")
+                .int(40)
+                .int(18)
+                .int(1)
+                .int(2)
+                .int(0)
+                .int(0)
+                .int(0)
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &PledgeShowMemberListAdd {
+                name: "Bob".into(),
+                level: 40,
+                class_id: 18,
+                online_object_id: 0x1000_0001,
+                pledge_type: 100,
+            },
+            &Bytes::default()
+                .byte(0x5C)
+                .string("Bob")
+                .int(40)
+                .int(18)
+                .int(0)
+                .int(1)
+                .int(0x1000_0001)
+                .int(100)
+                .done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn member_details_and_sub_pledges() {
+        check_round_trip(
+            &PledgeReceiveMemberInfo {
+                pledge_type: 100,
+                name: "Bob".into(),
+                title: "Sir".into(),
+                power_grade: 3,
+                pledge_name: "Knights".into(),
+                apprentice_or_sponsor_name: "Eve".into(),
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x3E)
+                .int(100)
+                .string("Bob")
+                .string("Sir")
+                .int(3)
+                .string("Knights")
+                .string("Eve")
+                .done(),
+            3,
+        );
+        check_round_trip(
+            &PledgeReceivePowerInfo {
+                power_grade: 3,
+                name: "Bob".into(),
+                privileges: 0x7FFE,
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x3D)
+                .int(3)
+                .string("Bob")
+                .int(0x7FFE)
+                .done(),
+            3,
+        );
+        check_round_trip(
+            &PledgeReceiveSubPledgeCreated {
+                id: 100,
+                name: "Knights".into(),
+                leader_name: String::new(),
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x40)
+                .int(1)
+                .int(100)
+                .string("Knights")
+                .string("")
+                .done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn info_update() {
+        check_round_trip(
+            &PledgeShowInfoUpdate {
+                clan_id: 1,
+                crest_id: 2,
+                level: 3,
+                castle_id: 4,
+                hideout_id: 5,
+                fort_id: 6,
+                rank: 7,
+                reputation_score: 8,
+                ally_id: 9,
+                ally_name: "Ally".into(),
+                ally_crest_id: 10,
+                at_war: true,
+            },
+            &Bytes::default()
+                .byte(0x8E)
+                .int(1)
+                .int(2)
+                .int(3)
+                .int(4)
+                .int(5)
+                .int(6)
+                .int(7)
+                .int(8)
+                .int(0)
+                .int(0)
+                .int(9)
+                .string("Ally")
+                .int(10)
+                .int(1)
+                .done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn gm_view() {
+        let packet = GmViewPledgeInfo {
+            player_name: "Boss".into(),
+            clan_id: 1,
+            clan_name: "Clan".into(),
+            leader_name: "Boss".into(),
+            crest_id: 2,
+            level: 3,
+            castle_id: 4,
+            hideout_id: 5,
+            fort_id: 6,
+            rank: 7,
+            reputation_score: 8,
+            ally_id: 9,
+            ally_name: "Ally".into(),
+            ally_crest_id: 10,
+            at_war: false,
+            members: vec![member()],
+        };
+        let expected = member_bytes(
+            Bytes::default()
+                .byte(0x96)
+                .string("Boss")
+                .int(1)
+                .int(0)
+                .string("Clan")
+                .string("Boss")
+                .int(2)
+                .int(3)
+                .int(4)
+                .int(5)
+                .int(6)
+                .int(7)
+                .int(8)
+                .int(0)
+                .int(0)
+                .int(9)
+                .string("Ally")
+                .int(10)
+                .int(0)
+                .int(0) // T3 unknown
+                .int(1),
+        )
+        .done();
+        check_round_trip(&packet, &expected, 1);
+    }
+
+    #[test]
+    fn privileges_and_skills() {
+        check_round_trip(
+            &PledgePowerGradeList {
+                privs: vec![
+                    RankPrivileges {
+                        rank: 1,
+                        privileges: 0x7FFE,
+                    },
+                    RankPrivileges {
+                        rank: 2,
+                        privileges: 0x10,
+                    },
+                ],
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x3C)
+                .int(2)
+                .int(1)
+                .int(0x7FFE)
+                .int(2)
+                .int(0x10)
+                .done(),
+            3,
+        );
+        check_round_trip(
+            &ManagePledgePower { privileges: 0x30 },
+            &Bytes::default().byte(0x2A).int(0).int(0).int(0x30).done(),
+            1,
+        );
+        check_round_trip(
+            &PledgeSkillList {
+                skills: vec![PledgeSkillEntry {
+                    display_id: 370,
+                    display_level: 1,
+                }],
+                sub_skills: vec![SubPledgeSkill {
+                    sub_type: 100,
+                    skill_id: 611,
+                    skill_level: 2,
+                }],
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x3A)
+                .int(1)
+                .int(1)
+                .int(370)
+                .int(1)
+                .int(100)
+                .int(611)
+                .int(2)
+                .done(),
+            3,
+        );
+        check_round_trip(
+            &PledgeSkillListAdd { id: 370, level: 3 },
+            &Bytes::default().byte(0xFE).short(0x3B).int(370).int(3).done(),
+            3,
+        );
+        check_round_trip(
+            &ExSubPledgeSkillAdd {
+                sub_type: 100,
+                skill_id: 611,
+                skill_level: 2,
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x76)
+                .int(100)
+                .int(611)
+                .int(2)
+                .done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn wars() {
+        // Java skips clans it cannot find but still writes the full size as the count.
+        check_round_trip(
+            &PledgeReceiveWarList {
+                tab: 1,
+                list_size: 3,
+                clan_names: vec!["Foes".into(), "Rivals".into()],
+            },
+            &Bytes::default()
+                .byte(0xFE)
+                .short(0x3F)
+                .int(1)
+                .int(0)
+                .int(3)
+                .string("Foes")
+                .int(1)
+                .int(1)
+                .string("Rivals")
+                .int(1)
+                .int(1)
+                .done(),
+            3,
+        );
+        // The three war notices differ in the order of the two names.
+        check_round_trip(
+            &StartPledgeWar {
+                player_name: "Boss".into(),
+                pledge_name: "Clan".into(),
+            },
+            &Bytes::default().byte(0x63).string("Boss").string("Clan").done(),
+            1,
+        );
+        check_round_trip(
+            &StopPledgeWar {
+                pledge_name: "Clan".into(),
+                player_name: "Boss".into(),
+            },
+            &Bytes::default().byte(0x65).string("Clan").string("Boss").done(),
+            1,
+        );
+        check_round_trip(
+            &SurrenderPledgeWar {
+                pledge_name: "Clan".into(),
+                player_name: "Boss".into(),
+            },
+            &Bytes::default().byte(0x67).string("Clan").string("Boss").done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn alliance_info() {
+        check_round_trip(
+            &AllianceInfo {
+                name: "Ally".into(),
+                total: 30,
+                online: 12,
+                leader_clan: "Clan".into(),
+                leader_player: "Boss".into(),
+                allies: vec![
+                    AllianceClanInfo {
+                        clan_name: "Clan".into(),
+                        level: 5,
+                        leader_name: "Boss".into(),
+                        total: 20,
+                        online: 8,
+                    },
+                    AllianceClanInfo {
+                        clan_name: "Other".into(),
+                        level: 3,
+                        leader_name: "Duke".into(),
+                        total: 10,
+                        online: 4,
+                    },
+                ],
+            },
+            &Bytes::default()
+                .byte(0xB5)
+                .string("Ally")
+                .int(30)
+                .int(12)
+                .string("Clan")
+                .string("Boss")
+                .int(2)
+                .string("Clan")
+                .int(0)
+                .int(5)
+                .string("Boss")
+                .int(20)
+                .int(8)
+                .string("Other")
+                .int(0)
+                .int(3)
+                .string("Duke")
+                .int(10)
+                .int(4)
+                .done(),
+            1,
+        );
+    }
+}
+
 // Silence the unused-helper warnings of the builder methods the later groups use.
 #[allow(dead_code)]
 fn _builder_is_complete(b: Bytes) -> Vec<u8> {

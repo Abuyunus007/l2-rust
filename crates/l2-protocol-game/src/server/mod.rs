@@ -9,6 +9,66 @@ use l2_net::{PacketError, PacketReader, PacketWriter};
 
 use crate::generated::opcodes::ServerOpcode;
 
+/// Declares a server packet that is nothing but a list of ints, longs and strings in a row (the
+/// field types of [`crate::client::WireField`]). Same result as writing the struct, the `OPCODE`
+/// const and the `Encode`/`Decode` impls by hand (see `skills.rs`). Put the `// Java:` line above
+/// the invocation.
+macro_rules! server_packet {
+    ($(#[$meta:meta])* $name:ident, $op:ident { $($(#[$fmeta:meta])* $field:ident: $ty:ty),* $(,)? }) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub struct $name {
+            $($(#[$fmeta])* pub $field: $ty,)*
+        }
+
+        impl $name {
+            pub const OPCODE: $crate::generated::opcodes::ServerOpcode =
+                $crate::generated::opcodes::ServerOpcode::$op;
+        }
+
+        impl l2_net::Encode for $name {
+            fn encode(&self, w: &mut l2_net::PacketWriter) {
+                $crate::server::write_opcode(w, Self::OPCODE);
+                $($crate::client::WireField::put(&self.$field, w);)*
+            }
+        }
+
+        impl l2_net::Decode for $name {
+            fn decode(r: &mut l2_net::PacketReader) -> Result<Self, l2_net::PacketError> {
+                Ok(Self {
+                    $($field: <$ty as $crate::client::WireField>::take(r)?,)*
+                })
+            }
+        }
+    };
+}
+
+/// Like [`server_packet!`] for a packet without fields (a unit struct).
+macro_rules! server_unit_packet {
+    ($(#[$meta:meta])* $name:ident, $op:ident) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub struct $name;
+
+        impl $name {
+            pub const OPCODE: $crate::generated::opcodes::ServerOpcode =
+                $crate::generated::opcodes::ServerOpcode::$op;
+        }
+
+        impl l2_net::Encode for $name {
+            fn encode(&self, w: &mut l2_net::PacketWriter) {
+                $crate::server::write_opcode(w, Self::OPCODE);
+            }
+        }
+
+        impl l2_net::Decode for $name {
+            fn decode(_r: &mut l2_net::PacketReader) -> Result<Self, l2_net::PacketError> {
+                Ok(Self)
+            }
+        }
+    };
+}
+
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
@@ -23,6 +83,7 @@ pub mod items;
 pub mod map_windows;
 pub mod movement;
 pub mod party;
+pub mod pledge;
 pub mod regen;
 pub mod skills;
 pub mod store;
@@ -70,6 +131,15 @@ pub use party::{
     PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
     PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowDeleteAll,
     PartySmallWindowUpdate, PartySummon, PartyWindowMember,
+};
+pub use pledge::{
+    AllianceClanInfo, AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem,
+    ExSubPledgeSkillAdd, GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo,
+    PledgeMember, PledgeMemberOnline, PledgePowerGradeList, PledgeReceiveMemberInfo, PledgeReceivePowerInfo,
+    PledgeReceiveSubPledgeCreated, PledgeReceiveWarList, PledgeShowInfoUpdate, PledgeShowMemberListAdd,
+    PledgeShowMemberListAll, PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll,
+    PledgeShowMemberListUpdate, PledgeSkillEntry, PledgeSkillList, PledgeSkillListAdd, PledgeStatusChanged,
+    RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
 };
 pub use regen::ExRegenMax;
 pub use skills::{
