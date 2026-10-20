@@ -11,11 +11,32 @@ use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
     NewCharacter, ProtocolVersion, RequestAcquireSkill, RequestAcquireSkillInfo, RequestActionUse,
-    RequestAutoSoulShot, RequestBypassToServer, RequestDestroyItem, RequestDispel, RequestDropItem,
-    RequestGotoLobby, RequestItemList, RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse,
-    RequestNetPing, RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg,
-    RequestSkillCoolTime, RequestTargetCanceld, RequestUnEquipItem, RequestVoteNew, Say2, SendBypassBuildCmd,
-    UseItem, ValidatePosition,
+    RequestAnswerJoinParty, RequestAutoSoulShot, RequestBypassToServer, RequestChangePartyLeader,
+    RequestDestroyItem, RequestDispel, RequestDropItem, RequestGotoLobby, RequestItemList, RequestJoinParty,
+    RequestKeyMapping, RequestLinkHtml, RequestMagicSkillUse, RequestNetPing, RequestOustPartyMember,
+    RequestRestart, RequestRestartPoint, RequestShortCutDel, RequestShortCutReg, RequestSkillCoolTime,
+    RequestTargetCanceld, RequestUnEquipItem, RequestVoteNew, RequestWithDrawalParty, Say2,
+    SendBypassBuildCmd, UseItem, ValidatePosition,
+};
+use crate::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+use crate::client::{
+    AllyDismiss, AllyLeave, RequestAllyCrest, RequestAllyInfo, RequestAnswerJoinAlly,
+    RequestAnswerJoinPledge, RequestDismissAlly, RequestExPledgeCrestLarge, RequestExSetPledgeCrestLarge,
+    RequestJoinAlly, RequestJoinPledge, RequestOustPledgeMember, RequestPledgeCrest,
+    RequestPledgeExtendedInfo, RequestPledgeInfo, RequestPledgeMemberInfo, RequestPledgeMemberList,
+    RequestPledgeMemberPowerInfo, RequestPledgePower, RequestPledgePowerGradeList,
+    RequestPledgeReorganizeMember, RequestPledgeSetAcademyMaster, RequestPledgeSetMemberPowerGrade,
+    RequestPledgeWarList, RequestReplyStartPledgeWar, RequestReplyStopPledgeWar,
+    RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
+    RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
+};
+use crate::client::{
+    RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
+};
+use crate::client::{
+    RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
+    RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
+    SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -68,6 +89,76 @@ pub enum ClientPacket {
     RequestDispel(RequestDispel),
     /// `REQUEST_NEW_VOTE_SYSTEM` (`0xD0` 0x007E), an ex packet.
     RequestVoteNew(RequestVoteNew),
+    RequestJoinParty(RequestJoinParty),
+    RequestAnswerJoinParty(RequestAnswerJoinParty),
+    RequestWithDrawalParty(RequestWithDrawalParty),
+    RequestOustPartyMember(RequestOustPartyMember),
+    /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
+    RequestChangePartyLeader(RequestChangePartyLeader),
+    TradeRequest(TradeRequest),
+    AnswerTradeRequest(AnswerTradeRequest),
+    AddTradeItem(AddTradeItem),
+    /// The client's `TRADE_DONE` (confirm or cancel the trade window).
+    TradeDone(TradeDone),
+    RequestPrivateStoreManageSell(RequestPrivateStoreManageSell),
+    RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy),
+    RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell),
+    RequestPrivateStoreQuitBuy(RequestPrivateStoreQuitBuy),
+    SetPrivateStoreMsgSell(SetPrivateStoreMsgSell),
+    SetPrivateStoreMsgBuy(SetPrivateStoreMsgBuy),
+    SetPrivateStoreListSell(SetPrivateStoreListSell),
+    SetPrivateStoreListBuy(SetPrivateStoreListBuy),
+    RequestPrivateStoreBuy(RequestPrivateStoreBuy),
+    RequestPrivateStoreSell(RequestPrivateStoreSell),
+    /// `SET_PRIVATE_STORE_WHOLE_MSG` (`0xD0` 0x0049), an ex packet.
+    SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg),
+    RequestJoinPledge(RequestJoinPledge),
+    RequestAnswerJoinPledge(RequestAnswerJoinPledge),
+    RequestWithdrawalPledge(RequestWithdrawalPledge),
+    RequestOustPledgeMember(RequestOustPledgeMember),
+    RequestPledgeMemberList(RequestPledgeMemberList),
+    RequestPledgeInfo(RequestPledgeInfo),
+    RequestPledgeExtendedInfo(RequestPledgeExtendedInfo),
+    RequestPledgeCrest(RequestPledgeCrest),
+    /// `RequestExPledgeCrestLarge` (`0xD0` ex packet).
+    RequestExPledgeCrestLarge(RequestExPledgeCrestLarge),
+    /// `RequestPledgePowerGradeList` (`0xD0` ex packet).
+    RequestPledgePowerGradeList(RequestPledgePowerGradeList),
+    /// `RequestPledgeMemberPowerInfo` (`0xD0` ex packet).
+    RequestPledgeMemberPowerInfo(RequestPledgeMemberPowerInfo),
+    /// `RequestPledgeMemberInfo` (`0xD0` ex packet).
+    RequestPledgeMemberInfo(RequestPledgeMemberInfo),
+    /// `RequestPledgeWarList` (`0xD0` ex packet).
+    RequestPledgeWarList(RequestPledgeWarList),
+    /// `RequestPledgeSetAcademyMaster` (`0xD0` ex packet).
+    RequestPledgeSetAcademyMaster(RequestPledgeSetAcademyMaster),
+    /// `RequestPledgeSetMemberPowerGrade` (`0xD0` ex packet).
+    RequestPledgeSetMemberPowerGrade(RequestPledgeSetMemberPowerGrade),
+    /// `RequestPledgeReorganizeMember` (`0xD0` ex packet).
+    RequestPledgeReorganizeMember(RequestPledgeReorganizeMember),
+    RequestPledgePower(RequestPledgePower),
+    RequestSetPledgeCrest(RequestSetPledgeCrest),
+    /// `RequestExSetPledgeCrestLarge` (`0xD0` ex packet).
+    RequestExSetPledgeCrestLarge(RequestExSetPledgeCrestLarge),
+    RequestSetAllyCrest(RequestSetAllyCrest),
+    RequestStartPledgeWar(RequestStartPledgeWar),
+    RequestReplyStartPledgeWar(RequestReplyStartPledgeWar),
+    RequestStopPledgeWar(RequestStopPledgeWar),
+    RequestReplyStopPledgeWar(RequestReplyStopPledgeWar),
+    RequestSurrenderPledgeWar(RequestSurrenderPledgeWar),
+    RequestReplySurrenderPledgeWar(RequestReplySurrenderPledgeWar),
+    RequestJoinAlly(RequestJoinAlly),
+    RequestAnswerJoinAlly(RequestAnswerJoinAlly),
+    AllyLeave(AllyLeave),
+    AllyDismiss(AllyDismiss),
+    RequestDismissAlly(RequestDismissAlly),
+    RequestAllyCrest(RequestAllyCrest),
+    RequestAllyInfo(RequestAllyInfo),
+    RequestPetGetItem(RequestPetGetItem),
+    RequestGetItemFromPet(RequestGetItemFromPet),
+    RequestGiveItemToPet(RequestGiveItemToPet),
+    RequestPetUseItem(RequestPetUseItem),
+    RequestChangePetName(RequestChangePetName),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -149,6 +240,113 @@ pub fn decode_client(
         RequestShortCutReg::OPCODE => ClientPacket::RequestShortCutReg(RequestShortCutReg::decode(reader)?),
         RequestShortCutDel::OPCODE => ClientPacket::RequestShortCutDel(RequestShortCutDel::decode(reader)?),
         DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
+        RequestJoinParty::OPCODE => ClientPacket::RequestJoinParty(RequestJoinParty::decode(reader)?),
+        RequestAnswerJoinParty::OPCODE => {
+            ClientPacket::RequestAnswerJoinParty(RequestAnswerJoinParty::decode(reader)?)
+        }
+        RequestWithDrawalParty::OPCODE => {
+            ClientPacket::RequestWithDrawalParty(RequestWithDrawalParty::decode(reader)?)
+        }
+        RequestOustPartyMember::OPCODE => {
+            ClientPacket::RequestOustPartyMember(RequestOustPartyMember::decode(reader)?)
+        }
+        TradeRequest::OPCODE => ClientPacket::TradeRequest(TradeRequest::decode(reader)?),
+        AnswerTradeRequest::OPCODE => ClientPacket::AnswerTradeRequest(AnswerTradeRequest::decode(reader)?),
+        AddTradeItem::OPCODE => ClientPacket::AddTradeItem(AddTradeItem::decode(reader)?),
+        TradeDone::OPCODE => ClientPacket::TradeDone(TradeDone::decode(reader)?),
+        RequestPrivateStoreManageSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreManageSell(RequestPrivateStoreManageSell::decode(reader)?)
+        }
+        RequestPrivateStoreManageBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy::decode(reader)?)
+        }
+        RequestPrivateStoreQuitSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell::decode(reader)?)
+        }
+        RequestPrivateStoreQuitBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreQuitBuy(RequestPrivateStoreQuitBuy::decode(reader)?)
+        }
+        SetPrivateStoreMsgSell::OPCODE => {
+            ClientPacket::SetPrivateStoreMsgSell(SetPrivateStoreMsgSell::decode(reader)?)
+        }
+        SetPrivateStoreMsgBuy::OPCODE => {
+            ClientPacket::SetPrivateStoreMsgBuy(SetPrivateStoreMsgBuy::decode(reader)?)
+        }
+        SetPrivateStoreListSell::OPCODE => {
+            ClientPacket::SetPrivateStoreListSell(SetPrivateStoreListSell::decode(reader)?)
+        }
+        SetPrivateStoreListBuy::OPCODE => {
+            ClientPacket::SetPrivateStoreListBuy(SetPrivateStoreListBuy::decode(reader)?)
+        }
+        RequestPrivateStoreBuy::OPCODE => {
+            ClientPacket::RequestPrivateStoreBuy(RequestPrivateStoreBuy::decode(reader)?)
+        }
+        RequestPrivateStoreSell::OPCODE => {
+            ClientPacket::RequestPrivateStoreSell(RequestPrivateStoreSell::decode(reader)?)
+        }
+        RequestJoinPledge::OPCODE => ClientPacket::RequestJoinPledge(RequestJoinPledge::decode(reader)?),
+        RequestAnswerJoinPledge::OPCODE => {
+            ClientPacket::RequestAnswerJoinPledge(RequestAnswerJoinPledge::decode(reader)?)
+        }
+        RequestWithdrawalPledge::OPCODE => {
+            ClientPacket::RequestWithdrawalPledge(RequestWithdrawalPledge::decode(reader)?)
+        }
+        RequestOustPledgeMember::OPCODE => {
+            ClientPacket::RequestOustPledgeMember(RequestOustPledgeMember::decode(reader)?)
+        }
+        RequestPledgeMemberList::OPCODE => {
+            ClientPacket::RequestPledgeMemberList(RequestPledgeMemberList::decode(reader)?)
+        }
+        RequestPledgeInfo::OPCODE => ClientPacket::RequestPledgeInfo(RequestPledgeInfo::decode(reader)?),
+        RequestPledgeExtendedInfo::OPCODE => {
+            ClientPacket::RequestPledgeExtendedInfo(RequestPledgeExtendedInfo::decode(reader)?)
+        }
+        RequestPledgeCrest::OPCODE => ClientPacket::RequestPledgeCrest(RequestPledgeCrest::decode(reader)?),
+        RequestPledgePower::OPCODE => ClientPacket::RequestPledgePower(RequestPledgePower::decode(reader)?),
+        RequestSetPledgeCrest::OPCODE => {
+            ClientPacket::RequestSetPledgeCrest(RequestSetPledgeCrest::decode(reader)?)
+        }
+        RequestSetAllyCrest::OPCODE => {
+            ClientPacket::RequestSetAllyCrest(RequestSetAllyCrest::decode(reader)?)
+        }
+        RequestStartPledgeWar::OPCODE => {
+            ClientPacket::RequestStartPledgeWar(RequestStartPledgeWar::decode(reader)?)
+        }
+        RequestReplyStartPledgeWar::OPCODE => {
+            ClientPacket::RequestReplyStartPledgeWar(RequestReplyStartPledgeWar::decode(reader)?)
+        }
+        RequestStopPledgeWar::OPCODE => {
+            ClientPacket::RequestStopPledgeWar(RequestStopPledgeWar::decode(reader)?)
+        }
+        RequestReplyStopPledgeWar::OPCODE => {
+            ClientPacket::RequestReplyStopPledgeWar(RequestReplyStopPledgeWar::decode(reader)?)
+        }
+        RequestSurrenderPledgeWar::OPCODE => {
+            ClientPacket::RequestSurrenderPledgeWar(RequestSurrenderPledgeWar::decode(reader)?)
+        }
+        RequestReplySurrenderPledgeWar::OPCODE => {
+            ClientPacket::RequestReplySurrenderPledgeWar(RequestReplySurrenderPledgeWar::decode(reader)?)
+        }
+        RequestJoinAlly::OPCODE => ClientPacket::RequestJoinAlly(RequestJoinAlly::decode(reader)?),
+        RequestAnswerJoinAlly::OPCODE => {
+            ClientPacket::RequestAnswerJoinAlly(RequestAnswerJoinAlly::decode(reader)?)
+        }
+        AllyLeave::OPCODE => ClientPacket::AllyLeave(AllyLeave::decode(reader)?),
+        AllyDismiss::OPCODE => ClientPacket::AllyDismiss(AllyDismiss::decode(reader)?),
+        RequestDismissAlly::OPCODE => ClientPacket::RequestDismissAlly(RequestDismissAlly::decode(reader)?),
+        RequestAllyCrest::OPCODE => ClientPacket::RequestAllyCrest(RequestAllyCrest::decode(reader)?),
+        RequestAllyInfo::OPCODE => ClientPacket::RequestAllyInfo(RequestAllyInfo::decode(reader)?),
+        RequestPetGetItem::OPCODE => ClientPacket::RequestPetGetItem(RequestPetGetItem::decode(reader)?),
+        RequestGetItemFromPet::OPCODE => {
+            ClientPacket::RequestGetItemFromPet(RequestGetItemFromPet::decode(reader)?)
+        }
+        RequestGiveItemToPet::OPCODE => {
+            ClientPacket::RequestGiveItemToPet(RequestGiveItemToPet::decode(reader)?)
+        }
+        RequestPetUseItem::OPCODE => ClientPacket::RequestPetUseItem(RequestPetUseItem::decode(reader)?),
+        RequestChangePetName::OPCODE => {
+            ClientPacket::RequestChangePetName(RequestChangePetName::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -175,6 +373,39 @@ fn decode_ex_client(
         }
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
         RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
+        RequestChangePartyLeader::EX_OPCODE => {
+            ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
+        }
+        SetPrivateStoreWholeMsg::EX_OPCODE => {
+            ClientPacket::SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg::decode(reader)?)
+        }
+        RequestExPledgeCrestLarge::EX_OPCODE => {
+            ClientPacket::RequestExPledgeCrestLarge(RequestExPledgeCrestLarge::decode(reader)?)
+        }
+        RequestPledgePowerGradeList::EX_OPCODE => {
+            ClientPacket::RequestPledgePowerGradeList(RequestPledgePowerGradeList::decode(reader)?)
+        }
+        RequestPledgeMemberPowerInfo::EX_OPCODE => {
+            ClientPacket::RequestPledgeMemberPowerInfo(RequestPledgeMemberPowerInfo::decode(reader)?)
+        }
+        RequestPledgeMemberInfo::EX_OPCODE => {
+            ClientPacket::RequestPledgeMemberInfo(RequestPledgeMemberInfo::decode(reader)?)
+        }
+        RequestPledgeWarList::EX_OPCODE => {
+            ClientPacket::RequestPledgeWarList(RequestPledgeWarList::decode(reader)?)
+        }
+        RequestPledgeSetAcademyMaster::EX_OPCODE => {
+            ClientPacket::RequestPledgeSetAcademyMaster(RequestPledgeSetAcademyMaster::decode(reader)?)
+        }
+        RequestPledgeSetMemberPowerGrade::EX_OPCODE => {
+            ClientPacket::RequestPledgeSetMemberPowerGrade(RequestPledgeSetMemberPowerGrade::decode(reader)?)
+        }
+        RequestPledgeReorganizeMember::EX_OPCODE => {
+            ClientPacket::RequestPledgeReorganizeMember(RequestPledgeReorganizeMember::decode(reader)?)
+        }
+        RequestExSetPledgeCrestLarge::EX_OPCODE => {
+            ClientPacket::RequestExSetPledgeCrestLarge(RequestExSetPledgeCrestLarge::decode(reader)?)
+        }
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))
@@ -341,10 +572,11 @@ mod tests {
 
     #[test]
     fn known_but_unported_packets_are_reported() {
-        // RequestGetItemFromPet (0x2C, a pet packet) is accepted in IN_GAME, but has no struct yet.
+        // RequestPartyMatchConfig (0x7F, party matching) is accepted in IN_GAME, but has no struct
+        // yet.
         assert_eq!(
-            decode(InGame, 0x2C, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::RequestGetItemFromPet))
+            decode(InGame, 0x7F, &[]).unwrap(),
+            Some(ClientPacket::Unported(ClientOpcode::RequestPartyMatchConfig))
         );
         // RequestManorList (ex id 0x0001): the id is consumed, the body is left alone.
         let mut r = PacketReader::new(&[0x01, 0x00, 0xAA]);

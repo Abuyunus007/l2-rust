@@ -41,12 +41,37 @@ use l2_protocol_game::server::interaction::{
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+use l2_protocol_game::server::party::{
+    AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
+    PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
+    PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
+};
+use l2_protocol_game::server::pledge::{
+    AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem, ExSubPledgeSkillAdd,
+    GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo, PledgeMember,
+    PledgePowerGradeList, PledgeReceiveMemberInfo, PledgeReceivePowerInfo, PledgeReceiveSubPledgeCreated,
+    PledgeReceiveWarList, PledgeShowInfoUpdate, PledgeShowMemberListAdd, PledgeShowMemberListAll,
+    PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
+    PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
+};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
     SkillPosition,
 };
+use l2_protocol_game::server::store::{
+    BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
+    PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
+    SellStoreEntry, StoreCandidate,
+};
+use l2_protocol_game::server::summon::{
+    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+};
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::trade::{
+    SendTradeRequest, TradeDone as ServerTradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone,
+    TradeOwnAdd, TradeStart, TradeUpdate,
+};
 use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
@@ -184,6 +209,102 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::RequestVoteNew(p) => object!(p => target_id),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
+        ClientPacket::RequestJoinParty(p) => object!(p => name, party_distribution_type_id),
+        ClientPacket::RequestAnswerJoinParty(p) => object!(p => response),
+        ClientPacket::RequestWithDrawalParty(_) => json!({}),
+        ClientPacket::RequestOustPartyMember(p) => object!(p => name),
+        ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::TradeRequest(p) => object!(p => object_id),
+        ClientPacket::AnswerTradeRequest(p) => object!(p => response),
+        ClientPacket::AddTradeItem(p) => object!(p => trade_id, object_id, count),
+        ClientPacket::TradeDone(p) => object!(p => response),
+        ClientPacket::RequestPrivateStoreManageSell(_)
+        | ClientPacket::RequestPrivateStoreManageBuy(_)
+        | ClientPacket::RequestPrivateStoreQuitSell(_)
+        | ClientPacket::RequestPrivateStoreQuitBuy(_) => json!({}),
+        ClientPacket::SetPrivateStoreMsgSell(p) => object!(p => store_msg),
+        ClientPacket::SetPrivateStoreMsgBuy(p) => object!(p => store_msg),
+        ClientPacket::SetPrivateStoreWholeMsg(p) => object!(p => msg),
+        ClientPacket::SetPrivateStoreListSell(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "package_sale": p.package_sale, "items": items })
+        }
+        ClientPacket::SetPrivateStoreListBuy(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "items": items })
+        }
+        ClientPacket::RequestPrivateStoreBuy(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "store_player_id": p.store_player_id, "items": items })
+        }
+        ClientPacket::RequestPrivateStoreSell(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, item_id, count, price))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "store_player_id": p.store_player_id, "items": items })
+        }
+        ClientPacket::RequestJoinPledge(p) => object!(p => target, pledge_type),
+        ClientPacket::RequestAnswerJoinPledge(p) => object!(p => answer),
+        ClientPacket::RequestOustPledgeMember(p) => object!(p => target),
+        ClientPacket::RequestPledgeInfo(p) => object!(p => clan_id),
+        ClientPacket::RequestPledgeExtendedInfo(p) => object!(p => name),
+        ClientPacket::RequestPledgeCrest(p) => object!(p => crest_id),
+        ClientPacket::RequestExPledgeCrestLarge(p) => object!(p => crest_id),
+        ClientPacket::RequestPledgeMemberPowerInfo(p) => object!(p => unk1, player),
+        ClientPacket::RequestPledgeMemberInfo(p) => object!(p => unk1, player),
+        ClientPacket::RequestPledgeWarList(p) => object!(p => unk1, tab),
+        ClientPacket::RequestPledgeSetAcademyMaster(p) => {
+            object!(p => set, curr_player_name, target_player_name)
+        }
+        ClientPacket::RequestPledgeSetMemberPowerGrade(p) => object!(p => member, power_grade),
+        ClientPacket::RequestPledgeReorganizeMember(p) => {
+            object!(p => is_member_selected, member_name, new_pledge_type, selected_member)
+        }
+        ClientPacket::RequestPledgePower(p) => object!(p => rank, action, privs),
+        ClientPacket::RequestSetPledgeCrest(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestExSetPledgeCrestLarge(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestSetAllyCrest(p) => {
+            json!({ "length": p.length, "data": p.data.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestStartPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplyStartPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestStopPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplyStopPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestSurrenderPledgeWar(p) => object!(p => pledge_name),
+        ClientPacket::RequestReplySurrenderPledgeWar(p) => object!(p => req_name, answer),
+        ClientPacket::RequestJoinAlly(p) => object!(p => id),
+        ClientPacket::RequestAnswerJoinAlly(p) => object!(p => response),
+        ClientPacket::AllyDismiss(p) => object!(p => clan_name),
+        ClientPacket::RequestAllyCrest(p) => object!(p => crest_id),
+        ClientPacket::RequestWithdrawalPledge(_)
+        | ClientPacket::RequestPledgeMemberList(_)
+        | ClientPacket::RequestPledgePowerGradeList(_)
+        | ClientPacket::AllyLeave(_)
+        | ClientPacket::RequestDismissAlly(_)
+        | ClientPacket::RequestAllyInfo(_) => json!({}),
+        ClientPacket::RequestPetGetItem(p) => object!(p => object_id),
+        ClientPacket::RequestGetItemFromPet(p) => object!(p => object_id, amount, unknown),
+        ClientPacket::RequestGiveItemToPet(p) => object!(p => object_id, amount),
+        ClientPacket::RequestPetUseItem(p) => object!(p => object_id),
+        ClientPacket::RequestChangePetName(p) => object!(p => name),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -289,6 +410,120 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PartySpelled => decoded::<PartySpelled>(&mut r, party_spelled_fields),
         ServerOpcode::ConfirmDlg => decoded::<ConfirmDlg>(&mut r, confirm_dlg_fields),
         ServerOpcode::FlyToLocation => decoded::<FlyToLocation>(&mut r, fly_to_location_fields),
+        ServerOpcode::AskJoinParty => decoded::<AskJoinParty>(&mut r, ask_join_party_fields),
+        ServerOpcode::JoinParty => decoded::<JoinParty>(&mut r, join_party_fields),
+        ServerOpcode::PartySmallWindowAll => {
+            decoded::<PartySmallWindowAll>(&mut r, party_small_window_all_fields)
+        }
+        ServerOpcode::PartySmallWindowAdd => {
+            decoded::<PartySmallWindowAdd>(&mut r, party_small_window_add_fields)
+        }
+        ServerOpcode::PartySmallWindowDeleteAll => decoded::<PartySmallWindowDeleteAll>(&mut r, no_fields),
+        ServerOpcode::PartySmallWindowDelete => {
+            decoded::<PartySmallWindowDelete>(&mut r, party_small_window_delete_fields)
+        }
+        ServerOpcode::PartySmallWindowUpdate => {
+            decoded::<PartySmallWindowUpdate>(&mut r, party_small_window_update_fields)
+        }
+        ServerOpcode::PartyMemberPosition => {
+            decoded::<PartyMemberPosition>(&mut r, party_member_position_fields)
+        }
+        ServerOpcode::ExPartyPetWindowAdd => decoded::<ExPartyPetWindowAdd>(&mut r, pet_window_add_fields),
+        ServerOpcode::ExPartyPetWindowUpdate => {
+            decoded::<ExPartyPetWindowUpdate>(&mut r, pet_window_update_fields)
+        }
+        ServerOpcode::ExPartyPetWindowDelete => {
+            decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        ServerOpcode::TradeRequest => decoded::<SendTradeRequest>(&mut r, send_trade_request_fields),
+        ServerOpcode::TradeStart => decoded::<TradeStart>(&mut r, trade_start_fields),
+        ServerOpcode::TradeOwnAdd => decoded::<TradeOwnAdd>(&mut r, trade_own_add_fields),
+        ServerOpcode::TradeOtherAdd => decoded::<TradeOtherAdd>(&mut r, trade_other_add_fields),
+        ServerOpcode::TradeUpdate => decoded::<TradeUpdate>(&mut r, trade_update_fields),
+        ServerOpcode::TradePressOtherOk => decoded::<TradeOtherDone>(&mut r, no_fields),
+        ServerOpcode::TradeDone => decoded::<ServerTradeDone>(&mut r, server_trade_done_fields),
+        ServerOpcode::PrivateStoreSellManageList => {
+            decoded::<PrivateStoreManageListSell>(&mut r, store_manage_sell_fields)
+        }
+        ServerOpcode::PrivateStoreBuyManageList => {
+            decoded::<PrivateStoreManageListBuy>(&mut r, store_manage_buy_fields)
+        }
+        ServerOpcode::PrivateStoreSellList => decoded::<PrivateStoreListSell>(&mut r, store_list_sell_fields),
+        ServerOpcode::PrivateStoreBuyList => decoded::<PrivateStoreListBuy>(&mut r, store_list_buy_fields),
+        ServerOpcode::PrivateStoreSellMsg => decoded::<PrivateStoreMsgSell>(&mut r, store_msg_sell_fields),
+        ServerOpcode::PrivateStoreBuyMsg => decoded::<PrivateStoreMsgBuy>(&mut r, store_msg_buy_fields),
+        ServerOpcode::ExPrivateStorePackageMsg => {
+            decoded::<ExPrivateStoreSetWholeMsg>(&mut r, store_whole_msg_fields)
+        }
+        ServerOpcode::AskJoinPledge => decoded::<AskJoinPledge>(&mut r, ask_join_pledge_fields),
+        ServerOpcode::JoinPledge => decoded::<JoinPledge>(&mut r, join_pledge_fields),
+        ServerOpcode::PledgeInfo => decoded::<PledgeInfo>(&mut r, pledge_info_fields),
+        ServerOpcode::PledgeCrest => decoded::<PledgeCrest>(&mut r, pledge_crest_fields),
+        ServerOpcode::ExPledgeEmblem => decoded::<ExPledgeEmblem>(&mut r, ex_pledge_emblem_fields),
+        ServerOpcode::AllianceCrest => decoded::<AllyCrest>(&mut r, ally_crest_fields),
+        ServerOpcode::PledgeShowMemberListAll => {
+            decoded::<PledgeShowMemberListAll>(&mut r, pledge_show_member_list_all_fields)
+        }
+        ServerOpcode::PledgeShowMemberListUpdate => {
+            decoded::<PledgeShowMemberListUpdate>(&mut r, pledge_show_member_list_update_fields)
+        }
+        ServerOpcode::PledgeShowMemberListAdd => {
+            decoded::<PledgeShowMemberListAdd>(&mut r, pledge_show_member_list_add_fields)
+        }
+        ServerOpcode::PledgeShowMemberListDelete => {
+            decoded::<PledgeShowMemberListDelete>(&mut r, pledge_show_member_list_delete_fields)
+        }
+        ServerOpcode::PledgeShowMemberListDeleteAll => {
+            decoded::<PledgeShowMemberListDeleteAll>(&mut r, no_fields)
+        }
+        ServerOpcode::PledgeReceiveMemberInfo => {
+            decoded::<PledgeReceiveMemberInfo>(&mut r, pledge_receive_member_info_fields)
+        }
+        ServerOpcode::PledgeReceivePowerInfo => {
+            decoded::<PledgeReceivePowerInfo>(&mut r, pledge_receive_power_info_fields)
+        }
+        ServerOpcode::PledgeReceiveSubPledgeCreated => {
+            decoded::<PledgeReceiveSubPledgeCreated>(&mut r, pledge_receive_sub_pledge_created_fields)
+        }
+        ServerOpcode::PledgeShowInfoUpdate => {
+            decoded::<PledgeShowInfoUpdate>(&mut r, pledge_show_info_update_fields)
+        }
+        ServerOpcode::PledgeStatusChanged => {
+            decoded::<PledgeStatusChanged>(&mut r, pledge_status_changed_fields)
+        }
+        ServerOpcode::GmViewPledgeInfo => decoded::<GmViewPledgeInfo>(&mut r, gm_view_pledge_info_fields),
+        ServerOpcode::PledgePowerGradeList => {
+            decoded::<PledgePowerGradeList>(&mut r, pledge_power_grade_list_fields)
+        }
+        ServerOpcode::ManagePledgePower => decoded::<ManagePledgePower>(&mut r, manage_pledge_power_fields),
+        ServerOpcode::PledgeSkillList => decoded::<PledgeSkillList>(&mut r, pledge_skill_list_fields),
+        ServerOpcode::PledgeSkillListAdd => {
+            decoded::<PledgeSkillListAdd>(&mut r, pledge_skill_list_add_fields)
+        }
+        ServerOpcode::ExSubPledgeSkillAdd => {
+            decoded::<ExSubPledgeSkillAdd>(&mut r, ex_sub_pledge_skill_add_fields)
+        }
+        ServerOpcode::PledgeReceiveWarList => {
+            decoded::<PledgeReceiveWarList>(&mut r, pledge_receive_war_list_fields)
+        }
+        ServerOpcode::StartPledgeWar => decoded::<StartPledgeWar>(&mut r, start_pledge_war_fields),
+        ServerOpcode::StopPledgeWar => decoded::<StopPledgeWar>(&mut r, stop_pledge_war_fields),
+        ServerOpcode::SurrenderPledgeWar => {
+            decoded::<SurrenderPledgeWar>(&mut r, surrender_pledge_war_fields)
+        }
+        ServerOpcode::AskJoinAlliance => decoded::<AskJoinAlly>(&mut r, ask_join_ally_fields),
+        ServerOpcode::AllianceInfo => decoded::<AllianceInfo>(&mut r, alliance_info_fields),
+        ServerOpcode::PetInfo => decoded::<PetInfo>(&mut r, pet_info_fields),
+        ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
+        ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
+        ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::SetSummonRemainTime => {
+            decoded::<SetSummonRemainTime>(&mut r, set_summon_remain_time_fields)
+        }
+        ServerOpcode::PetItemList => decoded::<PetItemList>(&mut r, pet_item_list_fields),
+        ServerOpcode::PetInventoryUpdate => {
+            decoded::<PetInventoryUpdate>(&mut r, pet_inventory_update_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -852,6 +1087,372 @@ fn party_spelled_fields(p: &PartySpelled) -> Value {
     fields
 }
 
+fn ask_join_party_fields(p: &AskJoinParty) -> Value {
+    let mut fields = object!(p => requestor_name);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields
+}
+
+fn join_party_fields(p: &JoinParty) -> Value {
+    object!(p => response)
+}
+
+fn party_vitals_fields(v: &PartyMemberVitals) -> Value {
+    object!(v => object_id, name, cp, max_cp, hp, max_hp, mp, max_mp, level, class_id)
+}
+
+fn party_summon_fields(s: &PartySummon) -> Value {
+    object!(s => object_id, display_id, summon_type, name, hp, max_hp, mp, max_mp, level)
+}
+
+fn party_small_window_all_fields(p: &PartySmallWindowAll) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|m| {
+            let mut fields = party_vitals_fields(&m.vitals);
+            fields["race"] = json!(m.race);
+            fields["summon"] = m.summon.as_ref().map_or(Value::Null, party_summon_fields);
+            fields
+        })
+        .collect();
+    let mut fields = object!(p => leader_object_id);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields["members"] = json!(members);
+    fields
+}
+
+fn party_small_window_add_fields(p: &PartySmallWindowAdd) -> Value {
+    let mut fields = object!(p => leader_object_id);
+    fields["distribution_type"] = json!(p.distribution_type.id());
+    fields["member"] = party_vitals_fields(&p.member);
+    fields
+}
+
+fn party_small_window_delete_fields(p: &PartySmallWindowDelete) -> Value {
+    object!(p => object_id, name)
+}
+
+fn party_small_window_update_fields(p: &PartySmallWindowUpdate) -> Value {
+    party_vitals_fields(&p.member)
+}
+
+fn party_member_position_fields(p: &PartyMemberPosition) -> Value {
+    let locations: Vec<Value> = p
+        .locations
+        .iter()
+        .map(|l| object!(l => object_id, x, y, z))
+        .collect();
+    json!({ "locations": locations })
+}
+
+fn pet_window_fields(w: &PartyPetWindow) -> Value {
+    let mut fields = party_summon_fields(&w.summon);
+    fields["owner_object_id"] = json!(w.owner_object_id);
+    fields
+}
+
+fn pet_window_add_fields(p: &ExPartyPetWindowAdd) -> Value {
+    pet_window_fields(&p.window)
+}
+
+fn pet_window_update_fields(p: &ExPartyPetWindowUpdate) -> Value {
+    pet_window_fields(&p.window)
+}
+
+fn pet_window_delete_fields(p: &ExPartyPetWindowDelete) -> Value {
+    object!(p => summon_object_id, owner_object_id, summon_name)
+}
+
+fn send_trade_request_fields(p: &SendTradeRequest) -> Value {
+    object!(p => sender_id)
+}
+
+fn trade_item_fields(item: &TradeItemInfo) -> Value {
+    object!(
+        item => type1, object_id, item_id, count, type2, custom_type1, body_part, enchant, custom_type2,
+        attack_element_type, attack_element_power, element_defense, enchant_options
+    )
+}
+
+fn trade_start_fields(p: &TradeStart) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    json!({ "partner_object_id": p.partner_object_id, "items": items })
+}
+
+fn trade_own_add_fields(p: &TradeOwnAdd) -> Value {
+    json!({ "item": trade_item_fields(&p.item) })
+}
+
+fn trade_other_add_fields(p: &TradeOtherAdd) -> Value {
+    json!({ "item": trade_item_fields(&p.item) })
+}
+
+fn trade_update_fields(p: &TradeUpdate) -> Value {
+    json!({ "change": p.change, "item": trade_item_fields(&p.item) })
+}
+
+fn server_trade_done_fields(p: &ServerTradeDone) -> Value {
+    object!(p => num)
+}
+
+fn store_candidate_fields(c: &StoreCandidate) -> Value {
+    json!({ "item": item_fields(&c.item), "reference_price": c.reference_price })
+}
+
+fn sell_store_entry_fields(e: &SellStoreEntry) -> Value {
+    json!({ "item": item_fields(&e.item), "price": e.price, "reference_price": e.reference_price })
+}
+
+fn buy_store_entry_fields(e: &BuyStoreEntry) -> Value {
+    json!({
+        "item": item_fields(&e.item),
+        "price": e.price,
+        "reference_price": e.reference_price,
+        "count": e.count,
+    })
+}
+
+fn store_manage_sell_fields(p: &PrivateStoreManageListSell) -> Value {
+    json!({
+        "object_id": p.object_id,
+        "package_sale": p.package_sale,
+        "player_adena": p.player_adena,
+        "item_list": p.item_list.iter().map(store_candidate_fields).collect::<Vec<_>>(),
+        "sell_list": p.sell_list.iter().map(sell_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_manage_buy_fields(p: &PrivateStoreManageListBuy) -> Value {
+    json!({
+        "object_id": p.object_id,
+        "player_adena": p.player_adena,
+        "item_list": p.item_list.iter().map(store_candidate_fields).collect::<Vec<_>>(),
+        "buy_list": p.buy_list.iter().map(buy_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_list_sell_fields(p: &PrivateStoreListSell) -> Value {
+    json!({
+        "seller_object_id": p.seller_object_id,
+        "package_sale": p.package_sale,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(sell_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_list_buy_fields(p: &PrivateStoreListBuy) -> Value {
+    json!({
+        "store_object_id": p.store_object_id,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(buy_store_entry_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn store_msg_sell_fields(p: &PrivateStoreMsgSell) -> Value {
+    object!(p => object_id, message)
+}
+
+fn store_msg_buy_fields(p: &PrivateStoreMsgBuy) -> Value {
+    object!(p => object_id, message)
+}
+
+fn store_whole_msg_fields(p: &ExPrivateStoreSetWholeMsg) -> Value {
+    object!(p => object_id, message)
+}
+
+fn join_pledge_fields(p: &JoinPledge) -> Value {
+    object!(p => pledge_id)
+}
+
+fn pledge_info_fields(p: &PledgeInfo) -> Value {
+    object!(p => clan_id, clan_name, ally_name)
+}
+
+fn pledge_crest_fields(p: &PledgeCrest) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn ex_pledge_emblem_fields(p: &ExPledgeEmblem) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn ally_crest_fields(p: &AllyCrest) -> Value {
+    json!({ "crest_id": p.crest_id, "data": hex::encode(&p.data) })
+}
+
+fn pledge_show_member_list_add_fields(p: &PledgeShowMemberListAdd) -> Value {
+    object!(p => name, level, class_id, online_object_id, pledge_type)
+}
+
+fn pledge_show_member_list_delete_fields(p: &PledgeShowMemberListDelete) -> Value {
+    object!(p => player_name)
+}
+
+fn pledge_receive_member_info_fields(p: &PledgeReceiveMemberInfo) -> Value {
+    object!(p => pledge_type, name, title, power_grade, pledge_name, apprentice_or_sponsor_name)
+}
+
+fn pledge_receive_power_info_fields(p: &PledgeReceivePowerInfo) -> Value {
+    object!(p => power_grade, name, privileges)
+}
+
+fn pledge_receive_sub_pledge_created_fields(p: &PledgeReceiveSubPledgeCreated) -> Value {
+    object!(p => id, name, leader_name)
+}
+
+fn pledge_show_info_update_fields(p: &PledgeShowInfoUpdate) -> Value {
+    object!(p => clan_id, crest_id, level, castle_id, hideout_id, fort_id, rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war)
+}
+
+fn pledge_status_changed_fields(p: &PledgeStatusChanged) -> Value {
+    object!(p => leader_id, clan_id, crest_id, ally_id, ally_crest_id)
+}
+
+fn manage_pledge_power_fields(p: &ManagePledgePower) -> Value {
+    object!(p => privileges)
+}
+
+fn pledge_skill_list_add_fields(p: &PledgeSkillListAdd) -> Value {
+    object!(p => id, level)
+}
+
+fn ex_sub_pledge_skill_add_fields(p: &ExSubPledgeSkillAdd) -> Value {
+    object!(p => sub_type, skill_id, skill_level)
+}
+
+fn pledge_receive_war_list_fields(p: &PledgeReceiveWarList) -> Value {
+    object!(p => tab, list_size, clan_names)
+}
+
+fn start_pledge_war_fields(p: &StartPledgeWar) -> Value {
+    object!(p => player_name, pledge_name)
+}
+
+fn stop_pledge_war_fields(p: &StopPledgeWar) -> Value {
+    object!(p => pledge_name, player_name)
+}
+
+fn surrender_pledge_war_fields(p: &SurrenderPledgeWar) -> Value {
+    object!(p => pledge_name, player_name)
+}
+
+fn ask_join_ally_fields(p: &AskJoinAlly) -> Value {
+    object!(p => requestor_object_id, requestor_name)
+}
+
+fn ask_join_pledge_fields(p: &AskJoinPledge) -> Value {
+    object!(p => requestor_object_id, sub_pledge_name, pledge_type, pledge_name)
+}
+
+fn pledge_member_fields(m: &PledgeMember) -> Value {
+    object!(m => name, level, class_id, sex, race, online_object_id, has_sponsor)
+}
+
+fn pledge_show_member_list_all_fields(p: &PledgeShowMemberListAll) -> Value {
+    let members: Vec<Value> = p.members.iter().map(pledge_member_fields).collect();
+    let mut fields = object!(
+        p => main_or_subpledge, clan_id, pledge_type, clan_name, leader_name, crest_id, level, castle_id,
+        hideout_id, fort_id, rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war
+    );
+    fields["members"] = json!(members);
+    fields
+}
+
+fn pledge_show_member_list_update_fields(p: &PledgeShowMemberListUpdate) -> Value {
+    let online = p
+        .online
+        .map(|o| json!({ "object_id": o.object_id, "pledge_type": o.pledge_type }));
+    let mut fields = object!(p => name, level, class_id, female, race, has_sponsor);
+    fields["online"] = json!(online);
+    fields
+}
+
+fn gm_view_pledge_info_fields(p: &GmViewPledgeInfo) -> Value {
+    let members: Vec<Value> = p.members.iter().map(pledge_member_fields).collect();
+    let mut fields = object!(
+        p => player_name, clan_id, clan_name, leader_name, crest_id, level, castle_id, hideout_id, fort_id,
+        rank, reputation_score, ally_id, ally_name, ally_crest_id, at_war
+    );
+    fields["members"] = json!(members);
+    fields
+}
+
+fn pledge_power_grade_list_fields(p: &PledgePowerGradeList) -> Value {
+    let privs: Vec<Value> = p.privs.iter().map(|g| object!(g => rank, privileges)).collect();
+    json!({ "privs": privs })
+}
+
+fn pledge_skill_list_fields(p: &PledgeSkillList) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|s| object!(s => display_id, display_level))
+        .collect();
+    let sub_skills: Vec<Value> = p
+        .sub_skills
+        .iter()
+        .map(|s| object!(s => sub_type, skill_id, skill_level))
+        .collect();
+    json!({ "skills": skills, "sub_skills": sub_skills })
+}
+
+fn alliance_info_fields(p: &AllianceInfo) -> Value {
+    let allies: Vec<Value> = p
+        .allies
+        .iter()
+        .map(|a| object!(a => clan_name, level, leader_name, total, online))
+        .collect();
+    let mut fields = object!(p => name, total, online, leader_clan, leader_player);
+    fields["allies"] = json!(allies);
+    fields
+}
+
+fn pet_info_fields(p: &PetInfo) -> Value {
+    object!(
+        p => summon_type, object_id, display_id, x, y, z, heading, m_atk_spd, p_atk_spd, run_speed, walk_speed,
+        swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier,
+        attack_speed_multiplier, collision_radius, collision_height, weapon, armor, has_owner, running,
+        in_combat, alike_dead, spawn_state, name, title, pvp_flag, karma, cur_fed, max_fed, cur_hp, max_hp,
+        cur_mp, max_mp, sp, level, exp, exp_for_this_level, exp_for_next_level, weight, max_load, p_atk,
+        p_def, m_atk, m_def, accuracy, evasion, critical, move_speed, atk_speed, casting_speed,
+        abnormal_visual_effects, mountable, water_or_flying, team_id, soul_shots_per_hit,
+        spirit_shots_per_hit, form_id, abnormal_visual_effect_special
+    )
+}
+
+fn pet_status_show_fields(p: &PetStatusShow) -> Value {
+    object!(p => summon_type)
+}
+
+fn pet_status_update_fields(p: &PetStatusUpdate) -> Value {
+    object!(
+        p => summon_type, object_id, x, y, z, title, cur_fed, max_fed, cur_hp, max_hp, cur_mp, max_mp, level,
+        exp, exp_for_this_level, exp_for_next_level
+    )
+}
+
+fn pet_delete_fields(p: &PetDelete) -> Value {
+    object!(p => pet_type, pet_object_id)
+}
+
+fn set_summon_remain_time_fields(p: &SetSummonRemainTime) -> Value {
+    object!(p => max_time, remaining_time)
+}
+
+fn pet_item_list_fields(p: &PetItemList) -> Value {
+    json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() })
+}
+
+fn pet_inventory_update_fields(p: &PetInventoryUpdate) -> Value {
+    let updates: Vec<Value> = p
+        .updates
+        .iter()
+        .map(|u| json!({ "change": u.change, "item": item_fields(&u.item) }))
+        .collect();
+    json!({ "updates": updates })
+}
+
 // ---------------------------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------------------------
@@ -966,6 +1567,66 @@ mod tests {
         ServerOpcode::PartySpelled,
         ServerOpcode::ConfirmDlg,
         ServerOpcode::FlyToLocation,
+        ServerOpcode::AskJoinParty,
+        ServerOpcode::JoinParty,
+        ServerOpcode::PartySmallWindowAll,
+        ServerOpcode::PartySmallWindowAdd,
+        ServerOpcode::PartySmallWindowDeleteAll,
+        ServerOpcode::PartySmallWindowDelete,
+        ServerOpcode::PartySmallWindowUpdate,
+        ServerOpcode::PartyMemberPosition,
+        ServerOpcode::ExPartyPetWindowAdd,
+        ServerOpcode::ExPartyPetWindowUpdate,
+        ServerOpcode::ExPartyPetWindowDelete,
+        ServerOpcode::TradeRequest,
+        ServerOpcode::TradeStart,
+        ServerOpcode::TradeOwnAdd,
+        ServerOpcode::TradeOtherAdd,
+        ServerOpcode::TradeUpdate,
+        ServerOpcode::TradePressOtherOk,
+        ServerOpcode::TradeDone,
+        ServerOpcode::PrivateStoreSellManageList,
+        ServerOpcode::PrivateStoreBuyManageList,
+        ServerOpcode::PrivateStoreSellList,
+        ServerOpcode::PrivateStoreBuyList,
+        ServerOpcode::PrivateStoreSellMsg,
+        ServerOpcode::PrivateStoreBuyMsg,
+        ServerOpcode::ExPrivateStorePackageMsg,
+        ServerOpcode::AskJoinPledge,
+        ServerOpcode::JoinPledge,
+        ServerOpcode::PledgeInfo,
+        ServerOpcode::PledgeCrest,
+        ServerOpcode::ExPledgeEmblem,
+        ServerOpcode::AllianceCrest,
+        ServerOpcode::PledgeShowMemberListAll,
+        ServerOpcode::PledgeShowMemberListUpdate,
+        ServerOpcode::PledgeShowMemberListAdd,
+        ServerOpcode::PledgeShowMemberListDelete,
+        ServerOpcode::PledgeShowMemberListDeleteAll,
+        ServerOpcode::PledgeReceiveMemberInfo,
+        ServerOpcode::PledgeReceivePowerInfo,
+        ServerOpcode::PledgeReceiveSubPledgeCreated,
+        ServerOpcode::PledgeShowInfoUpdate,
+        ServerOpcode::PledgeStatusChanged,
+        ServerOpcode::GmViewPledgeInfo,
+        ServerOpcode::PledgePowerGradeList,
+        ServerOpcode::ManagePledgePower,
+        ServerOpcode::PledgeSkillList,
+        ServerOpcode::PledgeSkillListAdd,
+        ServerOpcode::ExSubPledgeSkillAdd,
+        ServerOpcode::PledgeReceiveWarList,
+        ServerOpcode::StartPledgeWar,
+        ServerOpcode::StopPledgeWar,
+        ServerOpcode::SurrenderPledgeWar,
+        ServerOpcode::AskJoinAlliance,
+        ServerOpcode::AllianceInfo,
+        ServerOpcode::PetInfo,
+        ServerOpcode::PetStatusShow,
+        ServerOpcode::PetStatusUpdate,
+        ServerOpcode::PetDelete,
+        ServerOpcode::SetSummonRemainTime,
+        ServerOpcode::PetItemList,
+        ServerOpcode::PetInventoryUpdate,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -2304,6 +2965,529 @@ mod tests {
         );
     }
 
+    #[test]
+    fn party_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
+            RequestWithDrawalParty,
+        };
+        use l2_protocol_game::server::party::{PartyDistributionType, PartyWindowMember};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestJoinParty {
+                    name: "Bob".into(),
+                    party_distribution_type_id: 1
+                }
+                .to_bytes()
+            ),
+            json!({ "name": "Bob", "party_distribution_type_id": 1 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestAnswerJoinParty { response: -1 }.to_bytes()),
+            json!({ "response": -1 })
+        );
+        assert_eq!(c2s_fields(in_game, &RequestWithDrawalParty.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(in_game, &RequestOustPartyMember { name: "Eve".into() }.to_bytes()),
+            json!({ "name": "Eve" })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestChangePartyLeader { name: "Eve".into() }.to_bytes()
+            ),
+            json!({ "name": "Eve" })
+        );
+
+        assert_eq!(
+            s2c_fields(
+                &AskJoinParty {
+                    requestor_name: "Ann".into(),
+                    distribution_type: PartyDistributionType::ByTurn
+                }
+                .to_bytes()
+            ),
+            json!({ "requestor_name": "Ann", "distribution_type": 3 })
+        );
+        assert_eq!(
+            s2c_fields(&JoinParty { response: 1 }.to_bytes()),
+            json!({ "response": 1 })
+        );
+        let vitals = PartyMemberVitals {
+            object_id: 7,
+            name: "Cy".into(),
+            cp: 1,
+            max_cp: 2,
+            hp: 3,
+            max_hp: 4,
+            mp: 5,
+            max_mp: 6,
+            level: 40,
+            class_id: 18,
+        };
+        let all = PartySmallWindowAll {
+            leader_object_id: 7,
+            distribution_type: PartyDistributionType::Random,
+            members: vec![PartyWindowMember {
+                vitals: vitals.clone(),
+                race: 2,
+                summon: Some(PartySummon {
+                    object_id: 9,
+                    display_id: 14_000,
+                    summon_type: 1,
+                    name: "Pet".into(),
+                    hp: 1,
+                    max_hp: 2,
+                    mp: 3,
+                    max_mp: 4,
+                    level: 5,
+                }),
+            }],
+        };
+        let fields = s2c_fields(&all.to_bytes());
+        assert_eq!(fields["members"][0]["name"], "Cy");
+        assert_eq!(fields["members"][0]["race"], 2);
+        assert_eq!(fields["members"][0]["summon"]["display_id"], 14_000);
+        assert_eq!(
+            s2c_fields(&PartySmallWindowUpdate { member: vitals }.to_bytes())["max_hp"],
+            4
+        );
+        assert_eq!(s2c_fields(&PartySmallWindowDeleteAll.to_bytes()), json!({}));
+        assert_eq!(
+            s2c_fields(
+                &PartySmallWindowDelete {
+                    object_id: 7,
+                    name: "Cy".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 7, "name": "Cy" })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExPartyPetWindowDelete {
+                    summon_object_id: 9,
+                    owner_object_id: 7,
+                    summon_name: "Pet".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "summon_object_id": 9, "owner_object_id": 7, "summon_name": "Pet" })
+        );
+    }
+    #[test]
+    fn trade_packets_show_their_fields() {
+        use l2_protocol_game::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &TradeRequest { object_id: 5 }.to_bytes()),
+            json!({ "object_id": 5 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &AnswerTradeRequest { response: 1 }.to_bytes()),
+            json!({ "response": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &AddTradeItem {
+                    trade_id: 1,
+                    object_id: 2,
+                    count: 3
+                }
+                .to_bytes()
+            ),
+            json!({ "trade_id": 1, "object_id": 2, "count": 3 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &TradeDone { response: 0 }.to_bytes()),
+            json!({ "response": 0 })
+        );
+
+        assert_eq!(
+            s2c_fields(&SendTradeRequest { sender_id: 9 }.to_bytes()),
+            json!({ "sender_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(&ServerTradeDone { num: 1 }.to_bytes()),
+            json!({ "num": 1 })
+        );
+        assert_eq!(s2c_fields(&TradeOtherDone.to_bytes()), json!({}));
+        let item = TradeItemInfo {
+            type1: 4,
+            object_id: 77,
+            item_id: 57,
+            count: 1_000,
+            ..TradeItemInfo::default()
+        };
+        let fields = s2c_fields(&TradeOwnAdd { item: item.clone() }.to_bytes());
+        assert_eq!(fields["item"]["item_id"], 57);
+        assert_eq!(fields["item"]["count"], 1_000);
+        assert_eq!(
+            s2c_fields(&TradeUpdate { change: 3, item }.to_bytes())["change"],
+            3
+        );
+        let start = TradeStart {
+            partner_object_id: 11,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        let fields = s2c_fields(&start.to_bytes());
+        assert_eq!(fields["partner_object_id"], 11);
+        assert_eq!(fields["items"][0]["count"], 5);
+    }
+    #[test]
+    fn private_store_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestPrivateStoreBuy, RequestPrivateStoreManageSell, SellListEntry, SetPrivateStoreListSell,
+            SetPrivateStoreMsgSell, StoreBuyRequestEntry,
+        };
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestPrivateStoreManageSell.to_bytes()),
+            json!({})
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &SetPrivateStoreMsgSell {
+                    store_msg: "cheap".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "store_msg": "cheap" })
+        );
+        let list = SetPrivateStoreListSell {
+            package_sale: true,
+            items: Some(vec![SellListEntry {
+                item_id: 7,
+                count: 2,
+                price: 100,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &list.to_bytes()),
+            json!({ "package_sale": true, "items": [{ "item_id": 7, "count": 2, "price": 100 }] })
+        );
+        // A list Java drops (count 0) shows as null items.
+        let dropped = SetPrivateStoreListSell {
+            package_sale: false,
+            items: None,
+        };
+        assert_eq!(
+            c2s_fields(in_game, &dropped.to_bytes()),
+            json!({ "package_sale": false, "items": null })
+        );
+        let buy = RequestPrivateStoreBuy {
+            store_player_id: 3,
+            items: Some(vec![StoreBuyRequestEntry {
+                object_id: 4,
+                count: 5,
+                price: 6,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &buy.to_bytes()),
+            json!({ "store_player_id": 3, "items": [{ "object_id": 4, "count": 5, "price": 6 }] })
+        );
+
+        assert_eq!(
+            s2c_fields(
+                &PrivateStoreMsgBuy {
+                    object_id: 8,
+                    message: "wanted".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 8, "message": "wanted" })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExPrivateStoreSetWholeMsg {
+                    object_id: 8,
+                    message: "pack".into()
+                }
+                .to_bytes()
+            )["message"],
+            "pack"
+        );
+        let sell = PrivateStoreListSell {
+            seller_object_id: 9,
+            package_sale: false,
+            player_adena: 1_000,
+            items: vec![SellStoreEntry {
+                item: ItemInfo::plain(5, 57, 3),
+                price: 10,
+                reference_price: 20,
+            }],
+        };
+        let fields = s2c_fields(&sell.to_bytes());
+        assert_eq!(fields["items"][0]["item"]["object_id"], 5);
+        assert_eq!(fields["items"][0]["price"], 10);
+        let buy_list = PrivateStoreListBuy {
+            store_object_id: 9,
+            player_adena: 1_000,
+            items: vec![BuyStoreEntry {
+                item: ItemInfo::plain(5, 57, 3),
+                price: 10,
+                reference_price: 20,
+                count: 4,
+            }],
+        };
+        assert_eq!(s2c_fields(&buy_list.to_bytes())["items"][0]["count"], 4);
+    }
+    #[test]
+    fn pledge_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            AllyLeave, RequestJoinPledge, RequestPledgePower, RequestPledgeWarList, RequestSetPledgeCrest,
+            RequestStartPledgeWar,
+        };
+        use l2_protocol_game::server::pledge::{AllianceClanInfo, PledgeMemberOnline};
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestJoinPledge {
+                    target: 5,
+                    pledge_type: -1
+                }
+                .to_bytes()
+            ),
+            json!({ "target": 5, "pledge_type": -1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestStartPledgeWar {
+                    pledge_name: "Foes".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "pledge_name": "Foes" })
+        );
+        assert_eq!(c2s_fields(in_game, &AllyLeave.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(in_game, &RequestPledgeWarList { unk1: 0, tab: 1 }.to_bytes()),
+            json!({ "unk1": 0, "tab": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPledgePower {
+                    rank: 2,
+                    action: 2,
+                    privs: 0x30
+                }
+                .to_bytes()
+            ),
+            json!({ "rank": 2, "action": 2, "privs": 48 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestSetPledgeCrest {
+                    length: 2,
+                    data: Some(vec![0xAB, 0xCD])
+                }
+                .to_bytes()
+            ),
+            json!({ "length": 2, "data": "abcd" })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestSetPledgeCrest {
+                    length: 300,
+                    data: None
+                }
+                .to_bytes()
+            ),
+            json!({ "length": 300, "data": null })
+        );
+
+        let ask = AskJoinPledge {
+            requestor_object_id: 7,
+            sub_pledge_name: Some("Knights".into()),
+            pledge_type: 100,
+            pledge_name: "Clan".into(),
+        };
+        assert_eq!(
+            s2c_fields(&ask.to_bytes()),
+            json!({
+                "requestor_object_id": 7,
+                "sub_pledge_name": "Knights",
+                "pledge_type": 100,
+                "pledge_name": "Clan",
+            })
+        );
+        assert_eq!(
+            s2c_fields(&JoinPledge { pledge_id: 3 }.to_bytes()),
+            json!({ "pledge_id": 3 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &PledgeCrest {
+                    crest_id: 9,
+                    data: vec![1, 2]
+                }
+                .to_bytes()
+            ),
+            json!({ "crest_id": 9, "data": "0102" })
+        );
+        let list = PledgeShowMemberListAll {
+            main_or_subpledge: 0,
+            clan_id: 3,
+            pledge_type: 0,
+            clan_name: "Clan".into(),
+            leader_name: "Boss".into(),
+            crest_id: 0,
+            level: 5,
+            castle_id: 0,
+            hideout_id: 0,
+            fort_id: 0,
+            rank: 1,
+            reputation_score: 100,
+            ally_id: 0,
+            ally_name: String::new(),
+            ally_crest_id: 0,
+            at_war: false,
+            members: vec![PledgeMember {
+                name: "Boss".into(),
+                level: 40,
+                class_id: 18,
+                sex: 0,
+                race: 1,
+                online_object_id: 11,
+                has_sponsor: false,
+            }],
+        };
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["clan_name"], "Clan");
+        assert_eq!(fields["members"][0]["online_object_id"], 11);
+        let update = PledgeShowMemberListUpdate {
+            name: "Boss".into(),
+            level: 40,
+            class_id: 18,
+            female: false,
+            race: 1,
+            online: Some(PledgeMemberOnline {
+                object_id: 11,
+                pledge_type: 0,
+            }),
+            has_sponsor: false,
+        };
+        assert_eq!(s2c_fields(&update.to_bytes())["online"]["object_id"], 11);
+        let info = AllianceInfo {
+            name: "Ally".into(),
+            total: 10,
+            online: 4,
+            leader_clan: "Clan".into(),
+            leader_player: "Boss".into(),
+            allies: vec![AllianceClanInfo {
+                clan_name: "Clan".into(),
+                level: 5,
+                leader_name: "Boss".into(),
+                total: 10,
+                online: 4,
+            }],
+        };
+        assert_eq!(s2c_fields(&info.to_bytes())["allies"][0]["online"], 4);
+        assert_eq!(s2c_fields(&PledgeShowMemberListDeleteAll.to_bytes()), json!({}));
+    }
+    #[test]
+    fn summon_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem,
+            RequestPetUseItem,
+        };
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestPetGetItem { object_id: 4 }.to_bytes()),
+            json!({ "object_id": 4 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestGetItemFromPet {
+                    object_id: 4,
+                    amount: 5,
+                    unknown: 0
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 4, "amount": 5, "unknown": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestGiveItemToPet {
+                    object_id: 4,
+                    amount: 5
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 4, "amount": 5 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestPetUseItem { object_id: 4 }.to_bytes()),
+            json!({ "object_id": 4 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestChangePetName { name: "Rex".into() }.to_bytes()),
+            json!({ "name": "Rex" })
+        );
+
+        assert_eq!(
+            s2c_fields(&PetStatusShow { summon_type: 2 }.to_bytes()),
+            json!({ "summon_type": 2 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &PetDelete {
+                    pet_type: 1,
+                    pet_object_id: 9
+                }
+                .to_bytes()
+            ),
+            json!({ "pet_type": 1, "pet_object_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &SetSummonRemainTime {
+                    max_time: 1200,
+                    remaining_time: 600
+                }
+                .to_bytes()
+            ),
+            json!({ "max_time": 1200, "remaining_time": 600 })
+        );
+        let list = PetItemList {
+            items: vec![ItemInfo::plain(1, 57, 7)],
+        };
+        assert_eq!(s2c_fields(&list.to_bytes())["items"][0]["count"], 7);
+        let status = PetStatusUpdate {
+            summon_type: 2,
+            object_id: 9,
+            x: 1,
+            y: 2,
+            z: 3,
+            title: "Owner".into(),
+            cur_fed: 100,
+            max_fed: 200,
+            cur_hp: 10,
+            max_hp: 20,
+            cur_mp: 30,
+            max_mp: 40,
+            level: 15,
+            exp: 5_000_000_000,
+            exp_for_this_level: 4_000_000_000,
+            exp_for_next_level: 6_000_000_000,
+        };
+        let fields = s2c_fields(&status.to_bytes());
+        assert_eq!(fields["title"], "Owner");
+        assert_eq!(fields["exp"], 5_000_000_000_i64);
+    }
     /// Every server packet of the committed Java captures with a decoder must have fields, and
     /// no other server packet may have any. A decode error here means a `Decode` impl does not
     /// match what Java sends.

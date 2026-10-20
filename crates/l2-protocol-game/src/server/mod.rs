@@ -5,9 +5,69 @@
 //! `impl Decode` (fields after the opcode, for the proxy and test clients). Data that Java reads
 //! from the database or from game objects is passed in as plain values: no logic in here.
 
-use l2_net::PacketWriter;
+use l2_net::{PacketError, PacketReader, PacketWriter};
 
 use crate::generated::opcodes::ServerOpcode;
+
+/// Declares a server packet that is nothing but a list of ints, longs and strings in a row (the
+/// field types of [`crate::client::WireField`]). Same result as writing the struct, the `OPCODE`
+/// const and the `Encode`/`Decode` impls by hand (see `skills.rs`). Put the `// Java:` line above
+/// the invocation.
+macro_rules! server_packet {
+    ($(#[$meta:meta])* $name:ident, $op:ident { $($(#[$fmeta:meta])* $field:ident: $ty:ty),* $(,)? }) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, PartialEq, Eq)]
+        pub struct $name {
+            $($(#[$fmeta])* pub $field: $ty,)*
+        }
+
+        impl $name {
+            pub const OPCODE: $crate::generated::opcodes::ServerOpcode =
+                $crate::generated::opcodes::ServerOpcode::$op;
+        }
+
+        impl l2_net::Encode for $name {
+            fn encode(&self, w: &mut l2_net::PacketWriter) {
+                $crate::server::write_opcode(w, Self::OPCODE);
+                $($crate::client::WireField::put(&self.$field, w);)*
+            }
+        }
+
+        impl l2_net::Decode for $name {
+            fn decode(r: &mut l2_net::PacketReader) -> Result<Self, l2_net::PacketError> {
+                Ok(Self {
+                    $($field: <$ty as $crate::client::WireField>::take(r)?,)*
+                })
+            }
+        }
+    };
+}
+
+/// Like [`server_packet!`] for a packet without fields (a unit struct).
+macro_rules! server_unit_packet {
+    ($(#[$meta:meta])* $name:ident, $op:ident) => {
+        $(#[$meta])*
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        pub struct $name;
+
+        impl $name {
+            pub const OPCODE: $crate::generated::opcodes::ServerOpcode =
+                $crate::generated::opcodes::ServerOpcode::$op;
+        }
+
+        impl l2_net::Encode for $name {
+            fn encode(&self, w: &mut l2_net::PacketWriter) {
+                $crate::server::write_opcode(w, Self::OPCODE);
+            }
+        }
+
+        impl l2_net::Decode for $name {
+            fn decode(_r: &mut l2_net::PacketReader) -> Result<Self, l2_net::PacketError> {
+                Ok(Self)
+            }
+        }
+    };
+}
 
 pub mod charscreen;
 pub mod chat;
@@ -22,9 +82,14 @@ pub mod interaction;
 pub mod items;
 pub mod map_windows;
 pub mod movement;
+pub mod party;
+pub mod pledge;
 pub mod regen;
 pub mod skills;
+pub mod store;
+pub mod summon;
 pub mod system_message;
+pub mod trade;
 pub mod userinfo;
 pub mod visibility;
 
@@ -62,17 +127,50 @@ pub use items::{
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use party::{
+    AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
+    PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
+    PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowDeleteAll,
+    PartySmallWindowUpdate, PartySummon, PartyWindowMember,
+};
+pub use pledge::{
+    AllianceClanInfo, AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem,
+    ExSubPledgeSkillAdd, GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo,
+    PledgeMember, PledgeMemberOnline, PledgePowerGradeList, PledgeReceiveMemberInfo, PledgeReceivePowerInfo,
+    PledgeReceiveSubPledgeCreated, PledgeReceiveWarList, PledgeShowInfoUpdate, PledgeShowMemberListAdd,
+    PledgeShowMemberListAll, PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll,
+    PledgeShowMemberListUpdate, PledgeSkillEntry, PledgeSkillList, PledgeSkillListAdd, PledgeStatusChanged,
+    RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
+};
 pub use regen::ExRegenMax;
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
+pub use store::{
+    BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
+    PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
+    SellStoreEntry, StoreCandidate,
+};
+pub use summon::{
+    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+};
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+pub use trade::{
+    SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
+    TradeUpdate,
+};
 pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
 };
+
+/// Reads an int count, which Java never writes negative. Anything negative is an error.
+pub(crate) fn read_count(r: &mut PacketReader, field: &'static str) -> Result<usize, PacketError> {
+    let count = r.i32()?;
+    usize::try_from(count).map_err(|_| PacketError::invalid(field, format!("negative count {count}")))
+}
 
 /// Writes a server packet's id the way Java `ServerPackets.writeId` does: the id byte, then the
 /// `u16` ex id for ex packets (id byte `0xFE`).
