@@ -18,13 +18,9 @@
 //   them first.
 //
 // # Left out on purpose
-// - `Maps` and `Calculator` need the `ShowMiniMap` and `ShowCalculator` packets, which the
-//   protocol crate does not have yet.
 // - Pets: `Playable` is a player here (summons and pets are M6), so every `isPet()` branch is
 //   dead and left out.
 // - Events (`isOnEvent`) and the olympiad (`isInOlympiadMode`) are not modelled.
-// - The item reuse stamps are not saved (`character_item_reuse_save`, Java `storeItemReuseDelay` /
-//   `restoreItemReuse`): a relog forgets them.
 
 mod book;
 mod consume;
@@ -37,3 +33,4 @@ pub mod shots;
 
 pub(crate) use registry::ItemHandlerKind;
 pub(crate) use reuse::ItemStamp;
+pub use reuse::SavedItemReuse;

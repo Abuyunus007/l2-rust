@@ -14,6 +14,7 @@ use super::params;
 use super::vitals::{Vital, is_door};
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::formulas::{HealInput, HealWeaponGrade, calc_heal_amount};
+use crate::stats::ClassBalance;
 use crate::world::World;
 
 /// Java `Heal`.
@@ -78,8 +79,10 @@ impl EffectHandler for Heal {
                 effector_m_atk: a.m_atk(Some(effector), None),
                 heal_effect: &heal_effect,
                 effector_is_playable: a.is_playable(),
-                // M5-CFG: `PLAYER_HEALING_SKILL_MULTIPLIERS` (Java default 1.0).
-                player_healing_skill_multiplier: 1.0,
+                player_healing_skill_multiplier: ClassBalance::of(
+                    &world.settings.stats.class_balance.player_healing_skill,
+                    a.player().map_or(-1, |p| p.data.class_id),
+                ),
                 effector_m_critical_hit: m_critical_hit,
                 effected_max_recoverable_hp: t.max_recoverable_hp(),
                 effected_current_hp: world.core_of(effected).map_or(0.0, |c| c.cur_hp),

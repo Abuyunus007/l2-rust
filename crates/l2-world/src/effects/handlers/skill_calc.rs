@@ -12,8 +12,7 @@
 //
 // Left out, each with its marker:
 // - `M5-SHOT-01`: the soulshot / spiritshot charge (the callers pass `false`).
-// - `M5-CFG`: the `ClassBalanceConfig` tables the stat settings do not hold yet (the skill damage,
-//   critical and blow tables): every entry is Java's default 1.0 there.
+// The `ClassBalanceConfig` tables come from `StatSettings::class_balance` (M5-FIX-03).
 
 use l2_data::SkillTemplate;
 use l2_data::Stat;
@@ -204,15 +203,21 @@ impl World {
                 return false;
             };
             let defence = |rate: f64| t.calc_stat(Stat::DefenceCriticalRate, rate, None, None);
+            let cb = &world.settings.stats.class_balance;
             let input = SkillCritInput {
                 base_crit_rate: skill.base_crit_rate,
                 str_bonus: a.bonus(BaseStat::Str),
                 attacker_is_playable: a.is_playable(),
                 target_is_playable: t.is_playable(),
                 target_is_attackable: t.is_attackable(),
-                // M5-CFG: `PVP/PVE_PHYSICAL_SKILL_CRITICAL_CHANCE_MULTIPLIERS`.
-                pvp_physical_skill_critical_chance_multiplier: 1.0,
-                pve_physical_skill_critical_chance_multiplier: 1.0,
+                pvp_physical_skill_critical_chance_multiplier: ClassBalance::of(
+                    &cb.pvp_physical_skill_critical_chance,
+                    class_id(&a),
+                ),
+                pve_physical_skill_critical_chance_multiplier: ClassBalance::of(
+                    &cb.pve_physical_skill_critical_chance,
+                    class_id(&a),
+                ),
                 defence_critical_rate: &defence,
                 defence_critical_rate_add: t.calc(Stat::DefenceCriticalRateAdd, 0.0),
             };
@@ -307,8 +312,16 @@ impl World {
                         &cb.pvp_physical_skill_defence,
                         class_id(&t),
                     ),
-                    // M5-CFG: the skill critical damage and damage tables.
-                    ..SkillPhysDamClassBalance::default()
+                    pvp_physical_skill_critical_damage: ClassBalance::of(
+                        &cb.pvp_physical_skill_critical_damage,
+                        class_id(&a),
+                    ),
+                    pve_physical_skill_critical_damage: ClassBalance::of(
+                        &cb.pve_physical_skill_critical_damage,
+                        class_id(&a),
+                    ),
+                    pvp_physical_skill_damage: ClassBalance::of(&cb.pvp_physical_skill_damage, class_id(&a)),
+                    pve_physical_skill_damage: ClassBalance::of(&cb.pve_physical_skill_damage, class_id(&a)),
                 },
                 alt_game_shield_blocks: combat.alt_game_shield_blocks,
                 min_npc_level_dmg_penalty: combat.min_npc_level_dmg_penalty,
@@ -344,15 +357,21 @@ impl World {
             skill_power: Self::flat_skill_power(skill),
             pvp_phys_skill_dmg: a.calc(Stat::PvpPhysSkillDmg, 1.0),
             pvp_phys_skill_def: t.calc(Stat::PvpPhysSkillDef, 1.0),
-            // M5-CFG: the `*_BLOW_SKILL_*` tables of a blow and the `PVP_PHYSICAL_SKILL_DAMAGE`
-            // table of a backstab; only the backstab's defence table is held.
-            class_balance: BlowClassBalance {
-                pvp_skill_defence: if backstab {
-                    ClassBalance::of(&cb.pvp_physical_skill_defence, class_id(&t))
-                } else {
-                    1.0
-                },
-                ..BlowClassBalance::default()
+            // A blow reads the `*_BLOW_SKILL_*` tables, a backstab the `PVP_PHYSICAL_SKILL_*` ones
+            // (it has no PvE entries).
+            class_balance: if backstab {
+                BlowClassBalance {
+                    pvp_skill_damage: ClassBalance::of(&cb.pvp_physical_skill_damage, class_id(&a)),
+                    pvp_skill_defence: ClassBalance::of(&cb.pvp_physical_skill_defence, class_id(&t)),
+                    ..BlowClassBalance::default()
+                }
+            } else {
+                BlowClassBalance {
+                    pvp_skill_damage: ClassBalance::of(&cb.pvp_blow_skill_damage, class_id(&a)),
+                    pvp_skill_defence: ClassBalance::of(&cb.pvp_blow_skill_defence, class_id(&t)),
+                    pve_skill_damage: ClassBalance::of(&cb.pve_blow_skill_damage, class_id(&a)),
+                    pve_skill_defence: ClassBalance::of(&cb.pve_blow_skill_defence, class_id(&t)),
+                }
             },
             critical_damage: a.calc_stat(Stat::CriticalDamage, 1.0, Some(target), Some(&ctx)),
             critical_damage_pos: a.calc_stat(Stat::CriticalDamagePos, 1.0, Some(target), Some(&ctx)),
@@ -513,14 +532,23 @@ impl World {
                 target_level: t.level(),
                 min_npc_level_dmg_penalty: combat.min_npc_level_dmg_penalty,
                 npc_skill_dmg_penalty: &combat.npc_skill_dmg_penalty,
-                // M5-CFG: the magical and physical skill damage and critical tables; only the
-                // PvP physical skill defence table is held.
                 class_balance: MagicDamClassBalance {
+                    pvp_magical_skill_defence: ClassBalance::of(&cb.pvp_magical_skill_defence, class_id(&t)),
                     pvp_physical_skill_defence: ClassBalance::of(
                         &cb.pvp_physical_skill_defence,
                         class_id(&t),
                     ),
-                    ..MagicDamClassBalance::default()
+                    pvp_magical_skill_critical_damage: ClassBalance::of(
+                        &cb.pvp_magical_skill_critical_damage,
+                        class_id(&a),
+                    ),
+                    pve_magical_skill_critical_damage: ClassBalance::of(
+                        &cb.pve_magical_skill_critical_damage,
+                        class_id(&a),
+                    ),
+                    pvp_magical_skill_damage: ClassBalance::of(&cb.pvp_magical_skill_damage, class_id(&a)),
+                    pvp_physical_skill_damage: ClassBalance::of(&cb.pvp_physical_skill_damage, class_id(&a)),
+                    pve_magical_skill_damage: ClassBalance::of(&cb.pve_magical_skill_damage, class_id(&a)),
                 },
             };
             Some(calc_magic_dam(
@@ -594,6 +622,7 @@ impl World {
                 return None;
             };
             let combat = &world.settings.combat;
+            let cb = &world.settings.stats.class_balance;
             let input = ManaDamInput {
                 m_atk: a.m_atk(Some(target), Some(&ctx)),
                 m_def: t.m_def(Some(attacker), Some(&ctx)),
@@ -612,8 +641,7 @@ impl World {
                 ),
                 pve_magical_dmg: a.calc(Stat::PveMagicalDmg, 1.0),
                 attacker_player_level: a.player().map(|p| p.core.level),
-                // M5-CFG: `PVE_MAGICAL_SKILL_DAMAGE_MULTIPLIERS`.
-                pve_magical_skill_damage: 1.0,
+                pve_magical_skill_damage: ClassBalance::of(&cb.pve_magical_skill_damage, class_id(&a)),
                 target_is_raid: t.is_raid(),
                 target_is_raid_minion: is_raid_minion(world, &t),
                 target_level: t.level(),

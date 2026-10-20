@@ -24,12 +24,13 @@ use super::charscreen::{CharScreen, CharScreenStore, DbCharScreen, DeleteOutcome
 use super::testdata::datapack;
 
 /// Every game table the character screen writes or deletes from.
-const SCHEMA: [&str; 24] = [
+const SCHEMA: [&str; 25] = [
     include_str!("../../../l2-db/sql/game/characters.sql"),
     include_str!("../../../l2-db/sql/game/items.sql"),
     include_str!("../../../l2-db/sql/game/item_attributes.sql"),
     include_str!("../../../l2-db/sql/game/character_skills.sql"),
     include_str!("../../../l2-db/sql/game/character_skills_save.sql"),
+    include_str!("../../../l2-db/sql/game/character_item_reuse_save.sql"),
     include_str!("../../../l2-db/sql/game/character_shortcuts.sql"),
     include_str!("../../../l2-db/sql/game/character_macroses.sql"),
     include_str!("../../../l2-db/sql/game/character_reco_bonus.sql"),

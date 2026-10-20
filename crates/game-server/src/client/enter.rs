@@ -16,8 +16,8 @@ use std::time::Duration;
 
 use l2_db::{
     CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
-    MacroRepository, Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow,
-    SubclassRepository, VariableRepository,
+    ItemReuseRepository, ItemReuseRow, MacroRepository, Pool, RecommendationRepository, ShortcutRepository,
+    SkillRepository, SkillSaveRow, SubclassRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,7 +26,7 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData, PlayerProfile,
-    SavedEffect, ShortcutData, SkillData, WorldCommand,
+    SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -77,6 +77,7 @@ pub struct DbPlayerLoader {
     characters: CharacterRepository,
     items: ItemRepository,
     skills: SkillRepository,
+    item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
     hennas: HennaRepository,
     subclasses: SubclassRepository,
@@ -91,6 +92,7 @@ impl DbPlayerLoader {
             characters: CharacterRepository::new(pool.clone()),
             items: ItemRepository::new(pool.clone()),
             skills: SkillRepository::new(pool.clone()),
+            item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
@@ -177,6 +179,17 @@ impl DbPlayerLoader {
             .map(saved_effect_of)
             .collect();
 
+        // Java: restoreItemReuse reads the item reuse timers at load. Like the buffs they stay in
+        // the table until the next store replaces them (this loader only reads, D-39). Java
+        // catches a failed read and logs it, so does this.
+        data.profile.item_reuse_to_restore = match self.item_reuse.item_reuse_of(char_id).await {
+            Ok(rows) => rows.iter().map(saved_item_reuse_of).collect(),
+            Err(e) => {
+                warn!("Could not restore {} Item Reuse data: {e}", data.name);
+                Vec::new()
+            }
+        };
+
         // Java: getMacros().restoreMe()
         data.profile.macros = self
             .macros
@@ -248,6 +261,17 @@ pub fn saved_effect_of(row: &SkillSaveRow) -> SavedEffect {
         reuse_delay: row.reuse_delay,
         systime: i64::try_from(row.systime).unwrap_or(i64::MAX),
         restore_type: row.restore_type,
+    }
+}
+
+/// One `character_item_reuse_save` row as the world keeps it (a `systime` that does not fit an
+/// `i64` becomes the largest time, like `saved_effect_of`).
+pub fn saved_item_reuse_of(row: &ItemReuseRow) -> SavedItemReuse {
+    SavedItemReuse {
+        item_id: row.item_id,
+        item_obj_id: row.item_obj_id,
+        reuse_delay: i64::from(row.reuse_delay),
+        systime: i64::try_from(row.systime).unwrap_or(i64::MAX),
     }
 }
 
@@ -854,12 +878,13 @@ mod tests {
 
     /// The game tables the loader reads and `create_character` writes (the same list as
     /// `charscreen_db_tests`).
-    const LOADER_SCHEMA: [&str; 24] = [
+    const LOADER_SCHEMA: [&str; 25] = [
         include_str!("../../../l2-db/sql/game/characters.sql"),
         include_str!("../../../l2-db/sql/game/items.sql"),
         include_str!("../../../l2-db/sql/game/item_attributes.sql"),
         include_str!("../../../l2-db/sql/game/character_skills.sql"),
         include_str!("../../../l2-db/sql/game/character_skills_save.sql"),
+        include_str!("../../../l2-db/sql/game/character_item_reuse_save.sql"),
         include_str!("../../../l2-db/sql/game/character_shortcuts.sql"),
         include_str!("../../../l2-db/sql/game/character_macroses.sql"),
         include_str!("../../../l2-db/sql/game/character_reco_bonus.sql"),
