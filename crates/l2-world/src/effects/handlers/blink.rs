@@ -48,7 +48,7 @@ impl EffectHandler for Blink {
         world.set_intention_idle(cx.effected);
         // NOTE: Java broadcasts `FlyToLocation` here (see `fly.rs`).
         world.abort_attack(cx.effected);
-        // NOTE: Java also `abortCast()`; casting is M5-CAST-01 and has no abort in the world yet.
+        world.abort_cast(cx.effected);
         set_position_validated(world, cx.effected, destination);
     }
 }

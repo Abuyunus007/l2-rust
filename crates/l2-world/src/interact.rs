@@ -60,18 +60,20 @@ pub struct PawnState {
 }
 
 impl World {
-    /// Java `PlayerAI.notifyActionThink`: the attack and interact intentions think (cast and
-    /// pick up arrive with their systems).
+    /// Java `PlayerAI.notifyActionThink`: the attack, cast, pick up and interact intentions
+    /// think.
     pub(crate) fn player_notify_action_think(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
-        if player.movement.pawn.thinking {
+        // A cast may think inside a think (its `doCast` can end in a new intention).
+        if player.movement.pawn.thinking && player.movement.intention != Intention::Cast {
             return;
         }
         player.movement.pawn.thinking = true;
         match player.movement.intention {
             Intention::Attack => self.think_attack(id),
+            Intention::Cast => self.think_cast(id),
             Intention::Interact => self.think_interact(id),
             Intention::PickUp => self.think_pick_up(id),
             _ => {}
@@ -87,8 +89,10 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
-        // FOLLOW-UP(M4): `isAllSkillsDisabled()` and `isCastingNow()` also cancel it.
-        if player.movement.intention == Intention::Rest {
+        if player.movement.intention == Intention::Rest
+            || self.is_all_skills_disabled(id)
+            || self.is_casting_now(id)
+        {
             // Cancel action client side by sending Server->Client packet ActionFailed.
             self.send(id, &ActionFailed);
             return;
@@ -114,8 +118,8 @@ impl World {
 
     /// Java `AbstractAI.moveToPawn(pawn, offsetValue)`.
     pub(crate) fn move_to_pawn(&mut self, id: ObjectId, pawn: ObjectId, offset_value: i32) {
-        // Check if actor can move. (`isCastingNow()`: M5.)
-        if self.is_movement_disabled(id) || self.is_attacking_now(id) {
+        // Check if actor can move.
+        if self.is_movement_disabled(id) || self.is_attacking_now(id) || self.is_casting_now(id) {
             self.send(id, &ActionFailed);
             return;
         }
@@ -407,10 +411,11 @@ impl World {
             self.move_to_pawn(id, follow.target, follow.range);
             // GeoEngine can reject or truncate a route without ever raising ARRIVED. Revalidate
             // rather than leave the action waiting on an event that never comes.
-            if !self.is_moving(id) && self.intention_of(id) == Intention::Attack {
+            if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
                 self.notify_action_arrived(id);
             }
-        } else if !self.is_moving(id) && self.intention_of(id) == Intention::Attack {
+        } else if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast)
+        {
             // This task can observe arrival before the movement manager does.
             self.notify_action_arrived(id);
         }
@@ -441,6 +446,15 @@ impl World {
             self.set_attack_target(id, None);
             // Set the Intention of this AbstractAI to ACTIVE (not for a corpse: fixes stop move
             // from cast target decay).
+            if !self.is_alike_dead(object) {
+                self.set_intention_active(id);
+            }
+        }
+        // Check if the object was targeted to cast.
+        if self.cast_target_of(id) == Some(object) {
+            // Cancel cast target.
+            self.set_cast_target(id, None);
+            // Set the Intention of this AbstractAI to ACTIVE (not for a corpse).
             if !self.is_alike_dead(object) {
                 self.set_intention_active(id);
             }

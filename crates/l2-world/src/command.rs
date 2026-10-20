@@ -100,6 +100,13 @@ pub enum ClientInput {
     /// Java `RequestRestartPoint`: the raw `_requestedPointType` (0 village, 1 clan hall, 2
     /// castle, 3 fortress, 4 siege headquarters, 5 fixed, 27 jail).
     RestartPoint { point_type: i32 },
+    /// Java `RequestMagicSkillUse`: the skill id (or display id) the client asks to use, with
+    /// the ctrl (force use) and shift (do not move) keys.
+    MagicSkillUse {
+        magic_id: i32,
+        ctrl_pressed: bool,
+        shift_pressed: bool,
+    },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

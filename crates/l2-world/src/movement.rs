@@ -716,15 +716,13 @@ impl World {
         {
             self.send(id, &ActionFailed);
             // Save the move-to as the next intention to replay once ready.
-            self.ai_state_mut(id).saved_move_to = Some((x, y, z));
+            self.save_move_to_intention(id, (x, y, z));
             return;
         }
 
         self.stop_follow(id);
         // Set the Intention of this AbstractAI to MOVE_TO (`clearSavedIntention()` first).
-        if let Some(ai) = self.ai.creatures.get_mut(&id) {
-            ai.saved_move_to = None;
-        }
+        self.clear_saved_intention(id);
         if let Some(player) = self.players.get_mut(&id) {
             player.movement.intention = Intention::MoveTo;
         }
@@ -767,6 +765,7 @@ impl World {
             p.movement.intention = Intention::Idle;
         }
         // Init cast and attack target.
+        self.set_cast_target(id, None);
         self.set_attack_target(id, None);
         // A new intention supersedes a move that still waits for its path.
         self.clear_pending_path(id);
@@ -797,7 +796,10 @@ impl World {
         if !self.players.contains_key(&id) || !(spawned || teleporting) {
             return;
         }
-        // Casting is not modelled; `revalidateZone(true)` neither (zones).
+        if self.is_casting_now(id) || self.is_casting_simultaneously_now(id) {
+            return;
+        }
+        // `revalidateZone(true)` is not modelled (zones).
         if self.move_to_next_route_point(id) {
             return;
         }
@@ -826,7 +828,7 @@ impl World {
             return;
         }
         // If the Intention was MOVE_TO (or CAST), set the Intention to ACTIVE.
-        if player.movement.intention == Intention::MoveTo {
+        if matches!(player.movement.intention, Intention::MoveTo | Intention::Cast) {
             self.set_intention_idle(id);
         }
         // Stop the actor movement server side AND client side.

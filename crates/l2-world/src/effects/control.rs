@@ -222,9 +222,10 @@ impl World {
     }
 
     /// Java `Creature.isAllSkillsDisabled()`: `_allSkillsDisabled || isStunned() || isSleeping() ||
-    /// isParalyzed()` (`_allSkillsDisabled` is only set by events, which are scripts).
+    /// isParalyzed()`. The `_allSkillsDisabled` lock lives with the reuse state
+    /// (`skills/reuse.rs`, `disable_all_skills` / `enable_all_skills`).
     pub fn is_all_skills_disabled(&self, id: ObjectId) -> bool {
-        self.is_stunned(id) || self.is_sleeping(id) || self.is_paralyzed(id)
+        self.all_skills_locked(id) || self.is_stunned(id) || self.is_sleeping(id) || self.is_paralyzed(id)
     }
 
     /// Java `Creature.isImmobilized()`.
@@ -272,25 +273,25 @@ impl World {
 
     // ------------------------------------------------------------------ the CAST-01 seams
 
-    /// Java `Creature.isCastingNow()`.
-    // M5-CAST-01: reads the cast state when casting lands; nobody casts before it.
-    pub(crate) fn is_casting_now_for_effects(&self, _id: ObjectId) -> bool {
-        false
+    /// Java `Creature.isCastingNow()` (the cast state of `skills/cast.rs`).
+    pub(crate) fn is_casting_now_for_effects(&self, id: ObjectId) -> bool {
+        self.is_casting_now(id)
     }
 
     /// Java `Creature.canAbortCast()`.
-    // M5-CAST-01: the cast state's flag.
-    pub(crate) fn can_abort_cast_for_effects(&self, _id: ObjectId) -> bool {
-        true
+    pub(crate) fn can_abort_cast_for_effects(&self, id: ObjectId) -> bool {
+        self.can_abort_cast(id)
     }
 
-    /// Java `Creature.abortCast()`.
-    // M5-CAST-01: breaks the running cast (`MagicSkillCanceled`, `ActionFailed`).
-    pub(crate) fn abort_cast_for_effects(&mut self, _id: ObjectId) {}
+    /// Java `Creature.abortCast()`: `MagicSkillCanceled`, `ActionFailed`.
+    pub(crate) fn abort_cast_for_effects(&mut self, id: ObjectId) {
+        self.abort_cast(id);
+    }
 
-    /// Java `Creature.breakCast()`.
-    // M5-CAST-01: breaks the cast with its system message.
-    pub(crate) fn break_cast_for_effects(&mut self, _id: ObjectId) {}
+    /// Java `Creature.breakCast()`: with its system message.
+    pub(crate) fn break_cast_for_effects(&mut self, id: ObjectId) {
+        self.break_cast(id);
+    }
 
     // ------------------------------------------------------------------ picks and checks
 

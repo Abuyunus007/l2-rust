@@ -89,6 +89,9 @@ pub enum TimerKind {
     EffectIcons(ObjectId),
     /// Java `Player.updateAndBroadcastStatus`'s 50 ms task.
     UpdateAndBroadcastStatus(ObjectId),
+    /// The casting tasks (`MagicUseTask`, `QueuedMagicUseTask` and the delayed steps of a cast),
+    /// see `skills/cast.rs`.
+    Cast(crate::skills::cast::CastTimer),
     /// Sitting, standing, charges, souls and the fear of an NPC, see `effects/control.rs`.
     Control(crate::effects::control::ControlTimer),
 }
