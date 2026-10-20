@@ -20,7 +20,8 @@
 // - `character_reco_bonus` (the Nevit hourglass time) and the `character_variables` rows the
 //   world changed (Nevit's points; M4-VIT-01),
 // - `character_reco_bonus` again for a vote or `RecoGiveTask` (`storeRecommendationValues`) and
-//   for Java's daily reset (`resetRecommends`: the two `UPDATE`s over every row, M5-FU-03),
+//   for Java's daily reset (`resetRecommends`: the two `UPDATE`s over every row, M5-FU-03; only
+//   with `DailyResetDatabaseWrites = True` in `SideBySide.ini`),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.

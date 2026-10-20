@@ -167,10 +167,16 @@ struct Scene {
 
 impl Scene {
     fn new(nevit_enabled: bool) -> Self {
+        Self::with_db_writes(nevit_enabled, true)
+    }
+
+    /// `daily_reset_database_writes` is `DailyResetDatabaseWrites` of `SideBySide.ini`.
+    fn with_db_writes(nevit_enabled: bool, daily_reset_database_writes: bool) -> Self {
         let log = Log::default();
         let mut world = World::new(WorldRng::from_seed(7), Box::new(RecOutbox(log.clone())));
         world.set_settings(WorldSettings {
             nevit_enabled,
+            daily_reset_database_writes,
             ..WorldSettings::default()
         });
         world.set_static_data(Box::new(Data(StatData {
@@ -195,7 +201,10 @@ impl Scene {
 
     /// Both players stand in the same place; what the enter sent is dropped.
     fn two_players(nevit_enabled: bool, alice: PlayerProfile, bob: PlayerProfile) -> Self {
-        let mut s = Self::new(nevit_enabled);
+        Self::two_players_with(Self::new(nevit_enabled), alice, bob)
+    }
+
+    fn two_players_with(mut s: Self, alice: PlayerProfile, bob: PlayerProfile) -> Self {
         s.enter(player_data(ALICE, "Alice", alice));
         s.enter(player_data(BOB, "Bob", bob));
         s.log.take();
@@ -692,4 +701,60 @@ fn the_schedule_follows_the_local_zone() {
     assert_eq!(resets(&s.log.take()), 0);
     s.ticks(1);
     assert_eq!(resets(&s.log.take()), 1);
+}
+
+/// `DailyResetDatabaseWrites = False` (the side-by-side default): the global `UPDATE`s are left to
+/// the Java game server, but everything about the players online here still happens: counters,
+/// the mirror of their rows, the packets, the hourglass restart and the variables.
+#[test]
+fn the_daily_reset_leaves_the_global_updates_to_java_when_the_switch_is_off() {
+    let mut alice = profile(45, 3);
+    alice.variables.insert("hunting_time".into(), "500".into());
+    let scene = Scene::with_db_writes(true, false);
+    let mut s = Scene::two_players_with(scene, alice, profile(5, 0));
+    s.world.daily_reset();
+    let out = s.log.take();
+
+    assert!(
+        !Scene::persisted(&out).contains(&&PersistCommand::ResetRecommends),
+        "{:?}",
+        Scene::persisted(&out)
+    );
+    // The same as with the switch on, apart from that command.
+    assert_eq!(variable(&s, ALICE, "hunting_time").as_deref(), Some("0"));
+    assert_eq!(time_changes(&out, ALICE), vec![(false, 0)]);
+    assert_eq!(
+        vote_infos(&out, ALICE),
+        vec![(0, 25, 3600, 25, 0), (20, 25, 3600, 25, 0)]
+    );
+    assert_eq!((s.player(ALICE).recom_left, s.player(ALICE).recom_have), (20, 25));
+    assert_eq!(s.player(ALICE).data.profile.recom_time_left_ms, 3_600_000);
+    // Their own rows go out with the next store, and the variables at once (`storeMe`).
+    assert_eq!(
+        Scene::persisted(&out).len(),
+        2,
+        "one PlayerVariables per player: {:?}",
+        Scene::persisted(&out)
+    );
+    s.input(ALICE, ClientInput::Logout);
+    let stored = Scene::persisted(&s.log.take())
+        .into_iter()
+        .find_map(|c| match c {
+            PersistCommand::StorePlayer(p) => Some(p.clone()),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!((stored.profile.recom_have, stored.profile.recom_left), (25, 20));
+    assert!(stored.profile.reco_store);
+}
+
+/// The schedule does not depend on the switch: the timer still fires, without the `UPDATE`s.
+#[test]
+fn the_daily_timer_runs_with_the_switch_off() {
+    let mut s = Scene::two_players_with(Scene::with_db_writes(true, false), profile(45, 3), profile(0, 0));
+    s.world.start_daily_reset_task_at(MIDNIGHT + 6 * HOUR, |_| 0);
+    s.ticks(36_000);
+    let out = s.log.take();
+    assert_eq!(time_changes(&out, ALICE), vec![(false, 0)]);
+    assert!(!Scene::persisted(&out).contains(&&PersistCommand::ResetRecommends));
 }

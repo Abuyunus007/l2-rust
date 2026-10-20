@@ -20,8 +20,10 @@
 // The world never waits for the database. Java writes `character_reco_bonus` itself, so the
 // world hands the same statements to the persistence task as commands, in the order Java runs
 // them: `PersistCommand::RecoValues` (a vote, `RecoGiveTask`), `PersistCommand::ResetRecommends`
-// (the two `UPDATE`s of the daily reset) and `PersistCommand::PlayerVariables` (`storeMe`). The
-// mirror in the profile is updated with each of them, because Java reads the row back
+// (the two `UPDATE`s of the daily reset) and `PersistCommand::PlayerVariables` (`storeMe`).
+// `ResetRecommends` is only sent with the Rust-only setting `DailyResetDatabaseWrites`
+// (`SideBySide.ini`, default False): the Java game server on the same database runs it itself.
+// The mirror in the profile is updated with each of them, because Java reads the row back
 // (`loadRecommendations` at `startNevitHourglassTask`).
 //
 // # What is left out
@@ -404,9 +406,14 @@ impl World {
 
     /// Java `DailyResetManager.resetRecommends`.
     fn reset_recommends(&mut self) {
-        // The two `UPDATE`s run in the database first; the rows of the players in the world
-        // change too, which the mirror in their profile follows.
-        self.outbox.persist(PersistCommand::ResetRecommends);
+        // The two `UPDATE`s run in the database first. They touch every row, so with the Java game
+        // server on the same database (`DailyResetDatabaseWrites` off, D-39) they are left to it:
+        // run twice they would take 40 recommendations away. The rows of the players in the world
+        // change either way, which the mirror in their profile follows (their own rows are
+        // written by the normal store).
+        if self.settings.daily_reset_database_writes {
+            self.outbox.persist(PersistCommand::ResetRecommends);
+        }
         let ids = self.sorted_player_ids();
         for id in &ids {
             if let Some(player) = self.players.get_mut(id) {
