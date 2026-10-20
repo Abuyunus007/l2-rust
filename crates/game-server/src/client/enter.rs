@@ -16,8 +16,8 @@ use std::time::Duration;
 
 use l2_db::{
     CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
-    MacroRepository, Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SubclassRepository,
-    VariableRepository,
+    MacroRepository, Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow,
+    SubclassRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,7 +26,7 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData, PlayerProfile,
-    ShortcutData, SkillData, WorldCommand,
+    SavedEffect, ShortcutData, SkillData, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -165,6 +165,18 @@ impl DbPlayerLoader {
             })
             .collect();
 
+        // Java: restoreEffects reads the buffs of the last logout at EnterWorld. They are kept on
+        // the profile until the world enters the character, and the rows stay in the table until
+        // the next store replaces them (see `persist.rs`).
+        data.profile.class_index = class_index;
+        data.profile.effects_to_restore = self
+            .skills
+            .skill_effects_of(char_id, class_index)
+            .await?
+            .iter()
+            .map(saved_effect_of)
+            .collect();
+
         // Java: getMacros().restoreMe()
         data.profile.macros = self
             .macros
@@ -223,6 +235,19 @@ impl PlayerLoader for DbPlayerLoader {
         char_id: i32,
     ) -> BoxFuture<'a, Result<PlayerData, LoadError>> {
         Box::pin(self.load(account, char_id))
+    }
+}
+
+/// One `character_skills_save` row as the world keeps it. A `systime` that does not fit an `i64`
+/// (a row no game server wrote) becomes the largest time, so its reuse timer never ends.
+pub fn saved_effect_of(row: &SkillSaveRow) -> SavedEffect {
+    SavedEffect {
+        skill_id: row.skill_id,
+        skill_level: row.skill_level,
+        remaining_time: row.remaining_time,
+        reuse_delay: row.reuse_delay,
+        systime: i64::try_from(row.systime).unwrap_or(i64::MAX),
+        restore_type: row.restore_type,
     }
 }
 
@@ -772,6 +797,29 @@ mod tests {
 
     fn henna_row(slot: i32, symbol_id: Option<i32>) -> HennaRow {
         HennaRow { slot, symbol_id }
+    }
+
+    #[test]
+    fn a_saved_effect_row_keeps_its_columns() {
+        let row = SkillSaveRow {
+            skill_id: 1040,
+            skill_level: 3,
+            remaining_time: 42,
+            reuse_delay: 2000,
+            systime: 1_700_000_000_000,
+            restore_type: 1,
+        };
+        assert_eq!(
+            saved_effect_of(&row),
+            SavedEffect {
+                skill_id: 1040,
+                skill_level: 3,
+                remaining_time: 42,
+                reuse_delay: 2000,
+                systime: 1_700_000_000_000,
+                restore_type: 1,
+            }
+        );
     }
 
     #[test]

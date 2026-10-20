@@ -19,7 +19,6 @@ use tracing::info;
 
 use crate::command::LeaveReason;
 use crate::outbox::PersistCommand;
-use crate::snapshot::snapshot_for_store;
 use crate::world::World;
 
 impl World {
@@ -58,8 +57,9 @@ impl World {
         // the store (they change what is stored), `stopAllTimers` ends the vitality task.
         self.nevit_on_leave(id);
         self.forget_vitality(id);
-        // `storeMe()` comes next: the snapshot is taken while the effects are still on.
-        let Some(snapshot) = self.players.get(&id).map(|p| snapshot_for_store(p, self.tick)) else {
+        // `storeMe()` comes next: the snapshot is taken while the effects are still on (with them
+        // the buffs to save, `store_snapshot`).
+        let Some(snapshot) = self.store_snapshot(id) else {
             return;
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.

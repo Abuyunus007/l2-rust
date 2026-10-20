@@ -68,7 +68,7 @@ pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use effects::apply::ApplyMode;
 pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
-    SkillFinishType, SkillKey, effect_flag,
+    SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};

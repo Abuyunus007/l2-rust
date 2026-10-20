@@ -9,6 +9,7 @@ use std::net::IpAddr;
 use l2_util::ObjectId;
 
 use crate::data::DEFAULT_TITLE_COLOR;
+use crate::effects::SavedEffect;
 use crate::stats::Calculators;
 
 /// What every creature has (players now, NPCs in M3).
@@ -99,8 +100,8 @@ pub struct MacroData {
 /// The part of a character that lives in tables the Java game server also owns (D-39): values the
 /// enter-world packets show, read from them at load. The persistence task writes back only what
 /// the world models: `vitality_points`, the Nevit variables and the hourglass time
-/// (`variables_changed`, `variables_removed`, `reco_store`, M4-VIT-01) and `exp_before_death`;
-/// everything else only travels database -> world.
+/// (`variables_changed`, `variables_removed`, `reco_store`, M4-VIT-01), `exp_before_death` and the
+/// saved buffs (`effects_to_store`, M5-SAVE-01); everything else only travels database -> world.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerProfile {
     /// `characters.fame`.
@@ -141,6 +142,16 @@ pub struct PlayerProfile {
     /// The world keeps `character_reco_bonus` (Nevit is on): a store writes `recom_have`,
     /// `recom_left` and `recom_time_left_ms` (Java `storeRecommendations`).
     pub reco_store: bool,
+    /// The `character_skills_save` rows of the last logout, loaded for the active class index in
+    /// buff order (Java `restoreEffects` reads them). The world takes them at enter world, so they
+    /// are restored once (see `effects/save.rs`).
+    pub effects_to_restore: Vec<SavedEffect>,
+    /// The buffs and reuse timers the persistence task writes with this store (Java `storeEffect`):
+    /// the rows replace the character's `character_skills_save` rows. `None` leaves them alone
+    /// (`StoreSkillCooltime` is off, or the snapshot carries no effects).
+    pub effects_to_store: Option<Vec<SavedEffect>>,
+    /// Java `_classIndex`: the class index the saved buffs are stored under (0 for the base class).
+    pub class_index: i32,
 }
 
 impl Default for PlayerProfile {
@@ -163,6 +174,9 @@ impl Default for PlayerProfile {
             variables_changed: std::collections::BTreeSet::new(),
             variables_removed: std::collections::BTreeSet::new(),
             reco_store: false,
+            effects_to_restore: Vec::new(),
+            effects_to_store: None,
+            class_index: 0,
         }
     }
 }
