@@ -951,7 +951,10 @@ pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings
         karma_player_can_be_killed_in_peacezone: p.alt_game_karma_player_can_be_killed_in_peacezone,
         min_npc_level_dmg_penalty: config.npc.min_npc_level_dmg_penalty,
         alt_attackable_npcs: config.npc.alt_attackable_npcs,
+        alt_game_magicfailures: p.alt_game_magicfailures,
         calculate_magic_success_by_skill_magic_level: p.calculate_magic_success_by_skill_magic_level,
+        randomize_physical_skill_damage: p.randomize_physical_skill_damage,
+        randomize_magical_skill_damage: p.randomize_magical_skill_damage,
         min_npc_level_magic_penalty: config.npc.min_npc_level_magic_penalty,
         ..CombatSettings::default()
     };
@@ -972,6 +975,11 @@ pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings
             "CritDmgPenaltyForLvLDifferences",
             &ini.get_string("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58"),
             &s.npc_crit_dmg_penalty,
+        );
+        s.npc_skill_dmg_penalty = float_list(
+            "SkillDmgPenaltyForLvLDifferences",
+            &ini.get_string("SkillDmgPenaltyForLvLDifferences", "0.8, 0.7, 0.65, 0.62"),
+            &s.npc_skill_dmg_penalty,
         );
         s.npc_skill_chance_penalty = float_list(
             "SkillChancePenaltyForLvLDifferences",

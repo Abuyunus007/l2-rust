@@ -82,8 +82,12 @@ const CLASS: &str = r#"<list><classId>0</classId><staticData>
 </staticData><lvlUpgainData><level val="1"><hp>100</hp><mp>50</mp><cp>20</cp></level></lvlUpgainData></list>"#;
 
 fn npc_xml(id: i32, level: i32, hp: i32, mp: i32) -> String {
+    npc_xml_of("Monster", id, level, hp, mp)
+}
+
+fn npc_xml_of(kind: &str, id: i32, level: i32, hp: i32, mp: i32) -> String {
     format!(
-        r#"<npc id="{id}" type="Monster" level="{level}" name="N{id}">
+        r#"<npc id="{id}" type="{kind}" level="{level}" name="N{id}">
     <race>FAIRY</race>
     <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
       <vitals hp="{hp}" hpRegen="2" mp="{mp}.0" mpRegen="0.9" />
@@ -97,12 +101,16 @@ fn npc_xml(id: i32, level: i32, hp: i32, mp: i32) -> String {
 }
 
 /// 9001: level 1 monster with 300 HP. 9010: level 20 with 400 MP (for the level penalty of
-/// `ManaHealByLevel`).
+/// `ManaHealByLevel`). 9011: level 10 (within 9 levels of a level 1 player: `calcMagicDam`'s
+/// half-damage rule). 9020: a raid boss. 9030: 100000 HP, to take a whole hit.
 fn npcs() -> String {
     format!(
-        "<?xml version=\"1.0\"?><list>{}{}</list>",
+        "<?xml version=\"1.0\"?><list>{}{}{}{}{}</list>",
         npc_xml(9001, 1, 300, 40),
         npc_xml(9010, 20, 300, 400),
+        npc_xml(9011, 10, 300, 40),
+        npc_xml_of("RaidBoss", 9020, 1, 300, 40),
+        npc_xml(9030, 1, 100_000, 40),
     )
 }
 
@@ -170,7 +178,17 @@ struct Scene {
 
 impl Scene {
     fn new(skills: Arc<SkillTemplates>) -> Self {
-        let mut world = World::new(WorldRng::from_seed(20_261_020), Box::new(NoOutbox));
+        Self::seeded(skills, 20_261_020)
+    }
+
+    /// A scene whose world RNG starts at `seed`: two scenes with one seed make the same draws.
+    fn seeded(skills: Arc<SkillTemplates>, seed: u64) -> Self {
+        Self::build(skills, seed, WorldSettings::default())
+    }
+
+    fn build(skills: Arc<SkillTemplates>, seed: u64, settings: WorldSettings) -> Self {
+        let mut world = World::new(WorldRng::from_seed(seed), Box::new(NoOutbox));
+        world.set_settings(settings);
         // No natural regeneration, so the numbers are the effects' alone.
         world.set_regen_settings(RegenSettings {
             hp_regen_multiplier: 0.0,
@@ -200,12 +218,11 @@ impl Scene {
 
     /// A scene with the skills of an inline XML.
     fn inline(xml: &str) -> Self {
-        let table = SkillTemplates::from_xml(
-            &format!("<list>{xml}</list>"),
-            &EnchantSkillGroups::default(),
-            &SkillLoadOptions::default(),
-        );
-        Self::new(Arc::new(table))
+        Self::inline_seeded(xml, 20_261_020)
+    }
+
+    fn inline_seeded(xml: &str, seed: u64) -> Self {
+        Self::build(inline_table(xml), seed, WorldSettings::default())
     }
 
     fn enter(&mut self, id: ObjectId, log: Log, dx: i32) {
@@ -243,6 +260,14 @@ impl Scene {
     fn cp(&self, id: ObjectId) -> f64 {
         self.world.stats(id).unwrap().core().cur_cp
     }
+}
+
+fn inline_table(xml: &str) -> Arc<SkillTemplates> {
+    Arc::new(SkillTemplates::from_xml(
+        &format!("<list>{xml}</list>"),
+        &EnchantSkillGroups::default(),
+        &SkillLoadOptions::default(),
+    ))
 }
 
 // ---- the datapack --------------------------------------------------------------------------------
@@ -1131,4 +1156,1126 @@ fn a_bad_number_in_a_parameter_drops_the_effect_like_java() {
     s.world.set_current_hp(ME, 10.0, false);
     s.apply(ME, ME, SkillKey::new(9127, 1));
     assert_eq!(s.hp(ME), 10.0);
+}
+
+// ==== M5-EFX-04: damage, Heal, Lethal ====================================================================
+//
+// The numbers of the damage effects have a random part (the weapon's random damage, drawn twice for a
+// physical skill), so a test either bounds the damage by the formula, compares two scenes that start
+// from one RNG seed (the draws are the same, only the input under test differs), or makes the roll
+// certain with a stat (`pSkillEvas` 100, `mCritRate`, `magicSuccRes`, `vengeance*`).
+
+use l2_world::combat::attacker_position;
+use l2_world::formulas::Position;
+
+/// A passive-looking buff that adds `value` to `stat` (an `A2` skill on its own abnormal type).
+fn stat_buff(id: i32, abnormal: &str, stat: &str, op: &str, value: &str) -> String {
+    format!(
+        r#"<skill id="{id}" levels="1" name="B{id}"><operateType>A2</operateType><targetType>SELF</targetType>
+        <abnormalTime>600</abnormalTime><abnormalType>{abnormal}</abnormalType><abnormalLevel>1</abnormalLevel>
+        <effects><effect name="Buff"><{op} stat="{stat}" val="{value}"/></effect></effects></skill>"#
+    )
+}
+
+/// A melee physical skill with the given effect XML (`power` 100, `castRange` 40).
+fn strike(id: i32, effect: &str, extra: &str) -> String {
+    format!(
+        r#"<skill id="{id}" levels="1" name="S{id}"><operateType>A1</operateType><targetType>ONE</targetType>
+        <isMagic>0</isMagic><castRange>40</castRange><power>100</power>{extra}
+        <effects>{effect}</effects></skill>"#
+    )
+}
+
+/// A magic skill with the given effect XML (`power` 50).
+fn spell(id: i32, effect: &str, extra: &str) -> String {
+    format!(
+        r#"<skill id="{id}" levels="1" name="M{id}"><operateType>A1</operateType><targetType>ONE</targetType>
+        <isMagic>1</isMagic><power>50</power>{extra}
+        <effects>{effect}</effects></skill>"#
+    )
+}
+
+const STUN: &str = r#"<skill id="9390" levels="1" name="Stun"><operateType>A2</operateType><targetType>SELF</targetType>
+    <abnormalTime>60</abnormalTime><abnormalType>STUN</abnormalType><abnormalLevel>1</abnormalLevel>
+    <effects><effect name="Stun"/></effects></skill>"#;
+
+/// A static skill (`isMagic` 2) healing exactly `power`.
+fn static_heal(id: i32, power: i32) -> String {
+    spell(
+        id,
+        &format!(r#"<effect name="Heal"><power>{power}</power></effect>"#),
+        "",
+    )
+    .replace("<isMagic>1</isMagic>", "<isMagic>2</isMagic>")
+}
+
+fn k(id: i32) -> SkillKey {
+    SkillKey::new(id, 1)
+}
+
+fn ids_of(packets: &[Vec<u8>]) -> Vec<SystemMessageId> {
+    messages(packets).into_iter().map(|m| m.id).collect()
+}
+
+/// The damage numbers of the `C1_HAS_DONE_S3_POINTS_OF_DAMAGE_TO_C2` messages.
+fn damage_numbers(packets: &[Vec<u8>]) -> Vec<i32> {
+    messages(packets)
+        .into_iter()
+        .filter(|m| m.id == SystemMessageId::C1HasDoneS3PointsOfDamageToC2)
+        .filter_map(|m| match m.params.last() {
+            Some(SystemMessageParam::IntNumber(n)) => Some(*n),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The first value `f` gives for a seed of 0..500 (some outcomes are a matter of the dice).
+fn first_seed<T>(f: impl FnMut(u64) -> Option<T>) -> T {
+    (0..500).find_map(f).expect("no seed made the case happen")
+}
+
+/// Scene with the skills of `xml`, a seed and settings that make the magic critical hit certain
+/// (`max_mcrit_rate` high) or impossible (`0`).
+fn scene_with_mcrit_cap(xml: &str, seed: u64, cap: i32) -> Scene {
+    let mut settings = WorldSettings::default();
+    settings.stats.max_mcrit_rate = cap;
+    Scene::build(inline_table(xml), seed, settings)
+}
+
+/// The HP of npc 9030.
+const BIG: f64 = 100_000.0;
+
+fn loss(before: f64, now: f64) -> f64 {
+    before - now
+}
+
+#[test]
+fn the_damage_heal_and_hate_handlers_are_registered() {
+    let s = Scene::inline("");
+    let registry = s.world.effect_registry();
+    for name in [
+        "Backstab",
+        "DeathLink",
+        "DeleteHate",
+        "DeleteHateOfMe",
+        "EnergyDamage",
+        "FatalBlow",
+        "Heal",
+        "HpDrain",
+        "Lethal",
+        "MagicalDamage",
+        "MagicalDamageByAbnormal",
+        "MagicalDamageMp",
+        "MagicalSoulDamage",
+        "PhysicalDamage",
+        "PhysicalDamageHpLink",
+        "PhysicalSoulDamage",
+        "RandomizeHate",
+        "Resurrection",
+        "SoulBlow",
+        "TargetMeProbability",
+        "TransferHate",
+    ] {
+        assert!(registry.is_ported(name), "{name}");
+    }
+}
+
+// ---- Heal ----------------------------------------------------------------------------------------------
+
+#[test]
+fn heal_of_a_static_skill_restores_exactly_its_power() {
+    // Java Heal.onStart: a static skill (potions, scrolls) skips the M. Atk part and the critical.
+    let mut s = Scene::inline(&static_heal(9401, 30));
+    s.world.set_current_hp(ME, 10.0, false);
+    s.me.take();
+    s.apply(P2, ME, k(9401));
+    assert_eq!(s.hp(ME), 40.0);
+    assert_eq!(
+        restored(&s.me.take()),
+        [(
+            SystemMessageId::S2HpHasBeenRestoredByC1,
+            vec![name("P2"), int(30)]
+        )]
+    );
+}
+
+#[test]
+fn heal_of_a_magic_skill_adds_the_square_root_of_the_magic_attack() {
+    // `amount = power + sqrt(mAtkMul * mAtk)`; no weapon and no shot: `mAtkMul = 1 + 1`.
+    let mut s = scene_with_mcrit_cap(
+        &spell(9401, r#"<effect name="Heal"><power>20</power></effect>"#, ""),
+        1,
+        0,
+    );
+    s.world.set_current_hp(ME, 1.0, false);
+    let m_atk = s.world.stats(P2).unwrap().m_atk(Some(P2), None);
+    s.apply(P2, ME, k(9401));
+    let amount = 20.0 + (2.0 * m_atk).sqrt();
+    assert_eq!(s.hp(ME), 1.0 + amount);
+}
+
+#[test]
+fn heal_of_a_magic_skill_triples_on_a_magic_critical_hit() {
+    // "Heal critic, since CT2.3 Gracia Final": x3 when the caster's magic critical rolls.
+    let xml = format!(
+        "{}{}",
+        spell(9401, r#"<effect name="Heal"><power>20</power></effect>"#, ""),
+        stat_buff(9402, "MAGIC_CRITICAL_UP", "mCritRate", "add", "500"),
+    );
+    let mut s = scene_with_mcrit_cap(&xml, 1, 100_000);
+    s.apply(P2, P2, k(9402));
+    s.world.set_current_hp(ME, 1.0, false);
+    let m_atk = s.world.stats(P2).unwrap().m_atk(Some(P2), None);
+    s.apply(P2, ME, k(9401));
+    let amount = (20.0 + (2.0 * m_atk).sqrt()) * 3.0;
+    assert_eq!(s.hp(ME), 1.0 + amount);
+}
+
+#[test]
+fn heal_never_goes_above_the_room_left() {
+    let mut s = Scene::inline(&static_heal(9401, 500));
+    s.world.set_current_hp(ME, 90.0, false);
+    s.me.take();
+    s.apply(ME, ME, k(9401));
+    let max = f64::from(s.world.stats(ME).unwrap().max_hp());
+    assert_eq!(s.hp(ME), max);
+    // The own heal is the plain message with `(int) amount`.
+    assert_eq!(
+        restored(&s.me.take()),
+        [(
+            SystemMessageId::S1HpHasBeenRestored,
+            vec![int((max - 90.0) as i32)]
+        )]
+    );
+}
+
+#[test]
+fn heal_skill_4051_tells_rejuvenating_hp() {
+    // NOTE(java-quirk): skill 4051 has its own message whoever heals.
+    let mut s = Scene::inline(&static_heal(4051, 10));
+    s.world.set_current_hp(ME, 10.0, false);
+    s.me.take();
+    s.apply(P2, ME, k(4051));
+    assert_eq!(
+        restored(&s.me.take()),
+        [(SystemMessageId::RejuvenatingHp, vec![])]
+    );
+    assert_eq!(s.hp(ME), 20.0);
+}
+
+#[test]
+fn heal_from_an_npc_uses_the_plain_message_and_skips_dead_and_invulnerable_targets() {
+    let mut s = Scene::inline(&static_heal(9401, 10));
+    let npc = s.npc(9030);
+    s.world.set_current_hp(ME, 10.0, false);
+    s.me.take();
+    s.apply(npc, ME, k(9401));
+    // `effector.isPlayer() && effector != effected` is false for an NPC healer.
+    assert_eq!(
+        restored(&s.me.take()),
+        [(SystemMessageId::S1HpHasBeenRestored, vec![int(10)])]
+    );
+    // An invulnerable target is not healed.
+    s.world.set_invul(ME, true);
+    s.me.take();
+    s.apply(P2, ME, k(9401));
+    assert_eq!(s.hp(ME), 20.0);
+    assert!(restored(&s.me.take()).is_empty());
+    // Neither is a dead one.
+    s.world.set_invul(ME, false);
+    s.world.set_dead(ME, true);
+    s.apply(P2, ME, k(9401));
+    assert_eq!(s.hp(ME), 20.0);
+}
+
+#[test]
+fn heal_of_the_datapack_restores_hp() {
+    let Some(table) = datapack() else { return };
+    // 1011 Heal.
+    let skill = table.get(1011, 1).unwrap().clone();
+    assert!(skill.is_magic());
+    let mut s = Scene::new(table);
+    s.world.set_current_hp(ME, 1.0, false);
+    s.me.take();
+    s.apply(P2, ME, key(&skill));
+    assert!(s.hp(ME) > 1.0);
+    let sent = restored(&s.me.take());
+    assert_eq!(sent[0].0, SystemMessageId::S2HpHasBeenRestoredByC1);
+}
+
+// ---- PhysicalDamage ------------------------------------------------------------------------------------
+
+/// The bounds `calcPhysDam` gives a plain (not critical) skill hit on a monster, from the
+/// creatures' numbers: `76 * (pAtk + power) * proximity / pDef`, the random multiplier twice.
+fn physical_bounds(s: &Scene, npc: ObjectId, power: f64) -> (f64, f64) {
+    let a = s.world.stats(ME).unwrap();
+    let t = s.world.stats(npc).unwrap();
+    let proximity = match attacker_position(&s.world, ME, npc) {
+        Position::Back => 1.2,
+        Position::Front => 1.0,
+        Position::Side => 1.1,
+    };
+    let base = (76.0 * (a.p_atk(Some(npc)) + power) * proximity) / t.p_def(Some(ME));
+    // Level 1: the random damage without a weapon is `5 + (int) sqrt(1)` percent.
+    (base * 0.94 * 0.94 - 1.0, base * 1.06 * 1.06 + 1.0)
+}
+
+#[test]
+fn physical_damage_hurts_by_the_formula_and_tells_the_damage() {
+    let mut s = Scene::inline(&strike(9410, r#"<effect name="PhysicalDamage"/>"#, ""));
+    let npc = s.npc(9030);
+    // The monster walks to its attacker once hit: measure first.
+    let (low, high) = physical_bounds(&s, npc, 100.0);
+    s.me.take();
+    s.apply(ME, npc, k(9410));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken >= low && taken <= high, "{taken} not in {low}..{high}");
+    assert_eq!(damage_numbers(&s.me.take()), [taken as i32]);
+}
+
+#[test]
+fn physical_damage_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    // A skill whose only general effect is `PhysicalDamage`, with no flying.
+    let skill = table
+        .iter()
+        .find(|s| {
+            let general = s.effects.get(EffectScope::General);
+            general.len() == 1
+                && general[0].name == "PhysicalDamage"
+                && s.fly_radius == 0
+                && s.fly_type.is_none()
+                && s.base_crit_rate == 0
+                && s.is_physical()
+        })
+        .expect("a plain physical skill")
+        .clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, key(&skill));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken > 0.0);
+    assert_eq!(damage_numbers(&s.me.take()), [taken as i32]);
+}
+
+#[test]
+fn a_physical_critical_hit_is_announced() {
+    // `baseCritRate` 1000 makes the STR based rate certain.
+    let mut s = Scene::inline(&strike(
+        9410,
+        r#"<effect name="PhysicalDamage"/>"#,
+        "<baseCritRate>1000</baseCritRate>",
+    ));
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, k(9410));
+    let sent = s.me.take();
+    let ids = ids_of(&sent);
+    assert!(ids.contains(&SystemMessageId::C1LandedACriticalHit));
+    assert_eq!(damage_numbers(&sent), [loss(BIG, s.hp(npc)) as i32]);
+}
+
+#[test]
+fn a_physical_skill_that_does_no_damage_says_the_attack_failed() {
+    let mut s = Scene::inline(
+        &strike(9410, r#"<effect name="PhysicalDamage"/>"#, "")
+            .replace("<power>100</power>", "<power>-100000</power>"),
+    );
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, k(9410));
+    assert_eq!(s.hp(npc), BIG);
+    assert_eq!(ids_of(&s.me.take()), [SystemMessageId::YourAttackHasFailed]);
+}
+
+#[test]
+fn a_target_that_evades_the_skill_takes_nothing_and_both_players_are_told() {
+    let xml = format!(
+        "{}{}",
+        strike(9410, r#"<effect name="PhysicalDamage"/>"#, ""),
+        stat_buff(9411, "AVOID_UP", "pSkillEvas", "add", "100"),
+    );
+    let mut s = Scene::inline(&xml);
+    s.apply(P2, P2, k(9411));
+    let before = s.hp(P2);
+    s.me.take();
+    s.p2.take();
+    s.apply(ME, P2, k(9410));
+    assert_eq!(s.hp(P2), before);
+    assert_eq!(
+        restored(&s.me.take()),
+        [(SystemMessageId::C1DodgesTheAttack, vec![name("P2")])]
+    );
+    assert_eq!(
+        restored(&s.p2.take()),
+        [(SystemMessageId::YouHaveAvoidedC1SAttack2, vec![name("P1")])]
+    );
+}
+
+#[test]
+fn a_suicide_skill_kills_its_caster() {
+    let mut s = Scene::inline(&strike(
+        9410,
+        r#"<effect name="PhysicalDamage"/>"#,
+        "<isSuicideAttack>true</isSuicideAttack>",
+    ));
+    let npc = s.npc(9030);
+    s.apply(ME, npc, k(9410));
+    assert!(s.world.is_dead(ME));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn a_flying_skill_needs_a_caster_that_can_move() {
+    // Java PhysicalDamage.onStart: `(flyRadius > 0 || flyType != null) && isMovementDisabled()`.
+    let xml = format!(
+        "{}{}",
+        strike(
+            9410,
+            r#"<effect name="PhysicalDamage"/>"#,
+            "<flyRadius>100</flyRadius>"
+        ),
+        STUN
+    );
+    let mut s = Scene::inline(&xml);
+    let npc = s.npc(9030);
+    s.apply(ME, ME, k(9390));
+    assert!(s.world.is_movement_disabled(ME));
+    s.me.take();
+    s.apply(ME, npc, k(9410));
+    assert_eq!(s.hp(npc), BIG);
+    assert_eq!(
+        ids_of(&s.me.take()),
+        [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]
+    );
+}
+
+#[test]
+fn a_melee_skill_can_be_countered() {
+    // Java Formulas.calcDamageReflected: VENGEANCE_SKILL_PHYSICAL_DAMAGE 100 always counters.
+    // (A weak hit: a target that dies loses its buffs before the counter is rolled.)
+    let xml = format!(
+        "{}{}",
+        strike(9410, r#"<effect name="PhysicalDamage"/>"#, "")
+            .replace("<power>100</power>", "<power>5</power>"),
+        stat_buff(9412, "CRITICAL_PROB_UP", "vengeancePdam", "add", "100"),
+    );
+    let mut s = Scene::inline(&xml);
+    s.apply(P2, P2, k(9412));
+    let my_total = s.hp(ME) + s.cp(ME);
+    s.me.take();
+    s.p2.take();
+    s.apply(ME, P2, k(9410));
+    assert!(s.hp(ME) + s.cp(ME) < my_total, "the counter hurt the attacker");
+    assert!(ids_of(&s.me.take()).contains(&SystemMessageId::C1IsPerformingACounterattack));
+    assert!(ids_of(&s.p2.take()).contains(&SystemMessageId::YouCounteredC1SAttack));
+}
+
+#[test]
+fn a_ranged_or_magic_skill_is_not_countered() {
+    let xml = format!(
+        "{}{}",
+        strike(9410, r#"<effect name="PhysicalDamage"/>"#, "")
+            .replace("<castRange>40</castRange>", "<castRange>600</castRange>")
+            .replace("<power>100</power>", "<power>5</power>"),
+        stat_buff(9412, "CRITICAL_PROB_UP", "vengeancePdam", "add", "100"),
+    );
+    let mut s = Scene::inline(&xml);
+    s.apply(P2, P2, k(9412));
+    let my_total = s.hp(ME) + s.cp(ME);
+    s.apply(ME, P2, k(9410));
+    assert_eq!(s.hp(ME) + s.cp(ME), my_total);
+}
+
+#[test]
+fn physical_damage_hp_link_grows_as_the_targets_hp_falls() {
+    // Java Skill.getPower: PHYSICAL_ATTACK_HP_LINK scales the power by `2 - 2 * hp / maxHp`.
+    let xml = strike(9420, r#"<effect name="PhysicalDamageHpLink"/>"#, "");
+    let taken = |hp: f64| {
+        let mut s = Scene::inline_seeded(&xml, 7);
+        let npc = s.npc(9030);
+        s.world.set_current_hp(npc, hp, false);
+        s.apply(ME, npc, k(9420));
+        loss(hp, s.hp(npc))
+    };
+    // At full HP the power is 0 and the hit is the plain P. Atk one; at 1 HP it nearly doubles.
+    let (healthy, dying) = (taken(BIG), taken(BIG / 2.0));
+    assert!(dying > healthy, "{dying} should be above {healthy}");
+}
+
+#[test]
+fn physical_damage_hp_link_refuses_a_caster_that_cannot_move() {
+    let xml = format!(
+        "{}{}",
+        strike(9420, r#"<effect name="PhysicalDamageHpLink"/>"#, ""),
+        STUN
+    );
+    let mut s = Scene::inline(&xml);
+    let npc = s.npc(9030);
+    s.apply(ME, ME, k(9390));
+    s.me.take();
+    s.apply(ME, npc, k(9420));
+    assert_eq!(s.hp(npc), BIG);
+    assert_eq!(
+        ids_of(&s.me.take()),
+        [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]
+    );
+}
+
+#[test]
+fn physical_damage_hp_link_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "PhysicalDamageHpLink", |s| s.is_physical()).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9001);
+    s.world.set_current_hp(npc, 100.0, false);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < 100.0);
+}
+
+#[test]
+fn physical_soul_damage_grows_by_4_8_percent_per_soul_up_to_the_skills_limit() {
+    // Java PhysicalSoulDamage.onStart: `damage *= 1 + (souls * 0.048)`, souls capped by
+    // `soulMaxConsumeCount`; the same seed makes the same base damage.
+    let xml = strike(
+        9430,
+        r#"<effect name="PhysicalSoulDamage"/>"#,
+        "<soulMaxConsumeCount>2</soulMaxConsumeCount>",
+    );
+    let damage_with = |souls: i32| {
+        let mut s = Scene::inline_seeded(&xml, 11);
+        let npc = s.npc(9030);
+        if souls > 0 {
+            s.world.increase_souls(ME, souls);
+        }
+        s.apply(ME, npc, k(9430));
+        loss(BIG, s.hp(npc)) as i32
+    };
+    let base = damage_with(0);
+    assert!(base > 0);
+    assert_eq!(damage_with(1), (f64::from(base) * (1.0 + 0.048)) as i32);
+    assert_eq!(damage_with(2), (f64::from(base) * (1.0 + 2.0 * 0.048)) as i32);
+    // Three souls held, two usable.
+    assert_eq!(damage_with(3), damage_with(2));
+}
+
+#[test]
+fn physical_soul_damage_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "PhysicalSoulDamage", |s| {
+        s.fly_radius == 0 && s.fly_type.is_none()
+    })
+    .clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn energy_damage_grows_with_the_force_charges() {
+    // Java EnergyDamage: `energyChargesBoost = ((charges + chargeConsume) - 1) * 0.2 + 1`. The same
+    // seed makes the same draws, so the damage is in the ratio of the boosts.
+    let xml = strike(
+        9440,
+        r#"<effect name="EnergyDamage"><power>10</power><criticalChance>0</criticalChance></effect>"#,
+        "",
+    );
+    let taken = |charges: i32| {
+        let mut s = Scene::inline_seeded(&xml, 5);
+        let npc = s.npc(9030);
+        if charges > 0 {
+            s.world.increase_charges(ME, charges, 8);
+        }
+        s.apply(ME, npc, k(9440));
+        loss(BIG, s.hp(npc))
+    };
+    let (none, three) = (taken(0), taken(3));
+    let boost = |charges: f64| ((charges - 1.0) * 0.2) + 1.0;
+    assert!(none > 0.0);
+    assert!(
+        (three / none - boost(3.0) / boost(0.0)).abs() < 1e-9,
+        "{three} / {none}"
+    );
+}
+
+#[test]
+fn energy_damage_is_for_players_only() {
+    let mut s = Scene::inline(&strike(
+        9440,
+        r#"<effect name="EnergyDamage"><power>10</power></effect>"#,
+        "",
+    ));
+    let npc = s.npc(9030);
+    s.apply(npc, ME, k(9440));
+    assert_eq!(s.hp(ME), 100.0);
+}
+
+#[test]
+fn energy_damage_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "EnergyDamage", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.world.increase_charges(ME, 3, 8);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+// ---- the blows -----------------------------------------------------------------------------------------
+
+#[test]
+fn a_fatal_blow_hurts_and_is_announced_as_critical() {
+    // Java FatalBlow: `calcBlowSuccess` (blowChance 1000 always lands), then damage and the
+    // critical message whatever the roll said.
+    let mut s = Scene::inline(&strike(
+        9450,
+        r#"<effect name="FatalBlow"/>"#,
+        "<blowChance>1000</blowChance>",
+    ));
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, k(9450));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken > 0.0);
+    let sent = s.me.take();
+    assert!(ids_of(&sent).contains(&SystemMessageId::C1LandedACriticalHit));
+    assert_eq!(damage_numbers(&sent), [taken as i32]);
+}
+
+#[test]
+fn a_blow_that_does_not_land_does_nothing() {
+    let mut s = Scene::inline(&strike(
+        9450,
+        r#"<effect name="FatalBlow"/>"#,
+        "<blowChance>0</blowChance>",
+    ));
+    let npc = s.npc(9030);
+    s.apply(ME, npc, k(9450));
+    assert_eq!(s.hp(npc), BIG);
+}
+
+#[test]
+fn fatal_blow_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "FatalBlow", |s| s.blow_chance >= 100).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    // The blow chance is 100 or more of a base rate that the side of the attack doubles or halves.
+    for _ in 0..20 {
+        s.apply(ME, npc, key(&skill));
+    }
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn a_backstab_needs_the_attacker_not_in_front() {
+    // Java Backstab.calcSuccess: `!effector.isInFrontOf(effected)`. From one side of a monster the
+    // attacker is in front of it, from the other behind it.
+    let xml = strike(
+        9460,
+        r#"<effect name="Backstab"/>"#,
+        "<blowChance>1000</blowChance>",
+    );
+    let hit_with_heading = |heading: i32| {
+        let mut s = Scene::inline(&xml);
+        let npc = s.world.spawn_npc_at(9030, X + 80, Y, Z, heading).unwrap();
+        // The monster turns to its attacker once hit: read the position first.
+        let position = attacker_position(&s.world, ME, npc);
+        s.apply(ME, npc, k(9460));
+        (position, s.hp(npc) < BIG)
+    };
+    let (a, b) = (hit_with_heading(0), hit_with_heading(32768));
+    for (position, hit) in [a, b] {
+        assert_eq!(hit, position != Position::Front, "{position:?}");
+    }
+    assert_ne!(a.0, b.0);
+}
+
+#[test]
+fn backstab_of_the_datapack_hurts_from_behind() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "Backstab", |_| true).clone();
+    let mut s = Scene::new(table);
+    // Whichever of the two headings puts the attacker behind the monster.
+    let npcs: Vec<ObjectId> = [0, 32768]
+        .into_iter()
+        .map(|heading| s.world.spawn_npc_at(9030, X + 80, Y, Z, heading).unwrap())
+        .collect();
+    let behind = npcs
+        .into_iter()
+        .find(|npc| attacker_position(&s.world, ME, *npc) == Position::Back)
+        .expect("one heading puts the attacker behind");
+    for _ in 0..30 {
+        s.apply(ME, behind, key(&skill));
+    }
+    assert!(s.hp(behind) < BIG);
+}
+
+#[test]
+fn a_soul_blow_grows_with_the_souls() {
+    let xml = strike(
+        9470,
+        r#"<effect name="SoulBlow"/>"#,
+        "<blowChance>1000</blowChance><soulMaxConsumeCount>2</soulMaxConsumeCount>",
+    );
+    let taken = |souls: i32| {
+        let mut s = Scene::inline_seeded(&xml, 3);
+        let npc = s.npc(9030);
+        if souls > 0 {
+            s.world.increase_souls(ME, souls);
+        }
+        s.apply(ME, npc, k(9470));
+        loss(BIG, s.hp(npc))
+    };
+    let (none, two, three) = (taken(0), taken(2), taken(3));
+    assert!(none > 0.0);
+    assert!((two / none - (1.0 + 2.0 * 0.048)).abs() < 1e-9);
+    assert_eq!(two, three);
+}
+
+#[test]
+fn soul_blow_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "SoulBlow", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    for _ in 0..20 {
+        s.apply(ME, npc, key(&skill));
+    }
+    assert!(s.hp(npc) < BIG);
+}
+
+// ---- magical damage -------------------------------------------------------------------------------------
+
+#[test]
+fn magical_damage_hurts_and_tells_the_damage() {
+    let mut s = Scene::inline(&spell(9500, r#"<effect name="MagicalDamage"/>"#, ""));
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, k(9500));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken > 0.0);
+    let sent = s.me.take();
+    assert_eq!(damage_numbers(&sent), [taken as i32]);
+}
+
+#[test]
+fn magical_damage_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = table
+        .iter()
+        .find(|s| {
+            let general = s.effects.get(EffectScope::General);
+            general.len() == 1 && general[0].name == "MagicalDamage" && !s.is_suicide_attack
+        })
+        .expect("a plain magic skill")
+        .clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.me.take();
+    s.apply(ME, npc, key(&skill));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken > 0.0);
+    assert_eq!(damage_numbers(&s.me.take()), [taken as i32]);
+}
+
+#[test]
+fn a_magic_critical_hit_triples_the_damage_against_a_monster() {
+    // The same seed, one scene whose magic critical cannot happen and one where it always does.
+    let xml = format!(
+        "{}{}",
+        spell(9500, r#"<effect name="MagicalDamage"/>"#, ""),
+        stat_buff(9501, "MAGIC_CRITICAL_UP", "mCritRate", "add", "500"),
+    );
+    let hit = |cap: i32, buffed: bool| {
+        let mut s = scene_with_mcrit_cap(&xml, 9, cap);
+        if buffed {
+            s.apply(ME, ME, k(9501));
+        }
+        let npc = s.npc(9030);
+        s.me.take();
+        s.apply(ME, npc, k(9500));
+        (loss(BIG, s.hp(npc)), ids_of(&s.me.take()))
+    };
+    let (plain, plain_ids) = hit(0, false);
+    let (crit, crit_ids) = hit(100_000, true);
+    assert!(!plain_ids.contains(&SystemMessageId::MagicCriticalHit));
+    assert!(crit_ids.contains(&SystemMessageId::MagicCriticalHit));
+    assert!((crit - 3.0 * plain).abs() <= 3.0, "{crit} vs {plain}");
+}
+
+#[test]
+fn a_resisted_spell_tells_both_players() {
+    // `magicSuccRes` 200 puts the success rate under 0: the check fails, and fails again for the
+    // second roll, so the damage is 1 and both are told.
+    let xml = format!(
+        "{}{}",
+        spell(9500, r#"<effect name="MagicalDamage"/>"#, ""),
+        stat_buff(9502, "MD_UP", "magicSuccRes", "mul", "200"),
+    );
+    let mut s = Scene::inline(&xml);
+    s.apply(P2, P2, k(9502));
+    s.me.take();
+    s.p2.take();
+    s.apply(ME, P2, k(9500));
+    let mine = messages(&s.me.take());
+    assert_eq!(mine[0].id, SystemMessageId::C1HasResistedYourS2);
+    assert_eq!(mine[0].params[0], name("P2"));
+    let theirs = restored(&s.p2.take());
+    assert!(theirs.contains(&(SystemMessageId::YouResistedC1SMagic, vec![name("P1")])));
+}
+
+#[test]
+fn a_half_resisted_spell_says_the_attack_failed() {
+    // `magicSuccRes` 50 gives a rate of 50: the first check fails half the time, the second
+    // succeeds half the time (and the target is within 9 levels): "YOUR_ATTACK_HAS_FAILED", half damage.
+    let xml = format!(
+        "{}{}",
+        spell(9500, r#"<effect name="MagicalDamage"/>"#, ""),
+        stat_buff(9502, "MD_UP", "magicSuccRes", "mul", "50"),
+    );
+    let (mine, theirs) = first_seed(|seed| {
+        let mut s = Scene::inline_seeded(&xml, seed);
+        s.apply(P2, P2, k(9502));
+        s.me.take();
+        s.p2.take();
+        s.apply(ME, P2, k(9500));
+        let mine = ids_of(&s.me.take());
+        mine.contains(&SystemMessageId::YourAttackHasFailed)
+            .then(|| (mine, ids_of(&s.p2.take())))
+    });
+    assert!(!mine.contains(&SystemMessageId::C1HasResistedYourS2));
+    assert!(theirs.contains(&SystemMessageId::YouResistedC1SMagic));
+}
+
+#[test]
+fn magical_damage_by_abnormal_grows_with_the_targets_buffs() {
+    // `damage *= ((buffs * 0.3) + 1.3) / 4`.
+    let xml = format!(
+        "{}{}{}",
+        spell(9510, r#"<effect name="MagicalDamageByAbnormal"/>"#, ""),
+        stat_buff(9511, "PA_UP", "pAtk", "mul", "1.0"),
+        stat_buff(9512, "PD_UP", "pDef", "mul", "1.0"),
+    );
+    let taken = |buffs: i32| {
+        let mut s = scene_with_mcrit_cap(&xml, 21, 0);
+        let npc = s.npc(9030);
+        for id in [9511, 9512].into_iter().take(usize::try_from(buffs).unwrap()) {
+            // The buffs are put on the monster (the skills name their own caster as target).
+            s.apply(npc, npc, k(id));
+        }
+        s.apply(ME, npc, k(9510));
+        loss(BIG, s.hp(npc))
+    };
+    let (none, two) = (taken(0), taken(2));
+    assert!(none > 0.0);
+    // 0.475 / 0.325, give or take the two integer casts.
+    assert!((two - none * (0.475 / 0.325)).abs() <= 2.0, "{two} vs {none}");
+}
+
+#[test]
+fn magical_damage_by_abnormal_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "MagicalDamageByAbnormal", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn magical_soul_damage_grows_by_4_8_percent_per_soul() {
+    let xml = spell(
+        9520,
+        r#"<effect name="MagicalSoulDamage"/>"#,
+        "<soulMaxConsumeCount>2</soulMaxConsumeCount>",
+    );
+    let damage_with = |souls: i32| {
+        let mut s = Scene::inline_seeded(&xml, 13);
+        let npc = s.npc(9030);
+        if souls > 0 {
+            s.world.increase_souls(ME, souls);
+        }
+        s.apply(ME, npc, k(9520));
+        loss(BIG, s.hp(npc)) as i32
+    };
+    let base = damage_with(0);
+    assert!(base > 0);
+    assert_eq!(damage_with(2), (f64::from(base) * (1.0 + 2.0 * 0.048)) as i32);
+    assert_eq!(damage_with(5), damage_with(2));
+}
+
+#[test]
+fn magical_soul_damage_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "MagicalSoulDamage", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn death_link_hits_harder_the_less_hp_the_caster_has() {
+    // Java Skill.getPower: DEATH_LINK scales the power by `2 - 2 * hp / maxHp` of the caster:
+    // nothing at full HP.
+    let xml = spell(9530, r#"<effect name="DeathLink"/>"#, "");
+    let taken = |hp: f64| {
+        let mut s = Scene::inline_seeded(&xml, 17);
+        let npc = s.npc(9030);
+        s.world.set_current_hp(ME, hp, false);
+        s.apply(ME, npc, k(9530));
+        loss(BIG, s.hp(npc))
+    };
+    assert_eq!(taken(100.0), 0.0);
+    assert!(taken(10.0) > 0.0);
+}
+
+#[test]
+fn death_link_of_the_datapack_hurts_a_weak_caster() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "DeathLink", |s| !s.is_suicide_attack).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.world.set_current_hp(ME, 5.0, false);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn hp_drain_heals_the_caster_by_power_per_hp_taken() {
+    let mut s = Scene::inline(&spell(
+        9540,
+        r#"<effect name="HpDrain"><power>0.5</power></effect>"#,
+        "",
+    ));
+    let npc = s.npc(9030);
+    s.world.set_current_hp(ME, 10.0, false);
+    s.me.take();
+    s.apply(ME, npc, k(9540));
+    let taken = loss(BIG, s.hp(npc));
+    assert!(taken > 0.0);
+    // No CP on a monster: the drain is what the hit took.
+    assert_eq!(s.hp(ME), (10.0 + 0.5 * taken).min(100.0));
+}
+
+#[test]
+fn hp_drain_leaves_the_cp_of_a_player_target_out_of_the_drain() {
+    // `cp > 0`: the drain is `damage - cp` (0 when the hit is below the CP).
+    // A weak spell, so the target survives it and the HP and CP taken add up to the damage.
+    let mut s = Scene::inline(
+        &spell(9540, r#"<effect name="HpDrain"><power>1</power></effect>"#, "")
+            .replace("<power>50</power>", "<power>8</power>"),
+    );
+    s.world.set_current_hp(ME, 10.0, false);
+    s.apply(ME, P2, k(9540));
+    let cp_taken = 20.0 - s.cp(P2);
+    let hp_taken = 100.0 - s.hp(P2);
+    let damage = cp_taken + hp_taken;
+    assert!(
+        s.hp(P2) > 0.0 && damage > 20.0,
+        "the hit is above the CP and below the HP"
+    );
+    assert_eq!(s.hp(ME), 10.0 + (damage - 20.0));
+}
+
+#[test]
+fn a_half_resisted_drain_says_so() {
+    let xml = format!(
+        "{}{}",
+        spell(9540, r#"<effect name="HpDrain"><power>0.5</power></effect>"#, ""),
+        stat_buff(9502, "MD_UP", "magicSuccRes", "mul", "50"),
+    );
+    let (mine, theirs) = first_seed(|seed| {
+        let mut s = Scene::inline_seeded(&xml, seed);
+        s.apply(P2, P2, k(9502));
+        s.me.take();
+        s.p2.take();
+        s.apply(ME, P2, k(9540));
+        let mine = ids_of(&s.me.take());
+        mine.contains(&SystemMessageId::DrainWasOnly50PercentSuccessful)
+            .then(|| (mine, ids_of(&s.p2.take())))
+    });
+    assert!(!mine.contains(&SystemMessageId::YourAttackHasFailed));
+    assert!(theirs.contains(&SystemMessageId::YouResistedC1SDrain));
+}
+
+#[test]
+fn hp_drain_of_the_datapack_hurts() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "HpDrain", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9030);
+    s.apply(ME, npc, key(&skill));
+    assert!(s.hp(npc) < BIG);
+}
+
+#[test]
+fn magical_damage_mp_drains_mp_and_tells_both() {
+    let xml = spell(9550, r#"<effect name="MagicalDamageMp"/>"#, "");
+    let (mp_taken, mine, theirs) = first_seed(|seed| {
+        // `calcMagicAffected` rolls a gaussian: rarely it fails.
+        let mut s = Scene::inline_seeded(&xml, seed);
+        s.me.take();
+        s.p2.take();
+        s.apply(ME, P2, k(9550));
+        let mine = restored(&s.me.take());
+        let theirs = restored(&s.p2.take());
+        let taken = 50.0 - s.mp(P2);
+        (taken > 0.0).then_some((taken, mine, theirs))
+    });
+    assert!(mine.contains(&(
+        SystemMessageId::YourOpponentSMpWasReducedByS1,
+        vec![int(mp_taken as i32)]
+    )));
+    assert!(theirs.contains(&(
+        SystemMessageId::S2SMpHasBeenDrainedByC1,
+        vec![name("P1"), int(mp_taken as i32)]
+    )));
+}
+
+#[test]
+fn magical_damage_mp_skips_an_invulnerable_target_and_a_debuff_it_is_immune_to() {
+    let xml = format!(
+        "{}{}",
+        spell(9550, r#"<effect name="MagicalDamageMp"/>"#, ""),
+        stat_buff(9551, "MD_UP", "debuffImmunity", "add", "1"),
+    );
+    let mut s =
+        Scene::inline(&xml.replace("<power>50</power>", "<power>50</power><isDebuff>true</isDebuff>"));
+    s.world.set_invul(P2, true);
+    s.apply(ME, P2, k(9550));
+    assert_eq!(s.mp(P2), 50.0);
+    s.world.set_invul(P2, false);
+    s.apply(P2, P2, k(9551));
+    s.me.take();
+    s.p2.take();
+    s.apply(ME, P2, k(9550));
+    assert_eq!(s.mp(P2), 50.0);
+    assert_eq!(ids_of(&s.me.take()), [SystemMessageId::YourAttackHasFailed]);
+    assert_eq!(
+        restored(&s.p2.take()),
+        [(SystemMessageId::C1ResistedC2SMagic, vec![name("P2"), name("P1")])]
+    );
+}
+
+#[test]
+fn magical_damage_mp_of_the_datapack_drains() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "MagicalDamageMp", |s| !s.is_debuff).clone();
+    // `calcMagicAffected` rolls a gaussian: some seeds fail it.
+    first_seed(|seed| {
+        let mut s = Scene::seeded(table.clone(), seed);
+        s.apply(ME, P2, key(&skill));
+        (s.mp(P2) < 50.0).then_some(())
+    });
+}
+
+#[test]
+fn the_shield_deflect_stat_turns_a_spell_on_its_caster() {
+    // Java: `VENGEANCE_SKILL_MAGIC_DAMAGE > Rnd.get(100)` (100 always) reflects all the damage.
+    let xml = format!(
+        "{}{}",
+        spell(9500, r#"<effect name="MagicalDamage"/>"#, ""),
+        stat_buff(9560, "MD_UP", "vengeanceMdam", "add", "100"),
+    );
+    let mut s = Scene::inline(&xml);
+    s.apply(P2, P2, k(9560));
+    let (mine, theirs) = (s.hp(ME) + s.cp(ME), s.hp(P2) + s.cp(P2));
+    s.apply(ME, P2, k(9500));
+    assert!(s.hp(ME) + s.cp(ME) < mine);
+    assert_eq!(s.hp(P2) + s.cp(P2), theirs);
+}
+
+// ---- Lethal -----------------------------------------------------------------------------------------------
+
+fn lethal(full: i32, half: i32) -> String {
+    spell(
+        9600,
+        &format!(
+            r#"<effect name="Lethal"><fullLethal>{full}</fullLethal><halfLethal>{half}</halfLethal></effect>"#
+        ),
+        "",
+    )
+}
+
+#[test]
+fn a_lethal_strike_leaves_a_monster_with_1_hp() {
+    let mut s = Scene::inline(&lethal(100, 0));
+    let npc = s.npc(9001);
+    s.me.take();
+    s.apply(ME, npc, k(9600));
+    assert_eq!(s.hp(npc), 1.0);
+    assert_eq!(
+        ids_of(&s.me.take()),
+        [SystemMessageId::YourLethalStrikeWasSuccessful]
+    );
+}
+
+#[test]
+fn a_lethal_strike_leaves_a_player_with_1_hp_and_1_cp() {
+    let mut s = Scene::inline(&lethal(100, 0));
+    s.me.take();
+    s.p2.take();
+    s.apply(ME, P2, k(9600));
+    assert_eq!((s.hp(P2), s.cp(P2)), (1.0, 1.0));
+    assert!(ids_of(&s.p2.take()).contains(&SystemMessageId::LethalStrike));
+    assert_eq!(
+        ids_of(&s.me.take()),
+        [SystemMessageId::YourLethalStrikeWasSuccessful]
+    );
+}
+
+#[test]
+fn a_half_kill_halves_a_monsters_hp_and_takes_a_players_cp() {
+    let mut s = Scene::inline(&lethal(0, 100));
+    let npc = s.npc(9001);
+    s.me.take();
+    s.apply(ME, npc, k(9600));
+    assert_eq!(s.hp(npc), 150.0);
+    assert_eq!(ids_of(&s.me.take()), [SystemMessageId::HalfKill]);
+    s.p2.take();
+    s.apply(ME, P2, k(9600));
+    assert_eq!((s.hp(P2), s.cp(P2)), (100.0, 1.0));
+    assert_eq!(
+        ids_of(&s.p2.take()),
+        [
+            SystemMessageId::HalfKill,
+            SystemMessageId::YourCpWasDrainedBecauseYouWereHitWithAHalfKillSkill
+        ]
+    );
+}
+
+#[test]
+fn lethal_does_nothing_without_a_chance_or_against_what_it_cannot_kill() {
+    let mut s = Scene::inline(&lethal(0, 0));
+    let npc = s.npc(9001);
+    s.apply(ME, npc, k(9600));
+    assert_eq!(s.hp(npc), 300.0);
+
+    // A raid boss, an invulnerable player and a target six levels above the skill are all safe.
+    let mut s = Scene::inline(&lethal(100, 100));
+    let boss = s.npc(9020);
+    s.apply(ME, boss, k(9600));
+    assert_eq!(s.hp(boss), 300.0);
+    s.world.set_invul(P2, true);
+    s.apply(ME, P2, k(9600));
+    assert_eq!((s.hp(P2), s.cp(P2)), (100.0, 20.0));
+    let high = s.npc(9010);
+    s.apply(ME, high, k(9600));
+    assert_eq!(s.hp(high), 300.0);
+}
+
+#[test]
+fn lethal_of_the_datapack_runs() {
+    let Some(table) = datapack() else { return };
+    let skill = find(&table, "Lethal", |_| true).clone();
+    let mut s = Scene::new(table);
+    let npc = s.npc(9001);
+    for _ in 0..30 {
+        s.apply(ME, npc, key(&skill));
+    }
+    assert!(s.hp(npc) < 300.0);
 }

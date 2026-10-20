@@ -304,9 +304,10 @@ impl World {
         false
     }
 
-    /// Whether `id` is a player or an NPC in the world (Java's `Creature` argument).
+    /// Whether `id` is a player, an NPC or a door in the world (Java's `Creature` argument:
+    /// `Door extends Creature`, so `OpenDoor` and `DetectHiddenObjects` run on doors).
     fn is_creature(&self, id: ObjectId) -> bool {
-        self.players.contains_key(&id) || self.npcs.contains_key(&id)
+        self.players.contains_key(&id) || self.npcs.contains_key(&id) || self.doors.contains_key(&id)
     }
 
     /// Java `Skill.checkCondition(creature, object, false)`: the skill's conditions for
