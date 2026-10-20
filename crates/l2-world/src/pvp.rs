@@ -459,12 +459,6 @@ impl World {
         }
     }
 
-    /// Java `instanceof Guard` (`QuestGuard` extends it).
-    fn is_guard(&self, id: ObjectId) -> bool {
-        self.npc_template(id)
-            .is_some_and(|t| matches!(t.npc_type.as_str(), "Guard" | "QuestGuard"))
-    }
-
     /// Java `Player.setKarmaFlag()`: `UserInfo` for the player, the relation for everybody around.
     pub(crate) fn set_karma_flag(&mut self, id: ObjectId) {
         self.send_user_info(id);
