@@ -1,15 +1,15 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 //! The dispel, hate, movement and misc effect handlers (M5-EFX-03), end to end through the real
 //! effect engine: a skill with the handler's `<effect>` is applied with `apply_effects`, and the
-//! world's state is checked. The Java classes are named in each test. Handlers that need a door
-//! as the target are not here: `apply_effects` refuses a door (`is_creature`), see the report.
+//! world's state is checked. The Java classes are named in each test. The doors as targets
+//! (`OpenDoor`, `DetectHiddenObjects`) and the hate chances of M5-EFX-04 are at the end.
 
 use std::sync::{Arc, Mutex};
 
 use l2_data::stats::AbnormalType;
 use l2_data::{
-    ArmorSets, EnchantHpBonus, Hennas, ItemTemplates, NpcLoadOptions, NpcTemplates, PlayerTemplates,
-    SkillTemplates, SpawnData, SpawnLoadOptions,
+    ArmorSets, DoorTemplates, EnchantHpBonus, Hennas, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    PlayerTemplates, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::SystemMessage;
@@ -132,6 +132,29 @@ const SKILLS: &str = r##"<list>
 <effects><effect name="Buff"/></effects></skill>
 <skill id="9137" levels="1" name="Consume body"><operateType>A1</operateType><targetType>ONE</targetType>
 <effects><effect name="ConsumeBody"/></effects></skill>
+<skill id="9200" levels="1" name="Open door"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="OpenDoor"><chance>100</chance></effect></effects></skill>
+<skill id="9201" levels="1" name="Open door (item)"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="OpenDoor"><chance>100</chance><isItem>true</isItem></effect></effects></skill>
+<skill id="9202" levels="1" name="Detect hidden objects"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="DetectHiddenObjects"/></effects></skill>
+<skill id="9210" levels="1" name="Delete hate"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="DeleteHate"><chance>1000</chance></effect></effects></skill>
+<skill id="9211" levels="1" name="Delete hate of me"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="DeleteHateOfMe"><chance>1000</chance></effect></effects></skill>
+<skill id="9212" levels="1" name="Randomize hate"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="RandomizeHate"><chance>1000</chance></effect></effects></skill>
+<skill id="9213" levels="1" name="Transfer hate"><operateType>A1</operateType><targetType>ONE</targetType>
+<affectRange>1000</affectRange>
+<effects><effect name="TransferHate"><chance>1000</chance></effect></effects></skill>
+<skill id="9214" levels="1" name="Target me"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="TargetMeProbability"><chance>1000</chance></effect></effects></skill>
+<skill id="9215" levels="1" name="Resurrection"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="Resurrection"><power>50</power></effect></effects></skill>
+<skill id="9216" levels="1" name="Delete hate (never)"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="DeleteHate"><chance>-1000</chance></effect></effects></skill>
+<skill id="9217" levels="1" name="Target me (never)"><operateType>A1</operateType><targetType>ONE</targetType>
+<effects><effect name="TargetMeProbability"><chance>-1000</chance></effect></effects></skill>
 </list>"##;
 
 struct Data(StatData);
@@ -617,4 +640,176 @@ fn consume_body_takes_a_dead_npc_away_at_once_without_start_effects() {
     let count = world.npc_count();
     cast(&mut world, ME, monster, 9137);
     assert_eq!(world.npc_count(), count - 1);
+}
+
+// ---- doors as targets (M5-EFX-04: `Door extends Creature`) ----------------------------------------
+
+/// A world with one door of the given `<door>` attributes, 20 units from `ME`; returns its object
+/// id and the log of `ME`.
+fn world_with_door(attributes: &str) -> (World, ObjectId, Log) {
+    let xml = format!(
+        r#"<list><door id="77" name="door77" height="150" baseHpMax="1000" pos="1020,1000,0"
+            node1="1010,950" node2="1030,950" node3="1030,1050" node4="1010,1050" nodeZ="-10" {attributes}/></list>"#
+    );
+    let templates = DoorTemplates::from_xml(&xml).unwrap();
+    let (mut world, log) = world();
+    world
+        .spawn_doors(&templates, &IdFactory::new([]).unwrap())
+        .unwrap();
+    let door = world.doors().next().unwrap().object_id;
+    log.take();
+    (world, door, log)
+}
+
+#[test]
+fn open_door_opens_a_door_that_opens_by_skill() {
+    // Java OpenDoor.onStart: `Rnd.get(100) < chance` and the door is closed: `door.openMe()`.
+    let (mut world, door, _log) = world_with_door(r#"open_method="8""#);
+    assert!(!world.doors().next().unwrap().open);
+    cast(&mut world, ME, door, 9200);
+    assert!(world.doors().next().unwrap().open);
+}
+
+#[test]
+fn open_door_refuses_a_door_that_does_not_open_by_skill_unless_the_effect_is_for_an_item() {
+    // Java OpenDoor.onStart: `!door.isOpenableBySkill() && !_isItem` tells THIS_DOOR_CANNOT_BE_UNLOCKED.
+    let (mut world, door, log) = world_with_door(r#"open_method="1""#);
+    cast(&mut world, ME, door, 9200);
+    assert!(!world.doors().next().unwrap().open);
+    assert!(message_ids(&log.take()).contains(&SystemMessageId::ThisDoorCannotBeUnlocked));
+    // The item variant skips the check.
+    cast(&mut world, ME, door, 9201);
+    assert!(world.doors().next().unwrap().open);
+}
+
+#[test]
+fn detect_hidden_objects_shows_a_stealth_door() {
+    // Java DetectHiddenObjects.onStart: a stealth door gets mesh 1 and is targetable when its
+    // open type is not 0.
+    let (mut world, door, _log) = world_with_door(r#"stealth="true" targetable="false" open_method="1""#);
+    assert!(!world.doors().next().unwrap().targetable);
+    cast(&mut world, ME, door, 9202);
+    let door = world.doors().next().unwrap();
+    assert_eq!(door.mesh_index, 1);
+    assert!(door.targetable);
+}
+
+// ---- the hate chances (M5-EFX-04) -----------------------------------------------------------------
+
+fn hate_of(world: &mut World, npc: ObjectId, who: ObjectId) -> i64 {
+    world.aggro_hating(npc, who)
+}
+
+#[test]
+fn delete_hate_empties_the_aggro_list() {
+    // Java DeleteHate.onStart: `clearAggroList()`, walking, intention active.
+    let (mut world, monster, _) = world_with_monsters();
+    world.add_damage_hate(monster, ME, 0, 50);
+    world.add_damage_hate(monster, OTHER, 0, 20);
+    cast(&mut world, ME, monster, 9210);
+    assert!(world.aggro_list(monster).is_empty());
+}
+
+#[test]
+fn a_hate_chance_that_fails_changes_nothing() {
+    // `calcSuccess` is `Formulas.calcProbability`: a chance of -1000 never lands.
+    let (mut world, monster, _) = world_with_monsters();
+    world.add_damage_hate(monster, ME, 0, 50);
+    cast(&mut world, ME, monster, 9216);
+    assert_eq!(hate_of(&mut world, monster, ME), 50);
+    world.set_target(OTHER, Some(monster));
+    cast(&mut world, ME, OTHER, 9217);
+    assert_eq!(world.target_of(OTHER), Some(monster));
+}
+
+#[test]
+fn delete_hate_of_me_clears_only_the_casters_hate() {
+    // Java DeleteHateOfMe.onStart: `stopHating(effector)` keeps the entry with hate 0.
+    let (mut world, monster, _) = world_with_monsters();
+    world.add_damage_hate(monster, ME, 0, 50);
+    world.add_damage_hate(monster, OTHER, 0, 20);
+    cast(&mut world, ME, monster, 9211);
+    assert_eq!(hate_of(&mut world, monster, ME), 0);
+    assert_eq!(hate_of(&mut world, monster, OTHER), 20);
+    assert_eq!(world.aggro_list(monster).len(), 2);
+}
+
+#[test]
+fn randomize_hate_hands_the_casters_hate_to_another_attacker() {
+    // Java RandomizeHate.onStart: with one other attacker on the list, it gets all of the hate.
+    let (mut world, monster, _) = world_with_monsters();
+    world.add_damage_hate(monster, ME, 0, 50);
+    world.add_damage_hate(monster, OTHER, 0, 20);
+    cast(&mut world, ME, monster, 9212);
+    assert_eq!(hate_of(&mut world, monster, ME), 0);
+    assert_eq!(hate_of(&mut world, monster, OTHER), 70);
+}
+
+#[test]
+fn randomize_hate_needs_somebody_else_on_the_list() {
+    let (mut world, monster, _) = world_with_monsters();
+    world.add_damage_hate(monster, ME, 0, 50);
+    cast(&mut world, ME, monster, 9212);
+    assert_eq!(hate_of(&mut world, monster, ME), 50);
+}
+
+#[test]
+fn transfer_hate_moves_the_hate_of_every_nearby_attackable_to_the_target() {
+    // Java TransferHate.onStart: each visible attackable in `affectRange` with hate for the caster
+    // loses it (`reduceHate(effector, -hate)`) and gives it to the effected.
+    let (mut world, first, second) = world_with_monsters();
+    world.add_damage_hate(first, ME, 0, 50);
+    world.add_damage_hate(second, ME, 0, 30);
+    cast(&mut world, ME, OTHER, 9213);
+    assert_eq!(hate_of(&mut world, first, ME), 0);
+    assert_eq!(hate_of(&mut world, second, ME), 0);
+    assert_eq!(hate_of(&mut world, first, OTHER), 50);
+    assert_eq!(hate_of(&mut world, second, OTHER), 30);
+}
+
+#[test]
+fn target_me_probability_makes_a_player_target_the_caster() {
+    // Java TargetMeProbability.onStart: a playable that targets somebody else targets the caster
+    // (a skill that is no debuff passes `checkPvpSkill`).
+    let (mut world, monster, _) = world_with_monsters();
+    world.set_target(OTHER, Some(monster));
+    assert_eq!(world.target_of(OTHER), Some(monster));
+    cast(&mut world, ME, OTHER, 9214);
+    assert_eq!(world.target_of(OTHER), Some(ME));
+}
+
+#[test]
+fn target_me_probability_from_an_npc_clears_the_target() {
+    // NOTE(java-quirk): an NPC effector has no `asPlayer()`, so `setTarget(null)` runs.
+    let (mut world, monster, other_monster) = world_with_monsters();
+    world.set_target(OTHER, Some(other_monster));
+    cast(&mut world, monster, OTHER, 9214);
+    assert_eq!(world.target_of(OTHER), None);
+}
+
+// ---- Resurrection (the branch of an NPC caster) -----------------------------------------------------
+
+#[test]
+fn an_npc_caster_revives_a_dead_player_and_a_dead_monster() {
+    // Java Resurrection.onStart: a caster that is no player cancels the decay task and calls
+    // `effected.doRevive(percent)`.
+    let (mut world, monster, other_monster) = world_with_monsters();
+    world.set_dead(OTHER, true);
+    assert!(world.is_dead(OTHER));
+    cast(&mut world, monster, OTHER, 9215);
+    assert!(!world.is_dead(OTHER));
+
+    let _ = world.do_die(other_monster, None);
+    assert!(world.is_dead(other_monster));
+    cast(&mut world, monster, other_monster, 9215);
+    assert!(!world.is_dead(other_monster));
+}
+
+#[test]
+fn a_player_caster_only_proposes_the_resurrection() {
+    // The player branch is `Player.reviveRequest` (a dialog): M5-EFX-05. Until then nothing happens.
+    let (mut world, _log) = world();
+    world.set_dead(OTHER, true);
+    cast(&mut world, ME, OTHER, 9215);
+    assert!(world.is_dead(OTHER));
 }

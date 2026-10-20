@@ -811,6 +811,58 @@ pub fn calc_skill_reuse_delay(input: &SkillReuseInput) -> i32 {
     reuse_delay
 }
 
+// ------------------------------------------------------------------ damage reflected
+
+/// Java `Formulas.MELEE_ATTACK_RANGE`.
+pub const MELEE_ATTACK_RANGE: i32 = 40;
+
+/// What the chance part of `Formulas.calcDamageReflected(attacker, target, skill, crit)` reads.
+#[derive(Debug, Clone, Copy)]
+pub struct ReflectChanceInput {
+    /// `skill.isMagic()`.
+    pub skill_is_magic: bool,
+    /// `skill.getCastRange()`.
+    pub skill_cast_range: i32,
+    /// `target.calcStat(Stat.VENGEANCE_SKILL_PHYSICAL_DAMAGE, 0, target, skill)`.
+    pub vengeance_chance: f64,
+}
+
+/// The first half of Java `Formulas.calcDamageReflected`: whether the target counters the skill.
+/// Only melee, non-magic skills can be countered (no draw otherwise); one `Rnd.get(100)`.
+pub fn calc_damage_reflected(input: &ReflectChanceInput, rng: &mut impl Rnd) -> bool {
+    // Only melee skills can be reflected.
+    if input.skill_is_magic || input.skill_cast_range > MELEE_ATTACK_RANGE {
+        return false;
+    }
+
+    f64::from(rng.get_int(100)) < input.vengeance_chance
+}
+
+/// What the damage part of `Formulas.calcDamageReflected` reads.
+#[derive(Debug, Clone, Copy)]
+pub struct CounterDamageInput {
+    /// `target.getPAtk(attacker)`.
+    pub target_p_atk: f64,
+    /// `attacker.getPDef(target)`.
+    pub attacker_p_def: f64,
+    /// `Formulas.calcWeaponTraitBonus(attacker, target)`.
+    pub weapon_trait_bonus: f64,
+    /// `Formulas.calcGeneralTraitBonus(attacker, target, skill.getTraitType(), false)`.
+    pub general_trait_bonus: f64,
+    /// `Formulas.calcAttributeBonus(attacker, target, skill)`.
+    pub attribute_bonus: f64,
+}
+
+/// The second half of Java `Formulas.calcDamageReflected`: the damage the countering target deals
+/// back to the attacker (twice on a critical hit, see the handlers).
+pub fn calc_counter_damage(input: &CounterDamageInput) -> f64 {
+    let mut counterdmg = ((input.target_p_atk * 10.0) * 70.0) / input.attacker_p_def;
+    counterdmg *= input.weapon_trait_bonus;
+    counterdmg *= input.general_trait_bonus;
+    counterdmg *= input.attribute_bonus;
+    counterdmg
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1214,5 +1266,47 @@ mod tests {
             ..base
         };
         assert_eq!(calc_skill_reuse_delay(&balanced), 300);
+    }
+
+    #[test]
+    fn only_melee_physical_skills_are_countered() {
+        let base = ReflectChanceInput {
+            skill_is_magic: false,
+            skill_cast_range: 40,
+            vengeance_chance: 30.0,
+        };
+        // Draw 29 < 30 counters; draw 30 does not.
+        assert!(calc_damage_reflected(&base, &mut Fixed::new(&[29])));
+        assert!(!calc_damage_reflected(&base, &mut Fixed::new(&[30])));
+        // A magic skill or a ranged one never draws.
+        let magic = ReflectChanceInput {
+            skill_is_magic: true,
+            ..base
+        };
+        assert!(!calc_damage_reflected(&magic, &mut Fixed::new(&[])));
+        let ranged = ReflectChanceInput {
+            skill_cast_range: 41,
+            ..base
+        };
+        assert!(!calc_damage_reflected(&ranged, &mut Fixed::new(&[])));
+        // No vengeance stat: a draw of 0 is not below 0.
+        let none = ReflectChanceInput {
+            vengeance_chance: 0.0,
+            ..base
+        };
+        assert!(!calc_damage_reflected(&none, &mut Fixed::new(&[0])));
+    }
+
+    #[test]
+    fn counter_damage_follows_the_java_arithmetic() {
+        let input = CounterDamageInput {
+            target_p_atk: 100.0,
+            attacker_p_def: 70.0,
+            weapon_trait_bonus: 0.75,
+            general_trait_bonus: 1.0,
+            attribute_bonus: 1.1,
+        };
+        // ((100 * 10) * 70) / 70 = 1000, then the three bonuses in order.
+        assert_eq!(calc_counter_damage(&input), ((1000.0 * 0.75) * 1.0) * 1.1);
     }
 }

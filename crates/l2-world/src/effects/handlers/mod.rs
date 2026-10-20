@@ -10,6 +10,7 @@ mod add_hate;
 mod apply_skill_effects;
 mod blink;
 mod block;
+mod blow;
 mod buff;
 mod cancel;
 mod change_face;
@@ -38,10 +39,14 @@ mod focus;
 mod get_agro;
 mod give_sp;
 mod hate;
+mod hate_chance;
 mod heal;
+mod heal_skill;
 mod hide;
 mod hold;
 mod immobile_buff;
+mod lethal;
+mod magical_damage;
 mod mana_heal;
 mod max_vitals;
 mod misc;
@@ -50,12 +55,15 @@ mod mp_consume_per_level;
 mod mute;
 mod open_door;
 mod params;
+mod physical_damage;
 mod player_slots;
 mod recovery;
 mod relax;
 mod restoration;
+mod resurrection;
 mod set_skill;
 mod silent_move;
+mod skill_calc;
 mod statset;
 mod status_params;
 mod steal_abnormal;
@@ -177,4 +185,32 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Stun", hold::Stun::create);
     registry.register("TalismanSlot", player_slots::TalismanSlot::create);
     registry.register("TargetCancel", misc::TargetCancel::create);
+    // M5-EFX-04: damage, Heal, the hate chances.
+    registry.register("Backstab", blow::Backstab::create);
+    registry.register("DeathLink", magical_damage::DeathLink::create);
+    registry.register("DeleteHate", hate_chance::DeleteHate::create);
+    registry.register("DeleteHateOfMe", hate_chance::DeleteHateOfMe::create);
+    registry.register("EnergyDamage", physical_damage::EnergyDamage::create);
+    registry.register("FatalBlow", blow::FatalBlow::create);
+    registry.register("Heal", heal_skill::Heal::create);
+    registry.register("HpDrain", magical_damage::HpDrain::create);
+    registry.register("Lethal", lethal::Lethal::create);
+    registry.register("MagicalDamage", magical_damage::MagicalDamage::create);
+    registry.register(
+        "MagicalDamageByAbnormal",
+        magical_damage::MagicalDamageByAbnormal::create,
+    );
+    registry.register("MagicalDamageMp", magical_damage::MagicalDamageMp::create);
+    registry.register("MagicalSoulDamage", magical_damage::MagicalSoulDamage::create);
+    registry.register("PhysicalDamage", physical_damage::PhysicalDamage::create);
+    registry.register(
+        "PhysicalDamageHpLink",
+        physical_damage::PhysicalDamageHpLink::create,
+    );
+    registry.register("PhysicalSoulDamage", physical_damage::PhysicalSoulDamage::create);
+    registry.register("RandomizeHate", hate_chance::RandomizeHate::create);
+    registry.register("Resurrection", resurrection::Resurrection::create);
+    registry.register("SoulBlow", blow::SoulBlow::create);
+    registry.register("TargetMeProbability", hate_chance::TargetMeProbability::create);
+    registry.register("TransferHate", hate_chance::TransferHate::create);
 }
