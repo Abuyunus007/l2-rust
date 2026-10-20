@@ -245,6 +245,23 @@ fn skills_xml() -> String {
         ),
         // `params.getInt("skillId")` has no default: the constructor throws and the effect is dropped.
         skill_with(9399, "A1", "", 0, "", r#"<effect name="CallSkill"/>"#),
+        // Damage effects that must tell the listeners who hurt whom.
+        skill_with(
+            9398,
+            "A1",
+            "",
+            -100,
+            "",
+            r#"<effect name="StaticDamage"><power>25</power></effect>"#,
+        ),
+        skill_with(
+            9397,
+            "A2",
+            "MULTI_DEBUFF",
+            -100,
+            "",
+            r#"<effect name="DamOverTime" ticks="1"><power>10</power></effect>"#,
+        ),
         // The trigger buffs.
         trigger(
             9310,
@@ -761,6 +778,29 @@ fn a_landed_hit_feeds_the_damage_listeners() {
     assert!(s.has(ME, TRIGGERED));
 }
 
+/// The damage effects call `notifyDamageReceived(damage, effector, skill, crit, dot)`: a skill hit
+/// reaches the listeners of the caster (a skill hit passes `allowSkillAttack` only when allowed, so
+/// the plain trigger 9310 does not fire) and of the victim; a damage over time never does.
+#[test]
+fn damage_effects_feed_the_listeners() {
+    let mut s = Scene::new();
+    s.arm(9320);
+    let hare = s.hare(0);
+    // StaticDamage from the hare on ME: the victim's listener hears it.
+    s.apply(hare, ME, 9398);
+    assert!(s.has(ME, TRIGGERED), "damage received by a skill hit");
+    s.clear_triggered();
+    // A damage over time is not an event for the listeners.
+    s.apply(hare, ME, 9397);
+    s.run(1000);
+    assert!(!s.has(ME, TRIGGERED), "damage over time");
+    // The caster's own `allowSkillAttack = false` listener ignores its skill hits.
+    s.world.stop_skill_effects(ME, SkillFinishType::Silent, 9320);
+    s.arm(9310);
+    s.apply(ME, hare, 9398);
+    assert!(!s.has(ME, TRIGGERED), "skill hits are not allowed by 9310");
+}
+
 // ---- TriggerSkillByDamageReceived ------------------------------------------------------------------
 
 #[test]
@@ -1264,9 +1304,14 @@ fn item_count(s: &Scene, id: ObjectId, item_id: i32) -> i64 {
 /// (`(long) (count * rate)`), each item with "You have obtained".
 #[test]
 fn restoration_random_gives_the_picked_group_times_the_rate() {
-    let mut s = Scene::with(EffectSettings {
-        rate_extractable: 2.0,
-        ..EffectSettings::default()
+    let mut s = Scene::new();
+    s.world.set_settings(WorldSettings {
+        inventory: InventorySettings {
+            rate_extractable: 2.0,
+            ..InventorySettings::default()
+        },
+        minimum_chat_level: 0,
+        ..WorldSettings::default()
     });
     s.apply(OTHER, ME, 9374);
     let sent = s.run(200);

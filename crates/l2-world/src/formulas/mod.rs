@@ -64,10 +64,11 @@ pub use regen::{
 };
 pub use rng::Rnd;
 pub use skill::{
-    BlowClassBalance, BlowInput, BlowSuccessInput, SkillCastTimeInput, SkillCritInput,
-    SkillPhysDamClassBalance, SkillPhysDamInput, SkillPower, SkillReuseInput, calc_backstab_damage,
-    calc_blow_damage, calc_blow_success, calc_physical_skill_evasion, calc_skill_cast_time, calc_skill_crit,
-    calc_skill_phys_dam, calc_skill_reuse_delay, calculate_skill_resurrect_restore_percent,
+    BlowClassBalance, BlowInput, BlowSuccessInput, CounterDamageInput, MELEE_ATTACK_RANGE,
+    ReflectChanceInput, SkillCastTimeInput, SkillCritInput, SkillPhysDamClassBalance, SkillPhysDamInput,
+    SkillPower, SkillReuseInput, calc_backstab_damage, calc_blow_damage, calc_blow_success,
+    calc_counter_damage, calc_damage_reflected, calc_physical_skill_evasion, calc_skill_cast_time,
+    calc_skill_crit, calc_skill_phys_dam, calc_skill_reuse_delay, calculate_skill_resurrect_restore_percent,
 };
 pub use speed::{
     ReuseAttackType, ReuseInput, calc_atk_spd, calc_p_atk_spd, calculate_reuse_time,

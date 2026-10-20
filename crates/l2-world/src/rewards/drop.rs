@@ -20,8 +20,9 @@
 //   after the other (the x1 case) or each on its own (any custom rate).
 //
 // # Not modelled, with what brings it
-// - Spoil: `isSpoiled()` needs the Spoil skill (M5); `calculate_drops` can roll a `SPOIL` list
-//   (the code is Java's) but nothing asks for it yet, and sweeping is M5.
+// - Spoil: the state (`Attackable._spoilerObjectId`, `_sweepItems`) and its checks are at the end
+//   of this file (M5-SPOIL-01); the `Spoil` / `Sweeper` effects are in `effects/handlers/`.
+//   `isInLooterParty` is false for everybody until parties exist (M6).
 // - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion), seeds (manor) and
 //   the premium system (`PremiumSystem.ini`, off by default; there is no premium status).
 // - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
@@ -922,7 +923,6 @@ impl World {
             return;
         }
         // `CursedWeaponsManager.checkDrop(this, player)`: cursed weapons are M5.
-        // `if (isSpoiled()) _sweepItems.set(calculateDrops(SPOIL, ...))`: spoil is M5.
 
         let Some(templates) = self.item_templates() else {
             return;
@@ -958,6 +958,25 @@ impl World {
         };
         let settings = self.settings.drops.clone();
         let drop_template_id = self.chest_drop_template_id(dying, npc_id);
+        // `if (isSpoiled()) _sweepItems.set(calculateDrops(SPOIL, this, player))`: the spoil
+        // list rolls before the DROP list, so a seeded run draws in Java's order.
+        if self.is_spoiled(dying) {
+            let sweep_items = self.with_rng(|world, rng| {
+                world.npc_world.template(npc_id).map(|npc_template| {
+                    calculate_drops(
+                        &settings,
+                        &templates,
+                        npc_template,
+                        DropType::Spoil,
+                        &victim,
+                        &killer,
+                        rng,
+                    )
+                })
+            });
+            // An empty list is Java's `null`: nothing to sweep, no blue glow.
+            self.set_sweep_items(dying, sweep_items.filter(|items| !items.is_empty()));
+        }
         let death_items = self.with_rng(|world, rng| {
             world.npc_world.template(drop_template_id).map(|npc_template| {
                 calculate_drops(
@@ -1003,6 +1022,176 @@ impl World {
                 self.broadcast_packet(dying, &message);
             }
         }
+    }
+}
+
+// ------------------------------------------------------------------ spoil and sweep
+
+/// Java `Attackable._spoilerObjectId` and `_sweepItems` of one monster.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct SpoilState {
+    /// `_spoilerObjectId`: who cast Spoil (`0` in Java is `None`).
+    pub spoiler: Option<ObjectId>,
+    /// `_sweepItems`: the SPOIL list rolled when the monster died (`null` is `None`).
+    pub sweep: Option<Vec<ItemHolder>>,
+}
+
+/// What `ConditionPlayerCanSweep.testImpl` found, and the messages it sent to the sweeper, in
+/// Java's order. The condition code is read-only, so the caller sends the messages.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub(crate) struct SweepCheck {
+    pub can_sweep: bool,
+    pub messages: Vec<SystemMessageId>,
+}
+
+impl World {
+    /// Java `Attackable.isSpoiled()`: `_spoilerObjectId != 0`.
+    pub fn is_spoiled(&self, id: ObjectId) -> bool {
+        self.death.spoil.get(&id).is_some_and(|s| s.spoiler.is_some())
+    }
+
+    /// Java `Attackable.getSpoilerObjectId()` (`0` is `None`).
+    pub fn spoiler_of(&self, id: ObjectId) -> Option<ObjectId> {
+        self.death.spoil.get(&id).and_then(|s| s.spoiler)
+    }
+
+    /// Java `Attackable.setSpoilerObjectId(id)`.
+    pub(crate) fn set_spoiler(&mut self, id: ObjectId, spoiler: Option<ObjectId>) {
+        self.death.spoil.entry(id).or_default().spoiler = spoiler;
+        self.drop_empty_spoil_state(id);
+    }
+
+    /// `_sweepItems.set(items)`.
+    pub(crate) fn set_sweep_items(&mut self, id: ObjectId, items: Option<Vec<ItemHolder>>) {
+        self.death.spoil.entry(id).or_default().sweep = items;
+        self.drop_empty_spoil_state(id);
+    }
+
+    fn drop_empty_spoil_state(&mut self, id: ObjectId) {
+        if self
+            .death
+            .spoil
+            .get(&id)
+            .is_some_and(|s| *s == SpoilState::default())
+        {
+            self.death.spoil.remove(&id);
+        }
+    }
+
+    /// Java `Attackable.isSweepActive()`: `_sweepItems.get() != null` (the blue glow of `Die`).
+    pub fn is_sweep_active(&self, id: ObjectId) -> bool {
+        self.death.spoil.get(&id).is_some_and(|s| s.sweep.is_some())
+    }
+
+    /// Java `Attackable.takeSweep()`: `_sweepItems.getAndSet(null)`.
+    pub(crate) fn take_sweep(&mut self, id: ObjectId) -> Option<Vec<ItemHolder>> {
+        let items = self.death.spoil.get_mut(&id)?.sweep.take();
+        self.drop_empty_spoil_state(id);
+        items
+    }
+
+    /// Java `Attackable.getSpoilLootItems()`, as the holders (the checks look their templates
+    /// up).
+    pub fn spoil_loot_items(&self, id: ObjectId) -> Vec<ItemHolder> {
+        self.death
+            .spoil
+            .get(&id)
+            .and_then(|s| s.sweep.clone())
+            .unwrap_or_default()
+    }
+
+    /// Java `Attackable.checkSpoilOwner(sweeper, false)`: the sweeper cast the Spoil or is in
+    /// the party of whoever did. The caller sends `THERE_ARE_NO_PRIORITY_RIGHTS_ON_A_SWEEPER`.
+    // `sweeper.isInLooterParty(_spoilerObjectId)`: parties are M6, so only the spoiler sweeps.
+    pub(crate) fn check_spoil_owner(&self, id: ObjectId, sweeper: ObjectId) -> bool {
+        self.death.spoil.get(&id).and_then(|s| s.spoiler) == Some(sweeper)
+    }
+
+    /// Java `Attackable.isOldCorpse(attacker, CorpseConsumeSkillAllowedTimeBeforeDecay, false)`:
+    /// dead, and less than the allowed time left before it decays. The caller sends
+    /// `THE_CORPSE_IS_TOO_OLD_THE_SKILL_CANNOT_BE_USED`.
+    pub(crate) fn is_old_corpse(&self, id: ObjectId) -> bool {
+        let allowed = i64::from(self.settings.death.corpse_consume_skill_allowed_time_before_decay);
+        self.is_dead(id) && self.decay_remaining_ms(id) < allowed
+    }
+
+    /// Java `PlayerInventory.checkInventorySlotsAndWeight(itemList, false, false)`: the items fit
+    /// the slots and the weight limit.
+    // NOTE(java-quirk): the weight is each template's weight once, not times the count.
+    pub(crate) fn check_inventory_slots_and_weight(&self, player: ObjectId, items: &[ItemHolder]) -> bool {
+        let Some(templates) = self.item_templates() else {
+            return false;
+        };
+        let mut loot_weight: i32 = 0;
+        let mut required_slots: i64 = 0;
+        for holder in items {
+            // Java would throw on an unknown template; the roll only gives known items.
+            let Some(item) = templates.get(holder.id) else {
+                continue;
+            };
+            // If the item is not stackable or is stackable and not present in inventory, will
+            // need a slot.
+            if !item.stackable || self.inventory_item_count(player, item.id) <= 0 {
+                required_slots += 1;
+            }
+            loot_weight = loot_weight.wrapping_add(item.weight);
+        }
+        self.validate_capacity(player, required_slots, false)
+            && self.validate_weight(player, i64::from(loot_weight))
+    }
+
+    /// Java `ConditionPlayerCanSweep.testImpl` for `sweeper` and `skill`: the targets of the
+    /// skill are looked at one by one and the last dead one decides (a quirk of Java's loop).
+    /// Pure: the messages Java sends from the condition are returned.
+    pub(crate) fn can_sweep_check(&self, sweeper: ObjectId, skill: &l2_data::SkillTemplate) -> SweepCheck {
+        let mut check = SweepCheck::default();
+        if !self.is_player(sweeper) {
+            return check;
+        }
+        // `skill.getTargetList(sweeper)`: the single-target handlers of the sweep skills draw
+        // nothing, so a scratch RNG stands for the world's.
+        let target = self.cast_selected_target(sweeper);
+        let ctx = self.cast_target_context(sweeper);
+        let mut scratch = l2_util::WorldRng::from_seed(0);
+        let result = self.skill_target_list_with(&mut scratch, skill, sweeper, false, target, &ctx);
+        for message in &result.messages {
+            if let crate::skills::TargetMessage::System(id) = message {
+                check.messages.push(*id);
+            }
+        }
+        for &target in &result.targets {
+            if !self.is_attackable_npc(target) || !self.is_dead(target) {
+                continue;
+            }
+            if self.is_spoiled(target) {
+                let owner = self.check_spoil_owner(target, sweeper);
+                if !owner {
+                    check
+                        .messages
+                        .push(SystemMessageId::ThereAreNoPriorityRightsOnASweeper);
+                }
+                // `&=` does not short-circuit: every check runs and may talk.
+                let old = self.is_old_corpse(target);
+                if old {
+                    check
+                        .messages
+                        .push(SystemMessageId::TheCorpseIsTooOldTheSkillCannotBeUsed);
+                }
+                let fits = self.check_inventory_slots_and_weight(sweeper, &self.spoil_loot_items(target));
+                if !fits {
+                    check.messages.push(SystemMessageId::YourInventoryIsFull);
+                    check.messages.push(
+                        SystemMessageId::WeightAndVolumeLimitHaveBeenExceededThatSkillIsCurrentlyUnavailable,
+                    );
+                }
+                check.can_sweep = owner && !old && fits;
+            } else {
+                check
+                    .messages
+                    .push(SystemMessageId::SweeperFailedTargetNotSpoiled);
+            }
+        }
+        check
     }
 }
 

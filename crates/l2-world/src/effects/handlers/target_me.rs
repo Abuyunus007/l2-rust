@@ -1,6 +1,5 @@
-//! `TargetMe` and `TargetMeProbability`: the playable has to target the caster.
+//! `TargetMe`: the playable has to target the caster (`TargetMeProbability` is in `hate_chance.rs`).
 // Java: dist/game/data/scripts/handlers/skill/effects/TargetMe.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TargetMeProbability.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -65,37 +64,6 @@ impl EffectHandler for TargetMe {
     fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
         if world.is_playable(cx.effected) {
             world.set_locked_target(cx.effected, None);
-        }
-    }
-}
-
-/// Java `TargetMeProbability`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct TargetMeProbability {
-    chance: i32,
-}
-
-impl TargetMeProbability {
-    /// Java `TargetMeProbability(attachCond, applyCond, set, params)`: `chance` (default 100).
-    pub(crate) fn create(template: &EffectTemplate) -> Result<Box<dyn EffectHandler>, String> {
-        Ok(Box::new(Self {
-            chance: params::int(template, "chance", 100)?,
-        }))
-    }
-}
-
-impl EffectHandler for TargetMeProbability {
-    fn is_instant(&self) -> bool {
-        true
-    }
-
-    fn calc_success(&self, world: &mut World, cx: &EffectCx<'_>) -> bool {
-        world.calc_probability_for_effect(f64::from(self.chance), cx.effector, cx.effected, cx.skill)
-    }
-
-    fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        if world.is_playable(cx.effected) {
-            switch_target(world, cx);
         }
     }
 }

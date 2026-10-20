@@ -1,4 +1,5 @@
-//! `UseItem` (the equippable branch), `Player.useEquippableItem` and `RequestUnEquipItem`.
+//! `UseItem` (the equippable branch and the handler branch), `Player.useEquippableItem` and
+//! `RequestUnEquipItem`.
 // Java: network/clientpackets/UseItem.java
 // Java: network/clientpackets/RequestUnEquipItem.java
 // Java: entity/actor/Player.java (useEquippableItem)
@@ -11,6 +12,7 @@ use l2_util::ObjectId;
 
 use super::paperdoll::{body_part_of_paperdoll_slot, body_part_of_worn_item};
 use super::{LOC_PAPERDOLL, is_equipable, item_name_param};
+use crate::effects::EffectType;
 use crate::enter::storage_max_count;
 use crate::zones::ZoneId;
 
@@ -23,7 +25,7 @@ const FORMAL_WEAR_ID: i32 = 6408;
 
 impl crate::world::World {
     /// Java `UseItem.runImpl`.
-    pub(crate) fn on_use_item(&mut self, id: ObjectId, object_id: i32, _ctrl_pressed: bool) {
+    pub(crate) fn on_use_item(&mut self, id: ObjectId, object_id: i32, ctrl_pressed: bool) {
         // Flood protect UseItem: the flood protectors are the session's, not the world's.
 
         // Jail restriction.
@@ -67,8 +69,30 @@ impl crate::world::World {
             return;
         }
 
-        // Fishing, the karma teleport rule (`AltKarmaPlayerCanTeleport` against item skills with a
-        // teleport effect) and the item reuse delay are skill-system state (M5).
+        // Fishing (`isFishing()`): not modelled.
+
+        // The karma teleport rule: `AltKarmaPlayerCanTeleport` against item skills with a
+        // teleport effect.
+        let karma = self.players.get(&id).map_or(0, |p| p.data.karma);
+        if !self.settings.cast.alt_game_karma_player_can_teleport
+            && karma > 0
+            && let Some(skills) = &template.skills.item_skills
+            && let Some(table) = self.skill_table()
+        {
+            for holder in skills {
+                if let Some(skill) = table.get(holder.id, holder.level)
+                    && self.skill_has_effect_type(skill, &[EffectType::Teleport])
+                {
+                    return;
+                }
+            }
+        }
+
+        // If the item has reuse time and it has not passed. Message from reuse delay must come
+        // from item.
+        if self.item_reuse_blocks_use(id, &item, template) {
+            return;
+        }
 
         // `player.onActionRequest()` removes the spawn protection: not modelled.
 
@@ -166,9 +190,9 @@ impl crate::world::World {
             } else {
                 self.use_equippable_item(id, object_id, true);
             }
+        } else {
+            self.use_item_with_handler(id, &item, template, ctrl_pressed);
         }
-        // M5: the item handler of an item that is not equipped (potions, scrolls, shots), the
-        // fishing-rod lure case (`PAPERDOLL_LHAND`), the item reuse timestamp.
     }
 
     /// Java `Player.useEquippableItem(item, abortAttack)`: take the item off if it is worn, else
@@ -215,8 +239,11 @@ impl crate::world::World {
                     SystemMessage::new(SystemMessageId::YouHaveEquippedYourS1).with(name)
                 };
                 self.send(id, &message);
-                // M5: `item.decreaseMana(false)` (shadow items) and, for a weapon,
-                // `rechargeShots(true, true)`; the `ON_PLAYER_ITEM_EQUIP` script event.
+                // M5: `item.decreaseMana(false)` (shadow items); the `ON_PLAYER_ITEM_EQUIP` script
+                // event.
+                if matches!(template.body_part, BodyPart::RightHand | BodyPart::BothHands) {
+                    self.recharge_shots(id, true, true);
+                }
             } else {
                 self.send(
                     id,

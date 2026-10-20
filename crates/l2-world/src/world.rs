@@ -99,6 +99,9 @@ pub struct World {
     pub(crate) effects: crate::effects::EffectsWorld,
     /// Every creature's cast state and skill reuse (M5-CAST-01, `skills/cast.rs`).
     pub(crate) cast: crate::skills::cast::CastWorld,
+    /// The charge of weapons and NPCs and the automatic shots of players (M5-SHOT-01,
+    /// `inventory/handlers/shots.rs`).
+    pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
 }
 
 impl World {
@@ -146,6 +149,7 @@ impl World {
             rewards: crate::rewards::exp::ExpWorld::default(),
             effects: crate::effects::EffectsWorld::default(),
             cast: crate::skills::cast::CastWorld::default(),
+            shots: crate::inventory::handlers::shots::ShotsWorld::default(),
         }
     }
 
@@ -465,6 +469,10 @@ impl World {
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_request_magic_skill_use(id, magic_id, ctrl_pressed, shift_pressed),
+            // Java: RequestAutoSoulShot
+            ClientInput::AutoSoulShot { item_id, shot_type } => {
+                self.on_request_auto_soul_shot(id, item_id, shot_type)
+            }
             // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             ClientInput::Other { opcode, ex_opcode } => {

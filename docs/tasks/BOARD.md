@@ -249,16 +249,18 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | part 1 merged (heal/over-time); rest in EFX-04 |
 | [M5-EFX-02](M5/M5-EFX-02.md) | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | merged |
 | [M5-EFX-03](M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | 26/44 merged; rest in EFX-04/05 |
-| [M5-EFX-04](M5/M5-EFX-04.md) | Effect handlers: damage, Heal, hate chances (rest of EFX-01/03) | sonnet | full | FORM-02 | in-progress |
+| [M5-EFX-04](M5/M5-EFX-04.md) | Effect handlers: damage, Heal, hate chances (rest of EFX-01/03) | sonnet | full | FORM-02 | merged |
 | [M5-EFX-05](M5/M5-EFX-05.md) | Effect handlers needing casting or new world parts (rest of EFX-03) | sonnet | full | CAST-01 | in-progress |
-| [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | in-progress |
-| [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | in-progress |
-| [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | sonnet | full | EFX-03, FORM-02 | in-progress (rescoped) |
-| [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | in-progress |
+| [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | merged |
+| [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | merged |
+| [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | sonnet | full | EFX-03, FORM-02 | merged |
+| [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | merged |
 | [M5-LEARN-01](M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | merged |
 | [M5-SAVE-01](M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | merged |
-| [M5-ADMIN-04](M5/M5-ADMIN-04.md) | Admin commands for skills | haiku | spot | CAST-01 | in-progress |
-| [M5-E2E-01](M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | ready (refined when deps merge) |
+| [M5-ADMIN-04](M5/M5-ADMIN-04.md) | Admin commands for skills | haiku | spot | CAST-01 | merged |
+| [M5-SHORTCUT-01](M5/M5-SHORTCUT-01.md) | Shortcut bar: register and delete (skills on the bar) | sonnet | full | CAST-01 | in-progress |
+| [M5-FIX-03](M5/M5-FIX-03.md) | Follow-ups: item reuse save, ClassBalance skill tables, old corpses, maps | sonnet | spot | ITEM-01, EFX-04, SAVE-01 | in-progress |
+| [M5-E2E-01](M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | in-progress |
 | [M5-RUN-01](M5/M5-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
 
 ## Milestone test results

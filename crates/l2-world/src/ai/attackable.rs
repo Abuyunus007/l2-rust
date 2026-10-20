@@ -20,10 +20,12 @@
 //   the set; an NPC that spawns in an inactive region is not put in. So only NPCs in active
 //   regions are ever walked: of the ~42,000 NPCs, those near players.
 //
+// # Skills
+// The skill branches of the think (`AISkillScope`: buff, heal, res, suicide, short and long range,
+// the immobilised NPC's `tryCast` chain, `thinkCast`) are `npc_skills.rs`; the calls into it are
+// at the places where Java has the branches.
+//
 // # Left out (each with its card)
-// - Skills: every `AISkillScope` branch (`cast`, heal/res/buff/suicide/short and long range
-//   skills, `tryCast`, `effectTargetReconsider`, `skillTargetReconsider`) and `thinkCast`: M5.
-//   Effects (fear, confusion, silent move, invulnerability, `PASSIVE`): M5.
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
 // - Fake players, the faction system, dimensional rifts, festival monsters, siege guards,
@@ -124,6 +126,8 @@ pub struct AttackableWorld {
     members: HashMap<ObjectId, usize>,
     /// Java `Monster.getMinionList().getSpawnedMinions()`, by master.
     minions: HashMap<ObjectId, Vec<ObjectId>>,
+    /// The AI skill lists of the NPC templates, built on first use (`npc_skills.rs`).
+    pub(crate) ai_skills: super::npc_skills::AiSkillCache,
 }
 
 impl AttackableWorld {
@@ -192,21 +196,21 @@ impl World {
         self.npc_world.spawn_data()?.territory(name)
     }
 
-    fn dist_2d(&self, a: ObjectId, b: ObjectId) -> f64 {
+    pub(crate) fn dist_2d(&self, a: ObjectId, b: ObjectId) -> f64 {
         match (self.position_of(a), self.position_of(b)) {
             (Some(a), Some(b)) => distance_2d(a, b),
             _ => f64::MAX,
         }
     }
 
-    fn dist_3d(&self, a: ObjectId, b: ObjectId) -> f64 {
+    pub(crate) fn dist_3d(&self, a: ObjectId, b: ObjectId) -> f64 {
         match (self.position_of(a), self.position_of(b)) {
             (Some(a), Some(b)) => distance_3d(a, b),
             _ => f64::MAX,
         }
     }
 
-    /// Java `Monster.isAggressive()` (the `PASSIVE` effect is M5).
+    /// Java `Monster.isAggressive()`.
     fn is_aggressive_npc(&self, id: ObjectId) -> bool {
         self.npcs.get(&id).is_some_and(|n| n.class.is_monster())
             && self.npc_template(id).is_some_and(|t| t.is_aggressive)
@@ -237,7 +241,7 @@ impl World {
     }
 
     /// Java `Attackable.getLeader()` (`Monster._master`).
-    fn leader_of(&self, id: ObjectId) -> Option<ObjectId> {
+    pub(crate) fn leader_of(&self, id: ObjectId) -> Option<ObjectId> {
         self.npcs.get(&id).and_then(|n| n.leader)
     }
 
@@ -270,7 +274,7 @@ impl World {
         self.pawn_of(id).and_then(|p| p.ai_target)
     }
 
-    fn set_ai_target(&mut self, id: ObjectId, target: Option<ObjectId>) {
+    pub(crate) fn set_ai_target(&mut self, id: ObjectId, target: Option<ObjectId>) {
         if let Some(pawn) = self.pawn_mut(id) {
             pawn.ai_target = target;
         }
@@ -450,7 +454,7 @@ impl World {
         match self.intention_of(id) {
             Intention::Active => self.attackable_think_active(id),
             Intention::Attack => self.attackable_think_attack(id),
-            // M5: `Intention::Cast => thinkCast()`.
+            Intention::Cast => self.attackable_think_cast(id),
             _ => {}
         }
         if let Some(state) = self.ai.creatures.get_mut(&id) {
@@ -498,7 +502,7 @@ impl World {
             if self.is_recent_fake_death(target) {
                 return false;
             }
-            // The faction system's guards and the dimensional rift check are custom / M5.
+            // The faction system's guards and the dimensional rift check are custom (not ported).
         }
         let class = self.npcs.get(&me).map(|n| n.class);
         if class == Some(crate::npc::NpcClass::FriendlyMob) {
@@ -594,7 +598,7 @@ impl World {
                 .filter(|target| self.is_aggressive_towards(id, *target))
                 .collect();
             for target in targets {
-                // M5/D-05: `ON_NPC_HATE` can terminate the aggression here.
+                // D-05: `ON_NPC_HATE` can terminate the aggression here.
                 if self.aggro_hating(id, target) == 0 {
                     self.add_damage_hate(id, target, 0, 0);
                 }
@@ -711,7 +715,8 @@ impl World {
                 return;
             }
             if self.rng().below(RANDOM_WALK_RATE) == 0 {
-                // M5: the template's BUFF skills (`AISkillScope.BUFF`) are cast here.
+                // The template's BUFF skills: the first one that is not on yet is cast.
+                self.think_active_buffs(id);
             }
         }
         // Order to the Monster to random walk (1/100).
@@ -719,7 +724,10 @@ impl World {
             && self.rng().below(RANDOM_WALK_RATE) == 0
             && self.is_random_walking_enabled(id)
         {
-            // M5: the template's BUFF skills (`AISkillScope.BUFF`) are cast here, and return.
+            // The template's BUFF skills are cast here instead of walking.
+            if self.think_active_buffs(id) {
+                return;
+            }
             self.random_walk(id, &settings);
         }
     }
@@ -833,7 +841,9 @@ impl World {
             self.distrust_think_attack(id, forced);
             return;
         }
-        // M5: `npc.isCastingNow()` returns here.
+        if self.is_casting_now(id) {
+            return;
+        }
         let settings = self.ai.attackable.settings.clone();
         let Some(class) = self.npcs.get(&id).map(|n| n.class) else {
             return;
@@ -914,7 +924,13 @@ impl World {
             return;
         }
 
-        // M5: the SUICIDE skills (below 30% HP).
+        // The SUICIDE skills (below 30% HP).
+        let ai_skills = self.ai_skills_of(id);
+        if let Some(skills) = &ai_skills
+            && self.think_attack_suicide(id, most_hate, skills)
+        {
+            return;
+        }
 
         // In case many mobs are trying to hit from same place, move a bit, circling around the
         // target.
@@ -1037,7 +1053,13 @@ impl World {
             self.set_ai_target(id, Some(most_hate));
         }
 
-        // M5: cast skills (`!npc.isMoving() || MAGE`): heal, res, short and long range skills.
+        // Cast skills.
+        if let Some(skills) = &ai_skills
+            && (!self.is_moving(id) || ai_type == Some(AiType::Mage))
+            && self.think_attack_skills(id, most_hate, collision, skills)
+        {
+            return;
+        }
 
         // Check if target is within range or move.
         let mut range = self.stats(id).map_or(0, |s| s.physical_attack_range()) + combined_collision;
@@ -1220,14 +1242,19 @@ impl World {
         let Some(target) = self.attack_target_of(id) else {
             return;
         };
-        // `if (npc.getTarget() == null) npc.setTarget(target)`: the Creature's own target is
-        // only used by skills (M5).
+        // The Creature's own target is the one skills aim at.
+        if self.npc_cast_target(id).is_none() {
+            self.set_npc_target(id, Some(target));
+        }
         let dist = self.dist_2d(id, target);
 
         // TODO(Zoey76): Review this "magic changes".
-        let _random = self.rng().below(100);
-        // M5: IMMOBILIZE (15), COT (20), DEBUFF (30), NEGATIVE (40), ATTACK (movement disabled,
-        // MAGE or HEALER) and UNIVERSAL skills are tried here.
+        let random = self.rng().below(100);
+        // IMMOBILIZE (15), COT (20), DEBUFF (30), NEGATIVE (40), ATTACK (movement disabled, MAGE
+        // or HEALER) and UNIVERSAL skills are tried here.
+        if self.movement_disable_skills(id, target, random, dist) {
+            return;
+        }
 
         // If cannot cast, try to attack.
         let range = self.stats(id).map_or(0, |s| s.physical_attack_range())
@@ -1286,7 +1313,7 @@ impl World {
                 self.set_attack_target(id, Some(obj));
             }
             // Attackable and summon targets: monsters do not attack each other here (chaos is
-            // not reachable, see `is_aggressive_towards`), summons are M5.
+            // not reachable, see `is_aggressive_towards`), summons are M6.
         }
     }
 
@@ -1714,7 +1741,10 @@ impl World {
         if !self.can_handle_action(id) {
             return;
         }
-        // M5: casting returns here. `revalidateZone(true)`: NPCs have no zones.
+        // Casting returns here. `revalidateZone(true)`: NPCs have no zones.
+        if self.is_casting_now(id) || self.is_casting_simultaneously_now(id) {
+            return;
+        }
         if self.move_to_next_route_point(id) {
             return;
         }
@@ -1751,7 +1781,16 @@ impl World {
                 self.set_intention_active(id);
             }
         }
-        // (Cast and follow targets: M5.)
+        // Check if the object was targeted to cast.
+        if self.cast_target_of(id) == Some(object) {
+            // Cancel cast target
+            self.set_cast_target(id, None);
+            // Set the Intention of this AbstractAI to ACTIVE (not for a corpse).
+            if !self.is_alike_dead(object) {
+                self.set_intention_active(id);
+            }
+        }
+        // (Follow targets: M6.)
     }
 
     /// Java `AbstractAI.describeStateToPlayer(player)`: a creature that moves when it comes into
@@ -1963,7 +2002,7 @@ impl World {
     }
 
     /// Java `Attackable.getHateList()`: `None` when the list is empty or the NPC is dead.
-    fn aggro_hate_list(&mut self, id: ObjectId) -> Option<Vec<ObjectId>> {
+    pub(crate) fn aggro_hate_list(&mut self, id: ObjectId) -> Option<Vec<ObjectId>> {
         if self.aggro_list(id).is_empty() || self.is_alike_dead(id) {
             return None;
         }
@@ -1982,8 +2021,9 @@ impl World {
         let AggroInfo { hate, .. } = info;
         let invisible = self.objects.get(&target).is_some_and(|e| e.invisible);
         let spawned = self.objects.get(&target).is_some_and(|e| e.spawned);
-        // Players: M5 adds `isInvul()` and `isSpawnProtected()` to the invisible check.
-        if invisible || !spawned {
+        // Players: `isInvul()` joins the invisible check (`isSpawnProtected()` is the teleport
+        // protection, which is not modelled).
+        if invisible || !spawned || (self.is_player(target) && self.is_invul(target)) {
             // Remove Object Should Use This Method and Can be Blocked While Interacting.
             if let Some(state) = self.combat.creatures.get_mut(&id) {
                 state.aggro.retain(|a| a.attacker != target);

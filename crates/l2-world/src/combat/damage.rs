@@ -108,7 +108,11 @@ impl World {
             || self.is_dead(target)
             || (!self.is_in_surrounding_region(id, target) && !is_door)
         {
-            // M5: `rechargeShots(true, false)` when `rechargeShots`.
+            // Some times attack is processed but target die before the hit.
+            // So we need to recharge shot for next attack.
+            if task.recharge_shots {
+                self.recharge_shots(id, true, false);
+            }
             self.notify_action_cancel(id);
             self.send(id, &ActionFailed);
             return;
@@ -202,7 +206,10 @@ impl World {
             }
             // M5: trigger skills (`_triggerSkills`) and the weapon's on-critical skill.
         }
-        // M5: `rechargeShots(true, false)` when `rechargeShots`.
+        // Recharge any active auto-soulshot tasks for current creature.
+        if task.recharge_shots {
+            self.recharge_shots(id, true, false);
+        }
     }
 
     /// The HP and MP absorb of `onHitTimer` (`ABSORB_DAMAGE_PERCENT`, `ABSORB_MANA_DAMAGE_PERCENT`).

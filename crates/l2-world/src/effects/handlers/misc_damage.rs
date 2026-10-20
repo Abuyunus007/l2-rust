@@ -7,6 +7,7 @@
 use l2_data::skill::EffectTemplate;
 
 use super::statset::get_int;
+use crate::effects::SkillKey;
 use crate::effects::registry::{EffectCx, EffectHandler, EffectType};
 use crate::world::World;
 
@@ -34,7 +35,14 @@ impl EffectHandler for StaticDamage {
             return;
         }
         world.reduce_current_hp_by_skill(cx.effected, f64::from(self.power), Some(cx.effector), cx.skill);
-        // `notifyDamageReceived`: fake death and script events (M5-EFX-02, D-05).
+        world.notify_damage_received_by(
+            cx.effected,
+            f64::from(self.power),
+            Some(cx.effector),
+            Some(SkillKey::of(cx.skill)),
+            false,
+            false,
+        );
         if world.is_player(cx.effector) {
             world.send_damage_message(cx.effector, cx.effected, self.power, false, false, false);
         }

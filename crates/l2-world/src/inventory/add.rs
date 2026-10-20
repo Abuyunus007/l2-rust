@@ -16,8 +16,7 @@
 // # Left out on purpose
 // - `ItemProcessType` logging (`LogItems`), the GM audit, `ON_PLAYER_ITEM_ADD` (D-05).
 // - Cursed weapons, territory wards and combat flags that activate when picked up (M5).
-// - Herbs: an `ExImmediateEffect` item casts its skills instead of entering the inventory (M5);
-//   it vanishes here after its message.
+// - Herbs: an `ExImmediateEffect` item casts its skills instead of entering the inventory.
 // - Parties: `distributeItem` for loot and pickups (M5).
 
 use l2_data::item::{ADENA_ID, ItemTemplate};
@@ -28,6 +27,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::{LOC_INVENTORY, LOC_PAPERDOLL, is_equipable, item_name_param};
+use crate::effects::SkillKey;
 use crate::enter::current_load;
 use crate::ground_item::GroundItem;
 use crate::player::ItemData;
@@ -296,8 +296,8 @@ impl World {
     }
 
     /// Java `Player.addItem(process, itemId, count, reference, sendMessage)` (no enchant level):
-    /// creates the items. `None` for an unknown item, a herb (it casts its skills, M5) or when no
-    /// id could be allocated.
+    /// creates the items. `None` for an unknown item, a herb (it casts its skills at once) or when
+    /// no id could be allocated.
     pub fn add_item(
         &mut self,
         player: ObjectId,
@@ -313,8 +313,8 @@ impl World {
             tracing::error!("Item doesn't exist so cannot be added. Item ID: {item_id}");
             return None;
         };
-        // Sends message to client if requested (`isCastingNow()` for herbs: M5).
-        if send_message {
+        // Sends message to client if requested (not for a herb while a spell is being cast).
+        if send_message && (!self.is_casting_now(player) || !template.ex_immediate_effect) {
             let name = item_name_param(Some(&templates), item_id);
             let message = if count > 1 {
                 SystemMessage::new(SystemMessageId::YouHaveObtainedS2S1)
@@ -328,7 +328,17 @@ impl World {
 
         // Auto-use herbs.
         if template.ex_immediate_effect && template.is_etc_item() {
-            // M5: `doSimultaneousCast` for every skill of the herb, then `broadcastInfo()`.
+            let keys: Vec<SkillKey> = template
+                .skills
+                .item_skills
+                .iter()
+                .flatten()
+                .map(|s| SkillKey::new(s.id, s.level))
+                .collect();
+            for key in keys {
+                self.do_simultaneous_cast(player, key);
+            }
+            self.broadcast_info(player);
             return None;
         }
 

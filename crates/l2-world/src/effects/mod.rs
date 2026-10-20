@@ -130,9 +130,6 @@ pub struct EffectSettings {
     /// `PlayerConfig.ALT_VALIDATE_TRIGGER_SKILLS` (`AltValidateTriggerSkills`): a triggered skill
     /// between two playables goes through `checkPvpSkill` first (`makeTriggerCast`).
     pub alt_validate_trigger_skills: bool,
-    /// `RatesConfig.RATE_EXTRACTABLE` (`RateExtractable`): the multiplier of the items
-    /// `RestorationRandom` (and the extractable items) give.
-    pub rate_extractable: f32,
     /// `CancelReturnConfig.CANCEL_RETURN_ON` (`CancelReturn`).
     pub cancel_return_on: bool,
     /// `CancelReturnConfig.CANCEL_RETURN_MOB` (`ReturnMonster`).
@@ -161,7 +158,6 @@ impl Default for EffectSettings {
             alt_store_toggles: false,
             alt_store_dances: false,
             alt_validate_trigger_skills: false,
-            rate_extractable: 1.0,
             cancel_return_on: false,
             cancel_return_mob: true,
             cancel_return_player: true,

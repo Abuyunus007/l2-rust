@@ -24,7 +24,6 @@
 // `ThreadPool.schedule(.., 0)` / `execute` become "the next tick".
 //
 // # Left for other cards (markers)
-// - `// M5-SHOT-01:` soulshots / spiritshots (`isChargedShot`, `rechargeShots`).
 // - `// M5-EFX-03:` `Attackable.reduceHate`.
 // - `// M6:` summons, PvP flags (`updatePvPStatus`), olympiad, transformations, the channelizer
 //   (signets), talisman mana, trigger and weapon skills.
@@ -49,6 +48,7 @@ use crate::effects::apply::has_negative_effect;
 use crate::effects::buff_info::skill_name_param;
 use crate::effects::{EffectType, SkillKey, effect_flag};
 use crate::formulas::{SkillMasteryInput, calc_atk_spd, calc_skill_mastery};
+use crate::inventory::handlers::shots::ShotType;
 use crate::movement::Intention;
 use crate::stats::{BaseStat, ClassBalance, Stat};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
@@ -875,8 +875,13 @@ impl World {
                     view.p_atk_spd(),
                 );
             }
-            // M5-SHOT-01: a magic skill with spiritshots (or blessed ones) charged takes 60 % of
-            // the time (`(int) (0.6 * skillTime)`).
+            // Calculate the Casting Time of Magic Skills (reduced in 40% if using SPS/BSPS).
+            if skill.is_magic()
+                && (self.is_charged_shot(caster, ShotType::Spiritshots)
+                    || self.is_charged_shot(caster, ShotType::BlessedSpiritshots))
+            {
+                skill_time = (0.6 * f64::from(skill_time)) as i32;
+            }
         }
         // Avoid broken Casting Animation. Client can't handle less than 550ms Casting Animation
         // in Magic Skills with more than 550ms base.
@@ -1163,7 +1168,13 @@ impl World {
             }
         }
 
-        // M5-SHOT-01: `rechargeShots(skill.useSoulShot(), skill.useSpiritShot())`.
+        // The shots are charged again for this cast (`getAutoSoulShot`), before the skill lands
+        // and uses them up.
+        let (soul, spirit) = (
+            self.skill_uses_soul_shot(skill),
+            self.skill_uses_spirit_shot(skill),
+        );
+        self.recharge_shots(caster, soul, spirit);
 
         let mut su = StatusUpdate::new(caster.0);
         let mut send_status = false;
@@ -1254,7 +1265,17 @@ impl World {
             state.skill_cast = None;
             state.cast_interrupt_time = 0;
         }
-        // M5-SHOT-01: on each repeat recharge shots before cast (`getCount() > 0`).
+        // On each repeat recharge shots before cast.
+        if task.count > 0
+            && let Some(table) = self.skill_table()
+            && let Some(skill) = table.get(task.skill.id, task.skill.level)
+        {
+            let (soul, spirit) = (
+                self.skill_uses_soul_shot(skill),
+                self.skill_uses_spirit_shot(skill),
+            );
+            self.recharge_shots(caster, soul, spirit);
+        }
 
         // Stop casting.
         self.set_casting_now(caster, false);

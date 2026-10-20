@@ -72,7 +72,7 @@ impl EffectHandler for RestorationRandom {
             return;
         }
 
-        let rate = world.settings.effects.rate_extractable;
+        let rate = world.settings.inventory.rate_extractable;
         // Java: a `HashMap<Item, Long>` (the same item merges); the order here is the order the
         // items were given.
         let mut extracted: Vec<(ObjectId, i64)> = Vec::new();

@@ -30,7 +30,7 @@
 //   respawn, the death penalty hooks. Rewards and drops are marked `// M4-EXP-01:` and
 //   `// M4-DROP-01:` there.
 // - `// M4-AI-01:` what an attackable NPC does when attacked, its thinking and its aggro list use.
-// - `// M5:` soulshots, skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
+// - `// M5:` skills, effects (invulnerability, traits, reflect/absorb), PvP flagging.
 
 pub mod attack;
 pub mod damage;
@@ -88,6 +88,22 @@ pub struct CombatSettings {
     pub npc_crit_dmg_penalty: Vec<f32>,
     /// `NpcConfig.ALT_ATTACKABLE_NPCS` (`AltAttackableNpcs`): `Npc.canBeAttacked()`.
     pub alt_attackable_npcs: bool,
+    // M5-EFX-04: what the skill formulas read.
+    /// `PlayerConfig.ALT_GAME_MAGICFAILURES` (`MagicFailures`).
+    pub alt_game_magicfailures: bool,
+    /// `PlayerConfig.CALCULATE_MAGIC_SUCCESS_BY_SKILL_MAGIC_LEVEL`
+    /// (`CalculateMagicSuccessBySkillMagicLevel`).
+    pub calculate_magic_success_by_skill_magic_level: bool,
+    /// `PlayerConfig.RANDOMIZE_PHYSICAL_SKILL_DAMAGE` (`RandomizePhysicalSkillDamage`).
+    pub randomize_physical_skill_damage: bool,
+    /// `PlayerConfig.RANDOMIZE_MAGICAL_SKILL_DAMAGE` (`RandomizeMagicalSkillDamage`).
+    pub randomize_magical_skill_damage: bool,
+    /// `NpcConfig.MIN_NPC_LEVEL_MAGIC_PENALTY` (`MinNPCLevelForMagicPenalty`).
+    pub min_npc_level_magic_penalty: i32,
+    /// `NpcConfig.NPC_SKILL_DMG_PENALTY` (`SkillDmgPenaltyForLvLDifferences`).
+    pub npc_skill_dmg_penalty: Vec<f32>,
+    /// `NpcConfig.NPC_SKILL_CHANCE_PENALTY` (`SkillChancePenaltyForLvLDifferences`).
+    pub npc_skill_chance_penalty: Vec<f32>,
 }
 
 impl Default for CombatSettings {
@@ -104,6 +120,13 @@ impl Default for CombatSettings {
             npc_dmg_penalty: vec![0.7, 0.6, 0.6, 0.55],
             npc_crit_dmg_penalty: vec![0.75, 0.65, 0.6, 0.58],
             alt_attackable_npcs: true,
+            alt_game_magicfailures: true,
+            calculate_magic_success_by_skill_magic_level: true,
+            randomize_physical_skill_damage: true,
+            randomize_magical_skill_damage: true,
+            min_npc_level_magic_penalty: 78,
+            npc_skill_dmg_penalty: vec![0.8, 0.7, 0.65, 0.62],
+            npc_skill_chance_penalty: vec![2.5, 3.0, 3.25, 3.5],
         }
     }
 }
@@ -157,6 +180,8 @@ impl World {
         self.ai.creatures.remove(&id);
         // The cast state and the reuse stamps go with the object (M5-CAST-01).
         self.forget_cast(id);
+        // The charges and the automatic shots (M5-SHOT-01).
+        self.forget_shots(id);
     }
 
     /// Java `Creature.isAttackingNow()`: an attack is still in its animation.
