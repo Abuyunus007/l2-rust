@@ -246,7 +246,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M5-EFFECT-01](M5/M5-EFFECT-01.md) | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 (icons only) | merged |
 | [M5-CAST-01](M5/M5-CAST-01.md) | Casting | opus | full | EFFECT-01, FORM-02 | in-progress |
 | [M5-TARGET-01](M5/M5-TARGET-01.md) | The 34 target handlers | sonnet | full | none (CAST-01 calls it) | merged |
-| [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | in-progress |
+| [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | merged |
 | [M5-EFX-02](M5/M5-EFX-02.md) | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | in-progress |
 | [M5-EFX-03](M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | in-progress |
 | [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | ready (refined when deps merge) |
