@@ -18,6 +18,7 @@
 // - `destroy.rs`: `RequestDestroyItem`, `RequestDropItem` (the inventory side), `RequestItemList`.
 // - `notify.rs`: `broadcastUserInfo`, `broadcastModifiedStats`, the delayed `sendSkillList` /
 //   `sendItemList`, `refreshWeight`.
+// - `handlers/`: item handlers; `shots.rs` has the soulshots and spiritshots (M5-SHOT-01).
 // - `db.rs`: `Item.updateDatabase()` as `PersistCommand::ItemChanges`.
 // - `capacity.rs`: `validateCapacity` / `validateWeight` (checked when items are added).
 //
@@ -28,7 +29,7 @@
 // # Left out on purpose (each has a marker where it belongs)
 // - Casting: `isCastingNow` and the cast-finished equip of `UseItem` (M5). The attack parts
 //   (`isAttackingNow`, `abortAttack`, the equip at the attack's end) are in (M4-COMBAT-01).
-// - Item handlers (potions, scrolls, shots), item reuse timestamps (M5).
+// - Item handlers other than the shots (potions, scrolls), item reuse timestamps (M5-ITEM-01).
 // - Trade, private stores, mounts, summons, fishing, cursed weapons, transformations, the
 //   olympiad, augmentations and element attributes: not modelled yet, treated as "not active".
 // - The over-enchant protection of `UseItem` (needs `EnchantItemGroupsData`).
@@ -38,6 +39,7 @@ mod add;
 mod capacity;
 mod db;
 mod destroy;
+pub mod handlers;
 mod notify;
 mod paperdoll;
 mod use_item;

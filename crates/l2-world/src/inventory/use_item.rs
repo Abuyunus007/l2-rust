@@ -9,6 +9,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 
+use super::handlers::shots::ShotHandler;
 use super::paperdoll::{body_part_of_paperdoll_slot, body_part_of_worn_item};
 use super::{LOC_PAPERDOLL, is_equipable, item_name_param};
 use crate::enter::storage_max_count;
@@ -167,8 +168,13 @@ impl crate::world::World {
                 self.use_equippable_item(id, object_id, true);
             }
         }
-        // M5: the item handler of an item that is not equipped (potions, scrolls, shots), the
-        // fishing-rod lure case (`PAPERDOLL_LHAND`), the item reuse timestamp.
+        // The shot handlers (M5-SHOT-01). They have no item reuse delay, so the timestamp part
+        // of Java's call is not needed.
+        else if let Some(handler) = ShotHandler::of_template(template) {
+            self.use_shot_item(id, &item, handler);
+        }
+        // M5-ITEM-01: the other item handlers (potions, scrolls), the fishing-rod lure case
+        // (`PAPERDOLL_LHAND`), the item reuse timestamp.
     }
 
     /// Java `Player.useEquippableItem(item, abortAttack)`: take the item off if it is worn, else
@@ -215,8 +221,11 @@ impl crate::world::World {
                     SystemMessage::new(SystemMessageId::YouHaveEquippedYourS1).with(name)
                 };
                 self.send(id, &message);
-                // M5: `item.decreaseMana(false)` (shadow items) and, for a weapon,
-                // `rechargeShots(true, true)`; the `ON_PLAYER_ITEM_EQUIP` script event.
+                // M5: `item.decreaseMana(false)` (shadow items); the `ON_PLAYER_ITEM_EQUIP` script
+                // event.
+                if matches!(template.body_part, BodyPart::RightHand | BodyPart::BothHands) {
+                    self.recharge_shots(id, true, true);
+                }
             } else {
                 self.send(
                     id,

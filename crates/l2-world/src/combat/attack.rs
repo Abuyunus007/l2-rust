@@ -12,8 +12,6 @@
 // (100 ms), exactly as Java computes it.
 //
 // # Left out (each has its card)
-// - Soulshots (M5): `isChargedShot` is false, so no hit has the soulshot flag; the grade is still
-//   passed like Java.
 // - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, cursed weapons, observer mode,
 //   siege friends, transformations, effects (`POLEARM_SINGLE_TARGET`),
 //   PvP flagging (`updatePvPStatus`, M5): hooks marked where Java calls them.
@@ -34,6 +32,7 @@ use crate::formulas::{
     ReuseAttackType, ReuseInput, SHIELD_DEFENSE_PERFECT_BLOCK, SHIELD_DEFENSE_SUCCEED, calculate_reuse_time,
     calculate_time_between_attacks,
 };
+use crate::inventory::handlers::shots::ShotType;
 use crate::movement::{heading_from_points, heading_to_degree};
 use crate::objects::ObjectKind;
 use crate::target::distance_3d;
@@ -153,8 +152,7 @@ impl World {
         let p_atk_spd = self.stats(id).map_or(0.0, |s| s.p_atk_spd());
         let time_atk = calculate_time_between_attacks(p_atk_spd);
         let time_to_hit = time_atk / 2;
-        // M5: soulshots (`isChargedShot(ShotType.SOULSHOTS)`).
-        let soulshot = false;
+        let soulshot = self.is_charged_shot(id, ShotType::Soulshots);
         let ss_grade = weapon.as_ref().map_or(0, |t| t.crystal_type_plus().level());
         let (Some(attacker_pos), Some(target_pos)) = (self.position_of(id), self.position_of(target)) else {
             return;
@@ -216,8 +214,11 @@ impl World {
         if !hitted {
             // Abort the attack of the Creature and send Server->Client ActionFailed packet.
             self.abort_attack(id);
+        } else {
+            // If we didn't miss the hit, discharge the shoulshots, if any.
+            self.set_charged_shot(id, ShotType::Soulshots, false);
+            // M5: cursed weapons and heroes zero the target's CP.
         }
-        // M5: else discharge the soulshots; cursed weapons and heroes zero the target's CP.
 
         // If the Server->Client packet Attack contains at least 1 hit, send it to the Creature
         // AND to all Player in the _KnownPlayers of the Creature.

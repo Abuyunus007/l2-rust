@@ -19,6 +19,7 @@
 // ground (`ground_item.rs`).
 
 use l2_data::item::TYPE2_QUEST;
+use l2_data::item::types::EtcItemType;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::visibility::status;
 use l2_protocol_game::server::{
@@ -27,7 +28,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 use tracing::warn;
 
-use super::{LOC_PAPERDOLL, item_name_param};
+use super::{LOC_PAPERDOLL, etc_type, item_name_param};
 use crate::enter::{current_load, shortcut_init};
 use crate::player::ItemData;
 use crate::stats::skills::java_hash_map_order;
@@ -89,9 +90,28 @@ impl World {
             return;
         };
         player.data.shortcuts.remove(index);
-        // The auto soulshot removal (`ExAutoSoulShot`) is the shot system's (M5).
+        // A shortcut to a shot item ends its automatic use (`ExAutoSoulShot`, M5-SHOT-01).
+        let item = player
+            .data
+            .items
+            .iter()
+            .find(|i| i.object_id == object_id)
+            .map(|i| i.item_id);
+        if let Some(item_id) = item {
+            let is_shot = self
+                .item_templates()
+                .as_deref()
+                .and_then(|t| t.get(item_id))
+                .is_some_and(|t| etc_type(t) == Some(EtcItemType::Shot));
+            self.shortcut_removed_for_item(id, item_id, is_shot);
+        }
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
         let list = shortcut_init(&player.data, &*self.data);
         self.send(id, &list);
+        // The automatic shots are announced again after the list.
+        self.resend_auto_soul_shots(id);
     }
 
     /// Java `PlayerInventory.removeItem(item)`: the shortcut goes, a worn item comes off, the item
@@ -408,7 +428,9 @@ impl World {
         if item.loc == LOC_PAPERDOLL {
             let unequipped =
                 self.unequip_item_in_slot_and_record(id, usize::try_from(item.loc_data).unwrap_or(0));
-            // M5: `itm.unChargeAllShots()`.
+            for o in &unequipped {
+                self.un_charge_all_shots(*o);
+            }
             let entries: Vec<ItemUpdate> = unequipped
                 .iter()
                 .filter_map(|o| self.modified_entry(id, *o))
