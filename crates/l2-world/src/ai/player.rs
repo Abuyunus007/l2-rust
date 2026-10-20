@@ -57,6 +57,9 @@ impl World {
                 self.set_casting_now(id, false);
                 return;
             }
+            // NOTE(java-quirk): `useMagic` raised the casting flag, so the first `moveToPawn` of
+            // the follow task started here refuses (`ActionFailed`); the walk begins with the
+            // task's next run.
             if let Some(t) = target
                 && self.maybe_move_to_pawn(id, t, range)
             {
@@ -86,7 +89,12 @@ impl World {
     /// Java `CreatureAI.checkTargetLost(target)` with the AI's `_skill`: `true` (and the
     /// intention goes active) when there is no target, or an offensive area skill can no longer
     /// reach it.
-    pub(crate) fn check_target_lost(&mut self, id: ObjectId, target: Option<ObjectId>, skill: &SkillTemplate) -> bool {
+    pub(crate) fn check_target_lost(
+        &mut self,
+        id: ObjectId,
+        target: Option<ObjectId>,
+        skill: &SkillTemplate,
+    ) -> bool {
         let Some(target) = target else {
             self.set_intention_active(id);
             return true;
@@ -118,7 +126,12 @@ impl World {
 
     /// Java `CreatureAI.maybeMoveToPosition(worldPosition, offset)`: walk to `offset - 5` of the
     /// point when the player is farther than `offset` plus its collision radius.
-    pub(crate) fn maybe_move_to_position(&mut self, id: ObjectId, position: Option<(i32, i32, i32)>, offset: i32) -> bool {
+    pub(crate) fn maybe_move_to_position(
+        &mut self,
+        id: ObjectId,
+        position: Option<(i32, i32, i32)>,
+        offset: i32,
+    ) -> bool {
         let Some(position) = position else {
             return false;
         };

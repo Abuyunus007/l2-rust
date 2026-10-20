@@ -414,7 +414,8 @@ impl World {
             if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
                 self.notify_action_arrived(id);
             }
-        } else if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
+        } else if !self.is_moving(id) && matches!(self.intention_of(id), Intention::Attack | Intention::Cast)
+        {
             // This task can observe arrival before the movement manager does.
             self.notify_action_arrived(id);
         }

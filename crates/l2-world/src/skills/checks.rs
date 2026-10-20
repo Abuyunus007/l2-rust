@@ -137,7 +137,12 @@ impl World {
     }
 
     /// The side effects of a target handler: the heading, then the messages in Java's order.
-    pub(crate) fn apply_target_result(&mut self, caster: ObjectId, skill: &SkillTemplate, result: &TargetResult) {
+    pub(crate) fn apply_target_result(
+        &mut self,
+        caster: ObjectId,
+        skill: &SkillTemplate,
+        result: &TargetResult,
+    ) {
         if let Some(heading) = result.caster_heading {
             self.set_heading(caster, heading);
         }
@@ -265,7 +270,9 @@ impl World {
             if self.is_player(id) {
                 self.send(
                     id,
-                    &SystemMessage::new(SystemMessageId::ThatWeaponCannotUseAnyOtherSkillExceptTheWeaponSSkill),
+                    &SystemMessage::new(
+                        SystemMessageId::ThatWeaponCannotUseAnyOtherSkillExceptTheWeaponSSkill,
+                    ),
                 );
             }
             return false;
@@ -277,7 +284,9 @@ impl World {
                 p.data
                     .items
                     .iter()
-                    .find(|i| (i.loc == "INVENTORY" || i.loc == "PAPERDOLL") && i.item_id == skill.item_consume_id)
+                    .find(|i| {
+                        (i.loc == "INVENTORY" || i.loc == "PAPERDOLL") && i.item_id == skill.item_consume_id
+                    })
                     .map_or(-1, |i| i.count)
             });
             if count < i64::from(skill.item_consume_count) {
@@ -413,10 +422,12 @@ impl World {
                 let minutes = (remaining_time % 3600) / 60;
                 let seconds = remaining_time % 60;
                 let sm = if hours > 0 {
-                    SystemMessage::new(SystemMessageId::ThereAreS2HourSS3MinuteSAndS4SecondSRemainingInS1SReUseTime)
-                        .with(skill_name_param(skill))
-                        .with(SystemMessageParam::IntNumber(hours))
-                        .with(SystemMessageParam::IntNumber(minutes))
+                    SystemMessage::new(
+                        SystemMessageId::ThereAreS2HourSS3MinuteSAndS4SecondSRemainingInS1SReUseTime,
+                    )
+                    .with(skill_name_param(skill))
+                    .with(SystemMessageParam::IntNumber(hours))
+                    .with(SystemMessageParam::IntNumber(minutes))
                 } else if minutes > 0 {
                     SystemMessage::new(SystemMessageId::ThereAreS2MinuteSS3SecondSRemainingInS1SReUseTime)
                         .with(skill_name_param(skill))

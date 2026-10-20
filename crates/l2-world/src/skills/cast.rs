@@ -34,13 +34,13 @@
 use std::collections::HashMap;
 
 use l2_data::SkillTemplate;
-use l2_data::stats::AbnormalType;
 use l2_data::skill::{EffectScope, TargetType};
+use l2_data::stats::AbnormalType;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::visibility::status;
 use l2_protocol_game::server::{
-    ActionFailed, ExRotation, MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, SetupGauge, SkillPosition,
-    StatusUpdate, SystemMessage,
+    ActionFailed, ExRotation, MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, SetupGauge,
+    SkillPosition, StatusUpdate, SystemMessage,
 };
 use l2_util::ObjectId;
 use tracing::warn;
@@ -449,7 +449,9 @@ impl World {
             // Get the first target of the list.
             _ => {
                 let selected = self.creature_target(player);
-                self.cast_target_list(skill, player, true, selected).first().copied()
+                self.cast_target_list(skill, player, true, selected)
+                    .first()
+                    .copied()
             }
         };
         self.set_intention_cast(player, key, target);
@@ -682,7 +684,10 @@ impl World {
             if self.calc_skill_mastery_for(caster, skill) {
                 reuse_delay = 100;
                 if self.is_playable(caster) {
-                    self.send(caster, &SystemMessage::new(SystemMessageId::ASkillIsReadyToBeUsedAgain));
+                    self.send(
+                        caster,
+                        &SystemMessage::new(SystemMessageId::ASkillIsReadyToBeUsedAgain),
+                    );
                 }
             }
             if reuse_delay > 1000 {
@@ -907,7 +912,9 @@ impl World {
     fn schedule_magic_use(&mut self, task: MagicUseTask, delay_ms: i32, slot: Slot) {
         let caster = task.caster;
         let due = self.tick + TimerWheel::ms_to_ticks(u64::try_from(delay_ms).unwrap_or(0));
-        let timer = self.timers.schedule_at(due, TimerKind::Cast(CastTimer::MagicUse(task)));
+        let timer = self
+            .timers
+            .schedule_at(due, TimerKind::Cast(CastTimer::MagicUse(task)));
         let state = self.cast_state_mut(caster);
         match slot {
             Slot::Normal => state.skill_cast = Some(timer),
@@ -946,7 +953,11 @@ impl World {
                     self.begin_cast_at(caster, template, simultaneous, Some(target), targets);
                 }
             }
-            CastTimer::ChangeIntentionToCast { caster, skill, target } => {
+            CastTimer::ChangeIntentionToCast {
+                caster,
+                skill,
+                target,
+            } => {
                 if !self.is_in_world(caster) {
                     return;
                 }
@@ -963,7 +974,11 @@ impl World {
                     self.set_intention_attack(caster, target);
                 }
             }
-            CastTimer::CompleteMagicFinalizer { caster, skill, target } => {
+            CastTimer::CompleteMagicFinalizer {
+                caster,
+                skill,
+                target,
+            } => {
                 if self.is_in_world(caster) {
                     self.complete_magic_finalizer(caster, skill, target);
                 }
@@ -1022,8 +1037,8 @@ impl World {
             let mut skip_peace_zone = 0;
             let mut target_list = Vec::new();
             let radius = escape_range.wrapping_add(self.collision_radius_of(caster));
-            let party_heal =
-                skill.target_type == TargetType::Party && self.skill_has_effect_type(skill, &[EffectType::Heal]);
+            let party_heal = skill.target_type == TargetType::Party
+                && self.skill_has_effect_type(skill, &[EffectType::Heal]);
             let negative = has_negative_effect(skill);
             let player = self.is_player(caster);
             for &target in &task.targets {
@@ -1287,7 +1302,10 @@ impl World {
                 let due = self.tick + TimerWheel::ms_to_ticks(0);
                 self.timers.schedule_at(
                     due,
-                    TimerKind::Cast(CastTimer::QueuedMagicUse { player: caster, queued }),
+                    TimerKind::Cast(CastTimer::QueuedMagicUse {
+                        player: caster,
+                        queued,
+                    }),
                 );
             }
         }
@@ -1403,7 +1421,11 @@ impl World {
                 ) || (is_continuous(skill) && !skill.is_debuff));
             let block_raid_boss = (is_heal_skill && block_heal) || (is_buff_skill && block_buff);
             // `obj instanceof RaidBoss`: raid bosses (grand bosses are their own class).
-            let raid_boss = |w: &World, t: ObjectId| w.npcs.get(&t).is_some_and(|n| n.class == crate::npc::NpcClass::RaidBoss);
+            let raid_boss = |w: &World, t: ObjectId| {
+                w.npcs
+                    .get(&t)
+                    .is_some_and(|n| n.class == crate::npc::NpcClass::RaidBoss)
+            };
             if block_raid_boss && targets.iter().any(|t| raid_boss(self, *t)) {
                 // If the only target is a RaidBoss, nothing to apply.
                 if targets.len() == 1 {

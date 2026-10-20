@@ -582,7 +582,12 @@ impl World {
     }
 
     /// Java `CreatureAI.changeIntentionToCast(skill, target)`.
-    pub(crate) fn change_intention_to_cast(&mut self, id: ObjectId, skill: SkillKey, target: Option<ObjectId>) {
+    pub(crate) fn change_intention_to_cast(
+        &mut self,
+        id: ObjectId,
+        skill: SkillKey,
+        target: Option<ObjectId>,
+    ) {
         // Set the AI cast target (`target.asCreature()`).
         let target = target.filter(|t| self.objects.get(t).is_some_and(|e| e.kind.is_creature()));
         let ai = self.ai_state_mut(id);

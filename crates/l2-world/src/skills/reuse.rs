@@ -24,7 +24,9 @@
 use std::collections::HashMap;
 
 use l2_data::SkillTemplate;
-use l2_protocol_game::server::enterworld::{SkillCoolTime, SkillCoolTimeEntry, remaining_seconds, reuse_seconds};
+use l2_protocol_game::server::enterworld::{
+    SkillCoolTime, SkillCoolTimeEntry, remaining_seconds, reuse_seconds,
+};
 use l2_util::ObjectId;
 
 use crate::effects::effect_flag;
@@ -61,6 +63,8 @@ impl SkillStamp {
 /// remaining" on the wall clock).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ReuseTimeStamp {
+    /// The skill's reuse hash code (the map key).
+    pub hash_code: i32,
     pub skill_id: i32,
     pub skill_level: i32,
     /// `getReuse()`: the full delay, in milliseconds.
@@ -140,7 +144,13 @@ impl World {
     /// Java `Creature.addTimeStamp(skill, reuse, systime)` as `restoreEffects` uses it: the stamp
     /// ends `remaining_ms` from now (M5-SAVE-01 turns Java's wall-clock stamp into the time
     /// left).
-    pub fn restore_time_stamp(&mut self, id: ObjectId, skill: &SkillTemplate, reuse_ms: i64, remaining_ms: i64) {
+    pub fn restore_time_stamp(
+        &mut self,
+        id: ObjectId,
+        skill: &SkillTemplate,
+        reuse_ms: i64,
+        remaining_ms: i64,
+    ) {
         let now = self.world_ms();
         let stamp = SkillStamp {
             skill_id: skill.id,
@@ -193,8 +203,9 @@ impl World {
         concurrent_hash_map_order(&keys)
             .into_iter()
             .map(|i| {
-                let s = &state.stamps[i].1;
+                let (hash_code, s) = &state.stamps[i];
                 ReuseTimeStamp {
+                    hash_code: *hash_code,
                     skill_id: s.skill_id,
                     skill_level: s.skill_level,
                     reuse_ms: s.reuse_ms,
