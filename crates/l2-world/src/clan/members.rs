@@ -12,8 +12,8 @@ use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
-use super::model::{COMPLETE_PRIVILEGES_MASK, ClanPrivilegesRef, PlayerClanState};
-use super::{ClanWrite, days_ms};
+use super::model::{COMPLETE_PRIVILEGES_MASK, ClanMember, ClanPrivilegesRef, PlayerClanState};
+use super::{ClanRecord, ClanWrite, days_ms};
 use crate::world::{World, unix_ms_now};
 
 /// What `deleteMe` tells the other members once the player is gone.
@@ -28,16 +28,21 @@ impl World {
 
     /// Java `Player.restore`, the clan part: the expired join and create penalties are dropped,
     /// the clan is looked up (`ClanTable.getClan`), and the rank, privileges and pledge class
-    /// are set. A player whose clan is gone or who is no longer a member leaves it
-    /// (`setClan(null)`: clan columns and title cleared).
+    /// are set.
     ///
-    /// NOTE: side by side (D-39), a clan or a membership the Java game server created after this
-    /// server started is unknown here, so the member leaves it like in Java between two servers.
+    /// Side by side (D-39) the Java game server may have made the clan, or the membership, after
+    /// this server loaded its clans. The session read the character's clan from the database at
+    /// `CharacterSelect` (`PlayerProfile::clan_record`): an unknown clan is added to the table and
+    /// a member the table misses is added to the clan, then Java's restore goes on. When the clan
+    /// cannot be found even so (the read failed, the row is gone), the player is clanless here but
+    /// the row's clan columns and title stay as they are (`PlayerClanState::keep_stored`) instead
+    /// of Java's `setClan(null)`, which would write `clanid = 0`.
     pub(crate) fn clan_restore_player(&mut self, id: ObjectId) {
         let now = unix_ms_now();
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
+        let record = player.data.profile.clan_record.take();
         let state = player.data.profile.clan.get_or_insert_with(Default::default);
         if state.clan_join_expiry_time < now {
             state.clan_join_expiry_time = 0;
@@ -48,10 +53,25 @@ impl World {
         let clan_id = state.clan_id;
         let mut found = false;
         if clan_id > 0 {
+            if let Some(record) = record.filter(|r| r.clan_id == clan_id) {
+                self.install_clan_of_record(id, *record, now);
+            }
             found = self.clan(clan_id).is_some();
-            // `player.setClan(clan)`
             if !self.clan(clan_id).is_some_and(|c| c.is_member(id.0)) {
-                self.leave_clan_state(id);
+                warn!(
+                    "Clan: character {} is in clan {clan_id} by its row, but the clan or the membership is not found (not in the database either); the row's clan columns are kept.",
+                    id.0
+                );
+                found = false;
+                if let Some(s) = self.player_clan_state_mut(id) {
+                    *s = PlayerClanState {
+                        clan_join_expiry_time: s.clan_join_expiry_time,
+                        clan_create_expiry_time: s.clan_create_expiry_time,
+                        wants_peace: s.wants_peace,
+                        keep_stored: true,
+                        ..PlayerClanState::default()
+                    };
+                }
             }
             if self.clan(clan_id).is_some_and(|c| c.is_member(id.0)) {
                 let leader = self.clan(clan_id).is_some_and(|c| c.leader == Some(id));
@@ -80,8 +100,7 @@ impl World {
                 self.set_pledge_class(id);
             }
         }
-        // NOTE(java-quirk): Java tests its local `clan`, not the player's: a player whose clan
-        // exists but who is no longer a member keeps pledge class 0 (not the noble's 5).
+        // Without a clan here (also a kept row, see above): the noble's class 5.
         if !found {
             let noble = self.players.get(&id).is_some_and(|p| p.data.profile.noble);
             if let Some(s) = self.player_clan_state_mut(id) {
@@ -91,6 +110,57 @@ impl World {
                 // `isHero()`: 8, the heroes are not loaded (M8).
                 s.privileges = ClanPrivilegesRef::Own(0);
             }
+        }
+    }
+
+    /// The clan the session read for a character: a clan the table does not know is restored
+    /// from it (`new Clan(clanId)`, its dissolution scheduled like at startup); a member of a known
+    /// clan that the table misses is added from its row.
+    // NOTE: the clan wars of a clan added this way are not read (`restoreClanWars` runs at
+    // startup); they come with the next start.
+    fn install_clan_of_record(&mut self, id: ObjectId, record: ClanRecord, now: i64) {
+        let clan_id = record.clan_id;
+        if self.clan(clan_id).is_none() {
+            if record.data.is_none() {
+                return;
+            }
+            let clan = self.restore_clan(record, now);
+            let dissolving = clan.dissolving_expiry_time;
+            info!(
+                "ClanTable: Restored clan {}[{clan_id}] of character {} from the database.",
+                clan.name, id.0
+            );
+            self.clans.clans.insert(clan_id, clan);
+            if dissolving != 0 {
+                self.schedule_remove_clan(clan_id);
+            }
+            return;
+        }
+        if self.clan(clan_id).is_some_and(|c| c.is_member(id.0)) {
+            return;
+        }
+        let Some(row) = record.members.into_iter().find(|m| m.object_id == id.0) else {
+            return;
+        };
+        info!(
+            "Clan: character {} joined clan {clan_id} on another server; added from the database.",
+            id.0
+        );
+        if let Some(clan) = self.clan_mut(clan_id) {
+            clan.put_member(ClanMember {
+                object_id: id,
+                name: row.name,
+                title: row.title,
+                power_grade: row.power_grade,
+                level: row.level,
+                class_id: row.class_id,
+                female: row.female,
+                race: row.race,
+                pledge_type: row.pledge_type,
+                apprentice: row.apprentice,
+                sponsor: row.sponsor,
+                has_player: false,
+            });
         }
     }
 
@@ -289,6 +359,7 @@ impl World {
         // `player.setClan(this)`
         if let Some(s) = self.player_clan_state_mut(player) {
             s.clan_id = clan_id;
+            s.keep_stored = false;
         }
         self.set_pledge_class(player);
         if let Some(update) = self.pledge_member_update_of_player(player) {

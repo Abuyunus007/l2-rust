@@ -545,7 +545,7 @@ pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>)
 
 /// The rows of one clan (`Clan.restore`, `restoreSubPledges`, `restoreRankPrivs`,
 /// `restoreSkills`, `restoreNotice`).
-async fn load_clan(repo: &ClanRepository, clan_id: i32) -> Result<ClanRecord, l2_db::DbError> {
+pub async fn load_clan(repo: &ClanRepository, clan_id: i32) -> Result<ClanRecord, l2_db::DbError> {
     let mut record = ClanRecord {
         clan_id,
         ..ClanRecord::default()
@@ -1326,7 +1326,7 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
     let base_active = player.class_id == player.base_class;
     // M6-CLAN-01: the clan columns the world keeps (Java `storeCharBase`); a snapshot without
     // them keeps the row's values.
-    let clan = player.profile.clan;
+    let clan = player.profile.clan.filter(|c| !c.keep_stored);
     let title = if player.title.is_empty() && row.title.is_none() {
         None
     } else {

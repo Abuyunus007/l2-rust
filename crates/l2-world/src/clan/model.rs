@@ -149,6 +149,11 @@ pub struct PlayerClanState {
     pub clan_create_expiry_time: i64,
     /// Java `_pledgeClass` (the title above the CP bar). Not stored.
     pub pledge_class: i32,
+    /// The row names a clan (or a membership) this server could not find, not even in the
+    /// database at login: the player is clanless here, and the store keeps the row's clan columns
+    /// (D-39: never `clanid = 0` for a clan the Java game server owns). Cleared when the player
+    /// gets a clan here.
+    pub keep_stored: bool,
 }
 
 impl PlayerClanState {

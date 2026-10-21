@@ -51,7 +51,7 @@ impl World {
 
     /// Java `new Clan(clanId)`: `initializePrivs`, then `restore` (the clan, its members, sub
     /// pledges, rank privileges, skills and notice).
-    fn restore_clan(&self, record: ClanRecord, now: i64) -> Clan {
+    pub(crate) fn restore_clan(&self, record: ClanRecord, now: i64) -> Clan {
         let settings = &self.clans.settings;
         let mut clan = Clan::new(record.clan_id, "");
         if let Some(data) = record.data {
@@ -383,6 +383,7 @@ impl World {
         // `player.setClan(clan)`
         if let Some(s) = self.player_clan_state_mut(player) {
             s.clan_id = clan_id;
+            s.keep_stored = false;
         }
         self.set_pledge_class(player);
         // `new ClanPrivileges()` + `enableAll()`: an object of the player's own.

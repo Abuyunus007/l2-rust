@@ -735,37 +735,77 @@ fn a_member_entering_sees_the_clan_window_and_the_others_are_told() {
 }
 
 #[test]
-fn a_member_of_a_clan_that_is_gone_leaves_it_at_login() {
+fn an_unknown_clan_leaves_the_row_alone() {
     let mut s = Scene::new();
     s.load(vec![lions(5, vec![member(P1, 1, 0)])]);
-    // Clan 777 is unknown; P3 says it is in clan 500 but is not a member.
+    // Clan 777 is unknown and the session found no row for it; P3 says it is in clan 500, which
+    // does not list it, and its read failed. D-39: both are clanless here, but nothing of their
+    // rows changes (Java's `setClan(null)` would write `clanid = 0` and clear the title).
     for (id, clan_id) in [(P2, 777), (P3, CLAN)] {
         let mut data = member_data(id, clan_id, 5, 0);
         data.title = "Old title".to_owned();
         data.profile.noble = true;
+        if id == P2 {
+            data.profile.clan_record = Some(Box::new(ClanRecord {
+                clan_id: 777,
+                ..ClanRecord::default()
+            }));
+        }
         s.enter(data);
     }
     for id in [P2, P3] {
         assert_eq!(s.world.clan_id_of(ObjectId(id)), 0);
-        assert_eq!(s.world.player(ObjectId(id)).unwrap().data.title, "");
+        assert_eq!(s.world.player(ObjectId(id)).unwrap().data.title, "Old title");
+        assert!(s.state(id).keep_stored);
+        // Clanless here: the noble's class.
+        assert_eq!(s.world.pledge_class_of(ObjectId(id)), 5);
     }
-    // NOTE(java-quirk): the noble of the unknown clan gets class 5, the one that is no longer a
-    // member of a clan that exists keeps 0.
-    assert_eq!(
-        (
-            s.world.pledge_class_of(ObjectId(P2)),
-            s.world.pledge_class_of(ObjectId(P3))
-        ),
-        (5, 0)
-    );
+    assert!(s.world.clan(777).is_none());
+    assert!(!s.clan().is_member(P3));
+    assert!(clan_writes(&s.outs.take()).is_empty());
     s.leave(P2);
     let stored = s.stored(P2);
-    let clan = stored.profile.clan.unwrap();
+    // The store keeps the row's clan columns for a state marked `keep_stored`.
+    assert!(stored.profile.clan.unwrap().keep_stored);
+    assert_eq!(stored.title, "Old title");
+}
+
+#[test]
+fn a_clan_made_on_the_java_server_is_added_at_login() {
+    let mut s = Scene::new();
+    s.load(vec![lions(5, vec![member(P1, 1, 0)])]);
+    // The Java game server made clan 600 with P4 as its leader after this server started.
+    let mut data = member_data(P4, 600, 0, 0);
+    data.profile.clan_record = Some(Box::new(ClanRecord {
+        clan_id: 600,
+        data: Some(ClanDataRecord {
+            name: Some("Tigers".to_owned()),
+            level: 2,
+            leader_id: P4,
+            ..ClanDataRecord::default()
+        }),
+        members: vec![member(P4, 0, 0)],
+        ..ClanRecord::default()
+    }));
+    s.enter(data);
+    let out = s.take();
+    let tigers = s.world.clan(600).unwrap();
     assert_eq!(
-        (clan.clan_id, clan.power_grade, clan.stored_privileges()),
-        (0, 0, 0)
+        (tigers.name.as_str(), tigers.leader),
+        ("Tigers", Some(ObjectId(P4)))
     );
-    assert_eq!(stored.title, "");
+    assert_eq!(s.world.clan_id_of(ObjectId(P4)), 600);
+    assert!(s.world.is_clan_leader(ObjectId(P4)) && !s.state(P4).keep_stored);
+    let all = &decoded::<PledgeShowMemberListAll>(&out, P4, "PLEDGE_SHOW_MEMBER_LIST_ALL")[0];
+    assert_eq!((all.clan_id, all.clan_name.as_str()), (600, "Tigers"));
+
+    // P2 joined the Lions on the Java game server: the clan here does not list it yet.
+    let mut data = member_data(P2, CLAN, 5, 0);
+    data.profile.clan_record = Some(Box::new(lions(5, vec![member(P1, 1, 0), member(P2, 5, 0)])));
+    s.enter(data);
+    assert!(s.clan().is_member(P2));
+    assert_eq!(s.world.clan_id_of(ObjectId(P2)), CLAN);
+    assert_eq!(s.clan().members_count(), 2);
 }
 
 #[test]

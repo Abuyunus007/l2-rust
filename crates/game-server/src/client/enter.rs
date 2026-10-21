@@ -84,6 +84,7 @@ pub struct DbPlayerLoader {
     macros: MacroRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
+    clans: l2_db::ClanRepository,
 }
 
 impl DbPlayerLoader {
@@ -98,7 +99,8 @@ impl DbPlayerLoader {
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
-            variables: VariableRepository::new(pool),
+            variables: VariableRepository::new(pool.clone()),
+            clans: l2_db::ClanRepository::new(pool),
         }
     }
 
@@ -248,6 +250,18 @@ impl DbPlayerLoader {
 
         // Java: PlayerVariables.restoreMe
         data.profile.variables = self.variables.variables_of(char_id).await?.into_iter().collect();
+
+        // Java: ClanTable.getClan(clanid). Side by side (D-39) the Java game server may have made
+        // the clan or the membership after this server loaded its clans: the clan is read here
+        // (the startup queries) and the world adds it when its table does not know it. A failed
+        // read leaves the row's clan columns alone in the world.
+        let clan_id = data.profile.clan.map_or(0, |c| c.clan_id);
+        if clan_id > 0 {
+            match crate::persist::load_clan(&self.clans, clan_id).await {
+                Ok(record) => data.profile.clan_record = Some(Box::new(record)),
+                Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
+            }
+        }
         apply_restore_location(&mut data);
         Ok(data)
     }
@@ -387,6 +401,7 @@ fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
         clan_join_expiry_time: u64_i64(row.clan_join_expiry_time),
         clan_create_expiry_time: u64_i64(row.clan_create_expiry_time),
         pledge_class: 0,
+        keep_stored: false,
     }
 }
 
@@ -1012,7 +1027,17 @@ mod tests {
             (update.apprentice, update.sponsor, update.lvl_joined_academy),
             (7, 8, 20)
         );
-        // ... and keeps the row's values for a snapshot without them.
+        // ... and keeps the row's values for a snapshot without them, or for a player whose clan
+        // was not found (D-39: never `clanid = 0` for a clan of the Java game server).
+        p.profile.clan = Some(l2_world::PlayerClanState {
+            keep_stored: true,
+            ..l2_world::PlayerClanState::default()
+        });
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (update.clan_id, update.clan_privs, update.power_grade),
+            (500, 0x46, 5)
+        );
         p.profile.clan = None;
         let update = crate::persist::build_character_update(&p, &r);
         assert_eq!(
@@ -1152,7 +1177,7 @@ mod tests {
 
     /// The game tables the loader reads and `create_character` writes (the same list as
     /// `charscreen_db_tests`).
-    const LOADER_SCHEMA: [&str; 27] = [
+    const LOADER_SCHEMA: [&str; 31] = [
         include_str!("../../../l2-db/sql/game/characters.sql"),
         include_str!("../../../l2-db/sql/game/items.sql"),
         include_str!("../../../l2-db/sql/game/item_attributes.sql"),
@@ -1180,6 +1205,10 @@ mod tests {
         include_str!("../../../l2-db/sql/game/character_variables.sql"),
         include_str!("../../../l2-db/sql/game/mods_wedding.sql"),
         include_str!("../../../l2-db/sql/game/clan_data.sql"),
+        include_str!("../../../l2-db/sql/game/clan_privs.sql"),
+        include_str!("../../../l2-db/sql/game/clan_subpledges.sql"),
+        include_str!("../../../l2-db/sql/game/clan_skills.sql"),
+        include_str!("../../../l2-db/sql/game/clan_notices.sql"),
     ];
 
     /// A throwaway database with the game tables; `None` without `L2_TEST_DATABASE_URL`.
@@ -1206,6 +1235,81 @@ mod tests {
         }
         let pool = l2_db::connect_with(options, 5).await.unwrap();
         Some((db, pool))
+    }
+
+    /// The loader reads the character's clan (D-39: the Java game server may have made it after
+    /// this server loaded its clans); a clan id without a `clan_data` row gives a record without
+    /// data, which the world treats as "keep the row".
+    #[tokio::test]
+    async fn the_loader_reads_the_clan_of_the_character() {
+        let Some((db, pool)) = loader_setup().await else {
+            return;
+        };
+        let (_dir, pack) = crate::client::testdata::datapack();
+        let screen = crate::client::charscreen::CharScreen::new(
+            Arc::new(crate::client::charscreen::DbCharScreen::new(pool.clone())),
+            pack,
+            Arc::new(l2_config::GameConfig::default()),
+            Arc::new(l2_world::IdFactory::new([]).unwrap()),
+            0,
+        );
+        let create = |name: &str| l2_protocol_game::client::CharacterCreate {
+            name: name.to_owned(),
+            race: 0,
+            is_female: false,
+            class_id: 0,
+            int: 0,
+            str: 0,
+            con: 0,
+            men: 0,
+            dex: 0,
+            wit: 0,
+            hair_style: 0,
+            hair_color: 0,
+            face: 0,
+        };
+        let mut rng = l2_util::WorldRng::from_seed(7);
+        let mut ids = Vec::new();
+        for name in ["Leader", "Orphan"] {
+            let id = crate::client::charscreen::create_character(&screen, "acc", &create(name), &mut rng)
+                .await
+                .unwrap()
+                .char_id;
+            ids.push(id);
+        }
+        let (leader, orphan) = (ids[0], ids[1]);
+        db.exec(&format!(
+            "INSERT INTO clan_data (clan_id, clan_name, clan_level, leader_id) VALUES (900, 'Tigers', 3, {leader})"
+        ))
+        .await;
+        db.exec(&format!(
+            "UPDATE characters SET clanid = 900, power_grade = 1 WHERE charId = {leader}"
+        ))
+        .await;
+        db.exec(&format!(
+            "UPDATE characters SET clanid = 901 WHERE charId = {orphan}"
+        ))
+        .await;
+
+        let loader = DbPlayerLoader::new(pool.clone());
+        let loaded = loader.load_player("acc", leader).await.unwrap();
+        let record = loaded.profile.clan_record.unwrap();
+        assert_eq!(record.clan_id, 900);
+        let data = record.data.unwrap();
+        assert_eq!(
+            (data.name.as_deref(), data.level, data.leader_id),
+            (Some("Tigers"), 3, leader)
+        );
+        assert_eq!(record.members.len(), 1);
+        assert_eq!(record.members[0].object_id, leader);
+
+        let loaded = loader.load_player("acc", orphan).await.unwrap();
+        let record = loaded.profile.clan_record.unwrap();
+        assert_eq!((record.clan_id, record.data.is_none()), (901, true));
+        assert_eq!(loaded.profile.clan.unwrap().clan_id, 901);
+
+        pool.close().await;
+        db.drop_db().await;
     }
 
     #[tokio::test]
