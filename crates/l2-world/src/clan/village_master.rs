@@ -124,7 +124,7 @@ impl World {
                 self.broadcast_clan_level_up_effect(player);
             }
         } else if is("learn_clan_skills") {
-            debug!("{player}: learn_clan_skills: the pledge skills are not ported yet (M6-CLAN-03).");
+            self.show_pledge_skill_list(player);
         } else {
             self.generic_npc_bypass_feedback(npc, player, command);
         }

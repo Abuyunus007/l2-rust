@@ -91,6 +91,9 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
         ],
         clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
         maintenance_database_writes: clan_maintenance_database_writes(config_dir),
+        life_crystal_needed: player.life_crystal_needed,
+        join_academy_min_rep_score: feature.join_academy_min_rep_score,
+        join_academy_max_rep_score: feature.join_academy_max_rep_score,
     }
 }
 

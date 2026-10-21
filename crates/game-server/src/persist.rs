@@ -663,6 +663,7 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::RankPrivs { .. } => "Clan.setRankPrivs",
         ClanWrite::Notice { .. } => "Clan.storeNotice",
         ClanWrite::Delete { .. } => "ClanTable.destroyClan",
+        ClanWrite::UpdateSkill { .. } | ClanWrite::InsertSkill { .. } => "Clan.addNewSkill",
     }
 }
 
@@ -1754,6 +1755,22 @@ impl PlayerStore for DbStore {
                 enabled,
             } => clans.store_notice(*clan_id, notice, *enabled).await?,
             ClanWrite::Delete { clan_id, castle_id } => clans.delete_clan(*clan_id, *castle_id).await?,
+            ClanWrite::UpdateSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+            } => clans.update_clan_skill(*clan_id, *skill_id, *skill_level).await?,
+            ClanWrite::InsertSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+                skill_name,
+                sub_pledge_id,
+            } => {
+                clans
+                    .insert_clan_skill(*clan_id, *skill_id, *skill_level, skill_name, *sub_pledge_id)
+                    .await?
+            }
         }
         Ok(())
     }

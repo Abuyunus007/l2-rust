@@ -1,4 +1,4 @@
-//! The clan tables: `clan_data`, `clan_privs`, `clan_subpledges`, `clan_skills` (read only here),
+//! The clan tables: `clan_data`, `clan_privs`, `clan_subpledges`, `clan_skills`,
 //! `clan_notices`, `clan_wars` (read only here) and the clan columns of `characters`.
 // Java: org/l2jmobius/gameserver/entity/clan/Clan.java (restore*, store, updateClanInDB,
 //       removeMemberInDatabase, createSubPledge, updateSubPledgeInDB, setRankPrivs, storeNotice,
@@ -30,6 +30,10 @@ const SELECT_SUB_PLEDGES: &str = "SELECT sub_pledge_id,name,leader_id FROM clan_
 const SELECT_RANK_PRIVS: &str = "SELECT privs,`rank`,party FROM clan_privs WHERE clan_id=?";
 // Java: Clan.restoreSkills
 const SELECT_CLAN_SKILLS: &str = "SELECT skill_id,skill_level,sub_pledge_id FROM clan_skills WHERE clan_id=?";
+// Java: Clan.addNewSkill
+const UPDATE_CLAN_SKILL: &str = "UPDATE clan_skills SET skill_level=? WHERE skill_id=? AND clan_id=?";
+const INSERT_CLAN_SKILL: &str =
+    "INSERT INTO clan_skills (clan_id,skill_id,skill_level,skill_name,sub_pledge_id) VALUES (?,?,?,?,?)";
 // Java: Clan.restoreNotice
 const SELECT_CLAN_NOTICE: &str = "SELECT enabled,notice FROM clan_notices WHERE clan_id=?";
 // Java: ClanTable.restoreClanWars
@@ -427,6 +431,40 @@ impl ClanRepository {
             .bind(apprentice)
             .bind(sponsor)
             .bind(char_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// A clan that already had the skill: only the level changes. Java's statement does not look at
+    /// `sub_pledge_id`, so a skill id that two squads of the clan share changes in all of them.
+    // Java: Clan.addNewSkill
+    pub async fn update_clan_skill(&self, clan_id: i32, skill_id: i32, skill_level: i32) -> Result<()> {
+        sqlx::query(UPDATE_CLAN_SKILL)
+            .bind(skill_level)
+            .bind(skill_id)
+            .bind(clan_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// `sub_pledge_id` is -2 for a clan skill, 0 for a skill of the main squad.
+    // Java: Clan.addNewSkill
+    pub async fn insert_clan_skill(
+        &self,
+        clan_id: i32,
+        skill_id: i32,
+        skill_level: i32,
+        skill_name: &str,
+        sub_pledge_id: i32,
+    ) -> Result<()> {
+        sqlx::query(INSERT_CLAN_SKILL)
+            .bind(clan_id)
+            .bind(skill_id)
+            .bind(skill_level)
+            .bind(skill_name)
+            .bind(sub_pledge_id)
             .execute(&self.pool)
             .await?;
         Ok(())

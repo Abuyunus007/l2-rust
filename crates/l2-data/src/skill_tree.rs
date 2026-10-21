@@ -1,5 +1,6 @@
 //! Class skill trees, reduced to what character creation needs: skill id, skill level, the level a
 //! skill is learned at and its auto-learn flags. Skill definitions and effects are not loaded here.
+//! The clan trees (`pledgeSkillTree`, `subPledgeSkillTree`) are kept too (M6-CLAN-03).
 //!
 //! Java: `gameserver/data/xml/SkillTreeData.java` (`classSkillTree` parsing, the parent class chain,
 //! `getCompleteClassSkillTree`, `getAvailableSkills`) and `network/clientpackets/CharacterCreate.java`
@@ -55,6 +56,60 @@ pub struct SkillLearn {
     pub pre_req_skills: Vec<(i32, i32)>,
     /// Java `getRaces()`: empty means every race.
     pub races: Vec<Race>,
+    /// Java `getSocialClass()`: the pledge class a clan member needs for the clan skill (the
+    /// first `socialClass` element of the line). `None` for the lines of the class trees.
+    pub social_class: Option<SocialClass>,
+    /// Java `isResidencialSkill()` (`residenceSkill`): a castle or fortress skill.
+    pub residence_skill: bool,
+    /// Java `getResidenceIds()`.
+    pub residence_ids: Vec<i32>,
+}
+
+/// Java `SocialClass`: the pledge classes a clan skill asks for. The order is the Java ordinal.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum SocialClass {
+    Vagabond,
+    Vassal,
+    Apprentice,
+    Heir,
+    Knight,
+    Elder,
+    Baron,
+    Viscount,
+    Count,
+    Marquis,
+    Duke,
+    GrandDuke,
+    DistinguishedKing,
+    Emperor,
+}
+
+impl SocialClass {
+    /// Java `Enum.valueOf(SocialClass.class, name)`: `None` where Java throws.
+    pub fn from_name(name: &str) -> Option<Self> {
+        Some(match name.trim() {
+            "VAGABOND" => Self::Vagabond,
+            "VASSAL" => Self::Vassal,
+            "APPRENTICE" => Self::Apprentice,
+            "HEIR" => Self::Heir,
+            "KNIGHT" => Self::Knight,
+            "ELDER" => Self::Elder,
+            "BARON" => Self::Baron,
+            "VISCOUNT" => Self::Viscount,
+            "COUNT" => Self::Count,
+            "MARQUIS" => Self::Marquis,
+            "DUKE" => Self::Duke,
+            "GRAND_DUKE" => Self::GrandDuke,
+            "DISTINGUISHED_KING" => Self::DistinguishedKing,
+            "EMPEROR" => Self::Emperor,
+            _ => return None,
+        })
+    }
+
+    /// Java `ordinal()`.
+    pub fn ordinal(self) -> i32 {
+        self as i32
+    }
 }
 
 /// All class skill trees, immutable after loading. Java `SkillTreeData`, class part only.
@@ -67,6 +122,10 @@ pub struct SkillTrees {
     /// The keys of `complete` in the order Java's `LinkedHashMap` lists them (see
     /// [`SkillTrees::complete_class_tree_java_order`]).
     java_order: BTreeMap<ClassId, Vec<(i32, i32)>>,
+    /// Java `_pledgeSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    pledge: Vec<SkillLearn>,
+    /// Java `_subPledgeSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    sub_pledge: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -89,6 +148,16 @@ impl SkillTrees {
             gathered.skill_count(),
             &format!("Class Skills for {} class skill trees", gathered.own.len()),
         );
+        let residential = gathered.pledge.values().filter(|l| l.residence_skill).count();
+        log_loaded(
+            Self::LOADER,
+            gathered.pledge.len(),
+            &format!(
+                "clan skills, {} for clan and {residential} residential",
+                gathered.pledge.len() - residential
+            ),
+        );
+        log_loaded(Self::LOADER, gathered.sub_pledge.len(), "sub-pledge skills");
         Self::build(gathered)
     }
 
@@ -110,6 +179,10 @@ impl SkillTrees {
             common_order,
             own,
             own_order,
+            pledge,
+            pledge_order,
+            sub_pledge,
+            sub_pledge_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -137,7 +210,18 @@ impl SkillTrees {
             complete.insert(class, tree);
             java_order.insert(class, order);
         }
-        Self { complete, java_order }
+        let in_java_order = |mut tree: BTreeMap<(i32, i32), SkillLearn>, order: Vec<(i32, i32)>| {
+            java_concurrent_map_order(&order)
+                .into_iter()
+                .filter_map(|key| tree.remove(&key))
+                .collect()
+        };
+        Self {
+            complete,
+            java_order,
+            pledge: in_java_order(pledge, pledge_order),
+            sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
+        }
     }
 
     /// [`Self::complete_class_tree`] in the order Java lists it: the iteration order of the
@@ -186,6 +270,38 @@ impl SkillTrees {
         self.complete.get(&class)?.get(&(skill_id, skill_level))
     }
 
+    /// Java `getPledgeSkillTree().values()`: the clan skills (and the castle and fortress ones),
+    /// in the order of Java's `ConcurrentHashMap` (`getAvailablePledgeSkills` follows it, so the
+    /// list the clan trainer shows).
+    pub fn pledge_skills(&self) -> &[SkillLearn] {
+        &self.pledge
+    }
+
+    /// Java `getSubPledgeSkillTree().values()`: the squad skills, in Java's map order.
+    pub fn sub_pledge_skills(&self) -> &[SkillLearn] {
+        &self.sub_pledge
+    }
+
+    /// Java `getPledgeSkill(id, level)`.
+    pub fn pledge_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.pledge
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
+    }
+
+    /// Java `getSubPledgeSkill(id, level)`.
+    pub fn sub_pledge_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.sub_pledge
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
+    }
+
+    /// Java `isClanSkill(id, level)`: the line is in the clan or the squad tree.
+    pub fn is_clan_skill(&self, skill_id: i32, skill_level: i32) -> bool {
+        self.pledge_skill(skill_id, skill_level).is_some()
+            || self.sub_pledge_skill(skill_id, skill_level).is_some()
+    }
+
     /// Number of classes that have a complete tree.
     pub fn len(&self) -> usize {
         self.complete.len()
@@ -219,6 +335,69 @@ fn java_hash_map_order(keys: &[(i32, i32)]) -> Vec<(i32, i32)> {
         .collect();
     indexed.sort_unstable();
     indexed.into_iter().map(|(_, _, key)| key).collect()
+}
+
+/// The order Java's `ConcurrentHashMap<Integer, _>` iterates keys that were put in the order
+/// `keys` (all different) with `SkillData.getSkillHashCode` (`id * 1021 + level`) as the key.
+///
+/// The table starts with 16 bins and doubles when a put brings the count to 3/4 of the table
+/// (`sizeCtl`). A bin keeps its entries in put order, but a resize splits it the way
+/// `ConcurrentHashMap.transfer` does: the entries after the last change of side keep their order,
+/// the ones before are put in front one by one, which reverses them.
+// NOTE: a bin of 8 or more entries in a table below 64 bins makes Java grow the table at once
+// (`treeifyBin`); the shipped clan trees do not have such a bin.
+fn java_concurrent_map_order(keys: &[(i32, i32)]) -> Vec<(i32, i32)> {
+    type Entry = ((i32, i32), u32);
+    let spread = |&(skill_id, skill_level): &(i32, i32)| {
+        let h = skill_id.wrapping_mul(1021).wrapping_add(skill_level) as u32;
+        // `ConcurrentHashMap.spread`: `(h ^ (h >>> 16)) & HASH_BITS`.
+        (h ^ (h >> 16)) & 0x7fff_ffff
+    };
+    let mut table: Vec<Vec<Entry>> = vec![Vec::new(); 16];
+    let mut size_ctl = 12;
+    for (count, key) in keys.iter().enumerate() {
+        let hash = spread(key);
+        let bin = (hash as usize) & (table.len() - 1);
+        table[bin].push((*key, hash));
+        if count + 1 < size_ctl {
+            continue;
+        }
+        // `transfer` into a table twice as big.
+        let n = table.len();
+        let high = |hash: u32| (hash as usize) & n != 0;
+        let mut grown: Vec<Vec<Entry>> = vec![Vec::new(); n * 2];
+        for (i, entries) in table.iter().enumerate() {
+            let Some(first) = entries.first() else {
+                continue;
+            };
+            let mut run_bit = high(first.1);
+            let mut last_run = 0;
+            for (j, entry) in entries.iter().enumerate().skip(1) {
+                if high(entry.1) != run_bit {
+                    run_bit = high(entry.1);
+                    last_run = j;
+                }
+            }
+            let run = entries[last_run..].to_vec();
+            let (mut low_list, mut high_list) = if run_bit {
+                (Vec::new(), run)
+            } else {
+                (run, Vec::new())
+            };
+            for entry in &entries[..last_run] {
+                if high(entry.1) {
+                    high_list.insert(0, *entry);
+                } else {
+                    low_list.insert(0, *entry);
+                }
+            }
+            grown[i] = low_list;
+            grown[i + n] = high_list;
+        }
+        table = grown;
+        size_ctl = table.len() - table.len() / 4;
+    }
+    table.into_iter().flatten().map(|(key, _)| key).collect()
 }
 
 /// The class and its ancestors, root first. Java `getCompleteClassSkillTree` walks the same chain.
@@ -261,6 +440,12 @@ struct Gathered {
     /// The keys of each `own` tree in the order they were first added (the `HashMap`'s
     /// insertion order, which decides the order inside one bucket).
     own_order: BTreeMap<ClassId, Vec<(i32, i32)>>,
+    /// Java `_pledgeSkillTree` and the keys in the order they were first put.
+    pledge: BTreeMap<(i32, i32), SkillLearn>,
+    pledge_order: Vec<(i32, i32)>,
+    /// Java `_subPledgeSkillTree` and the keys in the order they were first put.
+    sub_pledge: BTreeMap<(i32, i32), SkillLearn>,
+    sub_pledge_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -277,7 +462,23 @@ impl Gathered {
                     }
                 }
             }
-            // Only class trees are kept. Other trees (transfer, pledge, fishing, ...) are not M2 data.
+            // The clan trees are kept for the clan trainers (M6-CLAN-03).
+            if tree.kind == "pledgeSkillTree" || tree.kind == "subPledgeSkillTree" {
+                let (map, order) = if tree.kind == "pledgeSkillTree" {
+                    (&mut self.pledge, &mut self.pledge_order)
+                } else {
+                    (&mut self.sub_pledge, &mut self.sub_pledge_order)
+                };
+                for skill in tree.skills {
+                    let learn = skill.into_learn();
+                    let key = (learn.skill_id, learn.skill_level);
+                    if map.insert(key, learn).is_none() {
+                        order.push(key);
+                    }
+                }
+                continue;
+            }
+            // Only class and clan trees are kept. Other trees (transfer, fishing, ...) are not M2 data.
             if tree.kind != "classSkillTree" {
                 continue;
             }
@@ -356,6 +557,12 @@ struct RawSkill {
     pre_req_skills: Vec<RawPreReq>,
     #[serde(rename = "race", default)]
     races: Vec<String>,
+    #[serde(rename = "@residenceSkill", default)]
+    residence_skill: bool,
+    #[serde(rename = "residenceId", default)]
+    residence_ids: Vec<i32>,
+    #[serde(rename = "socialClass", default)]
+    social_classes: Vec<String>,
 }
 
 #[derive(Deserialize)]
@@ -420,6 +627,19 @@ impl RawSkill {
                     race
                 })
                 .collect(),
+            // `setSocialClass` keeps the first one that is set.
+            social_class: self.social_classes.iter().find_map(|name| {
+                let class = SocialClass::from_name(name);
+                if class.is_none() {
+                    warn!(
+                        "SkillTreeData: unknown social class {name:?} on skill {} skipped.",
+                        self.skill_id
+                    );
+                }
+                class
+            }),
+            residence_skill: self.residence_skill,
+            residence_ids: self.residence_ids,
         }
     }
 }
@@ -658,6 +878,106 @@ mod tests {
             vec![(100, 1), (194, 1), (205, 1), (239, 1), (300, 1)]
         );
         assert!(trees.complete_class_tree_java_order(ClassId(2)).is_empty());
+    }
+
+    #[test]
+    fn concurrent_map_order_matches_java() {
+        // 30 keys put in this order into a `ConcurrentHashMap<Integer, _>` on a JDK 25
+        // (`id * 1021 + level` as the key) list as below: three resizes, with bins that hold
+        // several keys when they split.
+        let keys: Vec<(i32, i32)> = (100..130).map(|id| (id, 1 + id % 3)).collect();
+        let java = [
+            (128, 3),
+            (107, 3),
+            (127, 2),
+            (106, 2),
+            (126, 1),
+            (105, 1),
+            (104, 3),
+            (103, 2),
+            (125, 3),
+            (102, 1),
+            (124, 2),
+            (123, 1),
+            (122, 3),
+            (101, 3),
+            (121, 2),
+            (100, 2),
+            (120, 1),
+            (119, 3),
+            (118, 2),
+            (117, 1),
+            (116, 3),
+            (115, 2),
+            (114, 1),
+            (113, 3),
+            (112, 2),
+            (111, 1),
+            (110, 3),
+            (109, 2),
+            (108, 1),
+            (129, 1),
+        ];
+        assert_eq!(java_concurrent_map_order(&keys), java);
+    }
+
+    #[test]
+    fn clan_trees_keep_social_class_residence_and_items() {
+        let xml = r#"<list>
+			<skillTree type="pledgeSkillTree">
+				<skill skillName="Clan Body" skillId="370" skillLevel="1" getLevel="5" levelUpSp="1500">
+					<socialClass>APPRENTICE</socialClass>
+					<item id="9816" count="10" />
+				</skill>
+				<skill skillName="Residence Body" skillId="590" skillLevel="1" getLevel="4" residenceSkill="true">
+					<socialClass>APPRENTICE</socialClass>
+					<residenceId>1</residenceId>
+					<residenceId>8</residenceId>
+				</skill>
+			</skillTree>
+			<skillTree type="subPledgeSkillTree">
+				<skill skillName="Fire Squad" skillId="611" skillLevel="1" getLevel="8" levelUpSp="12000">
+					<socialClass>KNIGHT</socialClass>
+					<socialClass>EMPEROR</socialClass>
+					<item id="9910" count="8" />
+				</skill>
+			</skillTree>
+		</list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        // The class part is untouched.
+        assert!(trees.is_empty());
+        assert_eq!(trees.pledge_skills().len(), 2);
+        let body = trees.pledge_skill(370, 1).unwrap();
+        assert_eq!((body.get_level, body.level_up_sp), (5, 1500));
+        assert_eq!(body.social_class, Some(SocialClass::Apprentice));
+        assert_eq!(body.social_class.unwrap().ordinal(), 2);
+        assert!(!body.residence_skill);
+        assert_eq!(
+            body.required_items,
+            vec![SkillLearnItem {
+                item_id: 9816,
+                count: 10
+            }]
+        );
+        let residence = trees.pledge_skill(590, 1).unwrap();
+        assert!(residence.residence_skill);
+        assert_eq!(residence.residence_ids, vec![1, 8]);
+        // `setSocialClass` keeps the first one.
+        let squad = trees.sub_pledge_skill(611, 1).unwrap();
+        assert_eq!(squad.social_class, Some(SocialClass::Knight));
+        assert!(trees.pledge_skill(611, 1).is_none());
+        assert!(trees.is_clan_skill(370, 1) && trees.is_clan_skill(611, 1));
+        assert!(!trees.is_clan_skill(370, 2));
+    }
+
+    #[test]
+    fn social_class_ordinals_are_javas() {
+        assert_eq!(SocialClass::Vagabond.ordinal(), 0);
+        assert_eq!(SocialClass::Knight.ordinal(), 4);
+        assert_eq!(SocialClass::Baron.ordinal(), 6);
+        assert_eq!(SocialClass::Emperor.ordinal(), 13);
+        assert_eq!(SocialClass::from_name("GRAND_DUKE"), Some(SocialClass::GrandDuke));
+        assert_eq!(SocialClass::from_name("NOPE"), None);
     }
 
     #[test]

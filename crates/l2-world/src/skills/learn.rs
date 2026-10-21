@@ -20,11 +20,12 @@
 // new `SkillList` and shows the list again.
 //
 // # What is left out, with the system that brings it
-// - Only the class tree (`AcquireSkillType.CLASS`) is learned here. The fishing, collect, transform,
-//   transfer, sub-class, pledge and sub-pledge trees are not loaded (the card names them out of
-//   scope), so those requests find no `SkillLearn` and are ignored, which is what Java does for a
-//   skill that is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are
-//   therefore silent too.
+// - Only the class tree (`AcquireSkillType.CLASS`) is learned here, and the clan trees at the clan
+//   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03). The fishing, collect,
+//   transform, transfer and sub-class trees are not loaded (the card names them out of scope), so
+//   those requests find no `SkillLearn` and are ignored, which is what Java does for a skill that
+//   is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are therefore
+//   silent too.
 // - `isMounted()` (M6: the mounts).
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
@@ -633,10 +634,16 @@ impl World {
             );
             return;
         }
+        // The clan trainer's lists (M6-CLAN-03).
+        if matches!(skill_type, AcquireSkillType::Pledge | AcquireSkillType::Subpledge) {
+            self.on_pledge_acquire_skill_info(player, skill_id, level, skill_type);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
-        // Only the class tree is loaded: `getSkillLearn` finds nothing for the other types.
+        // Only the class and clan trees are loaded: `getSkillLearn` finds nothing for the other
+        // types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkillInfo of {skill_type:?} is not ported");
             return;
@@ -689,6 +696,7 @@ impl World {
         skill_id: i32,
         level: i32,
         skill_type: AcquireSkillType,
+        sub_type: i32,
     ) {
         if !self.players.contains_key(&player) {
             return;
@@ -750,7 +758,20 @@ impl World {
             }
         }
 
-        // Only the class tree is loaded: `getSkillLearn` finds nothing for the other types.
+        // The clan skills are bought with clan reputation (M6-CLAN-03).
+        match skill_type {
+            AcquireSkillType::Pledge => {
+                self.on_acquire_pledge_skill(player, skill_id, level);
+                return;
+            }
+            AcquireSkillType::Subpledge => {
+                self.on_acquire_sub_pledge_skill(player, skill_id, level, sub_type);
+                return;
+            }
+            _ => {}
+        }
+        // Only the class and clan trees are loaded: `getSkillLearn` finds nothing for the other
+        // types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkill of {skill_type:?} is not ported");
             return;

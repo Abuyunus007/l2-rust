@@ -361,7 +361,7 @@ impl World {
         let member = self.member_of_player(player)?;
         clan.leader = Some(member.object_id);
         clan.put_member(member);
-        // M6-CLAN-03: `setPlayer` -> `clan.addSkillEffects(player)` (a new clan has no skills).
+        // `setPlayer` -> `clan.addSkillEffects(player)`: a new clan has no skills.
         let row = ClanRow {
             clan_id,
             name: clan.name.clone(),

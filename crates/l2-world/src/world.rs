@@ -522,8 +522,8 @@ impl World {
                 id: skill_id,
                 level,
                 skill_type,
-                ..
-            } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
+                sub_type,
+            } => self.on_request_acquire_skill(id, skill_id, level, skill_type, sub_type),
             // Java: RequestMagicSkillUse
             ClientInput::MagicSkillUse {
                 magic_id,
