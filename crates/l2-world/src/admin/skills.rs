@@ -22,10 +22,15 @@
 // effect list.
 //
 // # Left out, with the system that brings it
-// - `//add_clan_skill` and `//give_clan_skills`: clans are M6.
-// - `//give_all_skills_fs`, `//setskill`, `//get_skills`, `//reset_skills`, `//buff`,
-//   `//removereuse` and `//switch_gm_buffs` are not in this card (the buttons of the main page
-//   that call them answer "The command '...' does not exist!").
+// - `//add_clan_skill`, `//give_clan_skills` and `//give_all_clan_skills`: the pledge skill tree
+//   comes with M6-CLAN-03, so these words are not registered yet.
+// - `//switch_gm_buffs`: the GM skill trees (`SkillTreeData.getGMSkillTree`) are not loaded, so
+//   the word is not registered yet.
+// - `//removereuse` sends `SkillCoolTime` in Java. That server packet is not in the protocol crate
+//   yet (M6 packet card): the reuse timers are cleared, the client keeps its cool-down icons until
+//   the next login.
+// - The `//get_skills` / `//reset_skills` stash is Java's static `adminSkills`: one per server,
+//   kept in `AdminWorld::skill_stash`.
 // - The `gmaudit` line of each command is written by the framework (`admin/mod.rs`); the extra
 //   lines of `showBuffs`, `//stopbuff`, `//stopallbuffs` and `//viewblockedeffects` are here.
 // - Shortcuts of a removed skill (`deleteShortcut`) go with `World::delete_skill_shortcuts`.
@@ -38,6 +43,7 @@ use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
+use super::commands::java_split_space;
 use super::html::{AdminHtml, build_page};
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
 use crate::effects::{BuffInfo, SkillFinishType, SkillKey};
@@ -73,6 +79,12 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_viewskilleffects", admin_viewskilleffects),
         ("admin_viewskilleffects_ps", admin_viewskilleffects),
         ("admin_areacancel", admin_areacancel),
+        ("admin_get_skills", admin_get_skills),
+        ("admin_reset_skills", admin_reset_skills),
+        ("admin_give_all_skills_fs", admin_give_all_skills_fs),
+        ("admin_setskill", admin_setskill),
+        ("admin_removereuse", admin_removereuse),
+        ("admin_buff", admin_buff),
     ];
     for (command, handler) in table {
         handlers.register(command, *handler);
@@ -1151,6 +1163,198 @@ fn admin_areacancel(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         ),
     );
     Ok(())
+}
+
+// ---------------------------------------------------------- the GM's skill swap and buffs
+
+/// `learn` for each `(id, level)`: Java `addSkill(skill, true)`, the rows in one command.
+fn learn_all(world: &mut World, player: ObjectId, skills: &[(i32, i32)]) {
+    let mut writes = SkillWrites::default();
+    for &(skill_id, level) in skills {
+        world.learn_skill(player, skill_id, level, &mut writes);
+    }
+    world.flush_skill_writes(player, writes);
+}
+
+/// Java `AdminSkill.onCommand`, `admin_get_skills`: the GM takes the target's skills. The GM's own
+/// skills are kept for `//reset_skills`; the target keeps its skills.
+fn admin_get_skills(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    let Some(player) = target_player(world, gm) else {
+        return Ok(());
+    };
+    if world.object_name(player) == world.object_name(gm) {
+        world.send(
+            player,
+            &SystemMessage::new(SystemMessageId::YouCannotUseThisOnYourself),
+        );
+    } else {
+        let theirs = all_skills(world, player);
+        let own = all_skills(world, gm);
+        let own_ids: Vec<i32> = own.iter().map(|(id, _)| *id).collect();
+        // Java overwrites `adminSkills` each time, even when a reset has not run yet.
+        world.admin.skill_stash = Some(own);
+        forget_skills(world, gm, &own_ids);
+        learn_all(world, gm, &theirs);
+        let name = world.object_name(player).unwrap_or_default();
+        world.send_sys_message(gm, &format!("You now have all the skills of {name}."));
+        world.send_skill_list(gm);
+    }
+    show_main_page(world, gm)
+}
+
+/// Java `AdminSkill.onCommand`, `admin_reset_skills`: the target's skills become the GM's, and the
+/// GM gets his own skills back from the stash of `//get_skills`.
+fn admin_reset_skills(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    let Some(player) = target_player(world, gm) else {
+        return Ok(());
+    };
+    let Some(stash) = world.admin.skill_stash.take() else {
+        world.send_sys_message(gm, "You must get the skills of someone in order to do this.");
+        return show_main_page(world, gm);
+    };
+    let their_ids: Vec<i32> = all_skills(world, player).iter().map(|(id, _)| *id).collect();
+    forget_skills(world, player, &their_ids);
+    learn_all(world, player, &all_skills(world, gm));
+    forget_skills(world, gm, &their_ids);
+    learn_all(world, gm, &stash);
+
+    let gm_name = world.object_name(gm).unwrap_or_default();
+    world.send_message(player, &format!("[GM]{gm_name} updated your skills."));
+    world.send_sys_message(gm, "You now have all your skills back.");
+    world.send_skill_list(gm);
+    world.send_skill_list(player);
+    show_main_page(world, gm)
+}
+
+/// Java `AdminSkill.onCommand`, `admin_give_all_skills_fs`: `giveAvailableSkills(true, true, true)`
+/// on the target, the Forgotten Scroll skills included.
+fn admin_give_all_skills_fs(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    let Some(player) = target_player(world, gm) else {
+        return Ok(());
+    };
+    let mut writes = SkillWrites::default();
+    let count = world.give_available_skills(player, true, true, true, &mut writes);
+    world.flush_skill_writes(player, writes);
+    let player_name = world.object_name(player).unwrap_or_default();
+    world.send_sys_message(gm, &format!("You gave {count} skills to {player_name}"));
+    world.send_skill_list(player);
+    Ok(())
+}
+
+/// The word at `index` of Java's `command.split(" ")`; a missing one is Java's
+/// `ArrayIndexOutOfBoundsException`, reported by the dispatcher.
+fn split_word<'a>(words: &[&'a str], index: usize) -> Result<&'a str, JavaException> {
+    words.get(index).copied().ok_or_else(|| {
+        JavaException(format!(
+            "java.lang.ArrayIndexOutOfBoundsException: Index {index} out of bounds for length {}",
+            words.len()
+        ))
+    })
+}
+
+/// Java `AdminSkill.onCommand`, `admin_setskill <id> <level>`: the GM himself learns the skill
+/// (`addSkill(skill)`, not stored), then his skill list. An unknown skill is Java's
+/// `NullPointerException` (`addSkill(null)`).
+fn admin_setskill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let words = java_split_space(command);
+    let id = parse_int(split_word(&words, 1)?)?;
+    let level = parse_int(split_word(&words, 2)?)?;
+    let Some((skill_id, skill_level, name)) =
+        skill_template(world, id, level).map(|t| (t.id, t.level, t.name.clone()))
+    else {
+        return Err(JavaException("java.lang.NullPointerException".to_owned()));
+    };
+    world.add_skill(gm, skill_id, skill_level);
+    world.send_skill_list(gm);
+    world.send_sys_message(
+        gm,
+        &format!("You added yourself skill {name}({id}) level {level}"),
+    );
+    Ok(())
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_removereuse [name]`: the reuse timers and the disabled
+/// skills of the named player (online) or the target are cleared.
+// M6: Java sends `SkillCoolTime(player)` here; the packet is not in the protocol crate yet.
+fn admin_removereuse(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let mut st = Tokens::spaces(command);
+    st.next_token(); // the command word
+    let player = match st.next_token() {
+        Some(name) => match world.player_by_name(name) {
+            Some(player) => player,
+            None => {
+                world.send_sys_message(gm, &format!("The player {name} is not online."));
+                return Ok(());
+            }
+        },
+        None => match world.target_of(gm).filter(|t| world.is_player(*t)) {
+            Some(player) => player,
+            None => {
+                world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
+                return Ok(());
+            }
+        },
+    };
+    world.reset_time_stamps(player);
+    world.reset_disabled_skills(player);
+    let name = world.object_name(player).unwrap_or_default();
+    world.send_sys_message(gm, &format!("Skill reuse was removed from {name}."));
+    Ok(())
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_buff <skillId> [skillLevel]`: the skill's effects land on
+/// the target creature from the GM. Without a level the skill's highest level is used.
+fn admin_buff(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let Some(target) = target_creature(world, gm) else {
+        world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
+        return Ok(());
+    };
+    let mut st = Tokens::spaces(command);
+    st.next_token(); // the command word
+    if !st.has_more() {
+        world.send_sys_message(gm, "Skill Id and level are not specified.");
+        world.send_sys_message(gm, "Usage: //buff <skillId> <skillLevel>");
+        return Ok(());
+    }
+    let skill_id = match int_arg(&mut st) {
+        Ok(skill_id) => skill_id,
+        Err(message) => return buff_failed(world, gm, &message),
+    };
+    let level = if st.has_more() {
+        match int_arg(&mut st) {
+            Ok(level) => level,
+            Err(message) => return buff_failed(world, gm, &message),
+        }
+    } else {
+        max_skill_level(world, skill_id)
+    };
+    let Some((template_id, template_level, name)) =
+        skill_template(world, skill_id, level).map(|t| (t.id, t.level, t.name.clone()))
+    else {
+        world.send_sys_message(
+            gm,
+            &format!("Skill with id: {skill_id}, level: {level} not found."),
+        );
+        return Ok(());
+    };
+    world.send_sys_message(gm, &format!("Admin buffing {name} ({skill_id},{level})"));
+    world.apply_effects(gm, target, SkillKey::new(template_id, template_level));
+    Ok(())
+}
+
+/// Java `catch (Exception e)` of `admin_buff`: the message, then the usage line.
+fn buff_failed(world: &mut World, gm: ObjectId, message: &str) -> Outcome {
+    world.send_sys_message(gm, &format!("Failed buffing: {message}"));
+    world.send_sys_message(gm, "Usage: //buff <skillId> <skillLevel>");
+    Ok(())
+}
+
+/// Java `SkillData.getMaxLevel(skillId)`: 0 for an unknown skill.
+fn max_skill_level(world: &World, skill_id: i32) -> i32 {
+    world
+        .data
+        .stat_data()
+        .map_or(0, |data| data.skills.max_level(skill_id))
 }
 
 #[cfg(test)]
