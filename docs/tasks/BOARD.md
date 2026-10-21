@@ -291,7 +291,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | merged |
 | [M6-CLAN-01](M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | merged |
 | [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | in-progress |
-| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills and academy | sonnet | full | CLAN-01 | in-progress |
+| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills and academy | sonnet | full | CLAN-01 | merged |
 | [M6-SUMMON-01](M6/M6-SUMMON-01.md) | Summons: servitors | opus | full | GPROTO-09 | merged |
 | [M6-PET-01](M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | in-progress |
 | [M6-CUBIC-01](M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | in-progress |
