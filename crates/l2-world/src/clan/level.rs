@@ -265,7 +265,7 @@ impl World {
                     SystemMessageId::SinceTheClanReputationScoreHasDroppedTo0OrLowerYourClanSkillSWillBeDeActivated,
                 ),
             );
-            // M6-CLAN-03: `skillsStatus(member, true)` for every online member.
+            self.clan_skills_status_for_members(clan_id, true);
         } else if old < 0 && value >= 0 {
             self.broadcast_to_clan(
                 clan_id,
@@ -273,7 +273,7 @@ impl World {
                     SystemMessageId::ClanSkillsWillNowBeActivatedSinceTheClanSReputationScoreIs0OrHigher,
                 ),
             );
-            // M6-CLAN-03: `skillsStatus(member, false)` for every online member.
+            self.clan_skills_status_for_members(clan_id, false);
         }
         if let Some(clan) = self.clan_mut(clan_id) {
             clan.reputation_score = value.clamp(-MAX_REPUTATION, MAX_REPUTATION);

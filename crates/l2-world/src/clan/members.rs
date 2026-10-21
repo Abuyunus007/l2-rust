@@ -215,8 +215,12 @@ impl World {
                 clan.leader = Some(id);
             }
         }
-        // M6-CLAN-03: `setPlayer` -> `_clan.addSkillEffects(player)`; M7: siege skills of a
-        // leader of a clan above level 3.
+        // `setPlayer` -> `_clan.addSkillEffects(player)`; M7: siege skills of a leader of a clan
+        // above level 3. The `SkillList` of the end of `EnterWorld` is sent from the player's
+        // saved skills only, so the client gets the skills that joined with a second one.
+        if self.clan_add_skill_effects(clan_id, id) {
+            self.send_skill_list(id);
+        }
         let name = self
             .players
             .get(&id)
@@ -356,7 +360,9 @@ impl World {
             return;
         };
         clan.put_member(member);
-        // M6-CLAN-03: `member.setPlayer(player)` -> `_clan.addSkillEffects(player)`.
+        // `member.setPlayer(player)` -> `_clan.addSkillEffects(player)`: the player is not in the
+        // clan yet (its pledge class is the old one).
+        self.clan_add_skill_effects(clan_id, player);
         // `player.setClan(this)`
         if let Some(s) = self.player_clan_state_mut(player) {
             s.clan_id = clan_id;
@@ -370,7 +376,7 @@ impl World {
             let skills = self.pledge_skill_list(clan);
             self.send(player, &skills);
         }
-        // M6-CLAN-03: `addSkillEffects(player)`.
+        self.clan_add_skill_effects(clan_id, player);
     }
 
     /// Java `Clan.removeClanMember(objectId, clanJoinExpiryTime)`. `write_db` false leaves the
@@ -441,7 +447,8 @@ impl World {
                     s.clan_create_expiry_time = unix_ms_now().saturating_add(days_ms(create_days));
                 }
             }
-            // M6-CLAN-03: `removeSkillEffects(player)`; M7: residential skills.
+            // Remove Clan skills from Player; M7: residential skills.
+            self.clan_remove_skill_effects(clan_id, object_id);
             self.send_skill_list(object_id);
             self.leave_clan_state(object_id);
             // NOTE(java-quirk): "Players leaving from clan academy have no penalty" reads

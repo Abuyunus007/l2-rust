@@ -7,7 +7,7 @@
 use l2_data::item::TYPE2_QUEST;
 use l2_data::item::types::{ArmorType, BodyPart, WeaponType};
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ActionFailed, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 
 use super::paperdoll::{body_part_of_paperdoll_slot, body_part_of_worn_item};
@@ -52,8 +52,14 @@ impl crate::world::World {
             );
             return;
         }
-        // M6-STORE-01: `isInStoreMode() && !isPetCollar` -> YOU_MAY_NOT_USE_ITEMS_IN_A_PRIVATE_STORE...
-        // + ActionFailed.
+        if self.is_in_store_mode(id) && !is_pet_collar {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouMayNotUseItemsInAPrivateStoreOrPrivateWorkShop),
+            );
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         if template.type2 == TYPE2_QUEST {
             self.send(id, &SystemMessage::new(SystemMessageId::YouCannotUseQuestItems));

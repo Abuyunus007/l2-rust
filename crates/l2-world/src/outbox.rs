@@ -106,6 +106,9 @@ pub enum PersistCommand {
     /// Java `PunishmentManager.changeCharAccessLevel`: `UPDATE characters SET accessLevel=? WHERE
     /// charId=?`.
     CharAccessLevel { char_id: i32, level: i32 },
+    /// The summon tables (`character_summons`, `character_summon_skills_save`), see
+    /// `summon/servitor.rs`. Applied in order with the character's other commands.
+    Summon(crate::summon::servitor::SummonWrite),
     /// A clan row write with Java's statement (`clan_data`, `clan_privs`, `clan_subpledges`,
     /// `clan_notices`, the clan columns of `characters`), see `clan/`. Applied in order with the
     /// other commands.

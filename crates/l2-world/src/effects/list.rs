@@ -806,6 +806,10 @@ impl World {
         if let Some(info) = info {
             self.remove_effect(owner, finish_type, info);
         }
+        // `Servitor.stopSkillEffects`: the buff is not kept for the servitor's next summon either.
+        if self.is_servitor(owner) {
+            self.servitor_forget_saved_skill(owner, skill_id);
+        }
     }
 
     /// Java `EffectList.stopSkillEffects(removeType, abnormalType)`: whether there was one.
@@ -1149,7 +1153,7 @@ impl World {
     /// The first half of Java's `updateEffectIcons()`: the sticky flags, then (for players) the
     /// icon task, one at a time.
     fn schedule_effect_icons(&mut self, owner: ObjectId) {
-        let is_playable = self.players.contains_key(&owner);
+        let is_playable = self.players.contains_key(&owner) || self.is_summon(owner);
         let due = self.ticks_from_now(ICON_UPDATE_MS);
         let Some(list) = self.effects.lists.get_mut(&owner) else {
             return;
@@ -1171,6 +1175,14 @@ impl World {
             return;
         };
         list.icon_task = None;
+        // A summon's icons go to its owner as `PartySpelled` (`summon/info.rs`).
+        if self.is_summon(owner) {
+            self.send_summon_party_spelled(owner);
+            return;
+        }
+        let Some(list) = self.effects.lists.get_mut(&owner) else {
+            return;
+        };
         let send_asu = if list.party_only {
             list.party_only = false;
             false
@@ -1192,8 +1204,8 @@ impl World {
             let icons = self.effect_icons(owner);
             self.send_abnormal_status_update(owner, &icons);
         }
-        // `_owner.isInParty()`: the whole party sees the icons in the party window. A summon's
-        // `PartySpelled` is SUMMON-01.
+        // `_owner.isInParty()`: the whole party sees the icons in the party window (a summon's
+        // `PartySpelled` is `summon/party.rs`).
         if let Some(party) = self.party_of(owner) {
             let spelled = self.party_spelled(owner);
             self.broadcast_party(party, &spelled);
@@ -1316,6 +1328,11 @@ impl World {
     /// Java `Player.updateAndBroadcastStatus()`: 50 ms later the weight and grade penalties are
     /// checked and the player's info goes out (one pending task at a time).
     pub(crate) fn update_and_broadcast_status(&mut self, id: ObjectId) {
+        // `Summon.stopAllEffects()` & co. end with `updateAndBroadcastStatus(1)`, at once.
+        if self.is_summon(id) {
+            self.update_and_broadcast_summon_status(id, 1);
+            return;
+        }
         if !self.players.contains_key(&id) || self.effects.status_tasks.contains_key(&id) {
             return;
         }

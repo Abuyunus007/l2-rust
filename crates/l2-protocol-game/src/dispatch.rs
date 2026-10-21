@@ -33,6 +33,7 @@ use crate::client::{
 use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
+use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
 };
@@ -166,6 +167,9 @@ pub enum ClientPacket {
     RequestGiveItemToPet(RequestGiveItemToPet),
     RequestPetUseItem(RequestPetUseItem),
     RequestChangePetName(RequestChangePetName),
+    RequestDuelStart(RequestDuelStart),
+    RequestDuelAnswerStart(RequestDuelAnswerStart),
+    RequestDuelSurrender(RequestDuelSurrender),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -422,6 +426,13 @@ fn decode_ex_client(
         }
         RequestExSetPledgeCrestLarge::EX_OPCODE => {
             ClientPacket::RequestExSetPledgeCrestLarge(RequestExSetPledgeCrestLarge::decode(reader)?)
+        }
+        RequestDuelStart::EX_OPCODE => ClientPacket::RequestDuelStart(RequestDuelStart::decode(reader)?),
+        RequestDuelAnswerStart::EX_OPCODE => {
+            ClientPacket::RequestDuelAnswerStart(RequestDuelAnswerStart::decode(reader)?)
+        }
+        RequestDuelSurrender::EX_OPCODE => {
+            ClientPacket::RequestDuelSurrender(RequestDuelSurrender::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

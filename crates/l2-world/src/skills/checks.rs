@@ -173,9 +173,9 @@ impl World {
             .map(|_| target)
     }
 
-    /// `isPlayable()`: players (summons are M6).
+    /// `isPlayable()`: players and summons.
     pub(crate) fn is_playable(&self, id: ObjectId) -> bool {
-        self.is_player(id)
+        self.is_player(id) || self.is_summon(id)
     }
 
     /// `GeoEngine.canSeeTarget(creature, worldPosition)`: doors, fences and the geodata between
@@ -397,8 +397,8 @@ impl World {
             | TargetType::AuraCorpseMob
             | TargetType::CommandChannel
             | TargetType::AuraFriendly => Some(id),
-            // `_summon`: no summons (M6).
-            TargetType::Pet | TargetType::Servitor | TargetType::Summon => None,
+            // `_summon`: the player's summon.
+            TargetType::Pet | TargetType::Servitor | TargetType::Summon => self.summon_of(id),
             _ => self.target_of(id),
         };
 
@@ -420,7 +420,13 @@ impl World {
             }
         }
 
-        // Duels: M6.
+        // Are the target and the player in the same duel?
+        if self.is_in_duel(id) && self.is_player(target) && self.duel_id_of(target) != self.duel_id_of(id) {
+            self.send_message(id, "You cannot do this while duelling.");
+            self.send(id, &ActionFailed);
+            return false;
+        }
+        // M6-SUMMON: the same for a summon target (`target.isPlayable()`, `asPlayer()`).
 
         // ---- Check skill availability
         // Check if this skill is enabled (ex : reuse time).

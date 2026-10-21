@@ -367,6 +367,21 @@ impl World {
         };
         self.spawn_at(id, x, y, z);
         self.set_teleporting(id, false);
+        // `Summon.onTeleported()`: the owner is told where it is.
+        if self.is_summon(id) {
+            let heading = self.heading_of(id);
+            self.send(
+                id,
+                &TeleportToLocation {
+                    object_id: id.0,
+                    x,
+                    y,
+                    z,
+                    heading,
+                },
+            );
+            return;
+        }
         if self.npcs.contains_key(&id) {
             // Monster.onTeleported: the minions follow their master.
             self.on_master_teleported(id);
@@ -380,8 +395,10 @@ impl World {
         }
         // "Force a revalidation"
         self.revalidate_zone(id, true);
-        // FOLLOW-UP(M4): `checkItemRestriction()`, teleport protection, pet, tamed beasts, movie,
-        // auto play.
+        // FOLLOW-UP(M4): `checkItemRestriction()`, teleport protection, tamed beasts, movie, auto
+        // play.
+        // "Modify the position of the pet if necessary."
+        self.summon_follow_owner_teleport(id);
         // "Send info to nearby players."
         self.broadcast_info(id);
     }

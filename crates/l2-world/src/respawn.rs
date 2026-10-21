@@ -269,6 +269,9 @@ impl World {
         self.death.decay_due.remove(&id);
         if self.players.contains_key(&id) {
             self.on_player_decay(id);
+        } else if self.is_summon(id) {
+            // `Summon.onDecay()`.
+            self.summon_on_decay(id);
         } else {
             self.on_npc_decay(id);
         }

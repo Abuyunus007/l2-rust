@@ -21,6 +21,7 @@ pub mod data;
 pub mod death;
 pub mod dialog;
 pub mod door;
+pub mod duel;
 pub mod effects;
 pub mod enter;
 pub mod formulas;
@@ -48,6 +49,7 @@ pub mod skills;
 pub mod snapshot;
 pub mod stats;
 pub mod status;
+pub mod summon;
 pub mod target;
 pub mod teleport;
 pub mod teleporter;
@@ -114,9 +116,13 @@ pub use stats::{
     StatView,
 };
 pub use status::RegenSettings;
+pub use summon::servitor::{SavedSummonEffect, SummonSkillSave, SummonWrite};
+pub use summon::{Summon, SummonKind, SummonSettings};
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
-pub use trade::{AddItemRules, TradeItem, TradeList, TradeState};
+pub use trade::{
+    AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
+};
 pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

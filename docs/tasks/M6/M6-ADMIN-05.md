@@ -39,4 +39,6 @@ The admin handlers for parties, clans, karma/pk, summons and pets as Java regist
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Merged modules: `party/`, `clan/` (`World::destroy_clan(id, true)` for `//pledge`), `pvp.rs` (`set_karma`, pk/pvp counts), `summon/`, `transform/` (`//transform`, `//untransform`, `//ride` if mounts exist, else leave a marker), `duel.rs`. Follow the admin handler pattern of `crates/l2-world/src/admin/` (M5-FU-01 added `admin/html.rs` for pages).
+- Up to seven M6 workers run at the same time. In shared files (`skills/targets.rs`, `enter.rs`, `player_view.rs`, `leave.rs`, `death.rs`, `world.rs`, `dispatch.rs`, `client/enter.rs`) only add your lines: no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.

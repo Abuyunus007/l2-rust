@@ -1,4 +1,4 @@
-//! The clan tables: `clan_data`, `clan_privs`, `clan_subpledges`, `clan_skills` (read only here),
+//! The clan tables: `clan_data`, `clan_privs`, `clan_subpledges`, `clan_skills`,
 //! `clan_notices`, `clan_wars` (read only here) and the clan columns of `characters`.
 // Java: org/l2jmobius/gameserver/entity/clan/Clan.java (restore*, store, updateClanInDB,
 //       removeMemberInDatabase, createSubPledge, updateSubPledgeInDB, setRankPrivs, storeNotice,
@@ -30,6 +30,10 @@ const SELECT_SUB_PLEDGES: &str = "SELECT sub_pledge_id,name,leader_id FROM clan_
 const SELECT_RANK_PRIVS: &str = "SELECT privs,`rank`,party FROM clan_privs WHERE clan_id=?";
 // Java: Clan.restoreSkills
 const SELECT_CLAN_SKILLS: &str = "SELECT skill_id,skill_level,sub_pledge_id FROM clan_skills WHERE clan_id=?";
+// Java: Clan.addNewSkill
+const UPDATE_CLAN_SKILL: &str = "UPDATE clan_skills SET skill_level=? WHERE skill_id=? AND clan_id=?";
+const INSERT_CLAN_SKILL: &str =
+    "INSERT INTO clan_skills (clan_id,skill_id,skill_level,skill_name,sub_pledge_id) VALUES (?,?,?,?,?)";
 // Java: Clan.restoreNotice
 const SELECT_CLAN_NOTICE: &str = "SELECT enabled,notice FROM clan_notices WHERE clan_id=?";
 // Java: ClanTable.restoreClanWars
@@ -43,6 +47,16 @@ const UPDATE_CLAN: &str = "UPDATE clan_data SET leader_id=?,ally_id=?,ally_name=
 const UPDATE_CLAN_LEVEL: &str = "UPDATE clan_data SET clan_level = ? WHERE clan_id = ?";
 // Java: Clan.changeAllyCrest(crestId, true)
 const UPDATE_ALLY_CREST_OF_CLAN: &str = "UPDATE clan_data SET ally_crest_id = ? WHERE clan_id = ?";
+// Java: Clan.changeClanCrest
+const UPDATE_CLAN_CREST: &str = "UPDATE clan_data SET crest_id = ? WHERE clan_id = ?";
+// Java: Clan.changeLargeCrest
+const UPDATE_CLAN_LARGE_CREST: &str = "UPDATE clan_data SET crest_large_id = ? WHERE clan_id = ?";
+// Java: Clan.changeAllyCrest(crestId, onlyThisClan = false)
+const UPDATE_ALLY_CREST_OF_ALLY: &str = "UPDATE clan_data SET ally_crest_id = ? WHERE ally_id = ?";
+// Java: ClanTable.storeClanWars, deleteClanWars
+const STORE_CLAN_WAR: &str =
+    "REPLACE INTO clan_wars (clan1, clan2, wantspeace1, wantspeace2) VALUES(?,?,?,?)";
+const DELETE_CLAN_WAR: &str = "DELETE FROM clan_wars WHERE (clan1=? AND clan2=?) OR (clan2=? AND clan1=?)";
 // Java: Clan.removeMemberInDatabase (three statements)
 const REMOVE_MEMBER: &str = "UPDATE characters SET clanid=0, title=?, clan_join_expiry_time=?, clan_create_expiry_time=?, clan_privs=0, wantspeace=0, subpledge=0, lvl_joined_academy=0, apprentice=0, sponsor=0 WHERE charId=?";
 const CLEAR_APPRENTICE_OF: &str = "UPDATE characters SET apprentice=0 WHERE apprentice=?";
@@ -357,6 +371,64 @@ impl ClanRepository {
         Ok(())
     }
 
+    // Java: Clan.changeClanCrest
+    pub async fn update_clan_crest(&self, clan_id: i32, crest_id: i32) -> Result<()> {
+        sqlx::query(UPDATE_CLAN_CREST)
+            .bind(crest_id)
+            .bind(clan_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    // Java: Clan.changeLargeCrest
+    pub async fn update_clan_large_crest(&self, clan_id: i32, crest_id: i32) -> Result<()> {
+        sqlx::query(UPDATE_CLAN_LARGE_CREST)
+            .bind(crest_id)
+            .bind(clan_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// Every clan of the alliance gets the crest (`ally_id` is the alliance's leading clan's id).
+    // Java: Clan.changeAllyCrest(crestId, onlyThisClan = false)
+    pub async fn update_ally_crest_of_ally(&self, ally_id: i32, crest_id: i32) -> Result<()> {
+        sqlx::query(UPDATE_ALLY_CREST_OF_ALLY)
+            .bind(crest_id)
+            .bind(ally_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// A war of `clan1` on `clan2`; nobody wants peace. The columns are `VARCHAR`, the ids go as
+    /// ints like Java's `setInt`.
+    // Java: ClanTable.storeClanWars
+    pub async fn store_clan_war(&self, clan1: i32, clan2: i32) -> Result<()> {
+        sqlx::query(STORE_CLAN_WAR)
+            .bind(clan1)
+            .bind(clan2)
+            .bind(0)
+            .bind(0)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// The war in both directions.
+    // Java: ClanTable.deleteClanWars
+    pub async fn delete_clan_war(&self, clan1: i32, clan2: i32) -> Result<()> {
+        sqlx::query(DELETE_CLAN_WAR)
+            .bind(clan1)
+            .bind(clan2)
+            .bind(clan1)
+            .bind(clan2)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     /// The member leaves the clan in the database, and nobody keeps it as apprentice or sponsor.
     // Java: Clan.removeMemberInDatabase
     pub async fn remove_member(
@@ -427,6 +499,40 @@ impl ClanRepository {
             .bind(apprentice)
             .bind(sponsor)
             .bind(char_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// A clan that already had the skill: only the level changes. Java's statement does not look at
+    /// `sub_pledge_id`, so a skill id that two squads of the clan share changes in all of them.
+    // Java: Clan.addNewSkill
+    pub async fn update_clan_skill(&self, clan_id: i32, skill_id: i32, skill_level: i32) -> Result<()> {
+        sqlx::query(UPDATE_CLAN_SKILL)
+            .bind(skill_level)
+            .bind(skill_id)
+            .bind(clan_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// `sub_pledge_id` is -2 for a clan skill, 0 for a skill of the main squad.
+    // Java: Clan.addNewSkill
+    pub async fn insert_clan_skill(
+        &self,
+        clan_id: i32,
+        skill_id: i32,
+        skill_level: i32,
+        skill_name: &str,
+        sub_pledge_id: i32,
+    ) -> Result<()> {
+        sqlx::query(INSERT_CLAN_SKILL)
+            .bind(clan_id)
+            .bind(skill_id)
+            .bind(skill_level)
+            .bind(skill_name)
+            .bind(sub_pledge_id)
             .execute(&self.pool)
             .await?;
         Ok(())
@@ -539,6 +645,11 @@ mod tests {
         assert_eq!(count(SELECT_SUB_PLEDGES), 1);
         assert_eq!(count(SELECT_RANK_PRIVS), 1);
         assert_eq!(count(SELECT_CLAN_SKILLS), 1);
+        assert_eq!(count(UPDATE_CLAN_CREST), 2);
+        assert_eq!(count(UPDATE_CLAN_LARGE_CREST), 2);
+        assert_eq!(count(UPDATE_ALLY_CREST_OF_ALLY), 2);
+        assert_eq!(count(STORE_CLAN_WAR), 4);
+        assert_eq!(count(DELETE_CLAN_WAR), 4);
         assert_eq!(count(SELECT_CLAN_NOTICE), 1);
         assert_eq!(count(SELECT_CLAN_WARS), 0);
         assert_eq!(count(INSERT_CLAN_DATA), 13);

@@ -722,8 +722,8 @@ impl World {
         let mut max_damage: i64 = 0;
         let mut rewards: Vec<(ObjectId, i64)> = Vec::new();
         for info in &aggro {
-            // Get the Creature corresponding to this attacker.
-            let Some(attacker) = self.players.get(&info.attacker).map(|p| p.core.object_id) else {
+            // Get the Creature corresponding to this attacker (`asPlayer()`: a summon's owner).
+            let Some(attacker) = self.acting_player(info.attacker) else {
                 continue;
             };
             // Get damages done by this attacker.
@@ -800,8 +800,21 @@ impl World {
     /// Java `Player.onDieDropItem(killer)`: a player with karma, or one killed by a monster, may
     /// drop items on the ground.
     pub(crate) fn player_on_die_drop_item(&mut self, dying: ObjectId, killer: ObjectId) {
-        // `isOnEvent()`: no events. A war between the clans of both (`isAtWarWith`): clans are M5.
+        // `isOnEvent()`: no events.
         let killer_is_player = self.players.contains_key(&killer);
+        // A player without karma killed by a player whose clan declared war on its clan drops
+        // nothing. NOTE(java-quirk): only this direction counts (the other one is commented out
+        // in Java).
+        let own_clan = self.clan_id_of(dying);
+        if killer_is_player
+            && self.players.get(&dying).is_some_and(|p| p.data.karma <= 0)
+            && self.clan(own_clan).is_some()
+            && self
+                .clan_of(killer)
+                .is_some_and(|pk_clan| pk_clan.is_at_war_with(own_clan))
+        {
+            return;
+        }
         let s = self.settings.drops.clone();
         let inside_pvp = self.is_inside_zone(dying, crate::zones::ZoneId::Pvp);
         if !((!inside_pvp || !killer_is_player) && (!self.is_gm(dying) || s.karma_drop_gm)) {
@@ -944,14 +957,12 @@ impl World {
 
     /// Java `Attackable.doItemDrop(mainDamageDealer)`.
     pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
-        let Some(dealer) = main_damage_dealer else {
+        // `mainDamageDealer.asPlayer()`: a summon's owner.
+        let Some(dealer) = main_damage_dealer.and_then(|d| self.acting_player(d)) else {
+            // Don't drop anything if the last attacker or owner isn't Player (a fake player may,
+            // when `FakePlayerCanDropItems` is on: fake players are not ported).
             return;
         };
-        // Don't drop anything if the last attacker or owner isn't Player (a fake player may, when
-        // `FakePlayerCanDropItems` is on: fake players are not ported).
-        if !self.players.contains_key(&dealer) {
-            return;
-        }
         // `CursedWeaponsManager.checkDrop(this, player)`: cursed weapons are M5.
 
         let Some(templates) = self.item_templates() else {

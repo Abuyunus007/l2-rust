@@ -86,6 +86,7 @@ impl World {
             // clan hall doors) arrive with M5.
             Some(ObjectKind::Door) => self.doors.get(&target).is_some_and(|d| d.attackable_door),
             Some(ObjectKind::Player) => self.is_auto_attackable(target, attacker),
+            Some(ObjectKind::Summon) => self.summon_auto_attackable_by(target, attacker),
             _ => false,
         }
     }
@@ -95,6 +96,7 @@ impl World {
         match self.objects.get(&id).map(|e| e.kind) {
             Some(ObjectKind::Player) => self.players.get(&id).map_or(0, |p| p.core.level),
             Some(ObjectKind::Npc) => self.npcs.get(&id).map_or(0, |n| n.core.level),
+            Some(ObjectKind::Summon) => self.stats(id).map_or(0, |s| s.level()),
             Some(ObjectKind::Door) => self.doors.get(&id).map_or(0, |d| d.template.level),
             // StaticObject.getLevel()
             Some(ObjectKind::StaticObject) => 1,
@@ -113,6 +115,11 @@ impl World {
                 .npcs
                 .get(&id)
                 .map_or((0, 0), |n| (n.core.max_hp as i32, n.core.cur_hp as i32)),
+            // `getMaxHp()` of a summon is the stat engine's (with the owner's servitor share).
+            Some(ObjectKind::Summon) => (
+                self.stats(id).map_or(0, |s| s.max_hp()),
+                self.npcs.get(&id).map_or(0, |n| n.core.cur_hp as i32),
+            ),
             Some(ObjectKind::Door) => self
                 .doors
                 .get(&id)
@@ -231,7 +238,9 @@ impl World {
         };
         let heading = match self.objects.get(&object).map(|e| e.kind) {
             Some(ObjectKind::Player) => self.players.get(&object).map_or(0, |p| p.core.heading),
-            Some(ObjectKind::Npc) => self.npcs.get(&object).map_or(0, |n| n.core.heading),
+            Some(ObjectKind::Npc | ObjectKind::Summon) => {
+                self.npcs.get(&object).map_or(0, |n| n.core.heading)
+            }
             // Doors and static objects have a heading of 0 (`Location.getHeading`).
             _ => 0,
         };
@@ -255,6 +264,10 @@ impl World {
             // `ai.notifyActionForgetObject(other)`; an NPC's own `_target` is only set by its
             // skills (M5).
             self.npc_notify_forget_object(creature, other);
+            // A summon's target is the one its owner ordered.
+            if self.is_summon(creature) && self.creature_target(creature) == Some(other) {
+                self.set_creature_target(creature, None);
+            }
             return;
         }
         if !self.players.contains_key(&creature) {
@@ -340,6 +353,8 @@ impl World {
         match self.objects.get(&obj).map(|e| e.kind) {
             Some(ObjectKind::Npc) => self.npc_click(player, obj, interact),
             Some(ObjectKind::Player) => self.player_click(player, obj, interact),
+            // Java: SummonClick
+            Some(ObjectKind::Summon) => self.summon_click(player, obj, interact),
             Some(ObjectKind::Door) => self.door_click(player, obj, interact),
             Some(ObjectKind::StaticObject) => self.static_object_click(player, obj, interact),
             // Java: ItemClick
@@ -455,9 +470,12 @@ impl World {
         if self.target_of(player) != Some(target) {
             self.set_target(player, Some(target));
         } else if interact {
-            // FOLLOW-UP(M5): private stores (`setIntentionInteract`), the cursed weapon level
-            // rule, `setIntentionFollow` for a player that cannot be attacked.
-            if self.is_auto_attackable_by(target, player) {
+            // FOLLOW-UP(M5): the cursed weapon level rule, `setIntentionFollow` for a player that
+            // cannot be attacked.
+            if self.is_in_store_mode(target) {
+                // Check if this Player has a Private Store.
+                self.set_intention_interact(player, target);
+            } else if self.is_auto_attackable_by(target, player) {
                 self.set_intention_attack(player, target);
             } else {
                 // This Action Failed packet avoids player getting stuck when clicking three or

@@ -34,7 +34,14 @@ impl World {
                     current_hps += core.cur_hp;
                 }
             }
-            // M6: the member's summon counts, too (SUMMON-01).
+            // The member's summon counts, too.
+            if self.is_player(member)
+                && let Some(summon) = self.summon_of(member).filter(|s| in_range(self, *s))
+                && let (Some(view), Some(core)) = (self.stats(summon), self.core_of(summon))
+            {
+                full_hp += f64::from(view.max_hp());
+                current_hps += core.cur_hp;
+            }
         }
         let percent_hp = current_hps / full_hp;
         for member in self.rebalance_targets(effector, skill) {
@@ -56,8 +63,34 @@ impl World {
                 }
                 self.set_current_hp(member, new_hp, true);
             }
-            // M6: the member's summon is shared the same way (SUMMON-01).
+            // The member's summon is shared the same way.
+            if self.is_player(member)
+                && let Some(summon) = self.summon_of(member).filter(|s| in_range(self, *s))
+            {
+                self.rebalance_one(summon, percent_hp);
+            }
         }
+    }
+
+    /// One creature of `RebalanceHP`'s second loop: its share of the HP, healed no further than
+    /// its recoverable maximum.
+    fn rebalance_one(&mut self, id: ObjectId, percent_hp: f64) {
+        let (Some(view), Some(core)) = (self.stats(id), self.core_of(id)) else {
+            return;
+        };
+        let current = core.cur_hp;
+        let mut new_hp = f64::from(view.max_hp()) * percent_hp;
+        let max_recoverable = f64::from(view.max_recoverable_hp());
+        // The target gets healed.
+        if new_hp > current {
+            // The heal will be blocked if the current HP passes the limit.
+            if current > max_recoverable {
+                new_hp = current;
+            } else if new_hp > max_recoverable {
+                new_hp = max_recoverable;
+            }
+        }
+        self.set_current_hp(id, new_hp, true);
     }
 
     fn rebalance_targets(&mut self, effector: ObjectId, skill: &SkillTemplate) -> Vec<ObjectId> {

@@ -29,7 +29,8 @@
 //   [`World::skill_uses_soul_shot`] / [`World::skill_uses_spirit_shot`] like the Java handlers.
 //
 // # Left out
-// - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) and fishing shots: M6.
+// - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) are `summon/shots.rs`; fishing shots are
+//   not ported.
 // - The olympiad (`OlympiadConfig.OLYMPIAD_DISABLE_BLESSED_SPIRITSHOTS`, `disableAutoShotsAll`
 //   at the start of a match): no olympiad yet.
 // - Fake players (`FAKE_PLAYER_USE_SHOTS`).
@@ -80,6 +81,10 @@ pub enum ShotHandler {
     SoulShots,
     SpiritShot,
     BlessedSpiritShot,
+    /// The summon's soulshots (`summon/shots.rs`).
+    BeastSoulShot,
+    /// The summon's spiritshots and blessed spiritshots (`summon/shots.rs`).
+    BeastSpiritShot,
 }
 
 impl ShotHandler {
@@ -89,6 +94,8 @@ impl ShotHandler {
             "SoulShots" => Some(Self::SoulShots),
             "SpiritShot" => Some(Self::SpiritShot),
             "BlessedSpiritShot" => Some(Self::BlessedSpiritShot),
+            "BeastSoulShot" => Some(Self::BeastSoulShot),
+            "BeastSpiritShot" => Some(Self::BeastSpiritShot),
             _ => None,
         }
     }
@@ -217,6 +224,9 @@ impl World {
     pub fn recharge_shots(&mut self, id: ObjectId, physical: bool, magic: bool) {
         if self.players.contains_key(&id) {
             self.recharge_player_shots(id, physical, magic);
+        } else if self.is_summon(id) {
+            // `Summon.rechargeShots`: the owner's automatic beast shots.
+            self.summon_recharge_shots(id, physical, magic);
         } else if self.npcs.contains_key(&id) {
             self.recharge_npc_shots(id, physical, magic);
         }
@@ -444,8 +454,8 @@ impl World {
 
     /// Java `RequestAutoSoulShot.runImpl`.
     pub(crate) fn on_request_auto_soul_shot(&mut self, id: ObjectId, item_id: i32, shot_type: i32) {
-        // `!isInStoreMode() && getActiveRequester() == null`: no stores yet.
-        if self.active_requester(id).is_some() || self.is_dead(id) {
+        // `!isInStoreMode() && getActiveRequester() == null && !isDead()`.
+        if self.is_in_store_mode(id) || self.active_requester(id).is_some() || self.is_dead(id) {
             return;
         }
         let Some(item) = self.first_item_with_id(id, item_id) else {
@@ -467,16 +477,8 @@ impl World {
             if (6535..=6540).contains(&item_id) {
                 return;
             }
-            // Attempt to charge first shot on activation.
-            if matches!(item_id, 6645 | 6646 | 6647 | 20332 | 20333 | 20334) {
-                // M6: with a summon the beast shots are switched on (`BeastSoulShot` &
-                // `BeastSpiritShot`, `Summon.getSoulShotsPerHit()`); nobody has a summon yet.
-                self.send(
-                    id,
-                    &SystemMessage::new(
-                        SystemMessageId::YouDoNotHaveAServitorOrPetAndThereforeCannotUseTheAutomaticUseFunction,
-                    ),
-                );
+            // Attempt to charge first shot on activation: the beast shots (`summon/shots.rs`).
+            if self.auto_soul_shot_beast_on(id, &item, shot_type) {
                 return;
             }
             // `getActiveWeaponItem() != getFistsWeaponItem()` means a weapon is in hand.
@@ -554,6 +556,11 @@ impl World {
 
     /// `UseItem` for a shot: the handler named by the template. `true` when it charged a shot.
     pub(crate) fn use_shot_item(&mut self, id: ObjectId, item: &ItemData, handler: ShotHandler) -> bool {
+        match handler {
+            ShotHandler::BeastSoulShot => return self.use_beast_shot(id, item, false),
+            ShotHandler::BeastSpiritShot => return self.use_beast_shot(id, item, true),
+            _ => {}
+        }
         let Some(templates) = self.item_templates() else {
             return false;
         };
@@ -571,6 +578,7 @@ impl World {
             ShotHandler::BlessedSpiritShot => {
                 self.use_spirit_shots(id, item, template, skill, ShotType::BlessedSpiritshots)
             }
+            ShotHandler::BeastSoulShot | ShotHandler::BeastSpiritShot => false,
         }
     }
 

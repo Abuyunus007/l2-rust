@@ -363,7 +363,10 @@ impl World {
         let Some(template) = templates.and_then(|t| t.get(item.item_id)) else {
             return;
         };
-        // Store mode is not modelled. `isHero()` is not modelled either: nobody is a hero.
+        if self.is_in_store_mode(id) {
+            return;
+        }
+        // `isHero()` is not modelled: nobody is a hero.
         if !self.is_gm(id) && template.is_hero_item() {
             return;
         }

@@ -138,9 +138,19 @@ pub enum ClientInput {
     },
     /// Java `TradeDone` (1 = confirm, anything else = cancel).
     TradeDone { response: i32 },
+    /// The private store packets (M6-STORE-01): `RequestActionUse` for the three store actions,
+    /// `RequestPrivateStore*`, `SetPrivateStore*`.
+    Store(crate::trade::StoreInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
+    /// Java `RequestActionUse`: a button of the action window (`ctrl_pressed` is `readInt() ==
+    /// 1`, `shift_pressed` `readByte() == 1`).
+    ActionUse {
+        action_id: i32,
+        ctrl_pressed: bool,
+        shift_pressed: bool,
+    },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
     /// The warehouse and freight packets (`SendWareHouseDepositList`, ...), see `warehouse/`.
@@ -156,6 +166,12 @@ pub enum ClientInput {
     OustPartyMember { name: String },
     /// Java `RequestChangePartyLeader`: the leader hands the party to `name`.
     ChangePartyLeader { name: String },
+    /// Java `RequestDuelStart`: challenge the player `name`; `party_duel` is 1 for a party duel.
+    DuelStart { name: String, party_duel: i32 },
+    /// Java `RequestDuelAnswerStart`: 1 accept, -1 the client refuses duels, else decline.
+    DuelAnswerStart { party_duel: i32, response: i32 },
+    /// Java `RequestDuelSurrender`.
+    DuelSurrender,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

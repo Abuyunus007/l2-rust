@@ -195,7 +195,12 @@ impl World {
                 self.notify_action_attacked(target, id);
             }
             self.client_start_auto_attack(id);
-            // Summons: the owner enters combat too (no summons yet).
+            // A summon's owner enters combat too.
+            if let Some(owner) = self.summon_owner(id)
+                && self.players.contains_key(&owner)
+            {
+                self.client_start_auto_attack(owner);
+            }
 
             // Manage attack or cast break of the target (calculating rate, sending message...).
             if !self.is_raid(target)
@@ -248,6 +253,11 @@ impl World {
         pcrit: bool,
         miss: bool,
     ) {
+        // `Summon.sendDamageMessage`.
+        if self.is_summon(id) {
+            self.summon_send_damage_message(id, target, damage, mcrit, pcrit, miss);
+            return;
+        }
         let attacker_name = self.creature_name(id);
         if miss && self.is_player(target) {
             let message = SystemMessage::new(SystemMessageId::C1HasEvadedC2SAttack)
@@ -302,6 +312,19 @@ impl World {
             self.player_reduce_hp(target, amount, attacker);
             return;
         }
+        if self.is_summon(target) {
+            // `Summon.reduceCurrentHp`: `SummonStatus.reduceHp` (transfer pain is not ported), then
+            // the owner hears about the damage.
+            self.reduce_hp(target, amount, attacker);
+            if let (Some(owner), Some(attacker)) = (self.summon_owner(target), attacker) {
+                let message = SystemMessage::new(SystemMessageId::C1HasReceivedS3DamageFromC2)
+                    .with(self.summon_name_param(target))
+                    .with(SystemMessageParam::Text(self.creature_name(attacker)))
+                    .with(SystemMessageParam::IntNumber(amount as i32));
+                self.send(owner, &message);
+            }
+            return;
+        }
         if !self.is_npc(target) {
             return;
         }
@@ -353,7 +376,8 @@ impl World {
         if self.npc_refuses_hate(npc, attacker) {
             return;
         }
-        let attacker_is_player = self.is_player(attacker);
+        // `attacker.asPlayer() != null`: a player or a summon.
+        let attacker_is_player = self.acting_player(attacker).is_some();
         let state = self.combat_state_mut(npc);
         let index = match state.aggro.iter().position(|a| a.attacker == attacker) {
             Some(index) => index,

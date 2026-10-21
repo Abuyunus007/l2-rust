@@ -19,7 +19,10 @@
 // - `window.rs`: `AddTradeItem`, `TradeDone`, `TradeList.addItem` / `confirm` / `validate`.
 // - `exchange.rs`: `TradeList.doExchange`, `TransferItems`, weight and slot counting.
 // - The item move itself is `World::transfer_item` (`inventory/transfer.rs`), which the private
-//   stores (STORE-01) call as well.
+//   stores call as well.
+// - `store.rs`, `store_lists.rs`, `store_deal.rs`: the private stores (M6-STORE-01): opening and
+//   closing, the lists the owner sets, the lists a customer sees and `TradeList.privateStoreBuy`
+//   / `privateStoreSell`.
 //
 // # What Java does *not* do (so neither does this)
 // Java cancels a trade only in `Player.deleteMe` (and then only `if (getActiveRequester() !=
@@ -30,7 +33,7 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isBlocked` (the ignore list is a later social card), the olympiad check (M8),
-//   `isInStoreMode` (STORE-01), the enchant scroll in use (`getActiveEnchantItemId`), a summoned
+//   the enchant scroll in use (`getActiveEnchantItemId`), a summoned
 //   pet's control item and a mounted strider's saddle (no summons or mounts yet), cursed weapons.
 // - The flood protector `canPerformTransaction` of `TradeDone` (no flood protectors yet).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
@@ -40,8 +43,12 @@
 mod exchange;
 mod packets;
 mod request;
+mod store;
+mod store_deal;
+mod store_lists;
 mod window;
 
+pub use store::{PrivateStoreType, StoreInput, StoreSettings};
 pub use window::AddItemRules;
 
 use l2_util::ObjectId;
@@ -146,4 +153,11 @@ pub struct TradeState {
     pub request_expire_time: i64,
     /// Java `_tradeRefusal`.
     pub refusal: bool,
+    /// Java `_privateStoreType` (private stores, `store.rs`).
+    pub store_type: PrivateStoreType,
+    /// Java `_sellList`: what a sell store or package sale offers. Java creates it on the first
+    /// `getSellList()`; `None` is "not created yet" (see `World::sell_list`).
+    pub sell_list: Option<TradeList>,
+    /// Java `_buyList`: what a buy store wants.
+    pub buy_list: Option<TradeList>,
 }

@@ -20,7 +20,9 @@
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
 // entering it does nothing: `ClanHallZone`, `SiegableHallZone`, `SiegeZone` (needs sieges),
 // `OlympiadStadiumZone`, `WaterZone`, `SwampZone`, `BossZone`, `DamageZone`, `FishingZone`,
-// `FlagPvPZone`, `RespawnZone` (restart points only).
+// `RespawnZone` (restart points only). `FlagPvPZone` flags the player (M6-DUEL-01); its
+// `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
+// exist.
 //
 // What Java does in these zones that is left out, with the system that brings it:
 // - `NoLandingZone`: dismounting a wyvern, the GM notice: mounts, M4
@@ -254,6 +256,8 @@ enum ZoneKind {
     Script,
     DerbyTrack,
     Effect,
+    /// `FlagPvPZone`: the PvP flag follows the player in and out.
+    FlagPvp,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -281,6 +285,7 @@ impl ZoneKind {
             "ScriptZone" => Self::Script,
             "DerbyTrackZone" => Self::DerbyTrack,
             "EffectZone" => Self::Effect,
+            "FlagPvPZone" => Self::FlagPvp,
             _ => Self::Inert,
         }
     }
@@ -509,6 +514,11 @@ impl World {
                     self.send_etc_status_update(id);
                 }
             }
+            ZoneKind::FlagPvp => {
+                self.update_pvp_flag(id, 1);
+                self.send_message(id, "You entered a PvP Flag zone.");
+                self.broadcast_user_info(id);
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -586,6 +596,13 @@ impl World {
                         self.send_etc_status_update(id);
                     }
                 }
+            }
+            ZoneKind::FlagPvp => {
+                if self.pvp_flag_of(id) > 0 {
+                    self.update_pvp_flag(id, 0);
+                }
+                self.send_message(id, "You left the PvP Flag zone.");
+                self.broadcast_user_info(id);
             }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }

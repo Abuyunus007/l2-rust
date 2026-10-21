@@ -26,18 +26,24 @@ pub enum ObjectKind {
     /// Java `Item` lying on the ground (`ground_item.rs`). Items in an inventory are not world
     /// objects here: they are rows of the owner's item list.
     Item,
+    /// Java `Summon` (servitors and pets, `summon/`). The creature is in `World::npcs` (with
+    /// `NpcClass::Summon`), but Java's `isNpc()` is false and `isPlayable()` true for it.
+    Summon,
 }
 
 impl ObjectKind {
-    /// Java `isPlayable()`: players (and later summons/pets) wake regions up.
+    /// Java `isPlayable()`: players and summons wake regions up.
     pub fn is_playable(self) -> bool {
-        matches!(self, Self::Player)
+        matches!(self, Self::Player | Self::Summon)
     }
 
     /// Java `isCreature()`: forgets targets when an object leaves view. Doors and static objects
     /// extend `Creature` in Java; fences do not.
     pub fn is_creature(self) -> bool {
-        matches!(self, Self::Player | Self::Npc | Self::Door | Self::StaticObject)
+        matches!(
+            self,
+            Self::Player | Self::Npc | Self::Summon | Self::Door | Self::StaticObject
+        )
     }
 }
 

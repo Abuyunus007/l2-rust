@@ -29,6 +29,8 @@ log=$(mktemp)
 CARGO_INCREMENTAL=0 cargo test -q --workspace --no-fail-fast >"$log" 2>&1
 summary=$(grep -E "test result" "$log" | awk '{s+=$4; f+=$6} END {print s" passed, "f" failed"}')
 echo "tests: $summary"
+# A crate that does not compile has no "test result" line: catch it here.
+grep -q "could not compile" "$log" && { grep -E "^error" "$log" | head -10; echo "TESTS DID NOT COMPILE (log: $log)"; exit 1; }
 case "$summary" in *" 0 failed") rm -f "$log" ;; *) grep -E "panicked at|^test .* FAILED|^error" "$log" | head -10; echo "TESTS FAILED (log: $log)"; exit 1 ;; esac
 
 git worktree remove --force --force ".claude/worktrees/agent-$agent" 2>/dev/null

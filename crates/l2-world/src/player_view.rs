@@ -7,7 +7,8 @@
 // (`enter::build_user_info`), so both views agree.
 // Compared field by field with Java's CharInfo constructor and writeImpl (M3-PLAYERS-01): the
 // speeds, flags and colours come from the same getters as UserInfo; only the GM-invisibility
-// handling differs. Not here yet: boats/airships, private store messages, summons' relations.
+// handling differs. Not here yet: boats/airships, summons' relations. The store title of
+// `sendInfo` is `send_store_message` (`trade/store_lists.rs`).
 
 use l2_protocol_game::server::{CharInfo, ExBrExtraUserInfo, RelationChanged, RelationEntry};
 use l2_util::ObjectId;
@@ -57,6 +58,15 @@ impl World {
                 pvp_flag: self.pvp_flag_of(subject),
             };
             self.send(viewer, &RelationChanged::single(entry));
+            // `if (hasSummon())`: the summon's relation with the same values.
+            if let Some(summon) = self.summon_of(subject) {
+                let entry = self.summon_relation_entry(summon, viewer, Some(auto_attackable));
+                self.send(viewer, &RelationChanged::single(entry));
+            }
+        }
+        // Java `sendInfo`: the title over the store of a player who has one open.
+        if appearing {
+            self.send_store_message(subject, viewer);
         }
         // Required for showing mount transformations to players that just entered the game.
         if appearing

@@ -213,22 +213,34 @@ impl World {
             }
         };
 
-        // Flag the attacker if it's a Player outside a PvP area.
-        if is_player && !self.is_inside_zone(id, ZoneId::Pvp) && target != id {
-            self.add_attack_stance_task(id);
-            // M6-SUMMON: `player.getSummon() != target` (attacking the own pet does not flag).
-            let flag_on_raid_or_champion = (self.is_raid(target)
-                && self.settings.pvp.flag_player_on_raid_attack)
-                || (self.stats(target).is_some_and(|v| v.is_champion())
-                    && self.settings.pvp.flag_player_on_champion_attack);
-            if flag_on_raid_or_champion {
-                self.update_pvp_status(id);
-            } else {
-                self.update_pvp_status_target(id, target);
+        // Flag the attacker if it's a Player outside a PvP area (`asPlayer()`: a summon's owner).
+        let flag_on_raid_or_champion = (self.is_raid(target) && self.settings.pvp.flag_player_on_raid_attack)
+            || (self.stats(target).is_some_and(|v| v.is_champion())
+                && self.settings.pvp.flag_player_on_champion_attack);
+        let acting = self.acting_player(id);
+        if let Some(player) = acting.filter(|p| !self.is_inside_zone(*p, ZoneId::Pvp) && *p != target) {
+            self.add_attack_stance_task(player);
+            // Attacking the own pet does not flag.
+            if self.summon_of(player) != Some(target) {
+                if flag_on_raid_or_champion {
+                    self.update_pvp_status(player);
+                } else {
+                    self.update_pvp_status_target(player, target);
+                }
             }
+        } else if self.settings.pvp.flag_player_on_summon_pet_raid_champion_attack
+            && self.is_summon(id)
+            && let Some(owner) = self.summon_owner(id)
+            && !self.is_inside_zone(owner, ZoneId::Pvp)
+            && owner != target
+            && self.summon_of(owner) != Some(target)
+            && flag_on_raid_or_champion
+        {
+            // NOTE(java-quirk): `asPlayer()` of a summon is its owner, so the branch above takes
+            // every case this one could see; it is kept as Java has it.
+            self.add_attack_stance_task(owner);
+            self.update_pvp_status(owner);
         }
-        // M6-SUMMON: `FLAG_PLAYER_ON_SUMMON_PET_RAID_CHAMPION_ATTACK`, the owner of a summon or pet
-        // that attacks a raid or champion is flagged.
 
         if !hitted {
             // Abort the attack of the Creature and send Server->Client ActionFailed packet.

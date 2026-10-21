@@ -197,13 +197,14 @@ impl<'w> StatView<'w> {
     }
 
     /// Java `getActiveWeaponItem()`: a player's right hand weapon, else the class's fists; an
-    /// NPC's template weapon.
+    /// NPC's template weapon; none for a summon (`Summon.getActiveWeaponItem()`).
     pub fn active_weapon_item(&self) -> Option<&'w ItemTemplate> {
         match self.who {
             Who::Player(p) => match self.active_weapon_instance() {
                 Some(item) => self.item_template(item.item_id),
                 None => self.item_template(fists_item_id(p.data.class_id)),
             },
+            Who::Npc(_) if self.is_summon() => None,
             Who::Npc(_) => {
                 let id = self.npc_template()?.rhand_id;
                 if id < 1 {

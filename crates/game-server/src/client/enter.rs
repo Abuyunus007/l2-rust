@@ -17,7 +17,7 @@ use std::time::Duration;
 use l2_db::{
     CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
     ItemReuseRepository, ItemReuseRow, MacroRepository, Pool, RecommendationRepository, ShortcutRepository,
-    SkillRepository, SkillSaveRow, SubclassRepository, VariableRepository,
+    SkillRepository, SkillSaveRow, SubclassRepository, SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,8 +26,8 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
-    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, WarehouseInput, WarehouseLoad,
-    WorldCommand,
+    PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
+    WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -85,6 +85,7 @@ pub struct DbPlayerLoader {
     macros: MacroRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
+    summons: SummonRepository,
     clans: l2_db::ClanRepository,
 }
 
@@ -101,6 +102,7 @@ impl DbPlayerLoader {
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
+            summons: SummonRepository::new(pool.clone()),
             clans: l2_db::ClanRepository::new(pool),
         }
     }
@@ -197,6 +199,22 @@ impl DbPlayerLoader {
             .await?
             .iter()
             .map(saved_effect_of)
+            .collect();
+
+        // Java: Servitor.restoreEffects reads these rows when a servitor of the same skill spawns.
+        // They are read here for the active class index and kept by the world as its view of the
+        // table (`summon/servitor.rs`).
+        data.profile.summon_effects = self
+            .summons
+            .servitor_effects_of(char_id, class_index)
+            .await?
+            .into_iter()
+            .map(|r| SavedSummonEffect {
+                summon_skill_id: r.summon_skill_id,
+                skill_id: r.skill_id,
+                skill_level: r.skill_level,
+                remaining_time: r.remaining_time,
+            })
             .collect();
 
         // Java: restoreItemReuse reads the item reuse timers at load. Like the buffs they stay in
@@ -446,8 +464,7 @@ fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
     }
 }
 
-/// The clan packets as the world takes them. The crest, war and alliance packets are M6-CLAN-02's
-/// and reach the world as `NotPorted`.
+/// The clan packets as the world takes them (pledges, crests, wars and alliances).
 fn clan_input(packet: ClientPacket) -> ClanInput {
     match packet {
         ClientPacket::RequestJoinPledge(p) => ClanInput::JoinPledge {
@@ -485,27 +502,45 @@ fn clan_input(packet: ClientPacket) -> ClanInput {
             curr_player_name: p.curr_player_name,
             target_player_name: p.target_player_name,
         },
-        ClientPacket::RequestPledgeWarList(_) => ClanInput::NotPorted("RequestPledgeWarList"),
-        ClientPacket::RequestPledgeCrest(_) => ClanInput::NotPorted("RequestPledgeCrest"),
-        ClientPacket::RequestExPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExPledgeCrestLarge"),
-        ClientPacket::RequestSetPledgeCrest(_) => ClanInput::NotPorted("RequestSetPledgeCrest"),
-        ClientPacket::RequestExSetPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExSetPledgeCrestLarge"),
-        ClientPacket::RequestSetAllyCrest(_) => ClanInput::NotPorted("RequestSetAllyCrest"),
-        ClientPacket::RequestStartPledgeWar(_) => ClanInput::NotPorted("RequestStartPledgeWar"),
-        ClientPacket::RequestReplyStartPledgeWar(_) => ClanInput::NotPorted("RequestReplyStartPledgeWar"),
-        ClientPacket::RequestStopPledgeWar(_) => ClanInput::NotPorted("RequestStopPledgeWar"),
-        ClientPacket::RequestReplyStopPledgeWar(_) => ClanInput::NotPorted("RequestReplyStopPledgeWar"),
-        ClientPacket::RequestSurrenderPledgeWar(_) => ClanInput::NotPorted("RequestSurrenderPledgeWar"),
-        ClientPacket::RequestReplySurrenderPledgeWar(_) => {
-            ClanInput::NotPorted("RequestReplySurrenderPledgeWar")
-        }
-        ClientPacket::RequestJoinAlly(_) => ClanInput::NotPorted("RequestJoinAlly"),
-        ClientPacket::RequestAnswerJoinAlly(_) => ClanInput::NotPorted("RequestAnswerJoinAlly"),
-        ClientPacket::AllyLeave(_) => ClanInput::NotPorted("AllyLeave"),
-        ClientPacket::AllyDismiss(_) => ClanInput::NotPorted("AllyDismiss"),
-        ClientPacket::RequestDismissAlly(_) => ClanInput::NotPorted("RequestDismissAlly"),
-        ClientPacket::RequestAllyCrest(_) => ClanInput::NotPorted("RequestAllyCrest"),
-        ClientPacket::RequestAllyInfo(_) => ClanInput::NotPorted("RequestAllyInfo"),
+        ClientPacket::RequestPledgeWarList(p) => ClanInput::PledgeWarList { tab: p.tab },
+        ClientPacket::RequestPledgeCrest(p) => ClanInput::PledgeCrest { crest_id: p.crest_id },
+        ClientPacket::RequestExPledgeCrestLarge(p) => ClanInput::ExPledgeCrestLarge { crest_id: p.crest_id },
+        ClientPacket::RequestSetPledgeCrest(p) => ClanInput::SetPledgeCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestExSetPledgeCrestLarge(p) => ClanInput::ExSetPledgeCrestLarge {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestSetAllyCrest(p) => ClanInput::SetAllyCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestStartPledgeWar(p) => ClanInput::StartPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStartPledgeWar(p) => ClanInput::ReplyStartPledgeWar { answer: p.answer },
+        ClientPacket::RequestStopPledgeWar(p) => ClanInput::StopPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStopPledgeWar(p) => ClanInput::ReplyStopPledgeWar { answer: p.answer },
+        ClientPacket::RequestSurrenderPledgeWar(p) => ClanInput::SurrenderPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplySurrenderPledgeWar(p) => ClanInput::ReplySurrenderPledgeWar {
+            req_name: p.req_name,
+            answer: p.answer,
+        },
+        ClientPacket::RequestJoinAlly(p) => ClanInput::JoinAlly { id: p.id },
+        ClientPacket::RequestAnswerJoinAlly(p) => ClanInput::AnswerJoinAlly { response: p.response },
+        ClientPacket::AllyLeave(_) => ClanInput::AllyLeave,
+        ClientPacket::AllyDismiss(p) => ClanInput::AllyDismiss {
+            clan_name: p.clan_name,
+        },
+        ClientPacket::RequestDismissAlly(_) => ClanInput::DismissAlly,
+        ClientPacket::RequestAllyCrest(p) => ClanInput::AllyCrest { crest_id: p.crest_id },
+        ClientPacket::RequestAllyInfo(_) => ClanInput::AllyInfo,
         _ => ClanInput::NotPorted("unknown clan packet"),
     }
 }
@@ -759,6 +794,41 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
+            // ported), RequestPrivateStore*, SetPrivateStore*
+            ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
+                ClientInput::Store(StoreInput::ActionUse {
+                    action_id: p.action_id,
+                })
+            }
+            ClientPacket::RequestPrivateStoreManageSell(_) => ClientInput::Store(StoreInput::ManageSell),
+            ClientPacket::RequestPrivateStoreManageBuy(_) => ClientInput::Store(StoreInput::ManageBuy),
+            ClientPacket::RequestPrivateStoreQuitSell(_) => ClientInput::Store(StoreInput::QuitSell),
+            ClientPacket::RequestPrivateStoreQuitBuy(_) => ClientInput::Store(StoreInput::QuitBuy),
+            ClientPacket::SetPrivateStoreMsgSell(p) => {
+                ClientInput::Store(StoreInput::MsgSell { msg: p.store_msg })
+            }
+            ClientPacket::SetPrivateStoreMsgBuy(p) => {
+                ClientInput::Store(StoreInput::MsgBuy { msg: p.store_msg })
+            }
+            ClientPacket::SetPrivateStoreWholeMsg(p) => {
+                ClientInput::Store(StoreInput::WholeMsg { msg: p.msg })
+            }
+            ClientPacket::SetPrivateStoreListSell(p) => ClientInput::Store(StoreInput::ListSell {
+                package_sale: p.package_sale,
+                items: p.items,
+            }),
+            ClientPacket::SetPrivateStoreListBuy(p) => {
+                ClientInput::Store(StoreInput::ListBuy { items: p.items })
+            }
+            ClientPacket::RequestPrivateStoreBuy(p) => ClientInput::Store(StoreInput::Buy {
+                store_player_id: p.store_player_id,
+                items: p.items,
+            }),
+            ClientPacket::RequestPrivateStoreSell(p) => ClientInput::Store(StoreInput::Sell {
+                store_player_id: p.store_player_id,
+                items: p.items,
+            }),
             // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,
@@ -797,6 +867,33 @@ impl ClientSession {
             // Java: RequestVoteNew
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
+            },
+            // Java: RequestActionUse (M6-SUMMON-01: the summon actions)
+            ClientPacket::RequestActionUse(p) => ClientInput::ActionUse {
+                action_id: p.action_id,
+                ctrl_pressed: p.ctrl_pressed,
+                shift_pressed: p.shift_pressed,
+            },
+            // The pet packets are PET-01's: the world hears them as not ported yet.
+            ClientPacket::RequestPetGetItem(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestPetGetItem::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestGetItemFromPet(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestGetItemFromPet::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestGiveItemToPet(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestGiveItemToPet::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestPetUseItem(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestPetUseItem::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestChangePetName(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestChangePetName::OPCODE.id(),
+                ex_opcode: None,
             },
             // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
             packet @ (ClientPacket::RequestJoinPledge(_)
@@ -850,6 +947,16 @@ impl ClientSession {
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
+            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
+            ClientPacket::RequestDuelStart(p) => ClientInput::DuelStart {
+                name: p.player,
+                party_duel: p.party_duel,
+            },
+            ClientPacket::RequestDuelAnswerStart(p) => ClientInput::DuelAnswerStart {
+                party_duel: p.party_duel,
+                response: p.response,
+            },
+            ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
@@ -1157,7 +1264,10 @@ mod tests {
 
     #[test]
     fn clan_packets_become_clan_input() {
-        use l2_protocol_game::client::pledge::{RequestAllyInfo, RequestJoinPledge, RequestPledgePower};
+        use l2_protocol_game::client::pledge::{
+            RequestAllyInfo, RequestJoinPledge, RequestPledgePower, RequestPledgeWarList,
+            RequestReplyStartPledgeWar, RequestSetPledgeCrest,
+        };
         assert_eq!(
             clan_input(ClientPacket::RequestJoinPledge(RequestJoinPledge {
                 target: 7,
@@ -1180,10 +1290,36 @@ mod tests {
                 privs: 9
             }
         );
-        // Alliances, wars and crests are M6-CLAN-02's.
+        // Alliances, wars and crests (M6-CLAN-02).
         assert_eq!(
             clan_input(ClientPacket::RequestAllyInfo(RequestAllyInfo)),
-            ClanInput::NotPorted("RequestAllyInfo")
+            ClanInput::AllyInfo
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestSetPledgeCrest(RequestSetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3]),
+            })),
+            ClanInput::SetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3])
+            }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestPledgeWarList(RequestPledgeWarList {
+                unk1: 0,
+                tab: 1
+            })),
+            ClanInput::PledgeWarList { tab: 1 }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestReplyStartPledgeWar(
+                RequestReplyStartPledgeWar {
+                    req_name: "x".into(),
+                    answer: 1
+                }
+            )),
+            ClanInput::ReplyStartPledgeWar { answer: 1 }
         );
     }
 

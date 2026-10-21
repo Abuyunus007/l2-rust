@@ -301,7 +301,11 @@ impl World {
         }
         self.pvp.players.entry(id).or_default().flag = value;
         self.send_user_info(id);
-        // If this player has a pet update the pets pvp flag as well: no summons yet (M6-SUMMON).
+        // If this player has a pet update the pets pvp flag as well.
+        if let Some(summon) = self.summon_of(id) {
+            let entry = self.summon_relation_entry(summon, id, Some(false));
+            self.send(id, &RelationChanged::single(entry));
+        }
         self.send_relation_to_visible_players(id);
     }
 
@@ -360,10 +364,9 @@ impl World {
         }
     }
 
-    /// The player a creature acts for (Java `asPlayer()`): the player itself.
-    // M6-SUMMON: a servitor or pet gives its owner.
+    /// The player a creature acts for (Java `asPlayer()`): the player itself, a summon's owner.
     fn acting_player_of(&self, id: ObjectId) -> Option<ObjectId> {
-        self.players.contains_key(&id).then_some(id)
+        self.acting_player(id)
     }
 
     /// Java `Player.updatePvPStatus(target)`: attacking another player outside a PvP zone flags the
@@ -376,7 +379,10 @@ impl World {
             return;
         }
         // The faction system (good against evil does not flag): not modelled.
-        // M6-DUEL: `_isInDuel && targetPlayer.getDuelId() == getDuelId()` does not flag.
+        // Fighting the opponent of one's own duel does not flag.
+        if self.is_in_duel(id) && self.duel_id_of(target_player) == self.duel_id_of(id) {
+            return;
+        }
         let both_in_pvp_zone =
             self.is_inside_zone(id, ZoneId::Pvp) && self.is_inside_zone(target, ZoneId::Pvp);
         if !both_in_pvp_zone && self.karma_of_player(target_player) == 0 {
@@ -482,6 +488,10 @@ impl World {
                 viewer,
                 &RelationChanged::single(self.relation_entry(subject, viewer)),
             );
+            if let Some(summon) = self.summon_of(subject) {
+                let entry = self.summon_relation_entry(summon, viewer, None);
+                self.send(viewer, &RelationChanged::single(entry));
+            }
         }
     }
 
@@ -499,7 +509,7 @@ impl World {
 
     /// Java `Player.onKillUpdatePvPKarma(target)`: what a kill of another player is worth to the
     /// killer, a PvP kill or a PK with karma.
-    pub(crate) fn on_kill_update_pvp_karma(&mut self, killer: ObjectId, target: ObjectId) {
+    pub fn on_kill_update_pvp_karma(&mut self, killer: ObjectId, target: ObjectId) {
         // Avoid nulls && check if player != killedPlayer.
         let Some(killed) = self.acting_player_of(target) else {
             return;
@@ -509,7 +519,11 @@ impl World {
         }
         // Cursed weapons progress: nobody has one (M8).
         // M8: olympiad (`isInOlympiadMode()` of either).
-        // M6-DUEL: `isInDuel() && killedPlayer.isInDuel()`.
+        // Duel support.
+        // NOTE(java-quirk): both only have to be in *a* duel, not the same one.
+        if self.is_in_duel(killer) && self.is_in_duel(killed) {
+            return;
+        }
         // If both players are in SIEGE zone just increase siege kills/deaths.
         if self.is_inside_zone(killer, ZoneId::Siege) && self.is_inside_zone(killed, ZoneId::Siege) {
             // M7: `_clan.addSiegeKill()` / `targetClan.addSiegeDeath()` unless `isSiegeFriend`.
@@ -744,8 +758,8 @@ impl World {
         if self.objects.get(&subject).is_some_and(|e| e.invisible) && self.is_gm(subject) {
             return false;
         }
-        // Check if the attacker isn't the Player Pet. M6-SUMMON: `attacker == _summon`.
-        if attacker == subject {
+        // Check if the attacker isn't the Player Pet.
+        if attacker == subject || self.summon_of(subject) == Some(attacker) {
             return false;
         }
         let attacker_class = self.npcs.get(&attacker).map(|n| n.class);
@@ -757,8 +771,18 @@ impl World {
         if attacker_class.is_some_and(NpcClass::is_monster) {
             return true;
         }
-        let attacker_is_player = self.players.contains_key(&attacker);
-        // M6-DUEL: both in the same duel, which is still going on (`DUELSTATE_DUELLING`).
+        // `attacker.isPlayable()`.
+        let attacker_is_player = self.is_playable(attacker);
+        // Both in the same duel, which is still going on (`DUELSTATE_DUELLING`); a summon counts
+        // with its owner's duel id (`attacker.getActingPlayer().getDuelId()`).
+        if attacker_is_player
+            && self.duel_state_of(subject) == crate::duel::DuelState::Duelling
+            && self
+                .acting_player_of(attacker)
+                .is_some_and(|a| self.duel_id_of(subject) == self.duel_id_of(a))
+        {
+            return true;
+        }
         // The attacker is in the subject's party (party checks go before the olympiad ones, so
         // party members do not auto attack in the olympiad).
         if self.is_in_party_with(subject, attacker) {

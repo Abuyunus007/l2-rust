@@ -23,6 +23,9 @@ use l2_protocol_game::server::combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, Revive,
 };
+use l2_protocol_game::server::duel::{
+    ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
+};
 use l2_protocol_game::server::effect_packets::FlyToLocation;
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
@@ -60,6 +63,7 @@ use l2_protocol_game::server::skills::{
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
     SkillPosition,
 };
+use l2_protocol_game::server::sound::PlaySound;
 use l2_protocol_game::server::store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
@@ -315,6 +319,9 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestGiveItemToPet(p) => object!(p => object_id, amount),
         ClientPacket::RequestPetUseItem(p) => object!(p => object_id),
         ClientPacket::RequestChangePetName(p) => object!(p => name),
+        ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
+        ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
+        ClientPacket::RequestDuelSurrender(_) => json!({}),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -527,6 +534,14 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetInfo => decoded::<PetInfo>(&mut r, pet_info_fields),
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
+        ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::ExDuelAskStart => decoded::<ExDuelAskStart>(&mut r, duel_ask_start_fields),
+        ServerOpcode::ExDuelReady => decoded::<ExDuelReady>(&mut r, duel_ready_fields),
+        ServerOpcode::ExDuelStart => decoded::<ExDuelStart>(&mut r, duel_start_fields),
+        ServerOpcode::ExDuelEnd => decoded::<ExDuelEnd>(&mut r, duel_end_fields),
+        ServerOpcode::ExDuelUpdateUserInfo => {
+            decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
+        }
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
         ServerOpcode::SetSummonRemainTime => {
             decoded::<SetSummonRemainTime>(&mut r, set_summon_remain_time_fields)
@@ -1453,6 +1468,30 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn play_sound_fields(p: &PlaySound) -> Value {
+    object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
+}
+
+fn duel_ask_start_fields(p: &ExDuelAskStart) -> Value {
+    object!(p => requestor_name, party_duel)
+}
+
+fn duel_ready_fields(p: &ExDuelReady) -> Value {
+    object!(p => party_duel)
+}
+
+fn duel_start_fields(p: &ExDuelStart) -> Value {
+    object!(p => party_duel)
+}
+
+fn duel_end_fields(p: &ExDuelEnd) -> Value {
+    object!(p => party_duel)
+}
+
+fn duel_update_user_info_fields(p: &ExDuelUpdateUserInfo) -> Value {
+    object!(p => name, object_id, class_id, level, current_hp, max_hp, current_mp, max_mp, current_cp, max_cp)
+}
+
 fn pet_status_update_fields(p: &PetStatusUpdate) -> Value {
     object!(
         p => summon_type, object_id, x, y, z, title, cur_fed, max_fed, cur_hp, max_hp, cur_mp, max_mp, level,
@@ -1693,6 +1732,12 @@ mod tests {
         ServerOpcode::PetInfo,
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
+        ServerOpcode::PlaySound,
+        ServerOpcode::ExDuelAskStart,
+        ServerOpcode::ExDuelReady,
+        ServerOpcode::ExDuelStart,
+        ServerOpcode::ExDuelEnd,
+        ServerOpcode::ExDuelUpdateUserInfo,
         ServerOpcode::PetDelete,
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,

@@ -25,11 +25,11 @@
 // - `buffs.rs`: `RebalanceHP` and the damage `TransferDamage` passes to a party member.
 //
 // # Left out, with the card that brings it
-// - Summons and pets (`PartySmallWindowAll`'s summon block, `ExPartyPetWindow*`, `PartySpelled` of a
-//   summon, the servitor exp multiplier): SUMMON-01. Marked `// M6:` where they would act.
+// - The summon parts (the pet window packets, a summon's `PartySpelled`) are `summon/party.rs`.
 // - Command channels (`ExOpenMPCC` ...): there is no command channel yet.
-// - Dimensional rift, festival, Underground Coliseum, duels, olympiad, events, party matching
-//   rooms: later milestones; each is marked where Java asks.
+// - Dimensional rift, festival, Underground Coliseum, olympiad, events, party matching
+//   rooms: later milestones; each is marked where Java asks. Duels are `duel.rs` (it hooks
+//   `Party.removePartyMember` and `setLeader`).
 // - Changing the loot rule inside a running party (`requestLootChange`, `answerLootChangeRequest`,
 //   `ExAskModifyPartyLooting`, `ExSetPartyLooting`): the client packets for it are not ported yet.
 // - `BlockList.isBlocked` in `RequestJoinParty`: the block list belongs to the friend list card.
@@ -195,9 +195,10 @@ impl PartyWorld {
 }
 
 impl World {
-    /// Java `Player.getParty()`: the party a player is in. A summon's owner will answer for it
-    /// (SUMMON-01).
+    /// Java `Player.getParty()`: the party a player is in; a summon's is its owner's
+    /// (`Summon.getParty()`).
     pub fn party_of(&self, id: ObjectId) -> Option<PartyId> {
+        let id = self.summon_owner(id).unwrap_or(id);
         self.party.of_player.get(&id).copied()
     }
 

@@ -35,7 +35,7 @@ const INTERACT_THINK_OFFSET: i32 = 36;
 const FOLLOW_INTERVAL_MS: u64 = 500;
 /// `AbstractAI.startFollow(target)` passes `-1`: the normal follow, which has its own task that
 /// runs every second.
-const NORMAL_FOLLOW_RANGE: i32 = -1;
+pub(crate) const NORMAL_FOLLOW_RANGE: i32 = -1;
 const NORMAL_FOLLOW_INTERVAL_MS: u64 = 1000;
 /// `1000 / GameTimeTaskManager.MILLIS_IN_TICK`: the pawn move timeout, in game ticks.
 const MOVE_TO_PAWN_TIMEOUT_TICKS: i32 = 10;
@@ -258,10 +258,7 @@ impl World {
     /// Java `Player.doInteract(target)` for what is not a player: the same as a click.
     fn do_interact(&mut self, id: ObjectId, target: ObjectId) {
         match self.objects.get(&target).map(|e| e.kind) {
-            Some(ObjectKind::Player) => {
-                // FOLLOW-UP(M5): private store lists.
-                self.send(id, &ActionFailed);
-            }
+            Some(ObjectKind::Player) => self.do_interact_player(id, target),
             Some(_) => self.on_action_object(id, target, true),
             None => {}
         }
