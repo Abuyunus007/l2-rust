@@ -27,17 +27,18 @@
 // # Left to other cards
 // - Crests, alliances, clan wars (M6-CLAN-02): their packets reach `ClanInput::NotPorted`; the
 //   ally and war columns and `clan_wars` are loaded.
-// - Clan skills on the members, the clan warehouse, the academy graduation (M6-CLAN-03): the
-//   skills are loaded and listed (`PledgeSkillList`), marked `// M6-CLAN-03:` where they act.
+// - The clan warehouse (M6-WH-01), marked `// M6-CLAN-03:` where it acts.
 // - Castles, forts, clan halls, sieges (M7): their ids stay as loaded (fort and hall 0).
 // - The `ClanMaster` village master script (scripts come last, D-05) that shows the pages with
 //   the clan commands; the commands themselves are here (`village_master.rs`).
 
+mod academy;
 mod handlers;
 mod level;
 mod members;
 pub mod model;
 mod request;
+mod skills;
 mod table;
 mod view;
 mod village_master;
@@ -81,6 +82,14 @@ pub struct ClanSettings {
     /// `ClanMaintenanceDatabaseWrites` of `SideBySide.ini` (D-49): the clan jobs that write rows
     /// on their own run their database part.
     pub maintenance_database_writes: bool,
+    /// `LifeCrystalNeeded` (`Player.ini`): a clan skill costs the life crystal of its tree line.
+    pub life_crystal_needed: bool,
+    /// `CompleteAcademyMinPoints` (`Feature.ini`): the reputation a graduate who joined the
+    /// academy at level 39 or later brings.
+    pub join_academy_min_rep_score: i32,
+    /// `CompleteAcademyMaxPoints` (`Feature.ini`): the reputation for one who joined at level 16
+    /// or earlier.
+    pub join_academy_max_rep_score: i32,
 }
 
 impl Default for ClanSettings {
@@ -97,6 +106,9 @@ impl Default for ClanSettings {
             clan_level_requirements: [30, 50, 80, 120, 140, 170],
             clan_name_template: Arc::new(|_| true),
             maintenance_database_writes: false,
+            life_crystal_needed: true,
+            join_academy_min_rep_score: 190,
+            join_academy_max_rep_score: 650,
         }
     }
 }
@@ -116,6 +128,9 @@ impl fmt::Debug for ClanSettings {
             .field("clan_level_costs", &self.clan_level_costs)
             .field("clan_level_requirements", &self.clan_level_requirements)
             .field("maintenance_database_writes", &self.maintenance_database_writes)
+            .field("life_crystal_needed", &self.life_crystal_needed)
+            .field("join_academy_min_rep_score", &self.join_academy_min_rep_score)
+            .field("join_academy_max_rep_score", &self.join_academy_max_rep_score)
             .finish_non_exhaustive()
     }
 }
@@ -240,6 +255,21 @@ pub enum ClanWrite {
     },
     /// `ClanTable.destroyClan`: the six `DELETE`s and, with a castle, its tax reset.
     Delete { clan_id: i32, castle_id: i32 },
+    /// `Clan.addNewSkill` of a skill the clan has: `UPDATE clan_skills SET skill_level=? WHERE
+    /// skill_id=? AND clan_id=?`.
+    UpdateSkill {
+        clan_id: i32,
+        skill_id: i32,
+        skill_level: i32,
+    },
+    /// `Clan.addNewSkill` of a new skill: `INSERT INTO clan_skills`.
+    InsertSkill {
+        clan_id: i32,
+        skill_id: i32,
+        skill_level: i32,
+        skill_name: String,
+        sub_pledge_id: i32,
+    },
 }
 
 /// The values of `INSERT_CLAN_DATA`.

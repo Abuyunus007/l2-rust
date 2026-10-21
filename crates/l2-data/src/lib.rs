@@ -62,7 +62,7 @@ pub use player_template::{
 };
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
-pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees};
+pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
 pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use stats::{Condition, FuncKind, FuncTemplate, Stat};

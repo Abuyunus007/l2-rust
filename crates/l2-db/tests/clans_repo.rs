@@ -252,6 +252,21 @@ async fn clan_rows_round_trip_with_javas_statements() {
         .await;
     let skills = repo.clan_skills(900).await.unwrap();
     assert_eq!((skills[0].skill_id, skills[0].sub_pledge_id), (370, -2));
+    // Clan.addNewSkill: a level up changes the row, a new skill inserts one.
+    repo.update_clan_skill(900, 370, 2).await.unwrap();
+    repo.insert_clan_skill(900, 611, 1, "Fire Squad", 100)
+        .await
+        .unwrap();
+    assert_eq!(
+        db.scalar("SELECT skill_level FROM clan_skills WHERE clan_id = 900 AND skill_id = 370")
+            .await,
+        2
+    );
+    assert_eq!(
+        db.scalar("SELECT sub_pledge_id FROM clan_skills WHERE clan_id = 900 AND skill_id = 611")
+            .await,
+        100
+    );
 
     // ClanTable.destroyClan
     repo.delete_clan(900, 0).await.unwrap();
