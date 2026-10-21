@@ -29,6 +29,10 @@ pub(crate) enum ItemHandlerKind {
     Maps,
     /// `Calculator`: opens the calculator (M5-FIX-03).
     Calculator,
+    /// `EnchantScrolls`: opens the enchant scroll window (M6-ENCHANT-01).
+    EnchantScrolls,
+    /// `EnchantAttribute`: opens the element stone window (M6-ENCHANT-01).
+    EnchantAttribute,
 }
 
 impl ItemHandlerKind {
@@ -42,6 +46,8 @@ impl ItemHandlerKind {
             "Book" => Self::Book,
             "Maps" => Self::Maps,
             "Calculator" => Self::Calculator,
+            "EnchantScrolls" => Self::EnchantScrolls,
+            "EnchantAttribute" => Self::EnchantAttribute,
             _ => return None,
         })
     }
@@ -74,6 +80,8 @@ impl World {
             ItemHandlerKind::Book => self.book_on_use(id, item),
             ItemHandlerKind::Maps => self.maps_on_use(id, item),
             ItemHandlerKind::Calculator => self.calculator_on_use(id, item),
+            ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
+            ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
         }
     }
 

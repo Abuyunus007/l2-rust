@@ -72,6 +72,8 @@ impl Default for BypassHandlers {
         // dist/game/data/scripts/handlers/bypass/npc/ScriptLink.java (M6-CLAN-02: the village
         // master scripts ClanMaster and AllianceMaster)
         handlers.register("Script", crate::clan::script_link_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/ReleaseAttribute.java (M6-ENCHANT-01)
+        handlers.register("ReleaseAttribute", crate::enchant::release_attribute_handler);
         handlers
     }
 }

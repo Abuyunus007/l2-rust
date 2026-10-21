@@ -365,6 +365,8 @@ pub struct WorldSettings {
     pub pvp: crate::pvp::PvpSettings,
     /// The private store ranges and packet limit (M6-STORE-01).
     pub store: crate::trade::StoreSettings,
+    /// The enchant and over-enchant settings (M6-ENCHANT-01).
+    pub enchant: crate::enchant::EnchantSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -420,6 +422,7 @@ impl Default for WorldSettings {
             party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
             store: crate::trade::StoreSettings::default(),
+            enchant: crate::enchant::EnchantSettings::default(),
             daily_reset_database_writes: false,
         }
     }

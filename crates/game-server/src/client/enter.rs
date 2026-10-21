@@ -25,7 +25,7 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
+    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
     PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
     WorldCommand,
 };
@@ -892,6 +892,35 @@ impl ClientSession {
                 response: p.response,
             },
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
+            // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
+            // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
+            // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute
+            ClientPacket::RequestEnchantItem(p) => ClientInput::Enchant(EnchantInput::Enchant {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestExTryToPutEnchantTargetItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutSupportItem {
+                    support_object_id: p.support_object_id,
+                    enchant_object_id: p.enchant_object_id,
+                })
+            }
+            ClientPacket::RequestExCancelEnchantItem(_) => ClientInput::Enchant(EnchantInput::CancelEnchant),
+            ClientPacket::RequestExEnchantItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::EnchantAttribute {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExRemoveItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::RemoveAttribute {
+                    object_id: p.object_id,
+                    element: p.element,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

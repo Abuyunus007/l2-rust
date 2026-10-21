@@ -23,6 +23,7 @@ pub mod dialog;
 pub mod door;
 pub mod duel;
 pub mod effects;
+pub mod enchant;
 pub mod enter;
 pub mod formulas;
 pub mod ground_item;
@@ -76,6 +77,7 @@ pub use death::DeathSettings;
 pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use effects::apply::ApplyMode;
+pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
 pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
     SavedEffect, SkillFinishType, SkillKey, effect_flag,

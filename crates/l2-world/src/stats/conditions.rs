@@ -427,11 +427,13 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         },
         Condition::ChangeWeapon { required } => match a.player() {
             None => false,
-            // `isEnchanting()` (an enchant scroll in use) is not modelled: never.
-            Some(_) if *required => a
-                .active_weapon_item()
-                .and_then(ItemTemplate::weapon)
-                .is_some_and(|w| w.change_weapon_id != 0),
+            // `player.isEnchanting()` refuses too.
+            Some(p) if *required => {
+                a.active_weapon_item()
+                    .and_then(ItemTemplate::weapon)
+                    .is_some_and(|w| w.change_weapon_id != 0)
+                    && !p.enchant.enchanting
+            }
             Some(_) => true,
         },
 

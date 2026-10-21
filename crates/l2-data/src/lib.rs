@@ -10,6 +10,7 @@ pub mod armor_set;
 pub mod augmentation;
 pub mod class_list;
 pub mod door;
+pub mod enchant;
 pub mod enchant_hp_bonus;
 pub mod experience;
 pub mod fence;
@@ -43,6 +44,10 @@ pub use armor_set::{ArmorSet, ArmorSets};
 pub use augmentation::{AugmentationOption, AugmentationOptions};
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
 pub use door::{DoorTemplate, DoorTemplates};
+pub use enchant::{
+    ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
+    EnchantScroll, EnchantSupportItem, EnchantTarget,
+};
 pub use enchant_hp_bonus::EnchantHpBonus;
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
@@ -131,6 +136,12 @@ pub struct Datapack {
     pub augmentation_options: Arc<AugmentationOptions>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
+    /// `data/EnchantItemData.xml`: the enchant scrolls and support items (M6-ENCHANT-01).
+    pub enchant_items: Arc<EnchantItemData>,
+    /// `data/EnchantItemGroups.xml`: the success chances (M6-ENCHANT-01).
+    pub enchant_groups: Arc<EnchantItemGroups>,
+    /// `data/ElementalAttributeData.xml`: the element stones (M6-ENCHANT-01).
+    pub elemental_attributes: Arc<ElementalAttributeData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -219,6 +230,12 @@ impl Datapack {
         let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
             skills.get(id, level).is_some()
         }));
+        let items = Arc::new(ItemTemplates::load(root, options.custom_items_load));
+        // Java loads `ElementalAttributeData` and `EnchantItemData` after `ItemData`: both check
+        // their item ids against it.
+        let enchant_items = Arc::new(EnchantItemData::load(root, &items));
+        let enchant_groups = Arc::new(EnchantItemGroups::load(root));
+        let elemental_attributes = Arc::new(ElementalAttributeData::load(root, &items));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -230,7 +247,7 @@ impl Datapack {
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             skill_trees: Arc::new(SkillTrees::load(root)),
             skill_learn: Arc::new(SkillLearnData::load(root)),
-            items: Arc::new(ItemTemplates::load(root, options.custom_items_load)),
+            items,
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
             // Java `HtmCache = False` is the lazy mode, so the lazy flag is the inverse.
@@ -253,6 +270,9 @@ impl Datapack {
             skills,
             augmentation_options,
             pet_skills,
+            enchant_items,
+            enchant_groups,
+            elemental_attributes,
         })
     }
 }

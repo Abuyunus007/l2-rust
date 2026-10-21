@@ -327,6 +327,11 @@ impl Server {
             let skill_learn = Arc::clone(&datapack.skill_learn);
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let class_list = Arc::clone(&datapack.class_list);
+            let enchant_data = (
+                Arc::clone(&datapack.enchant_items),
+                Arc::clone(&datapack.enchant_groups),
+                Arc::clone(&datapack.elemental_attributes),
+            );
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -358,6 +363,9 @@ impl Server {
                     world.set_pet_skill_data(pet_skills);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
+                    // Java: EnchantItemData, EnchantItemGroupsData, ElementalAttributeData.
+                    let (enchant_items, enchant_groups, elemental_attributes) = enchant_data;
+                    world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the

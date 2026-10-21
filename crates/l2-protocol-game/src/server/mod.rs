@@ -74,6 +74,7 @@ pub mod chat;
 pub mod combat;
 pub mod duel;
 pub mod effect_packets;
+pub mod enchant;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -108,6 +109,11 @@ pub use combat::{
 };
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
+pub use enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, ShortcutRegister,

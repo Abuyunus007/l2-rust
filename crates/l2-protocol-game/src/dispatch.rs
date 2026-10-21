@@ -35,6 +35,10 @@ use crate::client::{
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute, RequestExRemoveItemAttribute,
+    RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+};
+use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
@@ -163,6 +167,12 @@ pub enum ClientPacket {
     RequestDuelStart(RequestDuelStart),
     RequestDuelAnswerStart(RequestDuelAnswerStart),
     RequestDuelSurrender(RequestDuelSurrender),
+    RequestEnchantItem(RequestEnchantItem),
+    RequestExTryToPutEnchantTargetItem(RequestExTryToPutEnchantTargetItem),
+    RequestExTryToPutEnchantSupportItem(RequestExTryToPutEnchantSupportItem),
+    RequestExCancelEnchantItem(RequestExCancelEnchantItem),
+    RequestExEnchantItemAttribute(RequestExEnchantItemAttribute),
+    RequestExRemoveItemAttribute(RequestExRemoveItemAttribute),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -351,6 +361,7 @@ pub fn decode_client(
         RequestChangePetName::OPCODE => {
             ClientPacket::RequestChangePetName(RequestChangePetName::decode(reader)?)
         }
+        RequestEnchantItem::OPCODE => ClientPacket::RequestEnchantItem(RequestEnchantItem::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -416,6 +427,21 @@ fn decode_ex_client(
         }
         RequestDuelSurrender::EX_OPCODE => {
             ClientPacket::RequestDuelSurrender(RequestDuelSurrender::decode(reader)?)
+        }
+        RequestExTryToPutEnchantTargetItem::EX_OPCODE => {
+            ClientPacket::RequestExTryToPutEnchantTargetItem(RequestExTryToPutEnchantTargetItem::decode(reader)?)
+        }
+        RequestExTryToPutEnchantSupportItem::EX_OPCODE => ClientPacket::RequestExTryToPutEnchantSupportItem(
+            RequestExTryToPutEnchantSupportItem::decode(reader)?,
+        ),
+        RequestExCancelEnchantItem::EX_OPCODE => {
+            ClientPacket::RequestExCancelEnchantItem(RequestExCancelEnchantItem::decode(reader)?)
+        }
+        RequestExEnchantItemAttribute::EX_OPCODE => {
+            ClientPacket::RequestExEnchantItemAttribute(RequestExEnchantItemAttribute::decode(reader)?)
+        }
+        RequestExRemoveItemAttribute::EX_OPCODE => {
+            ClientPacket::RequestExRemoveItemAttribute(RequestExRemoveItemAttribute::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

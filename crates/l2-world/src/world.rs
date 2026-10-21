@@ -114,6 +114,8 @@ pub struct World {
     pub(crate) pvp: crate::pvp::PvpWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
+    pub(crate) enchant: crate::enchant::EnchantWorld,
 }
 
 impl World {
@@ -168,6 +170,7 @@ impl World {
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            enchant: crate::enchant::EnchantWorld::default(),
         }
     }
 
@@ -571,6 +574,8 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            // Java: RequestEnchantItem and the other enchant window packets
+            ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }

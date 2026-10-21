@@ -328,6 +328,8 @@ pub struct Player {
     /// Java `_transformation`, `_transformSkills`, the visible name and title, the inventory
     /// block of a transformation (see `transform/`).
     pub transform: crate::transform::TransformState,
+    /// The enchant scroll and attribute stone in use (see `enchant/`).
+    pub enchant: crate::enchant::EnchantState,
 }
 
 impl Player {
@@ -373,6 +375,7 @@ impl Player {
             inv_tasks: crate::inventory::InventoryTasks::default(),
             trade: crate::trade::TradeState::default(),
             transform: crate::transform::TransformState::default(),
+            enchant: crate::enchant::EnchantState::default(),
         }
     }
 
