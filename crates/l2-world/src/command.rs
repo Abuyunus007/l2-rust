@@ -156,6 +156,8 @@ pub enum ClientInput {
     /// The shop packets (`RequestBuyItem`, `RequestSellItem`, `RequestRefundItem`,
     /// `RequestBuySellUIClose`), see `shop/`.
     Shop(crate::shop::ShopInput),
+    /// The warehouse and freight packets (`SendWareHouseDepositList`, ...), see `warehouse/`.
+    Warehouse(crate::warehouse::WarehouseInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },

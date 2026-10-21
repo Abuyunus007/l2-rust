@@ -204,6 +204,10 @@ pub struct PlayerProfile {
     /// does not know the clan (one the Java game server made after this server started, D-39);
     /// it is taken at enter world, so snapshots never carry it.
     pub clan_record: Option<Box<crate::clan::ClanRecord>>,
+    /// The private warehouse, the freight and the other characters of the account as the session
+    /// read them (M6-WH-01). The world takes them when the player is created
+    /// ([`Player::from_data`]), so snapshots never carry them.
+    pub warehouse: crate::warehouse::WarehouseLoad,
 }
 
 impl Default for PlayerProfile {
@@ -234,6 +238,7 @@ impl Default for PlayerProfile {
             summon_effects: Vec::new(),
             clan: None,
             clan_record: None,
+            warehouse: crate::warehouse::WarehouseLoad::default(),
         }
     }
 }
@@ -330,10 +335,17 @@ pub struct Player {
     pub transform: crate::transform::TransformState,
     /// The refund list and the inventory block of an open shop window (see `shop/`).
     pub shop: crate::shop::ShopState,
+    /// The private warehouse, the freight and the active warehouse (see `warehouse/`).
+    pub warehouse: crate::warehouse::PlayerWarehouse,
 }
 
 impl Player {
-    pub fn from_data(data: PlayerData, tick: u64) -> Self {
+    pub fn from_data(mut data: PlayerData, tick: u64) -> Self {
+        // The warehouses are the player's own lists, not part of the snapshots.
+        let warehouse = crate::warehouse::PlayerWarehouse::from_load(
+            std::mem::take(&mut data.profile.warehouse),
+            data.object_id,
+        );
         let core = CreatureCore {
             object_id: data.object_id,
             x: data.x,
@@ -376,6 +388,7 @@ impl Player {
             trade: crate::trade::TradeState::default(),
             transform: crate::transform::TransformState::default(),
             shop: crate::shop::ShopState::default(),
+            warehouse,
         }
     }
 

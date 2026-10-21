@@ -18,7 +18,8 @@ use l2_db::{
 };
 use l2_testkit::test_db::TestDb;
 use l2_world::{
-    ItemData, ObjectId, PersistCommand, PlayerData, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
+    ItemData, ItemRowOp, ObjectId, PersistCommand, PlayerData, SavedEffect, SavedItemReuse, ShortcutData,
+    SkillData,
 };
 use sqlx::mysql::MySqlConnectOptions;
 
@@ -757,6 +758,174 @@ async fn an_item_handed_to_another_character_changes_owner_and_survives_both_sto
     store.store_player(&data).await.unwrap();
     assert_eq!(bag_of(MATE).await.len(), 1);
     assert!(bag_of(CHAR_ID).await.is_empty());
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// M6-WH-01: items moved between the inventory, the warehouses and the freight are written with
+/// Java's columns (`owner_id`, `loc`, `count`), the clan warehouse belongs to the clan, and the
+/// character's full stores neither delete a deposited item nor insert a withdrawn one again.
+#[tokio::test]
+async fn warehouse_moves_write_the_rows_and_survive_full_stores() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    const MATE: i32 = CHAR_ID + 1;
+    const CLAN: i32 = 500;
+    let characters = CharacterRepository::new(pool.clone());
+    let items = ItemRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut mate = new_character();
+    mate.char_id = MATE;
+    mate.char_name = "Mate".into();
+    characters.insert_character(&mate).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    let me = ObjectId(CHAR_ID);
+    let at = |owner: i32, loc: ItemLocation| {
+        let items = items.clone();
+        async move {
+            let mut rows = items.items_of_location(owner, loc).await.unwrap();
+            rows.sort_by_key(|r| r.object_id);
+            rows.into_iter()
+                .map(|r| (r.object_id, r.count))
+                .collect::<Vec<_>>()
+        }
+    };
+
+    // The bag was stored once: the sword and a pile of 500.
+    let sword = item(0x6000_1001, 2, 1, "INVENTORY", 0);
+    let pile = item(0x6000_1003, 23, 500, "INVENTORY", 0);
+    let mut data = player_data();
+    data.items = vec![sword.clone(), pile.clone()];
+    store.store_player(&data).await.unwrap();
+
+    // Deposit: the sword moves whole, 100 of the pile go to a new row.
+    let mut deposited = sword.clone();
+    deposited.loc = "WAREHOUSE".into();
+    let mut pile_left = pile.clone();
+    pile_left.count = 400;
+    let new_pile = item(0x6000_1004, 23, 100, "WAREHOUSE", 0);
+    store
+        .store_item_rows(
+            Some(me),
+            &[
+                ItemRowOp::Write {
+                    owner_id: CHAR_ID,
+                    item: deposited.clone(),
+                },
+                ItemRowOp::Write {
+                    owner_id: CHAR_ID,
+                    item: pile_left.clone(),
+                },
+                ItemRowOp::Insert {
+                    owner_id: CHAR_ID,
+                    item: new_pile.clone(),
+                },
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(
+        at(CHAR_ID, ItemLocation::Warehouse).await,
+        [(0x6000_1001, 1), (0x6000_1004, 100)]
+    );
+    assert_eq!(at(CHAR_ID, ItemLocation::Inventory).await, [(0x6000_1003, 400)]);
+    // The same ops again (a retry) neither fail nor duplicate.
+    store
+        .store_item_rows(
+            Some(me),
+            &[ItemRowOp::Insert {
+                owner_id: CHAR_ID,
+                item: new_pile.clone(),
+            }],
+        )
+        .await
+        .unwrap();
+    assert_eq!(at(CHAR_ID, ItemLocation::Warehouse).await.len(), 2);
+
+    // The next full store only knows the bag: the warehouse rows are not "gone".
+    data.items = vec![pile_left.clone()];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(at(CHAR_ID, ItemLocation::Warehouse).await.len(), 2);
+
+    // Withdraw: the sword goes back, 40 of the new pile become a new inventory row.
+    let mut back = deposited.clone();
+    back.loc = "INVENTORY".into();
+    let mut warehouse_pile = new_pile.clone();
+    warehouse_pile.count = 60;
+    let inventory_pile = item(0x6000_1005, 23, 40, "INVENTORY", 0);
+    store
+        .store_item_rows(
+            Some(me),
+            &[
+                ItemRowOp::Update {
+                    owner_id: CHAR_ID,
+                    item: back.clone(),
+                },
+                ItemRowOp::Update {
+                    owner_id: CHAR_ID,
+                    item: warehouse_pile.clone(),
+                },
+                ItemRowOp::Insert {
+                    owner_id: CHAR_ID,
+                    item: inventory_pile.clone(),
+                },
+            ],
+        )
+        .await
+        .unwrap();
+    assert_eq!(at(CHAR_ID, ItemLocation::Warehouse).await, [(0x6000_1004, 60)]);
+    // The store after it has the withdrawn items in the bag and writes no `INSERT` for them.
+    data.items = vec![back.clone(), pile_left.clone(), inventory_pile.clone()];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        at(CHAR_ID, ItemLocation::Inventory).await,
+        [(0x6000_1001, 1), (0x6000_1003, 400), (0x6000_1005, 40)]
+    );
+
+    // The clan warehouse: the owner is the clan, not a character.
+    let mut for_clan = back.clone();
+    for_clan.loc = "CLANWH".into();
+    store
+        .store_item_rows(
+            Some(me),
+            &[ItemRowOp::Write {
+                owner_id: CLAN,
+                item: for_clan.clone(),
+            }],
+        )
+        .await
+        .unwrap();
+    assert_eq!(at(CLAN, ItemLocation::ClanWh).await, [(0x6000_1001, 1)]);
+    data.items = vec![pile_left.clone(), inventory_pile.clone()];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(at(CLAN, ItemLocation::ClanWh).await, [(0x6000_1001, 1)]);
+
+    // Freight for another character, then a clan that is dissolved takes its rows with it.
+    let mut freight = inventory_pile.clone();
+    freight.loc = "FREIGHT".into();
+    store
+        .store_item_rows(
+            Some(me),
+            &[ItemRowOp::Write {
+                owner_id: MATE,
+                item: freight,
+            }],
+        )
+        .await
+        .unwrap();
+    assert_eq!(at(MATE, ItemLocation::Freight).await, [(0x6000_1005, 40)]);
+    store
+        .store_item_rows(
+            None,
+            &[ItemRowOp::Delete {
+                object_id: ObjectId(0x6000_1001),
+            }],
+        )
+        .await
+        .unwrap();
+    assert!(at(CLAN, ItemLocation::ClanWh).await.is_empty());
 
     pool.close().await;
     db.drop_db().await;

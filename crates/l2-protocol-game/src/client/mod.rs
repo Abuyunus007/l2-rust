@@ -180,6 +180,7 @@ pub mod store;
 pub mod summon;
 pub mod trade;
 pub mod vote;
+pub mod warehouse;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
@@ -228,6 +229,10 @@ pub use summon::{
 };
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
 pub use vote::RequestVoteNew;
+pub use warehouse::{
+    RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
+    WarehouseListEntry,
+};
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

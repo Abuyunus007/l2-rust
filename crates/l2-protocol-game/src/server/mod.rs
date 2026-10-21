@@ -96,6 +96,7 @@ pub mod system_message;
 pub mod trade;
 pub mod userinfo;
 pub mod visibility;
+pub mod warehouse;
 
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
@@ -174,6 +175,10 @@ pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
     StatusUpdate,
+};
+pub use warehouse::{
+    PackageSendableList, PackageToList, SortedWareHouseWithdrawalList, SortedWarehouseItem,
+    WareHouseDepositList, WareHouseWithdrawalList,
 };
 
 /// Reads an int count, which Java never writes negative. Anything negative is an error.

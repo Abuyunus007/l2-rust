@@ -59,6 +59,7 @@ pub mod trade;
 pub mod transform;
 pub mod user_command;
 mod visibility;
+pub mod warehouse;
 pub mod world;
 pub mod zones;
 
@@ -92,7 +93,7 @@ pub use movement::{
 };
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
-pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
+pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
@@ -124,5 +125,6 @@ pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use trade::{
     AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
 };
+pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

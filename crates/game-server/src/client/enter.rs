@@ -27,7 +27,7 @@ use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
     PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    WorldCommand,
+    WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -173,6 +173,11 @@ impl DbPlayerLoader {
             );
         }
 
+        // Java: getWarehouse().restore(), getFreight().restore(), and the other characters of the
+        // account (`_chars`) with their freight, which `RequestPackageSend` adds to. Java catches
+        // a failed read ("Could not restore container") and goes on with an empty container.
+        data.profile.warehouse = self.load_warehouses(char_id, &data.account).await;
+
         // Java: restoreSkills
         let mut skills = self.skills.skills_of(char_id, class_index).await?;
         skills.sort_by_key(|s| s.skill_id);
@@ -277,12 +282,47 @@ impl DbPlayerLoader {
         let clan_id = data.profile.clan.map_or(0, |c| c.clan_id);
         if clan_id > 0 {
             match crate::persist::load_clan(&self.clans, clan_id).await {
-                Ok(record) => data.profile.clan_record = Some(Box::new(record)),
+                Ok(mut record) => {
+                    record.warehouse = crate::persist::load_clan_warehouse(&self.items, clan_id).await;
+                    data.profile.clan_record = Some(Box::new(record));
+                }
                 Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
             }
         }
         apply_restore_location(&mut data);
         Ok(data)
+    }
+}
+
+impl DbPlayerLoader {
+    // Java: Player.load (the account's other characters), Player.getWarehouse().restore() and
+    // getFreight().restore(), ItemContainer.restore
+    async fn load_warehouses(&self, char_id: i32, account: &str) -> WarehouseLoad {
+        use crate::persist::load_container_items;
+        let mut load = WarehouseLoad::default();
+        match load_container_items(&self.items, char_id, ItemLocation::Warehouse).await {
+            Ok(items) => load.private = items,
+            Err(e) => warn!("Could not restore container: {e}"),
+        }
+        match load_container_items(&self.items, char_id, ItemLocation::Freight).await {
+            Ok(items) => load.freight.push((ObjectId(char_id), items)),
+            Err(e) => warn!("Could not restore container: {e}"),
+        }
+        match self.characters.other_characters(account, char_id).await {
+            Ok(chars) => {
+                for other in chars {
+                    let other_id = i32::try_from(other.char_id).unwrap_or(i32::MAX);
+                    load.account_chars.push((ObjectId(other_id), other.char_name));
+                    match load_container_items(&self.items, other_id, ItemLocation::Freight).await {
+                        Ok(items) if !items.is_empty() => load.freight.push((ObjectId(other_id), items)),
+                        Ok(_) => {}
+                        Err(e) => warn!("Could not restore container: {e}"),
+                    }
+                }
+            }
+            Err(e) => warn!("Could not load the other characters of the account: {e}"),
+        }
+        load
     }
 }
 
@@ -502,6 +542,23 @@ fn clan_input(packet: ClientPacket) -> ClanInput {
         ClientPacket::RequestAllyCrest(p) => ClanInput::AllyCrest { crest_id: p.crest_id },
         ClientPacket::RequestAllyInfo(_) => ClanInput::AllyInfo,
         _ => ClanInput::NotPorted("unknown clan packet"),
+    }
+}
+
+/// The warehouse and freight packets as the world takes them (M6-WH-01).
+fn warehouse_input(packet: ClientPacket) -> WarehouseInput {
+    match packet {
+        ClientPacket::SendWareHouseDepositList(p) => WarehouseInput::Deposit { items: p.items },
+        ClientPacket::SendWareHouseWithDrawList(p) => WarehouseInput::Withdraw { items: p.items },
+        ClientPacket::RequestPackageSend(p) => WarehouseInput::PackageSend {
+            object_id: p.object_id,
+            items: p.items,
+        },
+        ClientPacket::RequestPackageSendableItemList(p) => WarehouseInput::PackageSendableList {
+            object_id: p.object_id,
+        },
+        // The caller only passes the four packets above; a list Java drops is as harmless.
+        _ => WarehouseInput::Deposit { items: None },
     }
 }
 
@@ -872,6 +929,14 @@ impl ClientSession {
             | ClientPacket::RequestDismissAlly(_)
             | ClientPacket::RequestAllyCrest(_)
             | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
+            // Java: SendWareHouseDepositList, SendWareHouseWithDrawList, RequestPackageSend,
+            // RequestPackageSendableItemList (M6-WH-01)
+            packet @ (ClientPacket::SendWareHouseDepositList(_)
+            | ClientPacket::SendWareHouseWithDrawList(_)
+            | ClientPacket::RequestPackageSend(_)
+            | ClientPacket::RequestPackageSendableItemList(_)) => {
+                ClientInput::Warehouse(warehouse_input(packet))
+            }
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
@@ -1156,6 +1221,49 @@ mod tests {
         assert_eq!(
             (update.clan_id, update.clan_privs, update.power_grade),
             (500, 0x46, 5)
+        );
+    }
+
+    #[test]
+    fn warehouse_packets_become_warehouse_input() {
+        use l2_protocol_game::client::{
+            RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList,
+            SendWareHouseWithDrawList, WarehouseListEntry,
+        };
+        let entry = WarehouseListEntry {
+            object_id: 5,
+            count: 2,
+        };
+        assert_eq!(
+            warehouse_input(ClientPacket::SendWareHouseDepositList(SendWareHouseDepositList {
+                items: Some(vec![entry])
+            })),
+            WarehouseInput::Deposit {
+                items: Some(vec![entry])
+            }
+        );
+        // A list Java drops stays `None` all the way to the world.
+        assert_eq!(
+            warehouse_input(ClientPacket::SendWareHouseWithDrawList(
+                SendWareHouseWithDrawList { items: None }
+            )),
+            WarehouseInput::Withdraw { items: None }
+        );
+        assert_eq!(
+            warehouse_input(ClientPacket::RequestPackageSend(RequestPackageSend {
+                object_id: 9,
+                items: Some(vec![entry])
+            })),
+            WarehouseInput::PackageSend {
+                object_id: 9,
+                items: Some(vec![entry])
+            }
+        );
+        assert_eq!(
+            warehouse_input(ClientPacket::RequestPackageSendableItemList(
+                RequestPackageSendableItemList { object_id: 9 }
+            )),
+            WarehouseInput::PackageSendableList { object_id: 9 }
         );
     }
 

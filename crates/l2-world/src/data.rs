@@ -365,6 +365,8 @@ pub struct WorldSettings {
     pub pvp: crate::pvp::PvpSettings,
     /// The values the NPC shops read (M6-SHOP-01).
     pub shop: crate::shop::ShopSettings,
+    /// The freight price and slots, the clan warehouse rule, the sorted lists (M6-WH-01).
+    pub warehouse: crate::warehouse::WarehouseSettings,
     /// The private store ranges and packet limit (M6-STORE-01).
     pub store: crate::trade::StoreSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
@@ -422,6 +424,7 @@ impl Default for WorldSettings {
             party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
             shop: crate::shop::ShopSettings::default(),
+            warehouse: crate::warehouse::WarehouseSettings::default(),
             store: crate::trade::StoreSettings::default(),
             daily_reset_database_writes: false,
         }

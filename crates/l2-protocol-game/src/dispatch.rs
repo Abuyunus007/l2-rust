@@ -36,6 +36,9 @@ use crate::client::{
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
+    RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
+};
+use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
@@ -120,6 +123,10 @@ pub enum ClientPacket {
     RequestPrivateStoreSell(RequestPrivateStoreSell),
     /// `SET_PRIVATE_STORE_WHOLE_MSG` (`0xD0` 0x0049), an ex packet.
     SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg),
+    SendWareHouseDepositList(SendWareHouseDepositList),
+    SendWareHouseWithDrawList(SendWareHouseWithDrawList),
+    RequestPackageSend(RequestPackageSend),
+    RequestPackageSendableItemList(RequestPackageSendableItemList),
     RequestJoinPledge(RequestJoinPledge),
     RequestAnswerJoinPledge(RequestAnswerJoinPledge),
     RequestWithdrawalPledge(RequestWithdrawalPledge),
@@ -296,6 +303,16 @@ pub fn decode_client(
         }
         RequestPrivateStoreSell::OPCODE => {
             ClientPacket::RequestPrivateStoreSell(RequestPrivateStoreSell::decode(reader)?)
+        }
+        SendWareHouseDepositList::OPCODE => {
+            ClientPacket::SendWareHouseDepositList(SendWareHouseDepositList::decode(reader)?)
+        }
+        SendWareHouseWithDrawList::OPCODE => {
+            ClientPacket::SendWareHouseWithDrawList(SendWareHouseWithDrawList::decode(reader)?)
+        }
+        RequestPackageSend::OPCODE => ClientPacket::RequestPackageSend(RequestPackageSend::decode(reader)?),
+        RequestPackageSendableItemList::OPCODE => {
+            ClientPacket::RequestPackageSendableItemList(RequestPackageSendableItemList::decode(reader)?)
         }
         RequestJoinPledge::OPCODE => ClientPacket::RequestJoinPledge(RequestJoinPledge::decode(reader)?),
         RequestAnswerJoinPledge::OPCODE => {

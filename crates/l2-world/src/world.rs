@@ -410,6 +410,8 @@ impl World {
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
+        self.clean_loaded_warehouses(id);
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
@@ -560,6 +562,7 @@ impl World {
             ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
+            ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
