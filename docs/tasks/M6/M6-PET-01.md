@@ -41,4 +41,8 @@ Pets on top of the servitor core: pet data XML (`PetDataTable`), pet collars (`S
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- SUMMON-01 is merged: `crates/l2-world/src/summon/` (`SummonWorld`, `SummonKind { Servitor, Pet }`, `ai.rs`, `actions.rs`, `info.rs`, `spawn.rs`, `shots.rs` with the beast shots), summon creatures in `World::npcs` with `NpcClass::Summon`. Pet item/name client packets currently go to the not-ported path: route them to your code.
+- Markers for you: PcBody dead-pet target (`skills/targets.rs`), `effects/revive.rs` (pet resurrection), pet inventory and food. `character_summons`/`pets` rows exactly as Java (D-39).
+- Item moves (`RequestGiveItemToPet`/`GetItemFromPet`) use `World::transfer_item` (`inventory/transfer.rs`).
+- Up to seven M6 workers run at the same time. In shared files (`skills/targets.rs`, `enter.rs`, `player_view.rs`, `leave.rs`, `death.rs`, `world.rs`, `dispatch.rs`, `client/enter.rs`) only add your lines: no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.
