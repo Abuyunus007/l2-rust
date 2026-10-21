@@ -154,6 +154,12 @@ pub enum ClientInput {
     OustPartyMember { name: String },
     /// Java `RequestChangePartyLeader`: the leader hands the party to `name`.
     ChangePartyLeader { name: String },
+    /// Java `RequestDuelStart`: challenge the player `name`; `party_duel` is 1 for a party duel.
+    DuelStart { name: String, party_duel: i32 },
+    /// Java `RequestDuelAnswerStart`: 1 accept, -1 the client refuses duels, else decline.
+    DuelAnswerStart { party_duel: i32, response: i32 },
+    /// Java `RequestDuelSurrender`.
+    DuelSurrender,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

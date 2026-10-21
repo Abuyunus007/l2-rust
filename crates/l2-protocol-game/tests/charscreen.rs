@@ -288,6 +288,8 @@ fn check_server(opcode: u8, raw: &[u8]) -> Option<bool> {
         0x1D => CharDeleteSuccess::decode(body).ok()?.to_bytes(),
         0x1E => CharDeleteFail::decode(body).ok()?.to_bytes(),
         0x20 => ServerClose::decode(body).ok()?.to_bytes(),
+        // PlaySound (M6-DUEL-01): the recorded sessions hold real ones.
+        0x9E => PlaySound::decode(body).ok()?.to_bytes(),
         _ => return None,
     };
     Some(encoded == raw)
@@ -415,6 +417,9 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestGiveItemToPet(_)
             | ClientPacket::RequestPetUseItem(_)
             | ClientPacket::RequestChangePetName(_)
+            | ClientPacket::RequestDuelStart(_)
+            | ClientPacket::RequestDuelAnswerStart(_)
+            | ClientPacket::RequestDuelSurrender(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

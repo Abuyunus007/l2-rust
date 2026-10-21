@@ -112,6 +112,8 @@ pub enum TimerKind {
     Clan(crate::clan::ClanTimer),
     /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
     PvpFlag(ObjectId),
+    /// The three tasks of a duel (start countdown, the 1 s watch, the end), see `duel.rs`.
+    Duel(crate::duel::DuelTimer),
 }
 
 #[derive(Debug, Default)]

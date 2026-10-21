@@ -198,9 +198,11 @@ impl World {
         }
         self.recalculate_party_level(party);
 
-        // Festival participants (`SevenSignsFestival.updateParticipants`), duels
-        // (`DuelManager.onRemoveFromParty`) and channeling (`abortCast`/`abortChannelization`):
-        // none of them exists yet.
+        // Festival participants (`SevenSignsFestival.updateParticipants`) and channeling
+        // (`abortCast`/`abortChannelization`): neither exists yet.
+        if self.is_in_duel(player) {
+            self.duel_on_remove_from_party(player);
+        }
 
         let name = self.name_of_player(player);
         match kind {
@@ -257,6 +259,9 @@ impl World {
             if let Some(leader) = remaining.first() {
                 // `leader.setParty(null)`; a leader in a duel leaves it (`onRemoveFromParty`).
                 self.party.of_player.remove(leader);
+                if self.is_in_duel(*leader) {
+                    self.duel_on_remove_from_party(*leader);
+                }
             }
             // The loot rule change task would be cancelled here: there is none.
             if let Some(timer) = self
@@ -312,8 +317,9 @@ impl World {
     /// Java `Party.setLeader(player)` (and `changePartyLeader(name)` through
     /// `getPlayerByName`).
     pub(crate) fn set_party_leader(&mut self, party: PartyId, player: Option<ObjectId>) {
-        // `player != null && !player.isInDuel()`: no duels yet.
-        let Some(player) = player else {
+        // `player != null && !player.isInDuel()`: a duelist cannot get the party, and Java says
+        // nothing.
+        let Some(player) = player.filter(|player| !self.is_in_duel(*player)) else {
             return;
         };
         let Some(p) = self.party.parties.get_mut(&party) else {
