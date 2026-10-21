@@ -111,6 +111,8 @@ pub enum TimerKind {
     /// A servitor's life task, a summon's avoid task and its abnormal effect update, see
     /// `summon/`.
     Summon(crate::summon::SummonTimer),
+    /// The dissolution of a clan, the clan ranks and the end of a clan invitation, see `clan/`.
+    Clan(crate::clan::ClanTimer),
     /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
     PvpFlag(ObjectId),
 }

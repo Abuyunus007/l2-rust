@@ -195,6 +195,15 @@ pub struct PlayerProfile {
     /// when a servitor of the same skill spawns). The world takes them at enter world
     /// (`summon/servitor.rs`).
     pub summon_effects: Vec<crate::summon::servitor::SavedSummonEffect>,
+    /// The clan columns of `characters` (`clanid`, `clan_privs`, `power_grade`, `subpledge`, ...)
+    /// and the clan values of `Player`, see `clan/`. `None`: a snapshot that does not carry them
+    /// (the store keeps the row's values); the world fills it when the player enters.
+    pub clan: Option<crate::clan::PlayerClanState>,
+    /// The character's clan as the session read it at `CharacterSelect` (`clanid` of the row),
+    /// `None` without a clan or when the read failed. The world installs it when its clan table
+    /// does not know the clan (one the Java game server made after this server started, D-39);
+    /// it is taken at enter world, so snapshots never carry it.
+    pub clan_record: Option<Box<crate::clan::ClanRecord>>,
 }
 
 impl Default for PlayerProfile {
@@ -223,6 +232,8 @@ impl Default for PlayerProfile {
             item_reuse_to_store: None,
             class_index: 0,
             summon_effects: Vec::new(),
+            clan: None,
+            clan_record: None,
         }
     }
 }

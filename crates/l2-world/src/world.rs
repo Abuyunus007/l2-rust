@@ -108,6 +108,8 @@ pub struct World {
     pub(crate) punishments: crate::punishments::PunishmentWorld,
     /// Summons, their owners and the summon tables (M6-SUMMON-01, `summon/`).
     pub(crate) summons: crate::summon::SummonWorld,
+    /// The clans, the clan settings and the players' invitations (M6-CLAN-01, `clan/`).
+    pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
 }
@@ -161,6 +163,7 @@ impl World {
             party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
             summons: crate::summon::SummonWorld::default(),
+            clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
         }
     }
@@ -310,6 +313,8 @@ impl World {
                 }
                 // Java Shutdown: "Save items on ground before closing."
                 self.save_ground_items();
+                // Java Shutdown.saveData: `ClanTable.getInstance().shutdown()`.
+                self.clan_table_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -544,6 +549,7 @@ impl World {
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
+            ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -635,6 +641,8 @@ impl World {
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
             // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task
             TimerKind::Summon(timer) => self.on_summon_timer(timer),
+            // Java: ClanTable.scheduleRemoveClan, updateClanRanks, RequestPartner.clear
+            TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }

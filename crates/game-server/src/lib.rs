@@ -61,6 +61,72 @@ use crate::runtime::WorldRuntime;
 use crate::state::{ExitReason, GameState, ShutdownHandle};
 use crate::world_data::DatapackData;
 
+/// The clan values of `Player.ini`, `Feature.ini` and `Server.ini`, and `ClanMaintenanceDatabaseWrites`
+/// of `SideBySide.ini` (D-49).
+pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSettings {
+    let (player, feature) = (&config.player, &config.feature);
+    let template = config.manual.server.clan_name_template.clone();
+    l2_world::ClanSettings {
+        alt_clan_join_days: player.alt_clan_join_days,
+        alt_clan_create_days: player.alt_clan_create_days,
+        alt_clan_dissolve_days: player.alt_clan_dissolve_days,
+        alt_clan_leader_instant_activation: player.alt_clan_leader_instant_activation,
+        royal_guard_cost: feature.royal_guard_cost,
+        knight_unit_cost: feature.knight_unit_cost,
+        clan_level_costs: [
+            feature.clan_level_6_cost,
+            feature.clan_level_7_cost,
+            feature.clan_level_8_cost,
+            feature.clan_level_9_cost,
+            feature.clan_level_10_cost,
+            feature.clan_level_11_cost,
+        ],
+        clan_level_requirements: [
+            feature.clan_level_6_requirement,
+            feature.clan_level_7_requirement,
+            feature.clan_level_8_requirement,
+            feature.clan_level_9_requirement,
+            feature.clan_level_10_requirement,
+            feature.clan_level_11_requirement,
+        ],
+        clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
+        maintenance_database_writes: clan_maintenance_database_writes(config_dir),
+    }
+}
+
+/// `ClanMaintenanceDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means
+/// the default). Off, the clan jobs that write rows on their own (a dissolution whose time ran
+/// out, the Wednesday leader change, the start-up alliance check, the shutdown save of every
+/// clan) leave the rows to the Java game server that shares the database (D-39, D-49). Logs the
+/// active mode.
+pub fn clan_maintenance_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("ClanMaintenanceDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using ClanMaintenanceDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!(
+            "SideBySide: ClanMaintenanceDatabaseWrites = True, the clan maintenance jobs write their rows."
+        );
+    } else {
+        info!(
+            "SideBySide: ClanMaintenanceDatabaseWrites = False, the clan maintenance jobs leave their rows to the Java game server."
+        );
+    }
+    on
+}
+
 /// File names inside the config directory.
 pub const DATABASE_CONFIG_FILE: &str = "Database.ini";
 pub const INTERFACE_CONFIG_FILE: &str = "Interface.ini";
@@ -210,6 +276,9 @@ impl Server {
         let punishments = persist::load_punishments(&pool).await;
         let char_names = persist::load_char_names(&pool).await;
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
+        // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
+        let (clans, clan_wars) = persist::load_clans(&pool).await;
+        let clan_settings = clan_settings(&config, &paths.config_dir);
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -294,6 +363,9 @@ impl Server {
                     world.set_punishment_settings(punishment_settings);
                     world.load_char_names(char_names);
                     world.load_punishments(punishments);
+                    // Java: ClanTable (after the skills: the clan skills are checked against them).
+                    world.set_clan_settings(clan_settings);
+                    world.load_clans(clans, clan_wars);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

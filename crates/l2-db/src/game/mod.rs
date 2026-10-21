@@ -25,7 +25,10 @@ pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     NewCharacter,
 };
-pub use clans::ClanRepository;
+pub use clans::{
+    ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
+    ClanUpdate, ClanWarRow, NewClan,
+};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};

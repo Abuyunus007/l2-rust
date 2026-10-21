@@ -319,7 +319,15 @@ impl World {
                     && !(self.is_inside_zone(target, ZoneId::Pvp)
                         && !self.is_inside_zone(target, ZoneId::Siege))
                 {
-                    // M6: same ally id / same clan id (both 0 without clans).
+                    // Same alliance, same clan (M6-CLAN-01).
+                    let ally_id = self.ally_id_of(caster);
+                    if ally_id != 0 && ally_id == self.ally_id_of(target) {
+                        return false;
+                    }
+                    let clan_id = self.clan_id_of(caster);
+                    if clan_id != 0 && clan_id == self.clan_id_of(target) {
+                        return false;
+                    }
                     if !self.check_pvp_skill(caster, target, skill, ctx) {
                         return false;
                     }
@@ -376,7 +384,19 @@ impl World {
         if self.is_inside_zone(player, ZoneId::Pvp) && self.is_inside_zone(target, ZoneId::Pvp) {
             return true;
         }
-        // M6: clan war and same clan / ally.
+        // Clan war, same clan or alliance (M6-CLAN-01).
+        if let (Some(my_clan), Some(t_clan)) = (self.clan_of(player), self.clan_of(target)) {
+            if my_clan.is_at_war_with(t_clan.id) && t_clan.is_at_war_with(my_clan.id) {
+                // Always return true at war.
+                return true;
+            } else if my_clan.id == t_clan.id || (my_clan.ally_id > 0 && my_clan.ally_id == t_clan.ally_id) {
+                // Check if skill can do dmg.
+                return skill.effect_range > 0
+                    && ctx.ctrl_pressed
+                    && self.target_of(player) == Some(target)
+                    && has_effect(skill, EffectKind::Damage);
+            }
+        }
         // On retail, it is impossible to debuff a "peaceful" player.
         if !target_flagged {
             return skill.effect_range > 0
@@ -653,6 +673,15 @@ impl<R: Rnd> Targeting<'_, R> {
         self.w.is_player(self.caster)
     }
 
+    /// `clan.getMembers()` of the caster's clan whose `getPlayer()` is set, in the clan's map
+    /// order (M6-CLAN-01).
+    fn online_clan_members(&self) -> Vec<ObjectId> {
+        // `creature.asPlayer().getClan()`: a summon's owner's clan.
+        let player = self.w.acting_player(self.caster).unwrap_or(self.caster);
+        let clan_id = self.w.clan_id_of(player);
+        self.w.clan_online_members(clan_id, 0)
+    }
+
     /// The first test of `Area`, `BehindArea` and `FrontArea`.
     fn bad_area_target(&self) -> bool {
         let Some(target) = self.target else {
@@ -776,14 +805,20 @@ impl<R: Rnd> Targeting<'_, R> {
             if player == target {
                 return true;
             }
-            // M6: observer mode, olympiad, duel, clan war.
+            // M6: observer mode, olympiad, duel.
+            if self.w.is_at_war_with(player, target) {
+                return false;
+            }
             if self.w.is_in_party_with(player, target) {
                 return true;
             }
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
-            // M6: same clan / ally (true); a command channel member would be true as well.
+            // Same clan / ally (true); M6: a command channel member would be true as well.
+            if self.w.is_in_clan_with(player, target) || self.w.is_in_ally_with(player, target) {
+                return true;
+            }
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
                 return false;
             }
@@ -914,7 +949,10 @@ impl<R: Rnd> Targeting<'_, R> {
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
-            // M6: same clan / ally (true); a command channel member would be true as well.
+            // Same clan / ally (true); M6: a command channel member would be true as well.
+            if self.w.is_in_clan_with(player, target) || self.w.is_in_ally_with(player, target) {
+                return true;
+            }
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
                 return false;
             }
@@ -1040,11 +1078,30 @@ impl<R: Rnd> Targeting<'_, R> {
             if self.only_first {
                 return;
             }
-            if let Some(summon) = self.add_summon(player, self.skill.affect_range, false) {
+            let radius = self.skill.affect_range;
+            if let Some(summon) = self.add_summon(player, radius, false) {
                 self.push(summon);
             }
-            // M6: the online members of its clan within the affect range (`checkPvpSkill`, duel,
-            // event team). Without a clan the list ends here.
+            // The online members of its clan within the affect range (M6-CLAN-01).
+            for obj in self.online_clan_members() {
+                if obj == player {
+                    continue;
+                }
+                // M6: duel (`isInDuel()`, same duel and same party leader).
+                // Do not add this target if this is a Pc->Pc pvp casting and pvp condition not met
+                if !self.w.check_pvp_skill(player, obj, self.skill, self.ctx) {
+                    continue;
+                }
+                // Events (`isOnEvent()` teams): not modelled.
+                // The member's summon (`Skill.addSummon(creature, obj, radius, false)`).
+                if let Some(summon) = self.add_summon(obj, radius, false) {
+                    self.push(summon);
+                }
+                if !self.w.skill_add_character(self.caster, obj, radius, false) {
+                    continue;
+                }
+                self.push(obj);
+            }
         } else if self.w.is_npc(self.caster) {
             // For buff purposes, returns friendly mobs nearby and mob itself.
             self.push(self.caster);
@@ -1132,8 +1189,40 @@ impl<R: Rnd> Targeting<'_, R> {
     // Java: CorpseClan.java
     fn corpse_clan(&mut self) {
         if self.caster_is_player() {
-            // M6: dead clan members in range (not the caster), duel and event rules, siege zone.
-            // Without a clan the list stays empty (the caster is not added).
+            // M6: `isInOlympiadMode()` returns just the player.
+            // Dead clan members in range, not the caster (M6-CLAN-01). Without a clan the list
+            // stays empty (the caster is not added).
+            if self.w.clan_of(self.caster).is_none() {
+                return;
+            }
+            let radius = self.skill.affect_range;
+            let max_targets = self.affect_limit();
+            for obj in self.online_clan_members() {
+                if obj == self.caster {
+                    continue;
+                }
+                // M6: duel (`isInDuel()`, same duel and same party leader).
+                // Do not add this target if this is a Pc->Pc pvp casting and pvp condition not met
+                if !self.w.check_pvp_skill(self.caster, obj, self.skill, self.ctx) {
+                    continue;
+                }
+                // Events (`isOnEvent()` teams): not modelled.
+                if !self.w.skill_add_character(self.caster, obj, radius, true) {
+                    continue;
+                }
+                // Check target is not in a active siege zone (`!obj.isInSiege()`: sieges are M7,
+                // nobody takes part in one).
+                if self.w.is_inside_zone(obj, ZoneId::Siege) {
+                    continue;
+                }
+                self.push(obj);
+                if self.only_first {
+                    return;
+                }
+                if self.limit_reached(max_targets) {
+                    break;
+                }
+            }
         } else if self.w.is_npc(self.caster) {
             // For buff purposes, returns friendly mobs nearby and mob itself.
             self.push(self.caster);
@@ -1341,14 +1430,17 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         }
         let radius = self.skill.affect_range;
+        let clan_id = self.w.clan_id_of(self.caster);
+        let has_clan = self.w.clan(clan_id).is_some();
+        let party = self.w.party_of(self.caster);
+        let has_party = party.is_some();
         if let Some(summon) = self.add_summon(self.caster, radius, false) {
             self.push(summon);
         }
-        // M6: a clan (`hasClan` is false without clans).
         // If the player has neither a clan nor a party Java returns here.
-        let Some(party) = self.w.party_of(self.caster) else {
+        if !(has_clan || has_party) {
             return;
-        };
+        }
         let max_targets = self.affect_limit();
         // `World.getVisibleObjectsInRange(creature, Player.class, radius)`.
         for obj in self.w.visible_creatures_in_range(self.caster, radius) {
@@ -1356,8 +1448,10 @@ impl<R: Rnd> Targeting<'_, R> {
                 continue;
             }
             // M6: olympiad side and duel checks.
-            // Same party (or, M6, same clan).
-            if self.w.party_of(obj) != Some(party) {
+            // Same clan, or same party.
+            let same_clan = has_clan && self.w.clan_id_of(obj) == clan_id;
+            let same_party = has_party && self.w.party_of(obj) == party;
+            if !(same_clan || same_party) {
                 continue;
             }
             // Don't add this target if this is a Pc->Pc pvp casting and pvp condition not met.

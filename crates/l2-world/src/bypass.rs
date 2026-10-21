@@ -318,6 +318,9 @@ impl World {
             .is_some_and(|t| t.npc_type == "Teleporter");
         if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
+        } else if self.is_village_master(npc) {
+            // Java: VillageMaster.onBypassFeedback (the clan commands, `clan/village_master.rs`).
+            self.village_master_bypass_feedback(npc, player, command);
         } else {
             self.generic_npc_bypass_feedback(npc, player, command);
         }

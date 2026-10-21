@@ -377,6 +377,12 @@ impl World {
     /// Java `DailyResetManager.onReset`, the parts that are ported (see the module comment).
     pub fn daily_reset(&mut self) {
         info!("Starting reset of daily tasks...");
+        // Wednesday weekly tasks (`Calendar.getInstance()`: the local day; 1970-01-01 was a
+        // Thursday).
+        let local_day = l2_util::time::local_now_millis().div_euclid(86_400_000);
+        if (local_day + 4).rem_euclid(7) == 3 {
+            self.clan_leader_apply();
+        }
         // Daily tasks.
         self.reset_nevit();
         self.reset_recommends();

@@ -1,4 +1,4 @@
-# M6-CLAN-03: Clan skills, clan warehouse, academy
+# M6-CLAN-03: Clan skills and academy
 
 | Field | Value |
 |---|---|
@@ -10,7 +10,7 @@
 | Size | M |
 
 ## Goal
-Pledge skills (`AcquireSkillType.PLEDGE`/`SUBPLEDGE` at the clan trainer, M5-LEARN-01 pattern; clan skills applied to members), the clan warehouse (deposit/withdraw with privileges, `items.loc = CLANWH`), the academy (join, graduation reward).
+Pledge skills (`AcquireSkillType.PLEDGE`/`SUBPLEDGE` at the clan trainer, M5-LEARN-01 pattern; clan skills applied to members), the academy (join, graduation reward).
 
 ## Java source (the spec)
 - `C:\l2-rust\l2jmobius\java\org\l2jmobius\gameserver\entity\clan\Clan.java (skills)`
@@ -18,7 +18,7 @@ Pledge skills (`AcquireSkillType.PLEDGE`/`SUBPLEDGE` at the clan trainer, M5-LEA
 - `C:\l2-rust\l2jmobius\java\org\l2jmobius\gameserver\entity\item\container\ClanWarehouse.java (grep)`
 
 ## Files
-- `crates/l2-world/src/clan/{skills,warehouse,academy}.rs`
+- `crates/l2-world/src/clan/{skills,academy}.rs`
 - `crates/l2-world/src/skills/learn.rs (pledge branch)`
 - `tests`
 
@@ -40,4 +40,8 @@ Pledge skills (`AcquireSkillType.PLEDGE`/`SUBPLEDGE` at the clan trainer, M5-LEA
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Scope change: the clan warehouse moved to M6-WH-01. This card is pledge skills plus the academy.
+- CLAN-01 left `// M6-CLAN-03:` hooks (clan skill effects and `skillsStatus`, academy): resolve them. The skill learn pattern is `skills/learn.rs` (M5-LEARN-01).
+- Up to seven M6 workers run at the same time. In shared files (`skills/targets.rs`, `enter.rs`, `player_view.rs`, `leave.rs`, `death.rs`, `world.rs`, `dispatch.rs`, `client/enter.rs`) only add your lines: no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.
+- Merged APIs to reuse: `trade/` (`TradeList`, `World::transfer_item` in `inventory/transfer.rs`, `check_item_manipulation`, the request state in `trade/request.rs`), `party/` (`World::party_of`), `clan/` (`ClanTable`, privileges), `pvp.rs`, `transform/`. Item rows go through the persistence outbox like TRADE-01 does.

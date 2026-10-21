@@ -148,6 +148,8 @@ pub enum ClientInput {
         ctrl_pressed: bool,
         shift_pressed: bool,
     },
+    /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
+    Clan(crate::clan::ClanInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },
