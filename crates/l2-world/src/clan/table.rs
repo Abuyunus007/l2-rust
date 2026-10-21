@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 use super::model::{
     COMPLETE_PRIVILEGES_MASK, Clan, ClanMember, ClanPrivilegesRef, SubPledge, calculate_pledge_class,
-    is_alpha_numeric, java_len,
+    is_alpha_numeric, java_len, java_map_order,
 };
 use super::{ClanRecord, ClanRow, ClanTimer, ClanWrite, java_int_days_ms};
 use crate::timer::{TimerKind, TimerWheel};
@@ -282,16 +282,18 @@ impl World {
             .schedule_at(due, TimerKind::Clan(ClanTimer::UpdateRanks));
     }
 
-    /// Java `ClanTable.getClanAllies(allianceId)`: the clans of the alliance (none for 0).
+    /// Java `ClanTable.getClanAllies(allianceId)`: the clans of the alliance (none for 0), in the
+    /// iteration order of Java's `ConcurrentHashMap<Integer, Clan>` (the alliance window and the
+    /// ally broadcasts walk them in that order).
     pub fn clan_allies(&self, alliance_id: i32) -> Vec<i32> {
         if alliance_id == 0 {
             return Vec::new();
         }
-        self.clans
-            .clans
-            .values()
-            .filter(|c| c.ally_id == alliance_id)
-            .map(|c| c.id)
+        let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
+        java_map_order(&ids, ids.len())
+            .into_iter()
+            .filter_map(|i| ids.get(i).copied())
+            .filter(|id| self.clan(*id).is_some_and(|c| c.ally_id == alliance_id))
             .collect()
     }
 

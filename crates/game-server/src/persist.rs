@@ -47,13 +47,16 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
+use l2_db::CrestRepository;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate, GroundItemRecord,
     GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate, NewItem,
     NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, Pool, PunishmentRepository,
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
 };
-use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
+use l2_world::clan::{
+    ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
+};
 use l2_world::{
     ClanRecord, ClanWrite, GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData,
     PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
@@ -543,6 +546,25 @@ pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>)
     (clans, wars)
 }
 
+/// Java `CrestTable.load()`, the database half: the rows of `crests`, only a read (D-39). A
+/// database error is logged and the server goes on without crests, like Java.
+pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
+    match CrestRepository::new(pool.clone()).all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| CrestRecord {
+                crest_id: row.crest_id,
+                data: row.data,
+                crest_type: i32::from(row.crest_type),
+            })
+            .collect(),
+        Err(e) => {
+            warn!("CrestTable: There was an error while loading crests from database: {e}");
+            Vec::new()
+        }
+    }
+}
+
 /// The rows of one clan (`Clan.restore`, `restoreSubPledges`, `restoreRankPrivs`,
 /// `restoreSkills`, `restoreNotice`).
 pub async fn load_clan(repo: &ClanRepository, clan_id: i32) -> Result<ClanRecord, l2_db::DbError> {
@@ -627,6 +649,15 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::Update(_) => "Clan.updateClanInDB",
         ClanWrite::Level { .. } => "Clan.changeLevel",
         ClanWrite::AllyCrestOfClan { .. } => "Clan.changeAllyCrest",
+        ClanWrite::Crest(CrestWrite::Insert { .. }) => "CrestTable.createCrest",
+        ClanWrite::Crest(CrestWrite::Delete { .. }) => "CrestTable.removeCrest",
+        ClanWrite::Crest(CrestWrite::ClanCrest { .. }) => "Clan.changeClanCrest",
+        ClanWrite::Crest(CrestWrite::ClanLargeCrest { .. }) => "Clan.changeLargeCrest",
+        ClanWrite::Crest(CrestWrite::AllyCrestOfClan { .. } | CrestWrite::AllyCrestOfAlly { .. }) => {
+            "Clan.changeAllyCrest"
+        }
+        ClanWrite::War(WarWrite::Store { .. }) => "ClanTable.storeClanWars",
+        ClanWrite::War(WarWrite::Delete { .. }) => "ClanTable.deleteClanWars",
         ClanWrite::RemoveMember { .. } => "Clan.removeMemberInDatabase",
         ClanWrite::CharClanPrivs { .. } => "Clan.setNewLeader",
         ClanWrite::CharSubPledge { .. } => "ClanMember.updatePledgeType",
@@ -875,6 +906,7 @@ pub struct DbStore {
     variables: VariableRepository,
     punishments: PunishmentRepository,
     clans: ClanRepository,
+    crests: CrestRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -892,7 +924,8 @@ impl DbStore {
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
-            clans: ClanRepository::new(pool),
+            clans: ClanRepository::new(pool.clone()),
+            crests: CrestRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
         }
@@ -1631,6 +1664,30 @@ impl PlayerStore for DbStore {
             ClanWrite::AllyCrestOfClan { clan_id, crest_id } => {
                 clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
             }
+            ClanWrite::Crest(write) => match write {
+                CrestWrite::Insert {
+                    crest_id,
+                    data,
+                    crest_type,
+                } => self.crests.insert(*crest_id, data, *crest_type).await?,
+                CrestWrite::Delete { crest_id } => self.crests.delete(*crest_id).await?,
+                CrestWrite::ClanCrest { clan_id, crest_id } => {
+                    clans.update_clan_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::ClanLargeCrest { clan_id, crest_id } => {
+                    clans.update_clan_large_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfClan { clan_id, crest_id } => {
+                    clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfAlly { ally_id, crest_id } => {
+                    clans.update_ally_crest_of_ally(*ally_id, *crest_id).await?
+                }
+            },
+            ClanWrite::War(write) => match write {
+                WarWrite::Store { clan1, clan2 } => clans.store_clan_war(*clan1, *clan2).await?,
+                WarWrite::Delete { clan1, clan2 } => clans.delete_clan_war(*clan1, *clan2).await?,
+            },
             ClanWrite::RemoveMember {
                 char_id,
                 clan_join_expiry_time,

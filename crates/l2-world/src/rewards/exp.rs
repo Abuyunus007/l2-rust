@@ -1083,7 +1083,11 @@ impl World {
             lost_exp = java_round((current_level_exp as f64 * percent_lost) / 100.0);
             // Capping loss to 10% of current level experience.
             lost_exp = lost_exp.min(current_level_exp / 10);
-            // Reduced for festival and war kills, none for the advent blessing: not modelled.
+            // Reduced for festival and war kills (`isAtWarWith(pk)`), none for the advent
+            // blessing: the festival is not modelled.
+            if self.is_at_war_with(id, killer) {
+                lost_exp /= 4;
+            }
         }
 
         self.set_exp_before_death(id, exp);

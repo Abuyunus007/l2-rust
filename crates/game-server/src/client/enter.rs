@@ -405,8 +405,7 @@ fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
     }
 }
 
-/// The clan packets as the world takes them. The crest, war and alliance packets are M6-CLAN-02's
-/// and reach the world as `NotPorted`.
+/// The clan packets as the world takes them (pledges, crests, wars and alliances).
 fn clan_input(packet: ClientPacket) -> ClanInput {
     match packet {
         ClientPacket::RequestJoinPledge(p) => ClanInput::JoinPledge {
@@ -444,27 +443,45 @@ fn clan_input(packet: ClientPacket) -> ClanInput {
             curr_player_name: p.curr_player_name,
             target_player_name: p.target_player_name,
         },
-        ClientPacket::RequestPledgeWarList(_) => ClanInput::NotPorted("RequestPledgeWarList"),
-        ClientPacket::RequestPledgeCrest(_) => ClanInput::NotPorted("RequestPledgeCrest"),
-        ClientPacket::RequestExPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExPledgeCrestLarge"),
-        ClientPacket::RequestSetPledgeCrest(_) => ClanInput::NotPorted("RequestSetPledgeCrest"),
-        ClientPacket::RequestExSetPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExSetPledgeCrestLarge"),
-        ClientPacket::RequestSetAllyCrest(_) => ClanInput::NotPorted("RequestSetAllyCrest"),
-        ClientPacket::RequestStartPledgeWar(_) => ClanInput::NotPorted("RequestStartPledgeWar"),
-        ClientPacket::RequestReplyStartPledgeWar(_) => ClanInput::NotPorted("RequestReplyStartPledgeWar"),
-        ClientPacket::RequestStopPledgeWar(_) => ClanInput::NotPorted("RequestStopPledgeWar"),
-        ClientPacket::RequestReplyStopPledgeWar(_) => ClanInput::NotPorted("RequestReplyStopPledgeWar"),
-        ClientPacket::RequestSurrenderPledgeWar(_) => ClanInput::NotPorted("RequestSurrenderPledgeWar"),
-        ClientPacket::RequestReplySurrenderPledgeWar(_) => {
-            ClanInput::NotPorted("RequestReplySurrenderPledgeWar")
-        }
-        ClientPacket::RequestJoinAlly(_) => ClanInput::NotPorted("RequestJoinAlly"),
-        ClientPacket::RequestAnswerJoinAlly(_) => ClanInput::NotPorted("RequestAnswerJoinAlly"),
-        ClientPacket::AllyLeave(_) => ClanInput::NotPorted("AllyLeave"),
-        ClientPacket::AllyDismiss(_) => ClanInput::NotPorted("AllyDismiss"),
-        ClientPacket::RequestDismissAlly(_) => ClanInput::NotPorted("RequestDismissAlly"),
-        ClientPacket::RequestAllyCrest(_) => ClanInput::NotPorted("RequestAllyCrest"),
-        ClientPacket::RequestAllyInfo(_) => ClanInput::NotPorted("RequestAllyInfo"),
+        ClientPacket::RequestPledgeWarList(p) => ClanInput::PledgeWarList { tab: p.tab },
+        ClientPacket::RequestPledgeCrest(p) => ClanInput::PledgeCrest { crest_id: p.crest_id },
+        ClientPacket::RequestExPledgeCrestLarge(p) => ClanInput::ExPledgeCrestLarge { crest_id: p.crest_id },
+        ClientPacket::RequestSetPledgeCrest(p) => ClanInput::SetPledgeCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestExSetPledgeCrestLarge(p) => ClanInput::ExSetPledgeCrestLarge {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestSetAllyCrest(p) => ClanInput::SetAllyCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestStartPledgeWar(p) => ClanInput::StartPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStartPledgeWar(p) => ClanInput::ReplyStartPledgeWar { answer: p.answer },
+        ClientPacket::RequestStopPledgeWar(p) => ClanInput::StopPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStopPledgeWar(p) => ClanInput::ReplyStopPledgeWar { answer: p.answer },
+        ClientPacket::RequestSurrenderPledgeWar(p) => ClanInput::SurrenderPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplySurrenderPledgeWar(p) => ClanInput::ReplySurrenderPledgeWar {
+            req_name: p.req_name,
+            answer: p.answer,
+        },
+        ClientPacket::RequestJoinAlly(p) => ClanInput::JoinAlly { id: p.id },
+        ClientPacket::RequestAnswerJoinAlly(p) => ClanInput::AnswerJoinAlly { response: p.response },
+        ClientPacket::AllyLeave(_) => ClanInput::AllyLeave,
+        ClientPacket::AllyDismiss(p) => ClanInput::AllyDismiss {
+            clan_name: p.clan_name,
+        },
+        ClientPacket::RequestDismissAlly(_) => ClanInput::DismissAlly,
+        ClientPacket::RequestAllyCrest(p) => ClanInput::AllyCrest { crest_id: p.crest_id },
+        ClientPacket::RequestAllyInfo(_) => ClanInput::AllyInfo,
         _ => ClanInput::NotPorted("unknown clan packet"),
     }
 }
@@ -1048,7 +1065,10 @@ mod tests {
 
     #[test]
     fn clan_packets_become_clan_input() {
-        use l2_protocol_game::client::pledge::{RequestAllyInfo, RequestJoinPledge, RequestPledgePower};
+        use l2_protocol_game::client::pledge::{
+            RequestAllyInfo, RequestJoinPledge, RequestPledgePower, RequestPledgeWarList,
+            RequestReplyStartPledgeWar, RequestSetPledgeCrest,
+        };
         assert_eq!(
             clan_input(ClientPacket::RequestJoinPledge(RequestJoinPledge {
                 target: 7,
@@ -1071,10 +1091,36 @@ mod tests {
                 privs: 9
             }
         );
-        // Alliances, wars and crests are M6-CLAN-02's.
+        // Alliances, wars and crests (M6-CLAN-02).
         assert_eq!(
             clan_input(ClientPacket::RequestAllyInfo(RequestAllyInfo)),
-            ClanInput::NotPorted("RequestAllyInfo")
+            ClanInput::AllyInfo
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestSetPledgeCrest(RequestSetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3]),
+            })),
+            ClanInput::SetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3])
+            }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestPledgeWarList(RequestPledgeWarList {
+                unk1: 0,
+                tab: 1
+            })),
+            ClanInput::PledgeWarList { tab: 1 }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestReplyStartPledgeWar(
+                RequestReplyStartPledgeWar {
+                    req_name: "x".into(),
+                    answer: 1
+                }
+            )),
+            ClanInput::ReplyStartPledgeWar { answer: 1 }
         );
     }
 

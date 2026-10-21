@@ -11,11 +11,11 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use l2_db::{ClanRepository, ClanUpdate, NewClan, Pool, connect_with};
+use l2_db::{ClanRepository, ClanUpdate, CrestRepository, NewClan, Pool, connect_with};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
-const SCHEMA: [&str; 7] = [
+const SCHEMA: [&str; 8] = [
     include_str!("../sql/game/characters.sql"),
     include_str!("../sql/game/clan_data.sql"),
     include_str!("../sql/game/clan_privs.sql"),
@@ -23,6 +23,7 @@ const SCHEMA: [&str; 7] = [
     include_str!("../sql/game/clan_skills.sql"),
     include_str!("../sql/game/clan_notices.sql"),
     include_str!("../sql/game/clan_wars.sql"),
+    include_str!("../sql/game/crests.sql"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
@@ -269,6 +270,88 @@ async fn clan_rows_round_trip_with_javas_statements() {
             "{table}"
         );
     }
+    assert_eq!(db.scalar("SELECT COUNT(*) FROM clan_wars").await, 0);
+    db.drop_database().await;
+}
+
+#[tokio::test]
+async fn crests_and_wars_use_javas_statements() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let clans = ClanRepository::new(db.pool.clone());
+    let crests = CrestRepository::new(db.pool.clone());
+    for (clan_id, name, ally_id) in [(900, "Lions", 900), (901, "Tigers", 900), (902, "Bears", 0)] {
+        clans
+            .insert_clan(&NewClan {
+                clan_id,
+                clan_name: name.into(),
+                clan_level: 5,
+                castle_id: 0,
+                blood_alliance_count: 0,
+                blood_oath_count: 0,
+                ally_id,
+                ally_name: None,
+                leader_id: 0,
+                crest_id: 0,
+                crest_large_id: 0,
+                ally_crest_id: 0,
+                new_leader_id: 0,
+            })
+            .await
+            .unwrap();
+    }
+
+    // CrestTable.createCrest and load (highest id first), removeCrest
+    crests.insert(1, &[1, 2, 3], 1).await.unwrap();
+    crests.insert(7, &[0xDD; 300], 2).await.unwrap();
+    crests.insert(3, &[9], 3).await.unwrap();
+    let rows = crests.all().await.unwrap();
+    assert_eq!(rows.iter().map(|r| r.crest_id).collect::<Vec<_>>(), [7, 3, 1]);
+    assert_eq!(
+        (rows[0].data.len(), rows[0].crest_type, rows[2].data.as_slice()),
+        (300, 2, &[1u8, 2, 3][..])
+    );
+    // The primary key refuses an id that is taken (two servers picking the same next id).
+    assert!(crests.insert(7, &[1], 1).await.is_err());
+    crests.delete(3).await.unwrap();
+    assert_eq!(db.scalar("SELECT COUNT(*) FROM crests").await, 2);
+
+    // Clan.changeClanCrest, changeLargeCrest, changeAllyCrest (both forms)
+    clans.update_clan_crest(900, 1).await.unwrap();
+    clans.update_clan_large_crest(900, 7).await.unwrap();
+    clans.update_ally_crest_of_clan(902, 4).await.unwrap();
+    clans.update_ally_crest_of_ally(900, 5).await.unwrap();
+    assert_eq!(
+        db.scalar("SELECT crest_id * 100 + crest_large_id FROM clan_data WHERE clan_id = 900")
+            .await,
+        107
+    );
+    // `WHERE ally_id = 900` reaches both clans of the alliance, not the clan outside it.
+    assert_eq!(
+        db.scalar("SELECT ally_crest_id FROM clan_data WHERE clan_id = 901")
+            .await,
+        5
+    );
+    assert_eq!(
+        db.scalar("SELECT ally_crest_id FROM clan_data WHERE clan_id = 902")
+            .await,
+        4
+    );
+
+    // ClanTable.storeClanWars (REPLACE, ids as numbers into the VARCHAR columns) and
+    // deleteClanWars (either direction)
+    clans.store_clan_war(900, 902).await.unwrap();
+    clans.store_clan_war(900, 902).await.unwrap();
+    clans.store_clan_war(902, 900).await.unwrap();
+    let wars = clans.clan_wars().await.unwrap();
+    let mut pairs: Vec<_> = wars
+        .iter()
+        .map(|w| (w.clan1.as_str(), w.clan2.as_str()))
+        .collect();
+    pairs.sort_unstable();
+    assert_eq!(pairs, [("900", "902"), ("902", "900")]);
+    clans.delete_clan_war(902, 900).await.unwrap();
     assert_eq!(db.scalar("SELECT COUNT(*) FROM clan_wars").await, 0);
     db.drop_database().await;
 }

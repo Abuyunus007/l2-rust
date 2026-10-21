@@ -91,6 +91,13 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
         ],
         clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
         maintenance_database_writes: clan_maintenance_database_writes(config_dir),
+        alt_ally_join_days_when_leaved: player.alt_ally_join_days_when_leaved,
+        alt_ally_join_days_when_dismissed: player.alt_ally_join_days_when_dismissed,
+        alt_accept_clan_days_when_dismissed: player.alt_accept_clan_days_when_dismissed,
+        alt_create_ally_days_when_dissolved: player.alt_create_ally_days_when_dissolved,
+        alt_max_num_of_clans_in_ally: player.alt_max_num_of_clans_in_ally,
+        alt_clan_members_for_war: player.alt_clan_members_for_war,
+        reputation_score_per_kill: feature.reputation_score_per_kill,
     }
 }
 
@@ -277,6 +284,8 @@ impl Server {
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
+        // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
+        let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
@@ -361,6 +370,8 @@ impl Server {
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
+                    // Java: CrestTable (after ClanTable: it clears the crests clans lost).
+                    world.load_crests(crests);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
