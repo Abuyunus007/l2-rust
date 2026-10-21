@@ -241,7 +241,7 @@ pub(crate) struct TalkWorld {
 }
 
 /// Java: which `entity/actor/instance/*` classes are a `Merchant`.
-fn is_merchant(npc_type: &str) -> bool {
+pub(crate) fn is_merchant(npc_type: &str) -> bool {
     matches!(
         npc_type,
         "Merchant"

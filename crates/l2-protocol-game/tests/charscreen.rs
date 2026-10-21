@@ -415,6 +415,10 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestGiveItemToPet(_)
             | ClientPacket::RequestPetUseItem(_)
             | ClientPacket::RequestChangePetName(_)
+            | ClientPacket::RequestBuyItem(_)
+            | ClientPacket::RequestSellItem(_)
+            | ClientPacket::RequestRefundItem(_)
+            | ClientPacket::RequestBuySellUIClose(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

@@ -784,6 +784,11 @@ impl ClientSession {
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientPacket::RequestBuyItem(p) => ClientInput::Shop(l2_world::ShopInput::Buy(p)),
+            ClientPacket::RequestSellItem(p) => ClientInput::Shop(l2_world::ShopInput::Sell(p)),
+            ClientPacket::RequestRefundItem(p) => ClientInput::Shop(l2_world::ShopInput::Refund(p)),
+            ClientPacket::RequestBuySellUIClose(_) => ClientInput::Shop(l2_world::ShopInput::UiClose),
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

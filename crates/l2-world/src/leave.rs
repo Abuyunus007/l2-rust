@@ -70,6 +70,8 @@ impl World {
         self.leave_party(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
         self.cancel_transaction_on_leave(id);
+        // `deleteMe`: `clearRefund()` destroys what the player sold to merchants.
+        self.clear_refund(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

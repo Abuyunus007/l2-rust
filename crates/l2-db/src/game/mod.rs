@@ -4,6 +4,7 @@
 //! the Java SQL as constants with a `// Java:` comment, runtime queries, row structs that
 //! mirror the column types.
 
+mod buylists;
 mod characters;
 mod clans;
 mod ground_items;
@@ -20,6 +21,7 @@ mod sql_number;
 mod subclasses;
 mod variables;
 
+pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     NewCharacter,

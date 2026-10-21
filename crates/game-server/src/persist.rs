@@ -25,6 +25,7 @@
 // - the clan tables (`clan_data`, `clan_privs`, `clan_subpledges`, `clan_notices`) and the clan
 //   columns of offline members' `characters` rows, with Java's clan statements
 //   (`PersistCommand::Clan`, M6-CLAN-01),
+// - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -48,16 +49,16 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
-    CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate, GroundItemRecord,
-    GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate, NewItem,
-    NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, Pool, PunishmentRepository,
+    BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
+    GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
+    NewItem, NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, Pool, PunishmentRepository,
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
 };
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
 use l2_world::{
     ClanRecord, ClanWrite, GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData,
-    PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
-    StoredPunishment,
+    ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse,
+    ShortcutData, SkillData, StoredPunishment,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -181,6 +182,14 @@ pub trait PlayerStore: Send + 'static {
         &mut self,
         _char_id: i32,
         _level: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// Java `Product.save`: the `buylists` row of a limited product whose stock changed.
+    fn store_buy_list_product(
+        &mut self,
+        _row: &ProductRow,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -479,6 +488,15 @@ async fn run<S: PlayerStore>(
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
                 }
             }
+            OutboxMessage::Persist(PersistCommand::BuyList(row)) => {
+                // Java logs a failed save and goes on (no retry).
+                if let Err(e) = store.store_buy_list_product(&row).await {
+                    error!(
+                        "Failed to save Product buylist_id:{} item_id:{}: {e}",
+                        row.list_id, row.item_id
+                    );
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
@@ -488,6 +506,27 @@ async fn run<S: PlayerStore>(
         }
     }
     debug!("Outbox closed, persistence task done.");
+}
+
+/// Java `BuyListData.load()`, the database half: the rows of `buylists`, which hold the stock and
+/// the restock times the last run left. A database error is logged and the lists start full, like
+/// Java.
+pub async fn load_buy_list_stock(pool: &Pool) -> Vec<ProductRow> {
+    match BuyListRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| ProductRow {
+                list_id: row.buylist_id,
+                item_id: row.item_id,
+                count: row.count,
+                next_restock_time: row.next_restock_time,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Failed to load buyList data from database. {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
@@ -875,6 +914,7 @@ pub struct DbStore {
     variables: VariableRepository,
     punishments: PunishmentRepository,
     clans: ClanRepository,
+    buylists: BuyListRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -892,6 +932,7 @@ impl DbStore {
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
+            buylists: BuyListRepository::new(pool.clone()),
             clans: ClanRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -1622,6 +1663,18 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
+        self.buylists
+            .save_product(&l2_db::BuyListRow {
+                buylist_id: row.list_id,
+                item_id: row.item_id,
+                count: row.count,
+                next_restock_time: row.next_restock_time,
+            })
+            .await?;
+        Ok(())
+    }
+
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
         let clans = &self.clans;
         match write {
@@ -1733,6 +1786,8 @@ mod tests {
         EndPunishment(i32, String, &'static str, &'static str, i64),
         /// `changeCharAccessLevel`: character, level.
         AccessLevel(i32, i32),
+        /// `Product.save`: list id, item id, count, next restock time.
+        BuyList(i32, i32, i64, i64),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -1858,6 +1913,16 @@ mod tests {
             self.calls.lock().unwrap().push(Call::AccessLevel(char_id, level));
             Ok(())
         }
+
+        async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::BuyList(
+                row.list_id,
+                row.item_id,
+                row.count,
+                row.next_restock_time,
+            ));
+            Ok(())
+        }
     }
 
     fn player(id: i32, name: &str) -> PlayerData {
@@ -1936,6 +2001,27 @@ mod tests {
         }
         let calls = calls.lock().unwrap().clone();
         (calls, notices)
+    }
+
+    /// `Product.save` rows reach the store in the order the world sent them.
+    #[tokio::test]
+    async fn buy_list_rows_are_stored_in_order() {
+        let row = |count: i64, next: i64| {
+            OutboxMessage::Persist(PersistCommand::BuyList(ProductRow {
+                list_id: 382,
+                item_id: 1835,
+                count,
+                next_restock_time: next,
+            }))
+        };
+        let (calls, _) = run_all(Recording::default(), vec![row(4, 1_700_000_000_000), row(5, 0)]).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::BuyList(382, 1835, 4, 1_700_000_000_000),
+                Call::BuyList(382, 1835, 5, 0)
+            ]
+        );
     }
 
     #[tokio::test]

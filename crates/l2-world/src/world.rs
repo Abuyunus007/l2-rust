@@ -110,6 +110,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
+    pub(crate) shop: crate::shop::ShopWorld,
 }
 
 impl World {
@@ -162,6 +164,7 @@ impl World {
             punishments: crate::punishments::PunishmentWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            shop: crate::shop::ShopWorld::default(),
         }
     }
 
@@ -529,6 +532,8 @@ impl World {
             // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientInput::Shop(input) => self.on_shop_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -622,6 +627,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: BuyListTaskManager, InventoryEnableTask
+            TimerKind::Shop(timer) => self.on_shop_timer(timer),
         }
     }
 

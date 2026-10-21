@@ -69,6 +69,8 @@ impl Default for BypassHandlers {
         handlers.register("Chat", chat_handler);
         // dist/game/data/scripts/handlers/bypass/npc/SkillList.java
         handlers.register("SkillList", crate::skills::learn::skill_list_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Buy.java
+        handlers.register("Buy", crate::shop::buy_handler);
         handlers
     }
 }

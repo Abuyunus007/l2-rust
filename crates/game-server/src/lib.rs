@@ -278,6 +278,24 @@ impl Server {
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
+        // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
+        // MerchantPriceConfigTable.
+        let (buy_lists, price_configs) = {
+            let datapack = Arc::clone(&datapack);
+            let options = l2_data::BuyListOptions {
+                custom_buylist_load: config.general.custom_buylist_load,
+                correct_prices: config.general.correct_prices,
+            };
+            tokio::task::spawn_blocking(move || {
+                (
+                    Arc::new(l2_data::BuyLists::load(&datapack.root, &datapack.items, &options)),
+                    Arc::new(l2_data::MerchantPriceConfigs::load(&datapack.root)),
+                )
+            })
+            .await
+            .map_err(|e| StartupError::Internal(format!("buy list loader: {e}")))?
+        };
+        let buy_list_stock = persist::load_buy_list_stock(&pool).await;
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -361,6 +379,9 @@ impl Server {
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
+                    // Java: BuyListData (the products' stock the last run left).
+                    world.set_buy_lists(buy_lists, price_configs);
+                    world.load_buy_list_stock(buy_list_stock);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

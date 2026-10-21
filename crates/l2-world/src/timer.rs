@@ -112,6 +112,8 @@ pub enum TimerKind {
     Clan(crate::clan::ClanTimer),
     /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
     PvpFlag(ObjectId),
+    /// The restock of limited products and the inventory block of a shop window, see `shop/`.
+    Shop(crate::shop::ShopTimer),
 }
 
 #[derive(Debug, Default)]

@@ -98,6 +98,9 @@ pub enum PersistCommand {
     /// `clan_notices`, the clan columns of `characters`), see `clan/`. Applied in order with the
     /// other commands.
     Clan(crate::clan::ClanWrite),
+    /// Java `Product.save()`: `INSERT INTO buylists ... ON DUPLICATE KEY UPDATE` for one limited
+    /// product whose stock changed, see `shop/`.
+    BuyList(crate::shop::ProductRow),
 }
 
 /// Messages for the login server link.
