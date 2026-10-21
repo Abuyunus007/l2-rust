@@ -211,15 +211,6 @@ impl World {
         true
     }
 
-    /// `PlayerConfig.MAX_ITEM_IN_PACKET`: the largest inventory.
-    fn max_item_in_packet(&self) -> usize {
-        let s = &self.settings;
-        let max = s
-            .inventory_maximum_no_dwarf
-            .max(s.inventory_maximum_dwarf.max(s.inventory_maximum_gm));
-        usize::try_from(max).unwrap_or(0)
-    }
-
     /// The list of a packet if Java keeps it: not dropped by the reader and not above
     /// `MAX_ITEM_IN_PACKET`.
     fn checked_warehouse_list(

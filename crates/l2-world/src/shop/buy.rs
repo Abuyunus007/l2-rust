@@ -113,7 +113,7 @@ impl World {
     }
 
     /// `PlayerConfig.MAX_ITEM_IN_PACKET`: the largest of the three inventory limits.
-    pub(super) fn max_item_in_packet(&self) -> usize {
+    pub(crate) fn max_item_in_packet(&self) -> usize {
         let s = &self.settings;
         let max = s
             .inventory_maximum_no_dwarf
