@@ -284,7 +284,10 @@ impl World {
             // `pk == null || !pk.isCursedWeaponEquipped()`: nobody has a cursed weapon.
             // Check if any item should be dropped.
             self.on_die_drop_item(id, killer);
-            // Clan reputation for a kill in a clan war: clans are M5.
+            // Clan reputation for a kill in a clan war (`clan/war.rs`).
+            if !inside_pvp_zone && !inside_siege_zone {
+                self.clan_war_kill_reputation(id, killer);
+            }
 
             // Should not penalize player when lucky, in a non siege PvP zone, has advent blessing
             // or is in an event.

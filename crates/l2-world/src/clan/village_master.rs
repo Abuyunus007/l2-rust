@@ -94,8 +94,23 @@ impl World {
                 return;
             }
             self.vm_assign_sub_pledge_leader(player, params, params2);
-        } else if is("create_ally") || is("dissolve_ally") {
-            debug!("{player}: {actual}: alliances are not ported yet (M6-CLAN-02).");
+        } else if is("create_ally") {
+            if params.is_empty() {
+                return;
+            }
+            if self.clan_of(player).is_none() {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::OnlyClanLeadersMayCreateAlliances),
+                );
+            } else {
+                self.create_ally(player, params);
+            }
+        } else if is("dissolve_ally") {
+            // `player.getClan().dissolveAlly(player)`: Java throws without a clan.
+            if self.clan_of(player).is_some() {
+                self.dissolve_ally(player);
+            }
         } else if is("dissolve_clan") {
             self.vm_dissolve_clan(player);
         } else if is("change_clan_leader") {

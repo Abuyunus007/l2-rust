@@ -827,9 +827,16 @@ fn unknown_npc_bypasses_and_script_links_are_logged_and_ignored() {
     s.click(1, npc);
     s.log.take();
 
-    // `bypass -h Script Quest` is in the page and bound to the NPC, but no script handler exists.
+    // `bypass -h Script Quest` is in the page and bound to the NPC. The `ScriptLink` handler
+    // (M6-CLAN-02) knows no script of that name, so Java shows the "no quest" page.
     s.bypass(1, "Script Quest");
-    assert!(s.log.take().is_empty());
+    let out = s.log.take();
+    assert_eq!(names_to(&out, 1), ["NPC_HTML_MESSAGE", "ACTION_FAIL"]);
+    assert!(
+        html_to(&out, 1)[0]
+            .html
+            .contains("not on a quest that involves this NPC")
+    );
     assert_eq!(s.world.player(ObjectId(1)).unwrap().data.name, "P1");
 }
 

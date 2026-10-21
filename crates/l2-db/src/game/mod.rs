@@ -6,6 +6,7 @@
 
 mod characters;
 mod clans;
+mod crests;
 mod ground_items;
 mod hennas;
 mod ids;
@@ -29,6 +30,7 @@ pub use clans::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, NewClan,
 };
+pub use crests::{CrestRepository, CrestRow};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};

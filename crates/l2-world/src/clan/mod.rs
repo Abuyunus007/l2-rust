@@ -1,11 +1,17 @@
 //! Clans: the clan table, members, sub pledges, ranks and privileges, clan level, reputation,
-//! the clan notice and the clan window packets (M6-CLAN-01).
+//! the clan notice and the clan window packets (M6-CLAN-01), crests, alliances and clan wars
+//! (M6-CLAN-02).
 // Java: entity/clan/{Clan,ClanMember,ClanPrivileges,ClanAccess,ClanInfo}.java
 // Java: data/sql/ClanTable.java
 // Java: network/clientpackets/{RequestJoinPledge,RequestAnswerJoinPledge,RequestWithdrawalPledge,
 //       RequestOustPledgeMember,RequestPledge*}.java
 // Java: entity/actor/instance/VillageMaster.java (the clan commands of the village masters)
 // Java: network/holders/RequestPartner.java
+// Java (M6-CLAN-02): data/sql/CrestTable.java, entity/clan/Crest.java (`crest.rs`);
+//       entity/clan/Clan.java alliance parts, network/clientpackets/{RequestJoinAlly,...}.java
+//       (`alliance.rs`); data/sql/ClanTable.java wars, network/clientpackets/*PledgeWar*.java
+//       (`war.rs`); dist/game/data/scripts/village_master/{ClanMaster,AllianceMaster}
+//       (`master_script.rs`)
 // Design: docs/design/m6-social.md
 //
 // # Shape
@@ -28,13 +34,21 @@
 // - Crests, alliances, clan wars (M6-CLAN-02): their packets reach `ClanInput::NotPorted`; the
 //   ally and war columns and `clan_wars` are loaded.
 // - The clan warehouse (M6-WH-01), marked `// M6-CLAN-03:` where it acts.
+// - (M6-CLAN-02 is in: crests `crest.rs`, alliances `alliance.rs`, wars `war.rs`, the
+//   `ClanMaster`/`AllianceMaster` pages `master_script.rs`.)
+// - Clan skills on the members, the clan warehouse, the academy graduation (M6-CLAN-03): the
+//   skills are loaded and listed (`PledgeSkillList`), marked `// M6-CLAN-03:` where they act.
 // - Castles, forts, clan halls, sieges (M7): their ids stay as loaded (fort and hall 0).
-// - The `ClanMaster` village master script (scripts come last, D-05) that shows the pages with
-//   the clan commands; the commands themselves are here (`village_master.rs`).
+// - The other village master scripts (scripts come last, D-05); the `ClanMaster` and
+//   `AllianceMaster` pages that list the clan commands are in `master_script.rs`, the commands
+//   themselves in `village_master.rs`.
 
 mod academy;
+mod alliance;
+mod crest;
 mod handlers;
 mod level;
+mod master_script;
 mod members;
 pub mod model;
 mod request;
@@ -42,6 +56,7 @@ mod skills;
 mod table;
 mod view;
 mod village_master;
+mod war;
 
 use std::collections::{BTreeMap, HashMap};
 use std::fmt;
@@ -51,6 +66,8 @@ use l2_util::ObjectId;
 
 use crate::world::World;
 
+pub use crest::{Crest, CrestRecord, CrestTable, CrestType};
+pub(crate) use master_script::script_link_handler;
 pub use model::{
     COMPLETE_PRIVILEGES_MASK, Clan, ClanAccess, ClanMember, ClanPrivilegesRef, PlayerClanState, RankPrivs,
     SubPledge, calculate_pledge_class,
@@ -90,6 +107,20 @@ pub struct ClanSettings {
     /// `CompleteAcademyMaxPoints` (`Feature.ini`): the reputation for one who joined at level 16
     /// or earlier.
     pub join_academy_max_rep_score: i32,
+    /// `DaysBeforeJoinAllyWhenLeaved`.
+    pub alt_ally_join_days_when_leaved: i32,
+    /// `DaysBeforeJoinAllyWhenDismissed`.
+    pub alt_ally_join_days_when_dismissed: i32,
+    /// `DaysBeforeAcceptNewClanWhenDismissed`.
+    pub alt_accept_clan_days_when_dismissed: i32,
+    /// `DaysBeforeCreateNewAllyWhenDissolved`.
+    pub alt_create_ally_days_when_dissolved: i32,
+    /// `AltMaxNumOfClansInAlly`.
+    pub alt_max_num_of_clans_in_ally: i32,
+    /// `AltClanMembersForWar`.
+    pub alt_clan_members_for_war: i32,
+    /// `ReputationScorePerKill` (`Feature.ini`): what a clan war kill gives and takes.
+    pub reputation_score_per_kill: i32,
 }
 
 impl Default for ClanSettings {
@@ -109,6 +140,13 @@ impl Default for ClanSettings {
             life_crystal_needed: true,
             join_academy_min_rep_score: 190,
             join_academy_max_rep_score: 650,
+            alt_ally_join_days_when_leaved: 1,
+            alt_ally_join_days_when_dismissed: 1,
+            alt_accept_clan_days_when_dismissed: 1,
+            alt_create_ally_days_when_dissolved: 1,
+            alt_max_num_of_clans_in_ally: 3,
+            alt_clan_members_for_war: 15,
+            reputation_score_per_kill: 1,
         }
     }
 }
@@ -131,6 +169,9 @@ impl fmt::Debug for ClanSettings {
             .field("life_crystal_needed", &self.life_crystal_needed)
             .field("join_academy_min_rep_score", &self.join_academy_min_rep_score)
             .field("join_academy_max_rep_score", &self.join_academy_max_rep_score)
+            .field("alt_max_num_of_clans_in_ally", &self.alt_max_num_of_clans_in_ally)
+            .field("alt_clan_members_for_war", &self.alt_clan_members_for_war)
+            .field("reputation_score_per_kill", &self.reputation_score_per_kill)
             .finish_non_exhaustive()
     }
 }
@@ -144,6 +185,8 @@ pub struct ClanWorld {
     pub(crate) settings: ClanSettings,
     /// Java `Player.getRequest()` of the players that have one going.
     pub(crate) requests: HashMap<ObjectId, RequestPartner>,
+    /// Java `CrestTable` (M6-CLAN-02).
+    pub(crate) crests: CrestTable,
 }
 
 /// The clan timers (one `TimerKind::Clan`).
@@ -197,7 +240,45 @@ pub enum ClanInput {
         curr_player_name: String,
         target_player_name: String,
     },
-    /// The crest, alliance and war packets: M6-CLAN-02. The name of the Java packet.
+    /// `RequestPledgeCrest`.
+    PledgeCrest { crest_id: i32 },
+    /// `RequestExPledgeCrestLarge`.
+    ExPledgeCrestLarge { crest_id: i32 },
+    /// `RequestAllyCrest`.
+    AllyCrest { crest_id: i32 },
+    /// `RequestSetPledgeCrest`: `data` is `None` above the packet's limit.
+    SetPledgeCrest { length: i32, data: Option<Vec<u8>> },
+    /// `RequestExSetPledgeCrestLarge`.
+    ExSetPledgeCrestLarge { length: i32, data: Option<Vec<u8>> },
+    /// `RequestSetAllyCrest`.
+    SetAllyCrest { length: i32, data: Option<Vec<u8>> },
+    /// `RequestPledgeWarList`.
+    PledgeWarList { tab: i32 },
+    /// `RequestStartPledgeWar`.
+    StartPledgeWar { pledge_name: String },
+    /// `RequestReplyStartPledgeWar` (Java ignores the name).
+    ReplyStartPledgeWar { answer: i32 },
+    /// `RequestStopPledgeWar`.
+    StopPledgeWar { pledge_name: String },
+    /// `RequestReplyStopPledgeWar` (Java ignores the name).
+    ReplyStopPledgeWar { answer: i32 },
+    /// `RequestSurrenderPledgeWar`.
+    SurrenderPledgeWar { pledge_name: String },
+    /// `RequestReplySurrenderPledgeWar`.
+    ReplySurrenderPledgeWar { req_name: String, answer: i32 },
+    /// `RequestJoinAlly`.
+    JoinAlly { id: i32 },
+    /// `RequestAnswerJoinAlly`.
+    AnswerJoinAlly { response: i32 },
+    /// `AllyLeave`.
+    AllyLeave,
+    /// `AllyDismiss`.
+    AllyDismiss { clan_name: String },
+    /// `RequestDismissAlly`.
+    DismissAlly,
+    /// `RequestAllyInfo`.
+    AllyInfo,
+    /// A clan packet the session could not map: the name of the Java packet. Only logged.
     NotPorted(&'static str),
 }
 
@@ -213,6 +294,10 @@ pub enum ClanWrite {
     /// `Clan.changeAllyCrest(crestId, true)`: `UPDATE clan_data SET ally_crest_id = ? WHERE
     /// clan_id = ?`.
     AllyCrestOfClan { clan_id: i32, crest_id: i32 },
+    /// The `crests` table and the crest columns of `clan_data` (M6-CLAN-02).
+    Crest(CrestWrite),
+    /// The `clan_wars` rows (M6-CLAN-02).
+    War(WarWrite),
     /// `Clan.removeMemberInDatabase` (three statements).
     RemoveMember {
         char_id: i32,
@@ -270,6 +355,40 @@ pub enum ClanWrite {
         skill_name: String,
         sub_pledge_id: i32,
     },
+}
+
+/// A crest row write (M6-CLAN-02).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CrestWrite {
+    /// `CrestTable.createCrest`: `INSERT INTO crests(crest_id, data, type) VALUES(?, ?, ?)`.
+    Insert {
+        crest_id: i32,
+        data: Vec<u8>,
+        crest_type: i32,
+    },
+    /// `CrestTable.removeCrest`: `DELETE FROM crests WHERE crest_id=?`.
+    Delete { crest_id: i32 },
+    /// `Clan.changeClanCrest`: `UPDATE clan_data SET crest_id = ? WHERE clan_id = ?`.
+    ClanCrest { clan_id: i32, crest_id: i32 },
+    /// `Clan.changeLargeCrest`: `UPDATE clan_data SET crest_large_id = ? WHERE clan_id = ?`.
+    ClanLargeCrest { clan_id: i32, crest_id: i32 },
+    /// `Clan.changeAllyCrest(crestId, true)`: `UPDATE clan_data SET ally_crest_id = ? WHERE
+    /// clan_id = ?`.
+    AllyCrestOfClan { clan_id: i32, crest_id: i32 },
+    /// `Clan.changeAllyCrest(crestId, false)`: `UPDATE clan_data SET ally_crest_id = ? WHERE
+    /// ally_id = ?`.
+    AllyCrestOfAlly { ally_id: i32, crest_id: i32 },
+}
+
+/// A `clan_wars` row write (M6-CLAN-02).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WarWrite {
+    /// `ClanTable.storeClanWars`: `REPLACE INTO clan_wars (clan1, clan2, wantspeace1,
+    /// wantspeace2) VALUES(?,?,0,0)`.
+    Store { clan1: i32, clan2: i32 },
+    /// `ClanTable.deleteClanWars`: `DELETE FROM clan_wars WHERE (clan1=? AND clan2=?) OR
+    /// (clan2=? AND clan1=?)`.
+    Delete { clan1: i32, clan2: i32 },
 }
 
 /// The values of `INSERT_CLAN_DATA`.
@@ -689,8 +808,33 @@ impl World {
                 curr_player_name,
                 target_player_name,
             } => self.on_request_pledge_set_academy_master(id, set, &curr_player_name, &target_player_name),
+            ClanInput::PledgeCrest { crest_id } => self.on_request_pledge_crest(id, crest_id),
+            ClanInput::ExPledgeCrestLarge { crest_id } => self.on_request_ex_pledge_crest_large(id, crest_id),
+            ClanInput::AllyCrest { crest_id } => self.on_request_ally_crest(id, crest_id),
+            ClanInput::SetPledgeCrest { length, data } => self.on_request_set_pledge_crest(id, length, data),
+            ClanInput::ExSetPledgeCrestLarge { length, data } => {
+                self.on_request_ex_set_pledge_crest_large(id, length, data)
+            }
+            ClanInput::SetAllyCrest { length, data } => self.on_request_set_ally_crest(id, length, data),
+            ClanInput::PledgeWarList { tab } => self.on_request_pledge_war_list(id, tab),
+            ClanInput::StartPledgeWar { pledge_name } => self.on_request_start_pledge_war(id, &pledge_name),
+            ClanInput::ReplyStartPledgeWar { answer } => self.on_request_reply_start_pledge_war(id, answer),
+            ClanInput::StopPledgeWar { pledge_name } => self.on_request_stop_pledge_war(id, &pledge_name),
+            ClanInput::ReplyStopPledgeWar { answer } => self.on_request_reply_stop_pledge_war(id, answer),
+            ClanInput::SurrenderPledgeWar { pledge_name } => {
+                self.on_request_surrender_pledge_war(id, &pledge_name)
+            }
+            ClanInput::ReplySurrenderPledgeWar { req_name, answer } => {
+                self.on_request_reply_surrender_pledge_war(id, &req_name, answer)
+            }
+            ClanInput::JoinAlly { id: target } => self.on_request_join_ally(id, target),
+            ClanInput::AnswerJoinAlly { response } => self.on_request_answer_join_ally(id, response),
+            ClanInput::AllyLeave => self.on_ally_leave(id),
+            ClanInput::AllyDismiss { clan_name } => self.on_ally_dismiss(id, &clan_name),
+            ClanInput::DismissAlly => self.on_request_dismiss_ally(id),
+            ClanInput::AllyInfo => self.on_request_ally_info(id),
             ClanInput::NotPorted(packet) => {
-                tracing::debug!("{id}: {packet} is not ported yet (M6-CLAN-02).");
+                tracing::debug!("{id}: {packet} is not a clan packet the world knows.");
             }
         }
     }
