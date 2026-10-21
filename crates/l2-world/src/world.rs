@@ -106,6 +106,8 @@ pub struct World {
     pub(crate) party: crate::party::PartyWorld,
     /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
     pub(crate) punishments: crate::punishments::PunishmentWorld,
+    /// The clans, the clan settings and the players' invitations (M6-CLAN-01, `clan/`).
+    pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
 }
@@ -158,6 +160,7 @@ impl World {
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
             party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
+            clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
         }
     }
@@ -297,6 +300,8 @@ impl World {
                 }
                 // Java Shutdown: "Save items on ground before closing."
                 self.save_ground_items();
+                // Java Shutdown.saveData: `ClanTable.getInstance().shutdown()`.
+                self.clan_table_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -523,6 +528,7 @@ impl World {
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
+            ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -612,6 +618,8 @@ impl World {
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
+            // Java: ClanTable.scheduleRemoveClan, updateClanRanks, RequestPartner.clear
+            TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }

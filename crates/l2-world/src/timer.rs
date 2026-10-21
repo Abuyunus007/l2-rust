@@ -108,6 +108,8 @@ pub enum TimerKind {
     /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
     /// see `punishments.rs`.
     Punishment(crate::punishments::PunishmentTimer),
+    /// The dissolution of a clan, the clan ranks and the end of a clan invitation, see `clan/`.
+    Clan(crate::clan::ClanTimer),
     /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
     PvpFlag(ObjectId),
 }

@@ -27,8 +27,8 @@
 // # Relations
 // [`relation_mask`] is `Player.getRelation` over plain inputs ([`RelationInput`]); the world fills
 // the inputs from what exists. Clans, wars and sieges are other cards: until they exist their
-// inputs are empty (`// M6-CLAN:`, `// M7:` in [`World::relation_input`]),
-// so those bits stay 0 and the card that adds the state only has to fill the input.
+// inputs are empty (`// M7:` in [`World::relation_input`]), so those bits stay 0 and the card
+// that adds the state only has to fill the input. The clan inputs are filled (M6-CLAN-01).
 
 use std::collections::HashMap;
 
@@ -525,7 +525,17 @@ impl World {
             return;
         }
         // Target player doesn't have pvp flag set.
-        // M6-CLAN: a war both ways between the clans is a PvP kill (`increasePvpKills`).
+        // check about wars (M6-CLAN-01)
+        if let (Some(my_clan), Some(their_clan)) = (self.clan_of(killer), self.clan_of(killed))
+            && my_clan.is_at_war_with(their_clan.id)
+            && their_clan.is_at_war_with(my_clan.id)
+            && self.player_clan_state(killed).pledge_type != crate::clan::model::SUBUNIT_ACADEMY
+            && self.player_clan_state(killer).pledge_type != crate::clan::model::SUBUNIT_ACADEMY
+        {
+            // 'Both way war' -> 'PvP Kill'.
+            self.increase_pvp_kills(killer, target);
+            return;
+        }
         // 'No war' or 'One way war' -> 'Normal PK'.
         if self.karma_of_player(killed) > 0 {
             // Target player has karma.
@@ -693,12 +703,33 @@ impl World {
             .party_of(subject)
             .filter(|party| Some(*party) == self.party_of(viewer))
             .and_then(|party| self.party_members(party).iter().position(|m| *m == subject));
-        // M6-CLAN: `has_clan`, `same_clan`, `has_ally`, `is_clan_leader` and, with M6-CLAN-02, the
-        //          war between the clans.
+        // The clan bits (M6-CLAN-01): `getClan() == target.getClan()` compares the clans, so two
+        // players without a clan are not "the same clan" (the bit needs `_clan != null`).
+        let subject_clan = self.clan_of(subject);
+        let viewer_clan = self.clan_of(viewer);
+        let academy = |id| self.player_clan_state(id).pledge_type == crate::clan::model::SUBUNIT_ACADEMY;
+        // `target.getClan().isAtWarWith(getClan().getId())`, then the other way round.
+        let clan_war = match (subject_clan, viewer_clan) {
+            (Some(mine), Some(theirs))
+                if !academy(viewer) && !academy(subject) && theirs.is_at_war_with(mine.id) =>
+            {
+                Some(if mine.is_at_war_with(theirs.id) {
+                    ClanWar::Mutual
+                } else {
+                    ClanWar::OneSided
+                })
+            }
+            _ => None,
+        };
         // M7: `siege_state`, `siege_state_differs` and the territory wars.
         // The Handy's Block Checker arena (an event) adds INSIEGE/ENEMY/ALLY/ATTACKER: M8.
         RelationInput {
+            has_clan: subject_clan.is_some(),
+            same_clan: subject_clan.is_some_and(|c| viewer_clan.is_some_and(|v| v.id == c.id)),
+            has_ally: self.ally_id_of(subject) != 0,
+            is_clan_leader: self.is_clan_leader(subject),
             party_index,
+            clan_war,
             ..RelationInput::default()
         }
     }
@@ -740,8 +771,19 @@ impl World {
             if self.is_inside_zone(subject, ZoneId::Peace) || self.is_inside_zone(subject, ZoneId::NoPvp) {
                 return false;
             }
-            // M6-CLAN / M7: different clans in a siege (defenders and attackers of the same side
-            // do not hit each other), and clans at war (`getWantsPeace`, academy members).
+            if let (Some(clan), Some(attacker_clan)) = (self.clan_of(subject), self.clan_of(attacker)) {
+                // M7: different clans in a siege (defenders and attackers of the same side do not
+                // hit each other).
+                // Check if clan is at war (M6-CLAN-01).
+                if self.player_clan_state(subject).wants_peace == 0
+                    && self.player_clan_state(attacker).wants_peace == 0
+                    && !self.is_academy_member(subject)
+                    && clan.is_at_war_with(attacker_clan.id)
+                    && attacker_clan.is_at_war_with(clan.id)
+                {
+                    return true;
+                }
+            }
             // Check if the Player is in an arena, but NOT siege zone. NOTE: This check comes
             // before clan/ally checks, but after party checks. This is done because in arenas,
             // clan/ally members can autoattack if they are not in party.
@@ -753,7 +795,15 @@ impl World {
             {
                 return true;
             }
-            // M6-CLAN: the attacker is a member of the subject's clan, or in its alliance.
+            // Check if the attacker is not in the same clan (M6-CLAN-01).
+            if self.clan_of(subject).is_some_and(|c| c.is_member(attacker.0)) {
+                return false;
+            }
+            // Check if the attacker is not in the same ally.
+            let ally_id = self.ally_id_of(subject);
+            if ally_id != 0 && ally_id == self.ally_id_of(attacker) {
+                return false;
+            }
             // Now check again if the Player is in pvp zone, but this time at siege PvP zone,
             // applying clan/ally checks.
             if self.is_inside_zone(subject, ZoneId::Pvp)

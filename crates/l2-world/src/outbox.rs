@@ -94,6 +94,10 @@ pub enum PersistCommand {
     /// Java `PunishmentManager.changeCharAccessLevel`: `UPDATE characters SET accessLevel=? WHERE
     /// charId=?`.
     CharAccessLevel { char_id: i32, level: i32 },
+    /// A clan row write with Java's statement (`clan_data`, `clan_privs`, `clan_subpledges`,
+    /// `clan_notices`, the clan columns of `characters`), see `clan/`. Applied in order with the
+    /// other commands.
+    Clan(crate::clan::ClanWrite),
 }
 
 /// Messages for the login server link.

@@ -25,8 +25,8 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData, PlayerProfile,
-    SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
+    ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
+    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -84,6 +84,7 @@ pub struct DbPlayerLoader {
     macros: MacroRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
+    clans: l2_db::ClanRepository,
 }
 
 impl DbPlayerLoader {
@@ -98,7 +99,8 @@ impl DbPlayerLoader {
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
-            variables: VariableRepository::new(pool),
+            variables: VariableRepository::new(pool.clone()),
+            clans: l2_db::ClanRepository::new(pool),
         }
     }
 
@@ -248,6 +250,18 @@ impl DbPlayerLoader {
 
         // Java: PlayerVariables.restoreMe
         data.profile.variables = self.variables.variables_of(char_id).await?.into_iter().collect();
+
+        // Java: ClanTable.getClan(clanid). Side by side (D-39) the Java game server may have made
+        // the clan or the membership after this server loaded its clans: the clan is read here
+        // (the startup queries) and the world adds it when its table does not know it. A failed
+        // read leaves the row's clan columns alone in the world.
+        let clan_id = data.profile.clan.map_or(0, |c| c.clan_id);
+        if clan_id > 0 {
+            match crate::persist::load_clan(&self.clans, clan_id).await {
+                Ok(record) => data.profile.clan_record = Some(Box::new(record)),
+                Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
+            }
+        }
         apply_restore_location(&mut data);
         Ok(data)
     }
@@ -360,8 +374,98 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             death_penalty_level: i32::from(row.death_penalty_level),
             // Java `setLastAccess(rset.getLong("lastAccess"))`
             last_access: i64::try_from(row.last_access).unwrap_or(i64::MAX),
+            // The clan columns (`clanid`, `power_grade`, `subpledge`, ...). Java never reads
+            // `clan_privs` back (the world sets the privileges from the clan), but a store of a
+            // character the world did not change keeps it.
+            clan: Some(clan_state_of(row)),
             ..PlayerProfile::default()
         },
+    }
+}
+
+/// The clan columns of a `characters` row (Java `Player.restore`: `getInt` / `getLong`).
+// Java: Player.restore (wantspeace, clan_join_expiry_time, clan_create_expiry_time, power_grade,
+//       subpledge, apprentice, sponsor, lvl_joined_academy, clanid)
+fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
+    let u32_i32 = |v: u32| i32::try_from(v).unwrap_or(i32::MAX);
+    let u64_i64 = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+    l2_world::PlayerClanState {
+        clan_id: row.clanid.map_or(0, u32_i32),
+        privileges: l2_world::clan::ClanPrivilegesRef::Own(row.clan_privs.map_or(0, u32_i32)),
+        wants_peace: row.wantspeace.map_or(0, i32::from),
+        power_grade: row.power_grade.map_or(0, i32::from),
+        pledge_type: i32::from(row.subpledge),
+        lvl_joined_academy: i32::from(row.lvl_joined_academy),
+        apprentice: u32_i32(row.apprentice),
+        sponsor: u32_i32(row.sponsor),
+        clan_join_expiry_time: u64_i64(row.clan_join_expiry_time),
+        clan_create_expiry_time: u64_i64(row.clan_create_expiry_time),
+        pledge_class: 0,
+        keep_stored: false,
+    }
+}
+
+/// The clan packets as the world takes them. The crest, war and alliance packets are M6-CLAN-02's
+/// and reach the world as `NotPorted`.
+fn clan_input(packet: ClientPacket) -> ClanInput {
+    match packet {
+        ClientPacket::RequestJoinPledge(p) => ClanInput::JoinPledge {
+            target: p.target,
+            pledge_type: p.pledge_type,
+        },
+        ClientPacket::RequestAnswerJoinPledge(p) => ClanInput::AnswerJoinPledge { answer: p.answer },
+        ClientPacket::RequestWithdrawalPledge(_) => ClanInput::WithdrawalPledge,
+        ClientPacket::RequestOustPledgeMember(p) => ClanInput::OustPledgeMember { target: p.target },
+        ClientPacket::RequestPledgeMemberList(_) => ClanInput::PledgeMemberList,
+        ClientPacket::RequestPledgeInfo(p) => ClanInput::PledgeInfo { clan_id: p.clan_id },
+        ClientPacket::RequestPledgeExtendedInfo(_) => ClanInput::PledgeExtendedInfo,
+        ClientPacket::RequestPledgePower(p) => ClanInput::PledgePower {
+            rank: p.rank,
+            action: p.action,
+            privs: p.privs,
+        },
+        ClientPacket::RequestPledgePowerGradeList(_) => ClanInput::PledgePowerGradeList,
+        ClientPacket::RequestPledgeMemberPowerInfo(p) => {
+            ClanInput::PledgeMemberPowerInfo { player: p.player }
+        }
+        ClientPacket::RequestPledgeMemberInfo(p) => ClanInput::PledgeMemberInfo { player: p.player },
+        ClientPacket::RequestPledgeSetMemberPowerGrade(p) => ClanInput::PledgeSetMemberPowerGrade {
+            member: p.member,
+            power_grade: p.power_grade,
+        },
+        ClientPacket::RequestPledgeReorganizeMember(p) => ClanInput::PledgeReorganizeMember {
+            is_member_selected: p.is_member_selected,
+            member_name: p.member_name,
+            new_pledge_type: p.new_pledge_type,
+            selected_member: p.selected_member,
+        },
+        ClientPacket::RequestPledgeSetAcademyMaster(p) => ClanInput::PledgeSetAcademyMaster {
+            set: p.set,
+            curr_player_name: p.curr_player_name,
+            target_player_name: p.target_player_name,
+        },
+        ClientPacket::RequestPledgeWarList(_) => ClanInput::NotPorted("RequestPledgeWarList"),
+        ClientPacket::RequestPledgeCrest(_) => ClanInput::NotPorted("RequestPledgeCrest"),
+        ClientPacket::RequestExPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExPledgeCrestLarge"),
+        ClientPacket::RequestSetPledgeCrest(_) => ClanInput::NotPorted("RequestSetPledgeCrest"),
+        ClientPacket::RequestExSetPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExSetPledgeCrestLarge"),
+        ClientPacket::RequestSetAllyCrest(_) => ClanInput::NotPorted("RequestSetAllyCrest"),
+        ClientPacket::RequestStartPledgeWar(_) => ClanInput::NotPorted("RequestStartPledgeWar"),
+        ClientPacket::RequestReplyStartPledgeWar(_) => ClanInput::NotPorted("RequestReplyStartPledgeWar"),
+        ClientPacket::RequestStopPledgeWar(_) => ClanInput::NotPorted("RequestStopPledgeWar"),
+        ClientPacket::RequestReplyStopPledgeWar(_) => ClanInput::NotPorted("RequestReplyStopPledgeWar"),
+        ClientPacket::RequestSurrenderPledgeWar(_) => ClanInput::NotPorted("RequestSurrenderPledgeWar"),
+        ClientPacket::RequestReplySurrenderPledgeWar(_) => {
+            ClanInput::NotPorted("RequestReplySurrenderPledgeWar")
+        }
+        ClientPacket::RequestJoinAlly(_) => ClanInput::NotPorted("RequestJoinAlly"),
+        ClientPacket::RequestAnswerJoinAlly(_) => ClanInput::NotPorted("RequestAnswerJoinAlly"),
+        ClientPacket::AllyLeave(_) => ClanInput::NotPorted("AllyLeave"),
+        ClientPacket::AllyDismiss(_) => ClanInput::NotPorted("AllyDismiss"),
+        ClientPacket::RequestDismissAlly(_) => ClanInput::NotPorted("RequestDismissAlly"),
+        ClientPacket::RequestAllyCrest(_) => ClanInput::NotPorted("RequestAllyCrest"),
+        ClientPacket::RequestAllyInfo(_) => ClanInput::NotPorted("RequestAllyInfo"),
+        _ => ClanInput::NotPorted("unknown clan packet"),
     }
 }
 
@@ -636,6 +740,40 @@ impl ClientSession {
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
             },
+            // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
+            packet @ (ClientPacket::RequestJoinPledge(_)
+            | ClientPacket::RequestAnswerJoinPledge(_)
+            | ClientPacket::RequestWithdrawalPledge(_)
+            | ClientPacket::RequestOustPledgeMember(_)
+            | ClientPacket::RequestPledgeMemberList(_)
+            | ClientPacket::RequestPledgeInfo(_)
+            | ClientPacket::RequestPledgeExtendedInfo(_)
+            | ClientPacket::RequestPledgePower(_)
+            | ClientPacket::RequestPledgePowerGradeList(_)
+            | ClientPacket::RequestPledgeMemberPowerInfo(_)
+            | ClientPacket::RequestPledgeMemberInfo(_)
+            | ClientPacket::RequestPledgeSetMemberPowerGrade(_)
+            | ClientPacket::RequestPledgeReorganizeMember(_)
+            | ClientPacket::RequestPledgeSetAcademyMaster(_)
+            | ClientPacket::RequestPledgeWarList(_)
+            | ClientPacket::RequestPledgeCrest(_)
+            | ClientPacket::RequestExPledgeCrestLarge(_)
+            | ClientPacket::RequestSetPledgeCrest(_)
+            | ClientPacket::RequestExSetPledgeCrestLarge(_)
+            | ClientPacket::RequestSetAllyCrest(_)
+            | ClientPacket::RequestStartPledgeWar(_)
+            | ClientPacket::RequestReplyStartPledgeWar(_)
+            | ClientPacket::RequestStopPledgeWar(_)
+            | ClientPacket::RequestReplyStopPledgeWar(_)
+            | ClientPacket::RequestSurrenderPledgeWar(_)
+            | ClientPacket::RequestReplySurrenderPledgeWar(_)
+            | ClientPacket::RequestJoinAlly(_)
+            | ClientPacket::RequestAnswerJoinAlly(_)
+            | ClientPacket::AllyLeave(_)
+            | ClientPacket::AllyDismiss(_)
+            | ClientPacket::RequestDismissAlly(_)
+            | ClientPacket::RequestAllyCrest(_)
+            | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
@@ -831,6 +969,116 @@ mod tests {
     }
 
     #[test]
+    fn the_clan_columns_are_loaded_and_stored_back() {
+        let mut r = row();
+        r.clanid = Some(500);
+        r.clan_privs = Some(0x46);
+        r.wantspeace = Some(1);
+        r.power_grade = Some(5);
+        r.subpledge = -1;
+        r.lvl_joined_academy = 20;
+        r.apprentice = 7;
+        r.sponsor = 8;
+        r.clan_join_expiry_time = 1_000;
+        r.clan_create_expiry_time = 2_000;
+        let mut p = player_from_row(&r);
+        let clan = p.profile.clan.unwrap();
+        assert_eq!(
+            (
+                clan.clan_id,
+                clan.stored_privileges(),
+                clan.wants_peace,
+                clan.power_grade
+            ),
+            (500, 0x46, 1, 5)
+        );
+        assert_eq!(
+            (
+                clan.pledge_type,
+                clan.lvl_joined_academy,
+                clan.apprentice,
+                clan.sponsor
+            ),
+            (-1, 20, 7, 8)
+        );
+        assert_eq!(
+            (clan.clan_join_expiry_time, clan.clan_create_expiry_time),
+            (1_000, 2_000)
+        );
+
+        // The store writes what the snapshot carries (M6-CLAN-01)...
+        p.profile.clan = Some(l2_world::PlayerClanState {
+            clan_id: 600,
+            privileges: l2_world::clan::ClanPrivilegesRef::Own(0x00FF_FFFF),
+            power_grade: 1,
+            ..clan
+        });
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (
+                update.clan_id,
+                update.clan_privs,
+                update.power_grade,
+                update.subpledge
+            ),
+            (600, 0x00FF_FFFF, 1, -1)
+        );
+        assert_eq!(
+            (update.apprentice, update.sponsor, update.lvl_joined_academy),
+            (7, 8, 20)
+        );
+        // ... and keeps the row's values for a snapshot without them, or for a player whose clan
+        // was not found (D-39: never `clanid = 0` for a clan of the Java game server).
+        p.profile.clan = Some(l2_world::PlayerClanState {
+            keep_stored: true,
+            ..l2_world::PlayerClanState::default()
+        });
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (update.clan_id, update.clan_privs, update.power_grade),
+            (500, 0x46, 5)
+        );
+        p.profile.clan = None;
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (update.clan_id, update.clan_privs, update.power_grade),
+            (500, 0x46, 5)
+        );
+    }
+
+    #[test]
+    fn clan_packets_become_clan_input() {
+        use l2_protocol_game::client::pledge::{RequestAllyInfo, RequestJoinPledge, RequestPledgePower};
+        assert_eq!(
+            clan_input(ClientPacket::RequestJoinPledge(RequestJoinPledge {
+                target: 7,
+                pledge_type: -1
+            })),
+            ClanInput::JoinPledge {
+                target: 7,
+                pledge_type: -1
+            }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestPledgePower(RequestPledgePower {
+                rank: 5,
+                action: 2,
+                privs: 9
+            })),
+            ClanInput::PledgePower {
+                rank: 5,
+                action: 2,
+                privs: 9
+            }
+        );
+        // Alliances, wars and crests are M6-CLAN-02's.
+        assert_eq!(
+            clan_input(ClientPacket::RequestAllyInfo(RequestAllyInfo)),
+            ClanInput::NotPorted("RequestAllyInfo")
+        );
+    }
+
+    #[test]
     fn macro_commands_follow_macro_list_restore_me() {
         let commands = parse_macro_commands("1,1177,0,;3,0,0,/say hi;5,57,1;bad;2,x,0;7,1");
         assert_eq!(
@@ -929,7 +1177,7 @@ mod tests {
 
     /// The game tables the loader reads and `create_character` writes (the same list as
     /// `charscreen_db_tests`).
-    const LOADER_SCHEMA: [&str; 27] = [
+    const LOADER_SCHEMA: [&str; 31] = [
         include_str!("../../../l2-db/sql/game/characters.sql"),
         include_str!("../../../l2-db/sql/game/items.sql"),
         include_str!("../../../l2-db/sql/game/item_attributes.sql"),
@@ -957,6 +1205,10 @@ mod tests {
         include_str!("../../../l2-db/sql/game/character_variables.sql"),
         include_str!("../../../l2-db/sql/game/mods_wedding.sql"),
         include_str!("../../../l2-db/sql/game/clan_data.sql"),
+        include_str!("../../../l2-db/sql/game/clan_privs.sql"),
+        include_str!("../../../l2-db/sql/game/clan_subpledges.sql"),
+        include_str!("../../../l2-db/sql/game/clan_skills.sql"),
+        include_str!("../../../l2-db/sql/game/clan_notices.sql"),
     ];
 
     /// A throwaway database with the game tables; `None` without `L2_TEST_DATABASE_URL`.
@@ -983,6 +1235,81 @@ mod tests {
         }
         let pool = l2_db::connect_with(options, 5).await.unwrap();
         Some((db, pool))
+    }
+
+    /// The loader reads the character's clan (D-39: the Java game server may have made it after
+    /// this server loaded its clans); a clan id without a `clan_data` row gives a record without
+    /// data, which the world treats as "keep the row".
+    #[tokio::test]
+    async fn the_loader_reads_the_clan_of_the_character() {
+        let Some((db, pool)) = loader_setup().await else {
+            return;
+        };
+        let (_dir, pack) = crate::client::testdata::datapack();
+        let screen = crate::client::charscreen::CharScreen::new(
+            Arc::new(crate::client::charscreen::DbCharScreen::new(pool.clone())),
+            pack,
+            Arc::new(l2_config::GameConfig::default()),
+            Arc::new(l2_world::IdFactory::new([]).unwrap()),
+            0,
+        );
+        let create = |name: &str| l2_protocol_game::client::CharacterCreate {
+            name: name.to_owned(),
+            race: 0,
+            is_female: false,
+            class_id: 0,
+            int: 0,
+            str: 0,
+            con: 0,
+            men: 0,
+            dex: 0,
+            wit: 0,
+            hair_style: 0,
+            hair_color: 0,
+            face: 0,
+        };
+        let mut rng = l2_util::WorldRng::from_seed(7);
+        let mut ids = Vec::new();
+        for name in ["Leader", "Orphan"] {
+            let id = crate::client::charscreen::create_character(&screen, "acc", &create(name), &mut rng)
+                .await
+                .unwrap()
+                .char_id;
+            ids.push(id);
+        }
+        let (leader, orphan) = (ids[0], ids[1]);
+        db.exec(&format!(
+            "INSERT INTO clan_data (clan_id, clan_name, clan_level, leader_id) VALUES (900, 'Tigers', 3, {leader})"
+        ))
+        .await;
+        db.exec(&format!(
+            "UPDATE characters SET clanid = 900, power_grade = 1 WHERE charId = {leader}"
+        ))
+        .await;
+        db.exec(&format!(
+            "UPDATE characters SET clanid = 901 WHERE charId = {orphan}"
+        ))
+        .await;
+
+        let loader = DbPlayerLoader::new(pool.clone());
+        let loaded = loader.load_player("acc", leader).await.unwrap();
+        let record = loaded.profile.clan_record.unwrap();
+        assert_eq!(record.clan_id, 900);
+        let data = record.data.unwrap();
+        assert_eq!(
+            (data.name.as_deref(), data.level, data.leader_id),
+            (Some("Tigers"), 3, leader)
+        );
+        assert_eq!(record.members.len(), 1);
+        assert_eq!(record.members[0].object_id, leader);
+
+        let loaded = loader.load_player("acc", orphan).await.unwrap();
+        let record = loaded.profile.clan_record.unwrap();
+        assert_eq!((record.clan_id, record.data.is_none()), (901, true));
+        assert_eq!(loaded.profile.clan.unwrap().clan_id, 901);
+
+        pool.close().await;
+        db.drop_db().await;
     }
 
     #[tokio::test]

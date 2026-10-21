@@ -1064,6 +1064,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     | PersistCommand::EndPunishment { .. }
                     | PersistCommand::CharAccessLevel { .. },
                 ) => "punishment",
+                Out::Persist(PersistCommand::Clan(_)) => "clan",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

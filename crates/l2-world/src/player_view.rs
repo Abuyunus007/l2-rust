@@ -154,7 +154,8 @@ impl World {
             pledge_type: ui.pledge_type,
             title_color: ui.title_color,
             cursed_weapon_level: ui.cursed_weapon_level,
-            clan_reputation_score: 0,
+            // `_clan != null ? _clan.getReputationScore() : 0`
+            clan_reputation_score: self.clan_of(subject).map_or(0, |c| c.reputation_score),
             transformation_display_id: ui.transformation_display_id,
             agathion_id: 0,
             abnormal_visual_effect_special: visual_effects_special,

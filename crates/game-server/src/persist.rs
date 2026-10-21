@@ -22,6 +22,9 @@
 // - `character_reco_bonus` again for a vote or `RecoGiveTask` (`storeRecommendationValues`) and
 //   for Java's daily reset (`resetRecommends`: the two `UPDATE`s over every row, M5-FU-03; only
 //   with `DailyResetDatabaseWrites = True` in `SideBySide.ini`),
+// - the clan tables (`clan_data`, `clan_privs`, `clan_subpledges`, `clan_notices`) and the clan
+//   columns of offline members' `characters` rows, with Java's clan statements
+//   (`PersistCommand::Clan`, M6-CLAN-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -31,7 +34,8 @@
 // once; the full store (`StorePlayer`) writes what differs from the last write, which covers
 // everything Java only writes later (a lower count, new items). The baseline of a character
 // follows both, so neither writes a row twice or inserts a row that exists.
-// `UPDATE_CHARACTER` writes every column, including ones M2 does not model (clan, nobless...).
+// `UPDATE_CHARACTER` writes every column, including ones M2 does not model (nobless...). The clan
+// columns come from the snapshot when it carries them (`PlayerProfile::clan`, M6-CLAN-01).
 // (`vitality_points` is modelled since M4-VIT-01 and comes from the snapshot.) Those are read from the row first and written back unchanged, so a store never
 // changes what the Java side owns. The account may be on one game server at a time (the login
 // server enforces it), so nobody else changes the row between that read and the write.
@@ -44,14 +48,16 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::{
-    CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewPunishment, NewShortcut,
-    NewSkillSave, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel,
-    SkillRepository, VariableRepository,
+    CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate, GroundItemRecord,
+    GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate, NewItem,
+    NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, Pool, PunishmentRepository,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
 };
+use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
 use l2_world::{
-    GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, PunishmentAffect,
-    PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData, StoredPunishment,
+    ClanRecord, ClanWrite, GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData,
+    PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
+    StoredPunishment,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -175,6 +181,14 @@ pub trait PlayerStore: Send + 'static {
         &mut self,
         _char_id: i32,
         _level: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A clan row write with Java's statement (`Clan.store`, `updateClanInDB`, ...).
+    fn store_clan_write(
+        &mut self,
+        _write: &ClanWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -459,6 +473,12 @@ async fn run<S: PlayerStore>(
                     error!("The access level of character {char_id} could NOT be stored: {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Clan(write)) => {
+                // Java logs a failed clan statement and goes on (no retry).
+                if let Err(e) = store.store_clan_write(&write).await {
+                    error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
@@ -491,6 +511,167 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
             warn!("PunishmentManager: Error while loading punishments: {e}");
             Vec::new()
         }
+    }
+}
+
+/// Java `ClanTable`'s constructor, the database half: every clan (`new Clan(clanId)`'s queries)
+/// and the `clan_wars` rows. Only reads (D-39). A clan whose rows cannot be read is logged and
+/// left out, like Java's caught `restore` (which keeps a half-restored clan).
+pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>) {
+    let repo = ClanRepository::new(pool.clone());
+    let ids = match repo.clan_ids().await {
+        Ok(ids) => ids,
+        Err(e) => {
+            error!("ClanTable: Error restoring ClanTable. {e}");
+            return (Vec::new(), Vec::new());
+        }
+    };
+    let mut clans = Vec::with_capacity(ids.len());
+    for clan_id in ids {
+        match load_clan(&repo, clan_id).await {
+            Ok(record) => clans.push(record),
+            Err(e) => error!("Clan: Error restoring clan data of clan {clan_id}: {e}"),
+        }
+    }
+    let wars = match repo.clan_wars().await {
+        Ok(rows) => rows.into_iter().map(|r| (r.clan1, r.clan2)).collect(),
+        Err(e) => {
+            error!("ClanTable: Error restoring clan wars data. {e}");
+            Vec::new()
+        }
+    };
+    (clans, wars)
+}
+
+/// The rows of one clan (`Clan.restore`, `restoreSubPledges`, `restoreRankPrivs`,
+/// `restoreSkills`, `restoreNotice`).
+pub async fn load_clan(repo: &ClanRepository, clan_id: i32) -> Result<ClanRecord, l2_db::DbError> {
+    let mut record = ClanRecord {
+        clan_id,
+        ..ClanRecord::default()
+    };
+    if let Some(row) = repo.clan_data(clan_id).await? {
+        let int = |v: Option<i32>| v.unwrap_or(0);
+        record.data = Some(ClanDataRecord {
+            name: row.clan_name,
+            level: int(row.clan_level),
+            reputation_score: row.reputation_score,
+            castle_id: int(row.has_castle),
+            blood_alliance_count: i32::from(row.blood_alliance_count),
+            blood_oath_count: i32::from(row.blood_oath_count),
+            ally_id: int(row.ally_id),
+            ally_name: row.ally_name,
+            leader_id: int(row.leader_id),
+            crest_id: int(row.crest_id),
+            crest_large_id: int(row.crest_large_id),
+            ally_crest_id: int(row.ally_crest_id),
+            auction_bid_at: row.auction_bid_at,
+            ally_penalty_expiry_time: clamp_i64(row.ally_penalty_expiry_time),
+            ally_penalty_type: i32::from(row.ally_penalty_type),
+            char_penalty_expiry_time: clamp_i64(row.char_penalty_expiry_time),
+            dissolving_expiry_time: clamp_i64(row.dissolving_expiry_time),
+            // `getInt` of an unsigned `INT(10)`: the low 32 bits.
+            new_leader_id: row.new_leader_id as i32,
+        });
+        record.members = repo
+            .clan_members(clan_id)
+            .await?
+            .into_iter()
+            .map(|m| ClanMemberRecord {
+                object_id: clamp_i32(u64::from(m.char_id)),
+                name: m.char_name,
+                level: m.level.map_or(0, i32::from),
+                class_id: m.classid.map_or(0, i32::from),
+                // `getString("title")` may be null; it is written as an empty string.
+                title: m.title.unwrap_or_default(),
+                power_grade: m.power_grade.map_or(0, i32::from),
+                pledge_type: i32::from(m.subpledge),
+                apprentice: clamp_i32(u64::from(m.apprentice)),
+                sponsor: clamp_i32(u64::from(m.sponsor)),
+                female: m.sex.is_some_and(|s| s != 0),
+                race: m.race.map_or(0, i32::from),
+            })
+            .collect();
+    }
+    record.sub_pledges = repo
+        .sub_pledges(clan_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.sub_pledge_id, r.name.unwrap_or_default(), r.leader_id))
+        .collect();
+    record.rank_privs = repo
+        .rank_privs(clan_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.rank, r.party, r.privs))
+        .collect();
+    record.skills = repo
+        .clan_skills(clan_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.skill_id, r.skill_level, r.sub_pledge_id))
+        .collect();
+    record.notices = repo
+        .clan_notices(clan_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.enabled, r.notice))
+        .collect();
+    Ok(record)
+}
+
+/// The Java method a clan write comes from, for the log.
+fn clan_write_name(write: &ClanWrite) -> &'static str {
+    match write {
+        ClanWrite::Insert(_) => "Clan.store",
+        ClanWrite::Update(_) => "Clan.updateClanInDB",
+        ClanWrite::Level { .. } => "Clan.changeLevel",
+        ClanWrite::AllyCrestOfClan { .. } => "Clan.changeAllyCrest",
+        ClanWrite::RemoveMember { .. } => "Clan.removeMemberInDatabase",
+        ClanWrite::CharClanPrivs { .. } => "Clan.setNewLeader",
+        ClanWrite::CharSubPledge { .. } => "ClanMember.updatePledgeType",
+        ClanWrite::CharPowerGrade { .. } => "ClanMember.updatePowerGrade",
+        ClanWrite::CharApprenticeSponsor { .. } => "ClanMember.saveApprenticeAndSponsor",
+        ClanWrite::InsertSubPledge { .. } => "Clan.createSubPledge",
+        ClanWrite::UpdateSubPledge { .. } => "Clan.updateSubPledgeInDB",
+        ClanWrite::RankPrivs { .. } => "Clan.setRankPrivs",
+        ClanWrite::Notice { .. } => "Clan.storeNotice",
+        ClanWrite::Delete { .. } => "ClanTable.destroyClan",
+    }
+}
+
+/// `INSERT_CLAN_DATA`'s values.
+fn new_clan_of(row: &ClanRow) -> l2_db::NewClan {
+    l2_db::NewClan {
+        clan_id: row.clan_id,
+        clan_name: row.name.clone(),
+        clan_level: row.level,
+        castle_id: row.castle_id,
+        blood_alliance_count: row.blood_alliance_count,
+        blood_oath_count: row.blood_oath_count,
+        ally_id: row.ally_id,
+        ally_name: row.ally_name.clone(),
+        leader_id: row.leader_id,
+        crest_id: row.crest_id,
+        crest_large_id: row.crest_large_id,
+        ally_crest_id: row.ally_crest_id,
+        new_leader_id: row.new_leader_id,
+    }
+}
+
+/// `updateClanInDB`'s values.
+fn clan_update_of(row: &ClanUpdateRow) -> ClanUpdate {
+    ClanUpdate {
+        clan_id: row.clan_id,
+        leader_id: row.leader_id,
+        ally_id: row.ally_id,
+        ally_name: row.ally_name.clone(),
+        reputation_score: row.reputation_score,
+        ally_penalty_expiry_time: row.ally_penalty_expiry_time,
+        ally_penalty_type: row.ally_penalty_type,
+        char_penalty_expiry_time: row.char_penalty_expiry_time,
+        dissolving_expiry_time: row.dissolving_expiry_time,
+        new_leader_id: row.new_leader_id,
     }
 }
 
@@ -693,6 +874,7 @@ pub struct DbStore {
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
+    clans: ClanRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -709,7 +891,8 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
-            punishments: PunishmentRepository::new(pool),
+            punishments: PunishmentRepository::new(pool.clone()),
+            clans: ClanRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
         }
@@ -1141,6 +1324,9 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
     // Java stores the base class level, exp and sp in `characters`; the active subclass has its
     // own row in `character_subclasses`. M2 does not model that, so the row keeps its values.
     let base_active = player.class_id == player.base_class;
+    // M6-CLAN-01: the clan columns the world keeps (Java `storeCharBase`); a snapshot without
+    // them keeps the row's values.
+    let clan = player.profile.clan.filter(|c| !c.keep_stored);
     let title = if player.title.is_empty() && row.title.is_none() {
         None
     } else {
@@ -1179,7 +1365,10 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         fame: clamp_i32(u64::from(row.fame)),
         pvp_kills: player.pvp_kills,
         pk_kills: player.pk_kills,
-        clan_id: row.clanid.map_or(0, |v| clamp_i32(u64::from(v))),
+        clan_id: clan.map_or_else(
+            || row.clanid.map_or(0, |v| clamp_i32(u64::from(v))),
+            |c| c.clan_id,
+        ),
         race: player.race,
         class_id: player.class_id,
         delete_time: clamp_i64(row.deletetime),
@@ -1190,19 +1379,28 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         // The snapshot is of a player in the world; `PlayerLeft` marks it offline afterwards.
         online: 1,
         is_in_7s_dungeon: row.isin7sdungeon != 0,
-        clan_privs: row.clan_privs.map_or(0, |v| clamp_i32(u64::from(v))),
-        wants_peace: row.wantspeace.map_or(0, i32::from),
+        clan_privs: clan.map_or_else(
+            || row.clan_privs.map_or(0, |v| clamp_i32(u64::from(v))),
+            |c| c.stored_privileges(),
+        ),
+        wants_peace: clan.map_or_else(|| row.wantspeace.map_or(0, i32::from), |c| c.wants_peace),
         base_class: player.base_class,
         online_time: player.online_time,
         newbie: row.newbie.map_or(0, |v| clamp_i32(u64::from(v))),
         noble: row.nobless != 0,
-        power_grade: row.power_grade.map_or(0, i32::from),
-        subpledge: i32::from(row.subpledge),
-        lvl_joined_academy: i32::from(row.lvl_joined_academy),
-        apprentice: i64::from(row.apprentice),
-        sponsor: i64::from(row.sponsor),
-        clan_join_expiry_time: clamp_i64(row.clan_join_expiry_time),
-        clan_create_expiry_time: clamp_i64(row.clan_create_expiry_time),
+        power_grade: clan.map_or_else(|| row.power_grade.map_or(0, i32::from), |c| c.power_grade),
+        subpledge: clan.map_or_else(|| i32::from(row.subpledge), |c| c.pledge_type),
+        lvl_joined_academy: clan.map_or_else(|| i32::from(row.lvl_joined_academy), |c| c.lvl_joined_academy),
+        apprentice: clan.map_or_else(|| i64::from(row.apprentice), |c| i64::from(c.apprentice)),
+        sponsor: clan.map_or_else(|| i64::from(row.sponsor), |c| i64::from(c.sponsor)),
+        clan_join_expiry_time: clan.map_or_else(
+            || clamp_i64(row.clan_join_expiry_time),
+            |c| c.clan_join_expiry_time,
+        ),
+        clan_create_expiry_time: clan.map_or_else(
+            || clamp_i64(row.clan_create_expiry_time),
+            |c| c.clan_create_expiry_time,
+        ),
         char_name: player.name.clone(),
         death_penalty_level: i64::from(row.death_penalty_level),
         bookmark_slot: i32::from(row.bookmarkslot),
@@ -1421,6 +1619,75 @@ impl PlayerStore for DbStore {
 
     async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
         self.characters.update_access_level(char_id, level).await?;
+        Ok(())
+    }
+
+    async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
+        let clans = &self.clans;
+        match write {
+            ClanWrite::Insert(row) => clans.insert_clan(&new_clan_of(row)).await?,
+            ClanWrite::Update(row) => clans.update_clan(&clan_update_of(row)).await?,
+            ClanWrite::Level { clan_id, level } => clans.update_clan_level(*clan_id, *level).await?,
+            ClanWrite::AllyCrestOfClan { clan_id, crest_id } => {
+                clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
+            }
+            ClanWrite::RemoveMember {
+                char_id,
+                clan_join_expiry_time,
+                clan_create_expiry_time,
+            } => {
+                clans
+                    .remove_member(*char_id, *clan_join_expiry_time, *clan_create_expiry_time)
+                    .await?
+            }
+            ClanWrite::CharClanPrivs { char_id, privs } => {
+                clans.update_char_clan_privs(*char_id, *privs).await?
+            }
+            ClanWrite::CharSubPledge { char_id, pledge_type } => {
+                clans.update_char_subpledge(*char_id, *pledge_type).await?
+            }
+            ClanWrite::CharPowerGrade { char_id, power_grade } => {
+                clans.update_char_power_grade(*char_id, *power_grade).await?
+            }
+            ClanWrite::CharApprenticeSponsor {
+                char_id,
+                apprentice,
+                sponsor,
+            } => {
+                clans
+                    .update_char_apprentice_sponsor(*char_id, *apprentice, *sponsor)
+                    .await?
+            }
+            ClanWrite::InsertSubPledge {
+                clan_id,
+                sub_pledge_id,
+                name,
+                leader_id,
+            } => {
+                clans
+                    .insert_sub_pledge(*clan_id, *sub_pledge_id, name, *leader_id)
+                    .await?
+            }
+            ClanWrite::UpdateSubPledge {
+                clan_id,
+                sub_pledge_id,
+                name,
+                leader_id,
+            } => {
+                clans
+                    .update_sub_pledge(*clan_id, *sub_pledge_id, name, *leader_id)
+                    .await?
+            }
+            ClanWrite::RankPrivs { clan_id, rank, privs } => {
+                clans.replace_rank_privs(*clan_id, *rank, *privs).await?
+            }
+            ClanWrite::Notice {
+                clan_id,
+                notice,
+                enabled,
+            } => clans.store_notice(*clan_id, notice, *enabled).await?,
+            ClanWrite::Delete { clan_id, castle_id } => clans.delete_clan(*clan_id, *castle_id).await?,
+        }
         Ok(())
     }
 

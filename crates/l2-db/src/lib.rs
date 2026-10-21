@@ -17,8 +17,9 @@ pub use game::{
     IdRepository, NewCharacter, UsedIds,
 };
 pub use game::{
-    ClanRepository, MacroRepository, MacroRow, NewMacro, RecoBonus, RecommendationRepository,
-    VariableRepository,
+    ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
+    ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
+    RecommendationRepository, VariableRepository,
 };
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
