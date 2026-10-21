@@ -25,11 +25,18 @@ impl EffectHandler for Detection {
         true
     }
 
-    // NOTE: Java returns early when the two players are in one party, clan or alliance. The world
-    // has no parties, clans or alliances yet, so every pair counts as not together (what Java
-    // answers for players without them). Revisit this with the party and clan milestones.
+    // Java returns early when the two players are in one party, clan or alliance.
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
         if !world.is_player(cx.effector) || !world.is_player(cx.effected) {
+            return;
+        }
+        if world.is_in_party_with(cx.effector, cx.effected) {
+            return;
+        }
+        if world.is_in_clan_with(cx.effector, cx.effected) {
+            return;
+        }
+        if world.is_in_ally_with(cx.effector, cx.effected) {
             return;
         }
         let invisible = world

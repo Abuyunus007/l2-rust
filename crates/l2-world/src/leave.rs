@@ -66,6 +66,10 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
         let clan_leave = self.clan_before_leave(id);
+        // `deleteMe`: "If a Party is in progress, leave it".
+        self.leave_party(id);
+        // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
+        self.cancel_transaction_on_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };
@@ -101,6 +105,8 @@ impl World {
         // Java: the Player object is gone with its `_isInvul` and regeneration task (a new login is
         // a new object, so the invulnerability of the GM does not carry over).
         self.forget_status(id);
+        // `Player.stopAllTimers` -> `stopPvpRegTask`; the flag goes with the object.
+        self.forget_pvp(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

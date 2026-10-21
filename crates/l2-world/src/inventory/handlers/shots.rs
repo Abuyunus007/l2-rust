@@ -444,8 +444,8 @@ impl World {
 
     /// Java `RequestAutoSoulShot.runImpl`.
     pub(crate) fn on_request_auto_soul_shot(&mut self, id: ObjectId, item_id: i32, shot_type: i32) {
-        // `!isInStoreMode() && getActiveRequester() == null`: no stores or requests yet.
-        if self.is_dead(id) {
+        // `!isInStoreMode() && getActiveRequester() == null`: no stores yet.
+        if self.active_requester(id).is_some() || self.is_dead(id) {
             return;
         }
         let Some(item) = self.first_item_with_id(id, item_id) else {
@@ -459,7 +459,10 @@ impl World {
         };
         // Disabling blessed spiritshots in the olympiad: no olympiad yet.
         if shot_type == ExAutoSoulShot::ON {
-            // `canManipulateWithItemId` is always true (no inventory block is modelled).
+            if !self.can_manipulate_with_item_id(id, item.item_id) {
+                self.send_message(id, "Cannot use this item.");
+                return;
+            }
             // Fishing shots are not automatic on retail.
             if (6535..=6540).contains(&item_id) {
                 return;

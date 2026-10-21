@@ -14,8 +14,7 @@
 //
 // # Left out
 // - Merc tickets (`MercTicketManager`): the castle lord rule of `ItemClick`.
-// - Parties (`isInLooterParty`, `distributeItem`, the party drop protection): M5.
-// - Trade (`getActiveTradeList`), fake death, combat flags, cursed weapons.
+// - Fake death, combat flags, cursed weapons.
 // - The auto equip of bolts for a crossbow: `World::check_and_equip_arrows` is the shared (and
 //   arrow-only) helper of the attack code.
 
@@ -105,7 +104,14 @@ impl World {
         if self.is_alike_dead(id) {
             return;
         }
-        // `getActiveTradeList() != null`: there are no trades yet.
+        if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotPickUpOrUseItemsWhileTrading),
+            );
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Set the AI Intention to IDLE.
         self.set_intention_idle(id);
@@ -162,8 +168,14 @@ impl World {
             return;
         }
 
-        // Without parties a player always counts as "not in a party".
-        if let Some(template) = template
+        // Only a player without a party, or with finders keepers, needs room for the item itself:
+        // the other loot rules look for a member who has it.
+        let needs_room = self.party_of(id).is_none_or(|party| {
+            self.party_distribution_type(party)
+                == Some(l2_protocol_game::server::PartyDistributionType::FindersKeepers)
+        });
+        if needs_room
+            && let Some(template) = template
             && !self.validate_capacity_for_item(id, template)
         {
             self.send(id, &ActionFailed);
@@ -175,8 +187,10 @@ impl World {
             return;
         }
 
-        // `isInLooterParty(ownerId)`: parties are M5.
-        if target.owner.is_some_and(|owner| owner != id) {
+        if target
+            .owner
+            .is_some_and(|owner| owner != id && !self.is_in_looter_party(id, owner))
+        {
             let message = if item_id == ADENA_ID {
                 SystemMessage::new(SystemMessageId::YouHaveFailedToPickUpS1Adena)
                     .with(SystemMessageParam::LongNumber(target.data.count))
@@ -254,8 +268,10 @@ impl World {
             self.broadcast_to_self_and_visible(id, &message);
         }
 
-        // Check if a Party is in progress (`distributeItem`): M5.
-        if item_id == ADENA_ID && self.adena_of(id) > 0 {
+        // Check if a Party is in progress.
+        if self.is_in_party(id) {
+            self.party_distribute_ground_item(id, taken.data);
+        } else if item_id == ADENA_ID && self.adena_of(id) > 0 {
             self.add_adena(id, taken.data.count, true);
             // `ItemManager.destroyItem(PICKUP, target, this, null)`.
             self.release_item_id(taken.data.object_id);

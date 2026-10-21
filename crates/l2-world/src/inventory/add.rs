@@ -47,7 +47,7 @@ fn in_inventory(item: &ItemData) -> bool {
 
 impl World {
     /// Java `ItemContainer.getItemByItemId(itemId)` on a player's inventory: the first row.
-    fn inventory_item_by_item_id(&self, player: ObjectId, item_id: i32) -> Option<&ItemData> {
+    pub(crate) fn inventory_item_by_item_id(&self, player: ObjectId, item_id: i32) -> Option<&ItemData> {
         self.players
             .get(&player)?
             .data
@@ -90,7 +90,12 @@ impl World {
 
     /// Java `Item.changeCount(process, count, ...)`: adena stops at `MaxAdena`, nothing goes
     /// below 0.
-    fn change_item_count(&mut self, player: ObjectId, object_id: ObjectId, count: i64) -> Option<ItemData> {
+    pub(super) fn change_item_count(
+        &mut self,
+        player: ObjectId,
+        object_id: ObjectId,
+        count: i64,
+    ) -> Option<ItemData> {
         let max_adena = self.settings.ground.max_adena;
         let p = self.players.get_mut(&player)?;
         let item = p.data.items.iter_mut().find(|i| i.object_id == object_id)?;
@@ -404,13 +409,9 @@ impl World {
     }
 
     /// Java `Player.doAutoLoot(target, itemId, itemCount)`: the loot goes straight into the killer's
-    /// inventory (a party shares it: M5).
-    pub(crate) fn do_auto_loot(&mut self, player: ObjectId, _npc: ObjectId, item_id: i32, count: i64) {
-        if item_id == ADENA_ID {
-            self.add_adena(player, count, true);
-        } else {
-            self.add_item(player, item_id, count, true);
-        }
+    /// inventory, or is shared by the party (`party/loot.rs`).
+    pub(crate) fn do_auto_loot(&mut self, player: ObjectId, npc: ObjectId, item_id: i32, count: i64) {
+        self.do_auto_loot_for(player, npc, item_id, count);
     }
 
     // ------------------------------------------------------------------ dropping

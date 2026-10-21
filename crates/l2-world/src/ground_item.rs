@@ -25,7 +25,6 @@
 //
 // # What is left out, with the system that brings it
 // - Merc tickets (`MercTicketManager`), cursed weapons and combat flags (sieges, M5).
-// - Parties (`isInLooterParty`, party drop protection, `distributeItem`): M5.
 // - The command channel loot privilege of raid bosses (`getFirstCommandChannelAttacked`): M5.
 // - `ON_PLAYER_ITEM_DROP` / `ON_PLAYER_ITEM_PICKUP` script events (D-05).
 
@@ -453,9 +452,10 @@ impl World {
     }
 
     /// Java `DropProtection.tryPickUp(actor)`: no protection, the protected creature itself, or
-    /// (M5) a member of its party.
+    /// a member of its party.
     pub(crate) fn try_pick_up(&self, item: &GroundItem, actor: ObjectId) -> bool {
-        item.drop_protection.is_none_or(|p| p.owner == actor)
+        item.drop_protection
+            .is_none_or(|p| p.owner == actor || self.is_in_party_with(p.owner, actor))
     }
 
     // ------------------------------------------------------------------ auto destroy

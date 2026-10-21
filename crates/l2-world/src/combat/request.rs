@@ -60,8 +60,8 @@ impl World {
         if self.target_of(id) != Some(target) {
             // `target.onAction(player)`.
             self.on_action_object(id, target, true);
-        } else if target != id {
-            // Private stores and pending requests (`getActiveRequester`) would refuse: M5.
+        } else if target != id && self.active_requester(id).is_none() {
+            // Private stores (`isInStoreMode`) would refuse as well: M6-STORE-01.
             self.on_forced_attack(target, id);
         } else {
             self.send(id, &ActionFailed);
@@ -153,8 +153,9 @@ impl World {
     }
 
     /// Java `target.isAutoAttackable(attacker)` for any attacker: a player's view is
-    /// `World::is_auto_attackable_by`; an NPC attacker sees players as enemies when it is a
-    /// monster and other NPCs never (`Player.isAutoAttackable`, `Monster.isAutoAttackable`).
+    /// `World::is_auto_attackable_by`; for an NPC attacker a player target answers with
+    /// `Player.isAutoAttackable` (`pvp.rs`: monsters are enemies, friendly mobs never, guards of
+    /// players with karma) and other NPCs are never enemies.
     pub(crate) fn is_auto_attackable_for(&self, target: ObjectId, attacker: ObjectId) -> bool {
         if self.is_player(attacker) {
             return self.is_auto_attackable_by(target, attacker);
@@ -163,9 +164,7 @@ impl World {
             return false;
         }
         match self.objects.get(&target).map(|e| e.kind) {
-            // Friendly mobs do not attack players; monsters do; guards attack players with karma
-            // (the faction rules are a Custom config, off).
-            Some(ObjectKind::Player) => self.player_auto_attackable_by_npc(target, attacker),
+            Some(ObjectKind::Player) => self.is_auto_attackable(target, attacker),
             // A monster is not an enemy of a monster; guards, monsters and the rest see each
             // other as `Monster.isAutoAttackable` and `Guard.isAutoAttackable` say.
             Some(ObjectKind::Npc) => self.npc_auto_attackable_by_npc(target, attacker),

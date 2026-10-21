@@ -13,8 +13,8 @@
 //
 // # Left out (each has its card)
 // - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, cursed weapons, observer mode,
-//   siege friends, transformations, effects (`POLEARM_SINGLE_TARGET`),
-//   PvP flagging (`updatePvPStatus`, M5): hooks marked where Java calls them.
+//   siege friends, transformations, effects (`POLEARM_SINGLE_TARGET`).
+// - PvP flagging after the attack (`updatePvPStatus`) is `pvp.rs`.
 
 use l2_data::Stat;
 use l2_data::item::{CrystalType, EtcItemType, WeaponType};
@@ -100,7 +100,15 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Transformations that cannot attack: M5.
+        // Transformations that cannot attack (a player only).
+        if !self.is_alike_dead(id)
+            && self
+                .stats(id)
+                .is_some_and(|v| v.is_transformed() && v.transformation().is_some_and(|t| !t.can_attack))
+        {
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Check if attacker's weapon can attack.
         let weapon = self.stats(id).and_then(|s| s.active_weapon_item().cloned());
@@ -208,8 +216,19 @@ impl World {
         // Flag the attacker if it's a Player outside a PvP area.
         if is_player && !self.is_inside_zone(id, ZoneId::Pvp) && target != id {
             self.add_attack_stance_task(id);
-            // M5: `player.updatePvPStatus(target)` (and the raid/champion variant).
+            // M6-SUMMON: `player.getSummon() != target` (attacking the own pet does not flag).
+            let flag_on_raid_or_champion = (self.is_raid(target)
+                && self.settings.pvp.flag_player_on_raid_attack)
+                || (self.stats(target).is_some_and(|v| v.is_champion())
+                    && self.settings.pvp.flag_player_on_champion_attack);
+            if flag_on_raid_or_champion {
+                self.update_pvp_status(id);
+            } else {
+                self.update_pvp_status_target(id, target);
+            }
         }
+        // M6-SUMMON: `FLAG_PLAYER_ON_SUMMON_PET_RAID_CHAMPION_ATTACK`, the owner of a summon or pet
+        // that attacks a raid or champion is flagged.
 
         if !hitted {
             // Abort the attack of the Creature and send Server->Client ActionFailed packet.
@@ -275,8 +294,7 @@ impl World {
         calculate_reuse_time(&ReuseInput {
             p_atk_spd: view.p_atk_spd(),
             weapon_reuse_delay: weapon.map(|t| t.reuse_delay),
-            // Transformations: M5.
-            is_transformed: false,
+            is_transformed: view.is_transformed(),
             attack_type: match view.attack_type() {
                 WeaponType::Bow => ReuseAttackType::Bow,
                 WeaponType::CrossBow => ReuseAttackType::Crossbow,
@@ -551,7 +569,10 @@ impl World {
 
     /// Java `Creature.canUseRangeWeapon()`.
     fn can_use_range_weapon(&mut self, id: ObjectId) -> bool {
-        // Transformations: M5 (they may always shoot).
+        // Transformations may always shoot.
+        if self.is_transformed(id) {
+            return true;
+        }
         let game_ticks = self.game_ticks();
         let disabled_until = self
             .combat

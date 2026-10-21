@@ -38,8 +38,8 @@ pub struct RequestPartner {
 }
 
 impl World {
-    /// Java `getRequest().isProcessingRequest()`.
-    pub fn is_processing_request(&self, id: ObjectId) -> bool {
+    /// Java `getRequest().isProcessingRequest()` (the `RequestPartner` one, not `Player`'s).
+    pub fn is_request_partner_busy(&self, id: ObjectId) -> bool {
         self.clans.requests.get(&id).is_some_and(|r| r.partner.is_some())
     }
 
@@ -68,7 +68,7 @@ impl World {
             );
             return false;
         };
-        if self.is_processing_request(partner) {
+        if self.is_request_partner_busy(partner) {
             let name = self
                 .players
                 .get(&partner)
@@ -81,7 +81,7 @@ impl World {
             );
             return false;
         }
-        if self.is_processing_request(player) {
+        if self.is_request_partner_busy(player) {
             self.send(
                 player,
                 &SystemMessage::new(SystemMessageId::WaitingForAnotherReply),

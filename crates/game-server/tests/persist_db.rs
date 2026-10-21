@@ -211,9 +211,12 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
 
     let mut store = DbStore::new(pool.clone());
     let mut data = player_data();
+    // Java writes `getAppearance().getTitleColor()`, which the PvP title colours change (M6-PVP-01).
+    data.profile.title_color = 0x009C_9C9C;
     store.store_player(&data).await.unwrap();
 
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.title_color, 0x009C_9C9C);
     assert_eq!(row.level, Some(5));
     assert_eq!(
         (row.x, row.y, row.z, row.heading),
@@ -696,6 +699,64 @@ async fn item_changes_are_written_at_once_with_javas_columns() {
             .len(),
         1
     );
+
+    pool.close().await;
+    db.drop_db().await;
+}
+
+/// M6-TRADE-01: a traded item changes owner (`Item.updateDatabase(true)` after `setOwnerId`).
+/// The world sends the row leaving the old owner, then the whole row to the new one; neither
+/// character's later full store may delete or duplicate it.
+#[tokio::test]
+async fn an_item_handed_to_another_character_changes_owner_and_survives_both_stores() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    const MATE: i32 = CHAR_ID + 1;
+    let characters = CharacterRepository::new(pool.clone());
+    let items = ItemRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut mate = new_character();
+    mate.char_id = MATE;
+    mate.char_name = "Mate".into();
+    characters.insert_character(&mate).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+
+    // The giver stores its bag once, so the store knows the row.
+    let sword = item(0x6000_1001, 2, 1, "INVENTORY", 0);
+    let mut data = player_data();
+    data.items = vec![sword.clone()];
+    store.store_player(&data).await.unwrap();
+
+    // The hand-over, in the order the world sends it.
+    store
+        .store_item_changes(ObjectId(CHAR_ID), &[], &[sword.object_id])
+        .await
+        .unwrap();
+    store
+        .store_item_changes(ObjectId(MATE), std::slice::from_ref(&sword), &[])
+        .await
+        .unwrap();
+    let bag_of = |owner: i32| {
+        let items = items.clone();
+        async move {
+            items
+                .inventory_items(owner, ItemLocation::Inventory, ItemLocation::Paperdoll)
+                .await
+                .unwrap()
+        }
+    };
+    assert!(bag_of(CHAR_ID).await.is_empty());
+    let received = bag_of(MATE).await;
+    assert_eq!(received.len(), 1);
+    assert_eq!(received[0].object_id, 0x6000_1001);
+    assert_eq!(received[0].item_id, Some(2));
+
+    // The giver's next full store has no sword: the row is not Mate's to lose.
+    data.items = vec![];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(bag_of(MATE).await.len(), 1);
+    assert!(bag_of(CHAR_ID).await.is_empty());
 
     pool.close().await;
     db.drop_db().await;

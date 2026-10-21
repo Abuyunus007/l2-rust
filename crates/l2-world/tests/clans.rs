@@ -948,7 +948,7 @@ fn an_invitation_answered_yes_joins_the_clan() {
         ),
         (P1, None, 0, "Lions")
     );
-    assert!(s.world.is_processing_request(ObjectId(P1)) && s.world.is_processing_request(ObjectId(P2)));
+    assert!(s.world.is_request_partner_busy(ObjectId(P1)) && s.world.is_request_partner_busy(ObjectId(P2)));
 
     s.clan_input(P2, ClanInput::AnswerJoinPledge { answer: 1 });
     let out = s.take();
@@ -986,7 +986,7 @@ fn an_invitation_answered_yes_joins_the_clan() {
     // `setClanPrivileges(clan.getRankPrivs(5))`: the rank's own object.
     assert_eq!(state.privileges, ClanPrivilegesRef::Rank(5));
     assert!(s.clan().is_member(P2));
-    assert!(!s.world.is_processing_request(ObjectId(P1)) && !s.world.is_processing_request(ObjectId(P2)));
+    assert!(!s.world.is_request_partner_busy(ObjectId(P1)) && !s.world.is_request_partner_busy(ObjectId(P2)));
 }
 
 #[test]
@@ -1086,10 +1086,10 @@ fn a_request_waits_fifteen_seconds_and_blocks_others() {
         &[text("P3")]
     ));
     s.run_ms(14_950);
-    assert!(s.world.is_processing_request(ObjectId(P1)));
+    assert!(s.world.is_request_partner_busy(ObjectId(P1)));
     s.run_ms(100);
-    assert!(!s.world.is_processing_request(ObjectId(P1)));
-    assert!(!s.world.is_processing_request(ObjectId(P3)));
+    assert!(!s.world.is_request_partner_busy(ObjectId(P1)));
+    assert!(!s.world.is_request_partner_busy(ObjectId(P3)));
     // A late answer finds no requestor.
     s.clan_input(P3, ClanInput::AnswerJoinPledge { answer: 1 });
     assert_eq!(s.world.clan_id_of(ObjectId(P3)), 0);
@@ -2147,4 +2147,80 @@ fn clan_conditions_read_the_clan() {
     // castle 0: the clan's castle is 0 (`hasCastle`); without a clan `0` holds too.
     assert!(check(&mut s, P1, 102));
     assert!(check(&mut s, P3, 102));
+}
+
+// ---------------------------------------------------------------------------------- PvP
+
+fn tigers_at_war(p_tiger: i32) -> ClanRecord {
+    ClanRecord {
+        clan_id: 600,
+        data: Some(ClanDataRecord {
+            name: Some("Tigers".to_owned()),
+            level: 5,
+            leader_id: p_tiger,
+            ..ClanDataRecord::default()
+        }),
+        members: vec![member(p_tiger, 1, 0)],
+        ..ClanRecord::default()
+    }
+}
+
+#[test]
+fn relations_show_the_clan_the_leader_and_the_wars() {
+    use l2_protocol_game::server::visibility::relation;
+    let mut s = Scene::new();
+    s.world.load_clans(
+        vec![lions_of_three(5, 0), tigers_at_war(P4)],
+        vec![("600".to_owned(), "500".to_owned())],
+    );
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.enter(member_data(P2, CLAN, 5, 0));
+    s.enter(member_data(P4, 600, 1, 0));
+    s.enter(pdata(P5, 40));
+    let (p1, p2, p4, p5) = (ObjectId(P1), ObjectId(P2), ObjectId(P4), ObjectId(P5));
+    // `getRelation(target)`: the subject's clan bits, and the viewer's war on the subject's clan.
+    assert_eq!(
+        s.world.relation(p1, p2),
+        relation::CLAN_MEMBER | relation::CLAN_MATE | relation::LEADER
+    );
+    assert_eq!(s.world.relation(p2, p5), relation::CLAN_MEMBER);
+    // The Tigers declared war on the Lions (one way): a Tiger sees the Lions at war.
+    assert_eq!(
+        s.world.relation(p2, p4),
+        relation::CLAN_MEMBER | relation::ONE_SIDED_WAR
+    );
+    assert_eq!(s.world.relation(p4, p2), relation::CLAN_MEMBER | relation::LEADER);
+    assert_eq!(s.world.relation(p5, p1), 0);
+    // A one-sided war makes nobody auto attackable; a clan mate never is.
+    assert!(!s.world.is_auto_attackable(p2, p4));
+    assert!(!s.world.is_auto_attackable(p2, p1));
+}
+
+#[test]
+fn a_war_both_ways_makes_members_auto_attackable_and_mutual() {
+    use l2_protocol_game::server::visibility::relation;
+    let mut s = Scene::new();
+    s.world.load_clans(
+        vec![lions_of_three(5, 0), tigers_at_war(P4)],
+        vec![
+            ("600".to_owned(), "500".to_owned()),
+            ("500".to_owned(), "600".to_owned()),
+        ],
+    );
+    s.enter(member_data(P2, CLAN, 5, 0));
+    s.enter(member_data(P4, 600, 1, 0));
+    let (p2, p4) = (ObjectId(P2), ObjectId(P4));
+    assert_eq!(
+        s.world.relation(p2, p4),
+        relation::CLAN_MEMBER | relation::ONE_SIDED_WAR | relation::MUTUAL_WAR
+    );
+    assert!(s.world.is_auto_attackable(p2, p4));
+    assert!(s.world.is_auto_attackable(p4, p2));
+    // `getWantsPeace()` of either ends it.
+    let mut peaceful = member_data(P3, CLAN, 5, 0);
+    if let Some(clan) = peaceful.profile.clan.as_mut() {
+        clan.wants_peace = 1;
+    }
+    s.enter(peaceful);
+    assert!(!s.world.is_auto_attackable(ObjectId(P3), p4));
 }

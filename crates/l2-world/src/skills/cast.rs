@@ -25,7 +25,7 @@
 //
 // # Left for other cards (markers)
 // - `// M5-EFX-03:` `Attackable.reduceHate`.
-// - `// M6:` summons, PvP flags (`updatePvPStatus`), olympiad, transformations, the channelizer
+// - `// M6:` summons, olympiad, transformations, the channelizer
 //   (signets), talisman mana, trigger and weapon skills.
 
 use std::collections::HashMap;
@@ -352,9 +352,12 @@ impl World {
             }
         }
 
-        // Get the level of the used skill. Custom and transformation skills (by display id) do
-        // not exist yet.
-        let Some(key) = self.known_skill(player, magic_id) else {
+        // Get the level of the used skill. Custom skills (by display id) do not exist yet; the
+        // skills of a transformation are looked up when the player does not know the skill.
+        let Some(key) = self
+            .known_skill(player, magic_id)
+            .or_else(|| self.transform_skill(player, magic_id))
+        else {
             self.send(player, &ActionFailed);
             return;
         };
@@ -365,7 +368,15 @@ impl World {
         let Some(skill) = table.get(key.id, key.level) else {
             return;
         };
-        // Airships, transformations: none.
+        // Airships: none. Do not cast non transform skills when transformed.
+        if self.stats(player).is_some_and(|view| {
+            view.transformation()
+                .is_some_and(|form| !form.can_use_weapon_stats())
+        }) && !self.has_transform_skill(player, key.id)
+        {
+            self.send(player, &ActionFailed);
+            return;
+        }
 
         // If alternate rule Karma punishment is set to true, forbid teleport to player with Karma.
         let karma = self.players.get(&player).map_or(0, |p| p.data.karma);
@@ -1544,7 +1555,24 @@ impl World {
         // Launch the magic skill and calculate its effects.
         self.activate_skill(caster, &targets, key);
 
-        // M6: flag on raid/champion (`FLAG_PLAYER_ON_RAID_ATTACK`, `updatePvPStatus`).
+        // Flag on Raid/Champion (player or owner of summon/pet).
+        let pvp = &self.settings.pvp;
+        if skill.effect_point <= 0
+            && negative
+            && (pvp.flag_player_on_raid_attack || pvp.flag_player_on_champion_attack)
+            && self.is_player(caster)
+        {
+            // M6-SUMMON: the owner of a summon or pet (`FLAG_PLAYER_ON_SUMMON_PET_RAID_CHAMPION_ATTACK`).
+            let hits_raid_or_champion = targets.iter().any(|&t| {
+                self.objects.get(&t).is_some_and(|e| e.kind.is_creature())
+                    && ((self.is_raid(t) && self.settings.pvp.flag_player_on_raid_attack)
+                        || (self.stats(t).is_some_and(|v| v.is_champion())
+                            && self.settings.pvp.flag_player_on_champion_attack))
+            });
+            if hits_raid_or_champion {
+                self.update_pvp_status(caster);
+            }
+        }
 
         if self.is_player(caster) {
             let player = caster;
@@ -1559,9 +1587,13 @@ impl World {
                                 if self.is_player(target) {
                                     self.client_start_auto_attack(target);
                                 }
-                                // M6: attacking one's own pet does not flag; otherwise
-                                // `player.updatePvPStatus(target)` unless an area skill of 0
-                                // effect point.
+                                // Attack of the own pet does not flag the player (M6-SUMMON:
+                                // `player.getSummon() != target`); triggering a trap does not
+                                // flag its owner (the caster is a player, never a trap); an area
+                                // skill of 0 effect point does not flag either.
+                                if !(skill.effect_point == 0 && skill.affect_range > 0) {
+                                    self.update_pvp_status_target(caster, target);
+                                }
                             }
                         } else if self.is_attackable_npc(target) && !matches!(skill.id, LURE | TEMPTATION) {
                             // Add attacker into list.
@@ -1575,9 +1607,15 @@ impl World {
                         {
                             self.notify_action_attacked(target, caster);
                         }
-                    } else {
-                        // M6: casting a non offensive skill on a flagged or karma player, or on
-                        // an attackable, flags the player (`updatePvPStatus`).
+                    } else if self.is_player(target) {
+                        // Casting non offensive skill on player with pvp flag set or with karma.
+                        if target != caster
+                            && (self.pvp_flag_of(target) > 0 || self.karma_of_player(target) > 0)
+                        {
+                            self.update_pvp_status(player);
+                        }
+                    } else if self.is_attackable_npc(target) {
+                        self.update_pvp_status(player);
                     }
                 }
             }

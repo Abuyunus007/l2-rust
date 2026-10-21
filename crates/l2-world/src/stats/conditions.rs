@@ -6,7 +6,7 @@
 //
 // # What is decided
 // A kind is evaluated when the world models the state it reads. Some state cannot exist in the
-// world yet and is therefore known: nobody is transformed, mounted, flying, in a vehicle, in the
+// world yet and is therefore known: nobody is mounted, in a vehicle, in the
 // olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
 // the charges and the souls are the world's (`effects/`, M5-EFX-02).
 // Kinds that read state the Java server has but the world does not model (the halls and forts
@@ -51,7 +51,6 @@ enum NotModelled {
     Category,
     CanAction,
     TargetNpcType,
-    MyPartyExceptMe,
     GameChance,
     Behind,
     Front,
@@ -103,8 +102,15 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerIsPvpFlagged { value } => {
             a.is_player() && (a.world().pvp_flag_of(a.object_id()) > 0) == *value
         }
-        // Nobody is transformed: `getTransformationId()` is 0.
-        Condition::PlayerTransformationId { id } => a.is_player() && *id == 0,
+        // `player != null && (id == -1 ? isTransformed() : getTransformationId() == id)`.
+        Condition::PlayerTransformationId { id } => {
+            a.is_player()
+                && if *id == -1 {
+                    a.is_transformed()
+                } else {
+                    a.transformation_id() == *id
+                }
+        }
         // Nobody is mounted (`getMountType()` is NONE).
         Condition::PlayerIsRidingStrider { value } => a.is_player() && !*value,
         Condition::PlayerHp { hp } => (a.core().cur_hp * 100.0) / f64::from(a.max_hp()) <= f64::from(*hp),
@@ -184,7 +190,7 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         },
         Condition::PlayerSex { sex } => a.player().is_some_and(|p| i32::from(p.data.sex != 0) == *sex),
         // `!isPlayer() || isFlyingMounted() == value`: nobody rides a wyvern.
-        Condition::PlayerFlyMounted { value } => !a.is_player() || !*value,
+        Condition::PlayerFlyMounted { value } => !a.is_player() || a.is_flying_mounted() == *value,
         // `player == null ? true : isInVehicle() == value`: there are no boats or airships.
         Condition::PlayerVehicleMounted { value } => !a.is_player() || !*value,
         Condition::PlayerLandingZone { value } => match a.player() {
@@ -245,11 +251,12 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         | Condition::PlayerCanSummon { .. }
         | Condition::PlayerCanSummonSiegeGolem { .. }
         | Condition::PlayerCanTakeCastle
-        | Condition::PlayerCanTakeFort { .. }
-        | Condition::PlayerCanTransform { .. }
-        | Condition::PlayerCanUntransform { .. } => {
+        | Condition::PlayerCanTakeFort { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
         }
+        // `_value == canTransform`; the checks tell the player why not.
+        Condition::PlayerCanTransform { value } => *value == crate::transform::can_transform(a),
+        Condition::PlayerCanUntransform { value } => *value == crate::transform::can_untransform(a),
         // Java `ConditionPlayerCanSweep`: `_value == canSweep`. Like Java's `testImpl` it tells
         // the sweeper why it cannot (one message per failed check).
         Condition::PlayerCanSweep { value } => {
@@ -300,9 +307,17 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             let level = t.level();
             level >= levels[0] && level <= levels[1]
         }),
-        Condition::TargetMyPartyExceptMe { .. } => {
-            // Java also sends the player a system message from here; parties are M5.
-            not_modelled(NotModelled::MyPartyExceptMe, "target myPartyExceptMe (parties)")
+        Condition::TargetMyPartyExceptMe { value } => {
+            // The effector is a player, the target another player of its party.
+            // FOLLOW-UP: Java also sends the effector `YOU_CANNOT_USE_THIS_ON_YOURSELF` or
+            // `S1_CANNOT_BE_USED_DUE_TO_UNSUITABLE_TERMS` from here; a condition cannot send.
+            let is_party_member = a.is_player()
+                && target(env).is_some_and(|t| {
+                    t.is_player()
+                        && t.object_id() != a.object_id()
+                        && a.world().is_in_party_with(a.object_id(), t.object_id())
+                });
+            *value == is_party_member
         }
         Condition::TargetPlayable => target(env).is_some_and(|t| t.is_player()),
         Condition::TargetClassIdRestriction { class_ids } => target(env)
@@ -452,8 +467,8 @@ fn player_state(check: PlayerState, required: bool, env: &CondEnv<'_, '_>) -> bo
                 required != a.is_moving()
             }
         }
-        // Nothing flies yet (`_isFlying` is set by wyverns, airships and flying transformations).
-        PlayerState::Flying => !required,
+        // `_isFlying`: set by flying transformations (wyverns and airships come with the mounts).
+        PlayerState::Flying => a.is_flying() == required,
         PlayerState::Behind => not_modelled(NotModelled::Behind, "player behind"),
         PlayerState::Front => not_modelled(NotModelled::Front, "player front"),
         PlayerState::Chaotic => match a.player() {

@@ -675,6 +675,17 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientPacket::TradeRequest(p) => ClientInput::TradeRequest {
+                object_id: p.object_id,
+            },
+            ClientPacket::AnswerTradeRequest(p) => ClientInput::AnswerTradeRequest { response: p.response },
+            ClientPacket::AddTradeItem(p) => ClientInput::AddTradeItem {
+                trade_id: p.trade_id,
+                object_id: p.object_id,
+                count: p.count,
+            },
+            ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
             // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,
@@ -748,6 +759,16 @@ impl ClientSession {
             | ClientPacket::RequestDismissAlly(_)
             | ClientPacket::RequestAllyCrest(_)
             | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
+            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
+            // RequestOustPartyMember, RequestChangePartyLeader
+            ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
+                name: p.name,
+                distribution_type_id: p.party_distribution_type_id,
+            },
+            ClientPacket::RequestAnswerJoinParty(p) => ClientInput::AnswerJoinParty { response: p.response },
+            ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
+            ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
+            ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
@@ -930,6 +951,106 @@ mod tests {
         );
         // Java `_lastAccess`, in milliseconds.
         assert_eq!(profile.last_access, 1_700_000_000_000);
+    }
+
+    #[test]
+    fn the_clan_columns_are_loaded_and_stored_back() {
+        let mut r = row();
+        r.clanid = Some(500);
+        r.clan_privs = Some(0x46);
+        r.wantspeace = Some(1);
+        r.power_grade = Some(5);
+        r.subpledge = -1;
+        r.lvl_joined_academy = 20;
+        r.apprentice = 7;
+        r.sponsor = 8;
+        r.clan_join_expiry_time = 1_000;
+        r.clan_create_expiry_time = 2_000;
+        let mut p = player_from_row(&r);
+        let clan = p.profile.clan.unwrap();
+        assert_eq!(
+            (
+                clan.clan_id,
+                clan.stored_privileges(),
+                clan.wants_peace,
+                clan.power_grade
+            ),
+            (500, 0x46, 1, 5)
+        );
+        assert_eq!(
+            (
+                clan.pledge_type,
+                clan.lvl_joined_academy,
+                clan.apprentice,
+                clan.sponsor
+            ),
+            (-1, 20, 7, 8)
+        );
+        assert_eq!(
+            (clan.clan_join_expiry_time, clan.clan_create_expiry_time),
+            (1_000, 2_000)
+        );
+
+        // The store writes what the snapshot carries (M6-CLAN-01)...
+        p.profile.clan = Some(l2_world::PlayerClanState {
+            clan_id: 600,
+            privileges: l2_world::clan::ClanPrivilegesRef::Own(0x00FF_FFFF),
+            power_grade: 1,
+            ..clan
+        });
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (
+                update.clan_id,
+                update.clan_privs,
+                update.power_grade,
+                update.subpledge
+            ),
+            (600, 0x00FF_FFFF, 1, -1)
+        );
+        assert_eq!(
+            (update.apprentice, update.sponsor, update.lvl_joined_academy),
+            (7, 8, 20)
+        );
+        // ... and keeps the row's values for a snapshot without them.
+        p.profile.clan = None;
+        let update = crate::persist::build_character_update(&p, &r);
+        assert_eq!(
+            (update.clan_id, update.clan_privs, update.power_grade),
+            (500, 0x46, 5)
+        );
+    }
+
+    #[test]
+    fn clan_packets_become_clan_input() {
+        use l2_protocol_game::client::pledge::{RequestAllyInfo, RequestJoinPledge, RequestPledgePower};
+        assert_eq!(
+            clan_input(ClientPacket::RequestJoinPledge(RequestJoinPledge {
+                target: 7,
+                pledge_type: -1
+            })),
+            ClanInput::JoinPledge {
+                target: 7,
+                pledge_type: -1
+            }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestPledgePower(RequestPledgePower {
+                rank: 5,
+                action: 2,
+                privs: 9
+            })),
+            ClanInput::PledgePower {
+                rank: 5,
+                action: 2,
+                privs: 9
+            }
+        );
+        // Alliances, wars and crests are M6-CLAN-02's.
+        assert_eq!(
+            clan_input(ClientPacket::RequestAllyInfo(RequestAllyInfo)),
+            ClanInput::NotPorted("RequestAllyInfo")
+        );
     }
 
     #[test]
