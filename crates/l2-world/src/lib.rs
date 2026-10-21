@@ -116,6 +116,8 @@ pub use stats::{
 pub use status::RegenSettings;
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
-pub use trade::{AddItemRules, TradeItem, TradeList, TradeState};
+pub use trade::{
+    AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
+};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

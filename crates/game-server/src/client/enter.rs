@@ -26,7 +26,7 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
-    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
+    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, StoreInput, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -701,6 +701,41 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
+            // ported), RequestPrivateStore*, SetPrivateStore*
+            ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
+                ClientInput::Store(StoreInput::ActionUse {
+                    action_id: p.action_id,
+                })
+            }
+            ClientPacket::RequestPrivateStoreManageSell(_) => ClientInput::Store(StoreInput::ManageSell),
+            ClientPacket::RequestPrivateStoreManageBuy(_) => ClientInput::Store(StoreInput::ManageBuy),
+            ClientPacket::RequestPrivateStoreQuitSell(_) => ClientInput::Store(StoreInput::QuitSell),
+            ClientPacket::RequestPrivateStoreQuitBuy(_) => ClientInput::Store(StoreInput::QuitBuy),
+            ClientPacket::SetPrivateStoreMsgSell(p) => {
+                ClientInput::Store(StoreInput::MsgSell { msg: p.store_msg })
+            }
+            ClientPacket::SetPrivateStoreMsgBuy(p) => {
+                ClientInput::Store(StoreInput::MsgBuy { msg: p.store_msg })
+            }
+            ClientPacket::SetPrivateStoreWholeMsg(p) => {
+                ClientInput::Store(StoreInput::WholeMsg { msg: p.msg })
+            }
+            ClientPacket::SetPrivateStoreListSell(p) => ClientInput::Store(StoreInput::ListSell {
+                package_sale: p.package_sale,
+                items: p.items,
+            }),
+            ClientPacket::SetPrivateStoreListBuy(p) => {
+                ClientInput::Store(StoreInput::ListBuy { items: p.items })
+            }
+            ClientPacket::RequestPrivateStoreBuy(p) => ClientInput::Store(StoreInput::Buy {
+                store_player_id: p.store_player_id,
+                items: p.items,
+            }),
+            ClientPacket::RequestPrivateStoreSell(p) => ClientInput::Store(StoreInput::Sell {
+                store_player_id: p.store_player_id,
+                items: p.items,
+            }),
             // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,

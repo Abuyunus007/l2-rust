@@ -138,6 +138,9 @@ pub enum ClientInput {
     },
     /// Java `TradeDone` (1 = confirm, anything else = cancel).
     TradeDone { response: i32 },
+    /// The private store packets (M6-STORE-01): `RequestActionUse` for the three store actions,
+    /// `RequestPrivateStore*`, `SetPrivateStore*`.
+    Store(crate::trade::StoreInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },

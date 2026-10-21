@@ -392,8 +392,8 @@ impl World {
         let (Some(p), Some(n)) = (self.players.get(&player), self.npcs.get(&npc)) else {
             return false;
         };
-        // Casting is not modelled; sitting and private stores are not either.
-        if p.core.cur_hp < 0.5 {
+        // Casting and sitting are not modelled.
+        if p.core.cur_hp < 0.5 || p.trade.store_type != crate::trade::PrivateStoreType::None {
             return false;
         }
         if crate::target::distance_3d((n.core.x, n.core.y, n.core.z), (p.core.x, p.core.y, p.core.z))

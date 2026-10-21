@@ -743,10 +743,16 @@ impl World {
     }
 
     /// What `CreatureStatus.reduceHp` / `PlayerStatus.reduceHp` do after `stopEffectsOnDamage`
-    /// for a hit that is no damage over time: a sitting player stands up, a stun may break (one
-    /// in ten).
+    /// for a hit that is no damage over time: a player with a store closes it and stands up, a
+    /// sitting player stands up, a stun may break (one in ten).
     pub(crate) fn break_states_on_damage(&mut self, id: ObjectId) {
-        if self.is_player(id) && self.is_sitting(id) {
+        // `PlayerStatus.reduceHp`: "Attacked players in craft/shops stand up." (crafting is not
+        // ported).
+        if self.is_player(id) && self.is_in_store_mode(id) {
+            self.set_private_store_type(id, crate::trade::PrivateStoreType::None);
+            self.stand_up(id);
+            self.broadcast_user_info(id);
+        } else if self.is_player(id) && self.is_sitting(id) {
             self.stand_up(id);
         }
         if self.is_stunned(id) && self.rng().get_int(10) == 0 {
@@ -917,8 +923,8 @@ impl World {
         if self.control(id).is_some_and(|c| c.sitting_in_progress) {
             return;
         }
-        // `!isInStoreMode()`: no private stores yet.
-        if self.is_sitting(id) && !self.is_alike_dead(id) {
+        // A player with a private store open (even one being set up) stays where it is.
+        if self.is_sitting(id) && !self.is_in_store_mode(id) && !self.is_alike_dead(id) {
             if let Some(c) = self.control_mut(id) {
                 c.sitting_in_progress = true;
             }

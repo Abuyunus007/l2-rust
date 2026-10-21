@@ -258,10 +258,7 @@ impl World {
     /// Java `Player.doInteract(target)` for what is not a player: the same as a click.
     fn do_interact(&mut self, id: ObjectId, target: ObjectId) {
         match self.objects.get(&target).map(|e| e.kind) {
-            Some(ObjectKind::Player) => {
-                // FOLLOW-UP(M5): private store lists.
-                self.send(id, &ActionFailed);
-            }
+            Some(ObjectKind::Player) => self.do_interact_player(id, target),
             Some(_) => self.on_action_object(id, target, true),
             None => {}
         }
