@@ -72,7 +72,13 @@ impl World {
             self.send(player, &window);
         }
         // Sends pets/summons of party members.
-        // M6: `ExPartyPetWindowAdd` of every member's summon (SUMMON-01).
+        for member in self.party_members(party) {
+            if let Some(summon) = self.summon_of(member)
+                && let Some(packet) = self.party_pet_window_add(summon)
+            {
+                self.send(player, &packet);
+            }
+        }
         let leader_name = self
             .party_leader(party)
             .map(|l| self.name_of_player(l))
@@ -90,7 +96,10 @@ impl World {
         if let Some(add) = self.party_small_window_add(player, party) {
             self.broadcast_party_except(party, player, &add);
         }
-        // M6: if the new member has a summon, `ExPartyPetWindowAdd` goes to everybody (SUMMON-01).
+        // If the new member has a summon, everybody sees it in the pet window.
+        if let Some(packet) = self.summon_of(player).and_then(|s| self.party_pet_window_add(s)) {
+            self.broadcast_party(party, &packet);
+        }
 
         // Adjust the party level.
         let level = self.players.get(&player).map_or(0, |p| p.core.level);
@@ -104,8 +113,11 @@ impl World {
         for member in self.party_members(party) {
             // The icons go to the party only; the member's own list is unchanged.
             self.update_effect_icons(member, true);
-            // M6: the summon's `updateEffectIcons()` (SUMMON-01).
+            let summon = self.summon_of(member);
             self.broadcast_user_info(member);
+            if let Some(summon) = summon {
+                self.summon_update_effect_icons_plain(summon);
+            }
         }
 
         // Dimensional rift (`partyMemberInvited`) and the command channel window (`ExOpenMPCC`):
@@ -239,7 +251,12 @@ impl World {
                 name,
             },
         );
-        // M6: `ExPartyPetWindowDelete` of the player's summon, if it has one (SUMMON-01).
+        if let Some(packet) = self
+            .summon_of(player)
+            .and_then(|s| self.party_pet_window_delete(s))
+        {
+            self.broadcast_party(party, &packet);
+        }
         // Dimensional rift (`partyMemberExited`) and the command channel window (`ExCloseMPCC`):
         // neither exists.
 

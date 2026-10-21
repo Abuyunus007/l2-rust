@@ -17,7 +17,7 @@ use std::time::Duration;
 use l2_db::{
     CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
     ItemReuseRepository, ItemReuseRow, MacroRepository, Pool, RecommendationRepository, ShortcutRepository,
-    SkillRepository, SkillSaveRow, SubclassRepository, VariableRepository,
+    SkillRepository, SkillSaveRow, SubclassRepository, SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,7 +26,8 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
-    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, StoreInput, WorldCommand,
+    PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
+    WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -84,6 +85,7 @@ pub struct DbPlayerLoader {
     macros: MacroRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
+    summons: SummonRepository,
     clans: l2_db::ClanRepository,
 }
 
@@ -100,6 +102,7 @@ impl DbPlayerLoader {
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
+            summons: SummonRepository::new(pool.clone()),
             clans: l2_db::ClanRepository::new(pool),
         }
     }
@@ -191,6 +194,22 @@ impl DbPlayerLoader {
             .await?
             .iter()
             .map(saved_effect_of)
+            .collect();
+
+        // Java: Servitor.restoreEffects reads these rows when a servitor of the same skill spawns.
+        // They are read here for the active class index and kept by the world as its view of the
+        // table (`summon/servitor.rs`).
+        data.profile.summon_effects = self
+            .summons
+            .servitor_effects_of(char_id, class_index)
+            .await?
+            .into_iter()
+            .map(|r| SavedSummonEffect {
+                summon_skill_id: r.summon_skill_id,
+                skill_id: r.skill_id,
+                skill_level: r.skill_level,
+                remaining_time: r.remaining_time,
+            })
             .collect();
 
         // Java: restoreItemReuse reads the item reuse timers at load. Like the buffs they stay in
@@ -774,6 +793,33 @@ impl ClientSession {
             // Java: RequestVoteNew
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
+            },
+            // Java: RequestActionUse (M6-SUMMON-01: the summon actions)
+            ClientPacket::RequestActionUse(p) => ClientInput::ActionUse {
+                action_id: p.action_id,
+                ctrl_pressed: p.ctrl_pressed,
+                shift_pressed: p.shift_pressed,
+            },
+            // The pet packets are PET-01's: the world hears them as not ported yet.
+            ClientPacket::RequestPetGetItem(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestPetGetItem::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestGetItemFromPet(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestGetItemFromPet::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestGiveItemToPet(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestGiveItemToPet::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestPetUseItem(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestPetUseItem::OPCODE.id(),
+                ex_opcode: None,
+            },
+            ClientPacket::RequestChangePetName(_) => ClientInput::Other {
+                opcode: l2_protocol_game::client::RequestChangePetName::OPCODE.id(),
+                ex_opcode: None,
             },
             // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
             packet @ (ClientPacket::RequestJoinPledge(_)

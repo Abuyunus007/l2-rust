@@ -242,6 +242,10 @@ impl World {
         if let Some(c) = self.control_mut(id) {
             c.immobilized = value;
         }
+        // `Summon.setImmobilized`: the follow mode stops and comes back.
+        if self.is_summon(id) {
+            self.summon_on_immobilized(id, value);
+        }
     }
 
     /// Java `Player.isFakeDeath()`.
@@ -767,8 +771,9 @@ impl World {
         self.abort_cast_for_effects(id);
         self.stop_move(id, None);
         self.notify_action_stunned(id);
-        // `!isSummon()`: there are no summons yet.
-        self.set_intention_idle(id);
+        if !self.is_summon(id) {
+            self.set_intention_idle(id);
+        }
         self.update_abnormal_effect(id);
     }
 
@@ -948,6 +953,10 @@ impl World {
     /// Java `Creature.setRunning()` (to run): `ChangeMoveType`, then the new info to those who see
     /// the creature.
     pub(crate) fn set_running_effect(&mut self, id: ObjectId, value: bool) {
+        if self.is_summon(id) {
+            self.summon_set_running(id, value);
+            return;
+        }
         if self.npcs.contains_key(&id) {
             self.set_running(id, value);
             return;

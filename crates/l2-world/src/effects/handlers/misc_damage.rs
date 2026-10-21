@@ -69,7 +69,7 @@ impl EffectHandler for RebalanceHp {
     }
 
     /// `if (!effector.isPlayer() || !effector.isInParty()) return;` and then the party members
-    /// in range share their HP (`party/buffs.rs`; their summons are SUMMON-01).
+    /// in range share their HP, their summons too (`party/buffs.rs`).
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
         world.rebalance_party_hp(cx.effector, cx.skill);
     }

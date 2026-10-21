@@ -267,6 +267,7 @@ impl Server {
         };
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
         let regen_settings = world_data::regen_settings(&config);
+        let summon_settings = world_data::summon_settings(&config);
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
         // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
         let ground_items = persist::restore_ground_items(&pool, &config.general).await;
@@ -312,6 +313,7 @@ impl Server {
                 Arc::clone(&datapack.skill_trees),
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
+            let pet_skills = Arc::clone(&datapack.pet_skills);
             let class_list = Arc::clone(&datapack.class_list);
             let npc_start = (
                 Arc::clone(&datapack),
@@ -326,6 +328,7 @@ impl Server {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
                     world.set_regen_settings(regen_settings);
+                    world.set_summon_settings(summon_settings);
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);
@@ -339,6 +342,8 @@ impl Server {
                     world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
                     // Java: SkillLearnData (the classes each trainer teaches).
                     world.set_skill_learn_data(skill_learn);
+                    // Java: PetSkillData (the skill levels of the summon actions).
+                    world.set_pet_skill_data(pet_skills);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.

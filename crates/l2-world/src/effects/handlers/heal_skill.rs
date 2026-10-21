@@ -65,9 +65,9 @@ impl EffectHandler for Heal {
                 effector_is_mage_player: a.player().is_some_and(|p| {
                     u16::try_from(p.data.class_id).is_ok_and(|id| l2_data::ClassId(id).is_mage())
                 }),
-                // Summons are M6.
-                effector_is_summon: false,
-                effector_is_npc: a.npc().is_some(),
+                effector_is_summon: world.is_summon(effector),
+                // `isNpc()`: a summon's creature is in the NPC table but is no NPC.
+                effector_is_npc: a.npc().is_some() && !a.is_summon(),
                 effector_weapon_grade: match a.active_weapon_instance() {
                     None => HealWeaponGrade::NoWeapon,
                     Some(_) => match a.active_weapon_item().map(|item| item.crystal_type) {

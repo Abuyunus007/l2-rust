@@ -293,6 +293,180 @@ impl Decode for PetInfo {
     }
 }
 
+// Java: gameserver/network/serverpackets/AbstractNpcInfo.java (inner class `SummonInfo`)
+/// Describes a summon or pet to a player who is not its owner (`NPC_INFO`, the summon variant).
+///
+/// Same opcode as [`super::NpcInfo`], but Java's `SummonInfo.writeImpl` writes its own layout: the
+/// body armor in the chest slot, the running byte always 1, the owner's PvP flag and karma, the
+/// pet form, and no display effect at the end (one int shorter than `NpcInfo`).
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct SummonInfo {
+    pub object_id: i32,
+    /// `getTemplate().getDisplayId()`; `encode` adds 1000000.
+    pub display_id: i32,
+    /// `isAutoAttackable(attacker)`, written as an int.
+    pub attackable: bool,
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+    pub heading: i32,
+    pub m_atk_spd: i32,
+    pub p_atk_spd: i32,
+    /// The speeds divided by the move multiplier (`AbstractNpcInfo`'s constructor).
+    pub run_speed: i32,
+    pub walk_speed: i32,
+    pub swim_run_speed: i32,
+    pub swim_walk_speed: i32,
+    /// `isFlying() ? speed : 0`; written twice.
+    pub fly_run_speed: i32,
+    pub fly_walk_speed: i32,
+    pub move_multiplier: f64,
+    /// `getAttackSpeedMultiplier()`: a Java `float`, widened to double on the wire.
+    pub attack_speed_multiplier: f32,
+    /// `getTemplate().getFCollisionRadius()` / `getFCollisionHeight()`: floats; written twice.
+    pub collision_radius: f32,
+    pub collision_height: f32,
+    /// `getWeapon()` (right hand).
+    pub weapon: i32,
+    /// `getArmor()` (the chest slot).
+    pub armor: i32,
+    pub in_combat: bool,
+    pub alike_dead: bool,
+    /// `_isSummoned ? 2 : _value`: 2 plays the summon animation, else 0 (teleported) or 1.
+    pub spawn_state: u8,
+    pub name: String,
+    /// The owner's name while the owner is online, else empty.
+    pub title: String,
+    pub pvp_flag: i32,
+    pub karma: i32,
+    pub abnormal_visual_effects: i32,
+    /// One byte: 1 inside a water zone, else 2 when flying, else 0.
+    pub water_or_flying: u8,
+    /// `getTeam().getId()`.
+    pub team: u8,
+    /// `getTemplate().getWeaponEnchant()`.
+    pub enchant_effect: i32,
+    /// `getFormId()`.
+    pub form_id: i32,
+    pub abnormal_visual_effect_special: i32,
+}
+
+impl SummonInfo {
+    pub const OPCODE: ServerOpcode = ServerOpcode::NpcInfo;
+}
+
+impl Encode for SummonInfo {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id)
+            .i32(self.display_id.wrapping_add(SUMMON_ID_OFFSET))
+            .i32(i32::from(self.attackable))
+            .i32(self.x)
+            .i32(self.y)
+            .i32(self.z)
+            .i32(self.heading)
+            .i32(0)
+            .i32(self.m_atk_spd)
+            .i32(self.p_atk_spd)
+            .i32(self.run_speed)
+            .i32(self.walk_speed)
+            .i32(self.swim_run_speed)
+            .i32(self.swim_walk_speed)
+            .i32(self.fly_run_speed)
+            .i32(self.fly_walk_speed)
+            .i32(self.fly_run_speed)
+            .i32(self.fly_walk_speed)
+            .f64(self.move_multiplier)
+            .f64(f64::from(self.attack_speed_multiplier))
+            .f64(f64::from(self.collision_radius))
+            .f64(f64::from(self.collision_height))
+            .i32(self.weapon)
+            .i32(self.armor)
+            .i32(0) // left hand weapon
+            .u8(1) // name above char
+            .u8(1) // always running
+            .bool(self.in_combat)
+            .bool(self.alike_dead)
+            .u8(self.spawn_state)
+            .i32(-1) // High Five NPCString id
+            .string(&self.name)
+            .i32(-1) // High Five NPCString id
+            .string(&self.title)
+            .i32(1) // title color
+            .i32(self.pvp_flag)
+            .i32(self.karma)
+            .i32(self.abnormal_visual_effects)
+            .i32(0) // clan id
+            .i32(0) // crest id
+            .i32(0)
+            .i32(0)
+            .u8(self.water_or_flying)
+            .u8(self.team)
+            .f64(f64::from(self.collision_radius))
+            .f64(f64::from(self.collision_height))
+            .i32(self.enchant_effect)
+            .i32(0)
+            .i32(0)
+            .i32(self.form_id)
+            .u8(1)
+            .u8(1)
+            .i32(self.abnormal_visual_effect_special);
+    }
+}
+
+impl Decode for SummonInfo {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let mut p = Self {
+            object_id: r.i32()?,
+            display_id: r.i32()?.wrapping_sub(SUMMON_ID_OFFSET),
+            attackable: r.i32()? != 0,
+            x: r.i32()?,
+            y: r.i32()?,
+            z: r.i32()?,
+            heading: r.i32()?,
+            ..Self::default()
+        };
+        r.skip(4)?;
+        p.m_atk_spd = r.i32()?;
+        p.p_atk_spd = r.i32()?;
+        p.run_speed = r.i32()?;
+        p.walk_speed = r.i32()?;
+        p.swim_run_speed = r.i32()?;
+        p.swim_walk_speed = r.i32()?;
+        p.fly_run_speed = r.i32()?;
+        p.fly_walk_speed = r.i32()?;
+        r.skip(8)?; // the fly speeds, written a second time
+        p.move_multiplier = r.f64()?;
+        p.attack_speed_multiplier = r.f64()? as f32;
+        p.collision_radius = r.f64()? as f32;
+        p.collision_height = r.f64()? as f32;
+        p.weapon = r.i32()?;
+        p.armor = r.i32()?;
+        r.skip(4 + 2)?; // left hand, name above char, always running
+        p.in_combat = r.bool()?;
+        p.alike_dead = r.bool()?;
+        p.spawn_state = r.u8()?;
+        r.skip(4)?;
+        p.name = r.string();
+        r.skip(4)?;
+        p.title = r.string();
+        r.skip(4)?; // title color
+        p.pvp_flag = r.i32()?;
+        p.karma = r.i32()?;
+        p.abnormal_visual_effects = r.i32()?;
+        r.skip(4 * 4)?; // clan, crest, ally, ally crest
+        p.water_or_flying = r.u8()?;
+        p.team = r.u8()?;
+        r.skip(2 * 8)?; // collision radius and height again
+        p.enchant_effect = r.i32()?;
+        r.skip(2 * 4)?;
+        p.form_id = r.i32()?;
+        r.skip(2)?;
+        p.abnormal_visual_effect_special = r.i32()?;
+        Ok(p)
+    }
+}
+
 // Java: gameserver/network/serverpackets/PetStatusShow.java
 server_packet!(
     /// Opens the pet status window (`PET_STATUS_SHOW`).

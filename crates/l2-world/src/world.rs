@@ -106,6 +106,8 @@ pub struct World {
     pub(crate) party: crate::party::PartyWorld,
     /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
     pub(crate) punishments: crate::punishments::PunishmentWorld,
+    /// Summons, their owners and the summon tables (M6-SUMMON-01, `summon/`).
+    pub(crate) summons: crate::summon::SummonWorld,
     /// The clans, the clan settings and the players' invitations (M6-CLAN-01, `clan/`).
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
@@ -162,6 +164,7 @@ impl World {
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
             party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
+            summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
             duel: crate::duel::DuelWorld::default(),
@@ -264,7 +267,17 @@ impl World {
                 sink.send(bytes);
                 true
             }
-            None => false,
+            // Java `Summon.sendPacket`: what a summon is told goes to its owner (`summon/`).
+            None => match self.summons.summons.get(&to) {
+                Some(summon) if !summon.owner_offline => match self.sinks.get(&summon.owner) {
+                    Some(sink) => {
+                        sink.send(bytes);
+                        true
+                    }
+                    None => false,
+                },
+                _ => false,
+            },
         }
     }
 
@@ -399,6 +412,8 @@ impl World {
         self.init_player_stats(id);
         // Java `Player.restore`'s setCurrentCp/Hp/Mp: starts the regeneration of what is not full.
         self.restore_player_vitals(id);
+        // The saved buffs of the character's servitors (`character_summon_skills_save`).
+        self.take_saved_summon_effects(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -533,6 +548,12 @@ impl World {
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
+            // Java: RequestActionUse (the summon actions, `summon/actions.rs`)
+            ClientInput::ActionUse {
+                action_id,
+                ctrl_pressed,
+                shift_pressed,
+            } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
@@ -629,6 +650,8 @@ impl World {
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
+            // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task
+            TimerKind::Summon(timer) => self.on_summon_timer(timer),
             // Java: ClanTable.scheduleRemoveClan, updateClanRanks, RequestPartner.clear
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)

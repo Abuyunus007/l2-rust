@@ -35,7 +35,7 @@ const INTERACT_THINK_OFFSET: i32 = 36;
 const FOLLOW_INTERVAL_MS: u64 = 500;
 /// `AbstractAI.startFollow(target)` passes `-1`: the normal follow, which has its own task that
 /// runs every second.
-const NORMAL_FOLLOW_RANGE: i32 = -1;
+pub(crate) const NORMAL_FOLLOW_RANGE: i32 = -1;
 const NORMAL_FOLLOW_INTERVAL_MS: u64 = 1000;
 /// `1000 / GameTimeTaskManager.MILLIS_IN_TICK`: the pawn move timeout, in game ticks.
 const MOVE_TO_PAWN_TIMEOUT_TICKS: i32 = 10;

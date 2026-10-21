@@ -101,7 +101,7 @@ pub enum TargetMessage {
 /// set on the caster.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TargetResult {
-    /// Java's `List<WorldObject>`. Summons will be ids too (M6).
+    /// Java's `List<WorldObject>`.
     pub targets: Vec<ObjectId>,
     /// In the order Java sent them.
     pub messages: Vec<TargetMessage>,
@@ -278,9 +278,13 @@ impl World {
     }
 
     /// `creature.getTarget()` when it is a `Creature`. NPCs keep no target of their own in the
-    /// world yet (M5), so this is `None` for them.
+    /// world yet (M5), so this is `None` for them; a summon's is the one its owner ordered.
     fn current_creature_target(&self, caster: ObjectId) -> Option<ObjectId> {
-        let target = self.target_of(caster)?;
+        let target = if self.is_summon(caster) {
+            self.creature_target(caster)?
+        } else {
+            self.target_of(caster)?
+        };
         self.objects
             .get(&target)
             .filter(|e| e.kind.is_creature())
@@ -633,8 +637,27 @@ impl<R: Rnd> Targeting<'_, R> {
     }
 
     fn playable(&self, id: ObjectId) -> bool {
-        // M6: summons are playables too.
-        self.w.is_player(id)
+        self.w.is_playable(id)
+    }
+
+    /// `creature.isInParty() && target.isInParty()` with the same leader: a summon is in its
+    /// owner's party.
+    fn same_party(&self, a: ObjectId, b: ObjectId) -> bool {
+        match (self.w.acting_player(a), self.w.acting_player(b)) {
+            (Some(pa), Some(pb)) => self.w.is_in_party_with(pa, pb),
+            _ => false,
+        }
+    }
+
+    /// Java `Skill.addCharacter(caster, target, radius, isDead)` from the caster.
+    fn add_character(&self, target: ObjectId, radius: i32, is_dead: bool) -> bool {
+        self.w.skill_add_character(self.caster, target, radius, is_dead)
+    }
+
+    /// Java `Skill.addSummon(caster, owner, radius, isDead)`: the owner's summon, when it fits.
+    fn add_summon(&self, owner: ObjectId, radius: i32, is_dead: bool) -> Option<ObjectId> {
+        let summon = self.w.summon_of(owner)?;
+        self.add_character(summon, radius, is_dead).then_some(summon)
     }
 
     fn attackable_or_playable(&self, id: ObjectId) -> bool {
@@ -657,7 +680,9 @@ impl<R: Rnd> Targeting<'_, R> {
     /// `clan.getMembers()` of the caster's clan whose `getPlayer()` is set, in the clan's map
     /// order (M6-CLAN-01).
     fn online_clan_members(&self) -> Vec<ObjectId> {
-        let clan_id = self.w.clan_id_of(self.caster);
+        // `creature.asPlayer().getClan()`: a summon's owner's clan.
+        let player = self.w.acting_player(self.caster).unwrap_or(self.caster);
+        let clan_id = self.w.clan_id_of(player);
         self.w.clan_online_members(clan_id, 0)
     }
 
@@ -807,7 +832,36 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: AreaSummon.java
     fn area_summon(&mut self) {
-        // M6: the caster's servitor is the origin of the area. Without one Java returns the empty list.
+        // `creature.isPlayer() ? creature.asPlayer().getSummon() : null`: a live servitor.
+        let summon = if self.caster_is_player() {
+            self.w.summon_of(self.caster)
+        } else {
+            None
+        };
+        let Some(summon) = summon.filter(|s| self.w.is_servitor(*s) && !self.dead(*s)) else {
+            return;
+        };
+        if self.only_first {
+            self.push(summon);
+            return;
+        }
+        let src_in_arena = self.src_in_arena();
+        let max_targets = self.affect_limit();
+        for obj in self.w.visible_creatures_in_range(summon, self.skill.affect_range) {
+            if obj == self.caster {
+                continue;
+            }
+            if !self.attackable_or_playable(obj) {
+                continue;
+            }
+            if !self.check_area(obj, src_in_arena) {
+                continue;
+            }
+            if self.limit_reached(max_targets) {
+                continue;
+            }
+            self.push(obj);
+        }
     }
 
     // Java: Aura.java
@@ -1020,26 +1074,35 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: Clan.java
     fn clan(&mut self) {
-        if self.caster_is_player() {
+        if self.playable(self.caster) {
+            // `creature.asPlayer()`: a summon casts for its owner.
+            let Some(player) = self.w.acting_player(self.caster) else {
+                return;
+            };
             // M6: `isInOlympiadMode()` returns just the player.
-            self.push(self.caster);
+            self.push(player);
             if self.only_first {
                 return;
             }
             let radius = self.skill.affect_range;
-            // M6: the caster's summon (`Skill.addSummon(creature, player, radius, false)`).
+            if let Some(summon) = self.add_summon(player, radius, false) {
+                self.push(summon);
+            }
             // The online members of its clan within the affect range (M6-CLAN-01).
             for obj in self.online_clan_members() {
-                if obj == self.caster {
+                if obj == player {
                     continue;
                 }
                 // M6: duel (`isInDuel()`, same duel and same party leader).
                 // Do not add this target if this is a Pc->Pc pvp casting and pvp condition not met
-                if !self.w.check_pvp_skill(self.caster, obj, self.skill, self.ctx) {
+                if !self.w.check_pvp_skill(player, obj, self.skill, self.ctx) {
                     continue;
                 }
                 // Events (`isOnEvent()` teams): not modelled.
-                // M6: the member's summon (`Skill.addSummon(creature, obj, radius, false)`).
+                // The member's summon (`Skill.addSummon(creature, obj, radius, false)`).
+                if let Some(summon) = self.add_summon(obj, radius, false) {
+                    self.push(summon);
+                }
                 if !self.w.skill_add_character(self.caster, obj, radius, false) {
                     continue;
                 }
@@ -1098,13 +1161,17 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: CommandChannel.java
     fn command_channel(&mut self) {
-        if !self.caster_is_player() {
+        // `creature.asPlayer()`.
+        let Some(player) = self.w.acting_player(self.caster) else {
             return;
+        };
+        self.push(player);
+        if let Some(summon) = self.add_summon(player, self.skill.affect_range, false) {
+            self.push(summon);
         }
-        self.push(self.caster);
-        // M6: the caster's summon (`Skill.addSummon`).
-        let Some(party) = self.w.party_of(self.caster) else {
-            // If the player is not in a party, it gets only itself.
+        // `party = player.getParty()` (a summon caster's is its owner's).
+        let Some(party) = self.w.party_of(player) else {
+            // If the player is not in a party, it gets only itself (and its summon).
             return;
         };
         let radius = self.skill.affect_range;
@@ -1214,8 +1281,26 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: EnemySummon.java
     fn enemy_summon(&mut self) {
-        // M6: another player's servitor/pet whose owner is flagged, in a PvP zone or in the same
-        // duel. No summons exist.
+        let Some(target) = self.target.filter(|t| self.w.is_summon(*t)) else {
+            return;
+        };
+        if !self.caster_is_player() {
+            return;
+        }
+        if self.w.summon_of(self.caster) == Some(target) || self.dead(target) {
+            return;
+        }
+        let Some(owner) = self.w.summon_owner(target) else {
+            return;
+        };
+        if self.w.pvp_flag_of(owner) != 0 || self.w.karma_of(owner) > 0 {
+            self.push(target);
+            return;
+        }
+        if self.w.is_inside_zone(owner, ZoneId::Pvp) && self.w.is_inside_zone(self.caster, ZoneId::Pvp) {
+            self.push(target);
+        }
+        // M6 (DUEL-01): both in the same duel.
     }
 
     // Java: FlagPole.java
@@ -1296,7 +1381,13 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: OwnerPet.java
     fn owner_pet(&mut self) {
-        // M6: when the caster is a summon, its live owner. No summons exist.
+        // When the caster is a summon, its live owner.
+        if let Some(owner) = self.w.summon_owner(self.caster)
+            && self.w.players.contains_key(&owner)
+            && !self.dead(owner)
+        {
+            self.push(owner);
+        }
     }
 
     // Java: Party.java
@@ -1305,18 +1396,32 @@ impl<R: Rnd> Targeting<'_, R> {
         if self.only_first {
             return;
         }
-        // M6: a summon caster adds its owner, a player caster its summon.
         let radius = self.skill.affect_range;
-        // Get a list of party members.
-        if let Some(party) = self.w.party_of(self.caster) {
+        // `creature.asPlayer()`: a summon's owner.
+        let player = self.w.acting_player(self.caster);
+        if let Some(owner) = self.w.summon_owner(self.caster) {
+            // A summon caster adds its owner.
+            if self.w.players.contains_key(&owner) && self.add_character(owner, radius, false) {
+                self.push(owner);
+            }
+        } else if self.caster_is_player()
+            && let Some(summon) = self.add_summon(self.caster, radius, false)
+        {
+            // A player caster adds its summon.
+            self.push(summon);
+        }
+        // Get a list of party members (`creature.getParty()`: a summon's is its owner's).
+        if let Some(party) = player.and_then(|p| self.w.party_of(p)) {
             for member in self.w.party_members(party) {
-                if member == self.caster {
+                if Some(member) == player {
                     continue;
                 }
                 if self.w.skill_add_character(self.caster, member, radius, false) {
                     self.push(member);
                 }
-                // M6: the member's summon (`Skill.addSummon`).
+                if let Some(summon) = self.add_summon(member, radius, false) {
+                    self.push(summon);
+                }
             }
         }
     }
@@ -1335,7 +1440,9 @@ impl<R: Rnd> Targeting<'_, R> {
         let has_clan = self.w.clan(clan_id).is_some();
         let party = self.w.party_of(self.caster);
         let has_party = party.is_some();
-        // M6: the caster's summon (`Skill.addSummon(creature, player, radius, false)`).
+        if let Some(summon) = self.add_summon(self.caster, radius, false) {
+            self.push(summon);
+        }
         // If the player has neither a clan nor a party Java returns here.
         if !(has_clan || has_party) {
             return;
@@ -1362,7 +1469,12 @@ impl<R: Rnd> Targeting<'_, R> {
             if !self.w.check_pvp_skill(self.caster, obj, self.skill, self.ctx) {
                 continue;
             }
-            // M6: event teams, and the target's summon (`Skill.addSummon`).
+            // M6: event teams.
+            if !self.only_first
+                && let Some(summon) = self.add_summon(obj, radius, false)
+            {
+                self.push(summon);
+            }
             if !self.w.skill_add_character(self.caster, obj, radius, false) {
                 continue;
             }
@@ -1380,10 +1492,13 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         };
         // Check if target is a valid party member.
-        // M6: also the caster's summon, or a summon caster's owner.
-        if !self.dead(target) && (target == self.caster || self.w.is_in_party_with(self.caster, target)) {
-            self.push(target);
-            return;
+        if !self.dead(target) {
+            let own_summon = self.caster_is_player() && self.w.summon_of(self.caster) == Some(target);
+            let own_owner = self.w.summon_owner(self.caster) == Some(target) && self.w.is_player(target);
+            if target == self.caster || self.same_party(self.caster, target) || own_summon || own_owner {
+                self.push(target);
+                return;
+            }
         }
         if self.caster_is_player() && self.w.is_player(target) {
             self.out.messages.push(TargetMessage::UnsuitableTerms);
@@ -1404,7 +1519,10 @@ impl<R: Rnd> Targeting<'_, R> {
                 && (affect_range <= 0 || self.in_range(affect_range, self.caster, member))
             {
                 self.push(member);
-                // M6: the member's living summon.
+                // The member's living summon.
+                if let Some(summon) = self.w.summon_of(member).filter(|s| !self.dead(*s)) {
+                    self.push(summon);
+                }
             }
         }
     }
@@ -1446,7 +1564,7 @@ impl<R: Rnd> Targeting<'_, R> {
     // Java: PcBody.java
     fn pc_body(&mut self) {
         if let Some(target) = self.target.filter(|t| self.dead(*t)) {
-            // M6: a dead pet (`targetPet`) is a valid body too.
+            // M6 (PET-01): a dead pet (`targetPet`) is a valid body too.
             if self.caster_is_player() && self.w.is_player(target) {
                 let mut cond_good = true;
                 if has_effect(self.skill, EffectKind::Resurrection) {
@@ -1472,7 +1590,11 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: Pet.java
     fn pet(&mut self) {
-        // M6: the caster's pet.
+        if self.caster_is_player()
+            && let Some(summon) = self.w.summon_of(self.caster).filter(|s| self.w.is_pet(*s))
+        {
+            self.push(summon);
+        }
     }
 
     // Java: Self.java
@@ -1482,12 +1604,20 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: Servitor.java
     fn servitor(&mut self) {
-        // M6: the caster's servitor.
+        if self.caster_is_player()
+            && let Some(summon) = self.w.summon_of(self.caster).filter(|s| self.w.is_servitor(*s))
+        {
+            self.push(summon);
+        }
     }
 
     // Java: Summon.java
     fn summon(&mut self) {
-        // M6: the caster's summon (pet or servitor).
+        if self.caster_is_player()
+            && let Some(summon) = self.w.summon_of(self.caster)
+        {
+            self.push(summon);
+        }
     }
 
     // Java: TargetParty.java
@@ -1512,10 +1642,15 @@ impl<R: Rnd> Targeting<'_, R> {
         let selected = selected.unwrap_or(target);
         let radius = self.skill.affect_range;
         if let Some(party) = self.w.party_of(selected) {
-            // Every member within the affect range of the selected player (and, M6, its summon).
+            // Every member within the affect range of the selected player, and its summon.
             for member in self.w.party_members(party) {
                 if self.w.skill_add_character(selected, member, radius, false) {
                     self.push(member);
+                }
+                if let Some(summon) = self.w.summon_of(member)
+                    && self.w.skill_add_character(selected, summon, radius, false)
+                {
+                    self.push(summon);
                 }
             }
         } else {

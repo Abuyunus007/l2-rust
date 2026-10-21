@@ -512,7 +512,7 @@ impl World {
                 amount = rest;
                 full_value = rest as i32;
             }
-            if self.is_player(attacker) {
+            if self.is_playable(attacker) {
                 // `attacker.isPlayable() || attacker.isFakePlayer()`: CP takes the hit first.
                 let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
                 if cp >= amount {
@@ -851,6 +851,16 @@ impl World {
         if !self.npcs.contains_key(&id) {
             return;
         }
+        self.creature_broadcast_status_update(id);
+        // `Summon.broadcastStatusUpdate()`: then `updateAndBroadcastStatus(1)`.
+        if self.is_summon(id) {
+            self.update_and_broadcast_summon_status(id, 1);
+        }
+    }
+
+    /// Java `Creature.broadcastStatusUpdate()`: the HP to the creature's status listeners when
+    /// the bar moved.
+    fn creature_broadcast_status_update(&mut self, id: ObjectId) {
         let has_listeners = self.statuses.get(&id).is_some_and(|s| !s.listeners.is_empty());
         if !has_listeners || !self.need_hp_update(id) {
             return;

@@ -301,7 +301,11 @@ impl World {
         }
         self.pvp.players.entry(id).or_default().flag = value;
         self.send_user_info(id);
-        // If this player has a pet update the pets pvp flag as well: no summons yet (M6-SUMMON).
+        // If this player has a pet update the pets pvp flag as well.
+        if let Some(summon) = self.summon_of(id) {
+            let entry = self.summon_relation_entry(summon, id, Some(false));
+            self.send(id, &RelationChanged::single(entry));
+        }
         self.send_relation_to_visible_players(id);
     }
 
@@ -360,10 +364,9 @@ impl World {
         }
     }
 
-    /// The player a creature acts for (Java `asPlayer()`): the player itself.
-    // M6-SUMMON: a servitor or pet gives its owner.
+    /// The player a creature acts for (Java `asPlayer()`): the player itself, a summon's owner.
     fn acting_player_of(&self, id: ObjectId) -> Option<ObjectId> {
-        self.players.contains_key(&id).then_some(id)
+        self.acting_player(id)
     }
 
     /// Java `Player.updatePvPStatus(target)`: attacking another player outside a PvP zone flags the
@@ -485,6 +488,10 @@ impl World {
                 viewer,
                 &RelationChanged::single(self.relation_entry(subject, viewer)),
             );
+            if let Some(summon) = self.summon_of(subject) {
+                let entry = self.summon_relation_entry(summon, viewer, None);
+                self.send(viewer, &RelationChanged::single(entry));
+            }
         }
     }
 
@@ -751,8 +758,8 @@ impl World {
         if self.objects.get(&subject).is_some_and(|e| e.invisible) && self.is_gm(subject) {
             return false;
         }
-        // Check if the attacker isn't the Player Pet. M6-SUMMON: `attacker == _summon`.
-        if attacker == subject {
+        // Check if the attacker isn't the Player Pet.
+        if attacker == subject || self.summon_of(subject) == Some(attacker) {
             return false;
         }
         let attacker_class = self.npcs.get(&attacker).map(|n| n.class);
@@ -764,12 +771,15 @@ impl World {
         if attacker_class.is_some_and(NpcClass::is_monster) {
             return true;
         }
-        let attacker_is_player = self.players.contains_key(&attacker);
-        // Both in the same duel, which is still going on (`DUELSTATE_DUELLING`).
-        // M6-SUMMON: `attacker.isPlayable()` also holds for a summon (its owner's duel id).
+        // `attacker.isPlayable()`.
+        let attacker_is_player = self.is_playable(attacker);
+        // Both in the same duel, which is still going on (`DUELSTATE_DUELLING`); a summon counts
+        // with its owner's duel id (`attacker.getActingPlayer().getDuelId()`).
         if attacker_is_player
             && self.duel_state_of(subject) == crate::duel::DuelState::Duelling
-            && self.duel_id_of(subject) == self.duel_id_of(attacker)
+            && self
+                .acting_player_of(attacker)
+                .is_some_and(|a| self.duel_id_of(subject) == self.duel_id_of(a))
         {
             return true;
         }

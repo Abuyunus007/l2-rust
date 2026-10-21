@@ -722,8 +722,8 @@ impl World {
         let mut max_damage: i64 = 0;
         let mut rewards: Vec<(ObjectId, i64)> = Vec::new();
         for info in &aggro {
-            // Get the Creature corresponding to this attacker.
-            let Some(attacker) = self.players.get(&info.attacker).map(|p| p.core.object_id) else {
+            // Get the Creature corresponding to this attacker (`asPlayer()`: a summon's owner).
+            let Some(attacker) = self.acting_player(info.attacker) else {
                 continue;
             };
             // Get damages done by this attacker.
@@ -944,14 +944,12 @@ impl World {
 
     /// Java `Attackable.doItemDrop(mainDamageDealer)`.
     pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
-        let Some(dealer) = main_damage_dealer else {
+        // `mainDamageDealer.asPlayer()`: a summon's owner.
+        let Some(dealer) = main_damage_dealer.and_then(|d| self.acting_player(d)) else {
+            // Don't drop anything if the last attacker or owner isn't Player (a fake player may,
+            // when `FakePlayerCanDropItems` is on: fake players are not ported).
             return;
         };
-        // Don't drop anything if the last attacker or owner isn't Player (a fake player may, when
-        // `FakePlayerCanDropItems` is on: fake players are not ported).
-        if !self.players.contains_key(&dealer) {
-            return;
-        }
         // `CursedWeaponsManager.checkDrop(this, player)`: cursed weapons are M5.
 
         let Some(templates) = self.item_templates() else {

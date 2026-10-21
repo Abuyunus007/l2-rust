@@ -57,7 +57,10 @@ impl World {
             if self.objects.contains_key(&id) {
                 self.broadcast_creature_packet(id, &AutoAttackStop { target_id: id.0 });
                 self.set_auto_attacking(id, false);
-                // The summon's `AutoAttackStop`: summons are M5.
+                // A player's summon stops too.
+                if let Some(summon) = self.summon_of(id) {
+                    self.broadcast_packet(summon, &AutoAttackStop { target_id: summon.0 });
+                }
             }
         }
         if !self.combat.stances.is_empty() {

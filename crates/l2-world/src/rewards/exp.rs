@@ -267,23 +267,25 @@ impl World {
         let mut total_damage: i64 = 0;
         let mut rewards: Vec<(ObjectId, i64)> = Vec::new();
         for info in self.aggro_list(dying) {
-            // An attacker that is not a player (a summon would count for its owner) is skipped.
-            if !self.players.contains_key(&info.attacker) {
+            // `info.getAttacker().asPlayer()`: a summon counts for its owner; anything else is
+            // skipped.
+            let Some(attacker) = self.acting_player(info.attacker) else {
                 continue;
-            }
+            };
             // Prevent unwanted behavior.
             if info.damage > 1 {
                 // Check if damage dealer isn't too far from this (killed monster).
                 let far = self
-                    .position_of(info.attacker)
+                    .position_of(attacker)
                     .is_none_or(|p| distance_3d(at, p) > range);
                 if far {
                     continue;
                 }
                 total_damage = total_damage.wrapping_add(info.damage);
-                match rewards.iter_mut().find(|(who, _)| *who == info.attacker) {
+                // Calculate real damages (Summoners should get own damage plus summon's damage).
+                match rewards.iter_mut().find(|(who, _)| *who == attacker) {
                     Some((_, damage)) => *damage = damage.wrapping_add(info.damage),
-                    None => rewards.push((info.attacker, info.damage)),
+                    None => rewards.push((attacker, info.damage)),
                 }
             }
         }
@@ -301,14 +303,19 @@ impl World {
                 self.reward_party_share(dying, party, at, total_damage, &mut rewards);
                 continue;
             }
-            // Penalty applied to the attacker's XP by a servitor: none without summons.
+            // Penalty applied to the attacker's XP: "If this attacker have servitor, get Exp
+            // Penalty applied for the servitor."
+            let penalty = self.servitor_exp_multiplier(attacker);
             if !self.is_in_surrounding_region(dying, attacker) {
                 continue;
             }
             // Calculate the difference of level between this attacker and the Attackable.
             let level = self.core_of(attacker).map_or(1, |c| c.level);
             let (exp, sp) = self.calculate_exp_and_sp(dying, level, damage, total_damage);
-            // Champions and the over-hit bonus: see the module comment.
+            // Champions: see the module comment.
+            // `exp *= penalty` (a float widened to double).
+            let exp = exp * f64::from(penalty);
+            // The over-hit bonus: see the module comment.
 
             // Distribute the Exp and SP between the Player and its Summon.
             if self.is_dead(attacker) {
@@ -673,6 +680,14 @@ impl World {
     /// Java `ExperienceData.getExpForLevel(level)`, for the admin commands.
     pub(crate) fn exp_needed_for_level(&self, level: i32) -> Option<i64> {
         self.exp_for_level(level)
+    }
+
+    /// Java `ExperienceData.getMaxPetLevel()`: one more than the highest pet level.
+    pub(crate) fn exp_table_max_pet_level(&self) -> Option<i32> {
+        self.rewards
+            .experience
+            .max_pet_level()
+            .and_then(|m| i32::try_from(m + 1).ok())
     }
 
     fn set_exp(&mut self, id: ObjectId, value: i64) {

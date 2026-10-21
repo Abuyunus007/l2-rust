@@ -67,9 +67,8 @@ impl Betray {
 
 impl EffectHandler for Betray {
     /// `effector.isPlayer() && effected.isSummon()`.
-    // Summons are M6: nobody is a summon yet, so it never starts.
-    fn can_start(&self, _world: &World, _cx: &EffectCx<'_>) -> bool {
-        false
+    fn can_start(&self, world: &World, cx: &EffectCx<'_>) -> bool {
+        world.is_player(cx.effector) && world.is_summon(cx.effected)
     }
 
     fn effect_flags(&self) -> u32 {
@@ -84,8 +83,11 @@ impl EffectHandler for Betray {
         world.set_intention_idle(cx.effected);
     }
 
-    fn on_start(&self, _world: &mut World, _cx: &EffectCx<'_>) {
-        // Java: `effected.getAI().setIntentionAttack(effected.asPlayer())`, the summon attacks
-        // its own master. Unreachable until summons exist (`can_start`), M6.
+    fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
+        // `effected.getAI().setIntentionAttack(effected.asPlayer())`: the summon attacks its own
+        // master.
+        if let Some(owner) = world.acting_player(cx.effected) {
+            world.set_intention_attack(cx.effected, owner);
+        }
     }
 }

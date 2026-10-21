@@ -58,6 +58,11 @@ impl World {
                 pvp_flag: self.pvp_flag_of(subject),
             };
             self.send(viewer, &RelationChanged::single(entry));
+            // `if (hasSummon())`: the summon's relation with the same values.
+            if let Some(summon) = self.summon_of(subject) {
+                let entry = self.summon_relation_entry(summon, viewer, Some(auto_attackable));
+                self.send(viewer, &RelationChanged::single(entry));
+            }
         }
         // Java `sendInfo`: the title over the store of a player who has one open.
         if appearing {

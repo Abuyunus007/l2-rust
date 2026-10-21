@@ -798,7 +798,8 @@ impl World {
 
     /// Java `CreatureAI.notifyActionArrived`.
     pub(crate) fn notify_action_arrived(&mut self, id: ObjectId) {
-        if self.is_npc(id) {
+        // A summon thinks like any `CreatureAI` (its own think is `SummonAI`'s).
+        if self.is_npc(id) || self.is_summon(id) {
             self.npc_notify_action_arrived(id);
             return;
         }
@@ -1701,7 +1702,8 @@ impl World {
             // NOTE(java-quirk): a path with fewer than two nodes still counts as "a path" here
             // (`geoPath == null` fails), so the destination is not corrected in that case.
             let cursor = self.is_cursor_movement(id);
-            if is_player
+            // `isPlayable()`: a summon too.
+            if (is_player || self.is_summon(id))
                 && !cursor
                 && calc.mv.geo_path.is_none()
                 && calc.distance < 3000.0 // Should be able to click far away and move.
@@ -1723,10 +1725,19 @@ impl World {
             }
 
             // If no distance to go through, the movement is canceled.
-            if calc.distance < 1.0 && (self.pathfinding_enabled() || is_player) {
+            let is_summon = self.is_summon(id);
+            if calc.distance < 1.0 && (self.pathfinding_enabled() || is_player || is_summon) {
                 // An attack or cast already in flight has to survive this, cancelling it is what
                 // strands melee.
-                if !matches!(self.intention_of(id), Intention::Attack | Intention::Cast) {
+                let pending_target_action =
+                    matches!(self.intention_of(id), Intention::Attack | Intention::Cast);
+                if is_summon && !pending_target_action {
+                    // Do not break following owner.
+                    if self.follow_target_of(id) != self.summon_owner(id) {
+                        self.set_follow_status(id, false);
+                        self.set_intention_idle(id);
+                    }
+                } else if !pending_target_action {
                     self.set_intention_idle(id);
                 }
                 self.send(id, &ActionFailed);

@@ -185,7 +185,7 @@ impl World {
         }
 
         // Set target to null and cancel Attack or Cast.
-        self.set_target(id, None);
+        self.set_creature_target(id, None);
 
         // Stop movement.
         self.stop_move_on_death(id);
@@ -216,8 +216,8 @@ impl World {
         // that asked to hear about the death (scripts: D-05), the instance (no instances yet).
 
         // `killerPlayer.onKillUpdatePvPKarma(this)`: PvP kills, PK kills and the karma the killer
-        // gains (`pvp.rs`). M6-SUMMON: a summon's owner is the killer player.
-        if let Some(killer) = killer.filter(|k| self.players.contains_key(k)) {
+        // gains (`pvp.rs`). `killer.asPlayer()`: a summon's owner is the killer player.
+        if let Some(killer) = killer.and_then(|k| self.acting_player(k)) {
             self.on_kill_update_pvp_karma(killer, id);
         }
 
@@ -295,7 +295,18 @@ impl World {
 
         // Cubics, channeling, dimensional rift, agathion: not modelled.
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
-        // Summons (`cancelAction`), rent pets, the water task, `AntiFeedManager`: not modelled.
+        if let Some(summon) = self.summon_of(id) {
+            if self.is_betrayed(summon) {
+                self.send(
+                    id,
+                    &l2_protocol_game::server::SystemMessage::new(
+                        l2_protocol_game::SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders,
+                    ),
+                );
+            }
+            self.summon_cancel_action(summon);
+        }
+        // Rent pets, the water task, `AntiFeedManager`: not modelled.
 
         // `AntiFeedManager.setLastDeathTime(getObjectId())`.
         self.set_last_death_time(id);
@@ -315,6 +326,15 @@ impl World {
     /// already. `killer` is whoever dealt the last hit (a summon's owner counts as the killer in
     /// Java's `asPlayer()` places; summons do not exist yet).
     pub(crate) fn do_die_chain(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
+        if self.is_summon(id) {
+            // `Summon.doDie` / `Servitor.doDie` around `Playable.doDie`.
+            self.summon_do_die_before(id);
+            if !self.playable_do_die(id, killer) {
+                return false;
+            }
+            self.summon_do_die_after(id, killer);
+            return true;
+        }
         if self.is_player(id) {
             if !self.playable_do_die(id, killer) {
                 return false;

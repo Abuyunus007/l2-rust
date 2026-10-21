@@ -144,6 +144,13 @@ pub enum ClientInput {
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
+    /// Java `RequestActionUse`: a button of the action window (`ctrl_pressed` is `readInt() ==
+    /// 1`, `shift_pressed` `readByte() == 1`).
+    ActionUse {
+        action_id: i32,
+        ctrl_pressed: bool,
+        shift_pressed: bool,
+    },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int

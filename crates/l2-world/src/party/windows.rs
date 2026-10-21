@@ -67,8 +67,8 @@ impl World {
                 Some(PartyWindowMember {
                     vitals: self.party_member_vitals(*m)?,
                     race: self.players.get(m)?.data.race,
-                    // M6: the member's summon (SUMMON-01).
-                    summon: None,
+                    // `member.hasSummon()`: its `getId() + 1000000`, name and numbers.
+                    summon: self.summon_of(*m).and_then(|s| self.party_summon(s, false)),
                 })
             })
             .collect();
@@ -125,7 +125,8 @@ impl World {
     }
 
     /// `new PartySpelled(owner)` filled the way `EffectList.updateEffectIcons` does: every info in
-    /// use, a toggle left out (`isSummon || !skill.isToggle()`; summons are SUMMON-01).
+    /// use, a toggle left out (`isSummon || !skill.isToggle()`; a summon's is
+    /// `summon/party.rs`).
     pub(crate) fn party_spelled(&self, owner: ObjectId) -> PartySpelled {
         let effects = self
             .effect_list(owner)

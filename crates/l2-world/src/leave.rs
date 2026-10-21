@@ -77,6 +77,9 @@ impl World {
         self.leave_party(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
         self.cancel_transaction_on_leave(id);
+        // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
+        // after the player's `decayMe()`; here before, while the player is still in the tables).
+        self.summon_on_owner_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

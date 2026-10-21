@@ -25,7 +25,6 @@
 // `HashMap`). An NPC id without skills costs one template lookup per think.
 //
 // # Left out
-// - Summons (M6) as targets.
 // - Scripts: the NPC AI parameters that only scripts read (D-05).
 
 use std::collections::BTreeMap;
@@ -578,8 +577,8 @@ impl World {
                     } else {
                         local_dist
                     };
-                    // (`obj.isPlayer() || obj.isSummon()`: summons are M6.)
-                    if self.is_player(obj)
+                    // `obj.isPlayer() || obj.isSummon()`.
+                    if (self.is_player(obj) || self.is_summon(obj))
                         && local_dist2 <= f64::from(local_range)
                         && !self.is_affected_by_skill(attack_target, skill.id)
                     {
@@ -616,7 +615,8 @@ impl World {
                 let local_range = skill.cast_range + actor_collision + self.collision_radius_of(obj);
                 let base = local_dist - f64::from(actor_collision);
                 let local_dist2 = if self.is_moving(obj) { base - 70.0 } else { base };
-                if self.is_player(obj)
+                // `obj.isPlayer() || obj.isSummon()`.
+                if (self.is_player(obj) || self.is_summon(obj))
                     && local_dist2 <= f64::from(local_range)
                     && self.is_affected_by_effect_type(attack_target, EffectType::Buff)
                 {
@@ -677,7 +677,9 @@ impl World {
                 }
                 continue;
             }
-            // (`obj.isSummon()`: summons are M6.)
+            if self.is_summon(obj) {
+                return Some(obj);
+            }
         }
         None
     }
