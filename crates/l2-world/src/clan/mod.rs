@@ -33,11 +33,11 @@
 // # Left to other cards
 // - Crests, alliances, clan wars (M6-CLAN-02): their packets reach `ClanInput::NotPorted`; the
 //   ally and war columns and `clan_wars` are loaded.
-// - The clan warehouse (M6-WH-01), marked `// M6-CLAN-03:` where it acts.
 // - (M6-CLAN-02 is in: crests `crest.rs`, alliances `alliance.rs`, wars `war.rs`, the
 //   `ClanMaster`/`AllianceMaster` pages `master_script.rs`.)
-// - Clan skills on the members, the clan warehouse, the academy graduation (M6-CLAN-03): the
-//   skills are loaded and listed (`PledgeSkillList`), marked `// M6-CLAN-03:` where they act.
+// - Clan skills on the members and the academy graduation (M6-CLAN-03): the skills are loaded and
+//   listed (`PledgeSkillList`), marked `// M6-CLAN-03:` where they act. The clan warehouse
+//   (`Clan::warehouse`) is M6-WH-01, see `warehouse/`.
 // - Castles, forts, clan halls, sieges (M7): their ids stay as loaded (fort and hall 0).
 // - The other village master scripts (scripts come last, D-05); the `ClanMaster` and
 //   `AllianceMaster` pages that list the clan commands are in `master_script.rs`, the commands
@@ -440,6 +440,8 @@ pub struct ClanRecord {
     pub skills: Vec<(i32, i32, i32)>,
     /// `clan_notices`: `(enabled text, notice)`.
     pub notices: Vec<(String, String)>,
+    /// `items` with `loc = 'CLANWH'` and the clan as owner (Java `_warehouse.restore()`).
+    pub warehouse: Vec<crate::player::ItemData>,
 }
 
 /// The `clan_data` columns (`getInt` of NULL is 0, `getString` of NULL is `None`).

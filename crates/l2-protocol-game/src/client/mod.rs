@@ -174,12 +174,14 @@ pub mod item;
 pub mod movement;
 pub mod party;
 pub mod pledge;
+pub mod shop;
 pub mod shortcut;
 pub mod skills;
 pub mod store;
 pub mod summon;
 pub mod trade;
 pub mod vote;
+pub mod warehouse;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
@@ -187,8 +189,8 @@ pub use charscreen::{
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 pub use enchant::{
-    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute, RequestExRemoveItemAttribute,
-    RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
+    RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
 };
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
@@ -214,6 +216,9 @@ pub use pledge::{
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
+pub use shop::{
+    BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,
+};
 pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,
@@ -229,6 +234,10 @@ pub use summon::{
 };
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
 pub use vote::RequestVoteNew;
+pub use warehouse::{
+    RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
+    WarehouseListEntry,
+};
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

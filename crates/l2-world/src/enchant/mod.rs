@@ -43,6 +43,8 @@ pub use attribute::release_attribute_handler;
 use std::sync::Arc;
 
 use l2_data::{ElementalAttributeData, EnchantItemData, EnchantItemGroups};
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{EnchantResult, SystemMessage};
 use l2_util::ObjectId;
 
 use crate::punishments::IllegalActionPunishment;
@@ -211,17 +213,60 @@ impl World {
     pub(crate) fn on_enchant_input(&mut self, id: ObjectId, input: EnchantInput) {
         match input {
             EnchantInput::Enchant { object_id } => self.on_request_enchant_item(id, object_id),
-            EnchantInput::PutTargetItem { object_id } => self.on_try_to_put_enchant_target_item(id, object_id),
+            EnchantInput::PutTargetItem { object_id } => {
+                self.on_try_to_put_enchant_target_item(id, object_id)
+            }
             EnchantInput::PutSupportItem {
                 support_object_id,
                 enchant_object_id,
             } => self.on_try_to_put_enchant_support_item(id, support_object_id, enchant_object_id),
             EnchantInput::CancelEnchant => self.on_cancel_enchant_item(id),
-            EnchantInput::EnchantAttribute { object_id } => self.on_request_enchant_item_attribute(id, object_id),
+            EnchantInput::EnchantAttribute { object_id } => {
+                self.on_request_enchant_item_attribute(id, object_id)
+            }
             EnchantInput::RemoveAttribute { object_id, element } => {
                 self.on_request_remove_item_attribute(id, object_id, element);
             }
         }
+    }
+
+    /// The enchant check of `SendWareHouseDepositList` and `SendWareHouseWithDrawList`: a scroll in
+    /// use is cancelled (`YOU_HAVE_CANCELLED_THE_ENCHANTING_PROCESS`, `EnchantResult(2, 0, 0)`)
+    /// and the request ends. `true` when the caller must return.
+    pub fn warehouse_cancels_enchant(&mut self, id: ObjectId) -> bool {
+        if self.active_enchant_item(id).is_none() {
+            return false;
+        }
+        self.send(
+            id,
+            &SystemMessage::new(SystemMessageId::YouHaveCancelledTheEnchantingProcess),
+        );
+        self.send(
+            id,
+            &EnchantResult {
+                result: 2,
+                crystal: 0,
+                count: 0,
+            },
+        );
+        self.set_active_enchant_item(id, None);
+        true
+    }
+
+    /// The enchant check of `RequestPackageSend`: a scroll in use is an illegal action. `true`
+    /// when the caller must return.
+    pub fn package_send_enchant_exploit(&mut self, id: ObjectId) -> bool {
+        if self.active_enchant_item(id).is_none() {
+            return false;
+        }
+        let message = format!("{} tried to use enchant Exploit!", self.player_text(id));
+        self.enchant_illegal_action(id, &message);
+        true
+    }
+
+    /// `player.isEnchanting()` of the `PrivateWarehouse` and `ClanWarehouse` links.
+    pub fn enchant_blocks_warehouse_link(&self, id: ObjectId) -> bool {
+        self.is_enchanting(id)
     }
 
     /// `PunishmentManager.handleIllegalPlayerAction(player, message, DEFAULT_PUNISH)`.

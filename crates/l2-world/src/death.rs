@@ -296,7 +296,9 @@ impl World {
             }
         }
 
-        // Cubics, channeling, dimensional rift, agathion: not modelled.
+        // Unsummon Cubics (no `UserInfo`: the player's death sends its own updates).
+        self.clear_cubics(id);
+        // Channeling, dimensional rift, agathion: not modelled.
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
         if let Some(summon) = self.summon_of(id) {
             if self.is_betrayed(summon) {

@@ -55,7 +55,13 @@ fn request_enchant_item() {
     // 0x5F, readInt (the support id is commented out in Java).
     let mut expected = vec![0x5F];
     expected.extend(int(0x1000_0042));
-    check(&RequestEnchantItem { object_id: 0x1000_0042 }, &expected, 1);
+    check(
+        &RequestEnchantItem {
+            object_id: 0x1000_0042,
+        },
+        &expected,
+        1,
+    );
 }
 
 #[test]
@@ -157,9 +163,7 @@ fn put_enchant_item_results() {
     let mut expected = ex(0x81);
     expected.extend(int(0x1000_0042));
     check(
-        &ExPutEnchantTargetItemResult {
-            result: 0x1000_0042,
-        },
+        &ExPutEnchantTargetItemResult { result: 0x1000_0042 },
         &expected,
         3,
     );

@@ -76,6 +76,7 @@ mod statset;
 mod status_params;
 mod steal_abnormal;
 mod summon;
+mod summon_cubic;
 mod sweeper;
 mod target_me;
 mod teleport;
@@ -252,4 +253,7 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Summon", summon::Summon::create);
     registry.register("Unsummon", unsummon::Unsummon::create);
     registry.register("ImmobilePetBuff", immobile_buff::ImmobilePetBuff::create);
+    // M6-CUBIC-01: cubics.
+    registry.register("CubicMastery", summon_cubic::CubicMastery::create);
+    registry.register("SummonCubic", summon_cubic::SummonCubic::create);
 }

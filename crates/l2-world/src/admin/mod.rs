@@ -23,16 +23,21 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod clan;
 pub mod combat;
 pub mod commands;
 pub mod create_item;
 pub mod exp_sp;
 pub mod html;
 pub mod invul;
+pub mod karma;
 pub mod level;
+pub mod party;
 pub mod punishments;
 pub mod rights;
 pub mod skills;
+pub mod summon;
+pub mod transform;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -109,6 +114,9 @@ pub(crate) struct AdminWorld {
     /// `Player.getAdminConfirmCmd()` of each GM who waits for the answer of a `ConfirmDlg`
     /// (Java also sets `PlayerAction.ADMIN_COMMAND`; the entry is that action).
     pub(crate) pending_confirm: HashMap<ObjectId, String>,
+    /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
+    /// Java keeps one such list for the whole server, so this is one list too.
+    pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
 }
 
 impl Default for AdminWorld {
@@ -122,10 +130,16 @@ impl Default for AdminWorld {
         level::register(&mut handlers);
         skills::register(&mut handlers);
         punishments::register(&mut handlers);
+        clan::register(&mut handlers);
+        karma::register(&mut handlers);
+        party::register(&mut handlers);
+        summon::register(&mut handlers);
+        transform::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
+            skill_stash: None,
         }
     }
 }

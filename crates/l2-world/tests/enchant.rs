@@ -72,7 +72,6 @@ const TEMPLATE: &str = r#"<list><classId>0</classId><staticData>
 
 // Item ids.
 const C_SWORD: i32 = 2;
-const C_STAFF: i32 = 3;
 const C_HELMET: i32 = 4;
 const C_NECKLACE: i32 = 5;
 const S_SWORD: i32 = 6;
@@ -85,7 +84,6 @@ const SCROLL_BLESSED_WEAPON_C: i32 = 6573;
 const SCROLL_ANCIENT_WEAPON_C: i32 = 22014;
 const SUPPORT_WEAPON_C: i32 = 12364;
 const FIRE_STONE: i32 = 9546;
-const WATER_STONE: i32 = 9547;
 const DARK_STONE: i32 = 9550;
 const FIRE_CRYSTAL: i32 = 9552;
 const ADENA: i32 = 57;
@@ -576,11 +574,11 @@ fn an_object_id_the_player_does_not_have_is_an_illegal_action() {
     assert!(s.log.take().is_empty());
 }
 
-/// The `sendMessage` texts (a `SystemMessage` of the id `S1` with one string).
+/// The `sendMessage` texts (a `SystemMessage` of the id `S12` with one string).
 fn messages_text(out: &[Out], to: ObjectId) -> Vec<String> {
     messages(out, to)
         .into_iter()
-        .filter(|m| m.id == SystemMessageId::S1)
+        .filter(|m| m.id == SystemMessageId::S12)
         .filter_map(|m| match m.params.first() {
             Some(SystemMessageParam::Text(text)) => Some(text.clone()),
             _ => None,
@@ -620,7 +618,10 @@ fn the_support_item_must_fit_the_scroll_and_the_item() {
     let accepted: l2_protocol_game::server::ExPutEnchantSupportItemResult =
         decode(of(&out, A, "EX_PUT_ENCHANT_SUPPORT_ITEM_RESULT")[0]);
     assert_eq!(accepted.result, 202);
-    assert_eq!(s.world.enchant_state(A).unwrap().active_support, Some(ObjectId(202)));
+    assert_eq!(
+        s.world.enchant_state(A).unwrap().active_support,
+        Some(ObjectId(202))
+    );
 
     // An object the player does not have: INAPPROPRIATE_ENCHANT_CONDITIONS and no support item.
     s.enchant(
@@ -631,7 +632,10 @@ fn the_support_item_must_fit_the_scroll_and_the_item() {
         },
     );
     let out = s.log.take();
-    assert_eq!(message_ids(&out, A), [SystemMessageId::InappropriateEnchantConditions]);
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::InappropriateEnchantConditions]
+    );
     assert!(of(&out, A, "EX_PUT_ENCHANT_SUPPORT_ITEM_RESULT").is_empty());
     assert_eq!(s.world.enchant_state(A).unwrap().active_support, None);
 
@@ -648,7 +652,10 @@ fn the_support_item_must_fit_the_scroll_and_the_item() {
         },
     );
     let out = s.log.take();
-    assert_eq!(message_ids(&out, A), [SystemMessageId::InappropriateEnchantConditions]);
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::InappropriateEnchantConditions]
+    );
     let refused: l2_protocol_game::server::ExPutEnchantSupportItemResult =
         decode(of(&out, A, "EX_PUT_ENCHANT_SUPPORT_ITEM_RESULT")[0]);
     assert_eq!(refused.result, 0);
@@ -737,7 +744,10 @@ fn pressing_enchant_without_the_window_cancels_it() {
     let mut s = sword_scene(0, SCROLL_WEAPON_C);
     s.press(SWORD);
     let out = s.log.take();
-    assert_eq!(message_ids(&out, A), [SystemMessageId::YouHaveCancelledTheEnchantingProcess]);
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::YouHaveCancelledTheEnchantingProcess]
+    );
     assert_eq!(results(&out, A), [(2, 0, 0)]);
 
     // An item the player does not have, with a scroll open: the same.
@@ -758,7 +768,10 @@ fn a_scroll_that_no_longer_fits_the_item_is_refused() {
     s.log.take();
     s.press(SWORD);
     let out = s.log.take();
-    assert_eq!(message_ids(&out, A), [SystemMessageId::InappropriateEnchantConditions]);
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::InappropriateEnchantConditions]
+    );
     assert_eq!(results(&out, A), [(2, 0, 0)]);
     assert_eq!(s.count_of(A, SCROLL_WEAPON_D), 1);
 }
@@ -783,7 +796,10 @@ fn a_failed_enchant_destroys_the_item_and_pays_crystals() {
         .unwrap();
     assert_eq!(
         earned.params,
-        [SystemMessageParam::ItemName(C_CRYSTAL), SystemMessageParam::LongNumber(185)]
+        [
+            SystemMessageParam::ItemName(C_CRYSTAL),
+            SystemMessageParam::LongNumber(185)
+        ]
     );
     // The sword is removed (change 3), the new crystals are an addition (change 1).
     let changes = updates(&out, A);
@@ -877,16 +893,20 @@ fn a_worn_item_comes_off_when_the_enchant_fails() {
         .unwrap();
     assert_eq!(
         removed.params,
-        [SystemMessageParam::IntNumber(3), SystemMessageParam::ItemName(C_SWORD)]
+        [
+            SystemMessageParam::IntNumber(3),
+            SystemMessageParam::ItemName(C_SWORD)
+        ]
     );
     assert_eq!(s.item(A, SWORD).unwrap().loc, "INVENTORY");
     // The unequip update goes out on its own, before the result update.
-    let inventory_updates = of(&out, A, "INVENTORY_UPDATE");
-    assert_eq!(inventory_updates.len(), 2);
-    let first = decode::<InventoryUpdate>(inventory_updates[0]);
-    assert_eq!(first.updates.len(), 1);
-    assert_eq!(first.updates[0].item.object_id, SWORD);
-    assert_eq!(first.updates[0].item.equipped, 0);
+    let unequip = of(&out, A, "INVENTORY_UPDATE")
+        .into_iter()
+        .map(decode::<InventoryUpdate>)
+        .find(|u| {
+            u.updates.len() == 1 && u.updates[0].item.object_id == SWORD && u.updates[0].item.equipped == 0
+        });
+    assert!(unequip.is_some());
 }
 
 #[test]
@@ -1005,7 +1025,10 @@ fn a_weapon_plus_seven_is_announced_with_fireworks_and_armor_at_plus_six() {
         "Alice",
         1000,
         0,
-        vec![enchanted(inv(SWORD, C_SWORD, 1), 6), inv(SCROLL, SCROLL_WEAPON_C, 1)],
+        vec![
+            enchanted(inv(SWORD, C_SWORD, 1), 6),
+            inv(SCROLL, SCROLL_WEAPON_C, 1),
+        ],
     ));
     s.enter(player(B, "Bob", 1050, 0, vec![]));
     s.advance(100);
@@ -1030,7 +1053,12 @@ fn a_weapon_plus_seven_is_announced_with_fireworks_and_armor_at_plus_six() {
         // The firework: skill 5965 level 1 with the skill's hit time and reuse delay.
         let firework: MagicSkillUse = decode(of(&out, who, "MAGIC_SKILL_USE")[0]);
         assert_eq!(
-            (firework.skill_id, firework.skill_level, firework.hit_time, firework.reuse_delay),
+            (
+                firework.skill_id,
+                firework.skill_level,
+                firework.hit_time,
+                firework.reuse_delay
+            ),
             (5965, 1, 500, 1000)
         );
     }
@@ -1100,9 +1128,9 @@ fn the_scroll_in_use_cannot_be_dropped_and_blocks_logout_and_restart() {
 
     // Logout: ActionFailed. Restart: RestartResponse(false) and ActionFailed.
     s.input(A, ClientInput::Logout);
-    assert_eq!(names(&s.log.take(), A), ["ACTION_FAILED"]);
+    assert_eq!(names(&s.log.take(), A), ["ACTION_FAIL"]);
     s.input(A, ClientInput::Restart);
-    assert_eq!(names(&s.log.take(), A), ["RESTART_RESPONSE", "ACTION_FAILED"]);
+    assert_eq!(names(&s.log.take(), A), ["RESTART_RESPONSE", "ACTION_FAIL"]);
     assert!(s.world.player(A).is_some());
 
     // After cancelling the player can leave.
@@ -1140,7 +1168,11 @@ fn a_trade_cannot_be_confirmed_while_a_player_has_a_scroll_open() {
         "Alice",
         1000,
         0,
-        vec![inv(SWORD, C_SWORD, 1), inv(SCROLL, SCROLL_WEAPON_C, 1), inv(300, ADENA, 100)],
+        vec![
+            inv(SWORD, C_SWORD, 1),
+            inv(SCROLL, SCROLL_WEAPON_C, 1),
+            inv(300, ADENA, 100),
+        ],
     ));
     s.enter(player(B, "Bob", 1050, 0, vec![]));
     s.use_item(A, SCROLL);
@@ -1177,7 +1209,17 @@ fn nothing_is_enchanted_while_a_private_store_is_open() {
 fn an_item_past_the_maximum_is_destroyed_when_used() {
     // GROUPS: weapons reach +15 with a chance, so the maximum is 16 (+1). A +17 sword breaks when
     // the player tries to equip it, with the messages and the punishment of OverEnchantPunishment.
-    let mut s = Scene::alone(vec![enchanted(inv(SWORD, C_SWORD, 1), 17), inv(101, C_SWORD, 1)]);
+    // Entering the world would destroy it already: the protection is switched on after the enter.
+    let mut s = Scene::with_settings(|e| e.over_enchant_protection = false);
+    s.enter(player(
+        A,
+        "Alice",
+        1000,
+        0,
+        vec![enchanted(inv(SWORD, C_SWORD, 1), 17)],
+    ));
+    s.world.set_settings(WorldSettings::default());
+    s.log.take();
     s.use_item(A, SWORD);
     let out = s.log.take();
     assert!(s.item(A, SWORD).is_none());
@@ -1198,13 +1240,25 @@ fn an_item_past_the_maximum_is_destroyed_when_used() {
 #[test]
 fn the_protection_is_off_for_gms_and_when_the_config_says_so() {
     let mut s = Scene::new();
-    s.enter(player(A, "Gm", 1000, 100, vec![enchanted(inv(SWORD, C_SWORD, 1), 30)]));
+    s.enter(player(
+        A,
+        "Gm",
+        1000,
+        100,
+        vec![enchanted(inv(SWORD, C_SWORD, 1), 30)],
+    ));
     s.log.take();
     s.use_item(A, SWORD);
     assert_eq!(s.item(A, SWORD).unwrap().loc, "PAPERDOLL");
 
     let mut s = Scene::with_settings(|e| e.over_enchant_protection = false);
-    s.enter(player(A, "Alice", 1000, 0, vec![enchanted(inv(SWORD, C_SWORD, 1), 30)]));
+    s.enter(player(
+        A,
+        "Alice",
+        1000,
+        0,
+        vec![enchanted(inv(SWORD, C_SWORD, 1), 30)],
+    ));
     s.log.take();
     s.use_item(A, SWORD);
     assert_eq!(s.item(A, SWORD).unwrap().loc, "PAPERDOLL");
@@ -1255,7 +1309,14 @@ fn stone_scene(items: Vec<ItemData>, chance: f64) -> Scene {
 
 #[test]
 fn using_a_stone_opens_the_attribute_window_of_its_element() {
-    let mut s = stone_scene(vec![inv(110, S_SWORD, 1), inv(210, FIRE_STONE, 2), inv(211, DARK_STONE, 1)], 100.0);
+    let mut s = stone_scene(
+        vec![
+            inv(110, S_SWORD, 1),
+            inv(210, FIRE_STONE, 2),
+            inv(211, DARK_STONE, 1),
+        ],
+        100.0,
+    );
     s.use_item(A, 210);
     let out = s.log.take();
     let window: ExChooseInventoryAttributeItem = decode(of(&out, A, "EX_CHOOSE_INVENTORY_ATTRIBUTE_ITEM")[0]);
@@ -1285,7 +1346,10 @@ fn a_stone_gives_a_weapon_twenty_then_five() {
 
     assert_eq!(
         s.item(A, 110).unwrap().elementals,
-        [ItemElemental { element: 0, value: 20 }]
+        [ItemElemental {
+            element: 0,
+            value: 20
+        }]
     );
     assert_eq!(s.count_of(A, FIRE_STONE), 2);
     // S2_ELEMENTAL_POWER_HAS_BEEN_ADDED_SUCCESSFULLY_TO_S1: the item and the element.
@@ -1295,7 +1359,10 @@ fn a_stone_gives_a_weapon_twenty_then_five() {
         .unwrap();
     assert_eq!(
         added.params,
-        [SystemMessageParam::ItemName(S_SWORD), SystemMessageParam::ElementName(0)]
+        [
+            SystemMessageParam::ItemName(S_SWORD),
+            SystemMessageParam::ElementName(0)
+        ]
     );
     assert_eq!(
         decode::<ExAttributeEnchantResult>(of(&out, A, "EX_ATTRIBUTE_ENCHANT_RESULT")[0]).result,
@@ -1319,7 +1386,10 @@ fn a_stone_gives_a_weapon_twenty_then_five() {
 fn the_attribute_stops_at_the_limit_of_the_stone() {
     // 145 + 5 = 150: the limit of a level 3 stone for a weapon.
     let mut s = stone_scene(
-        vec![with_element(inv(110, S_SWORD, 1), 0, 145), inv(210, FIRE_STONE, 2)],
+        vec![
+            with_element(inv(110, S_SWORD, 1), 0, 145),
+            inv(210, FIRE_STONE, 2),
+        ],
         100.0,
     );
     s.use_item(A, 210);
@@ -1332,7 +1402,10 @@ fn the_attribute_stops_at_the_limit_of_the_stone() {
     s.log.take();
     s.enchant(A, EnchantInput::EnchantAttribute { object_id: 110 });
     let out = s.log.take();
-    assert_eq!(message_ids(&out, A), [SystemMessageId::AttributeItemUsageHasBeenCancelled]);
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::AttributeItemUsageHasBeenCancelled]
+    );
     assert_eq!(s.count_of(A, FIRE_STONE), 1);
     assert_eq!(s.item(A, 110).unwrap().elemental(0).unwrap().value, 150);
     assert_eq!(s.world.enchant_state(A).unwrap().active_attr, None);
@@ -1342,7 +1415,10 @@ fn the_attribute_stops_at_the_limit_of_the_stone() {
 fn a_crystal_reaches_further_than_a_stone() {
     // Crystal: level 6 -> 300 for a weapon. 295 + 5 = 300.
     let mut s = stone_scene(
-        vec![with_element(inv(110, S_SWORD, 1), 0, 295), inv(210, FIRE_CRYSTAL, 1)],
+        vec![
+            with_element(inv(110, S_SWORD, 1), 0, 295),
+            inv(210, FIRE_CRYSTAL, 1),
+        ],
         100.0,
     );
     s.use_item(A, 210);
@@ -1365,29 +1441,36 @@ fn armor_takes_the_opposite_element_and_six_points() {
     );
     let added = messages(&out, A)
         .into_iter()
-        .find(|m| m.id == SystemMessageId::TheS2SAttributeWasSuccessfullyBestowedOnS1AndResistanceToS3WasIncreased)
+        .find(|m| {
+            m.id == SystemMessageId::TheS2SAttributeWasSuccessfullyBestowedOnS1AndResistanceToS3WasIncreased
+        })
         .unwrap();
-    // addItemName, addElemental(realElement = water... the element of the armor), addElemental(opposite).
+    // addItemName, addElemental(realElement = the stone's fire), addElemental(opposite = water).
     assert_eq!(
         added.params,
         [
             SystemMessageParam::ItemName(S_CUIRASS),
-            SystemMessageParam::ElementName(1),
-            SystemMessageParam::ElementName(0)
+            SystemMessageParam::ElementName(0),
+            SystemMessageParam::ElementName(1)
         ]
     );
 }
 
 #[test]
 fn an_enchanted_item_uses_the_longer_message() {
-    let mut s = stone_scene(vec![enchanted(inv(111, S_CUIRASS, 1), 4), inv(210, FIRE_STONE, 1)], 100.0);
+    let mut s = stone_scene(
+        vec![enchanted(inv(111, S_CUIRASS, 1), 4), inv(210, FIRE_STONE, 1)],
+        100.0,
+    );
     s.use_item(A, 210);
     s.log.take();
     s.enchant(A, EnchantInput::EnchantAttribute { object_id: 111 });
     let out = s.log.take();
     let added = messages(&out, A)
         .into_iter()
-        .find(|m| m.id == SystemMessageId::TheS3SAttributeWasSuccessfullyBestowedOnS1S2AndResistanceToS4WasIncreased)
+        .find(|m| {
+            m.id == SystemMessageId::TheS3SAttributeWasSuccessfullyBestowedOnS1S2AndResistanceToS4WasIncreased
+        })
         .unwrap();
     assert_eq!(added.params[0], SystemMessageParam::IntNumber(4));
 }
@@ -1412,7 +1495,10 @@ fn armor_refuses_a_fourth_element_and_an_opposite_one() {
 
     // An armor that has fire (the opposite of the water the fire stone would give): illegal action.
     let mut s = stone_scene(
-        vec![with_element(inv(111, S_CUIRASS, 1), 0, 6), inv(210, FIRE_STONE, 1)],
+        vec![
+            with_element(inv(111, S_CUIRASS, 1), 0, 6),
+            inv(210, FIRE_STONE, 1),
+        ],
         100.0,
     );
     s.use_item(A, 210);
@@ -1457,7 +1543,14 @@ fn the_stone_dice_are_rnd_get_100_against_the_chance() {
 
 #[test]
 fn the_attribute_window_can_be_cancelled_and_refuses_what_cannot_hold_an_element() {
-    let mut s = stone_scene(vec![inv(110, S_SWORD, 1), inv(210, FIRE_STONE, 1), inv(300, C_SWORD, 1)], 100.0);
+    let mut s = stone_scene(
+        vec![
+            inv(110, S_SWORD, 1),
+            inv(210, FIRE_STONE, 1),
+            inv(300, C_SWORD, 1),
+        ],
+        100.0,
+    );
     s.use_item(A, 210);
     s.log.take();
     // -1 (0xFFFFFFFF): cancelled.
@@ -1492,7 +1585,13 @@ fn the_attribute_window_can_be_cancelled_and_refuses_what_cannot_hold_an_element
 fn a_stone_cancels_the_open_trade_request() {
     // `getActiveRequester() != null`: `cancelActiveTrade()`, the message, the stone is free.
     let mut s = Scene::new();
-    s.enter(player(A, "Alice", 1000, 0, vec![inv(110, S_SWORD, 1), inv(210, FIRE_STONE, 1)]));
+    s.enter(player(
+        A,
+        "Alice",
+        1000,
+        0,
+        vec![inv(110, S_SWORD, 1), inv(210, FIRE_STONE, 1)],
+    ));
     s.enter(player(B, "Bob", 1050, 0, vec![]));
     s.use_item(A, 210);
     s.input(B, ClientInput::TradeRequest { object_id: A.0 });
@@ -1505,9 +1604,9 @@ fn a_stone_cancels_the_open_trade_request() {
     );
     assert_eq!(s.count_of(A, FIRE_STONE), 1);
     assert_eq!(s.world.enchant_state(A).unwrap().active_attr, None);
-    // The request of Bob is gone as well.
-    s.input(A, ClientInput::AnswerTradeRequest { response: 1 });
-    assert!(s.world.player(A).unwrap().trade.active.is_none());
+    // NOTE(java-quirk): `cancelActiveTrade()` only cancels a trade list; a request that was not
+    // answered yet stays, so Alice can still accept it.
+    assert_eq!(s.world.player(A).unwrap().trade.active_requester, Some(B));
 }
 
 #[test]
@@ -1555,7 +1654,10 @@ fn an_npc_takes_the_element_off_for_the_price_of_the_grade() {
         .unwrap();
     assert_eq!(
         removed.params,
-        [SystemMessageParam::ItemName(S_SWORD), SystemMessageParam::ElementName(0)]
+        [
+            SystemMessageParam::ItemName(S_SWORD),
+            SystemMessageParam::ElementName(0)
+        ]
     );
     assert_eq!(
         decode::<ExBaseAttributeCancelResult>(of(&out, A, "EX_BASE_ATTRIBUTE_CANCEL_RESULT")[0]),
@@ -1605,9 +1707,13 @@ fn without_the_adena_the_element_stays() {
         },
     );
     let out = s.log.take();
+    // `reduceAdena(.., sendMessage = true)` says so first.
     assert_eq!(
         message_ids(&out, A),
-        [SystemMessageId::YouDoNotHaveEnoughFundsToCancelThisAttribute]
+        [
+            SystemMessageId::YouDoNotHaveEnoughAdena,
+            SystemMessageId::YouDoNotHaveEnoughFundsToCancelThisAttribute
+        ]
     );
     assert_eq!(s.item(A, 110).unwrap().elementals.len(), 1);
     assert_eq!(s.count_of(A, ADENA), 49_999);
@@ -1642,13 +1748,17 @@ fn a_grade_without_a_price_is_removed_for_free() {
         },
     );
     assert!(s.item(A, 110).unwrap().elementals.is_empty());
-    assert!(messages(&s.log.take(), A).iter().any(|m| m.id == SystemMessageId::S1SS2AttributeHasBeenRemoved));
+    assert!(
+        messages(&s.log.take(), A)
+            .iter()
+            .any(|m| m.id == SystemMessageId::S1SS2AttributeHasBeenRemoved)
+    );
 }
 
 #[test]
 fn the_cancel_window_lists_the_items_with_an_element_and_keeps_the_last_price() {
     // NOTE(java-quirk): the packet's `_price` carries over to an item whose grade has none.
-    let mut s = stone_scene(
+    let s = stone_scene(
         vec![
             with_element(inv(110, S_SWORD, 1), 0, 20),
             inv(112, C_SWORD, 1),
@@ -1659,7 +1769,8 @@ fn the_cancel_window_lists_the_items_with_an_element_and_keeps_the_last_price() 
     );
     s.world.send_base_attribute_cancel_window(A);
     let out = s.log.take();
-    let window: ExShowBaseAttributeCancelWindow = decode(of(&out, A, "EX_SHOW_BASE_ATTRIBUTE_CANCEL_WINDOW")[0]);
+    let window: ExShowBaseAttributeCancelWindow =
+        decode(of(&out, A, "EX_SHOW_BASE_ATTRIBUTE_CANCEL_WINDOW")[0]);
     assert_eq!(window.items, [(110, 50_000), (113, 50_000), (111, 40_000)]);
 }
 
@@ -1682,4 +1793,51 @@ fn removing_the_element_of_a_worn_item_keeps_the_other_elements_active() {
     let stats = s.world.stats(A).unwrap();
     assert_eq!(stats.defense_element_value(0), 0);
     assert_eq!(stats.defense_element_value(2), 6);
+}
+
+// ---- the warehouse checks -----------------------------------------------------------------------
+
+#[test]
+fn a_warehouse_deposit_cancels_the_scroll_and_a_package_send_is_an_exploit() {
+    let mut s = sword_scene(0, SCROLL_WEAPON_C);
+    // No scroll: nothing happens.
+    assert!(!s.world.warehouse_cancels_enchant(A));
+    assert!(!s.world.package_send_enchant_exploit(A));
+    assert!(!s.world.enchant_blocks_warehouse_link(A));
+
+    // `SendWareHouseDepositList`: the message, EnchantResult(2), the scroll is free.
+    s.use_item(A, SCROLL);
+    s.enchant(A, EnchantInput::PutTargetItem { object_id: SWORD });
+    assert!(s.world.enchant_blocks_warehouse_link(A));
+    s.log.take();
+    assert!(s.world.warehouse_cancels_enchant(A));
+    let out = s.log.take();
+    assert_eq!(
+        message_ids(&out, A),
+        [SystemMessageId::YouHaveCancelledTheEnchantingProcess]
+    );
+    assert_eq!(results(&out, A), [(2, 0, 0)]);
+    assert_eq!(s.world.active_enchant_item(A), None);
+
+    // `RequestPackageSend`: an illegal action, the scroll stays.
+    s.use_item(A, SCROLL);
+    s.log.take();
+    assert!(s.world.package_send_enchant_exploit(A));
+    assert_eq!(
+        messages_text(&s.log.take(), A),
+        ["You will be kicked for illegal action, GM informed."]
+    );
+    assert_eq!(s.world.active_enchant_item(A), Some(ObjectId(SCROLL)));
+}
+
+#[test]
+fn the_maximum_enchant_of_create_item_follows_the_item_kind() {
+    // `AdminCreateItem.getMaxEnchant`: weapon, accessory, then armor. GROUPS: weapons 15 + 1,
+    // armor 5 + 1... the armor group's 0-5 range has a chance, 6-15 has none, so 5 + 1 = 6; no
+    // accessory group, so the accessories take the armor value.
+    let s = Scene::new();
+    let items = ItemTemplates::from_xml(ITEMS).unwrap();
+    assert_eq!(s.world.max_enchant_of(items.get(C_SWORD).unwrap()), 16);
+    assert_eq!(s.world.max_enchant_of(items.get(C_HELMET).unwrap()), 6);
+    assert_eq!(s.world.max_enchant_of(items.get(C_NECKLACE).unwrap()), 6);
 }

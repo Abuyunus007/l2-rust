@@ -87,8 +87,12 @@ impl World {
         let clan_leave = self.clan_before_leave(id);
         // `deleteMe`: "If a Party is in progress, leave it".
         self.leave_party(id);
+        // `deleteMe`: `stopCubics()` (the cubic ids go; `UserInfo` is sent to the leaving client).
+        self.stop_cubics(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
         self.cancel_transaction_on_leave(id);
+        // `deleteMe`: `clearRefund()` destroys what the player sold to merchants.
+        self.clear_refund(id);
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
         // after the player's `decayMe()`; here before, while the player is still in the tables).
         self.summon_on_owner_leave(id);
@@ -131,6 +135,8 @@ impl World {
         self.forget_pvp(id);
         // The duel state belongs to the Player object, which is gone.
         self.forget_duel(id);
+        // `PlayerStat._maxCubicCount` goes with the object.
+        self.forget_cubics(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

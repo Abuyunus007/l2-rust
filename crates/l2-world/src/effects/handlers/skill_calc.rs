@@ -163,7 +163,7 @@ impl World {
     }
 
     /// Java `Formulas.calcShldUse(attacker, target, skill, sendSysMsg)`.
-    pub(super) fn calc_shld_use_skill(
+    pub(crate) fn calc_shld_use_skill(
         &mut self,
         attacker: ObjectId,
         target: ObjectId,
@@ -441,7 +441,7 @@ impl World {
     // ------------------------------------------------------------------ magic
 
     /// Java `Formulas.calcMCrit(effector.getMCriticalHit(effected, skill))`.
-    pub(super) fn calc_mcrit_for(
+    pub(crate) fn calc_mcrit_for(
         &mut self,
         attacker: ObjectId,
         target: ObjectId,
@@ -457,7 +457,7 @@ impl World {
     }
 
     /// The inputs of the `calcMagicSuccess` calls inside `calcMagicDam` and `calcManaDam`.
-    fn magic_success_input<'w>(
+    pub(crate) fn magic_success_input<'w>(
         world: &'w World,
         a: &StatView<'w>,
         t: &StatView<'w>,

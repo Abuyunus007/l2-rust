@@ -8,7 +8,9 @@
 
 pub mod armor_set;
 pub mod augmentation;
+pub mod buylist;
 pub mod class_list;
+pub mod cubic;
 pub mod door;
 pub mod enchant;
 pub mod enchant_hp_bonus;
@@ -42,7 +44,14 @@ use std::sync::Arc;
 
 pub use armor_set::{ArmorSet, ArmorSets};
 pub use augmentation::{AugmentationOption, AugmentationOptions};
+pub use buylist::{
+    BuyListDef, BuyListOptions, BuyLists, MerchantPriceConfig, MerchantPriceConfigs, ProductDef,
+};
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use cubic::{
+    CubicCondition, CubicData, CubicSelectionMode, CubicSkill, CubicTargetType, CubicTemplate,
+    HpConditionType,
+};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
@@ -142,6 +151,8 @@ pub struct Datapack {
     pub enchant_groups: Arc<EnchantItemGroups>,
     /// `data/ElementalAttributeData.xml`: the element stones (M6-ENCHANT-01).
     pub elemental_attributes: Arc<ElementalAttributeData>,
+    /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
+    pub cubics: Arc<CubicData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -273,6 +284,7 @@ impl Datapack {
             enchant_items,
             enchant_groups,
             elemental_attributes,
+            cubics: Arc::new(CubicData::load(root)),
         })
     }
 }

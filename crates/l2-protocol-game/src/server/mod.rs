@@ -88,6 +88,7 @@ pub mod movement;
 pub mod party;
 pub mod pledge;
 pub mod regen;
+pub mod shop;
 pub mod skills;
 pub mod sound;
 pub mod store;
@@ -96,6 +97,7 @@ pub mod system_message;
 pub mod trade;
 pub mod userinfo;
 pub mod visibility;
+pub mod warehouse;
 
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
@@ -154,6 +156,7 @@ pub use pledge::{
     RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
 };
 pub use regen::ExRegenMax;
+pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
@@ -178,6 +181,10 @@ pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
     StatusUpdate,
+};
+pub use warehouse::{
+    PackageSendableList, PackageToList, SortedWareHouseWithdrawalList, SortedWarehouseItem,
+    WareHouseDepositList, WareHouseWithdrawalList,
 };
 
 /// Reads an int count, which Java never writes negative. Anything negative is an error.

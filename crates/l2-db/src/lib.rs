@@ -12,6 +12,7 @@ mod login;
 mod pool;
 
 pub use error::{DbError, Result};
+pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     IdRepository, NewCharacter, UsedIds,

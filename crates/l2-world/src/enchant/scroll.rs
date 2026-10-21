@@ -109,7 +109,12 @@ impl World {
             return false;
         }
         self.set_active_enchant_item(id, Some(item.object_id));
-        self.send(id, &ChooseInventoryItem { item_id: item.item_id });
+        self.send(
+            id,
+            &ChooseInventoryItem {
+                item_id: item.item_id,
+            },
+        );
         self.send(id, &SystemMessage::new(SystemMessageId::SelectItemToEnchant));
         true
     }
@@ -142,14 +147,16 @@ impl World {
         };
 
         let tables = self.enchant_tables();
-        let scroll_template = tables.as_ref().and_then(|(data, _, _)| data.scroll(scroll.item_id));
+        let scroll_template = tables
+            .as_ref()
+            .and_then(|(data, _, _)| data.scroll(scroll.item_id));
         let fits = match (&tables, scroll_template) {
-            (Some((data, _, templates)), Some(scroll_template)) => templates
-                .get(item.item_id)
-                .is_some_and(|t| {
+            (Some((data, _, templates)), Some(scroll_template)) => {
+                templates.get(item.item_id).is_some_and(|t| {
                     let target = self.enchant_target(&item, t);
                     target.enchantable && scroll_template.is_valid(data, &target, None)
-                }),
+                })
+            }
             _ => false,
         };
         if !fits {
@@ -195,7 +202,10 @@ impl World {
         let support = self.inventory_item(id, ObjectId(support_object_id)).cloned();
         let (Some(item), Some(scroll), Some(support)) = (item, scroll, support) else {
             // message may be custom
-            self.send(id, &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+            );
             self.set_active_enchant_support(id, None);
             return;
         };
@@ -213,7 +223,10 @@ impl World {
         });
         if !fits {
             // message may be custom
-            self.send(id, &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+            );
             self.set_active_enchant_support(id, None);
             self.send(id, &ExPutEnchantSupportItemResult { result: 0 });
             return;
@@ -319,7 +332,9 @@ impl World {
         if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
-                &SystemMessage::new(SystemMessageId::YouCannotEnchantWhileOperatingAPrivateStoreOrPrivateWorkshop),
+                &SystemMessage::new(
+                    SystemMessageId::YouCannotEnchantWhileOperatingAPrivateStoreOrPrivateWorkshop,
+                ),
             );
             self.set_active_enchant_item(id, None);
             return;
@@ -332,7 +347,10 @@ impl World {
             .cloned();
         let (Some(item), Some(scroll)) = (item, scroll) else {
             self.set_active_enchant_item(id, None);
-            self.send(id, &SystemMessage::new(SystemMessageId::YouHaveCancelledTheEnchantingProcess));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouHaveCancelledTheEnchantingProcess),
+            );
             self.send_enchant_result(id, 2, 0, 0);
             return;
         };
@@ -370,7 +388,10 @@ impl World {
             || (self.settings.enchant.disable_over_enchanting
                 && item.enchant_level == scroll_template.max_enchant_level())
         {
-            self.send(id, &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+            );
             self.set_active_enchant_item(id, None);
             self.send_enchant_result(id, 2, 0, 0);
             return;
@@ -390,7 +411,10 @@ impl World {
         // Attempting to destroy scroll.
         let Some(destroyed_scroll) = self.destroy_inventory_item(id, scroll.object_id, 1) else {
             self.send(id, &SystemMessage::new(SystemMessageId::IncorrectItemCount2));
-            let message = format!("{} tried to enchant with a scroll he doesn't have", self.player_text(id));
+            let message = format!(
+                "{} tried to enchant with a scroll he doesn't have",
+                self.player_text(id)
+            );
             self.enchant_illegal_action(id, &message);
             self.set_active_enchant_item(id, None);
             self.send_enchant_result(id, 2, 0, 0);
@@ -419,12 +443,16 @@ impl World {
         // Last validation check.
         // NOTE(java-quirk): the scroll (and support item) are already used up when this fails, and
         // the `InventoryUpdate` that says so is never sent.
-        let current = self
-            .inventory_item(id, item.object_id)
-            .cloned()
-            .filter(|i| templates.get(i.item_id).is_some_and(|t| self.item_is_enchantable(i, t)));
+        let current = self.inventory_item(id, item.object_id).cloned().filter(|i| {
+            templates
+                .get(i.item_id)
+                .is_some_and(|t| self.item_is_enchantable(i, t))
+        });
         let Some(item) = current else {
-            self.send(id, &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+            );
             self.set_active_enchant_item(id, None);
             self.send_enchant_result(id, 2, 0, 0);
             return;
@@ -436,7 +464,10 @@ impl World {
         let target = self.enchant_target(&item, item_template);
         match scroll_template.odds(&data, &groups, &target, support_template) {
             EnchantOdds::Error => {
-                self.send(id, &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions));
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+                );
                 self.set_active_enchant_item(id, None);
                 self.send_enchant_result(id, 2, 0, 0);
             }
@@ -447,9 +478,7 @@ impl World {
                     self.enchant_success(
                         id,
                         &item,
-                        item_template,
-                        scroll_template,
-                        &groups,
+                        (item_template, scroll_template, &groups),
                         &mut iu,
                         (&scroll_after, destroyed_support.as_ref()),
                     );
@@ -489,9 +518,7 @@ impl World {
         &mut self,
         id: ObjectId,
         item: &ItemData,
-        template: &ItemTemplate,
-        scroll_template: &EnchantScroll,
-        groups: &EnchantItemGroups,
+        (template, scroll_template, groups): (&ItemTemplate, &EnchantScroll, &EnchantItemGroups),
         iu: &mut Vec<ItemUpdate>,
         used: (&ItemData, Option<&ItemData>),
     ) {
@@ -523,7 +550,11 @@ impl World {
         let min_enchant_announce = if armor { 6 } else { 7 };
         let max_enchant_announce = if armor { 0 } else { 15 };
         if now.enchant_level == min_enchant_announce || now.enchant_level == max_enchant_announce {
-            let name = self.players.get(&id).map(|p| p.data.name.clone()).unwrap_or_default();
+            let name = self
+                .players
+                .get(&id)
+                .map(|p| p.data.name.clone())
+                .unwrap_or_default();
             let templates = self.item_templates();
             let sm = SystemMessage::new(SystemMessageId::C1HasSuccessfullyEnchantedAS2S3)
                 .with(SystemMessageParam::Text(name))

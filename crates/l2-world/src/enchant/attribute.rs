@@ -126,7 +126,9 @@ impl World {
             .and_then(|t| t.get(item.item_id))
             .map_or(item.item_id, |t| t.display_id);
         let elementals = self.enchant.elementals.clone();
-        let element = elementals.as_ref().map_or(elementals::NONE, |e| e.item_element(display_id));
+        let element = elementals
+            .as_ref()
+            .map_or(elementals::NONE, |e| e.item_element(display_id));
         if element == elementals::NONE {
             // NOTE(java-quirk): the constructor throws `IllegalArgumentException` after the stone
             // was stored as the active one, so the player cannot log out until the window is
@@ -134,8 +136,13 @@ impl World {
             warn!("EnchantAttribute: Undefined Atribute item: {}", item.item_id);
             return false;
         }
-        let max_level = elementals.as_ref().map_or(-1, |e| e.max_element_level(display_id));
-        self.send(id, &ExChooseInventoryAttributeItem::new(display_id, element, max_level));
+        let max_level = elementals
+            .as_ref()
+            .map_or(-1, |e| e.max_element_level(display_id));
+        self.send(
+            id,
+            &ExChooseInventoryAttributeItem::new(display_id, element, max_level),
+        );
         true
     }
 
@@ -151,7 +158,10 @@ impl World {
         if object_id == -1 {
             // Player canceled enchant.
             self.clear_active_enchant_attr(id);
-            self.send(id, &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled),
+            );
             return;
         }
         let object_id = ObjectId(object_id);
@@ -185,7 +195,10 @@ impl World {
             .cloned();
         let (Some(item), Some(stone)) = (item, stone) else {
             self.clear_active_enchant_attr(id);
-            self.send(id, &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled),
+            );
             return;
         };
 
@@ -208,7 +221,9 @@ impl World {
         // nothing else, so the exploit branch of Java's `switch` cannot happen.
 
         let stone_id = stone.item_id;
-        let mut element_to_add = elemental_data.as_ref().map_or(elementals::NONE, |e| e.item_element(stone_id));
+        let mut element_to_add = elemental_data
+            .as_ref()
+            .map_or(elementals::NONE, |e| e.item_element(stone_id));
         let weapon = item_template.is_weapon();
         let armor = item_template.is_armor();
 
@@ -221,8 +236,7 @@ impl World {
         // NOTE(java-quirk): `getElemental(elementToAdd)` only finds the same element, so for a
         // weapon `oldElement.getElement() != elementToAdd` is never true and a weapon takes a
         // second element.
-        if (weapon
-            && old_element.is_some_and(|old| old.element != element_to_add && old.element != -2))
+        if (weapon && old_element.is_some_and(|old| old.element != element_to_add && old.element != -2))
             || (armor && old_element.is_none() && !item.elementals.is_empty() && item.elementals.len() >= 3)
         {
             self.send(
@@ -237,9 +251,17 @@ impl World {
 
         let element_value = old_element.map_or(0, |old| old.value);
         let opposite = opposite_element(element_to_add);
-        let limit = Self::attribute_limit(weapon, elemental_data.as_ref().and_then(|e| e.get(stone_id)).map(|h| h.kind));
+        let limit = Self::attribute_limit(
+            weapon,
+            elemental_data
+                .as_ref()
+                .and_then(|e| e.get(stone_id))
+                .map(|h| h.kind),
+        );
         let mut power_to_add = Self::attribute_power_to_add(
-            elemental_data.as_ref().map_or(elementals::NONE, |e| e.item_element(stone_id)),
+            elemental_data
+                .as_ref()
+                .map_or(elementals::NONE, |e| e.item_element(stone_id)),
             element_value,
             weapon,
             armor,
@@ -264,7 +286,10 @@ impl World {
         }
 
         if power_to_add <= 0 {
-            self.send(id, &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::AttributeItemUsageHasBeenCancelled),
+            );
             self.clear_active_enchant_attr(id);
             return;
         }
@@ -281,7 +306,10 @@ impl World {
         }
 
         let settings = &self.enchant_chances();
-        let kind = elemental_data.as_ref().and_then(|e| e.get(stone_id)).map(|h| h.kind);
+        let kind = elemental_data
+            .as_ref()
+            .and_then(|e| e.get(stone_id))
+            .map(|h| h.kind);
         let chance = match kind {
             Some(ElementalItemType::Stone | ElementalItemType::RoughOre) => Some(settings.0),
             Some(ElementalItemType::Crystal) => Some(settings.1),
@@ -330,7 +358,10 @@ impl World {
                 self.send_inventory_update(id, entry);
             }
         } else {
-            self.send(id, &SystemMessage::new(SystemMessageId::YouHaveFailedToAddElementalPower));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouHaveFailedToAddElementalPower),
+            );
         }
 
         self.send(id, &ExAttributeEnchantResult { result: power_to_add });

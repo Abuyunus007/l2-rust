@@ -112,6 +112,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
+    pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
@@ -169,6 +171,7 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
         }
@@ -410,6 +413,8 @@ impl World {
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
+        self.clean_loaded_warehouses(id);
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
@@ -558,6 +563,9 @@ impl World {
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientInput::Shop(input) => self.on_shop_input(id, input),
+            ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -661,6 +669,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: BuyListTaskManager, InventoryEnableTask
+            TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
         }

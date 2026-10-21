@@ -50,7 +50,7 @@ impl World {
     /// Java `Item.isAvailable(player, allowAdena, allowNonTradeable)` for an item of `player`.
     // Not modelled (nothing sets them yet): the control item of a summoned pet, the skill consumed
     // by `getLastSimultaneousSkillCast`, and `havePetInvItems` for a pet collar.
-    pub(super) fn is_item_available(
+    pub(crate) fn is_item_available(
         &self,
         player: ObjectId,
         item: &ItemData,

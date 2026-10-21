@@ -20,7 +20,8 @@ const CHECK_INTERVAL_MS: u64 = 1000;
 impl World {
     /// Java `AttackStanceTaskManager.addAttackStanceTask(creature)`: (re)starts the stance.
     pub fn add_attack_stance_task(&mut self, id: ObjectId) {
-        // Cubics act here (M5).
+        // A playable's stance starts its player's cubics.
+        self.cubics_on_attack_stance(id);
         let now = self.world_ms();
         self.combat.stances.insert(id, now);
         if self.combat.stance_timer.is_none() {

@@ -175,7 +175,7 @@ impl World {
     // the `InventoryUpdate` and the load to `actor`, not to the inventory's owner. A trade passes
     // the player who gives the item, so the giver is told about an item that is in the other
     // player's inventory. The full `ItemList` that the exchange sends afterwards replaces it.
-    fn create_transferred_item(
+    pub(crate) fn create_transferred_item(
         &mut self,
         to: ObjectId,
         item_id: i32,

@@ -59,22 +59,7 @@ pub mod elementals {
     ];
 
     /// `Elementals.ARMOR_VALUES`.
-    pub const ARMOR_VALUES: [i32; 14] = [
-        0,
-        12,
-        30,
-        60,
-        72,
-        90,
-        120,
-        132,
-        150,
-        180,
-        192,
-        210,
-        240,
-        i32::MAX,
-    ];
+    pub const ARMOR_VALUES: [i32; 14] = [0, 12, 30, 60, 72, 90, 120, 132, 150, 180, 192, 210, 240, i32::MAX];
 
     /// Java `Elementals.getOppositeElement(element)` on a `byte`.
     // NOTE(java-quirk): `-1 % 2` is `-1` in Java (and Rust), so `NONE` is "odd" and gives `-2`.
@@ -156,7 +141,10 @@ impl EnchantItemGroup {
                 .find(|holder| holder.min <= index && holder.max >= index)
                 .map_or(last.chance, |holder| holder.chance);
         }
-        warn!("EnchantItemGroup: item group: {} doesn't have any chances!", self.name);
+        warn!(
+            "EnchantItemGroup: item group: {} doesn't have any chances!",
+            self.name
+        );
         -1.0
     }
 
@@ -240,8 +228,16 @@ impl EnchantItemGroups {
     /// The three "Max ... enchant is set to" lines of Java's `load()` (printed when
     /// `OverEnchantProtection` is on).
     pub fn log_max_enchants(&self) {
-        info!("{}: Max weapon enchant is set to {}.", Self::LOADER, self.max_weapon_enchant);
-        info!("{}: Max armor enchant is set to {}.", Self::LOADER, self.max_armor_enchant);
+        info!(
+            "{}: Max weapon enchant is set to {}.",
+            Self::LOADER,
+            self.max_weapon_enchant
+        );
+        info!(
+            "{}: Max armor enchant is set to {}.",
+            Self::LOADER,
+            self.max_armor_enchant
+        );
         info!(
             "{}: Max accessory enchant is set to {}.",
             Self::LOADER,
@@ -700,11 +696,17 @@ impl EnchantItemData {
         items: &'a ItemTemplates,
     ) -> Option<(&'a ItemTemplate, EtcItemType)> {
         let Some(template) = items.get(id) else {
-            warn!("{}: Unexistent {kind}: {id} defined in enchant data!", Self::LOADER);
+            warn!(
+                "{}: Unexistent {kind}: {id} defined in enchant data!",
+                Self::LOADER
+            );
             return None;
         };
         let Some(etc_type) = template.etc().map(|e| e.etc_type).filter(|t| is_enchant_type(*t)) else {
-            warn!("{}: Wrong {kind} type: {id} defined in enchant data!", Self::LOADER);
+            warn!(
+                "{}: Wrong {kind} type: {id} defined in enchant data!",
+                Self::LOADER
+            );
             return None;
         };
         Some((template, etc_type))
@@ -897,8 +899,9 @@ impl ElementalAttributeData {
                 _ => elementals::NONE,
             };
             let kind_text = required(raw.kind, "item", "type")?;
-            let kind = ElementalItemType::from_name(&kind_text)
-                .ok_or_else(|| DataError::Invalid(format!("type=\"{kind_text}\" is no elemental item type")))?;
+            let kind = ElementalItemType::from_name(&kind_text).ok_or_else(|| {
+                DataError::Invalid(format!("type=\"{kind_text}\" is no elemental item type"))
+            })?;
             self.items.insert(
                 id,
                 ElementalItemHolder {
@@ -1170,10 +1173,24 @@ mod tests {
         assert!(!scroll.is_valid(&data, &target(&items, 2, 16), None));
         // A weapon scroll does not take armor, an armor scroll does not take a weapon.
         assert!(!scroll.is_valid(&data, &target(&items, 4, 0), None));
-        assert!(!data.scroll(952).unwrap().is_valid(&data, &target(&items, 2, 0), None));
-        assert!(data.scroll(952).unwrap().is_valid(&data, &target(&items, 4, 0), None));
+        assert!(
+            !data
+                .scroll(952)
+                .unwrap()
+                .is_valid(&data, &target(&items, 2, 0), None)
+        );
+        assert!(
+            data.scroll(952)
+                .unwrap()
+                .is_valid(&data, &target(&items, 4, 0), None)
+        );
         // The grade must be the item's.
-        assert!(!data.scroll(729).unwrap().is_valid(&data, &target(&items, 2, 0), None));
+        assert!(
+            !data
+                .scroll(729)
+                .unwrap()
+                .is_valid(&data, &target(&items, 2, 0), None)
+        );
         // `Item.isEnchantable()` false (worn elsewhere, blacklisted, not enchantable).
         let mut no = target(&items, 2, 0);
         no.enchantable = false;
@@ -1188,7 +1205,12 @@ mod tests {
         assert!(special.is_valid(&data, &target(&items, 13539, 0), None));
         assert!(!special.is_valid(&data, &target(&items, 2, 0), None));
         // The scroll for any item does not fit an item another scroll is made for.
-        assert!(!data.scroll(951).unwrap().is_valid(&data, &target(&items, 13539, 0), None));
+        assert!(
+            !data
+                .scroll(951)
+                .unwrap()
+                .is_valid(&data, &target(&items, 13539, 0), None)
+        );
     }
 
     #[test]
@@ -1201,8 +1223,18 @@ mod tests {
         assert!(!normal.is_valid(&data, &target(&items, 2, 9), support));
         assert!(normal.is_valid(&data, &target(&items, 2, 8), support));
         // Not with a blessed scroll, not for armor.
-        assert!(!data.scroll(6573).unwrap().is_valid(&data, &target(&items, 2, 0), support));
-        assert!(!data.scroll(952).unwrap().is_valid(&data, &target(&items, 4, 0), support));
+        assert!(
+            !data
+                .scroll(6573)
+                .unwrap()
+                .is_valid(&data, &target(&items, 2, 0), support)
+        );
+        assert!(
+            !data
+                .scroll(952)
+                .unwrap()
+                .is_valid(&data, &target(&items, 4, 0), support)
+        );
     }
 
     #[test]
@@ -1212,7 +1244,10 @@ mod tests {
         assert_eq!((groups.item_group_count(), groups.scroll_group_count()), (3, 1));
         // 0-2 100, 3-15 66.
         let fighter = groups.item_group("FIGHTER_WEAPON_GROUP").unwrap();
-        assert_eq!((fighter.chance(0), fighter.chance(2), fighter.chance(3)), (100.0, 100.0, 66.0));
+        assert_eq!(
+            (fighter.chance(0), fighter.chance(2), fighter.chance(3)),
+            (100.0, 100.0, 66.0)
+        );
         // A level past every range takes the last range's chance.
         assert_eq!(fighter.chance(40), 66.0);
         // A single level `3` is its own range.
@@ -1223,7 +1258,10 @@ mod tests {
         assert_eq!(sword.name, "FIGHTER_WEAPON_GROUP");
         let staff = groups.item_group_of(items.get(3).unwrap(), 0).unwrap();
         assert_eq!(staff.name, "MAGE_WEAPON_GROUP");
-        assert_eq!(groups.item_group_of(items.get(4).unwrap(), 0).unwrap().name, "ARMOR_GROUP");
+        assert_eq!(
+            groups.item_group_of(items.get(4).unwrap(), 0).unwrap().name,
+            "ARMOR_GROUP"
+        );
         assert!(groups.item_group_of(items.get(2).unwrap(), 5).is_none());
     }
 
@@ -1261,8 +1299,14 @@ mod tests {
         let groups = EnchantItemGroups::from_xml(GROUPS).unwrap();
         let sword = |level| target(&items, 2, level);
         let normal = data.scroll(951).unwrap();
-        assert_eq!(normal.odds(&data, &groups, &sword(0), None), EnchantOdds::Chance(100.0));
-        assert_eq!(normal.odds(&data, &groups, &sword(5), None), EnchantOdds::Chance(66.0));
+        assert_eq!(
+            normal.odds(&data, &groups, &sword(0), None),
+            EnchantOdds::Chance(100.0)
+        );
+        assert_eq!(
+            normal.odds(&data, &groups, &sword(5), None),
+            EnchantOdds::Chance(66.0)
+        );
         // +15 (support) +66.
         assert_eq!(
             normal.odds(&data, &groups, &sword(5), data.support(12364)),
@@ -1278,7 +1322,10 @@ mod tests {
             EnchantOdds::Chance(100.0)
         );
         // The scroll does not fit: ERROR.
-        assert_eq!(normal.odds(&data, &groups, &target(&items, 4, 0), None), EnchantOdds::Error);
+        assert_eq!(
+            normal.odds(&data, &groups, &target(&items, 4, 0), None),
+            EnchantOdds::Error
+        );
         // A scroll group that does not exist: -1, ERROR.
         let bare = EnchantItemGroups::from_xml("<list></list>").unwrap();
         assert_eq!(normal.odds(&data, &bare, &sword(0), None), EnchantOdds::Error);
@@ -1358,9 +1405,9 @@ mod tests {
         assert!(!elements.is_empty());
         // A plain C-grade weapon scroll, +0 to +2 always works, +3 on is 66 %.
         let scroll = data.scroll(951).unwrap();
-        let sword = items
-            .iter()
-            .find(|t| t.is_weapon() && t.crystal_type == CrystalType::C && t.enchantable && !t.is_magic_weapon());
+        let sword = items.iter().find(|t| {
+            t.is_weapon() && t.crystal_type == CrystalType::C && t.enchantable && !t.is_magic_weapon()
+        });
         if let Some(sword) = sword {
             let at = |level| EnchantTarget {
                 template: sword,

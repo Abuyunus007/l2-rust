@@ -145,7 +145,10 @@ impl World {
 
     /// Java `RequestItemList.runImpl`.
     pub(crate) fn on_request_item_list(&mut self, id: ObjectId) {
-        // `isInventoryDisabled()` is a trade/enchant flag nothing sets yet.
+        // `isInventoryDisabled()`: a shop window opened less than 1.5 s ago (`shop/`).
+        if self.is_inventory_disabled(id) {
+            return;
+        }
         self.send_item_list(id, true);
     }
 
