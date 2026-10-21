@@ -27,6 +27,8 @@ Clan/ally crests (upload, `crests` table, `PledgeCrest`/`AllyCrest` packets, the
 2. Single-owner world, ids not references, timers on the wheel, world RNG; no unwrap/expect on external data.
 3. Resolve the `// M6:` markers in your area; list the ones you leave.
 
+- From CLAN-01: the `ClanMaster` village master script (`bypass Script ClanMaster ...` plus a `ScriptLink` handler) so players reach the clan commands through the NPC (CP-M6b needs it); `create_ally`/`dissolve_ally` stubs in `clan/village_master.rs`; the `ClanInput::NotPorted` packets (crests, ally, wars); war reputation on death (`death.rs`) and drops (`rewards/drop.rs`).
+
 ## Out of scope
 - Sieges/castles/fortresses/clan halls (M7), Olympiad/Seven Signs (M8), quests (later).
 
