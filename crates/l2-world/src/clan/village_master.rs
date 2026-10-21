@@ -13,7 +13,7 @@ use l2_protocol_game::server::{
     MagicSkillLaunched, MagicSkillUse, NpcHtmlMessage, SkillPosition, SystemMessage, SystemMessageParam,
 };
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
 use super::java_int_days_ms;
 use super::model::{
