@@ -31,7 +31,8 @@
 //   (`AISkillScope`) is `npc_skills.rs` (M5-AI-03).
 // - `NextAction` (callbacks run on AI events): only the client packets of skills and pick up set
 //   one (M5); nothing in M4 does.
-// - The follow intention of a player (M6 summons and party follow).
+// - The follow intention: `CreatureAI.setIntentionFollow` is in `summon/ai.rs`
+//   (`creature_set_intention_follow`), with `SummonAI`'s around it.
 
 pub mod attackable;
 pub mod guards;
@@ -144,9 +145,10 @@ impl World {
         }
     }
 
-    /// Java `hasAI()`: players always have one; an NPC once something woke it.
+    /// Java `hasAI()`: players always have one; an NPC once something woke it; a summon from
+    /// its constructor on.
     pub fn has_ai(&self, id: ObjectId) -> bool {
-        self.is_player(id) || (self.is_npc(id) && self.ai.creatures.contains_key(&id))
+        self.is_player(id) || ((self.is_npc(id) || self.is_summon(id)) && self.ai.creatures.contains_key(&id))
     }
 
     /// Java `getAI().getIntention()`.
@@ -164,7 +166,7 @@ impl World {
     pub(crate) fn set_intention_value(&mut self, id: ObjectId, intention: Intention) {
         if let Some(p) = self.players.get_mut(&id) {
             p.movement.intention = intention;
-        } else if self.is_npc(id) {
+        } else if self.is_npc(id) || self.is_summon(id) {
             self.ai_state_mut(id).intention = intention;
         }
     }
@@ -189,8 +191,14 @@ impl World {
             .is_some_and(|a| a.client_auto_attacking)
     }
 
-    /// Java `AbstractAI.setAutoAttacking(value)` (summons pass it to their owner: M5).
+    /// Java `AbstractAI.setAutoAttacking(value)`: a summon passes it to its owner.
     pub(crate) fn set_auto_attacking(&mut self, id: ObjectId, value: bool) {
+        if let Some(owner) = self.summon_owner(id) {
+            if self.players.contains_key(&owner) {
+                self.set_auto_attacking(owner, value);
+            }
+            return;
+        }
         if !value && !self.ai.creatures.contains_key(&id) {
             return;
         }
@@ -215,6 +223,16 @@ impl World {
     /// Java `setIntentionAttack(target)`: `AttackableAI`'s (the attack timeout, the AI task) around
     /// `CreatureAI`'s.
     pub fn set_intention_attack(&mut self, id: ObjectId, target: ObjectId) {
+        if self.is_summon(id) {
+            // SummonAI.setIntentionAttack: no creature, no attack (and no `ActionFailed`). The
+            // pathfinding refusal is left out (`summon/ai.rs`).
+            if !self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) {
+                return;
+            }
+            self.stop_summon_avoid_task(id);
+            self.creature_set_intention_attack(id, target);
+            return;
+        }
         let attackable = self.is_attackable_npc(id);
         if attackable {
             // Calculate the attack timeout.
@@ -273,6 +291,10 @@ impl World {
             self.set_intention_idle(id);
             return;
         }
+        if self.is_summon(id) {
+            self.summon_set_intention_active(id);
+            return;
+        }
         if !self.is_npc(id) {
             return;
         }
@@ -317,12 +339,18 @@ impl World {
             return;
         }
         self.client_start_auto_attack(id);
+        // SummonAI: a summon hit next to its owner steps aside.
+        if self.is_summon(id) {
+            self.summon_avoid_attack(id, attacker);
+        }
     }
 
-    /// Java `notifyActionEvaded(attacker)`: nothing in `CreatureAI` or `AttackableAI`; only
-    /// `SummonAI` reacts (M6).
+    /// Java `notifyActionEvaded(attacker)`: nothing in `CreatureAI` or `AttackableAI`; `SummonAI`
+    /// steps aside like when it is hit.
     pub fn notify_action_evaded(&mut self, id: ObjectId, attacker: ObjectId) {
-        let _ = (id, attacker);
+        if self.is_summon(id) {
+            self.summon_avoid_attack(id, attacker);
+        }
     }
 
     /// Java `notifyActionCancel()` (`PlayerAI` forgets the saved move first).
@@ -346,8 +374,11 @@ impl World {
         if !self.can_handle_action(id) {
             return;
         }
-        // `stopAITask()` (an attackable leaves the think set).
+        // `stopAITask()` (an attackable leaves the think set, a summon's avoid task stops).
         self.stop_ai_task(id);
+        if self.is_summon(id) {
+            self.stop_summon_ai_task(id);
+        }
         // `_actor.asNpc().setDisplayEffect(0)`: `ExChangeNpcState` is not ported, and no NPC has
         // a display effect before scripts (D-05).
         if let Some(npc) = self.npcs.get_mut(&id) {
@@ -377,6 +408,8 @@ impl World {
     pub fn notify_action_think(&mut self, id: ObjectId) {
         if self.is_player(id) {
             self.player_notify_action_think(id);
+        } else if self.is_summon(id) {
+            self.summon_notify_think(id);
         } else if self.is_npc(id) {
             self.npc_notify_think(id);
         }
@@ -392,9 +425,18 @@ impl World {
         if self.is_npc(id) && !self.is_attackable_npc(id) {
             return;
         }
-        // Summons pass it to their owner (M5).
+        // Summons pass it to their owner.
+        if let Some(owner) = self.summon_owner(id) {
+            if self.players.contains_key(&owner) {
+                self.client_start_auto_attack(owner);
+            }
+            return;
+        }
         if !self.is_auto_attacking(id) {
-            // The player's summon gets its own `AutoAttackStart` here (M5).
+            // The player's summon gets its own `AutoAttackStart`.
+            if let Some(summon) = self.summon_of(id) {
+                self.broadcast_packet(summon, &AutoAttackStart { target_id: summon.0 });
+            }
             self.broadcast_creature_packet(id, &AutoAttackStart { target_id: id.0 });
             self.set_auto_attacking(id, true);
         }
@@ -404,6 +446,12 @@ impl World {
     /// Java `AbstractAI.clientStopAutoAttack()`: a player keeps its stance (the stance manager
     /// ends it), anybody else stops at once.
     pub fn client_stop_auto_attack(&mut self, id: ObjectId) {
+        if let Some(owner) = self.summon_owner(id) {
+            if self.players.contains_key(&owner) {
+                self.client_stop_auto_attack(owner);
+            }
+            return;
+        }
         if self.is_player(id) {
             if !self.has_attack_stance_task(id) && self.is_auto_attacking(id) {
                 self.add_attack_stance_task(id);
@@ -526,13 +574,13 @@ impl World {
                     self.set_intention_move_to(id, x, y, z);
                 }
             }
-            Intention::Follow => {
-                // M6: `setIntentionFollow(target)`; a player never follows yet, so only the
-                // refusal of a null target is reachable.
-                if follow_target.is_none() {
-                    self.client_action_failed(id);
+            // `setIntentionFollow(_savedFollowTarget)`.
+            Intention::Follow => match follow_target {
+                Some(target) if self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) => {
+                    self.creature_set_intention_follow(id, target);
                 }
-            }
+                _ => self.client_action_failed(id),
+            },
             // The pick up and interact targets are never saved: `setIntentionPickUp(null)` and
             // `setIntentionInteract(null)` stop the follow and refuse.
             Intention::PickUp | Intention::Interact => {
@@ -554,6 +602,10 @@ impl World {
         // AttackableAI.setIntentionCast: the target first.
         if self.is_attackable_npc(id) {
             self.attackable_before_intention_cast(id, target);
+        }
+        // SummonAI.setIntentionCast: the attack it interrupts, the avoid task.
+        if self.is_summon(id) {
+            self.summon_before_intention_cast(id);
         }
         // Forget next if it's not cast or it's cast and skill is toggle.
         if self.is_player(id) && !template.is_toggle() && self.intention_of(id) != Intention::Cast {
@@ -624,6 +676,10 @@ impl World {
     pub fn notify_action_finish_casting(&mut self, id: ObjectId) {
         // `AttackableAI`: a finished cast keeps the fight alive.
         self.attackable_finish_casting(id);
+        // `SummonAI`: back to the owner, or the attack the cast interrupted.
+        if self.is_summon(id) {
+            self.summon_notify_finish_casting(id);
+        }
         if self.is_player(id) && self.intention_of(id) == Intention::Cast {
             // Run interrupted or next intention.
             match self.next_intention(id) {

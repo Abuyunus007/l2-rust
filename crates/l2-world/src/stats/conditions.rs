@@ -192,7 +192,19 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerHasPet { control_item_ids } => {
             control_item_ids.len() == 1 && control_item_ids[0] == 0
         }
-        Condition::PlayerServitorNpcId { .. } => false,
+        // `player.hasSummon()` and its id in the list (`0` alone is "any summon").
+        Condition::PlayerServitorNpcId { npc_ids } => {
+            let world = a.world();
+            let summon = world
+                .acting_player(a.object_id())
+                .and_then(|player| world.summon_of(player));
+            match summon {
+                None => false,
+                Some(_) if npc_ids.len() == 1 && npc_ids[0] == 0 => true,
+                Some(summon) => world.summon_npc_id(summon).is_some_and(|id| npc_ids.contains(&id)),
+            }
+        }
+        Condition::PlayerCanSummon { value } => a.world().player_can_summon(a.object_id()) == *value,
         Condition::PlayerRangeFromNpc {
             npc_ids,
             radius,
@@ -215,7 +227,6 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         | Condition::PlayerCanEscape { .. }
         | Condition::PlayerCanRefuelAirship { .. }
         | Condition::PlayerCanResurrect { .. }
-        | Condition::PlayerCanSummon { .. }
         | Condition::PlayerCanSummonSiegeGolem { .. }
         | Condition::PlayerCanTakeCastle
         | Condition::PlayerCanTakeFort { .. }

@@ -46,12 +46,13 @@ use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, GroundItemRecord, GroundItemRepository, ItemLocation,
     ItemRepository, ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewPunishment, NewShortcut,
-    NewSkillSave, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel,
-    SkillRepository, VariableRepository,
+    NewSkillSave, NewSummonSkillSave, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository,
+    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::{
     GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData, PunishmentAffect,
     PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData, StoredPunishment,
+    SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -176,6 +177,11 @@ pub trait PlayerStore: Send + 'static {
         _char_id: i32,
         _level: i32,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The servitor tables (`CharSummonTable`, `Servitor.storeEffect` / `restoreEffects`).
+    fn store_summon(&mut self, _write: &SummonWrite) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
 }
@@ -459,6 +465,23 @@ async fn run<S: PlayerStore>(
                     error!("The access level of character {char_id} could NOT be stored: {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Summon(write)) => {
+                let mut result = store.store_summon(&write).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the summon tables ({write:?}, try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_summon(&write).await;
+                }
+                // Java logs it and goes on ("Summon cannot be removed", "Could not store summon
+                // effect data").
+                if let Err(e) = result {
+                    error!("The summon tables could NOT be written ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
@@ -693,6 +716,7 @@ pub struct DbStore {
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
+    summons: SummonRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -709,6 +733,7 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
+            summons: SummonRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -1420,6 +1445,45 @@ impl PlayerStore for DbStore {
 
     async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
         self.characters.update_access_level(char_id, level).await?;
+        Ok(())
+    }
+
+    async fn store_summon(&mut self, write: &SummonWrite) -> Result<(), PersistError> {
+        match write {
+            // Java: CharSummonTable.saveSummon
+            SummonWrite::SaveServitor {
+                owner,
+                summon_skill_id,
+                cur_hp,
+                cur_mp,
+                time,
+            } => {
+                self.summons
+                    .save_summon(owner.0, *summon_skill_id, *cur_hp, *cur_mp, *time)
+                    .await?;
+            }
+            // Java: CharSummonTable.removeServitor
+            SummonWrite::RemoveServitor { owner } => self.summons.remove_summon(owner.0).await?,
+            // Java: Servitor.storeEffect / restoreEffects
+            SummonWrite::ServitorEffects {
+                owner,
+                class_index,
+                summon_skill_id,
+                effects,
+            } => {
+                let rows: Vec<NewSummonSkillSave> = effects
+                    .iter()
+                    .map(|e| NewSummonSkillSave {
+                        skill_id: e.skill_id,
+                        skill_level: e.skill_level,
+                        remaining_time: e.remaining_time,
+                    })
+                    .collect();
+                self.summons
+                    .store_servitor_effects(owner.0, *class_index, *summon_skill_id, &rows)
+                    .await?;
+            }
+        }
         Ok(())
     }
 

@@ -106,6 +106,9 @@ pub enum TimerKind {
     /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
     /// see `punishments.rs`.
     Punishment(crate::punishments::PunishmentTimer),
+    /// A servitor's life task, a summon's avoid task and its abnormal effect update, see
+    /// `summon/`.
+    Summon(crate::summon::SummonTimer),
 }
 
 #[derive(Debug, Default)]

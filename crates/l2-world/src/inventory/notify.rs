@@ -92,6 +92,12 @@ impl World {
                 self.broadcast_to_self_and_visible(id, &update);
             }
         }
+        // The servitor of a player under `ServitorShare` shows the new stats too.
+        if let Some(summon) = self.summon_of(id)
+            && self.is_affected(id, crate::effects::effect_flag::SERVITOR_SHARE)
+        {
+            self.broadcast_status_update(summon);
+        }
     }
 
     /// Java `Player.sendSkillList()`: `SkillList` of everything the player knows, 300 ms later.

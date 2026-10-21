@@ -33,7 +33,7 @@ impl World {
     pub fn position_of(&self, id: ObjectId) -> Option<(i32, i32, i32)> {
         match self.objects.get(&id)?.kind {
             ObjectKind::Player => self.players.get(&id).map(|p| (p.core.x, p.core.y, p.core.z)),
-            ObjectKind::Npc => self.npcs.get(&id).map(|n| (n.core.x, n.core.y, n.core.z)),
+            ObjectKind::Npc | ObjectKind::Summon => self.npcs.get(&id).map(|n| (n.core.x, n.core.y, n.core.z)),
             ObjectKind::Door => self.doors.get(&id).map(|d| (d.x, d.y, d.z)),
             ObjectKind::Fence => self.fences.get(&id).map(|f| (f.x, f.y, f.z)),
             ObjectKind::StaticObject => self.static_objects.get(&id).map(|o| (o.x, o.y, o.z)),
@@ -51,7 +51,7 @@ impl World {
                     (p.core.x, p.core.y, p.core.z) = (x, y, z);
                 }
             }
-            ObjectKind::Npc => {
+            ObjectKind::Npc | ObjectKind::Summon => {
                 if let Some(n) = self.npcs.get_mut(&id) {
                     (n.core.x, n.core.y, n.core.z) = (x, y, z);
                 }
@@ -130,6 +130,8 @@ impl World {
         self.on_spawn(id);
         // Java `Attackable.onSpawn()`.
         self.npc_on_spawn(id);
+        // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.
+        self.summon_on_spawn(id);
     }
 
     /// Java `WorldObject.decayMe()`: out of view for everybody, out of the world table.
@@ -417,6 +419,7 @@ impl World {
         match kind {
             ObjectKind::Player => self.send_player_info(subject, viewer),
             ObjectKind::Npc => self.send_npc_info(subject, viewer),
+            ObjectKind::Summon => self.send_summon_info(subject, viewer),
             ObjectKind::Door => self.send_door_info(subject, viewer),
             ObjectKind::Fence => self.send_fence_info(subject, viewer),
             ObjectKind::StaticObject => self.send_static_object_info(subject, viewer),

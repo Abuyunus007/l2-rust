@@ -64,6 +64,9 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
+        // after the player's `decayMe()`; here before, while the player is still in the tables).
+        self.summon_on_owner_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

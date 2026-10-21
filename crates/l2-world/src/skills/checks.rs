@@ -173,9 +173,9 @@ impl World {
             .map(|_| target)
     }
 
-    /// `isPlayable()`: players (summons are M6).
+    /// `isPlayable()`: players and summons.
     pub(crate) fn is_playable(&self, id: ObjectId) -> bool {
-        self.is_player(id)
+        self.is_player(id) || self.is_summon(id)
     }
 
     /// `GeoEngine.canSeeTarget(creature, worldPosition)`: doors, fences and the geodata between

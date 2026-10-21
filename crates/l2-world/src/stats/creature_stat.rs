@@ -319,9 +319,14 @@ impl<'w> StatView<'w> {
         matches!(self.who, Who::Player(_))
     }
 
-    /// Java `isPlayable()` (summons and pets come later).
+    /// Java `isPlayable()`: players and summons.
     pub fn is_playable(&self) -> bool {
-        self.is_player()
+        self.is_player() || self.is_summon()
+    }
+
+    /// Java `isSummon()`.
+    pub fn is_summon(&self) -> bool {
+        self.npc().is_some_and(|n| n.class == crate::npc::NpcClass::Summon)
     }
 
     /// Java `isRaid()`.
@@ -505,7 +510,10 @@ impl<'w> StatView<'w> {
             Who::Player(_) => self.player_level_value(|t, l| t.base_hp_max(l)),
             Who::Npc(_) => self.base().hp_max,
         };
-        self.calc(Stat::MaxHp, f64::from(base)) as i32
+        let value = self.calc(Stat::MaxHp, f64::from(base)) as i32;
+        // `Servitor.getMaxHp()`: plus the owner's share (`summon/share.rs`).
+        let share = self.servitor_share(Stat::MaxHp, |o| f64::from(o.max_hp()));
+        if share == 0.0 { value } else { (f64::from(value) + share) as i32 }
     }
 
     /// Java `getMaxMp()`.
@@ -514,7 +522,10 @@ impl<'w> StatView<'w> {
             Who::Player(_) => self.player_level_value(|t, l| t.base_mp_max(l)),
             Who::Npc(_) => self.base().mp_max,
         };
-        self.calc(Stat::MaxMp, f64::from(base)) as i32
+        let value = self.calc(Stat::MaxMp, f64::from(base)) as i32;
+        // `Servitor.getMaxMp()`.
+        let share = self.servitor_share(Stat::MaxMp, |o| f64::from(o.max_mp()));
+        if share == 0.0 { value } else { (f64::from(value) + share) as i32 }
     }
 
     /// Java `getMaxCp()`.
@@ -554,8 +565,11 @@ impl<'w> StatView<'w> {
         }
         // `getBasePAtk() * bonusAtk` is int * float.
         let init = f64::from(self.base().p_atk as f32 * bonus);
-        self.calc_stat(Stat::PowerAttack, init, target, None)
-            .min(f64::from(s.max_patk))
+        let value = self
+            .calc_stat(Stat::PowerAttack, init, target, None)
+            .min(f64::from(s.max_patk));
+        // `Servitor.getPAtk(target)`.
+        value + self.servitor_share(Stat::PowerAttack, |o| o.p_atk(target))
     }
 
     /// Java `getMAtk(target, skill)`.
@@ -569,8 +583,11 @@ impl<'w> StatView<'w> {
             bonus = (f64::from(bonus) * s.raid_mattack_multiplier) as f32;
         }
         let init = f64::from(self.base().m_atk as f32 * bonus);
-        self.calc_stat(Stat::MagicAttack, init, target, skill)
-            .min(f64::from(s.max_matk))
+        let value = self
+            .calc_stat(Stat::MagicAttack, init, target, skill)
+            .min(f64::from(s.max_matk));
+        // `Servitor.getMAtk(target, skill)`.
+        value + self.servitor_share(Stat::MagicAttack, |o| o.m_atk(target, skill))
     }
 
     /// Java `getPDef(target)`.
@@ -594,7 +611,8 @@ impl<'w> StatView<'w> {
                 // `float * double`.
                 f64::from(ClassBalance::of(table, p.data.class_id)) * value
             }
-            _ => value,
+            // `Servitor.getPDef(target)`.
+            _ => value + self.servitor_share(Stat::PowerDefence, |o| o.p_def(target)),
         }
     }
 
@@ -619,7 +637,9 @@ impl<'w> StatView<'w> {
             };
             defence *= f64::from(ClassBalance::of(table, tp.data.class_id));
         }
+        // `Servitor.getMDef(target, skill)`.
         self.calc_stat(Stat::MagicDefence, defence, target, skill)
+            + self.servitor_share(Stat::MagicDefence, |o| o.m_def(target, skill))
     }
 
     /// Java `getPAtkSpd()`: `Math.round` of the calculation (`PlayerStat` caps it).
@@ -634,7 +654,8 @@ impl<'w> StatView<'w> {
         if self.is_player() && value > f64::from(s.max_patk_speed) && !self.is_gm() {
             return f64::from(s.max_patk_speed);
         }
-        value
+        // `Servitor.getPAtkSpd()`.
+        value + self.servitor_share(Stat::PowerAttackSpeed, |o| o.p_atk_spd())
     }
 
     /// Java `getMAtkSpd()`.
@@ -648,7 +669,9 @@ impl<'w> StatView<'w> {
         let value = self
             .calc(Stat::MagicAttackSpeed, init)
             .min(f64::from(s.max_matk_speed));
-        value as i32
+        // `Servitor.getMAtkSpd()`: `(int) (super + owner * (bonus - 1))`.
+        let share = self.servitor_share(Stat::MagicAttackSpeed, |o| f64::from(o.m_atk_spd()));
+        if share == 0.0 { value as i32 } else { (f64::from(value as i32) + share) as i32 }
     }
 
     /// Java `getCriticalHit(target, skill)`.
@@ -660,7 +683,10 @@ impl<'w> StatView<'w> {
             skill,
         );
         let value = value.min(f64::from(self.settings().max_pcrit_rate));
-        (value + 0.5) as i32
+        let value = (value + 0.5) as i32;
+        // `Servitor.getCriticalHit(target, skill)`.
+        let share = self.servitor_share(Stat::CriticalRate, |o| f64::from(o.critical_hit(target, skill)));
+        if share == 0.0 { value } else { (f64::from(value) + share) as i32 }
     }
 
     /// Java `getMCriticalHit(target, skill)`.
@@ -810,6 +836,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getAttackElement()`: the weapon's element, else the strongest element power.
     pub fn attack_element(&self) -> i8 {
+        // `Servitor.getAttackElement()`: the owner's.
+        if let Some(owner) = self.servitor_owner_view() {
+            return owner.attack_element();
+        }
         if let Some(element) = self.weapon_attack_element()
             && element >= 0
         {
@@ -830,6 +860,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getAttackElementValue(attribute)`.
     pub fn attack_element_value(&self, element: i8) -> i32 {
+        // `Servitor.getAttackElementValue(attribute)`: the owner's.
+        if let Some(owner) = self.servitor_owner_view() {
+            return owner.attack_element_value(element);
+        }
         match usize::try_from(element).ok().filter(|e| *e < 6) {
             Some(e) => self.calc(ATTACK_ELEMENT_STATS[e], f64::from(self.base().elements[e])) as i32,
             None => 0,
@@ -838,6 +872,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getDefenseElementValue(attribute)`.
     pub fn defense_element_value(&self, element: i8) -> i32 {
+        // `Servitor.getDefenseElementValue(attribute)`: the owner's.
+        if let Some(owner) = self.servitor_owner_view() {
+            return owner.defense_element_value(element);
+        }
         let base = self.base();
         match usize::try_from(element).ok().filter(|e| *e < 6) {
             Some(e) => self.calc(DEFENCE_ELEMENT_STATS[e], base.element_res[e]) as i32,

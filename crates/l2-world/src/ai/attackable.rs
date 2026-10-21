@@ -1833,7 +1833,16 @@ impl World {
                 self.set_intention_active(id);
             }
         }
-        // (Follow targets: M6.)
+        // Check if the object was targeted to follow.
+        if self.follow_target_of(id) == Some(object) {
+            // Stop the actor movement server side AND client side by sending Server->Client packet
+            // StopMove/StopRotation (broadcast).
+            self.client_stop_moving(id, None);
+            // Stop an AI Follow Task.
+            self.stop_follow(id);
+            // Set the Intention of this AbstractAI to ACTIVE.
+            self.set_intention_active(id);
+        }
     }
 
     /// Java `AbstractAI.describeStateToPlayer(player)`: a creature that moves when it comes into

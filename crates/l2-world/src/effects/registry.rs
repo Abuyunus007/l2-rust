@@ -204,7 +204,7 @@ enum StartRule {
     Player,
     /// `effected.isPlayable()` (`NoblesseBless`).
     Playable,
-    /// `effector.isPlayer() && effected.isSummon()` (`Betray`): no summons yet.
+    /// `effector.isPlayer() && effected.isSummon()` (`Betray`).
     Summon,
     /// `Fear`: players, summons, and attackables that are no siege NPCs.
     Fear,
@@ -242,9 +242,10 @@ impl EffectHandler for Unported {
             StartRule::Attackable => view.is_attackable(),
             StartRule::Player => view.is_player(),
             StartRule::Playable => view.is_playable(),
-            StartRule::Summon => false,
+            StartRule::Summon => world.is_player(cx.effector) && world.is_summon(cx.effected),
             StartRule::Fear => {
                 view.is_player()
+                    || view.is_summon()
                     || (view.is_attackable()
                         && !view.npc_template().is_some_and(|t| {
                             matches!(t.npc_type.as_str(), "Defender" | "FortCommander" | "SiegeFlag")

@@ -146,6 +146,12 @@ impl World {
         })
     }
 
+    /// `owner.getRelation(viewer)` for the `RelationChanged` of the owner's summon
+    /// (`summon/spawn.rs`).
+    pub(crate) fn summon_owner_relation(&self, owner: ObjectId, viewer: ObjectId) -> i32 {
+        self.relation(owner, viewer)
+    }
+
     /// Java `Player.getRelation(target)`: clans, parties, sieges, PvP flags and karma. None of
     /// those are modelled in M3, so the mask is empty.
     fn relation(&self, _subject: ObjectId, _viewer: ObjectId) -> i32 {

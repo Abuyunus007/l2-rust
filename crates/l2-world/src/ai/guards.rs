@@ -165,7 +165,11 @@ impl World {
             NpcClass::QuestGuard => true,
             // `FriendlyMob`: only players with karma. `Defender` / `FortCommander`: only players
             // (and only in a siege).
-            NpcClass::FriendlyMob | NpcClass::Defender | NpcClass::FortCommander | NpcClass::Npc => false,
+            NpcClass::FriendlyMob
+            | NpcClass::Defender
+            | NpcClass::FortCommander
+            | NpcClass::Npc
+            | NpcClass::Summon => false,
         }
     }
 

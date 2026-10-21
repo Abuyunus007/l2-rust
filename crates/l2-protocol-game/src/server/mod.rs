@@ -99,7 +99,7 @@ pub use charscreen::{
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
     delete_seconds, exp_percent,
 };
-pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
+pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, NpcSay, RestartResponse, SayBody, SenderField};
 pub use combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive, SetupGauge,
@@ -157,6 +157,7 @@ pub use store::{
 };
 pub use summon::{
     PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+    SummonInfo,
 };
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use trade::{

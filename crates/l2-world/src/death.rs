@@ -186,7 +186,7 @@ impl World {
         }
 
         // Set target to null and cancel Attack or Cast.
-        self.set_target(id, None);
+        self.set_creature_target(id, None);
 
         // Stop movement.
         self.stop_move_on_death(id);
@@ -294,7 +294,18 @@ impl World {
 
         // Cubics, channeling, dimensional rift, agathion: not modelled.
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
-        // Summons (`cancelAction`), rent pets, the water task, `AntiFeedManager`: not modelled.
+        if let Some(summon) = self.summon_of(id) {
+            if self.is_betrayed(summon) {
+                self.send(
+                    id,
+                    &l2_protocol_game::server::SystemMessage::new(
+                        l2_protocol_game::SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders,
+                    ),
+                );
+            }
+            self.summon_cancel_action(summon);
+        }
+        // Rent pets, the water task, `AntiFeedManager`: not modelled.
 
         // FIXME: Karma reduction tempfix.
         let karma = self.players.get(&id).map_or(0, |p| p.data.karma);
@@ -311,6 +322,15 @@ impl World {
     /// already. `killer` is whoever dealt the last hit (a summon's owner counts as the killer in
     /// Java's `asPlayer()` places; summons do not exist yet).
     pub(crate) fn do_die_chain(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
+        if self.is_summon(id) {
+            // `Summon.doDie` / `Servitor.doDie` around `Playable.doDie`.
+            self.summon_do_die_before(id);
+            if !self.playable_do_die(id, killer) {
+                return false;
+            }
+            self.summon_do_die_after(id, killer);
+            return true;
+        }
         if self.is_player(id) {
             if !self.playable_do_die(id, killer) {
                 return false;

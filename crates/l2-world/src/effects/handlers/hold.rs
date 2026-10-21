@@ -35,7 +35,27 @@ impl EffectHandler for Stun {
             return;
         }
         world.stop_stunning(cx.effected, false);
-        // The summon branch (the summon goes back to its owner or attacks the effector) is M6.
+        let effected = cx.effected;
+        if world.is_summon(effected) {
+            let owner = world.summon_owner(effected);
+            let to_owner = |world: &mut World| {
+                // `getAI().setIntentionMoveTo(effected.asPlayer())`.
+                if let Some((x, y, z)) = owner.and_then(|o| world.position_of(o)) {
+                    world.summon_set_intention_move_to(effected, x, y, z);
+                }
+            };
+            let effector = cx.effector;
+            if world.objects.get(&effector).is_some() && !world.is_dead(effector) {
+                let owner_flag = owner.map_or(0, |o| world.pvp_flag_of(o));
+                if world.is_playable(effector) && owner_flag == 0 {
+                    to_owner(world);
+                } else {
+                    world.do_summon_attack(effected, Some(effector));
+                }
+            } else {
+                to_owner(world);
+            }
+        }
     }
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {

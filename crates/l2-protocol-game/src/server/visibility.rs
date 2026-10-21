@@ -366,8 +366,8 @@ impl Decode for CharInfo {
 /// (`"Invisible"`), and the optional level/aggression and champion titles. An empty name makes
 /// the client use its own `npcname` table.
 ///
-/// The summon and trap variants (`SummonInfo`, `TrapInfo`) are not ported: they end one int
-/// earlier, and they belong with the summon work.
+/// The summon variant is [`super::SummonInfo`]; the trap variant (`TrapInfo`) is not ported.
+/// Both end one int earlier.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct NpcInfo {
     /// `getObjectId()`.

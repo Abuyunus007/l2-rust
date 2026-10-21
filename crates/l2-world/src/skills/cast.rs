@@ -571,8 +571,8 @@ impl World {
         let selected = self.cast_selected_target(caster);
         let targets = self.cast_target_list(skill, caster, false, selected);
         let target = match skill.target_type {
-            // We need it to correct facing: the summon (M6), none yet.
-            TargetType::AreaSummon => None,
+            // We need it to correct facing: `getSummon()` (a player's; nobody else has one).
+            TargetType::AreaSummon => self.summon_of(caster),
             // AURA skills should always be using caster as target.
             TargetType::Aura
             | TargetType::AuraCorpseMob
@@ -1160,7 +1160,9 @@ impl World {
         // Go through targets table.
         for &target in &task.targets {
             if self.is_playable(target) {
-                // M6: a player's summon target gets `updateAndBroadcastStatus(1)`.
+                if self.is_player(caster) && self.is_summon(target) {
+                    self.update_and_broadcast_summon_status(target, 1);
+                }
             } else if self.is_playable(caster) && self.is_attackable_npc(target) {
                 if skill.effect_point > 0 {
                     // M5-EFX-03: `target.asAttackable().reduceHate(this, skill.getEffectPoint())`.

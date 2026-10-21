@@ -129,6 +129,13 @@ pub enum ClientInput {
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
+    /// Java `RequestActionUse`: a button of the action window (`ctrl_pressed` is `readInt() ==
+    /// 1`, `shift_pressed` `readByte() == 1`).
+    ActionUse {
+        action_id: i32,
+        ctrl_pressed: bool,
+        shift_pressed: bool,
+    },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }
