@@ -287,7 +287,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-PVP-01](M6/M6-PVP-01.md) | PvP flag, karma, PK, relations | sonnet | full | GPROTO-09 | merged |
 | [M6-PARTY-01](M6/M6-PARTY-01.md) | Parties | sonnet | full | GPROTO-09 | merged |
 | [M6-TRADE-01](M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | merged |
-| [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | ready (refined when deps merge) |
+| [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | in-progress |
 | [M6-CLAN-01](M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | in-progress |
 | [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | ready (refined when deps merge) |
 | [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills, clan warehouse, academy | sonnet | full | CLAN-01 | ready (refined when deps merge) |
@@ -295,7 +295,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-PET-01](M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
 | [M6-CUBIC-01](M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
 | [M6-TRANS-01](M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | merged |
-| [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | haiku | spot | PARTY-01, PVP-01 | ready (refined when deps merge) |
+| [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | sonnet | spot | PARTY-01, PVP-01 | in-progress |
 | [M6-ADMIN-05](M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | ready (refined when deps merge) |
 | [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01 | ready (refined when deps merge) |
 | [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |

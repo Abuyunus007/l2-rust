@@ -41,4 +41,9 @@ Sit-down private stores: sell/buy/package-sell lists, store messages, the buyer 
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- Packets are merged (GPROTO-09): client `RequestPrivateStore*`, `SetPrivateStore*` (`l2_protocol_game::client::store`), server `PrivateStoreManageList{Sell,Buy}`, `PrivateStoreList{Sell,Buy}`, `PrivateStoreMsg*` (`server::store`). Dispatch arms exist; route them in `enter.rs`.
+- Reuse TRADE-01's `trade/` module: `TradeList`, `TradeItem`, `World::transfer_item` (`inventory/transfer.rs`), `check_item_manipulation`, `validate_item_manipulation`, `item_is_tradeable`, `transfer_items`, `trade_items_weight`/`slots`, `validate_trade_list`. TRADE-01 left `// M6-STORE-01:` markers for store mode in `on_trade_request`, `UseItem`, destroy and forced attack: resolve them.
+- Item ownership rows: TRADE-01 sends removed-on-old-owner then upsert-on-new-owner (`item_variables` rows get lost). If you need it, add a dedicated `PersistCommand::ItemMoved` (`UPDATE items SET owner_id, count, loc` like Java `Item.updateDatabase`) and use it for both trade and stores.
+- Store mode in CharInfo/UserInfo and sitting: `player_view.rs` and the sit/stand code.
+- Other M6 workers run at the same time (CLAN-01, SUMMON-01). In shared files change only your lines; no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.
