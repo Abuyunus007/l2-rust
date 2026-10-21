@@ -10,6 +10,7 @@ pub mod armor_set;
 pub mod augmentation;
 pub mod buylist;
 pub mod class_list;
+pub mod cubic;
 pub mod door;
 pub mod enchant_hp_bonus;
 pub mod experience;
@@ -46,6 +47,10 @@ pub use buylist::{
     BuyListDef, BuyListOptions, BuyLists, MerchantPriceConfig, MerchantPriceConfigs, ProductDef,
 };
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use cubic::{
+    CubicCondition, CubicData, CubicSelectionMode, CubicSkill, CubicTargetType, CubicTemplate,
+    HpConditionType,
+};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant_hp_bonus::EnchantHpBonus;
 pub use experience::ExperienceTable;
@@ -135,6 +140,8 @@ pub struct Datapack {
     pub augmentation_options: Arc<AugmentationOptions>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
+    /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
+    pub cubics: Arc<CubicData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -257,6 +264,7 @@ impl Datapack {
             skills,
             augmentation_options,
             pet_skills,
+            cubics: Arc::new(CubicData::load(root)),
         })
     }
 }

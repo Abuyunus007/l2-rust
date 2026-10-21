@@ -666,7 +666,7 @@ fn the_registry_has_every_java_handler_and_buff_is_ported() {
     let registry = world.effect_registry();
     assert_eq!(registry.len(), 165);
     assert!(registry.is_ported("Buff"));
-    assert!(registry.contains("SummonCubic") && !registry.is_ported("SummonCubic"));
+    assert!(registry.is_ported("SummonCubic") && registry.is_ported("CubicMastery"));
 }
 
 // ---- the real datapack ----------------------------------------------------------------------------
