@@ -816,7 +816,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
             .any(|s| s.skill_id == 172 && s.skill_level >= 1),
         pk_kills: data.pk_kills,
         pvp_kills: data.pvp_kills,
-        cubics: Vec::new(),
+        cubics: world.cubic_ids_of(core.object_id),
         in_party_match_room: false,
         abnormal_visual_effects: if invisible {
             visual_effects | crate::player_view::STEALTH_MASK

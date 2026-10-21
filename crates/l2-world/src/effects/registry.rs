@@ -559,9 +559,9 @@ mod tests {
         let registry = EffectRegistry::new();
         assert_eq!(registry.len(), 165);
         assert!(registry.is_ported("Buff"));
-        // Cubics are M6-CUBIC-01: this one stays a stand-in until then.
-        assert!(registry.contains("SummonCubic"));
-        assert!(!registry.is_ported("SummonCubic"));
+        // M6-CUBIC-01 ported the cubic handlers.
+        assert!(registry.is_ported("SummonCubic"));
+        assert!(registry.is_ported("CubicMastery"));
         assert!(!registry.contains("NoSuchEffect"));
         let mut names: Vec<&str> = JAVA_EFFECTS.iter().map(|e| e.0).collect();
         names.sort_unstable();

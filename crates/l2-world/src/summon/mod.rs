@@ -18,7 +18,8 @@
 //
 // # Left out, with the system that brings it
 // - Pets (`Pet`, `BabyPet`, feeding, the pet inventory, `RequestPetGetItem` & co.): PET-01.
-// - Cubics: CUBIC-01. Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in `SummonStatus`): DUEL-01.
+// - Cubics are in `cubic.rs` (CUBIC-01). Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in
+//   `SummonStatus`): DUEL-01.
 // - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
 //   as "not in one".
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
@@ -31,6 +32,8 @@
 
 pub mod actions;
 pub mod ai;
+pub mod cubic;
+pub mod cubic_formulas;
 pub mod info;
 pub mod party;
 pub mod servitor;
@@ -75,6 +78,8 @@ pub enum SummonTimer {
     Avoid(ObjectId),
     /// `Summon.updateAbnormalEffect()`'s 50 ms task.
     AbnormalEffect(ObjectId),
+    /// A cubic's action task and disappear task, see `cubic.rs`.
+    Cubic(cubic::CubicTimer),
 }
 
 /// The `SummonAI` fields (Java `ai/SummonAI.java`).
@@ -190,6 +195,8 @@ pub struct SummonWorld {
     /// The world's view of `character_summon_skills_save`: (owner, class index, reference skill)
     /// -> the rows (see `servitor.rs`).
     pub(crate) saved_rows: HashMap<(ObjectId, i32, i32), Vec<servitor::SummonSkillSave>>,
+    /// The cubics of every player and `CubicData` (CUBIC-01, see `cubic.rs`).
+    pub(crate) cubics: cubic::CubicWorld,
 }
 
 impl World {
@@ -199,6 +206,7 @@ impl World {
             SummonTimer::Life(id) => self.on_servitor_life_timer(id),
             SummonTimer::Avoid(id) => self.on_summon_avoid_timer(id),
             SummonTimer::AbnormalEffect(id) => self.on_summon_abnormal_effect_timer(id),
+            SummonTimer::Cubic(timer) => self.on_cubic_timer(timer),
         }
     }
 

@@ -750,6 +750,16 @@ impl World {
         }
     }
 
+    /// Java `DuelManager.getDuel(duelId)`'s `getPlayerA()`, `getPlayerB()` and `isPartyDuel()`
+    /// (`None` for a duel that does not exist; a player is `None` once `onRemoveFromParty` nulled
+    /// it). For the cubics' target choice.
+    pub(crate) fn duel_parts(&self, duel_id: i32) -> Option<(Option<ObjectId>, Option<ObjectId>, bool)> {
+        self.duel
+            .duels
+            .get(&duel_id)
+            .map(|duel| (duel.player_a, duel.player_b, duel.party_duel))
+    }
+
     /// Java `DuelManager.onBuff(player, buff)`: a debuff cast on a duelist that is removed when
     /// the duel ends. (Java's only caller is the cubic code.)
     pub fn duel_on_buff(&mut self, player: ObjectId, skill_id: i32) {

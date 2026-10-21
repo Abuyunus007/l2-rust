@@ -314,6 +314,7 @@ impl Server {
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
             let pet_skills = Arc::clone(&datapack.pet_skills);
+            let cubics = Arc::clone(&datapack.cubics);
             let class_list = Arc::clone(&datapack.class_list);
             let npc_start = (
                 Arc::clone(&datapack),
@@ -344,6 +345,8 @@ impl Server {
                     world.set_skill_learn_data(skill_learn);
                     // Java: PetSkillData (the skill levels of the summon actions).
                     world.set_pet_skill_data(pet_skills);
+                    // Java: CubicData (the cubic templates of `SummonCubic`).
+                    world.set_cubic_data(cubics);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.

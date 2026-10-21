@@ -169,6 +169,16 @@ impl World {
     /// Java `Skill.activateSkill(caster, targets)`: the skill's effects on every target (a
     /// reflected debuff turns around), then its self effects on the caster.
     pub fn activate_skill(&mut self, caster: ObjectId, targets: &[ObjectId], key: SkillKey) {
+        self.activate_skill_with(caster, targets, key, false);
+    }
+
+    /// Java `Skill.activateSkill(cubic, targets)`: the same, but a cubic's cast uses no shots, so
+    /// none are discharged (`if (cubic == null)`).
+    pub(crate) fn activate_skill_for_cubic(&mut self, owner: ObjectId, targets: &[ObjectId], key: SkillKey) {
+        self.activate_skill_with(owner, targets, key, true);
+    }
+
+    fn activate_skill_with(&mut self, caster: ObjectId, targets: &[ObjectId], key: SkillKey, cubic: bool) {
         let Some(skills) = self.skill_table() else {
             return;
         };
@@ -200,8 +210,10 @@ impl World {
             }
             self.apply_effects_with(caster, caster, key, ApplyMode::SELF);
         }
-        // No cubic casts yet (M6), so the shots the skill uses are used up here.
-        self.discharge_skill_shots(caster, skill);
+        // A cubic's cast does not use up the owner's shots.
+        if !cubic {
+            self.discharge_skill_shots(caster, skill);
+        }
         if skill.is_suicide_attack {
             self.do_die(caster, Some(caster));
         }
@@ -269,14 +281,19 @@ impl World {
 
     /// `new BuffInfo(effector, effected, skill)`: the abnormal time comes from
     /// `Formulas.calcEffectAbnormalTime`.
-    fn new_buff_info(&mut self, effector: ObjectId, effected: ObjectId, skill: &SkillTemplate) -> BuffInfo {
+    pub(crate) fn new_buff_info(
+        &mut self,
+        effector: ObjectId,
+        effected: ObjectId,
+        skill: &SkillTemplate,
+    ) -> BuffInfo {
         let time = self.calc_effect_abnormal_time(effector, effected, skill);
         let id = self.effects.next_info_id();
         BuffInfo::new(id, effector, effected, skill, time, self.tick)
     }
 
     /// `PVE` when a playable hits an attackable, `PVP` between playables, else none.
-    fn pvp_or_pve_scope(&self, effector: ObjectId, effected: ObjectId) -> Option<EffectScope> {
+    pub(crate) fn pvp_or_pve_scope(&self, effector: ObjectId, effected: ObjectId) -> Option<EffectScope> {
         let playable = |id| self.stats(id).is_some_and(|v| v.is_playable());
         let attackable = |id| self.stats(id).is_some_and(|v| v.is_attackable());
         if playable(effector) && attackable(effected) {
