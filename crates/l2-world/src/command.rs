@@ -129,6 +129,8 @@ pub enum ClientInput {
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
+    /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
+    Clan(crate::clan::ClanInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

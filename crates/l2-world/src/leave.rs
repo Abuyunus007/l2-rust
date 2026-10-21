@@ -64,6 +64,8 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
+        let clan_leave = self.clan_before_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };
@@ -87,6 +89,8 @@ impl World {
         });
         // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);
+        // `deleteMe`: the other members see the player go offline.
+        self.clan_after_leave(id, clan_leave);
         // `Creature.deleteMe`: every effect goes without broadcasting
         // (`stopAllEffectsWithoutExclusions(false, false)`); the messages still reach a client
         // that is connected. Then the `BuffFinishTask` stops with the object.

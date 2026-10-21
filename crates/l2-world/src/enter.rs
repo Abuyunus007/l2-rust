@@ -427,6 +427,9 @@ impl World {
             return;
         }
         let now_ms = crate::world::unix_ms_now();
+        // Java `Player.restore`, the clan part (`ClanTable.getClan`, rank, privileges, pledge
+        // class): before anything shows the player.
+        self.clan_restore_player(id);
 
         // Java `EnterWorld`: `GMStartupInvulnerable` and `AdminData.hasAccess("admin_invul", ..)`
         // for a GM (`player.setInvul(true)`). The flag shows in no packet, so it is set first.
@@ -449,6 +452,9 @@ impl World {
         if let Some(info) = self.user_info(id) {
             self.send(id, &info);
         }
+        // "Clan related checks are here." (PledgeSkillList, the other members, the member list,
+        // PledgeStatusChanged).
+        self.clan_on_enter_world(id);
 
         // `if (ENABLE_VITALITY && RECOVER_VITALITY_ON_RECONNECT)`: the time offline gives vitality
         // back (quietly, after the first `UserInfo`).
@@ -494,6 +500,8 @@ impl World {
             // Nevit.onPlayerLogin: the hunting points and time are player variables.
             self.nevit_on_player_login(id);
         }
+        // "You have recently been dismissed from a clan..." while the join penalty lasts.
+        self.clan_join_penalty_message(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
@@ -629,7 +637,11 @@ impl World {
         // FriendList: not loaded.
         packets.push(FriendList::default().to_bytes());
         packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
-        // Seven Signs period message, announcements, server news: not ported.
+        // Seven Signs period message, announcements: not ported. `if (showClanNotice)` the clan
+        // notice (validation off), else the server news (not ported).
+        if let Some(notice) = self.clan_notice_page(id) {
+            packets.push(notice.to_bytes());
+        }
         // "Dead or fake dead": no broadcast needed since the player will already spawn dead to
         // others.
         if self.is_alike_dead(id) {
@@ -766,11 +778,16 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         face: data.face,
         is_gm: access.is_gm,
         title: data.title.clone(),
-        clan_id: 0,
-        clan_crest_id: 0,
-        ally_id: 0,
-        ally_crest_id: 0,
-        relation: 0,
+        clan_id: world.clan_id_of(core.object_id),
+        clan_crest_id: world.clan_crest_id_of(core.object_id),
+        ally_id: world.ally_id_of(core.object_id),
+        ally_crest_id: world.ally_crest_id_of(core.object_id),
+        // `isClanLeader() ? 0x40 : 0`; the siege states are M7.
+        relation: if world.is_clan_leader(core.object_id) {
+            0x40
+        } else {
+            0
+        },
         mount_type: 0,
         private_store_type: 0,
         // `getSkillLevel(CommonSkill.CREATE_DWARVEN) >= 1`
@@ -788,7 +805,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
             visual_effects
         },
         water_or_flying: 0,
-        clan_privileges: 0,
+        clan_privileges: world.clan_privileges_of(core.object_id),
         recom_left: player.recom_left as i16,
         recom_have: player.recom_have as i16,
         mount_npc_id: 0,
@@ -798,7 +815,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         current_cp: core.cur_cp as i32,
         enchant_effect: enchant_effect as u8,
         team: 0,
-        clan_crest_large_id: 0,
+        clan_crest_large_id: world.clan_crest_large_id_of(core.object_id),
         noble: data.profile.noble,
         // `isHero() || (isGM() && GM_HERO_AURA)`; the heroes table is not loaded.
         hero: access.is_gm && settings.gm_hero_aura,
@@ -808,9 +825,9 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         fish_z: 0,
         name_color: access.name_color,
         running: view.is_running(),
-        // Restore: no clan gives 5 for a noble (hero 8 once heroes are loaded), else 0.
-        pledge_class: if data.profile.noble { 5 } else { 0 },
-        pledge_type: 0,
+        // Java `_pledgeClass` (set at restore and by the clan code, see `clan/`).
+        pledge_class: world.pledge_class_of(core.object_id),
+        pledge_type: world.player_clan_state(core.object_id).pledge_type,
         title_color: if data.profile.title_color == crate::data::DEFAULT_TITLE_COLOR {
             access.title_color
         } else {

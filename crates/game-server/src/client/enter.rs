@@ -25,8 +25,8 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData, PlayerProfile,
-    SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
+    ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
+    PlayerProfile, SavedEffect, SavedItemReuse, ShortcutData, SkillData, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -360,8 +360,97 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             death_penalty_level: i32::from(row.death_penalty_level),
             // Java `setLastAccess(rset.getLong("lastAccess"))`
             last_access: i64::try_from(row.last_access).unwrap_or(i64::MAX),
+            // The clan columns (`clanid`, `power_grade`, `subpledge`, ...). Java never reads
+            // `clan_privs` back (the world sets the privileges from the clan), but a store of a
+            // character the world did not change keeps it.
+            clan: Some(clan_state_of(row)),
             ..PlayerProfile::default()
         },
+    }
+}
+
+/// The clan columns of a `characters` row (Java `Player.restore`: `getInt` / `getLong`).
+// Java: Player.restore (wantspeace, clan_join_expiry_time, clan_create_expiry_time, power_grade,
+//       subpledge, apprentice, sponsor, lvl_joined_academy, clanid)
+fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
+    let u32_i32 = |v: u32| i32::try_from(v).unwrap_or(i32::MAX);
+    let u64_i64 = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+    l2_world::PlayerClanState {
+        clan_id: row.clanid.map_or(0, u32_i32),
+        privileges: l2_world::clan::ClanPrivilegesRef::Own(row.clan_privs.map_or(0, u32_i32)),
+        wants_peace: row.wantspeace.map_or(0, i32::from),
+        power_grade: row.power_grade.map_or(0, i32::from),
+        pledge_type: i32::from(row.subpledge),
+        lvl_joined_academy: i32::from(row.lvl_joined_academy),
+        apprentice: u32_i32(row.apprentice),
+        sponsor: u32_i32(row.sponsor),
+        clan_join_expiry_time: u64_i64(row.clan_join_expiry_time),
+        clan_create_expiry_time: u64_i64(row.clan_create_expiry_time),
+        pledge_class: 0,
+    }
+}
+
+/// The clan packets as the world takes them. The crest, war and alliance packets are M6-CLAN-02's
+/// and reach the world as `NotPorted`.
+fn clan_input(packet: ClientPacket) -> ClanInput {
+    match packet {
+        ClientPacket::RequestJoinPledge(p) => ClanInput::JoinPledge {
+            target: p.target,
+            pledge_type: p.pledge_type,
+        },
+        ClientPacket::RequestAnswerJoinPledge(p) => ClanInput::AnswerJoinPledge { answer: p.answer },
+        ClientPacket::RequestWithdrawalPledge(_) => ClanInput::WithdrawalPledge,
+        ClientPacket::RequestOustPledgeMember(p) => ClanInput::OustPledgeMember { target: p.target },
+        ClientPacket::RequestPledgeMemberList(_) => ClanInput::PledgeMemberList,
+        ClientPacket::RequestPledgeInfo(p) => ClanInput::PledgeInfo { clan_id: p.clan_id },
+        ClientPacket::RequestPledgeExtendedInfo(_) => ClanInput::PledgeExtendedInfo,
+        ClientPacket::RequestPledgePower(p) => ClanInput::PledgePower {
+            rank: p.rank,
+            action: p.action,
+            privs: p.privs,
+        },
+        ClientPacket::RequestPledgePowerGradeList(_) => ClanInput::PledgePowerGradeList,
+        ClientPacket::RequestPledgeMemberPowerInfo(p) => {
+            ClanInput::PledgeMemberPowerInfo { player: p.player }
+        }
+        ClientPacket::RequestPledgeMemberInfo(p) => ClanInput::PledgeMemberInfo { player: p.player },
+        ClientPacket::RequestPledgeSetMemberPowerGrade(p) => ClanInput::PledgeSetMemberPowerGrade {
+            member: p.member,
+            power_grade: p.power_grade,
+        },
+        ClientPacket::RequestPledgeReorganizeMember(p) => ClanInput::PledgeReorganizeMember {
+            is_member_selected: p.is_member_selected,
+            member_name: p.member_name,
+            new_pledge_type: p.new_pledge_type,
+            selected_member: p.selected_member,
+        },
+        ClientPacket::RequestPledgeSetAcademyMaster(p) => ClanInput::PledgeSetAcademyMaster {
+            set: p.set,
+            curr_player_name: p.curr_player_name,
+            target_player_name: p.target_player_name,
+        },
+        ClientPacket::RequestPledgeWarList(_) => ClanInput::NotPorted("RequestPledgeWarList"),
+        ClientPacket::RequestPledgeCrest(_) => ClanInput::NotPorted("RequestPledgeCrest"),
+        ClientPacket::RequestExPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExPledgeCrestLarge"),
+        ClientPacket::RequestSetPledgeCrest(_) => ClanInput::NotPorted("RequestSetPledgeCrest"),
+        ClientPacket::RequestExSetPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExSetPledgeCrestLarge"),
+        ClientPacket::RequestSetAllyCrest(_) => ClanInput::NotPorted("RequestSetAllyCrest"),
+        ClientPacket::RequestStartPledgeWar(_) => ClanInput::NotPorted("RequestStartPledgeWar"),
+        ClientPacket::RequestReplyStartPledgeWar(_) => ClanInput::NotPorted("RequestReplyStartPledgeWar"),
+        ClientPacket::RequestStopPledgeWar(_) => ClanInput::NotPorted("RequestStopPledgeWar"),
+        ClientPacket::RequestReplyStopPledgeWar(_) => ClanInput::NotPorted("RequestReplyStopPledgeWar"),
+        ClientPacket::RequestSurrenderPledgeWar(_) => ClanInput::NotPorted("RequestSurrenderPledgeWar"),
+        ClientPacket::RequestReplySurrenderPledgeWar(_) => {
+            ClanInput::NotPorted("RequestReplySurrenderPledgeWar")
+        }
+        ClientPacket::RequestJoinAlly(_) => ClanInput::NotPorted("RequestJoinAlly"),
+        ClientPacket::RequestAnswerJoinAlly(_) => ClanInput::NotPorted("RequestAnswerJoinAlly"),
+        ClientPacket::AllyLeave(_) => ClanInput::NotPorted("AllyLeave"),
+        ClientPacket::AllyDismiss(_) => ClanInput::NotPorted("AllyDismiss"),
+        ClientPacket::RequestDismissAlly(_) => ClanInput::NotPorted("RequestDismissAlly"),
+        ClientPacket::RequestAllyCrest(_) => ClanInput::NotPorted("RequestAllyCrest"),
+        ClientPacket::RequestAllyInfo(_) => ClanInput::NotPorted("RequestAllyInfo"),
+        _ => ClanInput::NotPorted("unknown clan packet"),
     }
 }
 
@@ -625,6 +714,40 @@ impl ClientSession {
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
             },
+            // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
+            packet @ (ClientPacket::RequestJoinPledge(_)
+            | ClientPacket::RequestAnswerJoinPledge(_)
+            | ClientPacket::RequestWithdrawalPledge(_)
+            | ClientPacket::RequestOustPledgeMember(_)
+            | ClientPacket::RequestPledgeMemberList(_)
+            | ClientPacket::RequestPledgeInfo(_)
+            | ClientPacket::RequestPledgeExtendedInfo(_)
+            | ClientPacket::RequestPledgePower(_)
+            | ClientPacket::RequestPledgePowerGradeList(_)
+            | ClientPacket::RequestPledgeMemberPowerInfo(_)
+            | ClientPacket::RequestPledgeMemberInfo(_)
+            | ClientPacket::RequestPledgeSetMemberPowerGrade(_)
+            | ClientPacket::RequestPledgeReorganizeMember(_)
+            | ClientPacket::RequestPledgeSetAcademyMaster(_)
+            | ClientPacket::RequestPledgeWarList(_)
+            | ClientPacket::RequestPledgeCrest(_)
+            | ClientPacket::RequestExPledgeCrestLarge(_)
+            | ClientPacket::RequestSetPledgeCrest(_)
+            | ClientPacket::RequestExSetPledgeCrestLarge(_)
+            | ClientPacket::RequestSetAllyCrest(_)
+            | ClientPacket::RequestStartPledgeWar(_)
+            | ClientPacket::RequestReplyStartPledgeWar(_)
+            | ClientPacket::RequestStopPledgeWar(_)
+            | ClientPacket::RequestReplyStopPledgeWar(_)
+            | ClientPacket::RequestSurrenderPledgeWar(_)
+            | ClientPacket::RequestReplySurrenderPledgeWar(_)
+            | ClientPacket::RequestJoinAlly(_)
+            | ClientPacket::RequestAnswerJoinAlly(_)
+            | ClientPacket::AllyLeave(_)
+            | ClientPacket::AllyDismiss(_)
+            | ClientPacket::RequestDismissAlly(_)
+            | ClientPacket::RequestAllyCrest(_)
+            | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

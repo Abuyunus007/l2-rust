@@ -9,8 +9,8 @@
 // world yet and is therefore known: nobody is transformed, mounted, flying, in a vehicle, in the
 // olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
 // the charges and the souls are the world's (`effects/`, M5-EFX-02).
-// Kinds that read state the Java server has but the world does not model (clans and their
-// halls, castles and forts, sieges and territory wars, heroes, parties,
+// Kinds that read state the Java server has but the world does not model (the halls and forts
+// of clans, sieges and territory wars, heroes, parties,
 // categories, the instance type tree, the `Can...` checks, random chance in a read-only stat
 // calculation, positions relative to the target's heading) evaluate to `false` and log one
 // warning per kind: a stat bonus never applies by accident.
@@ -46,11 +46,8 @@ enum NotModelled {
     Hero,
     SiegeZone,
     SiegeSide,
-    ClanLeader,
-    PledgeClass,
     ClanHall,
     Fort,
-    Castle,
     Category,
     CanAction,
     TargetNpcType,
@@ -140,21 +137,51 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             Some(_) => a.non_quest_size() <= a.inventory_limit() - size,
             None => true,
         },
-        Condition::PlayerIsClanLeader { .. } => {
-            a.is_player() && not_modelled(NotModelled::ClanLeader, "player isClanLeader (clans)")
+        // `player.isClanLeader() == _value` (M6-CLAN-01).
+        Condition::PlayerIsClanLeader { value } => {
+            a.is_player() && a.world().is_clan_leader(a.object_id()) == *value
         }
-        Condition::PlayerPledgeClass { .. } => {
-            a.is_player() && not_modelled(NotModelled::PledgeClass, "player pledgeClass (clans)")
+        // `ConditionPlayerPledgeClass`: a clan member whose pledge class reaches the value, or
+        // the leader (`-1` asks for the leader).
+        Condition::PlayerPledgeClass { pledge_class } => {
+            let world = a.world();
+            let id = a.object_id();
+            if !a.is_player() || world.clan_of(id).is_none() {
+                false
+            } else {
+                let leader = world.is_clan_leader(id);
+                if *pledge_class == -1 && !leader {
+                    false
+                } else {
+                    leader || world.pledge_class_of(id) >= *pledge_class
+                }
+            }
         }
-        Condition::PlayerHasClanHall { .. } => {
-            a.is_player() && not_modelled(NotModelled::ClanHall, "player clanHall (clans)")
-        }
-        Condition::PlayerHasFort { .. } => {
-            a.is_player() && not_modelled(NotModelled::Fort, "player fort (clans)")
-        }
-        Condition::PlayerHasCastle { .. } => {
-            a.is_player() && not_modelled(NotModelled::Castle, "player castle (clans)")
-        }
+        // Without a clan: `[0]` asks for "no clan hall". A clan's hall comes with the clan hall
+        // tables (M7).
+        Condition::PlayerHasClanHall { clan_hall } => match a.player() {
+            None => false,
+            Some(_) if a.world().clan_of(a.object_id()).is_none() => {
+                clan_hall.len() == 1 && clan_hall[0] == 0
+            }
+            Some(_) => not_modelled(
+                NotModelled::ClanHall,
+                "player clanHall of a clan (clan halls, M7)",
+            ),
+        },
+        // Without a clan: `0` asks for "no fortress". A clan's fortress comes with the forts (M7).
+        Condition::PlayerHasFort { fort } => match a.player() {
+            None => false,
+            Some(_) if a.world().clan_of(a.object_id()).is_none() => *fort == 0,
+            Some(_) => not_modelled(NotModelled::Fort, "player fort of a clan (fortresses, M7)"),
+        },
+        // `ConditionPlayerHasCastle`: the clan's castle (`clan_data.hasCastle`); `-1` is any.
+        Condition::PlayerHasCastle { castle } => match a.world().clan_of(a.object_id()) {
+            _ if !a.is_player() => false,
+            None => *castle == 0,
+            Some(clan) if *castle == -1 => clan.castle_id > 0,
+            Some(clan) => clan.castle_id == *castle,
+        },
         Condition::PlayerSex { sex } => a.player().is_some_and(|p| i32::from(p.data.sex != 0) == *sex),
         // `!isPlayer() || isFlyingMounted() == value`: nobody rides a wyvern.
         Condition::PlayerFlyMounted { value } => !a.is_player() || !*value,

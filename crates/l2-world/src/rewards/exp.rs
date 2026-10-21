@@ -110,7 +110,7 @@ impl Default for ExpSettings {
 #[derive(Debug, Default)]
 pub struct ExpWorld {
     experience: Arc<ExperienceTable>,
-    experience_loss: Arc<ExperienceLoss>,
+    pub(crate) experience_loss: Arc<ExperienceLoss>,
     karma_loss: Arc<KarmaLoss>,
     pub(crate) skill_trees: Arc<SkillTrees>,
     /// The vitality points and level of every player (M4-VIT-01).
@@ -146,13 +146,13 @@ impl World {
     }
 
     /// Java `ExperienceData.getExpForLevel(level)`; `None` without a table.
-    fn exp_for_level(&self, level: i32) -> Option<i64> {
+    pub(crate) fn exp_for_level(&self, level: i32) -> Option<i64> {
         self.rewards.experience.exp_for_level(level)
     }
 
     /// Java `ExperienceData.getMaxLevel()`: one more than the highest player level, because the
     /// exp of the level above the last one ends its progress bar.
-    fn java_max_level(&self) -> Option<i32> {
+    pub(crate) fn java_max_level(&self) -> Option<i32> {
         self.rewards
             .experience
             .max_level()
