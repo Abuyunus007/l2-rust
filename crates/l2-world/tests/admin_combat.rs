@@ -589,9 +589,12 @@ fn kill_a_player_is_a_real_death_with_the_die_packet() {
     }
     assert_eq!(decoded::<Die>(&out, USER, "DIE")[0].object_id, USER);
 
-    // Dead already: nothing more is sent to him.
+    // Dead already: no second death is sent to him. The `stopAllEffects()` of the kill (M5/M6,
+    // Java `Player.stopAllEffects` -> `updateAndBroadcastStatus`) still refreshes his status.
     s.cmd(GM, "kill P1");
-    assert!(names_to(&s.log.take(), USER).is_empty());
+    let again = names_to(&s.log.take(), USER);
+    assert!(!again.contains(&"DIE".to_owned()));
+    assert_eq!(again, ["USER_INFO", "EX_BR_EXTRA_USER_INFO"]);
 }
 
 // -------------------------------------------------------------------------------- //res
