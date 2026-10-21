@@ -171,6 +171,7 @@ pub mod ingame;
 pub mod interaction;
 pub mod item;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod shop;
@@ -196,6 +197,7 @@ pub use interaction::{
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
+pub use multisell::MultiSellChoose;
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,

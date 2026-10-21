@@ -7,6 +7,7 @@
 
 use l2_net::{Decode, PacketError, PacketReader};
 
+use crate::client::MultiSellChoose;
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
@@ -111,6 +112,8 @@ pub enum ClientPacket {
     AddTradeItem(AddTradeItem),
     /// The client's `TRADE_DONE` (confirm or cancel the trade window).
     TradeDone(TradeDone),
+    /// `MULTI_SELL_CHOOSE`: the player picks an entry of the open multisell list.
+    MultiSellChoose(MultiSellChoose),
     RequestPrivateStoreManageSell(RequestPrivateStoreManageSell),
     RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy),
     RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell),
@@ -274,6 +277,7 @@ pub fn decode_client(
         AnswerTradeRequest::OPCODE => ClientPacket::AnswerTradeRequest(AnswerTradeRequest::decode(reader)?),
         AddTradeItem::OPCODE => ClientPacket::AddTradeItem(AddTradeItem::decode(reader)?),
         TradeDone::OPCODE => ClientPacket::TradeDone(TradeDone::decode(reader)?),
+        MultiSellChoose::OPCODE => ClientPacket::MultiSellChoose(MultiSellChoose::decode(reader)?),
         RequestPrivateStoreManageSell::OPCODE => {
             ClientPacket::RequestPrivateStoreManageSell(RequestPrivateStoreManageSell::decode(reader)?)
         }

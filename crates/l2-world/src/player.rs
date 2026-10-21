@@ -337,6 +337,8 @@ pub struct Player {
     pub shop: crate::shop::ShopState,
     /// The private warehouse, the freight and the active warehouse (see `warehouse/`).
     pub warehouse: crate::warehouse::PlayerWarehouse,
+    /// Java `_multiSell`: the multisell list the player was last shown (see `multisell.rs`).
+    pub multisell: Option<crate::multisell::PreparedList>,
 }
 
 impl Player {
@@ -389,6 +391,7 @@ impl Player {
             transform: crate::transform::TransformState::default(),
             shop: crate::shop::ShopState::default(),
             warehouse,
+            multisell: None,
         }
     }
 

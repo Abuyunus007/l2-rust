@@ -32,6 +32,7 @@ pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod movement;
+pub mod multisell;
 pub mod npc;
 pub mod objects;
 pub mod outbox;
@@ -91,6 +92,7 @@ pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };
+pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};

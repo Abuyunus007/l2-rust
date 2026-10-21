@@ -116,6 +116,8 @@ pub struct World {
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
+    pub(crate) multisell: crate::multisell::MultisellWorld,
 }
 
 impl World {
@@ -171,6 +173,7 @@ impl World {
             pvp: crate::pvp::PvpWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            multisell: crate::multisell::MultisellWorld::default(),
         }
     }
 
@@ -516,6 +519,12 @@ impl World {
                 count,
             } => self.on_add_trade_item(id, trade_id, object_id, count),
             ClientInput::TradeDone { response } => self.on_trade_done(id, response),
+            // Java: MultiSellChoose
+            ClientInput::MultiSellChoose {
+                list_id,
+                entry_id,
+                amount,
+            } => self.on_multisell_choose(id, list_id, entry_id, amount),
             // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
             ClientInput::Store(input) => self.on_store_input(id, input),
             ClientInput::AcquireSkillInfo {

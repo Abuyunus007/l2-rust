@@ -860,6 +860,16 @@ pub fn summon_settings(config: &GameConfig) -> l2_world::SummonSettings {
     }
 }
 
+/// The multisell values of `General.ini` and `Player.ini` (`MultisellAmountLimit`,
+/// `AltBlacksmithUseRecipes`, `MaxPersonalFamePoints`).
+pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
+    l2_world::MultisellSettings {
+        amount_limit: config.general.multisell_amount_limit,
+        alt_blacksmith_use_recipes: config.player.alt_blacksmith_use_recipes,
+        max_personal_fame_points: config.player.max_personal_fame_points,
+    }
+}
+
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
     use l2_config::game::GeneralConfig;
