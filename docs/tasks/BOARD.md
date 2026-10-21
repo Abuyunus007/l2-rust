@@ -270,7 +270,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 
 ## M6: Parties, PvP, trade, clans, companions (approved 2026-10-20)
 
-16 cards (draft: [M6/DRAFT.md](M6/DRAFT.md)). Design: [docs/design/m6-social.md](../design/m6-social.md). Owner decisions: sieges/castles/clan halls in M7, Olympiad/Seven Signs in M8, quests after that; order inside M6: party/PvP/trade, then clans, then summons/pets/cubics/transformations.
+16 cards, plus 8 economy cards added 2026-10-21 from PLAN.md's M6 scope (draft: [M6/DRAFT.md](M6/DRAFT.md)). Design: [docs/design/m6-social.md](../design/m6-social.md). Owner decisions: sieges/castles/clan halls in M7, Olympiad/Seven Signs in M8, quests after that; order inside M6: party/PvP/trade, then clans, then summons/pets/cubics/transformations.
 
 ### Checkpoints
 | Checkpoint | You test |
@@ -278,6 +278,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | 🎮 **CP-M6a** | Two players: party with shared exp/loot and party buffs, a trade, PvP flag and karma. |
 | 🎮 **CP-M6b** | Clan: create, invite, ranks, crest, clan skills; the same clan on Sieghardt. |
 | 🎮 **CP-M6c** | Servitor, pet, cubics, a transformation. |
+| 🎮 **CP-M6e** | Economy: buy/sell/refund at an NPC shop, multisell, warehouse and freight, enchant and attribute an item, craft, friends, a mail with an attachment. |
 | 🎮 **CP-M6d** | Milestone: a party session with summons and a clan on Kain, then on Sieghardt. |
 
 ### Cards
@@ -289,16 +290,24 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-TRADE-01](M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | merged |
 | [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | in-progress |
 | [M6-CLAN-01](M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | merged |
-| [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | ready (refined when deps merge) |
-| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills, clan warehouse, academy | sonnet | full | CLAN-01 | ready (refined when deps merge) |
+| [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | in-progress |
+| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills and academy | sonnet | full | CLAN-01 | in-progress |
 | [M6-SUMMON-01](M6/M6-SUMMON-01.md) | Summons: servitors | opus | full | GPROTO-09 | in-progress |
 | [M6-PET-01](M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
 | [M6-CUBIC-01](M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | ready (refined when deps merge) |
 | [M6-TRANS-01](M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | merged |
 | [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | sonnet | spot | PARTY-01, PVP-01 | in-progress |
 | [M6-ADMIN-05](M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | ready (refined when deps merge) |
-| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01 | ready (refined when deps merge) |
+| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | ready (refined when deps merge) |
 | [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
+| [M6-SHOP-01](M6/M6-SHOP-01.md) | NPC shops (buy, sell, refund) | sonnet | full | none | in-progress |
+| [M6-MULTISELL-01](M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | ready |
+| [M6-WH-01](M6/M6-WH-01.md) | Warehouses and freight | sonnet | full | TRADE-01, CLAN-01 | in-progress |
+| [M6-ENCHANT-01](M6/M6-ENCHANT-01.md) | Enchanting and attributes | sonnet | full | none | ready |
+| [M6-CRAFT-01](M6/M6-CRAFT-01.md) | Crafting and manufacture shops | sonnet | full | STORE-01 | ready |
+| [M6-FRIEND-01](M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | ready |
+| [M6-MAIL-01](M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | ready |
+| [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | ready |
 
 ## Milestone test results
 
