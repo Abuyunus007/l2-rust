@@ -1129,7 +1129,11 @@ impl World {
 
     /// Java `Creature.updateEffectIcons(partyOnly)` (`EffectList.updateEffectIcons`).
     pub fn update_effect_icons(&mut self, owner: ObjectId, party_only: bool) {
-        if party_only && let Some(list) = self.effects.lists.get_mut(&owner) {
+        // Java's list exists from the constructor on; a member who never had an effect still
+        // sends its (empty) icons to a party it joins.
+        if let Some(list) = self.effect_list_mut(owner)
+            && party_only
+        {
             list.party_only = true;
         }
         self.update_effect_list(owner, true);
@@ -1185,7 +1189,8 @@ impl World {
         } else {
             true
         };
-        // The party (`PartySpelled`) and olympiad (`ExOlympiadSpelledInfo`) packets are M6.
+        // The olympiad packet (`ExOlympiadSpelledInfo`) is M8; the party's `PartySpelled` follows
+        // the `AbnormalStatusUpdate` below.
         let potions: Vec<BuffInfoId> = list
             .buffs
             .iter()
@@ -1198,6 +1203,12 @@ impl World {
         if send_asu {
             let icons = self.effect_icons(owner);
             self.send_abnormal_status_update(owner, &icons);
+        }
+        // `_owner.isInParty()`: the whole party sees the icons in the party window (a summon's
+        // `PartySpelled` is `summon/party.rs`).
+        if let Some(party) = self.party_of(owner) {
+            let spelled = self.party_spelled(owner);
+            self.broadcast_party(party, &spelled);
         }
     }
 

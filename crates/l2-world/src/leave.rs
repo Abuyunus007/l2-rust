@@ -64,6 +64,10 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `deleteMe`: "If a Party is in progress, leave it".
+        self.leave_party(id);
+        // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
+        self.cancel_transaction_on_leave(id);
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
         // after the player's `decayMe()`; here before, while the player is still in the tables).
         self.summon_on_owner_leave(id);
@@ -100,6 +104,8 @@ impl World {
         // Java: the Player object is gone with its `_isInvul` and regeneration task (a new login is
         // a new object, so the invulnerability of the GM does not carry over).
         self.forget_status(id);
+        // `Player.stopAllTimers` -> `stopPvpRegTask`; the flag goes with the object.
+        self.forget_pvp(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

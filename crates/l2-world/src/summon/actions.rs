@@ -15,7 +15,7 @@ use l2_data::skill::TargetType;
 use l2_protocol_game::server::{ActionFailed, ChatType, NpcSay, PetStatusShow, SystemMessage};
 use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
-use tracing::debug;
+use tracing::{debug, warn};
 
 use crate::effects::SkillKey;
 use crate::effects::apply::has_negative_effect;
@@ -35,9 +35,9 @@ const NPC_STRINGS: [NpcStringId; 4] = [
 ];
 /// `Summon.PASSIVE_SUMMONS`: "Sin eater, Big Boom, Wyvern can't attack with attack button."
 const PASSIVE_SUMMONS: [i32; 37] = [
-    12564, 12621, 14702, 14703, 14704, 14705, 14706, 14707, 14708, 14709, 14710, 14711, 14712, 14713,
-    14714, 14715, 14716, 14717, 14718, 14719, 14720, 14721, 14722, 14723, 14724, 14725, 14726, 14727,
-    14728, 14729, 14730, 14731, 14732, 14733, 14734, 14735, 14736,
+    12564, 12621, 14702, 14703, 14704, 14705, 14706, 14707, 14708, 14709, 14710, 14711, 14712, 14713, 14714,
+    14715, 14716, 14717, 14718, 14719, 14720, 14721, 14722, 14723, 14724, 14725, 14726, 14727, 14728, 14729,
+    14730, 14731, 14732, 14733, 14734, 14735, 14736,
 ];
 /// `Summon.canAttack`: an owner farther than this from the target sends the summon back.
 const MAX_ATTACK_ORDER_DISTANCE: f64 = 3000.0;
@@ -54,29 +54,29 @@ enum ActionSkill {
 fn action_skill(action_id: i32) -> Option<(ActionSkill, bool, bool)> {
     use ActionSkill::{Id, Name};
     Some(match action_id {
-        32 => (Name("DDMagic"), false, false),          // Wild Hog Cannon - Wild Cannon
-        36 => (Name("RangeDebuff"), false, false),      // Soulless - Toxic Smoke
-        39 => (Name("RangeDD"), false, false),          // Soulless - Parasite Burst
-        42 => (Name("HealMagic"), false, false),        // Kai the Cat - Self Damage Shield
-        43 => (Name("DDMagic"), false, false),          // Merrow the Unicorn - Hydro Screw
-        44 => (Name("DDMagic"), false, false),          // Big Boom - Boom Attack
-        45 => (Name("HealMagic"), true, false),         // Boxer the Unicorn - Master Recharge
-        46 => (Name("DDMagic"), false, false),          // Mew the Cat - Mega Storm Strike
-        47 => (Name("DDMagic"), false, false),          // Silhouette - Steal Blood
-        48 => (Name("DDMagic"), false, false),          // Mechanic Golem - Mech. Cannon
+        32 => (Name("DDMagic"), false, false), // Wild Hog Cannon - Wild Cannon
+        36 => (Name("RangeDebuff"), false, false), // Soulless - Toxic Smoke
+        39 => (Name("RangeDD"), false, false), // Soulless - Parasite Burst
+        42 => (Name("HealMagic"), false, false), // Kai the Cat - Self Damage Shield
+        43 => (Name("DDMagic"), false, false), // Merrow the Unicorn - Hydro Screw
+        44 => (Name("DDMagic"), false, false), // Big Boom - Boom Attack
+        45 => (Name("HealMagic"), true, false), // Boxer the Unicorn - Master Recharge
+        46 => (Name("DDMagic"), false, false), // Mew the Cat - Mega Storm Strike
+        47 => (Name("DDMagic"), false, false), // Silhouette - Steal Blood
+        48 => (Name("DDMagic"), false, false), // Mechanic Golem - Mech. Cannon
         1003 => (Name("PhysicalSpecial"), false, true), // Wind Hatchling/Strider - Wild Stun
-        1004 => (Name("Buff"), true, true),             // Wind Hatchling/Strider - Wild Defense
-        1005 => (Name("DDMagic"), false, true),         // Star Hatchling/Strider - Bright Burst
-        1006 => (Name("Heal"), true, true),             // Star Hatchling/Strider - Bright Heal
-        1007 => (Name("Buff1"), true, false),           // Feline Queen - Blessing of Queen
-        1008 => (Name("Buff2"), true, false),           // Feline Queen - Gift of Queen
-        1009 => (Name("DDMagic"), false, false),        // Feline Queen - Cure of Queen
-        1010 => (Name("Buff1"), true, false),           // Unicorn Seraphim - Blessing of Seraphim
-        1011 => (Name("Buff2"), true, false),           // Unicorn Seraphim - Gift of Seraphim
-        1012 => (Name("DDMagic"), false, false),        // Unicorn Seraphim - Cure of Seraphim
-        1013 => (Name("DeBuff1"), false, false),        // Nightshade - Curse of Shade
-        1014 => (Name("DeBuff2"), false, false),        // Nightshade - Mass Curse of Shade
-        1015 => (Name("Heal"), false, false),           // Nightshade - Shade Sacrifice
+        1004 => (Name("Buff"), true, true),    // Wind Hatchling/Strider - Wild Defense
+        1005 => (Name("DDMagic"), false, true), // Star Hatchling/Strider - Bright Burst
+        1006 => (Name("Heal"), true, true),    // Star Hatchling/Strider - Bright Heal
+        1007 => (Name("Buff1"), true, false),  // Feline Queen - Blessing of Queen
+        1008 => (Name("Buff2"), true, false),  // Feline Queen - Gift of Queen
+        1009 => (Name("DDMagic"), false, false), // Feline Queen - Cure of Queen
+        1010 => (Name("Buff1"), true, false),  // Unicorn Seraphim - Blessing of Seraphim
+        1011 => (Name("Buff2"), true, false),  // Unicorn Seraphim - Gift of Seraphim
+        1012 => (Name("DDMagic"), false, false), // Unicorn Seraphim - Cure of Seraphim
+        1013 => (Name("DeBuff1"), false, false), // Nightshade - Curse of Shade
+        1014 => (Name("DeBuff2"), false, false), // Nightshade - Mass Curse of Shade
+        1015 => (Name("Heal"), false, false),  // Nightshade - Shade Sacrifice
         1016 => (Name("PhysicalSpecial1"), false, false), // Cursed Man - Cursed Blow
         1017 => (Name("PhysicalSpecial2"), false, false), // Cursed Man - Cursed Strike
         1031 => (Name("PhysicalSpecial1"), false, false), // Feline King - Slash
@@ -87,80 +87,80 @@ fn action_skill(action_id: i32) -> Option<(ActionSkill, bool, bool)> {
         1036 => (Name("PhysicalSpecial1"), false, false), // Spectral Lord - Corpse Kaboom
         1037 => (Name("PhysicalSpecial2"), false, false), // Spectral Lord - Dicing Death
         1038 => (Name("PhysicalSpecial3"), false, false), // Spectral Lord - Dark Curse
-        1039 => (Id(5110), false, false),               // Swoop Cannon - Cannon Fodder
-        1040 => (Id(5111), false, false),               // Swoop Cannon - Big Bang
-        1041 => (Name("Skill01"), false, true),         // Great Wolf - Bite Attack
-        1042 => (Name("Skill03"), false, true),         // Great Wolf - Maul
-        1043 => (Name("Skill02"), false, true),         // Great Wolf - Cry of the Wolf
-        1044 => (Name("Skill04"), false, true),         // Great Wolf - Awakening
-        1045 => (Id(5584), false, true),                // Great Wolf - Howl
-        1046 => (Id(5585), false, true),                // Strider - Roar
-        1047 => (Id(5580), false, false),               // Divine Beast - Bite
-        1048 => (Id(5581), false, false),               // Divine Beast - Stun Attack
-        1049 => (Id(5582), false, false),               // Divine Beast - Fire Breath
-        1050 => (Id(5583), false, false),               // Divine Beast - Roar
-        1051 => (Name("buff3"), false, false),          // Feline Queen - Bless The Body
-        1052 => (Name("buff4"), false, false),          // Feline Queen - Bless The Soul
-        1053 => (Name("buff5"), false, false),          // Feline Queen - Haste
-        1054 => (Name("buff3"), false, false),          // Unicorn Seraphim - Acumen
-        1055 => (Name("buff4"), false, false),          // Unicorn Seraphim - Clarity
-        1056 => (Name("buff5"), false, false),          // Unicorn Seraphim - Empower
-        1057 => (Name("buff6"), false, false),          // Unicorn Seraphim - Wild Magic
-        1058 => (Name("buff3"), false, false),          // Nightshade - Death Whisper
-        1059 => (Name("buff4"), false, false),          // Nightshade - Focus
-        1060 => (Name("buff5"), false, false),          // Nightshade - Guidance
-        1061 => (Id(5745), false, true),                // Wild Beast Fighter, White Weasel - Death blow
-        1062 => (Id(5746), false, true),                // Wild Beast Fighter - Double attack
-        1063 => (Id(5747), false, true),                // Wild Beast Fighter - Spin attack
-        1064 => (Id(5748), false, true),                // Wild Beast Fighter - Meteor Shower
-        1065 => (Id(5753), false, true),                // ... - Awakening
-        1066 => (Id(5749), false, true),                // Fox Shaman, Spirit Shaman - Thunder Bolt
-        1067 => (Id(5750), false, true),                // Fox Shaman, Spirit Shaman - Flash
-        1068 => (Id(5751), false, true),                // Fox Shaman, Spirit Shaman - Lightning Wave
-        1069 => (Id(5752), false, true),                // Fox Shaman, Fairy Princess - Flare
-        1070 => (Id(5771), false, true),                // ... - Buff control
-        1071 => (Name("DDMagic"), false, true),         // Tigress - Power Strike
-        1072 => (Id(6046), false, true),                // Toy Knight - Piercing attack
-        1073 => (Id(6047), false, true),                // Toy Knight - Whirlwind
-        1074 => (Id(6048), false, true),                // Toy Knight - Lance Smash
-        1075 => (Id(6049), false, true),                // Toy Knight - Battle Cry
-        1076 => (Id(6050), false, true),                // Turtle Ascetic - Power Smash
-        1077 => (Id(6051), false, true),                // Turtle Ascetic - Energy Burst
-        1078 => (Id(6052), false, true),                // Turtle Ascetic - Shockwave
-        1079 => (Id(6053), false, true),                // Turtle Ascetic - Howl
-        1080 => (Id(6041), false, false),               // Phoenix Rush
-        1081 => (Id(6042), false, false),               // Phoenix Cleanse
-        1082 => (Id(6043), false, false),               // Phoenix Flame Feather
-        1083 => (Id(6044), false, false),               // Phoenix Flame Beak
-        1086 => (Id(6094), false, false),               // Panther Cancel
-        1087 => (Id(6095), false, false),               // Panther Dark Claw
-        1088 => (Id(6096), false, false),               // Panther Fatal Claw
-        1089 => (Id(6199), false, true),                // Deinonychus - Tail Strike
-        1090 => (Id(6205), false, true),                // Guardian's Strider - Strider Bite
-        1091 => (Id(6206), false, true),                // Guardian's Strider - Strider Fear
-        1092 => (Id(6207), false, true),                // Guardian's Strider - Strider Dash
-        1093 => (Id(6618), false, true),                // Maguen - Maguen Strike
-        1094 => (Id(6681), false, true),                // Maguen - Maguen Wind Walk
-        1095 => (Id(6619), false, true),                // Elite Maguen - Maguen Power Strike
-        1096 => (Id(6682), false, true),                // Elite Maguen - Elite Maguen Wind Walk
-        1097 => (Id(6683), false, true),                // Maguen - Maguen Return
-        1098 => (Id(6684), false, true),                // Elite Maguen - Maguen Party Return
-        5000 => (Id(23155), false, true),               // Baby Rudolph - Reindeer Scratch
-        5001 => (Id(23167), false, true),               // ... - Rosy Seduction
-        5002 => (Id(23168), false, true),               // ... - Critical Seduction
-        5003 => (Id(5749), false, true),                // Hyum, Lapham - Thunder Bolt
-        5004 => (Id(5750), false, true),                // Hyum, Lapham - Flash
-        5005 => (Id(5751), false, true),                // Hyum, Lapham - Lightning Wave
-        5006 => (Id(5771), false, true),                // ... - Buff Control
-        5007 => (Id(6046), false, true),                // Deseloph, Lilias - Piercing Attack
-        5008 => (Id(6047), false, true),                // Deseloph, Lilias - Spin Attack
-        5009 => (Id(6048), false, true),                // Deseloph, Lilias - Smash
-        5010 => (Id(6049), false, true),                // Deseloph, Lilias - Ignite
-        5011 => (Id(6050), false, true),                // Rekang, Mafum - Power Smash
-        5012 => (Id(6051), false, true),                // Rekang, Mafum - Energy Burst
-        5013 => (Id(6052), false, true),                // Rekang, Mafum - Shockwave
-        5014 => (Id(6053), false, true),                // Rekang, Mafum - Ignite
-        5015 => (Id(SWITCH_STANCE_ID), false, true),    // ... - Switch Stance
+        1039 => (Id(5110), false, false),      // Swoop Cannon - Cannon Fodder
+        1040 => (Id(5111), false, false),      // Swoop Cannon - Big Bang
+        1041 => (Name("Skill01"), false, true), // Great Wolf - Bite Attack
+        1042 => (Name("Skill03"), false, true), // Great Wolf - Maul
+        1043 => (Name("Skill02"), false, true), // Great Wolf - Cry of the Wolf
+        1044 => (Name("Skill04"), false, true), // Great Wolf - Awakening
+        1045 => (Id(5584), false, true),       // Great Wolf - Howl
+        1046 => (Id(5585), false, true),       // Strider - Roar
+        1047 => (Id(5580), false, false),      // Divine Beast - Bite
+        1048 => (Id(5581), false, false),      // Divine Beast - Stun Attack
+        1049 => (Id(5582), false, false),      // Divine Beast - Fire Breath
+        1050 => (Id(5583), false, false),      // Divine Beast - Roar
+        1051 => (Name("buff3"), false, false), // Feline Queen - Bless The Body
+        1052 => (Name("buff4"), false, false), // Feline Queen - Bless The Soul
+        1053 => (Name("buff5"), false, false), // Feline Queen - Haste
+        1054 => (Name("buff3"), false, false), // Unicorn Seraphim - Acumen
+        1055 => (Name("buff4"), false, false), // Unicorn Seraphim - Clarity
+        1056 => (Name("buff5"), false, false), // Unicorn Seraphim - Empower
+        1057 => (Name("buff6"), false, false), // Unicorn Seraphim - Wild Magic
+        1058 => (Name("buff3"), false, false), // Nightshade - Death Whisper
+        1059 => (Name("buff4"), false, false), // Nightshade - Focus
+        1060 => (Name("buff5"), false, false), // Nightshade - Guidance
+        1061 => (Id(5745), false, true),       // Wild Beast Fighter, White Weasel - Death blow
+        1062 => (Id(5746), false, true),       // Wild Beast Fighter - Double attack
+        1063 => (Id(5747), false, true),       // Wild Beast Fighter - Spin attack
+        1064 => (Id(5748), false, true),       // Wild Beast Fighter - Meteor Shower
+        1065 => (Id(5753), false, true),       // ... - Awakening
+        1066 => (Id(5749), false, true),       // Fox Shaman, Spirit Shaman - Thunder Bolt
+        1067 => (Id(5750), false, true),       // Fox Shaman, Spirit Shaman - Flash
+        1068 => (Id(5751), false, true),       // Fox Shaman, Spirit Shaman - Lightning Wave
+        1069 => (Id(5752), false, true),       // Fox Shaman, Fairy Princess - Flare
+        1070 => (Id(5771), false, true),       // ... - Buff control
+        1071 => (Name("DDMagic"), false, true), // Tigress - Power Strike
+        1072 => (Id(6046), false, true),       // Toy Knight - Piercing attack
+        1073 => (Id(6047), false, true),       // Toy Knight - Whirlwind
+        1074 => (Id(6048), false, true),       // Toy Knight - Lance Smash
+        1075 => (Id(6049), false, true),       // Toy Knight - Battle Cry
+        1076 => (Id(6050), false, true),       // Turtle Ascetic - Power Smash
+        1077 => (Id(6051), false, true),       // Turtle Ascetic - Energy Burst
+        1078 => (Id(6052), false, true),       // Turtle Ascetic - Shockwave
+        1079 => (Id(6053), false, true),       // Turtle Ascetic - Howl
+        1080 => (Id(6041), false, false),      // Phoenix Rush
+        1081 => (Id(6042), false, false),      // Phoenix Cleanse
+        1082 => (Id(6043), false, false),      // Phoenix Flame Feather
+        1083 => (Id(6044), false, false),      // Phoenix Flame Beak
+        1086 => (Id(6094), false, false),      // Panther Cancel
+        1087 => (Id(6095), false, false),      // Panther Dark Claw
+        1088 => (Id(6096), false, false),      // Panther Fatal Claw
+        1089 => (Id(6199), false, true),       // Deinonychus - Tail Strike
+        1090 => (Id(6205), false, true),       // Guardian's Strider - Strider Bite
+        1091 => (Id(6206), false, true),       // Guardian's Strider - Strider Fear
+        1092 => (Id(6207), false, true),       // Guardian's Strider - Strider Dash
+        1093 => (Id(6618), false, true),       // Maguen - Maguen Strike
+        1094 => (Id(6681), false, true),       // Maguen - Maguen Wind Walk
+        1095 => (Id(6619), false, true),       // Elite Maguen - Maguen Power Strike
+        1096 => (Id(6682), false, true),       // Elite Maguen - Elite Maguen Wind Walk
+        1097 => (Id(6683), false, true),       // Maguen - Maguen Return
+        1098 => (Id(6684), false, true),       // Elite Maguen - Maguen Party Return
+        5000 => (Id(23155), false, true),      // Baby Rudolph - Reindeer Scratch
+        5001 => (Id(23167), false, true),      // ... - Rosy Seduction
+        5002 => (Id(23168), false, true),      // ... - Critical Seduction
+        5003 => (Id(5749), false, true),       // Hyum, Lapham - Thunder Bolt
+        5004 => (Id(5750), false, true),       // Hyum, Lapham - Flash
+        5005 => (Id(5751), false, true),       // Hyum, Lapham - Lightning Wave
+        5006 => (Id(5771), false, true),       // ... - Buff Control
+        5007 => (Id(6046), false, true),       // Deseloph, Lilias - Piercing Attack
+        5008 => (Id(6047), false, true),       // Deseloph, Lilias - Spin Attack
+        5009 => (Id(6048), false, true),       // Deseloph, Lilias - Smash
+        5010 => (Id(6049), false, true),       // Deseloph, Lilias - Ignite
+        5011 => (Id(6050), false, true),       // Rekang, Mafum - Power Smash
+        5012 => (Id(6051), false, true),       // Rekang, Mafum - Energy Burst
+        5013 => (Id(6052), false, true),       // Rekang, Mafum - Shockwave
+        5014 => (Id(6053), false, true),       // Rekang, Mafum - Ignite
+        5015 => (Id(SWITCH_STANCE_ID), false, true), // ... - Switch Stance
         _ => return None,
     })
 }
@@ -168,19 +168,37 @@ fn action_skill(action_id: i32) -> Option<(ActionSkill, bool, bool)> {
 impl World {
     /// Java `RequestActionUse.runImpl`: the checks every action goes through, then the summon
     /// actions.
-    pub(crate) fn on_action_use(&mut self, player: ObjectId, action_id: i32, ctrl_pressed: bool, shift_pressed: bool) {
+    pub(crate) fn on_action_use(
+        &mut self,
+        player: ObjectId,
+        action_id: i32,
+        ctrl_pressed: bool,
+        shift_pressed: bool,
+    ) {
         if !self.players.contains_key(&player) {
             return;
         }
         // Don't do anything if player is dead or confused.
-        if (self.is_fake_death(player) && action_id != 0) || self.is_dead(player) || self.is_out_of_control(player) {
+        if (self.is_fake_death(player) && action_id != 0)
+            || self.is_dead(player)
+            || self.is_out_of_control(player)
+        {
             self.send(player, &ActionFailed);
             return;
         }
         if !self.check_bot_penalty(player, action_id) {
             return;
         }
-        // M6 (TRANS-01): a transformed player may only use `ExBasicActionList.ACTIONS_ON_TRANSFORM`.
+        // Don't allow to do some action if player is transformed.
+        if !self.transformed_action_allowed(player, action_id) {
+            self.send(player, &ActionFailed);
+            let name = self.players.get(&player).map_or("?", |p| p.data.name.as_str());
+            warn!(
+                "{name} used action which he does not have! Id = {action_id} transform: {}",
+                self.transformation_id(player)
+            );
+            return;
+        }
 
         let summon = self.summon_of(player);
         let target = self.target_of(player);
@@ -211,7 +229,10 @@ impl World {
             52 => {
                 if let Some(summon) = self.validate_summon(player, summon, false) {
                     if self.is_movement_disabled(summon) {
-                        self.send_system(player, SystemMessageId::YourPetServitorIsCurrentlyInAStateOfDistress);
+                        self.send_system(
+                            player,
+                            SystemMessageId::YourPetServitorIsCurrentlyInAStateOfDistress,
+                        );
                     } else if self.is_attacking_now(summon) || self.summon_in_combat(summon) {
                         self.send_system(
                             player,
@@ -242,7 +263,14 @@ impl World {
                             || self.npc_template(t).is_some_and(|n| n.npc_type == "SiegeFlag")
                     });
                     if siege_target {
-                        self.summon_use_skill(player, ActionSkill::Id(4230), target, false, ctrl_pressed, shift_pressed);
+                        self.summon_use_skill(
+                            player,
+                            ActionSkill::Id(4230),
+                            target,
+                            false,
+                            ctrl_pressed,
+                            shift_pressed,
+                        );
                     } else {
                         self.send_system(player, SystemMessageId::InvalidTarget);
                     }
@@ -251,7 +279,14 @@ impl World {
             // Siege Golem - Siege Hammer.
             1000 => {
                 if target.is_some_and(|t| self.objects.get(&t).is_some_and(|e| e.kind == ObjectKind::Door)) {
-                    self.summon_use_skill(player, ActionSkill::Id(4079), target, false, ctrl_pressed, shift_pressed);
+                    self.summon_use_skill(
+                        player,
+                        ActionSkill::Id(4079),
+                        target,
+                        false,
+                        ctrl_pressed,
+                        shift_pressed,
+                    );
                 }
             }
             // Sin Eater - Ultimate Bombastic Buster.
@@ -294,11 +329,17 @@ impl World {
             return;
         };
         if self.is_dead(summon) {
-            self.send_system(player, SystemMessageId::DeadPetsCannotBeReturnedToTheirSummoningItem);
+            self.send_system(
+                player,
+                SystemMessageId::DeadPetsCannotBeReturnedToTheirSummoningItem,
+            );
             return;
         }
         if self.is_movement_disabled(summon) {
-            self.send_system(player, SystemMessageId::YourPetServitorIsCurrentlyInAStateOfDistress);
+            self.send_system(
+                player,
+                SystemMessageId::YourPetServitorIsCurrentlyInAStateOfDistress,
+            );
             return;
         }
         if self.is_attacking_now(summon) || self.summon_in_combat(summon) {
@@ -317,13 +358,21 @@ impl World {
 
     /// Java `RequestActionUse.validateSummon(player, summon, checkPet)`: the summon when it may
     /// take the order (a pet for the pet actions, a servitor for both).
-    fn validate_summon(&mut self, player: ObjectId, summon: Option<ObjectId>, check_pet: bool) -> Option<ObjectId> {
+    fn validate_summon(
+        &mut self,
+        player: ObjectId,
+        summon: Option<ObjectId>,
+        check_pet: bool,
+    ) -> Option<ObjectId> {
         if let Some(summon) = summon
             && ((check_pet && self.is_pet(summon)) || self.is_servitor(summon))
         {
             // `summon.isPet() && summon.asPet().isUncontrollable()`: PET-01.
             if self.is_betrayed(summon) {
-                self.send_system(player, SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders);
+                self.send_system(
+                    player,
+                    SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders,
+                );
                 return None;
             }
             return Some(summon);
@@ -377,7 +426,12 @@ impl World {
                 };
                 if level > 0 {
                     self.set_creature_target(summon, target);
-                    self.summon_use_magic(summon, SkillKey::new(skill_id, level), ctrl_pressed, shift_pressed);
+                    self.summon_use_magic(
+                        summon,
+                        SkillKey::new(skill_id, level),
+                        ctrl_pressed,
+                        shift_pressed,
+                    );
                 }
                 if skill_id == SWITCH_STANCE_ID {
                     // `summon.switchMode()`: does nothing but for baby pets (PET-01).
@@ -385,13 +439,14 @@ impl World {
             }
             ActionSkill::Name(name) => {
                 // `BabyPet` not in support mode: PET-01.
-                let holder = self
-                    .summon_template(summon)
-                    .and_then(|t| template_skill(t, name));
+                let holder = self.summon_template(summon).and_then(|t| template_skill(t, name));
                 let Some(key) = holder else {
                     return;
                 };
-                if self.skill_table().is_some_and(|t| t.get(key.id, key.level).is_some()) {
+                if self
+                    .skill_table()
+                    .is_some_and(|t| t.get(key.id, key.level).is_some())
+                {
                     self.set_creature_target(summon, target);
                     self.summon_use_magic(summon, key, ctrl_pressed, shift_pressed);
                     // `skill.getId() == SWITCH_STANCE_ID`: `switchMode()` (PET-01).
@@ -435,7 +490,13 @@ impl World {
     }
 
     /// Java `Summon.useMagic(skill, forceUse, dontMove)`: `true` when the CAST intention was set.
-    pub fn summon_use_magic(&mut self, summon: ObjectId, key: SkillKey, force_use: bool, dont_move: bool) -> bool {
+    pub fn summon_use_magic(
+        &mut self,
+        summon: ObjectId,
+        key: SkillKey,
+        force_use: bool,
+        dont_move: bool,
+    ) -> bool {
         let _ = dont_move;
         let Some(owner) = self.summon_owner(summon) else {
             return false;
@@ -474,7 +535,9 @@ impl World {
             // Get the first target of the list.
             _ => {
                 let selected = self.cast_selected_target(summon);
-                self.cast_target_list(skill, summon, true, selected).first().copied()
+                self.cast_target_list(skill, summon, true, selected)
+                    .first()
+                    .copied()
             }
         };
         let Some(target) = target else {
@@ -483,7 +546,10 @@ impl World {
         };
         // Check if this skill is enabled (e.g. reuse time).
         if self.is_skill_disabled(summon, skill) {
-            self.send_system(owner, SystemMessageId::ThatPetServitorSkillCannotBeUsedBecauseItIsRecharging);
+            self.send_system(
+                owner,
+                SystemMessageId::ThatPetServitorSkillCannotBeUsedBecauseItIsRecharging,
+            );
             return false;
         }
         // Check if the summon has enough MP.
@@ -512,7 +578,10 @@ impl World {
                 return false;
             }
             // Olympiad and siege friends: not modelled.
-            let is_door = self.objects.get(&target).is_some_and(|e| e.kind == ObjectKind::Door);
+            let is_door = self
+                .objects
+                .get(&target)
+                .is_some_and(|e| e.kind == ObjectKind::Door);
             if is_door {
                 if !self.is_auto_attackable_for(target, owner) {
                     return false;
@@ -556,12 +625,18 @@ impl World {
             return false;
         }
         // Sin eater, Big Boom, Wyvern can't attack with attack button.
-        if self.summon_npc_id(summon).is_some_and(|id| PASSIVE_SUMMONS.contains(&id)) {
+        if self
+            .summon_npc_id(summon)
+            .is_some_and(|id| PASSIVE_SUMMONS.contains(&id))
+        {
             self.send(owner, &ActionFailed);
             return false;
         }
         if self.is_betrayed(summon) {
-            self.send_system(owner, SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders);
+            self.send_system(
+                owner,
+                SystemMessageId::YourPetServitorIsUnresponsiveAndWillNotObeyAnyOrders,
+            );
             self.send(owner, &ActionFailed);
             return false;
         }
@@ -591,8 +666,15 @@ impl World {
             return false;
         }
         // Siege golems AI doesn't support attacking other than doors/walls at the moment.
-        let is_door = self.objects.get(&target).is_some_and(|e| e.kind == ObjectKind::Door);
-        if is_door && self.summon_template(summon).is_none_or(|t| t.race != NpcRace::SiegeWeapon) {
+        let is_door = self
+            .objects
+            .get(&target)
+            .is_some_and(|e| e.kind == ObjectKind::Door);
+        if is_door
+            && self
+                .summon_template(summon)
+                .is_none_or(|t| t.race != NpcRace::SiegeWeapon)
+        {
             return false;
         }
         let far = match (self.position_of(owner), self.position_of(target)) {

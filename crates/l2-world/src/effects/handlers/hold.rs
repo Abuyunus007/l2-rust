@@ -45,7 +45,7 @@ impl EffectHandler for Stun {
                 }
             };
             let effector = cx.effector;
-            if world.objects.get(&effector).is_some() && !world.is_dead(effector) {
+            if world.objects.contains_key(&effector) && !world.is_dead(effector) {
                 let owner_flag = owner.map_or(0, |o| world.pvp_flag_of(o));
                 if world.is_playable(effector) && owner_flag == 0 {
                     to_owner(world);

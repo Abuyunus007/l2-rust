@@ -148,6 +148,7 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("StealAbnormal", steal_abnormal::StealAbnormal::create);
     registry.register("Teleport", teleport::Teleport::create);
     registry.register("TeleportToTarget", teleport_to_target::TeleportToTarget::create);
+    registry.register("Transformation", crate::transform::effect::Transformation::create);
     registry.register("ThrowUp", throw_up::ThrowUp::create);
     registry.register("VitalityPointUp", vitality_point_up::VitalityPointUp::create);
     // M5-EFX-02: the status handlers.

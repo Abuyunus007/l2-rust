@@ -152,16 +152,20 @@ fn p_def_mod(view: &StatView<'_>, init: f64) -> f64 {
     let mut value = init;
     if let Some(template) = view.player_template() {
         let worn = |slot: usize| view.paperdoll(slot).is_some();
-        // Transformations are not modelled; Java's `p.isTransformed() ? ... :` takes the second
-        // branch.
         if worn(paperdoll::CHEST) {
-            value -= f64::from(template.base_def_by_slot(paperdoll::CHEST));
+            // A form's chest defence is subtracted as it is; the other slots use it as a slot
+            // number (`def_mod_slot_key`).
+            value -= if view.is_transformed() {
+                f64::from(view.transform_def_by_slot(paperdoll::CHEST))
+            } else {
+                f64::from(template.base_def_by_slot(paperdoll::CHEST))
+            };
         }
         let full_armor = view
             .paperdoll_template(paperdoll::CHEST)
             .is_some_and(|t| t.body_part == BodyPart::FullArmor);
         if worn(paperdoll::LEGS) || (worn(paperdoll::CHEST) && full_armor) {
-            value -= f64::from(template.base_def_by_slot(paperdoll::LEGS));
+            value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(paperdoll::LEGS)));
         }
         for slot in [
             paperdoll::HEAD,
@@ -171,7 +175,7 @@ fn p_def_mod(view: &StatView<'_>, init: f64) -> f64 {
             paperdoll::CLOAK,
         ] {
             if worn(slot) {
-                value -= f64::from(template.base_def_by_slot(slot));
+                value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(slot)));
             }
         }
     }
@@ -190,7 +194,7 @@ fn m_def_mod(view: &StatView<'_>, init: f64) -> f64 {
             paperdoll::NECK,
         ] {
             if view.paperdoll(slot).is_some() {
-                value -= f64::from(template.base_def_by_slot(slot));
+                value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(slot)));
             }
         }
     }
@@ -262,10 +266,14 @@ pub(crate) fn apply(
             }
         }
         FuncKind::Share => {
-            // Only servitors share their owner's stats; there are no summons yet, so the
-            // effector never is one. The condition is still tested first, like Java.
-            let _ = holds();
-            init
+            // `FuncShare`: a servitor gets the owner's base value of the stat times the value.
+            if !holds() {
+                return init;
+            }
+            match view.servitor_owner_view() {
+                Some(owner) => init + share_base_value(func.stat, &owner) * func.value,
+                None => init,
+            }
         }
         FuncKind::Enchant => {
             if !holds() {
@@ -390,4 +398,20 @@ fn enchant_hp(func: &Func, view: &StatView<'_>, init: f64) -> f64 {
         template.body_part == BodyPart::FullArmor,
     );
     init + f64::from(bonus)
+}
+
+/// Java `FuncShare.getBaseValue(stat, player)`: the owner's value a servitor shares.
+fn share_base_value(stat: Stat, owner: &StatView<'_>) -> f64 {
+    match stat {
+        Stat::MaxHp => f64::from(owner.max_hp()),
+        Stat::MaxMp => f64::from(owner.max_mp()),
+        Stat::PowerAttack => owner.p_atk(None),
+        Stat::MagicAttack => owner.m_atk(None, None),
+        Stat::PowerDefence => owner.p_def(None),
+        Stat::MagicDefence => owner.m_def(None, None),
+        Stat::CriticalRate => f64::from(owner.critical_hit(None, None)),
+        Stat::PowerAttackSpeed => owner.p_atk_spd(),
+        Stat::MagicAttackSpeed => f64::from(owner.m_atk_spd()),
+        _ => owner.calc_stat(stat, 0.0, None, None),
+    }
 }

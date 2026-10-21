@@ -1,6 +1,7 @@
-//! User commands (`BypassUserCmd`): `/loc`.
+//! User commands (`BypassUserCmd`): `/loc` and `/partyinfo`.
 // Java: network/clientpackets/BypassUserCmd.java
 // Java: dist/game/data/scripts/handlers/chat/commands/user/Loc.java
+// Java: dist/game/data/scripts/handlers/chat/commands/user/PartyInfo.java
 //
 // Java's `//loc` does not exist; the client's `/loc` is user command 0. The other user commands
 // (clan penalty, channels, time ...) belong to their systems; the card of each ports its handler.
@@ -24,6 +25,8 @@ impl World {
         }
         if command == 0 {
             self.user_command_loc(id);
+        } else if command == crate::party::PARTY_INFO_COMMAND {
+            self.user_command_party_info(id);
         } else {
             // Java tells a GM "User commandID N not implemented yet." for an id without handler.
             // Handlers that exist in Java but are not ported yet would make that message a lie,

@@ -39,8 +39,9 @@
 //
 // # What is not modelled yet (each has its card)
 // - Zones (water, castle, `revalidateZone`): M3-TELE-01 / M3 zones. Nobody is "in water".
-// - Flying, vehicles, transformations, falling damage (HP), the casting intention, spawn
-//   protection (`onActionRequest`), the admin tele mode: M4/M5. The attack intention's parts are
+// - Flying (the geodata and height rules; a flying form only skips the position checks),
+//   vehicles, falling damage (HP), the casting intention, spawn protection
+//   (`onActionRequest`), the admin tele mode: M4/M5. The attack intention's parts are
 //   here (direct move, the target's collision, the `ATTACK` probe; M4-COMBAT-01).
 // - Doors and fences: M3-DOOR-01 (`doors_between`, the region door lists). The geoengine's own
 //   obstacle hook is used by every check that goes through it.
@@ -620,7 +621,10 @@ impl World {
             return;
         }
 
-        // Java: `isFlyingMounted() && x > GRACIA_MAX_X` -> untransform: no transformations yet.
+        // Don't allow flying transformations outside gracia area!
+        if x > crate::transform::GRACIA_MAX_X && self.stats(id).is_some_and(|v| v.is_flying_mounted()) {
+            self.untransform(id);
+        }
 
         let Some(player) = self.players.get(&id) else {
             return;
@@ -631,7 +635,7 @@ impl World {
         let dy = y.wrapping_sub(real_y);
         let dz = z.wrapping_sub(real_z);
         let diff_sq = f64::from(dx.wrapping_mul(dx).wrapping_add(dy.wrapping_mul(dy)));
-        if self.is_in_water(id) {
+        if self.is_in_water(id) || self.stats(id).is_some_and(|v| v.is_flying()) {
             // Java: `isFlying() || isInsideZone(WATER)`.
             self.set_xyz(id, real_x, real_y, z);
             if diff_sq > 90_000.0 {
@@ -1717,7 +1721,8 @@ impl World {
             if calc.distance < 1.0 && (self.pathfinding_enabled() || is_player || is_summon) {
                 // An attack or cast already in flight has to survive this, cancelling it is what
                 // strands melee.
-                let pending_target_action = matches!(self.intention_of(id), Intention::Attack | Intention::Cast);
+                let pending_target_action =
+                    matches!(self.intention_of(id), Intention::Attack | Intention::Cast);
                 if is_summon && !pending_target_action {
                     // Do not break following owner.
                     if self.follow_target_of(id) != self.summon_owner(id) {
@@ -1909,7 +1914,12 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return false;
         };
-        if player.core.cur_hp < 0.5 || self.is_in_water(id) {
+        // `isDead() || isFlying() || isFlyingMounted() || isInsideZone(WATER)`
+        if player.core.cur_hp < 0.5
+            || self.is_in_water(id)
+            || player.transform.flying
+            || self.stats(id).is_some_and(|v| v.is_flying_mounted())
+        {
             return false;
         }
         if player.movement.falling_timestamp_ms != 0 && now < player.movement.falling_timestamp_ms {

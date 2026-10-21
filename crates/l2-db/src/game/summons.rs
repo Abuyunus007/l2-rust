@@ -60,7 +60,14 @@ impl SummonRepository {
 
     /// Stores a servitor for a restore.
     // Java: CharSummonTable.saveSummon
-    pub async fn save_summon(&self, owner_id: i32, summon_skill_id: i32, cur_hp: i32, cur_mp: i32, time: i32) -> Result<()> {
+    pub async fn save_summon(
+        &self,
+        owner_id: i32,
+        summon_skill_id: i32,
+        cur_hp: i32,
+        cur_mp: i32,
+        time: i32,
+    ) -> Result<()> {
         sqlx::query(SAVE_SUMMON)
             .bind(owner_id)
             .bind(summon_skill_id)
@@ -84,7 +91,11 @@ impl SummonRepository {
 
     /// The saved buffs of every servitor of a character's class index, in `buff_index` order.
     // Java: Servitor.restoreEffects (the SELECT, for every reference skill at once)
-    pub async fn servitor_effects_of(&self, owner_id: i32, class_index: i32) -> Result<Vec<SummonSkillSaveRow>> {
+    pub async fn servitor_effects_of(
+        &self,
+        owner_id: i32,
+        class_index: i32,
+    ) -> Result<Vec<SummonSkillSaveRow>> {
         let rows = sqlx::query_as::<_, SummonSkillSaveRow>(RESTORE_SKILL_SAVE_ALL)
             .bind(owner_id)
             .bind(class_index)

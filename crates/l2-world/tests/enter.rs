@@ -889,10 +889,18 @@ fn hero_voice_is_refused_for_a_normal_player() {
 #[test]
 fn channels_without_a_handler_are_dropped() {
     let (mut w, log) = two_players();
-    for chat_type in [3, 4, 9, 14] {
+    for chat_type in [4, 9, 14] {
         say(&mut w, 1, chat_type, "party?", None);
     }
     assert!(log.take().is_empty());
+}
+
+/// The party channel has a handler (M6-PARTY-01): without a party the speaker is told so.
+#[test]
+fn party_chat_without_a_party_says_so() {
+    let (mut w, log) = two_players();
+    say(&mut w, 1, 3, "party?", None);
+    assert_eq!(log.take(), vec![Out::Packet(1, text("You are not in a party."))]);
 }
 
 #[test]
@@ -1056,6 +1064,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     | PersistCommand::EndPunishment { .. }
                     | PersistCommand::CharAccessLevel { .. },
                 ) => "punishment",
+                Out::Persist(PersistCommand::Summon(_)) => "summon",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

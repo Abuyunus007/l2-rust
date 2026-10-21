@@ -33,9 +33,11 @@ pub mod movement;
 pub mod npc;
 pub mod objects;
 pub mod outbox;
+pub mod party;
 pub mod player;
 mod player_view;
 pub mod punishments;
+pub mod pvp;
 pub mod region;
 pub mod respawn;
 pub mod rewards;
@@ -50,6 +52,8 @@ pub mod target;
 pub mod teleport;
 pub mod teleporter;
 pub mod timer;
+pub mod trade;
+pub mod transform;
 pub mod user_command;
 mod visibility;
 pub mod world;
@@ -85,6 +89,7 @@ pub use movement::{
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
+pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,
@@ -93,6 +98,7 @@ pub use punishments::{
     IllegalActionPunishment, NewPunishment, PunishmentAffect, PunishmentRecord, PunishmentSettings,
     PunishmentType, StoredPunishment,
 };
+pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
 pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
@@ -110,5 +116,6 @@ pub use summon::servitor::{SavedSummonEffect, SummonSkillSave, SummonWrite};
 pub use summon::{Summon, SummonKind, SummonSettings};
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
 pub use timer::{TimerId, TimerKind, TimerWheel};
+pub use trade::{AddItemRules, TradeItem, TradeList, TradeState};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

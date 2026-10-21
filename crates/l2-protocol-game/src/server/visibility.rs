@@ -701,6 +701,37 @@ impl Decode for RelationChanged {
     }
 }
 
+// Java: gameserver/network/serverpackets/NicknameChanged.java
+/// A creature's title changed (`NICK_NAME_CHANGED`): `Player.broadcastTitleInfo` sends it to
+/// everybody who sees the player (M6-PVP-01, the PvP title colour system).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct NicknameChanged {
+    /// `getObjectId()`.
+    pub object_id: i32,
+    /// `getTitle()`.
+    pub title: String,
+}
+
+impl NicknameChanged {
+    pub const OPCODE: ServerOpcode = ServerOpcode::NickNameChanged;
+}
+
+impl Encode for NicknameChanged {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id).string(&self.title);
+    }
+}
+
+impl Decode for NicknameChanged {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            object_id: r.i32()?,
+            title: r.string(),
+        })
+    }
+}
+
 /// `StatusUpdate` attribute ids (Java `StatusUpdate.*`).
 pub mod status {
     pub const LEVEL: i32 = 0x01;

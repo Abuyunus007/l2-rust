@@ -450,6 +450,12 @@ impl World {
             self.send(id, &info);
         }
 
+        // `if (!player.isGM()) player.updatePvpTitleAndColor(false)`: the custom title for the
+        // PvP kills of the character (`Custom/PvpTitleColor.ini`).
+        if !self.is_gm(id) {
+            self.update_pvp_title_and_color(id, false);
+        }
+
         // `if (ENABLE_VITALITY && RECOVER_VITALITY_ON_RECONNECT)`: the time offline gives vitality
         // back (quietly, after the first `UserInfo`).
         self.recover_vitality_on_reconnect(id, now_ms);
@@ -708,7 +714,12 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         z: core.z,
         vehicle_id: 0,
         object_id: core.object_id.0,
-        name: data.name.clone(),
+        // `appearance.getVisibleName()`: a form (the cursed weapons) can rename the player.
+        name: player
+            .transform
+            .visible_name
+            .clone()
+            .unwrap_or_else(|| data.name.clone()),
         race: data.race,
         is_female: data.sex != 0,
         base_class: data.base_class,
@@ -754,9 +765,17 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         walk_speed: speed(view.walk_speed()),
         swim_run_speed: speed(view.swim_run_speed()),
         swim_walk_speed: speed(view.swim_walk_speed()),
-        // `isFlying() ? run : 0`: nothing flies yet.
-        fly_run_speed: 0,
-        fly_walk_speed: 0,
+        // `isFlying() ? run : 0`
+        fly_run_speed: if view.is_flying() {
+            speed(view.run_speed())
+        } else {
+            0
+        },
+        fly_walk_speed: if view.is_flying() {
+            speed(view.walk_speed())
+        } else {
+            0
+        },
         move_multiplier,
         attack_speed_multiplier: view.attack_speed_multiplier(),
         collision_radius: view.collision_radius(),
@@ -787,7 +806,14 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         } else {
             visual_effects
         },
-        water_or_flying: 0,
+        // `isInsideZone(WATER) ? 1 : isFlyingMounted() ? 2 : 0`
+        water_or_flying: if view.in_water() {
+            1
+        } else if view.is_flying_mounted() {
+            2
+        } else {
+            0
+        },
         clan_privileges: 0,
         recom_left: player.recom_left as i16,
         recom_have: player.recom_have as i16,
@@ -817,7 +843,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
             data.profile.title_color
         },
         cursed_weapon_level: 0,
-        transformation_display_id: 0,
+        transformation_display_id: view.transformation_display_id(),
         attack_element: i16::from(attack_element),
         attack_element_value: view.attack_element_value(attack_element) as i16,
         defense_fire: defense(0),

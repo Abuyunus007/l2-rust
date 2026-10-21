@@ -18,7 +18,7 @@
 // [`World::set_dead`]) is the only one in the world: `World::do_die` sets it, `World::do_revive`
 // clears it (both in `death.rs`, M4-DEATH-01).
 //
-// Left out, with the card that brings it: the party, duel and olympiad
+// Left out, with the card that brings it: the duel and olympiad
 // parts of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
 // festival, siege and clan hall regeneration modifiers (no such state yet), `isSitting()` (sitting
 // is not modelled), and the champion regeneration (champions are not rolled).
@@ -196,11 +196,12 @@ pub struct CreatureStatus {
     listeners: BTreeSet<ObjectId>,
     /// Java `Player._broadcastStatusUpdateTask`: the pending self update of a player.
     self_update_timer: Option<TimerId>,
-    /// The update windows of HP and CP (Java `_hpUpdateIncCheck` ...). Created on first use with
-    /// the maximum at that time, where Java creates them with the constructor. The MP window is
-    /// read only by Java's party part (`needMpUpdate`), which is not ported.
+    /// The update windows of HP, CP and MP (Java `_hpUpdateIncCheck` ...). Created on first use
+    /// with the maximum at that time, where Java creates them with the constructor. The MP window
+    /// is read only by the party part of the status broadcast (`needMpUpdate`).
     hp_bar: Option<BarCheck>,
     cp_bar: Option<BarCheck>,
+    mp_bar: Option<BarCheck>,
 }
 
 impl World {
@@ -495,11 +496,16 @@ impl World {
         // a stun may break.
         self.break_states_on_damage(id);
         let mut amount = value;
-        let full_value = amount as i32;
+        let mut full_value = amount as i32;
         if let Some(attacker) = attacker.filter(|a| *a != id) {
             // GM `giveDamage` rights and duels: M5.
-            // Summon damage transfer, mana shield and damage transfer to a party member: M5
-            // (effects and summons; their stats are 0 without them).
+            // Summon damage transfer and mana shield: M5 (effects and summons; their stats are 0
+            // without them).
+            // Check and calculate the damage transferred to a party member (`TransferDamage`).
+            if let Some(rest) = self.party_transfer_damage(id, attacker, amount) {
+                amount = rest;
+                full_value = rest as i32;
+            }
             if self.is_playable(attacker) {
                 // `attacker.isPlayable() || attacker.isFakePlayer()`: CP takes the hit first.
                 let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
@@ -869,8 +875,9 @@ impl World {
     }
 
     /// The self update of a player (Java `Player.broadcastStatusUpdate`'s task): the six vitals,
-    /// then the party, olympiad and duel parts (not ported, see the module comment). Those parts
-    /// read the update windows too, so the windows move as they do in Java.
+    /// then the party window of the others, and the olympiad and duel parts (not ported, see the
+    /// module comment). Those parts read the update windows too, so the windows move as they do
+    /// in Java.
     pub(crate) fn on_self_update_timer(&mut self, id: ObjectId) {
         if let Some(st) = self.statuses.get_mut(&id) {
             st.self_update_timer = None;
@@ -893,9 +900,21 @@ impl World {
         update.add_attribute(attr::CUR_CP, core.cur_cp as i32);
         self.send(id, &update);
         // Java computes needCpUpdate and needHpUpdate for its party and duel parts; needMpUpdate
-        // only runs when there is a party, so it is skipped with the party part.
-        self.need_cp_update(id);
-        self.need_hp_update(id);
+        // only runs when there is a party and neither of the others asked for the update.
+        let need_cp = self.need_cp_update(id);
+        let need_hp = self.need_hp_update(id);
+        // Check if a party is in progress and the party window update is useful.
+        if self.is_in_party(id) && (need_cp || need_hp || self.need_mp_update(id)) {
+            self.send_party_small_window_update(id);
+        }
+    }
+
+    fn need_mp_update(&mut self, id: ObjectId) -> bool {
+        let Some((cur, max)) = self.mp_and_max(id) else {
+            return false;
+        };
+        let st = self.status_mut(id);
+        need_update(&mut st.mp_bar, cur, max)
     }
 
     fn need_hp_update(&mut self, id: ObjectId) -> bool {

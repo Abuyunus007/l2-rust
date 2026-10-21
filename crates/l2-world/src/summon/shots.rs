@@ -52,7 +52,11 @@ impl World {
             .and_then(|t| t.skills.item_skills.as_ref())
             .and_then(|skills| skills.first().copied());
         let Some(skill) = skill else {
-            let name = if spirit { "BeastSpiritShot" } else { "BeastSoulShot" };
+            let name = if spirit {
+                "BeastSpiritShot"
+            } else {
+                "BeastSoulShot"
+            };
             warn!("{name}: is missing skills!");
             return false;
         };
@@ -171,14 +175,21 @@ impl World {
 
     /// The beast shot branch of `RequestAutoSoulShot` (switching on): `true` when it handled the
     /// request (the caller returns).
-    pub(crate) fn auto_soul_shot_beast_on(&mut self, owner: ObjectId, item: &ItemData, shot_type: i32) -> bool {
+    pub(crate) fn auto_soul_shot_beast_on(
+        &mut self,
+        owner: ObjectId,
+        item: &ItemData,
+        shot_type: i32,
+    ) -> bool {
         if !BEAST_SHOT_IDS.contains(&item.item_id) {
             return false;
         }
         let Some(summon) = self.summon_of(owner) else {
             self.send(
                 owner,
-                &SystemMessage::new(SystemMessageId::YouDoNotHaveAServitorOrPetAndThereforeCannotUseTheAutomaticUseFunction),
+                &SystemMessage::new(
+                    SystemMessageId::YouDoNotHaveAServitorOrPetAndThereforeCannotUseTheAutomaticUseFunction,
+                ),
             );
             return true;
         };

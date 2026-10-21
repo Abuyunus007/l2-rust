@@ -33,6 +33,7 @@ pub mod spawn;
 pub mod static_object;
 pub mod stats;
 pub mod teleporter;
+pub mod transform;
 pub mod zone;
 
 use std::path::{Path, PathBuf};
@@ -68,6 +69,7 @@ pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use stats::{Condition, FuncKind, FuncTemplate, Stat};
 pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
+pub use transform::{Transform, TransformTemplate, Transforms};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
 /// Everything loaded from a datapack folder.
@@ -121,6 +123,8 @@ pub struct Datapack {
     pub hit_condition_bonus: Arc<HitConditionBonus>,
     /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
     pub hennas: Arc<Hennas>,
+    /// `data/stats/transformations/*.xml`: the transformations by id (M6-TRANS-01).
+    pub transforms: Arc<Transforms>,
     /// `data/stats/skills/*.xml`: every skill and enchant level as a template (M4-DATA-11).
     pub skills: Arc<SkillTemplates>,
     /// `data/stats/augmentation/options/*.xml`: what the two option ids of an augmentation give.
@@ -245,6 +249,7 @@ impl Datapack {
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             hennas: Arc::new(Hennas::load(root)),
+            transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,
             pet_skills,

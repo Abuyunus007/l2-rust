@@ -33,7 +33,9 @@ impl World {
     pub fn position_of(&self, id: ObjectId) -> Option<(i32, i32, i32)> {
         match self.objects.get(&id)?.kind {
             ObjectKind::Player => self.players.get(&id).map(|p| (p.core.x, p.core.y, p.core.z)),
-            ObjectKind::Npc | ObjectKind::Summon => self.npcs.get(&id).map(|n| (n.core.x, n.core.y, n.core.z)),
+            ObjectKind::Npc | ObjectKind::Summon => {
+                self.npcs.get(&id).map(|n| (n.core.x, n.core.y, n.core.z))
+            }
             ObjectKind::Door => self.doors.get(&id).map(|d| (d.x, d.y, d.z)),
             ObjectKind::Fence => self.fences.get(&id).map(|f| (f.x, f.y, f.z)),
             ObjectKind::StaticObject => self.static_objects.get(&id).map(|o| (o.x, o.y, o.z)),

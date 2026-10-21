@@ -1,6 +1,6 @@
 //! What other players see of a player: `CharInfo`, `ExBrExtraUserInfo` and `RelationChanged`.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (sendInfo, getRelation,
-//       isAutoAttackable, getKnownRelations)
+// Java: org/l2jmobius/gameserver/entity/actor/Player.java (sendInfo, getKnownRelations; the
+//       relation and isAutoAttackable are in `pvp.rs`)
 // Java: org/l2jmobius/gameserver/network/serverpackets/CharInfo.java
 //
 // The values come from the same computation as the player's own `UserInfo`
@@ -21,6 +21,13 @@ use crate::world::World;
 impl World {
     /// Java `Player.sendInfo(player)` for an ordinary player (not in a boat or airship).
     pub(crate) fn send_player_info(&mut self, subject: ObjectId, viewer: ObjectId) {
+        self.send_player_info_as(subject, viewer, true);
+    }
+
+    /// `sendInfo` (`appearing`: the player comes into view) or the `CharInfo` of
+    /// `broadcastCharInfo` (the player changed), which are the same packets but for the second
+    /// `CharInfo` a transformed player sends when it appears.
+    pub(crate) fn send_player_info_as(&mut self, subject: ObjectId, viewer: ObjectId, appearing: bool) {
         let Some(info) = self.char_info(subject, viewer) else {
             return;
         };
@@ -50,6 +57,18 @@ impl World {
                 pvp_flag: self.pvp_flag_of(subject),
             };
             self.send(viewer, &RelationChanged::single(entry));
+            // `if (hasSummon())`: the summon's relation with the same values.
+            if let Some(summon) = self.summon_of(subject) {
+                let entry = self.summon_relation_entry(summon, viewer, Some(auto_attackable));
+                self.send(viewer, &RelationChanged::single(entry));
+            }
+        }
+        // Required for showing mount transformations to players that just entered the game.
+        if appearing
+            && self.is_transformed(subject)
+            && let Some(info) = self.char_info(subject, viewer)
+        {
+            self.send(viewer, &info);
         }
     }
 
@@ -94,10 +113,11 @@ impl World {
             hair_color: ui.hair_color,
             face: ui.face,
             // Java: a GM looking at an invisible player sees the title "Invisible".
+            // `appearance.getVisibleTitle()` (UserInfo writes the real title).
             title: if gm_sees_invisible {
                 "Invisible".to_string()
             } else {
-                ui.title
+                player.transform.visible_title.clone().unwrap_or(ui.title)
             },
             clan_id: ui.clan_id,
             clan_crest_id: ui.clan_crest_id,
@@ -144,23 +164,5 @@ impl World {
             agathion_id: 0,
             abnormal_visual_effect_special: visual_effects_special,
         })
-    }
-
-    /// `owner.getRelation(viewer)` for the `RelationChanged` of the owner's summon
-    /// (`summon/spawn.rs`).
-    pub(crate) fn summon_owner_relation(&self, owner: ObjectId, viewer: ObjectId) -> i32 {
-        self.relation(owner, viewer)
-    }
-
-    /// Java `Player.getRelation(target)`: clans, parties, sieges, PvP flags and karma. None of
-    /// those are modelled in M3, so the mask is empty.
-    fn relation(&self, _subject: ObjectId, _viewer: ObjectId) -> i32 {
-        0
-    }
-
-    /// Java `Player.isAutoAttackable(attacker)` between two players: karma, PvP flag, duels,
-    /// olympiad and siege rules. Without them (M4/M5) nobody is auto-attackable.
-    pub(crate) fn is_auto_attackable(&self, _subject: ObjectId, _viewer: ObjectId) -> bool {
-        false
     }
 }

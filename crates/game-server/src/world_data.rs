@@ -110,6 +110,9 @@ pub struct AccessLevels {
     no_take_aggro: std::collections::BTreeSet<i32>,
     /// The levels with `gainExp="false"` (Java `AccessLevel.canGainExp()`, default true).
     no_gain_exp: std::collections::BTreeSet<i32>,
+    /// The levels with `allowTransaction="false"` (Java `AccessLevel.allowTransaction()`, default
+    /// true).
+    no_transaction: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -204,6 +207,10 @@ impl AccessLevels {
                     if attribute(&e, "gainExp").is_some_and(|v| v.eq_ignore_ascii_case("false")) {
                         table.no_gain_exp.insert(level);
                     }
+                    // Java: `set.getBoolean("allowTransaction", true)`: anything but "true" is false.
+                    if attribute(&e, "allowTransaction").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
+                        table.no_transaction.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -236,6 +243,12 @@ impl AccessLevels {
     pub fn can_gain_exp(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         !self.no_gain_exp.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).allowTransaction()`.
+    pub fn allows_transaction(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        !self.no_transaction.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel`: below 0 is the banned level; a level the file does not
@@ -324,6 +337,10 @@ impl StaticData for DatapackData {
         Some(&self.stats)
     }
 
+    fn transforms(&self) -> Option<&Arc<l2_data::Transforms>> {
+        Some(&self.datapack.transforms)
+    }
+
     fn exp_percent(&self, exp: i64, level: i32) -> f64 {
         self.datapack.experience.exp_percent(exp, level).unwrap_or(0.0)
     }
@@ -360,6 +377,10 @@ impl StaticData for DatapackData {
 
     fn access_level_can_gain_exp(&self, level: i32) -> bool {
         self.access.can_gain_exp(level)
+    }
+
+    fn access_level_allows_transaction(&self, level: i32) -> bool {
+        self.access.allows_transaction(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -399,6 +420,73 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         settings.max_sp = if max_sp >= 0 { max_sp } else { i64::MAX };
     }
     settings
+}
+
+/// The values parties read (Java `PlayerConfig`, `RatesConfig`, `ClassBalanceConfig`). The cut-off
+/// method and its two lists are placeholders in the generated config, so they come from
+/// `Player.ini`; the exp and SP amount multipliers from `Custom/ClassBalance.ini`.
+pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PartySettings {
+    use l2_config::IniFile;
+    use l2_world::{PartyExpType, PartySettings};
+
+    let r = &config.rates;
+    let p = &config.player;
+    let mut settings = PartySettings {
+        alt_party_range: p.alt_party_range,
+        alt_leave_party_leader: p.alt_leave_party_leader,
+        rate_party_xp: r.rate_party_xp,
+        rate_party_sp: r.rate_party_sp,
+        xp_cutoff_percent: p.party_xp_cutoff_percent,
+        xp_cutoff_level: p.party_xp_cutoff_level,
+        ..PartySettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
+        // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
+        let method = ini.get_string("PartyXpCutoffMethod", "LEVEL");
+        match PartyExpType::from_name(&method) {
+            Some(method) => settings.xp_cutoff_method = method,
+            None => warn!("PartyXpCutoffMethod = {method} is not a party exp type; using LEVEL."),
+        }
+        let gaps = ini.get_string("PartyXpCutoffGaps", "0,9;10,14;15,99");
+        match parse_party_gaps(&gaps) {
+            Some(gaps) => settings.xp_cutoff_gaps = gaps,
+            None => warn!("PartyXpCutoffGaps = {gaps} is not a list of level pairs; using the default."),
+        }
+        let percents = ini.get_string("PartyXpCutoffGapPercent", "100;30;0");
+        match parse_party_percents(&percents) {
+            Some(percents) => settings.xp_cutoff_gap_percents = percents,
+            None => {
+                warn!("PartyXpCutoffGapPercent = {percents} is not a list of numbers; using the default.")
+            }
+        }
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
+        for (key, table) in [
+            ("ExpAmountMultipliers", &mut settings.exp_amount_multipliers),
+            ("SpAmountMultipliers", &mut settings.sp_amount_multipliers),
+        ] {
+            parse_class_multipliers(key, &ini.get_string(key, ""), table);
+        }
+    }
+    settings
+}
+
+/// Java `PARTY_XP_CUTOFF_GAPS`: `"0,9;10,14;15,99"` is three level ranges. `None` where Java's
+/// `Integer.parseInt` would throw.
+fn parse_party_gaps(text: &str) -> Option<Vec<[i32; 2]>> {
+    text.split(';')
+        .map(|gap| {
+            let mut parts = gap.split(',');
+            let low = parts.next()?.parse().ok()?;
+            let high = parts.next()?.parse().ok()?;
+            Some([low, high])
+        })
+        .collect()
+}
+
+/// Java `PARTY_XP_CUTOFF_GAP_PERCENTS`: `"100;30;0"`.
+fn parse_party_percents(text: &str) -> Option<Vec<i32>> {
+    text.split(';').map(|percent| percent.parse().ok()).collect()
 }
 
 /// The values vitality reads (Java `PlayerConfig`, `RatesConfig`).
@@ -518,6 +606,63 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
         settings.ban_chat_channels = channels;
     }
     settings
+}
+
+/// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
+/// (`Custom/PvpTitleColor.ini`). `AntiFeedInterval` (seconds, Java keeps ms) and the five
+/// `ColorForAmountN` (`Integer.decode("0x" + text)`) are post-processed in Java (placeholders in
+/// the generated config), so they are read from the files here.
+pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSettings {
+    use l2_config::IniFile;
+    use l2_world::{PvpSettings, PvpTitleColorSettings};
+
+    let p = &config.pvp;
+    let t = &config.pvp_title_color;
+    let mut s = PvpSettings {
+        pvp_normal_time_ms: p.pvp_normal_time,
+        pvp_pvp_time_ms: p.pvp_pvp_time,
+        flag_player_on_raid_attack: p.flag_player_on_raid_attack,
+        flag_player_on_champion_attack: p.flag_player_on_champion_attack,
+        flag_player_on_summon_pet_raid_champion_attack: p.flag_player_on_summon_pet_raid_champion_attack,
+        karma_award_pk_kill: p.karma_award_pk_kill,
+        antifeed_enable: p.antifeed_enable,
+        antifeed_dualbox: p.antifeed_dualbox,
+        antifeed_disconnected_as_dualbox: p.antifeed_disconnected_as_dualbox,
+        faction_system_enabled: config.faction_system.faction_system_enabled,
+        title_color: PvpTitleColorSettings {
+            enabled: t.pvp_color_system_enabled,
+            amounts: [
+                t.pvp_amount1,
+                t.pvp_amount2,
+                t.pvp_amount3,
+                t.pvp_amount4,
+                t.pvp_amount5,
+            ],
+            titles: [
+                t.title_for_pvp_amount1.clone(),
+                t.title_for_pvp_amount2.clone(),
+                t.title_for_pvp_amount3.clone(),
+                t.title_for_pvp_amount4.clone(),
+                t.title_for_pvp_amount5.clone(),
+            ],
+            ..PvpTitleColorSettings::default()
+        },
+        ..PvpSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpConfig::FILE)) {
+        s.antifeed_interval_ms = i64::from(ini.get_int("AntiFeedInterval", 120)).saturating_mul(1000);
+    }
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpTitleColorConfig::FILE)) {
+        for (i, color) in s.title_color.colors.iter_mut().enumerate() {
+            let key = format!("ColorForAmount{}", i + 1);
+            let text = ini.get_string(&key, "00FF00");
+            match i32::from_str_radix(text.trim(), 16) {
+                Ok(value) => *color = value,
+                Err(_) => warn!("{key} = {text} is not a hex colour; using 00FF00."),
+            }
+        }
+    }
+    s
 }
 
 /// Java `Integer.parseInt` of every piece of a comma separated list; a piece that is not a number
@@ -762,6 +907,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         ground: ground_item_settings(config, config_dir),
         drops: drop_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
+        party: party_settings(config, config_dir),
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
         effects: l2_world::EffectSettings {
@@ -810,7 +956,9 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             rate_extractable: config.rates.rate_extractable,
             alt_allow_augment_trade: p.alt_allow_augment_trade,
             alt_allow_augment_destroy: p.alt_allow_augment_destroy,
+            alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
+        pvp: pvp_settings(config, config_dir),
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,
@@ -1330,6 +1478,68 @@ mod tests {
         world.user_info(id).unwrap()
     }
 
+    /// Java `PlayerConfig`: `PartyXpCutoffGaps` is `low,high` pairs split by `;`, the percents are
+    /// numbers split by `;`; a bad number is a Java exception (here the default stays).
+    #[test]
+    fn the_party_cutoff_lists_parse_like_java() {
+        assert_eq!(
+            parse_party_gaps("0,9;10,14;15,99"),
+            Some(vec![[0, 9], [10, 14], [15, 99]])
+        );
+        assert_eq!(parse_party_gaps("1,2"), Some(vec![[1, 2]]));
+        assert_eq!(parse_party_gaps("1;2,3"), None);
+        assert_eq!(parse_party_gaps("a,2"), None);
+        assert_eq!(parse_party_percents("100;30;0"), Some(vec![100, 30, 0]));
+        assert_eq!(parse_party_percents("100;x"), None);
+    }
+
+    /// The party settings come from `Player.ini`, `Rates.ini` and `Custom/ClassBalance.ini`; the
+    /// defaults of a missing file are Java's.
+    #[test]
+    fn party_settings_read_the_config_files() {
+        use l2_world::PartyExpType;
+
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let defaults = party_settings(&config, dir.path());
+        assert_eq!(defaults, l2_world::PartySettings::default());
+
+        std::fs::write(
+            dir.path().join(l2_config::game::PlayerConfig::FILE),
+            "AltPartyRange = 900\nAltLeavePartyLeader = True\nPartyXpCutoffMethod = highfive\n\
+             PartyXpCutoffPercent = 4.5\nPartyXpCutoffLevel = 7\nPartyXpCutoffGaps = 0,4;5,9\n\
+             PartyXpCutoffGapPercent = 100;50\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::RatesConfig::FILE),
+            "RatePartyXp = 1.5\nRatePartySp = 2\n",
+        )
+        .unwrap();
+        let custom = dir.path().join("Custom");
+        std::fs::create_dir_all(&custom).unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::ClassBalanceConfig::FILE),
+            "ExpAmountMultipliers = 0*0.5;18*2\nSpAmountMultipliers = 1*3\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = party_settings(&config, dir.path());
+        assert_eq!(settings.alt_party_range, 900);
+        assert!(settings.alt_leave_party_leader);
+        assert_eq!(settings.rate_party_xp, 1.5);
+        assert_eq!(settings.rate_party_sp, 2.0);
+        assert_eq!(settings.xp_cutoff_method, PartyExpType::HighFive);
+        assert_eq!(settings.xp_cutoff_percent, 4.5);
+        assert_eq!(settings.xp_cutoff_level, 7);
+        assert_eq!(settings.xp_cutoff_gaps, vec![[0, 4], [5, 9]]);
+        assert_eq!(settings.xp_cutoff_gap_percents, vec![100, 50]);
+        assert_eq!(settings.exp_amount_multipliers[0], 0.5);
+        assert_eq!(settings.exp_amount_multipliers[18], 2.0);
+        assert_eq!(settings.exp_amount_multipliers[1], 1.0);
+        assert_eq!(settings.sp_amount_multipliers[1], 3.0);
+    }
+
     #[test]
     fn stat_bonus_reads_every_section_by_name() {
         let table = stat_bonus_from_xml(
@@ -1476,6 +1686,26 @@ mod tests {
         assert!(!levels.can_take_aggro(100));
         // A level the file does not list is Java's default AccessLevel, which takes aggro.
         assert!(levels.can_take_aggro(55));
+    }
+
+    #[test]
+    fn allow_transaction_is_false_only_where_the_file_says_so() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" allowTransaction="false" />
+	<access level="0" name="User" allowTransaction="true" />
+	<access level="20" name="Test GM" allowTransaction="false" />
+	<access level="70" name="Admin" />
+</list>"#,
+        );
+        // `set.getBoolean("allowTransaction", true)`: absent is true.
+        assert!(levels.allows_transaction(0));
+        assert!(levels.allows_transaction(70));
+        assert!(!levels.allows_transaction(-1));
+        assert!(!levels.allows_transaction(-5));
+        assert!(!levels.allows_transaction(20));
+        // A level the file does not list is Java's default AccessLevel, which may trade.
+        assert!(levels.allows_transaction(55));
     }
 
     #[test]
@@ -1720,5 +1950,52 @@ mod tests {
         assert_eq!(v.rate_vitality_level, [1.5, 2.0, 2.5, 3.0]);
         assert_eq!((v.rate_vitality_gain, v.rate_vitality_lost), (1.0, 0.6));
         assert_eq!(v.rate_recovery_on_reconnect, 4.0);
+    }
+
+    /// `PVP.ini` and `Custom/PvpTitleColor.ini` (M6-PVP-01): the Java defaults without files, and
+    /// the post-processed keys (`AntiFeedInterval` in seconds, `ColorForAmountN` as hex) from them.
+    #[test]
+    fn the_pvp_settings_are_read() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!(s, l2_world::PvpSettings::default());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (120_000, 60_000));
+        assert_eq!(s.antifeed_interval_ms, 120_000);
+
+        std::fs::write(
+            dir.path().join("PVP.ini"),
+            "PvPVsNormalTime = 5000
+PvPVsPvPTime = 2500
+AntiFeedEnable = True
+AntiFeedInterval = 30
+             FlagPlayerOnRaidAttack = False
+AwardPKKillPVPPoint = True
+",
+        )
+        .unwrap();
+        std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+        std::fs::write(
+            dir.path().join("Custom").join("PvpTitleColor.ini"),
+            "EnablePvPColorSystem = True
+PvpAmount1 = 7
+ColorForAmount1 = 9C9C9C
+ColorForAmount2 = nonsense
+             PvPTitleForAmount1 = Sergeant
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let s = pvp_settings(&config, dir.path());
+        assert_eq!((s.pvp_normal_time_ms, s.pvp_pvp_time_ms), (5_000, 2_500));
+        assert!(s.antifeed_enable && s.karma_award_pk_kill && !s.flag_player_on_raid_attack);
+        assert_eq!(s.antifeed_interval_ms, 30_000);
+        assert!(s.title_color.enabled);
+        assert_eq!(s.title_color.amounts[0], 7);
+        assert_eq!(s.title_color.titles[0], "Sergeant");
+        // `Integer.decode("0x" + text)`.
+        assert_eq!(s.title_color.colors[0], 0x009C_9C9C);
+        // Java would throw for a bad colour; the default stays.
+        assert_eq!(s.title_color.colors[1], 0x0000_FF00);
     }
 }

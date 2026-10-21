@@ -110,7 +110,10 @@ impl World {
             return;
         };
         if servitor.life_time_remaining < 0 {
-            self.send_to_summon_owner(summon, &SystemMessage::new(SystemMessageId::YourServitorPassedAway));
+            self.send_to_summon_owner(
+                summon,
+                &SystemMessage::new(SystemMessageId::YourServitorPassedAway),
+            );
             self.unsummon(summon, owner);
             return;
         }
@@ -204,7 +207,7 @@ impl World {
                         pet_object_id: summon.0,
                     },
                 );
-                // M6 (PARTY-01): `party.broadcastToPartyMembers(owner, new ExPartyPetWindowDelete(this))`.
+                self.summon_party_window_delete(summon, owner);
                 // A servitor has no inventory: `_owner.setPetInvItems(false)` (PET-01 keeps the flag).
             }
             self.abort_attack(summon);
@@ -281,20 +284,25 @@ impl World {
         if servitor.life_time_remaining <= 0 {
             return;
         }
-        let (owner, summon_skill_id, time) = (state.owner, servitor.reference_skill, servitor.life_time_remaining);
+        let (owner, summon_skill_id, time) = (
+            state.owner,
+            servitor.reference_skill,
+            servitor.life_time_remaining,
+        );
         let Some(core) = self.core_of(summon) else {
             return;
         };
         let (cur_hp, cur_mp) = (core.cur_hp, core.cur_mp);
         self.summons.saved_servitors.insert(owner, summon_skill_id);
-        self.outbox.persist(PersistCommand::Summon(SummonWrite::SaveServitor {
-            owner,
-            summon_skill_id,
-            // `(int) Math.round(getCurrentHp())`.
-            cur_hp: crate::stats::java_round(cur_hp) as i32,
-            cur_mp: crate::stats::java_round(cur_mp) as i32,
-            time,
-        }));
+        self.outbox
+            .persist(PersistCommand::Summon(SummonWrite::SaveServitor {
+                owner,
+                summon_skill_id,
+                // `(int) Math.round(getCurrentHp())`.
+                cur_hp: crate::stats::java_round(cur_hp) as i32,
+                cur_mp: crate::stats::java_round(cur_mp) as i32,
+                time,
+            }));
     }
 
     /// The owner's class index (`getClassIndex()`), the key of the saved buffs.
@@ -426,7 +434,9 @@ impl World {
         rows: Vec<SummonSkillSave>,
     ) {
         if rows.is_empty() {
-            self.summons.saved_rows.remove(&(owner, class_index, reference_skill));
+            self.summons
+                .saved_rows
+                .remove(&(owner, class_index, reference_skill));
         } else {
             self.summons
                 .saved_rows
@@ -468,7 +478,13 @@ impl World {
     /// `SummonEffectTable.addServitorEffect(owner, referenceSkill, skill, effectCurTime)`.
     // NOTE(java-quirk): Java keeps the effects in a concurrent set, applied in no fixed order;
     // here they are applied in the order they were stored.
-    fn add_servitor_effect(&mut self, owner: ObjectId, class_index: i32, reference_skill: i32, effect: SummonEffect) {
+    fn add_servitor_effect(
+        &mut self,
+        owner: ObjectId,
+        class_index: i32,
+        reference_skill: i32,
+        effect: SummonEffect,
+    ) {
         self.summons
             .servitor_effects
             .entry(owner)
@@ -552,7 +568,11 @@ impl World {
                 if !self.is_attackable_npc(mob) || self.is_dead(mob) {
                     continue;
                 }
-                let info = self.aggro_list(mob).iter().find(|a| a.attacker == summon).copied();
+                let info = self
+                    .aggro_list(mob)
+                    .iter()
+                    .find(|a| a.attacker == summon)
+                    .copied();
                 if let Some(info) = info {
                     self.add_damage_hate(mob, owner, info.damage, info.hate);
                 }
@@ -577,10 +597,7 @@ impl World {
     /// Java `Summon.onDecay()` -> `deleteMe(_owner)`.
     pub(crate) fn summon_on_decay(&mut self, summon: ObjectId) {
         // The packets of an owner who left reach nobody (Java's old `Player` object).
-        let owner = self
-            .summon(summon)
-            .filter(|s| !s.owner_offline)
-            .map(|s| s.owner);
+        let owner = self.summon(summon).filter(|s| !s.owner_offline).map(|s| s.owner);
         self.summon_delete_me(summon, owner);
     }
 
@@ -597,7 +614,7 @@ impl World {
                     pet_object_id: summon.0,
                 },
             );
-            // M6 (PARTY-01): `party.broadcastToPartyMembers(owner, new ExPartyPetWindowDelete(this))`.
+            self.summon_party_window_delete(summon, owner);
         }
         // A pet's items go with it (PET-01).
         self.cancel_decay_task(summon);
@@ -621,7 +638,9 @@ impl World {
         }
         self.cancel_servitor_life_task(summon);
         self.stop_summon_avoid_task(summon);
-        let abnormal = self.summon_mut(summon).and_then(|s| s.abnormal_effect_timer.take());
+        let abnormal = self
+            .summon_mut(summon)
+            .and_then(|s| s.abnormal_effect_timer.take());
         if let Some(timer) = abnormal {
             self.timers.cancel(timer);
         }
@@ -696,5 +715,4 @@ impl World {
         self.set_follow_status(summon, true);
         self.update_and_broadcast_summon_status(summon, 0);
     }
-
 }

@@ -43,8 +43,17 @@ impl crate::world::World {
             return;
         };
 
-        // The trade list and private store checks (`getActiveTradeList`, `isInStoreMode`) need the
-        // trade and store systems, which do not exist yet.
+        // Pet Collar exclusion. This is handled in SummonItems handler.
+        let is_pet_collar = super::etc_type(template) == Some(l2_data::item::types::EtcItemType::PetCollar);
+        if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) && !is_pet_collar {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotPickUpOrUseItemsWhileTrading),
+            );
+            return;
+        }
+        // M6-STORE-01: `isInStoreMode() && !isPetCollar` -> YOU_MAY_NOT_USE_ITEMS_IN_A_PRIVATE_STORE...
+        // + ActionFailed.
 
         if template.type2 == TYPE2_QUEST {
             self.send(id, &SystemMessage::new(SystemMessageId::YouCannotUseQuestItems));
@@ -61,8 +70,15 @@ impl crate::world::World {
             return;
         }
 
-        // Char cannot use item when dead; `canManipulateWithItemId` is always true (no inventory
-        // block is modelled).
+        // Char cannot use item when dead (handled above) or when the inventory block forbids it.
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms)
+                    .with(item_name_param(templates, item.item_id)),
+            );
+            return;
+        }
 
         let equipped = item.loc == LOC_PAPERDOLL;
         if !equipped && !self.check_item_condition(id, template, true) {
@@ -341,6 +357,11 @@ impl crate::world::World {
 
         // Prevent player from unequipping items in special conditions (stun, sleep, paralysis).
         if self.is_alike_dead(id) {
+            return;
+        }
+
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send(id, &SystemMessage::new(SystemMessageId::ThatItemCannotBeTakenOff));
             return;
         }
 

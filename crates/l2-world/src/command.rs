@@ -126,6 +126,18 @@ pub enum ClientInput {
     },
     /// Java `RequestShortcutDel`: the wire slot (`slot + page * 12`).
     ShortcutDel { slot: i32 },
+    /// Java `TradeRequest`: ask the player with this object id to trade.
+    TradeRequest { object_id: i32 },
+    /// Java `AnswerTradeRequest` (1 = accept).
+    AnswerTradeRequest { response: i32 },
+    /// Java `AddTradeItem`: put an item into the trade window.
+    AddTradeItem {
+        trade_id: i32,
+        object_id: i32,
+        count: i64,
+    },
+    /// Java `TradeDone` (1 = confirm, anything else = cancel).
+    TradeDone { response: i32 },
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
@@ -136,6 +148,17 @@ pub enum ClientInput {
         ctrl_pressed: bool,
         shift_pressed: bool,
     },
+    /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
+    /// of the packet (the world checks it).
+    JoinParty { name: String, distribution_type_id: i32 },
+    /// Java `RequestAnswerJoinParty`: 1 accept, 0 decline, -1 the client refuses party requests.
+    AnswerJoinParty { response: i32 },
+    /// Java `RequestWithDrawalParty`: leave the party.
+    WithdrawParty,
+    /// Java `RequestOustPartyMember`: the leader expels `name`.
+    OustPartyMember { name: String },
+    /// Java `RequestChangePartyLeader`: the leader hands the party to `name`.
+    ChangePartyLeader { name: String },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

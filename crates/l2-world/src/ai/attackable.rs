@@ -504,9 +504,12 @@ impl World {
 
     /// Java `isAggressiveTowards(target)`.
     fn is_aggressive_towards(&self, me: ObjectId, target: ObjectId) -> bool {
-        // Check if the target isn't invulnerable (an invincible GM is skipped, anybody else is
-        // attacked all the same).
-        if self.is_invul(target) && self.is_player(target) && self.is_gm(target) {
+        // Check if the target isn't invulnerable (an invincible GM, or the summon of one, is
+        // skipped, anybody else is attacked all the same).
+        if self.is_invul(target)
+            && ((self.is_player(target) && self.is_gm(target))
+                || self.summon_owner(target).is_some_and(|o| self.is_gm(o)))
+        {
             return false;
         }
         let Some(kind) = self.objects.get(&target).map(|e| e.kind) else {
@@ -516,7 +519,8 @@ impl World {
         if kind == ObjectKind::Door {
             return false;
         }
-        let is_player = kind == ObjectKind::Player;
+        // `target.isPlayable()` for the range and silent move checks.
+        let is_player = matches!(kind, ObjectKind::Player | ObjectKind::Summon);
         // Check if the target isn't dead, is in the Aggro range and is at the same height.
         if self.is_alike_dead(target) {
             return false;
@@ -532,14 +536,15 @@ impl World {
         {
             return false;
         }
-        if is_player {
-            let access_level = self.players.get(&target).map_or(0, |p| p.data.access_level);
+        // `target.asPlayer()`: a summon's owner.
+        if let Some(player) = self.acting_player(target) {
+            let access_level = self.players.get(&player).map_or(0, |p| p.data.access_level);
             // Don't take the aggro if the GM has the access level that doesn't take aggro.
             if !self.data.can_take_aggro(access_level) {
                 return false;
             }
             // Check if the target is within the grace period for JUST getting up from fake death.
-            if self.is_recent_fake_death(target) {
+            if self.is_recent_fake_death(player) {
                 return false;
             }
             // The faction system's guards and the dimensional rift check are custom (not ported).
@@ -1238,7 +1243,7 @@ impl World {
             // `target.isAutoAttackable(npc)`: a monster attacks players (not other monsters or
             // NPCs), a guard players with karma and monsters, a monster guards.
             // (A door is not attackable by a monster.)
-            if !matches!(kind, ObjectKind::Player | ObjectKind::Npc)
+            if !matches!(kind, ObjectKind::Player | ObjectKind::Npc | ObjectKind::Summon)
                 || !self.is_auto_attackable_for(target, id)
             {
                 return false;
@@ -1369,13 +1374,13 @@ impl World {
             {
                 continue;
             }
-            if self.is_player(obj) {
+            // Players and summons; attackable targets: monsters do not attack each other here
+            // (chaos is not reachable, see `is_aggressive_towards`).
+            if self.is_player(obj) || self.is_summon(obj) {
                 let hate = most_hate.map_or(2000, |m| self.aggro_hating(id, m));
                 self.add_damage_hate(id, obj, 0, hate);
                 self.set_attack_target(id, Some(obj));
             }
-            // Attackable and summon targets: monsters do not attack each other here (chaos is
-            // not reachable, see `is_aggressive_towards`), summons are M6.
         }
     }
 
@@ -1876,7 +1881,7 @@ impl World {
         let Some(kind) = self.objects.get(&subject).map(|e| e.kind) else {
             return;
         };
-        if !matches!(kind, ObjectKind::Player | ObjectKind::Npc) {
+        if !matches!(kind, ObjectKind::Player | ObjectKind::Npc | ObjectKind::Summon) {
             return;
         }
         self.wake_ai(subject);

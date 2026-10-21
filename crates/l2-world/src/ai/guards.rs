@@ -173,24 +173,6 @@ impl World {
         }
     }
 
-    /// Java `Player.isAutoAttackable(attacker)` for an NPC `attacker`: monsters attack players,
-    /// friendly mobs do not, "guards attack only PK players".
-    pub(crate) fn player_auto_attackable_by_npc(&self, player: ObjectId, attacker: ObjectId) -> bool {
-        let Some(class) = self.npc_class(attacker) else {
-            return false;
-        };
-        if class == NpcClass::FriendlyMob {
-            return false;
-        }
-        if class.is_monster() {
-            return true;
-        }
-        if class.is_guard() {
-            return self.players.get(&player).is_some_and(|p| p.data.karma > 0);
-        }
-        false
-    }
-
     /// Java `Defender.returnHome()` / `FortCommander.returnHome()`: back to the spawn point, but
     /// only when more than 40 (200) away from it. `true` when the NPC is a defender (the caller
     /// has nothing more to do).

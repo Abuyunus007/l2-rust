@@ -30,8 +30,8 @@ pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
-pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
+pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,
     hash_password, hex_to_string, string_to_hex,

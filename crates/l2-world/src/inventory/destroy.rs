@@ -163,7 +163,16 @@ impl World {
             }
             return;
         }
-        // Flood protector `canPerformTransaction`; trade and store mode: not modelled.
+        // Flood protector `canPerformTransaction`: not modelled. Store mode: M6-STORE-01.
+        if self.is_processing_transaction(id) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::WhileOperatingAPrivateStoreOrWorkshopYouCannotDiscardDestroyOrTradeAnItem,
+                ),
+            );
+            return;
+        }
 
         let object_id = ObjectId(object_id);
         let discarded = SystemMessage::new(SystemMessageId::ThisItemCannotBeDiscarded);
@@ -210,7 +219,10 @@ impl World {
             return;
         }
 
-        // `canManipulateWithItemId` is always true here.
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send_message(id, "You cannot use this item.");
+            return;
+        }
 
         let mut count = count;
         if count > item.count {
@@ -375,11 +387,24 @@ impl World {
             return;
         }
 
-        // `!getAccessLevel().allowTransaction()`: the access level table does not carry the flag
-        // yet, every level may trade.
+        if !self.allows_transaction(id) {
+            self.send_message(id, "Transactions are disabled for your Access Level.");
+            self.send(id, &SystemMessage::new(SystemMessageId::NothingHappened));
+            return;
+        }
 
-        // Private stores, transactions, fishing, flying and a skill that consumes the item or is
-        // being cast (`isCastingNow`): none of them exist yet.
+        // Transactions (a trade or an open request). Private stores (M6-STORE-01), fishing, flying
+        // and a skill that consumes the item or is being cast (`isCastingNow`): none of them exist
+        // yet.
+        if self.is_processing_transaction(id) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::WhileOperatingAPrivateStoreOrWorkshopYouCannotDiscardDestroyOrTradeAnItem,
+                ),
+            );
+            return;
+        }
 
         if template.type2 == TYPE2_QUEST && !gm {
             self.send(
@@ -401,7 +426,10 @@ impl World {
             return;
         }
 
-        // `canManipulateWithItemId` is always true here.
+        if !self.can_manipulate_with_item_id(id, item.item_id) {
+            self.send_message(id, "You cannot use this item.");
+            return;
+        }
 
         if item.loc == LOC_PAPERDOLL {
             let unequipped =

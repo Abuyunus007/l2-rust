@@ -102,10 +102,14 @@ pub struct World {
     /// The charge of weapons and NPCs and the automatic shots of players (M5-SHOT-01,
     /// `inventory/handlers/shots.rs`).
     pub(crate) shots: crate::inventory::handlers::shots::ShotsWorld,
+    /// The parties, who is in one, and the pending invitations (M6-PARTY-01, `party/`).
+    pub(crate) party: crate::party::PartyWorld,
     /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
     pub(crate) punishments: crate::punishments::PunishmentWorld,
     /// Summons, their owners and the summon tables (M6-SUMMON-01, `summon/`).
     pub(crate) summons: crate::summon::SummonWorld,
+    /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
+    pub(crate) pvp: crate::pvp::PvpWorld,
 }
 
 impl World {
@@ -154,8 +158,10 @@ impl World {
             effects: crate::effects::EffectsWorld::default(),
             cast: crate::skills::cast::CastWorld::default(),
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
+            party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
             summons: crate::summon::SummonWorld::default(),
+            pvp: crate::pvp::PvpWorld::default(),
         }
     }
 
@@ -488,6 +494,15 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientInput::TradeRequest { object_id } => self.on_trade_request(id, object_id),
+            ClientInput::AnswerTradeRequest { response } => self.on_answer_trade_request(id, response),
+            ClientInput::AddTradeItem {
+                trade_id,
+                object_id,
+                count,
+            } => self.on_add_trade_item(id, trade_id, object_id, count),
+            ClientInput::TradeDone { response } => self.on_trade_done(id, response),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -529,6 +544,16 @@ impl World {
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
+            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
+            // RequestOustPartyMember, RequestChangePartyLeader
+            ClientInput::JoinParty {
+                name,
+                distribution_type_id,
+            } => self.on_request_join_party(id, &name, distribution_type_id),
+            ClientInput::AnswerJoinParty { response } => self.on_request_answer_join_party(id, response),
+            ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
+            ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
+            ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -604,10 +629,14 @@ impl World {
             // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
             TimerKind::Control(timer) => self.on_control_timer(timer),
+            // Java: Party's position broadcast task
+            TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
             // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task
             TimerKind::Summon(timer) => self.on_summon_timer(timer),
+            // Java: PvpFlagTaskManager.run (for one player)
+            TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
         }
     }
 

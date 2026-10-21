@@ -397,8 +397,8 @@ impl World {
             | TargetType::AuraCorpseMob
             | TargetType::CommandChannel
             | TargetType::AuraFriendly => Some(id),
-            // `_summon`: no summons (M6).
-            TargetType::Pet | TargetType::Servitor | TargetType::Summon => None,
+            // `_summon`: the player's summon.
+            TargetType::Pet | TargetType::Servitor | TargetType::Summon => self.summon_of(id),
             _ => self.target_of(id),
         };
 

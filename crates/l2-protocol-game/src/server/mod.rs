@@ -166,7 +166,8 @@ pub use trade::{
 };
 pub use userinfo::UserInfo;
 pub use visibility::{
-    CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, RelationEntry, StatusUpdate,
+    CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
+    StatusUpdate,
 };
 
 /// Reads an int count, which Java never writes negative. Anything negative is an error.

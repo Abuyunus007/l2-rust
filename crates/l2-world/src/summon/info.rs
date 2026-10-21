@@ -7,9 +7,7 @@
 // Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java (see `actions.rs`)
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{
-    EffectIcon, PartySpelled, PetInfo, PetStatusUpdate, SummonInfo, SystemMessage, SystemMessageParam,
-};
+use l2_protocol_game::server::{PetInfo, PetStatusUpdate, SummonInfo, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 
 use super::SummonKind;
@@ -313,7 +311,7 @@ impl World {
             self.send(owner, &update);
         }
         self.broadcast_summon_npc_info(summon, value);
-        // M6 (PARTY-01): `party.broadcastToPartyMembers(owner, new ExPartyPetWindowUpdate(this))`.
+        self.summon_party_window_update(summon);
         self.summon_update_effect_icons(summon);
     }
 
@@ -329,6 +327,12 @@ impl World {
                 self.send(viewer, &info);
             }
         }
+    }
+
+    /// `updateEffectIcons()` (`partyOnly` false) of a summon.
+    pub(crate) fn summon_update_effect_icons_plain(&mut self, summon: ObjectId) {
+        let _ = self.effect_list_mut(summon);
+        self.update_effect_icons(summon, false);
     }
 
     /// `updateEffectIcons(true)` of a summon. Java makes the effect list with the creature, so
@@ -415,33 +419,5 @@ impl World {
                 .with(SystemMessageParam::IntNumber(damage))
         };
         self.send(owner, &message);
-    }
-
-    /// The summon branch of the icon task of `EffectList.updateEffectIcons()`: the buffs (no
-    /// toggle filter for the owner's packet) as `PartySpelled` to the owner.
-    // M6 (PARTY-01): the party members get `psSummon` (the same without toggles).
-    pub(crate) fn send_summon_party_spelled(&mut self, summon: ObjectId) {
-        let Some(owner) = self.summon_owner(summon) else {
-            return;
-        };
-        let creature_type = if self.is_servitor(summon) {
-            PartySpelled::SERVITOR
-        } else {
-            PartySpelled::PET
-        };
-        let mut packet = PartySpelled {
-            creature_type,
-            creature_id: summon.0,
-            effects: Vec::new(),
-        };
-        for icon in self.effect_icons(summon) {
-            packet.add_skill(EffectIcon {
-                display_id: icon.skill_id,
-                display_level: icon.skill_level,
-                time: icon.time,
-                in_use: true,
-            });
-        }
-        self.send(owner, &packet);
     }
 }

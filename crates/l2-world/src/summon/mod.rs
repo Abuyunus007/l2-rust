@@ -18,17 +18,21 @@
 //
 // # Left out, with the system that brings it
 // - Pets (`Pet`, `BabyPet`, feeding, the pet inventory, `RequestPetGetItem` & co.): PET-01.
-// - Parties (`ExPartyPetWindow*`, the party half of `PartySpelled`, the party targets): PARTY-01.
+// - Cubics: CUBIC-01. Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in `SummonStatus`): DUEL-01.
 // - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
 //   as "not in one".
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
 //   protection, `CharSummonTable.restoreServitor`): spawn protection is not modelled. The
 //   `character_summons` row is written and removed exactly like Java, so the Java GS restores it.
-// - Transfer pain (`SummonStatus.reduceHp`'s `TRANSFER_DAMAGE_TO_PLAYER`), `TamedBeast`, mounts.
+//   For the same reason `Summon.isInvul()` has no `_owner.isSpawnProtected()` part.
+// - The `PathFinding.findPath` refusals of `SummonAI` and `Summon.useMagic` (see `ai.rs`).
+// - Transfer pain (`SummonStatus.reduceHp`'s `TRANSFER_DAMAGE_TO_PLAYER`), `TamedBeast`, mounts,
+//   the Mobius auto play.
 
 pub mod actions;
 pub mod ai;
 pub mod info;
+pub mod party;
 pub mod servitor;
 pub mod share;
 pub mod shots;

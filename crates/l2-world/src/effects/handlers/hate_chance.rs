@@ -220,13 +220,13 @@ impl EffectHandler for TargetMeProbability {
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
         let (effector, effected) = (cx.effector, cx.effected);
-        // `effected.isPlayable()`: a player (summons are M6) that does not target the caster yet.
-        if !world.is_player(effected) || world.target_of(effected) == Some(effector) {
+        // `effected.isPlayable()` that does not target the caster yet.
+        if !world.is_playable(effected) || world.creature_target(effected) == Some(effector) {
             return;
         }
         // If effector is null, then its not a player, but NPC. If it is not null, then it should
-        // check if the skill is pvp skill.
-        let player = world.is_player(effector).then_some(effector);
+        // check if the skill is pvp skill (`effector.asPlayer()`: a summon's owner).
+        let player = world.acting_player(effector);
         let allowed = match player {
             None => true,
             // `_currentSkill.isCtrlPressed()` of the caster's cast in progress.
@@ -238,7 +238,7 @@ impl EffectHandler for TargetMeProbability {
         if allowed {
             // Target is different.
             // NOTE(java-quirk): an NPC caster passes `null`, which clears the target.
-            world.set_target(effected, player);
+            world.set_creature_target(effected, player);
         }
     }
 }

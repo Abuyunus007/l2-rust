@@ -210,16 +210,16 @@ impl World {
         self.update_and_broadcast_summon_status(id, 0);
         // `sendPacket(new RelationChanged(this, _owner.getRelation(_owner), false))` to the
         // owner, then the players within 800 of the owner.
-        self.send_summon_relation(id, owner, owner, Some(false));
+        self.send_summon_relation(id, owner, Some(false));
         let viewers: Vec<ObjectId> = self
             .visible_objects_in_range(owner, RELATION_RANGE)
             .into_iter()
             .filter(|o| self.objects.get(o).is_some_and(|e| e.kind == ObjectKind::Player))
             .collect();
         for viewer in viewers {
-            self.send_summon_relation(id, owner, viewer, None);
+            self.send_summon_relation(id, viewer, None);
         }
-        // M6 (PARTY-01): `party.broadcastToPartyMembers(_owner, new ExPartyPetWindowAdd(this))`.
+        self.summon_party_window_add(id);
 
         // "AddVisibleObject created the info packets with summon animation."
         // "If someone comes into range now, the animation shouldn't show any more."
@@ -249,16 +249,28 @@ impl World {
 
     /// `new RelationChanged(summon, owner.getRelation(viewer), autoAttackable)` to `viewer`.
     /// `auto_attackable` `None` = `isAutoAttackable(viewer)` of the summon.
-    fn send_summon_relation(&self, summon: ObjectId, owner: ObjectId, viewer: ObjectId, auto_attackable: Option<bool>) {
-        let auto_attackable = auto_attackable.unwrap_or_else(|| self.summon_auto_attackable_by(summon, viewer));
-        let entry = RelationEntry {
+    fn send_summon_relation(&self, summon: ObjectId, viewer: ObjectId, auto_attackable: Option<bool>) {
+        let entry = self.summon_relation_entry(summon, viewer, auto_attackable);
+        self.send(viewer, &RelationChanged::single(entry));
+    }
+
+    /// `new RelationChanged(summon, owner.getRelation(viewer), autoAttackable)`: the owner's
+    /// relation, karma and PvP flag. `auto_attackable` `None` = `owner.isAutoAttackable(viewer)`.
+    pub(crate) fn summon_relation_entry(
+        &self,
+        summon: ObjectId,
+        viewer: ObjectId,
+        auto_attackable: Option<bool>,
+    ) -> RelationEntry {
+        let owner = self.summon_owner(summon).unwrap_or(summon);
+        RelationEntry {
             object_id: summon.0,
-            relation: self.summon_owner_relation(owner, viewer),
-            auto_attackable,
+            relation: self.relation(owner, viewer),
+            auto_attackable: auto_attackable
+                .unwrap_or_else(|| self.summon_auto_attackable_by(summon, viewer)),
             karma: self.players.get(&owner).map_or(0, |p| p.data.karma),
             pvp_flag: self.pvp_flag_of(owner),
-        };
-        self.send(viewer, &RelationChanged::single(entry));
+        }
     }
 
     /// Java `Creature.setRunning(true/false)` for a summon: `ChangeMoveType`, then

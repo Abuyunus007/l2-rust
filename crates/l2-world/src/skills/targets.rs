@@ -14,9 +14,10 @@
 // Java's handlers call `getAffectLimit()`, so a seeded world replays them.
 //
 // # What is not there yet (each marked `// M6:` or `// M5:` where it would act)
-// - Summons, pets, servitors, parties, command channels, clans, alliances, duels, olympiad,
-//   sieges, events, auto play, observer mode: none exist. Java's code path for "none of these"
-//   is followed: party = only the caster, clan = only the caster, summon targets find nothing.
+// - Summons, pets, servitors, command channels, clans, alliances, duels, olympiad, sieges,
+//   events, auto play, observer mode: none exist. Java's code path for "none of these" is
+//   followed: clan = only the caster, summon targets find nothing. Parties are real since
+//   M6-PARTY-01 (`party/`).
 // - PvP flags (`Player.getPvpFlag()`): the world has none, they read as 0.
 // - NPCs have no zone flags in the world, so `isInsideZone` is false for them.
 //
@@ -305,9 +306,13 @@ impl World {
         }
         if self.is_player(caster) {
             if self.is_player(target) {
-                // M5/M6: auto play settings, observer mode, siege state/side, party and command
-                // channel (same party is never a target), event teams. None exist.
+                // M5/M6: auto play settings, observer mode, siege state/side, event teams. None
+                // exist.
                 if has_negative_effect(skill) && self.is_inside_zone(target, ZoneId::Peace) {
+                    return false;
+                }
+                // Same party (a command channel would be the same; there are none).
+                if self.is_in_party_with(caster, target) {
                     return false;
                 }
                 if !source_in_arena
@@ -359,7 +364,14 @@ impl World {
         {
             return false;
         }
-        // M6: siege friend, same party / command channel.
+        // M6: siege friend (`FORCE_ATTACK_IS_IMPOSSIBLE_AGAINST_A_TEMPORARY_ALLIED_MEMBER_...`).
+        // Party (and command channel): only a force attack with a damage skill hits a member.
+        if self.is_in_party_with(player, target) {
+            return skill.effect_range > 0
+                && ctx.ctrl_pressed
+                && self.target_of(player) == Some(target)
+                && has_effect(skill, EffectKind::Damage);
+        }
         // You can debuff anyone except party members while in an arena.
         if self.is_inside_zone(player, ZoneId::Pvp) && self.is_inside_zone(target, ZoneId::Pvp) {
             return true;
@@ -604,12 +616,18 @@ impl<R: Rnd> Targeting<'_, R> {
         self.w.is_playable(id)
     }
 
-    /// Java `Skill.addCharacter(caster, target, radius, isDead)`.
-    fn add_character(&self, target: ObjectId, radius: i32, is_dead: bool) -> bool {
-        if is_dead != self.dead(target) {
-            return false;
+    /// `creature.isInParty() && target.isInParty()` with the same leader: a summon is in its
+    /// owner's party.
+    fn same_party(&self, a: ObjectId, b: ObjectId) -> bool {
+        match (self.w.acting_player(a), self.w.acting_player(b)) {
+            (Some(pa), Some(pb)) => self.w.is_in_party_with(pa, pb),
+            _ => false,
         }
-        !(radius > 0 && !self.in_range(radius, self.caster, target))
+    }
+
+    /// Java `Skill.addCharacter(caster, target, radius, isDead)` from the caster.
+    fn add_character(&self, target: ObjectId, radius: i32, is_dead: bool) -> bool {
+        self.w.skill_add_character(self.caster, target, radius, is_dead)
     }
 
     /// Java `Skill.addSummon(caster, owner, radius, isDead)`: the owner's summon, when it fits.
@@ -758,11 +776,14 @@ impl<R: Rnd> Targeting<'_, R> {
             if player == target {
                 return true;
             }
-            // M6: observer mode, olympiad, duel, clan war, same party (true), clan / ally /
-            // command channel (true).
+            // M6: observer mode, olympiad, duel, clan war.
+            if self.w.is_in_party_with(player, target) {
+                return true;
+            }
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
+            // M6: same clan / ally (true); a command channel member would be true as well.
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
                 return false;
             }
@@ -886,10 +907,14 @@ impl<R: Rnd> Targeting<'_, R> {
             return false;
         }
         if self.playable(target) {
-            // M6: duel, same party (true), clan / ally / command channel (true).
+            // M6: duel.
+            if self.w.is_in_party_with(player, target) {
+                return true;
+            }
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
+            // M6: same clan / ally (true); a command channel member would be true as well.
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
                 return false;
             }
@@ -1081,8 +1106,27 @@ impl<R: Rnd> Targeting<'_, R> {
         if let Some(summon) = self.add_summon(player, self.skill.affect_range, false) {
             self.push(summon);
         }
-        // M6: the members of its party or command channel in range. A player without a party
-        // gets only itself (and its summon).
+        // `party = player.getParty()` (a summon caster's is its owner's).
+        let Some(party) = self.w.party_of(player) else {
+            // If the player is not in a party, it gets only itself (and its summon).
+            return;
+        };
+        let radius = self.skill.affect_range;
+        let max_targets = self.affect_limit();
+        // M6: the members of the command channel, when the party is in one (there are none).
+        for member in self.w.party_members(party) {
+            if member == self.caster {
+                continue;
+            }
+            if self.w.skill_add_character(self.caster, member, radius, false) {
+                self.push(member);
+                // NOTE(java-quirk): no `maxTargets > 0` test, so an affect limit of 0 stops the
+                // list after the first member.
+                if self.size_at_least(max_targets) {
+                    break;
+                }
+            }
+        }
     }
 
     // Java: CorpseClan.java
@@ -1258,6 +1302,8 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         }
         let radius = self.skill.affect_range;
+        // `creature.asPlayer()`: a summon's owner.
+        let player = self.w.acting_player(self.caster);
         if let Some(owner) = self.w.summon_owner(self.caster) {
             // A summon caster adds its owner.
             if self.w.players.contains_key(&owner) && self.add_character(owner, radius, false) {
@@ -1269,8 +1315,20 @@ impl<R: Rnd> Targeting<'_, R> {
             // A player caster adds its summon.
             self.push(summon);
         }
-        // M6: the party members (and their summons) within the affect range. Without a party:
-        // the caster (and its summon or owner) alone.
+        // Get a list of party members (`creature.getParty()`: a summon's is its owner's).
+        if let Some(party) = player.and_then(|p| self.w.party_of(p)) {
+            for member in self.w.party_members(party) {
+                if Some(member) == player {
+                    continue;
+                }
+                if self.w.skill_add_character(self.caster, member, radius, false) {
+                    self.push(member);
+                }
+                if let Some(summon) = self.add_summon(member, radius, false) {
+                    self.push(summon);
+                }
+            }
+        }
     }
 
     // Java: PartyClan.java
@@ -1279,8 +1337,47 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         }
         self.push(self.caster);
-        // M6: the summon, then the players around that share the caster's clan or party. Without
-        // either Java returns here.
+        if self.only_first {
+            return;
+        }
+        let radius = self.skill.affect_range;
+        if let Some(summon) = self.add_summon(self.caster, radius, false) {
+            self.push(summon);
+        }
+        // M6: a clan (`hasClan` is false without clans).
+        // If the player has neither a clan nor a party Java returns here.
+        let Some(party) = self.w.party_of(self.caster) else {
+            return;
+        };
+        let max_targets = self.affect_limit();
+        // `World.getVisibleObjectsInRange(creature, Player.class, radius)`.
+        for obj in self.w.visible_creatures_in_range(self.caster, radius) {
+            if !self.w.is_player(obj) {
+                continue;
+            }
+            // M6: olympiad side and duel checks.
+            // Same party (or, M6, same clan).
+            if self.w.party_of(obj) != Some(party) {
+                continue;
+            }
+            // Don't add this target if this is a Pc->Pc pvp casting and pvp condition not met.
+            if !self.w.check_pvp_skill(self.caster, obj, self.skill, self.ctx) {
+                continue;
+            }
+            // M6: event teams.
+            if !self.only_first
+                && let Some(summon) = self.add_summon(obj, radius, false)
+            {
+                self.push(summon);
+            }
+            if !self.w.skill_add_character(self.caster, obj, radius, false) {
+                continue;
+            }
+            self.push(obj);
+            if self.limit_reached(max_targets) {
+                break;
+            }
+        }
     }
 
     // Java: PartyMember.java
@@ -1290,11 +1387,10 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         };
         // Check if target is a valid party member.
-        // M6: also a live target in the same party.
         if !self.dead(target) {
             let own_summon = self.caster_is_player() && self.w.summon_of(self.caster) == Some(target);
             let own_owner = self.w.summon_owner(self.caster) == Some(target) && self.w.is_player(target);
-            if target == self.caster || own_summon || own_owner {
+            if target == self.caster || self.same_party(self.caster, target) || own_summon || own_owner {
                 self.push(target);
                 return;
             }
@@ -1306,14 +1402,57 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // Java: PartyNotMe.java
     fn party_not_me(&mut self) {
-        // M6: the other living party members within `AltPartyRange` (and the affect range) and
-        // their living summons. Without a party the list is empty.
+        let Some(party) = self.w.party_of(self.caster) else {
+            return;
+        };
+        let party_range = self.w.settings.party.alt_party_range;
+        let affect_range = self.skill.affect_range;
+        for member in self.w.party_members(party) {
+            if !self.dead(member)
+                && member != self.caster
+                && self.in_range(party_range, self.caster, member)
+                && (affect_range <= 0 || self.in_range(affect_range, self.caster, member))
+            {
+                self.push(member);
+                // The member's living summon.
+                if let Some(summon) = self.w.summon_of(member).filter(|s| !self.dead(*s)) {
+                    self.push(summon);
+                }
+            }
+        }
     }
 
     // Java: PartyOther.java
     fn party_other(&mut self) {
-        // M6: a living party member other than the caster (skills 426 and 427 pick by mage class).
-        // Without a party every target fails.
+        if let Some(target) = self
+            .target
+            .filter(|t| *t != self.caster && self.w.is_in_party_with(self.caster, *t))
+        {
+            if self.dead(target) {
+                return;
+            }
+            if let Some(class_id) = self.w.players.get(&target).map(|p| p.data.class_id) {
+                let mage = u16::try_from(class_id).is_ok_and(|id| l2_data::ClassId(id).is_mage());
+                // FORCE BUFFS may cancel here but there should be a proper condition.
+                match self.skill.id {
+                    426 => {
+                        if !mage {
+                            self.push(target);
+                        }
+                        return;
+                    }
+                    427 => {
+                        if mage {
+                            self.push(target);
+                        }
+                        return;
+                    }
+                    _ => {}
+                }
+            }
+            self.push(target);
+            return;
+        }
         self.out.incorrect_target();
     }
 
@@ -1395,9 +1534,23 @@ impl<R: Rnd> Targeting<'_, R> {
             self.not_handled();
             return;
         }
-        // M6: when that player is in a party, every member (and summon) within the affect range
-        // of that player. Without a party only `target`.
-        self.push(target);
+        let selected = selected.unwrap_or(target);
+        let radius = self.skill.affect_range;
+        if let Some(party) = self.w.party_of(selected) {
+            // Every member within the affect range of the selected player, and its summon.
+            for member in self.w.party_members(party) {
+                if self.w.skill_add_character(selected, member, radius, false) {
+                    self.push(member);
+                }
+                if let Some(summon) = self.w.summon_of(member)
+                    && self.w.skill_add_character(selected, summon, radius, false)
+                {
+                    self.push(summon);
+                }
+            }
+        } else {
+            self.push(target);
+        }
     }
 
     // Java: Unlockable.java

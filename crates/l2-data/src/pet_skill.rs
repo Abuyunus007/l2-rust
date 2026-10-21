@@ -62,11 +62,9 @@ impl PetSkillData {
     fn add_document(&mut self, doc: RawFile, skill_exists: &dyn Fn(i32, i32) -> bool) {
         for child in doc.children {
             let RawChild::Skill(raw) = child else { continue };
-            let (Some(npc_id), Some(skill_id), Some(skill_level)) = (
-                parse(&raw.npc_id),
-                parse(&raw.skill_id),
-                parse(&raw.skill_level),
-            ) else {
+            let (Some(npc_id), Some(skill_id), Some(skill_level)) =
+                (parse(&raw.npc_id), parse(&raw.skill_id), parse(&raw.skill_level))
+            else {
                 warn!("PetSkillData: skipping a <skill> without a valid npcId, skillId or skillLevel.");
                 continue;
             };
@@ -74,12 +72,17 @@ impl PetSkillData {
             // skills are all unknown still counts in the loaded total.
             let tree = self.by_npc.entry(npc_id).or_default();
             if skill_exists(skill_id, if skill_level == 0 { 1 } else { skill_level }) {
-                let skill = PetSkill { skill_id, skill_level };
+                let skill = PetSkill {
+                    skill_id,
+                    skill_level,
+                };
                 if !tree.contains(&skill) {
                     tree.push(skill);
                 }
             } else {
-                info!("PetSkillData: Could not find skill with id {skill_id}, level {skill_level} for NPC {npc_id}.");
+                info!(
+                    "PetSkillData: Could not find skill with id {skill_id}, level {skill_level} for NPC {npc_id}."
+                );
             }
         }
     }

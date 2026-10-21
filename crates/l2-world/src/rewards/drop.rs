@@ -22,13 +22,13 @@
 // # Not modelled, with what brings it
 // - Spoil: the state (`Attackable._spoilerObjectId`, `_sweepItems`) and its checks are at the end
 //   of this file (M5-SPOIL-01); the `Spoil` / `Sweeper` effects are in `effects/handlers/`.
-//   `isInLooterParty` is false for everybody until parties exist (M6).
+//   `isInLooterParty` is `party/mod.rs` (M6-PARTY-01).
 // - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion), seeds (manor) and
 //   the premium system (`PremiumSystem.ini`, off by default; there is no premium status).
 // - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
-// - Parties: Java picks the leader of the party that did the most damage as the one the loot
-//   belongs to and shares auto loot by `distributeItem`; without parties (M5) the loot goes to
-//   the single biggest damage dealer.
+// - Parties: the leader of the party that did the most damage is the one the loot belongs to
+//   when its members together beat the single biggest dealer; auto loot is shared by
+//   `Party.distributeItem` (`party/loot.rs`, M6-PARTY-01). Only the command channel is missing.
 
 use std::collections::BTreeMap;
 
@@ -754,10 +754,40 @@ impl World {
                 }
             }
         }
-        // Parties (M5): the leader of the party that did the most damage gets the loot when its
-        // members together beat the single best dealer.
+        // The party that did the most damage: every attacker's party once, with what its members
+        // did in all (the attackers out of range count here, too).
+        let mut damaging_parties: Vec<(crate::party::PartyId, i64)> = Vec::new();
+        for info in &aggro {
+            let Some(party) = self.party_of(info.attacker) else {
+                continue;
+            };
+            let mut total_member_damage: i64 = 0;
+            for member in self.party_members(party) {
+                if let Some(member_aggro) = aggro.iter().find(|a| a.attacker == member)
+                    && member_aggro.damage > 1
+                {
+                    total_member_damage = total_member_damage.wrapping_add(member_aggro.damage);
+                }
+            }
+            match damaging_parties.iter_mut().find(|(p, _)| *p == party) {
+                Some(entry) => entry.1 = total_member_damage,
+                None => damaging_parties.push((party, total_member_damage)),
+            }
+        }
+        // `sort(comparingLong(c -> -c.damage))` is stable: equal parties stay in aggro order.
+        damaging_parties.sort_by_key(|(_, damage)| std::cmp::Reverse(*damage));
+        let most_damage_party = damaging_parties.first().copied();
 
         // Manage base, quests and sweep drops of the Attackable.
+        if let Some((party, damage)) = most_damage_party
+            && damage > max_damage
+        {
+            // The party's members together beat the single best dealer: its leader gets the loot.
+            let leader = self.party_leader(party);
+            self.do_item_drop(dying, leader);
+            // `EventDropManager.doEventDrop(leader, this)`: no event drops.
+            return;
+        }
         let dealer = match max_dealer {
             // `maxDealer.isOnline()`.
             Some(p) if self.players.contains_key(&p) => Some(p),
@@ -1100,9 +1130,10 @@ impl World {
 
     /// Java `Attackable.checkSpoilOwner(sweeper, false)`: the sweeper cast the Spoil or is in
     /// the party of whoever did. The caller sends `THERE_ARE_NO_PRIORITY_RIGHTS_ON_A_SWEEPER`.
-    // `sweeper.isInLooterParty(_spoilerObjectId)`: parties are M6, so only the spoiler sweeps.
     pub(crate) fn check_spoil_owner(&self, id: ObjectId, sweeper: ObjectId) -> bool {
-        self.death.spoil.get(&id).and_then(|s| s.spoiler) == Some(sweeper)
+        let spoiler = self.death.spoil.get(&id).and_then(|s| s.spoiler);
+        // `sweeper.getObjectId() == _spoilerObjectId || sweeper.isInLooterParty(_spoilerObjectId)`.
+        spoiler == Some(sweeper) || spoiler.is_some_and(|s| self.is_in_looter_party(sweeper, s))
     }
 
     /// Java `Attackable.isOldCorpse(attacker, CorpseConsumeSkillAllowedTimeBeforeDecay, false)`:

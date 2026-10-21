@@ -559,7 +559,7 @@ mod tests {
         let registry = EffectRegistry::new();
         assert_eq!(registry.len(), 165);
         assert!(registry.is_ported("Buff"));
-        // Summons are M6: this one stays a stand-in until then.
+        // Cubics are M6-CUBIC-01: this one stays a stand-in until then.
         assert!(registry.contains("SummonCubic"));
         assert!(!registry.is_ported("SummonCubic"));
         assert!(!registry.contains("NoSuchEffect"));

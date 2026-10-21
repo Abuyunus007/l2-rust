@@ -61,8 +61,14 @@ impl EffectHandler for DispelBySlotProbability {
             if world.rng().get_int(100) >= self.rate {
                 continue;
             }
-            // NOTE: Java stops a transformation here (`stopTransformation(true)`) before the buff
-            // of the type is taken. Transformations are M6; only the buff is taken.
+            // Dispel transformations (buff and by GM): Java stops the transformation before the
+            // buff of the type is taken.
+            // NOTE(java-quirk): the condition is `isTransformed() || (isPlayer() || (value ==
+            // asPlayer().getTransformationId()) || value < 0)`, true for every player; for a
+            // creature that is no player Java's `asPlayer()` is null and the call throws.
+            if abnormal == AbnormalType::Transform && world.is_player(cx.effected) {
+                world.stop_transformation(cx.effected, true);
+            }
             let present = world
                 .effect_list(cx.effected)
                 .and_then(|list| list.info_by_abnormal_type(abnormal))

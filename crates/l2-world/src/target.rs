@@ -8,9 +8,8 @@
 // Java: entity/World.java (removeVisibleObject, switchRegion: the targets they clear)
 //
 // # What is left out, with the system that brings it
-// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, a pending
-//   trade/party request (`getActiveRequester`), spawn protection (`onActionRequest`): none of them
-//   exist yet.
+// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, spawn
+//   protection (`onActionRequest`): none of them exist yet.
 // - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
@@ -151,8 +150,8 @@ impl World {
         let mut new_target = new_target;
 
         if let Some(target) = new_target {
-            // FOLLOW-UP(M5): a party member is exempt from both checks (`isInParty`).
-            let in_party = false;
+            // A member of the player's own party is exempt from both checks.
+            let in_party = self.is_in_party_with(id, target);
             // Prevents /target exploiting.
             if !in_party
                 && self
@@ -239,7 +238,9 @@ impl World {
         };
         let heading = match self.objects.get(&object).map(|e| e.kind) {
             Some(ObjectKind::Player) => self.players.get(&object).map_or(0, |p| p.core.heading),
-            Some(ObjectKind::Npc | ObjectKind::Summon) => self.npcs.get(&object).map_or(0, |n| n.core.heading),
+            Some(ObjectKind::Npc | ObjectKind::Summon) => {
+                self.npcs.get(&object).map_or(0, |n| n.core.heading)
+            }
             // Doors and static objects have a heading of 0 (`Location.getHeading`).
             _ => 0,
         };
@@ -318,7 +319,14 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // FOLLOW-UP: `getActiveRequester()` (trade, party and friend requests), `onActionRequest()`.
+        // Check if the target is valid, if the player haven't a shop or isn't the requester of a
+        // transaction (ex: FriendInvite, JoinAlly, JoinParty...). A player who was asked for a trade
+        // cannot click until the request is answered or has run out.
+        if self.active_requester(id).is_some() {
+            self.send(id, &ActionFailed);
+            return;
+        }
+        // FOLLOW-UP: `onActionRequest()` (spawn protection).
 
         match action_id {
             0 => self.on_action_object(id, obj, true),

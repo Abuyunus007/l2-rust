@@ -96,7 +96,8 @@ impl World {
     /// Java `SummonAI.setIntentionFollow(target)` then `CreatureAI.setIntentionFollow(target)`.
     pub(crate) fn summon_set_intention_follow(&mut self, summon: ObjectId, target: Option<ObjectId>) {
         // `target.asCreature()`.
-        let Some(target) = target.filter(|t| self.objects.get(t).is_some_and(|e| e.kind.is_creature())) else {
+        let Some(target) = target.filter(|t| self.objects.get(t).is_some_and(|e| e.kind.is_creature()))
+        else {
             self.client_action_failed(summon);
             return;
         };
@@ -384,7 +385,8 @@ impl World {
         if self.is_moving(summon) || self.is_dead(summon) || self.is_movement_disabled(summon) {
             return;
         }
-        let (Some((owner_x, owner_y, _)), Some((x, y, z))) = (self.position_of(owner), self.position_of(summon))
+        let (Some((owner_x, owner_y, _)), Some((x, y, z))) =
+            (self.position_of(owner), self.position_of(summon))
         else {
             return;
         };
@@ -427,5 +429,4 @@ impl World {
         self.set_intention_attack(summon, target);
         // Fake players (`FAKE_PLAYER_AUTO_ATTACKABLE`) are not ported.
     }
-
 }

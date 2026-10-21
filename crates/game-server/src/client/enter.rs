@@ -604,6 +604,17 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
+            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
+            ClientPacket::TradeRequest(p) => ClientInput::TradeRequest {
+                object_id: p.object_id,
+            },
+            ClientPacket::AnswerTradeRequest(p) => ClientInput::AnswerTradeRequest { response: p.response },
+            ClientPacket::AddTradeItem(p) => ClientInput::AddTradeItem {
+                trade_id: p.trade_id,
+                object_id: p.object_id,
+                count: p.count,
+            },
+            ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
             // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,
@@ -670,6 +681,16 @@ impl ClientSession {
                 opcode: l2_protocol_game::client::RequestChangePetName::OPCODE.id(),
                 ex_opcode: None,
             },
+            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
+            // RequestOustPartyMember, RequestChangePartyLeader
+            ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
+                name: p.name,
+                distribution_type_id: p.party_distribution_type_id,
+            },
+            ClientPacket::RequestAnswerJoinParty(p) => ClientInput::AnswerJoinParty { response: p.response },
+            ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
+            ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
+            ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

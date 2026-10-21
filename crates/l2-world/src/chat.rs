@@ -1,15 +1,15 @@
 //! Chat: `Say2` and the chat handlers of the channels a plain character can use.
 // Java: network/clientpackets/Say2.java (runImpl)
 // Java: dist/game/data/scripts/handlers/chat/channels/{ChatGeneral,ChatShout,ChatTrade,
-// Java: ChatWhisper,ChatHeroVoice}.java
+// Java: ChatWhisper,ChatHeroVoice,ChatParty}.java
 //
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
 // out because the systems do not exist: cursed weapons, block lists, factions, the say filter
 // (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
-// party, clan, alliance, petition and room channels (their messages are dropped with a debug
-// line, like Java does for a channel without handler).
+// clan, alliance, petition and room channels (their messages are dropped with a debug line, like
+// Java does for a channel without handler). The party channel is `chat_party` (M6-PARTY-01).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, ChatType, CreatureSay, SayBody, SenderField, SystemMessage};
@@ -125,6 +125,7 @@ impl World {
             ChatType::Trade => self.chat_trade(id, &text),
             ChatType::Whisper => self.chat_whisper(id, target.as_deref(), &text),
             ChatType::HeroVoice => self.chat_hero_voice(id),
+            ChatType::Party => self.chat_party(id, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }
     }
@@ -400,6 +401,21 @@ impl World {
                 self.send(id, &SystemMessage::new(SystemMessageId::ThatPlayerIsNotOnline));
             }
         }
+    }
+
+    // Java: ChatParty.onChat (without the jail rule and the block list)
+    fn chat_party(&self, id: ObjectId, text: &str) {
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
+        let Some(party) = self.party_of(id) else {
+            self.send_message(id, "You are not in a party.");
+            return;
+        };
+        // `getParty().broadcastCreatureSay(new CreatureSay(...), activeChar)`: every member,
+        // the speaker too.
+        let packet = self.say_packet(id, ChatType::Party, &player.data.name, text);
+        self.broadcast_party(party, &packet);
     }
 
     // Java: ChatHeroVoice.onChat; the heroes table is not loaded, so only a GM passes.

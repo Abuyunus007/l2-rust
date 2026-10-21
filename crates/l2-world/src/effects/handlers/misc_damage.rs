@@ -1,5 +1,5 @@
-//! `StaticDamage`, and the two party effects `RebalanceHP` and `TransferDamage` (parties are M6,
-//! so they have nothing to do yet).
+//! `StaticDamage`, and the two party effects `RebalanceHP` and `TransferDamage` (the party side is
+//! `party/buffs.rs`).
 // Java: dist/game/data/scripts/handlers/skill/effects/StaticDamage.java
 // Java: dist/game/data/scripts/handlers/skill/effects/RebalanceHP.java
 // Java: dist/game/data/scripts/handlers/skill/effects/TransferDamage.java
@@ -69,14 +69,14 @@ impl EffectHandler for RebalanceHp {
     }
 
     /// `if (!effector.isPlayer() || !effector.isInParty()) return;` and then the party members
-    /// (and their summons) in range share their HP. In M5 a player has no party ("party" targets
-    /// mean "just me", `docs/design/m5-skills.md`), so Java returns here every time.
-    // M6: the members' HP rebalance, when parties exist.
-    fn on_start(&self, _world: &mut World, _cx: &EffectCx<'_>) {}
+    /// in range share their HP, their summons too (`party/buffs.rs`).
+    fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
+        world.rebalance_party_hp(cx.effector, cx.skill);
+    }
 }
 
 /// Java `TransferDamage`: the effected player passes part of the damage it takes to the caster
-/// (the damage code reads the link only for a player with a party, M6).
+/// (the damage code reads the link only for a player with a party, `party/buffs.rs`).
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct TransferDamage;
 
