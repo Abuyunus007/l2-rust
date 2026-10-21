@@ -51,7 +51,7 @@ impl World {
     // Not modelled (nothing sets them yet): the control item of a summoned pet, the enchant scroll,
     // support item and attribute stone in use, the skill consumed by `getLastSimultaneousSkillCast`,
     // and `havePetInvItems` for a pet collar.
-    fn is_item_available(
+    pub(super) fn is_item_available(
         &self,
         player: ObjectId,
         item: &ItemData,

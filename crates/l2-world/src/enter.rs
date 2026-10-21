@@ -791,7 +791,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         ally_crest_id: 0,
         relation: 0,
         mount_type: 0,
-        private_store_type: 0,
+        private_store_type: player.trade.store_type.id(),
         // `getSkillLevel(CommonSkill.CREATE_DWARVEN) >= 1`
         has_dwarven_craft: data
             .skills

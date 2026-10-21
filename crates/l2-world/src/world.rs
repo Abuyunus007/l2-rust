@@ -488,6 +488,8 @@ impl World {
                 count,
             } => self.on_add_trade_item(id, trade_id, object_id, count),
             ClientInput::TradeDone { response } => self.on_trade_done(id, response),
+            // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
+            ClientInput::Store(input) => self.on_store_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,

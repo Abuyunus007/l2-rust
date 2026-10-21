@@ -8,7 +8,8 @@
 // through `PacketSink::left_world`.
 //
 // What decides whether Java lets a player log out or restart (`canLogout`, combat stance,
-// enchanting, store mode, class change, festival) is not modelled yet: the answer is always yes.
+// enchanting, class change, festival) is not modelled yet: the answer is always yes (a store
+// refuses a restart).
 // When one of those systems arrives, this is where it refuses (RestartResponse(false) +
 // ActionFailed for a restart, ActionFailed for a logout).
 
@@ -28,6 +29,12 @@ impl World {
     }
 
     pub(crate) fn on_restart(&mut self, id: ObjectId) {
+        // Java `RequestRestart`: a player with a store open cannot restart.
+        if self.is_in_store_mode(id) {
+            self.send_message(id, "Cannot restart while trading.");
+            self.send(id, &RestartResponse { result: false });
+            return;
+        }
         self.leave(id, LeaveReason::Restart);
     }
 

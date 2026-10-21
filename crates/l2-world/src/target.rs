@@ -455,9 +455,12 @@ impl World {
         if self.target_of(player) != Some(target) {
             self.set_target(player, Some(target));
         } else if interact {
-            // FOLLOW-UP(M5): private stores (`setIntentionInteract`), the cursed weapon level
-            // rule, `setIntentionFollow` for a player that cannot be attacked.
-            if self.is_auto_attackable_by(target, player) {
+            // FOLLOW-UP(M5): the cursed weapon level rule, `setIntentionFollow` for a player that
+            // cannot be attacked.
+            if self.is_in_store_mode(target) {
+                // Check if this Player has a Private Store.
+                self.set_intention_interact(player, target);
+            } else if self.is_auto_attackable_by(target, player) {
                 self.set_intention_attack(player, target);
             } else {
                 // This Action Failed packet avoids player getting stuck when clicking three or

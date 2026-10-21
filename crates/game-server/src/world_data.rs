@@ -900,6 +900,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         drops: drop_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
         party: party_settings(config, config_dir),
+        store: l2_world::StoreSettings {
+            shop_min_range_from_player: config.private_store_range.shop_min_range_from_player,
+            shop_min_range_from_npc: config.private_store_range.shop_min_range_from_npc,
+            max_item_in_packet: config.effective_max_item_in_packet(),
+        },
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
         effects: l2_world::EffectSettings {
