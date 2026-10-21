@@ -30,6 +30,7 @@ use crate::client::{
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
+use crate::client::{RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem};
 use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
@@ -96,6 +97,12 @@ pub enum ClientPacket {
     RequestOustPartyMember(RequestOustPartyMember),
     /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
     RequestChangePartyLeader(RequestChangePartyLeader),
+    RequestBuyItem(RequestBuyItem),
+    RequestSellItem(RequestSellItem),
+    /// `REQUEST_REFUND_ITEM` (`0xD0` 0x0075), an ex packet.
+    RequestRefundItem(RequestRefundItem),
+    /// `REQUEST_BUI_SELL_UI_CLOSE` (`0xD0` 0x0076), an ex packet.
+    RequestBuySellUIClose(RequestBuySellUIClose),
     TradeRequest(TradeRequest),
     AnswerTradeRequest(AnswerTradeRequest),
     AddTradeItem(AddTradeItem),
@@ -254,6 +261,8 @@ pub fn decode_client(
         RequestOustPartyMember::OPCODE => {
             ClientPacket::RequestOustPartyMember(RequestOustPartyMember::decode(reader)?)
         }
+        RequestBuyItem::OPCODE => ClientPacket::RequestBuyItem(RequestBuyItem::decode(reader)?),
+        RequestSellItem::OPCODE => ClientPacket::RequestSellItem(RequestSellItem::decode(reader)?),
         TradeRequest::OPCODE => ClientPacket::TradeRequest(TradeRequest::decode(reader)?),
         AnswerTradeRequest::OPCODE => ClientPacket::AnswerTradeRequest(AnswerTradeRequest::decode(reader)?),
         AddTradeItem::OPCODE => ClientPacket::AddTradeItem(AddTradeItem::decode(reader)?),
@@ -379,6 +388,10 @@ fn decode_ex_client(
         RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
         RequestChangePartyLeader::EX_OPCODE => {
             ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
+        }
+        RequestRefundItem::EX_OPCODE => ClientPacket::RequestRefundItem(RequestRefundItem::decode(reader)?),
+        RequestBuySellUIClose::EX_OPCODE => {
+            ClientPacket::RequestBuySellUIClose(RequestBuySellUIClose::decode(reader)?)
         }
         SetPrivateStoreWholeMsg::EX_OPCODE => {
             ClientPacket::SetPrivateStoreWholeMsg(SetPrivateStoreWholeMsg::decode(reader)?)
@@ -728,6 +741,57 @@ mod tests {
         // The state check comes first: these are IN_GAME only.
         assert_eq!(decode(Authenticated, 0x39, &ZEROS).unwrap(), None);
         assert_eq!(decode(Entering, 0xD0, &[0x4B, 0x00]).unwrap(), None);
+    }
+
+    #[test]
+    fn shop_packets_decode_in_game_only() {
+        use crate::client::{BuyItemEntry, SellItemEntry};
+        let buy = RequestBuyItem {
+            list_id: 382,
+            items: Some(vec![BuyItemEntry {
+                item_id: 1835,
+                count: 5,
+            }]),
+        };
+        let sell = RequestSellItem {
+            list_id: 382,
+            items: Some(vec![SellItemEntry {
+                object_id: 7,
+                item_id: 57,
+                count: 1,
+            }]),
+        };
+        let refund = RequestRefundItem {
+            list_id: 382,
+            items: Some(vec![0]),
+        };
+        for &state in ConnectionState::ALL {
+            let in_game = state == InGame;
+            let got = decode(state, 0x40, &buy.to_bytes()[1..]).unwrap();
+            assert_eq!(
+                got,
+                in_game.then(|| ClientPacket::RequestBuyItem(buy.clone())),
+                "{state:?}"
+            );
+            let got = decode(state, 0x37, &sell.to_bytes()[1..]).unwrap();
+            assert_eq!(
+                got,
+                in_game.then(|| ClientPacket::RequestSellItem(sell.clone())),
+                "{state:?}"
+            );
+            let got = decode(state, EX_PACKET, &refund.to_bytes()[1..]).unwrap();
+            assert_eq!(
+                got,
+                in_game.then(|| ClientPacket::RequestRefundItem(refund.clone())),
+                "{state:?}"
+            );
+            let got = decode(state, EX_PACKET, &RequestBuySellUIClose.to_bytes()[1..]).unwrap();
+            assert_eq!(
+                got,
+                in_game.then_some(ClientPacket::RequestBuySellUIClose(RequestBuySellUIClose)),
+                "{state:?}"
+            );
+        }
     }
 
     #[test]

@@ -363,6 +363,8 @@ pub struct WorldSettings {
     pub party: crate::party::PartySettings,
     /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
     pub pvp: crate::pvp::PvpSettings,
+    /// The values the NPC shops read (M6-SHOP-01).
+    pub shop: crate::shop::ShopSettings,
     /// The private store ranges and packet limit (M6-STORE-01).
     pub store: crate::trade::StoreSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
@@ -419,6 +421,7 @@ impl Default for WorldSettings {
             cast: crate::skills::cast::CastSettings::default(),
             party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
+            shop: crate::shop::ShopSettings::default(),
             store: crate::trade::StoreSettings::default(),
             daily_reset_database_writes: false,
         }

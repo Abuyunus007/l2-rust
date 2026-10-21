@@ -58,6 +58,7 @@ use l2_protocol_game::server::pledge::{
     PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
     PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
 };
+use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
@@ -219,6 +220,23 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestWithDrawalParty(_) => json!({}),
         ClientPacket::RequestOustPartyMember(p) => object!(p => name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::RequestBuyItem(p) => {
+            let items = p
+                .items
+                .as_ref()
+                .map(|v| v.iter().map(|i| object!(i => item_id, count)).collect::<Vec<_>>());
+            json!({ "list_id": p.list_id, "items": items })
+        }
+        ClientPacket::RequestSellItem(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, item_id, count))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "list_id": p.list_id, "items": items })
+        }
+        ClientPacket::RequestRefundItem(p) => object!(p => list_id, items),
+        ClientPacket::RequestBuySellUIClose(_) => json!({}),
         ClientPacket::TradeRequest(p) => object!(p => object_id),
         ClientPacket::AnswerTradeRequest(p) => object!(p => response),
         ClientPacket::AddTradeItem(p) => object!(p => trade_id, object_id, count),
@@ -443,6 +461,14 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        // One id for two packets: the first int is 0 for the merchant's list, 1 for the sell side.
+        ServerOpcode::ExBuySellList => {
+            if raw.get(start..start + 4) == Some(&[0, 0, 0, 0]) {
+                decoded::<BuyList>(&mut r, buy_list_fields)
+            } else {
+                decoded::<ExBuySellList>(&mut r, ex_buy_sell_list_fields)
+            }
         }
         ServerOpcode::TradeRequest => decoded::<SendTradeRequest>(&mut r, send_trade_request_fields),
         ServerOpcode::TradeStart => decoded::<TradeStart>(&mut r, trade_start_fields),
@@ -1197,6 +1223,29 @@ fn trade_item_fields(item: &TradeItemInfo) -> Value {
     )
 }
 
+fn buy_list_fields(p: &BuyList) -> Value {
+    let products: Vec<Value> = p
+        .products
+        .iter()
+        .map(|i| object!(i => item_id, count, type2, type1, body_part, enchant, price))
+        .collect();
+    json!({ "money": p.money, "list_id": p.list_id, "size": p.size, "products": products })
+}
+
+fn ex_buy_sell_list_fields(p: &ExBuySellList) -> Value {
+    let sell: Vec<Value> = p
+        .sell_list
+        .iter()
+        .map(|e| json!({ "item": item_fields(&e.item), "price": e.price }))
+        .collect();
+    let refund: Vec<Value> = p
+        .refund_list
+        .iter()
+        .map(|e| json!({ "item": item_fields(&e.item), "index": e.index, "price": e.price }))
+        .collect();
+    json!({ "sell_list": sell, "refund_list": refund, "done": p.done })
+}
+
 fn trade_start_fields(p: &TradeStart) -> Value {
     let items: Vec<Value> = p.items.iter().map(item_fields).collect();
     json!({ "partner_object_id": p.partner_object_id, "items": items })
@@ -1625,6 +1674,7 @@ mod tests {
         ServerOpcode::ExPartyPetWindowAdd,
         ServerOpcode::ExPartyPetWindowUpdate,
         ServerOpcode::ExPartyPetWindowDelete,
+        ServerOpcode::ExBuySellList,
         ServerOpcode::TradeRequest,
         ServerOpcode::TradeStart,
         ServerOpcode::TradeOwnAdd,
@@ -3144,6 +3194,91 @@ mod tests {
             json!({ "summon_object_id": 9, "owner_object_id": 7, "summon_name": "Pet" })
         );
     }
+    #[test]
+    fn shop_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem,
+            SellItemEntry,
+        };
+        use l2_protocol_game::server::shop::{BuyListProduct, RefundEntry, SellEntry};
+        let in_game = ConnectionState::InGame;
+        let buy = RequestBuyItem {
+            list_id: 382,
+            items: Some(vec![BuyItemEntry {
+                item_id: 1835,
+                count: 5,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &buy.to_bytes()),
+            json!({ "list_id": 382, "items": [{ "item_id": 1835, "count": 5 }] })
+        );
+        let sell = RequestSellItem {
+            list_id: 382,
+            items: Some(vec![SellItemEntry {
+                object_id: 7,
+                item_id: 57,
+                count: 2,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &sell.to_bytes()),
+            json!({ "list_id": 382, "items": [{ "object_id": 7, "item_id": 57, "count": 2 }] })
+        );
+        let refund = RequestRefundItem {
+            list_id: 382,
+            items: Some(vec![0, 3]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &refund.to_bytes()),
+            json!({ "list_id": 382, "items": [0, 3] })
+        );
+        assert_eq!(c2s_fields(in_game, &RequestBuySellUIClose.to_bytes()), json!({}));
+        // A bad list shows as null.
+        let bad = RequestBuyItem {
+            list_id: 1,
+            items: None,
+        };
+        assert_eq!(
+            c2s_fields(in_game, &bad.to_bytes()),
+            json!({ "list_id": 1, "items": null })
+        );
+
+        // The merchant's list and the sell side share one opcode.
+        let list = BuyList::new(
+            1000,
+            382,
+            vec![BuyListProduct {
+                item_id: 1835,
+                count: 0,
+                type2: 5,
+                type1: 4,
+                body_part: 0,
+                enchant: 0,
+                price: 25,
+            }],
+        );
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["list_id"], 382);
+        assert_eq!(fields["products"][0]["price"], 25);
+        let sides = ExBuySellList {
+            sell_list: vec![SellEntry {
+                item: ItemInfo::plain(1, 57, 3),
+                price: 1,
+            }],
+            refund_list: vec![RefundEntry {
+                item: ItemInfo::plain(2, 1835, 1),
+                index: 0,
+                price: 10,
+            }],
+            done: true,
+        };
+        let fields = s2c_fields(&sides.to_bytes());
+        assert_eq!(fields["sell_list"][0]["price"], 1);
+        assert_eq!(fields["refund_list"][0]["item"]["item_id"], 1835);
+        assert_eq!(fields["done"], true);
+    }
+
     #[test]
     fn trade_packets_show_their_fields() {
         use l2_protocol_game::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};

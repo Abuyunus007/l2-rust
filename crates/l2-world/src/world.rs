@@ -112,6 +112,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
+    pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
 }
@@ -167,6 +169,7 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
         }
     }
@@ -555,6 +558,8 @@ impl World {
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientInput::Shop(input) => self.on_shop_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -656,6 +661,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: BuyListTaskManager, InventoryEnableTask
+            TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
         }

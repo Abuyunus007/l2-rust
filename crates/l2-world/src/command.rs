@@ -153,6 +153,9 @@ pub enum ClientInput {
     },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
+    /// The shop packets (`RequestBuyItem`, `RequestSellItem`, `RequestRefundItem`,
+    /// `RequestBuySellUIClose`), see `shop/`.
+    Shop(crate::shop::ShopInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },

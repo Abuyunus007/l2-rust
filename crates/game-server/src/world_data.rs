@@ -964,6 +964,13 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        shop: l2_world::ShopSettings {
+            allow_refund: config.general.allow_refund,
+            only_gm_items_free: config.general.only_gm_items_free,
+            rate_siege_guards_price: config.rates.rate_siege_guards_price,
+            merchant_zero_sell_price: config.merchant_zero_sell_price.merchant_zero_sell_price,
+            ..l2_world::ShopSettings::default()
+        },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,
