@@ -368,6 +368,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::AnswerTradeRequest(_)
             | ClientPacket::AddTradeItem(_)
             | ClientPacket::TradeDone(_)
+            | ClientPacket::MultiSellChoose(_)
             | ClientPacket::RequestPrivateStoreManageSell(_)
             | ClientPacket::RequestPrivateStoreManageBuy(_)
             | ClientPacket::RequestPrivateStoreQuitSell(_)

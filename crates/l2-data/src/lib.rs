@@ -22,6 +22,7 @@ pub mod item;
 pub mod level_tables;
 pub mod loader;
 pub mod map_region;
+pub mod multisell;
 pub mod npc;
 pub mod pet_skill;
 pub mod player_class;
@@ -57,6 +58,7 @@ pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
+pub use multisell::{MultisellData, MultisellLoadOptions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
@@ -121,6 +123,8 @@ pub struct Datapack {
     pub enchant_hp_bonus: Arc<EnchantHpBonus>,
     /// `data/stats/hitConditionBonus.xml`: the hit percentages for height, side, night and rain.
     pub hit_condition_bonus: Arc<HitConditionBonus>,
+    /// `data/multisell/*.xml`: the exchange lists of NPCs (M6-MULTISELL-01).
+    pub multisell: Arc<MultisellData>,
     /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
     pub hennas: Arc<Hennas>,
     /// `data/stats/transformations/*.xml`: the transformations by id (M6-TRANS-01).
@@ -162,6 +166,10 @@ pub struct DatapackOptions {
     /// The skill loader's options (`CustomSkillsLoad`, the abnormal success rates,
     /// `SkillDurationList` / `SkillReuseList`).
     pub skills: SkillLoadOptions,
+    /// `General.ini` `CustomMultisellLoad` (default false): also load `data/multisell/custom`.
+    pub custom_multisell_load: bool,
+    /// `General.ini` `CorrectPrices` (default true): raise a too cheap one adena entry.
+    pub correct_prices: bool,
 }
 
 impl Default for DatapackOptions {
@@ -178,6 +186,8 @@ impl Default for DatapackOptions {
             htm_cache: true,
             check_html_encoding: true,
             skills: SkillLoadOptions::default(),
+            custom_multisell_load: false,
+            correct_prices: true,
         }
     }
 }
@@ -219,6 +229,16 @@ impl Datapack {
         let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
             skills.get(id, level).is_some()
         }));
+        // Java loads ItemData before MultisellData (every ingredient looks its template up).
+        let items = Arc::new(ItemTemplates::load(root, options.custom_items_load));
+        let multisell = Arc::new(MultisellData::load(
+            root,
+            &items,
+            &MultisellLoadOptions {
+                custom_multisell_load: options.custom_multisell_load,
+                correct_prices: options.correct_prices,
+            },
+        ));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -230,7 +250,7 @@ impl Datapack {
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             skill_trees: Arc::new(SkillTrees::load(root)),
             skill_learn: Arc::new(SkillLearnData::load(root)),
-            items: Arc::new(ItemTemplates::load(root, options.custom_items_load)),
+            items,
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
             // Java `HtmCache = False` is the lazy mode, so the lazy flag is the inverse.
@@ -248,6 +268,7 @@ impl Datapack {
             armor_sets: Arc::new(ArmorSets::load(root)),
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
+            multisell,
             hennas: Arc::new(Hennas::load(root)),
             transforms: Arc::new(Transforms::load(root)),
             skills,
@@ -356,5 +377,6 @@ mod tests {
         assert!(pack.enchant_hp_bonus.is_empty());
         assert!(pack.hennas.is_empty());
         assert!(pack.skills.is_empty());
+        assert!(pack.multisell.is_empty());
     }
 }

@@ -737,6 +737,12 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: MultiSellChoose
+            ClientPacket::MultiSellChoose(p) => ClientInput::MultiSellChoose {
+                list_id: p.list_id,
+                entry_id: p.entry_id,
+                amount: p.amount,
+            },
             // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
             // ported), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {

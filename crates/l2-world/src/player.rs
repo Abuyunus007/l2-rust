@@ -328,6 +328,8 @@ pub struct Player {
     /// Java `_transformation`, `_transformSkills`, the visible name and title, the inventory
     /// block of a transformation (see `transform/`).
     pub transform: crate::transform::TransformState,
+    /// Java `_multiSell`: the multisell list the player was last shown (see `multisell.rs`).
+    pub multisell: Option<crate::multisell::PreparedList>,
 }
 
 impl Player {
@@ -373,6 +375,7 @@ impl Player {
             inv_tasks: crate::inventory::InventoryTasks::default(),
             trade: crate::trade::TradeState::default(),
             transform: crate::transform::TransformState::default(),
+            multisell: None,
         }
     }
 

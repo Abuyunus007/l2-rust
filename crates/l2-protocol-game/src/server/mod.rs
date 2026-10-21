@@ -84,6 +84,7 @@ pub mod interaction;
 pub mod items;
 pub mod map_windows;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod regen;
@@ -132,6 +133,9 @@ pub use items::{
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use multisell::{
+    MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+};
 pub use party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
