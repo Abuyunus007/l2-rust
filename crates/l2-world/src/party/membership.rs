@@ -72,7 +72,13 @@ impl World {
             self.send(player, &window);
         }
         // Sends pets/summons of party members.
-        // M6: `ExPartyPetWindowAdd` of every member's summon (SUMMON-01).
+        for member in self.party_members(party) {
+            if let Some(summon) = self.summon_of(member)
+                && let Some(packet) = self.party_pet_window_add(summon)
+            {
+                self.send(player, &packet);
+            }
+        }
         let leader_name = self
             .party_leader(party)
             .map(|l| self.name_of_player(l))
@@ -90,7 +96,10 @@ impl World {
         if let Some(add) = self.party_small_window_add(player, party) {
             self.broadcast_party_except(party, player, &add);
         }
-        // M6: if the new member has a summon, `ExPartyPetWindowAdd` goes to everybody (SUMMON-01).
+        // If the new member has a summon, everybody sees it in the pet window.
+        if let Some(packet) = self.summon_of(player).and_then(|s| self.party_pet_window_add(s)) {
+            self.broadcast_party(party, &packet);
+        }
 
         // Adjust the party level.
         let level = self.players.get(&player).map_or(0, |p| p.core.level);
@@ -104,8 +113,11 @@ impl World {
         for member in self.party_members(party) {
             // The icons go to the party only; the member's own list is unchanged.
             self.update_effect_icons(member, true);
-            // M6: the summon's `updateEffectIcons()` (SUMMON-01).
+            let summon = self.summon_of(member);
             self.broadcast_user_info(member);
+            if let Some(summon) = summon {
+                self.summon_update_effect_icons_plain(summon);
+            }
         }
 
         // Dimensional rift (`partyMemberInvited`) and the command channel window (`ExOpenMPCC`):
@@ -198,9 +210,11 @@ impl World {
         }
         self.recalculate_party_level(party);
 
-        // Festival participants (`SevenSignsFestival.updateParticipants`), duels
-        // (`DuelManager.onRemoveFromParty`) and channeling (`abortCast`/`abortChannelization`):
-        // none of them exists yet.
+        // Festival participants (`SevenSignsFestival.updateParticipants`) and channeling
+        // (`abortCast`/`abortChannelization`): neither exists yet.
+        if self.is_in_duel(player) {
+            self.duel_on_remove_from_party(player);
+        }
 
         let name = self.name_of_player(player);
         match kind {
@@ -237,7 +251,12 @@ impl World {
                 name,
             },
         );
-        // M6: `ExPartyPetWindowDelete` of the player's summon, if it has one (SUMMON-01).
+        if let Some(packet) = self
+            .summon_of(player)
+            .and_then(|s| self.party_pet_window_delete(s))
+        {
+            self.broadcast_party(party, &packet);
+        }
         // Dimensional rift (`partyMemberExited`) and the command channel window (`ExCloseMPCC`):
         // neither exists.
 
@@ -257,6 +276,9 @@ impl World {
             if let Some(leader) = remaining.first() {
                 // `leader.setParty(null)`; a leader in a duel leaves it (`onRemoveFromParty`).
                 self.party.of_player.remove(leader);
+                if self.is_in_duel(*leader) {
+                    self.duel_on_remove_from_party(*leader);
+                }
             }
             // The loot rule change task would be cancelled here: there is none.
             if let Some(timer) = self
@@ -312,8 +334,9 @@ impl World {
     /// Java `Party.setLeader(player)` (and `changePartyLeader(name)` through
     /// `getPlayerByName`).
     pub(crate) fn set_party_leader(&mut self, party: PartyId, player: Option<ObjectId>) {
-        // `player != null && !player.isInDuel()`: no duels yet.
-        let Some(player) = player else {
+        // `player != null && !player.isInDuel()`: a duelist cannot get the party, and Java says
+        // nothing.
+        let Some(player) = player.filter(|player| !self.is_in_duel(*player)) else {
             return;
         };
         let Some(p) = self.party.parties.get_mut(&party) else {

@@ -9,7 +9,7 @@
 // files stay as they are: a damage over time (`isDOT`), the HP consumption of a toggle and the
 // line-of-sight rule of `Creature.reduceCurrentHp`.
 //
-// Left out, as in `status.rs`: duels, olympiad, offline traders, the summon / party damage
+// Left out, as in `status.rs`: olympiad, offline traders, the summon / party damage
 // transfer, the mana shield, GM `giveDamage` rights, champions, sitting / store mode standing up
 // (none of them exist in the world yet), and `notifyDamageReceived`'s fake death and script events.
 
@@ -91,11 +91,13 @@ impl World {
                 self.minions_assist(id, attacker);
             }
         }
-        // NpcStatus.reduceHp: the attacker joins the attack-by list.
+        // NpcStatus.reduceHp: a duelist who hits an NPC leaves the duel; the attacker joins the
+        // attack-by list.
         if self.is_dead(id) {
             return;
         }
         if let Some(attacker) = attacker {
+            self.duel_interrupt_on_npc_hit(attacker);
             self.add_attacker_to_attack_by_list(id, attacker);
         }
         // CreatureStatus.reduceHp: invul handling.
@@ -137,6 +139,11 @@ impl World {
         }
         let mut amount = value;
         if let Some(attacker) = attacker.filter(|a| *a != id) {
+            // A duelist who is beaten or has won takes no damage; a hit by somebody outside the
+            // duel interrupts it.
+            if self.duel_ignores_damage(id, attacker) {
+                return;
+            }
             if self.is_player(attacker) {
                 // `attacker.isPlayable()`: CP takes the hit first.
                 let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
@@ -168,7 +175,12 @@ impl World {
         }
         if amount > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
-            self.set_current_hp(id, (current - amount).max(0.0), true);
+            let mut new_hp = (current - amount).max(0.0);
+            // Duels end at 1 HP: the duelist is beaten, not killed.
+            if current - amount <= 0.0 && self.duel_defeats_instead_of_dying(id, attacker) {
+                new_hp = 1.0;
+            }
+            self.set_current_hp(id, new_hp, true);
         }
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && !is_hp_consumption {
             self.abort_attack(id);

@@ -215,3 +215,72 @@ impl Decode for NetPing {
         Ok(Self { game_time: r.i32()? })
     }
 }
+
+// Java: gameserver/network/serverpackets/NpcSay.java
+/// An NPC (or a summon) says something over its head (`NPC_SAY`): a fixed text, or a client
+/// `NpcStringId` with its parameters.
+///
+/// The multilingual branch of Java's `writeImpl` (`MULTILANG_ENABLE`, off by default) is not
+/// ported: it would write -1 and the translated text.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NpcSay {
+    pub object_id: i32,
+    /// `textType.getClientId()`.
+    pub text_type: i32,
+    /// The template (display) id; `encode` adds 1000000 like Java's constructors.
+    pub npc_id: i32,
+    /// The `NpcStringId`, or -1 for [`Self::text`].
+    pub npc_string: i32,
+    /// The text of an `NpcSay` without an `NpcStringId` (written only when `npc_string` is -1).
+    pub text: String,
+    /// The parameters of an `NpcStringId` (written only when it is not -1).
+    pub parameters: Vec<String>,
+}
+
+impl NpcSay {
+    pub const OPCODE: ServerOpcode = ServerOpcode::NpcSay;
+    const NPC_ID_OFFSET: i32 = 1_000_000;
+}
+
+impl Encode for NpcSay {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id)
+            .i32(self.text_type)
+            .i32(self.npc_id.wrapping_add(Self::NPC_ID_OFFSET))
+            .i32(self.npc_string);
+        if self.npc_string == -1 {
+            w.string(&self.text);
+        } else {
+            for parameter in &self.parameters {
+                w.string(parameter);
+            }
+        }
+    }
+}
+
+impl Decode for NpcSay {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let object_id = r.i32()?;
+        let text_type = r.i32()?;
+        let npc_id = r.i32()?.wrapping_sub(Self::NPC_ID_OFFSET);
+        let npc_string = r.i32()?;
+        let mut text = String::new();
+        let mut parameters = Vec::new();
+        if npc_string == -1 {
+            text = r.string();
+        } else {
+            while r.remaining() >= 2 {
+                parameters.push(r.string());
+            }
+        }
+        Ok(Self {
+            object_id,
+            text_type,
+            npc_id,
+            npc_string,
+            text,
+            parameters,
+        })
+    }
+}

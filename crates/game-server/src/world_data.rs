@@ -852,6 +852,14 @@ pub fn regen_settings(config: &GameConfig) -> RegenSettings {
 ///
 /// `GlobalChat` and `TradeChat` are enum placeholders in the generated config, so they are read
 /// from `General.ini` here.
+/// The summon values of `Player.ini` (`SummonStoreSkillCooltime`, `RestoreServitorOnReconnect`).
+pub fn summon_settings(config: &GameConfig) -> l2_world::SummonSettings {
+    l2_world::SummonSettings {
+        summon_store_skill_cooltime: config.player.summon_store_skill_cooltime,
+        restore_servitor_on_reconnect: config.player.restore_servitor_on_reconnect,
+    }
+}
+
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
     use l2_config::game::GeneralConfig;
@@ -900,6 +908,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         drops: drop_settings(config, config_dir),
         exp: exp_settings(config, config_dir),
         party: party_settings(config, config_dir),
+        store: l2_world::StoreSettings {
+            shop_min_range_from_player: config.private_store_range.shop_min_range_from_player,
+            shop_min_range_from_npc: config.private_store_range.shop_min_range_from_npc,
+            max_item_in_packet: config.effective_max_item_in_packet(),
+        },
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
         effects: l2_world::EffectSettings {

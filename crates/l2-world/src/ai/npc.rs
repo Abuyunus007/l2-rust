@@ -18,6 +18,11 @@ impl World {
 
     /// Java `getAI().setIntentionIdle()` of an NPC (players: `World::set_intention_idle`).
     pub(crate) fn npc_set_intention_idle(&mut self, id: ObjectId) {
+        // `SummonAI.setIntentionIdle()`.
+        if self.is_summon(id) {
+            self.summon_set_intention_idle(id);
+            return;
+        }
         if !self.is_npc(id) {
             return;
         }

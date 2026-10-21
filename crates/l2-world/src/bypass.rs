@@ -71,6 +71,9 @@ impl Default for BypassHandlers {
         handlers.register("SkillList", crate::skills::learn::skill_list_handler);
         // dist/game/data/scripts/handlers/bypass/npc/Buy.java
         handlers.register("Buy", crate::shop::buy_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/ScriptLink.java (M6-CLAN-02: the village
+        // master scripts ClanMaster and AllianceMaster)
+        handlers.register("Script", crate::clan::script_link_handler);
         handlers
     }
 }

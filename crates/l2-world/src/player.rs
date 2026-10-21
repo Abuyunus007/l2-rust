@@ -190,6 +190,11 @@ pub struct PlayerProfile {
     pub item_reuse_to_store: Option<Vec<SavedItemReuse>>,
     /// Java `_classIndex`: the class index the saved buffs are stored under (0 for the base class).
     pub class_index: i32,
+    /// The `character_summon_skills_save` rows of the character's active class index: the buffs
+    /// its servitors had when they were last unsummoned (Java `Servitor.restoreEffects` reads them
+    /// when a servitor of the same skill spawns). The world takes them at enter world
+    /// (`summon/servitor.rs`).
+    pub summon_effects: Vec<crate::summon::servitor::SavedSummonEffect>,
     /// The clan columns of `characters` (`clanid`, `clan_privs`, `power_grade`, `subpledge`, ...)
     /// and the clan values of `Player`, see `clan/`. `None`: a snapshot that does not carry them
     /// (the store keeps the row's values); the world fills it when the player enters.
@@ -226,6 +231,7 @@ impl Default for PlayerProfile {
             item_reuse_to_restore: Vec::new(),
             item_reuse_to_store: None,
             class_index: 0,
+            summon_effects: Vec::new(),
             clan: None,
             clan_record: None,
         }

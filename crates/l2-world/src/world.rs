@@ -106,12 +106,16 @@ pub struct World {
     pub(crate) party: crate::party::PartyWorld,
     /// The live punishments and the illegal action settings (M5-FU-04, `punishments.rs`).
     pub(crate) punishments: crate::punishments::PunishmentWorld,
+    /// Summons, their owners and the summon tables (M6-SUMMON-01, `summon/`).
+    pub(crate) summons: crate::summon::SummonWorld,
     /// The clans, the clan settings and the players' invitations (M6-CLAN-01, `clan/`).
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
     /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
     pub(crate) shop: crate::shop::ShopWorld,
+    /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
+    pub(crate) duel: crate::duel::DuelWorld,
 }
 
 impl World {
@@ -162,9 +166,11 @@ impl World {
             shots: crate::inventory::handlers::shots::ShotsWorld::default(),
             party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
+            summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
             shop: crate::shop::ShopWorld::default(),
+            duel: crate::duel::DuelWorld::default(),
         }
     }
 
@@ -264,7 +270,17 @@ impl World {
                 sink.send(bytes);
                 true
             }
-            None => false,
+            // Java `Summon.sendPacket`: what a summon is told goes to its owner (`summon/`).
+            None => match self.summons.summons.get(&to) {
+                Some(summon) if !summon.owner_offline => match self.sinks.get(&summon.owner) {
+                    Some(sink) => {
+                        sink.send(bytes);
+                        true
+                    }
+                    None => false,
+                },
+                _ => false,
+            },
         }
     }
 
@@ -399,6 +415,8 @@ impl World {
         self.init_player_stats(id);
         // Java `Player.restore`'s setCurrentCp/Hp/Mp: starts the regeneration of what is not full.
         self.restore_player_vitals(id);
+        // The saved buffs of the character's servitors (`character_summon_skills_save`).
+        self.take_saved_summon_effects(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -496,6 +514,8 @@ impl World {
                 count,
             } => self.on_add_trade_item(id, trade_id, object_id, count),
             ClientInput::TradeDone { response } => self.on_trade_done(id, response),
+            // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
+            ClientInput::Store(input) => self.on_store_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -505,8 +525,8 @@ impl World {
                 id: skill_id,
                 level,
                 skill_type,
-                ..
-            } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
+                sub_type,
+            } => self.on_request_acquire_skill(id, skill_id, level, skill_type, sub_type),
             // Java: RequestMagicSkillUse
             ClientInput::MagicSkillUse {
                 magic_id,
@@ -531,6 +551,12 @@ impl World {
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
             // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
+            // Java: RequestActionUse (the summon actions, `summon/actions.rs`)
+            ClientInput::ActionUse {
+                action_id,
+                ctrl_pressed,
+                shift_pressed,
+            } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
@@ -544,6 +570,12 @@ impl World {
             ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
             ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
             ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
+            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
+            ClientInput::DuelStart { name, party_duel } => self.on_request_duel_start(id, &name, party_duel),
+            ClientInput::DuelAnswerStart { party_duel, response } => {
+                self.on_request_duel_answer_start(id, party_duel, response)
+            }
+            ClientInput::DuelSurrender => self.do_duel_surrender(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -623,12 +655,16 @@ impl World {
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
+            // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task
+            TimerKind::Summon(timer) => self.on_summon_timer(timer),
             // Java: ClanTable.scheduleRemoveClan, updateClanRanks, RequestPartner.clear
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
             // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
+            // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
+            TimerKind::Duel(timer) => self.on_duel_timer(timer),
         }
     }
 

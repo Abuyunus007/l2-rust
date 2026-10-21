@@ -152,8 +152,8 @@ impl World {
             }
             // Calculate and add the EXP and SP reward to the member.
             if valid_members.contains(&member) {
-                // M6: the servitor penalty (`getExpMultiplier()`), 1 without a summon.
-                let penalty = 1.0;
+                // The servitor penalty (`getExpMultiplier()`, a float), 1 without a servitor.
+                let penalty = f64::from(self.servitor_exp_multiplier(member));
                 let level = f64::from(self.member_level(member));
                 let sq_level = level * level;
                 let pre_calculation = (sq_level / f64::from(sq_level_sum)) * penalty;

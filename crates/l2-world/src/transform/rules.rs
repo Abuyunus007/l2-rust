@@ -44,8 +44,8 @@ impl World {
     }
 
     /// The check at the top of `RequestActionUse.runImpl`: a transformed player may only use the
-    /// actions of [`ACTIONS_ON_TRANSFORM`]. `false` means "ActionFailed, and a warning"; the
-    /// handler of the packet calls this (the packet is not handled in the world yet).
+    /// actions of [`ACTIONS_ON_TRANSFORM`]. `false` means "ActionFailed, and a warning" (see
+    /// `summon/actions.rs`).
     pub fn transformed_action_allowed(&self, id: ObjectId, action_id: i32) -> bool {
         !self.is_transformed(id) || ACTIONS_ON_TRANSFORM.binary_search(&action_id).is_ok()
     }

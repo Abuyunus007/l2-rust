@@ -120,7 +120,14 @@ impl World {
                 return true;
             }
         }
-        // Summons: M6.
+        // `_actor.isSummon()`: a summon that can walk to the target keeps it.
+        if self.is_summon(id) {
+            if self.summon_can_move_to(id, target) {
+                return false;
+            }
+            self.set_intention_active(id);
+            return true;
+        }
         false
     }
 

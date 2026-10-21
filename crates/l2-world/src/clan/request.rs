@@ -26,6 +26,8 @@ pub const REQUEST_TIMEOUT_SECS: u64 = 15;
 pub enum RequestPacket {
     /// `RequestJoinPledge` with its pledge type.
     JoinPledge { pledge_type: i32 },
+    /// `RequestJoinAlly` (M6-CLAN-02).
+    JoinAlly,
 }
 
 /// One player's request state (Java `RequestPartner` fields).

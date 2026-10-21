@@ -60,8 +60,7 @@ impl World {
         if self.target_of(id) != Some(target) {
             // `target.onAction(player)`.
             self.on_action_object(id, target, true);
-        } else if target != id && self.active_requester(id).is_none() {
-            // Private stores (`isInStoreMode`) would refuse as well: M6-STORE-01.
+        } else if target != id && !self.is_in_store_mode(id) && self.active_requester(id).is_none() {
             self.on_forced_attack(target, id);
         } else {
             self.send(id, &ActionFailed);
@@ -108,7 +107,7 @@ impl World {
     pub(crate) fn can_be_attacked(&self, id: ObjectId) -> bool {
         match self.objects.get(&id).map(|e| e.kind) {
             // `Playable.canBeAttacked()`.
-            Some(ObjectKind::Player) => true,
+            Some(ObjectKind::Player | ObjectKind::Summon) => true,
             // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`).
             Some(ObjectKind::Npc) => self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs,
             // Doors, static objects and fences keep `WorldObject`'s false (siege doors: M5).
@@ -127,7 +126,7 @@ impl World {
     /// `this`: only fights between playables are stopped by peace and no-PvP zones.
     pub(crate) fn is_inside_peace_zone(&self, this: ObjectId, attacker: ObjectId, target: ObjectId) -> bool {
         // `(target.isPlayable() || target.isFakePlayer()) && attacker.isPlayable()`.
-        if !(self.is_player(target) && self.is_player(attacker)) {
+        if !(self.is_playable(target) && self.is_playable(attacker)) {
             return false;
         }
         // Instances (`isPvP`) and territory wards: M5.
@@ -162,6 +161,18 @@ impl World {
         }
         if target == attacker {
             return false;
+        }
+        // A summon attacker: `Player.isAutoAttackable` refuses its own owner (`attacker ==
+        // _summon`); otherwise the rules of a playable attacker are its owner's (`asPlayer()`).
+        if let Some(owner) = self.summon_owner(attacker) {
+            if target == owner {
+                return false;
+            }
+            return self.is_auto_attackable_by(target, owner);
+        }
+        // `Summon.isAutoAttackable(attacker)`: the owner's.
+        if self.is_summon(target) {
+            return self.summon_auto_attackable_by(target, attacker);
         }
         match self.objects.get(&target).map(|e| e.kind) {
             Some(ObjectKind::Player) => self.is_auto_attackable(target, attacker),

@@ -48,17 +48,21 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
+use l2_db::CrestRepository;
 use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
     GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
-    NewItem, NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, Pool, PunishmentRepository,
-    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, VariableRepository,
+    NewItem, NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, Pool,
+    PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
+    SummonRepository, VariableRepository,
 };
-use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
+use l2_world::clan::{
+    ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
+};
 use l2_world::{
     ClanRecord, ClanWrite, GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData,
     ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse,
-    ShortcutData, SkillData, StoredPunishment,
+    ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -190,6 +194,14 @@ pub trait PlayerStore: Send + 'static {
     fn store_buy_list_product(
         &mut self,
         _row: &ProductRow,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The servitor tables (`CharSummonTable`, `Servitor.storeEffect` / `restoreEffects`).
+    fn store_summon(
+        &mut self,
+        _write: &SummonWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -482,6 +494,23 @@ async fn run<S: PlayerStore>(
                     error!("The access level of character {char_id} could NOT be stored: {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Summon(write)) => {
+                let mut result = store.store_summon(&write).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store the summon tables ({write:?}, try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_summon(&write).await;
+                }
+                // Java logs it and goes on ("Summon cannot be removed", "Could not store summon
+                // effect data").
+                if let Err(e) = result {
+                    error!("The summon tables could NOT be written ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Clan(write)) => {
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
@@ -582,6 +611,25 @@ pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>)
     (clans, wars)
 }
 
+/// Java `CrestTable.load()`, the database half: the rows of `crests`, only a read (D-39). A
+/// database error is logged and the server goes on without crests, like Java.
+pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
+    match CrestRepository::new(pool.clone()).all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| CrestRecord {
+                crest_id: row.crest_id,
+                data: row.data,
+                crest_type: i32::from(row.crest_type),
+            })
+            .collect(),
+        Err(e) => {
+            warn!("CrestTable: There was an error while loading crests from database: {e}");
+            Vec::new()
+        }
+    }
+}
+
 /// The rows of one clan (`Clan.restore`, `restoreSubPledges`, `restoreRankPrivs`,
 /// `restoreSkills`, `restoreNotice`).
 pub async fn load_clan(repo: &ClanRepository, clan_id: i32) -> Result<ClanRecord, l2_db::DbError> {
@@ -666,6 +714,15 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::Update(_) => "Clan.updateClanInDB",
         ClanWrite::Level { .. } => "Clan.changeLevel",
         ClanWrite::AllyCrestOfClan { .. } => "Clan.changeAllyCrest",
+        ClanWrite::Crest(CrestWrite::Insert { .. }) => "CrestTable.createCrest",
+        ClanWrite::Crest(CrestWrite::Delete { .. }) => "CrestTable.removeCrest",
+        ClanWrite::Crest(CrestWrite::ClanCrest { .. }) => "Clan.changeClanCrest",
+        ClanWrite::Crest(CrestWrite::ClanLargeCrest { .. }) => "Clan.changeLargeCrest",
+        ClanWrite::Crest(CrestWrite::AllyCrestOfClan { .. } | CrestWrite::AllyCrestOfAlly { .. }) => {
+            "Clan.changeAllyCrest"
+        }
+        ClanWrite::War(WarWrite::Store { .. }) => "ClanTable.storeClanWars",
+        ClanWrite::War(WarWrite::Delete { .. }) => "ClanTable.deleteClanWars",
         ClanWrite::RemoveMember { .. } => "Clan.removeMemberInDatabase",
         ClanWrite::CharClanPrivs { .. } => "Clan.setNewLeader",
         ClanWrite::CharSubPledge { .. } => "ClanMember.updatePledgeType",
@@ -676,6 +733,7 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::RankPrivs { .. } => "Clan.setRankPrivs",
         ClanWrite::Notice { .. } => "Clan.storeNotice",
         ClanWrite::Delete { .. } => "ClanTable.destroyClan",
+        ClanWrite::UpdateSkill { .. } | ClanWrite::InsertSkill { .. } => "Clan.addNewSkill",
     }
 }
 
@@ -913,8 +971,10 @@ pub struct DbStore {
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
+    summons: SummonRepository,
     clans: ClanRepository,
     buylists: BuyListRepository,
+    crests: CrestRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -931,9 +991,11 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
+            summons: SummonRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
-            clans: ClanRepository::new(pool),
+            clans: ClanRepository::new(pool.clone()),
+            crests: CrestRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
         }
@@ -1675,6 +1737,45 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_summon(&mut self, write: &SummonWrite) -> Result<(), PersistError> {
+        match write {
+            // Java: CharSummonTable.saveSummon
+            SummonWrite::SaveServitor {
+                owner,
+                summon_skill_id,
+                cur_hp,
+                cur_mp,
+                time,
+            } => {
+                self.summons
+                    .save_summon(owner.0, *summon_skill_id, *cur_hp, *cur_mp, *time)
+                    .await?;
+            }
+            // Java: CharSummonTable.removeServitor
+            SummonWrite::RemoveServitor { owner } => self.summons.remove_summon(owner.0).await?,
+            // Java: Servitor.storeEffect / restoreEffects
+            SummonWrite::ServitorEffects {
+                owner,
+                class_index,
+                summon_skill_id,
+                effects,
+            } => {
+                let rows: Vec<NewSummonSkillSave> = effects
+                    .iter()
+                    .map(|e| NewSummonSkillSave {
+                        skill_id: e.skill_id,
+                        skill_level: e.skill_level,
+                        remaining_time: e.remaining_time,
+                    })
+                    .collect();
+                self.summons
+                    .store_servitor_effects(owner.0, *class_index, *summon_skill_id, &rows)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
         let clans = &self.clans;
         match write {
@@ -1684,6 +1785,30 @@ impl PlayerStore for DbStore {
             ClanWrite::AllyCrestOfClan { clan_id, crest_id } => {
                 clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
             }
+            ClanWrite::Crest(write) => match write {
+                CrestWrite::Insert {
+                    crest_id,
+                    data,
+                    crest_type,
+                } => self.crests.insert(*crest_id, data, *crest_type).await?,
+                CrestWrite::Delete { crest_id } => self.crests.delete(*crest_id).await?,
+                CrestWrite::ClanCrest { clan_id, crest_id } => {
+                    clans.update_clan_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::ClanLargeCrest { clan_id, crest_id } => {
+                    clans.update_clan_large_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfClan { clan_id, crest_id } => {
+                    clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfAlly { ally_id, crest_id } => {
+                    clans.update_ally_crest_of_ally(*ally_id, *crest_id).await?
+                }
+            },
+            ClanWrite::War(write) => match write {
+                WarWrite::Store { clan1, clan2 } => clans.store_clan_war(*clan1, *clan2).await?,
+                WarWrite::Delete { clan1, clan2 } => clans.delete_clan_war(*clan1, *clan2).await?,
+            },
             ClanWrite::RemoveMember {
                 char_id,
                 clan_join_expiry_time,
@@ -1740,6 +1865,22 @@ impl PlayerStore for DbStore {
                 enabled,
             } => clans.store_notice(*clan_id, notice, *enabled).await?,
             ClanWrite::Delete { clan_id, castle_id } => clans.delete_clan(*clan_id, *castle_id).await?,
+            ClanWrite::UpdateSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+            } => clans.update_clan_skill(*clan_id, *skill_id, *skill_level).await?,
+            ClanWrite::InsertSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+                skill_name,
+                sub_pledge_id,
+            } => {
+                clans
+                    .insert_clan_skill(*clan_id, *skill_id, *skill_level, skill_name, *sub_pledge_id)
+                    .await?
+            }
         }
         Ok(())
     }

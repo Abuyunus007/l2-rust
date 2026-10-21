@@ -66,8 +66,8 @@ impl EffectHandler for Lethal {
                 world.set_current_hp(effected, 1.0, true);
                 world.send(effected, &SystemMessage::new(SystemMessageId::LethalStrike));
             }
-            // For Monsters HP is set to 1 (summons: M6).
-            else if world.is_monster(effected) {
+            // For Monsters HP is set to 1.
+            else if world.is_monster(effected) || world.is_summon(effected) {
                 world.notify_damage_received_by(
                     effected,
                     current_hp - 1.0,

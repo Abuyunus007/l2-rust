@@ -1283,3 +1283,54 @@ fn a_skill_that_goes_takes_its_shortcuts() {
     let sent = s.log.take();
     assert_eq!(of(&sent, ME, "SHORT_CUT_INIT").len(), 2);
 }
+
+/// A death at the hands of a player whose clan the victim's clan declared war on costs a quarter
+/// (`calculateDeathExpPenalty(killer, isAtWarWith(pk))`); a war declared the other way does not.
+#[test]
+fn a_death_in_a_clan_war_costs_a_quarter() {
+    use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
+    let clan = |id: i32, name: &str, leader: i32| ClanRecord {
+        clan_id: id,
+        data: Some(ClanDataRecord {
+            name: Some(name.to_owned()),
+            level: 5,
+            leader_id: leader,
+            ..ClanDataRecord::default()
+        }),
+        members: vec![ClanMemberRecord {
+            object_id: leader,
+            name: name.to_owned(),
+            level: 20,
+            power_grade: 1,
+            ..ClanMemberRecord::default()
+        }],
+        ..ClanRecord::default()
+    };
+    let lost = |tag: &str, wars: Vec<(String, String)>| -> i64 {
+        let mut s = Scene::new(tag);
+        s.world
+            .load_clans(vec![clan(500, "Lions", ME), clan(600, "Tigers", OTHER)], wars);
+        let in_clan = |id, name: &str, clan_id| {
+            let mut data = player_data(id, name, 20);
+            data.exp = EXP[19] + 50_000;
+            data.profile.clan = Some(PlayerClanState {
+                clan_id,
+                power_grade: 1,
+                ..PlayerClanState::default()
+            });
+            data
+        };
+        s.enter(in_clan(ME, "Hero", 500));
+        s.enter(in_clan(OTHER, "Foe", 600));
+        let before = s.me().data.exp;
+        assert!(s.world.do_die(ObjectId(ME), Some(ObjectId(OTHER))));
+        before - s.me().data.exp
+    };
+    let war = |a: &str, b: &str| vec![(a.to_owned(), b.to_owned())];
+    // 187922 * 7.625 / 100 = 14329.05 -> 14329 (see `a_death_costs_exp_and_remembers_it`).
+    assert_eq!(lost("clan-war-none", vec![]), 14_329);
+    // The victim's clan (500) declared the war: 14329 / 4 = 3582.
+    assert_eq!(lost("clan-war-declared", war("500", "600")), 3_582);
+    // Only the killer's clan declared it: `isAtWarWith` asks the victim's clan.
+    assert_eq!(lost("clan-war-attacked", war("600", "500")), 14_329);
+}

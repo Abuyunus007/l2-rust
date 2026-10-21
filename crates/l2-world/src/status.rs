@@ -18,8 +18,8 @@
 // [`World::set_dead`]) is the only one in the world: `World::do_die` sets it, `World::do_revive`
 // clears it (both in `death.rs`, M4-DEATH-01).
 //
-// Left out, with the card that brings it: the duel and olympiad
-// parts of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
+// Left out, with the card that brings it: the olympiad
+// part of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
 // festival, siege and clan hall regeneration modifiers (no such state yet), `isSitting()` (sitting
 // is not modelled), and the champion regeneration (champions are not rolled).
 
@@ -448,9 +448,11 @@ impl World {
         if self.is_dead(id) {
             return;
         }
-        // NpcStatus.reduceHp adds the attacker to the attack-by list before it calls
-        // CreatureStatus.reduceHp, so this comes before the invulnerability check.
+        // NpcStatus.reduceHp: a duelist who hits an NPC leaves the duel, then the attacker is added
+        // to the attack-by list before CreatureStatus.reduceHp, so this comes before the
+        // invulnerability check.
         if let Some(attacker) = attacker {
+            self.duel_interrupt_on_npc_hit(attacker);
             self.add_attacker_to_attack_by_list(id, attacker);
         }
         // "invul handling": `isInvul() && !(isDOT || isHPConsumption)`. DOT and HP consumption do
@@ -459,8 +461,7 @@ impl World {
             return;
         }
         // M5: a GM without `giveDamage` rights (access level flags are not loaded: every access
-        // level may give damage). NpcStatus: duels (M5). AttackableStatus: over-hit is a skill
-        // effect (M5).
+        // level may give damage). AttackableStatus: over-hit is a skill effect (M5).
         // `!isDOT && !isHPConsumption`: neither reaches this function yet.
         self.stop_effects_on_damage(id, true);
         // The stun break (`isStunned() && Rnd.get(10) == 0` -> `stopStunning(true)`).
@@ -498,7 +499,12 @@ impl World {
         let mut amount = value;
         let mut full_value = amount as i32;
         if let Some(attacker) = attacker.filter(|a| *a != id) {
-            // GM `giveDamage` rights and duels: M5.
+            // GM `giveDamage` rights: M5.
+            // A duelist who is beaten or has won takes no damage; a hit by somebody outside the
+            // duel interrupts it.
+            if self.duel_ignores_damage(id, attacker) {
+                return;
+            }
             // Summon damage transfer and mana shield: M5 (effects and summons; their stats are 0
             // without them).
             // Check and calculate the damage transferred to a party member (`TransferDamage`).
@@ -506,7 +512,7 @@ impl World {
                 amount = rest;
                 full_value = rest as i32;
             }
-            if self.is_player(attacker) {
+            if self.is_playable(attacker) {
                 // `attacker.isPlayable() || attacker.isFakePlayer()`: CP takes the hit first.
                 let cp = self.players.get(&id).map_or(0.0, |p| p.core.cur_cp);
                 if cp >= amount {
@@ -540,8 +546,11 @@ impl World {
 
         if amount > 0.0 {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
-            // Duels end at 1 HP: M5.
-            let new_hp = (current - amount).max(0.0);
+            let mut new_hp = (current - amount).max(0.0);
+            // Duels end at 1 HP: the duelist is beaten, not killed.
+            if current - amount <= 0.0 && self.duel_defeats_instead_of_dying(id, attacker) {
+                new_hp = 1.0;
+            }
             self.set_current_hp(id, new_hp, true);
         }
 
@@ -842,6 +851,16 @@ impl World {
         if !self.npcs.contains_key(&id) {
             return;
         }
+        self.creature_broadcast_status_update(id);
+        // `Summon.broadcastStatusUpdate()`: then `updateAndBroadcastStatus(1)`.
+        if self.is_summon(id) {
+            self.update_and_broadcast_summon_status(id, 1);
+        }
+    }
+
+    /// Java `Creature.broadcastStatusUpdate()`: the HP to the creature's status listeners when
+    /// the bar moved.
+    fn creature_broadcast_status_update(&mut self, id: ObjectId) {
         let has_listeners = self.statuses.get(&id).is_some_and(|s| !s.listeners.is_empty());
         if !has_listeners || !self.need_hp_update(id) {
             return;
@@ -865,8 +884,8 @@ impl World {
     }
 
     /// The self update of a player (Java `Player.broadcastStatusUpdate`'s task): the six vitals,
-    /// then the party window of the others, and the olympiad and duel parts (not ported, see the
-    /// module comment). Those parts read the update windows too, so the windows move as they do
+    /// then the party window of the others, the duel window of the opponents, and the olympiad part
+    /// (not ported, see the module comment). Those parts read the update windows too, so the windows move as they do
     /// in Java.
     pub(crate) fn on_self_update_timer(&mut self, id: ObjectId) {
         if let Some(st) = self.statuses.get_mut(&id) {
@@ -896,6 +915,12 @@ impl World {
         // Check if a party is in progress and the party window update is useful.
         if self.is_in_party(id) && (need_cp || need_hp || self.need_mp_update(id)) {
             self.send_party_small_window_update(id);
+        }
+        // In duel MP updated only with CP or HP.
+        if self.is_in_duel(id) && (need_cp || need_hp) {
+            if let Some(info) = self.duel_update_user_info(id) {
+                self.duel_broadcast_to_opposite_team(id, &info);
+            }
         }
     }
 

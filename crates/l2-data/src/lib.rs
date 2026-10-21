@@ -24,6 +24,7 @@ pub mod level_tables;
 pub mod loader;
 pub mod map_region;
 pub mod npc;
+pub mod pet_skill;
 pub mod player_class;
 pub mod player_template;
 pub mod skill;
@@ -61,12 +62,13 @@ pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
+pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
-pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees};
+pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
 pub use spawn::{SpawnData, SpawnLoadOptions};
 pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use stats::{Condition, FuncKind, FuncTemplate, Stat};
@@ -131,6 +133,8 @@ pub struct Datapack {
     pub skills: Arc<SkillTemplates>,
     /// `data/stats/augmentation/options/*.xml`: what the two option ids of an augmentation give.
     pub augmentation_options: Arc<AugmentationOptions>,
+    /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
+    pub pet_skills: Arc<PetSkillData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -215,6 +219,10 @@ impl Datapack {
         let spawns = SpawnData::load(root, &npcs, &spawn_options);
         let skills = Arc::new(SkillTemplates::load(root, &options.skills));
         let augmentation_options = Arc::new(AugmentationOptions::load(root, &skills));
+        // Java checks every entry against `SkillData` (loaded before it).
+        let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
+            skills.get(id, level).is_some()
+        }));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -248,6 +256,7 @@ impl Datapack {
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,
+            pet_skills,
         })
     }
 }

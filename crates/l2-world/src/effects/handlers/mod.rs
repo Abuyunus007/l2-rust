@@ -67,6 +67,7 @@ mod relax;
 mod restoration;
 mod restoration_random;
 mod resurrection;
+mod servitor_share;
 mod set_skill;
 mod silent_move;
 mod skill_calc;
@@ -74,6 +75,7 @@ mod spoil;
 mod statset;
 mod status_params;
 mod steal_abnormal;
+mod summon;
 mod sweeper;
 mod target_me;
 mod teleport;
@@ -81,6 +83,7 @@ mod teleport_to_target;
 mod throw_up;
 mod trait_effects;
 pub(crate) mod trigger_skill;
+mod unsummon;
 mod vitality_point_up;
 mod vitals;
 
@@ -244,4 +247,9 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("SoulBlow", blow::SoulBlow::create);
     registry.register("TargetMeProbability", hate_chance::TargetMeProbability::create);
     registry.register("TransferHate", hate_chance::TransferHate::create);
+    // M6-SUMMON-01: servitors.
+    registry.register("ServitorShare", servitor_share::ServitorShare::create);
+    registry.register("Summon", summon::Summon::create);
+    registry.register("Unsummon", unsummon::Unsummon::create);
+    registry.register("ImmobilePetBuff", immobile_buff::ImmobilePetBuff::create);
 }

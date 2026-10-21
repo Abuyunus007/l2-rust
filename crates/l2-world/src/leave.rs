@@ -8,7 +8,8 @@
 // through `PacketSink::left_world`.
 //
 // What decides whether Java lets a player log out or restart (`canLogout`, combat stance,
-// enchanting, store mode, class change, festival) is not modelled yet: the answer is always yes.
+// enchanting, class change, festival) is not modelled yet: the answer is always yes (a store
+// refuses a restart).
 // When one of those systems arrives, this is where it refuses (RestartResponse(false) +
 // ActionFailed for a restart, ActionFailed for a logout).
 
@@ -28,6 +29,12 @@ impl World {
     }
 
     pub(crate) fn on_restart(&mut self, id: ObjectId) {
+        // Java `RequestRestart`: a player with a store open cannot restart.
+        if self.is_in_store_mode(id) {
+            self.send_message(id, "Cannot restart while trading.");
+            self.send(id, &RestartResponse { result: false });
+            return;
+        }
         self.leave(id, LeaveReason::Restart);
     }
 
@@ -72,6 +79,9 @@ impl World {
         self.cancel_transaction_on_leave(id);
         // `deleteMe`: `clearRefund()` destroys what the player sold to merchants.
         self.clear_refund(id);
+        // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
+        // after the player's `decayMe()`; here before, while the player is still in the tables).
+        self.summon_on_owner_leave(id);
         let Some(_player) = self.players.remove(&id) else {
             return;
         };
@@ -109,6 +119,8 @@ impl World {
         self.forget_status(id);
         // `Player.stopAllTimers` -> `stopPvpRegTask`; the flag goes with the object.
         self.forget_pvp(id);
+        // The duel state belongs to the Player object, which is gone.
+        self.forget_duel(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

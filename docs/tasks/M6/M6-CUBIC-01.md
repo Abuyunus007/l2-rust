@@ -40,4 +40,7 @@ Cubic data, the `SummonCubic` effect, cubic actions (attack/heal/debuff skills o
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
-- The orchestrator refines this card when its dependencies are merged (exact module names and APIs to call).
+- SUMMON-01 is merged (`crates/l2-world/src/summon/`). The `SummonCubic` effect is the unported example in `effects/registry.rs`; DUEL-01 left `World::duel_on_buff` for the cubic code to call (Java's cubic debuff/heal path).
+- Cubic ids and timers on the wheel; cubics in UserInfo/CharInfo (`enter.rs`/`player_view.rs`).
+- Up to seven M6 workers run at the same time. In shared files (`skills/targets.rs`, `enter.rs`, `player_view.rs`, `leave.rs`, `death.rs`, `world.rs`, `dispatch.rs`, `client/enter.rs`) only add your lines: no reformatting or moving code.
+- Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.

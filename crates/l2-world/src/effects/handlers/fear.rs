@@ -28,6 +28,7 @@ impl EffectHandler for Fear {
             return false;
         };
         view.is_player()
+            || view.is_summon()
             || (view.is_attackable()
                 && !view.npc_template().is_some_and(|t| {
                     matches!(t.npc_type.as_str(), "Defender" | "FortCommander" | "SiegeFlag")

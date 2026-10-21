@@ -7,6 +7,7 @@
 mod buylists;
 mod characters;
 mod clans;
+mod crests;
 mod ground_items;
 mod hennas;
 mod ids;
@@ -19,6 +20,7 @@ mod shortcuts;
 mod skills;
 mod sql_number;
 mod subclasses;
+mod summons;
 mod variables;
 
 pub use buylists::{BuyListRepository, BuyListRow};
@@ -30,6 +32,7 @@ pub use clans::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, NewClan,
 };
+pub use crests::{CrestRepository, CrestRow};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
@@ -44,4 +47,5 @@ pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use subclasses::{SubclassRepository, SubclassRow, SubclassValues};
+pub use summons::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use variables::VariableRepository;

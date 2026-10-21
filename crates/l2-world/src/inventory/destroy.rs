@@ -166,8 +166,8 @@ impl World {
             }
             return;
         }
-        // Flood protector `canPerformTransaction`: not modelled. Store mode: M6-STORE-01.
-        if self.is_processing_transaction(id) {
+        // Flood protector `canPerformTransaction`: not modelled.
+        if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
                 &SystemMessage::new(
@@ -396,10 +396,9 @@ impl World {
             return;
         }
 
-        // Transactions (a trade or an open request). Private stores (M6-STORE-01), fishing, flying
-        // and a skill that consumes the item or is being cast (`isCastingNow`): none of them exist
-        // yet.
-        if self.is_processing_transaction(id) {
+        // Transactions (a trade or an open request) and private stores. Fishing, flying and a
+        // skill that consumes the item or is being cast (`isCastingNow`): none of them exist yet.
+        if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
                 &SystemMessage::new(

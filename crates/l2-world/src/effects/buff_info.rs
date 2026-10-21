@@ -344,6 +344,13 @@ impl World {
         if stats.is_empty() {
             return;
         }
+        if self.is_summon(id) {
+            // `isSummon()`: `updateAndBroadcastStatus(1)` (the summon is spawned).
+            if self.objects.get(&id).is_some_and(|e| e.spawned) {
+                self.update_and_broadcast_summon_status(id, 1);
+            }
+            return;
+        }
         if self.npcs.contains_key(&id) {
             // An NPC whose speed changed is shown again (`NpcInfo`), anything else is a
             // `StatusUpdate` of the attack and cast speeds.
@@ -453,7 +460,9 @@ impl World {
             update = true;
         }
         if update {
-            // Summons: `updateAndBroadcastStatus(1)` (M6).
+            if self.is_summon(owner) {
+                self.update_and_broadcast_summon_status(owner, 1);
+            }
             self.add_abnormal_visual_effects(owner, skill, !passive);
         }
     }
@@ -616,8 +625,13 @@ impl World {
             }
             // Remove abnormal visual effects (a passive's quietly, see `initialize_effects`).
             self.remove_abnormal_visual_effects(info.effected, skill, broadcast && !info.facts.passive);
-            // Set the proper system message (the summon check is M6).
+            // Set the proper system message: not for a summon whose owner has no summon any
+            // more (`!_effected.asSummon().getOwner().hasSummon()`).
+            let orphan_summon = self
+                .summon_owner(info.effected)
+                .is_some_and(|owner| self.summon_of(owner).is_none());
             let message = match info.finish_type {
+                _ if orphan_summon => None,
                 SkillFinishType::Silent => None,
                 _ if info.facts.toggle => Some(SystemMessageId::S1HasBeenAborted),
                 SkillFinishType::Removed => Some(SystemMessageId::TheEffectOfS1HasBeenRemoved),
@@ -675,6 +689,9 @@ impl World {
             if self.sinks.contains_key(&id) {
                 self.broadcast_user_info(id);
             }
+        } else if self.is_summon(id) {
+            // `Summon.updateAbnormalEffect()`: `SummonInfo` 50 ms later.
+            self.summon_update_abnormal_effect(id);
         } else if self.npcs.contains_key(&id) && self.objects.get(&id).is_some_and(|e| e.spawned) {
             self.broadcast_info(id);
         }

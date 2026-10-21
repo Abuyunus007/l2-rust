@@ -499,8 +499,8 @@ impl World {
             let input = AbnormalTimeInput {
                 skill_is_passive_or_toggle: passive_or_toggle,
                 skill_abnormal_time: skill.abnormal_time,
-                // The half time of an herb on a servitor needs summons (M6).
-                halve_for_servitor: false,
+                // `target.isServitor() && skill.isAbnormalInstant()`: an herb lasts half as long.
+                halve_for_servitor: world.is_servitor(target) && skill.abnormal_instant,
                 mastery: SkillMasteryInput {
                     actor_is_player: cv.is_player(),
                     skill_is_static: skill.is_static(),

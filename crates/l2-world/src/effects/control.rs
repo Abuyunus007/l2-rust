@@ -242,6 +242,10 @@ impl World {
         if let Some(c) = self.control_mut(id) {
             c.immobilized = value;
         }
+        // `Summon.setImmobilized`: the follow mode stops and comes back.
+        if self.is_summon(id) {
+            self.summon_on_immobilized(id, value);
+        }
     }
 
     /// Java `Player.isFakeDeath()`.
@@ -743,10 +747,16 @@ impl World {
     }
 
     /// What `CreatureStatus.reduceHp` / `PlayerStatus.reduceHp` do after `stopEffectsOnDamage`
-    /// for a hit that is no damage over time: a sitting player stands up, a stun may break (one
-    /// in ten).
+    /// for a hit that is no damage over time: a player with a store closes it and stands up, a
+    /// sitting player stands up, a stun may break (one in ten).
     pub(crate) fn break_states_on_damage(&mut self, id: ObjectId) {
-        if self.is_player(id) && self.is_sitting(id) {
+        // `PlayerStatus.reduceHp`: "Attacked players in craft/shops stand up." (crafting is not
+        // ported).
+        if self.is_player(id) && self.is_in_store_mode(id) {
+            self.set_private_store_type(id, crate::trade::PrivateStoreType::None);
+            self.stand_up(id);
+            self.broadcast_user_info(id);
+        } else if self.is_player(id) && self.is_sitting(id) {
             self.stand_up(id);
         }
         if self.is_stunned(id) && self.rng().get_int(10) == 0 {
@@ -761,8 +771,9 @@ impl World {
         self.abort_cast_for_effects(id);
         self.stop_move(id, None);
         self.notify_action_stunned(id);
-        // `!isSummon()`: there are no summons yet.
-        self.set_intention_idle(id);
+        if !self.is_summon(id) {
+            self.set_intention_idle(id);
+        }
         self.update_abnormal_effect(id);
     }
 
@@ -917,8 +928,8 @@ impl World {
         if self.control(id).is_some_and(|c| c.sitting_in_progress) {
             return;
         }
-        // `!isInStoreMode()`: no private stores yet.
-        if self.is_sitting(id) && !self.is_alike_dead(id) {
+        // A player with a private store open (even one being set up) stays where it is.
+        if self.is_sitting(id) && !self.is_in_store_mode(id) && !self.is_alike_dead(id) {
             if let Some(c) = self.control_mut(id) {
                 c.sitting_in_progress = true;
             }
@@ -942,6 +953,10 @@ impl World {
     /// Java `Creature.setRunning()` (to run): `ChangeMoveType`, then the new info to those who see
     /// the creature.
     pub(crate) fn set_running_effect(&mut self, id: ObjectId, value: bool) {
+        if self.is_summon(id) {
+            self.summon_set_running(id, value);
+            return;
+        }
         if self.npcs.contains_key(&id) {
             self.set_running(id, value);
             return;

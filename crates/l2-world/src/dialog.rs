@@ -106,6 +106,9 @@ pub struct PlayerTalk {
     last_origin: i32,
     /// Java `getLastFolkNPC()`: the NPC the player clicked last.
     pub last_folk_npc: Option<ObjectId>,
+    /// Java `getLastQuestNpcObject()`: the NPC a script (`Script <name>`) last talked through;
+    /// 0 for none.
+    pub last_quest_npc_object: i32,
     /// Java `getLearningClass()`: the class whose skill tree the player was last shown by a
     /// trainer. `None` is the player's own class (Java's field starts as `getPlayerClass()`).
     pub learning_class: Option<l2_data::ClassId>,
@@ -392,8 +395,8 @@ impl World {
         let (Some(p), Some(n)) = (self.players.get(&player), self.npcs.get(&npc)) else {
             return false;
         };
-        // Casting is not modelled; sitting and private stores are not either.
-        if p.core.cur_hp < 0.5 {
+        // Casting and sitting are not modelled.
+        if p.core.cur_hp < 0.5 || p.trade.store_type != crate::trade::PrivateStoreType::None {
             return false;
         }
         if crate::target::distance_3d((n.core.x, n.core.y, n.core.z), (p.core.x, p.core.y, p.core.z))

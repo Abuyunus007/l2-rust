@@ -13,7 +13,7 @@ use l2_protocol_game::server::{
     MagicSkillLaunched, MagicSkillUse, NpcHtmlMessage, SkillPosition, SystemMessage, SystemMessageParam,
 };
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
 use super::java_int_days_ms;
 use super::model::{
@@ -94,8 +94,23 @@ impl World {
                 return;
             }
             self.vm_assign_sub_pledge_leader(player, params, params2);
-        } else if is("create_ally") || is("dissolve_ally") {
-            debug!("{player}: {actual}: alliances are not ported yet (M6-CLAN-02).");
+        } else if is("create_ally") {
+            if params.is_empty() {
+                return;
+            }
+            if self.clan_of(player).is_none() {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::OnlyClanLeadersMayCreateAlliances),
+                );
+            } else {
+                self.create_ally(player, params);
+            }
+        } else if is("dissolve_ally") {
+            // `player.getClan().dissolveAlly(player)`: Java throws without a clan.
+            if self.clan_of(player).is_some() {
+                self.dissolve_ally(player);
+            }
         } else if is("dissolve_clan") {
             self.vm_dissolve_clan(player);
         } else if is("change_clan_leader") {
@@ -124,7 +139,7 @@ impl World {
                 self.broadcast_clan_level_up_effect(player);
             }
         } else if is("learn_clan_skills") {
-            debug!("{player}: learn_clan_skills: the pledge skills are not ported yet (M6-CLAN-03).");
+            self.show_pledge_skill_list(player);
         } else {
             self.generic_npc_bypass_feedback(npc, player, command);
         }

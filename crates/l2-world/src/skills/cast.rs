@@ -582,8 +582,8 @@ impl World {
         let selected = self.cast_selected_target(caster);
         let targets = self.cast_target_list(skill, caster, false, selected);
         let target = match skill.target_type {
-            // We need it to correct facing: the summon (M6), none yet.
-            TargetType::AreaSummon => None,
+            // We need it to correct facing: `getSummon()` (a player's; nobody else has one).
+            TargetType::AreaSummon => self.summon_of(caster),
             // AURA skills should always be using caster as target.
             TargetType::Aura
             | TargetType::AuraCorpseMob
@@ -1171,7 +1171,9 @@ impl World {
         // Go through targets table.
         for &target in &task.targets {
             if self.is_playable(target) {
-                // M6: a player's summon target gets `updateAndBroadcastStatus(1)`.
+                if self.is_player(caster) && self.is_summon(target) {
+                    self.update_and_broadcast_summon_status(target, 1);
+                }
             } else if self.is_playable(caster) && self.is_attackable_npc(target) {
                 if skill.effect_point > 0 {
                     // M5-EFX-03: `target.asAttackable().reduceHate(this, skill.getEffectPoint())`.
@@ -1557,12 +1559,18 @@ impl World {
 
         // Flag on Raid/Champion (player or owner of summon/pet).
         let pvp = &self.settings.pvp;
+        let flag_actor = if self.is_player(caster) {
+            Some(caster)
+        } else if pvp.flag_player_on_summon_pet_raid_champion_attack && self.is_summon(caster) {
+            self.summon_owner(caster)
+        } else {
+            None
+        };
         if skill.effect_point <= 0
             && negative
             && (pvp.flag_player_on_raid_attack || pvp.flag_player_on_champion_attack)
-            && self.is_player(caster)
+            && let Some(acting_player) = flag_actor
         {
-            // M6-SUMMON: the owner of a summon or pet (`FLAG_PLAYER_ON_SUMMON_PET_RAID_CHAMPION_ATTACK`).
             let hits_raid_or_champion = targets.iter().any(|&t| {
                 self.objects.get(&t).is_some_and(|e| e.kind.is_creature())
                     && ((self.is_raid(t) && self.settings.pvp.flag_player_on_raid_attack)
@@ -1570,12 +1578,12 @@ impl World {
                             && self.settings.pvp.flag_player_on_champion_attack))
             });
             if hits_raid_or_champion {
-                self.update_pvp_status(caster);
+                self.update_pvp_status(acting_player);
             }
         }
 
-        if self.is_player(caster) {
-            let player = caster;
+        // `asPlayer()`: a summon casts for its owner.
+        if let Some(player) = self.acting_player(caster) {
             for &target in &targets {
                 // ATTACKED and PvPStatus.
                 if self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) {
@@ -1587,12 +1595,20 @@ impl World {
                                 if self.is_player(target) {
                                     self.client_start_auto_attack(target);
                                 }
-                                // Attack of the own pet does not flag the player (M6-SUMMON:
-                                // `player.getSummon() != target`); triggering a trap does not
-                                // flag its owner (the caster is a player, never a trap); an area
-                                // skill of 0 effect point does not flag either.
-                                if !(skill.effect_point == 0 && skill.affect_range > 0) {
-                                    self.update_pvp_status_target(caster, target);
+                                // The combat mode of a summon target is its owner's.
+                                if let Some(owner) = self.summon_owner(target)
+                                    && self.has_ai(target)
+                                    && self.players.contains_key(&owner)
+                                {
+                                    self.client_start_auto_attack(owner);
+                                }
+                                // Attack of the own pet does not flag the player; triggering a
+                                // trap does not flag its owner (no traps); an area skill of 0
+                                // effect point does not flag either.
+                                if self.summon_of(player) != Some(target)
+                                    && !(skill.effect_point == 0 && skill.affect_range > 0)
+                                {
+                                    self.update_pvp_status_target(player, target);
                                 }
                             }
                         } else if self.is_attackable_npc(target) && !matches!(skill.id, LURE | TEMPTATION) {
@@ -1632,16 +1648,19 @@ impl World {
                 if !self.is_attackable_npc(npc) {
                     continue;
                 }
-                // `player.hasSummon() && targets == [summon]`: no summons.
-                let effect_point = skill.effect_point;
+                // A skill on the own summon alone makes no hate.
+                let own_summon_only = targets.len() == 1 && self.summon_of(player) == Some(targets[0]);
+                let effect_point = if own_summon_only { 0 } else { skill.effect_point };
                 if effect_point > 0 && self.has_ai(npc) && self.intention_of(npc) == Intention::Attack {
                     let npc_target = self.creature_target(npc);
                     for &skill_target in &targets {
                         if npc_target == Some(skill_target) || npc == skill_target {
                             let level = self.stats(npc).map_or(0, |v| v.level());
                             let base = effect_point.wrapping_mul(150) / level.wrapping_add(7);
-                            let ratio = self.hate_ratio(npc, player);
-                            self.add_damage_hate(npc, player, 0, (f64::from(base) * ratio) as i64);
+                            // `originalCaster = isSummon() ? this : player`.
+                            let original_caster = if self.is_summon(caster) { caster } else { player };
+                            let ratio = self.hate_ratio(npc, original_caster);
+                            self.add_damage_hate(npc, original_caster, 0, (f64::from(base) * ratio) as i64);
                         }
                     }
                 }

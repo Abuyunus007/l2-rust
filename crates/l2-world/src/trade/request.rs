@@ -202,8 +202,15 @@ impl World {
             return;
         }
 
-        // M6-STORE-01: `player.isInStoreMode() || partner.isInStoreMode()` ->
-        // WHILE_OPERATING_A_PRIVATE_STORE_OR_WORKSHOP_YOU_CANNOT_DISCARD_DESTROY_OR_TRADE_AN_ITEM.
+        if self.is_in_store_mode(id) || self.is_in_store_mode(partner) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::WhileOperatingAPrivateStoreOrWorkshopYouCannotDiscardDestroyOrTradeAnItem,
+                ),
+            );
+            return;
+        }
 
         if self.is_processing_transaction(id) {
             self.send(

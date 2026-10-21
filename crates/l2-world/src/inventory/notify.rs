@@ -98,6 +98,12 @@ impl World {
                 self.broadcast_to_self_and_visible(id, &update);
             }
         }
+        // The servitor of a player under `ServitorShare` shows the new stats too.
+        if let Some(summon) = self.summon_of(id)
+            && self.is_affected(id, crate::effects::effect_flag::SERVITOR_SHARE)
+        {
+            self.broadcast_status_update(summon);
+        }
     }
 
     /// Java `Player.sendSkillList()`: `SkillList` of everything the player knows, 300 ms later.
@@ -117,6 +123,9 @@ impl World {
     }
 
     pub(crate) fn on_skill_list_timer(&mut self, id: ObjectId) {
+        // `skill.isClanSkill() && _clan.getReputationScore() < 0`: a clan without reputation has
+        // its skills switched off (the rest of the player's skills are never disabled here).
+        let clan_skills_off = self.clan_of(id).is_some_and(|c| c.reputation_score < 0);
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
@@ -137,9 +146,8 @@ impl World {
                 id: skill_id,
                 level,
                 passive,
-                // Clan skills of a clan with negative reputation and enchantable skills need the
-                // clan and the skill enchant tables.
-                disabled: false,
+                disabled: clan_skills_off && self.rewards.skill_trees.is_clan_skill(skill_id, level),
+                // Enchantable skills need the skill enchant tables.
                 enchanted: false,
             })
             .collect();

@@ -91,6 +91,16 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
         ],
         clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
         maintenance_database_writes: clan_maintenance_database_writes(config_dir),
+        life_crystal_needed: player.life_crystal_needed,
+        join_academy_min_rep_score: feature.join_academy_min_rep_score,
+        join_academy_max_rep_score: feature.join_academy_max_rep_score,
+        alt_ally_join_days_when_leaved: player.alt_ally_join_days_when_leaved,
+        alt_ally_join_days_when_dismissed: player.alt_ally_join_days_when_dismissed,
+        alt_accept_clan_days_when_dismissed: player.alt_accept_clan_days_when_dismissed,
+        alt_create_ally_days_when_dissolved: player.alt_create_ally_days_when_dissolved,
+        alt_max_num_of_clans_in_ally: player.alt_max_num_of_clans_in_ally,
+        alt_clan_members_for_war: player.alt_clan_members_for_war,
+        reputation_score_per_kill: feature.reputation_score_per_kill,
     }
 }
 
@@ -267,6 +277,7 @@ impl Server {
         };
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
         let regen_settings = world_data::regen_settings(&config);
+        let summon_settings = world_data::summon_settings(&config);
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
         // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
         let ground_items = persist::restore_ground_items(&pool, &config.general).await;
@@ -277,6 +288,8 @@ impl Server {
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
+        // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
+        let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
@@ -330,6 +343,7 @@ impl Server {
                 Arc::clone(&datapack.skill_trees),
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
+            let pet_skills = Arc::clone(&datapack.pet_skills);
             let class_list = Arc::clone(&datapack.class_list);
             let npc_start = (
                 Arc::clone(&datapack),
@@ -344,6 +358,7 @@ impl Server {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
                     world.set_regen_settings(regen_settings);
+                    world.set_summon_settings(summon_settings);
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);
@@ -357,6 +372,8 @@ impl Server {
                     world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
                     // Java: SkillLearnData (the classes each trainer teaches).
                     world.set_skill_learn_data(skill_learn);
+                    // Java: PetSkillData (the skill levels of the summon actions).
+                    world.set_pet_skill_data(pet_skills);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
@@ -382,6 +399,8 @@ impl Server {
                     // Java: BuyListData (the products' stock the last run left).
                     world.set_buy_lists(buy_lists, price_configs);
                     world.load_buy_list_stock(buy_list_stock);
+                    // Java: CrestTable (after ClanTable: it clears the crests clans lost).
+                    world.load_crests(crests);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

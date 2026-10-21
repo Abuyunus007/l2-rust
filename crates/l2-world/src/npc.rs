@@ -68,6 +68,9 @@ pub enum NpcClass {
     Defender,
     /// `FortCommander` (extends `Defender`).
     FortCommander,
+    /// A summon's creature (`Servitor`, `Pet`: `summon/`). Never made from a spawn
+    /// (`from_type` answers `None` for those types); not an NPC for Java's `isNpc()`.
+    Summon,
 }
 
 impl NpcClass {
@@ -173,7 +176,8 @@ impl NpcClass {
             | Self::Guard
             | Self::QuestGuard
             | Self::Defender
-            | Self::FortCommander => false,
+            | Self::FortCommander
+            | Self::Summon => false,
         }
     }
 }
@@ -246,6 +250,11 @@ impl NpcWorld {
     /// The template of an NPC id, if the templates are loaded and know it.
     pub(crate) fn template(&self, npc_id: i32) -> Option<&NpcTemplate> {
         self.templates.as_ref()?.get(npc_id)
+    }
+
+    /// `ZoneManager.getZone(x, y, z, WaterZone.class) != null`, when the check was handed over.
+    pub(crate) fn is_water_at(&self, x: i32, y: i32, z: i32) -> bool {
+        self.water.as_ref().is_some_and(|f| f(x, y, z))
     }
 
     /// The NPC templates, if they were handed over.

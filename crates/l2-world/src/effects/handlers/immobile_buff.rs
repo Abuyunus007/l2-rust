@@ -34,3 +34,33 @@ impl EffectHandler for ImmobileBuff {
         world.set_immobilized(cx.effected, true);
     }
 }
+
+// Java: dist/game/data/scripts/handlers/skill/effects/ImmobilePetBuff.java
+/// Java `ImmobilePetBuff`: the owner's skill that keeps its own summon in place.
+#[derive(Debug, Clone, Copy, Default)]
+pub(crate) struct ImmobilePetBuff;
+
+impl ImmobilePetBuff {
+    pub(crate) fn create(_template: &EffectTemplate) -> Result<Box<dyn EffectHandler>, String> {
+        Ok(Box::new(ImmobilePetBuff))
+    }
+}
+
+impl EffectHandler for ImmobilePetBuff {
+    fn effect_type(&self) -> EffectType {
+        EffectType::Buff
+    }
+
+    fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
+        world.set_immobilized(cx.effected, false);
+    }
+
+    fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
+        if world.is_summon(cx.effected)
+            && world.is_player(cx.effector)
+            && world.summon_owner(cx.effected) == Some(cx.effector)
+        {
+            world.set_immobilized(cx.effected, true);
+        }
+    }
+}

@@ -72,6 +72,7 @@ macro_rules! server_unit_packet {
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
+pub mod duel;
 pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
@@ -88,6 +89,7 @@ pub mod pledge;
 pub mod regen;
 pub mod shop;
 pub mod skills;
+pub mod sound;
 pub mod store;
 pub mod summon;
 pub mod system_message;
@@ -100,11 +102,12 @@ pub use charscreen::{
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
     delete_seconds, exp_percent,
 };
-pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, RestartResponse, SayBody, SenderField};
+pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, NpcSay, RestartResponse, SayBody, SenderField};
 pub use combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive, SetupGauge,
 };
+pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
@@ -152,6 +155,7 @@ pub use skills::{
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
+pub use sound::PlaySound;
 pub use store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
@@ -159,6 +163,7 @@ pub use store::{
 };
 pub use summon::{
     PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+    SummonInfo,
 };
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use trade::{
