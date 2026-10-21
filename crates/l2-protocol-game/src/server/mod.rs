@@ -72,6 +72,7 @@ macro_rules! server_unit_packet {
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
+pub mod duel;
 pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
@@ -87,6 +88,7 @@ pub mod party;
 pub mod pledge;
 pub mod regen;
 pub mod skills;
+pub mod sound;
 pub mod store;
 pub mod summon;
 pub mod system_message;
@@ -104,6 +106,7 @@ pub use combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive, SetupGauge,
 };
+pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
@@ -150,6 +153,7 @@ pub use skills::{
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
+pub use sound::PlaySound;
 pub use store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,

@@ -348,7 +348,11 @@ impl World {
         if player == target {
             return false;
         }
-        // M6: duel and olympiad ("fight is on" returns true).
+        // Duel ("fight is on").
+        if self.is_in_duel_with(player, target) {
+            return true;
+        }
+        // M8: the same olympiad game (returns true as well).
         if self.is_inside_zone(target, ZoneId::Peace) {
             return false;
         }
@@ -753,7 +757,10 @@ impl<R: Rnd> Targeting<'_, R> {
             if player == target {
                 return true;
             }
-            // M6: observer mode, olympiad, duel, clan war.
+            // M6: observer mode, olympiad, clan war.
+            if self.w.is_in_duel_with(player, target) {
+                return false;
+            }
             if self.w.is_in_party_with(player, target) {
                 return true;
             }
@@ -855,7 +862,9 @@ impl<R: Rnd> Targeting<'_, R> {
             return false;
         }
         if self.playable(target) {
-            // M6: duel.
+            if self.w.is_in_duel_with(player, target) {
+                return false;
+            }
             if self.w.is_in_party_with(player, target) {
                 return true;
             }
@@ -1250,7 +1259,12 @@ impl<R: Rnd> Targeting<'_, R> {
             if !self.w.is_player(obj) {
                 continue;
             }
-            // M6: olympiad side and duel checks.
+            // M8: olympiad side checks.
+            // A duelist only gets the members of its own duel (the party-leader comparison that
+            // follows in Java is the party test below).
+            if self.w.is_in_duel(self.caster) && self.w.duel_id_of(self.caster) != self.w.duel_id_of(obj) {
+                continue;
+            }
             // Same party (or, M6, same clan).
             if self.w.party_of(obj) != Some(party) {
                 continue;

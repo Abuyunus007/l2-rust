@@ -108,6 +108,8 @@ pub struct World {
     pub(crate) punishments: crate::punishments::PunishmentWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
+    pub(crate) duel: crate::duel::DuelWorld,
 }
 
 impl World {
@@ -159,6 +161,7 @@ impl World {
             party: crate::party::PartyWorld::default(),
             punishments: crate::punishments::PunishmentWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            duel: crate::duel::DuelWorld::default(),
         }
     }
 
@@ -533,6 +536,12 @@ impl World {
             ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
             ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
             ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
+            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
+            ClientInput::DuelStart { name, party_duel } => self.on_request_duel_start(id, &name, party_duel),
+            ClientInput::DuelAnswerStart { party_duel, response } => {
+                self.on_request_duel_answer_start(id, party_duel, response)
+            }
+            ClientInput::DuelSurrender => self.do_duel_surrender(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -614,6 +623,8 @@ impl World {
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
+            TimerKind::Duel(timer) => self.on_duel_timer(timer),
         }
     }
 

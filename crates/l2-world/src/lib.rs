@@ -20,6 +20,7 @@ pub mod data;
 pub mod death;
 pub mod dialog;
 pub mod door;
+pub mod duel;
 pub mod effects;
 pub mod enter;
 pub mod formulas;

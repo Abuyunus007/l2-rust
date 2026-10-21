@@ -103,6 +103,8 @@ impl World {
         self.forget_status(id);
         // `Player.stopAllTimers` -> `stopPvpRegTask`; the flag goes with the object.
         self.forget_pvp(id);
+        // The duel state belongs to the Player object, which is gone.
+        self.forget_duel(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

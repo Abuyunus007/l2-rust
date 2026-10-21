@@ -646,6 +646,16 @@ impl ClientSession {
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
+            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
+            ClientPacket::RequestDuelStart(p) => ClientInput::DuelStart {
+                name: p.player,
+                party_duel: p.party_duel,
+            },
+            ClientPacket::RequestDuelAnswerStart(p) => ClientInput::DuelAnswerStart {
+                party_duel: p.party_duel,
+                response: p.response,
+            },
+            ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

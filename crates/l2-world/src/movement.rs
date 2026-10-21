@@ -715,7 +715,15 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Java also refuses while the duel state is "dead" (M5).
+        // A duelist who is beaten stands frozen until the duel ends.
+        if self.duel_state_of(id) == crate::duel::DuelState::Dead {
+            self.send(id, &ActionFailed);
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotMoveWhileFrozenPleaseWait),
+            );
+            return;
+        }
         if self.is_all_skills_disabled(id) || self.is_casting_now_for_effects(id) || self.is_attacking_now(id)
         {
             self.send(id, &ActionFailed);

@@ -823,7 +823,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         max_cp: view.max_cp(),
         current_cp: core.cur_cp as i32,
         enchant_effect: enchant_effect as u8,
-        team: 0,
+        // `getTeam().getId()`: BLUE/RED in a duel.
+        team: world.team_of(core.object_id),
         clan_crest_large_id: 0,
         noble: data.profile.noble,
         // `isHero() || (isGM() && GM_HERO_AURA)`; the heroes table is not loaded.
