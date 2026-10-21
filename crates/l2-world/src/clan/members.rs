@@ -178,7 +178,8 @@ impl World {
             pledge_class: state.pledge_class,
             ..PlayerClanState::default()
         };
-        // M6-CLAN-03: `_activeWarehouse = null`.
+        // `_activeWarehouse = null`.
+        self.clear_active_warehouse(id);
     }
 
     /// Java `EnterWorld`'s clan block, after the first `UserInfo`: the clan skills, the other

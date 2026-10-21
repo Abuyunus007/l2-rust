@@ -168,6 +168,10 @@ impl World {
             }
         }
 
+        // `_warehouse.restore()`: the items whose template is known (`Item.restoreFromDb`).
+        clan.warehouse = record.warehouse;
+        self.drop_unknown_items(&mut clan.warehouse);
+
         // restoreNotice
         for (enabled, notice) in record.notices {
             // `Boolean.parseBoolean`
@@ -498,8 +502,22 @@ impl World {
         self.broadcast_to_clan(clan_id, &SystemMessage::new(SystemMessageId::ClanHasDispersed));
         let castle_id = clan.castle_id;
         // Sieges, fortress sieges, siegable halls and the clan hall auction: M7.
-        // M6-CLAN-03: `clan.getWarehouse().destroyAllItems(...)`.
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
+        let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
+        // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
+        // released) and its row deleted, with the clan's own rows (D-49: left alone without
+        // `write_db`).
+        for object_id in &warehouse {
+            self.release_item_id(*object_id);
+        }
+        if write_db && !warehouse.is_empty() {
+            let ops = warehouse
+                .into_iter()
+                .map(|object_id| crate::outbox::ItemRowOp::Delete { object_id })
+                .collect();
+            self.outbox
+                .persist(crate::outbox::PersistCommand::ItemRows { tracked: None, ops });
+        }
         for member in members {
             self.remove_clan_member(clan_id, member, 0, write_db);
         }

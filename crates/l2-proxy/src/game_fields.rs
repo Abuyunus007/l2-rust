@@ -77,6 +77,9 @@ use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
 };
+use l2_protocol_game::server::warehouse::{
+    PackageSendableList, PackageToList, WareHouseDepositList, WareHouseWithdrawalList,
+};
 use l2_protocol_game::{ClientOpcode, ClientPacket, ConnectionState, ServerOpcode, decode_client};
 use serde_json::{Value, json};
 
@@ -219,6 +222,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::AnswerTradeRequest(p) => object!(p => response),
         ClientPacket::AddTradeItem(p) => object!(p => trade_id, object_id, count),
         ClientPacket::TradeDone(p) => object!(p => response),
+        ClientPacket::SendWareHouseDepositList(p) => json!({ "items": warehouse_list_fields(&p.items) }),
+        ClientPacket::SendWareHouseWithDrawList(p) => json!({ "items": warehouse_list_fields(&p.items) }),
+        ClientPacket::RequestPackageSend(p) => {
+            json!({ "object_id": p.object_id, "items": warehouse_list_fields(&p.items) })
+        }
+        ClientPacket::RequestPackageSendableItemList(p) => object!(p => object_id),
         ClientPacket::RequestPrivateStoreManageSell(_)
         | ClientPacket::RequestPrivateStoreManageBuy(_)
         | ClientPacket::RequestPrivateStoreQuitSell(_)
@@ -525,6 +534,18 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetItemList => decoded::<PetItemList>(&mut r, pet_item_list_fields),
         ServerOpcode::PetInventoryUpdate => {
             decoded::<PetInventoryUpdate>(&mut r, pet_inventory_update_fields)
+        }
+        ServerOpcode::WarehouseDepositList => {
+            decoded::<WareHouseDepositList>(&mut r, warehouse_deposit_list_fields)
+        }
+        // The sorted list (`SortedWareHouseWithdrawalList`) has the same opcode and the same item
+        // layout (its "equipped" short is a constant 0): one decoder reads both.
+        ServerOpcode::WarehouseWithdrawList => {
+            decoded::<WareHouseWithdrawalList>(&mut r, warehouse_withdrawal_list_fields)
+        }
+        ServerOpcode::PackageToList => decoded::<PackageToList>(&mut r, package_to_list_fields),
+        ServerOpcode::PackageSendableList => {
+            decoded::<PackageSendableList>(&mut r, package_sendable_list_fields)
         }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
@@ -1447,6 +1468,47 @@ fn set_summon_remain_time_fields(p: &SetSummonRemainTime) -> Value {
     object!(p => max_time, remaining_time)
 }
 
+fn warehouse_list_fields(items: &Option<Vec<l2_protocol_game::client::WarehouseListEntry>>) -> Value {
+    // `None` is a list Java drops.
+    items.as_ref().map_or(Value::Null, |v| {
+        Value::Array(v.iter().map(|i| object!(i => object_id, count)).collect())
+    })
+}
+
+fn warehouse_deposit_list_fields(p: &WareHouseDepositList) -> Value {
+    json!({
+        "wh_type": p.wh_type,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn warehouse_withdrawal_list_fields(p: &WareHouseWithdrawalList) -> Value {
+    json!({
+        "wh_type": p.wh_type,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn package_to_list_fields(p: &PackageToList) -> Value {
+    json!({
+        "players": p
+            .players
+            .iter()
+            .map(|(id, name)| json!({ "object_id": id, "name": name }))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn package_sendable_list_fields(p: &PackageSendableList) -> Value {
+    json!({
+        "player_object_id": p.player_object_id,
+        "adena": p.adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
+}
+
 fn pet_item_list_fields(p: &PetItemList) -> Value {
     json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() })
 }
@@ -1635,6 +1697,10 @@ mod tests {
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,
         ServerOpcode::PetInventoryUpdate,
+        ServerOpcode::WarehouseDepositList,
+        ServerOpcode::WarehouseWithdrawList,
+        ServerOpcode::PackageToList,
+        ServerOpcode::PackageSendableList,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -3159,6 +3225,100 @@ mod tests {
         assert_eq!(fields["partner_object_id"], 11);
         assert_eq!(fields["items"][0]["count"], 5);
     }
+    #[test]
+    fn warehouse_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList,
+            SendWareHouseWithDrawList, WarehouseListEntry,
+        };
+        use l2_protocol_game::server::{SortedWareHouseWithdrawalList, SortedWarehouseItem};
+        let in_game = ConnectionState::InGame;
+        let entry = WarehouseListEntry {
+            object_id: 4,
+            count: 2,
+        };
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &SendWareHouseDepositList {
+                    items: Some(vec![entry])
+                }
+                .to_bytes()
+            ),
+            json!({ "items": [{ "object_id": 4, "count": 2 }] })
+        );
+        // A list Java drops shows as null.
+        assert_eq!(
+            c2s_fields(in_game, &SendWareHouseWithDrawList { items: None }.to_bytes()),
+            json!({ "items": null })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPackageSend {
+                    object_id: 9,
+                    items: Some(vec![entry])
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 9, "items": [{ "object_id": 4, "count": 2 }] })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPackageSendableItemList { object_id: 9 }.to_bytes()
+            ),
+            json!({ "object_id": 9 })
+        );
+
+        let plain = WareHouseWithdrawalList {
+            wh_type: 4,
+            player_adena: 77,
+            items: vec![ItemInfo::plain(5, 57, 3)],
+        };
+        let fields = s2c_fields(&plain.to_bytes());
+        assert_eq!(fields["wh_type"], 4);
+        assert_eq!(fields["items"][0]["count"], 3);
+        // The sorted list has the same opcode and the same byte layout.
+        let sorted = SortedWareHouseWithdrawalList {
+            wh_type: 1,
+            player_adena: 5,
+            items: vec![SortedWarehouseItem {
+                object_id: 6,
+                display_id: 57,
+                count: 8,
+                time: -1,
+                ..SortedWarehouseItem::default()
+            }],
+        };
+        let fields = s2c_fields(&sorted.to_bytes());
+        assert_eq!(fields["wh_type"], 1);
+        assert_eq!(fields["items"][0]["object_id"], 6);
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        assert_eq!(fields["items"][0]["time"], -1);
+        let to_list = PackageToList {
+            players: vec![(12, "Neo".into())],
+        };
+        assert_eq!(
+            s2c_fields(&to_list.to_bytes()),
+            json!({ "players": [{ "object_id": 12, "name": "Neo" }] })
+        );
+        let sendable = PackageSendableList {
+            player_object_id: 12,
+            adena: 9,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        let fields = s2c_fields(&sendable.to_bytes());
+        assert_eq!(fields["player_object_id"], 12);
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        let deposit = WareHouseDepositList {
+            wh_type: 1,
+            player_adena: 1,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        assert_eq!(s2c_fields(&deposit.to_bytes())["items"][0]["count"], 5);
+    }
+
     #[test]
     fn private_store_packets_show_their_fields() {
         use l2_protocol_game::client::{

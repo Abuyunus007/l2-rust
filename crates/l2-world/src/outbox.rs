@@ -43,6 +43,18 @@ pub enum PersistCommand {
         upserts: Vec<ItemData>,
         removed: Vec<ObjectId>,
     },
+    /// Java `Item.updateDatabase()` for items that changed owner or container: the rows of a
+    /// warehouse, freight or clan warehouse move (M6-WH-01). Unlike `ItemChanges` the rows may
+    /// belong to somebody else than the character whose inventory they left (another character's
+    /// freight, the clan's warehouse), so every op names its owner. `tracked` is the character
+    /// whose last-written rows the persistence task keeps (its inventory and paperdoll items):
+    /// after each op the task updates them, so a later full store neither deletes an item that
+    /// went to a warehouse nor inserts one that came back. Applied in order with the character's
+    /// other commands.
+    ItemRows {
+        tracked: Option<ObjectId>,
+        ops: Vec<ItemRowOp>,
+    },
     /// Java `ItemsOnGroundManager.run()` (only with `SaveDroppedItem`): `DELETE FROM
     /// itemsonground`, then one `INSERT` per row.
     SaveGroundItems(Vec<crate::ground_item::GroundItemRow>),
@@ -98,6 +110,24 @@ pub enum PersistCommand {
     /// `clan_notices`, the clan columns of `characters`), see `clan/`. Applied in order with the
     /// other commands.
     Clan(crate::clan::ClanWrite),
+}
+
+/// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,
+/// `insertIntoDb`, `removeFromDb`). The item carries `loc`, `loc_data`, count and the rest; the
+/// owner column is `owner_id`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ItemRowOp {
+    /// `Item.updateDatabase(true)` of an item that may not be in the table yet (it was created in
+    /// this session and the character was not stored since): an `UPDATE` when the persistence task
+    /// knows the row (the `tracked` character's last-written rows), else an `INSERT`.
+    Write { owner_id: i32, item: ItemData },
+    /// `updateInDb`: the row exists (it was read from a warehouse, freight or clan warehouse, or
+    /// written by an earlier op).
+    Update { owner_id: i32, item: ItemData },
+    /// `insertIntoDb`: a new item (a new object id of the Rust range).
+    Insert { owner_id: i32, item: ItemData },
+    /// `removeFromDb`: `DELETE FROM items WHERE object_id = ?` (and the item's own rows).
+    Delete { object_id: ObjectId },
 }
 
 /// Messages for the login server link.

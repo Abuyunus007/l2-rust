@@ -951,6 +951,13 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        warehouse: l2_world::WarehouseSettings {
+            freight_slots: p.alt_freight_slots,
+            freight_price: p.alt_freight_price,
+            members_can_withdraw_from_clanwh: p.alt_members_can_withdraw_from_clanwh,
+            sorting_private: config.warehouse_sorting.enable_warehousesorting_private,
+            sorting_clan: config.warehouse_sorting.enable_warehousesorting_clan,
+        },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,
