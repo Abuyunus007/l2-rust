@@ -5,8 +5,8 @@
 //       removeReviving, hasCharmOfCourage), network/clientpackets/DlgAnswer.java (the two
 //       resurrection questions), mechanics/stats/Formulas.java (calculateSkillResurrectRestorePercent)
 //
-// Pets and servitors are M6: a request "for the pet" finds no dead summon, so it does nothing, as
-// Java does for a player without a pet.
+// A request "for the pet" revives the player's dead pet (`summon/pet.rs`); without one it does
+// nothing, as in Java.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ConfirmDlg, SystemMessage, SystemMessageParam};
@@ -73,8 +73,14 @@ impl World {
             self.send(reviver, &SystemMessage::new(message));
             return;
         }
-        // `pet && hasPet() && _summon.isDead()` needs summons (M6).
-        if pet || !self.is_dead(player) {
+        // `(pet && hasPet() && _summon.isDead()) || (!pet && isDead())`.
+        let valid = if pet {
+            self.summon_of(player)
+                .is_some_and(|s| self.is_pet(s) && self.is_dead(s))
+        } else {
+            self.is_dead(player)
+        };
+        if !valid {
             return;
         }
         let revive_power = self.skill_resurrect_restore_percent(f64::from(power), reviver);
@@ -112,15 +118,26 @@ impl World {
             return;
         };
         let (requested, power, pet) = (control.revive_requested, control.revive_power, control.revive_pet);
-        // `(!isDead() && !_revivePet) || (_revivePet && hasPet() && !_summon.isDead())`: no summons.
-        if !requested || (!self.is_dead(player) && !pet) {
+        // `(!isDead() && !_revivePet) || (_revivePet && hasPet() && !_summon.isDead())`.
+        let living_pet = self
+            .summon_of(player)
+            .is_some_and(|s| self.is_pet(s) && !self.is_dead(s));
+        if !requested || (!self.is_dead(player) && !pet) || (pet && living_pet) {
             return;
         }
-        if answer == 1 && !pet {
-            if power != 0.0 {
-                self.do_revive_with_power(player, power);
-            } else {
-                self.do_revive(player);
+        if answer == 1 {
+            if !pet {
+                if power != 0.0 {
+                    self.do_revive_with_power(player, power);
+                } else {
+                    self.do_revive(player);
+                }
+            } else if let Some(summon) = self.summon_of(player).filter(|s| self.is_pet(*s)) {
+                if power != 0.0 {
+                    self.pet_do_revive_with_power(summon, power);
+                } else {
+                    self.pet_do_revive(summon);
+                }
             }
         }
         if let Some(control) = self.control_mut(player) {

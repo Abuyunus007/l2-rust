@@ -50,9 +50,9 @@ use l2_config::game::GeneralConfig;
 use l2_db::{
     CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate, GroundItemRecord,
     GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate, NewItem,
-    NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, Pool, PunishmentRepository,
-    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
-    VariableRepository,
+    NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
+    PetRepository, PetValues, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository,
+    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
 use l2_world::{
@@ -540,6 +540,18 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
     }
 }
 
+/// Java `PetNameTable.doesPetNameExist`, read once: the name and the collar item id of every
+/// named pet. Only reads (D-39); a failed read leaves the table empty and is logged.
+pub async fn load_pet_names(pool: &Pool) -> Vec<(String, i32)> {
+    match PetRepository::new(pool.clone()).all_pet_names().await {
+        Ok(names) => names,
+        Err(e) => {
+            warn!("PetNameTable: Could not load the pet names: {e}");
+            Vec::new()
+        }
+    }
+}
+
 /// Java `ClanTable`'s constructor, the database half: every clan (`new Clan(clanId)`'s queries)
 /// and the `clan_wars` rows. Only reads (D-39). A clan whose rows cannot be read is logged and
 /// left out, like Java's caught `restore` (which keeps a half-restored clan).
@@ -901,6 +913,7 @@ pub struct DbStore {
     variables: VariableRepository,
     punishments: PunishmentRepository,
     summons: SummonRepository,
+    pets: PetRepository,
     clans: ClanRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -919,6 +932,7 @@ impl DbStore {
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
+            pets: PetRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
             clans: ClanRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -1684,6 +1698,51 @@ impl PlayerStore for DbStore {
                 self.summons
                     .store_servitor_effects(owner.0, *class_index, *summon_skill_id, &rows)
                     .await?;
+            }
+            // Java: Pet.storeMe
+            SummonWrite::StorePet { insert, pet } => {
+                let values = PetValues {
+                    name: pet.name.clone().unwrap_or_default(),
+                    level: pet.level,
+                    cur_hp: pet.cur_hp,
+                    cur_mp: pet.cur_mp,
+                    exp: pet.exp,
+                    sp: pet.sp,
+                    fed: pet.fed,
+                    owner_id: pet.owner.0,
+                    restore: pet.restore,
+                    item_obj_id: pet.control_object_id.0,
+                };
+                if *insert {
+                    // A collar whose row exists already (it came to this character after the
+                    // login, so the world did not know the row) is updated instead.
+                    if let Err(e) = self.pets.insert_pet(&values).await {
+                        if e.is_duplicate_key() {
+                            self.pets.update_pet(&values).await?;
+                        } else {
+                            return Err(e.into());
+                        }
+                    }
+                } else {
+                    self.pets.update_pet(&values).await?;
+                }
+            }
+            // Java: Pet.destroyControlItem, ItemManager.destroyItem
+            SummonWrite::DeletePet { control_object_id } => self.pets.delete_pet(control_object_id.0).await?,
+            // Java: Pet.storeEffect / restoreEffects
+            SummonWrite::PetEffects {
+                control_object_id,
+                effects,
+            } => {
+                let rows: Vec<NewPetSkillSave> = effects
+                    .iter()
+                    .map(|e| NewPetSkillSave {
+                        skill_id: e.skill_id,
+                        skill_level: e.skill_level,
+                        remaining_time: e.remaining_time,
+                    })
+                    .collect();
+                self.pets.store_effects(control_object_id.0, &rows).await?;
             }
         }
         Ok(())

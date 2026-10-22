@@ -52,12 +52,20 @@ impl EffectHandler for Restoration {
             );
             return;
         }
-        // NOTE: a pet (`isPet()`) would get the item in its own inventory; pets are M6.
-        if world.is_player(cx.effected)
-            && let Some(object_id) = world.add_item(cx.effected, self.item_id, self.item_count, true)
-            && self.item_enchantment_level > 0
-        {
-            set_enchant_level(world, cx.effected, object_id, self.item_enchantment_level);
+        if world.is_player(cx.effected) {
+            if let Some(object_id) = world.add_item(cx.effected, self.item_id, self.item_count, true)
+                && self.item_enchantment_level > 0
+            {
+                set_enchant_level(world, cx.effected, object_id, self.item_enchantment_level);
+            }
+        } else if world.is_pet(cx.effected) {
+            // The pet gets the item in its own inventory and the owner its list.
+            world.pet_restoration_item(
+                cx.effected,
+                self.item_id,
+                self.item_count,
+                self.item_enchantment_level,
+            );
         }
     }
 }

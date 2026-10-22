@@ -1791,8 +1791,8 @@ mod summon {
     };
     use l2_protocol_game::server::items::{ItemInfo, ItemUpdate};
     use l2_protocol_game::server::summon::{
-        PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate,
-        SetSummonRemainTime,
+        ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow,
+        PetStatusUpdate, SetSummonRemainTime,
     };
 
     trait DoubleBytes {
@@ -1874,6 +1874,27 @@ mod summon {
             &Bytes::default().byte(0xD1).int(1_200_000).int(600_000).done(),
             1,
         );
+    }
+
+    /// `ExChangeNpcState`: `0xFE`, the ex id `0xBE` and two ints; `Pet.setCurrentFed` sends `0x64`
+    /// when the food runs out and `0x65` when it comes back.
+    #[test]
+    fn change_npc_state() {
+        for state in [0x64, 0x65] {
+            check_round_trip(
+                &ExChangeNpcState {
+                    object_id: 0x6000_0001,
+                    state,
+                },
+                &Bytes::default()
+                    .byte(0xFE)
+                    .short(0xBE)
+                    .int(0x6000_0001)
+                    .int(state)
+                    .done(),
+                3,
+            );
+        }
     }
 
     #[test]

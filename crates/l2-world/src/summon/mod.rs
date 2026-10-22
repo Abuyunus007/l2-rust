@@ -17,7 +17,6 @@
 // - A pet (PET-01) is a `Summon` of kind [`SummonKind::Pet`] with its own pet state next to it.
 //
 // # Left out, with the system that brings it
-// - Pets (`Pet`, `BabyPet`, feeding, the pet inventory, `RequestPetGetItem` & co.): PET-01.
 // - Cubics: CUBIC-01. Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in `SummonStatus`): DUEL-01.
 // - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
 //   as "not in one".
@@ -31,8 +30,11 @@
 
 pub mod actions;
 pub mod ai;
+pub mod baby_pet;
 pub mod info;
 pub mod party;
+pub mod pet;
+pub mod pet_items;
 pub mod servitor;
 pub mod share;
 pub mod shots;
@@ -75,6 +77,10 @@ pub enum SummonTimer {
     Avoid(ObjectId),
     /// `Summon.updateAbnormalEffect()`'s 50 ms task.
     AbnormalEffect(ObjectId),
+    /// `Pet.FeedTask`: every 10 s (PET-01, `pet.rs`).
+    PetFeed(ObjectId),
+    /// `BabyPet.CastTask`: first after 3 s, then every 2 s (PET-01, `baby_pet.rs`).
+    BabyCast(ObjectId),
 }
 
 /// The `SummonAI` fields (Java `ai/SummonAI.java`).
@@ -143,6 +149,8 @@ pub struct Summon {
     pub abnormal_effect_timer: Option<TimerId>,
     /// `Servitor`'s fields; `None` for a pet.
     pub servitor: Option<ServitorState>,
+    /// `Pet`'s fields (PET-01); `None` for a servitor.
+    pub pet: Option<pet::PetState>,
 }
 
 /// The `.ini` values summons read. `Default` is the Java default of each key.
@@ -190,6 +198,8 @@ pub struct SummonWorld {
     /// The world's view of `character_summon_skills_save`: (owner, class index, reference skill)
     /// -> the rows (see `servitor.rs`).
     pub(crate) saved_rows: HashMap<(ObjectId, i32, i32), Vec<servitor::SummonSkillSave>>,
+    /// The pet tables and the pet `.ini` values (PET-01, see `pet.rs`).
+    pub(crate) pet_world: pet::PetWorld,
 }
 
 impl World {
@@ -199,6 +209,8 @@ impl World {
             SummonTimer::Life(id) => self.on_servitor_life_timer(id),
             SummonTimer::Avoid(id) => self.on_summon_avoid_timer(id),
             SummonTimer::AbnormalEffect(id) => self.on_summon_abnormal_effect_timer(id),
+            SummonTimer::PetFeed(id) => self.on_pet_feed_timer(id),
+            SummonTimer::BabyCast(id) => self.on_baby_cast_timer(id),
         }
     }
 
@@ -287,14 +299,15 @@ impl World {
 
     /// Java `ConditionPlayerCanSummon`'s test: the player (`effector.asPlayer()`) may call a
     /// summon now. Tells the player why not.
-    // Spawn and teleport protection and mounts are not modelled; a pet stored for a restore is
-    // PET-01's.
+    // Spawn and teleport protection and mounts are not modelled.
     pub(crate) fn player_can_summon(&self, id: ObjectId) -> bool {
         let Some(player) = self.acting_player(id) else {
             return false;
         };
         let refused = (self.summons.settings.restore_servitor_on_reconnect
             && self.summons.saved_servitors.contains_key(&player))
+            || (self.summons.pet_world.settings.restore_pet_on_reconnect
+                && self.summons.pet_world.saved.contains_key(&player))
             || self.summon_of(player).is_some();
         if refused {
             self.send(
@@ -310,12 +323,20 @@ impl World {
 
     /// Java `Summon.getSoulShotsPerHit()`: the template's `soulShot`, at least 1.
     pub fn soul_shots_per_hit(&self, summon: ObjectId) -> i32 {
+        // `Pet.getSoulShotsPerHit()`: the level row's count.
+        if let Some(level) = self.pet_level_data_of(summon) {
+            return i32::from(level.soul_shot);
+        }
         let shots = self.summon_template(summon).map_or(0, |t| t.soul_shot);
         if shots > 0 { shots } else { 1 }
     }
 
     /// Java `Summon.getSpiritShotsPerHit()`.
     pub fn spirit_shots_per_hit(&self, summon: ObjectId) -> i32 {
+        // `Pet.getSpiritShotsPerHit()`.
+        if let Some(level) = self.pet_level_data_of(summon) {
+            return i32::from(level.spirit_shot);
+        }
         let shots = self.summon_template(summon).map_or(0, |t| t.spirit_shot);
         if shots > 0 { shots } else { 1 }
     }
@@ -351,6 +372,10 @@ impl World {
 
     /// Java `Summon.getExpForThisLevel()`: 0 at or above the highest pet level.
     pub fn summon_exp_for_this_level(&self, summon: ObjectId) -> i64 {
+        // `Pet.getExpForThisLevel()`: the pet's own table.
+        if self.is_pet(summon) {
+            return self.pet_exp_for_this_level(summon);
+        }
         let level = self.stats(summon).map_or(0, |s| s.level());
         let Some(max_pet_level) = self.exp_table_max_pet_level() else {
             return 0;
@@ -363,6 +388,10 @@ impl World {
 
     /// Java `Summon.getExpForNextLevel()`: 0 from one below the highest pet level on.
     pub fn summon_exp_for_next_level(&self, summon: ObjectId) -> i64 {
+        // `Pet.getExpForNextLevel()`.
+        if self.is_pet(summon) {
+            return self.pet_exp_for_next_level(summon);
+        }
         let level = self.stats(summon).map_or(0, |s| s.level());
         let Some(max_pet_level) = self.exp_table_max_pet_level() else {
             return 0;

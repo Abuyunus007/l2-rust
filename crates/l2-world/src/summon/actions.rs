@@ -307,8 +307,19 @@ impl World {
                     self.broadcast_packet(summon, &packet);
                 }
             }
-            // Switch State (baby pets only, PET-01).
-            1084 => {}
+            // Switch State (baby pets only).
+            1084 => {
+                if summon.is_some_and(|s| self.is_baby_pet(s)) {
+                    self.summon_use_skill(
+                        player,
+                        ActionSkill::Id(SWITCH_STANCE_ID),
+                        target,
+                        true,
+                        ctrl_pressed,
+                        shift_pressed,
+                    );
+                }
+            }
             other => match action_skill(other) {
                 Some((skill, owner_target, pet)) => {
                     let skill_target = if owner_target { Some(player) } else { target };
@@ -347,7 +358,14 @@ impl World {
             return;
         }
         if self.is_pet(summon) {
-            // The 40 % food check and the pet's unsummon are PET-01's.
+            let fed = self.pet_current_fed(summon) as f32;
+            let max_fed = self.pet_max_fed(summon) as f32;
+            let current_fed_percent = (fed / max_fed) * 100.0_f32;
+            if current_fed_percent < 40.0 {
+                self.send_system(player, SystemMessageId::YouMayNotRestoreAHungryPet);
+                return;
+            }
+            self.unsummon(summon, Some(player));
             return;
         }
         self.send_system(
@@ -367,7 +385,14 @@ impl World {
         if let Some(summon) = summon
             && ((check_pet && self.is_pet(summon)) || self.is_servitor(summon))
         {
-            // `summon.isPet() && summon.asPet().isUncontrollable()`: PET-01.
+            if self.is_pet(summon) && self.pet_is_uncontrollable(summon) {
+                // NOTE(java-quirk): the message is the siege war status window one.
+                self.send_system(
+                    player,
+                    SystemMessageId::OnlyAClanLeaderThatIsANoblesseCanViewTheSiegeWarStatusWindowDuringASiegeWar,
+                );
+                return None;
+            }
             if self.is_betrayed(summon) {
                 self.send_system(
                     player,
@@ -387,7 +412,12 @@ impl World {
 
     /// Java `RequestActionUse.canControl(player, summon)`.
     fn can_control(&self, player: ObjectId, summon: ObjectId) -> bool {
-        // `BabyPet` in support mode: PET-01.
+        // NOTE(java-quirk): the switch stance skill goes through here too, so a baby pet in the
+        // auxiliary mode cannot be switched back with the button (`switchMode()` is never reached).
+        if self.is_baby_pet(summon) && !self.baby_is_in_support_mode(summon) {
+            self.send_system(player, SystemMessageId::APetOnAuxiliaryModeCannotUseSkills);
+            return false;
+        }
         if self.is_pet(summon) {
             let level = self.stats(summon).map_or(0, |s| s.level());
             let owner_level = self.core_of(player).map_or(0, |c| c.level);
@@ -418,9 +448,9 @@ impl World {
         }
         match skill {
             ActionSkill::Id(skill_id) => {
-                // A pet's level comes from `PetDataTable` (PET-01).
+                // A pet's level comes from `PetDataTable`.
                 let level = if self.is_pet(summon) {
-                    0
+                    self.pet_available_skill_level(summon, skill_id)
                 } else {
                     self.pet_skill_available_level(summon, skill_id)
                 };
@@ -434,11 +464,15 @@ impl World {
                     );
                 }
                 if skill_id == SWITCH_STANCE_ID {
-                    // `summon.switchMode()`: does nothing but for baby pets (PET-01).
+                    // `summon.switchMode()`: does nothing but for baby pets.
+                    self.summon_switch_mode(summon);
                 }
             }
             ActionSkill::Name(name) => {
-                // `BabyPet` not in support mode: PET-01.
+                if self.is_baby_pet(summon) && !self.baby_is_in_support_mode(summon) {
+                    self.send_system(player, SystemMessageId::APetOnAuxiliaryModeCannotUseSkills);
+                    return;
+                }
                 let holder = self.summon_template(summon).and_then(|t| template_skill(t, name));
                 let Some(key) = holder else {
                     return;
@@ -449,7 +483,9 @@ impl World {
                 {
                     self.set_creature_target(summon, target);
                     self.summon_use_magic(summon, key, ctrl_pressed, shift_pressed);
-                    // `skill.getId() == SWITCH_STANCE_ID`: `switchMode()` (PET-01).
+                    if key.id == SWITCH_STANCE_ID {
+                        self.summon_switch_mode(summon);
+                    }
                 }
             }
         }
@@ -712,6 +748,11 @@ impl World {
 
     /// Java `SummonClick.onAction(player, target, interact)`.
     pub(crate) fn summon_click(&mut self, player: ObjectId, summon: ObjectId, interact: bool) {
+        // `PetClick` for a pet.
+        if self.is_pet(summon) {
+            self.pet_click(player, summon, interact);
+            return;
+        }
         // Aggression target lock effect.
         if self.is_locked_target(player) && self.locked_target(player) != Some(summon) {
             self.send_system(player, SystemMessageId::FailedToChangeAttackTarget);
@@ -729,7 +770,7 @@ impl World {
         } else if interact {
             if self.summon_auto_attackable_by(summon, player) {
                 self.set_intention_attack(player, summon);
-                // `player.onActionRequest()`: spawn protection is not modelled.
+                self.on_action_request(player);
             } else {
                 // This Action Failed packet avoids player getting stuck when clicking three or
                 // more times.

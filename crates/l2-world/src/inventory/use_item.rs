@@ -116,7 +116,8 @@ impl crate::world::World {
             return;
         }
 
-        // `player.onActionRequest()` removes the spawn protection: not modelled.
+        // `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(id);
 
         if is_equipable(template) {
             // Check if player is casting or using a skill: casting is M5 (`isCastingNow()` and

@@ -29,6 +29,10 @@ pub(crate) enum ItemHandlerKind {
     Maps,
     /// `Calculator`: opens the calculator (M5-FIX-03).
     Calculator,
+    /// `SummonItems`: a pet collar (M6-PET-01).
+    SummonItems,
+    /// `PetFood` (M6-PET-01).
+    PetFood,
 }
 
 impl ItemHandlerKind {
@@ -42,6 +46,8 @@ impl ItemHandlerKind {
             "Book" => Self::Book,
             "Maps" => Self::Maps,
             "Calculator" => Self::Calculator,
+            "SummonItems" => Self::SummonItems,
+            "PetFood" => Self::PetFood,
             _ => return None,
         })
     }
@@ -65,8 +71,8 @@ impl World {
         force_use: bool,
     ) -> bool {
         match kind {
-            // `ItemSkills` only adds the olympiad rule, and `Elixir` the pet check ("your pet
-            // cannot carry this item"); neither applies yet.
+            // `ItemSkills` only adds the olympiad rule (not modelled), `Elixir` the player-only
+            // rule (a pet's item skills go through `ItemSkillsTemplate`'s own pet branches).
             ItemHandlerKind::ItemSkills | ItemHandlerKind::ItemSkillsTemplate | ItemHandlerKind::Elixir => {
                 self.item_skills_on_use(id, item, template, force_use)
             }
@@ -74,6 +80,8 @@ impl World {
             ItemHandlerKind::Book => self.book_on_use(id, item),
             ItemHandlerKind::Maps => self.maps_on_use(id, item),
             ItemHandlerKind::Calculator => self.calculator_on_use(id, item),
+            ItemHandlerKind::SummonItems => self.summon_items_on_use(id, item, template, force_use),
+            ItemHandlerKind::PetFood => self.pet_food_on_use(id, item, template),
         }
     }
 

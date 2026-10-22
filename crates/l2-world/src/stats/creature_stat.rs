@@ -353,6 +353,8 @@ impl<'w> StatView<'w> {
     pub fn level(&self) -> i32 {
         match self.who {
             Who::Player(p) => p.core.level,
+            // `PetStat` keeps its own level.
+            Who::Npc(n) if self.is_pet() => n.core.level,
             Who::Npc(_) => self.npc_level(),
         }
     }
@@ -429,6 +431,18 @@ impl<'w> StatView<'w> {
 
     /// Java `getSkillLevel(id)`: 0 for a skill the creature does not know.
     pub fn skill_level(&self, id: i32) -> i32 {
+        // `Pet.getSkillLevel(skillId)`: the level the pet's own level gives, for a skill it knows.
+        if self.is_pet() {
+            if self.skills().all(|(skill, _)| skill != id) {
+                return 0;
+            }
+            let level = self.level();
+            return if level > 70 {
+                7 + ((level - 70) / 5)
+            } else {
+                level / 10
+            };
+        }
         self.skills()
             .find(|(skill, _)| *skill == id)
             .map_or(0, |(_, level)| level)
@@ -527,7 +541,7 @@ impl<'w> StatView<'w> {
     pub fn max_hp(&self) -> i32 {
         let base = match self.who {
             Who::Player(_) => self.player_level_value(|t, l| t.base_hp_max(l)),
-            Who::Npc(_) => self.base().hp_max,
+            Who::Npc(_) => self.pet_level_data().map_or(self.base().hp_max, |l| l.max_hp),
         };
         let value = self.calc(Stat::MaxHp, f64::from(base)) as i32;
         // `Servitor.getMaxHp()`: plus the owner's share (`summon/share.rs`).
@@ -543,7 +557,7 @@ impl<'w> StatView<'w> {
     pub fn max_mp(&self) -> i32 {
         let base = match self.who {
             Who::Player(_) => self.player_level_value(|t, l| t.base_mp_max(l)),
-            Who::Npc(_) => self.base().mp_max,
+            Who::Npc(_) => self.pet_level_data().map_or(self.base().mp_max, |l| l.max_mp),
         };
         let value = self.calc(Stat::MaxMp, f64::from(base)) as i32;
         // `Servitor.getMaxMp()`.
@@ -581,6 +595,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getPAtk(target)`.
     pub fn p_atk(&self, target: Option<ObjectId>) -> f64 {
+        // `PetStat.getPAtk(target)`: the level row's value, nothing else.
+        if let Some(level) = self.pet_level_data() {
+            return self.calc_stat(Stat::PowerAttack, f64::from(level.p_atk), target, None);
+        }
         let s = self.settings();
         let mut bonus: f32 = 1.0;
         if s.champion_enable && self.is_champion() {
@@ -601,6 +619,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getMAtk(target, skill)`.
     pub fn m_atk(&self, target: Option<ObjectId>, skill: Option<&CalcSkill>) -> f64 {
+        // `PetStat.getMAtk(target, skill)`.
+        if let Some(level) = self.pet_level_data() {
+            return self.calc_stat(Stat::MagicAttack, f64::from(level.m_atk), target, skill);
+        }
         let s = self.settings();
         let mut bonus: f32 = 1.0;
         if s.champion_enable && self.is_champion() {
@@ -619,6 +641,20 @@ impl<'w> StatView<'w> {
 
     /// Java `getPDef(target)`.
     pub fn p_def(&self, target: Option<ObjectId>) -> f64 {
+        // `PetStat.getPDef(target)`: the owner's class balance when the pet is hit or hits.
+        if let Some(level) = self.pet_level_data() {
+            let value = self.calc_stat(Stat::PowerDefence, f64::from(level.p_def), target, None);
+            let Some(target) = target else {
+                return value;
+            };
+            let cb = &self.settings().class_balance;
+            let table = if self.other(target).is_some_and(|t| t.is_playable()) {
+                &cb.pvp_physical_attack_defence
+            } else {
+                &cb.pve_physical_attack_defence
+            };
+            return f64::from(ClassBalance::of(table, self.pet_owner_class_id().unwrap_or(0))) * value;
+        }
         let s = self.settings();
         let base = f64::from(self.base().p_def);
         let init = if self.is_raid() {
@@ -645,6 +681,10 @@ impl<'w> StatView<'w> {
 
     /// Java `getMDef(target, skill)`.
     pub fn m_def(&self, target: Option<ObjectId>, skill: Option<&CalcSkill>) -> f64 {
+        // `PetStat.getMDef(target, skill)`.
+        if let Some(level) = self.pet_level_data() {
+            return self.calc_stat(Stat::MagicDefence, f64::from(level.m_def), target, skill);
+        }
         let s = self.settings();
         let mut defence = f64::from(self.base().m_def);
         if self.is_raid() {
@@ -681,6 +721,10 @@ impl<'w> StatView<'w> {
         if self.is_player() && value > f64::from(s.max_patk_speed) && !self.is_gm() {
             return f64::from(s.max_patk_speed);
         }
+        // `PetStat.getPAtkSpd()`: a hungry pet attacks at half the speed.
+        if self.pet_is_hungry() {
+            return value / 2.0;
+        }
         // `Servitor.getPAtkSpd()`.
         value + self.servitor_share(Stat::PowerAttackSpeed, |o| o.p_atk_spd())
     }
@@ -696,6 +740,10 @@ impl<'w> StatView<'w> {
         let value = self
             .calc(Stat::MagicAttackSpeed, init)
             .min(f64::from(s.max_matk_speed));
+        // `PetStat.getMAtkSpd()`: `super.getMAtkSpd() / 2` when hungry (an int division).
+        if self.pet_is_hungry() {
+            return (value as i32) / 2;
+        }
         // `Servitor.getMAtkSpd()`: `(int) (super + owner * (bonus - 1))`.
         let share = self.servitor_share(Stat::MagicAttackSpeed, |o| f64::from(o.m_atk_spd()));
         if share == 0.0 {
@@ -814,7 +862,7 @@ impl<'w> StatView<'w> {
         } else {
             self.calc(Stat::MoveSpeed, base)
         };
-        self.player_speed_cap(value)
+        self.player_speed_cap(value) * self.pet_speed_factor()
     }
 
     /// Java `getWalkSpeed()`.
@@ -829,7 +877,7 @@ impl<'w> StatView<'w> {
         } else {
             self.calc(Stat::MoveSpeed, base)
         };
-        self.player_speed_cap(value)
+        self.player_speed_cap(value) * self.pet_speed_factor()
     }
 
     /// Java `getSwimRunSpeed()`.
@@ -873,7 +921,9 @@ impl<'w> StatView<'w> {
             (false, true) => MoveType::Run,
             (false, false) => MoveType::Walk,
         };
-        self.move_speed() * (1.0 / self.base_move_speed(kind))
+        // `Pet.getMovementSpeedMultiplier()` halves it again for a starving pet (`getMoveSpeed()`
+        // already used the halved run and walk speeds).
+        self.move_speed() * (1.0 / self.base_move_speed(kind)) * self.pet_speed_factor()
     }
 
     // ------------------------------------------------------------------ elements

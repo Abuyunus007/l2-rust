@@ -388,7 +388,8 @@ impl World {
         }
         // Players mounted on pets cannot use any toggle skills: no mounts yet.
 
-        // `player.onActionRequest()`: spawn protection is not modelled.
+        // `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(player);
 
         // Stop if use self-buff (except if on AirShip or Boat).
         // NOTE(java-quirk): `(!isInAirShip() || !isInBoat())` is always true.

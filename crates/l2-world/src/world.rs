@@ -555,6 +555,9 @@ impl World {
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
+            // Java: RequestPetGetItem, RequestGiveItemToPet, RequestGetItemFromPet,
+            // RequestPetUseItem, RequestChangePetName (`summon/pet_items.rs`)
+            ClientInput::Pet(input) => self.on_pet_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {

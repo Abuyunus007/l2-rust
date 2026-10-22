@@ -31,12 +31,13 @@
 //   start value), the attack range, base speeds, level modifier, attack type, collision and
 //   `FuncPDefMod`/`FuncMDefMod`.
 //
-// Not here yet: summons and pets.
+// Summons: `summon/` (servitor share); pets: `pet_stat.rs`.
 
 pub mod calculators;
 pub mod conditions;
 pub mod creature_stat;
 pub mod npc_stat;
+pub mod pet_stat;
 pub mod player_stat;
 pub mod skills;
 pub mod std_funcs;

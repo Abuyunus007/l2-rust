@@ -153,6 +153,9 @@ pub enum ClientInput {
     },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
+    /// The packets about the player's pet (`RequestPetGetItem`, `RequestGiveItemToPet`, ...), see
+    /// `summon/pet_items.rs`.
+    Pet(crate::summon::pet_items::PetInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },

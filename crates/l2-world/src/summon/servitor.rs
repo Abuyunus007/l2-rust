@@ -22,7 +22,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{PetDelete, SetSummonRemainTime, SystemMessage};
 use l2_util::ObjectId;
 
-use super::{SummonEffect, SummonTimer};
+use super::{SummonEffect, SummonKind, SummonTimer};
 use crate::effects::SkillKey;
 use crate::outbox::PersistCommand;
 use crate::timer::{TimerKind, TimerWheel};
@@ -73,6 +73,21 @@ pub enum SummonWrite {
         owner: ObjectId,
         class_index: i32,
         summon_skill_id: i32,
+        effects: Vec<SummonSkillSave>,
+    },
+    /// `Pet.storeMe`: `INSERT INTO pets (..)` for a pet that is not in the table yet, else
+    /// `UPDATE pets SET ..` (PET-01).
+    StorePet {
+        insert: bool,
+        pet: super::pet::PetRowWrite,
+    },
+    /// `Pet.destroyControlItem` and `ItemManager.destroyItem` of a collar: `DELETE FROM pets
+    /// WHERE item_obj_id = ?`.
+    DeletePet { control_object_id: ObjectId },
+    /// `Pet.storeEffect` / `restoreEffects`: `DELETE FROM character_pet_skills_save WHERE
+    /// petObjItemId=?`, then one `INSERT` per row (`buff_index` counts from 1).
+    PetEffects {
+        control_object_id: ObjectId,
         effects: Vec<SummonSkillSave>,
     },
 }
@@ -193,6 +208,10 @@ impl World {
         if !self.is_summon(summon) {
             return;
         }
+        if self.is_pet(summon) {
+            self.pet_unsummon(summon, owner);
+            return;
+        }
         self.cancel_servitor_life_task(summon);
         let spawned = self.objects.get(&summon).is_some_and(|e| e.spawned);
         if spawned && !self.is_dead(summon) {
@@ -242,7 +261,7 @@ impl World {
 
     /// `for (int itemId : owner.getAutoSoulShot())`: the automatic shots whose handler is a
     /// "Beast" one are switched off (`disableAutoShot`).
-    fn disable_beast_auto_shots(&mut self, owner: ObjectId) {
+    pub(crate) fn disable_beast_auto_shots(&mut self, owner: ObjectId) {
         for item_id in self.auto_soul_shots(owner) {
             let beast = self
                 .item_templates()
@@ -377,7 +396,7 @@ impl World {
         };
         let owner = state.owner;
         let Some(reference_skill) = state.servitor.as_ref().map(|s| s.reference_skill) else {
-            // A pet's are PET-01's.
+            // A pet's are `pet_restore_effects`.
             return;
         };
         // `getOwner().isInOlympiadMode()`: no olympiad yet.
@@ -521,6 +540,8 @@ impl World {
     /// The saved `character_summon_skills_save` rows of a character entering the world (the
     /// world's view of the table, see the module comment).
     pub(crate) fn take_saved_summon_effects(&mut self, owner: ObjectId) {
+        // The same for the rows of the pets (`pets`, `character_pet_skills_save`).
+        self.take_saved_pets(owner);
         // NOTE: Java brings a stored servitor back at the first action after the login
         // (`Player.onActionRequest` with spawn protection, `CharSummonTable.restoreServitor`), and
         // `ConditionPlayerCanSummon` refuses a new summon while one is stored. The restore is not
@@ -551,6 +572,11 @@ impl World {
     /// (`playable_do_die`, which the caller runs in between: `before` true is the part before
     /// `super.doDie`, `false` the part after it).
     pub(crate) fn summon_do_die_before(&mut self, summon: ObjectId) {
+        if self.is_pet(summon) {
+            // `Pet.doDie`: no `Summon.doDie(killer)`, so no stored buffs either.
+            self.pet_do_die_before(summon);
+            return;
+        }
         if self.is_affected(summon, crate::effects::effect_flag::NOBLESS_BLESSING) {
             self.stop_effects(summon, crate::effects::EffectType::NoblesseBlessing);
             self.servitor_store_effect(summon, true);
@@ -561,6 +587,10 @@ impl World {
 
     /// The part of `Summon.doDie` / `Servitor.doDie` after `super.doDie(killer)` succeeded.
     pub(crate) fn summon_do_die_after(&mut self, summon: ObjectId, killer: Option<ObjectId>) {
+        if self.is_pet(summon) {
+            self.pet_do_die_after(summon, killer);
+            return;
+        }
         let owner = self.summon_owner(summon);
         if let Some(owner) = owner {
             // The monsters that hate the summon hate its owner as much.
@@ -606,6 +636,10 @@ impl World {
         let Some(kind) = self.summon(summon).map(|s| s.kind) else {
             return;
         };
+        if kind == SummonKind::Pet {
+            self.pet_delete_me(summon, owner);
+            return;
+        }
         if let Some(owner) = owner {
             self.send(
                 owner,
@@ -616,7 +650,6 @@ impl World {
             );
             self.summon_party_window_delete(summon, owner);
         }
-        // A pet's items go with it (PET-01).
         self.cancel_decay_task(summon);
         self.decay(summon);
         if let Some(owner) = owner
@@ -667,6 +700,12 @@ impl World {
     /// The summon part of Java `Player.deleteMe()`: the summon is stored for a restore and
     /// unsummoned; a dead one stays (its owner's name goes from its title).
     pub(crate) fn summon_on_owner_leave(&mut self, owner: ObjectId) {
+        self.summon_on_owner_leave_inner(owner);
+        // What the pet tables kept for this session of the owner (PET-01).
+        self.pet_forget_owner(owner);
+    }
+
+    fn summon_on_owner_leave_inner(&mut self, owner: ObjectId) {
         let Some(summon) = self.summon_of(owner) else {
             return;
         };
