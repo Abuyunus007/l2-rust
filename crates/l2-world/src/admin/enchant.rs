@@ -187,6 +187,6 @@ mod tests {
         assert_eq!(substring_12("admin_seteh ").as_deref(), Some(""));
         assert_eq!(substring_12("admin_seteh 12").as_deref(), Some("12"));
         // Characters, not bytes.
-        assert_eq!(substring_12("admin_setehé é").as_deref(), Some("é"));
+        assert_eq!(substring_12("admin_seteh é").as_deref(), Some("é"));
     }
 }

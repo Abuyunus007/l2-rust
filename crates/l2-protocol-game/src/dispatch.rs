@@ -636,6 +636,7 @@ fn decode_ex_client(
         }
         RequestExEnchantSkillRouteChange::EX_OPCODE => {
             ClientPacket::RequestExEnchantSkillRouteChange(RequestExEnchantSkillRouteChange::decode(reader)?)
+        }
         RequestConfirmTargetItem::EX_OPCODE => {
             ClientPacket::RequestConfirmTargetItem(RequestConfirmTargetItem::decode(reader)?)
         }
