@@ -179,6 +179,7 @@ pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod recipe;
+pub mod refine;
 pub mod shop;
 pub mod shortcut;
 pub mod skills;
@@ -237,6 +238,9 @@ pub use recipe::{
     RequestRecipeItemMakeSelf, RequestRecipeShopListSet, RequestRecipeShopMakeInfo,
     RequestRecipeShopMakeItem, RequestRecipeShopManagePrev, RequestRecipeShopManageQuit,
     RequestRecipeShopMessageSet,
+pub use refine::{
+    RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
+    RequestRefine, RequestRefineCancel,
 };
 pub use shop::{
     BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,

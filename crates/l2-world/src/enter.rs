@@ -717,9 +717,12 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
     let slots = paperdoll_items(data);
     let mut object_ids = [0; paperdoll::TOTAL_SLOTS];
     let mut item_ids = [0; paperdoll::TOTAL_SLOTS];
+    let mut augmentation_ids = [0; paperdoll::TOTAL_SLOTS];
     for (slot, item) in slots.iter().enumerate() {
         if let Some(item) = item {
             object_ids[slot] = item.object_id.0;
+            // `getPaperdollAugmentationId`
+            augmentation_ids[slot] = item.augmentation.unwrap_or(0);
             // `getPaperdollItemDisplayId`
             item_ids[slot] = item_static(st, item).display_id;
         }
@@ -767,7 +770,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         weapon_equipped: true,
         paperdoll_object_ids: object_ids,
         paperdoll_item_ids: item_ids,
-        paperdoll_augmentation_ids: [0; paperdoll::TOTAL_SLOTS],
+        paperdoll_augmentation_ids: augmentation_ids,
         talisman_slots: view.talisman_slots(),
         // `PlayerStat.canEquipCloak()`: true until the player has entered the world.
         can_equip_cloak: view.can_equip_cloak(),

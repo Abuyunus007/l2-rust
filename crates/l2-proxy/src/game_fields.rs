@@ -72,6 +72,10 @@ use l2_protocol_game::server::pledge::{
 use l2_protocol_game::server::recipe::{
     RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList, RecipeShopMsg,
     RecipeShopSellList,
+use l2_protocol_game::server::refine::{
+    ExPutCommissionResultForVariationMake, ExPutIntensiveResultForVariationMake,
+    ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
+    ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::skills::{
@@ -407,6 +411,18 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
         ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
         ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
+        ClientPacket::RequestConfirmTargetItem(p) => object!(p => object_id),
+        ClientPacket::RequestConfirmRefinerItem(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id)
+        }
+        ClientPacket::RequestConfirmGemStone(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id, gemstone_item_object_id, gemstone_count)
+        }
+        ClientPacket::RequestRefine(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id, gemstone_item_object_id, gemstone_count)
+        }
+        ClientPacket::RequestConfirmCancelItem(p) => object!(p => object_id),
+        ClientPacket::RequestRefineCancel(p) => object!(p => target_item_object_id),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -651,6 +667,26 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExChooseInventoryAttributeItem => {
             decoded::<ExChooseInventoryAttributeItem>(&mut r, choose_inventory_attribute_fields)
+        }
+        ServerOpcode::ExShowVariationMakeWindow => decoded::<ExShowVariationMakeWindow>(&mut r, no_fields),
+        ServerOpcode::ExShowVariationCancelWindow => {
+            decoded::<ExShowVariationCancelWindow>(&mut r, no_fields)
+        }
+        ServerOpcode::ExPutItemResultForVariationMake => {
+            decoded::<ExPutItemResultForVariationMake>(&mut r, put_item_variation_make_fields)
+        }
+        ServerOpcode::ExPutIntensiveResultForVariationMake => {
+            decoded::<ExPutIntensiveResultForVariationMake>(&mut r, put_intensive_variation_make_fields)
+        }
+        ServerOpcode::ExPutCommissionResultForVariationMake => {
+            decoded::<ExPutCommissionResultForVariationMake>(&mut r, put_commission_variation_make_fields)
+        }
+        ServerOpcode::ExVariationResult => decoded::<ExVariationResult>(&mut r, variation_result_fields),
+        ServerOpcode::ExPutItemResultForVariationCancel => {
+            decoded::<ExPutItemResultForVariationCancel>(&mut r, put_item_variation_cancel_fields)
+        }
+        ServerOpcode::ExVariationCancelResult => {
+            decoded::<ExVariationCancelResult>(&mut r, variation_cancel_result_fields)
         }
         ServerOpcode::ExShowBaseAttributeCancelWindow => {
             decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
@@ -1717,6 +1753,30 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn put_item_variation_make_fields(p: &ExPutItemResultForVariationMake) -> Value {
+    object!(p => item_object_id, item_id)
+}
+
+fn put_intensive_variation_make_fields(p: &ExPutIntensiveResultForVariationMake) -> Value {
+    object!(p => refiner_item_object_id, life_stone_id, gemstone_item_id, gemstone_count)
+}
+
+fn put_commission_variation_make_fields(p: &ExPutCommissionResultForVariationMake) -> Value {
+    object!(p => gemstone_object_id, item_id, gemstone_count)
+}
+
+fn variation_result_fields(p: &ExVariationResult) -> Value {
+    object!(p => stat12, stat34, result)
+}
+
+fn put_item_variation_cancel_fields(p: &ExPutItemResultForVariationCancel) -> Value {
+    object!(p => item_object_id, item_id, aug1, aug2, price)
+}
+
+fn variation_cancel_result_fields(p: &ExVariationCancelResult) -> Value {
+    object!(p => result)
+}
+
 fn choose_inventory_item_fields(p: &ChooseInventoryItem) -> Value {
     object!(p => item_id)
 }
@@ -2078,6 +2138,14 @@ mod tests {
         ServerOpcode::ExAttributeEnchantResult,
         ServerOpcode::ExBaseAttributeCancelResult,
         ServerOpcode::ExChooseInventoryAttributeItem,
+        ServerOpcode::ExShowVariationMakeWindow,
+        ServerOpcode::ExShowVariationCancelWindow,
+        ServerOpcode::ExPutItemResultForVariationMake,
+        ServerOpcode::ExPutIntensiveResultForVariationMake,
+        ServerOpcode::ExPutCommissionResultForVariationMake,
+        ServerOpcode::ExVariationResult,
+        ServerOpcode::ExPutItemResultForVariationCancel,
+        ServerOpcode::ExVariationCancelResult,
         ServerOpcode::ExShowBaseAttributeCancelWindow,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,

@@ -91,6 +91,7 @@ pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod recipe;
+pub mod refine;
 pub mod regen;
 pub mod shop;
 pub mod skills;
@@ -171,6 +172,10 @@ pub use pledge::{
 pub use recipe::{
     ManufactureEntry, RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList,
     RecipeShopMsg, RecipeShopSellList,
+pub use refine::{
+    ExPutCommissionResultForVariationMake, ExPutIntensiveResultForVariationMake,
+    ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
+    ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 pub use regen::ExRegenMax;
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};

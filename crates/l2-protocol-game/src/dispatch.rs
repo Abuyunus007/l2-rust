@@ -44,6 +44,10 @@ use crate::client::{
 use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
+use crate::client::{
+    RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
+    RequestRefine, RequestRefineCancel,
+};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
@@ -238,6 +242,12 @@ pub enum ClientPacket {
     RequestExCancelEnchantItem(RequestExCancelEnchantItem),
     RequestExEnchantItemAttribute(RequestExEnchantItemAttribute),
     RequestExRemoveItemAttribute(RequestExRemoveItemAttribute),
+    RequestConfirmTargetItem(RequestConfirmTargetItem),
+    RequestConfirmRefinerItem(RequestConfirmRefinerItem),
+    RequestConfirmGemStone(RequestConfirmGemStone),
+    RequestRefine(RequestRefine),
+    RequestConfirmCancelItem(RequestConfirmCancelItem),
+    RequestRefineCancel(RequestRefineCancel),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -598,6 +608,22 @@ fn decode_ex_client(
         }
         RequestExRemoveItemAttribute::EX_OPCODE => {
             ClientPacket::RequestExRemoveItemAttribute(RequestExRemoveItemAttribute::decode(reader)?)
+        }
+        RequestConfirmTargetItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmTargetItem(RequestConfirmTargetItem::decode(reader)?)
+        }
+        RequestConfirmRefinerItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmRefinerItem(RequestConfirmRefinerItem::decode(reader)?)
+        }
+        RequestConfirmGemStone::EX_OPCODE => {
+            ClientPacket::RequestConfirmGemStone(RequestConfirmGemStone::decode(reader)?)
+        }
+        RequestRefine::EX_OPCODE => ClientPacket::RequestRefine(RequestRefine::decode(reader)?),
+        RequestConfirmCancelItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmCancelItem(RequestConfirmCancelItem::decode(reader)?)
+        }
+        RequestRefineCancel::EX_OPCODE => {
+            ClientPacket::RequestRefineCancel(RequestRefineCancel::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };
