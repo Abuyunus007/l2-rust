@@ -59,10 +59,11 @@ use l2_testkit::fake_game_client::{
 use l2_testkit::fake_login_client::FakeClient as LoginClient;
 use l2_testkit::test_db::{DEFAULT_SERVER_INI, SAMPLE_HEXID, SAMPLE_SERVER_ID, TestDb};
 use l2_world::{
-    ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
+    ClanWrite, ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
     MailWrite, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, World,
     WorldCommand, WorldRng,
 };
+use l2_world::clan::CrestWrite;
 use login_server::state::{LoginState, ServerStatus as ListStatus};
 
 use l2_db::Pool;
@@ -738,6 +739,24 @@ struct MailRow {
     deleted_by_receiver: bool,
 }
 
+/// The columns of `clan_data` the scenarios look at.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ClanDbRow {
+    clan_id: i32,
+    name: String,
+    level: i32,
+    leader_id: i32,
+    crest_id: i32,
+}
+
+/// One row of `crests`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct CrestDbRow {
+    crest_id: i32,
+    data: Vec<u8>,
+    crest_type: i32,
+}
+
 /// The two ways to play a scenario. `collect_until` returns everything the player's client got
 /// since the last call, up to the packet `stop` accepts and a moment after it (the rest of that
 /// event); `collect_quiet` returns what arrives in a quiet moment.
@@ -754,6 +773,8 @@ trait Harness {
     async fn leave(&mut self, who: Who) -> Left;
     /// The rows of `messages` as the store has them now, by message id.
     async fn mail_rows(&mut self) -> Vec<MailRow>;
+    /// The rows of `clan_data` and `crests` as the store has them now, by id.
+    async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -913,6 +934,60 @@ impl Persisted {
             }
         }
         table.into_values().collect()
+    }
+
+    /// The `clan_data` and `crests` tables after the clan writes of the world.
+    fn clan_tables(&self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
+        let mut clans: std::collections::BTreeMap<i32, ClanDbRow> = Default::default();
+        let mut crests: std::collections::BTreeMap<i32, CrestDbRow> = Default::default();
+        for command in self.commands() {
+            let PersistCommand::Clan(write) = command else {
+                continue;
+            };
+            match write {
+                ClanWrite::Insert(row) => {
+                    clans.insert(
+                        row.clan_id,
+                        ClanDbRow {
+                            clan_id: row.clan_id,
+                            name: row.name,
+                            level: row.level,
+                            leader_id: row.leader_id,
+                            crest_id: row.crest_id,
+                        },
+                    );
+                }
+                ClanWrite::Level { clan_id, level } => {
+                    if let Some(row) = clans.get_mut(&clan_id) {
+                        row.level = level;
+                    }
+                }
+                ClanWrite::Crest(CrestWrite::ClanCrest { clan_id, crest_id }) => {
+                    if let Some(row) = clans.get_mut(&clan_id) {
+                        row.crest_id = crest_id;
+                    }
+                }
+                ClanWrite::Crest(CrestWrite::Insert {
+                    crest_id,
+                    data,
+                    crest_type,
+                }) => {
+                    crests.insert(
+                        crest_id,
+                        CrestDbRow {
+                            crest_id,
+                            data,
+                            crest_type,
+                        },
+                    );
+                }
+                ClanWrite::Crest(CrestWrite::Delete { crest_id }) => {
+                    crests.remove(&crest_id);
+                }
+                _ => {}
+            }
+        }
+        (clans.into_values().collect(), crests.into_values().collect())
     }
 
     fn item_rows(&self, owner: i32) -> Vec<ItemRow> {
@@ -1230,6 +1305,10 @@ impl Harness for BareWorld {
     async fn mail_rows(&mut self) -> Vec<MailRow> {
         self.persisted.mail_table()
     }
+
+    async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
+        self.persisted.clan_tables()
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1428,6 +1507,41 @@ impl Rig {
             .collect()
     }
 
+    /// The rows of `clan_data` and `crests`, by id.
+    async fn clan_rows(&self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
+        let clans: Vec<(i32, Option<String>, Option<i32>, Option<i32>, Option<i32>)> = sqlx::query_as(
+            "SELECT clan_id, clan_name, clan_level, leader_id, crest_id FROM clan_data ORDER BY clan_id",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap();
+        let crests: Vec<(i32, Vec<u8>, i8)> =
+            sqlx::query_as("SELECT crest_id, data, `type` FROM crests ORDER BY crest_id")
+                .fetch_all(&self.pool)
+                .await
+                .unwrap();
+        (
+            clans
+                .into_iter()
+                .map(|(clan_id, name, level, leader_id, crest_id)| ClanDbRow {
+                    clan_id,
+                    name: name.unwrap_or_default(),
+                    level: level.unwrap_or(0),
+                    leader_id: leader_id.unwrap_or(0),
+                    crest_id: crest_id.unwrap_or(0),
+                })
+                .collect(),
+            crests
+                .into_iter()
+                .map(|(crest_id, data, crest_type)| CrestDbRow {
+                    crest_id,
+                    data,
+                    crest_type: i32::from(crest_type),
+                })
+                .collect(),
+        )
+    }
+
     /// The rows the scenarios compare: the character's progress and every row of `items` it owns.
     async fn left_of(&self, char_id: i32) -> Left {
         let (level, exp, sp, clan_id): (Option<u8>, Option<u64>, u64, Option<u32>) = sqlx::query_as(
@@ -1583,6 +1697,10 @@ impl Harness for Net {
     async fn mail_rows(&mut self) -> Vec<MailRow> {
         self.rig.mail_rows().await
     }
+
+    async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
+        self.rig.clan_rows().await
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1603,3 +1721,6 @@ mod enchant;
 
 #[path = "e2e/m6_mail.rs"]
 mod mail;
+
+#[path = "e2e/m6_clan.rs"]
+mod clan;
