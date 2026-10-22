@@ -60,7 +60,7 @@ use l2_testkit::fake_login_client::FakeClient as LoginClient;
 use l2_testkit::test_db::{DEFAULT_SERVER_INI, SAMPLE_HEXID, SAMPLE_SERVER_ID, TestDb};
 use l2_world::{
     ClanWrite, ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
-    MailWrite, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, World,
+    MailWrite, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, SummonWrite, World,
     WorldCommand, WorldRng,
 };
 use l2_world::clan::CrestWrite;
@@ -757,6 +757,16 @@ struct CrestDbRow {
     crest_type: i32,
 }
 
+/// One row of `character_summons`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SummonDbRow {
+    owner_id: i32,
+    summon_skill_id: i32,
+    cur_hp: i32,
+    cur_mp: i32,
+    time: i32,
+}
+
 /// The two ways to play a scenario. `collect_until` returns everything the player's client got
 /// since the last call, up to the packet `stop` accepts and a moment after it (the rest of that
 /// event); `collect_quiet` returns what arrives in a quiet moment.
@@ -775,6 +785,8 @@ trait Harness {
     async fn mail_rows(&mut self) -> Vec<MailRow>;
     /// The rows of `clan_data` and `crests` as the store has them now, by id.
     async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>);
+    /// The rows of `character_summons` as the store has them now.
+    async fn summon_rows(&mut self) -> Vec<SummonDbRow>;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -934,6 +946,38 @@ impl Persisted {
             }
         }
         table.into_values().collect()
+    }
+
+    /// The `character_summons` table after the summon writes of the world.
+    fn summon_table(&self) -> Vec<SummonDbRow> {
+        let mut table: Vec<SummonDbRow> = Vec::new();
+        for command in self.commands() {
+            let PersistCommand::Summon(write) = command else {
+                continue;
+            };
+            match write {
+                SummonWrite::SaveServitor {
+                    owner,
+                    summon_skill_id,
+                    cur_hp,
+                    cur_mp,
+                    time,
+                } => {
+                    // `REPLACE INTO`: the key is (owner, skill).
+                    table.retain(|r| !(r.owner_id == owner.0 && r.summon_skill_id == summon_skill_id));
+                    table.push(SummonDbRow {
+                        owner_id: owner.0,
+                        summon_skill_id,
+                        cur_hp,
+                        cur_mp,
+                        time,
+                    });
+                }
+                SummonWrite::RemoveServitor { owner } => table.retain(|r| r.owner_id != owner.0),
+                _ => {}
+            }
+        }
+        table
     }
 
     /// The `clan_data` and `crests` tables after the clan writes of the world.
@@ -1309,6 +1353,10 @@ impl Harness for BareWorld {
     async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
         self.persisted.clan_tables()
     }
+
+    async fn summon_rows(&mut self) -> Vec<SummonDbRow> {
+        self.persisted.summon_table()
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1507,6 +1555,25 @@ impl Rig {
             .collect()
     }
 
+    /// The rows of `character_summons`, by owner.
+    async fn summon_rows(&self) -> Vec<SummonDbRow> {
+        let rows: Vec<(u32, u32, Option<u32>, Option<u32>, u32)> = sqlx::query_as(
+            "SELECT ownerId, summonSkillId, curHp, curMp, `time` FROM character_summons ORDER BY ownerId",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap();
+        rows.into_iter()
+            .map(|(owner_id, summon_skill_id, cur_hp, cur_mp, time)| SummonDbRow {
+                owner_id: i32::try_from(owner_id).unwrap(),
+                summon_skill_id: i32::try_from(summon_skill_id).unwrap(),
+                cur_hp: i32::try_from(cur_hp.unwrap_or(0)).unwrap(),
+                cur_mp: i32::try_from(cur_mp.unwrap_or(0)).unwrap(),
+                time: i32::try_from(time).unwrap(),
+            })
+            .collect()
+    }
+
     /// The rows of `clan_data` and `crests`, by id.
     async fn clan_rows(&self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
         let clans: Vec<(i32, Option<String>, Option<i32>, Option<i32>, Option<i32>)> = sqlx::query_as(
@@ -1701,6 +1768,10 @@ impl Harness for Net {
     async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
         self.rig.clan_rows().await
     }
+
+    async fn summon_rows(&mut self) -> Vec<SummonDbRow> {
+        self.rig.summon_rows().await
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1724,3 +1795,6 @@ mod mail;
 
 #[path = "e2e/m6_clan.rs"]
 mod clan;
+
+#[path = "e2e/m6_summon.rs"]
+mod summon;
