@@ -312,6 +312,34 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | merged |
 | [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | merged |
 
+## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
+
+12 cards (draft: [M7/DRAFT.md](M7/DRAFT.md)). Design: [docs/design/m7-residences.md](../design/m7-residences.md). Owner decisions: Sieghardt runs the real sieges while both share the DB, Kain only GM-started test sieges with `SiegeDatabaseWrites` off (D-51); Territory War last in M7; order: residences, castle sieges and NPCs, fortresses and clan halls, manor, Territory War.
+
+### Checkpoints
+| Checkpoint | You test |
+|---|---|
+| 🎮 **CP-M7a** | A castle owned by your clan: the chamberlain (tax rate, doors, treasury), the castle tax in a town shop, the castle warehouse and teleporter. |
+| 🎮 **CP-M7b** | A GM-started castle siege on Kain: register, a flag, guards and mercenaries, break the doors, engrave, your clan owns the castle (in Kain's world; nothing global written with the switch off). |
+| 🎮 **CP-M7c** | A fortress siege; a clan hall auction and its functions; one conquerable clan hall siege. |
+| 🎮 **CP-M7d** | The manor and Territory War; milestone: residences and their owners as Sieghardt keeps them. |
+
+### Cards
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | in-progress |
+| [M7-RES-01](M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | in-progress |
+| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
+| [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | ready (refined when deps merge) |
+| [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
+| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | ready (refined when deps merge) |
+| [M7-CHSIEGE-01](M7/M7-CHSIEGE-01.md) | Conquerable clan hall sieges | sonnet | full | CH-01, SIEGE-01 | ready (refined when deps merge) |
+| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
+| [M7-TW-01](M7/M7-TW-01.md) | Territory War | opus | full | SIEGE-01 | ready (refined when deps merge) |
+| [M7-ADMIN-06](M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |
+| [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |
+| [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
