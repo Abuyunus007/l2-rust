@@ -214,10 +214,13 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     let mut data = player_data();
     // Java writes `getAppearance().getTitleColor()`, which the PvP title colours change (M6-PVP-01).
     data.profile.title_color = 0x009C_9C9C;
+    // Java writes `getFame()`, which multisell fame ingredients and products change.
+    data.profile.fame = 321;
     store.store_player(&data).await.unwrap();
 
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
     assert_eq!(row.title_color, 0x009C_9C9C);
+    assert_eq!(row.fame, 321);
     assert_eq!(row.level, Some(5));
     assert_eq!(
         (row.x, row.y, row.z, row.heading),
@@ -232,7 +235,6 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     // Not modelled: unchanged.
     assert_eq!(row.clanid, Some(77));
     assert_eq!(row.nobless, 1);
-    assert_eq!(row.fame, 123);
     assert_eq!(row.clan_privs, Some(9));
     assert_eq!(row.vitality_points, 555);
     assert_eq!(row.pccafe_points, 42);
