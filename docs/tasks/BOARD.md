@@ -298,7 +298,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-TRANS-01](M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | merged |
 | [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | sonnet | spot | PARTY-01, PVP-01 | merged |
 | [M6-ADMIN-05](M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | merged |
-| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | ready (refined when deps merge) |
+| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | in-progress |
 | [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
 | [M6-SHOP-01](M6/M6-SHOP-01.md) | NPC shops (buy, sell, refund) | sonnet | full | none | merged |
 | [M6-MULTISELL-01](M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | merged |
@@ -310,6 +310,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | in-progress |
 | [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
 | [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | in-progress |
+| [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | in-progress |
 
 ## Milestone test results
 
