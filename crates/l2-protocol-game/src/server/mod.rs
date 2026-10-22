@@ -69,6 +69,7 @@ macro_rules! server_unit_packet {
     };
 }
 
+pub mod auction;
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
@@ -79,6 +80,7 @@ pub mod enchant_skill;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
+pub mod fort;
 pub mod friend;
 pub mod gm_view;
 pub mod ground_item;
@@ -86,6 +88,7 @@ pub mod handshake;
 pub mod interaction;
 pub mod items;
 pub mod mail;
+pub mod manor;
 pub mod map_windows;
 pub mod movement;
 pub mod multisell;
@@ -95,16 +98,19 @@ pub mod recipe;
 pub mod refine;
 pub mod regen;
 pub mod shop;
+pub mod siege;
 pub mod skills;
 pub mod sound;
 pub mod store;
 pub mod summon;
 pub mod system_message;
+pub mod territory;
 pub mod trade;
 pub mod userinfo;
 pub mod visibility;
 pub mod warehouse;
 
+pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
@@ -135,6 +141,7 @@ pub use entry::{
     ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, FortressInfo};
 pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
@@ -152,6 +159,11 @@ pub use mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,
     SentPostEntry,
+};
+pub use manor::{
+    CropOffer, CropProcureInfo, CropSettingInfo, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
+    ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList, ManorDefaultCrop,
+    PeriodCropSales, PeriodSales, ProcureCastle, SeedProductionInfo, SeedSettingInfo, SellCropItem,
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
@@ -184,6 +196,10 @@ pub use refine::{
 };
 pub use regen::ExRegenMax;
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
+pub use siege::{
+    CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,
+    SiegeDefenderList, SiegeInfo, SiegeOwnerClan, SiegeTime,
+};
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
@@ -200,6 +216,10 @@ pub use summon::{
     SetSummonRemainTime, SummonInfo,
 };
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+pub use territory::{
+    DominionTerritory, ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
+    TerritoryWards,
+};
 pub use trade::{
     SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
     TradeUpdate,
