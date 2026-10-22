@@ -69,6 +69,15 @@ use l2_protocol_game::server::pledge::{
     PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
     PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
 };
+use l2_protocol_game::server::recipe::{
+    RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList, RecipeShopMsg,
+    RecipeShopSellList,
+};
+use l2_protocol_game::server::refine::{
+    ExPutCommissionResultForVariationMake, ExPutIntensiveResultForVariationMake,
+    ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
+    ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
+};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
@@ -268,6 +277,20 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             json!({ "object_id": p.object_id, "items": warehouse_list_fields(&p.items) })
         }
         ClientPacket::RequestPackageSendableItemList(p) => object!(p => object_id),
+        ClientPacket::RequestRecipeBookOpen(p) => object!(p => recipe_type),
+        ClientPacket::RequestRecipeBookDestroy(p) => object!(p => recipe_id),
+        ClientPacket::RequestRecipeItemMakeInfo(p) => object!(p => id),
+        ClientPacket::RequestRecipeItemMakeSelf(p) => object!(p => id),
+        ClientPacket::RequestRecipeShopMessageSet(p) => object!(p => name),
+        ClientPacket::RequestRecipeShopListSet(p) => json!({
+            "items": p.items.as_ref().map(|v| {
+                v.iter().map(|i| object!(i => recipe_id, cost)).collect::<Vec<_>>()
+            }),
+        }),
+        ClientPacket::RequestRecipeShopManageQuit(_) => json!({}),
+        ClientPacket::RequestRecipeShopMakeInfo(p) => object!(p => player_object_id, recipe_id),
+        ClientPacket::RequestRecipeShopMakeItem(p) => object!(p => id, recipe_id, unknown),
+        ClientPacket::RequestRecipeShopManagePrev(_) => json!({}),
         ClientPacket::MultiSellChoose(p) => {
             object!(p => list_id, entry_id, amount, unk1, unk2, unk3, elemental)
         }
@@ -389,6 +412,18 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
         ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
         ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
+        ClientPacket::RequestConfirmTargetItem(p) => object!(p => object_id),
+        ClientPacket::RequestConfirmRefinerItem(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id)
+        }
+        ClientPacket::RequestConfirmGemStone(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id, gemstone_item_object_id, gemstone_count)
+        }
+        ClientPacket::RequestRefine(p) => {
+            object!(p => target_item_object_id, refiner_item_object_id, gemstone_item_object_id, gemstone_count)
+        }
+        ClientPacket::RequestConfirmCancelItem(p) => object!(p => object_id),
+        ClientPacket::RequestRefineCancel(p) => object!(p => target_item_object_id),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -634,6 +669,26 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExChooseInventoryAttributeItem => {
             decoded::<ExChooseInventoryAttributeItem>(&mut r, choose_inventory_attribute_fields)
         }
+        ServerOpcode::ExShowVariationMakeWindow => decoded::<ExShowVariationMakeWindow>(&mut r, no_fields),
+        ServerOpcode::ExShowVariationCancelWindow => {
+            decoded::<ExShowVariationCancelWindow>(&mut r, no_fields)
+        }
+        ServerOpcode::ExPutItemResultForVariationMake => {
+            decoded::<ExPutItemResultForVariationMake>(&mut r, put_item_variation_make_fields)
+        }
+        ServerOpcode::ExPutIntensiveResultForVariationMake => {
+            decoded::<ExPutIntensiveResultForVariationMake>(&mut r, put_intensive_variation_make_fields)
+        }
+        ServerOpcode::ExPutCommissionResultForVariationMake => {
+            decoded::<ExPutCommissionResultForVariationMake>(&mut r, put_commission_variation_make_fields)
+        }
+        ServerOpcode::ExVariationResult => decoded::<ExVariationResult>(&mut r, variation_result_fields),
+        ServerOpcode::ExPutItemResultForVariationCancel => {
+            decoded::<ExPutItemResultForVariationCancel>(&mut r, put_item_variation_cancel_fields)
+        }
+        ServerOpcode::ExVariationCancelResult => {
+            decoded::<ExVariationCancelResult>(&mut r, variation_cancel_result_fields)
+        }
         ServerOpcode::ExShowBaseAttributeCancelWindow => {
             decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
         }
@@ -645,6 +700,36 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
         }
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::RecipeBookItemList => {
+            decoded::<RecipeBookItemList>(&mut r, |p| object!(p => is_common, max_mp, recipes))
+        }
+        ServerOpcode::RecipeItemMakeInfo => {
+            decoded::<RecipeItemMakeInfo>(&mut r, |p| object!(p => id, is_common, cur_mp, max_mp, success))
+        }
+        ServerOpcode::RecipeShopItemInfo => {
+            decoded::<RecipeShopItemInfo>(&mut r, |p| object!(p => object_id, recipe_id, cur_mp, max_mp))
+        }
+        ServerOpcode::RecipeShopManageList => decoded::<RecipeShopManageList>(&mut r, |p| {
+            let items: Vec<Value> = p.items.iter().map(|i| object!(i => recipe_id, cost)).collect();
+            json!({
+                "seller_id": p.seller_id,
+                "adena": p.adena,
+                "is_common": p.is_common,
+                "recipes": p.recipes,
+                "items": items,
+            })
+        }),
+        ServerOpcode::RecipeShopMsg => decoded::<RecipeShopMsg>(&mut r, |p| object!(p => object_id, message)),
+        ServerOpcode::RecipeShopSellList => decoded::<RecipeShopSellList>(&mut r, |p| {
+            let items: Vec<Value> = p.items.iter().map(|i| object!(i => recipe_id, cost)).collect();
+            json!({
+                "manufacturer_id": p.manufacturer_id,
+                "cur_mp": p.cur_mp,
+                "max_mp": p.max_mp,
+                "buyer_adena": p.buyer_adena,
+                "items": items,
+            })
+        }),
         ServerOpcode::SetSummonRemainTime => {
             decoded::<SetSummonRemainTime>(&mut r, set_summon_remain_time_fields)
         }
@@ -1669,6 +1754,30 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn put_item_variation_make_fields(p: &ExPutItemResultForVariationMake) -> Value {
+    object!(p => item_object_id, item_id)
+}
+
+fn put_intensive_variation_make_fields(p: &ExPutIntensiveResultForVariationMake) -> Value {
+    object!(p => refiner_item_object_id, life_stone_id, gemstone_item_id, gemstone_count)
+}
+
+fn put_commission_variation_make_fields(p: &ExPutCommissionResultForVariationMake) -> Value {
+    object!(p => gemstone_object_id, item_id, gemstone_count)
+}
+
+fn variation_result_fields(p: &ExVariationResult) -> Value {
+    object!(p => stat12, stat34, result)
+}
+
+fn put_item_variation_cancel_fields(p: &ExPutItemResultForVariationCancel) -> Value {
+    object!(p => item_object_id, item_id, aug1, aug2, price)
+}
+
+fn variation_cancel_result_fields(p: &ExVariationCancelResult) -> Value {
+    object!(p => result)
+}
+
 fn choose_inventory_item_fields(p: &ChooseInventoryItem) -> Value {
     object!(p => item_id)
 }
@@ -2030,6 +2139,14 @@ mod tests {
         ServerOpcode::ExAttributeEnchantResult,
         ServerOpcode::ExBaseAttributeCancelResult,
         ServerOpcode::ExChooseInventoryAttributeItem,
+        ServerOpcode::ExShowVariationMakeWindow,
+        ServerOpcode::ExShowVariationCancelWindow,
+        ServerOpcode::ExPutItemResultForVariationMake,
+        ServerOpcode::ExPutIntensiveResultForVariationMake,
+        ServerOpcode::ExPutCommissionResultForVariationMake,
+        ServerOpcode::ExVariationResult,
+        ServerOpcode::ExPutItemResultForVariationCancel,
+        ServerOpcode::ExVariationCancelResult,
         ServerOpcode::ExShowBaseAttributeCancelWindow,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,
@@ -2053,6 +2170,12 @@ mod tests {
         ServerOpcode::ExReplyReceivedPost,
         ServerOpcode::ExReplySentPost,
         ServerOpcode::ExReplyPostItemList,
+        ServerOpcode::RecipeBookItemList,
+        ServerOpcode::RecipeItemMakeInfo,
+        ServerOpcode::RecipeShopItemInfo,
+        ServerOpcode::RecipeShopManageList,
+        ServerOpcode::RecipeShopMsg,
+        ServerOpcode::RecipeShopSellList,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -3803,6 +3926,66 @@ mod tests {
             items: vec![ItemInfo::plain(1, 57, 5)],
         };
         assert_eq!(s2c_fields(&deposit.to_bytes())["items"][0]["count"], 5);
+    }
+
+    #[test]
+    fn recipe_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RecipeShopListEntry, RequestRecipeBookOpen, RequestRecipeShopListSet, RequestRecipeShopMakeItem,
+        };
+        use l2_protocol_game::server::recipe::ManufactureEntry;
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestRecipeBookOpen { recipe_type: 0 }.to_bytes()),
+            json!({ "recipe_type": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestRecipeShopMakeItem {
+                    id: 4,
+                    recipe_id: 9,
+                    unknown: 0
+                }
+                .to_bytes()
+            ),
+            json!({ "id": 4, "recipe_id": 9, "unknown": 0 })
+        );
+        let list = RequestRecipeShopListSet {
+            items: Some(vec![RecipeShopListEntry {
+                recipe_id: 3,
+                cost: 50,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &list.to_bytes()),
+            json!({ "items": [{ "recipe_id": 3, "cost": 50 }] })
+        );
+        let book = RecipeBookItemList {
+            is_common: false,
+            max_mp: 70,
+            recipes: vec![5, 6],
+        };
+        assert_eq!(
+            s2c_fields(&book.to_bytes()),
+            json!({ "is_common": false, "max_mp": 70, "recipes": [5, 6] })
+        );
+        let sell = RecipeShopSellList {
+            manufacturer_id: 1,
+            cur_mp: 2,
+            max_mp: 3,
+            buyer_adena: 4,
+            items: vec![ManufactureEntry {
+                recipe_id: 7,
+                cost: 8,
+            }],
+        };
+        assert_eq!(s2c_fields(&sell.to_bytes())["items"][0]["cost"], 8);
+        let msg = RecipeShopMsg {
+            object_id: 1,
+            message: "Arrows".into(),
+        };
+        assert_eq!(s2c_fields(&msg.to_bytes())["message"], "Arrows");
     }
 
     #[test]

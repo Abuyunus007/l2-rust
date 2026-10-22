@@ -13,11 +13,13 @@
 pub mod actions;
 pub mod admin;
 pub mod ai;
+pub mod augment;
 pub mod bypass;
 pub mod chat;
 pub mod clan;
 pub mod combat;
 pub mod command;
+pub mod craft;
 pub mod data;
 pub mod death;
 pub mod dialog;
@@ -71,10 +73,15 @@ pub mod zones;
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
 pub use ai::AiState;
 pub use ai::attackable::AiSettings;
+pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use craft::{
+    CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
+    RecipeWrite,
+};
 pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,
     WorldSettings,

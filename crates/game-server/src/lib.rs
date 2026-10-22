@@ -398,6 +398,7 @@ impl Server {
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let pets = Arc::clone(&datapack.pets);
             let cubics = Arc::clone(&datapack.cubics);
+            let recipes = Arc::clone(&datapack.recipes);
             let class_list = Arc::clone(&datapack.class_list);
             let multisell = (
                 Arc::clone(&datapack.multisell),
@@ -443,6 +444,8 @@ impl Server {
                     world.load_pet_names(pet_names);
                     // Java: CubicData (the cubic templates of `SummonCubic`).
                     world.set_cubic_data(cubics);
+                    // Java: RecipeData (data/Recipes.xml).
+                    world.set_recipe_data(recipes);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: MultisellData (the exchange lists of NPCs).
@@ -453,6 +456,8 @@ impl Server {
                     world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
+                    // Java: AugmentationData (the skill map and the retail chance tables).
+                    world.set_augmentation_data(datapack.augmentation_data.clone());
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
                     // spawns.
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {

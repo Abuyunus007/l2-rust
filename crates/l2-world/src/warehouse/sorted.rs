@@ -3,8 +3,7 @@
 // Java: network/enums/WarehouseListType.java, entity/item/WarehouseItem.java
 // Java: config/custom/WarehouseSortingConfig.java (the `WhSortedP.htm` / `WhSortedC.htm` pages)
 //
-// Left out: the `RECIPE` sort by recipe level (`RecipeData`, the craft card): the list is only
-// sorted by name there (the first of Java's two sorts).
+// The `RECIPE` list sorted by level (`LEVEL`) uses `RecipeData` (M6-CRAFT-01).
 
 use std::cmp::Ordering;
 use std::collections::HashSet;
@@ -162,6 +161,35 @@ fn by_name(a: &Entry<'_>, b: &Entry<'_>, order: i8) -> Ordering {
     }
 }
 
+/// Java `WarehouseItemRecipeComparator` (always called with `A2Z`): by the level of the recipe
+/// the recipe item teaches.
+fn by_recipe(a: &Entry<'_>, b: &Entry<'_>, recipes: Option<&l2_data::RecipeData>) -> Ordering {
+    if let Some(result) = money_rule(a, b, A2Z) {
+        return result;
+    }
+    if a.etc_type() == Some(EtcItemType::Recipe) && b.etc_type() == Some(EtcItemType::Recipe) {
+        let Some(rp1) = recipes.and_then(|r| r.by_item_id(a.template.id)) else {
+            return Ordering::Greater;
+        };
+        let Some(rp2) = recipes.and_then(|r| r.by_item_id(b.template.id)) else {
+            return Ordering::Less;
+        };
+        return rp1.level.cmp(&rp2.level);
+    }
+    by_name(a, b, A2Z)
+}
+
+/// A stable insertion sort: `List.sort`'s result for a comparator that is a total order.
+fn insertion_sort<T>(items: &mut [T], mut compare: impl FnMut(&T, &T) -> Ordering) {
+    for i in 1..items.len() {
+        let mut j = i;
+        while j > 0 && compare(&items[j - 1], &items[j]) == Ordering::Greater {
+            items.swap(j - 1, j);
+            j -= 1;
+        }
+    }
+}
+
 /// Java `WarehouseItemGradeComparator` (always called with `A2Z`).
 fn by_grade(a: &Entry<'_>, b: &Entry<'_>, order: i8) -> Ordering {
     if let Some(result) = money_rule(a, b, order) {
@@ -288,8 +316,14 @@ impl World {
                 entries.sort_by(|a, b| by_name(a, b, A2Z));
                 entries.sort_by(|a, b| by_grade(a, b, A2Z));
             }
-            // The second sort, by recipe level, needs `RecipeData` (the craft card).
-            LEVEL if list_type == WarehouseListType::Recipe => entries.sort_by(|a, b| by_name(a, b, A2Z)),
+            LEVEL if list_type == WarehouseListType::Recipe => {
+                entries.sort_by(|a, b| by_name(a, b, A2Z));
+                let recipes = self.recipe_data();
+                // Java's comparator is not a total order for a recipe item that has no recipe
+                // (`rp1 == null` answers "greater" whatever the other is), and `sort_by` may
+                // panic on that; a stable insertion sort (at most 300 entries) cannot.
+                insertion_sort(&mut entries, |a, b| by_recipe(a, b, recipes.as_deref()));
+            }
             TYPE if list_type == WarehouseListType::Material => {
                 entries.sort_by(|a, b| by_name(a, b, A2Z));
                 entries.sort_by(|a, b| by_material(a, b, A2Z));
@@ -379,6 +413,50 @@ mod tests {
         );
         assert_eq!(WarehouseListType::from_name("armor"), None);
         assert_eq!(WarehouseListType::from_name("AMULET"), None);
+    }
+
+    /// `WarehouseItemRecipeComparator`: adena first, recipes by the level of what they teach, a
+    /// recipe item without a recipe last, everything else by name.
+    #[test]
+    fn recipe_items_sort_by_recipe_level() {
+        let items = ItemTemplates::from_xml(
+            r#"<list>
+<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
+<item id="10" type="EtcItem" name="Recipe: B"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="11" type="EtcItem" name="Recipe: A"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="12" type="EtcItem" name="Recipe: C"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="13" type="EtcItem" name="Recipe: no data"><set name="etcitem_type" val="RECIPE" /></item>
+</list>"#,
+        )
+        .unwrap();
+        let recipes = l2_data::RecipeData::from_xml(
+            r#"<list>
+<item id="1" recipeId="10" name="b" craftLevel="3" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+<item id="2" recipeId="11" name="a" craftLevel="5" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+<item id="3" recipeId="12" name="c" craftLevel="3" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+</list>"#,
+        )
+        .unwrap();
+        let rows: Vec<ItemData> = [12, 13, 10, 57, 11]
+            .iter()
+            .map(|id| ItemData {
+                item_id: *id,
+                ..ItemData::default()
+            })
+            .collect();
+        let mut entries: Vec<Entry<'_>> = rows
+            .iter()
+            .map(|item| Entry {
+                item,
+                template: items.get(item.item_id).unwrap(),
+            })
+            .collect();
+        // The packet does the name sort first, then this one.
+        entries.sort_by(|a, b| by_name(a, b, A2Z));
+        insertion_sort(&mut entries, |a, b| by_recipe(a, b, Some(&recipes)));
+        let order: Vec<i32> = entries.iter().map(|e| e.item.item_id).collect();
+        // Adena; the two level 3 recipes by name (B, C); level 5 (A); the one without a recipe.
+        assert_eq!(order, [57, 10, 12, 11, 13]);
     }
 
     #[test]

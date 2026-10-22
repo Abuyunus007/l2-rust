@@ -121,6 +121,8 @@ pub enum TimerKind {
     Duel(crate::duel::DuelTimer),
     /// The 10 s deletion task of the expired mails, see `mail/`.
     Mail(crate::mail::MailTimer),
+    /// The passes of an alt crafting (`RecipeItemMaker`), see `craft/`.
+    Craft(crate::craft::CraftTimer),
 }
 
 #[derive(Debug, Default)]

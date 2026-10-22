@@ -174,6 +174,8 @@ pub enum ClientInput {
     Shop(crate::shop::ShopInput),
     /// The warehouse and freight packets (`SendWareHouseDepositList`, ...), see `warehouse/`.
     Warehouse(crate::warehouse::WarehouseInput),
+    /// The crafting packets (`RequestRecipeBookOpen`, `RequestRecipeShop*`, ...), see `craft/`.
+    Craft(crate::craft::CraftInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },
@@ -209,6 +211,9 @@ pub enum ClientInput {
     /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
     /// `enchant/`.
     Enchant(crate::enchant::EnchantInput),
+    /// The augmentation window packets (`RequestRefine`, `RequestConfirmTargetItem`, ...), see
+    /// `augment.rs`.
+    Augment(crate::augment::AugmentInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

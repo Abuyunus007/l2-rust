@@ -36,7 +36,6 @@
 // - The flood protector `canPerformTransaction`, `setInventoryBlockingStatus(true)` (nothing
 //   reads the 1.5 s inventory lock yet), cursed weapons, the olympiad, a summoned pet's
 //   control item.
-// - The recipe level sort of the sorted list (`RecipeData` is the craft card's).
 // - Clan halls and castles (`ClanHallManager`, `FortManager`, the vault): M7.
 // - `ItemProcessType` logging (`LogItems`), the GM audit, the clan warehouse script events.
 // - The duplicate stackable rows `ItemContainer.restore()` merges and deletes.

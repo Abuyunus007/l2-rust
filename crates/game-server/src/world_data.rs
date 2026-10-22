@@ -647,6 +647,65 @@ pub fn enchant_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Enc
     settings
 }
 
+/// The augmentation values (`Player.ini`). The four `RetailLikeAugmentation*GradeChance` lists and
+/// `AugmentationBlackList` are post-processed in Java (placeholders in the generated config), so
+/// they are read from `Player.ini` here.
+pub fn augment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::AugmentSettings {
+    use l2_config::IniFile;
+    use l2_config::game::PlayerConfig;
+    use l2_world::AugmentSettings;
+
+    let p = &config.player;
+    let mut settings = AugmentSettings {
+        ng_skill_chance: p.augmentation_ng_skill_chance,
+        ng_glow_chance: p.augmentation_ng_glow_chance,
+        mid_skill_chance: p.augmentation_mid_skill_chance,
+        mid_glow_chance: p.augmentation_mid_glow_chance,
+        high_skill_chance: p.augmentation_high_skill_chance,
+        high_glow_chance: p.augmentation_high_glow_chance,
+        top_skill_chance: p.augmentation_top_skill_chance,
+        top_glow_chance: p.augmentation_top_glow_chance,
+        basestat_chance: p.augmentation_basestat_chance,
+        acc_skill_chance: p.augmentation_acc_skill_chance,
+        retail_like: p.retail_like_augmentation,
+        retail_like_accessory: p.retail_like_augmentation_accessory,
+        alt_allow_augment_pvp_items: p.alt_allow_augment_pvp_items,
+        ..AugmentSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(PlayerConfig::FILE)) {
+        // Java: `Integer.parseInt` of the first four numbers of each list (it throws for a bad one
+        // or a short list).
+        let grades = [
+            "RetailLikeAugmentationNoGradeChance",
+            "RetailLikeAugmentationMidGradeChance",
+            "RetailLikeAugmentationHighGradeChance",
+            "RetailLikeAugmentationTopGradeChance",
+        ];
+        for (grade, key) in grades.iter().enumerate() {
+            let text = ini.get_string(key, "55,35,7,3");
+            let numbers: Vec<i32> = text.split(',').filter_map(|n| n.parse().ok()).collect();
+            if text.split(',').count() >= 4 && numbers.len() == text.split(',').count() {
+                settings.retail_like_chances[grade] = [numbers[0], numbers[1], numbers[2], numbers[3]];
+            } else {
+                warn!("{key} = {text} is not a list of four numbers; using the default.");
+            }
+        }
+        // Java: `Integer.parseInt` of each comma separated id (it throws for a bad one), sorted.
+        let text = ini.get_string("AugmentationBlackList", "");
+        if !text.is_empty() {
+            let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
+            match ids {
+                Ok(mut ids) => {
+                    ids.sort_unstable();
+                    settings.blacklist = ids;
+                }
+                Err(_) => warn!("AugmentationBlackList = {text} is not a list of ids; using the default."),
+            }
+        }
+    }
+    settings
+}
+
 /// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
 /// (`Custom/PvpTitleColor.ini`). `AntiFeedInterval` (seconds, Java keeps ms) and the five
 /// `ColorForAmountN` (`Integer.decode("0x" + text)`) are post-processed in Java (placeholders in
@@ -1039,6 +1098,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         },
         pvp: pvp_settings(config, config_dir),
         enchant: enchant_settings(config, config_dir),
+        augment: augment_settings(config, config_dir),
         shop: l2_world::ShopSettings {
             allow_refund: config.general.allow_refund,
             only_gm_items_free: config.general.only_gm_items_free,
@@ -1052,6 +1112,18 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             members_can_withdraw_from_clanwh: p.alt_members_can_withdraw_from_clanwh,
             sorting_private: config.warehouse_sorting.enable_warehousesorting_private,
             sorting_clan: config.warehouse_sorting.enable_warehousesorting_clan,
+        },
+        craft: l2_world::CraftSettings {
+            is_crafting_enabled: p.is_crafting_enabled,
+            crafting_in_combat: p.crafting_in_combat,
+            craft_masterwork: p.craft_masterwork,
+            craft_masterwork_chance_rate: p.craft_masterwork_chance_rate,
+            alt_game_creation: p.alt_game_creation,
+            alt_game_creation_speed: p.alt_game_creation_speed,
+            alt_game_creation_xp_rate: p.alt_game_creation_xp_rate,
+            alt_game_creation_sp_rate: p.alt_game_creation_sp_rate,
+            alt_game_creation_rare_xpsp_rate: p.alt_game_creation_rare_xpsp_rate,
+            store_recipe_shoplist: p.store_recipe_shoplist,
         },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
