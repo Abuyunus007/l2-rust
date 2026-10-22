@@ -49,6 +49,10 @@ use l2_protocol_game::server::interaction::{
     TargetSelected, TargetUnselected,
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
+use l2_protocol_game::server::mail::{
+    ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
+    ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,
+};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
 use l2_protocol_game::server::party::{
@@ -349,6 +353,26 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
         ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
         ClientPacket::RequestDuelSurrender(_) => json!({}),
+        ClientPacket::RequestPostItemList(_)
+        | ClientPacket::RequestReceivedPostList(_)
+        | ClientPacket::RequestSentPostList(_) => json!({}),
+        ClientPacket::RequestSendPost(p) => json!({
+            "receiver": p.receiver,
+            "is_cod": p.is_cod,
+            "subject": p.subject,
+            "text": p.text,
+            "items": p.items.as_ref().map(|v| {
+                v.iter().map(|i| object!(i => object_id, count)).collect::<Vec<_>>()
+            }),
+            "req_adena": p.req_adena,
+        }),
+        ClientPacket::RequestReceivedPost(p) => object!(p => msg_id),
+        ClientPacket::RequestSentPost(p) => object!(p => msg_id),
+        ClientPacket::RequestPostAttachment(p) => object!(p => msg_id),
+        ClientPacket::RequestRejectPostAttachment(p) => object!(p => msg_id),
+        ClientPacket::RequestCancelPostAttachment(p) => object!(p => msg_id),
+        ClientPacket::RequestDeleteReceivedPost(p) => json!({ "msg_ids": p.msg_ids }),
+        ClientPacket::RequestDeleteSentPost(p) => json!({ "msg_ids": p.msg_ids }),
         ClientPacket::RequestEnchantItem(p) => object!(p => object_id),
         ClientPacket::RequestExTryToPutEnchantTargetItem(p) => object!(p => object_id),
         ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
@@ -628,6 +652,28 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PackageSendableList => {
             decoded::<PackageSendableList>(&mut r, package_sendable_list_fields)
         }
+        ServerOpcode::ExNoticePostArrived => {
+            decoded::<ExNoticePostArrived>(&mut r, |p| object!(p => show_animation))
+        }
+        ServerOpcode::ExNoticePostSent => {
+            decoded::<ExNoticePostSent>(&mut r, |p| object!(p => show_animation))
+        }
+        ServerOpcode::ExMailArrived => decoded::<ExMailArrived>(&mut r, |_| json!({})),
+        ServerOpcode::ExChangePostState => {
+            decoded::<ExChangePostState>(&mut r, |p| object!(p => received_board, msg_ids, change_id))
+        }
+        ServerOpcode::ExShowReceivedPostList => {
+            decoded::<ExShowReceivedPostList>(&mut r, show_received_post_list_fields)
+        }
+        ServerOpcode::ExShowSentPostList => decoded::<ExShowSentPostList>(&mut r, show_sent_post_list_fields),
+        ServerOpcode::ExReplyReceivedPost => {
+            decoded::<ExReplyReceivedPost>(&mut r, reply_received_post_fields)
+        }
+        ServerOpcode::ExReplySentPost => decoded::<ExReplySentPost>(&mut r, reply_sent_post_fields),
+        ServerOpcode::ExReplyPostItemList => decoded::<ExReplyPostItemList>(
+            &mut r,
+            |p| json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() }),
+        ),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -1712,6 +1758,52 @@ fn package_sendable_list_fields(p: &PackageSendableList) -> Value {
     })
 }
 
+fn show_received_post_list_fields(p: &ExShowReceivedPostList) -> Value {
+    json!({
+        "time": p.time,
+        "mails": p.mails.iter().map(|m| object!(
+            m => msg_id, subject, sender_name, locked, expiration, unread, has_attachments, returned,
+            send_by_system
+        )).collect::<Vec<_>>(),
+    })
+}
+
+fn show_sent_post_list_fields(p: &ExShowSentPostList) -> Value {
+    json!({
+        "time": p.time,
+        "mails": p.mails.iter().map(|m| object!(
+            m => msg_id, subject, receiver_name, locked, expiration, unread, has_attachments
+        )).collect::<Vec<_>>(),
+    })
+}
+
+fn reply_received_post_fields(p: &ExReplyReceivedPost) -> Value {
+    json!({
+        "msg_id": p.msg_id,
+        "locked": p.locked,
+        "sender_name": p.sender_name,
+        "subject": p.subject,
+        "content": p.content,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+        "req_adena": p.req_adena,
+        "has_attachments": p.has_attachments,
+        "send_by_system": p.send_by_system,
+    })
+}
+
+fn reply_sent_post_fields(p: &ExReplySentPost) -> Value {
+    json!({
+        "msg_id": p.msg_id,
+        "locked": p.locked,
+        "receiver_name": p.receiver_name,
+        "subject": p.subject,
+        "content": p.content,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+        "req_adena": p.req_adena,
+        "send_by_system": p.send_by_system,
+    })
+}
+
 fn pet_item_list_fields(p: &PetItemList) -> Value {
     json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() })
 }
@@ -1920,6 +2012,15 @@ mod tests {
         ServerOpcode::WarehouseWithdrawList,
         ServerOpcode::PackageToList,
         ServerOpcode::PackageSendableList,
+        ServerOpcode::ExNoticePostArrived,
+        ServerOpcode::ExNoticePostSent,
+        ServerOpcode::ExMailArrived,
+        ServerOpcode::ExChangePostState,
+        ServerOpcode::ExShowReceivedPostList,
+        ServerOpcode::ExShowSentPostList,
+        ServerOpcode::ExReplyReceivedPost,
+        ServerOpcode::ExReplySentPost,
+        ServerOpcode::ExReplyPostItemList,
     ];
 
     /// The ex id of a server packet the way the relay reads it.

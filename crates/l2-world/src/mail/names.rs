@@ -24,7 +24,9 @@ impl World {
             self.mail_remember(character.id, &character.name, character.access_level);
         }
         let count = load.messages.len();
-        for message in load.messages {
+        for mut message in load.messages {
+            // `Item.restoreFromDb` returns null for a template the datapack does not know.
+            self.drop_unknown_items(&mut message.attachments);
             let id = message.id;
             if self.mail.messages.insert(id, message).is_none() {
                 self.mail.order.push(id);
@@ -68,7 +70,11 @@ impl World {
         if let Some(online) = self.player_by_name(name) {
             return online.0;
         }
-        self.mail.ids_by_name.get(&name.to_lowercase()).copied().unwrap_or(-1)
+        self.mail
+            .ids_by_name
+            .get(&name.to_lowercase())
+            .copied()
+            .unwrap_or(-1)
     }
 
     /// Java `CharInfoTable.getNameById`: `None` for an id below 1 or an unknown character.

@@ -430,6 +430,8 @@ impl World {
         // Java `Player.restore`, the clan part (`ClanTable.getClan`, rank, privileges, pledge
         // class): before anything shows the player.
         self.clan_restore_player(id);
+        // Java `CharacterSelect`: `CharInfoTable.addName(player)` (M6-MAIL-01).
+        self.mail_remember_player(id);
 
         // Java `EnterWorld`: `GMStartupInvulnerable` and `AdminData.hasAccess("admin_invul", ..)`
         // for a GM (`player.setInvul(true)`). The flag shows in no packet, so it is set first.
@@ -534,6 +536,8 @@ impl World {
         );
         // "Unstuck players that had client open when server crashed."
         self.send(id, &ActionFailed);
+        // `MailManager.hasUnreadPost(player)` -> `ExNoticePostArrived(false)` (M6-MAIL-01).
+        self.mail_unread_notice(id);
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
         self.send(id, &skill_list(&p.data, &*self.data));
         debug!("enter-world packets sent to {id}");

@@ -2,9 +2,10 @@
 // Java: network/clientpackets/RequestSendPost.java
 
 use l2_data::item::ADENA_ID;
+use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{PostAttachment, RequestSendPost};
+use l2_protocol_game::server::SystemMessageParam;
 use l2_protocol_game::server::{ExNoticePostSent, InventoryUpdate, ItemUpdate, SystemMessage};
-use l2_protocol_game::{SystemMessageId, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -53,7 +54,12 @@ impl World {
             return true;
         }
         let tick = self.game_ticks();
-        if self.mail.next_send_tick.get(&player).is_some_and(|&next| tick < next) {
+        if self
+            .mail
+            .next_send_tick
+            .get(&player)
+            .is_some_and(|&next| tick < next)
+        {
             return false;
         }
         let interval = self.mail.settings.send_interval_ticks;
@@ -92,7 +98,10 @@ impl World {
             return;
         }
         // `readImpl` stops at an item count above `MaxItemInPacket`, before it reads the adena.
-        if items.as_ref().is_some_and(|v| v.len() > self.max_item_in_packet()) {
+        if items
+            .as_ref()
+            .is_some_and(|v| v.len() > self.max_item_in_packet())
+        {
             items = None;
             req_adena = 0;
         }
@@ -123,8 +132,13 @@ impl World {
             return;
         }
 
-        // M6-ENCHANT: `player.isEnchanting()` ->
-        // YOU_CANNOT_FORWARD_DURING_AN_ITEM_ENHANCEMENT_OR_ATTRIBUTE_ENHANCEMENT.
+        if self.is_enchanting(id) {
+            self.mail_tell(
+                id,
+                SystemMessageId::YouCannotForwardDuringAnItemEnhancementOrAttributeEnhancement,
+            );
+            return;
+        }
 
         if self.is_in_store_mode(id) {
             self.mail_tell(
@@ -168,7 +182,10 @@ impl World {
                 return;
             }
             if items.as_ref().is_none_or(Vec::is_empty) {
-                self.mail_tell(id, SystemMessageId::ItSAPaymentRequestTransactionPleaseAttachTheItem);
+                self.mail_tell(
+                    id,
+                    SystemMessageId::ItSAPaymentRequestTransactionPleaseAttachTheItem,
+                );
                 return;
             }
         }
@@ -251,8 +268,8 @@ impl World {
             unix_ms_now(),
         );
         if let Some(msg) = self.mail_remove_items(id, msg, items.as_deref()) {
-            // `player.setMultiSell(null)` ("Should not trade during mail."): the multisell state
-            // is not kept.
+            // "Should not trade during mail."
+            self.clear_multisell(id);
             self.mail_send_message(msg);
             self.send(id, &ExNoticePostSent { show_animation: true });
             self.mail_tell(id, SystemMessageId::MailSuccessfullySent);
@@ -291,7 +308,9 @@ impl World {
             return None;
         }
 
-        let items = items?;
+        let Some(items) = items else {
+            return Some(msg);
+        };
         // `msg.createAttachments()`: the mail gets its container.
         msg.has_attachments = true;
         let message_id = msg.id;

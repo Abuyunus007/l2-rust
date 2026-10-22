@@ -33,6 +33,11 @@ use crate::client::{
 };
 use crate::client::{RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem};
 use crate::client::{
+    RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost, RequestPostAttachment,
+    RequestPostItemList, RequestReceivedPost, RequestReceivedPostList, RequestRejectPostAttachment,
+    RequestSendPost, RequestSentPost, RequestSentPostList,
+};
+use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
@@ -45,11 +50,6 @@ use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
-};
-use crate::client::{
-    RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost, RequestPostAttachment,
-    RequestPostItemList, RequestReceivedPost, RequestReceivedPostList, RequestRejectPostAttachment,
-    RequestSendPost, RequestSentPost, RequestSentPostList,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 

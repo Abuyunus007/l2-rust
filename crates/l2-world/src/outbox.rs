@@ -116,6 +116,8 @@ pub enum PersistCommand {
     /// Java `Product.save()`: `INSERT INTO buylists ... ON DUPLICATE KEY UPDATE` for one limited
     /// product whose stock changed, see `shop/`.
     BuyList(crate::shop::ProductRow),
+    /// A write of the `messages` table with Java's statement, see `mail/`.
+    Mail(crate::mail::MailWrite),
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

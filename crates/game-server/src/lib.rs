@@ -104,6 +104,21 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
     }
 }
 
+/// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`) and
+/// `FloodProtectorSendMailInterval` of `FloodProtector.ini` (game ticks of 100 ms, default 100;
+/// the flood protector settings are not part of `GameConfig` yet).
+pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSettings {
+    let interval = match IniFile::load(config_dir.join("FloodProtector.ini")) {
+        Ok(ini) => ini.get_int("FloodProtectorSendMailInterval", 100),
+        Err(_) => 100,
+    };
+    l2_world::MailSettings {
+        allow_mail: config.general.allow_mail,
+        allow_attachments: config.general.allow_attachments,
+        send_interval_ticks: interval,
+    }
+}
+
 /// `ClanMaintenanceDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means
 /// the default). Off, the clan jobs that write rows on their own (a dissolution whose time ran
 /// out, the Wednesday leader change, the start-up alliance check, the shutdown save of every
@@ -288,6 +303,9 @@ impl Server {
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
+        // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
+        let mail = persist::load_mail(&pool).await;
+        let mail_settings = mail_settings(&config, &paths.config_dir);
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -414,6 +432,9 @@ impl Server {
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
+                    // Java: MailManager, MessageDeletionTaskManager.
+                    world.set_mail_settings(mail_settings);
+                    world.load_mail(mail);
                     // Java: BuyListData (the products' stock the last run left).
                     world.set_buy_lists(buy_lists, price_configs);
                     world.load_buy_list_stock(buy_list_stock);

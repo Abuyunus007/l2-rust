@@ -149,9 +149,7 @@ impl Decode for RequestSendPost {
 
         let attach_count = r.i32()?;
         // Java computes `(attachCount * BATCH_LENGTH) + 8` in `int`.
-        let expected = attach_count
-            .wrapping_mul(ATTACHMENT_BATCH_LENGTH)
-            .wrapping_add(8);
+        let expected = attach_count.wrapping_mul(ATTACHMENT_BATCH_LENGTH).wrapping_add(8);
         if attach_count < 0 || i64::from(expected) != r.remaining() as i64 {
             return Ok(packet);
         }

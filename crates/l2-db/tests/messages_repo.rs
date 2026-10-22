@@ -123,7 +123,10 @@ async fn a_mail_is_stored_loaded_and_changed_like_java_does() {
     system.is_deleted_by_sender = true;
     repo.insert(&system).await.unwrap();
     let rows = repo.load_all().await.unwrap();
-    assert_eq!(rows.iter().find(|r| r.message_id == 1_610_612_802).unwrap(), &system);
+    assert_eq!(
+        rows.iter().find(|r| r.message_id == 1_610_612_802).unwrap(),
+        &system
+    );
 
     repo.delete(1_610_612_800).await.unwrap();
     assert_eq!(repo.load_all().await.unwrap().len(), 2);

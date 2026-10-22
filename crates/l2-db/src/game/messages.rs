@@ -22,8 +22,7 @@ const MARK_READ: &str = "UPDATE messages SET isUnread = 'false' WHERE messageId 
 // Java: MailManager.markAsDeletedBySenderInDb
 const MARK_DELETED_BY_SENDER: &str = "UPDATE messages SET isDeletedBySender = 'true' WHERE messageId = ?";
 // Java: MailManager.markAsDeletedByReceiverInDb
-const MARK_DELETED_BY_RECEIVER: &str =
-    "UPDATE messages SET isDeletedByReceiver = 'true' WHERE messageId = ?";
+const MARK_DELETED_BY_RECEIVER: &str = "UPDATE messages SET isDeletedByReceiver = 'true' WHERE messageId = ?";
 // Java: MailManager.removeAttachmentsInDb
 const REMOVE_ATTACHMENTS: &str = "UPDATE messages SET hasAttachments = 'false' WHERE messageId = ?";
 // Java: MailManager.deleteMessageInDb
@@ -153,7 +152,10 @@ impl MessageRepository {
 
     /// Java `markAsReadInDb`.
     pub async fn mark_read(&self, message_id: i32) -> Result<()> {
-        sqlx::query(MARK_READ).bind(message_id).execute(&self.pool).await?;
+        sqlx::query(MARK_READ)
+            .bind(message_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
@@ -186,7 +188,10 @@ impl MessageRepository {
 
     /// Java `deleteMessageInDb` (the database half).
     pub async fn delete(&self, message_id: i32) -> Result<()> {
-        sqlx::query(DELETE_MESSAGE).bind(message_id).execute(&self.pool).await?;
+        sqlx::query(DELETE_MESSAGE)
+            .bind(message_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 }

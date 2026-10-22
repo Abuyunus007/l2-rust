@@ -99,7 +99,7 @@ impl World {
             Place::Inventory(player) => self.inventory_add_item(player, item).map(|added| added.item),
             Place::Container(container) => {
                 item.loc = container.base_location().to_string();
-                item.loc_data = 0;
+                item.loc_data = container.loc_data();
                 self.container_items_mut(container)?.push(item.clone());
                 Some(item)
             }
@@ -167,7 +167,7 @@ impl World {
                 let id = self.allocate_item_id()?;
                 let mut data = self.new_item_data(template, id, if template.stackable { count } else { 1 });
                 data.loc = container.base_location().to_string();
-                data.loc_data = 0;
+                data.loc_data = container.loc_data();
                 data.enchant_level = template.default_enchant_level;
                 self.container_items_mut(container)?.push(data.clone());
                 Some(data)

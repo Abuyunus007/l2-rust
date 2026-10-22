@@ -14,7 +14,7 @@ use crate::world::World;
 
 impl World {
     /// Java `MailManager.getMessage(msgId)`.
-    pub(crate) fn mail_message(&self, id: i32) -> Option<&MailMessage> {
+    pub fn mail_message(&self, id: i32) -> Option<&MailMessage> {
         self.mail.messages.get(&id)
     }
 
@@ -43,7 +43,7 @@ impl World {
 
     /// Java `MailManager.hasUnreadPost(player)`.
     // NOTE(java-quirk): a mail the receiver deleted without reading it still counts.
-    pub(crate) fn mail_has_unread_post(&self, receiver: ObjectId) -> bool {
+    pub fn mail_has_unread_post(&self, receiver: ObjectId) -> bool {
         self.mail
             .messages
             .values()
@@ -51,7 +51,7 @@ impl World {
     }
 
     /// Java `MailManager.getInboxSize(objectId)`.
-    pub(crate) fn mail_inbox_size(&self, object_id: i32) -> usize {
+    pub fn mail_inbox_size(&self, object_id: i32) -> usize {
         self.mail
             .messages
             .values()
@@ -60,7 +60,7 @@ impl World {
     }
 
     /// Java `MailManager.getOutboxSize(objectId)`.
-    pub(crate) fn mail_outbox_size(&self, object_id: i32) -> usize {
+    pub fn mail_outbox_size(&self, object_id: i32) -> usize {
         self.mail
             .messages
             .values()
@@ -99,14 +99,21 @@ impl World {
             self.mail.order.push(id);
         }
         if self.players.contains_key(&ObjectId(receiver)) {
+            self.send(ObjectId(receiver), &ExNoticePostArrived { show_animation: true });
+        }
+        self.mail_start_deletion_task();
+    }
+
+    /// What `EnterWorld` does for the post box: the unread mail notice (without the animation).
+    pub(crate) fn mail_unread_notice(&self, id: ObjectId) {
+        if self.mail.settings.allow_mail && self.mail_has_unread_post(id) {
             self.send(
-                ObjectId(receiver),
+                id,
                 &ExNoticePostArrived {
-                    show_animation: true,
+                    show_animation: false,
                 },
             );
         }
-        self.mail_start_deletion_task();
     }
 
     /// Java `MailMessage.markAsRead()`.

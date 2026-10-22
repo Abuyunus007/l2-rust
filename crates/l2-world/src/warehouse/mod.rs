@@ -42,6 +42,7 @@ mod moves;
 mod sorted;
 
 pub use container::ContainerRef;
+pub(crate) use moves::Place;
 pub use sorted::WarehouseListType;
 
 use std::collections::BTreeMap;

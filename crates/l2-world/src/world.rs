@@ -116,6 +116,8 @@ pub struct World {
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The mails, the names they need and the deletion task (M6-MAIL-01, `mail/`).
+    pub(crate) mail: crate::mail::MailWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
@@ -175,6 +177,7 @@ impl World {
             pvp: crate::pvp::PvpWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
         }
@@ -591,6 +594,7 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            ClientInput::Mail(input) => self.on_mail_input(id, input),
             // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -682,6 +686,8 @@ impl World {
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
+            // Java: MessageDeletionTaskManager.run
+            TimerKind::Mail(timer) => self.on_mail_timer(timer),
         }
     }
 

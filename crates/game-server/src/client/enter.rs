@@ -25,9 +25,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, MailInput,
+    PacketSink, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -958,6 +958,32 @@ impl ClientSession {
             ClientPacket::RequestSellItem(p) => ClientInput::Shop(l2_world::ShopInput::Sell(p)),
             ClientPacket::RequestRefundItem(p) => ClientInput::Shop(l2_world::ShopInput::Refund(p)),
             ClientPacket::RequestBuySellUIClose(_) => ClientInput::Shop(l2_world::ShopInput::UiClose),
+            // Java: RequestPostItemList, RequestSendPost, RequestReceivedPostList, RequestReceivedPost,
+            // RequestSentPostList, RequestSentPost, RequestPostAttachment, RequestRejectPostAttachment,
+            // RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost (M6-MAIL-01)
+            ClientPacket::RequestPostItemList(_) => ClientInput::Mail(MailInput::PostItemList),
+            ClientPacket::RequestSendPost(p) => ClientInput::Mail(MailInput::Send(p)),
+            ClientPacket::RequestReceivedPostList(_) => ClientInput::Mail(MailInput::ReceivedPostList),
+            ClientPacket::RequestSentPostList(_) => ClientInput::Mail(MailInput::SentPostList),
+            ClientPacket::RequestReceivedPost(p) => {
+                ClientInput::Mail(MailInput::ReceivedPost { msg_id: p.msg_id })
+            }
+            ClientPacket::RequestSentPost(p) => ClientInput::Mail(MailInput::SentPost { msg_id: p.msg_id }),
+            ClientPacket::RequestPostAttachment(p) => {
+                ClientInput::Mail(MailInput::PostAttachment { msg_id: p.msg_id })
+            }
+            ClientPacket::RequestRejectPostAttachment(p) => {
+                ClientInput::Mail(MailInput::RejectPostAttachment { msg_id: p.msg_id })
+            }
+            ClientPacket::RequestCancelPostAttachment(p) => {
+                ClientInput::Mail(MailInput::CancelPostAttachment { msg_id: p.msg_id })
+            }
+            ClientPacket::RequestDeleteReceivedPost(p) => {
+                ClientInput::Mail(MailInput::DeleteReceivedPost { msg_ids: p.msg_ids })
+            }
+            ClientPacket::RequestDeleteSentPost(p) => {
+                ClientInput::Mail(MailInput::DeleteSentPost { msg_ids: p.msg_ids })
+            }
             // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
             ClientPacket::RequestDuelStart(p) => ClientInput::DuelStart {
                 name: p.player,

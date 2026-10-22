@@ -38,10 +38,8 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isInBlockList` (the ignore list is the friend list card's, `// M6-FRIEND:`).
-// - The enchant scroll in use (`isEnchanting`, `// M6-ENCHANT:`), `player.setMultiSell(null)`
-//   (the multisell state is not kept), the flood protector `canPerformTransaction` of the
-//   attachment packets (no flood protectors yet; `canSendMail` is here, see
-//   [`MailSettings::send_interval_ticks`]).
+// - The flood protector `canPerformTransaction` of the attachment packets (no flood protectors
+//   yet; `canSendMail` is here, see [`MailSettings::send_interval_ticks`]).
 // - `ItemProcessType` logging (`LogItems`), the GM audit.
 // - `CustomMailManager` and the community board mail (`MailBoard`): scripts of a later card.
 //   `MailMessage::new_system` is the constructor they need.
@@ -133,6 +131,8 @@ pub struct MailMessage {
 impl MailMessage {
     /// Java `MailMessage(senderId, receiverId, isCod, subject, text, reqAdena)`: a mail a player
     /// writes. `now_ms` is `System.currentTimeMillis()`.
+    // Java's constructor has six parameters; the id (`IdManager`) and the clock are passed in.
+    #[allow(clippy::too_many_arguments)]
     pub fn new_player_mail(
         id: i32,
         sender_id: i32,
@@ -143,7 +143,11 @@ impl MailMessage {
         req_adena: i64,
         now_ms: i64,
     ) -> Self {
-        let hours = if is_cod { COD_EXPIRATION_HOURS } else { EXPIRATION_HOURS };
+        let hours = if is_cod {
+            COD_EXPIRATION_HOURS
+        } else {
+            EXPIRATION_HOURS
+        };
         Self {
             id,
             sender_id,
