@@ -7,6 +7,7 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod armor_set;
+pub mod augment;
 pub mod augmentation;
 pub mod buylist;
 pub mod class_list;
@@ -44,6 +45,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use armor_set::{ArmorSet, ArmorSets};
+pub use augment::{AugmentationChance, AugmentationData};
 pub use augmentation::{AugmentationOption, AugmentationOptions};
 pub use buylist::{
     BuyListDef, BuyListOptions, BuyLists, MerchantPriceConfig, MerchantPriceConfigs, ProductDef,
@@ -147,6 +149,9 @@ pub struct Datapack {
     pub skills: Arc<SkillTemplates>,
     /// `data/stats/augmentation/options/*.xml`: what the two option ids of an augmentation give.
     pub augmentation_options: Arc<AugmentationOptions>,
+    /// `data/stats/augmentation/{augmentation_skillmap,retailchances,retailchances_accessory}.xml`:
+    /// what an augmentation is rolled from (M6-AUGMENT-01).
+    pub augmentation_data: Arc<AugmentationData>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
     /// `data/EnchantItemData.xml`: the enchant scrolls and support items (M6-ENCHANT-01).
@@ -247,6 +252,7 @@ impl Datapack {
         let spawns = SpawnData::load(root, &npcs, &spawn_options);
         let skills = Arc::new(SkillTemplates::load(root, &options.skills));
         let augmentation_options = Arc::new(AugmentationOptions::load(root, &skills));
+        let augmentation_data = Arc::new(AugmentationData::load(root));
         // Java checks every entry against `SkillData` (loaded before it).
         let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
             skills.get(id, level).is_some()
@@ -300,6 +306,7 @@ impl Datapack {
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,
+            augmentation_data,
             pet_skills,
             enchant_items,
             enchant_groups,

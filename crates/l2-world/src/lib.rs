@@ -12,6 +12,7 @@
 
 pub mod admin;
 pub mod ai;
+pub mod augment;
 pub mod bypass;
 pub mod chat;
 pub mod clan;
@@ -68,6 +69,7 @@ pub mod zones;
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
 pub use ai::AiState;
 pub use ai::attackable::AiSettings;
+pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};

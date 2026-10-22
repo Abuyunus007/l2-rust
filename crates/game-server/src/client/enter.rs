@@ -25,9 +25,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    AugmentInput, ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData,
+    PacketSink, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -997,6 +997,39 @@ impl ClientSession {
                     element: p.element,
                 })
             }
+            // Java: RequestConfirmTargetItem, RequestConfirmRefinerItem, RequestConfirmGemStone,
+            // RequestRefine, RequestConfirmCancelItem, RequestRefineCancel
+            ClientPacket::RequestConfirmTargetItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestConfirmRefinerItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmRefinerItem {
+                    target_item_object_id: p.target_item_object_id,
+                    refiner_item_object_id: p.refiner_item_object_id,
+                })
+            }
+            ClientPacket::RequestConfirmGemStone(p) => ClientInput::Augment(AugmentInput::ConfirmGemStone {
+                target_item_object_id: p.target_item_object_id,
+                refiner_item_object_id: p.refiner_item_object_id,
+                gemstone_item_object_id: p.gemstone_item_object_id,
+                gemstone_count: p.gemstone_count,
+            }),
+            ClientPacket::RequestRefine(p) => ClientInput::Augment(AugmentInput::Refine {
+                target_item_object_id: p.target_item_object_id,
+                refiner_item_object_id: p.refiner_item_object_id,
+                gemstone_item_object_id: p.gemstone_item_object_id,
+                gemstone_count: p.gemstone_count,
+            }),
+            ClientPacket::RequestConfirmCancelItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmCancelItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestRefineCancel(p) => ClientInput::Augment(AugmentInput::RefineCancel {
+                target_item_object_id: p.target_item_object_id,
+            }),
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

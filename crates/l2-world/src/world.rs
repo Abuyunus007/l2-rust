@@ -120,6 +120,8 @@ pub struct World {
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
+    /// The augmentation skill map and retail chance tables (M6-AUGMENT-01, `augment.rs`).
+    pub(crate) augment: crate::augment::AugmentWorld,
 }
 
 impl World {
@@ -177,6 +179,7 @@ impl World {
             duel: crate::duel::DuelWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
+            augment: crate::augment::AugmentWorld::default(),
         }
     }
 
@@ -593,6 +596,8 @@ impl World {
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
             // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
+            // Java: RequestRefine and the other augmentation window packets
+            ClientInput::Augment(input) => self.on_augment_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }

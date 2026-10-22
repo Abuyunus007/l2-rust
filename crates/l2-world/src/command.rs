@@ -184,6 +184,9 @@ pub enum ClientInput {
     /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
     /// `enchant/`.
     Enchant(crate::enchant::EnchantInput),
+    /// The augmentation window packets (`RequestRefine`, `RequestConfirmTargetItem`, ...), see
+    /// `augment.rs`.
+    Augment(crate::augment::AugmentInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

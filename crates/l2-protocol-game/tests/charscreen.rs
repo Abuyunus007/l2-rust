@@ -435,6 +435,12 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestExCancelEnchantItem(_)
             | ClientPacket::RequestExEnchantItemAttribute(_)
             | ClientPacket::RequestExRemoveItemAttribute(_)
+            | ClientPacket::RequestConfirmTargetItem(_)
+            | ClientPacket::RequestConfirmRefinerItem(_)
+            | ClientPacket::RequestConfirmGemStone(_)
+            | ClientPacket::RequestRefine(_)
+            | ClientPacket::RequestConfirmCancelItem(_)
+            | ClientPacket::RequestRefineCancel(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

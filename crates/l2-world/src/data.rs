@@ -371,6 +371,8 @@ pub struct WorldSettings {
     pub store: crate::trade::StoreSettings,
     /// The enchant and over-enchant settings (M6-ENCHANT-01).
     pub enchant: crate::enchant::EnchantSettings,
+    /// The augmentation chances, blacklist and PvP rule (M6-AUGMENT-01).
+    pub augment: crate::augment::AugmentSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -429,6 +431,7 @@ impl Default for WorldSettings {
             warehouse: crate::warehouse::WarehouseSettings::default(),
             store: crate::trade::StoreSettings::default(),
             enchant: crate::enchant::EnchantSettings::default(),
+            augment: crate::augment::AugmentSettings::default(),
             daily_reset_database_writes: false,
         }
     }

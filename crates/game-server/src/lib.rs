@@ -396,6 +396,8 @@ impl Server {
                     world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
+                    // Java: AugmentationData (the skill map and the retail chance tables).
+                    world.set_augmentation_data(datapack.augmentation_data.clone());
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
                     // spawns.
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {
