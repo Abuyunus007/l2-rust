@@ -166,6 +166,7 @@ pub mod charscreen;
 pub mod combat;
 pub mod duel;
 pub mod enterworld;
+pub mod friend;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
@@ -188,6 +189,10 @@ pub use charscreen::{
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
+pub use friend::{
+    RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
+    RequestSendFriendMsg,
+};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
 pub use interaction::{

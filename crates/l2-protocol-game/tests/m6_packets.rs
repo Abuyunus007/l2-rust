@@ -2413,6 +2413,129 @@ mod warehouse {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Friends and block list (M6-FRIEND-01)
+// ---------------------------------------------------------------------------------------------
+
+mod friend {
+    use super::*;
+    use l2_protocol_game::client::{
+        RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
+        RequestSendFriendMsg,
+    };
+    use l2_protocol_game::server::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
+
+    #[test]
+    fn client_friend_packets() {
+        let p = RequestFriendInvite { name: "Ann".into() };
+        check_round_trip(&p, &Bytes::default().byte(0x77).string("Ann").done(), 1);
+        let p = RequestAnswerFriendInvite { response: 1 };
+        check_round_trip(&p, &Bytes::default().byte(0x78).int(1).done(), 1);
+        let p = RequestFriendList;
+        check_round_trip(&p, &Bytes::default().byte(0x79).done(), 1);
+        let p = RequestFriendDel { name: "Bob".into() };
+        check_round_trip(&p, &Bytes::default().byte(0x7A).string("Bob").done(), 1);
+        // Java readImpl: the text, then the receiver.
+        let p = RequestSendFriendMsg {
+            message: "hi".into(),
+            receiver: "Bob".into(),
+        };
+        check_round_trip(
+            &p,
+            &Bytes::default().byte(0x6B).string("hi").string("Bob").done(),
+            1,
+        );
+        // Block with a name, then the list request without one.
+        let p = RequestBlock {
+            kind: 0,
+            name: Some("Eve".into()),
+        };
+        check_round_trip(&p, &Bytes::default().byte(0xA9).int(0).string("Eve").done(), 1);
+        let p = RequestBlock { kind: 2, name: None };
+        check_round_trip(&p, &Bytes::default().byte(0xA9).int(2).done(), 1);
+    }
+
+    #[test]
+    fn server_friend_packets() {
+        // Java FriendAddRequest.writeImpl: the name, then int 0.
+        let p = FriendAddRequest {
+            requestor_name: "Ann".into(),
+        };
+        check_round_trip(&p, &Bytes::default().byte(0x83).string("Ann").int(0).done(), 1);
+        // Java FriendPacket: 1 for an added friend, 3 for a removed one, then the id, the name,
+        // the online flag and the id again when online (else 0).
+        let p = FriendPacket {
+            added: true,
+            object_id: 0x1000_0002,
+            name: "Bob".into(),
+            online: true,
+        };
+        check_round_trip(
+            &p,
+            &Bytes::default()
+                .byte(0x76)
+                .int(1)
+                .int(0x1000_0002)
+                .string("Bob")
+                .int(1)
+                .int(0x1000_0002)
+                .done(),
+            1,
+        );
+        let p = FriendPacket {
+            added: false,
+            object_id: 0x1000_0002,
+            name: "Bob".into(),
+            online: false,
+        };
+        check_round_trip(
+            &p,
+            &Bytes::default()
+                .byte(0x76)
+                .int(3)
+                .int(0x1000_0002)
+                .string("Bob")
+                .int(0)
+                .int(0)
+                .done(),
+            1,
+        );
+        // Java FriendStatusPacket: online, name, id.
+        let p = FriendStatusPacket {
+            online: false,
+            name: "Bob".into(),
+            object_id: 0x1000_0002,
+        };
+        check_round_trip(
+            &p,
+            &Bytes::default()
+                .byte(0x77)
+                .int(0)
+                .string("Bob")
+                .int(0x1000_0002)
+                .done(),
+            1,
+        );
+        // Java L2FriendSay: int 0, receiver, sender, message.
+        let p = L2FriendSay {
+            sender: "Ann".into(),
+            receiver: "Bob".into(),
+            message: "hi".into(),
+        };
+        check_round_trip(
+            &p,
+            &Bytes::default()
+                .byte(0x78)
+                .int(0)
+                .string("Bob")
+                .string("Ann")
+                .string("hi")
+                .done(),
+            1,
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------------------------
 

@@ -1067,6 +1067,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Summon(_)) => "summon",
                 Out::Persist(PersistCommand::Clan(_)) => "clan",
                 Out::Persist(PersistCommand::BuyList(_)) => "buylist",
+                Out::Persist(PersistCommand::Friend(_)) => "friend",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

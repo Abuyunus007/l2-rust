@@ -32,7 +32,7 @@
 // `World::cancel_active_trade`.
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - `BlockList.isBlocked` (the ignore list is a later social card), the olympiad check (M8),
+// - the olympiad check (M8),
 //   the enchant scroll in use (`getActiveEnchantItemId`), a summoned
 //   pet's control item and a mounted strider's saddle (no summons or mounts yet), cursed weapons.
 // - The flood protector `canPerformTransaction` of `TradeDone` (no flood protectors yet).

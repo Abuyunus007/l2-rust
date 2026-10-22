@@ -77,6 +77,7 @@ pub mod effect_packets;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
+pub mod friend;
 pub mod gm_view;
 pub mod ground_item;
 pub mod handshake;
@@ -120,6 +121,7 @@ pub use entry::{
     ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};

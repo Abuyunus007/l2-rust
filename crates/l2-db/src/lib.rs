@@ -23,6 +23,7 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{CrestRepository, CrestRow};
+pub use game::{FriendLink, FriendRepository};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{

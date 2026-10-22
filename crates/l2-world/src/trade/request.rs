@@ -235,7 +235,17 @@ impl World {
             return;
         }
 
-        // M6 (social): `BlockList.isBlocked(partner, player)` -> S1_HAS_PLACED_YOU_ON_HIS_HER_IGNORE_LIST.
+        // Java `BlockList.isBlocked(partner, player)`: the partner refuses messages or blocks the
+        // player.
+        if self.is_blocked(partner, id) {
+            let name = self.player_name(partner);
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::S1HasPlacedYouOnHisHerIgnoreList)
+                    .with(SystemMessageParam::Text(name)),
+            );
+            return;
+        }
 
         if self.distance_3d(id, partner).is_none_or(|d| d > TRADE_RANGE) {
             self.send(id, &SystemMessage::new(SystemMessageId::YourTargetIsOutOfRange));

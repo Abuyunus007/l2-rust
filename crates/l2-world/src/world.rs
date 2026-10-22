@@ -116,6 +116,8 @@ pub struct World {
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The friend list and the block list of every online character (M6-FRIEND-01, `friends.rs`).
+    pub(crate) friends: crate::friends::FriendWorld,
 }
 
 impl World {
@@ -171,6 +173,7 @@ impl World {
             pvp: crate::pvp::PvpWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            friends: crate::friends::FriendWorld::default(),
         }
     }
 
@@ -419,6 +422,8 @@ impl World {
         self.restore_player_vitals(id);
         // The saved buffs of the character's servitors (`character_summon_skills_save`).
         self.take_saved_summon_effects(id);
+        // Java `Player.restore`: `restoreFriendList()` and the block list (M6-FRIEND-01).
+        self.load_social_lists(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -579,6 +584,18 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            // Java: RequestFriendInvite, RequestAnswerFriendInvite, RequestFriendList,
+            // RequestFriendDel, RequestSendFriendMsg, RequestBlock
+            ClientInput::FriendInvite { name } => self.on_request_friend_invite(id, &name),
+            ClientInput::AnswerFriendInvite { response } => {
+                self.on_request_answer_friend_invite(id, response)
+            }
+            ClientInput::FriendList => self.on_request_friend_list(id),
+            ClientInput::FriendDel { name } => self.on_request_friend_del(id, &name),
+            ClientInput::SendFriendMsg { message, receiver } => {
+                self.on_request_send_friend_msg(id, &message, &receiver)
+            }
+            ClientInput::Block { kind, name } => self.on_request_block(id, kind, name.as_deref()),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }

@@ -208,6 +208,12 @@ pub struct PlayerProfile {
     /// read them (M6-WH-01). The world takes them when the player is created
     /// ([`Player::from_data`]), so snapshots never carry them.
     pub warehouse: crate::warehouse::WarehouseLoad,
+    /// The friend list as the session read it (`character_friends` with relation 0, M6-FRIEND-01).
+    /// The world takes it at enter world (`friends.rs`), so snapshots never carry it.
+    pub friends: Vec<crate::friends::FriendEntry>,
+    /// The block list as the session read it (`character_friends` with relation 1). Taken at
+    /// enter world like `friends`.
+    pub block_list: Vec<crate::friends::FriendEntry>,
 }
 
 impl Default for PlayerProfile {
@@ -239,6 +245,8 @@ impl Default for PlayerProfile {
             clan: None,
             clan_record: None,
             warehouse: crate::warehouse::WarehouseLoad::default(),
+            friends: Vec::new(),
+            block_list: Vec::new(),
         }
     }
 }

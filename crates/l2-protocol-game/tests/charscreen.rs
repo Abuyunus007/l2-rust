@@ -324,6 +324,12 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestKeyMapping(p) => p.to_bytes(),
             ClientPacket::RequestShortCutReg(p) => p.to_bytes(),
             ClientPacket::RequestShortCutDel(p) => p.to_bytes(),
+            ClientPacket::RequestFriendInvite(p) => p.to_bytes(),
+            ClientPacket::RequestAnswerFriendInvite(p) => p.to_bytes(),
+            ClientPacket::RequestFriendList(p) => p.to_bytes(),
+            ClientPacket::RequestFriendDel(p) => p.to_bytes(),
+            ClientPacket::RequestSendFriendMsg(p) => p.to_bytes(),
+            ClientPacket::RequestBlock(p) => p.to_bytes(),
             // Chat packets are checked in tests/chat.rs.
             // Chat packets are checked in tests/chat.rs, interaction packets in tests/interaction.rs.
             ClientPacket::Say2(_)

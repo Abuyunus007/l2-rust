@@ -32,7 +32,7 @@
 //   `Party.removePartyMember` and `setLeader`).
 // - Changing the loot rule inside a running party (`requestLootChange`, `answerLootChangeRequest`,
 //   `ExAskModifyPartyLooting`, `ExSetPartyLooting`): the client packets for it are not ported yet.
-// - `BlockList.isBlocked` in `RequestJoinParty`: the block list belongs to the friend list card.
+// - `BlockList.isBlocked` in `RequestJoinParty` and the party chat: `friends.rs` (M6-FRIEND-01).
 
 mod buffs;
 mod invite;
