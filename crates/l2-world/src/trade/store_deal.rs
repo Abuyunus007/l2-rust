@@ -29,6 +29,7 @@ use tracing::warn;
 use super::TradeList;
 use super::store::PrivateStoreType;
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::flood::FloodKind;
 use crate::inventory::item_name_param;
 use crate::world::World;
 
@@ -106,8 +107,10 @@ impl World {
             return;
         };
 
-        // The flood protector `canPerformTransaction` ("You are buying items too fast.") is not
-        // ported.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are buying items too fast.");
+            return;
+        }
 
         if !self.players.contains_key(&store) {
             return;
@@ -449,8 +452,10 @@ impl World {
             return;
         };
 
-        // The flood protector `canPerformTransaction` ("You are selling items too fast.") is not
-        // ported.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are selling items too fast.");
+            return;
+        }
 
         if !self.players.contains_key(&store) {
             return;

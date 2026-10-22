@@ -15,6 +15,7 @@ use tracing::warn;
 
 use super::refresh::AttachmentAction;
 use super::{MailInput, MailMessage, MailWrite};
+use crate::flood::FloodKind;
 use crate::inventory::LOC_INVENTORY;
 use crate::outbox::ItemRowOp;
 use crate::player::ItemData;
@@ -283,7 +284,10 @@ impl World {
         if !self.mail.settings.allow_mail || !self.mail.settings.allow_attachments {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction`.
+        // The second pass (`refreshed`) is the same request: the interval was started by the first.
+        if !refreshed && !self.flood_allows(id, FloodKind::Transaction) {
+            return;
+        }
         if !self.mail_allows_transaction(id) {
             self.send_message(id, "Transactions are disabled for your Access Level");
             return;
@@ -433,7 +437,10 @@ impl World {
         if !self.mail.settings.allow_mail || !self.mail.settings.allow_attachments {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction`.
+        // The second pass (`refreshed`) is the same request: the interval was started by the first.
+        if !refreshed && !self.flood_allows(id, FloodKind::Transaction) {
+            return;
+        }
         if !self.is_inside_zone(id, ZoneId::Peace) {
             self.mail_peace_zone_attachments_message(id);
             return;
@@ -510,7 +517,10 @@ impl World {
         if !self.mail.settings.allow_mail || !self.mail.settings.allow_attachments {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction`.
+        // The second pass (`refreshed`) is the same request: the interval was started by the first.
+        if !refreshed && !self.flood_allows(id, FloodKind::Transaction) {
+            return;
+        }
         let Some(msg) = self.mail_message(msg_id) else {
             return;
         };

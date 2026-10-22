@@ -16,6 +16,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::{CREATE_COMMON, CREATE_DWARVEN, RecipeWrite};
+use crate::flood::FloodKind;
 use crate::inventory::{item_name_param, java_concurrent_map_order};
 use crate::outbox::PersistCommand;
 use crate::player::ItemData;
@@ -261,8 +262,10 @@ impl World {
     }
 
     /// Java `RequestRecipeBookDestroy.runImpl`.
-    // The flood protector `canPerformTransaction` is not modelled.
     pub(crate) fn on_request_recipe_book_destroy(&mut self, id: ObjectId, recipe_id: i32) {
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            return;
+        }
         let Some(recipe) = self.recipe_data().and_then(|d| d.get(recipe_id).cloned()) else {
             return;
         };

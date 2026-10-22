@@ -20,6 +20,7 @@ use super::sorted::{A2Z, WarehouseListType, get_order};
 use crate::bypass::BypassHandlers;
 use crate::clan::model::ClanAccess;
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::flood::FloodKind;
 use crate::outbox::ItemRowOp;
 use crate::target::distance_2d;
 use crate::world::{World, unix_ms_now};
@@ -290,8 +291,10 @@ impl World {
         let Some(items) = self.checked_warehouse_list(items) else {
             return;
         };
-        // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are depositing items too
-        // fast.").
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are depositing items too fast.");
+            return;
+        }
         let Some(warehouse) = self.players.get(&id).and_then(|p| p.warehouse.active) else {
             return;
         };
@@ -406,6 +409,11 @@ impl World {
         let Some(items) = self.checked_warehouse_list(items) else {
             return;
         };
+        // Only the packet is a request; the second pass (`refreshed`) is the same one.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are withdrawing items too fast.");
+            return;
+        }
         self.warehouse_withdraw(id, items, false);
     }
 
@@ -418,8 +426,6 @@ impl World {
         mut items: Vec<WarehouseListEntry>,
         refreshed: bool,
     ) {
-        // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are withdrawing items too
-        // fast.").
         let Some(warehouse) = self.players.get(&id).and_then(|p| p.warehouse.active) else {
             return;
         };
@@ -568,7 +574,10 @@ impl World {
         if !is_account_char {
             return;
         }
-        // FOLLOW-UP: the flood protector ("You are sending freight packages too fast.").
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are sending freight packages too fast.");
+            return;
+        }
         let manager = self.players.get(&id).and_then(|p| p.talk.last_folk_npc);
         let in_reach = manager
             .and_then(|m| Some((self.position_of(m)?, self.position_of(id)?)))

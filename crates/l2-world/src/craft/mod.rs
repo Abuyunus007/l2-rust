@@ -37,7 +37,6 @@
 // with `StoreRecipeShopList` (`PlayerProfile::recipe_shop_to_store`).
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - The flood protectors `canManufacture` / `canPerformTransaction`.
 // - `isSellingBuffs` (`SellBuffsManager`), `isMounted()` (no mounts yet), the olympiad.
 // - Offline craft (`OfflineCraftEnable`).
 // - `ItemProcessType` logging (`LogItems`).
