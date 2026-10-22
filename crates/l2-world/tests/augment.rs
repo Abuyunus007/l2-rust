@@ -1428,3 +1428,30 @@ fn the_augment_link_opens_the_windows() {
     assert!(!augment_handler(&mut s.world, A, "Augment 1", None));
     assert!(s.log.take().is_empty());
 }
+
+// ---- the item packets ----------------------------------------------------------------------------
+
+#[test]
+fn the_user_info_shows_the_augmentation_of_the_worn_items() {
+    // UserInfo / CharInfo: `getPaperdollAugmentationId(slot)` for every slot, 0 for no item or an
+    // item that is not augmented.
+    let mut s = Scene::new(vec![
+        augmented(worn(SWORD, C_SWORD, pd::RHAND), 0x0003_0002),
+        worn(103, S_RING, pd::RFINGER),
+        augmented(inv(104, S_NECK, 1), 0x0001_0001),
+    ]);
+    // Any change that sends the user info will do: putting the necklace on.
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(1),
+        input: ClientInput::UseItem {
+            object_id: 104,
+            ctrl_pressed: false,
+        },
+    });
+    let out = s.log.take();
+    let info: l2_protocol_game::server::UserInfo = decode(of(&out, "USER_INFO").last().unwrap());
+    assert_eq!(info.paperdoll_augmentation_ids[pd::RHAND], 0x0003_0002);
+    assert_eq!(info.paperdoll_augmentation_ids[pd::RFINGER], 0);
+    // The necklace was put on by the click.
+    assert_eq!(info.paperdoll_augmentation_ids[pd::NECK], 0x0001_0001);
+}
