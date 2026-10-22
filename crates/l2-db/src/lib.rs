@@ -10,6 +10,7 @@ mod error;
 mod game;
 mod login;
 mod pool;
+mod schema;
 
 pub use error::{DbError, Result};
 pub use game::{BuyListRepository, BuyListRow};
@@ -44,3 +45,4 @@ pub use login::{
     hash_password, hex_to_string, string_to_hex,
 };
 pub use pool::{Pool, connect, connect_options, connect_with, pool_max_size, pool_min_idle};
+pub use schema::GAME_SCHEMA;

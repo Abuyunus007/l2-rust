@@ -24,35 +24,7 @@ use super::charscreen::{CharScreen, CharScreenStore, DbCharScreen, DeleteOutcome
 use super::testdata::datapack;
 
 /// Every game table the character screen writes or deletes from.
-const SCHEMA: [&str; 27] = [
-    include_str!("../../../l2-db/sql/game/characters.sql"),
-    include_str!("../../../l2-db/sql/game/items.sql"),
-    include_str!("../../../l2-db/sql/game/item_attributes.sql"),
-    include_str!("../../../l2-db/sql/game/item_elementals.sql"),
-    include_str!("../../../l2-db/sql/game/item_variables.sql"),
-    include_str!("../../../l2-db/sql/game/character_skills.sql"),
-    include_str!("../../../l2-db/sql/game/character_skills_save.sql"),
-    include_str!("../../../l2-db/sql/game/character_item_reuse_save.sql"),
-    include_str!("../../../l2-db/sql/game/character_shortcuts.sql"),
-    include_str!("../../../l2-db/sql/game/character_macroses.sql"),
-    include_str!("../../../l2-db/sql/game/character_reco_bonus.sql"),
-    include_str!("../../../l2-db/sql/game/character_contacts.sql"),
-    include_str!("../../../l2-db/sql/game/character_friends.sql"),
-    include_str!("../../../l2-db/sql/game/character_hennas.sql"),
-    include_str!("../../../l2-db/sql/game/character_quests.sql"),
-    include_str!("../../../l2-db/sql/game/character_recipebook.sql"),
-    include_str!("../../../l2-db/sql/game/character_subclasses.sql"),
-    include_str!("../../../l2-db/sql/game/heroes.sql"),
-    include_str!("../../../l2-db/sql/game/olympiad_nobles.sql"),
-    include_str!("../../../l2-db/sql/game/seven_signs.sql"),
-    include_str!("../../../l2-db/sql/game/pets.sql"),
-    include_str!("../../../l2-db/sql/game/merchant_lease.sql"),
-    include_str!("../../../l2-db/sql/game/character_raid_points.sql"),
-    include_str!("../../../l2-db/sql/game/character_instance_time.sql"),
-    include_str!("../../../l2-db/sql/game/character_variables.sql"),
-    include_str!("../../../l2-db/sql/game/mods_wedding.sql"),
-    include_str!("../../../l2-db/sql/game/clan_data.sql"),
-];
+const SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 
 const ACCOUNT: &str = "acc";
 

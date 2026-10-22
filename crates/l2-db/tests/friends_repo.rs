@@ -182,13 +182,16 @@ async fn the_block_list_is_relation_one_and_separate_from_friends() {
     // The friend list of Alice does not show the blocked character.
     assert!(repo.friends_of(ALICE).await.unwrap().is_empty());
 
-    // BlockList.updateInDB(remove) only deletes a block row (relation 1).
-    repo.add_friends(ALICE, CAROL).await.unwrap();
+    // BlockList.updateInDB(remove) only deletes a block row (relation 1). A friend and a block
+    // row of the same pair cannot both exist (primary key charId, friendId), so the friend row is
+    // another character's.
     repo.remove_block(ALICE, CAROL).await.unwrap();
     assert!(repo.block_list_of(ALICE).await.unwrap().is_empty());
+    repo.add_friends(ALICE, BOB).await.unwrap();
+    repo.remove_block(ALICE, BOB).await.unwrap();
     assert_eq!(
         ids(&repo.friends_of(ALICE).await.unwrap()),
-        vec![(CAROL, Some("Carol"))],
+        vec![(BOB, Some("Bob"))],
         "a friend row survives the removal of a block"
     );
     db.drop_database().await;

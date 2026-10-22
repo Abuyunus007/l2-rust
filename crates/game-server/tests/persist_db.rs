@@ -23,21 +23,7 @@ use l2_world::{
 };
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 12] = [
-    include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
-    include_str!("../../l2-db/sql/game/character_variables.sql"),
-    include_str!("../../l2-db/sql/game/characters.sql"),
-    include_str!("../../l2-db/sql/game/items.sql"),
-    include_str!("../../l2-db/sql/game/character_skills.sql"),
-    include_str!("../../l2-db/sql/game/character_skills_save.sql"),
-    include_str!("../../l2-db/sql/game/character_item_reuse_save.sql"),
-    include_str!("../../l2-db/sql/game/character_shortcuts.sql"),
-    // Deleting an item also deletes its augmentation row, as Java's Item.removeFromDb does.
-    include_str!("../../l2-db/sql/game/item_attributes.sql"),
-    include_str!("../../l2-db/sql/game/item_elementals.sql"),
-    include_str!("../../l2-db/sql/game/item_variables.sql"),
-    include_str!("../../l2-db/sql/game/messages.sql"),
-];
+const SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 
 const CHAR_ID: i32 = 0x6000_0001;
 const NOW: i64 = 1_700_000_000_000;
