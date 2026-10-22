@@ -147,8 +147,9 @@ impl World {
                 level,
                 passive,
                 disabled: clan_skills_off && self.rewards.skill_trees.is_clan_skill(skill_id, level),
-                // Enchantable skills need the skill enchant tables.
-                enchanted: false,
+                // `isEnchantable`: the skill has enchant levels, and an enchant route that the
+                // player's level reached.
+                enchanted: crate::enter::skill_is_enchantable(&*self.data, skill_id, level),
             })
             .collect();
         // The skills of the form, by skill id.

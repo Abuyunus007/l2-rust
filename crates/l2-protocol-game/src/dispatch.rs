@@ -55,6 +55,10 @@ use crate::client::{
     RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
 };
 use crate::client::{
+    RequestExEnchantSkill, RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail,
+    RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
+};
+use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
@@ -242,6 +246,12 @@ pub enum ClientPacket {
     RequestExCancelEnchantItem(RequestExCancelEnchantItem),
     RequestExEnchantItemAttribute(RequestExEnchantItemAttribute),
     RequestExRemoveItemAttribute(RequestExRemoveItemAttribute),
+    RequestExEnchantSkillInfo(RequestExEnchantSkillInfo),
+    RequestExEnchantSkillInfoDetail(RequestExEnchantSkillInfoDetail),
+    RequestExEnchantSkill(RequestExEnchantSkill),
+    RequestExEnchantSkillSafe(RequestExEnchantSkillSafe),
+    RequestExEnchantSkillUntrain(RequestExEnchantSkillUntrain),
+    RequestExEnchantSkillRouteChange(RequestExEnchantSkillRouteChange),
     RequestConfirmTargetItem(RequestConfirmTargetItem),
     RequestConfirmRefinerItem(RequestConfirmRefinerItem),
     RequestConfirmGemStone(RequestConfirmGemStone),
@@ -608,6 +618,24 @@ fn decode_ex_client(
         }
         RequestExRemoveItemAttribute::EX_OPCODE => {
             ClientPacket::RequestExRemoveItemAttribute(RequestExRemoveItemAttribute::decode(reader)?)
+        }
+        RequestExEnchantSkillInfo::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkillInfo(RequestExEnchantSkillInfo::decode(reader)?)
+        }
+        RequestExEnchantSkillInfoDetail::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkillInfoDetail(RequestExEnchantSkillInfoDetail::decode(reader)?)
+        }
+        RequestExEnchantSkill::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkill(RequestExEnchantSkill::decode(reader)?)
+        }
+        RequestExEnchantSkillSafe::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkillSafe(RequestExEnchantSkillSafe::decode(reader)?)
+        }
+        RequestExEnchantSkillUntrain::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkillUntrain(RequestExEnchantSkillUntrain::decode(reader)?)
+        }
+        RequestExEnchantSkillRouteChange::EX_OPCODE => {
+            ClientPacket::RequestExEnchantSkillRouteChange(RequestExEnchantSkillRouteChange::decode(reader)?)
         }
         RequestConfirmTargetItem::EX_OPCODE => {
             ClientPacket::RequestConfirmTargetItem(RequestConfirmTargetItem::decode(reader)?)

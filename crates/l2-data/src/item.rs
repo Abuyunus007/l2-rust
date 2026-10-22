@@ -236,9 +236,23 @@ pub struct ItemTemplate {
     pub conditions: Vec<MessagedCondition>,
     /// The skills the item carries (Java `getSkills`, `getUnequipSkill`, enchant4/on-crit/on-magic).
     pub skills: ItemSkills,
+    /// Java keeps these in `EnchantItemOptionsData`: the option ids (0 = none) of each enchant level
+    /// of this item, which `Item.getEnchantOptions()` reads for the item packets and
+    /// `applyEnchantStats`. Filled by [`ItemTemplates::attach_enchant_options`] after both tables
+    /// are loaded, so the packet code (which only has the template) can reach them.
+    pub enchant_options: BTreeMap<i32, [i32; 3]>,
 }
 
 impl ItemTemplate {
+    /// Java `Item.getEnchantOptions()` for this template at `enchant_level`: the three option ids,
+    /// `[0, 0, 0]` (`DEFAULT_ENCHANT_OPTIONS`) for a level without options.
+    pub fn enchant_options_at(&self, enchant_level: i32) -> [i32; 3] {
+        self.enchant_options
+            .get(&enchant_level)
+            .copied()
+            .unwrap_or([0; 3])
+    }
+
     /// Java `isWeapon()`.
     pub fn is_weapon(&self) -> bool {
         matches!(self.kind, ItemKind::Weapon(_))
@@ -474,6 +488,15 @@ impl ItemTemplates {
         log_loaded(Self::LOADER, self.armor_count(), "armor items");
         log_loaded(Self::LOADER, self.weapon_count(), "weapon items");
         log_loaded(Self::LOADER, self.len(), "items in total");
+    }
+
+    /// Hands the enchant options (`EnchantItemOptionsData`) to the templates they belong to.
+    pub fn attach_enchant_options(&mut self, options: &crate::EnchantItemOptions) {
+        for (item_id, levels) in options.iter() {
+            if let Some(template) = self.items.get_mut(&item_id) {
+                template.enchant_options = levels.clone();
+            }
+        }
     }
 
     /// Java `getTemplate(id)`: `None` for an unknown id.
@@ -800,6 +823,7 @@ fn build_template(class: &str, set: &ItemSet) -> Result<ItemTemplate, DataError>
         elementals: Vec::new(),
         conditions: Vec::new(),
         skills: ItemSkills::default(),
+        enchant_options: BTreeMap::new(),
     };
 
     match class {

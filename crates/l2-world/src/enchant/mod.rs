@@ -19,6 +19,14 @@
 // - `attribute.rs`: the element stones: `EnchantAttribute`, `RequestExEnchantItemAttribute`,
 //   `RequestExRemoveItemAttribute`, the cancel window of the `ReleaseAttribute` NPC link.
 // - `protection.rs`: `OverEnchantProtection` (`UseItem`, `EnterWorld`, `//create_item`).
+// - `skill.rs`: the skill enchanting (M6-ENCHANT-02): `RequestExEnchantSkillInfo`,
+//   `RequestExEnchantSkillInfoDetail` and the four ways to change an enchanted skill.
+//
+// The enchant options of items (`EnchantItemOptionsData`, `applyEnchantStats`) are the stat
+// engine's (`stats/skills.rs`, `World::clear_enchant_stats` / `apply_enchant_stats`); the option
+// ids reach the item packets through `ItemTemplate::enchant_options_at`.
+//
+// `//enchant` (the GM page that sets the enchant level of worn items) is `admin/enchant.rs`.
 //
 // # Where else it shows
 // While a scroll is open the item manipulation checks refuse it (`validate_item_manipulation`,
@@ -27,16 +35,14 @@
 // `ChangeWeapon` condition give up (`isEnchanting`).
 //
 // # Left out on purpose
-// - Enchant options (`EnchantItemOptionsData`, `Item.applyEnchantStats`): nothing in the datapack
-//   the card names reads them; a separate card brings them.
 // - Mounts (`isMounted`): not modelled, so the scroll never refuses a mounted player.
-// - The skill enchanting (`RequestExEnchantSkill*`, the enchant routes of skills): another system.
 // - The Java GS "enchant.items" log file: the lines go to `tracing` with the target `enchant.items`
 //   (`LogItemEnchants`).
 
 mod attribute;
 mod protection;
 mod scroll;
+mod skill;
 
 pub use attribute::release_attribute_handler;
 
@@ -73,6 +79,14 @@ pub struct EnchantSettings {
     pub enchant_blacklist: Vec<i32>,
     /// `GeneralConfig.LOG_ITEM_ENCHANTS` (`LogItemEnchants`).
     pub log_item_enchants: bool,
+    /// `GeneralConfig.LOG_SKILL_ENCHANTS` (`LogSkillEnchants`).
+    pub log_skill_enchants: bool,
+    /// `PlayerConfig.ES_SP_BOOK_NEEDED` (`EnchantSkillSpBookNeeded`): the spellbook is used up.
+    pub es_sp_book_needed: bool,
+    /// `GeneralConfig.NORMAL_ENCHANT_COST_MULTIPLIER` (`NormalEnchantCostMultipiler`, sic).
+    pub normal_enchant_cost_multiplier: i32,
+    /// `GeneralConfig.SAFE_ENCHANT_COST_MULTIPLIER` (`SafeEnchantCostMultipiler`, sic).
+    pub safe_enchant_cost_multiplier: i32,
 }
 
 impl Default for EnchantSettings {
@@ -90,6 +104,10 @@ impl Default for EnchantSettings {
                 7831, 13293, 13294, 13296,
             ],
             log_item_enchants: false,
+            log_skill_enchants: false,
+            es_sp_book_needed: true,
+            normal_enchant_cost_multiplier: 1,
+            safe_enchant_cost_multiplier: 5,
         }
     }
 }
@@ -137,6 +155,22 @@ pub enum EnchantInput {
     EnchantAttribute { object_id: i32 },
     /// Java `RequestExRemoveItemAttribute`.
     RemoveAttribute { object_id: i32, element: i32 },
+    /// Java `RequestExEnchantSkillInfo`.
+    SkillInfo { skill_id: i32, skill_level: i32 },
+    /// Java `RequestExEnchantSkillInfoDetail` (`kind` is `_type`).
+    SkillInfoDetail {
+        kind: i32,
+        skill_id: i32,
+        skill_level: i32,
+    },
+    /// Java `RequestExEnchantSkill`.
+    EnchantSkill { skill_id: i32, skill_level: i32 },
+    /// Java `RequestExEnchantSkillSafe`.
+    EnchantSkillSafe { skill_id: i32, skill_level: i32 },
+    /// Java `RequestExEnchantSkillUntrain`.
+    UntrainSkill { skill_id: i32, skill_level: i32 },
+    /// Java `RequestExEnchantSkillRouteChange`.
+    ChangeSkillRoute { skill_id: i32, skill_level: i32 },
 }
 
 impl World {
@@ -227,6 +261,31 @@ impl World {
             EnchantInput::RemoveAttribute { object_id, element } => {
                 self.on_request_remove_item_attribute(id, object_id, element);
             }
+            EnchantInput::SkillInfo {
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill_info(id, skill_id, skill_level),
+            EnchantInput::SkillInfoDetail {
+                kind,
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill_info_detail(id, kind, skill_id, skill_level),
+            EnchantInput::EnchantSkill {
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill(id, skill_id, skill_level),
+            EnchantInput::EnchantSkillSafe {
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill_safe(id, skill_id, skill_level),
+            EnchantInput::UntrainSkill {
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill_untrain(id, skill_id, skill_level),
+            EnchantInput::ChangeSkillRoute {
+                skill_id,
+                skill_level,
+            } => self.on_request_ex_enchant_skill_route_change(id, skill_id, skill_level),
         }
     }
 

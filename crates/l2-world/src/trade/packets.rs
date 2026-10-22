@@ -42,8 +42,10 @@ impl World {
             element_defense: std::array::from_fn(|element| {
                 item.item.element_def_attr(element as i32, template) as i16
             }),
-            // `Item.DEFAULT_ENCHANT_OPTIONS`: enchant options are not modelled.
-            enchant_options: [0; 3],
+            // `TradeItem` copies `item.getEnchantOptions()`; Java writes the low 16 bits.
+            enchant_options: template.map_or([0; 3], |t| {
+                t.enchant_options_at(item.item.enchant_level).map(|id| id as i16)
+            }),
         }
     }
 
