@@ -701,6 +701,18 @@ struct Left {
     clan_id: i32,
     /// Every row of `items` owned by the character, sorted by object id.
     items: Vec<ItemRow>,
+    /// The rows of `character_skills_save` (buffs and reuse timers), in the order of `buff_index`.
+    buffs: Vec<BuffRow>,
+}
+
+/// One row of `character_skills_save` (the columns that do not depend on the clock).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct BuffRow {
+    skill_id: i32,
+    skill_level: i32,
+    reuse_delay: i32,
+    /// 0 a buff, 1 a reuse timer without a buff.
+    restore_type: i32,
 }
 
 impl Left {
@@ -1342,6 +1354,18 @@ impl Harness for BareWorld {
             sp: data.sp,
             clan_id: data.profile.clan.as_ref().map_or(0, |c| c.clan_id),
             items,
+            buffs: data
+                .profile
+                .effects_to_store
+                .iter()
+                .flatten()
+                .map(|e| BuffRow {
+                    skill_id: e.skill_id,
+                    skill_level: e.skill_level,
+                    reuse_delay: i32::try_from(e.reuse_delay).unwrap(),
+                    restore_type: e.restore_type,
+                })
+                .collect(),
         }
     }
 
@@ -1661,7 +1685,23 @@ impl Rig {
         .fetch_all(&self.pool)
         .await
         .unwrap();
+        let buffs: Vec<(i32, i32, i32, i32)> = sqlx::query_as(
+            "SELECT skill_id, skill_level, reuse_delay, restore_type FROM character_skills_save              WHERE charId = ? ORDER BY buff_index",
+        )
+        .bind(char_id)
+        .fetch_all(&self.pool)
+        .await
+        .unwrap();
         Left {
+            buffs: buffs
+                .into_iter()
+                .map(|(skill_id, skill_level, reuse_delay, restore_type)| BuffRow {
+                    skill_id,
+                    skill_level,
+                    reuse_delay,
+                    restore_type,
+                })
+                .collect(),
             level: i32::from(level.unwrap_or(0)),
             exp: i64::try_from(exp.unwrap_or(0)).unwrap(),
             sp: i64::try_from(sp).unwrap(),

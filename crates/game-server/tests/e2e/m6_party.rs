@@ -289,6 +289,21 @@ pub fn assert_played(played: &Played) {
         played.tail_object_id
     );
     assert_eq!((a.clan_id, b.clan_id), (0, 0));
+    // The buff is stored at the logout (`StoreSkillCooltime` is on). B holds it with no reuse
+    // timer; A has it with the 5 s of reuse if they are not over (`Player.storeEffect` writes 0
+    // for a timer that has run out, which it has after the hunt).
+    let chant = |reuse_delay| BuffRow {
+        skill_id: m6_data::CHANT_OF_BATTLE,
+        skill_level: 1,
+        reuse_delay,
+        restore_type: 0,
+    };
+    assert_eq!(b.buffs, [chant(0)]);
+    assert!(
+        a.buffs == [chant(0)] || a.buffs == [chant(5_000)],
+        "{:?}",
+        a.buffs
+    );
 }
 
 #[tokio::test]
