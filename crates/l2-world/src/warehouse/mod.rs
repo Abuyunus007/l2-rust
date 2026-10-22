@@ -33,7 +33,7 @@
 // the container (`refresh.rs`); the window continues when the persistence task answers.
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - The flood protector `canPerformTransaction`, `setInventoryBlockingStatus(true)` (nothing
+// - `setInventoryBlockingStatus(true)` (nothing
 //   reads the 1.5 s inventory lock yet), cursed weapons, the olympiad, a summoned pet's
 //   control item.
 // - Clan halls and castles (`ClanHallManager`, `FortManager`, the vault): M7.

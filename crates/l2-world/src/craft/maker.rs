@@ -38,6 +38,7 @@ use tracing::warn;
 
 use super::ManufactureItem;
 use crate::enter::{item_list, quest_item_list};
+use crate::flood::FloodKind;
 use crate::inventory::{LOC_INVENTORY, LOC_PAPERDOLL, item_name_param};
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::{World, unix_ms_now};
@@ -181,8 +182,10 @@ impl World {
     }
 
     /// Java `RequestRecipeItemMakeSelf.runImpl`.
-    // The flood protector `canManufacture` is not modelled.
     pub(crate) fn on_request_recipe_item_make_self(&mut self, id: ObjectId, recipe_id: i32) {
+        if !self.flood_allows(id, FloodKind::Manufacture) {
+            return;
+        }
         if self.is_in_store_mode(id) {
             self.send_message(id, "You cannot create items while trading.");
             return;

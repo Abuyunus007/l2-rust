@@ -50,6 +50,7 @@ use tracing::warn;
 use super::servitor::{SummonSkillSave, SummonWrite};
 use super::{Summon, SummonAi, SummonEffect, SummonKind, SummonTimer};
 use crate::effects::SkillKey;
+use crate::flood::FloodKind;
 use crate::npc::NpcClass;
 use crate::objects::{Npc, ObjectKind};
 use crate::outbox::PersistCommand;
@@ -370,8 +371,11 @@ impl World {
             self.pet_message(id, SystemMessageId::YourPetCannotCarryThisItem);
             return false;
         }
-        // The flood protector, the block checker arena and the observer mode are not modelled.
-        if self.is_all_skills_disabled(id) || self.is_casting_now(id) {
+        // The block checker arena and the observer mode are not modelled.
+        if !self.flood_allows(id, FloodKind::ItemPetSummon)
+            || self.is_all_skills_disabled(id)
+            || self.is_casting_now(id)
+        {
             return false;
         }
         if self.is_sitting(id) {

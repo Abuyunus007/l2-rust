@@ -15,6 +15,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 
 use super::ManufactureItem;
+use crate::flood::FloodKind;
 use crate::trade::PrivateStoreType;
 use crate::world::World;
 use crate::zones::ZoneId;
@@ -324,13 +325,15 @@ impl World {
     }
 
     /// Java `RequestRecipeShopMakeItem.runImpl`.
-    // The flood protector `canManufacture` is not modelled.
     pub(crate) fn on_request_recipe_shop_make_item(
         &mut self,
         id: ObjectId,
         manufacturer: i32,
         recipe_id: i32,
     ) {
+        if !self.flood_allows(id, FloodKind::Manufacture) {
+            return;
+        }
         let manufacturer = ObjectId(manufacturer);
         if !self.players.contains_key(&manufacturer) {
             return;

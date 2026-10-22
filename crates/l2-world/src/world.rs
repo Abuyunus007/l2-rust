@@ -128,6 +128,8 @@ pub struct World {
     pub(crate) craft: crate::craft::CraftWorld,
     /// The augmentation skill map and retail chance tables (M6-AUGMENT-01, `augment.rs`).
     pub(crate) augment: crate::augment::AugmentWorld,
+    /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
+    pub(crate) flood: crate::flood::FloodWorld,
 }
 
 impl World {
@@ -189,6 +191,7 @@ impl World {
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
+            flood: crate::flood::FloodWorld::default(),
         }
     }
 

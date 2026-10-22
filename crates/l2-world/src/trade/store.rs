@@ -26,7 +26,7 @@
 // - Offline trade (`OfflineTradeEnable`, `OfflineTraderTable`, `setPrivateStoreType`'s
 //   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record): M6-STORE-01 leaves
 //   it, there are no detached clients in the Rust server yet.
-// - The flood protector `canPerformTransaction`, the cursed weapon check, `isSellingBuffs`
+// - The cursed weapon check, `isSellingBuffs`
 //   (`SellBuffsManager`), the olympiad (M8), a mount and a duel (`isInDuel`: M6-DUEL-01).
 
 use l2_protocol_game::SystemMessageId;

@@ -18,6 +18,7 @@ use tracing::{debug, info};
 
 use crate::command::LeaveReason;
 use crate::data::ChatBroadcast;
+use crate::flood::FloodKind;
 use crate::world::World;
 
 /// Java: `_text.length() > 105` without an item link.
@@ -276,7 +277,7 @@ impl World {
     }
 
     // Java: ChatShout.onChat
-    fn chat_shout(&self, id: ObjectId, text: &str) {
+    fn chat_shout(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
@@ -294,12 +295,23 @@ impl World {
             );
             return;
         }
+        // Only the `GLOBAL` mode is flood protected.
+        if self.settings.global_chat == ChatBroadcast::Global
+            && !is_gm
+            && !self.flood_allows(id, FloodKind::GlobalChat)
+        {
+            self.send_message(id, "Do not spam shout channel.");
+            return;
+        }
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
         let packet = self.say_packet(id, ChatType::Shout, &player.data.name, text);
         self.broadcast_by_mode(id, self.settings.global_chat, is_gm, &packet, true);
     }
 
     // Java: ChatTrade.onChat
-    fn chat_trade(&self, id: ObjectId, text: &str) {
+    fn chat_trade(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
@@ -311,6 +323,17 @@ impl World {
             return;
         }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
+        // Only the `GLOBAL` mode is flood protected.
+        if self.settings.trade_chat == ChatBroadcast::Global
+            && !is_gm
+            && !self.flood_allows(id, FloodKind::GlobalChat)
+        {
+            self.send_message(id, "Do not spam trade channel.");
+            return;
+        }
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
         let packet = self.say_packet(id, ChatType::Trade, &player.data.name, text);
         self.broadcast_by_mode(id, self.settings.trade_chat, is_gm, &packet, false);
     }
@@ -446,7 +469,7 @@ impl World {
     }
 
     // Java: ChatHeroVoice.onChat; the heroes table is not loaded, so only a GM passes.
-    fn chat_hero_voice(&self, id: ObjectId) {
+    fn chat_hero_voice(&mut self, id: ObjectId) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
@@ -456,6 +479,13 @@ impl World {
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         if !is_gm {
             self.send_message(id, "Only Heroes can enter the Hero channel.");
+            return;
+        }
+        if !self.flood_allows(id, FloodKind::HeroVoice) {
+            self.send_message(
+                id,
+                "Action failed. Heroes are only able to speak in the global channel once every 10 seconds.",
+            );
             return;
         }
         // A GM would reach the hero channel after the flood check; heroes do not exist yet.

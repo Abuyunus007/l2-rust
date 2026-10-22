@@ -15,6 +15,7 @@ use l2_protocol_game::server::{ActionFailed, SystemMessage};
 use l2_util::ObjectId;
 
 use crate::effects::control::ATTACK_ACTION_BLOCK_ID;
+use crate::flood::FloodKind;
 use crate::objects::ObjectKind;
 use crate::world::World;
 use crate::zones::ZoneId;
@@ -23,6 +24,9 @@ impl World {
     /// Java `AttackRequest.runImpl`.
     pub(crate) fn on_attack_request(&mut self, id: ObjectId, object_id: i32) {
         if !self.players.contains_key(&id) {
+            return;
+        }
+        if !self.flood_allows(id, FloodKind::PlayerAction) {
             return;
         }
         // `BOT_PENALTY` effects (`BlockAction`) refuse the attack (`checkCondition(-1)`).
