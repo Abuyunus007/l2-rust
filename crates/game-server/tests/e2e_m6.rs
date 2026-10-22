@@ -60,8 +60,8 @@ use l2_testkit::fake_login_client::FakeClient as LoginClient;
 use l2_testkit::test_db::{DEFAULT_SERVER_INI, SAMPLE_HEXID, SAMPLE_SERVER_ID, TestDb};
 use l2_world::{
     ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
-    PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, World, WorldCommand,
-    WorldRng,
+    MailWrite, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, World,
+    WorldCommand, WorldRng,
 };
 use login_server::state::{LoginState, ServerStatus as ListStatus};
 
@@ -576,6 +576,13 @@ mod act {
         )
     }
 
+    pub fn put_enchant_target(object_id: i32) -> Act {
+        Act::new(
+            ClientInput::Enchant(EnchantInput::PutTargetItem { object_id }),
+            &client::RequestExTryToPutEnchantTargetItem { object_id },
+        )
+    }
+
     pub fn enchant_item(object_id: i32) -> Act {
         Act::new(
             ClientInput::Enchant(EnchantInput::Enchant { object_id }),
@@ -716,6 +723,21 @@ impl Left {
     }
 }
 
+/// One row of `messages` (the columns the scenarios look at).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MailRow {
+    message_id: i32,
+    sender_id: i32,
+    receiver_id: i32,
+    subject: String,
+    content: String,
+    req_adena: i64,
+    has_attachments: bool,
+    unread: bool,
+    deleted_by_sender: bool,
+    deleted_by_receiver: bool,
+}
+
 /// The two ways to play a scenario. `collect_until` returns everything the player's client got
 /// since the last call, up to the packet `stop` accepts and a moment after it (the rest of that
 /// event); `collect_quiet` returns what arrives in a quiet moment.
@@ -730,6 +752,8 @@ trait Harness {
     async fn wait_seconds(&mut self, seconds: u64);
     /// Logs out and returns what was stored.
     async fn leave(&mut self, who: Who) -> Left;
+    /// The rows of `messages` as the store has them now, by message id.
+    async fn mail_rows(&mut self) -> Vec<MailRow>;
 }
 
 // ------------------------------------------------------------------------------------------
@@ -836,6 +860,59 @@ impl Persisted {
             }
         }
         table
+    }
+
+    /// The `messages` table after the mail writes of the world.
+    fn mail_table(&self) -> Vec<MailRow> {
+        let mut table: std::collections::BTreeMap<i32, MailRow> = Default::default();
+        for command in self.commands() {
+            let PersistCommand::Mail(write) = command else {
+                continue;
+            };
+            match write {
+                MailWrite::Insert(m) => {
+                    table.insert(
+                        m.id,
+                        MailRow {
+                            message_id: m.id,
+                            sender_id: m.sender_id,
+                            receiver_id: m.receiver_id,
+                            subject: m.subject.clone(),
+                            content: m.content.clone(),
+                            req_adena: m.req_adena,
+                            has_attachments: m.has_attachments,
+                            unread: m.unread,
+                            deleted_by_sender: m.deleted_by_sender,
+                            deleted_by_receiver: m.deleted_by_receiver,
+                        },
+                    );
+                }
+                MailWrite::MarkRead(id) => {
+                    if let Some(row) = table.get_mut(&id) {
+                        row.unread = false;
+                    }
+                }
+                MailWrite::MarkDeletedBySender(id) => {
+                    if let Some(row) = table.get_mut(&id) {
+                        row.deleted_by_sender = true;
+                    }
+                }
+                MailWrite::MarkDeletedByReceiver(id) => {
+                    if let Some(row) = table.get_mut(&id) {
+                        row.deleted_by_receiver = true;
+                    }
+                }
+                MailWrite::RemoveAttachments(id) => {
+                    if let Some(row) = table.get_mut(&id) {
+                        row.has_attachments = false;
+                    }
+                }
+                MailWrite::Delete(id) => {
+                    table.remove(&id);
+                }
+            }
+        }
+        table.into_values().collect()
     }
 
     fn item_rows(&self, owner: i32) -> Vec<ItemRow> {
@@ -1149,6 +1226,10 @@ impl Harness for BareWorld {
             items,
         }
     }
+
+    async fn mail_rows(&mut self) -> Vec<MailRow> {
+        self.persisted.mail_table()
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1320,6 +1401,33 @@ impl Rig {
         char_id
     }
 
+    /// The rows of `messages`, by message id. The `true`/`false` enums are Java's.
+    async fn mail_rows(&self) -> Vec<MailRow> {
+        type Columns = (i32, i32, i32, Option<String>, Option<String>, i64, String, String, String, String);
+        let rows: Vec<Columns> = sqlx::query_as(
+            "SELECT messageId, senderId, receiverId, subject, content, reqAdena, hasAttachments,              isUnread, isDeletedBySender, isDeletedByReceiver FROM messages ORDER BY messageId",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .unwrap();
+        rows.into_iter()
+            .map(|(message_id, sender_id, receiver_id, subject, content, req_adena, att, unread, by_s, by_r)| {
+                MailRow {
+                    message_id,
+                    sender_id,
+                    receiver_id,
+                    subject: subject.unwrap_or_default(),
+                    content: content.unwrap_or_default(),
+                    req_adena,
+                    has_attachments: att == "true",
+                    unread: unread == "true",
+                    deleted_by_sender: by_s == "true",
+                    deleted_by_receiver: by_r == "true",
+                }
+            })
+            .collect()
+    }
+
     /// The rows the scenarios compare: the character's progress and every row of `items` it owns.
     async fn left_of(&self, char_id: i32) -> Left {
         let (level, exp, sp, clan_id): (Option<u8>, Option<u64>, u64, Option<u32>) = sqlx::query_as(
@@ -1471,6 +1579,10 @@ impl Harness for Net {
         self.rig.wait_until_out_of_game(Self::ACCOUNTS[who.index()]).await;
         self.rig.left_of(self.ids[who.index()]).await
     }
+
+    async fn mail_rows(&mut self) -> Vec<MailRow> {
+        self.rig.mail_rows().await
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1485,3 +1597,9 @@ mod trade;
 
 #[path = "e2e/m6_town.rs"]
 mod town;
+
+#[path = "e2e/m6_enchant.rs"]
+mod enchant;
+
+#[path = "e2e/m6_mail.rs"]
+mod mail;
