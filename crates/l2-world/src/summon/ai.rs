@@ -249,7 +249,12 @@ impl World {
             return;
         }
         self.summon_set_intention_idle(summon);
-        // `doPickupItem(getTarget())`: a pet's is PET-01's.
+        // `doPickupItem(getTarget())`: a servitor's does nothing.
+        if let Some(target) = target
+            && self.is_pet(summon)
+        {
+            self.pet_do_pickup_item(summon, target);
+        }
     }
 
     /// Java `SummonAI.thinkInteract()`.

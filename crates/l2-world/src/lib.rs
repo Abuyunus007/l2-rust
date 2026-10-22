@@ -123,6 +123,8 @@ pub use stats::{
     StatView,
 };
 pub use status::RegenSettings;
+pub use summon::pet::{PetRowData, PetRowWrite, PetSettings, PetState, SavedPet, SavedPetEffect};
+pub use summon::pet_items::PetInput;
 pub use summon::servitor::{SavedSummonEffect, SummonSkillSave, SummonWrite};
 pub use summon::{Summon, SummonKind, SummonSettings};
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};

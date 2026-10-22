@@ -197,8 +197,10 @@ fn m_def_mod(view: &StatView<'_>, init: f64) -> f64 {
                 value -= f64::from(template.base_def_by_slot(view.def_mod_slot_key(slot)));
             }
         }
+    } else if view.is_pet() && view.world().pet_jewel_id(view.object_id()) != 0 {
+        // A pet wearing a neck item loses 13.
+        value -= 13.0;
     }
-    // Java: a pet wearing a neck item loses 13; pets are not in the world yet.
     value * view.bonus(BaseStat::Men) * view.level_mod()
 }
 

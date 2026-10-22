@@ -602,7 +602,9 @@ impl World {
         let pos_x = (f64::from(x) + (FEAR_RANGE * radians.cos())) as i32;
         let pos_y = (f64::from(y) + (FEAR_RANGE * radians.sin())) as i32;
         // `if (!_actor.isPet()) _actor.setRunning()`.
-        self.set_running_effect(id, true);
+        if !self.is_pet(id) {
+            self.set_running_effect(id, true);
+        }
         // If pathfinding enabled the creature will go to the destination or it will go to the
         // nearest obstacle.
         let (to_x, to_y, to_z) = if self.pathfinding_enabled() {

@@ -899,6 +899,31 @@ pub fn summon_settings(config: &GameConfig) -> l2_world::SummonSettings {
     }
 }
 
+/// The pet values (`Player.ini`: `RestorePetOnReconnect`, `PlayerSpawnProtection`; `Rates.ini`:
+/// `PetXpRate`, `PetFoodRate`, `SinEaterXpRate`; `NPC.ini`: `MaximumSlotsForPet` and the two regen
+/// multipliers, which Java divides by 100; `Server.ini`: `PetNameTemplate`).
+pub fn pet_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PetSettings {
+    use l2_config::IniFile;
+
+    let mut settings = l2_world::PetSettings {
+        restore_pet_on_reconnect: config.player.restore_pet_on_reconnect,
+        pet_xp_rate: config.rates.pet_xp_rate,
+        pet_food_rate: config.rates.pet_food_rate,
+        sineater_xp_rate: config.rates.sineater_xp_rate,
+        inventory_maximum_pet: config.npc.inventory_maximum_pet,
+        player_spawn_protection: config.player.player_spawn_protection,
+        ..l2_world::PetSettings::default()
+    };
+    // Java: `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
+        settings.pet_hp_regen_multiplier = ini.get_double("PetHpRegenMultiplier", 100.0) / 100.0;
+        settings.pet_mp_regen_multiplier = ini.get_double("PetMpRegenMultiplier", 100.0) / 100.0;
+    }
+    let template = config.manual.server.pet_name_template.clone();
+    settings.pet_name_template = std::sync::Arc::new(move |name: &str| template.is_match(name));
+    settings
+}
+
 /// The multisell values of `General.ini` and `Player.ini` (`MultisellAmountLimit`,
 /// `AltBlacksmithUseRecipes`, `MaxPersonalFamePoints`).
 pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {

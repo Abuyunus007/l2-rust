@@ -36,14 +36,19 @@ impl EffectHandler for Resurrection {
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
         if world.is_player(cx.effector) {
-            // `effected.asPlayer()` is null for an NPC; a pet (`isPet()`) is M6.
-            if world.is_player(cx.effected) {
-                world.revive_request(cx.effected, cx.effector, false, self.power);
+            // `effected.asPlayer()` is null for an NPC; a pet is its owner's request.
+            if let Some(player) = world.acting_player(cx.effected) {
+                let pet = world.is_pet(cx.effected);
+                world.revive_request(player, cx.effector, pet, self.power);
             }
         } else {
             world.cancel_decay_task(cx.effected);
             let percent = world.skill_resurrect_restore_percent(f64::from(self.power), cx.effector);
-            world.do_revive_with_power(cx.effected, percent);
+            if world.is_pet(cx.effected) {
+                world.pet_do_revive_with_power(cx.effected, percent);
+            } else {
+                world.do_revive_with_power(cx.effected, percent);
+            }
         }
     }
 }
@@ -73,7 +78,14 @@ impl EffectHandler for ResurrectionSpecial {
     }
 
     fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
-        // `!effected.isPlayer() && !effected.isPet()`: pets are M6.
+        // `!effected.isPlayer() && !effected.isPet()`.
+        if world.is_pet(cx.effected) {
+            // `player.reviveRequest(player, true, _power)`.
+            if let Some(owner) = world.summon_owner(cx.effected) {
+                world.revive_request(owner, owner, true, self.power);
+            }
+            return;
+        }
         if !world.is_player(cx.effected) {
             return;
         }

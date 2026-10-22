@@ -16,8 +16,9 @@ use std::time::Duration;
 
 use l2_db::{
     CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
-    ItemReuseRepository, ItemReuseRow, MacroRepository, Pool, RecommendationRepository, ShortcutRepository,
-    SkillRepository, SkillSaveRow, SubclassRepository, SummonRepository, VariableRepository,
+    ItemReuseRepository, ItemReuseRow, MacroRepository, PetRepository, Pool, RecommendationRepository,
+    ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository, SummonRepository,
+    VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,8 +27,8 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -86,6 +87,7 @@ pub struct DbPlayerLoader {
     reco: RecommendationRepository,
     variables: VariableRepository,
     summons: SummonRepository,
+    pets: PetRepository,
     clans: l2_db::ClanRepository,
 }
 
@@ -103,6 +105,7 @@ impl DbPlayerLoader {
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
+            pets: PetRepository::new(pool.clone()),
             clans: l2_db::ClanRepository::new(pool),
         }
     }
@@ -145,6 +148,28 @@ impl DbPlayerLoader {
         for r in self
             .items
             .inventory_items(char_id, ItemLocation::Inventory, ItemLocation::Paperdoll)
+            .await?
+        {
+            data.items.push(ItemData {
+                object_id: ObjectId(r.object_id),
+                item_id: r.item_id.unwrap_or(0),
+                count: i64::try_from(r.count).unwrap_or(i64::MAX),
+                enchant_level: r.enchant_level.unwrap_or(0),
+                loc: r.loc.unwrap_or_default(),
+                loc_data: r.loc_data.unwrap_or(0),
+                custom_type1: r.custom_type1.unwrap_or(0),
+                custom_type2: r.custom_type2.unwrap_or(0),
+                mana_left: r.mana_left,
+                time: r.time,
+                ..Default::default()
+            });
+        }
+
+        // Java: PetInventory.restore (PET and PET_EQUIP rows of the owner). Java reads them when
+        // the pet spawns; they ride with the inventory here, and only the pet code looks at them.
+        for r in self
+            .items
+            .inventory_items(char_id, ItemLocation::Pet, ItemLocation::PetEquip)
             .await?
         {
             data.items.push(ItemData {
@@ -216,6 +241,26 @@ impl DbPlayerLoader {
                 remaining_time: r.remaining_time,
             })
             .collect();
+
+        // Java: Pet.restore and Pet.restoreEffects read these rows when a pet spawns. They are
+        // read here for the collars the character holds, and kept by the world as its view of the
+        // tables (`summon/pet.rs`). A failed read is logged and leaves the pets new, like a
+        // missing row.
+        match self.pets.pets_of_owner(char_id).await {
+            Ok(rows) => {
+                data.profile.pet_rows = rows.into_iter().map(crate::persist::saved_pet_of).collect();
+            }
+            Err(e) => warn!("Could not restore pet data for {}: {e}", data.name),
+        }
+        match self.pets.effects_of_owner(char_id).await {
+            Ok(rows) => {
+                data.profile.pet_effects = rows
+                    .into_iter()
+                    .map(crate::persist::saved_pet_effect_of)
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore pet effect data for {}: {e}", data.name),
+        }
 
         // Java: restoreItemReuse reads the item reuse timers at load. Like the buffs they stay in
         // the table until the next store replaces them (this loader only reads, D-39). Java
@@ -880,32 +925,28 @@ impl ClientSession {
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
             },
+            // Java: RequestPetGetItem, RequestGetItemFromPet, RequestGiveItemToPet,
+            // RequestPetUseItem, RequestChangePetName (M6-PET-01)
+            ClientPacket::RequestPetGetItem(p) => ClientInput::Pet(PetInput::GetItem {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestGetItemFromPet(p) => ClientInput::Pet(PetInput::GetItemFromPet {
+                object_id: p.object_id,
+                amount: p.amount,
+            }),
+            ClientPacket::RequestGiveItemToPet(p) => ClientInput::Pet(PetInput::GiveItemToPet {
+                object_id: p.object_id,
+                amount: p.amount,
+            }),
+            ClientPacket::RequestPetUseItem(p) => ClientInput::Pet(PetInput::UseItem {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestChangePetName(p) => ClientInput::Pet(PetInput::ChangeName { name: p.name }),
             // Java: AnswerCoupleAction
             ClientPacket::AnswerCoupleAction(p) => ClientInput::AnswerCoupleAction {
                 action_id: p.action_id,
                 answer: p.answer,
                 object_id: p.object_id,
-            },
-            // The pet packets are PET-01's: the world hears them as not ported yet.
-            ClientPacket::RequestPetGetItem(_) => ClientInput::Other {
-                opcode: l2_protocol_game::client::RequestPetGetItem::OPCODE.id(),
-                ex_opcode: None,
-            },
-            ClientPacket::RequestGetItemFromPet(_) => ClientInput::Other {
-                opcode: l2_protocol_game::client::RequestGetItemFromPet::OPCODE.id(),
-                ex_opcode: None,
-            },
-            ClientPacket::RequestGiveItemToPet(_) => ClientInput::Other {
-                opcode: l2_protocol_game::client::RequestGiveItemToPet::OPCODE.id(),
-                ex_opcode: None,
-            },
-            ClientPacket::RequestPetUseItem(_) => ClientInput::Other {
-                opcode: l2_protocol_game::client::RequestPetUseItem::OPCODE.id(),
-                ex_opcode: None,
-            },
-            ClientPacket::RequestChangePetName(_) => ClientInput::Other {
-                opcode: l2_protocol_game::client::RequestChangePetName::OPCODE.id(),
-                ex_opcode: None,
             },
             // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
             packet @ (ClientPacket::RequestJoinPledge(_)

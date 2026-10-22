@@ -809,6 +809,9 @@ impl World {
         // `Servitor.stopSkillEffects`: the buff is not kept for the servitor's next summon either.
         if self.is_servitor(owner) {
             self.servitor_forget_saved_skill(owner, skill_id);
+        } else if self.is_pet(owner) {
+            // `Pet.stopSkillEffects`: `SummonEffectTable.removePetEffects`.
+            self.pet_forget_saved_skill(owner, skill_id);
         }
     }
 
