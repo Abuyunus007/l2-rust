@@ -28,6 +28,8 @@
 // - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
 // - `character_friends` rows of the friend list and the block list (`PersistCommand::Friend`,
 //   M6-FRIEND-01),
+// - `character_recipebook` (a recipe learned or forgotten, `PersistCommand::Recipe`) and
+//   `character_recipeshoplist` (with the store, `StoreRecipeShopList`; M6-CRAFT-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -56,17 +58,17 @@ use l2_db::{
     FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
     ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse, NewPetSkillSave,
     NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues, Pool,
-    PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
-    SummonRepository, VariableRepository,
+    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
+    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
     ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad,
-    MailMessage, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect,
-    PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
-    SkillData, StoredPunishment, SummonWrite,
+    MailMessage, MailRefresh, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow,
+    PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet,
+    SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -237,6 +239,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A `character_recipebook` row (`Player.insertNewRecipeData`, `deleteRecipeData`).
+    fn store_recipe_write(
+        &mut self,
+        _write: &RecipeWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// Java `Pet.restore` and `Pet.restoreEffects` for one collar: its `pets` row and its saved
     /// buffs (M6-PET-01). A store without a database has no rows.
     fn load_pet_row(
@@ -249,6 +259,25 @@ pub trait PlayerStore: Send + 'static {
                 effects: Vec::new(),
             })
         }
+    }
+
+    /// Java `Mail.restore` for one message (M6-SYNC-01): the items still in the mail. The Java game
+    /// server shares the rows (D-39), so the world asks before it hands attachments out.
+    fn load_mail_attachments(
+        &mut self,
+        _sender_id: i32,
+        _message_id: i32,
+    ) -> impl Future<Output = Result<Vec<ItemData>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
+    /// Java `ClanWarehouse.restore` (M6-SYNC-01): the `CLANWH` items of a clan, read when a clan
+    /// warehouse window opens.
+    fn load_clan_warehouse(
+        &mut self,
+        _clan_id: i32,
+    ) -> impl Future<Output = Result<Vec<ItemData>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
     }
 
     /// A `character_friends` row change (Java's friend and block list statements, M6-FRIEND-01).
@@ -618,6 +647,48 @@ async fn run<S: PlayerStore>(
                     );
                 }
             }
+            OutboxMessage::Persist(PersistCommand::MailAttachmentsRequest {
+                player,
+                message_id,
+                sender_id,
+            }) => {
+                // Not a write: the answer goes back to the world (D-15). The queue is in order, so
+                // the rows include every write sent before the request. A failed read is reported
+                // as a failure and the world hands nothing out.
+                let result = match store.load_mail_attachments(sender_id, message_id).await {
+                    Ok(items) => Ok(items),
+                    Err(e) => {
+                        warn!("Could not read the attachments of mail {message_id}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::MailAttachmentsLoaded {
+                    player,
+                    message_id,
+                    result,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!("The attachments of mail {message_id} could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ClanWarehouseRequest { player, clan_id }) => {
+                // Not a write either: see above.
+                let result = match store.load_clan_warehouse(clan_id).await {
+                    Ok(items) => Ok(items),
+                    Err(e) => {
+                        warn!("Could not read the warehouse of clan {clan_id}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::ClanWarehouseLoaded {
+                    player,
+                    clan_id,
+                    result,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!("The warehouse of clan {clan_id} could not be handed to the world.");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Clan(write)) => {
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
@@ -643,6 +714,13 @@ async fn run<S: PlayerStore>(
                         "Failed to save Product buylist_id:{} item_id:{}: {e}",
                         row.list_id, row.item_id
                     );
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Recipe(write)) => {
+                // Java logs a failed statement and goes on ("SQL exception while inserting
+                // recipe", no retry).
+                if let Err(e) = store.store_recipe_write(&write).await {
+                    error!("The recipe book row could NOT be written ({write:?}): {e}");
                 }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
@@ -719,8 +797,17 @@ pub async fn load_mail(pool: &Pool) -> MailLoad {
         };
         by_sender.insert(row.sender_id, list);
     }
-    load.messages = rows
-        .into_iter()
+    load.messages = mail_messages_of(rows, &by_sender);
+    load
+}
+
+/// The mails with the items of their `Mail` containers: `by_sender` holds the `MAIL` rows of each
+/// sender, the items of a message are the ones whose `loc_data` is its id.
+fn mail_messages_of(
+    rows: Vec<l2_db::MessageRow>,
+    by_sender: &std::collections::HashMap<i32, Vec<ItemData>>,
+) -> Vec<MailMessage> {
+    rows.into_iter()
         .map(|row| {
             let attachments = if row.has_attachments {
                 by_sender
@@ -752,8 +839,40 @@ pub async fn load_mail(pool: &Pool) -> MailLoad {
                 attachments,
             }
         })
-        .collect();
-    load
+        .collect()
+}
+
+/// The mails of one character as sender or receiver with their attachments, read at
+/// `CharacterSelect` (M6-SYNC-01): the Java game server shares the tables (D-39), so what
+/// `load_mail` read at startup may be out of date. Only reads. A failed read is an error, never
+/// an empty list: the world then keeps what it has.
+pub async fn load_mail_of_character(
+    messages: &MessageRepository,
+    items: &ItemRepository,
+    char_id: i32,
+) -> Result<MailRefresh, l2_db::DbError> {
+    let rows = messages.messages_of_character(char_id).await?;
+    let mut by_sender: std::collections::HashMap<i32, Vec<ItemData>> = std::collections::HashMap::new();
+    for row in rows.iter().filter(|r| r.has_attachments) {
+        if let std::collections::hash_map::Entry::Vacant(entry) = by_sender.entry(row.sender_id) {
+            entry.insert(load_container_items(items, row.sender_id, ItemLocation::Mail).await?);
+        }
+    }
+    Ok(MailRefresh {
+        messages: mail_messages_of(rows, &by_sender),
+    })
+}
+
+/// The attachment rows of one mail (Java `Mail.restore`: `owner_id` = the sender, `loc = 'MAIL'`,
+/// `loc_data` = the message id), read before `RequestPostAttachment` hands them out (M6-SYNC-01).
+pub async fn load_mail_attachments(
+    items: &ItemRepository,
+    sender_id: i32,
+    message_id: i32,
+) -> Result<Vec<ItemData>, l2_db::DbError> {
+    let mut list = load_container_items(items, sender_id, ItemLocation::Mail).await?;
+    list.retain(|i| i.loc_data == message_id);
+    Ok(list)
 }
 
 /// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
@@ -1263,6 +1382,7 @@ pub struct DbStore {
     clans: ClanRepository,
     buylists: BuyListRepository,
     messages: MessageRepository,
+    recipes: RecipeRepository,
     crests: CrestRepository,
     friends: FriendRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
@@ -1289,6 +1409,7 @@ impl DbStore {
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
+            recipes: RecipeRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             friends: FriendRepository::new(pool),
@@ -1911,6 +2032,18 @@ impl PlayerStore for DbStore {
             self.store_item_reuse(char_id, rows).await;
         }
 
+        // Java: Player.store -> storeRecipeShopList (only with `StoreRecipeShopList`, and only a
+        // character that has a shop; Java logs a failure and goes on).
+        if let Some(shop) = &player.profile.recipe_shop_to_store {
+            let rows: Vec<RecipeShopRow> = shop
+                .iter()
+                .map(|&(recipe_id, price)| RecipeShopRow { recipe_id, price })
+                .collect();
+            if let Err(e) = self.recipes.store_shop(char_id, &rows).await {
+                error!("Could not store recipe shop for playerId {char_id}: {e}");
+            }
+        }
+
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);
         let mut baseline = match self.baselines.remove(&player.object_id) {
@@ -2244,6 +2377,31 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_recipe_write(&mut self, write: &RecipeWrite) -> Result<(), PersistError> {
+        match write {
+            RecipeWrite::Insert {
+                char_id,
+                recipe_id,
+                class_index,
+                dwarven,
+            } => {
+                self.recipes
+                    .insert_recipe(*char_id, *recipe_id, *class_index, *dwarven)
+                    .await?;
+            }
+            RecipeWrite::Delete {
+                char_id,
+                recipe_id,
+                class_index,
+            } => {
+                self.recipes
+                    .delete_recipe(*char_id, *recipe_id, *class_index)
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
     async fn load_pet_row(&mut self, control: ObjectId) -> Result<PetRowData, PersistError> {
         let row = self.pets.pet_of_control_item(control.0).await?;
         let effects = self.pets.effects_of(control.0).await?;
@@ -2251,6 +2409,18 @@ impl PlayerStore for DbStore {
             row: row.map(saved_pet_of),
             effects: effects.into_iter().map(saved_pet_effect_of).collect(),
         })
+    }
+
+    async fn load_mail_attachments(
+        &mut self,
+        sender_id: i32,
+        message_id: i32,
+    ) -> Result<Vec<ItemData>, PersistError> {
+        Ok(load_mail_attachments(&self.items, sender_id, message_id).await?)
+    }
+
+    async fn load_clan_warehouse(&mut self, clan_id: i32) -> Result<Vec<ItemData>, PersistError> {
+        Ok(load_container_items(&self.items, clan_id, ItemLocation::ClanWh).await?)
     }
 
     async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
@@ -2421,6 +2591,12 @@ mod tests {
         BuyList(i32, i32, i64, i64),
         /// `Mail` (M6-MAIL-01): the write.
         Mail(MailWrite),
+        /// The read of the attachments of a mail: sender, message (M6-SYNC-01).
+        MailAttachments(i32, i32),
+        /// The read of the warehouse of a clan (M6-SYNC-01).
+        ClanWarehouse(i32),
+        /// A recipe book row.
+        Recipe(RecipeWrite),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -2573,6 +2749,57 @@ mod tests {
             Ok(())
         }
 
+        /// A mail 9 has one item row left; a mail below 0 cannot be read.
+        async fn load_mail_attachments(
+            &mut self,
+            sender_id: i32,
+            message_id: i32,
+        ) -> Result<Vec<ItemData>, PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::MailAttachments(sender_id, message_id));
+            if message_id < 0 {
+                return Err(PersistError::NoSuchCharacter(sender_id));
+            }
+            Ok(if message_id == 9 {
+                vec![ItemData {
+                    object_id: ObjectId(7001),
+                    item_id: 57,
+                    count: 3,
+                    loc: "MAIL".into(),
+                    loc_data: 9,
+                    ..Default::default()
+                }]
+            } else {
+                Vec::new()
+            })
+        }
+
+        /// A clan 500 has one item; a clan below 0 cannot be read.
+        async fn load_clan_warehouse(&mut self, clan_id: i32) -> Result<Vec<ItemData>, PersistError> {
+            self.calls.lock().unwrap().push(Call::ClanWarehouse(clan_id));
+            if clan_id < 0 {
+                return Err(PersistError::NoSuchCharacter(clan_id));
+            }
+            Ok(if clan_id == 500 {
+                vec![ItemData {
+                    object_id: ObjectId(401),
+                    item_id: 57,
+                    count: 50,
+                    loc: "CLANWH".into(),
+                    ..Default::default()
+                }]
+            } else {
+                Vec::new()
+            })
+        }
+
+        async fn store_recipe_write(&mut self, write: &RecipeWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Recipe(write.clone()));
+            Ok(())
+        }
+
         async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::BuyList(
                 row.list_id,
@@ -2701,6 +2928,101 @@ mod tests {
         }
     }
 
+    /// The two reads of M6-SYNC-01 are not writes: they come after the writes sent before them (the
+    /// answer includes them) and go back to the world as commands; a failed read is `Err`.
+    #[tokio::test]
+    async fn the_mail_and_clan_warehouse_reads_are_answered_to_the_world_in_order() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let send = |command: PersistCommand| tx.send(OutboxMessage::Persist(command)).unwrap();
+        send(PersistCommand::Mail(MailWrite::RemoveAttachments(8)));
+        send(PersistCommand::MailAttachmentsRequest {
+            player: ObjectId(1),
+            message_id: 9,
+            sender_id: 4,
+        });
+        send(PersistCommand::MailAttachmentsRequest {
+            player: ObjectId(1),
+            message_id: -1,
+            sender_id: 4,
+        });
+        send(PersistCommand::ClanWarehouseRequest {
+            player: ObjectId(2),
+            clan_id: 500,
+        });
+        send(PersistCommand::ClanWarehouseRequest {
+            player: ObjectId(2),
+            clan_id: -1,
+        });
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![
+                Call::Mail(MailWrite::RemoveAttachments(8)),
+                Call::MailAttachments(4, 9),
+                Call::MailAttachments(4, -1),
+                Call::ClanWarehouse(500),
+                Call::ClanWarehouse(-1),
+            ]
+        );
+        let mut answers = Vec::new();
+        while let Ok(command) = world_rx.try_recv() {
+            answers.push(command);
+        }
+        assert_eq!(answers.len(), 4);
+        match &answers[0] {
+            l2_world::WorldCommand::MailAttachmentsLoaded {
+                player,
+                message_id,
+                result,
+            } => {
+                assert_eq!((*player, *message_id), (ObjectId(1), 9));
+                let items = result.as_ref().unwrap();
+                assert_eq!(items.len(), 1);
+                assert_eq!((items[0].object_id, items[0].loc_data), (ObjectId(7001), 9));
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[1],
+            l2_world::WorldCommand::MailAttachmentsLoaded {
+                message_id: -1,
+                result: Err(()),
+                ..
+            }
+        ));
+        match &answers[2] {
+            l2_world::WorldCommand::ClanWarehouseLoaded {
+                player,
+                clan_id,
+                result,
+            } => {
+                assert_eq!((*player, *clan_id), (ObjectId(2), 500));
+                assert_eq!(result.as_ref().unwrap().len(), 1);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[3],
+            l2_world::WorldCommand::ClanWarehouseLoaded {
+                clan_id: -1,
+                result: Err(()),
+                ..
+            }
+        ));
+    }
+
     /// `Product.save` rows reach the store in the order the world sent them.
     #[tokio::test]
     async fn buy_list_rows_are_stored_in_order() {
@@ -2740,6 +3062,31 @@ mod tests {
                 Call::Mail(MailWrite::Delete(5)),
             ]
         );
+    }
+
+    /// A recipe learned and forgotten reaches the store in the order the world sent it.
+    #[tokio::test]
+    async fn recipe_book_rows_are_stored_in_order() {
+        let insert = RecipeWrite::Insert {
+            char_id: 7,
+            recipe_id: 20,
+            class_index: 1,
+            dwarven: true,
+        };
+        let delete = RecipeWrite::Delete {
+            char_id: 7,
+            recipe_id: 20,
+            class_index: 1,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Recipe(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Recipe(delete.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::Recipe(insert), Call::Recipe(delete)]);
     }
 
     #[tokio::test]

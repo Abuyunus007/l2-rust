@@ -59,6 +59,7 @@ mod mute;
 mod nevits_hourglass;
 mod open_chest;
 mod open_door;
+mod open_recipe_book;
 mod params;
 mod physical_damage;
 mod player_slots;
@@ -256,6 +257,15 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("SummonPet", summon_pet::SummonPet::create);
     registry.register("Unsummon", unsummon::Unsummon::create);
     registry.register("ImmobilePetBuff", immobile_buff::ImmobilePetBuff::create);
+    // M6-CRAFT-01: the recipe book skills.
+    registry.register(
+        "OpenCommonRecipeBook",
+        open_recipe_book::OpenCommonRecipeBook::create,
+    );
+    registry.register(
+        "OpenDwarfRecipeBook",
+        open_recipe_book::OpenDwarfRecipeBook::create,
+    );
     // M6-CUBIC-01: cubics.
     registry.register("CubicMastery", summon_cubic::CubicMastery::create);
     registry.register("SummonCubic", summon_cubic::SummonCubic::create);

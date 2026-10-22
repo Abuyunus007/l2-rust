@@ -116,6 +116,9 @@ pub enum PersistCommand {
     /// Java `Product.save()`: `INSERT INTO buylists ... ON DUPLICATE KEY UPDATE` for one limited
     /// product whose stock changed, see `shop/`.
     BuyList(crate::shop::ProductRow),
+    /// Java `Player.insertNewRecipeData` / `deleteRecipeData`: a `character_recipebook` row, see
+    /// `craft/`.
+    Recipe(crate::craft::RecipeWrite),
     /// Asks the persistence task to read the `pets` row and the `character_pet_skills_save` rows
     /// of a pet collar the world has no row for (a collar that came to the character after the
     /// login). The answer comes back as `WorldCommand::PetRowLoaded` (M6-PET-01, D-15: the world
@@ -129,6 +132,19 @@ pub enum PersistCommand {
     Friend(crate::friends::FriendWrite),
     /// A write of the `messages` table with Java's statement, see `mail/`.
     Mail(crate::mail::MailWrite),
+    /// Asks the persistence task to read the attachment rows of one mail (`items` with `owner_id`
+    /// = the sender, `loc = 'MAIL'`, `loc_data` = the message id, Java `Mail.restore`) before
+    /// `RequestPostAttachment` hands them out (M6-SYNC-01, D-39: the Java game server shares the
+    /// rows). The answer comes back as `WorldCommand::MailAttachmentsLoaded`. Read in order with
+    /// the other commands, so the answer includes every write sent before it.
+    MailAttachmentsRequest {
+        player: ObjectId,
+        message_id: i32,
+        sender_id: i32,
+    },
+    /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
+    /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
+    ClanWarehouseRequest { player: ObjectId, clan_id: i32 },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

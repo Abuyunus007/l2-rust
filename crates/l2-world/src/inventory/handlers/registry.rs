@@ -29,6 +29,8 @@ pub(crate) enum ItemHandlerKind {
     Maps,
     /// `Calculator`: opens the calculator (M5-FIX-03).
     Calculator,
+    /// `Recipes`: a recipe item joins the recipe book (M6-CRAFT-01).
+    Recipes,
     /// `SummonItems`: a pet collar (M6-PET-01).
     SummonItems,
     /// `PetFood` (M6-PET-01).
@@ -50,6 +52,7 @@ impl ItemHandlerKind {
             "Book" => Self::Book,
             "Maps" => Self::Maps,
             "Calculator" => Self::Calculator,
+            "Recipes" => Self::Recipes,
             "SummonItems" => Self::SummonItems,
             "PetFood" => Self::PetFood,
             "EnchantScrolls" => Self::EnchantScrolls,
@@ -86,6 +89,7 @@ impl World {
             ItemHandlerKind::Book => self.book_on_use(id, item),
             ItemHandlerKind::Maps => self.maps_on_use(id, item),
             ItemHandlerKind::Calculator => self.calculator_on_use(id, item),
+            ItemHandlerKind::Recipes => self.recipes_on_use(id, item),
             ItemHandlerKind::SummonItems => self.summon_items_on_use(id, item, template, force_use),
             ItemHandlerKind::PetFood => self.pet_food_on_use(id, item, template),
             ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
@@ -155,7 +159,9 @@ mod tests {
             Some(ItemHandlerKind::Calculator)
         );
         assert_eq!(ItemHandlerKind::from_name("itemskills"), None);
-        // Registered in Java, not ported here (a later card adds its own).
-        assert_eq!(ItemHandlerKind::from_name("Recipes"), None);
+        assert_eq!(
+            ItemHandlerKind::from_name("Recipes"),
+            Some(ItemHandlerKind::Recipes)
+        );
     }
 }

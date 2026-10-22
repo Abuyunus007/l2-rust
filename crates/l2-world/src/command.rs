@@ -174,6 +174,8 @@ pub enum ClientInput {
     Shop(crate::shop::ShopInput),
     /// The warehouse and freight packets (`SendWareHouseDepositList`, ...), see `warehouse/`.
     Warehouse(crate::warehouse::WarehouseInput),
+    /// The crafting packets (`RequestRecipeBookOpen`, `RequestRecipeShop*`, ...), see `craft/`.
+    Craft(crate::craft::CraftInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
     /// of the packet (the world checks it).
     JoinParty { name: String, distribution_type_id: i32 },
@@ -209,6 +211,9 @@ pub enum ClientInput {
     /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
     /// `enchant/`.
     Enchant(crate::enchant::EnchantInput),
+    /// The augmentation window packets (`RequestRefine`, `RequestConfirmTargetItem`, ...), see
+    /// `augment.rs`.
+    Augment(crate::augment::AugmentInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }
@@ -278,6 +283,20 @@ pub enum WorldCommand {
         control_object_id: l2_util::ObjectId,
         result: Result<crate::summon::pet::PetRowData, ()>,
     },
+    /// The answer to `PersistCommand::MailAttachmentsRequest`: the rows still in the mail, or `Err`
+    /// when the read failed (the attachments are then not handed out, M6-SYNC-01).
+    MailAttachmentsLoaded {
+        player: l2_util::ObjectId,
+        message_id: i32,
+        result: Result<Vec<crate::player::ItemData>, ()>,
+    },
+    /// The answer to `PersistCommand::ClanWarehouseRequest`: the `CLANWH` rows of the clan, or
+    /// `Err` when the read failed (the window is then not opened, M6-SYNC-01).
+    ClanWarehouseLoaded {
+        player: l2_util::ObjectId,
+        clan_id: i32,
+        result: Result<Vec<crate::player::ItemData>, ()>,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -313,6 +332,24 @@ impl fmt::Debug for WorldCommand {
             } => write!(
                 f,
                 "PetRowLoaded({owner}, {control_object_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::MailAttachmentsLoaded {
+                player,
+                message_id,
+                result,
+            } => write!(
+                f,
+                "MailAttachmentsLoaded({player}, {message_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::ClanWarehouseLoaded {
+                player,
+                clan_id,
+                result,
+            } => write!(
+                f,
+                "ClanWarehouseLoaded({player}, {clan_id}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),

@@ -36,6 +36,20 @@
 // `java_concurrent_map_order`), not the ids' or the dates'. [`MailWorld::order`] is the insertion
 // order that function needs (the load order is `ORDER BY expiration`).
 //
+// # One database, two servers (M6-SYNC-01, D-39)
+// The Java GS reads `messages` and the MAIL rows of `items` once at its start, like this server, so
+// a mail one server changes is not seen by the other. What is done about it (refresh.rs):
+// - At `CharacterSelect` the session reads the character's mails with their attachments
+//   ([`MailRefresh`]) and the world replaces its copies of exactly those messages when the player
+//   enters.
+// - `RequestPostAttachment`, `RequestRejectPostAttachment` and `RequestCancelPostAttachment` ask for
+//   the attachment rows of the message first (`PersistCommand::MailAttachmentsRequest` /
+//   `WorldCommand::MailAttachmentsLoaded`, D-15) and move only the rows that are still
+//   `loc = 'MAIL'` with that `loc_data`.
+// - The expiry task writes its rows only with `MailExpiryDatabaseWrites` (D-49,
+//   [`MailSettings::expiry_database_writes`]); otherwise the Java GS, which has the same mails,
+//   does it.
+//
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isInBlockList` (the ignore list is the friend list card's, `// M6-FRIEND:`).
 // - The flood protector `canPerformTransaction` of the attachment packets (no flood protectors
@@ -51,6 +65,7 @@ mod expire;
 mod names;
 mod packets;
 mod receive;
+mod refresh;
 mod send;
 mod table;
 
@@ -63,6 +78,7 @@ use crate::player::ItemData;
 use crate::timer::TimerId;
 
 pub use names::MailCharacter;
+pub use refresh::MailRefresh;
 
 /// `MailMessage.EXPIRATION` (hours): 15 days.
 pub const EXPIRATION_HOURS: i64 = 360;
@@ -88,6 +104,11 @@ pub struct MailSettings {
     /// `FloodProtectorSendMailInterval`, in game ticks of 100 ms: the time between two mails of
     /// a player (`getFloodProtectors().canSendMail()`).
     pub send_interval_ticks: i32,
+    /// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (D-49, default False): the expiry task
+    /// deletes the rows of an expired mail and moves its attachments back to the sender. While the
+    /// Java GS shares the database it does the same on its own schedule, so by default this server
+    /// only expires the mails in memory.
+    pub expiry_database_writes: bool,
 }
 
 impl Default for MailSettings {
@@ -96,6 +117,7 @@ impl Default for MailSettings {
             allow_mail: true,
             allow_attachments: true,
             send_interval_ticks: 100,
+            expiry_database_writes: false,
         }
     }
 }
@@ -314,6 +336,12 @@ pub(crate) struct MailWorld {
     pub next_send_tick: BTreeMap<ObjectId, i32>,
     /// The timer of the 10 s deletion task.
     pub deletion_timer: Option<TimerId>,
+    /// The ids of the mails this server made since it started (`mail_send_message`). The Java GS
+    /// does not know them, and their rows may still be in the persistence queue, so a refresh
+    /// leaves them alone.
+    pub local_ids: std::collections::BTreeSet<i32>,
+    /// The attachment packet waiting for the attachment rows: player to message id and packet.
+    pub pending_attachments: BTreeMap<ObjectId, (i32, refresh::AttachmentAction)>,
 }
 
 #[cfg(test)]
