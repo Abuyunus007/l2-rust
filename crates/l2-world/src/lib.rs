@@ -28,8 +28,8 @@ pub mod duel;
 pub mod effects;
 pub mod enchant;
 pub mod enter;
-pub mod formulas;
 pub mod fishing;
+pub mod formulas;
 pub mod friends;
 pub mod ground_item;
 pub mod ids;
@@ -96,7 +96,9 @@ pub use effects::{
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
 pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
-pub use fishing::{ChampionshipData, ChampionshipRow, FishingSettings, FishingTimer, FishingWorld, PlayerFishing};
+pub use fishing::{
+    ChampionshipData, ChampionshipRow, FishingSettings, FishingTimer, FishingWorld, PlayerFishing,
+};
 pub use friends::{FriendEntry, FriendWorld, FriendWrite};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};

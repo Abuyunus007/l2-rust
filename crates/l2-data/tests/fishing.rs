@@ -64,7 +64,13 @@ fn rods_and_monsters_xml_spot_checks() {
     let monsters = FishingMonstersData::load(&root);
     assert_eq!(monsters.len(), 8);
     assert!(monsters.get_fishing_monster(5).is_none());
-    assert_eq!(monsters.get_fishing_monster(40).unwrap().fishing_monster_id, 18322);
-    assert_eq!(monsters.get_fishing_monster(85).unwrap().fishing_monster_id, 18326);
+    assert_eq!(
+        monsters.get_fishing_monster(40).unwrap().fishing_monster_id,
+        18322
+    );
+    assert_eq!(
+        monsters.get_fishing_monster(85).unwrap().fishing_monster_id,
+        18326
+    );
     assert!(monsters.get_fishing_monster(86).is_none());
 }

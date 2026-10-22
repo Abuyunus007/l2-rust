@@ -496,7 +496,10 @@ mod tests {
         )
         .unwrap();
         assert_eq!(monsters.get_fishing_monster(6).unwrap().fishing_monster_id, 18319);
-        assert_eq!(monsters.get_fishing_monster(25).unwrap().fishing_monster_id, 18320);
+        assert_eq!(
+            monsters.get_fishing_monster(25).unwrap().fishing_monster_id,
+            18320
+        );
         assert!(monsters.get_fishing_monster(5).is_none());
         assert!(monsters.get_fishing_monster(26).is_none());
         assert_eq!(monsters.get_fishing_monster_by_id(18320).unwrap().probability, 5);

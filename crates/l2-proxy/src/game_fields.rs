@@ -27,7 +27,6 @@ use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
 use l2_protocol_game::server::effect_packets::FlyToLocation;
-use l2_protocol_game::server::fishing::{ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStartCombat};
 use l2_protocol_game::server::enchant::{
     ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
     ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
@@ -44,6 +43,9 @@ use l2_protocol_game::server::enterworld::{
 use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
+};
+use l2_protocol_game::server::fishing::{
+    ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStartCombat,
 };
 use l2_protocol_game::server::friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 use l2_protocol_game::server::gm_view::GmViewItemList;
@@ -717,9 +719,10 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExDuelUpdateUserInfo => {
             decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
         }
-        ServerOpcode::ExFishingStart => {
-            decoded::<ExFishingStart>(&mut r, |p| object!(p => object_id, fish_type, x, y, z, night_lure))
-        }
+        ServerOpcode::ExFishingStart => decoded::<ExFishingStart>(
+            &mut r,
+            |p| object!(p => object_id, fish_type, x, y, z, night_lure),
+        ),
         ServerOpcode::ExFishingStartCombat => decoded::<ExFishingStartCombat>(
             &mut r,
             |p| object!(p => object_id, time, hp, mode, lure_type, deceptive_mode),
@@ -4154,7 +4157,10 @@ mod tests {
             object_id: 7,
             win: true,
         };
-        assert_eq!(s2c_fields(&end.to_bytes()), json!({ "object_id": 7, "win": true }));
+        assert_eq!(
+            s2c_fields(&end.to_bytes()),
+            json!({ "object_id": 7, "win": true })
+        );
     }
 
     #[test]

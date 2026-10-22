@@ -52,7 +52,12 @@ impl World {
 
     /// Java `FishShots.onItemUse`: charges the rod with a fishing soulshot, which doubles the
     /// damage of the next pump or reel.
-    pub(crate) fn fish_shots_on_use(&mut self, id: ObjectId, item: &ItemData, template: &ItemTemplate) -> bool {
+    pub(crate) fn fish_shots_on_use(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        template: &ItemTemplate,
+    ) -> bool {
         // The weapon instance and its template: a rod in the right hand.
         let Some(weapon_object) = self.paperdoll_object(id, pd::RHAND) else {
             return false;
@@ -67,7 +72,12 @@ impl World {
             return false;
         }
 
-        let Some(skill) = template.skills.item_skills.as_ref().and_then(|s| s.first().copied()) else {
+        let Some(skill) = template
+            .skills
+            .item_skills
+            .as_ref()
+            .and_then(|s| s.first().copied())
+        else {
             warn!("FishShots: is missing skills!");
             return false;
         };

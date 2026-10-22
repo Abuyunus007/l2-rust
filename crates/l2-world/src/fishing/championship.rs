@@ -95,7 +95,11 @@ fn double_text(value: f64) -> String {
 /// Java's two bubble sorts (`refreshResult`, `refreshWinResult`): longest first. Bubble sort with
 /// a strict `<` is stable, so a stable sort gives the same order, ties included.
 fn sort_longest_first(rows: &mut [ChampionshipRow]) {
-    rows.sort_by(|a, b| b.length.partial_cmp(&a.length).unwrap_or(std::cmp::Ordering::Equal));
+    rows.sort_by(|a, b| {
+        b.length
+            .partial_cmp(&a.length)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 }
 
 /// Java `setEndOfChamp`: from `end_date` set minute and second to 0, add 6 days, move to Tuesday
@@ -127,7 +131,16 @@ impl World {
     /// the minimum length, and the end of the period, which runs at once when it is over. Does
     /// nothing without `AltFishChampionshipEnabled`, like `GameServer`.
     pub fn load_fishing_championship(&mut self, data: ChampionshipData) {
-        self.load_fishing_championship_at(data, unix_ms_now(), l2_util::time::local_offset_millis);
+        let now = self.fishing_now_ms();
+        self.load_fishing_championship_at(data, now, l2_util::time::local_offset_millis);
+    }
+
+    /// Java `System.currentTimeMillis()` for the championship.
+    fn fishing_now_ms(&self) -> i64 {
+        self.settings
+            .fishing
+            .clock_override_unix_ms
+            .unwrap_or_else(unix_ms_now)
     }
 
     /// [`Self::load_fishing_championship`] for a given clock.
@@ -148,7 +161,9 @@ impl World {
         };
         for row in data.rows {
             if row.rewarded == 0 {
-                championship.tmp_players.push(ChampionshipRow { rewarded: 0, ..row });
+                championship
+                    .tmp_players
+                    .push(ChampionshipRow { rewarded: 0, ..row });
             } else if row.rewarded > 0 {
                 championship.win_players.push(row);
             }
@@ -178,7 +193,8 @@ impl World {
     /// Java `finishChamp.run()`: the running week becomes the winners and a new period starts.
     pub(crate) fn on_championship_finish_timer(&mut self) {
         if self.fishing.championship.started {
-            self.championship_finish(unix_ms_now(), &l2_util::time::local_offset_millis);
+            let now = self.fishing_now_ms();
+            self.championship_finish(now, &l2_util::time::local_offset_millis);
         }
     }
 
@@ -210,12 +226,10 @@ impl World {
             return;
         }
         let mut rows = championship.win_players.clone();
-        rows.extend(
-            championship
-                .tmp_players
-                .iter()
-                .map(|f| ChampionshipRow { rewarded: 0, ..f.clone() }),
-        );
+        rows.extend(championship.tmp_players.iter().map(|f| ChampionshipRow {
+            rewarded: 0,
+            ..f.clone()
+        }));
         self.outbox
             .persist(PersistCommand::FishingChampionship(Box::new(ChampionshipData {
                 end_date: championship.end_date,
@@ -278,9 +292,9 @@ impl World {
             .collect();
     }
 
-    /// Java `newFish(player, lureId)`: a fish was caught; if it is long enough it joins the
-    /// ranking.
-    pub(crate) fn championship_new_fish(&mut self, id: ObjectId, lure_id: i32) {
+    /// Java `FishingChampionshipManager.newFish(player, lureId)`: a fish was caught; its length is
+    /// drawn and told to the fisher, and if it is long enough it joins the ranking.
+    pub fn championship_new_fish(&mut self, id: ObjectId, lure_id: i32) {
         if !self.settings.fishing.championship_enabled {
             return;
         }
@@ -298,7 +312,8 @@ impl World {
                 .with(SystemMessageParam::Text(double_text(len))),
         );
 
-        let registered = SystemMessage::new(SystemMessageId::BecauseOfTheSizeOfFishCaughtYouWillBeRegisteredInTheRanking);
+        let registered =
+            SystemMessage::new(SystemMessageId::BecauseOfTheSizeOfFishCaughtYouWillBeRegisteredInTheRanking);
         let championship = &mut self.fishing.championship;
         let existing = championship
             .tmp_players
@@ -434,19 +449,21 @@ impl World {
         let c = &self.fishing.championship;
         let table = self.championship_table(&c.win_players_name, &c.win_fish_length, "0");
         self.replace_prizes(&mut html.html, &table);
+        let minutes = minutes_remaining(self.fishing.championship.end_date, self.fishing_now_ms());
         html.html = html
             .html
-            .replace(
-                "%refresh%",
-                &minutes_remaining(self.fishing.championship.end_date, unix_ms_now()).to_string(),
-            )
+            .replace("%refresh%", &minutes.to_string())
             .replace("%objectId%", &npc.0.to_string());
         self.send_html(id, &html);
     }
 
     /// Java `isWinner(playerName)`: an exact match.
     pub(crate) fn championship_is_winner(&self, name: &str) -> bool {
-        self.fishing.championship.win_players_name.iter().any(|n| n == name)
+        self.fishing
+            .championship
+            .win_players_name
+            .iter()
+            .any(|n| n == name)
     }
 
     /// Java `getReward(player)`.
@@ -472,9 +489,13 @@ impl World {
             }
             championship.win_players[index].rewarded = 2;
             if reward_count > 0 {
-                self.add_item(id, settings.championship_reward_item, i64::from(reward_count), true);
-                if let Some(html) =
-                    self.html_from_file(id, 0, &format!("{HTML_DIR}fish_event_reward001.htm"))
+                self.add_item(
+                    id,
+                    settings.championship_reward_item,
+                    i64::from(reward_count),
+                    true,
+                );
+                if let Some(html) = self.html_from_file(id, 0, &format!("{HTML_DIR}fish_event_reward001.htm"))
                 {
                     self.send_html(id, &html);
                 }
@@ -492,7 +513,12 @@ impl World {
     /// Java `Fisherman.onBypassFeedback`: `FishSkillList`, `FishingChampionship` and
     /// `FishingReward`. `false` for every other command (the caller hands it to the normal NPC
     /// code).
-    pub(crate) fn fisherman_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) -> bool {
+    pub(crate) fn fisherman_bypass_feedback(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+    ) -> bool {
         let enabled = self.settings.fishing.championship_enabled;
         if command.eq_ignore_ascii_case("FishSkillList") {
             // FOLLOW-UP: `showFishSkillList` needs the fishing skill tree, which is not loaded.

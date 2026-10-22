@@ -8,6 +8,7 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::MultiSellChoose;
+use crate::client::RequestExFishRanking;
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
@@ -49,7 +50,6 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
-use crate::client::RequestExFishRanking;
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
     RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,

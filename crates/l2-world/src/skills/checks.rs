@@ -332,7 +332,8 @@ impl World {
             return false;
         }
 
-        if self.is_fishing(id) && !self.skill_has_effect_type(skill, &[EffectType::Fishing, EffectType::FishingStart])
+        if self.is_fishing(id)
+            && !self.skill_has_effect_type(skill, &[EffectType::Fishing, EffectType::FishingStart])
         {
             // Only fishing skills are available.
             // NOTE(java-quirk): this refusal sends no `ActionFailed`.

@@ -363,15 +363,27 @@ impl World {
         }
 
         // Use a copy, else the fish data may be over-written below.
-        let pick = usize::try_from(self.rng().below(i32::try_from(candidates.len()).unwrap_or(i32::MAX)))
-            .unwrap_or(0);
+        let pick = usize::try_from(
+            self.rng()
+                .below(i32::try_from(candidates.len()).unwrap_or(i32::MAX)),
+        )
+        .unwrap_or(0);
         let Some(mut fish) = candidates.into_iter().nth(pick) else {
             return;
         };
-        self.send(id, &SystemMessage::new(SystemMessageId::YouCastYourLineAndStartToFish));
+        self.send(
+            id,
+            &SystemMessage::new(SystemMessageId::YouCastYourLineAndStartToFish),
+        );
         // Night lures only catch at night, ordinary lures only during the day.
         let night_lure = is_night_lure(lure_id);
-        if self.game_clock_night.unwrap_or(false) != night_lure {
+        let night = self
+            .settings
+            .fishing
+            .clock_override_night
+            .or(self.game_clock_night)
+            .unwrap_or(false);
+        if night != night_lure {
             fish.fish_group = -1;
         }
         let fish_group = fish.fish_group;
@@ -396,7 +408,9 @@ impl World {
 
     /// Java `Player.getRandomFishLvl`.
     fn random_fish_lvl(&mut self, id: ObjectId) -> i32 {
-        let mut skill_level = self.stats(id).map_or(0, |v| v.skill_level(FISHING_EXPERTISE_SKILL));
+        let mut skill_level = self
+            .stats(id)
+            .map_or(0, |v| v.skill_level(FISHING_EXPERTISE_SKILL));
         // Fisherman's Potion: the skill's power replaces the expertise level.
         let potion = self
             .effect_list(id)
@@ -456,7 +470,9 @@ impl World {
         if period == 0 {
             // NOTE(java-quirk): `ThreadPool.scheduleAtFixedRate` refuses a period of 0, logs it and
             // returns null: no bite task runs and only the `Fishing` skill ends the cast.
-            warn!("ThreadPool: Failed to schedule recurring task LookingForFishTask: lure {lure_id} has no bite delay.");
+            warn!(
+                "ThreadPool: Failed to schedule recurring task LookingForFishTask: lure {lure_id} has no bite delay."
+            );
             return;
         }
         let end_time_ms = self.world_ms()
@@ -464,10 +480,9 @@ impl World {
             + i64::try_from(FIRST_CHECK_MS).unwrap_or(10_000);
         let mut rate = FixedRate::new(self.tick, FIRST_CHECK_MS, period);
         let due = rate.next_due(self.tick);
-        let timer = self.timers.schedule_at(
-            due,
-            TimerKind::Fishing(super::FishingTimer::LookForFish(id)),
-        );
+        let timer = self
+            .timers
+            .schedule_at(due, TimerKind::Fishing(super::FishingTimer::LookForFish(id)));
         if let Some(player) = self.players.get_mut(&id) {
             player.fishing.look = Some(LookingForFish {
                 timer: Some(timer),

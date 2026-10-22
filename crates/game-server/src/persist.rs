@@ -53,7 +53,6 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
-use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
     FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
@@ -62,14 +61,16 @@ use l2_db::{
     PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
     SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
+use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad,
-    MailMessage, MailRefresh, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow,
-    PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet,
-    SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData,
+    ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId,
+    PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType,
+    RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
+    StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -3177,7 +3178,9 @@ mod tests {
         };
         let (calls, _) = run_all(
             Recording::default(),
-            vec![OutboxMessage::Persist(PersistCommand::FishingChampionship(Box::new(data)))],
+            vec![OutboxMessage::Persist(PersistCommand::FishingChampionship(
+                Box::new(data),
+            ))],
         )
         .await;
         assert_eq!(calls, vec![Call::Championship(1_792_000_000_000, 2)]);

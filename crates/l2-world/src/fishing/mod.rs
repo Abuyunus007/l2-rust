@@ -71,6 +71,12 @@ pub struct FishingSettings {
     /// the Java game server shares the database (its `DELETE FROM fishing_championship` and the
     /// re-inserts would clobber the other server's ranking).
     pub championship_database_writes: bool,
+    /// Tests only (like `TalkSettings::clock_override_unix_ms`): pins `GameTimeTaskManager`'s
+    /// `isNight()`, which the game clock would switch with the wall clock.
+    pub clock_override_night: Option<bool>,
+    /// Tests only (like `TalkSettings::clock_override_unix_ms`): the clock of the championship
+    /// (`System.currentTimeMillis()`).
+    pub clock_override_unix_ms: Option<i64>,
 }
 
 impl Default for FishingSettings {
@@ -81,6 +87,8 @@ impl Default for FishingSettings {
             championship_reward_item: 57,
             championship_rewards: [800_000, 500_000, 300_000, 200_000, 100_000],
             championship_database_writes: false,
+            clock_override_night: None,
+            clock_override_unix_ms: None,
         }
     }
 }
@@ -226,9 +234,12 @@ impl World {
             return;
         };
         let state = std::mem::take(&mut player.fishing);
-        for timer in [state.look.and_then(|l| l.timer), state.combat.and_then(|c| c.timer)]
-            .into_iter()
-            .flatten()
+        for timer in [
+            state.look.and_then(|l| l.timer),
+            state.combat.and_then(|c| c.timer),
+        ]
+        .into_iter()
+        .flatten()
         {
             self.timers.cancel(timer);
         }

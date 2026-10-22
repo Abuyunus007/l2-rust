@@ -119,13 +119,27 @@ async fn the_championship_is_saved_whole() {
         fish_length: length,
         rewarded,
     };
-    repo.save(1_792_000_000_123, &[row("Alpha", 91.234, 1), row("Bravo", 75.5, 2), row("Charlie", 60.001, 0)])
-        .await
-        .unwrap();
+    repo.save(
+        1_792_000_000_123,
+        &[
+            row("Alpha", 91.234, 1),
+            row("Bravo", 75.5, 2),
+            row("Charlie", 60.001, 0),
+        ],
+    )
+    .await
+    .unwrap();
     assert_eq!(repo.end_date().await.unwrap(), 1_792_000_000_123);
     let mut rows = repo.load_rows().await.unwrap();
     rows.sort_by(|a, b| a.player_name.cmp(&b.player_name));
-    assert_eq!(rows, [row("Alpha", 91.234, 1), row("Bravo", 75.5, 2), row("Charlie", 60.001, 0)]);
+    assert_eq!(
+        rows,
+        [
+            row("Alpha", 91.234, 1),
+            row("Bravo", 75.5, 2),
+            row("Charlie", 60.001, 0)
+        ]
+    );
 
     repo.save(5, &[row("Delta", 88.0, 0)]).await.unwrap();
     assert_eq!(repo.end_date().await.unwrap(), 5);

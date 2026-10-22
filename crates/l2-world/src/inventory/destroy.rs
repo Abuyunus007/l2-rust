@@ -436,7 +436,10 @@ impl World {
         }
         if self.is_fishing(id) {
             // You can't mount, dismount, break and drop items while fishing.
-            self.send(id, &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing2));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing2),
+            );
             return;
         }
 

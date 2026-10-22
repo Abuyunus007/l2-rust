@@ -154,7 +154,10 @@ impl World {
 
         if cur_hp >= max_hp.saturating_mul(2) {
             // The fish got away.
-            self.send(id, &SystemMessage::new(SystemMessageId::YourBaitWasStolenByThatFish));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourBaitWasStolenByThatFish),
+            );
             self.fish_do_die(id, false);
         } else if time <= 0 {
             // Time is up, so that fish got away.
@@ -389,10 +392,7 @@ impl World {
             return;
         }
 
-        let weapon_id = self
-            .stats(id)
-            .and_then(|v| v.active_weapon_item())
-            .map(|t| t.id);
+        let weapon_id = self.stats(id).and_then(|v| v.active_weapon_item()).map(|t| t.id);
         let has_weapon_instance = self
             .paperdoll_object(id, l2_protocol_game::server::charscreen::paperdoll::RHAND)
             .is_some();
@@ -406,12 +406,7 @@ impl World {
             ss = 2;
         }
 
-        let Some(rod) = self
-            .fishing
-            .rods
-            .as_ref()
-            .and_then(|r| r.get(weapon_id).cloned())
-        else {
+        let Some(rod) = self.fishing.rods.as_ref().and_then(|r| r.get(weapon_id).cloned()) else {
             // Java dereferences the missing rod (a NullPointerException); the skill needs a rod.
             tracing::warn!("Fishing: item {weapon_id} is not a fishing rod.");
             return;
@@ -424,7 +419,9 @@ impl World {
         let mut dmg = ((rod.fishing_rod_damage + expertise + power) * grade_bonus * f64::from(ss)) as i32;
 
         // Penalty 5% less damage dealt.
-        let expertise_level = self.stats(id).map_or(0, |v| v.skill_level(FISHING_EXPERTISE_SKILL));
+        let expertise_level = self
+            .stats(id)
+            .map_or(0, |v| v.skill_level(FISHING_EXPERTISE_SKILL));
         if expertise_level < skill_level - 2 {
             self.send(
                 id,

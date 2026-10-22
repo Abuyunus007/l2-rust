@@ -1211,6 +1211,8 @@ pub fn fishing_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Fis
             g.alt_fish_championship_reward_5,
         ],
         championship_database_writes: fishing_championship_database_writes(config_dir),
+        clock_override_night: None,
+        clock_override_unix_ms: None,
     }
 }
 
