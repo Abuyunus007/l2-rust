@@ -16,13 +16,17 @@ use super::m5_data::{MANA_POTION, MANA_POTION_SKILL};
 
 /// A `Merchant` with a buy list and an exchange list.
 pub const SMITH_ID: i32 = 30101;
-pub const SMITH_POS: (i32, i32, i32) = (START.0 - 120, START.1 + 60, GROUND_Z);
+pub const SMITH_POS: (i32, i32, i32) = (START.0 - 150, START.1 + 60, GROUND_Z);
 /// A `Warehouse` keeper.
 pub const KEEPER_ID: i32 = 30102;
-pub const KEEPER_POS: (i32, i32, i32) = (START.0 - 120, START.1 - 60, GROUND_Z);
+pub const KEEPER_POS: (i32, i32, i32) = (START.0 - 150, START.1 - 60, GROUND_Z);
 /// A `VillageMasterFighter`: clans are created through it.
 pub const MASTER_ID: i32 = 30103;
-pub const MASTER_POS: (i32, i32, i32) = (START.0 - 60, START.1 - 120, GROUND_Z);
+pub const MASTER_POS: (i32, i32, i32) = (START.0 - 150, START.1 - 150, GROUND_Z);
+/// Where a player opens a private store: a store may not be opened within 100 units of an NPC
+/// (`ShopMinRangeFromNpc`), and the gatekeeper stands 100 units from the start. 107 units from the
+/// start, so a customer at the start can still reach the store (150 units).
+pub const STORE_SPOT: (i32, i32, i32) = (START.0 + 40, START.1 - 100, GROUND_Z);
 /// The servitor `Summon Kat the Cat` calls (the shipped Kat, stats rounded).
 pub const KAT_ID: i32 = 14111;
 

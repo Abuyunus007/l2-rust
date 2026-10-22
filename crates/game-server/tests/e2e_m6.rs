@@ -308,6 +308,30 @@ mod act {
         )
     }
 
+    /// A click on the ground: walk to `target` from `origin`.
+    pub fn move_to(target: (i32, i32, i32), origin: (i32, i32, i32)) -> Act {
+        Act::new(
+            ClientInput::MoveTo {
+                target_x: target.0,
+                target_y: target.1,
+                target_z: target.2,
+                origin_x: origin.0,
+                origin_y: origin.1,
+                origin_z: origin.2,
+                movement_mode: 1,
+            },
+            &client::MoveToLocation {
+                target_x: target.0,
+                target_y: target.1,
+                target_z: target.2,
+                origin_x: origin.0,
+                origin_y: origin.1,
+                origin_z: origin.2,
+                movement_mode: 1,
+            },
+        )
+    }
+
     pub fn use_skill(magic_id: i32) -> Act {
         Act::new(
             ClientInput::MagicSkillUse {
@@ -1455,3 +1479,9 @@ impl Harness for Net {
 
 #[path = "e2e/m6_party.rs"]
 mod party;
+
+#[path = "e2e/m6_trade.rs"]
+mod trade;
+
+#[path = "e2e/m6_town.rs"]
+mod town;
