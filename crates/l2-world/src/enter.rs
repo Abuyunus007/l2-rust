@@ -430,6 +430,9 @@ impl World {
         // Java `Player.restore`, the clan part (`ClanTable.getClan`, rank, privileges, pledge
         // class): before anything shows the player.
         self.clan_restore_player(id);
+        // The mails the session read at `CharacterSelect` replace this server's copies of them
+        // (M6-SYNC-01, D-39: the Java GS shares the table).
+        self.mail_refresh_player(id);
         // Java `CharacterSelect`: `CharInfoTable.addName(player)` (M6-MAIL-01).
         self.mail_remember_player(id);
 

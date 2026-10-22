@@ -15,6 +15,7 @@ use tracing::warn;
 
 use super::container::ContainerRef;
 use super::moves::Place;
+use super::refresh::PendingClanWindow;
 use super::sorted::{A2Z, WarehouseListType, get_order};
 use crate::bypass::BypassHandlers;
 use crate::clan::model::ClanAccess;
@@ -92,7 +93,7 @@ impl World {
     }
 
     /// Java `setActiveWarehouse(warehouse)`.
-    fn set_active_warehouse(&mut self, player: ObjectId, container: Option<ContainerRef>) {
+    pub(super) fn set_active_warehouse(&mut self, player: ObjectId, container: Option<ContainerRef>) {
         if let Some(p) = self.players.get_mut(&player) {
             p.warehouse.active = container;
         }
@@ -169,7 +170,11 @@ impl World {
     // ------------------------------------------------------------------ clan warehouse
 
     /// Java `ClanWarehouse.showWithdrawWindow(player, itemtype, sortorder)`.
-    fn show_clan_withdraw_window(&mut self, player: ObjectId, sorted: Option<(WarehouseListType, i8)>) {
+    pub(super) fn show_clan_withdraw_window(
+        &mut self,
+        player: ObjectId,
+        sorted: Option<(WarehouseListType, i8)>,
+    ) {
         self.send(player, &ActionFailed);
         if !self.has_clan_access(player, ClanAccess::AccessWarehouse) {
             self.send(
@@ -190,6 +195,16 @@ impl World {
         }
         self.destroy_expired_items(player, container);
         self.send_withdraw_window(player, WH_TYPE_CLAN, sorted);
+    }
+
+    /// The `depositc` branch of Java `ClanWarehouse.onCommand`.
+    pub(super) fn show_clan_deposit_window(&mut self, player: ObjectId, clan_id: i32) {
+        self.send(player, &ActionFailed);
+        self.set_active_warehouse(player, Some(ContainerRef::Clan(clan_id)));
+        // `setInventoryBlockingStatus(true)`: not modelled.
+        if let Some(packet) = self.warehouse_deposit_list(player, WH_TYPE_CLAN) {
+            self.send(player, &packet);
+        }
     }
 
     // ------------------------------------------------------------------ the packets
@@ -391,6 +406,18 @@ impl World {
         let Some(items) = self.checked_warehouse_list(items) else {
             return;
         };
+        self.warehouse_withdraw(id, items, false);
+    }
+
+    /// The body of Java `SendWareHouseWithDrawList.runImpl`. For the clan warehouse the packet
+    /// first waits for the `CLANWH` rows (M6-SYNC-01, see `refresh.rs`); the answer calls this
+    /// again with `refreshed`, and every check runs in both passes.
+    pub(super) fn warehouse_withdraw(
+        &mut self,
+        id: ObjectId,
+        mut items: Vec<WarehouseListEntry>,
+        refreshed: bool,
+    ) {
         // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are withdrawing items too
         // fast.").
         let Some(warehouse) = self.players.get(&id).and_then(|p| p.warehouse.active) else {
@@ -422,6 +449,33 @@ impl World {
                 ),
             );
             return;
+        }
+
+        if let ContainerRef::Clan(clan_id) = warehouse {
+            if !refreshed {
+                // The Java GS shares the clan warehouse (D-39): what the window showed may be gone.
+                self.request_clan_window(id, clan_id, PendingClanWindow::WithdrawPacket(items));
+                return;
+            }
+            // NOTE(M6-SYNC-01): after the refresh a missing item is not a forged packet: another
+            // clan member took it on the Java game server after the window was built. Java's
+            // "tried to withdraw non-existent item" punishment would hit a player who did
+            // nothing wrong, so such entries are skipped and the rest of the packet goes on.
+            items.retain(|entry| {
+                let there = self
+                    .container_item(warehouse, ObjectId(entry.object_id))
+                    .is_some_and(|i| i.count >= entry.count);
+                if !there {
+                    warn!(
+                        "ClanWarehouse: item {} is no longer in the warehouse of clan {clan_id}; skipped for {id}.",
+                        entry.object_id
+                    );
+                }
+                there
+            });
+            if items.is_empty() {
+                return;
+            }
         }
 
         // Java's `weight` and `slots` are ints: `+=` of a long narrows.
@@ -707,7 +761,7 @@ fn clan_warehouse_handler(
         if world.settings.warehouse.sorting_clan {
             world.show_sorting_page(player, npc, "data/html/mods/WhSortedC.htm");
         } else {
-            world.show_clan_withdraw_window(player, None);
+            world.request_clan_window(player, clan_id, PendingClanWindow::Withdraw(None));
         }
         true
     } else if lower.starts_with("withdrawsortedc") {
@@ -715,15 +769,10 @@ fn clan_warehouse_handler(
             warn!("Exception in ClanWarehouse: bad warehouse list type in [{command}]");
             return false;
         };
-        world.show_clan_withdraw_window(player, Some(sorted));
+        world.request_clan_window(player, clan_id, PendingClanWindow::Withdraw(Some(sorted)));
         true
     } else if lower.starts_with("depositc") {
-        world.send(player, &ActionFailed);
-        world.set_active_warehouse(player, Some(ContainerRef::Clan(clan_id)));
-        // `setInventoryBlockingStatus(true)`: not modelled.
-        if let Some(packet) = world.warehouse_deposit_list(player, WH_TYPE_CLAN) {
-            world.send(player, &packet);
-        }
+        world.request_clan_window(player, clan_id, PendingClanWindow::Deposit);
         true
     } else {
         false

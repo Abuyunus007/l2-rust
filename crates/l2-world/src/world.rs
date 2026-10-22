@@ -333,6 +333,16 @@ impl World {
                 control_object_id,
                 result,
             } => self.on_pet_row_loaded(owner, control_object_id, result),
+            WorldCommand::MailAttachmentsLoaded {
+                player,
+                message_id,
+                result,
+            } => self.on_mail_attachments_loaded(player, message_id, result),
+            WorldCommand::ClanWarehouseLoaded {
+                player,
+                clan_id,
+                result,
+            } => self.on_clan_warehouse_loaded(player, clan_id, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();

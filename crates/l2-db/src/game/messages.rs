@@ -15,6 +15,11 @@ use crate::pool::Pool;
 
 // Java: MailManager.load
 const SELECT_ALL: &str = "SELECT * FROM messages ORDER BY expiration";
+// The mails one character can see in its boxes (M6-SYNC-01): the same columns and order as
+// `SELECT_ALL`, narrowed to the sender and the receiver, which are the two lists Java builds from
+// the map (`MailManager.getInbox`, `getOutbox`).
+const SELECT_OF_CHARACTER: &str =
+    "SELECT * FROM messages WHERE senderId = ? OR receiverId = ? ORDER BY expiration";
 // Java: MailMessage.getStatement
 const INSERT_MESSAGE: &str = "INSERT INTO messages (messageId, senderId, receiverId, subject, content, expiration, reqAdena, hasAttachments, isUnread, isDeletedBySender, isDeletedByReceiver, sendBySystem, isReturned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 // Java: MailManager.markAsReadInDb
@@ -128,6 +133,18 @@ impl MessageRepository {
         Ok(rows.into_iter().map(MessageRow::from).collect())
     }
 
+    /// The mails a character is the sender or the receiver of, by expiration (M6-SYNC-01: read at
+    /// the character select, because the Java game server may have changed them after this server
+    /// loaded `messages`, D-39).
+    pub async fn messages_of_character(&self, char_id: i32) -> Result<Vec<MessageRow>> {
+        let rows: Vec<MessageDbRow> = sqlx::query_as(SELECT_OF_CHARACTER)
+            .bind(char_id)
+            .bind(char_id)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows.into_iter().map(MessageRow::from).collect())
+    }
+
     /// A new mail (Java `MailManager.sendMessage`).
     pub async fn insert(&self, message: &MessageRow) -> Result<()> {
         sqlx::query(INSERT_MESSAGE)
@@ -213,6 +230,7 @@ mod tests {
             assert_eq!(sql.matches('?').count(), 1, "{sql}");
         }
         assert_eq!(SELECT_ALL.matches('?').count(), 0);
+        assert_eq!(SELECT_OF_CHARACTER.matches('?').count(), 2);
     }
 
     #[test]

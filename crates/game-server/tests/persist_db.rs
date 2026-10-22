@@ -23,7 +23,7 @@ use l2_world::{
 };
 use sqlx::mysql::MySqlConnectOptions;
 
-const SCHEMA: [&str; 11] = [
+const SCHEMA: [&str; 12] = [
     include_str!("../../l2-db/sql/game/character_reco_bonus.sql"),
     include_str!("../../l2-db/sql/game/character_variables.sql"),
     include_str!("../../l2-db/sql/game/characters.sql"),
@@ -36,6 +36,7 @@ const SCHEMA: [&str; 11] = [
     include_str!("../../l2-db/sql/game/item_attributes.sql"),
     include_str!("../../l2-db/sql/game/item_elementals.sql"),
     include_str!("../../l2-db/sql/game/item_variables.sql"),
+    include_str!("../../l2-db/sql/game/messages.sql"),
 ];
 
 const CHAR_ID: i32 = 0x6000_0001;
@@ -1304,5 +1305,142 @@ async fn player_variables_are_upserted_and_deleted() {
     );
 
     pool.close().await;
+    db.drop_db().await;
+}
+
+/// M6-SYNC-01: the reads that keep the mail and the clan warehouse of this server in step with the
+/// Java game server, which shares the rows (D-39). Only reads; the rows come from the writes of
+/// the other server, here made with the store.
+#[tokio::test]
+async fn the_mail_and_clan_warehouse_reads_see_what_the_database_has_now() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    const SENDER: i32 = CHAR_ID + 1;
+    const MAIL_A: i32 = 0x1000_0101;
+    const MAIL_B: i32 = 0x1000_0102;
+    const CLAN: i32 = 500;
+    let messages = l2_db::MessageRepository::new(pool.clone());
+    let items = ItemRepository::new(pool.clone());
+    let mut store = DbStore::new(pool.clone());
+    let mail = |id: i32, sender: i32, receiver: i32, has_attachments: bool| l2_db::MessageRow {
+        message_id: id,
+        sender_id: sender,
+        receiver_id: receiver,
+        subject: "s".into(),
+        content: "t".into(),
+        expiration: NOW,
+        req_adena: 0,
+        has_attachments,
+        is_unread: true,
+        is_deleted_by_sender: false,
+        is_deleted_by_receiver: false,
+        send_by_system: 0,
+        is_returned: false,
+    };
+    messages
+        .insert(&mail(MAIL_A, SENDER, CHAR_ID, true))
+        .await
+        .unwrap();
+    messages
+        .insert(&mail(MAIL_B, SENDER, CHAR_ID + 7, false))
+        .await
+        .unwrap();
+    store
+        .store_item_rows(
+            None,
+            &[
+                ItemRowOp::Insert {
+                    owner_id: SENDER,
+                    item: item(0x1000_0201, 57, 3, "MAIL", MAIL_A),
+                },
+                ItemRowOp::Insert {
+                    owner_id: SENDER,
+                    item: item(0x1000_0202, 57, 5, "MAIL", MAIL_A),
+                },
+                // An attachment of another mail of the same sender.
+                ItemRowOp::Insert {
+                    owner_id: SENDER,
+                    item: item(0x1000_0203, 57, 9, "MAIL", MAIL_B),
+                },
+                ItemRowOp::Insert {
+                    owner_id: CLAN,
+                    item: item(0x1000_0301, 57, 50, "CLANWH", 0),
+                },
+                ItemRowOp::Insert {
+                    owner_id: CLAN,
+                    item: item(0x1000_0302, 57, 60, "WAREHOUSE", 0),
+                },
+            ],
+        )
+        .await
+        .unwrap();
+
+    // The character select: both mails of the sender are not the character's, one is.
+    let refresh = game_server::persist::load_mail_of_character(&messages, &items, CHAR_ID)
+        .await
+        .unwrap();
+    assert_eq!(refresh.messages.len(), 1);
+    let loaded = &refresh.messages[0];
+    assert_eq!(
+        (loaded.id, loaded.sender_id, loaded.receiver_id),
+        (MAIL_A, SENDER, CHAR_ID)
+    );
+    let mut attached: Vec<(i32, i64)> = loaded
+        .attachments
+        .iter()
+        .map(|i| (i.object_id.0, i.count))
+        .collect();
+    attached.sort_unstable();
+    assert_eq!(attached, [(0x1000_0201, 3), (0x1000_0202, 5)]);
+    // The sender sees both mails, each with its own items.
+    let sent = game_server::persist::load_mail_of_character(&messages, &items, SENDER)
+        .await
+        .unwrap();
+    assert_eq!(sent.messages.len(), 2);
+
+    // The attachments of one message: only the rows still `MAIL` with that `loc_data`.
+    let rows = store.load_mail_attachments(SENDER, MAIL_A).await.unwrap();
+    assert_eq!(rows.len(), 2);
+    assert!(rows.iter().all(|r| r.loc == "MAIL" && r.loc_data == MAIL_A));
+    // The Java game server gave one out: its row moved to a character's inventory.
+    items
+        .update_item(
+            0x1000_0201,
+            &l2_db::ItemUpdate {
+                owner_id: CHAR_ID,
+                count: 3,
+                loc: ItemLocation::Inventory,
+                loc_data: 0,
+                enchant_level: 0,
+                custom_type1: 0,
+                custom_type2: 0,
+                mana_left: -1,
+                time: -1,
+            },
+        )
+        .await
+        .unwrap();
+    let rows = store.load_mail_attachments(SENDER, MAIL_A).await.unwrap();
+    assert_eq!(
+        rows.iter().map(|r| r.object_id.0).collect::<Vec<_>>(),
+        [0x1000_0202]
+    );
+    assert!(
+        store
+            .load_mail_attachments(SENDER, 12345)
+            .await
+            .unwrap()
+            .is_empty()
+    );
+
+    // The clan warehouse: the CLANWH rows of the clan only.
+    let wh = store.load_clan_warehouse(CLAN).await.unwrap();
+    assert_eq!(
+        wh.iter().map(|r| r.object_id.0).collect::<Vec<_>>(),
+        [0x1000_0301]
+    );
+    assert!(store.load_clan_warehouse(501).await.unwrap().is_empty());
+
     db.drop_db().await;
 }
