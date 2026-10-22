@@ -123,6 +123,9 @@ pub enum TimerKind {
     Mail(crate::mail::MailTimer),
     /// The passes of an alt crafting (`RecipeItemMaker`), see `craft/`.
     Craft(crate::craft::CraftTimer),
+    /// The bite task and the fight of a fisher, and the two tasks of the championship, see
+    /// `fishing/`.
+    Fishing(crate::fishing::FishingTimer),
 }
 
 #[derive(Debug, Default)]

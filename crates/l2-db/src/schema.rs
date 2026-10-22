@@ -32,6 +32,8 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/clan_subpledges.sql"),
     include_str!("../sql/game/clan_wars.sql"),
     include_str!("../sql/game/crests.sql"),
+    include_str!("../sql/game/fishing_championship.sql"),
+    include_str!("../sql/game/global_variables.sql"),
     include_str!("../sql/game/heroes.sql"),
     include_str!("../sql/game/item_attributes.sql"),
     include_str!("../sql/game/item_elementals.sql"),

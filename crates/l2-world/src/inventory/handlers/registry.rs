@@ -39,6 +39,8 @@ pub(crate) enum ItemHandlerKind {
     EnchantScrolls,
     /// `EnchantAttribute`: opens the element stone window (M6-ENCHANT-01).
     EnchantAttribute,
+    /// `FishShots`: charges a fishing rod (M6-FU-08).
+    FishShots,
 }
 
 impl ItemHandlerKind {
@@ -57,6 +59,7 @@ impl ItemHandlerKind {
             "PetFood" => Self::PetFood,
             "EnchantScrolls" => Self::EnchantScrolls,
             "EnchantAttribute" => Self::EnchantAttribute,
+            "FishShots" => Self::FishShots,
             _ => return None,
         })
     }
@@ -94,6 +97,7 @@ impl World {
             ItemHandlerKind::PetFood => self.pet_food_on_use(id, item, template),
             ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
             ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
+            ItemHandlerKind::FishShots => self.fish_shots_on_use(id, item, template),
         }
     }
 
@@ -106,8 +110,10 @@ impl World {
         template: &ItemTemplate,
         ctrl_pressed: bool,
     ) {
-        // M6: the fishing rod branch (a lure goes to `PAPERDOLL_LHAND` while a rod is held)
-        // needs fishing, which is not modelled.
+        // The fishing rod branch: a lure goes to `PAPERDOLL_LHAND` while a rod is held.
+        if self.put_lure_on_rod(id, item) {
+            return;
+        }
 
         // The shot handlers (M5-SHOT-01) have no item reuse delay, so the stamp below is not
         // needed for them.

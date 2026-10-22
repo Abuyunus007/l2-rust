@@ -333,7 +333,7 @@ impl World {
     }
 
     /// `broadcastPacket(new MagicSkillUse(this, this, skillId, level, 0, 0))`.
-    fn broadcast_self_skill_use(&self, id: ObjectId, skill_id: i32, level: i32) {
+    pub(crate) fn broadcast_self_skill_use(&self, id: ObjectId, skill_id: i32, level: i32) {
         if let Some(packet) = self.self_skill_use(id, skill_id, level) {
             self.broadcast_creature_packet(id, &packet);
         }

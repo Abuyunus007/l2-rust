@@ -268,7 +268,7 @@ impl World {
     pub fn can_duel(&self, id: ObjectId) -> Result<(), SystemMessageId> {
         use SystemMessageId::{
             C1CannotDuelBecauseC1IsAlreadyEngagedInADuel, C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle,
-            C1CannotDuelBecauseC1SHpOrMpIsBelow50,
+            C1CannotDuelBecauseC1IsCurrentlyFishing, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
             C1CannotMakeAChallengeToADuelBecauseC1IsCurrentlyInADuelProhibitedAreaPeacefulZoneSevenSignsZoneNearWaterRestartProhibitedArea as InProhibitedArea,
             ThereIsNoOpponentToReceiveYourChallengeForADuel,
         };
@@ -296,7 +296,10 @@ impl World {
         // M8: `_inOlympiadMode` (C1_CANNOT_DUEL_BECAUSE_C1_IS_PARTICIPATING_IN_THE_OLYMPIAD).
         // M8: `isCursedWeaponEquipped()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_IN_A_CHAOTIC_STATE).
         // M6-STORE: `_privateStoreType != NONE` (..._ENGAGED_IN_A_PRIVATE_STORE_OR_MANUFACTURE).
-        // Mounts, boats (`isMounted() || isInBoat()`) and fishing: not modelled.
+        // Mounts and boats (`isMounted() || isInBoat()`): not modelled.
+        if self.is_fishing(id) {
+            return Err(C1CannotDuelBecauseC1IsCurrentlyFishing);
+        }
         if self.is_inside_zone(id, ZoneId::Pvp)
             || self.is_inside_zone(id, ZoneId::Peace)
             || self.is_inside_zone(id, ZoneId::Siege)

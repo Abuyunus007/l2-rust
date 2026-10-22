@@ -93,6 +93,8 @@ impl World {
         self.cancel_transaction_on_leave(id);
         // `deleteMe`: "Stop crafting, if in progress" (`requestMakeItemAbort`).
         self.craft_on_player_leave(id);
+        // `deleteMe`: `_taskForFish.cancel(false)`.
+        self.fishing_on_player_leave(id);
         // `deleteMe`: `clearRefund()` destroys what the player sold to merchants.
         self.clear_refund(id);
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right

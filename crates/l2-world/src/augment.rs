@@ -19,7 +19,7 @@
 //
 // # Left out on purpose
 // - `isFishing()` and `isCursedWeaponEquipped()` of `AbstractRefinePacket.isValid(player)`: neither
-//   fishing nor cursed weapons exist yet, so they never refuse.
+//   cursed weapons do not exist yet, so they never refuse.
 // - The `OnPlayerAugment` script event (`Item.setAugmentation` / `removeAugmentation`): scripts come
 //   after the world is complete (D-05).
 // - `PunishmentManager.handleIllegalPlayerAction` for an item of another owner: the items come from
@@ -820,7 +820,14 @@ impl World {
             );
             return false;
         }
-        // `isFishing()` and `isCursedWeaponEquipped()`: neither exists yet.
+        if self.is_fishing(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotAugmentItemsWhileFishing),
+            );
+            return false;
+        }
+        // `isCursedWeaponEquipped()`: there are no cursed weapons yet.
         if self.is_sitting(id) {
             self.send(
                 id,

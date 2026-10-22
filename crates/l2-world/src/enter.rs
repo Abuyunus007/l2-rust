@@ -879,10 +879,10 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         noble: data.profile.noble,
         // `isHero() || (isGM() && GM_HERO_AURA)`; the heroes table is not loaded.
         hero: access.is_gm && settings.gm_hero_aura,
-        fishing: false,
-        fish_x: 0,
-        fish_y: 0,
-        fish_z: 0,
+        fishing: player.fishing.fishing,
+        fish_x: player.fishing.fish_x,
+        fish_y: player.fishing.fish_y,
+        fish_z: player.fishing.fish_z,
         name_color: access.name_color,
         running: view.is_running(),
         // Java `_pledgeClass` (set at restore and by the clan code, see `clan/`).

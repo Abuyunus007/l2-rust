@@ -91,7 +91,11 @@ impl crate::world::World {
             return;
         }
 
-        // Fishing (`isFishing()`): not modelled.
+        if self.is_fishing(id) && !crate::fishing::is_usable_while_fishing(item.item_id) {
+            // You cannot do anything else while fishing.
+            self.send(id, &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing3));
+            return;
+        }
 
         // The karma teleport rule: `AltKarmaPlayerCanTeleport` against item skills with a
         // teleport effect.
