@@ -358,6 +358,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestAcquireSkillInfo(_)
             | ClientPacket::RequestDispel(_)
             | ClientPacket::RequestVoteNew(_)
+            | ClientPacket::AnswerCoupleAction(_)
             // M6 social packets are checked in tests/m6_packets.rs.
             | ClientPacket::RequestJoinParty(_)
             | ClientPacket::RequestAnswerJoinParty(_)

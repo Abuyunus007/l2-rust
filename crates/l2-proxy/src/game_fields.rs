@@ -227,6 +227,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::RequestVoteNew(p) => object!(p => target_id),
+        ClientPacket::AnswerCoupleAction(p) => object!(p => action_id, answer, object_id),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
         ClientPacket::RequestJoinParty(p) => object!(p => name, party_distribution_type_id),
         ClientPacket::RequestAnswerJoinParty(p) => object!(p => response),

@@ -261,6 +261,66 @@ impl Decode for SocialAction {
     }
 }
 
+// Java: gameserver/network/serverpackets/ChairSit.java
+/// A player sits on a throne, bench or chair (`CHAIR_SIT`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ChairSit {
+    /// The player who sits.
+    pub object_id: i32,
+    /// `StaticObject.getId()`: the id from `StaticObjects.xml`, not an object id.
+    pub static_object_id: i32,
+}
+
+impl ChairSit {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ChairSit;
+}
+
+impl Encode for ChairSit {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id).i32(self.static_object_id);
+    }
+}
+
+impl Decode for ChairSit {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            object_id: r.i32()?,
+            static_object_id: r.i32()?,
+        })
+    }
+}
+
+// Java: gameserver/network/serverpackets/ExAskCoupleAction.java
+/// Asks a player to join a couple social action (`EX_ASK_COUPLE_ACTION`, `0xFE 0x00BB`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExAskCoupleAction {
+    /// The player who asks (Java `charObjId`).
+    pub object_id: i32,
+    /// The couple social action id.
+    pub action_id: i32,
+}
+
+impl ExAskCoupleAction {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExAskCoupleAction;
+}
+
+impl Encode for ExAskCoupleAction {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        // Java writes the action id before the object id.
+        w.i32(self.action_id).i32(self.object_id);
+    }
+}
+
+impl Decode for ExAskCoupleAction {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let action_id = r.i32()?;
+        let object_id = r.i32()?;
+        Ok(Self { object_id, action_id })
+    }
+}
+
 // Java: gameserver/network/serverpackets/ShowTownMap.java
 /// Opens the town map window (`SHOW_TOWN_MAP`); a clicked map sign sends it.
 #[derive(Debug, Clone, PartialEq, Eq)]

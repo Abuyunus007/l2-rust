@@ -308,7 +308,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-FRIEND-01](M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | in-progress |
 | [M6-MAIL-01](M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | in-progress |
 | [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | in-progress |
-| [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | in-progress |
+| [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
 
 ## Milestone test results
 
