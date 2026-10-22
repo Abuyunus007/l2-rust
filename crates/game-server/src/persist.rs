@@ -54,21 +54,22 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::{
-    BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
-    FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
-    ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse, NewPetSkillSave,
-    NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues, Pool,
-    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
-    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
+    BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
+    ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
+    ItemRepository, ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse,
+    NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues,
+    Pool, PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository,
+    ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad,
-    MailMessage, MailRefresh, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow,
-    PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet,
-    SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    BotReportRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent,
+    MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId, OfflinePetRows, PersistCommand,
+    PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite,
+    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
+    SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -278,6 +279,35 @@ pub trait PlayerStore: Send + 'static {
         _clan_id: i32,
     ) -> impl Future<Output = Result<Vec<ItemData>, PersistError>> + Send {
         async { Ok(Vec::new()) }
+    }
+
+    /// Java `PetInventory.restore` and `PlayerInventory.restore` of a character that is offline
+    /// while its dead pet decays (M6-FU-09): the `PET`, `PET_EQUIP`, `INVENTORY` and `PAPERDOLL`
+    /// rows. Read in order with the other commands, so the answer includes every write sent
+    /// before it.
+    fn load_offline_pet_rows(
+        &mut self,
+        _owner: ObjectId,
+    ) -> impl Future<Output = Result<OfflinePetRows, PersistError>> + Send {
+        async { Ok(OfflinePetRows::default()) }
+    }
+
+    /// Java `BlockList.loadList` for a character that is not online (M6-FU-09): the ids of its
+    /// block list. The Java game server shares the rows (D-39), so the world asks before a mail
+    /// goes to an offline receiver.
+    fn load_block_list(
+        &mut self,
+        _owner: i32,
+    ) -> impl Future<Output = Result<Vec<i32>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
+    /// One row of `bot_reported_char_data` (Java `BotReportTable.saveReportedCharData`, M6-FU-09).
+    fn store_bot_report(
+        &mut self,
+        _row: &BotReportRow,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
     }
 
     /// A `character_friends` row change (Java's friend and block list statements, M6-FRIEND-01).
@@ -671,6 +701,51 @@ async fn run<S: PlayerStore>(
                     warn!("The attachments of mail {message_id} could not be handed to the world.");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::OfflinePetRowsRequest {
+                owner,
+                control_object_id,
+            }) => {
+                // Not a write either: see above.
+                let result = match store.load_offline_pet_rows(owner).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!(
+                            "Could not read the pet and inventory rows of character {}: {e}",
+                            owner.0
+                        );
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::OfflinePetRowsLoaded {
+                    owner,
+                    control_object_id,
+                    result,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The pet rows of character {} could not be handed to the world.",
+                        owner.0
+                    );
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BlockListRequest { sender, owner }) => {
+                // Not a write either: see above.
+                let result = match store.load_block_list(owner).await {
+                    Ok(list) => Ok(list),
+                    Err(e) => {
+                        warn!("Could not read the block list of character {owner}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::BlockListLoaded {
+                    sender,
+                    owner,
+                    result,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!("The block list of character {owner} could not be handed to the world.");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::ClanWarehouseRequest { player, clan_id }) => {
                 // Not a write either: see above.
                 let result = match store.load_clan_warehouse(clan_id).await {
@@ -693,6 +768,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BotReport(row)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_bot_report(&row).await {
+                    error!("A bot report could NOT be stored ({row:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
@@ -873,6 +954,28 @@ pub async fn load_mail_attachments(
     let mut list = load_container_items(items, sender_id, ItemLocation::Mail).await?;
     list.retain(|i| i.loc_data == message_id);
     Ok(list)
+}
+
+/// Java `BotReportTable.loadReportedCharData`, the database half: the rows of
+/// `bot_reported_char_data`. A database error is logged and the server goes on without reports,
+/// like Java. Only with `EnableBotReportButton`, like Java's constructor.
+pub async fn load_bot_reports(pool: &Pool) -> Vec<BotReportRow> {
+    match BotReportRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .filter_map(|row| {
+                Some(BotReportRow {
+                    bot_id: i32::try_from(row.bot_id).ok()?,
+                    reporter_id: i32::try_from(row.reporter_id).ok()?,
+                    report_date: i64::try_from(row.report_date).unwrap_or(i64::MAX),
+                })
+            })
+            .collect(),
+        Err(e) => {
+            warn!("BotReportTable: Could not load reported char data! {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
@@ -1385,6 +1488,7 @@ pub struct DbStore {
     recipes: RecipeRepository,
     crests: CrestRepository,
     friends: FriendRepository,
+    bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -1412,7 +1516,8 @@ impl DbStore {
             recipes: RecipeRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
-            friends: FriendRepository::new(pool),
+            friends: FriendRepository::new(pool.clone()),
+            bot_reports: BotReportRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
             rows_written: HashSet::new(),
@@ -2423,6 +2528,32 @@ impl PlayerStore for DbStore {
         Ok(load_container_items(&self.items, clan_id, ItemLocation::ClanWh).await?)
     }
 
+    async fn load_offline_pet_rows(&mut self, owner: ObjectId) -> Result<OfflinePetRows, PersistError> {
+        let items = &self.items;
+        let mut pet_items = load_container_items(items, owner.0, ItemLocation::Pet).await?;
+        pet_items.extend(load_container_items(items, owner.0, ItemLocation::PetEquip).await?);
+        let mut inventory = load_container_items(items, owner.0, ItemLocation::Inventory).await?;
+        inventory.extend(load_container_items(items, owner.0, ItemLocation::Paperdoll).await?);
+        Ok(OfflinePetRows { pet_items, inventory })
+    }
+
+    async fn store_bot_report(&mut self, row: &BotReportRow) -> Result<(), PersistError> {
+        self.bot_reports
+            .insert_report(row.bot_id, row.reporter_id, row.report_date)
+            .await?;
+        Ok(())
+    }
+
+    async fn load_block_list(&mut self, owner: i32) -> Result<Vec<i32>, PersistError> {
+        Ok(self
+            .friends
+            .block_list_of(owner)
+            .await?
+            .into_iter()
+            .map(|link| link.friend_id)
+            .collect())
+    }
+
     async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
         let friends = &self.friends;
         match write {
@@ -2595,6 +2726,12 @@ mod tests {
         MailAttachments(i32, i32),
         /// The read of the warehouse of a clan (M6-SYNC-01).
         ClanWarehouse(i32),
+        /// The read of an offline receiver's block list (M6-FU-09).
+        BlockList(i32),
+        /// One bot report row: bot, reporter, date (M6-FU-09).
+        BotReport(i32, i32, i64),
+        /// The read of an offline owner's pet and inventory rows (M6-FU-09).
+        OfflinePetRows(i32),
         /// A recipe book row.
         Recipe(RecipeWrite),
     }
@@ -2774,6 +2911,47 @@ mod tests {
             } else {
                 Vec::new()
             })
+        }
+
+        async fn store_bot_report(&mut self, row: &BotReportRow) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::BotReport(row.bot_id, row.reporter_id, row.report_date));
+            Ok(())
+        }
+
+        /// A character 6 has one item on its pet and one in its inventory; a character below 0 cannot
+        /// be read.
+        async fn load_offline_pet_rows(&mut self, owner: ObjectId) -> Result<OfflinePetRows, PersistError> {
+            self.calls.lock().unwrap().push(Call::OfflinePetRows(owner.0));
+            if owner.0 < 0 {
+                return Err(PersistError::NoSuchCharacter(owner.0));
+            }
+            let row = |object_id: i32, loc: &str| ItemData {
+                object_id: ObjectId(object_id),
+                item_id: 57,
+                count: 1,
+                loc: loc.into(),
+                ..Default::default()
+            };
+            Ok(if owner.0 == 6 {
+                OfflinePetRows {
+                    pet_items: vec![row(7001, "PET")],
+                    inventory: vec![row(7002, "INVENTORY")],
+                }
+            } else {
+                OfflinePetRows::default()
+            })
+        }
+
+        /// A character 6 has character 4 on its block list; a character below 0 cannot be read.
+        async fn load_block_list(&mut self, owner: i32) -> Result<Vec<i32>, PersistError> {
+            self.calls.lock().unwrap().push(Call::BlockList(owner));
+            if owner < 0 {
+                return Err(PersistError::NoSuchCharacter(owner));
+            }
+            Ok(if owner == 6 { vec![4] } else { Vec::new() })
         }
 
         /// A clan 500 has one item; a clan below 0 cannot be read.
@@ -3020,6 +3198,130 @@ mod tests {
                 result: Err(()),
                 ..
             }
+        ));
+    }
+
+    /// M6-FU-09: a bot report is one row, written in order with the other commands.
+    #[tokio::test]
+    async fn a_bot_report_is_one_row() {
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, LeftAcks::default());
+        tx.send(OutboxMessage::Persist(PersistCommand::BotReport(BotReportRow {
+            bot_id: 3,
+            reporter_id: 4,
+            report_date: 5_000_000_000,
+        })))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::BotReport(3, 4, 5_000_000_000)]
+        );
+    }
+
+    /// M6-FU-09: the block list read goes back to the world as a command, `Err` when it failed.
+    #[tokio::test]
+    async fn the_block_list_read_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        for owner in [6, -1] {
+            tx.send(OutboxMessage::Persist(PersistCommand::BlockListRequest {
+                sender: ObjectId(4),
+                owner,
+            }))
+            .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::BlockList(6), Call::BlockList(-1)]
+        );
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert_eq!(answers.len(), 2);
+        match &answers[0] {
+            l2_world::WorldCommand::BlockListLoaded {
+                sender,
+                owner,
+                result,
+            } => {
+                assert_eq!((*sender, *owner), (ObjectId(4), 6));
+                assert_eq!(result.as_ref().unwrap(), &vec![4]);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[1],
+            l2_world::WorldCommand::BlockListLoaded {
+                owner: -1,
+                result: Err(()),
+                ..
+            }
+        ));
+    }
+
+    /// M6-FU-09: the rows of an offline owner whose pet decayed go back to the world; `Err` when the
+    /// read failed.
+    #[tokio::test]
+    async fn the_offline_pet_read_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        for owner in [6, -1] {
+            tx.send(OutboxMessage::Persist(PersistCommand::OfflinePetRowsRequest {
+                owner: ObjectId(owner),
+                control_object_id: ObjectId(9),
+            }))
+            .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::OfflinePetRows(6), Call::OfflinePetRows(-1)]
+        );
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert_eq!(answers.len(), 2);
+        match &answers[0] {
+            l2_world::WorldCommand::OfflinePetRowsLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => {
+                assert_eq!((*owner, *control_object_id), (ObjectId(6), ObjectId(9)));
+                let rows = result.as_ref().unwrap();
+                assert_eq!(rows.pet_items.len(), 1);
+                assert_eq!(rows.inventory.len(), 1);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[1],
+            l2_world::WorldCommand::OfflinePetRowsLoaded { result: Err(()), .. }
         ));
     }
 

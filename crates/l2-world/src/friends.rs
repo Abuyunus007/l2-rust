@@ -19,7 +19,8 @@
 // - The chat log line of `GeneralConfig.LOG_CHAT` in `RequestSendFriendMsg`: the world has no
 //   chat log yet.
 // - `BlockList.isInBlockList(ownerId, targetId)` for an owner that is offline (Java loads its rows
-//   from the database): `is_blocked` answers for an online owner only. The mail card reads rows.
+//   from the database): `is_blocked` answers for an online owner only. The mail reads the rows
+//   of an offline receiver itself (`PersistCommand::BlockListRequest`, `mail/send.rs`, M6-FU-09).
 // - The GM check of `RequestBlock` (`CharInfoTable.getAccessLevelById`) for an offline character:
 //   the world keeps no access levels of characters that are not online.
 // - The `EX_REQUEST_EX_FRIEND_LIST_EXTENDED` packet (the friend list with class and level): not

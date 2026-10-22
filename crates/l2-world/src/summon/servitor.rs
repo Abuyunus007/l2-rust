@@ -626,8 +626,12 @@ impl World {
 
     /// Java `Summon.onDecay()` -> `deleteMe(_owner)`.
     pub(crate) fn summon_on_decay(&mut self, summon: ObjectId) {
-        // The packets of an owner who left reach nobody (Java's old `Player` object).
-        let owner = self.summon(summon).filter(|s| !s.owner_offline).map(|s| s.owner);
+        // The packets of an owner who left reach nobody (Java's old `Player` object). An owner who
+        // logged in again since is told like any online owner.
+        let owner = self
+            .summon(summon)
+            .filter(|s| !s.owner_offline || self.players.contains_key(&s.owner))
+            .map(|s| s.owner);
         self.summon_delete_me(summon, owner);
     }
 
