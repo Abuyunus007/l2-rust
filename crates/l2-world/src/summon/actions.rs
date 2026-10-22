@@ -6,8 +6,9 @@
 // Java: data/xml/PetSkillData.java (getAvailableLevel)
 // Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java
 //
-// The other actions of `RequestActionUse` (sit, walk, stores, socials, couple actions, airships,
-// mounts, the bot report) belong to their own systems and are logged as not ported here.
+// The player's own actions (sit, walk, socials, couple actions) are `actions.rs`; the stores are
+// `trade/store.rs`. The manufacture, mount, airship and bot report actions belong to their own
+// systems and are logged as not ported here.
 
 use l2_data::NpcTemplate;
 use l2_data::npc::{NpcParam, NpcRace};
@@ -314,7 +315,12 @@ impl World {
                     let skill_target = if owner_target { Some(player) } else { target };
                     self.summon_use_skill(player, skill, skill_target, pet, ctrl_pressed, shift_pressed);
                 }
-                None => debug!("RequestActionUse {other} of {player}: not a summon action, not ported yet"),
+                // The player's own actions: sit, walk, socials, couple actions (`actions.rs`).
+                None => {
+                    if !self.on_player_action(player, other, target) {
+                        debug!("RequestActionUse {other} of {player}: not a summon action, not ported yet");
+                    }
+                }
             },
         }
     }
