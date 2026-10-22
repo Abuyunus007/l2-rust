@@ -145,6 +145,10 @@ pub enum PersistCommand {
     /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
     /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
     ClanWarehouseRequest { player: ObjectId, clan_id: i32 },
+    /// Java `BotReportTable.saveReportedCharData`, one row at a time (M6-FU-09, see
+    /// `bot_report.rs`): `INSERT INTO bot_reported_char_data VALUES (?,?,?)`, replacing the report
+    /// date of a row that exists.
+    BotReport(crate::bot_report::BotReportRow),
     /// Asks the persistence task to read the block list of a character that is not online
     /// (`character_friends` with `relation = 1`, Java `BlockList.loadList`) before
     /// `RequestSendPost` sends a mail to it (M6-FU-09). The answer comes back as

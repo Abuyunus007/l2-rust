@@ -13,6 +13,7 @@ mod pool;
 mod schema;
 
 pub use error::{DbError, Result};
+pub use game::{BotReportDbRow, BotReportRepository};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,

@@ -71,7 +71,8 @@ impl World {
         };
         let ops = self.offline_pet_ops(owner, control, rows);
         if !ops.is_empty() {
-            self.outbox.persist(PersistCommand::ItemRows { tracked: None, ops });
+            self.outbox
+                .persist(PersistCommand::ItemRows { tracked: None, ops });
         }
         // `DELETE FROM pets WHERE item_obj_id = ?`.
         self.pet_row_deleted(control);
@@ -79,7 +80,12 @@ impl World {
 
     /// The row writes of `transferItemsToOwner()` followed by `destroyItem(control)` on the
     /// owner's inventory rows.
-    fn offline_pet_ops(&mut self, owner: ObjectId, control: ObjectId, rows: OfflinePetRows) -> Vec<ItemRowOp> {
+    fn offline_pet_ops(
+        &mut self,
+        owner: ObjectId,
+        control: ObjectId,
+        rows: OfflinePetRows,
+    ) -> Vec<ItemRowOp> {
         let OfflinePetRows {
             pet_items,
             mut inventory,
@@ -132,7 +138,10 @@ impl World {
                     });
                     let Some(created) = created else {
                         // The source row stays where it is rather than losing the count.
-                        warn!("Could not make an item for {owner}'s stack of {}.", source.item_id);
+                        warn!(
+                            "Could not make an item for {owner}'s stack of {}.",
+                            source.item_id
+                        );
                         continue;
                     };
                     ops.push(ItemRowOp::Insert {

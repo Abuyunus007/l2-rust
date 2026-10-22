@@ -1486,7 +1486,10 @@ impl World {
         let control = self.pet_control_object_id(pet);
         // An owner who is not in the world: Java's retained `Player` object gets the items and
         // loses the collar, the database has to do the same (`pet_offline.rs`).
-        let offline_owner = owner.is_none().then(|| self.summon(pet).map(|s| s.owner)).flatten();
+        let offline_owner = owner
+            .is_none()
+            .then(|| self.summon(pet).map(|s| s.owner))
+            .flatten();
         // `_inventory.transferItemsToOwner()`.
         if let Some(owner) = owner {
             self.pet_transfer_items_to_owner(owner);

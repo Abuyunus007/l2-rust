@@ -1802,7 +1802,12 @@ fn store_window_items(s: &mut Scene) -> Vec<i32> {
     s.input(ClientInput::Store(StoreInput::ActionUse { action_id: 10 }));
     let packets = s.me.take();
     let raw = of(&packets, "PRIVATE_STORE_SELL_MANAGE_LIST");
-    assert!(!raw.is_empty(), "{:?} {:?}", names(&packets), message_ids(&packets));
+    assert!(
+        !raw.is_empty(),
+        "{:?} {:?}",
+        names(&packets),
+        message_ids(&packets)
+    );
     let window: PrivateStoreManageListSell = decode(raw[0]);
     window.item_list.iter().map(|c| c.item.object_id).collect()
 }
@@ -1975,7 +1980,10 @@ fn a_stack_the_offline_owner_does_not_have_becomes_a_new_item() {
     match &ops[0] {
         ItemRowOp::Insert { owner_id, item } => {
             assert_eq!(*owner_id, ME.0);
-            assert_eq!((item.item_id, item.count, item.loc.as_str()), (ORE, 4, "INVENTORY"));
+            assert_eq!(
+                (item.item_id, item.count, item.loc.as_str()),
+                (ORE, 4, "INVENTORY")
+            );
             // A new id of the Rust range, not the pet row's.
             assert!(item.object_id != PET_ORE && item.object_id.0 >= 0x6000_0000);
         }

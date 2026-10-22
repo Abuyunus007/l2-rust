@@ -128,6 +128,8 @@ pub struct World {
     pub(crate) craft: crate::craft::CraftWorld,
     /// The augmentation skill map and retail chance tables (M6-AUGMENT-01, `augment.rs`).
     pub(crate) augment: crate::augment::AugmentWorld,
+    /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
+    pub(crate) bot_report: crate::bot_report::BotReportWorld,
 }
 
 impl World {
@@ -189,6 +191,7 @@ impl World {
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
+            bot_report: crate::bot_report::BotReportWorld::default(),
         }
     }
 
@@ -725,6 +728,8 @@ impl World {
             // Java: RecoGiveTask, DailyResetManager.onReset
             TimerKind::RecoGive(id) => self.on_reco_give_timer(id),
             TimerKind::DailyReset => self.on_daily_reset_timer(),
+            // Java: BotReportTable.ResetPointTask
+            TimerKind::BotReportReset => self.on_bot_report_reset_timer(),
             // Java: BuffFinishTask, EffectTickTask, EffectList's icon task,
             // Player.updateAndBroadcastStatus
             TimerKind::BuffFinish(id) => self.on_buff_finish_timer(id),

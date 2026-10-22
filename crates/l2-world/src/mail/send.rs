@@ -318,7 +318,12 @@ impl World {
     /// `WorldCommand::BlockListLoaded`: the block list of the offline receiver is in, so the
     /// mail goes on (`BlockList.isInBlockList(receiverId, senderId)` of the offline list). A
     /// failed read sends nothing and never falls back to "not blocked" (D-50).
-    pub(crate) fn on_block_list_loaded(&mut self, sender: ObjectId, owner: i32, result: Result<Vec<i32>, ()>) {
+    pub(crate) fn on_block_list_loaded(
+        &mut self,
+        sender: ObjectId,
+        owner: i32,
+        result: Result<Vec<i32>, ()>,
+    ) {
         let request = match self.mail.pending_block_checks.get(&sender) {
             Some((pending, _)) if *pending == owner => {
                 self.mail.pending_block_checks.remove(&sender).map(|(_, r)| r)
@@ -333,7 +338,9 @@ impl World {
             return;
         }
         let Ok(list) = result else {
-            warn!("Mail: could not read the block list of character {owner}; the mail of {sender} is not sent.");
+            warn!(
+                "Mail: could not read the block list of character {owner}; the mail of {sender} is not sent."
+            );
             self.send(sender, &ActionFailed);
             return;
         };

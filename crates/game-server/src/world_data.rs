@@ -612,6 +612,80 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
     settings
 }
 
+/// `BotReportPunishments.xml` (Java `BotReportTable.PunishmentsLoader`): `<punishment
+/// neededReportCount skillId [skillLevel] [sysMessageId]>`. Java reports a bad attribute and then
+/// still calls `addPunishment` with what it has (its `-1` defaults); the skill check of the world
+/// drops that one.
+pub fn bot_report_punishments_from_xml(xml: &str) -> BTreeMap<i32, l2_world::BotPunishment> {
+    let mut punishments = BTreeMap::new();
+    let mut reader = Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(Event::Empty(e) | Event::Start(e)) if e.name().as_ref() == "punishment" => {
+                let number = |key: &str| attribute(&e, key).and_then(|v| v.trim().parse::<i32>().ok());
+                let (Some(needed), Some(skill_id)) = (number("neededReportCount"), number("skillId")) else {
+                    warn!("Problem with BotReportTable: a punishment without neededReportCount or skillId");
+                    continue;
+                };
+                punishments.insert(
+                    needed,
+                    l2_world::BotPunishment {
+                        skill_id,
+                        skill_level: number("skillLevel").unwrap_or(1),
+                        system_message: number("sysMessageId").unwrap_or(-1),
+                    },
+                );
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            Ok(_) => {}
+        }
+    }
+    punishments
+}
+
+/// The bot report values (Java `GeneralConfig.BOTREPORT_*`). The reset hour and the delay are
+/// post-processed in Java (placeholders in the generated config), so they are read from
+/// `General.ini` here; the punishments come from `BotReportPunishments.xml` when the button is on.
+pub fn bot_report_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BotReportSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let mut settings = l2_world::BotReportSettings {
+        enable: config.general.botreport_enable,
+        allow_reports_from_same_clan_members: config.general.botreport_allow_reports_from_same_clan_members,
+        ..l2_world::BotReportSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        // Java: `config.getInt("BotReportDelay", 30) * 60000`.
+        settings.report_delay_ms = i64::from(ini.get_int("BotReportDelay", 30)) * 60_000;
+        // Java: `getString("BotReportPointsResetHour", "00:00").split(":")`, parsed with
+        // `Integer.parseInt`; anything else fails the scheduling (every 24 hours).
+        let text = ini.get_string("BotReportPointsResetHour", "00:00");
+        let mut parts = text.split(':');
+        settings.reset_hour_minute = match (parts.next(), parts.next()) {
+            (Some(hour), Some(minute)) => hour
+                .trim()
+                .parse::<i64>()
+                .ok()
+                .zip(minute.trim().parse::<i64>().ok()),
+            _ => None,
+        };
+    }
+    if settings.enable {
+        let path = config_dir.join("BotReportPunishments.xml");
+        match std::fs::read(&path) {
+            Ok(bytes) => {
+                settings.punishments = bot_report_punishments_from_xml(&String::from_utf8_lossy(&bytes));
+            }
+            Err(e) => warn!(
+                "BotReportTable: Could not load punishments from {}: {e}",
+                path.display()
+            ),
+        }
+    }
+    settings
+}
+
 /// The enchant values (`Player.ini`, `General.ini`). `EnchantBlackList` and `OverEnchantPunishment`
 /// are post-processed in Java (placeholders in the generated config), so they are read from
 /// `Player.ini` here.
@@ -1546,6 +1620,82 @@ mod tests {
     use std::path::PathBuf;
 
     use super::*;
+
+    /// The shipped `BotReportPunishments.xml`: exact counts and the negative range key.
+    #[test]
+    fn the_bot_report_punishments_are_read() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<list>
+	<!-- a comment -->
+	<punishment neededReportCount="25" skillId="6038" skillLevel="1" sysMessageId="2473" />
+	<punishment neededReportCount="150" skillId="6057" sysMessageId="2480" />
+	<punishment neededReportCount="-150" skillId="6040" skillLevel="2" />
+	<punishment skillId="1" />
+</list>"#;
+        let punishments = bot_report_punishments_from_xml(xml);
+        let punishment = |skill_id, skill_level, system_message| l2_world::BotPunishment {
+            skill_id,
+            skill_level,
+            system_message,
+        };
+        assert_eq!(
+            punishments,
+            BTreeMap::from([
+                (-150, punishment(6040, 2, -1)),
+                // `skillLevel` defaults to 1.
+                (25, punishment(6038, 1, 2473)),
+                (150, punishment(6057, 1, 2480)),
+            ])
+        );
+    }
+
+    /// `BotReportDelay` is minutes, the reset hour is `HH:MM` (anything else: no hour, the reset
+    /// then runs every 24 hours), the punishments are only read with the button on.
+    #[test]
+    fn the_bot_report_settings_come_from_general_ini() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "EnableBotReportButton = True
+BotReportPointsResetHour = 06:30
+BotReportDelay = 45
+AllowReportsFromSameClanMembers = True
+",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("BotReportPunishments.xml"),
+            r#"<list><punishment neededReportCount="25" skillId="6038" sysMessageId="2473" /></list>"#,
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert!(settings.enable);
+        assert!(settings.allow_reports_from_same_clan_members);
+        assert_eq!(settings.report_delay_ms, 45 * 60_000);
+        assert_eq!(settings.reset_hour_minute, Some((6, 30)));
+        assert_eq!(settings.punishments.len(), 1);
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "EnableBotReportButton = True
+BotReportPointsResetHour = noon
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert_eq!(settings.reset_hour_minute, None);
+        assert_eq!(settings.report_delay_ms, 30 * 60_000);
+
+        // Off by default: no punishments are read.
+        std::fs::write(dir.path().join("General.ini"), "").unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert!(!settings.enable);
+        assert!(settings.punishments.is_empty());
+        assert_eq!(settings.reset_hour_minute, Some((0, 0)));
+    }
 
     #[test]
     fn the_side_by_side_switch_defaults_to_off_and_reads_the_file() {

@@ -340,6 +340,14 @@ impl Server {
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
         let mail = persist::load_mail(&pool).await;
         let mail_settings = mail_settings(&config, &paths.config_dir);
+        // Java: BotReportTable.getInstance (only with EnableBotReportButton): the punishments and
+        // the reports of the table, read only.
+        let bot_report_settings = world_data::bot_report_settings(&config, &paths.config_dir);
+        let bot_reports = if bot_report_settings.enable {
+            persist::load_bot_reports(&pool).await
+        } else {
+            Vec::new()
+        };
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -479,6 +487,13 @@ impl Server {
                     // Java: MailManager, MessageDeletionTaskManager.
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
+                    // Java: BotReportTable (after the skills: a punishment needs its skill).
+                    let bot_report_on = bot_report_settings.enable;
+                    world.set_bot_report(bot_report_settings);
+                    if bot_report_on {
+                        world.load_bot_reports(bot_reports);
+                        world.start_bot_report_reset_task();
+                    }
                     // Java: BuyListData (the products' stock the last run left).
                     world.set_buy_lists(buy_lists, price_configs);
                     world.load_buy_list_stock(buy_list_stock);

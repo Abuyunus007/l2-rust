@@ -26,8 +26,7 @@
 // - M6-MOUNT: `getMountType()`, `isMounted()`, `isInBoat()`, `isInAirShip()` are always false,
 //   action 38 (mount/dismount) and the airship actions (67 to 70) are not ported.
 // - M6-FISHING: `isFishing()` is always false.
-// - M6-BOTREPORT: action 65 (`BotReportTable.reportBot`) is not ported; Java answers "This feature
-//   is disabled." with `EnableBotReportButton = False`, which is not a world setting yet.
+// - Action 65 (the bot report button) is `bot_report.rs`.
 // - M7: `isInSiege()` and `isInHideoutSiege()` are always false (the siege code sets them).
 // - M8: `isInOlympiadMode()` is always false.
 
@@ -111,12 +110,15 @@ enum PlayerAction {
     WalkRun,
     Social(i32),
     CoupleSocial(i32),
+    /// 65: `BotReportTable.reportBot` (or "This feature is disabled.").
+    BotReport,
 }
 
 fn player_action(action_id: i32) -> Option<PlayerAction> {
     match action_id {
         0 => Some(PlayerAction::SitStand),
         1 => Some(PlayerAction::WalkRun),
+        65 => Some(PlayerAction::BotReport),
         71..=73 => Some(PlayerAction::CoupleSocial(action_id - COUPLE_ACTION_OFFSET)),
         other => SOCIAL_ACTIONS
             .iter()
@@ -165,6 +167,7 @@ impl World {
             }
             PlayerAction::Social(social_id) => self.try_broadcast_social(player, social_id),
             PlayerAction::CoupleSocial(social_id) => self.use_couple_social(player, social_id),
+            PlayerAction::BotReport => self.on_bot_report_action(player, self.target_of(player)),
         }
         true
     }
