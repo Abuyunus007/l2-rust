@@ -83,6 +83,8 @@ impl World {
         self.inventory_item(id, object_id)?;
         // Removes any reference to the item from Shortcut bar.
         self.remove_item_from_shortcut(id, object_id);
+        // Removes active Enchant Scroll.
+        self.enchant_item_removed(id, object_id);
         // Unequip item if equipped.
         let mut scratch = Vec::new();
         for slot in 0..l2_protocol_game::server::charscreen::paperdoll::TOTAL_SLOTS {
@@ -323,9 +325,10 @@ impl World {
             .and_then(|i| templates.and_then(|t| t.get(i.item_id)));
 
         let discard_refused = SystemMessage::new(SystemMessageId::ThisItemCannotBeDiscarded);
-        // `validateItemManipulation` (owner, summon, mount, active enchant scroll, cursed weapon)
-        // is true for any item the inventory has: none of those exist yet.
+        // `validateItemManipulation` (owner, summon, mount, active enchant scroll, cursed weapon):
+        // the summon, mount and cursed weapon parts are not modelled.
         let refused = template.is_none()
+            || !self.validate_item_manipulation(id, object_id)
             || count == 0
             || (!settings.allow_discard_item && !gm)
             // `Item.isDropable()`: the template, and for an augmented item `AltAllowAugmentTrade`.

@@ -27,6 +27,11 @@ use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
 use l2_protocol_game::server::effect_packets::FlyToLocation;
+use l2_protocol_game::server::enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -45,6 +50,7 @@ use l2_protocol_game::server::interaction::{
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
 use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
@@ -250,6 +256,9 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             json!({ "object_id": p.object_id, "items": warehouse_list_fields(&p.items) })
         }
         ClientPacket::RequestPackageSendableItemList(p) => object!(p => object_id),
+        ClientPacket::MultiSellChoose(p) => {
+            object!(p => list_id, entry_id, amount, unk1, unk2, unk3, elemental)
+        }
         ClientPacket::RequestPrivateStoreManageSell(_)
         | ClientPacket::RequestPrivateStoreManageBuy(_)
         | ClientPacket::RequestPrivateStoreQuitSell(_)
@@ -340,6 +349,14 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
         ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
         ClientPacket::RequestDuelSurrender(_) => json!({}),
+        ClientPacket::RequestEnchantItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantTargetItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+            object!(p => support_object_id, enchant_object_id)
+        }
+        ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
+        ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
+        ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -486,6 +503,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::TradeUpdate => decoded::<TradeUpdate>(&mut r, trade_update_fields),
         ServerOpcode::TradePressOtherOk => decoded::<TradeOtherDone>(&mut r, no_fields),
         ServerOpcode::TradeDone => decoded::<ServerTradeDone>(&mut r, server_trade_done_fields),
+        ServerOpcode::MultiSellList => decoded::<MultiSellList>(&mut r, multi_sell_list_fields),
         ServerOpcode::PrivateStoreSellManageList => {
             decoded::<PrivateStoreManageListSell>(&mut r, store_manage_sell_fields)
         }
@@ -561,6 +579,28 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::ChooseInventoryItem => {
+            decoded::<ChooseInventoryItem>(&mut r, choose_inventory_item_fields)
+        }
+        ServerOpcode::EnchantResult => decoded::<EnchantResult>(&mut r, enchant_result_fields),
+        ServerOpcode::ExPutEnchantTargetItemResult => {
+            decoded::<ExPutEnchantTargetItemResult>(&mut r, put_enchant_target_fields)
+        }
+        ServerOpcode::ExPutEnchantSupportItemResult => {
+            decoded::<ExPutEnchantSupportItemResult>(&mut r, put_enchant_support_fields)
+        }
+        ServerOpcode::ExAttributeEnchantResult => {
+            decoded::<ExAttributeEnchantResult>(&mut r, attribute_enchant_result_fields)
+        }
+        ServerOpcode::ExBaseAttributeCancelResult => {
+            decoded::<ExBaseAttributeCancelResult>(&mut r, base_attribute_cancel_result_fields)
+        }
+        ServerOpcode::ExChooseInventoryAttributeItem => {
+            decoded::<ExChooseInventoryAttributeItem>(&mut r, choose_inventory_attribute_fields)
+        }
+        ServerOpcode::ExShowBaseAttributeCancelWindow => {
+            decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
+        }
         ServerOpcode::ExDuelAskStart => decoded::<ExDuelAskStart>(&mut r, duel_ask_start_fields),
         ServerOpcode::ExDuelReady => decoded::<ExDuelReady>(&mut r, duel_ready_fields),
         ServerOpcode::ExDuelStart => decoded::<ExDuelStart>(&mut r, duel_start_fields),
@@ -1288,6 +1328,44 @@ fn server_trade_done_fields(p: &ServerTradeDone) -> Value {
     object!(p => num)
 }
 
+fn multi_sell_detail_fields(d: &MultiSellItemDetail) -> Value {
+    object!(d => enchant, augment_id, attack_element, attack_element_power, element_defense)
+}
+
+fn multi_sell_list_fields(p: &MultiSellList) -> Value {
+    let entries: Vec<Value> = p
+        .entries
+        .iter()
+        .map(|e| {
+            let products: Vec<Value> = e
+                .products
+                .iter()
+                .map(|i| {
+                    let mut v = object!(i => item_id, body_part, type2, count);
+                    v["detail"] = multi_sell_detail_fields(&i.detail);
+                    v
+                })
+                .collect();
+            let ingredients: Vec<Value> = e
+                .ingredients
+                .iter()
+                .map(|i| {
+                    let mut v = object!(i => item_id, type2, count);
+                    v["detail"] = multi_sell_detail_fields(&i.detail);
+                    v
+                })
+                .collect();
+            json!({
+                "entry_id": e.entry_id,
+                "stackable": e.stackable,
+                "products": products,
+                "ingredients": ingredients,
+            })
+        })
+        .collect();
+    json!({ "list_id": p.list_id, "page": p.page, "finished": p.finished, "entries": entries })
+}
+
 fn store_candidate_fields(c: &StoreCandidate) -> Value {
     json!({ "item": item_fields(&c.item), "reference_price": c.reference_price })
 }
@@ -1517,6 +1595,43 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn choose_inventory_item_fields(p: &ChooseInventoryItem) -> Value {
+    object!(p => item_id)
+}
+
+fn enchant_result_fields(p: &EnchantResult) -> Value {
+    object!(p => result, crystal, count)
+}
+
+fn put_enchant_target_fields(p: &ExPutEnchantTargetItemResult) -> Value {
+    object!(p => result)
+}
+
+fn put_enchant_support_fields(p: &ExPutEnchantSupportItemResult) -> Value {
+    object!(p => result)
+}
+
+fn attribute_enchant_result_fields(p: &ExAttributeEnchantResult) -> Value {
+    object!(p => result)
+}
+
+fn base_attribute_cancel_result_fields(p: &ExBaseAttributeCancelResult) -> Value {
+    object!(p => object_id, attribute)
+}
+
+fn choose_inventory_attribute_fields(p: &ExChooseInventoryAttributeItem) -> Value {
+    object!(p => item_id, elements, max_level)
+}
+
+fn base_attribute_cancel_window_fields(p: &ExShowBaseAttributeCancelWindow) -> Value {
+    let items: Vec<Value> = p
+        .items
+        .iter()
+        .map(|&(object_id, price)| json!({ "object_id": object_id, "price": price }))
+        .collect();
+    json!({ "items": items })
+}
+
 fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
@@ -1744,6 +1859,7 @@ mod tests {
         ServerOpcode::TradeUpdate,
         ServerOpcode::TradePressOtherOk,
         ServerOpcode::TradeDone,
+        ServerOpcode::MultiSellList,
         ServerOpcode::PrivateStoreSellManageList,
         ServerOpcode::PrivateStoreBuyManageList,
         ServerOpcode::PrivateStoreSellList,
@@ -1783,6 +1899,14 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::ChooseInventoryItem,
+        ServerOpcode::EnchantResult,
+        ServerOpcode::ExPutEnchantTargetItemResult,
+        ServerOpcode::ExPutEnchantSupportItemResult,
+        ServerOpcode::ExAttributeEnchantResult,
+        ServerOpcode::ExBaseAttributeCancelResult,
+        ServerOpcode::ExChooseInventoryAttributeItem,
+        ServerOpcode::ExShowBaseAttributeCancelWindow,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,
         ServerOpcode::ExDuelStart,
@@ -1817,6 +1941,55 @@ mod tests {
 
     fn c2s_fields(state: ConnectionState, bytes: &[u8]) -> Value {
         c2s(state, bytes).expect("the packet has fields")
+    }
+
+    #[test]
+    fn multisell_packets_show_their_fields() {
+        use l2_protocol_game::client::MultiSellChoose;
+        use l2_protocol_game::server::multisell::{
+            MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+        };
+        let choose = MultiSellChoose::new(1235, 300_001, 25);
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &choose.to_bytes()),
+            json!({
+                "list_id": 1235, "entry_id": 300_001, "amount": 25,
+                "unk1": 0, "unk2": 0, "unk3": 0, "elemental": [0, 0, 0, 0, 0, 0, 0, 0],
+            })
+        );
+        let list = MultiSellList {
+            list_id: 7,
+            page: 1,
+            finished: true,
+            entries: vec![MultiSellEntry {
+                entry_id: 100_000,
+                stackable: true,
+                products: vec![MultiSellProduct {
+                    item_id: 22,
+                    body_part: 1,
+                    type2: 1,
+                    count: 2,
+                    detail: MultiSellItemDetail {
+                        enchant: 3,
+                        ..MultiSellItemDetail::default()
+                    },
+                }],
+                ingredients: vec![MultiSellIngredient {
+                    item_id: 57,
+                    type2: 4,
+                    count: 2100,
+                    detail: MultiSellItemDetail::default(),
+                }],
+            }],
+        };
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["list_id"], 7);
+        assert_eq!(fields["finished"], true);
+        assert_eq!(fields["entries"][0]["entry_id"], 100_000);
+        assert_eq!(fields["entries"][0]["products"][0]["detail"]["enchant"], 3);
+        assert_eq!(fields["entries"][0]["products"][0]["count"], 2);
+        assert_eq!(fields["entries"][0]["ingredients"][0]["item_id"], 57);
+        assert_eq!(fields["entries"][0]["ingredients"][0]["count"], 2100);
     }
 
     #[test]

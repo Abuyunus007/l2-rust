@@ -231,6 +231,23 @@ impl World {
         }
     }
 
+    /// Java `Player.flushInventoryUpdate()`: the pending update goes out now instead of 100 ms
+    /// after the last change.
+    // NOTE(java-quirk): Java sends the packet even when nothing is pending (an update of 0 items).
+    pub(crate) fn flush_inventory_update(&mut self, player: ObjectId) {
+        let Some(p) = self.players.get_mut(&player) else {
+            return;
+        };
+        if let Some(timer) = p.pending_inventory.timer.take() {
+            self.timers.cancel(timer);
+        }
+        let Some(p) = self.players.get_mut(&player) else {
+            return;
+        };
+        let updates = std::mem::take(&mut p.pending_inventory.entries);
+        self.send_inventory_update_now(player, updates);
+    }
+
     /// The send task of `sendInventoryUpdate`.
     pub(crate) fn on_inventory_update_timer(&mut self, player: ObjectId) {
         let Some(p) = self.players.get_mut(&player) else {

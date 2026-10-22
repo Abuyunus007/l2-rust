@@ -165,12 +165,14 @@ macro_rules! client_unit_packet {
 pub mod charscreen;
 pub mod combat;
 pub mod duel;
+pub mod enchant;
 pub mod enterworld;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod recipe;
@@ -188,6 +190,10 @@ pub use charscreen::{
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
+pub use enchant::{
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
+    RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
@@ -197,6 +203,7 @@ pub use interaction::{
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
+pub use multisell::MultiSellChoose;
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
