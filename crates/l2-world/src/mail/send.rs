@@ -224,8 +224,19 @@ impl World {
             return;
         }
 
-        // M6-FRIEND: `BlockList.isInBlockList(receiverId, player.getObjectId())` ->
-        // C1_HAS_BLOCKED_YOU_YOU_CANNOT_SEND_MAIL_TO_C1 (addString(receiver)).
+        // Java `BlockList.isInBlockList(receiverId, player.getObjectId())`: an online receiver's own
+        // lists (`isBlocked`: refusal mode or the block list).
+        // FOLLOW-UP(mail-block-offline): Java also reads an offline receiver's block rows
+        // (`OFFLINE_LIST`/`loadList`); that needs an async read here, so an offline receiver's block
+        // list does not stop the mail yet.
+        if self.is_blocked(ObjectId(receiver_id), id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::C1HasBlockedYouYouCannotSendMailToC1)
+                    .with(SystemMessageParam::Text(receiver)),
+            );
+            return;
+        }
 
         if self.mail_outbox_size(id.0) >= OUTBOX_SIZE {
             self.mail_tell(

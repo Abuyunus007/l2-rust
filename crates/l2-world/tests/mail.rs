@@ -782,6 +782,26 @@ fn the_fee_needs_the_adena_that_is_not_attached() {
 }
 
 #[test]
+fn a_receiver_who_blocked_the_sender_gets_no_mail() {
+    // Java RequestSendPost: `BlockList.isInBlockList(receiverId, player.getObjectId())`.
+    let mut s = Scene::new();
+    s.enter(player(A, "Alice", alice_items()));
+    let mut bob = player(B, "Bob", vec![inv(2001, ADENA, 10)]);
+    bob.profile.block_list = vec![l2_world::FriendEntry {
+        object_id: A.0,
+        name: Some("Alice".to_string()),
+    }];
+    s.enter(bob);
+    s.log.take();
+    s.send(A, "Bob", &[], None);
+    let out = s.log.take();
+    let raw = of(&out, A, "SYSTEM_MESSAGE");
+    let message: SystemMessage = decode(raw[0]);
+    assert_eq!(message.id, SystemMessageId::C1HasBlockedYouYouCannotSendMailToC1);
+    assert!(mail_writes(&out).is_empty());
+}
+
+#[test]
 fn nobody_writes_to_the_gm_staff_but_a_gm() {
     let mut s = Scene::new();
     s.enter(player(A, "Alice", alice_items()));
