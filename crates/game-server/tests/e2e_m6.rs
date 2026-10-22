@@ -1045,6 +1045,15 @@ impl Persisted {
         (clans.into_values().collect(), crests.into_values().collect())
     }
 
+    /// The rows of the item table (owner, item) the predicate accepts, by object id.
+    fn items_where(&self, accept: impl Fn(i32, &ItemData) -> bool) -> Vec<ItemData> {
+        self.item_table()
+            .into_values()
+            .filter(|(owner, item)| accept(*owner, item))
+            .map(|(_, item)| item)
+            .collect()
+    }
+
     fn item_rows(&self, owner: i32) -> Vec<ItemRow> {
         self.item_table()
             .into_values()
@@ -1065,6 +1074,8 @@ struct BareWorld {
     world: World,
     log: Log,
     persisted: Persisted,
+    /// How many of the persistence commands were looked at for reads that need an answer.
+    answered: usize,
     players: [PlayerData; 2],
     /// Keeps the folder of the datapack (nothing reads it after the start).
     _root: tempfile::TempDir,
@@ -1256,6 +1267,7 @@ impl BareWorld {
             world,
             log: Log::default(),
             persisted,
+            answered: 0,
             players: [bare_player(0, clan_leader), bare_player(1, clan_leader)],
             _root: root,
         }
@@ -1266,11 +1278,50 @@ impl BareWorld {
             session: SessionId(u64::try_from(who.index() + 1).unwrap()),
             input,
         });
+        self.answer_reads();
     }
 
     fn ticks(&mut self, count: usize) {
         for _ in 0..count {
             self.world.tick();
+            self.answer_reads();
+        }
+    }
+
+    /// What the persistence task does for the commands that ask a question (M6-SYNC-01): it reads
+    /// the rows and answers on the world's channel. Here the rows come from the model of the table.
+    fn answer_reads(&mut self) {
+        let commands = self.persisted.commands();
+        let new = commands[self.answered..].to_vec();
+        self.answered = commands.len();
+        for command in new {
+            match command {
+                PersistCommand::MailAttachmentsRequest {
+                    player,
+                    message_id,
+                    sender_id,
+                } => {
+                    let items = self.persisted.items_where(|owner, item| {
+                        owner == sender_id && item.loc == "MAIL" && item.loc_data == message_id
+                    });
+                    self.world.handle(WorldCommand::MailAttachmentsLoaded {
+                        player,
+                        message_id,
+                        result: Ok(items),
+                    });
+                }
+                PersistCommand::ClanWarehouseRequest { player, clan_id } => {
+                    let items = self
+                        .persisted
+                        .items_where(|owner, item| owner == clan_id && item.loc == "CLANWH");
+                    self.world.handle(WorldCommand::ClanWarehouseLoaded {
+                        player,
+                        clan_id,
+                        result: Ok(items),
+                    });
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -1308,7 +1359,7 @@ impl Harness for BareWorld {
                 return self.log.take(id);
             }
             examined = mine.len();
-            self.world.tick();
+            self.ticks(1);
         }
         panic!(
             "the event did not happen for {who:?} in 60 s of world time; got {:?}",
