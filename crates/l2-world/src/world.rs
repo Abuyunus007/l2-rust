@@ -118,6 +118,8 @@ pub struct World {
     pub(crate) duel: crate::duel::DuelWorld,
     /// The friend list and the block list of every online character (M6-FRIEND-01, `friends.rs`).
     pub(crate) friends: crate::friends::FriendWorld,
+    /// The mails, the names they need and the deletion task (M6-MAIL-01, `mail/`).
+    pub(crate) mail: crate::mail::MailWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
@@ -178,6 +180,7 @@ impl World {
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             friends: crate::friends::FriendWorld::default(),
+            mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
         }
@@ -622,6 +625,7 @@ impl World {
                 self.on_request_send_friend_msg(id, &message, &receiver)
             }
             ClientInput::Block { kind, name } => self.on_request_block(id, kind, name.as_deref()),
+            ClientInput::Mail(input) => self.on_mail_input(id, input),
             // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -713,6 +717,8 @@ impl World {
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
+            // Java: MessageDeletionTaskManager.run
+            TimerKind::Mail(timer) => self.on_mail_timer(timer),
         }
     }
 

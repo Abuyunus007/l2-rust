@@ -34,6 +34,7 @@ pub mod interact;
 pub mod inventory;
 pub mod item_ops;
 pub mod leave;
+pub mod mail;
 pub mod movement;
 pub mod multisell;
 pub mod npc;
@@ -94,6 +95,7 @@ pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
 pub use l2_util::{ObjectId, WorldRng};
+pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailSettings, MailWrite};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };

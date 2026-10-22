@@ -204,6 +204,8 @@ pub enum ClientInput {
     DuelAnswerStart { party_duel: i32, response: i32 },
     /// Java `RequestDuelSurrender`.
     DuelSurrender,
+    /// The mail packets (`RequestSendPost`, `RequestReceivedPost`, ...), see `mail/`.
+    Mail(crate::mail::MailInput),
     /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
     /// `enchant/`.
     Enchant(crate::enchant::EnchantInput),
