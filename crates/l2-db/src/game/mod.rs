@@ -8,12 +8,14 @@ mod buylists;
 mod characters;
 mod clans;
 mod crests;
+mod friends;
 mod ground_items;
 mod hennas;
 mod ids;
 mod item_reuse;
 mod items;
 mod macros;
+mod messages;
 mod pets;
 mod punishments;
 mod recommendations;
@@ -34,6 +36,7 @@ pub use clans::{
     ClanUpdate, ClanWarRow, NewClan,
 };
 pub use crests::{CrestRepository, CrestRow};
+pub use friends::{FriendLink, FriendRepository};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
@@ -43,6 +46,7 @@ pub use items::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use macros::{MacroRepository, MacroRow, NewMacro};
+pub use messages::{MessageRepository, MessageRow};
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};

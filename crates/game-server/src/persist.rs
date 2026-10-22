@@ -26,6 +26,8 @@
 //   columns of offline members' `characters` rows, with Java's clan statements
 //   (`PersistCommand::Clan`, M6-CLAN-01),
 // - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
+// - `character_friends` rows of the friend list and the block list (`PersistCommand::Friend`,
+//   M6-FRIEND-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -51,18 +53,20 @@ use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
-    GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
-    NewItem, NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
-    PetRepository, PetValues, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository,
-    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
+    FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
+    ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse, NewPetSkillSave,
+    NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues, Pool,
+    PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
+    SummonRepository, VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PetRowData,
-    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse,
-    SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad,
+    MailMessage, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect,
+    PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
+    SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -217,6 +221,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A write of the `messages` table with Java's statement (`MailManager`).
+    fn store_mail_write(
+        &mut self,
+        _write: &MailWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// A clan row write with Java's statement (`Clan.store`, `updateClanInDB`, ...).
     fn store_clan_write(
         &mut self,
@@ -237,6 +249,14 @@ pub trait PlayerStore: Send + 'static {
                 effects: Vec::new(),
             })
         }
+    }
+
+    /// A `character_friends` row change (Java's friend and block list statements, M6-FRIEND-01).
+    fn store_friend_write(
+        &mut self,
+        _write: &FriendWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
     }
 }
 
@@ -604,6 +624,18 @@ async fn run<S: PlayerStore>(
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Friend(write)) => {
+                // Java logs a failed friend statement and goes on (no retry).
+                if let Err(e) = store.store_friend_write(&write).await {
+                    error!("Friend data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Mail(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_mail_write(&write).await {
+                    error!("Mail data could NOT be stored ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::BuyList(row)) => {
                 // Java logs a failed save and goes on (no retry).
                 if let Err(e) = store.store_buy_list_product(&row).await {
@@ -643,6 +675,85 @@ pub async fn load_buy_list_stock(pool: &Pool) -> Vec<ProductRow> {
             Vec::new()
         }
     }
+}
+
+/// Java `MailManager`'s constructor and `CharInfoTable`'s, the database half: every mail with the
+/// items of its `Mail` container, and the id, name and access level of every character. Only reads
+/// (D-39). A database error is logged and the post box starts empty, like Java.
+pub async fn load_mail(pool: &Pool) -> MailLoad {
+    let mut load = MailLoad::default();
+    match CharacterRepository::new(pool.clone()).all_names().await {
+        Ok(rows) => {
+            load.characters = rows
+                .into_iter()
+                .map(|row| MailCharacter {
+                    id: i32::try_from(row.char_id).unwrap_or(0),
+                    name: row.char_name,
+                    access_level: row.accesslevel.unwrap_or(0),
+                })
+                .collect();
+        }
+        Err(e) => warn!("CharInfoTable: Couldn't retrieve all char id/name/access: {e}"),
+    }
+    let rows = match MessageRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("MailManager: Error loading from database: {e}");
+            return load;
+        }
+    };
+    // Java `Mail.restore()`: `WHERE owner_id=? AND loc='MAIL' AND loc_data=?` per mail; here one
+    // read per sender, split by message.
+    let items = ItemRepository::new(pool.clone());
+    let mut by_sender: std::collections::HashMap<i32, Vec<ItemData>> = std::collections::HashMap::new();
+    for row in rows.iter().filter(|r| r.has_attachments) {
+        if by_sender.contains_key(&row.sender_id) {
+            continue;
+        }
+        let list = match load_container_items(&items, row.sender_id, ItemLocation::Mail).await {
+            Ok(list) => list,
+            Err(e) => {
+                warn!("Could not restore container: {e}");
+                Vec::new()
+            }
+        };
+        by_sender.insert(row.sender_id, list);
+    }
+    load.messages = rows
+        .into_iter()
+        .map(|row| {
+            let attachments = if row.has_attachments {
+                by_sender
+                    .get(&row.sender_id)
+                    .map(|list| {
+                        list.iter()
+                            .filter(|i| i.loc_data == row.message_id)
+                            .cloned()
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
+            MailMessage {
+                id: row.message_id,
+                sender_id: row.sender_id,
+                receiver_id: row.receiver_id,
+                subject: row.subject,
+                content: row.content,
+                expiration: row.expiration,
+                req_adena: row.req_adena,
+                has_attachments: row.has_attachments,
+                unread: row.is_unread,
+                returned: row.is_returned,
+                send_by_system: row.send_by_system,
+                deleted_by_sender: row.is_deleted_by_sender,
+                deleted_by_receiver: row.is_deleted_by_receiver,
+                attachments,
+            }
+        })
+        .collect();
+    load
 }
 
 /// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
@@ -1151,7 +1262,9 @@ pub struct DbStore {
     pets: PetRepository,
     clans: ClanRepository,
     buylists: BuyListRepository,
+    messages: MessageRepository,
     crests: CrestRepository,
+    friends: FriendRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -1175,8 +1288,10 @@ impl DbStore {
             pets: PetRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
+            messages: MessageRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
-            crests: CrestRepository::new(pool),
+            crests: CrestRepository::new(pool.clone()),
+            friends: FriendRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
             rows_written: HashSet::new(),
@@ -2002,6 +2117,37 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_mail_write(&mut self, write: &MailWrite) -> Result<(), PersistError> {
+        match write {
+            // Java: MailManager.sendMessage (MailMessage.getStatement)
+            MailWrite::Insert(msg) => {
+                self.messages
+                    .insert(&l2_db::MessageRow {
+                        message_id: msg.id,
+                        sender_id: msg.sender_id,
+                        receiver_id: msg.receiver_id,
+                        subject: msg.subject.clone(),
+                        content: msg.content.clone(),
+                        expiration: msg.expiration,
+                        req_adena: msg.req_adena,
+                        has_attachments: msg.has_attachments,
+                        is_unread: msg.unread,
+                        is_deleted_by_sender: msg.deleted_by_sender,
+                        is_deleted_by_receiver: msg.deleted_by_receiver,
+                        send_by_system: msg.send_by_system,
+                        is_returned: msg.returned,
+                    })
+                    .await?;
+            }
+            MailWrite::MarkRead(id) => self.messages.mark_read(*id).await?,
+            MailWrite::MarkDeletedBySender(id) => self.messages.mark_deleted_by_sender(*id).await?,
+            MailWrite::MarkDeletedByReceiver(id) => self.messages.mark_deleted_by_receiver(*id).await?,
+            MailWrite::RemoveAttachments(id) => self.messages.remove_attachments(*id).await?,
+            MailWrite::Delete(id) => self.messages.delete(*id).await?,
+        }
+        Ok(())
+    }
+
     async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
         self.buylists
             .save_product(&l2_db::BuyListRow {
@@ -2105,6 +2251,17 @@ impl PlayerStore for DbStore {
             row: row.map(saved_pet_of),
             effects: effects.into_iter().map(saved_pet_effect_of).collect(),
         })
+    }
+
+    async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
+        let friends = &self.friends;
+        match write {
+            FriendWrite::AddFriends { first, second } => friends.add_friends(first.0, second.0).await?,
+            FriendWrite::RemoveFriends { first, second } => friends.remove_friends(first.0, second.0).await?,
+            FriendWrite::AddBlock { owner, target } => friends.add_block(owner.0, target.0).await?,
+            FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
+        }
+        Ok(())
     }
 
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
@@ -2262,6 +2419,8 @@ mod tests {
         AccessLevel(i32, i32),
         /// `Product.save`: list id, item id, count, next restock time.
         BuyList(i32, i32, i64, i64),
+        /// `Mail` (M6-MAIL-01): the write.
+        Mail(MailWrite),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -2406,6 +2565,11 @@ mod tests {
 
         async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::AccessLevel(char_id, level));
+            Ok(())
+        }
+
+        async fn store_mail_write(&mut self, write: &MailWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Mail(write.clone()));
             Ok(())
         }
 
@@ -2554,6 +2718,26 @@ mod tests {
             vec![
                 Call::BuyList(382, 1835, 4, 1_700_000_000_000),
                 Call::BuyList(382, 1835, 5, 0)
+            ]
+        );
+    }
+
+    /// M6-MAIL-01: the `messages` writes reach the store in the order the world sent them, the
+    /// rows of the attachments in between.
+    #[tokio::test]
+    async fn mail_writes_are_stored_in_order() {
+        let msgs = vec![
+            OutboxMessage::Persist(PersistCommand::Mail(MailWrite::RemoveAttachments(5))),
+            OutboxMessage::Persist(PersistCommand::Mail(MailWrite::MarkRead(6))),
+            OutboxMessage::Persist(PersistCommand::Mail(MailWrite::Delete(5))),
+        ];
+        let (calls, _) = run_all(Recording::default(), msgs).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Mail(MailWrite::RemoveAttachments(5)),
+                Call::Mail(MailWrite::MarkRead(6)),
+                Call::Mail(MailWrite::Delete(5)),
             ]
         );
     }

@@ -28,12 +28,14 @@ pub mod effects;
 pub mod enchant;
 pub mod enter;
 pub mod formulas;
+pub mod friends;
 pub mod ground_item;
 pub mod ids;
 pub mod interact;
 pub mod inventory;
 pub mod item_ops;
 pub mod leave;
+pub mod mail;
 pub mod movement;
 pub mod multisell;
 pub mod npc;
@@ -88,12 +90,14 @@ pub use effects::{
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
 pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
+pub use friends::{FriendEntry, FriendWorld, FriendWrite};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
 pub use l2_util::{ObjectId, WorldRng};
+pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailSettings, MailWrite};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };

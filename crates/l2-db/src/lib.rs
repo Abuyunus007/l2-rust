@@ -23,6 +23,7 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{CrestRepository, CrestRow};
+pub use game::{FriendLink, FriendRepository};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{
@@ -30,6 +31,7 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{MessageRepository, MessageRow};
 pub use game::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};

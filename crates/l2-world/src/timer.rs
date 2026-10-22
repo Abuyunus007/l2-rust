@@ -119,6 +119,8 @@ pub enum TimerKind {
     Shop(crate::shop::ShopTimer),
     /// The three tasks of a duel (start countdown, the 1 s watch, the end), see `duel.rs`.
     Duel(crate::duel::DuelTimer),
+    /// The 10 s deletion task of the expired mails, see `mail/`.
+    Mail(crate::mail::MailTimer),
 }
 
 #[derive(Debug, Default)]

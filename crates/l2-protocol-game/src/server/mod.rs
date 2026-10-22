@@ -78,11 +78,13 @@ pub mod enchant;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
+pub mod friend;
 pub mod gm_view;
 pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
+pub mod mail;
 pub mod map_windows;
 pub mod movement;
 pub mod multisell;
@@ -128,6 +130,7 @@ pub use entry::{
     ExRotation, ExShowContactList, ExVitalityPointInfo, MacroCommandEntry, MacroEntry, MacroList,
 };
 pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
+pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
@@ -139,6 +142,11 @@ pub use items::{
     InventoryBlock, InventoryUpdate, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item,
     read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
     write_item_updates,
+};
+pub use mail::{
+    ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
+    ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,
+    SentPostEntry,
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};

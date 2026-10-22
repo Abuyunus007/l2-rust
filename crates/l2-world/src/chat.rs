@@ -6,7 +6,7 @@
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
-// out because the systems do not exist: cursed weapons, block lists, factions, the say filter
+// out because the systems do not exist: cursed weapons, factions, the say filter
 // (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
 // clan, alliance, petition and room channels (their messages are dropped with a debug line, like
 // Java does for a channel without handler). The party channel is `chat_party` (M6-PARTY-01).
@@ -233,12 +233,15 @@ impl World {
         }
     }
 
-    fn broadcast_say(&self, packet: &CreatureSay) {
+    // Java: `World.getPlayers()` with `!BlockList.isBlocked(player, activeChar)`.
+    fn broadcast_say(&self, id: ObjectId, packet: &CreatureSay) {
         // In object id order, so the same input gives the same output (D-13).
         let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
         ids.sort_unstable();
         for to in ids {
-            self.send(to, packet);
+            if !self.is_blocked(to, id) {
+                self.send(to, packet);
+            }
         }
     }
 
@@ -264,7 +267,8 @@ impl World {
         // World.forEachVisibleObjectInRange(activeChar, Player.class, 1250, ...), then the speaker.
         let packet = self.say_packet(id, ChatType::General, &player.data.name, text);
         for to in self.visible_objects_in_range(id, GENERAL_CHAT_RANGE) {
-            if self.players.contains_key(&to) {
+            // Java: `!BlockList.isBlocked(player, activeChar)`.
+            if self.players.contains_key(&to) && !self.is_blocked(to, id) {
                 self.send(to, &packet);
             }
         }
@@ -291,7 +295,7 @@ impl World {
             return;
         }
         let packet = self.say_packet(id, ChatType::Shout, &player.data.name, text);
-        self.broadcast_by_mode(id, self.settings.global_chat, is_gm, &packet);
+        self.broadcast_by_mode(id, self.settings.global_chat, is_gm, &packet, true);
     }
 
     // Java: ChatTrade.onChat
@@ -308,7 +312,7 @@ impl World {
         }
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
         let packet = self.say_packet(id, ChatType::Trade, &player.data.name, text);
-        self.broadcast_by_mode(id, self.settings.trade_chat, is_gm, &packet);
+        self.broadcast_by_mode(id, self.settings.trade_chat, is_gm, &packet, false);
     }
 
     /// The `DEFAULT_GLOBAL_CHAT` / `DEFAULT_TRADE_CHAT` switch: `ON` (and `GM` for a GM) goes to
@@ -320,13 +324,15 @@ impl World {
         mode: ChatBroadcast,
         speaker_is_gm: bool,
         packet: &CreatureSay,
+        // Java `ChatShout` also drops the players the speaker blocks; `ChatTrade` does not.
+        mutual_block: bool,
     ) {
         match mode {
             // `World.getPlayers()` with the same `getMapRegionLocId` and instance as the speaker.
-            ChatBroadcast::On => self.broadcast_say_in_map_region(id, packet),
-            ChatBroadcast::Gm if speaker_is_gm => self.broadcast_say_in_map_region(id, packet),
+            ChatBroadcast::On => self.broadcast_say_in_map_region(id, packet, mutual_block),
+            ChatBroadcast::Gm if speaker_is_gm => self.broadcast_say_in_map_region(id, packet, mutual_block),
             // `World.getPlayers()`: everybody.
-            ChatBroadcast::Global => self.broadcast_say(packet),
+            ChatBroadcast::Global => self.broadcast_say(id, packet),
             ChatBroadcast::Gm | ChatBroadcast::Off => {}
         }
     }
@@ -339,7 +345,7 @@ impl World {
         }
     }
 
-    fn broadcast_say_in_map_region(&self, id: ObjectId, packet: &CreatureSay) {
+    fn broadcast_say_in_map_region(&self, id: ObjectId, packet: &CreatureSay, mutual_block: bool) {
         let region = self.map_region_loc_id(id);
         let instance = self.objects.get(&id).map_or(0, |e| e.instance_id);
         let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -347,6 +353,8 @@ impl World {
         for to in ids {
             if self.map_region_loc_id(to) == region
                 && self.objects.get(&to).map_or(0, |e| e.instance_id) == instance
+                && !self.is_blocked(to, id)
+                && !(mutual_block && self.is_blocked(id, to))
             {
                 self.send(to, packet);
             }
@@ -391,6 +399,15 @@ impl World {
                     );
                     return;
                 }
+                // Java: `!BlockList.isBlocked(receiver, activeChar)`: the receiver refuses messages
+                // or blocks the sender.
+                if self.is_blocked(receiver_id, id) {
+                    self.send(
+                        id,
+                        &SystemMessage::new(SystemMessageId::ThatPersonIsInMessageRefusalMode),
+                    );
+                    return;
+                }
                 let to_receiver = self.say_packet(id, ChatType::Whisper, &player.data.name, text);
                 let to_sender =
                     self.say_packet(id, ChatType::Whisper, &format!("->{}", receiver.data.name), text);
@@ -415,7 +432,17 @@ impl World {
         // `getParty().broadcastCreatureSay(new CreatureSay(...), activeChar)`: every member,
         // the speaker too.
         let packet = self.say_packet(id, ChatType::Party, &player.data.name, text);
-        self.broadcast_party(party, &packet);
+        self.broadcast_party_say(id, party, &packet);
+    }
+
+    /// Java `AbstractPlayerGroup.broadcastCreatureSay(msg, broadcaster)`: every member but the
+    /// ones who refuse the speaker's messages (the speaker is a member too).
+    fn broadcast_party_say(&self, speaker: ObjectId, party: crate::party::PartyId, packet: &CreatureSay) {
+        for member in self.party_members(party) {
+            if !self.is_blocked(member, speaker) {
+                self.send(member, packet);
+            }
+        }
     }
 
     // Java: ChatHeroVoice.onChat; the heroes table is not loaded, so only a GM passes.

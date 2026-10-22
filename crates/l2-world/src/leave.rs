@@ -107,6 +107,7 @@ impl World {
             self.timers.cancel(timer);
         }
         let account = snapshot.account.clone();
+        let leaving_name = snapshot.name.clone();
         info!("{} ({account}) left the world: {reason:?}.", snapshot.name);
         self.outbox
             .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
@@ -121,6 +122,10 @@ impl World {
         self.decay(id);
         // `deleteMe`: the other members see the player go offline.
         self.clan_after_leave(id, clan_leave);
+        // `deleteMe`: `notifyFriends()` (the character is already out of the tables), then the
+        // block list goes with the object (M6-FRIEND-01).
+        self.friends_notify_offline(id, &leaving_name);
+        self.forget_social_lists(id);
         // `Creature.deleteMe`: every effect goes without broadcasting
         // (`stopAllEffectsWithoutExclusions(false, false)`); the messages still reach a client
         // that is connected. Then the `BuffFinishTask` stops with the object.

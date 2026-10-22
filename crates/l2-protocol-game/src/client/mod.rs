@@ -168,10 +168,12 @@ pub mod couple;
 pub mod duel;
 pub mod enchant;
 pub mod enterworld;
+pub mod friend;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
+pub mod mail;
 pub mod movement;
 pub mod multisell;
 pub mod party;
@@ -197,6 +199,10 @@ pub use enchant::{
     RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
 };
 pub use enterworld::{EnterWorld, RequestKeyMapping};
+pub use friend::{
+    RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
+    RequestSendFriendMsg,
+};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
 pub use interaction::{
@@ -204,6 +210,11 @@ pub use interaction::{
     SendBypassBuildCmd,
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
+pub use mail::{
+    PostAttachment, RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost,
+    RequestPostAttachment, RequestPostItemList, RequestReceivedPost, RequestReceivedPostList,
+    RequestRejectPostAttachment, RequestSendPost, RequestSentPost, RequestSentPostList,
+};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 pub use multisell::MultiSellChoose;
 pub use party::{

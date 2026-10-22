@@ -116,6 +116,10 @@ pub struct World {
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The friend list and the block list of every online character (M6-FRIEND-01, `friends.rs`).
+    pub(crate) friends: crate::friends::FriendWorld,
+    /// The mails, the names they need and the deletion task (M6-MAIL-01, `mail/`).
+    pub(crate) mail: crate::mail::MailWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
@@ -177,6 +181,8 @@ impl World {
             pvp: crate::pvp::PvpWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            friends: crate::friends::FriendWorld::default(),
+            mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
@@ -433,6 +439,8 @@ impl World {
         self.restore_player_vitals(id);
         // The saved buffs of the character's servitors (`character_summon_skills_save`).
         self.take_saved_summon_effects(id);
+        // Java `Player.restore`: `restoreFriendList()` and the block list (M6-FRIEND-01).
+        self.load_social_lists(id);
         // Spawned in `on_entered`, at the point of Java's EnterWorld where `spawnMe` runs.
         self.register_object(id, ObjectKind::Player);
         self.sessions.insert(session, id);
@@ -608,6 +616,19 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            // Java: RequestFriendInvite, RequestAnswerFriendInvite, RequestFriendList,
+            // RequestFriendDel, RequestSendFriendMsg, RequestBlock
+            ClientInput::FriendInvite { name } => self.on_request_friend_invite(id, &name),
+            ClientInput::AnswerFriendInvite { response } => {
+                self.on_request_answer_friend_invite(id, response)
+            }
+            ClientInput::FriendList => self.on_request_friend_list(id),
+            ClientInput::FriendDel { name } => self.on_request_friend_del(id, &name),
+            ClientInput::SendFriendMsg { message, receiver } => {
+                self.on_request_send_friend_msg(id, &message, &receiver)
+            }
+            ClientInput::Block { kind, name } => self.on_request_block(id, kind, name.as_deref()),
+            ClientInput::Mail(input) => self.on_mail_input(id, input),
             // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             // Java: RequestRefine and the other augmentation window packets
@@ -701,6 +722,8 @@ impl World {
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
+            // Java: MessageDeletionTaskManager.run
+            TimerKind::Mail(timer) => self.on_mail_timer(timer),
         }
     }
 

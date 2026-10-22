@@ -16,6 +16,8 @@ pub const LOC_WAREHOUSE: &str = "WAREHOUSE";
 pub const LOC_CLANWH: &str = "CLANWH";
 /// `ItemLocation.FREIGHT`.
 pub const LOC_FREIGHT: &str = "FREIGHT";
+/// `ItemLocation.MAIL`.
+pub const LOC_MAIL: &str = "MAIL";
 
 /// Which warehouse a player works with (Java `_activeWarehouse`, and the containers it points to).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -27,6 +29,9 @@ pub enum ContainerRef {
     /// `PlayerFreight`: the freight of the character `owner`, held in the world by the player
     /// `holder` (the same player, or the one who sends a package to `owner`).
     Freight { holder: ObjectId, owner: ObjectId },
+    /// `Mail`: the attachments of a mail (M6-MAIL-01); the rows are the sender's, `loc_data` is
+    /// the message id.
+    Mail { message: i32, sender: i32 },
 }
 
 impl ContainerRef {
@@ -46,6 +51,15 @@ impl ContainerRef {
             Self::Private(player) => player.0,
             Self::Clan(clan) => clan,
             Self::Freight { owner, .. } => owner.0,
+            Self::Mail { sender, .. } => sender,
+        }
+    }
+
+    /// The `loc_data` column of the rows: the message id for a mail, 0 for the rest.
+    pub fn loc_data(self) -> i32 {
+        match self {
+            Self::Mail { message, .. } => message,
+            _ => 0,
         }
     }
 
@@ -55,6 +69,7 @@ impl ContainerRef {
             Self::Private(_) => LOC_WAREHOUSE,
             Self::Clan(_) => LOC_CLANWH,
             Self::Freight { .. } => LOC_FREIGHT,
+            Self::Mail { .. } => LOC_MAIL,
         }
     }
 }
@@ -70,6 +85,7 @@ impl World {
                 let freight = &self.players.get(&holder)?.warehouse.freight;
                 Some(freight.get(&owner).map_or(&[][..], Vec::as_slice))
             }
+            ContainerRef::Mail { message, .. } => self.mail_attachments(message),
         }
     }
 
@@ -85,6 +101,7 @@ impl World {
                     .entry(owner)
                     .or_default(),
             ),
+            ContainerRef::Mail { message, .. } => self.mail_attachments_mut(message),
         }
     }
 
@@ -129,6 +146,8 @@ impl World {
     pub(crate) fn container_validate_capacity(&self, container: ContainerRef, slots: i64) -> bool {
         let size = i64::try_from(self.container_size(container)).unwrap_or(i64::MAX);
         let limit = match container {
+            // `ItemContainer.validateCapacity` of a `Mail` is always true.
+            ContainerRef::Mail { .. } => return true,
             ContainerRef::Private(player) => self.warehouse_limit(player),
             ContainerRef::Clan(_) => i64::from(self.settings.warehouse_slots_clan),
             // `_owner == null ? ALT_FREIGHT_SLOTS : ALT_FREIGHT_SLOTS + FREIGHT_LIM`: only the
