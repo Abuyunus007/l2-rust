@@ -331,7 +331,7 @@ impl World {
 
     /// Java `LocationUtil.checkIfInRange(range, this, creature, true)`: the 3D distance within
     /// `range` plus both collision radii, same instance.
-    fn in_shop_range(&self, id: ObjectId, other: ObjectId, range: i32) -> bool {
+    pub(crate) fn in_shop_range(&self, id: ObjectId, other: ObjectId, range: i32) -> bool {
         let instance = |o: ObjectId| self.objects.get(&o).map_or(0, |e| e.instance_id);
         if instance(id) != instance(other) {
             return false;

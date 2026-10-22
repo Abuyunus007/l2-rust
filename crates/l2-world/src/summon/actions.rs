@@ -224,6 +224,9 @@ impl World {
                     self.summon_cancel_action(summon);
                 }
             }
+            // Dwarven Manufacture and General Manufacture (M6-CRAFT-01, `craft/shop.rs`).
+            37 => self.action_manufacture(player, true),
+            51 => self.action_manufacture(player, false),
             // Unsummon Pet.
             19 => self.action_unsummon_pet(player, summon),
             // Unsummon Servitor.

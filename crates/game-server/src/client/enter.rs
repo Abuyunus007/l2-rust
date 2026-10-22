@@ -26,9 +26,10 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, EnchantInput, FriendEntry, ItemData, LeaveReason, MacroCmdData, MacroData,
-    MailInput, PacketSink, PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse,
-    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, CraftInput, EnchantInput, FriendEntry, ItemData, LeaveReason, MacroCmdData,
+    MacroData, MailInput, PacketSink, PetInput, PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad,
+    SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput,
+    WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -90,6 +91,7 @@ pub struct DbPlayerLoader {
     summons: SummonRepository,
     pets: PetRepository,
     clans: l2_db::ClanRepository,
+    recipes: l2_db::RecipeRepository,
 }
 
 impl DbPlayerLoader {
@@ -108,7 +110,8 @@ impl DbPlayerLoader {
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
             pets: PetRepository::new(pool.clone()),
-            clans: l2_db::ClanRepository::new(pool),
+            clans: l2_db::ClanRepository::new(pool.clone()),
+            recipes: l2_db::RecipeRepository::new(pool),
         }
     }
 
@@ -204,6 +207,10 @@ impl DbPlayerLoader {
         // account (`_chars`) with their freight, which `RequestPackageSend` adds to. Java catches
         // a failed read ("Could not restore container") and goes on with an empty container.
         data.profile.warehouse = self.load_warehouses(char_id, &data.account).await;
+
+        // Java: Player.load -> restoreRecipeBook(true) and (with `StoreRecipeShopList`)
+        // restoreRecipeShopList(). A failed read is logged and the character goes on without.
+        data.profile.recipes = self.load_recipes(char_id).await;
 
         // Java: restoreSkills
         let mut skills = self.skills.skills_of(char_id, class_index).await?;
@@ -359,6 +366,30 @@ impl DbPlayerLoader {
 }
 
 impl DbPlayerLoader {
+    // Java: Player.restoreRecipeBook, Player.restoreRecipeShopList
+    async fn load_recipes(&self, char_id: i32) -> RecipeLoad {
+        let mut load = RecipeLoad::default();
+        match self.recipes.recipes_of(char_id).await {
+            Ok(rows) => {
+                load.book = rows
+                    .into_iter()
+                    .map(|r| RecipeBookEntry {
+                        recipe_id: r.recipe_id,
+                        // `rs.getInt(2) == 1`
+                        dwarven: r.kind == 1,
+                        class_index: r.class_index,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore recipe book data:{e}"),
+        }
+        match self.recipes.shop_of(char_id).await {
+            Ok(rows) => load.shop = rows.into_iter().map(|r| (r.recipe_id, r.price)).collect(),
+            Err(e) => warn!("Could not restore recipe shop list data for playerId: {char_id}: {e}"),
+        }
+        load
+    }
+
     // Java: Player.load (the account's other characters), Player.getWarehouse().restore() and
     // getFreight().restore(), ItemContainer.restore
     async fn load_warehouses(&self, char_id: i32, account: &str) -> WarehouseLoad {
@@ -1017,6 +1048,18 @@ impl ClientSession {
             | ClientPacket::RequestPackageSendableItemList(_)) => {
                 ClientInput::Warehouse(warehouse_input(packet))
             }
+            // Java: RequestRecipeBookOpen, RequestRecipeBookDestroy, RequestRecipeItemMakeInfo,
+            // RequestRecipeItemMakeSelf, RequestRecipeShop* (M6-CRAFT-01)
+            ClientPacket::RequestRecipeBookOpen(p) => ClientInput::Craft(CraftInput::BookOpen(p)),
+            ClientPacket::RequestRecipeBookDestroy(p) => ClientInput::Craft(CraftInput::BookDestroy(p)),
+            ClientPacket::RequestRecipeItemMakeInfo(p) => ClientInput::Craft(CraftInput::ItemMakeInfo(p)),
+            ClientPacket::RequestRecipeItemMakeSelf(p) => ClientInput::Craft(CraftInput::ItemMakeSelf(p)),
+            ClientPacket::RequestRecipeShopMessageSet(p) => ClientInput::Craft(CraftInput::ShopMessageSet(p)),
+            ClientPacket::RequestRecipeShopListSet(p) => ClientInput::Craft(CraftInput::ShopListSet(p)),
+            ClientPacket::RequestRecipeShopManageQuit(_) => ClientInput::Craft(CraftInput::ShopManageQuit),
+            ClientPacket::RequestRecipeShopMakeInfo(p) => ClientInput::Craft(CraftInput::ShopMakeInfo(p)),
+            ClientPacket::RequestRecipeShopMakeItem(p) => ClientInput::Craft(CraftInput::ShopMakeItem(p)),
+            ClientPacket::RequestRecipeShopManagePrev(_) => ClientInput::Craft(CraftInput::ShopManagePrev),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {

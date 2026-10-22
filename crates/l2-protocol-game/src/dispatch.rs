@@ -55,6 +55,11 @@ use crate::client::{
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
 };
+use crate::client::{
+    RequestRecipeBookDestroy, RequestRecipeBookOpen, RequestRecipeItemMakeInfo, RequestRecipeItemMakeSelf,
+    RequestRecipeShopListSet, RequestRecipeShopMakeInfo, RequestRecipeShopMakeItem,
+    RequestRecipeShopManagePrev, RequestRecipeShopManageQuit, RequestRecipeShopMessageSet,
+};
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
 /// A decoded client packet.
@@ -154,6 +159,17 @@ pub enum ClientPacket {
     SendWareHouseWithDrawList(SendWareHouseWithDrawList),
     RequestPackageSend(RequestPackageSend),
     RequestPackageSendableItemList(RequestPackageSendableItemList),
+    // M6-CRAFT-01: 0xB9 and 0xBD have no Java class (see `client/recipe.rs`).
+    RequestRecipeBookOpen(RequestRecipeBookOpen),
+    RequestRecipeBookDestroy(RequestRecipeBookDestroy),
+    RequestRecipeItemMakeInfo(RequestRecipeItemMakeInfo),
+    RequestRecipeItemMakeSelf(RequestRecipeItemMakeSelf),
+    RequestRecipeShopMessageSet(RequestRecipeShopMessageSet),
+    RequestRecipeShopListSet(RequestRecipeShopListSet),
+    RequestRecipeShopManageQuit(RequestRecipeShopManageQuit),
+    RequestRecipeShopMakeInfo(RequestRecipeShopMakeInfo),
+    RequestRecipeShopMakeItem(RequestRecipeShopMakeItem),
+    RequestRecipeShopManagePrev(RequestRecipeShopManagePrev),
     RequestJoinPledge(RequestJoinPledge),
     RequestAnswerJoinPledge(RequestAnswerJoinPledge),
     RequestWithdrawalPledge(RequestWithdrawalPledge),
@@ -371,6 +387,36 @@ pub fn decode_client(
         RequestPackageSend::OPCODE => ClientPacket::RequestPackageSend(RequestPackageSend::decode(reader)?),
         RequestPackageSendableItemList::OPCODE => {
             ClientPacket::RequestPackageSendableItemList(RequestPackageSendableItemList::decode(reader)?)
+        }
+        RequestRecipeBookOpen::OPCODE => {
+            ClientPacket::RequestRecipeBookOpen(RequestRecipeBookOpen::decode(reader)?)
+        }
+        RequestRecipeBookDestroy::OPCODE => {
+            ClientPacket::RequestRecipeBookDestroy(RequestRecipeBookDestroy::decode(reader)?)
+        }
+        RequestRecipeItemMakeInfo::OPCODE => {
+            ClientPacket::RequestRecipeItemMakeInfo(RequestRecipeItemMakeInfo::decode(reader)?)
+        }
+        RequestRecipeItemMakeSelf::OPCODE => {
+            ClientPacket::RequestRecipeItemMakeSelf(RequestRecipeItemMakeSelf::decode(reader)?)
+        }
+        RequestRecipeShopMessageSet::OPCODE => {
+            ClientPacket::RequestRecipeShopMessageSet(RequestRecipeShopMessageSet::decode(reader)?)
+        }
+        RequestRecipeShopListSet::OPCODE => {
+            ClientPacket::RequestRecipeShopListSet(RequestRecipeShopListSet::decode(reader)?)
+        }
+        RequestRecipeShopManageQuit::OPCODE => {
+            ClientPacket::RequestRecipeShopManageQuit(RequestRecipeShopManageQuit::decode(reader)?)
+        }
+        RequestRecipeShopMakeInfo::OPCODE => {
+            ClientPacket::RequestRecipeShopMakeInfo(RequestRecipeShopMakeInfo::decode(reader)?)
+        }
+        RequestRecipeShopMakeItem::OPCODE => {
+            ClientPacket::RequestRecipeShopMakeItem(RequestRecipeShopMakeItem::decode(reader)?)
+        }
+        RequestRecipeShopManagePrev::OPCODE => {
+            ClientPacket::RequestRecipeShopManagePrev(RequestRecipeShopManagePrev::decode(reader)?)
         }
         RequestJoinPledge::OPCODE => ClientPacket::RequestJoinPledge(RequestJoinPledge::decode(reader)?),
         RequestAnswerJoinPledge::OPCODE => {

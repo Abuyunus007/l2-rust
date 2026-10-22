@@ -69,6 +69,10 @@ use l2_protocol_game::server::pledge::{
     PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
     PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
 };
+use l2_protocol_game::server::recipe::{
+    RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList, RecipeShopMsg,
+    RecipeShopSellList,
+};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
@@ -268,6 +272,20 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
             json!({ "object_id": p.object_id, "items": warehouse_list_fields(&p.items) })
         }
         ClientPacket::RequestPackageSendableItemList(p) => object!(p => object_id),
+        ClientPacket::RequestRecipeBookOpen(p) => object!(p => recipe_type),
+        ClientPacket::RequestRecipeBookDestroy(p) => object!(p => recipe_id),
+        ClientPacket::RequestRecipeItemMakeInfo(p) => object!(p => id),
+        ClientPacket::RequestRecipeItemMakeSelf(p) => object!(p => id),
+        ClientPacket::RequestRecipeShopMessageSet(p) => object!(p => name),
+        ClientPacket::RequestRecipeShopListSet(p) => json!({
+            "items": p.items.as_ref().map(|v| {
+                v.iter().map(|i| object!(i => recipe_id, cost)).collect::<Vec<_>>()
+            }),
+        }),
+        ClientPacket::RequestRecipeShopManageQuit(_) => json!({}),
+        ClientPacket::RequestRecipeShopMakeInfo(p) => object!(p => player_object_id, recipe_id),
+        ClientPacket::RequestRecipeShopMakeItem(p) => object!(p => id, recipe_id, unknown),
+        ClientPacket::RequestRecipeShopManagePrev(_) => json!({}),
         ClientPacket::MultiSellChoose(p) => {
             object!(p => list_id, entry_id, amount, unk1, unk2, unk3, elemental)
         }
@@ -645,6 +663,36 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
         }
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::RecipeBookItemList => {
+            decoded::<RecipeBookItemList>(&mut r, |p| object!(p => is_common, max_mp, recipes))
+        }
+        ServerOpcode::RecipeItemMakeInfo => {
+            decoded::<RecipeItemMakeInfo>(&mut r, |p| object!(p => id, is_common, cur_mp, max_mp, success))
+        }
+        ServerOpcode::RecipeShopItemInfo => {
+            decoded::<RecipeShopItemInfo>(&mut r, |p| object!(p => object_id, recipe_id, cur_mp, max_mp))
+        }
+        ServerOpcode::RecipeShopManageList => decoded::<RecipeShopManageList>(&mut r, |p| {
+            let items: Vec<Value> = p.items.iter().map(|i| object!(i => recipe_id, cost)).collect();
+            json!({
+                "seller_id": p.seller_id,
+                "adena": p.adena,
+                "is_common": p.is_common,
+                "recipes": p.recipes,
+                "items": items,
+            })
+        }),
+        ServerOpcode::RecipeShopMsg => decoded::<RecipeShopMsg>(&mut r, |p| object!(p => object_id, message)),
+        ServerOpcode::RecipeShopSellList => decoded::<RecipeShopSellList>(&mut r, |p| {
+            let items: Vec<Value> = p.items.iter().map(|i| object!(i => recipe_id, cost)).collect();
+            json!({
+                "manufacturer_id": p.manufacturer_id,
+                "cur_mp": p.cur_mp,
+                "max_mp": p.max_mp,
+                "buyer_adena": p.buyer_adena,
+                "items": items,
+            })
+        }),
         ServerOpcode::SetSummonRemainTime => {
             decoded::<SetSummonRemainTime>(&mut r, set_summon_remain_time_fields)
         }
@@ -2053,6 +2101,12 @@ mod tests {
         ServerOpcode::ExReplyReceivedPost,
         ServerOpcode::ExReplySentPost,
         ServerOpcode::ExReplyPostItemList,
+        ServerOpcode::RecipeBookItemList,
+        ServerOpcode::RecipeItemMakeInfo,
+        ServerOpcode::RecipeShopItemInfo,
+        ServerOpcode::RecipeShopManageList,
+        ServerOpcode::RecipeShopMsg,
+        ServerOpcode::RecipeShopSellList,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -3803,6 +3857,66 @@ mod tests {
             items: vec![ItemInfo::plain(1, 57, 5)],
         };
         assert_eq!(s2c_fields(&deposit.to_bytes())["items"][0]["count"], 5);
+    }
+
+    #[test]
+    fn recipe_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RecipeShopListEntry, RequestRecipeBookOpen, RequestRecipeShopListSet, RequestRecipeShopMakeItem,
+        };
+        use l2_protocol_game::server::recipe::ManufactureEntry;
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestRecipeBookOpen { recipe_type: 0 }.to_bytes()),
+            json!({ "recipe_type": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestRecipeShopMakeItem {
+                    id: 4,
+                    recipe_id: 9,
+                    unknown: 0
+                }
+                .to_bytes()
+            ),
+            json!({ "id": 4, "recipe_id": 9, "unknown": 0 })
+        );
+        let list = RequestRecipeShopListSet {
+            items: Some(vec![RecipeShopListEntry {
+                recipe_id: 3,
+                cost: 50,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &list.to_bytes()),
+            json!({ "items": [{ "recipe_id": 3, "cost": 50 }] })
+        );
+        let book = RecipeBookItemList {
+            is_common: false,
+            max_mp: 70,
+            recipes: vec![5, 6],
+        };
+        assert_eq!(
+            s2c_fields(&book.to_bytes()),
+            json!({ "is_common": false, "max_mp": 70, "recipes": [5, 6] })
+        );
+        let sell = RecipeShopSellList {
+            manufacturer_id: 1,
+            cur_mp: 2,
+            max_mp: 3,
+            buyer_adena: 4,
+            items: vec![ManufactureEntry {
+                recipe_id: 7,
+                cost: 8,
+            }],
+        };
+        assert_eq!(s2c_fields(&sell.to_bytes())["items"][0]["cost"], 8);
+        let msg = RecipeShopMsg {
+            object_id: 1,
+            message: "Arrows".into(),
+        };
+        assert_eq!(s2c_fields(&msg.to_bytes())["message"], "Arrows");
     }
 
     #[test]

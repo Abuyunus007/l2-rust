@@ -1053,6 +1053,18 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             sorting_private: config.warehouse_sorting.enable_warehousesorting_private,
             sorting_clan: config.warehouse_sorting.enable_warehousesorting_clan,
         },
+        craft: l2_world::CraftSettings {
+            is_crafting_enabled: p.is_crafting_enabled,
+            crafting_in_combat: p.crafting_in_combat,
+            craft_masterwork: p.craft_masterwork,
+            craft_masterwork_chance_rate: p.craft_masterwork_chance_rate,
+            alt_game_creation: p.alt_game_creation,
+            alt_game_creation_speed: p.alt_game_creation_speed,
+            alt_game_creation_xp_rate: p.alt_game_creation_xp_rate,
+            alt_game_creation_sp_rate: p.alt_game_creation_sp_rate,
+            alt_game_creation_rare_xpsp_rate: p.alt_game_creation_rare_xpsp_rate,
+            store_recipe_shoplist: p.store_recipe_shoplist,
+        },
         cast: l2_world::CastSettings {
             alt_game_karma_player_can_teleport: p.alt_game_karma_player_can_teleport,
             dance_consume_additional_mp: p.dance_consume_additional_mp,

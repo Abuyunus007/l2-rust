@@ -28,6 +28,8 @@
 // - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
 // - `character_friends` rows of the friend list and the block list (`PersistCommand::Friend`,
 //   M6-FRIEND-01),
+// - `character_recipebook` (a recipe learned or forgotten, `PersistCommand::Recipe`) and
+//   `character_recipeshoplist` (with the store, `StoreRecipeShopList`; M6-CRAFT-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -56,8 +58,8 @@ use l2_db::{
     FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
     ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse, NewPetSkillSave,
     NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues, Pool,
-    PunishmentRepository, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
-    SummonRepository, VariableRepository,
+    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
+    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
@@ -65,8 +67,8 @@ use l2_world::clan::{
 use l2_world::{
     ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad,
     MailMessage, MailWrite, ObjectId, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect,
-    PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
-    SkillData, StoredPunishment, SummonWrite,
+    PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect,
+    ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -233,6 +235,14 @@ pub trait PlayerStore: Send + 'static {
     fn store_clan_write(
         &mut self,
         _write: &ClanWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `character_recipebook` row (`Player.insertNewRecipeData`, `deleteRecipeData`).
+    fn store_recipe_write(
+        &mut self,
+        _write: &RecipeWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -643,6 +653,13 @@ async fn run<S: PlayerStore>(
                         "Failed to save Product buylist_id:{} item_id:{}: {e}",
                         row.list_id, row.item_id
                     );
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Recipe(write)) => {
+                // Java logs a failed statement and goes on ("SQL exception while inserting
+                // recipe", no retry).
+                if let Err(e) = store.store_recipe_write(&write).await {
+                    error!("The recipe book row could NOT be written ({write:?}): {e}");
                 }
             }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
@@ -1263,6 +1280,7 @@ pub struct DbStore {
     clans: ClanRepository,
     buylists: BuyListRepository,
     messages: MessageRepository,
+    recipes: RecipeRepository,
     crests: CrestRepository,
     friends: FriendRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
@@ -1289,6 +1307,7 @@ impl DbStore {
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
+            recipes: RecipeRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             friends: FriendRepository::new(pool),
@@ -1911,6 +1930,18 @@ impl PlayerStore for DbStore {
             self.store_item_reuse(char_id, rows).await;
         }
 
+        // Java: Player.store -> storeRecipeShopList (only with `StoreRecipeShopList`, and only a
+        // character that has a shop; Java logs a failure and goes on).
+        if let Some(shop) = &player.profile.recipe_shop_to_store {
+            let rows: Vec<RecipeShopRow> = shop
+                .iter()
+                .map(|&(recipe_id, price)| RecipeShopRow { recipe_id, price })
+                .collect();
+            if let Err(e) = self.recipes.store_shop(char_id, &rows).await {
+                error!("Could not store recipe shop for playerId {char_id}: {e}");
+            }
+        }
+
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);
         let mut baseline = match self.baselines.remove(&player.object_id) {
@@ -2244,6 +2275,31 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_recipe_write(&mut self, write: &RecipeWrite) -> Result<(), PersistError> {
+        match write {
+            RecipeWrite::Insert {
+                char_id,
+                recipe_id,
+                class_index,
+                dwarven,
+            } => {
+                self.recipes
+                    .insert_recipe(*char_id, *recipe_id, *class_index, *dwarven)
+                    .await?;
+            }
+            RecipeWrite::Delete {
+                char_id,
+                recipe_id,
+                class_index,
+            } => {
+                self.recipes
+                    .delete_recipe(*char_id, *recipe_id, *class_index)
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
     async fn load_pet_row(&mut self, control: ObjectId) -> Result<PetRowData, PersistError> {
         let row = self.pets.pet_of_control_item(control.0).await?;
         let effects = self.pets.effects_of(control.0).await?;
@@ -2421,6 +2477,8 @@ mod tests {
         BuyList(i32, i32, i64, i64),
         /// `Mail` (M6-MAIL-01): the write.
         Mail(MailWrite),
+        /// A recipe book row.
+        Recipe(RecipeWrite),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -2570,6 +2628,11 @@ mod tests {
 
         async fn store_mail_write(&mut self, write: &MailWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Mail(write.clone()));
+            Ok(())
+        }
+
+        async fn store_recipe_write(&mut self, write: &RecipeWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Recipe(write.clone()));
             Ok(())
         }
 
@@ -2740,6 +2803,31 @@ mod tests {
                 Call::Mail(MailWrite::Delete(5)),
             ]
         );
+    }
+
+    /// A recipe learned and forgotten reaches the store in the order the world sent it.
+    #[tokio::test]
+    async fn recipe_book_rows_are_stored_in_order() {
+        let insert = RecipeWrite::Insert {
+            char_id: 7,
+            recipe_id: 20,
+            class_index: 1,
+            dwarven: true,
+        };
+        let delete = RecipeWrite::Delete {
+            char_id: 7,
+            recipe_id: 20,
+            class_index: 1,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Recipe(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Recipe(delete.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::Recipe(insert), Call::Recipe(delete)]);
     }
 
     #[tokio::test]
