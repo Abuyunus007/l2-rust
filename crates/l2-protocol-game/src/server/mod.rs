@@ -82,6 +82,7 @@ pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
+pub mod mail;
 pub mod map_windows;
 pub mod movement;
 pub mod party;
@@ -175,6 +176,11 @@ pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
     StatusUpdate,
+};
+pub use mail::{
+    ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
+    ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,
+    SentPostEntry,
 };
 pub use warehouse::{
     PackageSendableList, PackageToList, SortedWareHouseWithdrawalList, SortedWarehouseItem,

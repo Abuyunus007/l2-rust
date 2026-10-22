@@ -30,6 +30,7 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{MessageRepository, MessageRow};
 pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};

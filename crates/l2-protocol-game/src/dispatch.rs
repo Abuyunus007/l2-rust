@@ -43,6 +43,11 @@ use crate::client::{
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
 };
+use crate::client::{
+    RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost, RequestPostAttachment,
+    RequestPostItemList, RequestReceivedPost, RequestReceivedPostList, RequestRejectPostAttachment,
+    RequestSendPost, RequestSentPost, RequestSentPostList,
+};
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
 /// A decoded client packet.
@@ -177,6 +182,18 @@ pub enum ClientPacket {
     RequestDuelStart(RequestDuelStart),
     RequestDuelAnswerStart(RequestDuelAnswerStart),
     RequestDuelSurrender(RequestDuelSurrender),
+    /// The mail packets (`0xD0` 0x0065 to 0x006F), ex packets.
+    RequestPostItemList(RequestPostItemList),
+    RequestSendPost(RequestSendPost),
+    RequestReceivedPostList(RequestReceivedPostList),
+    RequestDeleteReceivedPost(RequestDeleteReceivedPost),
+    RequestReceivedPost(RequestReceivedPost),
+    RequestPostAttachment(RequestPostAttachment),
+    RequestRejectPostAttachment(RequestRejectPostAttachment),
+    RequestSentPostList(RequestSentPostList),
+    RequestDeleteSentPost(RequestDeleteSentPost),
+    RequestSentPost(RequestSentPost),
+    RequestCancelPostAttachment(RequestCancelPostAttachment),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -446,6 +463,35 @@ fn decode_ex_client(
         }
         RequestDuelSurrender::EX_OPCODE => {
             ClientPacket::RequestDuelSurrender(RequestDuelSurrender::decode(reader)?)
+        }
+        RequestPostItemList::EX_OPCODE => {
+            ClientPacket::RequestPostItemList(RequestPostItemList::decode(reader)?)
+        }
+        RequestSendPost::EX_OPCODE => ClientPacket::RequestSendPost(RequestSendPost::decode(reader)?),
+        RequestReceivedPostList::EX_OPCODE => {
+            ClientPacket::RequestReceivedPostList(RequestReceivedPostList::decode(reader)?)
+        }
+        RequestDeleteReceivedPost::EX_OPCODE => {
+            ClientPacket::RequestDeleteReceivedPost(RequestDeleteReceivedPost::decode(reader)?)
+        }
+        RequestReceivedPost::EX_OPCODE => {
+            ClientPacket::RequestReceivedPost(RequestReceivedPost::decode(reader)?)
+        }
+        RequestPostAttachment::EX_OPCODE => {
+            ClientPacket::RequestPostAttachment(RequestPostAttachment::decode(reader)?)
+        }
+        RequestRejectPostAttachment::EX_OPCODE => {
+            ClientPacket::RequestRejectPostAttachment(RequestRejectPostAttachment::decode(reader)?)
+        }
+        RequestSentPostList::EX_OPCODE => {
+            ClientPacket::RequestSentPostList(RequestSentPostList::decode(reader)?)
+        }
+        RequestDeleteSentPost::EX_OPCODE => {
+            ClientPacket::RequestDeleteSentPost(RequestDeleteSentPost::decode(reader)?)
+        }
+        RequestSentPost::EX_OPCODE => ClientPacket::RequestSentPost(RequestSentPost::decode(reader)?),
+        RequestCancelPostAttachment::EX_OPCODE => {
+            ClientPacket::RequestCancelPostAttachment(RequestCancelPostAttachment::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

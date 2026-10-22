@@ -170,6 +170,7 @@ pub mod handshake;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
+pub mod mail;
 pub mod movement;
 pub mod party;
 pub mod pledge;
@@ -195,6 +196,11 @@ pub use interaction::{
     SendBypassBuildCmd,
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
+pub use mail::{
+    PostAttachment, RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost,
+    RequestPostAttachment, RequestPostItemList, RequestReceivedPost, RequestReceivedPostList,
+    RequestRejectPostAttachment, RequestSendPost, RequestSentPost, RequestSentPostList,
+};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,

@@ -428,6 +428,17 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestDuelStart(_)
             | ClientPacket::RequestDuelAnswerStart(_)
             | ClientPacket::RequestDuelSurrender(_)
+            | ClientPacket::RequestPostItemList(_)
+            | ClientPacket::RequestSendPost(_)
+            | ClientPacket::RequestReceivedPostList(_)
+            | ClientPacket::RequestDeleteReceivedPost(_)
+            | ClientPacket::RequestReceivedPost(_)
+            | ClientPacket::RequestPostAttachment(_)
+            | ClientPacket::RequestRejectPostAttachment(_)
+            | ClientPacket::RequestSentPostList(_)
+            | ClientPacket::RequestDeleteSentPost(_)
+            | ClientPacket::RequestSentPost(_)
+            | ClientPacket::RequestCancelPostAttachment(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };
