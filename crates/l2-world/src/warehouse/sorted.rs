@@ -372,8 +372,10 @@ fn sorted_item(item: &ItemData, template: &ItemTemplate, now_ms: i64) -> SortedW
         element_defense: std::array::from_fn(|element| {
             item.element_def_attr(element as i32, Some(template)) as i16
         }),
-        // `Item.DEFAULT_ENCHANT_OPTIONS`: enchant options are not modelled.
-        enchant_options: [0; 3],
+        // `item.getEnchantOptions()`; Java writes the low 16 bits.
+        enchant_options: template
+            .enchant_options_at(item.enchant_level)
+            .map(|id| id as i16),
     }
 }
 

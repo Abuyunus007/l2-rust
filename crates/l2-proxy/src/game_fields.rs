@@ -32,6 +32,9 @@ use l2_protocol_game::server::enchant::{
     ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
     ExShowBaseAttributeCancelWindow,
 };
+use l2_protocol_game::server::enchant_skill::{
+    ExEnchantSkillInfo, ExEnchantSkillInfoDetail, ExEnchantSkillList, ExEnchantSkillResult,
+};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -412,6 +415,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
         ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
         ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
+        ClientPacket::RequestExEnchantSkillInfo(p) => object!(p => skill_id, skill_level),
+        ClientPacket::RequestExEnchantSkillInfoDetail(p) => object!(p => kind, skill_id, skill_level),
+        ClientPacket::RequestExEnchantSkill(p) => object!(p => skill_id, skill_level),
+        ClientPacket::RequestExEnchantSkillSafe(p) => object!(p => skill_id, skill_level),
+        ClientPacket::RequestExEnchantSkillUntrain(p) => object!(p => skill_id, skill_level),
+        ClientPacket::RequestExEnchantSkillRouteChange(p) => object!(p => skill_id, skill_level),
         ClientPacket::RequestConfirmTargetItem(p) => object!(p => object_id),
         ClientPacket::RequestConfirmRefinerItem(p) => {
             object!(p => target_item_object_id, refiner_item_object_id)
@@ -691,6 +700,14 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExShowBaseAttributeCancelWindow => {
             decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
+        }
+        ServerOpcode::ExEnchantSkillInfo => decoded::<ExEnchantSkillInfo>(&mut r, enchant_skill_info_fields),
+        ServerOpcode::ExEnchantSkillInfoDetail => {
+            decoded::<ExEnchantSkillInfoDetail>(&mut r, enchant_skill_info_detail_fields)
+        }
+        ServerOpcode::ExEnchantSkillList => decoded::<ExEnchantSkillList>(&mut r, enchant_skill_list_fields),
+        ServerOpcode::ExEnchantSkillResult => {
+            decoded::<ExEnchantSkillResult>(&mut r, enchant_skill_result_fields)
         }
         ServerOpcode::ExDuelAskStart => decoded::<ExDuelAskStart>(&mut r, duel_ask_start_fields),
         ServerOpcode::ExDuelReady => decoded::<ExDuelReady>(&mut r, duel_ready_fields),
@@ -1815,6 +1832,27 @@ fn base_attribute_cancel_window_fields(p: &ExShowBaseAttributeCancelWindow) -> V
     json!({ "items": items })
 }
 
+fn enchant_skill_info_fields(p: &ExEnchantSkillInfo) -> Value {
+    object!(p => skill_id, level, max_enchanted, routes)
+}
+
+fn enchant_skill_info_detail_fields(p: &ExEnchantSkillInfoDetail) -> Value {
+    object!(p => kind, skill_id, skill_level, sp, chance, adena, book_id, book_required)
+}
+
+fn enchant_skill_list_fields(p: &ExEnchantSkillList) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|&(id, level)| json!({ "id": id, "level": level }))
+        .collect();
+    json!({ "kind": p.kind, "skills": skills })
+}
+
+fn enchant_skill_result_fields(p: &ExEnchantSkillResult) -> Value {
+    object!(p => enchanted)
+}
+
 fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
@@ -2148,6 +2186,10 @@ mod tests {
         ServerOpcode::ExPutItemResultForVariationCancel,
         ServerOpcode::ExVariationCancelResult,
         ServerOpcode::ExShowBaseAttributeCancelWindow,
+        ServerOpcode::ExEnchantSkillInfo,
+        ServerOpcode::ExEnchantSkillInfoDetail,
+        ServerOpcode::ExEnchantSkillList,
+        ServerOpcode::ExEnchantSkillResult,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,
         ServerOpcode::ExDuelStart,
@@ -2246,6 +2288,67 @@ mod tests {
         assert_eq!(fields["entries"][0]["products"][0]["count"], 2);
         assert_eq!(fields["entries"][0]["ingredients"][0]["item_id"], 57);
         assert_eq!(fields["entries"][0]["ingredients"][0]["count"], 2100);
+    }
+
+    #[test]
+    fn enchant_skill_packets_show_their_fields() {
+        use l2_protocol_game::client::{RequestExEnchantSkill, RequestExEnchantSkillInfoDetail};
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &RequestExEnchantSkillInfoDetail {
+                    kind: 3,
+                    skill_id: 1,
+                    skill_level: 205
+                }
+                .to_bytes()
+            ),
+            json!({ "kind": 3, "skill_id": 1, "skill_level": 205 })
+        );
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &RequestExEnchantSkill {
+                    skill_id: 1,
+                    skill_level: 101
+                }
+                .to_bytes()
+            ),
+            json!({ "skill_id": 1, "skill_level": 101 })
+        );
+        let info = ExEnchantSkillInfo {
+            skill_id: 1,
+            level: 101,
+            max_enchanted: false,
+            routes: vec![101, 201],
+        };
+        assert_eq!(
+            s2c_fields(&info.to_bytes()),
+            json!({ "skill_id": 1, "level": 101, "max_enchanted": false, "routes": [101, 201] })
+        );
+        let detail = ExEnchantSkillInfoDetail {
+            kind: 1,
+            skill_id: 1,
+            skill_level: 102,
+            sp: 5,
+            chance: 80,
+            adena: 7,
+            book_id: 9627,
+            book_required: true,
+        };
+        assert_eq!(s2c_fields(&detail.to_bytes())["book_id"], 9627);
+        assert_eq!(
+            s2c_fields(&ExEnchantSkillResult { enchanted: true }.to_bytes()),
+            json!({ "enchanted": true })
+        );
+        let list = ExEnchantSkillList {
+            kind: 2,
+            skills: vec![(1, 101)],
+        };
+        assert_eq!(
+            s2c_fields(&list.to_bytes()),
+            json!({ "kind": 2, "skills": [{ "id": 1, "level": 101 }] })
+        );
     }
 
     #[test]

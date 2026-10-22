@@ -27,6 +27,7 @@ pub mod clan;
 pub mod combat;
 pub mod commands;
 pub mod create_item;
+pub mod enchant;
 pub mod exp_sp;
 pub mod html;
 pub mod invul;
@@ -127,6 +128,7 @@ impl Default for AdminWorld {
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
         create_item::register(&mut handlers);
+        enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
         punishments::register(&mut handlers);

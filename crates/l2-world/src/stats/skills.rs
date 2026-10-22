@@ -21,7 +21,7 @@ use l2_data::item::{CrystalType, EtcItemType};
 use l2_data::{FuncKind, FuncTemplate, SkillTemplate, Stat};
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_util::ObjectId;
-use tracing::warn;
+use tracing::{info, warn};
 
 use super::calculators::{Func, FuncOwner};
 use super::creature_stat::StatView;
@@ -258,7 +258,8 @@ impl World {
 
     /// What the instance of `item` brings besides its template: the functions and skills of its
     /// augmentation options (`Options.apply`, low option id first), then the element attribute
-    /// bonuses (`Item.updateElementAttrBonus`).
+    /// bonuses (`Item.updateElementAttrBonus`), then the enchant options of its enchant level
+    /// (`Item.applyEnchantStats`, see [`World::enchant_option_effects`]).
     fn item_instance_bonuses(&self, item: &ItemData, template: Option<&ItemTemplate>) -> InstanceBonuses {
         let mut out = InstanceBonuses::default();
         if let Some(augmentation) = item.augmentation {
@@ -278,6 +279,15 @@ impl World {
                 // The chance skills (`addTriggerSkill`) need the option triggers of the effect
                 // engine: not modelled yet.
             }
+        }
+        // `Item.applyEnchantStats()` runs after the +4 skill in Java; only the order of the
+        // functions in the calculators differs.
+        for option in self.enchant_option_effects(item, template) {
+            let owner = FuncOwner::AugmentationOption(option.id);
+            out.funcs
+                .extend(option.funcs.iter().map(|t| Func::from_template(t, owner)));
+            out.skills.extend(option.active);
+            out.skills.extend(option.passive);
         }
         let armor = template.is_some_and(ItemTemplate::is_armor);
         for elemental in &item.elementals {
@@ -374,7 +384,7 @@ impl World {
                 .item_instance_bonuses(item, data.items.get(item.item_id));
             add.extend(bonuses.skills.iter().copied());
             if let Some(template) = data.items.get(item.item_id) {
-                // The enchant options (`applyEnchantStats`) are not loaded yet.
+                // The enchant options (`applyEnchantStats`) are in `bonuses` above.
                 if item.enchant_level >= 4
                     && let Some(s) = template.skills.enchant4_skill
                 {
@@ -510,14 +520,133 @@ impl World {
         stats
     }
 
+    /// Java `Item.getEnchantOptions()` and `OptionData.getOptions(id)` for each id: the options an
+    /// enchant level of `item` gives, in id order, as owned values. An id without an option is
+    /// logged (`applyEnchantStats`), except 0.
+    fn enchant_option_effects(&self, item: &ItemData, template: Option<&ItemTemplate>) -> Vec<OptionEffects> {
+        let Some(template) = template else {
+            return Vec::new();
+        };
+        let mut out = Vec::new();
+        for id in template.enchant_options_at(item.enchant_level) {
+            match self.data.augmentation_option(id) {
+                Some(option) => out.push(OptionEffects {
+                    id: option.id,
+                    funcs: option.funcs.clone(),
+                    active: option.active_skill.map(|s| (s.id, s.level)),
+                    passive: option.passive_skill.map(|s| (s.id, s.level)),
+                }),
+                None if id != 0 => {
+                    info!(
+                        "Item applyEnchantStats could not find option {id} {} {}",
+                        template.label(),
+                        item.object_id
+                    );
+                }
+                None => {}
+            }
+        }
+        out
+    }
+
+    /// Java `Item.clearEnchantStats()` for a worn item whose enchant level is about to change: the
+    /// options of the current level go (`Options.remove`: the functions by owner, the active, then
+    /// the passive skill, and the skill list). Returns the stats whose functions went.
+    // The trigger skills of the options (`removeTriggerSkill`) are not modelled, like the
+    // augmentation ones.
+    pub(crate) fn clear_enchant_stats(&mut self, id: ObjectId, object_id: ObjectId) -> Vec<Stat> {
+        let Some(options) = self.worn_item_enchant_options(id, object_id) else {
+            return Vec::new();
+        };
+        let mut stats = Vec::new();
+        for option in &options {
+            if !option.funcs.is_empty()
+                && let Some(player) = self.players.get_mut(&id)
+            {
+                stats.extend(
+                    player
+                        .core
+                        .calculators
+                        .remove_owner(FuncOwner::AugmentationOption(option.id)),
+                );
+            }
+            if let Some((skill_id, level)) = option.active {
+                self.remove_skill_of(id, skill_id, level);
+            }
+            if let Some((skill_id, level)) = option.passive {
+                self.remove_skill_of(id, skill_id, level);
+            }
+        }
+        if !options.is_empty() {
+            self.send_skill_list(id);
+        }
+        stats
+    }
+
+    /// Java `Item.applyEnchantStats()` for a worn item whose enchant level just changed: the
+    /// options of the new level join (`Options.apply`: the functions, the active, then the passive
+    /// skill, and the skill list). Returns the stats whose functions were added.
+    // NOTE: `Options.addSkill` also restores the reuse timestamp of an active skill and sends
+    // `SkillCoolTime`; the augmentation options do not, so neither do these.
+    pub(crate) fn apply_enchant_stats(&mut self, id: ObjectId, object_id: ObjectId) -> Vec<Stat> {
+        let Some(options) = self.worn_item_enchant_options(id, object_id) else {
+            return Vec::new();
+        };
+        let mut stats = Vec::new();
+        for option in &options {
+            let owner = FuncOwner::AugmentationOption(option.id);
+            let funcs: Vec<Func> = option
+                .funcs
+                .iter()
+                .map(|t| Func::from_template(t, owner))
+                .collect();
+            if !funcs.is_empty()
+                && let Some(player) = self.players.get_mut(&id)
+            {
+                stats.extend(player.core.calculators.add_all(funcs));
+            }
+            for (skill_id, level) in option.active.into_iter().chain(option.passive) {
+                if !self.add_skill(id, skill_id, level) {
+                    warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
+                }
+            }
+        }
+        if !options.is_empty() {
+            self.send_skill_list(id);
+        }
+        stats
+    }
+
+    /// The enchant options of a worn item at its current enchant level; `None` when the item is
+    /// not worn by the player (`isEquipped()`).
+    fn worn_item_enchant_options(&self, id: ObjectId, object_id: ObjectId) -> Option<Vec<OptionEffects>> {
+        let item = self
+            .players
+            .get(&id)?
+            .data
+            .items
+            .iter()
+            .find(|i| i.object_id == object_id && i.loc == "PAPERDOLL")?;
+        let template = self.data.stat_data().and_then(|d| d.items.get(item.item_id));
+        Some(self.enchant_option_effects(item, template))
+    }
+
     /// Whether `Options.apply` / `Options.remove` run for `item`, each of which sends the skill
-    /// list: it is augmented with at least one option the datapack knows.
+    /// list: it is augmented, or has an enchant level with options, with at least one option the
+    /// datapack knows.
     pub(crate) fn augmentation_sends_skill_list(&self, item: &ItemData) -> bool {
-        item.augmentation.is_some_and(|augmentation| {
+        let template = self.data.stat_data().and_then(|d| d.items.get(item.item_id));
+        let augmented = item.augmentation.is_some_and(|augmentation| {
             l2_data::augmentation::augmentation_option_ids(augmentation)
                 .into_iter()
                 .any(|option| self.data.augmentation_option(option).is_some())
-        })
+        });
+        augmented
+            || template.is_some_and(|t| {
+                t.enchant_options_at(item.enchant_level)
+                    .into_iter()
+                    .any(|option| self.data.augmentation_option(option).is_some())
+            })
     }
 
     /// Java `Player.refreshOverloaded()`, the skill part: the weight penalty skill of the load.
@@ -633,6 +762,16 @@ struct InstanceBonuses {
     funcs: Vec<Func>,
     /// `(id, level)`: an option's active skill, then its passive skill, option by option.
     skills: Vec<(i32, i32)>,
+}
+
+/// One option an enchant level gives, copied out of the table so a function can change the player
+/// while it holds it.
+#[derive(Debug, Clone)]
+struct OptionEffects {
+    id: i32,
+    funcs: Vec<FuncTemplate>,
+    active: Option<(i32, i32)>,
+    passive: Option<(i32, i32)>,
 }
 
 /// `Elementals.ElementalStatBonus.applyBonus`: the stat an element of an item raises, the
