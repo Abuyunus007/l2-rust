@@ -854,9 +854,8 @@ pub async fn load_mail_of_character(
     let rows = messages.messages_of_character(char_id).await?;
     let mut by_sender: std::collections::HashMap<i32, Vec<ItemData>> = std::collections::HashMap::new();
     for row in rows.iter().filter(|r| r.has_attachments) {
-        if !by_sender.contains_key(&row.sender_id) {
-            let list = load_container_items(items, row.sender_id, ItemLocation::Mail).await?;
-            by_sender.insert(row.sender_id, list);
+        if let std::collections::hash_map::Entry::Vacant(entry) = by_sender.entry(row.sender_id) {
+            entry.insert(load_container_items(items, row.sender_id, ItemLocation::Mail).await?);
         }
     }
     Ok(MailRefresh {
