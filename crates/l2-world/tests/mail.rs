@@ -358,11 +358,11 @@ impl Scene {
         found
     }
 
-    /// `RequestPostAttachment`; the database has what the world has, so the read the world asks for
-    /// is answered at once with the attachments in memory. The tests of the refresh use
-    /// `MailInput::PostAttachment` and answer the request themselves.
-    fn collect(&mut self, who: ObjectId, msg_id: i32) {
-        self.mail(who, MailInput::PostAttachment { msg_id });
+    /// An attachment packet (`RequestPostAttachment`, reject or cancel); the database has what the
+    /// world has, so the read the world asks for is answered at once with the attachments in
+    /// memory. The tests of the refresh send `MailInput` themselves and answer the request.
+    fn answered(&mut self, who: ObjectId, input: MailInput) {
+        self.mail(who, input);
         for (player, message_id, _sender) in self.take_attachment_requests() {
             let rows = self
                 .world
@@ -375,6 +375,10 @@ impl Scene {
                 result: Ok(rows),
             });
         }
+    }
+
+    fn collect(&mut self, who: ObjectId, msg_id: i32) {
+        self.answered(who, MailInput::PostAttachment { msg_id });
     }
 
     fn advance(&mut self, ms: u64) {
@@ -1239,7 +1243,7 @@ fn collecting_needs_a_peace_zone() {
         messages(&s.log.take(), B),
         [SystemMessageId::YouCannotReceiveOrSendMailWithAttachedItemsInNonPeaceZoneRegions]
     );
-    s.mail(B, MailInput::RejectPostAttachment { msg_id: 500 });
+    s.answered(B, MailInput::RejectPostAttachment { msg_id: 500 });
     assert_eq!(
         messages(&s.log.take(), B),
         [SystemMessageId::YouCannotReceiveOrSendMailWithAttachedItemsInNonPeaceZoneRegions]
@@ -1257,7 +1261,7 @@ fn rejecting_returns_the_items_in_a_new_mail_to_the_sender() {
     s.log.take();
     let id = s.alice_sends(&[(1002, 1)], None);
 
-    s.mail(B, MailInput::RejectPostAttachment { msg_id: id });
+    s.answered(B, MailInput::RejectPostAttachment { msg_id: id });
     let out = s.log.take();
 
     let writes = mail_writes(&out);
@@ -1315,7 +1319,7 @@ fn the_sender_cancels_a_mail_nobody_collected() {
     s.log.take();
     let id = s.alice_sends(&[(1002, 1), (1004, 20)], None);
 
-    s.mail(A, MailInput::CancelPostAttachment { msg_id: id });
+    s.answered(A, MailInput::CancelPostAttachment { msg_id: id });
     let out = s.log.take();
 
     // The items are back (the ore joined its stack), the mail is gone.
@@ -1346,7 +1350,7 @@ fn a_collected_mail_cannot_be_cancelled() {
     let id = s.alice_sends(&[(1002, 1)], None);
     s.collect(B, id);
     s.log.take();
-    s.mail(A, MailInput::CancelPostAttachment { msg_id: id });
+    s.answered(A, MailInput::CancelPostAttachment { msg_id: id });
     let out = s.log.take();
     assert_eq!(
         messages(&out, A),
@@ -1784,4 +1788,169 @@ fn expiry_writes_respect_the_switch() {
     );
     assert!(messages(&out, A).contains(&SystemMessageId::TheMailWasReturnedDueToTheExceededWaitingTime));
     assert!(messages(&out, B).contains(&SystemMessageId::TheMailWasReturnedDueToTheExceededWaitingTime));
+}
+
+/// `RequestRejectPostAttachment` reads the rows first too: the returned mail takes only what is
+/// still in the mail.
+#[test]
+fn rejecting_returns_only_the_rows_that_are_still_in_the_mail() {
+    let mut s = Scene::new();
+    s.enter(player(B, "Bob", vec![]));
+    s.world.load_mail(MailLoad {
+        messages: vec![stored_mail(
+            500,
+            C,
+            B,
+            in_a_while(),
+            &[in_mail(7001, SWORD, 1, 500), in_mail(7002, ORE, 5, 500)],
+        )],
+        characters: vec![],
+    });
+    s.log.take();
+
+    s.mail(B, MailInput::RejectPostAttachment { msg_id: 500 });
+    assert_eq!(s.take_attachment_requests(), [(B, 500, C.0)]);
+    let waiting = s.log.take();
+    assert!(
+        mail_writes(&waiting).is_empty() && rows(&waiting).is_empty(),
+        "{waiting:?}"
+    );
+    assert!(s.world.mail_message(500).unwrap().has_attachments);
+
+    // The sword went to somebody on the Java GS.
+    s.world.handle(WorldCommand::MailAttachmentsLoaded {
+        player: B,
+        message_id: 500,
+        result: Ok(vec![in_mail(7002, ORE, 5, 500)]),
+    });
+    let out = s.log.take();
+    let inserted: Vec<MailMessage> = mail_writes(&out)
+        .into_iter()
+        .filter_map(|w| match w {
+            MailWrite::Insert(m) => Some(*m),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(inserted.len(), 1);
+    assert_eq!(
+        inserted[0]
+            .attachments
+            .iter()
+            .map(|i| i.object_id.0)
+            .collect::<Vec<_>>(),
+        [7002]
+    );
+    assert_eq!((inserted[0].receiver_id, inserted[0].returned), (C.0, true));
+    let written = rows(&out);
+    assert!(written.iter().any(|r| r.2 == 7002), "{written:?}");
+    assert!(written.iter().all(|r| r.2 != 7001), "{written:?}");
+    assert!(!s.world.mail_message(500).unwrap().has_attachments);
+}
+
+/// Everything was taken at the Java GS: nothing is returned.
+#[test]
+fn rejecting_a_mail_whose_rows_are_gone_returns_nothing() {
+    let mut s = Scene::new();
+    s.enter(player(B, "Bob", vec![]));
+    s.world.load_mail(MailLoad {
+        messages: vec![stored_mail(
+            500,
+            C,
+            B,
+            in_a_while(),
+            &[in_mail(7001, SWORD, 1, 500)],
+        )],
+        characters: vec![],
+    });
+    s.log.take();
+    s.mail(B, MailInput::RejectPostAttachment { msg_id: 500 });
+    s.take_attachment_requests();
+    s.world.handle(WorldCommand::MailAttachmentsLoaded {
+        player: B,
+        message_id: 500,
+        result: Ok(vec![]),
+    });
+    let out = s.log.take();
+    assert!(mail_writes(&out).is_empty() && rows(&out).is_empty(), "{out:?}");
+    assert!(!s.world.mail_message(500).unwrap().has_attachments);
+
+    // A failed read refuses the action as well.
+    s.world.load_mail(MailLoad {
+        messages: vec![stored_mail(
+            501,
+            C,
+            B,
+            in_a_while(),
+            &[in_mail(7002, ORE, 1, 501)],
+        )],
+        characters: vec![],
+    });
+    s.mail(B, MailInput::RejectPostAttachment { msg_id: 501 });
+    s.take_attachment_requests();
+    s.log.take();
+    s.world.handle(WorldCommand::MailAttachmentsLoaded {
+        player: B,
+        message_id: 501,
+        result: Err(()),
+    });
+    let out = s.log.take();
+    assert!(mail_writes(&out).is_empty() && rows(&out).is_empty(), "{out:?}");
+    assert!(s.world.mail_message(501).unwrap().has_attachments);
+}
+
+/// `RequestCancelPostAttachment` reads the rows first: the sender gets back only what is still in
+/// the mail.
+#[test]
+fn cancelling_gives_back_only_the_rows_that_are_still_in_the_mail() {
+    let mut s = Scene::new();
+    s.enter(player(A, "Alice", alice_items()));
+    s.enter(player(B, "Bob", vec![]));
+    s.log.take();
+    let id = s.alice_sends(&[(1002, 1), (1004, 20)], None);
+    let in_the_mail = s.world.mail_message(id).unwrap().attachments.clone();
+    let ore_row = in_the_mail.iter().find(|i| i.item_id == ORE).unwrap().clone();
+    s.log.take();
+
+    s.mail(A, MailInput::CancelPostAttachment { msg_id: id });
+    assert_eq!(s.take_attachment_requests(), [(A, id, A.0)]);
+    let waiting = s.log.take();
+    assert!(
+        mail_writes(&waiting).is_empty() && rows(&waiting).is_empty(),
+        "{waiting:?}"
+    );
+
+    // The sword was taken at the Java GS (Bob is online there), only the ore is left.
+    s.world.handle(WorldCommand::MailAttachmentsLoaded {
+        player: A,
+        message_id: id,
+        result: Ok(vec![ore_row]),
+    });
+    let out = s.log.take();
+    let items: Vec<i32> = s.inventory_of(A).into_iter().map(|(_, item, _)| item).collect();
+    assert!(!items.contains(&SWORD), "{items:?}");
+    assert!(items.contains(&ORE));
+    assert!(mail_writes(&out).contains(&MailWrite::Delete(id)));
+    assert!(s.world.mail_message(id).is_none());
+}
+
+#[test]
+fn cancelling_a_mail_whose_rows_are_gone_says_it_was_received() {
+    let mut s = Scene::new();
+    s.enter(player(A, "Alice", alice_items()));
+    s.enter(player(B, "Bob", vec![]));
+    s.log.take();
+    let id = s.alice_sends(&[(1002, 1)], None);
+    s.log.take();
+    s.mail(A, MailInput::CancelPostAttachment { msg_id: id });
+    s.take_attachment_requests();
+    s.world.handle(WorldCommand::MailAttachmentsLoaded {
+        player: A,
+        message_id: id,
+        result: Ok(vec![]),
+    });
+    let out = s.log.take();
+    assert!(messages(&out, A).contains(&SystemMessageId::YouCannotCancelSentMailSinceTheRecipientReceivedIt));
+    assert!(mail_writes(&out).is_empty() && rows(&out).is_empty(), "{out:?}");
+    assert!(s.world.mail_message(id).is_some());
+    assert!(!s.world.mail_message(id).unwrap().has_attachments);
 }

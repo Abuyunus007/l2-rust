@@ -16,7 +16,8 @@
 
 use std::collections::BTreeSet;
 
-use l2_protocol_game::server::ActionFailed;
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{ActionFailed, SystemMessage};
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
@@ -27,6 +28,17 @@ use crate::world::World;
 
 /// `ItemLocation.MAIL` as the `items.loc` column spells it.
 const LOC_MAIL: &str = "MAIL";
+
+/// Which attachment packet waits for the rows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum AttachmentAction {
+    /// `RequestPostAttachment`.
+    Take,
+    /// `RequestRejectPostAttachment`.
+    Reject,
+    /// `RequestCancelPostAttachment`.
+    Cancel,
+}
 
 /// The mails of one character as the database has them (sender or receiver), with their
 /// attachments (`PlayerProfile::mail_refresh`).
@@ -100,8 +112,14 @@ impl World {
 
     /// Asks for the attachment rows of `message_id` before `player` takes them. A request that is
     /// already out is replaced (the answer of the first one is dropped as stale).
-    pub(crate) fn mail_request_attachments(&mut self, player: ObjectId, message_id: i32, sender_id: i32) {
-        self.mail.pending_attachments.insert(player, message_id);
+    pub(crate) fn mail_request_attachments(
+        &mut self,
+        player: ObjectId,
+        message_id: i32,
+        sender_id: i32,
+        action: AttachmentAction,
+    ) {
+        self.mail.pending_attachments.insert(player, (message_id, action));
         self.outbox.persist(PersistCommand::MailAttachmentsRequest {
             player,
             message_id,
@@ -118,9 +136,10 @@ impl World {
         message_id: i32,
         result: Result<Vec<ItemData>, ()>,
     ) {
-        if self.mail.pending_attachments.get(&player) != Some(&message_id) {
-            return;
-        }
+        let action = match self.mail.pending_attachments.get(&player) {
+            Some(&(pending, action)) if pending == message_id => action,
+            _ => return,
+        };
         self.mail.pending_attachments.remove(&player);
         if !self.players.contains_key(&player) {
             return;
@@ -143,8 +162,19 @@ impl World {
         if message.attachments.is_empty() {
             // Taken elsewhere already: the Java GS wrote the flag, nothing to write here.
             message.has_attachments = false;
+            if action == AttachmentAction::Cancel {
+                // Java's answer to a sent mail without attachments.
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::YouCannotCancelSentMailSinceTheRecipientReceivedIt),
+                );
+            }
             return;
         }
-        self.post_attachment(player, message_id, true);
+        match action {
+            AttachmentAction::Take => self.post_attachment(player, message_id, true),
+            AttachmentAction::Reject => self.reject_attachment(player, message_id, true),
+            AttachmentAction::Cancel => self.cancel_attachment(player, message_id, true),
+        }
     }
 }

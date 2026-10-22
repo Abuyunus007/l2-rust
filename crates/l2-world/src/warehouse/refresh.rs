@@ -8,6 +8,7 @@
 // answer (`WorldCommand::ClanWarehouseLoaded`) replaces `Clan::warehouse` and then continues with
 // the window. A failed read opens nothing and never shows the old container.
 
+use l2_protocol_game::client::WarehouseListEntry;
 use l2_protocol_game::server::ActionFailed;
 use l2_util::ObjectId;
 use tracing::warn;
@@ -18,12 +19,15 @@ use crate::player::ItemData;
 use crate::world::World;
 
 /// Which clan warehouse window is waiting for the rows.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum PendingClanWindow {
     /// `WithdrawC` (`None`) or `WithdrawSortedC` (the list type and order).
     Withdraw(Option<(WarehouseListType, i8)>),
     /// `DepositC`.
     Deposit,
+    /// `SendWareHouseWithDrawList` on the clan warehouse: the packet waits for the rows and then
+    /// runs on the refreshed container.
+    WithdrawPacket(Vec<WarehouseListEntry>),
 }
 
 impl World {
@@ -50,11 +54,12 @@ impl World {
         let Some(p) = self.players.get_mut(&player) else {
             return;
         };
-        let window = match p.warehouse.pending_clan {
-            Some((pending_clan, window)) if pending_clan == clan_id => window,
-            _ => return,
+        if !matches!(p.warehouse.pending_clan, Some((pending, _)) if pending == clan_id) {
+            return;
+        }
+        let Some((_, window)) = p.warehouse.pending_clan.take() else {
+            return;
         };
-        p.warehouse.pending_clan = None;
         let Ok(mut items) = result else {
             warn!(
                 "ClanWarehouse: could not read the items of clan {clan_id} for {player}; the window is not opened."
@@ -75,6 +80,7 @@ impl World {
         match window {
             PendingClanWindow::Withdraw(sorted) => self.show_clan_withdraw_window(player, sorted),
             PendingClanWindow::Deposit => self.show_clan_deposit_window(player, clan_id),
+            PendingClanWindow::WithdrawPacket(items) => self.warehouse_withdraw(player, items, true),
         }
     }
 }

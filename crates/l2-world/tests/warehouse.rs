@@ -371,18 +371,7 @@ impl Scene {
     /// answered at once. The tests of the refresh use [`bypass_unanswered`](Self::bypass_unanswered).
     fn bypass(&mut self, who: ObjectId, command: &str) {
         self.bypass_unanswered(who, command);
-        for (player, clan_id) in self.take_clan_requests() {
-            let items = self
-                .world
-                .clan(clan_id)
-                .map(|c| c.warehouse.clone())
-                .unwrap_or_default();
-            self.world.handle(WorldCommand::ClanWarehouseLoaded {
-                player,
-                clan_id,
-                result: Ok(items),
-            });
-        }
+        self.answer_clan_requests_from_memory();
     }
 
     fn bypass_unanswered(&mut self, who: ObjectId, command: &str) {
@@ -416,13 +405,35 @@ impl Scene {
         );
     }
 
+    /// `SendWareHouseWithDrawList`; a withdraw from the clan warehouse asks for the rows of the
+    /// clan first (M6-SYNC-01), answered here with what the world has.
     fn withdraw(&mut self, who: ObjectId, items: &[(i32, i64)]) {
+        self.withdraw_unanswered(who, items);
+        self.answer_clan_requests_from_memory();
+    }
+
+    fn withdraw_unanswered(&mut self, who: ObjectId, items: &[(i32, i64)]) {
         self.input(
             who,
             ClientInput::Warehouse(WarehouseInput::Withdraw {
                 items: Some(entries(items)),
             }),
         );
+    }
+
+    fn answer_clan_requests_from_memory(&mut self) {
+        for (player, clan_id) in self.take_clan_requests() {
+            let items = self
+                .world
+                .clan(clan_id)
+                .map(|c| c.warehouse.clone())
+                .unwrap_or_default();
+            self.world.handle(WorldCommand::ClanWarehouseLoaded {
+                player,
+                clan_id,
+                result: Ok(items),
+            });
+        }
     }
 
     fn send_package(&mut self, who: ObjectId, receiver: ObjectId, items: &[(i32, i64)]) {
@@ -1954,4 +1965,99 @@ fn the_private_warehouse_does_not_ask() {
     s.bypass_unanswered(A, "WithdrawP");
     assert!(s.take_clan_requests().is_empty());
     assert_eq!(of(&s.log.take(), A, "WAREHOUSE_WITHDRAW_LIST").len(), 1);
+}
+
+/// `SendWareHouseWithDrawList` on the clan warehouse reads the rows first and runs on the refreshed
+/// container: nothing moves before the answer, an item the Java GS took meanwhile is skipped (and
+/// does not punish the player), the rest goes on.
+#[test]
+fn a_clan_withdraw_runs_on_the_refreshed_container() {
+    let mut s = clan_scene(3, WorldSettings::default());
+    s.enter(clan_data(A, 1, vec![inv(101, ADENA, 10)]));
+    s.talk(A);
+    s.bypass(A, "WithdrawC");
+    s.log.take();
+
+    s.withdraw_unanswered(A, &[(400, 1), (401, 20)]);
+    assert_eq!(s.take_clan_requests(), [(A, CLAN)]);
+    let waiting = s.log.take();
+    assert!(
+        rows(&waiting).is_empty() && packets(&waiting, A).is_empty(),
+        "{waiting:?}"
+    );
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 2);
+
+    // The sword (400) was taken on the Java GS; 401 is still there.
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![clan_wh(401, PILE, 50)]),
+    });
+    let out = s.log.take();
+    assert!(s.inventory_of(A).iter().all(|(_, item, _)| *item != SWORD));
+    assert!(
+        s.inventory_of(A)
+            .iter()
+            .any(|(_, item, count)| *item == PILE && *count == 20)
+    );
+    let written = flat(&rows(&out)[0].1);
+    assert!(written.iter().all(|r| r.2 != 400), "{written:?}");
+    assert!(written.iter().any(|r| r.2 == 401), "{written:?}");
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 1);
+    // No punishment message: only the inventory update and the load.
+    let names = names(&out, A);
+    assert!(
+        names
+            .iter()
+            .all(|n| n == "INVENTORY_UPDATE" || n == "STATUS_UPDATE"),
+        "{names:?}"
+    );
+}
+
+/// When nothing of the packet is left after the refresh, nothing moves; a failed read moves nothing
+/// either.
+#[test]
+fn a_clan_withdraw_of_items_that_are_all_gone_or_unreadable_moves_nothing() {
+    let mut s = clan_scene(3, WorldSettings::default());
+    s.enter(clan_data(A, 1, vec![]));
+    s.talk(A);
+    s.bypass(A, "WithdrawC");
+    s.log.take();
+
+    s.withdraw_unanswered(A, &[(400, 1)]);
+    s.take_clan_requests();
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![]),
+    });
+    let out = s.log.take();
+    assert!(rows(&out).is_empty());
+    assert!(s.inventory_of(A).is_empty());
+    assert!(s.world.clan(CLAN).unwrap().warehouse.is_empty());
+
+    s.withdraw_unanswered(A, &[(401, 1)]);
+    s.take_clan_requests();
+    s.log.take();
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Err(()),
+    });
+    let out = s.log.take();
+    assert_eq!(names(&out, A), ["ACTION_FAIL"]);
+    assert!(rows(&out).is_empty());
+}
+
+/// The private warehouse withdraw does not ask: nobody else changes it.
+#[test]
+fn a_private_withdraw_does_not_ask_for_rows() {
+    let mut s = Scene::new();
+    s.enter(keeper_client(A, vec![], vec![wh(300, SWORD, 1)]));
+    s.talk(A);
+    s.bypass(A, "WithdrawP");
+    s.log.take();
+    s.withdraw_unanswered(A, &[(300, 1)]);
+    assert!(s.take_clan_requests().is_empty());
+    assert_eq!(rows(&s.log.take()).len(), 1);
 }

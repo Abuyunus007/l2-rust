@@ -42,9 +42,10 @@
 // - At `CharacterSelect` the session reads the character's mails with their attachments
 //   ([`MailRefresh`]) and the world replaces its copies of exactly those messages when the player
 //   enters.
-// - `RequestPostAttachment` asks the persistence task for the attachment rows of the message first
-//   (`PersistCommand::MailAttachmentsRequest` / `WorldCommand::MailAttachmentsLoaded`, D-15) and
-//   hands out only the rows that are still `loc = 'MAIL'` with that `loc_data`.
+// - `RequestPostAttachment`, `RequestRejectPostAttachment` and `RequestCancelPostAttachment` ask for
+//   the attachment rows of the message first (`PersistCommand::MailAttachmentsRequest` /
+//   `WorldCommand::MailAttachmentsLoaded`, D-15) and move only the rows that are still
+//   `loc = 'MAIL'` with that `loc_data`.
 // - The expiry task writes its rows only with `MailExpiryDatabaseWrites` (D-49,
 //   [`MailSettings::expiry_database_writes`]); otherwise the Java GS, which has the same mails,
 //   does it.
@@ -339,8 +340,8 @@ pub(crate) struct MailWorld {
     /// does not know them, and their rows may still be in the persistence queue, so a refresh
     /// leaves them alone.
     pub local_ids: std::collections::BTreeSet<i32>,
-    /// The `RequestPostAttachment` waiting for the attachment rows: player to message id.
-    pub pending_attachments: BTreeMap<ObjectId, i32>,
+    /// The attachment packet waiting for the attachment rows: player to message id and packet.
+    pub pending_attachments: BTreeMap<ObjectId, (i32, refresh::AttachmentAction)>,
 }
 
 #[cfg(test)]
