@@ -320,6 +320,43 @@ impl Scene {
     }
 
     fn send(&mut self, who: ObjectId, receiver: &str, items: &[(i32, i64)], cod: Option<i64>) {
+        self.send_with_block_list(who, receiver, items, cod, Ok(vec![]));
+    }
+
+    /// `send`, where the read of an offline receiver's block list (M6-FU-09) is answered with
+    /// `block_list`. The tests with an online receiver never see the read.
+    fn send_with_block_list(
+        &mut self,
+        who: ObjectId,
+        receiver: &str,
+        items: &[(i32, i64)],
+        cod: Option<i64>,
+        block_list: Result<Vec<i32>, ()>,
+    ) {
+        self.send_request(who, receiver, items, cod);
+        for (sender, owner) in self.take_block_list_requests() {
+            self.world.handle(WorldCommand::BlockListLoaded {
+                sender,
+                owner,
+                result: block_list.clone(),
+            });
+        }
+    }
+
+    /// The block list reads the world asked for (M6-FU-09), taken out of the log.
+    fn take_block_list_requests(&self) -> Vec<(ObjectId, i32)> {
+        let mut found = Vec::new();
+        self.log.0.lock().unwrap().retain(|o| match o {
+            Out::Persist(PersistCommand::BlockListRequest { sender, owner }) => {
+                found.push((*sender, *owner));
+                false
+            }
+            _ => true,
+        });
+        found
+    }
+
+    fn send_request(&mut self, who: ObjectId, receiver: &str, items: &[(i32, i64)], cod: Option<i64>) {
         self.mail(
             who,
             MailInput::Send(RequestSendPost {
@@ -799,6 +836,69 @@ fn a_receiver_who_blocked_the_sender_gets_no_mail() {
     let message: SystemMessage = decode(raw[0]);
     assert_eq!(message.id, SystemMessageId::C1HasBlockedYouYouCannotSendMailToC1);
     assert!(mail_writes(&out).is_empty());
+}
+
+#[test]
+fn an_offline_receivers_block_list_is_read_before_the_mail_goes() {
+    // Java `BlockList.isInBlockList(ownerId, targetId)` of a player who is not online:
+    // `OFFLINE_LIST.computeIfAbsent(ownerId, loadList).contains(targetId)`.
+    let mut s = Scene::new();
+    s.enter(player(A, "Alice", alice_items()));
+    s.log.take();
+
+    // Carol is offline: the world asks for her block list and sends nothing yet.
+    s.send_request(A, "Carol", &[], None);
+    let out = s.log.take();
+    assert_eq!(
+        out.iter()
+            .filter_map(|o| match o {
+                Out::Persist(PersistCommand::BlockListRequest { sender, owner }) => Some((*sender, *owner)),
+                _ => None,
+            })
+            .collect::<Vec<_>>(),
+        vec![(A, C.0)]
+    );
+    assert!(mail_writes(&out).is_empty());
+    assert!(packets(&out, A).is_empty());
+
+    // Alice is on the list: "C1 has blocked you", no mail, no fee.
+    s.world.handle(WorldCommand::BlockListLoaded {
+        sender: A,
+        owner: C.0,
+        result: Ok(vec![A.0]),
+    });
+    let out = s.log.take();
+    let message: SystemMessage = decode(of(&out, A, "SYSTEM_MESSAGE")[0]);
+    assert_eq!(message.id, SystemMessageId::C1HasBlockedYouYouCannotSendMailToC1);
+    assert_eq!(message.params, vec![SystemMessageParam::Text("Carol".into())]);
+    assert!(mail_writes(&out).is_empty());
+    assert_eq!(s.world.adena_of(A), 100_000);
+
+    // Somebody else on the list: the mail goes, for the fee.
+    s.send_with_block_list(A, "Carol", &[], None, Ok(vec![B.0]));
+    let out = s.log.take();
+    assert_eq!(mail_writes(&out).len(), 1);
+    assert_eq!(s.world.adena_of(A), 100_000 - 100);
+}
+
+#[test]
+fn a_failed_block_list_read_sends_no_mail() {
+    // D-50: a failed read refuses the action, never falls back to "not blocked".
+    let mut s = Scene::new();
+    s.enter(player(A, "Alice", alice_items()));
+    s.log.take();
+    s.send_with_block_list(A, "Carol", &[], None, Err(()));
+    let out = s.log.take();
+    assert!(mail_writes(&out).is_empty());
+    assert_eq!(of(&out, A, "ACTION_FAIL").len(), 1);
+    assert_eq!(s.world.adena_of(A), 100_000);
+    // The answer was used up: a late second one does nothing.
+    s.world.handle(WorldCommand::BlockListLoaded {
+        sender: A,
+        owner: C.0,
+        result: Ok(vec![]),
+    });
+    assert!(mail_writes(&s.log.take()).is_empty());
 }
 
 #[test]

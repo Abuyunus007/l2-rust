@@ -50,8 +50,7 @@ impl World {
     }
 
     /// Java `Item.isAvailable(player, allowAdena, allowNonTradeable)` for an item of `player`.
-    // Not modelled (nothing sets them yet): the control item of a summoned pet, the skill consumed
-    // by `getLastSimultaneousSkillCast`, and `havePetInvItems` for a pet collar.
+    // Not modelled (nothing sets it yet): the skill consumed by `getLastSimultaneousSkillCast`.
     pub(crate) fn is_item_available(
         &self,
         player: ObjectId,
@@ -74,6 +73,13 @@ impl World {
         if self.is_enchant_item_in_use(player, item.object_id) {
             return false;
         }
+        // Not the control item of the currently summoned pet (`player.getSummon().getControlObjectId()`,
+        // 0 for a servitor).
+        if let Some(summon) = self.summon_of(player)
+            && self.pet_control_object_id(summon) == Some(item.object_id)
+        {
+            return false;
+        }
         // Not adena.
         if !allow_adena && item.item_id == ADENA_ID {
             return false;
@@ -86,8 +92,12 @@ impl World {
         {
             return false;
         }
-        // Tradeable (a pet collar is excluded only while the pet has items, not modelled).
-        allow_non_tradeable || self.item_is_tradeable(item, template)
+        // Tradeable, and not a pet collar while the pet's inventory kept items (`havePetInvItems`).
+        // The collar rule sits inside the `allowNonTradeable ||` of Java: a private warehouse
+        // deposit (`allowNonTradeable = isPrivate`) takes the collar anyway.
+        allow_non_tradeable
+            || (self.item_is_tradeable(item, template)
+                && !(template.is_pet_item() && self.have_pet_inv_items(player)))
     }
 
     /// Java `new TradeStart(player)`: the packet for a player who has just begun to trade with

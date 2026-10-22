@@ -343,6 +343,16 @@ impl World {
                 clan_id,
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
+            WorldCommand::OfflinePetRowsLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => self.on_offline_pet_rows_loaded(owner, control_object_id, result),
+            WorldCommand::BlockListLoaded {
+                sender,
+                owner,
+                result,
+            } => self.on_block_list_loaded(sender, owner, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();

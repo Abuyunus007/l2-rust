@@ -38,6 +38,7 @@ pub mod info;
 pub mod party;
 pub mod pet;
 pub mod pet_items;
+pub mod pet_offline;
 pub mod servitor;
 pub mod share;
 pub mod shots;
