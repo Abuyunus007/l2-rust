@@ -108,7 +108,11 @@ impl World {
     /// `PunishmentManager.handleIllegalPlayerAction(player, "Warning!! Character .. sent a false
     /// recipe id.")`.
     fn false_recipe_id(&mut self, player: ObjectId) {
-        let name = self.players.get(&player).map(|p| p.data.name.clone()).unwrap_or_default();
+        let name = self
+            .players
+            .get(&player)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
         let text = format!(
             "Warning!! Character {name} of account {} sent a false recipe id.",
             self.account_of(player)
@@ -117,7 +121,12 @@ impl World {
     }
 
     /// Java `RecipeManager.requestManufactureItem(manufacturer, recipeListId, player)`.
-    pub(crate) fn request_manufacture_item(&mut self, manufacturer: ObjectId, recipe_list_id: i32, player: ObjectId) {
+    pub(crate) fn request_manufacture_item(
+        &mut self,
+        manufacturer: ObjectId,
+        recipe_list_id: i32,
+        player: ObjectId,
+    ) {
         let Some(recipe) = self.get_valid_recipe_list(player, recipe_list_id) else {
             return;
         };
@@ -283,7 +292,10 @@ impl World {
             if let Some(cost) = cost {
                 m.price = cost;
                 if self.adena_of(target) < m.price {
-                    self.send(target, &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena));
+                    self.send(
+                        target,
+                        &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena),
+                    );
                     self.maker_abort(&m);
                     return m;
                 }
@@ -363,11 +375,17 @@ impl World {
                     * PASS_DELAY_FACTOR) as i32;
                 // FIXME (Java): the packet should show a crafting animation.
                 self.broadcast_craft_skill(m.crafter, m.skill_id, m.skill_level, m.delay);
-                self.send(m.crafter, &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay));
+                self.send(
+                    m.crafter,
+                    &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay),
+                );
                 self.schedule_maker(m, 100 + i64::from(m.delay), false);
             } else {
                 // For alt mode, sleep delay msec before finishing.
-                self.send(m.crafter, &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay));
+                self.send(
+                    m.crafter,
+                    &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay),
+                );
                 self.schedule_maker(m, i64::from(m.delay), true);
             }
         } else {
@@ -416,9 +434,10 @@ impl World {
             .data
             .stat_data()
             .and_then(|d| d.skills.get_skill(skill_id, skill_level));
-        let ctx = skill.map(|s| crate::stats::skills::calc_skill(s));
-        self.stats(id)
-            .map_or(1.0, |v| v.calc_stat(Stat::MagicReuseRate, 1.0, None, ctx.as_ref()))
+        let ctx = skill.map(crate::stats::skills::calc_skill);
+        self.stats(id).map_or(1.0, |v| {
+            v.calc_stat(Stat::MagicReuseRate, 1.0, None, ctx.as_ref())
+        })
     }
 
     /// `broadcastSkillPacket(new MagicSkillUse(player, skillId, skillLevel, delay, 0), player)`.
@@ -461,7 +480,10 @@ impl World {
         // First take adena for manufacture.
         // Customer must pay for services.
         if m.target != m.crafter && m.price > 0 && !self.craft_transfer_adena(m.target, m.crafter, m.price) {
-            self.send(m.target, &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena));
+            self.send(
+                m.target,
+                &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena),
+            );
             self.maker_abort(m);
             return;
         }
@@ -477,10 +499,12 @@ impl World {
                 let crafter_name = self.name_param(m.crafter);
                 self.send(
                     m.crafter,
-                    &SystemMessage::new(SystemMessageId::YourAttemptToCreateS2ForC1AtThePriceOfS3AdenaHasFailed)
-                        .with(target_name)
-                        .with(self.recipe_product_name(m.recipe.item_id))
-                        .with(SystemMessageParam::LongNumber(m.price)),
+                    &SystemMessage::new(
+                        SystemMessageId::YourAttemptToCreateS2ForC1AtThePriceOfS3AdenaHasFailed,
+                    )
+                    .with(target_name)
+                    .with(self.recipe_product_name(m.recipe.item_id))
+                    .with(SystemMessageParam::LongNumber(m.price)),
                 );
                 self.send(
                     m.target,
@@ -490,7 +514,10 @@ impl World {
                         .with(SystemMessageParam::LongNumber(m.price)),
                 );
             } else {
-                self.send(m.target, &SystemMessage::new(SystemMessageId::YouFailedAtMixingTheItem));
+                self.send(
+                    m.target,
+                    &SystemMessage::new(SystemMessageId::YouFailedAtMixingTheItem),
+                );
             }
 
             // Craft window counts come from the client inventory, so it is sent directly,
@@ -539,7 +566,10 @@ impl World {
     /// null.
     fn craft_transfer_adena(&mut self, from: ObjectId, to: ObjectId, amount: i64) -> bool {
         // `_target.getInventory().getAdenaInstance().getObjectId()`
-        let Some(adena) = self.inventory_item_by_item_id(from, ADENA_ID).map(|i| i.object_id) else {
+        let Some(adena) = self
+            .inventory_item_by_item_id(from, ADENA_ID)
+            .map(|i| i.object_id)
+        else {
             return false;
         };
         if self.check_item_manipulation(from, adena, amount).is_none() {
@@ -603,10 +633,12 @@ impl World {
             if item_count == 1 {
                 self.send(
                     m.crafter,
-                    &SystemMessage::new(SystemMessageId::S2HasBeenCreatedForC1AfterThePaymentOfS3AdenaWasReceived)
-                        .with(target_name)
-                        .with(product.clone())
-                        .with(SystemMessageParam::LongNumber(m.price)),
+                    &SystemMessage::new(
+                        SystemMessageId::S2HasBeenCreatedForC1AfterThePaymentOfS3AdenaWasReceived,
+                    )
+                    .with(target_name)
+                    .with(product.clone())
+                    .with(SystemMessageParam::LongNumber(m.price)),
                 );
                 self.send(
                     m.target,
@@ -653,7 +685,13 @@ impl World {
     }
 
     /// The `ALT_GAME_CREATION` end of `rewardPlayer`: exp and SP for the crafter.
-    fn alt_creation_exp_sp(&mut self, m: &mut ItemMaker, reference_price: i32, item_id: i32, item_count: i32) {
+    fn alt_creation_exp_sp(
+        &mut self,
+        m: &mut ItemMaker,
+        reference_price: i32,
+        item_id: i32,
+        item_count: i32,
+    ) {
         let settings = self.settings.craft.clone();
         let recipe_level = m.recipe.level;
         if m.exp < 0 {
@@ -768,7 +806,10 @@ impl World {
                     if cur_hp <= modified_value {
                         // Rest (wait for HP).
                         if alt && is_wait {
-                            self.send(m.crafter, &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay));
+                            self.send(
+                                m.crafter,
+                                &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay),
+                            );
                             self.schedule_maker(m, 100 + i64::from(m.delay), false);
                         } else {
                             self.send(m.target, &SystemMessage::new(SystemMessageId::NotEnoughHp));
@@ -784,7 +825,10 @@ impl World {
                     if cur_mp < modified_value {
                         // Rest (wait for MP).
                         if alt && is_wait {
-                            self.send(m.crafter, &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay));
+                            self.send(
+                                m.crafter,
+                                &SetupGauge::new(m.crafter.0, SetupGauge::BLUE, m.delay),
+                            );
                             self.schedule_maker(m, 100 + i64::from(m.delay), false);
                         } else {
                             self.send(m.target, &SystemMessage::new(SystemMessageId::NotEnoughMp));
@@ -822,7 +866,9 @@ impl World {
                         m.target,
                         &SystemMessage::new(SystemMessageId::YouAreMissingS2S1RequiredToCreateThat)
                             .with(item_name_param(templates.as_deref(), holder.item_id))
-                            .with(SystemMessageParam::LongNumber(i64::from(holder.quantity) - amount)),
+                            .with(SystemMessageParam::LongNumber(
+                                i64::from(holder.quantity) - amount,
+                            )),
                     );
                     self.maker_abort(m);
                     return None;

@@ -345,6 +345,7 @@ impl Server {
             let skill_learn = Arc::clone(&datapack.skill_learn);
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let cubics = Arc::clone(&datapack.cubics);
+            let recipes = Arc::clone(&datapack.recipes);
             let class_list = Arc::clone(&datapack.class_list);
             let multisell = (
                 Arc::clone(&datapack.multisell),
@@ -386,6 +387,8 @@ impl Server {
                     world.set_pet_skill_data(pet_skills);
                     // Java: CubicData (the cubic templates of `SummonCubic`).
                     world.set_cubic_data(cubics);
+                    // Java: RecipeData (data/Recipes.xml).
+                    world.set_recipe_data(recipes);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: MultisellData (the exchange lists of NPCs).

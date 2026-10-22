@@ -40,7 +40,13 @@ impl World {
     pub fn manufacture_items(&self, id: ObjectId) -> Vec<(i32, i64)> {
         self.players
             .get(&id)
-            .map(|p| p.craft.manufacture.iter().map(|m| (m.recipe_id, m.cost)).collect())
+            .map(|p| {
+                p.craft
+                    .manufacture
+                    .iter()
+                    .map(|m| (m.recipe_id, m.cost))
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -315,7 +321,12 @@ impl World {
 
     /// Java `RequestRecipeShopMakeItem.runImpl`.
     // The flood protector `canManufacture` is not modelled.
-    pub(crate) fn on_request_recipe_shop_make_item(&mut self, id: ObjectId, manufacturer: i32, recipe_id: i32) {
+    pub(crate) fn on_request_recipe_shop_make_item(
+        &mut self,
+        id: ObjectId,
+        manufacturer: i32,
+        recipe_id: i32,
+    ) {
         let manufacturer = ObjectId(manufacturer);
         if !self.players.contains_key(&manufacturer) {
             return;

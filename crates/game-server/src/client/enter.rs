@@ -25,9 +25,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, CraftInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, CraftInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData,
+    PacketSink, PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse,
+    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -985,9 +985,7 @@ impl ClientSession {
             ClientPacket::RequestRecipeBookDestroy(p) => ClientInput::Craft(CraftInput::BookDestroy(p)),
             ClientPacket::RequestRecipeItemMakeInfo(p) => ClientInput::Craft(CraftInput::ItemMakeInfo(p)),
             ClientPacket::RequestRecipeItemMakeSelf(p) => ClientInput::Craft(CraftInput::ItemMakeSelf(p)),
-            ClientPacket::RequestRecipeShopMessageSet(p) => {
-                ClientInput::Craft(CraftInput::ShopMessageSet(p))
-            }
+            ClientPacket::RequestRecipeShopMessageSet(p) => ClientInput::Craft(CraftInput::ShopMessageSet(p)),
             ClientPacket::RequestRecipeShopListSet(p) => ClientInput::Craft(CraftInput::ShopListSet(p)),
             ClientPacket::RequestRecipeShopManageQuit(_) => ClientInput::Craft(CraftInput::ShopManageQuit),
             ClientPacket::RequestRecipeShopMakeInfo(p) => ClientInput::Craft(CraftInput::ShopMakeInfo(p)),

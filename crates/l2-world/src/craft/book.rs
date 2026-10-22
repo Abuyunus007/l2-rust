@@ -11,9 +11,7 @@
 
 use l2_data::stats::Stat;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{
-    RecipeBookItemList, RecipeItemMakeInfo, SystemMessage, SystemMessageParam,
-};
+use l2_protocol_game::server::{RecipeBookItemList, RecipeItemMakeInfo, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -79,17 +77,13 @@ impl World {
 
     /// Java `Player.getDwarfRecipeLimit()`: `DwarfRecipeLimit` plus `REC_D_LIM`.
     pub(crate) fn dwarf_recipe_limit(&self, id: ObjectId) -> i32 {
-        let bonus = self
-            .stats(id)
-            .map_or(0.0, |v| v.calc(Stat::RecDLim, 0.0));
+        let bonus = self.stats(id).map_or(0.0, |v| v.calc(Stat::RecDLim, 0.0));
         self.settings.dwarf_recipe_limit.wrapping_add(bonus as i32)
     }
 
     /// Java `Player.getCommonRecipeLimit()`: `CommonRecipeLimit` plus `REC_C_LIM`.
     pub(crate) fn common_recipe_limit(&self, id: ObjectId) -> i32 {
-        let bonus = self
-            .stats(id)
-            .map_or(0.0, |v| v.calc(Stat::RecCLim, 0.0));
+        let bonus = self.stats(id).map_or(0.0, |v| v.calc(Stat::RecCLim, 0.0));
         self.settings.common_recipe_limit.wrapping_add(bonus as i32)
     }
 
@@ -337,7 +331,10 @@ impl World {
             );
             return false;
         }
-        let Some(rp) = self.recipe_data().and_then(|d| d.by_item_id(item.item_id).cloned()) else {
+        let Some(rp) = self
+            .recipe_data()
+            .and_then(|d| d.by_item_id(item.item_id).cloned())
+        else {
             return false;
         };
         if self.has_recipe_list(id, rp.id) {

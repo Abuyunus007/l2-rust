@@ -55,16 +55,16 @@ use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
     GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
     NewItem, NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, Pool,
-    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository,
-    SummonRepository, VariableRepository,
+    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
+    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
     ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PlayerData,
-    ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
-    SavedItemReuse, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse,
+    ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -2000,7 +2000,11 @@ impl PlayerStore for DbStore {
                 char_id,
                 recipe_id,
                 class_index,
-            } => self.recipes.delete_recipe(*char_id, *recipe_id, *class_index).await?,
+            } => {
+                self.recipes
+                    .delete_recipe(*char_id, *recipe_id, *class_index)
+                    .await?
+            }
         }
         Ok(())
     }

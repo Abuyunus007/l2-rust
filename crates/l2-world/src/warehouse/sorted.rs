@@ -415,6 +415,50 @@ mod tests {
         assert_eq!(WarehouseListType::from_name("AMULET"), None);
     }
 
+    /// `WarehouseItemRecipeComparator`: adena first, recipes by the level of what they teach, a
+    /// recipe item without a recipe last, everything else by name.
+    #[test]
+    fn recipe_items_sort_by_recipe_level() {
+        let items = ItemTemplates::from_xml(
+            r#"<list>
+<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
+<item id="10" type="EtcItem" name="Recipe: B"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="11" type="EtcItem" name="Recipe: A"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="12" type="EtcItem" name="Recipe: C"><set name="etcitem_type" val="RECIPE" /></item>
+<item id="13" type="EtcItem" name="Recipe: no data"><set name="etcitem_type" val="RECIPE" /></item>
+</list>"#,
+        )
+        .unwrap();
+        let recipes = l2_data::RecipeData::from_xml(
+            r#"<list>
+<item id="1" recipeId="10" name="b" craftLevel="3" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+<item id="2" recipeId="11" name="a" craftLevel="5" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+<item id="3" recipeId="12" name="c" craftLevel="3" type="dwarven" successRate="100"><production id="1" count="1"/></item>
+</list>"#,
+        )
+        .unwrap();
+        let rows: Vec<ItemData> = [12, 13, 10, 57, 11]
+            .iter()
+            .map(|id| ItemData {
+                item_id: *id,
+                ..ItemData::default()
+            })
+            .collect();
+        let mut entries: Vec<Entry<'_>> = rows
+            .iter()
+            .map(|item| Entry {
+                item,
+                template: items.get(item.item_id).unwrap(),
+            })
+            .collect();
+        // The packet does the name sort first, then this one.
+        entries.sort_by(|a, b| by_name(a, b, A2Z));
+        insertion_sort(&mut entries, |a, b| by_recipe(a, b, Some(&recipes)));
+        let order: Vec<i32> = entries.iter().map(|e| e.item.item_id).collect();
+        // Adena; the two level 3 recipes by name (B, C); level 5 (A); the one without a recipe.
+        assert_eq!(order, [57, 10, 12, 11, 13]);
+    }
+
     #[test]
     fn java_string_order_is_by_utf16_unit() {
         assert_eq!(compare_java_strings("Apple", "Banana"), Ordering::Less);
