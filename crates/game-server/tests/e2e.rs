@@ -113,7 +113,7 @@ fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::write(config_dir.join("General.ini"), "MinimumChatLevel = 0\n").unwrap();
     std::fs::write(
         config_dir.join("FloodProtector.ini"),
-        "FloodProtectorCharacterSelectInterval = 0\n",
+        datapack::no_flood_protection_ini(),
     )
     .unwrap();
     std::fs::write(

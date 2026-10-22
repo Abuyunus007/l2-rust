@@ -104,18 +104,12 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
     }
 }
 
-/// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`) and
-/// `FloodProtectorSendMailInterval` of `FloodProtector.ini` (game ticks of 100 ms, default 100;
-/// the flood protector settings are not part of `GameConfig` yet).
+/// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`); the send interval is the
+/// `SendMail` flood protector ([`world_data::flood_settings`]).
 pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSettings {
-    let interval = match IniFile::load(config_dir.join("FloodProtector.ini")) {
-        Ok(ini) => ini.get_int("FloodProtectorSendMailInterval", 100),
-        Err(_) => 100,
-    };
     l2_world::MailSettings {
         allow_mail: config.general.allow_mail,
         allow_attachments: config.general.allow_attachments,
-        send_interval_ticks: interval,
         expiry_database_writes: mail_expiry_database_writes(config_dir),
     }
 }
@@ -347,6 +341,8 @@ impl Server {
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
         let mail = persist::load_mail(&pool).await;
         let mail_settings = mail_settings(&config, &paths.config_dir);
+        // Java: FloodProtectorConfig.load (FloodProtector.ini).
+        let flood_settings = world_data::flood_settings(&paths.config_dir);
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -492,6 +488,8 @@ impl Server {
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
                     // Java: MailManager, MessageDeletionTaskManager.
+                    // Java: FloodProtectors (per client, the settings are shared).
+                    world.set_flood_settings(flood_settings);
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
                     // Java: BuyListData (the products' stock the last run left).

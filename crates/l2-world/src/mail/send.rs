@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::MailMessage;
+use crate::flood::FloodKind;
 use crate::inventory::LOC_PAPERDOLL;
 use crate::outbox::ItemRowOp;
 use crate::player::ItemData;
@@ -45,30 +46,6 @@ impl World {
         self.players
             .get(&player)
             .is_some_and(|p| self.data.access_level_allows_transaction(p.data.access_level))
-    }
-
-    /// Java `getClient().getFloodProtectors().canSendMail()`: a GM may always, anybody else once
-    /// per interval; every allowed call starts the next interval.
-    fn mail_can_send(&mut self, player: ObjectId) -> bool {
-        if self.is_gm(player) {
-            return true;
-        }
-        let tick = self.game_ticks();
-        if self
-            .mail
-            .next_send_tick
-            .get(&player)
-            .is_some_and(|&next| tick < next)
-        {
-            return false;
-        }
-        let interval = self.mail.settings.send_interval_ticks;
-        // Players that left long ago do not pile up.
-        self.mail.next_send_tick.retain(|_, &mut next| next > tick);
-        self.mail
-            .next_send_tick
-            .insert(player, tick.saturating_add(interval));
-        true
     }
 
     /// `player.checkItemManipulation(objectId, count, "attach")` and `item.isTradeable() &&
@@ -254,7 +231,7 @@ impl World {
             return;
         }
 
-        if !self.mail_can_send(id) {
+        if !self.flood_allows(id, FloodKind::SendMail) {
             self.mail_tell(
                 id,
                 SystemMessageId::ThePreviousMailWasForwardedLessThan1MinuteAgoAndThisCannotBeForwarded,

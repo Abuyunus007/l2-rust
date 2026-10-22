@@ -29,6 +29,7 @@ use tracing::warn;
 
 use super::{LOC_PAPERDOLL, item_name_param};
 use crate::enter::current_load;
+use crate::flood::FloodKind;
 use crate::player::ItemData;
 use crate::stats::skills::java_hash_map_order;
 use crate::world::World;
@@ -175,7 +176,10 @@ impl World {
             }
             return;
         }
-        // Flood protector `canPerformTransaction`: not modelled.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are destroying items too fast.");
+            return;
+        }
         if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
@@ -334,7 +338,10 @@ impl World {
         if self.is_alike_dead(id) {
             return;
         }
-        // Flood protect drop to avoid packet lag: the flood protectors are the session's.
+        // Flood protect drop to avoid packet lag.
+        if !self.flood_allows(id, FloodKind::DropItem) {
+            return;
+        }
 
         let object_id = ObjectId(object_id);
         let gm = self.is_gm(id);

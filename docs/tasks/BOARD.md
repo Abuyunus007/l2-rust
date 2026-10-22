@@ -311,7 +311,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
 | [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | merged |
 | [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | merged |
-| [M6-FU-06](M6/M6-FU-06.md) | Flood protectors | sonnet | full | none | in-progress |
+| [M6-FU-06](M6/M6-FU-06.md) | Flood protectors | sonnet | full | none | merged |
 | [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | in-progress |
 | [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | in-progress |
 | [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | in-progress |
@@ -331,7 +331,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | in-progress |
+| [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | merged |
 | [M7-RES-01](M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | in-progress |
 | [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
 | [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | ready (refined when deps merge) |

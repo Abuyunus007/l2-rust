@@ -32,11 +32,16 @@ use crate::client::{
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
+use crate::client::{RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo};
 use crate::client::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
 };
+use crate::client::{RequestBidItemAuction, RequestInfoItemAuction};
 use crate::client::{RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem};
+use crate::client::{
+    RequestBuySeed, RequestManorList, RequestProcureCropList, RequestSetCrop, RequestSetSeed,
+};
 use crate::client::{
     RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost, RequestPostAttachment,
     RequestPostItemList, RequestReceivedPost, RequestReceivedPostList, RequestRejectPostAttachment,
@@ -49,6 +54,11 @@ use crate::client::{
     RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
     RequestRefine, RequestRefineCancel,
 };
+use crate::client::{
+    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
+    RequestSiegeInfo,
+};
+use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
@@ -261,11 +271,45 @@ pub enum ClientPacket {
     RequestRefine(RequestRefine),
     RequestConfirmCancelItem(RequestConfirmCancelItem),
     RequestRefineCancel(RequestRefineCancel),
+    /// `REQUEST_SIEGE_INFO` (0xAA).
+    RequestSiegeInfo(RequestSiegeInfo),
+    /// `REQUEST_SIEGE_ATTACKER_LIST` (0xAB).
+    RequestSiegeAttackerList(RequestSiegeAttackerList),
+    /// `REQUEST_SIEGE_DEFENDER_LIST` (0xAC).
+    RequestSiegeDefenderList(RequestSiegeDefenderList),
+    /// `REQUEST_JOIN_SIEGE` (0xAD).
+    RequestJoinSiege(RequestJoinSiege),
+    /// `REQUEST_CONFIRM_SIEGE_WAITING_LIST` (0xAE).
+    RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList),
+    /// `REQUEST_BUY_SEED` (0xC5).
+    RequestBuySeed(RequestBuySeed),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
     /// The same for ex packets (`0xD0` + `u16`). The ex id is consumed, the body is left unread.
     UnportedEx(ExClientOpcode),
+    /// `REQUEST_ALL_FORTRESS_INFO` (`0xD0` 0x003D), an ex packet.
+    RequestAllFortressInfo(RequestAllFortressInfo),
+    /// `REQUEST_FORTRESS_SIEGE_INFO` (`0xD0` 0x003F), an ex packet.
+    RequestFortressSiegeInfo(RequestFortressSiegeInfo),
+    /// `REQUEST_FORTRESS_MAP_INFO` (`0xD0` 0x0048), an ex packet.
+    RequestFortressMapInfo(RequestFortressMapInfo),
+    /// `REQUEST_MANOR_LIST` (`0xD0` 0x0001), an ex packet.
+    RequestManorList(RequestManorList),
+    /// `REQUEST_PROCEDURE_CROP_LIST` (`0xD0` 0x0002), an ex packet (Java `RequestProcureCropList`).
+    RequestProcureCropList(RequestProcureCropList),
+    /// `REQUEST_SET_SEED` (`0xD0` 0x0003), an ex packet.
+    RequestSetSeed(RequestSetSeed),
+    /// `REQUEST_SET_CROP` (`0xD0` 0x0004), an ex packet.
+    RequestSetCrop(RequestSetCrop),
+    /// `REQUEST_EX_JOIN_DOMINION_WAR` (`0xD0` 0x0057), an ex packet.
+    RequestJoinDominionWar(RequestJoinDominionWar),
+    /// `REQUEST_EX_DOMINION_INFO` (`0xD0` 0x0058), an ex packet.
+    RequestDominionInfo(RequestDominionInfo),
+    /// `REQUEST_BID_ITEM_AUCTION` (`0xD0` 0x0039), an ex packet.
+    RequestBidItemAuction(RequestBidItemAuction),
+    /// `REQUEST_INFO_ITEM_AUCTION` (`0xD0` 0x003A), an ex packet.
+    RequestInfoItemAuction(RequestInfoItemAuction),
 }
 
 /// Decodes the body of a client packet whose `opcode` byte was already read from `reader`.
@@ -505,6 +549,18 @@ pub fn decode_client(
             ClientPacket::RequestChangePetName(RequestChangePetName::decode(reader)?)
         }
         RequestEnchantItem::OPCODE => ClientPacket::RequestEnchantItem(RequestEnchantItem::decode(reader)?),
+        RequestSiegeInfo::OPCODE => ClientPacket::RequestSiegeInfo(RequestSiegeInfo::decode(reader)?),
+        RequestSiegeAttackerList::OPCODE => {
+            ClientPacket::RequestSiegeAttackerList(RequestSiegeAttackerList::decode(reader)?)
+        }
+        RequestSiegeDefenderList::OPCODE => {
+            ClientPacket::RequestSiegeDefenderList(RequestSiegeDefenderList::decode(reader)?)
+        }
+        RequestJoinSiege::OPCODE => ClientPacket::RequestJoinSiege(RequestJoinSiege::decode(reader)?),
+        RequestConfirmSiegeWaitingList::OPCODE => {
+            ClientPacket::RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList::decode(reader)?)
+        }
+        RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -658,6 +714,33 @@ fn decode_ex_client(
         }
         RequestRefineCancel::EX_OPCODE => {
             ClientPacket::RequestRefineCancel(RequestRefineCancel::decode(reader)?)
+        }
+        RequestAllFortressInfo::EX_OPCODE => {
+            ClientPacket::RequestAllFortressInfo(RequestAllFortressInfo::decode(reader)?)
+        }
+        RequestFortressSiegeInfo::EX_OPCODE => {
+            ClientPacket::RequestFortressSiegeInfo(RequestFortressSiegeInfo::decode(reader)?)
+        }
+        RequestFortressMapInfo::EX_OPCODE => {
+            ClientPacket::RequestFortressMapInfo(RequestFortressMapInfo::decode(reader)?)
+        }
+        RequestManorList::EX_OPCODE => ClientPacket::RequestManorList(RequestManorList::decode(reader)?),
+        RequestProcureCropList::EX_OPCODE => {
+            ClientPacket::RequestProcureCropList(RequestProcureCropList::decode(reader)?)
+        }
+        RequestSetSeed::EX_OPCODE => ClientPacket::RequestSetSeed(RequestSetSeed::decode(reader)?),
+        RequestSetCrop::EX_OPCODE => ClientPacket::RequestSetCrop(RequestSetCrop::decode(reader)?),
+        RequestJoinDominionWar::EX_OPCODE => {
+            ClientPacket::RequestJoinDominionWar(RequestJoinDominionWar::decode(reader)?)
+        }
+        RequestDominionInfo::EX_OPCODE => {
+            ClientPacket::RequestDominionInfo(RequestDominionInfo::decode(reader)?)
+        }
+        RequestBidItemAuction::EX_OPCODE => {
+            ClientPacket::RequestBidItemAuction(RequestBidItemAuction::decode(reader)?)
+        }
+        RequestInfoItemAuction::EX_OPCODE => {
+            ClientPacket::RequestInfoItemAuction(RequestInfoItemAuction::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };
@@ -831,14 +914,22 @@ mod tests {
             decode(InGame, 0x7F, &[]).unwrap(),
             Some(ClientPacket::Unported(ClientOpcode::RequestPartyMatchConfig))
         );
-        // RequestManorList (ex id 0x0001): the id is consumed, the body is left alone.
+        // RequestProcedureCropList (ex id 0x0002, Java RequestProcureCropList) is ported; an ex
+        // packet that has no struct still consumes its id and leaves the body alone.
         let mut r = PacketReader::new(&[0x01, 0x00, 0xAA]);
+        let result = decode_client(InGame, 0xD0, &mut r).unwrap();
+        assert_eq!(result, Some(ClientPacket::RequestManorList(RequestManorList)));
+        assert_eq!(r.remaining(), 1);
+        // A count of 0 is Java's bad list: the body is read (4 bytes) and the packet is dropped.
+        let mut r = PacketReader::new(&[0x02, 0x00, 0, 0, 0, 0]);
         let result = decode_client(InGame, 0xD0, &mut r).unwrap();
         assert_eq!(
             result,
-            Some(ClientPacket::UnportedEx(ExClientOpcode::RequestManorList))
+            Some(ClientPacket::RequestProcureCropList(RequestProcureCropList {
+                items: None
+            }))
         );
-        assert_eq!(r.remaining(), 1);
+        assert_eq!(r.remaining(), 0);
     }
 
     #[test]

@@ -162,6 +162,7 @@ macro_rules! client_unit_packet {
     };
 }
 
+pub mod auction;
 pub mod charscreen;
 pub mod combat;
 pub mod couple;
@@ -170,12 +171,14 @@ pub mod enchant;
 pub mod enchant_skill;
 pub mod enterworld;
 pub mod fishing;
+pub mod fort;
 pub mod friend;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
 pub mod mail;
+pub mod manor;
 pub mod movement;
 pub mod multisell;
 pub mod party;
@@ -184,13 +187,16 @@ pub mod recipe;
 pub mod refine;
 pub mod shop;
 pub mod shortcut;
+pub mod siege;
 pub mod skills;
 pub mod store;
 pub mod summon;
+pub mod territory;
 pub mod trade;
 pub mod vote;
 pub mod warehouse;
 
+pub use auction::{RequestBidItemAuction, RequestInfoItemAuction};
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
@@ -207,6 +213,7 @@ pub use enchant_skill::{
 };
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use fishing::RequestExFishRanking;
+pub use fort::{RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo};
 pub use friend::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
@@ -222,6 +229,10 @@ pub use mail::{
     PostAttachment, RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost,
     RequestPostAttachment, RequestPostItemList, RequestReceivedPost, RequestReceivedPostList,
     RequestRejectPostAttachment, RequestSendPost, RequestSentPost, RequestSentPostList,
+};
+pub use manor::{
+    CropSale, CropSaleItem, RequestBuySeed, RequestManorList, RequestProcureCropList, RequestSetCrop,
+    RequestSetSeed, SeedPurchase, SeedSale,
 };
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 pub use multisell::MultiSellChoose;
@@ -254,6 +265,10 @@ pub use shop::{
     BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,
 };
 pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
+pub use siege::{
+    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
+    RequestSiegeInfo,
+};
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,
 };
@@ -266,6 +281,7 @@ pub use store::{
 pub use summon::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
+pub use territory::{RequestDominionInfo, RequestJoinDominionWar};
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
 pub use vote::RequestVoteNew;
 pub use warehouse::{

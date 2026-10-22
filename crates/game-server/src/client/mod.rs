@@ -113,16 +113,11 @@ impl ClientContext {
     }
 }
 
-/// `FloodProtectorCharacterSelectInterval` (ticks of 100 ms) from `FloodProtector.ini`; the flood
-/// protector settings are not part of `GameConfig` yet.
-fn character_select_interval(config_dir: &std::path::Path) -> i32 {
-    match IniFile::load(config_dir.join("FloodProtector.ini")) {
-        Ok(ini) => ini.get_int(
-            "FloodProtectorCharacterSelectInterval",
-            CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
-        ),
-        Err(_) => CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
-    }
+/// The `CharacterSelect` flood protector of `FloodProtector.ini`.
+fn character_select_flood(config_dir: &std::path::Path) -> l2_world::FloodConfig {
+    crate::world_data::flood_settings(config_dir)
+        .get(l2_world::FloodKind::CharacterSelect)
+        .clone()
 }
 
 /// The address the listener binds, from `GameserverHostname` and `GameserverPort`.
@@ -176,8 +171,9 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
             Arc::clone(&state.datapack),
             Arc::clone(&state.config),
             Arc::clone(&state.ids),
-            character_select_interval(&state.paths.config_dir),
-        ),
+            CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
+        )
+        .with_select_flood(character_select_flood(&state.paths.config_dir)),
         loader: Arc::new(DbPlayerLoader::new(state.pool.clone())),
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),

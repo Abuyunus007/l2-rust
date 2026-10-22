@@ -130,6 +130,8 @@ pub struct World {
     pub(crate) augment: crate::augment::AugmentWorld,
     /// The fish, rods and fishing monsters, and the fishing championship (M6-FU-08, `fishing/`).
     pub(crate) fishing: crate::fishing::FishingWorld,
+    /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
+    pub(crate) flood: crate::flood::FloodWorld,
 }
 
 impl World {
@@ -192,6 +194,7 @@ impl World {
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
+            flood: crate::flood::FloodWorld::default(),
         }
     }
 

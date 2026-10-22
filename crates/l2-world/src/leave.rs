@@ -130,6 +130,8 @@ impl World {
         // block list goes with the object (M6-FRIEND-01).
         self.friends_notify_offline(id, &leaving_name);
         self.forget_social_lists(id);
+        // The flood protectors belong to the client (M6-FU-06).
+        self.forget_flood(id, reason);
         // `Creature.deleteMe`: every effect goes without broadcasting
         // (`stopAllEffectsWithoutExclusions(false, false)`); the messages still reach a client
         // that is connected. Then the `BuffFinishTask` stops with the object.

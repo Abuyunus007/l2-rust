@@ -612,6 +612,46 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
     settings
 }
 
+/// `FloodProtectorConfig.FLOOD_PROTECTOR_CONFIG_FILE`.
+pub const FLOOD_PROTECTOR_FILE: &str = "FloodProtector.ini";
+
+/// `config/FloodProtector.ini` (Java `FloodProtectorConfig.load`): the fifteen flood protectors.
+/// A missing file or key is the Java default of the key.
+pub fn flood_settings(config_dir: &Path) -> l2_world::FloodSettings {
+    use l2_config::IniFile;
+
+    match IniFile::load(config_dir.join(FLOOD_PROTECTOR_FILE)) {
+        Ok(ini) => flood_settings_from_ini(&ini),
+        Err(e) => {
+            warn!("Cannot read {FLOOD_PROTECTOR_FILE}: {e}; using the flood protector defaults.");
+            l2_world::FloodSettings::java_defaults()
+        }
+    }
+}
+
+/// `FloodProtectorConfig.loadFloodProtectorConfig` for every protector.
+pub fn flood_settings_from_ini(ini: &l2_config::IniFile) -> l2_world::FloodSettings {
+    use l2_world::{FloodConfig, FloodKind, FloodPunishment, FloodSettings};
+
+    let mut settings = FloodSettings::java_defaults();
+    for kind in FloodKind::ALL {
+        let key = |suffix: &str| format!("FloodProtector{}{suffix}", kind.config_name());
+        settings.set(
+            kind,
+            FloodConfig {
+                protection_interval: ini.get_int(&key("Interval"), kind.java_default_interval()),
+                log_flooding: ini.get_bool(&key("LogFlooding"), false),
+                punishment_limit: ini.get_int(&key("PunishmentLimit"), 0),
+                punishment_type: FloodPunishment::parse(&ini.get_string(&key("PunishmentType"), "none")),
+                // NOTE(java-quirk): `getInt(...) * 60000` is an int multiplication; a huge number
+                // of minutes overflows before it becomes the long.
+                punishment_time: i64::from(ini.get_int(&key("PunishmentTime"), 0).wrapping_mul(60_000)),
+            },
+        );
+    }
+    settings
+}
+
 /// The enchant values (`Player.ini`, `General.ini`). `EnchantBlackList` and `OverEnchantPunishment`
 /// are post-processed in Java (placeholders in the generated config), so they are read from
 /// `Player.ini` here.
@@ -2245,5 +2285,78 @@ ColorForAmount2 = nonsense
         assert_eq!(s.title_color.colors[0], 0x009C_9C9C);
         // Java would throw for a bad colour; the default stays.
         assert_eq!(s.title_color.colors[1], 0x0000_FF00);
+    }
+
+    #[test]
+    fn flood_protector_ini_gives_every_key_and_java_defaults_for_the_rest() {
+        use l2_world::{FloodKind, FloodPunishment};
+
+        // No file: the defaults of `FloodProtectorConfig`, not the numbers of the shipped file.
+        let dir = tempfile::tempdir().unwrap();
+        let defaults = flood_settings(dir.path());
+        assert_eq!(defaults, l2_world::FloodSettings::java_defaults());
+        assert_eq!(defaults.get(FloodKind::UseItem).protection_interval, 4);
+
+        std::fs::write(
+            dir.path().join(FLOOD_PROTECTOR_FILE),
+            "FloodProtectorUseItemInterval = 0
+FloodProtectorTransactionInterval = 7
+FloodProtectorTransactionLogFlooding = True
+FloodProtectorTransactionPunishmentLimit = 12
+FloodProtectorTransactionPunishmentType = ban
+FloodProtectorTransactionPunishmentTime = 5
+FloodProtectorGlobalChatPunishmentType = kick
+FloodProtectorPlayerActionInterval = 1
+",
+        )
+        .unwrap();
+        let s = flood_settings(dir.path());
+        assert_eq!(s.get(FloodKind::UseItem).protection_interval, 0);
+        let transaction = s.get(FloodKind::Transaction);
+        assert_eq!(transaction.protection_interval, 7);
+        assert!(transaction.log_flooding);
+        assert_eq!(transaction.punishment_limit, 12);
+        assert_eq!(transaction.punishment_type, FloodPunishment::Ban);
+        // Minutes in the file, milliseconds in the settings.
+        assert_eq!(transaction.punishment_time, 300_000);
+        assert_eq!(
+            s.get(FloodKind::GlobalChat).punishment_type,
+            FloodPunishment::Kick
+        );
+        assert_eq!(s.get(FloodKind::GlobalChat).protection_interval, 5);
+        assert_eq!(s.get(FloodKind::PlayerAction).protection_interval, 1);
+        // A key that is missing keeps its own default.
+        assert_eq!(s.get(FloodKind::HeroVoice).protection_interval, 100);
+        assert_eq!(
+            s.get(FloodKind::HeroVoice).punishment_type,
+            FloodPunishment::Unknown("none".to_owned())
+        );
+    }
+
+    /// The shipped `FloodProtector.ini` of the reference distribution: all fifteen protectors and
+    /// every one of the five keys is read. Skipped without the reference folder.
+    #[test]
+    fn the_shipped_flood_protector_ini_is_read_completely() {
+        use l2_world::FloodKind;
+
+        let root = PathBuf::from("C:/l2-rust/l2jmobius/dist/game/config");
+        if !root.join(FLOOD_PROTECTOR_FILE).exists() {
+            eprintln!("skipped: the reference config folder is missing");
+            return;
+        }
+        let s = flood_settings(&root);
+        let intervals: Vec<i32> = FloodKind::ALL
+            .iter()
+            .map(|k| s.get(*k).protection_interval)
+            .collect();
+        // The numbers of the shipped file (some differ from the code defaults, e.g. UseItem 0).
+        assert_eq!(
+            intervals,
+            [0, 42, 16, 100, 5, 20, 10, 3, 10, 10, 3, 100, 30, 9, 1]
+        );
+        for kind in FloodKind::ALL {
+            assert!(!s.get(kind).log_flooding, "{kind:?}");
+            assert_eq!(s.get(kind).punishment_limit, 0, "{kind:?}");
+        }
     }
 }
