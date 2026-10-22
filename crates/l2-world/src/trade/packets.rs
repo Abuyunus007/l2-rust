@@ -48,9 +48,8 @@ impl World {
     }
 
     /// Java `Item.isAvailable(player, allowAdena, allowNonTradeable)` for an item of `player`.
-    // Not modelled (nothing sets them yet): the control item of a summoned pet, the enchant scroll,
-    // support item and attribute stone in use, the skill consumed by `getLastSimultaneousSkillCast`,
-    // and `havePetInvItems` for a pet collar.
+    // Not modelled (nothing sets them yet): the control item of a summoned pet, the skill consumed
+    // by `getLastSimultaneousSkillCast`, and `havePetInvItems` for a pet collar.
     pub(crate) fn is_item_available(
         &self,
         player: ObjectId,
@@ -67,6 +66,10 @@ impl World {
         if template.type2 == TYPE2_QUEST
             || (template.type2 == TYPE2_MONEY && template.type1 == TYPE1_SHIELD_ARMOR)
         {
+            return false;
+        }
+        // Not momentarily used enchant scroll, support item or attribute stone.
+        if self.is_enchant_item_in_use(player, item.object_id) {
             return false;
         }
         // Not adena.

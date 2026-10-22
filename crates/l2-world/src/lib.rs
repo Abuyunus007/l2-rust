@@ -23,6 +23,7 @@ pub mod dialog;
 pub mod door;
 pub mod duel;
 pub mod effects;
+pub mod enchant;
 pub mod enter;
 pub mod formulas;
 pub mod ground_item;
@@ -83,6 +84,7 @@ pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
+pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;

@@ -350,6 +350,11 @@ impl Server {
                 Arc::clone(&datapack.multisell),
                 world_data::multisell_settings(&config),
             );
+            let enchant_data = (
+                Arc::clone(&datapack.enchant_items),
+                Arc::clone(&datapack.enchant_groups),
+                Arc::clone(&datapack.elemental_attributes),
+            );
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -386,6 +391,9 @@ impl Server {
                     // Java: MultisellData (the exchange lists of NPCs).
                     let (multisell_data, multisell_settings) = multisell;
                     world.set_multisell_data(multisell_data, multisell_settings);
+                    // Java: EnchantItemData, EnchantItemGroupsData, ElementalAttributeData.
+                    let (enchant_items, enchant_groups, elemental_attributes) = enchant_data;
+                    world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the

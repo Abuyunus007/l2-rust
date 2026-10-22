@@ -79,6 +79,8 @@ impl Default for BypassHandlers {
         // dist/game/data/scripts/handlers/bypass/npc/Multisell.java (M6-MULTISELL-01)
         handlers.register("multisell", crate::multisell::multisell_bypass_handler);
         handlers.register("exc_multisell", crate::multisell::multisell_bypass_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/ReleaseAttribute.java (M6-ENCHANT-01)
+        handlers.register("ReleaseAttribute", crate::enchant::release_attribute_handler);
         handlers
     }
 }

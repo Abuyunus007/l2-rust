@@ -14,7 +14,7 @@
 // ActionFailed for a restart, ActionFailed for a logout).
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{LeaveWorld, RestartResponse, ServerClose, SystemMessage};
+use l2_protocol_game::server::{ActionFailed, LeaveWorld, RestartResponse, ServerClose, SystemMessage};
 use l2_util::ObjectId;
 use tracing::info;
 
@@ -25,10 +25,22 @@ use crate::world::World;
 impl World {
     /// `Logout.runImpl` / `RequestRestart.runImpl`, once the checks passed.
     pub(crate) fn on_logout(&mut self, id: ObjectId) {
+        // Java `Logout`: `canLogout()` is false while an enchant scroll or attribute stone is in
+        // use.
+        if self.enchant_blocks_logout(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
         self.leave(id, LeaveReason::Logout);
     }
 
     pub(crate) fn on_restart(&mut self, id: ObjectId) {
+        // Java `RequestRestart`: an enchant scroll or attribute stone in use.
+        if self.enchant_blocks_logout(id) {
+            self.send(id, &RestartResponse { result: false });
+            self.send(id, &ActionFailed);
+            return;
+        }
         // Java `RequestRestart`: a player with a store open cannot restart.
         if self.is_in_store_mode(id) {
             self.send_message(id, "Cannot restart while trading.");

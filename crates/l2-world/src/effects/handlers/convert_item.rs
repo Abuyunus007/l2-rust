@@ -34,7 +34,9 @@ impl EffectHandler for ConvertItem {
         if world.is_alike_dead(player) || !world.is_player(player) {
             return;
         }
-        // `player.isEnchanting()`: the enchant window is not modelled.
+        if world.is_enchanting(player) {
+            return;
+        }
         let Some(templates) = world.item_templates() else {
             return;
         };

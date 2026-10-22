@@ -12,6 +12,7 @@ pub mod buylist;
 pub mod class_list;
 pub mod cubic;
 pub mod door;
+pub mod enchant;
 pub mod enchant_hp_bonus;
 pub mod experience;
 pub mod fence;
@@ -53,6 +54,10 @@ pub use cubic::{
     HpConditionType,
 };
 pub use door::{DoorTemplate, DoorTemplates};
+pub use enchant::{
+    ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
+    EnchantScroll, EnchantSupportItem, EnchantTarget,
+};
 pub use enchant_hp_bonus::EnchantHpBonus;
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
@@ -144,6 +149,12 @@ pub struct Datapack {
     pub augmentation_options: Arc<AugmentationOptions>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
+    /// `data/EnchantItemData.xml`: the enchant scrolls and support items (M6-ENCHANT-01).
+    pub enchant_items: Arc<EnchantItemData>,
+    /// `data/EnchantItemGroups.xml`: the success chances (M6-ENCHANT-01).
+    pub enchant_groups: Arc<EnchantItemGroups>,
+    /// `data/ElementalAttributeData.xml`: the element stones (M6-ENCHANT-01).
+    pub elemental_attributes: Arc<ElementalAttributeData>,
     /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
     pub cubics: Arc<CubicData>,
 }
@@ -250,6 +261,11 @@ impl Datapack {
                 correct_prices: options.correct_prices,
             },
         ));
+        // Java loads `ElementalAttributeData` and `EnchantItemData` after `ItemData`: both check
+        // their item ids against it.
+        let enchant_items = Arc::new(EnchantItemData::load(root, &items));
+        let enchant_groups = Arc::new(EnchantItemGroups::load(root));
+        let elemental_attributes = Arc::new(ElementalAttributeData::load(root, &items));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -285,6 +301,9 @@ impl Datapack {
             skills,
             augmentation_options,
             pet_skills,
+            enchant_items,
+            enchant_groups,
+            elemental_attributes,
             cubics: Arc::new(CubicData::load(root)),
         })
     }

@@ -508,6 +508,8 @@ impl World {
         }
         // "You have recently been dismissed from a clan..." while the join penalty lasts.
         self.clan_join_penalty_message(id);
+        // Over-enchant protection.
+        self.over_enchant_protection_on_enter(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak

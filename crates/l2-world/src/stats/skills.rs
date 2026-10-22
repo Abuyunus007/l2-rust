@@ -298,6 +298,40 @@ impl World {
         out
     }
 
+    /// Java `Item.updateElementAttrBonus(player)` for a worn item (`Elementals.updateBonus` on each
+    /// element: the bonus comes off and goes on again with the current value), and the part of
+    /// `Elementals.removeBonus` that a removed element needs: every element the item has now is
+    /// active with its value, the ones it lost are not. Returns the stats whose functions changed.
+    // The owner here is the item (all its elements), where Java has one owner object per element;
+    // the end state is the same.
+    pub(crate) fn update_item_element_bonus(&mut self, id: ObjectId, object_id: ObjectId) -> Vec<Stat> {
+        let Some(item) = self
+            .players
+            .get(&id)
+            .and_then(|p| p.data.items.iter().find(|i| i.object_id == object_id))
+            .cloned()
+        else {
+            return Vec::new();
+        };
+        let funcs: Vec<Func> = {
+            let template = self.data.stat_data().and_then(|d| d.items.get(item.item_id));
+            self.item_instance_bonuses(&item, template)
+                .funcs
+                .into_iter()
+                .filter(|f| matches!(f.owner, FuncOwner::ItemElement(_)))
+                .collect()
+        };
+        let Some(player) = self.players.get_mut(&id) else {
+            return Vec::new();
+        };
+        let mut stats = player
+            .core
+            .calculators
+            .remove_owner(FuncOwner::ItemElement(object_id));
+        stats.extend(player.core.calculators.add_all(funcs));
+        stats
+    }
+
     /// The skill parts of `ArmorSetListener.notifyEquiped` and `ItemSkillsListener.notifyEquiped`
     /// for `item` in paperdoll `slot`, with the augmentation and element bonuses the latter
     /// applies first. Returns the stats whose functions were added.

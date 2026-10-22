@@ -118,6 +118,8 @@ pub struct World {
     pub(crate) duel: crate::duel::DuelWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
+    /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
+    pub(crate) enchant: crate::enchant::EnchantWorld,
 }
 
 impl World {
@@ -174,6 +176,7 @@ impl World {
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
+            enchant: crate::enchant::EnchantWorld::default(),
         }
     }
 
@@ -588,6 +591,8 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            // Java: RequestEnchantItem and the other enchant window packets
+            ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }

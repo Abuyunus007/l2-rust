@@ -165,6 +165,7 @@ macro_rules! client_unit_packet {
 pub mod charscreen;
 pub mod combat;
 pub mod duel;
+pub mod enchant;
 pub mod enterworld;
 pub mod handshake;
 pub mod ingame;
@@ -188,6 +189,10 @@ pub use charscreen::{
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
+pub use enchant::{
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
+    RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};

@@ -333,6 +333,8 @@ pub struct Player {
     /// Java `_transformation`, `_transformSkills`, the visible name and title, the inventory
     /// block of a transformation (see `transform/`).
     pub transform: crate::transform::TransformState,
+    /// The enchant scroll and attribute stone in use (see `enchant/`).
+    pub enchant: crate::enchant::EnchantState,
     /// The refund list and the inventory block of an open shop window (see `shop/`).
     pub shop: crate::shop::ShopState,
     /// The private warehouse, the freight and the active warehouse (see `warehouse/`).
@@ -389,6 +391,7 @@ impl Player {
             inv_tasks: crate::inventory::InventoryTasks::default(),
             trade: crate::trade::TradeState::default(),
             transform: crate::transform::TransformState::default(),
+            enchant: crate::enchant::EnchantState::default(),
             shop: crate::shop::ShopState::default(),
             warehouse,
             multisell: None,

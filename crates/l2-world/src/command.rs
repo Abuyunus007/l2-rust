@@ -181,6 +181,9 @@ pub enum ClientInput {
     DuelAnswerStart { party_duel: i32, response: i32 },
     /// Java `RequestDuelSurrender`.
     DuelSurrender,
+    /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
+    /// `enchant/`.
+    Enchant(crate::enchant::EnchantInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

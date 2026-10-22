@@ -27,6 +27,11 @@ use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
 use l2_protocol_game::server::effect_packets::FlyToLocation;
+use l2_protocol_game::server::enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -344,6 +349,14 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
         ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
         ClientPacket::RequestDuelSurrender(_) => json!({}),
+        ClientPacket::RequestEnchantItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantTargetItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+            object!(p => support_object_id, enchant_object_id)
+        }
+        ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
+        ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
+        ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -566,6 +579,28 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::ChooseInventoryItem => {
+            decoded::<ChooseInventoryItem>(&mut r, choose_inventory_item_fields)
+        }
+        ServerOpcode::EnchantResult => decoded::<EnchantResult>(&mut r, enchant_result_fields),
+        ServerOpcode::ExPutEnchantTargetItemResult => {
+            decoded::<ExPutEnchantTargetItemResult>(&mut r, put_enchant_target_fields)
+        }
+        ServerOpcode::ExPutEnchantSupportItemResult => {
+            decoded::<ExPutEnchantSupportItemResult>(&mut r, put_enchant_support_fields)
+        }
+        ServerOpcode::ExAttributeEnchantResult => {
+            decoded::<ExAttributeEnchantResult>(&mut r, attribute_enchant_result_fields)
+        }
+        ServerOpcode::ExBaseAttributeCancelResult => {
+            decoded::<ExBaseAttributeCancelResult>(&mut r, base_attribute_cancel_result_fields)
+        }
+        ServerOpcode::ExChooseInventoryAttributeItem => {
+            decoded::<ExChooseInventoryAttributeItem>(&mut r, choose_inventory_attribute_fields)
+        }
+        ServerOpcode::ExShowBaseAttributeCancelWindow => {
+            decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
+        }
         ServerOpcode::ExDuelAskStart => decoded::<ExDuelAskStart>(&mut r, duel_ask_start_fields),
         ServerOpcode::ExDuelReady => decoded::<ExDuelReady>(&mut r, duel_ready_fields),
         ServerOpcode::ExDuelStart => decoded::<ExDuelStart>(&mut r, duel_start_fields),
@@ -1560,6 +1595,43 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn choose_inventory_item_fields(p: &ChooseInventoryItem) -> Value {
+    object!(p => item_id)
+}
+
+fn enchant_result_fields(p: &EnchantResult) -> Value {
+    object!(p => result, crystal, count)
+}
+
+fn put_enchant_target_fields(p: &ExPutEnchantTargetItemResult) -> Value {
+    object!(p => result)
+}
+
+fn put_enchant_support_fields(p: &ExPutEnchantSupportItemResult) -> Value {
+    object!(p => result)
+}
+
+fn attribute_enchant_result_fields(p: &ExAttributeEnchantResult) -> Value {
+    object!(p => result)
+}
+
+fn base_attribute_cancel_result_fields(p: &ExBaseAttributeCancelResult) -> Value {
+    object!(p => object_id, attribute)
+}
+
+fn choose_inventory_attribute_fields(p: &ExChooseInventoryAttributeItem) -> Value {
+    object!(p => item_id, elements, max_level)
+}
+
+fn base_attribute_cancel_window_fields(p: &ExShowBaseAttributeCancelWindow) -> Value {
+    let items: Vec<Value> = p
+        .items
+        .iter()
+        .map(|&(object_id, price)| json!({ "object_id": object_id, "price": price }))
+        .collect();
+    json!({ "items": items })
+}
+
 fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
@@ -1827,6 +1899,14 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::ChooseInventoryItem,
+        ServerOpcode::EnchantResult,
+        ServerOpcode::ExPutEnchantTargetItemResult,
+        ServerOpcode::ExPutEnchantSupportItemResult,
+        ServerOpcode::ExAttributeEnchantResult,
+        ServerOpcode::ExBaseAttributeCancelResult,
+        ServerOpcode::ExChooseInventoryAttributeItem,
+        ServerOpcode::ExShowBaseAttributeCancelWindow,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,
         ServerOpcode::ExDuelStart,
