@@ -836,13 +836,17 @@ impl<'w> StatView<'w> {
 
     // ------------------------------------------------------------------ speeds
 
-    /// Java `getBaseMoveSpeed(type)`: `PlayerStat` takes a form's speeds (the mount's speeds
-    /// come with the mounts).
+    /// Java `getBaseMoveSpeed(type)`: `PlayerStat` takes a form's speeds, or the speeds of the
+    /// mount's `speed_on_ride` while the player rides one.
     pub fn base_move_speed(&self, kind: MoveType) -> f64 {
-        if self.is_transformed()
-            && let Some(template) = self.transform_template()
+        if self.is_transformed() {
+            if let Some(template) = self.transform_template() {
+                return Self::transform_move_speed(template, kind);
+            }
+        } else if self.is_mounted()
+            && let Some(speed) = self.mount_move_speed(kind)
         {
-            return Self::transform_move_speed(template, kind);
+            return speed;
         }
         self.base().speed(kind)
     }
@@ -983,6 +987,9 @@ impl<'w> StatView<'w> {
     /// template).
     pub fn collision_radius(&self) -> f32 {
         match self.who {
+            Who::Player(_) if self.mount_template().is_some() => {
+                self.mount_template().map_or(0.0, |t| t.collision_radius)
+            }
             Who::Player(_) if self.is_transformed() => self
                 .transform_template()
                 .map_or_else(|| self.player_collision().0, |t| t.collision_radius),
@@ -994,6 +1001,9 @@ impl<'w> StatView<'w> {
     /// Java `getCollisionHeight()`.
     pub fn collision_height(&self) -> f32 {
         match self.who {
+            Who::Player(_) if self.mount_template().is_some() => {
+                self.mount_template().map_or(0.0, |t| t.collision_height)
+            }
             Who::Player(_) if self.is_transformed() => self
                 .transform_template()
                 .map_or_else(|| self.player_collision().1, |t| t.collision_height),

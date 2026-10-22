@@ -769,6 +769,30 @@ fn the_skill_conditions_follow_the_form_state() {
     assert!(!s.world.is_transformed(ME));
 }
 
+/// A mounted player cannot start the skill (`ConditionPlayerCanTransform`: `isMounted()` gives
+/// `YOU_CANNOT_POLYMORPH_WHILE_RIDING_A_PET`), and `TransformData.transformPlayer` gets the rider
+/// off the mount first (`Player.transform` calls `dismount()`).
+#[test]
+fn a_mount_blocks_the_skill_and_transform_player_dismounts() {
+    let mut s = Scene::new();
+    assert!(s.world.mount_npc(ME, 12526, ObjectId(0), false));
+    s.me.take();
+    s.use_skill(9101);
+    let sent = s.me.take();
+    assert!(
+        message_ids(&sent).contains(&SystemMessageId::YouCannotPolymorphWhileRidingAPet),
+        "{:?}",
+        names(&sent)
+    );
+    assert!(of(&sent, "MAGIC_SKILL_USE").is_empty());
+    assert!(s.world.is_mounted(ME) && !s.world.is_transformed(ME));
+
+    // The admin way in: the rider lands first, then the form starts.
+    assert!(s.world.transform_player(101, ME));
+    assert!(!s.world.is_mounted(ME));
+    assert_eq!(s.world.transformation_id(ME), 101);
+}
+
 // ---- how a form ends ---------------------------------------------------------------------------
 
 /// `DispelBySlotProbability` (with a TRANSFORM slot) also stops the transformation.

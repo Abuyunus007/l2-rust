@@ -57,7 +57,10 @@ impl EffectHandler for SummonCubic {
             );
             return;
         }
-        // `player.inObserverMode() || player.isMounted()`: neither is modelled.
+        // `player.inObserverMode() || player.isMounted()`: the observer mode is not modelled.
+        if world.is_mounted(effected) {
+            return;
+        }
         let mut template_level = if self.cubic_level > 0 {
             self.cubic_level
         } else {

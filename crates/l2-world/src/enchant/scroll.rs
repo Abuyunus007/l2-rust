@@ -106,8 +106,15 @@ impl World {
     // ------------------------------------------------------------------ EnchantScrolls
 
     /// Java `EnchantScrolls.onItemUse`: opens the scroll window.
-    // `playable.isPlayer()` is always true here; `player.isMounted()` is not modelled.
+    // `playable.isPlayer()` is always true here.
     pub(crate) fn enchant_scrolls_on_use(&mut self, id: ObjectId, item: &ItemData) -> bool {
+        if self.is_mounted(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::InappropriateEnchantConditions),
+            );
+            return false;
+        }
         if self.is_casting_now(id) {
             return false;
         }

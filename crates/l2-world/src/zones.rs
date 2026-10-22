@@ -25,7 +25,8 @@
 // exist.
 //
 // What Java does in these zones that is left out, with the system that brings it:
-// - `NoLandingZone`: dismounting a wyvern, the GM notice: mounts, M4
+// - `SiegeZone`: the dismount of a wyvern and the mounts it refuses (M7, `mount.rs` has the
+//   `enteredNoLanding` half)
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
 //   `characters.lastAccess`; the login hook is not called
 // - `isAffected`: the `affectedClassType` check (needs the class list), the instance template
@@ -492,7 +493,10 @@ impl World {
             ZoneKind::NoRestart => self.set_inside(id, ZoneId::NoRestart, true),
             ZoneKind::NoSummonFriend => self.set_inside(id, ZoneId::NoSummonFriend, true),
             ZoneKind::Landing => self.set_inside(id, ZoneId::Landing, true),
-            ZoneKind::NoLanding => self.set_inside(id, ZoneId::NoLanding, true),
+            ZoneKind::NoLanding => {
+                self.set_inside(id, ZoneId::NoLanding, true);
+                self.no_landing_zone_entered(id, zone.param("dismountDelay"));
+            }
             ZoneKind::Hq => self.set_inside(id, ZoneId::Hq, true),
             ZoneKind::Condition => {
                 let (no_bookmark, no_item_drop) = condition_flags(zone);
@@ -573,7 +577,10 @@ impl World {
             ZoneKind::NoRestart => self.set_inside(id, ZoneId::NoRestart, false),
             ZoneKind::NoSummonFriend => self.set_inside(id, ZoneId::NoSummonFriend, false),
             ZoneKind::Landing => self.set_inside(id, ZoneId::Landing, false),
-            ZoneKind::NoLanding => self.set_inside(id, ZoneId::NoLanding, false),
+            ZoneKind::NoLanding => {
+                self.set_inside(id, ZoneId::NoLanding, false);
+                self.no_landing_zone_exited(id);
+            }
             ZoneKind::Hq => self.set_inside(id, ZoneId::Hq, false),
             ZoneKind::Condition => {
                 let (no_bookmark, no_item_drop) = condition_flags(zone);
@@ -690,10 +697,11 @@ impl World {
             y: player.core.y,
             z: player.core.z,
         };
-        // A flying mount is not modelled (M4).
         let race = race_name(player.data.race)?;
+        // `player.isFlyingMounted()`: the flying fallback region.
+        let flying_mounted = self.stats(id).is_some_and(|v| v.is_flying_mounted());
         let mut pick = self.restart_point_picker();
-        let loc = regions.nearest_karma_respawn(&zones, pos, race, false, &mut pick)?;
+        let loc = regions.nearest_karma_respawn(&zones, pos, race, flying_mounted, &mut pick)?;
         Some((loc.x, loc.y, loc.z))
     }
 }

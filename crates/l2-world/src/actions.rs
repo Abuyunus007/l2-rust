@@ -23,8 +23,8 @@
 // `RequestMagicSkillUse`, ...) are not ported (see `ai/mod.rs`).
 //
 // # Left out (markers)
-// - M6-MOUNT: `getMountType()`, `isMounted()`, `isInBoat()`, `isInAirShip()` are always false,
-//   action 38 (mount/dismount) and the airship actions (67 to 70) are not ported.
+// - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
+//   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
 // - M6-FISHING: `isFishing()` is always false.
 // - Action 65 (the bot report button) is `bot_report.rs`.
 // - M7: `isInSiege()` and `isInHideoutSiege()` are always false (the siege code sets them).
@@ -177,7 +177,10 @@ impl World {
     /// Java `RequestActionUse.useSit`: sit on a throne, stand a fake death up, stand up or sit
     /// down.
     fn use_sit(&mut self, player: ObjectId, target: Option<ObjectId>) {
-        // M6-MOUNT: `player.getMountType() != MountType.NONE` returns false.
+        // `player.getMountType() != MountType.NONE` returns false.
+        if self.is_mounted(player) {
+            return;
+        }
         let chair = target.and_then(|t| {
             let object = self.static_objects.get(&t)?;
             (object.kind == STATIC_OBJECT_TYPE_CHAIR).then_some((object.static_object_id, t))
@@ -314,8 +317,11 @@ impl World {
         // M7: `player.isInSiege()`.
         // NOTE(java-quirk): the `isInHideoutSiege()` branch of the player has no `return`, the
         // checks go on after the message (M7: nobody is in a hideout siege yet).
-        // M6-MOUNT: `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()`.
-        if self.stats(player).is_some_and(|v| v.is_flying_mounted()) {
+        // `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()` (no boats here).
+        if self
+            .stats(player)
+            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        {
             self.couple_refusal(
                 player,
                 M::C1IsRidingAShipSteedOrStriderAndCannotBeRequestedForACoupleAction,
@@ -376,8 +382,11 @@ impl World {
         }
         // M8: `partner.isInOlympiadMode()`.
         // M7: `partner.isInHideoutSiege()`, `partner.isInSiege()`.
-        // M6-MOUNT: `partner.isMounted() || isInBoat() || isInAirShip()`.
-        if self.stats(partner).is_some_and(|v| v.is_flying_mounted()) {
+        // `partner.isMounted() || partner.isFlyingMounted() || isInBoat() || isInAirShip()`.
+        if self
+            .stats(partner)
+            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        {
             self.couple_refusal(
                 player,
                 M::C1IsRidingAShipSteedOrStriderAndCannotBeRequestedForACoupleAction,

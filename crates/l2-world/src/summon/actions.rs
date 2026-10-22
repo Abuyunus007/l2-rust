@@ -7,8 +7,8 @@
 // Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java
 //
 // The player's own actions (sit, walk, socials, couple actions) are `actions.rs`; the stores are
-// `trade/store.rs`. The manufacture, mount, airship and bot report actions belong to their own
-// systems and are logged as not ported here.
+// `trade/store.rs`. The manufacture and mount actions are `craft/shop.rs` and `mount.rs`; the airship and
+// bot report actions belong to their own systems and are logged as not ported here.
 
 use l2_data::NpcTemplate;
 use l2_data::npc::{NpcParam, NpcRace};
@@ -227,6 +227,10 @@ impl World {
             // Dwarven Manufacture and General Manufacture (M6-CRAFT-01, `craft/shop.rs`).
             37 => self.action_manufacture(player, true),
             51 => self.action_manufacture(player, false),
+            // Mount/Dismount (`mount.rs`).
+            38 => {
+                self.mount_player(player, summon);
+            }
             // Unsummon Pet.
             19 => self.action_unsummon_pet(player, summon),
             // Unsummon Servitor.

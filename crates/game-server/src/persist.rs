@@ -2461,6 +2461,13 @@ impl PlayerStore for DbStore {
                     self.pets.update_pet(&values).await?;
                 }
             }
+            // Java: Player.storePetFood
+            SummonWrite::PetFed {
+                control_object_id,
+                fed,
+            } => {
+                self.pets.update_fed(control_object_id.0, *fed).await?;
+            }
             // Java: Pet.destroyControlItem, ItemManager.destroyItem
             SummonWrite::DeletePet { control_object_id } => self.pets.delete_pet(control_object_id.0).await?,
             // Java: Pet.storeEffect / restoreEffects

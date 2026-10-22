@@ -1792,7 +1792,7 @@ mod summon {
     use l2_protocol_game::server::items::{ItemInfo, ItemUpdate};
     use l2_protocol_game::server::summon::{
         ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow,
-        PetStatusUpdate, SetSummonRemainTime,
+        PetStatusUpdate, Ride, SetSummonRemainTime,
     };
 
     trait DoubleBytes {
@@ -1872,6 +1872,56 @@ mod summon {
                 remaining_time: 600_000,
             },
             &Bytes::default().byte(0xD1).int(1_200_000).int(600_000).done(),
+            1,
+        );
+    }
+
+    /// `Ride` (0x8C): seven ints; the npc id carries the offset of 1000000 even when nothing is
+    /// ridden (a dismount sends 1000000).
+    #[test]
+    fn ride() {
+        check_round_trip(
+            &Ride {
+                object_id: 0x6000_0001,
+                mounted: true,
+                ride_type: 2,
+                ride_npc_id: 12_621,
+                x: 82_698,
+                y: 148_638,
+                z: -3_473,
+            },
+            &Bytes::default()
+                .byte(0x8C)
+                .int(0x6000_0001)
+                .int(1)
+                .int(2)
+                .int(1_012_621)
+                .int(82_698)
+                .int(148_638)
+                .int(-3_473)
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &Ride {
+                object_id: 7,
+                mounted: false,
+                ride_type: 0,
+                ride_npc_id: 0,
+                x: 1,
+                y: 2,
+                z: 3,
+            },
+            &Bytes::default()
+                .byte(0x8C)
+                .int(7)
+                .int(0)
+                .int(0)
+                .int(1_000_000)
+                .int(1)
+                .int(2)
+                .int(3)
+                .done(),
             1,
         );
     }

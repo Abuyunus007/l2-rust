@@ -386,7 +386,10 @@ impl World {
         {
             return;
         }
-        // Players mounted on pets cannot use any toggle skills: no mounts yet.
+        // Players mounted on pets cannot use any toggle skills.
+        if skill.is_toggle() && self.is_mounted(player) {
+            return;
+        }
 
         // `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
         self.on_action_request(player);

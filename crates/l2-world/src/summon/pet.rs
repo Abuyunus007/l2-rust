@@ -29,7 +29,7 @@
 // tables (`PetWorld::rows`, `saved_effect_rows`).
 //
 // # Left out, with the system that brings it
-// - Mounts (`isMountable()` striders and wyverns are listed, `Player.mount` is not).
+// - Mounts are `mount.rs` (`Player.mount` unsummons the pet through [`World::pet_unsummon`]).
 // - The spawn protection that delays `CharSummonTable.restorePet` until the first action: the
 //   pet comes back at the first `on_action_request` (see `World::pet_on_action_request`).
 // - The flood protector of the pet packets, `PunishmentManager.handleIllegalPlayerAction` for a
@@ -383,7 +383,7 @@ impl World {
             return false;
         }
         // `player.hasSummon() || player.isMounted()`.
-        if self.summon_of(id).is_some() {
+        if self.summon_of(id).is_some() || self.is_mounted(id) {
             self.pet_message(id, SystemMessageId::YouAlreadyHaveAPet);
             return false;
         }
@@ -413,8 +413,8 @@ impl World {
     /// Java `SummonPet.onStart` from the checks on: the collar the player used (the
     /// `PetItemHolder` `SummonItems` attached) makes the pet.
     pub(crate) fn summon_pet_effect(&mut self, player: ObjectId) {
-        // `player.hasSummon() || player.isMounted()`: mounts do not exist yet.
-        if self.summon_of(player).is_some() {
+        // `player.hasSummon() || player.isMounted()`.
+        if self.summon_of(player).is_some() || self.is_mounted(player) {
             self.pet_message(player, SystemMessageId::YouAlreadyHaveAPet);
             return;
         }

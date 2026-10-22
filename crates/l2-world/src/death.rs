@@ -265,7 +265,9 @@ impl World {
 
     /// Java `Player.doDie(killer)` after `Playable.doDie`.
     fn player_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
-        // Mounts (`stopFeed`) and Krateis arenas: not modelled.
+        // Krateis arenas: not modelled.
+        // `if (isMounted()) stopFeed()`
+        self.mount_on_die(id);
         if self.is_fake_death(id) {
             self.stop_fake_death(id, true);
         }
@@ -508,8 +510,10 @@ impl World {
                 control.revive_requested = false;
                 control.revive_power = 0.0;
             }
-            // The pet revive request, a summon next to its owner in a peace zone, the mount's
-            // food, the dimensional rift and the instance's eject timer: not modelled.
+            // The pet revive request, a summon next to its owner in a peace zone, the dimensional
+            // rift and the instance's eject timer: not modelled.
+            // `if (isMounted()) startFeed(_mountNpcId)`
+            self.mount_on_revive(id);
         }
     }
 

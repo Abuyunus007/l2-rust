@@ -759,6 +759,8 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
+            // Java: PetFeedTask, DismountTask, RentPetTask
+            TimerKind::Mount(timer) => self.on_mount_timer(timer),
         }
     }
 

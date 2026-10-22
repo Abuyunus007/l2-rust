@@ -147,7 +147,13 @@ impl World {
             },
             water_or_flying: ui.water_or_flying,
             recom_have: ui.recom_have,
-            mount_npc_id: ui.mount_npc_id,
+            // `CharInfo` writes `getMountNpcId() + 1000000` and the packet adds the offset itself;
+            // `UserInfo` carries it already (0 without a mount).
+            mount_npc_id: if ui.mount_npc_id > 0 {
+                ui.mount_npc_id - 1_000_000
+            } else {
+                0
+            },
             class_id: ui.class_id,
             enchant_effect: ui.enchant_effect,
             team: ui.team,
