@@ -307,7 +307,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-CRAFT-01](M6/M6-CRAFT-01.md) | Crafting and manufacture shops | sonnet | full | STORE-01 | merged |
 | [M6-FRIEND-01](M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | merged |
 | [M6-MAIL-01](M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | merged |
-| [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | in-progress |
+| [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | merged |
 | [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
 | [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | in-progress |
 | [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | in-progress |

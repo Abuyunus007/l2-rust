@@ -172,6 +172,7 @@ pub use pledge::{
 pub use recipe::{
     ManufactureEntry, RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList,
     RecipeShopMsg, RecipeShopSellList,
+};
 pub use refine::{
     ExPutCommissionResultForVariationMake, ExPutIntensiveResultForVariationMake,
     ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
