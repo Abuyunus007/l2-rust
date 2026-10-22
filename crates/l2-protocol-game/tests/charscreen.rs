@@ -369,6 +369,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::AnswerTradeRequest(_)
             | ClientPacket::AddTradeItem(_)
             | ClientPacket::TradeDone(_)
+            | ClientPacket::MultiSellChoose(_)
             | ClientPacket::RequestPrivateStoreManageSell(_)
             | ClientPacket::RequestPrivateStoreManageBuy(_)
             | ClientPacket::RequestPrivateStoreQuitSell(_)
@@ -429,6 +430,12 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestDuelStart(_)
             | ClientPacket::RequestDuelAnswerStart(_)
             | ClientPacket::RequestDuelSurrender(_)
+            | ClientPacket::RequestEnchantItem(_)
+            | ClientPacket::RequestExTryToPutEnchantTargetItem(_)
+            | ClientPacket::RequestExTryToPutEnchantSupportItem(_)
+            | ClientPacket::RequestExCancelEnchantItem(_)
+            | ClientPacket::RequestExEnchantItemAttribute(_)
+            | ClientPacket::RequestExRemoveItemAttribute(_)
             | ClientPacket::Unported(_)
             | ClientPacket::UnportedEx(_) => return None,
         };

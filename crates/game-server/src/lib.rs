@@ -346,6 +346,15 @@ impl Server {
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let cubics = Arc::clone(&datapack.cubics);
             let class_list = Arc::clone(&datapack.class_list);
+            let multisell = (
+                Arc::clone(&datapack.multisell),
+                world_data::multisell_settings(&config),
+            );
+            let enchant_data = (
+                Arc::clone(&datapack.enchant_items),
+                Arc::clone(&datapack.enchant_groups),
+                Arc::clone(&datapack.elemental_attributes),
+            );
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -379,6 +388,12 @@ impl Server {
                     world.set_cubic_data(cubics);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
+                    // Java: MultisellData (the exchange lists of NPCs).
+                    let (multisell_data, multisell_settings) = multisell;
+                    world.set_multisell_data(multisell_data, multisell_settings);
+                    // Java: EnchantItemData, EnchantItemGroupsData, ElementalAttributeData.
+                    let (enchant_items, enchant_groups, elemental_attributes) = enchant_data;
+                    world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
@@ -631,6 +646,8 @@ fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOption
         default_corpse_time: config.npc.default_corpse_time,
         htm_cache: config.general.htm_cache,
         check_html_encoding: config.general.check_html_encoding,
+        custom_multisell_load: config.general.custom_multisell_load,
+        correct_prices: config.general.correct_prices,
     }
 }
 
@@ -818,7 +835,8 @@ mod tests {
         std::fs::create_dir_all(&custom).unwrap();
         std::fs::write(
             dir.path().join("General.ini"),
-            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\nCustomSkillsLoad = True\n",
+            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\nCustomSkillsLoad = True\n\
+             CustomMultisellLoad = True\nCorrectPrices = False\n",
         )
         .unwrap();
         std::fs::write(
@@ -848,6 +866,8 @@ mod tests {
                 default_corpse_time: 3,
                 htm_cache: false,
                 check_html_encoding: false,
+                custom_multisell_load: true,
+                correct_prices: false,
                 skills: l2_data::SkillLoadOptions {
                     custom_skills_load: true,
                     min_abnormal_state_success_rate: 5,

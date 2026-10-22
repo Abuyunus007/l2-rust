@@ -288,8 +288,9 @@ impl World {
             self.send_message(id, "Transactions are disabled for your Access Level.");
             return;
         }
-        // M6-ENCHANT: `getActiveEnchantItemId() != ID_NONE` cancels the enchanting
-        // (`YOU_HAVE_CANCELLED_THE_ENCHANTING_PROCESS`, `EnchantResult(2, 0, 0)`) and returns.
+        if self.warehouse_cancels_enchant(id) {
+            return;
+        }
         // Alt game - Karma punishment.
         if self.karma_blocks_warehouse(id) {
             return;
@@ -402,7 +403,9 @@ impl World {
             self.send_message(id, "Transactions are disabled for your Access Level.");
             return;
         }
-        // M6-ENCHANT: the active enchant scroll (see the deposit).
+        if self.warehouse_cancels_enchant(id) {
+            return;
+        }
         if self.karma_blocks_warehouse(id) {
             return;
         }
@@ -519,8 +522,9 @@ impl World {
         if !in_reach {
             return;
         }
-        // M6-ENCHANT: an active enchant scroll is an illegal action here ("tried to use enchant
-        // Exploit!").
+        if self.package_send_enchant_exploit(id) {
+            return;
+        }
         // Get current tradelist if any.
         if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) {
             return;
@@ -630,7 +634,9 @@ fn private_warehouse_handler(
     let Some(npc) = world.warehouse_npc(target) else {
         return false;
     };
-    // `player.isEnchanting()` is not modelled (M6-ENCHANT).
+    if world.enchant_blocks_warehouse_link(player) {
+        return false;
+    }
     let lower = command.to_lowercase();
     if lower.starts_with("withdrawp") {
         if world.settings.warehouse.sorting_private {
@@ -677,7 +683,9 @@ fn clan_warehouse_handler(
     ) {
         return false;
     }
-    // `player.isEnchanting()` is not modelled (M6-ENCHANT).
+    if world.enchant_blocks_warehouse_link(player) {
+        return false;
+    }
     let Some(clan) = world.clan_of(player) else {
         world.send(
             player,

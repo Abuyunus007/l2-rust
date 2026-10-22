@@ -25,9 +25,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PlayerData,
-    PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
+    PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
+    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -794,6 +794,12 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: MultiSellChoose
+            ClientPacket::MultiSellChoose(p) => ClientInput::MultiSellChoose {
+                list_id: p.list_id,
+                entry_id: p.entry_id,
+                amount: p.amount,
+            },
             // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
             // ported), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
@@ -968,6 +974,35 @@ impl ClientSession {
                 response: p.response,
             },
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
+            // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
+            // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
+            // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute
+            ClientPacket::RequestEnchantItem(p) => ClientInput::Enchant(EnchantInput::Enchant {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestExTryToPutEnchantTargetItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutSupportItem {
+                    support_object_id: p.support_object_id,
+                    enchant_object_id: p.enchant_object_id,
+                })
+            }
+            ClientPacket::RequestExCancelEnchantItem(_) => ClientInput::Enchant(EnchantInput::CancelEnchant),
+            ClientPacket::RequestExEnchantItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::EnchantAttribute {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExRemoveItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::RemoveAttribute {
+                    object_id: p.object_id,
+                    element: p.element,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

@@ -6,10 +6,11 @@
 // `ADDED` / `MODIFIED` flag, the update packets; no overflow drop, no herb skip, as Java's admin
 // commands get). The database rows follow the item list.
 //
+// `//create_item <id> <amount> <enchant>` sets the enchant level of an enchantable item, clamped to
+// the highest level `EnchantItemGroupsData` has a chance for when `OverEnchantProtection` is on
+// (`World::max_enchant_of`, M6-ENCHANT-01).
+//
 // # Left out, with the system that brings it
-// - `//create_item <id> <amount> <enchant>` for an enchantable item: `OverEnchantProtection` clamps
-//   the enchant to `EnchantItemGroupsData`, which is not ported (FOLLOW-UP(M4)). Such a command
-//   creates nothing and logs a warning. The other cases of the form are as Java.
 // - `//use_item` of an item that is not equippable runs its item handler (potions, scrolls, ...),
 //   which is M5: nothing happens for those items here.
 //
@@ -18,7 +19,6 @@
 // typed as `//command` they wait for the answer of a `ConfirmDlg` (`admin/mod.rs`).
 
 use l2_util::ObjectId;
-use tracing::warn;
 
 use super::exp_sp::parse_long;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
@@ -121,18 +121,26 @@ fn create_item(world: &mut World, gm: ObjectId, target: ObjectId, id: i32, num: 
         return;
     }
     let name = template.name.clone();
-    if enchant.is_some_and(|enchant| enchant > 0 && template.enchantable) {
-        // FOLLOW-UP(M4): `OverEnchantProtection` clamps the enchant to `EnchantItemGroupsData`,
-        // which is not ported. Nothing is created and, as with Java's other unsupported paths, the
-        // GM is not told.
-        warn!("//create_item {id} with an enchant level: EnchantItemGroupsData is not ported yet");
-        return;
-    }
 
-    world.inventory_add_item_by_id(target, id, num);
-    if enchant.is_some() {
-        // Java: `item != null && item.isEnchantable() && enchant > 0` is false here.
-        world.send_message(gm, "This item is not enchantable, no enchant applied.");
+    let added = world.inventory_add_item_by_id(target, id, num);
+    if let Some(enchant) = enchant {
+        // `(item != null) && item.isEnchantable() && (enchant > 0)`
+        match added
+            .as_ref()
+            .filter(|added| enchant > 0 && world.item_is_enchantable(&added.item, template))
+        {
+            Some(added) => {
+                let level = if world.settings.enchant.over_enchant_protection {
+                    enchant.min(world.max_enchant_of(template))
+                } else {
+                    enchant
+                };
+                let object_id = added.item.object_id;
+                // `setEnchantLevel` only marks the item dirty: the next store writes it.
+                world.set_item_enchant_level(target, object_id, level);
+            }
+            None => world.send_message(gm, "This item is not enchantable, no enchant applied."),
+        }
     }
     if gm != target {
         world.send_message(target, &format!("Admin spawned {num} {name} in your inventory."));

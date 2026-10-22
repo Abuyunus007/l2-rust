@@ -12,6 +12,7 @@ pub mod buylist;
 pub mod class_list;
 pub mod cubic;
 pub mod door;
+pub mod enchant;
 pub mod enchant_hp_bonus;
 pub mod experience;
 pub mod fence;
@@ -24,6 +25,7 @@ pub mod item;
 pub mod level_tables;
 pub mod loader;
 pub mod map_region;
+pub mod multisell;
 pub mod npc;
 pub mod pet_skill;
 pub mod player_class;
@@ -52,6 +54,10 @@ pub use cubic::{
     HpConditionType,
 };
 pub use door::{DoorTemplate, DoorTemplates};
+pub use enchant::{
+    ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
+    EnchantScroll, EnchantSupportItem, EnchantTarget,
+};
 pub use enchant_hp_bonus::EnchantHpBonus;
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
@@ -66,6 +72,7 @@ pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
+pub use multisell::{MultisellData, MultisellLoadOptions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
@@ -130,6 +137,8 @@ pub struct Datapack {
     pub enchant_hp_bonus: Arc<EnchantHpBonus>,
     /// `data/stats/hitConditionBonus.xml`: the hit percentages for height, side, night and rain.
     pub hit_condition_bonus: Arc<HitConditionBonus>,
+    /// `data/multisell/*.xml`: the exchange lists of NPCs (M6-MULTISELL-01).
+    pub multisell: Arc<MultisellData>,
     /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
     pub hennas: Arc<Hennas>,
     /// `data/stats/transformations/*.xml`: the transformations by id (M6-TRANS-01).
@@ -140,6 +149,12 @@ pub struct Datapack {
     pub augmentation_options: Arc<AugmentationOptions>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
+    /// `data/EnchantItemData.xml`: the enchant scrolls and support items (M6-ENCHANT-01).
+    pub enchant_items: Arc<EnchantItemData>,
+    /// `data/EnchantItemGroups.xml`: the success chances (M6-ENCHANT-01).
+    pub enchant_groups: Arc<EnchantItemGroups>,
+    /// `data/ElementalAttributeData.xml`: the element stones (M6-ENCHANT-01).
+    pub elemental_attributes: Arc<ElementalAttributeData>,
     /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
     pub cubics: Arc<CubicData>,
 }
@@ -173,6 +188,10 @@ pub struct DatapackOptions {
     /// The skill loader's options (`CustomSkillsLoad`, the abnormal success rates,
     /// `SkillDurationList` / `SkillReuseList`).
     pub skills: SkillLoadOptions,
+    /// `General.ini` `CustomMultisellLoad` (default false): also load `data/multisell/custom`.
+    pub custom_multisell_load: bool,
+    /// `General.ini` `CorrectPrices` (default true): raise a too cheap one adena entry.
+    pub correct_prices: bool,
 }
 
 impl Default for DatapackOptions {
@@ -189,6 +208,8 @@ impl Default for DatapackOptions {
             htm_cache: true,
             check_html_encoding: true,
             skills: SkillLoadOptions::default(),
+            custom_multisell_load: false,
+            correct_prices: true,
         }
     }
 }
@@ -230,6 +251,21 @@ impl Datapack {
         let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
             skills.get(id, level).is_some()
         }));
+        // Java loads ItemData before MultisellData (every ingredient looks its template up).
+        let items = Arc::new(ItemTemplates::load(root, options.custom_items_load));
+        let multisell = Arc::new(MultisellData::load(
+            root,
+            &items,
+            &MultisellLoadOptions {
+                custom_multisell_load: options.custom_multisell_load,
+                correct_prices: options.correct_prices,
+            },
+        ));
+        // Java loads `ElementalAttributeData` and `EnchantItemData` after `ItemData`: both check
+        // their item ids against it.
+        let enchant_items = Arc::new(EnchantItemData::load(root, &items));
+        let enchant_groups = Arc::new(EnchantItemGroups::load(root));
+        let elemental_attributes = Arc::new(ElementalAttributeData::load(root, &items));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -241,7 +277,7 @@ impl Datapack {
             player_templates: Arc::new(PlayerTemplates::load(root, max_level)),
             skill_trees: Arc::new(SkillTrees::load(root)),
             skill_learn: Arc::new(SkillLearnData::load(root)),
-            items: Arc::new(ItemTemplates::load(root, options.custom_items_load)),
+            items,
             zones: Arc::new(Zones::load(root)),
             map_regions: Arc::new(MapRegions::load(root)),
             // Java `HtmCache = False` is the lazy mode, so the lazy flag is the inverse.
@@ -259,11 +295,15 @@ impl Datapack {
             armor_sets: Arc::new(ArmorSets::load(root)),
             enchant_hp_bonus: Arc::new(EnchantHpBonus::load(root)),
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
+            multisell,
             hennas: Arc::new(Hennas::load(root)),
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,
             pet_skills,
+            enchant_items,
+            enchant_groups,
+            elemental_attributes,
             cubics: Arc::new(CubicData::load(root)),
         })
     }
@@ -368,5 +408,6 @@ mod tests {
         assert!(pack.enchant_hp_bonus.is_empty());
         assert!(pack.hennas.is_empty());
         assert!(pack.skills.is_empty());
+        assert!(pack.multisell.is_empty());
     }
 }

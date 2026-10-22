@@ -608,6 +608,45 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
     settings
 }
 
+/// The enchant values (`Player.ini`, `General.ini`). `EnchantBlackList` and `OverEnchantPunishment`
+/// are post-processed in Java (placeholders in the generated config), so they are read from
+/// `Player.ini` here.
+pub fn enchant_settings(config: &GameConfig, config_dir: &Path) -> l2_world::EnchantSettings {
+    use l2_config::IniFile;
+    use l2_config::game::PlayerConfig;
+    use l2_world::{EnchantSettings, IllegalActionPunishment};
+
+    let p = &config.player;
+    let mut settings = EnchantSettings {
+        over_enchant_protection: p.over_enchant_protection,
+        disable_over_enchanting: p.disable_over_enchanting,
+        enchant_chance_element_stone: p.enchant_chance_element_stone,
+        enchant_chance_element_crystal: p.enchant_chance_element_crystal,
+        enchant_chance_element_jewel: p.enchant_chance_element_jewel,
+        enchant_chance_element_energy: p.enchant_chance_element_energy,
+        log_item_enchants: config.general.log_item_enchants,
+        ..EnchantSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(PlayerConfig::FILE)) {
+        settings.over_enchant_punishment =
+            IllegalActionPunishment::find_by_name(&ini.get_string("OverEnchantPunishment", "JAIL"));
+        // Java: `Integer.parseInt` of each comma separated id (it throws for a bad one), sorted.
+        let text = ini.get_string(
+            "EnchantBlackList",
+            "7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296",
+        );
+        let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
+        match ids {
+            Ok(mut ids) => {
+                ids.sort_unstable();
+                settings.enchant_blacklist = ids;
+            }
+            Err(_) => warn!("EnchantBlackList = {text} is not a list of ids; using the default."),
+        }
+    }
+    settings
+}
+
 /// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
 /// (`Custom/PvpTitleColor.ini`). `AntiFeedInterval` (seconds, Java keeps ms) and the five
 /// `ColorForAmountN` (`Integer.decode("0x" + text)`) are post-processed in Java (placeholders in
@@ -860,6 +899,16 @@ pub fn summon_settings(config: &GameConfig) -> l2_world::SummonSettings {
     }
 }
 
+/// The multisell values of `General.ini` and `Player.ini` (`MultisellAmountLimit`,
+/// `AltBlacksmithUseRecipes`, `MaxPersonalFamePoints`).
+pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
+    l2_world::MultisellSettings {
+        amount_limit: config.general.multisell_amount_limit,
+        alt_blacksmith_use_recipes: config.player.alt_blacksmith_use_recipes,
+        max_personal_fame_points: config.player.max_personal_fame_points,
+    }
+}
+
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
     use l2_config::game::GeneralConfig;
@@ -964,6 +1013,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        enchant: enchant_settings(config, config_dir),
         shop: l2_world::ShopSettings {
             allow_refund: config.general.allow_refund,
             only_gm_items_free: config.general.only_gm_items_free,

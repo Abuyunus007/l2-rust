@@ -301,9 +301,9 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | ready (refined when deps merge) |
 | [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
 | [M6-SHOP-01](M6/M6-SHOP-01.md) | NPC shops (buy, sell, refund) | sonnet | full | none | merged |
-| [M6-MULTISELL-01](M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | in-progress |
+| [M6-MULTISELL-01](M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | merged |
 | [M6-WH-01](M6/M6-WH-01.md) | Warehouses and freight | sonnet | full | TRADE-01, CLAN-01 | merged |
-| [M6-ENCHANT-01](M6/M6-ENCHANT-01.md) | Enchanting and attributes | sonnet | full | none | in-progress |
+| [M6-ENCHANT-01](M6/M6-ENCHANT-01.md) | Enchanting and attributes | sonnet | full | none | merged |
 | [M6-CRAFT-01](M6/M6-CRAFT-01.md) | Crafting and manufacture shops | sonnet | full | STORE-01 | in-progress |
 | [M6-FRIEND-01](M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | in-progress |
 | [M6-MAIL-01](M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | in-progress |
