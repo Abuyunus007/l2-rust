@@ -367,6 +367,8 @@ pub struct WorldSettings {
     pub shop: crate::shop::ShopSettings,
     /// The freight price and slots, the clan warehouse rule, the sorted lists (M6-WH-01).
     pub warehouse: crate::warehouse::WarehouseSettings,
+    /// The crafting switches and rates (M6-CRAFT-01).
+    pub craft: crate::craft::CraftSettings,
     /// The private store ranges and packet limit (M6-STORE-01).
     pub store: crate::trade::StoreSettings,
     /// The enchant and over-enchant settings (M6-ENCHANT-01).
@@ -427,6 +429,7 @@ impl Default for WorldSettings {
             pvp: crate::pvp::PvpSettings::default(),
             shop: crate::shop::ShopSettings::default(),
             warehouse: crate::warehouse::WarehouseSettings::default(),
+            craft: crate::craft::CraftSettings::default(),
             store: crate::trade::StoreSettings::default(),
             enchant: crate::enchant::EnchantSettings::default(),
             daily_reset_database_writes: false,

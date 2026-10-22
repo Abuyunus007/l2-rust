@@ -48,6 +48,8 @@ impl World {
         snapshot.profile.effects_to_store = self.saved_effects(id);
         // Java `Player.store` -> `storeItemReuseDelay()` runs on every store, with no setting.
         snapshot.profile.item_reuse_to_store = Some(self.saved_item_reuse(id));
+        // `storeRecipeShopList()` (only with `StoreRecipeShopList` and a shop).
+        snapshot.profile.recipe_shop_to_store = self.recipe_shop_to_store(id);
         // `_clanPrivileges.getMask()`: the mask of the moment, also of a shared rank object.
         if let Some(clan) = snapshot.profile.clan.as_mut() {
             clan.privileges = crate::clan::ClanPrivilegesRef::Own(self.clan_privileges_of(id));

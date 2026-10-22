@@ -16,6 +16,7 @@ pub mod bypass;
 pub mod chat;
 pub mod clan;
 pub mod combat;
+pub mod craft;
 pub mod command;
 pub mod data;
 pub mod death;
@@ -128,6 +129,10 @@ pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWher
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use trade::{
     AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
+};
+pub use craft::{
+    CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
+    RecipeWrite,
 };
 pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

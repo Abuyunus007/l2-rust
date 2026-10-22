@@ -200,7 +200,9 @@ impl RecipeShopManageList {
 impl Encode for RecipeShopManageList {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        w.i32(self.seller_id).i32(self.adena).i32(i32::from(self.is_common));
+        w.i32(self.seller_id)
+            .i32(self.adena)
+            .i32(i32::from(self.is_common));
         write_recipe_ids(w, &self.recipes);
         write_manufacture(w, &self.items);
     }

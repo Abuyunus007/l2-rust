@@ -120,6 +120,8 @@ pub struct World {
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
+    /// The recipes and the makers waiting on the timer wheel (M6-CRAFT-01, `craft/`).
+    pub(crate) craft: crate::craft::CraftWorld,
 }
 
 impl World {
@@ -177,6 +179,7 @@ impl World {
             duel: crate::duel::DuelWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
+            craft: crate::craft::CraftWorld::default(),
         }
     }
 
@@ -418,6 +421,8 @@ impl World {
         self.players.insert(id, player);
         // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
         self.clean_loaded_warehouses(id);
+        // Java `Player.load`: `restoreRecipeBook(true)` and `restoreRecipeShopList()`.
+        self.restore_craft(id);
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
@@ -575,6 +580,7 @@ impl World {
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
+            ClientInput::Craft(input) => self.on_craft_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -682,6 +688,7 @@ impl World {
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
+            TimerKind::Craft(timer) => self.on_craft_timer(timer),
         }
     }
 

@@ -15,6 +15,7 @@ mod item_reuse;
 mod items;
 mod macros;
 mod punishments;
+mod recipes;
 mod recommendations;
 mod shortcuts;
 mod skills;
@@ -43,6 +44,7 @@ pub use items::{
 };
 pub use macros::{MacroRepository, MacroRow, NewMacro};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
+pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};

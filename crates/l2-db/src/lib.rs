@@ -34,6 +34,7 @@ pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
+pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,

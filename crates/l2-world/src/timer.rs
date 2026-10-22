@@ -119,6 +119,8 @@ pub enum TimerKind {
     Shop(crate::shop::ShopTimer),
     /// The three tasks of a duel (start countdown, the 1 s watch, the end), see `duel.rs`.
     Duel(crate::duel::DuelTimer),
+    /// The passes of an alt crafting (`RecipeItemMaker`), see `craft/`.
+    Craft(crate::craft::CraftTimer),
 }
 
 #[derive(Debug, Default)]

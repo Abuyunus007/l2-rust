@@ -35,7 +35,10 @@ fn recipes_xml_counts_and_spot_checks() {
     assert_eq!((arrow.level, arrow.success_rate), (1, 100));
     assert_eq!((arrow.item_id, arrow.count), (17, 500));
     assert_eq!(arrow.recipes.len(), 2);
-    assert_eq!((arrow.stat_use[0].kind, arrow.stat_use[0].value), (StatType::Mp, 30));
+    assert_eq!(
+        (arrow.stat_use[0].kind, arrow.stat_use[0].value),
+        (StatType::Mp, 30)
+    );
     assert_eq!(arrow.rare_item_id, 0);
 
     // Craft levels in the file go from 1 to 10, and both recipe types exist.

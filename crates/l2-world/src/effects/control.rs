@@ -750,9 +750,8 @@ impl World {
     /// for a hit that is no damage over time: a player with a store closes it and stands up, a
     /// sitting player stands up, a stun may break (one in ten).
     pub(crate) fn break_states_on_damage(&mut self, id: ObjectId) {
-        // `PlayerStatus.reduceHp`: "Attacked players in craft/shops stand up." (crafting is not
-        // ported).
-        if self.is_player(id) && self.is_in_store_mode(id) {
+        // `PlayerStatus.reduceHp`: "Attacked players in craft/shops stand up."
+        if self.is_player(id) && (self.is_crafting(id) || self.is_in_store_mode(id)) {
             self.set_private_store_type(id, crate::trade::PrivateStoreType::None);
             self.stand_up(id);
             self.broadcast_user_info(id);

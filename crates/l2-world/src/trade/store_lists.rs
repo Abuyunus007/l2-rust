@@ -358,7 +358,11 @@ impl World {
                     self.send(id, &packet);
                 }
             }
-            // `MANUFACTURE` sends `RecipeShopSellList` (crafting is not ported).
+            PrivateStoreType::Manufacture => {
+                if let Some(packet) = self.recipe_shop_sell_list(id, target) {
+                    self.send(id, &packet);
+                }
+            }
             _ => {}
         }
     }
@@ -394,7 +398,9 @@ impl World {
                     },
                 );
             }
-            // `MANUFACTURE` sends `RecipeShopMsg` (crafting is not ported).
+            PrivateStoreType::Manufacture => {
+                self.send(viewer, &self.recipe_shop_msg(subject));
+            }
             _ => {}
         }
     }

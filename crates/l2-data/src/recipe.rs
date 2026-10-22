@@ -348,8 +348,8 @@ impl RawItem {
         }
 
         // `set.getInt("itemId")` has no default: a recipe without `<production>` throws.
-        let (item_id, count) = production
-            .ok_or_else(|| DataError::Invalid(format!("recipe item id {id} has no production")))?;
+        let (item_id, count) =
+            production.ok_or_else(|| DataError::Invalid(format!("recipe item id {id} has no production")))?;
         let (rare_item_id, rare_count, rarity) = rare.unwrap_or((0, 0, 0));
         Ok(Some(RecipeList {
             id,
@@ -529,5 +529,4 @@ mod tests {
         assert!(table.add(doc).is_err());
         assert!(table.is_empty());
     }
-
 }

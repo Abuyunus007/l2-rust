@@ -116,6 +116,9 @@ pub enum PersistCommand {
     /// Java `Product.save()`: `INSERT INTO buylists ... ON DUPLICATE KEY UPDATE` for one limited
     /// product whose stock changed, see `shop/`.
     BuyList(crate::shop::ProductRow),
+    /// Java `Player.insertNewRecipeData` / `deleteRecipeData`: a `character_recipebook` row, see
+    /// `craft/`.
+    Recipe(crate::craft::RecipeWrite),
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

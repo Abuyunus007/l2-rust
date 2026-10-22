@@ -208,6 +208,14 @@ pub struct PlayerProfile {
     /// read them (M6-WH-01). The world takes them when the player is created
     /// ([`Player::from_data`]), so snapshots never carry them.
     pub warehouse: crate::warehouse::WarehouseLoad,
+    /// The recipe book and the manufacture shop rows as the session read them (M6-CRAFT-01). The
+    /// world takes them when the player is created ([`Player::from_data`]), so snapshots never
+    /// carry them.
+    pub recipes: crate::craft::RecipeLoad,
+    /// The manufacture shop the persistence task writes with this store (Java
+    /// `storeRecipeShopList`, only with `StoreRecipeShopList` and a shop): `(recipeId, price)` in
+    /// the order of the shop. `None` leaves the rows alone.
+    pub recipe_shop_to_store: Option<Vec<(i32, i64)>>,
 }
 
 impl Default for PlayerProfile {
@@ -239,6 +247,8 @@ impl Default for PlayerProfile {
             clan: None,
             clan_record: None,
             warehouse: crate::warehouse::WarehouseLoad::default(),
+            recipes: crate::craft::RecipeLoad::default(),
+            recipe_shop_to_store: None,
         }
     }
 }
@@ -341,6 +351,8 @@ pub struct Player {
     pub warehouse: crate::warehouse::PlayerWarehouse,
     /// Java `_multiSell`: the multisell list the player was last shown (see `multisell.rs`).
     pub multisell: Option<crate::multisell::PreparedList>,
+    /// The recipe books, the manufacture shop and the crafting flag (see `craft/`).
+    pub craft: crate::craft::PlayerCraft,
 }
 
 impl Player {
@@ -350,6 +362,7 @@ impl Player {
             std::mem::take(&mut data.profile.warehouse),
             data.object_id,
         );
+        let craft = crate::craft::PlayerCraft::from_load(std::mem::take(&mut data.profile.recipes));
         let core = CreatureCore {
             object_id: data.object_id,
             x: data.x,
@@ -395,6 +408,7 @@ impl Player {
             shop: crate::shop::ShopState::default(),
             warehouse,
             multisell: None,
+            craft,
         }
     }
 
