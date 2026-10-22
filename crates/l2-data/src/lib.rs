@@ -28,6 +28,7 @@ pub mod npc;
 pub mod pet_skill;
 pub mod player_class;
 pub mod player_template;
+pub mod recipe;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -71,6 +72,7 @@ pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
+pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -142,6 +144,8 @@ pub struct Datapack {
     pub pet_skills: Arc<PetSkillData>,
     /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
     pub cubics: Arc<CubicData>,
+    /// `data/Recipes.xml`: the crafting recipes by id (M6-CRAFT-01).
+    pub recipes: Arc<RecipeData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -265,6 +269,7 @@ impl Datapack {
             augmentation_options,
             pet_skills,
             cubics: Arc::new(CubicData::load(root)),
+            recipes: Arc::new(RecipeData::load(root)),
         })
     }
 }
