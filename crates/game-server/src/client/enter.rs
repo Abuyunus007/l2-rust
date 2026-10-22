@@ -830,8 +830,8 @@ impl ClientSession {
                 entry_id: p.entry_id,
                 amount: p.amount,
             },
-            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
-            // ported), RequestPrivateStore*, SetPrivateStore*
+            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions go to
+            // `ClientInput::ActionUse` below), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
                 ClientInput::Store(StoreInput::ActionUse {
                     action_id: p.action_id,
@@ -909,6 +909,12 @@ impl ClientSession {
                 action_id: p.action_id,
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
+            },
+            // Java: AnswerCoupleAction
+            ClientPacket::AnswerCoupleAction(p) => ClientInput::AnswerCoupleAction {
+                action_id: p.action_id,
+                answer: p.answer,
+                object_id: p.object_id,
             },
             // The pet packets are PET-01's: the world hears them as not ported yet.
             ClientPacket::RequestPetGetItem(_) => ClientInput::Other {
