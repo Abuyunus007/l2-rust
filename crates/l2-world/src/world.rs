@@ -112,8 +112,14 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
+    pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
     pub(crate) duel: crate::duel::DuelWorld,
+    /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
+    pub(crate) multisell: crate::multisell::MultisellWorld,
+    /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
+    pub(crate) enchant: crate::enchant::EnchantWorld,
 }
 
 impl World {
@@ -167,7 +173,10 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
+            multisell: crate::multisell::MultisellWorld::default(),
+            enchant: crate::enchant::EnchantWorld::default(),
         }
     }
 
@@ -407,6 +416,8 @@ impl World {
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
+        self.clean_loaded_warehouses(id);
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'
         // functions, then the current HP/MP/CP clamped to the maxima.
         self.init_player_stats(id);
@@ -511,6 +522,12 @@ impl World {
                 count,
             } => self.on_add_trade_item(id, trade_id, object_id, count),
             ClientInput::TradeDone { response } => self.on_trade_done(id, response),
+            // Java: MultiSellChoose
+            ClientInput::MultiSellChoose {
+                list_id,
+                entry_id,
+                amount,
+            } => self.on_multisell_choose(id, list_id, entry_id, amount),
             // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
             ClientInput::Store(input) => self.on_store_input(id, input),
             ClientInput::AcquireSkillInfo {
@@ -522,8 +539,8 @@ impl World {
                 id: skill_id,
                 level,
                 skill_type,
-                ..
-            } => self.on_request_acquire_skill(id, skill_id, level, skill_type),
+                sub_type,
+            } => self.on_request_acquire_skill(id, skill_id, level, skill_type, sub_type),
             // Java: RequestMagicSkillUse
             ClientInput::MagicSkillUse {
                 magic_id,
@@ -558,6 +575,9 @@ impl World {
             // Java: RequestPetGetItem, RequestGiveItemToPet, RequestGetItemFromPet,
             // RequestPetUseItem, RequestChangePetName (`summon/pet_items.rs`)
             ClientInput::Pet(input) => self.on_pet_input(id, input),
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientInput::Shop(input) => self.on_shop_input(id, input),
+            ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
@@ -574,6 +594,8 @@ impl World {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
+            // Java: RequestEnchantItem and the other enchant window packets
+            ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -659,6 +681,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: BuyListTaskManager, InventoryEnableTask
+            TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
         }

@@ -2117,6 +2117,323 @@ mod summon {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Warehouses and freight (M6-WH-01)
+// ---------------------------------------------------------------------------------------------
+
+mod warehouse {
+    use super::*;
+    use l2_protocol_game::client::{
+        RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList,
+        SendWareHouseWithDrawList, WarehouseListEntry,
+    };
+    use l2_protocol_game::server::items::ItemInfo;
+    use l2_protocol_game::server::{
+        PackageSendableList, PackageToList, SortedWareHouseWithdrawalList, SortedWarehouseItem,
+        WareHouseDepositList, WareHouseWithdrawalList,
+    };
+
+    fn entry(object_id: i32, count: i64) -> WarehouseListEntry {
+        WarehouseListEntry { object_id, count }
+    }
+
+    /// The list a client sends: count, then `objectId` and `count` per entry (12 bytes each).
+    fn list_bytes(b: Bytes, entries: &[(i32, i64)]) -> Bytes {
+        let mut b = b.int(entries.len() as i32);
+        for (object_id, count) in entries {
+            b = b.int(*object_id).long(*count);
+        }
+        b
+    }
+
+    fn decode_client_body<P: Decode>(bytes: &[u8]) -> P {
+        P::decode(&mut PacketReader::new(bytes)).unwrap()
+    }
+
+    #[test]
+    fn the_deposit_list_round_trips_and_has_java_s_opcode() {
+        let packet = SendWareHouseDepositList {
+            items: Some(vec![entry(0x1000_0010, 5), entry(0x1000_0011, 1)]),
+        };
+        check_round_trip(
+            &packet,
+            &list_bytes(Bytes::default().byte(0x3B), &[(0x1000_0010, 5), (0x1000_0011, 1)]).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn the_withdraw_list_round_trips_and_has_java_s_opcode() {
+        let packet = SendWareHouseWithDrawList {
+            items: Some(vec![entry(7, 3_000_000_000)]),
+        };
+        check_round_trip(
+            &packet,
+            &list_bytes(Bytes::default().byte(0x3C), &[(7, 3_000_000_000)]).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn the_package_packets_round_trip() {
+        let send = RequestPackageSend {
+            object_id: 0x1000_0099,
+            items: Some(vec![entry(8, 0), entry(9, 2)]),
+        };
+        check_round_trip(
+            &send,
+            &list_bytes(Bytes::default().byte(0xA8).int(0x1000_0099), &[(8, 0), (9, 2)]).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestPackageSendableItemList {
+                object_id: 0x1000_0099,
+            },
+            &Bytes::default().byte(0xA7).int(0x1000_0099).done(),
+            1,
+        );
+    }
+
+    /// Java `readImpl`: a count that does not match the bytes left, a count below 1, or an entry
+    /// with a nonsense value leaves `_items` null, and the handler returns without a word.
+    #[test]
+    fn bad_lists_are_dropped_like_java() {
+        // The count says 2, the bytes hold 1.
+        let short = Bytes::default().int(2).int(5).long(1).done();
+        assert_eq!(decode_client_body::<SendWareHouseDepositList>(&short).items, None);
+        // The count says 1, the bytes hold 2.
+        let long = list_bytes(Bytes::default(), &[(5, 1), (6, 1)]).done();
+        let long = [&1_i32.to_le_bytes()[..], &long[4..]].concat();
+        assert_eq!(decode_client_body::<SendWareHouseWithDrawList>(&long).items, None);
+        // Count 0 and a negative count.
+        assert_eq!(
+            decode_client_body::<SendWareHouseDepositList>(&Bytes::default().int(0).done()).items,
+            None
+        );
+        assert_eq!(
+            decode_client_body::<SendWareHouseDepositList>(&Bytes::default().int(-1).done()).items,
+            None
+        );
+        // Deposit: an object id below 1 or a count below 1.
+        for bad in [(0, 1), (-4, 1), (5, 0), (5, -1)] {
+            let bytes = list_bytes(Bytes::default(), &[bad]).done();
+            assert_eq!(
+                decode_client_body::<SendWareHouseDepositList>(&bytes).items,
+                None,
+                "{bad:?}"
+            );
+        }
+        // Withdraw and package: a count of 0 is fine, below 0 is not; the object id still needs 1.
+        let zero = list_bytes(Bytes::default(), &[(5, 0)]).done();
+        assert_eq!(
+            decode_client_body::<SendWareHouseWithDrawList>(&zero).items,
+            Some(vec![entry(5, 0)])
+        );
+        for bad in [(0, 0), (5, -1)] {
+            let bytes = list_bytes(Bytes::default(), &[bad]).done();
+            assert_eq!(
+                decode_client_body::<SendWareHouseWithDrawList>(&bytes).items,
+                None,
+                "{bad:?}"
+            );
+        }
+        // `RequestPackageSend` reads the receiver first, then the list under the same rules.
+        let bytes = list_bytes(Bytes::default().int(77), &[(5, 0), (6, -2)]).done();
+        let decoded = decode_client_body::<RequestPackageSend>(&bytes);
+        assert_eq!((decoded.object_id, decoded.items), (77, None));
+    }
+
+    fn info() -> ItemInfo {
+        ItemInfo {
+            object_id: 0x1000_0010,
+            item_id: 57,
+            location: 3,
+            count: 123_456_789_012,
+            type2: 4,
+            custom_type1: 5,
+            equipped: 0,
+            body_part: 0x4000,
+            enchant: 7,
+            custom_type2: 8,
+            augmentation: 0x0003_0002,
+            mana: -1,
+            time: -9999,
+            attack_element_type: 2,
+            attack_element_power: 30,
+            element_defense: [1, 2, 3, 4, 5, 6],
+            enchant_options: [11, 12, 13],
+        }
+    }
+
+    /// `AbstractItemPacket.writeItem(ItemInfo)` of [`info`], then the repeated object id.
+    fn info_bytes(b: Bytes) -> Bytes {
+        b.int(0x1000_0010)
+            .int(57)
+            .int(3) // location
+            .long(123_456_789_012)
+            .short(4) // type2
+            .short(5) // custom type 1
+            .short(0) // equipped
+            .int(0x4000)
+            .short(7) // enchant
+            .short(8) // custom type 2
+            .int(0x0003_0002) // augmentation
+            .int(-1) // mana
+            .int(-9999) // time
+            .short(2) // attack element
+            .short(30)
+            .short(1)
+            .short(2)
+            .short(3)
+            .short(4)
+            .short(5)
+            .short(6)
+            .short(11)
+            .short(12)
+            .short(13)
+            .int(0x1000_0010) // the object id again
+    }
+
+    #[test]
+    fn the_deposit_window_matches_java_s_write_impl() {
+        // `WareHouseDepositList`: type (short), adena (long), count (short), items.
+        let packet = WareHouseDepositList {
+            wh_type: 4,
+            player_adena: 9_000_000_000,
+            items: vec![info()],
+        };
+        check_round_trip(
+            &packet,
+            &info_bytes(Bytes::default().byte(0x41).short(4).long(9_000_000_000).short(1)).done(),
+            1,
+        );
+    }
+
+    #[test]
+    fn the_withdraw_window_matches_java_s_write_impl() {
+        let packet = WareHouseWithdrawalList {
+            wh_type: 1,
+            player_adena: 5,
+            items: vec![info(), ItemInfo::plain(2, 3, 4)],
+        };
+        let mut expected = info_bytes(Bytes::default().byte(0x42).short(1).long(5).short(2));
+        expected = expected
+            .int(2)
+            .int(3)
+            .int(0)
+            .long(4)
+            .short(0)
+            .short(0)
+            .short(0)
+            .int(0)
+            .short(0)
+            .short(0)
+            .int(0)
+            .int(-1)
+            .int(-9999)
+            .short(-2)
+            .short(0)
+            .raw(&[0; 18])
+            .int(2);
+        check_round_trip(&packet, &expected.done(), 1);
+    }
+
+    #[test]
+    fn the_sorted_withdraw_window_matches_java_s_write_impl() {
+        let packet = SortedWareHouseWithdrawalList {
+            wh_type: 4,
+            player_adena: 70,
+            items: vec![SortedWarehouseItem {
+                object_id: 0x1000_0010,
+                display_id: 57,
+                location_slot: 3,
+                count: 123_456_789_012,
+                type2: 4,
+                custom_type1: 5,
+                body_part: 0x4000,
+                enchant: 7,
+                custom_type2: 8,
+                augmentation: 0x0003_0002,
+                mana: -1,
+                time: -1,
+                attack_element_type: 2,
+                attack_element_power: 30,
+                element_defense: [1, 2, 3, 4, 5, 6],
+                enchant_options: [11, 12, 13],
+            }],
+        };
+        // `SortedWareHouseWithdrawalList.writeImpl`: a constant 0 short where `ItemInfo` has the
+        // equipped flag, the time -1 (`WarehouseItem`), the object id again at the end.
+        let expected = Bytes::default()
+            .byte(0x42)
+            .short(4)
+            .long(70)
+            .short(1)
+            .int(0x1000_0010)
+            .int(57)
+            .int(3)
+            .long(123_456_789_012)
+            .short(4)
+            .short(5)
+            .short(0) // "Can't be equipped in WH"
+            .int(0x4000)
+            .short(7)
+            .short(8)
+            .int(0x0003_0002)
+            .int(-1)
+            .int(-1)
+            .short(2)
+            .short(30)
+            .short(1)
+            .short(2)
+            .short(3)
+            .short(4)
+            .short(5)
+            .short(6)
+            .short(11)
+            .short(12)
+            .short(13)
+            .int(0x1000_0010)
+            .done();
+        check_round_trip(&packet, &expected, 1);
+    }
+
+    #[test]
+    fn the_package_lists_match_java_s_write_impl() {
+        let to_list = PackageToList {
+            players: vec![(0x1000_0001, "Neo".into()), (0x1000_0002, "Trinity".into())],
+        };
+        check_round_trip(
+            &to_list,
+            &Bytes::default()
+                .byte(0xC8)
+                .int(2)
+                .int(0x1000_0001)
+                .string("Neo")
+                .int(0x1000_0002)
+                .string("Trinity")
+                .done(),
+            1,
+        );
+        check_round_trip(
+            &PackageToList::default(),
+            &Bytes::default().byte(0xC8).int(0).done(),
+            1,
+        );
+        // `PackageSendableList`: the receiver (int), adena (long), count (int), items.
+        let sendable = PackageSendableList {
+            player_object_id: 0x1000_0001,
+            adena: 12,
+            items: vec![info()],
+        };
+        check_round_trip(
+            &sendable,
+            &info_bytes(Bytes::default().byte(0xD2).int(0x1000_0001).long(12).int(1)).done(),
+            1,
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------------------------
 
@@ -2133,6 +2450,29 @@ mod dispatch {
         assert_eq!(decode(ConnectionState::InGame), Some(expected));
         assert_eq!(decode(ConnectionState::Authenticated), None);
         assert_eq!(decode(ConnectionState::Connected), None);
+    }
+
+    #[test]
+    fn warehouse_packets() {
+        let p = SendWareHouseDepositList {
+            items: Some(vec![WarehouseListEntry {
+                object_id: 5,
+                count: 1,
+            }]),
+        };
+        dispatches(&p, ClientPacket::SendWareHouseDepositList(p.clone()));
+        let p = SendWareHouseWithDrawList { items: None };
+        dispatches(&p, ClientPacket::SendWareHouseWithDrawList(p.clone()));
+        let p = RequestPackageSend {
+            object_id: 9,
+            items: Some(vec![WarehouseListEntry {
+                object_id: 5,
+                count: 0,
+            }]),
+        };
+        dispatches(&p, ClientPacket::RequestPackageSend(p.clone()));
+        let p = RequestPackageSendableItemList { object_id: 9 };
+        dispatches(&p, ClientPacket::RequestPackageSendableItemList(p));
     }
 
     #[test]

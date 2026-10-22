@@ -165,26 +165,34 @@ macro_rules! client_unit_packet {
 pub mod charscreen;
 pub mod combat;
 pub mod duel;
+pub mod enchant;
 pub mod enterworld;
 pub mod handshake;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
+pub mod shop;
 pub mod shortcut;
 pub mod skills;
 pub mod store;
 pub mod summon;
 pub mod trade;
 pub mod vote;
+pub mod warehouse;
 
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
+pub use enchant::{
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
+    RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
@@ -194,6 +202,7 @@ pub use interaction::{
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
+pub use multisell::MultiSellChoose;
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
@@ -208,6 +217,9 @@ pub use pledge::{
     RequestPledgeWarList, RequestReplyStartPledgeWar, RequestReplyStopPledgeWar,
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
+};
+pub use shop::{
+    BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,
 };
 pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
 pub use skills::{
@@ -224,6 +236,10 @@ pub use summon::{
 };
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
 pub use vote::RequestVoteNew;
+pub use warehouse::{
+    RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
+    WarehouseListEntry,
+};
 
 /// Writes the id byte of a plain client packet.
 pub(crate) fn write_opcode(w: &mut PacketWriter, opcode: ClientOpcode) {

@@ -42,6 +42,7 @@ Port the packets this card needs yourself in `crates/l2-protocol-game/src/{clien
 
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), `docs/design/m4-combat.md`, `docs/design/m5-skills.md`, `docs/design/m6-social.md` first.
+- WH-01 left the recipe-level sort of `SortedWareHouseWithdrawalList` as a name sort (`warehouse/sorted.rs`): use your `RecipeData` there. Private store base: `trade/store.rs`, `store_lists.rs`, `store_deal.rs` (STORE-01); `PrivateStoreType` 5 is manufacture.
 - Up to seven M6 workers run at the same time. In shared files (`skills/targets.rs`, `enter.rs`, `player_view.rs`, `leave.rs`, `death.rs`, `world.rs`, `dispatch.rs`, `client/enter.rs`) only add your lines: no reformatting or moving code.
 - Use `-j 4` for cargo clippy/test (parallel linking crashed under load) and CARGO_INCREMENTAL=0.
 - Merged APIs to reuse: `trade/` (`TradeList`, `World::transfer_item` in `inventory/transfer.rs`, `check_item_manipulation`, the request state in `trade/request.rs`), `party/` (`World::party_of`), `clan/` (`ClanTable`, privileges), `pvp.rs`, `transform/`. Item rows go through the persistence outbox like TRADE-01 does.

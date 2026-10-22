@@ -508,6 +508,8 @@ impl World {
         }
         // "You have recently been dismissed from a clan..." while the join penalty lasts.
         self.clan_join_penalty_message(id);
+        // Over-enchant protection.
+        self.over_enchant_protection_on_enter(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
@@ -816,7 +818,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
             .any(|s| s.skill_id == 172 && s.skill_level >= 1),
         pk_kills: data.pk_kills,
         pvp_kills: data.pvp_kills,
-        cubics: Vec::new(),
+        cubics: world.cubic_ids_of(core.object_id),
         in_party_match_room: false,
         abnormal_visual_effects: if invisible {
             visual_effects | crate::player_view::STEALTH_MASK

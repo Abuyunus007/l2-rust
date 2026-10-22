@@ -27,6 +27,11 @@ use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
 use l2_protocol_game::server::effect_packets::FlyToLocation;
+use l2_protocol_game::server::enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutEntry, ShortcutInit,
@@ -45,6 +50,7 @@ use l2_protocol_game::server::interaction::{
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
 use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
@@ -58,6 +64,7 @@ use l2_protocol_game::server::pledge::{
     PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
     PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
 };
+use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
@@ -80,6 +87,9 @@ use l2_protocol_game::server::trade::{
 use l2_protocol_game::server::userinfo::UserInfo;
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
+};
+use l2_protocol_game::server::warehouse::{
+    PackageSendableList, PackageToList, WareHouseDepositList, WareHouseWithdrawalList,
 };
 use l2_protocol_game::{ClientOpcode, ClientPacket, ConnectionState, ServerOpcode, decode_client};
 use serde_json::{Value, json};
@@ -219,10 +229,36 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestWithDrawalParty(_) => json!({}),
         ClientPacket::RequestOustPartyMember(p) => object!(p => name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::RequestBuyItem(p) => {
+            let items = p
+                .items
+                .as_ref()
+                .map(|v| v.iter().map(|i| object!(i => item_id, count)).collect::<Vec<_>>());
+            json!({ "list_id": p.list_id, "items": items })
+        }
+        ClientPacket::RequestSellItem(p) => {
+            let items = p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, item_id, count))
+                    .collect::<Vec<_>>()
+            });
+            json!({ "list_id": p.list_id, "items": items })
+        }
+        ClientPacket::RequestRefundItem(p) => object!(p => list_id, items),
+        ClientPacket::RequestBuySellUIClose(_) => json!({}),
         ClientPacket::TradeRequest(p) => object!(p => object_id),
         ClientPacket::AnswerTradeRequest(p) => object!(p => response),
         ClientPacket::AddTradeItem(p) => object!(p => trade_id, object_id, count),
         ClientPacket::TradeDone(p) => object!(p => response),
+        ClientPacket::SendWareHouseDepositList(p) => json!({ "items": warehouse_list_fields(&p.items) }),
+        ClientPacket::SendWareHouseWithDrawList(p) => json!({ "items": warehouse_list_fields(&p.items) }),
+        ClientPacket::RequestPackageSend(p) => {
+            json!({ "object_id": p.object_id, "items": warehouse_list_fields(&p.items) })
+        }
+        ClientPacket::RequestPackageSendableItemList(p) => object!(p => object_id),
+        ClientPacket::MultiSellChoose(p) => {
+            object!(p => list_id, entry_id, amount, unk1, unk2, unk3, elemental)
+        }
         ClientPacket::RequestPrivateStoreManageSell(_)
         | ClientPacket::RequestPrivateStoreManageBuy(_)
         | ClientPacket::RequestPrivateStoreQuitSell(_)
@@ -313,6 +349,14 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
         ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
         ClientPacket::RequestDuelSurrender(_) => json!({}),
+        ClientPacket::RequestEnchantItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantTargetItem(p) => object!(p => object_id),
+        ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+            object!(p => support_object_id, enchant_object_id)
+        }
+        ClientPacket::RequestExCancelEnchantItem(_) => json!({}),
+        ClientPacket::RequestExEnchantItemAttribute(p) => object!(p => object_id),
+        ClientPacket::RequestExRemoveItemAttribute(p) => object!(p => object_id, element),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -444,6 +488,14 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
         }
+        // One id for two packets: the first int is 0 for the merchant's list, 1 for the sell side.
+        ServerOpcode::ExBuySellList => {
+            if raw.get(start..start + 4) == Some(&[0, 0, 0, 0]) {
+                decoded::<BuyList>(&mut r, buy_list_fields)
+            } else {
+                decoded::<ExBuySellList>(&mut r, ex_buy_sell_list_fields)
+            }
+        }
         ServerOpcode::TradeRequest => decoded::<SendTradeRequest>(&mut r, send_trade_request_fields),
         ServerOpcode::TradeStart => decoded::<TradeStart>(&mut r, trade_start_fields),
         ServerOpcode::TradeOwnAdd => decoded::<TradeOwnAdd>(&mut r, trade_own_add_fields),
@@ -451,6 +503,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::TradeUpdate => decoded::<TradeUpdate>(&mut r, trade_update_fields),
         ServerOpcode::TradePressOtherOk => decoded::<TradeOtherDone>(&mut r, no_fields),
         ServerOpcode::TradeDone => decoded::<ServerTradeDone>(&mut r, server_trade_done_fields),
+        ServerOpcode::MultiSellList => decoded::<MultiSellList>(&mut r, multi_sell_list_fields),
         ServerOpcode::PrivateStoreSellManageList => {
             decoded::<PrivateStoreManageListSell>(&mut r, store_manage_sell_fields)
         }
@@ -526,6 +579,28 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::ChooseInventoryItem => {
+            decoded::<ChooseInventoryItem>(&mut r, choose_inventory_item_fields)
+        }
+        ServerOpcode::EnchantResult => decoded::<EnchantResult>(&mut r, enchant_result_fields),
+        ServerOpcode::ExPutEnchantTargetItemResult => {
+            decoded::<ExPutEnchantTargetItemResult>(&mut r, put_enchant_target_fields)
+        }
+        ServerOpcode::ExPutEnchantSupportItemResult => {
+            decoded::<ExPutEnchantSupportItemResult>(&mut r, put_enchant_support_fields)
+        }
+        ServerOpcode::ExAttributeEnchantResult => {
+            decoded::<ExAttributeEnchantResult>(&mut r, attribute_enchant_result_fields)
+        }
+        ServerOpcode::ExBaseAttributeCancelResult => {
+            decoded::<ExBaseAttributeCancelResult>(&mut r, base_attribute_cancel_result_fields)
+        }
+        ServerOpcode::ExChooseInventoryAttributeItem => {
+            decoded::<ExChooseInventoryAttributeItem>(&mut r, choose_inventory_attribute_fields)
+        }
+        ServerOpcode::ExShowBaseAttributeCancelWindow => {
+            decoded::<ExShowBaseAttributeCancelWindow>(&mut r, base_attribute_cancel_window_fields)
+        }
         ServerOpcode::ExDuelAskStart => decoded::<ExDuelAskStart>(&mut r, duel_ask_start_fields),
         ServerOpcode::ExDuelReady => decoded::<ExDuelReady>(&mut r, duel_ready_fields),
         ServerOpcode::ExDuelStart => decoded::<ExDuelStart>(&mut r, duel_start_fields),
@@ -540,6 +615,18 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetItemList => decoded::<PetItemList>(&mut r, pet_item_list_fields),
         ServerOpcode::PetInventoryUpdate => {
             decoded::<PetInventoryUpdate>(&mut r, pet_inventory_update_fields)
+        }
+        ServerOpcode::WarehouseDepositList => {
+            decoded::<WareHouseDepositList>(&mut r, warehouse_deposit_list_fields)
+        }
+        // The sorted list (`SortedWareHouseWithdrawalList`) has the same opcode and the same item
+        // layout (its "equipped" short is a constant 0): one decoder reads both.
+        ServerOpcode::WarehouseWithdrawList => {
+            decoded::<WareHouseWithdrawalList>(&mut r, warehouse_withdrawal_list_fields)
+        }
+        ServerOpcode::PackageToList => decoded::<PackageToList>(&mut r, package_to_list_fields),
+        ServerOpcode::PackageSendableList => {
+            decoded::<PackageSendableList>(&mut r, package_sendable_list_fields)
         }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
@@ -1197,6 +1284,29 @@ fn trade_item_fields(item: &TradeItemInfo) -> Value {
     )
 }
 
+fn buy_list_fields(p: &BuyList) -> Value {
+    let products: Vec<Value> = p
+        .products
+        .iter()
+        .map(|i| object!(i => item_id, count, type2, type1, body_part, enchant, price))
+        .collect();
+    json!({ "money": p.money, "list_id": p.list_id, "size": p.size, "products": products })
+}
+
+fn ex_buy_sell_list_fields(p: &ExBuySellList) -> Value {
+    let sell: Vec<Value> = p
+        .sell_list
+        .iter()
+        .map(|e| json!({ "item": item_fields(&e.item), "price": e.price }))
+        .collect();
+    let refund: Vec<Value> = p
+        .refund_list
+        .iter()
+        .map(|e| json!({ "item": item_fields(&e.item), "index": e.index, "price": e.price }))
+        .collect();
+    json!({ "sell_list": sell, "refund_list": refund, "done": p.done })
+}
+
 fn trade_start_fields(p: &TradeStart) -> Value {
     let items: Vec<Value> = p.items.iter().map(item_fields).collect();
     json!({ "partner_object_id": p.partner_object_id, "items": items })
@@ -1216,6 +1326,44 @@ fn trade_update_fields(p: &TradeUpdate) -> Value {
 
 fn server_trade_done_fields(p: &ServerTradeDone) -> Value {
     object!(p => num)
+}
+
+fn multi_sell_detail_fields(d: &MultiSellItemDetail) -> Value {
+    object!(d => enchant, augment_id, attack_element, attack_element_power, element_defense)
+}
+
+fn multi_sell_list_fields(p: &MultiSellList) -> Value {
+    let entries: Vec<Value> = p
+        .entries
+        .iter()
+        .map(|e| {
+            let products: Vec<Value> = e
+                .products
+                .iter()
+                .map(|i| {
+                    let mut v = object!(i => item_id, body_part, type2, count);
+                    v["detail"] = multi_sell_detail_fields(&i.detail);
+                    v
+                })
+                .collect();
+            let ingredients: Vec<Value> = e
+                .ingredients
+                .iter()
+                .map(|i| {
+                    let mut v = object!(i => item_id, type2, count);
+                    v["detail"] = multi_sell_detail_fields(&i.detail);
+                    v
+                })
+                .collect();
+            json!({
+                "entry_id": e.entry_id,
+                "stackable": e.stackable,
+                "products": products,
+                "ingredients": ingredients,
+            })
+        })
+        .collect();
+    json!({ "list_id": p.list_id, "page": p.page, "finished": p.finished, "entries": entries })
 }
 
 fn store_candidate_fields(c: &StoreCandidate) -> Value {
@@ -1447,6 +1595,43 @@ fn pet_status_show_fields(p: &PetStatusShow) -> Value {
     object!(p => summon_type)
 }
 
+fn choose_inventory_item_fields(p: &ChooseInventoryItem) -> Value {
+    object!(p => item_id)
+}
+
+fn enchant_result_fields(p: &EnchantResult) -> Value {
+    object!(p => result, crystal, count)
+}
+
+fn put_enchant_target_fields(p: &ExPutEnchantTargetItemResult) -> Value {
+    object!(p => result)
+}
+
+fn put_enchant_support_fields(p: &ExPutEnchantSupportItemResult) -> Value {
+    object!(p => result)
+}
+
+fn attribute_enchant_result_fields(p: &ExAttributeEnchantResult) -> Value {
+    object!(p => result)
+}
+
+fn base_attribute_cancel_result_fields(p: &ExBaseAttributeCancelResult) -> Value {
+    object!(p => object_id, attribute)
+}
+
+fn choose_inventory_attribute_fields(p: &ExChooseInventoryAttributeItem) -> Value {
+    object!(p => item_id, elements, max_level)
+}
+
+fn base_attribute_cancel_window_fields(p: &ExShowBaseAttributeCancelWindow) -> Value {
+    let items: Vec<Value> = p
+        .items
+        .iter()
+        .map(|&(object_id, price)| json!({ "object_id": object_id, "price": price }))
+        .collect();
+    json!({ "items": items })
+}
+
 fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
@@ -1484,6 +1669,47 @@ fn pet_delete_fields(p: &PetDelete) -> Value {
 
 fn set_summon_remain_time_fields(p: &SetSummonRemainTime) -> Value {
     object!(p => max_time, remaining_time)
+}
+
+fn warehouse_list_fields(items: &Option<Vec<l2_protocol_game::client::WarehouseListEntry>>) -> Value {
+    // `None` is a list Java drops.
+    items.as_ref().map_or(Value::Null, |v| {
+        Value::Array(v.iter().map(|i| object!(i => object_id, count)).collect())
+    })
+}
+
+fn warehouse_deposit_list_fields(p: &WareHouseDepositList) -> Value {
+    json!({
+        "wh_type": p.wh_type,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn warehouse_withdrawal_list_fields(p: &WareHouseWithdrawalList) -> Value {
+    json!({
+        "wh_type": p.wh_type,
+        "player_adena": p.player_adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
+}
+
+fn package_to_list_fields(p: &PackageToList) -> Value {
+    json!({
+        "players": p
+            .players
+            .iter()
+            .map(|(id, name)| json!({ "object_id": id, "name": name }))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn package_sendable_list_fields(p: &PackageSendableList) -> Value {
+    json!({
+        "player_object_id": p.player_object_id,
+        "adena": p.adena,
+        "items": p.items.iter().map(item_fields).collect::<Vec<_>>(),
+    })
 }
 
 fn pet_item_list_fields(p: &PetItemList) -> Value {
@@ -1625,6 +1851,7 @@ mod tests {
         ServerOpcode::ExPartyPetWindowAdd,
         ServerOpcode::ExPartyPetWindowUpdate,
         ServerOpcode::ExPartyPetWindowDelete,
+        ServerOpcode::ExBuySellList,
         ServerOpcode::TradeRequest,
         ServerOpcode::TradeStart,
         ServerOpcode::TradeOwnAdd,
@@ -1632,6 +1859,7 @@ mod tests {
         ServerOpcode::TradeUpdate,
         ServerOpcode::TradePressOtherOk,
         ServerOpcode::TradeDone,
+        ServerOpcode::MultiSellList,
         ServerOpcode::PrivateStoreSellManageList,
         ServerOpcode::PrivateStoreBuyManageList,
         ServerOpcode::PrivateStoreSellList,
@@ -1671,6 +1899,14 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::ChooseInventoryItem,
+        ServerOpcode::EnchantResult,
+        ServerOpcode::ExPutEnchantTargetItemResult,
+        ServerOpcode::ExPutEnchantSupportItemResult,
+        ServerOpcode::ExAttributeEnchantResult,
+        ServerOpcode::ExBaseAttributeCancelResult,
+        ServerOpcode::ExChooseInventoryAttributeItem,
+        ServerOpcode::ExShowBaseAttributeCancelWindow,
         ServerOpcode::ExDuelAskStart,
         ServerOpcode::ExDuelReady,
         ServerOpcode::ExDuelStart,
@@ -1680,6 +1916,10 @@ mod tests {
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,
         ServerOpcode::PetInventoryUpdate,
+        ServerOpcode::WarehouseDepositList,
+        ServerOpcode::WarehouseWithdrawList,
+        ServerOpcode::PackageToList,
+        ServerOpcode::PackageSendableList,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -1701,6 +1941,55 @@ mod tests {
 
     fn c2s_fields(state: ConnectionState, bytes: &[u8]) -> Value {
         c2s(state, bytes).expect("the packet has fields")
+    }
+
+    #[test]
+    fn multisell_packets_show_their_fields() {
+        use l2_protocol_game::client::MultiSellChoose;
+        use l2_protocol_game::server::multisell::{
+            MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+        };
+        let choose = MultiSellChoose::new(1235, 300_001, 25);
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &choose.to_bytes()),
+            json!({
+                "list_id": 1235, "entry_id": 300_001, "amount": 25,
+                "unk1": 0, "unk2": 0, "unk3": 0, "elemental": [0, 0, 0, 0, 0, 0, 0, 0],
+            })
+        );
+        let list = MultiSellList {
+            list_id: 7,
+            page: 1,
+            finished: true,
+            entries: vec![MultiSellEntry {
+                entry_id: 100_000,
+                stackable: true,
+                products: vec![MultiSellProduct {
+                    item_id: 22,
+                    body_part: 1,
+                    type2: 1,
+                    count: 2,
+                    detail: MultiSellItemDetail {
+                        enchant: 3,
+                        ..MultiSellItemDetail::default()
+                    },
+                }],
+                ingredients: vec![MultiSellIngredient {
+                    item_id: 57,
+                    type2: 4,
+                    count: 2100,
+                    detail: MultiSellItemDetail::default(),
+                }],
+            }],
+        };
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["list_id"], 7);
+        assert_eq!(fields["finished"], true);
+        assert_eq!(fields["entries"][0]["entry_id"], 100_000);
+        assert_eq!(fields["entries"][0]["products"][0]["detail"]["enchant"], 3);
+        assert_eq!(fields["entries"][0]["products"][0]["count"], 2);
+        assert_eq!(fields["entries"][0]["ingredients"][0]["item_id"], 57);
+        assert_eq!(fields["entries"][0]["ingredients"][0]["count"], 2100);
     }
 
     #[test]
@@ -3145,6 +3434,91 @@ mod tests {
         );
     }
     #[test]
+    fn shop_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem,
+            SellItemEntry,
+        };
+        use l2_protocol_game::server::shop::{BuyListProduct, RefundEntry, SellEntry};
+        let in_game = ConnectionState::InGame;
+        let buy = RequestBuyItem {
+            list_id: 382,
+            items: Some(vec![BuyItemEntry {
+                item_id: 1835,
+                count: 5,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &buy.to_bytes()),
+            json!({ "list_id": 382, "items": [{ "item_id": 1835, "count": 5 }] })
+        );
+        let sell = RequestSellItem {
+            list_id: 382,
+            items: Some(vec![SellItemEntry {
+                object_id: 7,
+                item_id: 57,
+                count: 2,
+            }]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &sell.to_bytes()),
+            json!({ "list_id": 382, "items": [{ "object_id": 7, "item_id": 57, "count": 2 }] })
+        );
+        let refund = RequestRefundItem {
+            list_id: 382,
+            items: Some(vec![0, 3]),
+        };
+        assert_eq!(
+            c2s_fields(in_game, &refund.to_bytes()),
+            json!({ "list_id": 382, "items": [0, 3] })
+        );
+        assert_eq!(c2s_fields(in_game, &RequestBuySellUIClose.to_bytes()), json!({}));
+        // A bad list shows as null.
+        let bad = RequestBuyItem {
+            list_id: 1,
+            items: None,
+        };
+        assert_eq!(
+            c2s_fields(in_game, &bad.to_bytes()),
+            json!({ "list_id": 1, "items": null })
+        );
+
+        // The merchant's list and the sell side share one opcode.
+        let list = BuyList::new(
+            1000,
+            382,
+            vec![BuyListProduct {
+                item_id: 1835,
+                count: 0,
+                type2: 5,
+                type1: 4,
+                body_part: 0,
+                enchant: 0,
+                price: 25,
+            }],
+        );
+        let fields = s2c_fields(&list.to_bytes());
+        assert_eq!(fields["list_id"], 382);
+        assert_eq!(fields["products"][0]["price"], 25);
+        let sides = ExBuySellList {
+            sell_list: vec![SellEntry {
+                item: ItemInfo::plain(1, 57, 3),
+                price: 1,
+            }],
+            refund_list: vec![RefundEntry {
+                item: ItemInfo::plain(2, 1835, 1),
+                index: 0,
+                price: 10,
+            }],
+            done: true,
+        };
+        let fields = s2c_fields(&sides.to_bytes());
+        assert_eq!(fields["sell_list"][0]["price"], 1);
+        assert_eq!(fields["refund_list"][0]["item"]["item_id"], 1835);
+        assert_eq!(fields["done"], true);
+    }
+
+    #[test]
     fn trade_packets_show_their_fields() {
         use l2_protocol_game::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
         let in_game = ConnectionState::InGame;
@@ -3204,6 +3578,100 @@ mod tests {
         assert_eq!(fields["partner_object_id"], 11);
         assert_eq!(fields["items"][0]["count"], 5);
     }
+    #[test]
+    fn warehouse_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList,
+            SendWareHouseWithDrawList, WarehouseListEntry,
+        };
+        use l2_protocol_game::server::{SortedWareHouseWithdrawalList, SortedWarehouseItem};
+        let in_game = ConnectionState::InGame;
+        let entry = WarehouseListEntry {
+            object_id: 4,
+            count: 2,
+        };
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &SendWareHouseDepositList {
+                    items: Some(vec![entry])
+                }
+                .to_bytes()
+            ),
+            json!({ "items": [{ "object_id": 4, "count": 2 }] })
+        );
+        // A list Java drops shows as null.
+        assert_eq!(
+            c2s_fields(in_game, &SendWareHouseWithDrawList { items: None }.to_bytes()),
+            json!({ "items": null })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPackageSend {
+                    object_id: 9,
+                    items: Some(vec![entry])
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 9, "items": [{ "object_id": 4, "count": 2 }] })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestPackageSendableItemList { object_id: 9 }.to_bytes()
+            ),
+            json!({ "object_id": 9 })
+        );
+
+        let plain = WareHouseWithdrawalList {
+            wh_type: 4,
+            player_adena: 77,
+            items: vec![ItemInfo::plain(5, 57, 3)],
+        };
+        let fields = s2c_fields(&plain.to_bytes());
+        assert_eq!(fields["wh_type"], 4);
+        assert_eq!(fields["items"][0]["count"], 3);
+        // The sorted list has the same opcode and the same byte layout.
+        let sorted = SortedWareHouseWithdrawalList {
+            wh_type: 1,
+            player_adena: 5,
+            items: vec![SortedWarehouseItem {
+                object_id: 6,
+                display_id: 57,
+                count: 8,
+                time: -1,
+                ..SortedWarehouseItem::default()
+            }],
+        };
+        let fields = s2c_fields(&sorted.to_bytes());
+        assert_eq!(fields["wh_type"], 1);
+        assert_eq!(fields["items"][0]["object_id"], 6);
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        assert_eq!(fields["items"][0]["time"], -1);
+        let to_list = PackageToList {
+            players: vec![(12, "Neo".into())],
+        };
+        assert_eq!(
+            s2c_fields(&to_list.to_bytes()),
+            json!({ "players": [{ "object_id": 12, "name": "Neo" }] })
+        );
+        let sendable = PackageSendableList {
+            player_object_id: 12,
+            adena: 9,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        let fields = s2c_fields(&sendable.to_bytes());
+        assert_eq!(fields["player_object_id"], 12);
+        assert_eq!(fields["items"][0]["item_id"], 57);
+        let deposit = WareHouseDepositList {
+            wh_type: 1,
+            player_adena: 1,
+            items: vec![ItemInfo::plain(1, 57, 5)],
+        };
+        assert_eq!(s2c_fields(&deposit.to_bytes())["items"][0]["count"], 5);
+    }
+
     #[test]
     fn private_store_packets_show_their_fields() {
         use l2_protocol_game::client::{

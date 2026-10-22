@@ -137,8 +137,8 @@ impl World {
     // NOTE(java-quirk): the item is looked up by its template id, not by the saved object id, so
     // two saved stamps of one template (two objects) both land on the first such item, the later
     // row replacing the earlier.
-    // The warehouse fallback of Java (`getWarehouse().getItemByItemId`) is left out: the world
-    // does not hold the warehouse, so a timer of an item stored there is dropped.
+    // An item that is not in the inventory is looked up in the private warehouse (`isInInventory`
+    // false: the stamp is made, the client is not told).
     pub(crate) fn restore_item_reuse(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;
@@ -153,15 +153,29 @@ impl World {
         let now_wall = crate::world::unix_ms_now();
         let now = self.world_ms();
         for row in rows {
-            let item = self.players.get(&id).and_then(|p| {
+            let in_inventory = self.players.get(&id).and_then(|p| {
                 p.data
                     .items
                     .iter()
                     .find(|i| i.item_id == row.item_id && (i.loc == "INVENTORY" || i.loc == "PAPERDOLL"))
                     .cloned()
             });
-            let Some(item) = item else {
-                continue;
+            // `getWarehouse().getItemByItemId(itemId)` when the inventory has none.
+            let (item, is_in_inventory) = match in_inventory {
+                Some(item) => (item, true),
+                None => {
+                    let stored = self.players.get(&id).and_then(|p| {
+                        p.warehouse
+                            .private
+                            .iter()
+                            .find(|i| i.item_id == row.item_id)
+                            .cloned()
+                    });
+                    let Some(item) = stored else {
+                        continue;
+                    };
+                    (item, false)
+                }
             };
             let Some(template) = templates.get(item.item_id) else {
                 continue;
@@ -184,7 +198,7 @@ impl World {
                     stamp_ms: now + remaining,
                 },
             );
-            if template.etc().is_some() {
+            if is_in_inventory && template.etc().is_some() {
                 // `ExUseSharedGroupItem` (nothing is sent when the group is 0).
                 self.send_shared_group_update(
                     id,

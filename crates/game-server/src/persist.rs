@@ -25,6 +25,7 @@
 // - the clan tables (`clan_data`, `clan_privs`, `clan_subpledges`, `clan_notices`) and the clan
 //   columns of offline members' `characters` rows, with Java's clan statements
 //   (`PersistCommand::Clan`, M6-CLAN-01),
+// - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -47,18 +48,21 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
+use l2_db::CrestRepository;
 use l2_db::{
-    CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate, GroundItemRecord,
-    GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate, NewItem,
-    NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
+    BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
+    GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
+    NewItem, NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
     PetRepository, PetValues, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository,
     SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
-use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow};
+use l2_world::clan::{
+    ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
+};
 use l2_world::{
-    ClanRecord, ClanWrite, GroundItemRow, ItemData, LsEvent, ObjectId, PersistCommand, PlayerData,
-    PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse, ShortcutData, SkillData,
-    StoredPunishment, SummonWrite,
+    ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PlayerData,
+    ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse,
+    ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -116,6 +120,17 @@ pub trait PlayerStore: Send + 'static {
         upserts: &[ItemData],
         removed: &[ObjectId],
     ) -> impl Future<Output = Result<(), PersistError>> + Send;
+
+    /// Java `Item.updateDatabase()` for items that changed owner or container (a warehouse, the
+    /// freight, the clan warehouse; M6-WH-01): one statement per op, in order. `tracked` is the
+    /// character whose inventory rows the store keeps a baseline of.
+    fn store_item_rows(
+        &mut self,
+        _tracked: Option<ObjectId>,
+        _ops: &[ItemRowOp],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
 
     /// Java `ItemsOnGroundManager.run()`: the table `itemsonground` is emptied and `rows` are
     /// inserted. Only sent with `SaveDroppedItem` on.
@@ -182,6 +197,14 @@ pub trait PlayerStore: Send + 'static {
         &mut self,
         _char_id: i32,
         _level: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// Java `Product.save`: the `buylists` row of a limited product whose stock changed.
+    fn store_buy_list_product(
+        &mut self,
+        _row: &ProductRow,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -339,6 +362,21 @@ async fn run<S: PlayerStore>(
                 // item list against what was last written.
                 if let Err(e) = result {
                     error!("Item changes of {} could NOT be stored: {e}", owner.0);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ItemRows { tracked, ops }) => {
+                let mut result = store.store_item_rows(tracked, &ops).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not store item rows (try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.store_item_rows(tracked, &ops).await;
+                }
+                if let Err(e) = result {
+                    error!("Item rows could NOT be stored: {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::SaveGroundItems(rows)) => {
@@ -505,6 +543,15 @@ async fn run<S: PlayerStore>(
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
                 }
             }
+            OutboxMessage::Persist(PersistCommand::BuyList(row)) => {
+                // Java logs a failed save and goes on (no retry).
+                if let Err(e) = store.store_buy_list_product(&row).await {
+                    error!(
+                        "Failed to save Product buylist_id:{} item_id:{}: {e}",
+                        row.list_id, row.item_id
+                    );
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
@@ -514,6 +561,27 @@ async fn run<S: PlayerStore>(
         }
     }
     debug!("Outbox closed, persistence task done.");
+}
+
+/// Java `BuyListData.load()`, the database half: the rows of `buylists`, which hold the stock and
+/// the restock times the last run left. A database error is logged and the lists start full, like
+/// Java.
+pub async fn load_buy_list_stock(pool: &Pool) -> Vec<ProductRow> {
+    match BuyListRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| ProductRow {
+                list_id: row.buylist_id,
+                item_id: row.item_id,
+                count: row.count,
+                next_restock_time: row.next_restock_time,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Failed to load buyList data from database. {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `PunishmentManager.load()`, the database half: the rows of `punishments`. A database
@@ -564,10 +632,15 @@ pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>)
             return (Vec::new(), Vec::new());
         }
     };
+    let items = ItemRepository::new(pool.clone());
     let mut clans = Vec::with_capacity(ids.len());
     for clan_id in ids {
         match load_clan(&repo, clan_id).await {
-            Ok(record) => clans.push(record),
+            Ok(mut record) => {
+                // `_warehouse.restore()`: Java catches a failed read and goes on with an empty one.
+                record.warehouse = load_clan_warehouse(&items, clan_id).await;
+                clans.push(record);
+            }
             Err(e) => error!("Clan: Error restoring clan data of clan {clan_id}: {e}"),
         }
     }
@@ -579,6 +652,37 @@ pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>)
         }
     };
     (clans, wars)
+}
+
+/// Java `new ClanWarehouse(clan)` + `restore()`: the `CLANWH` items of the clan. A failed read is
+/// logged and gives an empty warehouse ("Could not restore container").
+pub async fn load_clan_warehouse(items: &ItemRepository, clan_id: i32) -> Vec<ItemData> {
+    match load_container_items(items, clan_id, ItemLocation::ClanWh).await {
+        Ok(items) => items,
+        Err(e) => {
+            warn!("Could not restore container: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `CrestTable.load()`, the database half: the rows of `crests`, only a read (D-39). A
+/// database error is logged and the server goes on without crests, like Java.
+pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
+    match CrestRepository::new(pool.clone()).all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| CrestRecord {
+                crest_id: row.crest_id,
+                data: row.data,
+                crest_type: i32::from(row.crest_type),
+            })
+            .collect(),
+        Err(e) => {
+            warn!("CrestTable: There was an error while loading crests from database: {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// The rows of one clan (`Clan.restore`, `restoreSubPledges`, `restoreRankPrivs`,
@@ -665,6 +769,15 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::Update(_) => "Clan.updateClanInDB",
         ClanWrite::Level { .. } => "Clan.changeLevel",
         ClanWrite::AllyCrestOfClan { .. } => "Clan.changeAllyCrest",
+        ClanWrite::Crest(CrestWrite::Insert { .. }) => "CrestTable.createCrest",
+        ClanWrite::Crest(CrestWrite::Delete { .. }) => "CrestTable.removeCrest",
+        ClanWrite::Crest(CrestWrite::ClanCrest { .. }) => "Clan.changeClanCrest",
+        ClanWrite::Crest(CrestWrite::ClanLargeCrest { .. }) => "Clan.changeLargeCrest",
+        ClanWrite::Crest(CrestWrite::AllyCrestOfClan { .. } | CrestWrite::AllyCrestOfAlly { .. }) => {
+            "Clan.changeAllyCrest"
+        }
+        ClanWrite::War(WarWrite::Store { .. }) => "ClanTable.storeClanWars",
+        ClanWrite::War(WarWrite::Delete { .. }) => "ClanTable.deleteClanWars",
         ClanWrite::RemoveMember { .. } => "Clan.removeMemberInDatabase",
         ClanWrite::CharClanPrivs { .. } => "Clan.setNewLeader",
         ClanWrite::CharSubPledge { .. } => "ClanMember.updatePledgeType",
@@ -675,6 +788,7 @@ fn clan_write_name(write: &ClanWrite) -> &'static str {
         ClanWrite::RankPrivs { .. } => "Clan.setRankPrivs",
         ClanWrite::Notice { .. } => "Clan.storeNotice",
         ClanWrite::Delete { .. } => "ClanTable.destroyClan",
+        ClanWrite::UpdateSkill { .. } | ClanWrite::InsertSkill { .. } => "Clan.addNewSkill",
     }
 }
 
@@ -831,6 +945,41 @@ pub async fn restore_item_attributes<'a>(
     Ok(())
 }
 
+/// Java `ItemContainer.restore()`: the items one owner has in one location (`SELECT ... FROM items
+/// WHERE owner_id=? AND loc=?`), with their augmentation and elements. The private warehouse
+/// (`WAREHOUSE`), the freight (`FREIGHT`) and the clan warehouse (`CLANWH`, the owner is the clan)
+/// read their items this way (M6-WH-01).
+// Java: ItemContainer.restore, Item.restoreFromDb
+pub async fn load_container_items(
+    repo: &ItemRepository,
+    owner_id: i32,
+    location: ItemLocation,
+) -> Result<Vec<ItemData>, l2_db::DbError> {
+    let mut items: Vec<ItemData> = repo
+        .items_of_location(owner_id, location)
+        .await?
+        .into_iter()
+        .map(|row| ItemData {
+            object_id: ObjectId(row.object_id),
+            item_id: row.item_id.unwrap_or(0),
+            count: i64::try_from(row.count).unwrap_or(i64::MAX),
+            enchant_level: row.enchant_level.unwrap_or(0),
+            loc: row.loc.clone().unwrap_or_default(),
+            loc_data: row.loc_data.unwrap_or(0),
+            custom_type1: row.custom_type1.unwrap_or(0),
+            custom_type2: row.custom_type2.unwrap_or(0),
+            mana_left: row.mana_left,
+            time: row.time,
+            ..Default::default()
+        })
+        .collect();
+    // Java catches a failed read of the attributes and logs it; the items then have none.
+    if let Err(e) = restore_item_attributes(repo, owner_id, items.iter_mut()).await {
+        warn!("Could not restore augmentation and elemental data for the items of {owner_id}: {e}");
+    }
+    Ok(items)
+}
+
 /// The rule part of [`restore_item_attributes`]: the rows of the augmentation `-1` and of an
 /// element with type or value `-1` are skipped (the table's "nothing" default).
 fn apply_item_attribute_rows(
@@ -915,9 +1064,14 @@ pub struct DbStore {
     summons: SummonRepository,
     pets: PetRepository,
     clans: ClanRepository,
+    buylists: BuyListRepository,
+    crests: CrestRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
+    /// Item ids a `PersistCommand::ItemRows` wrote, so that trying the same ops again (a retry)
+    /// updates the row instead of inserting it twice (M6-WH-01).
+    rows_written: HashSet<i32>,
 }
 
 impl DbStore {
@@ -934,9 +1088,12 @@ impl DbStore {
             summons: SummonRepository::new(pool.clone()),
             pets: PetRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
-            clans: ClanRepository::new(pool),
+            buylists: BuyListRepository::new(pool.clone()),
+            clans: ClanRepository::new(pool.clone()),
+            crests: CrestRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
+            rows_written: HashSet::new(),
         }
     }
 
@@ -1079,8 +1236,19 @@ impl DbStore {
         item: &ItemData,
         old: Option<&ItemData>,
     ) -> Result<bool, PersistError> {
+        self.write_item_row(char_id, item, old.is_some(), old).await
+    }
+
+    /// [`write_item`](Self::write_item) with the owner column and the existence of the row given
+    /// (`PersistCommand::ItemRows` knows both: the owner may be a clan or another character).
+    async fn write_item_row(
+        &self,
+        char_id: i32,
+        item: &ItemData,
+        exists: bool,
+        old: Option<&ItemData>,
+    ) -> Result<bool, PersistError> {
         let id = item.object_id.0;
-        let exists = old.is_some();
         let Some(loc) = ItemLocation::from_db_str(&item.loc) else {
             warn!(
                 "Item {id} of character {char_id} has the unknown location {:?}; not stored.",
@@ -1158,6 +1326,57 @@ impl DbStore {
             if baseline.items.contains_key(&object_id.0) {
                 self.items.delete_item(object_id.0).await?;
                 baseline.items.remove(&object_id.0);
+            }
+        }
+        Ok(())
+    }
+
+    /// The writes of `store_item_rows`: each op is Java's statement for an item that changed
+    /// owner or container. The `tracked` character's baseline follows each successful statement:
+    /// a row now in its inventory or paperdoll is a row the next full store compares, any other
+    /// row (a warehouse, the freight, somebody else's) is not, so the store neither deletes it
+    /// as "gone" nor inserts it again.
+    async fn apply_item_rows(
+        &mut self,
+        tracked: Option<ObjectId>,
+        ops: &[ItemRowOp],
+        mut baseline: Option<&mut Baseline>,
+    ) -> Result<(), PersistError> {
+        for op in ops {
+            match op {
+                ItemRowOp::Write { owner_id, item }
+                | ItemRowOp::Update { owner_id, item }
+                | ItemRowOp::Insert { owner_id, item } => {
+                    let id = item.object_id.0;
+                    let old = baseline.as_ref().and_then(|b| b.items.get(&id)).cloned();
+                    let exists = match op {
+                        ItemRowOp::Update { .. } => true,
+                        _ => old.is_some() || self.rows_written.contains(&id),
+                    };
+                    if !self.write_item_row(*owner_id, item, exists, old.as_ref()).await? {
+                        continue;
+                    }
+                    if self.rows_written.len() >= ROWS_WRITTEN_LIMIT {
+                        self.rows_written.clear();
+                    }
+                    self.rows_written.insert(id);
+                    if let Some(baseline) = baseline.as_deref_mut() {
+                        let mine = tracked.is_some_and(|t| t.0 == *owner_id)
+                            && (item.loc == "INVENTORY" || item.loc == "PAPERDOLL");
+                        if mine {
+                            baseline.items.insert(id, item.clone());
+                        } else {
+                            baseline.items.remove(&id);
+                        }
+                    }
+                }
+                ItemRowOp::Delete { object_id } => {
+                    self.items.delete_item(object_id.0).await?;
+                    self.rows_written.remove(&object_id.0);
+                    if let Some(baseline) = baseline.as_deref_mut() {
+                        baseline.items.remove(&object_id.0);
+                    }
+                }
             }
         }
         Ok(())
@@ -1329,6 +1548,9 @@ impl DbStore {
     }
 }
 
+/// How many ids `DbStore::rows_written` remembers before it starts over.
+const ROWS_WRITTEN_LIMIT: usize = 65_536;
+
 /// Every place an item of a character can be (the baseline reads them all, so an item that
 /// moved between inventory and warehouse is updated, not inserted twice).
 const ALL_LOCATIONS: [ItemLocation; 11] = [
@@ -1404,7 +1626,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         exp_before_death: player.profile.exp_before_death,
         sp: if base_active { player.sp } else { clamp_i64(row.sp) },
         karma: player.karma,
-        fame: clamp_i32(u64::from(row.fame)),
+        // Java writes `getFame()`: multisell fame ingredients and products change it (M6-MULTISELL-01).
+        fame: player.profile.fame,
         pvp_kills: player.pvp_kills,
         pk_kills: player.pk_kills,
         clan_id: clan.map_or_else(
@@ -1528,6 +1751,35 @@ impl PlayerStore for DbStore {
             .apply_item_changes(char_id, upserts, removed, &mut baseline)
             .await;
         self.baselines.insert(owner, baseline);
+        result
+    }
+
+    async fn store_item_rows(
+        &mut self,
+        tracked: Option<ObjectId>,
+        ops: &[ItemRowOp],
+    ) -> Result<(), PersistError> {
+        // The rows the tracked character is known to have: from its last store, else from the
+        // database (once; the baseline then follows every write).
+        let mut baseline = match tracked {
+            None => None,
+            Some(owner) => Some(match self.baselines.remove(&owner) {
+                Some(baseline) => baseline,
+                None => {
+                    let row = self
+                        .characters
+                        .restore_character(owner.0)
+                        .await?
+                        .ok_or(PersistError::NoSuchCharacter(owner.0))?;
+                    let class_index = (row.classid == Some(row.base_class)).then_some(0);
+                    self.load_baseline(owner.0, class_index).await?
+                }
+            }),
+        };
+        let result = self.apply_item_rows(tracked, ops, baseline.as_mut()).await;
+        if let (Some(owner), Some(baseline)) = (tracked, baseline) {
+            self.baselines.insert(owner, baseline);
+        }
         result
     }
 
@@ -1664,6 +1916,18 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
+        self.buylists
+            .save_product(&l2_db::BuyListRow {
+                buylist_id: row.list_id,
+                item_id: row.item_id,
+                count: row.count,
+                next_restock_time: row.next_restock_time,
+            })
+            .await?;
+        Ok(())
+    }
+
     async fn store_summon(&mut self, write: &SummonWrite) -> Result<(), PersistError> {
         match write {
             // Java: CharSummonTable.saveSummon
@@ -1757,6 +2021,30 @@ impl PlayerStore for DbStore {
             ClanWrite::AllyCrestOfClan { clan_id, crest_id } => {
                 clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
             }
+            ClanWrite::Crest(write) => match write {
+                CrestWrite::Insert {
+                    crest_id,
+                    data,
+                    crest_type,
+                } => self.crests.insert(*crest_id, data, *crest_type).await?,
+                CrestWrite::Delete { crest_id } => self.crests.delete(*crest_id).await?,
+                CrestWrite::ClanCrest { clan_id, crest_id } => {
+                    clans.update_clan_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::ClanLargeCrest { clan_id, crest_id } => {
+                    clans.update_clan_large_crest(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfClan { clan_id, crest_id } => {
+                    clans.update_ally_crest_of_clan(*clan_id, *crest_id).await?
+                }
+                CrestWrite::AllyCrestOfAlly { ally_id, crest_id } => {
+                    clans.update_ally_crest_of_ally(*ally_id, *crest_id).await?
+                }
+            },
+            ClanWrite::War(write) => match write {
+                WarWrite::Store { clan1, clan2 } => clans.store_clan_war(*clan1, *clan2).await?,
+                WarWrite::Delete { clan1, clan2 } => clans.delete_clan_war(*clan1, *clan2).await?,
+            },
             ClanWrite::RemoveMember {
                 char_id,
                 clan_join_expiry_time,
@@ -1813,6 +2101,22 @@ impl PlayerStore for DbStore {
                 enabled,
             } => clans.store_notice(*clan_id, notice, *enabled).await?,
             ClanWrite::Delete { clan_id, castle_id } => clans.delete_clan(*clan_id, *castle_id).await?,
+            ClanWrite::UpdateSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+            } => clans.update_clan_skill(*clan_id, *skill_id, *skill_level).await?,
+            ClanWrite::InsertSkill {
+                clan_id,
+                skill_id,
+                skill_level,
+                skill_name,
+                sub_pledge_id,
+            } => {
+                clans
+                    .insert_clan_skill(*clan_id, *skill_id, *skill_level, skill_name, *sub_pledge_id)
+                    .await?
+            }
         }
         Ok(())
     }
@@ -1845,6 +2149,8 @@ mod tests {
         Items(i32, Vec<i32>, Vec<i32>),
         /// The rows of one `itemsonground` save (object ids).
         GroundItems(Vec<i32>),
+        /// `ItemRows` (M6-WH-01): the tracked character and each op as (statement, owner, object id).
+        ItemRows(Option<i32>, Vec<(&'static str, i32, i32)>),
         /// Skill changes: owner, (skill id, level) written, skill ids deleted.
         Skills(i32, Vec<(i32, i32)>, Vec<i32>),
         /// Recommendation counters: owner, rec_have, rec_left.
@@ -1859,6 +2165,8 @@ mod tests {
         EndPunishment(i32, String, &'static str, &'static str, i64),
         /// `changeCharAccessLevel`: character, level.
         AccessLevel(i32, i32),
+        /// `Product.save`: list id, item id, count, next restock time.
+        BuyList(i32, i32, i64, i64),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -1905,6 +2213,27 @@ mod tests {
                 upserts.iter().map(|i| i.object_id.0).collect(),
                 removed.iter().map(|i| i.0).collect(),
             ));
+            Ok(())
+        }
+
+        async fn store_item_rows(
+            &mut self,
+            tracked: Option<ObjectId>,
+            ops: &[ItemRowOp],
+        ) -> Result<(), PersistError> {
+            let ops = ops
+                .iter()
+                .map(|op| match op {
+                    ItemRowOp::Write { owner_id, item } => ("write", *owner_id, item.object_id.0),
+                    ItemRowOp::Update { owner_id, item } => ("update", *owner_id, item.object_id.0),
+                    ItemRowOp::Insert { owner_id, item } => ("insert", *owner_id, item.object_id.0),
+                    ItemRowOp::Delete { object_id } => ("delete", 0, object_id.0),
+                })
+                .collect();
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::ItemRows(tracked.map(|t| t.0), ops));
             Ok(())
         }
 
@@ -1982,6 +2311,16 @@ mod tests {
 
         async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::AccessLevel(char_id, level));
+            Ok(())
+        }
+
+        async fn store_buy_list_product(&mut self, row: &ProductRow) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::BuyList(
+                row.list_id,
+                row.item_id,
+                row.count,
+                row.next_restock_time,
+            ));
             Ok(())
         }
     }
@@ -2062,6 +2401,27 @@ mod tests {
         }
         let calls = calls.lock().unwrap().clone();
         (calls, notices)
+    }
+
+    /// `Product.save` rows reach the store in the order the world sent them.
+    #[tokio::test]
+    async fn buy_list_rows_are_stored_in_order() {
+        let row = |count: i64, next: i64| {
+            OutboxMessage::Persist(PersistCommand::BuyList(ProductRow {
+                list_id: 382,
+                item_id: 1835,
+                count,
+                next_restock_time: next,
+            }))
+        };
+        let (calls, _) = run_all(Recording::default(), vec![row(4, 1_700_000_000_000), row(5, 0)]).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::BuyList(382, 1835, 4, 1_700_000_000_000),
+                Call::BuyList(382, 1835, 5, 0)
+            ]
+        );
     }
 
     #[tokio::test]
@@ -2212,6 +2572,49 @@ mod tests {
                 Call::Items(1, vec![10], vec![]),
                 Call::Store("A1".into()),
                 Call::Items(1, vec![11, 12], vec![10]),
+                Call::Offline(1),
+            ]
+        );
+    }
+
+    /// M6-WH-01: the rows of a warehouse move reach the store in order with the other writes of
+    /// the character, with the tracked character and the owner of each row.
+    #[tokio::test]
+    async fn item_rows_are_applied_in_order_between_the_stores() {
+        let row = |id: i32| ItemData {
+            object_id: ObjectId(id),
+            ..ItemData::default()
+        };
+        let messages = vec![
+            store_msg(1, "A1"),
+            OutboxMessage::Persist(PersistCommand::ItemRows {
+                tracked: Some(ObjectId(1)),
+                ops: vec![
+                    ItemRowOp::Write {
+                        owner_id: 1,
+                        item: row(10),
+                    },
+                    ItemRowOp::Insert {
+                        owner_id: 500,
+                        item: row(11),
+                    },
+                ],
+            }),
+            OutboxMessage::Persist(PersistCommand::ItemRows {
+                tracked: None,
+                ops: vec![ItemRowOp::Delete {
+                    object_id: ObjectId(11),
+                }],
+            }),
+            left_msg(1),
+        ];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Store("A1".into()),
+                Call::ItemRows(Some(1), vec![("write", 1, 10), ("insert", 500, 11)]),
+                Call::ItemRows(None, vec![("delete", 0, 11)]),
                 Call::Offline(1),
             ]
         );

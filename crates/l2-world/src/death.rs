@@ -284,7 +284,10 @@ impl World {
             // `pk == null || !pk.isCursedWeaponEquipped()`: nobody has a cursed weapon.
             // Check if any item should be dropped.
             self.on_die_drop_item(id, killer);
-            // Clan reputation for a kill in a clan war: clans are M5.
+            // Clan reputation for a kill in a clan war (`clan/war.rs`).
+            if !inside_pvp_zone && !inside_siege_zone {
+                self.clan_war_kill_reputation(id, killer);
+            }
 
             // Should not penalize player when lucky, in a non siege PvP zone, has advent blessing
             // or is in an event.
@@ -293,7 +296,9 @@ impl World {
             }
         }
 
-        // Cubics, channeling, dimensional rift, agathion: not modelled.
+        // Unsummon Cubics (no `UserInfo`: the player's death sends its own updates).
+        self.clear_cubics(id);
+        // Channeling, dimensional rift, agathion: not modelled.
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
         if let Some(summon) = self.summon_of(id) {
             if self.is_betrayed(summon) {

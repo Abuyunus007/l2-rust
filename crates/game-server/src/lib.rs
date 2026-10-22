@@ -91,6 +91,16 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
         ],
         clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
         maintenance_database_writes: clan_maintenance_database_writes(config_dir),
+        life_crystal_needed: player.life_crystal_needed,
+        join_academy_min_rep_score: feature.join_academy_min_rep_score,
+        join_academy_max_rep_score: feature.join_academy_max_rep_score,
+        alt_ally_join_days_when_leaved: player.alt_ally_join_days_when_leaved,
+        alt_ally_join_days_when_dismissed: player.alt_ally_join_days_when_dismissed,
+        alt_accept_clan_days_when_dismissed: player.alt_accept_clan_days_when_dismissed,
+        alt_create_ally_days_when_dissolved: player.alt_create_ally_days_when_dissolved,
+        alt_max_num_of_clans_in_ally: player.alt_max_num_of_clans_in_ally,
+        alt_clan_members_for_war: player.alt_clan_members_for_war,
+        reputation_score_per_kill: feature.reputation_score_per_kill,
     }
 }
 
@@ -281,7 +291,27 @@ impl Server {
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
+        // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
+        let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
+        // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
+        // MerchantPriceConfigTable.
+        let (buy_lists, price_configs) = {
+            let datapack = Arc::clone(&datapack);
+            let options = l2_data::BuyListOptions {
+                custom_buylist_load: config.general.custom_buylist_load,
+                correct_prices: config.general.correct_prices,
+            };
+            tokio::task::spawn_blocking(move || {
+                (
+                    Arc::new(l2_data::BuyLists::load(&datapack.root, &datapack.items, &options)),
+                    Arc::new(l2_data::MerchantPriceConfigs::load(&datapack.root)),
+                )
+            })
+            .await
+            .map_err(|e| StartupError::Internal(format!("buy list loader: {e}")))?
+        };
+        let buy_list_stock = persist::load_buy_list_stock(&pool).await;
 
         // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
@@ -318,7 +348,17 @@ impl Server {
             let skill_learn = Arc::clone(&datapack.skill_learn);
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let pets = Arc::clone(&datapack.pets);
+            let cubics = Arc::clone(&datapack.cubics);
             let class_list = Arc::clone(&datapack.class_list);
+            let multisell = (
+                Arc::clone(&datapack.multisell),
+                world_data::multisell_settings(&config),
+            );
+            let enchant_data = (
+                Arc::clone(&datapack.enchant_items),
+                Arc::clone(&datapack.enchant_groups),
+                Arc::clone(&datapack.elemental_attributes),
+            );
             let npc_start = (
                 Arc::clone(&datapack),
                 Arc::clone(&ids),
@@ -352,8 +392,16 @@ impl Server {
                     world.set_pet_data(pets);
                     world.set_pet_settings(pet_settings);
                     world.load_pet_names(pet_names);
+                    // Java: CubicData (the cubic templates of `SummonCubic`).
+                    world.set_cubic_data(cubics);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
+                    // Java: MultisellData (the exchange lists of NPCs).
+                    let (multisell_data, multisell_settings) = multisell;
+                    world.set_multisell_data(multisell_data, multisell_settings);
+                    // Java: EnchantItemData, EnchantItemGroupsData, ElementalAttributeData.
+                    let (enchant_items, enchant_groups, elemental_attributes) = enchant_data;
+                    world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
@@ -374,6 +422,11 @@ impl Server {
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
+                    // Java: BuyListData (the products' stock the last run left).
+                    world.set_buy_lists(buy_lists, price_configs);
+                    world.load_buy_list_stock(buy_list_stock);
+                    // Java: CrestTable (after ClanTable: it clears the crests clans lost).
+                    world.load_crests(crests);
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
@@ -601,6 +654,8 @@ fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOption
         default_corpse_time: config.npc.default_corpse_time,
         htm_cache: config.general.htm_cache,
         check_html_encoding: config.general.check_html_encoding,
+        custom_multisell_load: config.general.custom_multisell_load,
+        correct_prices: config.general.correct_prices,
     }
 }
 
@@ -788,7 +843,8 @@ mod tests {
         std::fs::create_dir_all(&custom).unwrap();
         std::fs::write(
             dir.path().join("General.ini"),
-            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\nCustomSkillsLoad = True\n",
+            "CustomItemsLoad = True\nHtmCache = False\nCheckHtmlEncoding = False\nCustomSkillsLoad = True\n\
+             CustomMultisellLoad = True\nCorrectPrices = False\n",
         )
         .unwrap();
         std::fs::write(
@@ -818,6 +874,8 @@ mod tests {
                 default_corpse_time: 3,
                 htm_cache: false,
                 check_html_encoding: false,
+                custom_multisell_load: true,
+                correct_prices: false,
                 skills: l2_data::SkillLoadOptions {
                     custom_skills_load: true,
                     min_abnormal_state_success_rate: 5,

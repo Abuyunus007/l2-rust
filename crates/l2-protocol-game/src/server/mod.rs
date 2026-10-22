@@ -74,6 +74,7 @@ pub mod chat;
 pub mod combat;
 pub mod duel;
 pub mod effect_packets;
+pub mod enchant;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -84,9 +85,11 @@ pub mod interaction;
 pub mod items;
 pub mod map_windows;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod regen;
+pub mod shop;
 pub mod skills;
 pub mod sound;
 pub mod store;
@@ -95,6 +98,7 @@ pub mod system_message;
 pub mod trade;
 pub mod userinfo;
 pub mod visibility;
+pub mod warehouse;
 
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
@@ -108,6 +112,11 @@ pub use combat::{
 };
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
+pub use enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, ShortcutRegister,
@@ -132,6 +141,9 @@ pub use items::{
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use multisell::{
+    MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+};
 pub use party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
@@ -148,6 +160,7 @@ pub use pledge::{
     RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
 };
 pub use regen::ExRegenMax;
+pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillEntry, AcquireSkillInfo, AcquireSkillList,
     AcquireSkillRequirement, AcquireSkillType, EffectIcon, ExAutoSoulShot, MagicSkillCanceled,
@@ -172,6 +185,10 @@ pub use userinfo::UserInfo;
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
     StatusUpdate,
+};
+pub use warehouse::{
+    PackageSendableList, PackageToList, SortedWareHouseWithdrawalList, SortedWarehouseItem,
+    WareHouseDepositList, WareHouseWithdrawalList,
 };
 
 /// Reads an int count, which Java never writes negative. Anything negative is an error.

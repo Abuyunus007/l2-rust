@@ -208,8 +208,10 @@ impl World {
             return;
         };
 
-        // Both players using an enchant scroll (`getActiveEnchantItemId() != ID_NONE`): enchanting
-        // is not ported.
+        // Either player is using an enchant scroll (`getActiveEnchantItemId() != ID_NONE`).
+        if self.active_enchant_item(id).is_some() || self.active_enchant_item(partner).is_some() {
+            return;
+        }
 
         if !self.allows_transaction(id) {
             self.cancel_active_trade(id);

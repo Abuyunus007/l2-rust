@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 use super::model::{
     COMPLETE_PRIVILEGES_MASK, Clan, ClanMember, ClanPrivilegesRef, SubPledge, calculate_pledge_class,
-    is_alpha_numeric, java_len,
+    is_alpha_numeric, java_len, java_map_order,
 };
 use super::{ClanRecord, ClanRow, ClanTimer, ClanWrite, java_int_days_ms};
 use crate::timer::{TimerKind, TimerWheel};
@@ -168,6 +168,10 @@ impl World {
             }
         }
 
+        // `_warehouse.restore()`: the items whose template is known (`Item.restoreFromDb`).
+        clan.warehouse = record.warehouse;
+        self.drop_unknown_items(&mut clan.warehouse);
+
         // restoreNotice
         for (enabled, notice) in record.notices {
             // `Boolean.parseBoolean`
@@ -282,16 +286,18 @@ impl World {
             .schedule_at(due, TimerKind::Clan(ClanTimer::UpdateRanks));
     }
 
-    /// Java `ClanTable.getClanAllies(allianceId)`: the clans of the alliance (none for 0).
+    /// Java `ClanTable.getClanAllies(allianceId)`: the clans of the alliance (none for 0), in the
+    /// iteration order of Java's `ConcurrentHashMap<Integer, Clan>` (the alliance window and the
+    /// ally broadcasts walk them in that order).
     pub fn clan_allies(&self, alliance_id: i32) -> Vec<i32> {
         if alliance_id == 0 {
             return Vec::new();
         }
-        self.clans
-            .clans
-            .values()
-            .filter(|c| c.ally_id == alliance_id)
-            .map(|c| c.id)
+        let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
+        java_map_order(&ids, ids.len())
+            .into_iter()
+            .filter_map(|i| ids.get(i).copied())
+            .filter(|id| self.clan(*id).is_some_and(|c| c.ally_id == alliance_id))
             .collect()
     }
 
@@ -361,7 +367,7 @@ impl World {
         let member = self.member_of_player(player)?;
         clan.leader = Some(member.object_id);
         clan.put_member(member);
-        // M6-CLAN-03: `setPlayer` -> `clan.addSkillEffects(player)` (a new clan has no skills).
+        // `setPlayer` -> `clan.addSkillEffects(player)`: a new clan has no skills.
         let row = ClanRow {
             clan_id,
             name: clan.name.clone(),
@@ -498,8 +504,22 @@ impl World {
         self.broadcast_to_clan(clan_id, &SystemMessage::new(SystemMessageId::ClanHasDispersed));
         let castle_id = clan.castle_id;
         // Sieges, fortress sieges, siegable halls and the clan hall auction: M7.
-        // M6-CLAN-03: `clan.getWarehouse().destroyAllItems(...)`.
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
+        let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
+        // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
+        // released) and its row deleted, with the clan's own rows (D-49: left alone without
+        // `write_db`).
+        for object_id in &warehouse {
+            self.release_item_id(*object_id);
+        }
+        if write_db && !warehouse.is_empty() {
+            let ops = warehouse
+                .into_iter()
+                .map(|object_id| crate::outbox::ItemRowOp::Delete { object_id })
+                .collect();
+            self.outbox
+                .persist(crate::outbox::PersistCommand::ItemRows { tracked: None, ops });
+        }
         for member in members {
             self.remove_clan_member(clan_id, member, 0, write_db);
         }

@@ -90,7 +90,7 @@ impl World {
 
     /// Java `Item.changeCount(process, count, ...)`: adena stops at `MaxAdena`, nothing goes
     /// below 0.
-    pub(super) fn change_item_count(
+    pub(crate) fn change_item_count(
         &mut self,
         player: ObjectId,
         object_id: ObjectId,

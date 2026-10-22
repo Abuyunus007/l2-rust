@@ -23,6 +23,7 @@ pub mod dialog;
 pub mod door;
 pub mod duel;
 pub mod effects;
+pub mod enchant;
 pub mod enter;
 pub mod formulas;
 pub mod ground_item;
@@ -32,6 +33,7 @@ pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod movement;
+pub mod multisell;
 pub mod npc;
 pub mod objects;
 pub mod outbox;
@@ -44,6 +46,7 @@ pub mod region;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod shop;
 pub mod shortcuts;
 pub mod skills;
 pub mod snapshot;
@@ -58,6 +61,7 @@ pub mod trade;
 pub mod transform;
 pub mod user_command;
 mod visibility;
+pub mod warehouse;
 pub mod world;
 pub mod zones;
 
@@ -80,6 +84,7 @@ pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
+pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
@@ -89,9 +94,10 @@ pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };
+pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
-pub use outbox::{LsEvent, Outbox, PacketSink, PersistCommand};
+pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
@@ -107,6 +113,7 @@ pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
+pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
 pub use skills::learn::LearnSettings;
 pub use skills::{CastSettings, CastTimer, MagicUseTask, ReuseTimeStamp, SkillUse};
 pub use snapshot::snapshot_for_store;
@@ -124,5 +131,6 @@ pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use trade::{
     AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
 };
+pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};
 pub use zones::{PlayerZones, ZoneId, ZoneSettings};

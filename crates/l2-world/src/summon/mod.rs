@@ -17,7 +17,8 @@
 // - A pet (PET-01) is a `Summon` of kind [`SummonKind::Pet`] with its own pet state next to it.
 //
 // # Left out, with the system that brings it
-// - Cubics: CUBIC-01. Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in `SummonStatus`): DUEL-01.
+// - Cubics are in `cubic.rs` (CUBIC-01). Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in
+//   `SummonStatus`): DUEL-01.
 // - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
 //   as "not in one".
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
@@ -31,6 +32,8 @@
 pub mod actions;
 pub mod ai;
 pub mod baby_pet;
+pub mod cubic;
+pub mod cubic_formulas;
 pub mod info;
 pub mod party;
 pub mod pet;
@@ -81,6 +84,8 @@ pub enum SummonTimer {
     PetFeed(ObjectId),
     /// `BabyPet.CastTask`: first after 3 s, then every 2 s (PET-01, `baby_pet.rs`).
     BabyCast(ObjectId),
+    /// A cubic's action task and disappear task, see `cubic.rs`.
+    Cubic(cubic::CubicTimer),
 }
 
 /// The `SummonAI` fields (Java `ai/SummonAI.java`).
@@ -200,6 +205,8 @@ pub struct SummonWorld {
     pub(crate) saved_rows: HashMap<(ObjectId, i32, i32), Vec<servitor::SummonSkillSave>>,
     /// The pet tables and the pet `.ini` values (PET-01, see `pet.rs`).
     pub(crate) pet_world: pet::PetWorld,
+    /// The cubics of every player and `CubicData` (CUBIC-01, see `cubic.rs`).
+    pub(crate) cubics: cubic::CubicWorld,
 }
 
 impl World {
@@ -211,6 +218,7 @@ impl World {
             SummonTimer::AbnormalEffect(id) => self.on_summon_abnormal_effect_timer(id),
             SummonTimer::PetFeed(id) => self.on_pet_feed_timer(id),
             SummonTimer::BabyCast(id) => self.on_baby_cast_timer(id),
+            SummonTimer::Cubic(timer) => self.on_cubic_timer(timer),
         }
     }
 

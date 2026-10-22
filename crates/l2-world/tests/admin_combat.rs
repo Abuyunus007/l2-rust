@@ -589,9 +589,12 @@ fn kill_a_player_is_a_real_death_with_the_die_packet() {
     }
     assert_eq!(decoded::<Die>(&out, USER, "DIE")[0].object_id, USER);
 
-    // Dead already: nothing more is sent to him.
+    // Dead already: no second death is sent to him. The `stopAllEffects()` of the kill (M5/M6,
+    // Java `Player.stopAllEffects` -> `updateAndBroadcastStatus`) still refreshes his status.
     s.cmd(GM, "kill P1");
-    assert!(names_to(&s.log.take(), USER).is_empty());
+    let again = names_to(&s.log.take(), USER);
+    assert!(!again.contains(&"DIE".to_owned()));
+    assert_eq!(again, ["USER_INFO", "EX_BR_EXTRA_USER_INFO"]);
 }
 
 // -------------------------------------------------------------------------------- //res
@@ -1076,7 +1079,7 @@ fn create_item_with_bad_numbers_says_so_and_still_shows_the_page() {
 }
 
 #[test]
-fn create_item_with_an_enchant_applies_no_enchant_to_a_plain_item_and_refuses_an_enchantable_one() {
+fn create_item_with_an_enchant_applies_it_to_an_enchantable_item_only() {
     let mut s = setup();
     s.enter(GM, 0);
     s.log.take();
@@ -1093,11 +1096,13 @@ fn create_item_with_an_enchant_applies_no_enchant_to_a_plain_item_and_refuses_an
     );
     assert_eq!(items_of(&s, GM), [(12, 1, "INVENTORY".to_owned())]);
 
-    // The blade is enchantable, which needs `EnchantItemGroupsData` (not ported): nothing is made
-    // and, like Java's other unsupported paths, nothing is said to the GM.
+    // The blade is enchantable: it gets the level (no `EnchantItemGroupsData` is installed here,
+    // so `OverEnchantProtection` has no limit; the clamp is tested in `enchant.rs`).
     s.cmd(GM, "create_item 24 1 5");
-    assert!(texts_to(&s.log.take(), GM).is_empty());
-    assert_eq!(items_of(&s, GM).len(), 1);
+    assert_eq!(items_of(&s, GM).len(), 2);
+    let player = s.world.player(ObjectId(GM)).unwrap();
+    let blade = player.data.items.iter().find(|i| i.item_id == 24).unwrap();
+    assert_eq!(blade.enchant_level, 5);
 }
 
 #[test]

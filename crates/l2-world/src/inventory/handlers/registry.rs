@@ -33,6 +33,10 @@ pub(crate) enum ItemHandlerKind {
     SummonItems,
     /// `PetFood` (M6-PET-01).
     PetFood,
+    /// `EnchantScrolls`: opens the enchant scroll window (M6-ENCHANT-01).
+    EnchantScrolls,
+    /// `EnchantAttribute`: opens the element stone window (M6-ENCHANT-01).
+    EnchantAttribute,
 }
 
 impl ItemHandlerKind {
@@ -48,6 +52,8 @@ impl ItemHandlerKind {
             "Calculator" => Self::Calculator,
             "SummonItems" => Self::SummonItems,
             "PetFood" => Self::PetFood,
+            "EnchantScrolls" => Self::EnchantScrolls,
+            "EnchantAttribute" => Self::EnchantAttribute,
             _ => return None,
         })
     }
@@ -82,6 +88,8 @@ impl World {
             ItemHandlerKind::Calculator => self.calculator_on_use(id, item),
             ItemHandlerKind::SummonItems => self.summon_items_on_use(id, item, template, force_use),
             ItemHandlerKind::PetFood => self.pet_food_on_use(id, item, template),
+            ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
+            ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
         }
     }
 

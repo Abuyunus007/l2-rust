@@ -12,6 +12,7 @@ mod login;
 mod pool;
 
 pub use error::{DbError, Result};
+pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
     IdRepository, NewCharacter, UsedIds,
@@ -21,6 +22,7 @@ pub use game::{
     ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
     RecommendationRepository, VariableRepository,
 };
+pub use game::{CrestRepository, CrestRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{

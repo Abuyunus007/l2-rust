@@ -7,7 +7,6 @@
 // it lost (M4-EXP-01 hook).
 //
 // # Left out, with the system that brings it
-// - `stopAllEffects()` for a non-GM player: effects are M5.
 // - Champions (`ChampionMonstersConfig`): not rolled, so the champion branch of `kill` is not taken.
 
 use l2_protocol_game::SystemMessageId;
@@ -223,7 +222,10 @@ fn kill_in_range(world: &mut World, gm: ObjectId, center: ObjectId, radius: i32)
 fn kill(world: &mut World, gm: ObjectId, target: ObjectId) {
     let amount = match world.objects.get(&target).map(|e| e.kind) {
         Some(ObjectKind::Player) => {
-            // M5: `stopAllEffects()` for a player that is not a GM (effects are not ported).
+            // Java: `stopAllEffects()` for a player that is not a GM (e.g. the invincibility effect).
+            if !world.is_gm(target) {
+                world.stop_all_effects(target);
+            }
             let Some(view) = world.stats(target) else {
                 return;
             };

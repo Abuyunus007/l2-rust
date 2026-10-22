@@ -54,9 +54,10 @@ impl World {
         true
     }
 
-    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory.
-    // The saddle of a mount, the enchant scroll in use and a cursed weapon refuse here too; they
-    // are not modelled (mounts, enchanting and cursed weapons are not ported).
+    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory, is
+    /// not the control item of the summoned pet and is not the enchant scroll in use.
+    // The saddle of a mount and a cursed weapon refuse here as well; mounts and cursed weapons are
+    // not ported.
     pub(crate) fn validate_item_manipulation(&self, player: ObjectId, object_id: ObjectId) -> bool {
         if self.inventory_item(player, object_id).is_none() {
             return false;
@@ -67,7 +68,7 @@ impl World {
         {
             return false;
         }
-        true
+        self.active_enchant_item(player) != Some(object_id)
     }
 
     /// Java `Player.checkItemManipulation(objectId, count, action)`: the item if the player owns
@@ -84,6 +85,10 @@ impl World {
             return None;
         }
         if count > item.count {
+            return None;
+        }
+        // The enchant scroll in use.
+        if self.active_enchant_item(player) == Some(object_id) {
             return None;
         }
         // We cannot put a weapon with augmentation in a warehouse (or trade it) while casting
@@ -177,7 +182,7 @@ impl World {
     // the `InventoryUpdate` and the load to `actor`, not to the inventory's owner. A trade passes
     // the player who gives the item, so the giver is told about an item that is in the other
     // player's inventory. The full `ItemList` that the exchange sends afterwards replaces it.
-    fn create_transferred_item(
+    pub(crate) fn create_transferred_item(
         &mut self,
         to: ObjectId,
         item_id: i32,

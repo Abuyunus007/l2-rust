@@ -26,9 +26,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink, PetInput, PlayerData,
-    PlayerProfile, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, SavedSummonEffect, ShortcutData,
-    SkillData, StoreInput, WorldCommand,
+    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
+    PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect,
+    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -198,6 +198,11 @@ impl DbPlayerLoader {
             );
         }
 
+        // Java: getWarehouse().restore(), getFreight().restore(), and the other characters of the
+        // account (`_chars`) with their freight, which `RequestPackageSend` adds to. Java catches
+        // a failed read ("Could not restore container") and goes on with an empty container.
+        data.profile.warehouse = self.load_warehouses(char_id, &data.account).await;
+
         // Java: restoreSkills
         let mut skills = self.skills.skills_of(char_id, class_index).await?;
         skills.sort_by_key(|s| s.skill_id);
@@ -340,12 +345,47 @@ impl DbPlayerLoader {
         let clan_id = data.profile.clan.map_or(0, |c| c.clan_id);
         if clan_id > 0 {
             match crate::persist::load_clan(&self.clans, clan_id).await {
-                Ok(record) => data.profile.clan_record = Some(Box::new(record)),
+                Ok(mut record) => {
+                    record.warehouse = crate::persist::load_clan_warehouse(&self.items, clan_id).await;
+                    data.profile.clan_record = Some(Box::new(record));
+                }
                 Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
             }
         }
         apply_restore_location(&mut data);
         Ok(data)
+    }
+}
+
+impl DbPlayerLoader {
+    // Java: Player.load (the account's other characters), Player.getWarehouse().restore() and
+    // getFreight().restore(), ItemContainer.restore
+    async fn load_warehouses(&self, char_id: i32, account: &str) -> WarehouseLoad {
+        use crate::persist::load_container_items;
+        let mut load = WarehouseLoad::default();
+        match load_container_items(&self.items, char_id, ItemLocation::Warehouse).await {
+            Ok(items) => load.private = items,
+            Err(e) => warn!("Could not restore container: {e}"),
+        }
+        match load_container_items(&self.items, char_id, ItemLocation::Freight).await {
+            Ok(items) => load.freight.push((ObjectId(char_id), items)),
+            Err(e) => warn!("Could not restore container: {e}"),
+        }
+        match self.characters.other_characters(account, char_id).await {
+            Ok(chars) => {
+                for other in chars {
+                    let other_id = i32::try_from(other.char_id).unwrap_or(i32::MAX);
+                    load.account_chars.push((ObjectId(other_id), other.char_name));
+                    match load_container_items(&self.items, other_id, ItemLocation::Freight).await {
+                        Ok(items) if !items.is_empty() => load.freight.push((ObjectId(other_id), items)),
+                        Ok(_) => {}
+                        Err(e) => warn!("Could not restore container: {e}"),
+                    }
+                }
+            }
+            Err(e) => warn!("Could not load the other characters of the account: {e}"),
+        }
+        load
     }
 }
 
@@ -487,8 +527,7 @@ fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
     }
 }
 
-/// The clan packets as the world takes them. The crest, war and alliance packets are M6-CLAN-02's
-/// and reach the world as `NotPorted`.
+/// The clan packets as the world takes them (pledges, crests, wars and alliances).
 fn clan_input(packet: ClientPacket) -> ClanInput {
     match packet {
         ClientPacket::RequestJoinPledge(p) => ClanInput::JoinPledge {
@@ -526,28 +565,63 @@ fn clan_input(packet: ClientPacket) -> ClanInput {
             curr_player_name: p.curr_player_name,
             target_player_name: p.target_player_name,
         },
-        ClientPacket::RequestPledgeWarList(_) => ClanInput::NotPorted("RequestPledgeWarList"),
-        ClientPacket::RequestPledgeCrest(_) => ClanInput::NotPorted("RequestPledgeCrest"),
-        ClientPacket::RequestExPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExPledgeCrestLarge"),
-        ClientPacket::RequestSetPledgeCrest(_) => ClanInput::NotPorted("RequestSetPledgeCrest"),
-        ClientPacket::RequestExSetPledgeCrestLarge(_) => ClanInput::NotPorted("RequestExSetPledgeCrestLarge"),
-        ClientPacket::RequestSetAllyCrest(_) => ClanInput::NotPorted("RequestSetAllyCrest"),
-        ClientPacket::RequestStartPledgeWar(_) => ClanInput::NotPorted("RequestStartPledgeWar"),
-        ClientPacket::RequestReplyStartPledgeWar(_) => ClanInput::NotPorted("RequestReplyStartPledgeWar"),
-        ClientPacket::RequestStopPledgeWar(_) => ClanInput::NotPorted("RequestStopPledgeWar"),
-        ClientPacket::RequestReplyStopPledgeWar(_) => ClanInput::NotPorted("RequestReplyStopPledgeWar"),
-        ClientPacket::RequestSurrenderPledgeWar(_) => ClanInput::NotPorted("RequestSurrenderPledgeWar"),
-        ClientPacket::RequestReplySurrenderPledgeWar(_) => {
-            ClanInput::NotPorted("RequestReplySurrenderPledgeWar")
-        }
-        ClientPacket::RequestJoinAlly(_) => ClanInput::NotPorted("RequestJoinAlly"),
-        ClientPacket::RequestAnswerJoinAlly(_) => ClanInput::NotPorted("RequestAnswerJoinAlly"),
-        ClientPacket::AllyLeave(_) => ClanInput::NotPorted("AllyLeave"),
-        ClientPacket::AllyDismiss(_) => ClanInput::NotPorted("AllyDismiss"),
-        ClientPacket::RequestDismissAlly(_) => ClanInput::NotPorted("RequestDismissAlly"),
-        ClientPacket::RequestAllyCrest(_) => ClanInput::NotPorted("RequestAllyCrest"),
-        ClientPacket::RequestAllyInfo(_) => ClanInput::NotPorted("RequestAllyInfo"),
+        ClientPacket::RequestPledgeWarList(p) => ClanInput::PledgeWarList { tab: p.tab },
+        ClientPacket::RequestPledgeCrest(p) => ClanInput::PledgeCrest { crest_id: p.crest_id },
+        ClientPacket::RequestExPledgeCrestLarge(p) => ClanInput::ExPledgeCrestLarge { crest_id: p.crest_id },
+        ClientPacket::RequestSetPledgeCrest(p) => ClanInput::SetPledgeCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestExSetPledgeCrestLarge(p) => ClanInput::ExSetPledgeCrestLarge {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestSetAllyCrest(p) => ClanInput::SetAllyCrest {
+            length: p.length,
+            data: p.data,
+        },
+        ClientPacket::RequestStartPledgeWar(p) => ClanInput::StartPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStartPledgeWar(p) => ClanInput::ReplyStartPledgeWar { answer: p.answer },
+        ClientPacket::RequestStopPledgeWar(p) => ClanInput::StopPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplyStopPledgeWar(p) => ClanInput::ReplyStopPledgeWar { answer: p.answer },
+        ClientPacket::RequestSurrenderPledgeWar(p) => ClanInput::SurrenderPledgeWar {
+            pledge_name: p.pledge_name,
+        },
+        ClientPacket::RequestReplySurrenderPledgeWar(p) => ClanInput::ReplySurrenderPledgeWar {
+            req_name: p.req_name,
+            answer: p.answer,
+        },
+        ClientPacket::RequestJoinAlly(p) => ClanInput::JoinAlly { id: p.id },
+        ClientPacket::RequestAnswerJoinAlly(p) => ClanInput::AnswerJoinAlly { response: p.response },
+        ClientPacket::AllyLeave(_) => ClanInput::AllyLeave,
+        ClientPacket::AllyDismiss(p) => ClanInput::AllyDismiss {
+            clan_name: p.clan_name,
+        },
+        ClientPacket::RequestDismissAlly(_) => ClanInput::DismissAlly,
+        ClientPacket::RequestAllyCrest(p) => ClanInput::AllyCrest { crest_id: p.crest_id },
+        ClientPacket::RequestAllyInfo(_) => ClanInput::AllyInfo,
         _ => ClanInput::NotPorted("unknown clan packet"),
+    }
+}
+
+/// The warehouse and freight packets as the world takes them (M6-WH-01).
+fn warehouse_input(packet: ClientPacket) -> WarehouseInput {
+    match packet {
+        ClientPacket::SendWareHouseDepositList(p) => WarehouseInput::Deposit { items: p.items },
+        ClientPacket::SendWareHouseWithDrawList(p) => WarehouseInput::Withdraw { items: p.items },
+        ClientPacket::RequestPackageSend(p) => WarehouseInput::PackageSend {
+            object_id: p.object_id,
+            items: p.items,
+        },
+        ClientPacket::RequestPackageSendableItemList(p) => WarehouseInput::PackageSendableList {
+            object_id: p.object_id,
+        },
+        // The caller only passes the four packets above; a list Java drops is as harmless.
+        _ => WarehouseInput::Deposit { items: None },
     }
 }
 
@@ -783,6 +857,12 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: MultiSellChoose
+            ClientPacket::MultiSellChoose(p) => ClientInput::MultiSellChoose {
+                list_id: p.list_id,
+                entry_id: p.entry_id,
+                amount: p.amount,
+            },
             // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
             // ported), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
@@ -914,6 +994,14 @@ impl ClientSession {
             | ClientPacket::RequestDismissAlly(_)
             | ClientPacket::RequestAllyCrest(_)
             | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
+            // Java: SendWareHouseDepositList, SendWareHouseWithDrawList, RequestPackageSend,
+            // RequestPackageSendableItemList (M6-WH-01)
+            packet @ (ClientPacket::SendWareHouseDepositList(_)
+            | ClientPacket::SendWareHouseWithDrawList(_)
+            | ClientPacket::RequestPackageSend(_)
+            | ClientPacket::RequestPackageSendableItemList(_)) => {
+                ClientInput::Warehouse(warehouse_input(packet))
+            }
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
@@ -924,6 +1012,11 @@ impl ClientSession {
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
+            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
+            ClientPacket::RequestBuyItem(p) => ClientInput::Shop(l2_world::ShopInput::Buy(p)),
+            ClientPacket::RequestSellItem(p) => ClientInput::Shop(l2_world::ShopInput::Sell(p)),
+            ClientPacket::RequestRefundItem(p) => ClientInput::Shop(l2_world::ShopInput::Refund(p)),
+            ClientPacket::RequestBuySellUIClose(_) => ClientInput::Shop(l2_world::ShopInput::UiClose),
             // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
             ClientPacket::RequestDuelStart(p) => ClientInput::DuelStart {
                 name: p.player,
@@ -934,6 +1027,35 @@ impl ClientSession {
                 response: p.response,
             },
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
+            // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
+            // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
+            // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute
+            ClientPacket::RequestEnchantItem(p) => ClientInput::Enchant(EnchantInput::Enchant {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestExTryToPutEnchantTargetItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutSupportItem {
+                    support_object_id: p.support_object_id,
+                    enchant_object_id: p.enchant_object_id,
+                })
+            }
+            ClientPacket::RequestExCancelEnchantItem(_) => ClientInput::Enchant(EnchantInput::CancelEnchant),
+            ClientPacket::RequestExEnchantItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::EnchantAttribute {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExRemoveItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::RemoveAttribute {
+                    object_id: p.object_id,
+                    element: p.element,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
@@ -1197,8 +1319,54 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_packets_become_warehouse_input() {
+        use l2_protocol_game::client::{
+            RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList,
+            SendWareHouseWithDrawList, WarehouseListEntry,
+        };
+        let entry = WarehouseListEntry {
+            object_id: 5,
+            count: 2,
+        };
+        assert_eq!(
+            warehouse_input(ClientPacket::SendWareHouseDepositList(SendWareHouseDepositList {
+                items: Some(vec![entry])
+            })),
+            WarehouseInput::Deposit {
+                items: Some(vec![entry])
+            }
+        );
+        // A list Java drops stays `None` all the way to the world.
+        assert_eq!(
+            warehouse_input(ClientPacket::SendWareHouseWithDrawList(
+                SendWareHouseWithDrawList { items: None }
+            )),
+            WarehouseInput::Withdraw { items: None }
+        );
+        assert_eq!(
+            warehouse_input(ClientPacket::RequestPackageSend(RequestPackageSend {
+                object_id: 9,
+                items: Some(vec![entry])
+            })),
+            WarehouseInput::PackageSend {
+                object_id: 9,
+                items: Some(vec![entry])
+            }
+        );
+        assert_eq!(
+            warehouse_input(ClientPacket::RequestPackageSendableItemList(
+                RequestPackageSendableItemList { object_id: 9 }
+            )),
+            WarehouseInput::PackageSendableList { object_id: 9 }
+        );
+    }
+
+    #[test]
     fn clan_packets_become_clan_input() {
-        use l2_protocol_game::client::pledge::{RequestAllyInfo, RequestJoinPledge, RequestPledgePower};
+        use l2_protocol_game::client::pledge::{
+            RequestAllyInfo, RequestJoinPledge, RequestPledgePower, RequestPledgeWarList,
+            RequestReplyStartPledgeWar, RequestSetPledgeCrest,
+        };
         assert_eq!(
             clan_input(ClientPacket::RequestJoinPledge(RequestJoinPledge {
                 target: 7,
@@ -1221,10 +1389,36 @@ mod tests {
                 privs: 9
             }
         );
-        // Alliances, wars and crests are M6-CLAN-02's.
+        // Alliances, wars and crests (M6-CLAN-02).
         assert_eq!(
             clan_input(ClientPacket::RequestAllyInfo(RequestAllyInfo)),
-            ClanInput::NotPorted("RequestAllyInfo")
+            ClanInput::AllyInfo
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestSetPledgeCrest(RequestSetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3]),
+            })),
+            ClanInput::SetPledgeCrest {
+                length: 3,
+                data: Some(vec![1, 2, 3])
+            }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestPledgeWarList(RequestPledgeWarList {
+                unk1: 0,
+                tab: 1
+            })),
+            ClanInput::PledgeWarList { tab: 1 }
+        );
+        assert_eq!(
+            clan_input(ClientPacket::RequestReplyStartPledgeWar(
+                RequestReplyStartPledgeWar {
+                    req_name: "x".into(),
+                    answer: 1
+                }
+            )),
+            ClanInput::ReplyStartPledgeWar { answer: 1 }
         );
     }
 

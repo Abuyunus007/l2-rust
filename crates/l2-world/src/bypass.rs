@@ -69,6 +69,18 @@ impl Default for BypassHandlers {
         handlers.register("Chat", chat_handler);
         // dist/game/data/scripts/handlers/bypass/npc/SkillList.java
         handlers.register("SkillList", crate::skills::learn::skill_list_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Buy.java
+        handlers.register("Buy", crate::shop::buy_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/{PrivateWarehouse,ClanWarehouse,Freight}.java
+        crate::warehouse::register_bypass_handlers(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/ScriptLink.java (M6-CLAN-02: the village
+        // master scripts ClanMaster and AllianceMaster)
+        handlers.register("Script", crate::clan::script_link_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Multisell.java (M6-MULTISELL-01)
+        handlers.register("multisell", crate::multisell::multisell_bypass_handler);
+        handlers.register("exc_multisell", crate::multisell::multisell_bypass_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/ReleaseAttribute.java (M6-ENCHANT-01)
+        handlers.register("ReleaseAttribute", crate::enchant::release_attribute_handler);
         handlers
     }
 }
