@@ -591,7 +591,8 @@ impl World {
 
         // Finally move to the target location.
         self.set_intention_move_to(id, target_x, target_y, target_z);
-        // Java `player.onActionRequest()`: spawn protection is not modelled.
+        // Java `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(id);
     }
 
     /// Java `ValidatePosition.runImpl`.
@@ -1808,7 +1809,10 @@ impl World {
             return true;
         }
         if let Some(n) = self.npcs.get(&id) {
-            return self.is_alike_dead(id) || n.movement.teleporting;
+            // `isOverloaded()` of a pet that carries too much (`Pet.refreshOverloaded`).
+            return self.is_alike_dead(id)
+                || n.movement.teleporting
+                || self.pet_state(id).is_some_and(|p| p.overloaded);
         }
         self.players.get(&id).is_none_or(|p| {
             self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_alike_dead(id) || p.movement.teleporting

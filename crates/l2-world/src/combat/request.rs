@@ -56,7 +56,8 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // `player.onActionRequest()`: spawn protection is not modelled.
+        // `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(id);
         if self.target_of(id) != Some(target) {
             // `target.onAction(player)`.
             self.on_action_object(id, target, true);

@@ -278,6 +278,9 @@ impl Server {
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
         let regen_settings = world_data::regen_settings(&config);
         let summon_settings = world_data::summon_settings(&config);
+        let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
+        // Java: PetNameTable (the names of the pets that exist), read only.
+        let pet_names = persist::load_pet_names(&pool).await;
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
         // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
         let ground_items = persist::restore_ground_items(&pool, &config.general).await;
@@ -344,6 +347,7 @@ impl Server {
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
             let pet_skills = Arc::clone(&datapack.pet_skills);
+            let pets = Arc::clone(&datapack.pets);
             let cubics = Arc::clone(&datapack.cubics);
             let recipes = Arc::clone(&datapack.recipes);
             let class_list = Arc::clone(&datapack.class_list);
@@ -385,6 +389,10 @@ impl Server {
                     world.set_skill_learn_data(skill_learn);
                     // Java: PetSkillData (the skill levels of the summon actions).
                     world.set_pet_skill_data(pet_skills);
+                    // Java: PetDataTable (the pets), PetNameTable, the pet values of the .ini files.
+                    world.set_pet_data(pets);
+                    world.set_pet_settings(pet_settings);
+                    world.load_pet_names(pet_names);
                     // Java: CubicData (the cubic templates of `SummonCubic`).
                     world.set_cubic_data(cubics);
                     // Java: RecipeData (data/Recipes.xml).
@@ -427,6 +435,10 @@ impl Server {
             )
             .map_err(StartupError::WorldThread)?
         };
+
+        // The persistence task answers the reads the world asked for (the pet rows of a collar)
+        // with a command on the world's channel.
+        left_acks.set_world(world.handle());
 
         // D-14: the path workers answer with `WorldCommand::PathFound` on the world's channel.
         let geo = geo::Geo::start(

@@ -1564,10 +1564,11 @@ impl<R: Rnd> Targeting<'_, R> {
     // Java: PcBody.java
     fn pc_body(&mut self) {
         if let Some(target) = self.target.filter(|t| self.dead(*t)) {
-            // M6 (PET-01): a dead pet (`targetPet`) is a valid body too.
-            if self.caster_is_player() && self.w.is_player(target) {
+            // A dead pet (`targetPet`) is a valid body too.
+            let target_player = self.w.is_player(target);
+            if self.caster_is_player() && (target_player || self.w.is_pet(target)) {
                 let mut cond_good = true;
-                if has_effect(self.skill, EffectKind::Resurrection) {
+                if has_effect(self.skill, EffectKind::Resurrection) && target_player {
                     // Check target is not in an active siege zone. `isInSiege()` (the player
                     // takes part in a siege): M6, false.
                     if self.w.is_inside_zone(target, ZoneId::Siege) {

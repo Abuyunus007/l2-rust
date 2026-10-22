@@ -319,6 +319,11 @@ impl World {
                 request_id,
                 result,
             } => self.on_path_found(requester, request_id, result),
+            WorldCommand::PetRowLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => self.on_pet_row_loaded(owner, control_object_id, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -583,6 +588,9 @@ impl World {
                 object_id,
             } => self.on_answer_couple_action(id, action_id, answer, object_id),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
+            // Java: RequestPetGetItem, RequestGiveItemToPet, RequestGetItemFromPet,
+            // RequestPetUseItem, RequestChangePetName (`summon/pet_items.rs`)
+            ClientInput::Pet(input) => self.on_pet_input(id, input),
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),

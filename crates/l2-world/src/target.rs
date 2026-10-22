@@ -326,7 +326,8 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // FOLLOW-UP: `onActionRequest()` (spawn protection).
+        // `onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(id);
 
         match action_id {
             0 => self.on_action_object(id, obj, true),

@@ -54,17 +54,18 @@ use l2_db::CrestRepository;
 use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
     GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
-    NewItem, NewItemReuse, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, Pool,
-    PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository, ShortcutRepository,
-    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
+    NewItem, NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
+    PetRepository, PetValues, Pool, PunishmentRepository, RecipeRepository, RecipeShopRow,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
+    VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PlayerData,
-    ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse,
-    ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PetRowData,
+    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
+    SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -234,6 +235,20 @@ pub trait PlayerStore: Send + 'static {
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
+
+    /// Java `Pet.restore` and `Pet.restoreEffects` for one collar: its `pets` row and its saved
+    /// buffs (M6-PET-01). A store without a database has no rows.
+    fn load_pet_row(
+        &mut self,
+        _control: ObjectId,
+    ) -> impl Future<Output = Result<PetRowData, PersistError>> + Send {
+        async {
+            Ok(PetRowData {
+                row: None,
+                effects: Vec::new(),
+            })
+        }
+    }
 }
 
 /// How often a failed store is tried again before it is given up (and logged as lost).
@@ -260,14 +275,29 @@ impl Default for RetryPolicy {
 /// Network-side bookkeeping, not game state (D-10): the lock is held only to add or take a
 /// waiter.
 #[derive(Clone, Default)]
-pub struct LeftAcks(Arc<Mutex<HashMap<ObjectId, Vec<oneshot::Sender<()>>>>>);
+pub struct LeftAcks {
+    waiters: Arc<Mutex<HashMap<ObjectId, Vec<oneshot::Sender<()>>>>>,
+    /// The way back to the world, for the answers of reads the world asked for (the pet rows of
+    /// a collar, M6-PET-01). Set once the world thread runs.
+    world: Arc<std::sync::OnceLock<crate::state::WorldHandle>>,
+}
 
 impl LeftAcks {
+    /// Installs the world's handle (once; later calls are ignored).
+    pub fn set_world(&self, handle: crate::state::WorldHandle) {
+        let _ = self.world.set(handle);
+    }
+
+    /// Sends an answer to the world. `false` when there is no world (yet) or it is gone.
+    pub fn send_to_world(&self, command: l2_world::WorldCommand) -> bool {
+        self.world.get().is_some_and(|world| world.send(command))
+    }
+
     /// A receiver that completes once `PlayerLeft` of `id` was handled: the final store is done
     /// (or failed for good, which is logged) and the character is marked offline.
     pub fn wait_for(&self, id: ObjectId) -> oneshot::Receiver<()> {
         let (tx, rx) = oneshot::channel();
-        self.0
+        self.waiters
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .entry(id)
@@ -278,7 +308,11 @@ impl LeftAcks {
 
     /// Wakes everyone waiting for `id`. The persistence task calls it after `PlayerLeft`.
     pub fn ack(&self, id: ObjectId) {
-        let waiters = self.0.lock().unwrap_or_else(PoisonError::into_inner).remove(&id);
+        let waiters = self
+            .waiters
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(&id);
         for tx in waiters.into_iter().flatten() {
             let _ = tx.send(());
         }
@@ -547,6 +581,34 @@ async fn run<S: PlayerStore>(
                     error!("The summon tables could NOT be written ({write:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::PetRowRequest {
+                owner,
+                control_object_id,
+            }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is
+                // reported as a failure, and the world summons nothing.
+                let result = match store.load_pet_row(control_object_id).await {
+                    Ok(data) => Ok(data),
+                    Err(e) => {
+                        warn!(
+                            "Could not read the pet row of collar {}: {e}",
+                            control_object_id.0
+                        );
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::PetRowLoaded {
+                    owner,
+                    control_object_id,
+                    result,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The pet row of collar {} could not be handed to the world.",
+                        control_object_id.0
+                    );
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Clan(write)) => {
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
@@ -620,6 +682,43 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
             .collect(),
         Err(e) => {
             warn!("PunishmentManager: Error while loading punishments: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// A `pets` row as the world keeps it (`Pet.restore`).
+pub fn saved_pet_of(r: l2_db::PetRow) -> SavedPet {
+    SavedPet {
+        control_object_id: ObjectId(i32::try_from(r.item_obj_id).unwrap_or(0)),
+        name: r.name.filter(|n| !n.is_empty()),
+        level: i32::from(r.level),
+        cur_hp: i32::try_from(r.cur_hp.unwrap_or(0)).unwrap_or(i32::MAX),
+        cur_mp: i32::try_from(r.cur_mp.unwrap_or(0)).unwrap_or(i32::MAX),
+        exp: i64::try_from(r.exp.unwrap_or(0)).unwrap_or(i64::MAX),
+        sp: i64::from(r.sp.unwrap_or(0)),
+        fed: i32::try_from(r.fed.unwrap_or(0)).unwrap_or(i32::MAX),
+        restore: r.restore == "true",
+    }
+}
+
+/// A `character_pet_skills_save` row as the world keeps it (`Pet.restoreEffects`).
+pub fn saved_pet_effect_of(r: l2_db::PetSkillSaveRow) -> SavedPetEffect {
+    SavedPetEffect {
+        control_object_id: ObjectId(r.pet_obj_item_id),
+        skill_id: r.skill_id,
+        skill_level: r.skill_level,
+        remaining_time: r.remaining_time,
+    }
+}
+
+/// Java `PetNameTable.doesPetNameExist`, read once: the name and the collar item id of every
+/// named pet. Only reads (D-39); a failed read leaves the table empty and is logged.
+pub async fn load_pet_names(pool: &Pool) -> Vec<(String, i32)> {
+    match PetRepository::new(pool.clone()).all_pet_names().await {
+        Ok(names) => names,
+        Err(e) => {
+            warn!("PetNameTable: Could not load the pet names: {e}");
             Vec::new()
         }
     }
@@ -1067,6 +1166,7 @@ pub struct DbStore {
     variables: VariableRepository,
     punishments: PunishmentRepository,
     summons: SummonRepository,
+    pets: PetRepository,
     clans: ClanRepository,
     buylists: BuyListRepository,
     recipes: RecipeRepository,
@@ -1091,6 +1191,7 @@ impl DbStore {
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
+            pets: PetRepository::new(pool.clone()),
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
             recipes: RecipeRepository::new(pool.clone()),
@@ -1980,6 +2081,51 @@ impl PlayerStore for DbStore {
                     .store_servitor_effects(owner.0, *class_index, *summon_skill_id, &rows)
                     .await?;
             }
+            // Java: Pet.storeMe
+            SummonWrite::StorePet { insert, pet } => {
+                let values = PetValues {
+                    name: pet.name.clone().unwrap_or_default(),
+                    level: pet.level,
+                    cur_hp: pet.cur_hp,
+                    cur_mp: pet.cur_mp,
+                    exp: pet.exp,
+                    sp: pet.sp,
+                    fed: pet.fed,
+                    owner_id: pet.owner.0,
+                    restore: pet.restore,
+                    item_obj_id: pet.control_object_id.0,
+                };
+                if *insert {
+                    // A collar whose row exists already (it came to this character after the
+                    // login, so the world did not know the row) is updated instead.
+                    if let Err(e) = self.pets.insert_pet(&values).await {
+                        if e.is_duplicate_key() {
+                            self.pets.update_pet(&values).await?;
+                        } else {
+                            return Err(e.into());
+                        }
+                    }
+                } else {
+                    self.pets.update_pet(&values).await?;
+                }
+            }
+            // Java: Pet.destroyControlItem, ItemManager.destroyItem
+            SummonWrite::DeletePet { control_object_id } => self.pets.delete_pet(control_object_id.0).await?,
+            // Java: Pet.storeEffect / restoreEffects
+            SummonWrite::PetEffects {
+                control_object_id,
+                effects,
+            } => {
+                let rows: Vec<NewPetSkillSave> = effects
+                    .iter()
+                    .map(|e| NewPetSkillSave {
+                        skill_id: e.skill_id,
+                        skill_level: e.skill_level,
+                        remaining_time: e.remaining_time,
+                    })
+                    .collect();
+                self.pets.store_effects(control_object_id.0, &rows).await?;
+            }
         }
         Ok(())
     }
@@ -2007,6 +2153,15 @@ impl PlayerStore for DbStore {
             }
         }
         Ok(())
+    }
+
+    async fn load_pet_row(&mut self, control: ObjectId) -> Result<PetRowData, PersistError> {
+        let row = self.pets.pet_of_control_item(control.0).await?;
+        let effects = self.pets.effects_of(control.0).await?;
+        Ok(PetRowData {
+            row: row.map(saved_pet_of),
+            effects: effects.into_iter().map(saved_pet_effect_of).collect(),
+        })
     }
 
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
@@ -2405,6 +2560,45 @@ mod tests {
         }
         let calls = calls.lock().unwrap().clone();
         (calls, notices)
+    }
+
+    /// A pet row request is not a write: the store is asked and the answer goes back to the world
+    /// as `WorldCommand::PetRowLoaded` (M6-PET-01).
+    #[tokio::test]
+    async fn a_pet_row_request_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(Recording::default(), rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Persist(PersistCommand::PetRowRequest {
+            owner: ObjectId(1),
+            control_object_id: ObjectId(77),
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::PetRowLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => {
+                assert_eq!((owner, control_object_id), (ObjectId(1), ObjectId(77)));
+                assert_eq!(
+                    result,
+                    Ok(PetRowData {
+                        row: None,
+                        effects: vec![]
+                    })
+                );
+            }
+            other => panic!("{other:?}"),
+        }
     }
 
     /// `Product.save` rows reach the store in the order the world sent them.

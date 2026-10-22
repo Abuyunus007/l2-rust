@@ -512,6 +512,10 @@ impl World {
                 _ => i64::from(settings.autodestroy_item_after) * 1000,
             };
             if now - drop_time > auto_destroy_time {
+                // `ItemManager.destroyItem`: "If it's a pet control item, delete the pet as well."
+                if template.is_some_and(|t| t.is_pet_item()) {
+                    self.pet_row_deleted(id);
+                }
                 self.decay_ground_item(id);
                 self.ground.auto_destroy.remove(&id);
             }

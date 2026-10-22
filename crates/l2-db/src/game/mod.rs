@@ -14,6 +14,7 @@ mod ids;
 mod item_reuse;
 mod items;
 mod macros;
+mod pets;
 mod punishments;
 mod recipes;
 mod recommendations;
@@ -43,6 +44,7 @@ pub use items::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use macros::{MacroRepository, MacroRow, NewMacro};
+pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};

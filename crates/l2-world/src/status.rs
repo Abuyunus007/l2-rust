@@ -778,8 +778,16 @@ impl World {
         };
         let base_reg = self.npc_template_of(id).map_or(0.0, |t| t.base_hp_reg);
         let rate = |base: f64| view.calc_stat(Stat::RegenerateHpRate, base, None, None);
+        // `creature.isPet()`: the level row's regeneration times `PetHpRegenMultiplier`.
+        let kind = match self.pet_level_data_of(id) {
+            Some(level) => RegenKind::Pet {
+                pet_regen: level.regen_hp,
+                pet_regen_multiplier: self.summons.pet_world.settings.pet_hp_regen_multiplier,
+            },
+            None => RegenKind::Npc { base_reg },
+        };
         calc_hp_regen(&HpRegenInput {
-            kind: RegenKind::Npc { base_reg },
+            kind,
             is_raid: view.is_raid(),
             hp_regen_multiplier: self.regen.hp_regen_multiplier,
             raid_hp_regen_multiplier: self.regen.raid_hp_regen_multiplier,
@@ -797,8 +805,15 @@ impl World {
         };
         let base_reg = self.npc_template_of(id).map_or(0.0, |t| t.base_mp_reg);
         let rate = |base: f64| view.calc_stat(Stat::RegenerateMpRate, base, None, None);
+        let kind = match self.pet_level_data_of(id) {
+            Some(level) => RegenKind::Pet {
+                pet_regen: level.regen_mp,
+                pet_regen_multiplier: self.summons.pet_world.settings.pet_mp_regen_multiplier,
+            },
+            None => RegenKind::Npc { base_reg },
+        };
         calc_mp_regen(&MpRegenInput {
-            kind: RegenKind::Npc { base_reg },
+            kind,
             is_raid: view.is_raid(),
             mp_regen_multiplier: self.regen.mp_regen_multiplier,
             raid_mp_regen_multiplier: self.regen.raid_mp_regen_multiplier,

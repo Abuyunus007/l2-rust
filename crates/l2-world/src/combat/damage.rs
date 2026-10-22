@@ -315,7 +315,19 @@ impl World {
         if self.is_summon(target) {
             // `Summon.reduceCurrentHp`: `SummonStatus.reduceHp` (transfer pain is not ported), then
             // the owner hears about the damage.
+            let was_dead = self.is_dead(target);
             self.reduce_hp(target, amount, attacker);
+            // `PetStatus.reduceHp`: "Your pet received $s2 damage by $c1." (not for a damage over
+            // time, which does not come through here).
+            if self.is_pet(target)
+                && !was_dead
+                && let Some(attacker) = attacker
+            {
+                let message = SystemMessage::new(SystemMessageId::YourPetReceivedS2DamageByC1)
+                    .with(SystemMessageParam::Text(self.creature_name(attacker)))
+                    .with(SystemMessageParam::IntNumber(amount as i32));
+                self.send(target, &message);
+            }
             if let (Some(owner), Some(attacker)) = (self.summon_owner(target), attacker) {
                 let message = SystemMessage::new(SystemMessageId::C1HasReceivedS3DamageFromC2)
                     .with(self.summon_name_param(target))

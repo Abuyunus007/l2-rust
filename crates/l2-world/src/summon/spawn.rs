@@ -134,6 +134,7 @@ impl World {
                 ..SummonAi::default()
             },
             abnormal_effect_timer: None,
+            pet: None,
             servitor: Some(ServitorState {
                 exp_multiplier: params.exp_multiplier,
                 consume_item: params.consume_item,
@@ -204,7 +205,11 @@ impl World {
         };
         // `restoreEffects()` unless the summon comes back from a teleport.
         if self.summons.settings.summon_store_skill_cooltime && !self.is_teleporting(id) {
-            self.servitor_restore_effects(id);
+            if self.is_pet(id) {
+                self.pet_restore_effects(id);
+            } else {
+                self.servitor_restore_effects(id);
+            }
         }
         self.set_follow_status(id, true);
         self.update_and_broadcast_summon_status(id, 0);
@@ -229,6 +234,9 @@ impl World {
         }
         self.summon_recharge_shots(id, true, true);
         // ON_PLAYER_SUMMON_SPAWN: script event (D-05).
+
+        // `BabyPet.onSpawn`: the baby pet sorts its skills and starts to heal.
+        self.baby_on_spawn(id);
 
         // `Servitor.onSpawn`: the life task, at a fixed rate of 5 s from now.
         // NOTE: Java's first run has a delay of 0 and runs at once on the thread pool; here it runs

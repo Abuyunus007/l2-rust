@@ -195,6 +195,11 @@ pub struct PlayerProfile {
     /// when a servitor of the same skill spawns). The world takes them at enter world
     /// (`summon/servitor.rs`).
     pub summon_effects: Vec<crate::summon::servitor::SavedSummonEffect>,
+    /// The `pets` rows of the collars the character holds (Java `Pet.restore` reads one when its
+    /// pet spawns). The world takes them at enter world (`summon/pet.rs`).
+    pub pet_rows: Vec<crate::summon::pet::SavedPet>,
+    /// The `character_pet_skills_save` rows of those collars (Java `Pet.restoreEffects`).
+    pub pet_effects: Vec<crate::summon::pet::SavedPetEffect>,
     /// The clan columns of `characters` (`clanid`, `clan_privs`, `power_grade`, `subpledge`, ...)
     /// and the clan values of `Player`, see `clan/`. `None`: a snapshot that does not carry them
     /// (the store keeps the row's values); the world fills it when the player enters.
@@ -244,6 +249,8 @@ impl Default for PlayerProfile {
             item_reuse_to_store: None,
             class_index: 0,
             summon_effects: Vec::new(),
+            pet_rows: Vec::new(),
+            pet_effects: Vec::new(),
             clan: None,
             clan_record: None,
             warehouse: crate::warehouse::WarehouseLoad::default(),

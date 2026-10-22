@@ -27,7 +27,7 @@
 // - PC cafe points (`PcCafePointsManager`). Vitality and Nevit are in `vitality.rs` and `nevit.rs`
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
-// - Summons and pets (`getExpMultiplier`, the pet's share), the over-hit bonus (a skill effect,
+// - The over-hit bonus (a skill effect,
 //   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
 //   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), subclasses
 //   (`isSubClassActive`), clans and the tutorial quest event, scripts (D-05).
@@ -466,7 +466,9 @@ impl World {
         self.nevit_on_exp_gain_start_advent(id, add_to_exp);
         let add_to_exp = add_to_exp * bonus_exp;
         let add_to_sp = add_to_sp * bonus_sp;
-        // The pet's share: no pets yet.
+        // If this player has a pet and it is in his range he takes from the owner's Exp, give the
+        // pet Exp now.
+        let (add_to_exp, add_to_sp) = self.pet_take_owner_share(id, add_to_exp, add_to_sp);
 
         let final_exp = java_round(add_to_exp);
         let final_sp = java_round(add_to_sp);
@@ -812,7 +814,9 @@ impl World {
         self.transformation_level_up(id);
         // The party level.
         self.recalculate_party_level_of(id);
-        // Clan member list, the pet's level: not modelled.
+        // Synchronize level with pet if possible.
+        self.pet_sync_level_with_owner(id);
+        // Clan member list: not modelled.
         let (level, max_cp, max_hp, max_mp) = match (self.core_of(id), self.stats(id)) {
             (Some(core), Some(view)) => (core.level, view.max_cp(), view.max_hp(), view.max_mp()),
             _ => return level_increased,

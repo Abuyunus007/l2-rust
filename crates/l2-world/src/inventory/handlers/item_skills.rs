@@ -39,8 +39,19 @@ impl World {
         force_use: bool,
     ) -> bool {
         // `ItemSkills` (and so `Elixir`) refuse in a Grand Olympiad match with YOU_CANNOT_USE_THAT_
-        // ITEM_IN_A_GRAND_OLYMPIAD_MATCH; the olympiad is not modelled. Pets (`isPet()`) and
-        // events (`isOnEvent()`) are not either.
+        // ITEM_IN_A_GRAND_OLYMPIAD_MATCH; the olympiad is not modelled, nor are events
+        // (`isOnEvent()`).
+        if !self.is_player(id) && !self.is_pet(id) {
+            return false;
+        }
+        // Pets can use items only when they are tradable.
+        if self.is_pet(id) && !template.tradeable {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YourPetCannotCarryThisItem),
+            );
+            return false;
+        }
 
         // Verify that item is not under reuse.
         if !self.check_item_skill_reuse(id, None, item) {
@@ -91,7 +102,13 @@ impl World {
                 return false;
             }
 
-            // "Your pet uses $s1": pets are not modelled.
+            // Send message to the master.
+            if self.is_pet(id) {
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::YourPetUsesS1).with(skill_name_param(item_skill)),
+                );
+            }
 
             if item_skill.simultaneous_cast
                 || ((template.immediate_effect || template.ex_immediate_effect) && item_skill.is_static())
@@ -129,7 +146,8 @@ impl World {
             None => self.item_remaining_reuse_time(id, item.object_id),
         };
         let available = remaining <= 0;
-        if !available {
+        // `playable.isPlayer() && !isAvailable`: a pet is not told.
+        if !available && self.is_player(id) {
             let name = match skill {
                 Some(skill) if !skill.is_static() => skill_name_param(skill),
                 _ => {
