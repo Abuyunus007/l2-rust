@@ -55,24 +55,25 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         // 0 is `EnchantResult.SUCCESS`.
         assert_eq!(result.result, 0, "round {round}: {done:?}");
         let updates: Vec<InventoryUpdate> = all(&done, "INVENTORY_UPDATE");
-        let changed: Vec<(i32, i32, i64, i16)> = updates
+        // The entries come in Java's `InventoryUpdate` hash order, which depends on the object
+        // ids (the bare world and the real servers hand out different ones): compare them sorted.
+        let mut changed: Vec<(i32, i32, i64, i16)> = updates
             .iter()
             .flat_map(|u| u.updates.iter())
             .map(|u| (u.item.object_id, u.item.item_id, u.item.count, u.item.enchant))
             .collect();
-        assert_eq!(
-            changed,
-            [
-                (blade, m6_data::TEST_BLADE, 1, i16::try_from(round).unwrap()),
-                (
-                    scroll,
-                    m6_data::ENCHANT_SCROLL_D,
-                    m6_data::SCROLLS_AT_START - round,
-                    0
-                ),
-            ],
-            "round {round}"
-        );
+        changed.sort_unstable();
+        let mut expected = [
+            (blade, m6_data::TEST_BLADE, 1, i16::try_from(round).unwrap()),
+            (
+                scroll,
+                m6_data::ENCHANT_SCROLL_D,
+                m6_data::SCROLLS_AT_START - round,
+                0,
+            ),
+        ];
+        expected.sort_unstable();
+        assert_eq!(changed, expected, "round {round}");
     }
 
     let left = h.leave(Who::A).await;
