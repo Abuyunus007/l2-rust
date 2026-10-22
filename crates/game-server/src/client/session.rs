@@ -12,7 +12,6 @@
 use std::net::IpAddr;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Instant;
 
 use l2_net::{Control, Encode, FrameHandler, PacketReader};
 use l2_protocol_game::client::{AuthLogin, ProtocolVersion};
@@ -49,8 +48,9 @@ pub struct ClientSession {
     /// The character `CharacterSelect` picked, until the world takes it over (M2-ENTER-01 clears
     /// it) or the client leaves.
     pub(super) selected: Option<i32>,
-    /// When the next `CharacterSelect` / `CharacterRestore` is allowed (flood protector).
-    pub(super) next_select: Option<Instant>,
+    /// The `CharacterSelect` flood protector of this client (`CharacterSelect` and
+    /// `CharacterRestore`).
+    pub(super) select_flood: l2_world::FloodAction,
     /// Shared with the registry entry and the packet sink: is the account's character in the
     /// world?
     pub(super) in_world: Arc<AtomicBool>,
@@ -76,7 +76,7 @@ impl ClientSession {
             session_key: None,
             characters: Vec::new(),
             selected: None,
-            next_select: None,
+            select_flood: l2_world::FloodAction::default(),
             in_world: Arc::default(),
             pending: None,
             sink_events: None,

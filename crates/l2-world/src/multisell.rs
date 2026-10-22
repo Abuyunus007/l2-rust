@@ -24,7 +24,7 @@
 // # Left out on purpose (each has a comment where it belongs)
 // - Castle taxes: `applyTaxes` lists add the castle's tax to the adena ingredient and pay it into
 //   the castle treasury; castles are M7, so no list pays tax yet.
-// - The flood protector `canUseMultiSell`, `ItemProcessType` logging and the GM audit.
+// - `ItemProcessType` logging and the GM audit.
 // - PC cafe points (`-100`): the world does not model them yet, so a player has 0.
 // - Fame is changed in the world but the persistence task does not write it back yet.
 
@@ -45,6 +45,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::flood::FloodKind;
 use crate::inventory::{LOC_INVENTORY, LOC_PAPERDOLL, item_name_param};
 use crate::player::ItemData;
 use crate::target::distance_3d;
@@ -672,10 +673,16 @@ impl World {
 
     /// Java `MultiSellChoose.runImpl`.
     pub(crate) fn on_multisell_choose(&mut self, id: ObjectId, list_id: i32, entry_id: i32, amount: i64) {
+        if !self.players.contains_key(&id) {
+            return;
+        }
+        // Ignore the flood click only, the open list must stay valid for the next exchange.
+        if !self.flood_allows(id, FloodKind::MultiSell) {
+            return;
+        }
         let Some(player) = self.players.get(&id) else {
             return;
         };
-        // FOLLOW-UP: the flood protector `canUseMultiSell` is not ported (no flood protectors yet).
         let settings = self.multisell.settings.clone();
         if amount < 1 || amount > settings.amount_limit {
             self.clear_multisell(id);

@@ -19,7 +19,7 @@
 //   and then only logged.
 // - `admin_` commands do not use this registry: they go to the `admin` module
 //   ([`World::admin_command`]), as Java hands them to `AdminCommandHandler`.
-// - The flood protectors (`canUseServerBypass`) and the `ON_PLAYER_BYPASS` script event.
+// - The `ON_PLAYER_BYPASS` script event.
 
 use std::collections::HashMap;
 
@@ -29,6 +29,7 @@ use tracing::{debug, info, warn};
 
 use crate::command::LeaveReason;
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::flood::FloodKind;
 use crate::target::{distance_2d, distance_3d};
 use crate::world::World;
 
@@ -244,7 +245,9 @@ impl World {
                 return;
             }
         }
-        // FOLLOW-UP: `canUseServerBypass` flood protector.
+        if !self.flood_allows(id, FloodKind::ServerBypass) {
+            return;
+        }
 
         if command.starts_with("admin_") {
             self.admin_command(id, command, true);

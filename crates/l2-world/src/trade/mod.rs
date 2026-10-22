@@ -34,7 +34,6 @@
 // # Left out on purpose (each has a comment where it belongs)
 // - the olympiad check (M8),
 //   a summoned pet's control item and a mounted strider's saddle (no summons or mounts yet), cursed weapons.
-// - The flood protector `canPerformTransaction` of `TradeDone` (no flood protectors yet).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 // - `Player.setTradeRefusal` is only called by the script `AdminAdmin` (`//tradeoff`), a later card;
 //   the flag is [`TradeState::refusal`].
