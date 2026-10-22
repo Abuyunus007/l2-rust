@@ -271,9 +271,8 @@ impl Scene {
             Arc::new(Zones::load(root.path())),
             Arc::new(MapRegions::load(root.path())),
         );
-        // The flood protector gets its own test; here a player sends mail after mail.
+        // The flood protector is off here (the default of a world); a player sends mail after mail.
         world.set_mail_settings(MailSettings {
-            send_interval_ticks: 0,
             // The expiry tests check the rows; the switch has its own test.
             expiry_database_writes: true,
             ..MailSettings::default()
@@ -962,6 +961,7 @@ fn the_boxes_hold_240_mails() {
 fn the_second_mail_within_the_interval_is_refused() {
     let mut s = Scene::new();
     s.world.set_mail_settings(MailSettings::default());
+    s.world.set_flood_settings(FloodSettings::java_defaults());
     s.enter(player(A, "Alice", alice_items()));
     s.log.take();
     s.send(A, "Carol", &[], None);
@@ -1877,7 +1877,6 @@ fn an_answer_nobody_asked_for_is_dropped() {
 fn expiry_writes_respect_the_switch() {
     let mut s = Scene::new();
     s.world.set_mail_settings(MailSettings {
-        send_interval_ticks: 0,
         expiry_database_writes: false,
         ..MailSettings::default()
     });

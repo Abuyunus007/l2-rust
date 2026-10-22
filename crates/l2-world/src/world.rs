@@ -130,6 +130,8 @@ pub struct World {
     pub(crate) augment: crate::augment::AugmentWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
+    /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
+    pub(crate) flood: crate::flood::FloodWorld,
 }
 
 impl World {
@@ -192,6 +194,7 @@ impl World {
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
+            flood: crate::flood::FloodWorld::default(),
         }
     }
 

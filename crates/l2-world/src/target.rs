@@ -8,7 +8,7 @@
 // Java: entity/World.java (removeVisibleObject, switchRegion: the targets they clear)
 //
 // # What is left out, with the system that brings it
-// - Flood protection (`canPerformPlayerAction`), observer mode, the bot-penalty effect, spawn
+// - Observer mode, the bot-penalty effect, spawn
 //   protection (`onActionRequest`): none of them exist yet.
 // - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
@@ -27,6 +27,7 @@ use tracing::{debug, warn};
 
 use crate::dialog::INTERACTION_DISTANCE;
 use crate::effects::control::ACTION_BLOCK_ID;
+use crate::flood::FloodKind;
 use crate::objects::ObjectKind;
 use crate::world::World;
 
@@ -285,7 +286,10 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP: flood protection, observer mode.
+        if !self.flood_allows(id, FloodKind::PlayerAction) {
+            return;
+        }
+        // FOLLOW-UP: observer mode.
         // `BOT_PENALTY` effects (`BlockAction`) refuse the click (`checkCondition(-4)`).
         if !self.check_bot_penalty(id, ACTION_BLOCK_ID) {
             return;

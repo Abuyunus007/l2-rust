@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::{TRADE_RANGE, TradeItem, TradeList};
+use crate::flood::FloodKind;
 use crate::player::ItemData;
 use crate::world::World;
 
@@ -187,7 +188,10 @@ impl World {
         if !self.is_online(id) {
             return;
         }
-        // The flood protector `canPerformTransaction` ("You are trading too fast.") is not ported.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are trading too fast.");
+            return;
+        }
         let Some(trade) = self.players.get(&id).and_then(|p| p.trade.active.as_ref()) else {
             return;
         };

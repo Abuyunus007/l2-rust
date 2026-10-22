@@ -29,7 +29,6 @@
 // - The castle tax. `MerchantPriceConfig.getTotalTaxRate()` adds the castle's `taxPercent` and the
 //   treasury gets `subTotal * castleTaxRate`; castles are M7 (`// M7:` where it belongs). The
 //   base tax of the town (`MerchantPriceConfig.xml`) is applied.
-// - The flood protector `canPerformTransaction` of the three packets (no flood protectors yet).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 // - `Wear` (`ShopPreviewList`) and `BuyShadowItem`: separate bypasses, not in this card.
 

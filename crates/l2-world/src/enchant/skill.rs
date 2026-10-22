@@ -18,8 +18,7 @@
 // both info packets for the new level, and the shortcuts of the skill show the new level.
 //
 // # What is left out
-// - The flood protector `canPerformPlayerAction` of `RequestExEnchantSkill` (the session's, not
-//   the world's) and `player.isSellingBuffs()` (the SellBuffs custom feature is not ported).
+// - `player.isSellingBuffs()` (the SellBuffs custom feature is not ported).
 // - `_subclassLock` of `isAllowedToEnchantSkills()` (sub-classes are not modelled yet) and
 //   `isInBoat() || isInAirShip()` (boats and airships are not modelled; `M6-MOUNT`).
 // - The Java GS "enchant.skills" log file: the lines go to `tracing` with the target
@@ -38,6 +37,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
+use crate::flood::FloodKind;
 use crate::rewards::exp::SkillWrites;
 use crate::world::World;
 
@@ -449,7 +449,9 @@ impl World {
     /// Java `RequestExEnchantSkill.runImpl`: the normal enchant. A failure sets the skill back to
     /// its base level.
     pub(crate) fn on_request_ex_enchant_skill(&mut self, id: ObjectId, skill_id: i32, skill_level: i32) {
-        // `canPerformPlayerAction` flood protector: the session's.
+        if !self.flood_allows(id, FloodKind::PlayerAction) {
+            return;
+        }
         if skill_id <= 0 || skill_level <= 0 {
             return;
         }
