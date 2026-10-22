@@ -490,10 +490,11 @@ fn the_count_starts_over_when_a_request_passes() {
 #[test]
 fn global_shout_and_trade_chat_share_the_global_chat_protector() {
     let mut s = Scene::new();
-    let mut settings = WorldSettings::default();
-    settings.global_chat = ChatBroadcast::Global;
-    settings.trade_chat = ChatBroadcast::Global;
-    s.world.set_settings(settings);
+    s.world.set_settings(WorldSettings {
+        global_chat: ChatBroadcast::Global,
+        trade_chat: ChatBroadcast::Global,
+        ..WorldSettings::default()
+    });
     s.enter(P1);
     s.log.take();
     let say = |s: &mut Scene, chat_type: ChatType| {
