@@ -1605,3 +1605,176 @@ fn the_pet_wears_its_armor() {
     assert!(message_ids(&s.me.take()).contains(&SystemMessageId::YourPetTookOffS1));
     assert_eq!(s.world.stats(again).unwrap().p_def(None), before);
 }
+
+// ---- a collar the world has no row for ---------------------------------------------------------
+
+impl Persisted {
+    /// The `(owner, collar)` of the pet row requests since the last call.
+    fn pet_row_requests(&self) -> Vec<(ObjectId, ObjectId)> {
+        let mut commands = self.0.lock().unwrap();
+        let requests = commands
+            .iter()
+            .filter_map(|c| match c {
+                PersistCommand::PetRowRequest {
+                    owner,
+                    control_object_id,
+                } => Some((*owner, *control_object_id)),
+                _ => None,
+            })
+            .collect();
+        commands.retain(|c| !matches!(c, PersistCommand::PetRowRequest { .. }));
+        requests
+    }
+}
+
+/// A collar that came to the character after the login (a trade, a pickup) may have a `pets` row
+/// the world never read. Using it asks the persistence task for the row (no insert, no pet yet,
+/// one request however often the player clicks); the pet comes with the answer: a restore when
+/// the row exists (its level and exp are not overwritten, D-39), a new pet when the database has
+/// none, nothing when the read failed.
+#[test]
+fn an_unknown_collar_asks_for_its_row_before_the_pet_is_made() {
+    let answer = |s: &mut Scene, control: ObjectId, result| {
+        s.world.handle(WorldCommand::PetRowLoaded {
+            owner: ME,
+            control_object_id: control,
+            result,
+        });
+    };
+    let row = |control| SavedPet {
+        control_object_id: control,
+        name: Some("Old".into()),
+        level: 4,
+        cur_hp: 90,
+        cur_mp: 40,
+        exp: 700,
+        sp: 0,
+        fed: 11,
+        restore: false,
+    };
+
+    // The row exists: a restore, not an insert.
+    let mut s = Scene::new(vec![]);
+    let control = s.world.add_item(ME, COLLAR, 1, false).unwrap();
+    s.persisted.summon_writes();
+    for _ in 0..2 {
+        s.input(ClientInput::UseItem {
+            object_id: control.0,
+            ctrl_pressed: false,
+        });
+        s.advance(1000);
+    }
+    assert_eq!(s.world.summon_of(ME), None);
+    assert_eq!(s.persisted.pet_row_requests(), vec![(ME, control)], "one request");
+    assert!(s.persisted.summon_writes().is_empty(), "nothing is inserted");
+    answer(
+        &mut s,
+        control,
+        Ok(PetRowData {
+            row: Some(row(control)),
+            effects: vec![],
+        }),
+    );
+    let pet = s.pet();
+    assert_eq!(s.world.stats(pet).unwrap().level(), 4);
+    assert_eq!(s.world.summon(pet).unwrap().exp, 700);
+    assert_eq!(s.world.summon(pet).unwrap().name, "Old");
+    assert!(
+        s.persisted
+            .summon_writes()
+            .iter()
+            .all(|w| !matches!(w, SummonWrite::StorePet { insert: true, .. }))
+    );
+    // It is known now: no second request.
+    s.action(19);
+    s.advance(100);
+    s.input(ClientInput::UseItem {
+        object_id: control.0,
+        ctrl_pressed: false,
+    });
+    s.advance(1000);
+    assert!(s.world.summon_of(ME).is_some());
+    assert!(s.persisted.pet_row_requests().is_empty());
+
+    // The database has no row: a new pet, inserted.
+    let mut s = Scene::new(vec![]);
+    let control = s.world.add_item(ME, COLLAR, 1, false).unwrap();
+    s.input(ClientInput::UseItem {
+        object_id: control.0,
+        ctrl_pressed: false,
+    });
+    s.advance(1000);
+    s.persisted.summon_writes();
+    answer(
+        &mut s,
+        control,
+        Ok(PetRowData {
+            row: None,
+            effects: vec![],
+        }),
+    );
+    let pet = s.pet();
+    assert_eq!(s.world.stats(pet).unwrap().level(), 3);
+    assert!(
+        s.persisted
+            .summon_writes()
+            .iter()
+            .any(|w| matches!(w, SummonWrite::StorePet { insert: true, .. }))
+    );
+
+    // The read failed: no pet, and the player can try again.
+    let mut s = Scene::new(vec![]);
+    let control = s.world.add_item(ME, COLLAR, 1, false).unwrap();
+    s.input(ClientInput::UseItem {
+        object_id: control.0,
+        ctrl_pressed: false,
+    });
+    s.advance(1000);
+    s.persisted.summon_writes();
+    answer(&mut s, control, Err(()));
+    assert_eq!(s.world.summon_of(ME), None);
+    assert!(s.persisted.summon_writes().is_empty());
+    s.input(ClientInput::UseItem {
+        object_id: control.0,
+        ctrl_pressed: false,
+    });
+    s.advance(1000);
+    assert_eq!(s.persisted.pet_row_requests().len(), 2);
+    // An answer nobody asked for is ignored.
+    answer(
+        &mut s,
+        ObjectId(1),
+        Ok(PetRowData {
+            row: None,
+            effects: vec![],
+        }),
+    );
+    assert_eq!(s.world.summon_of(ME), None);
+}
+
+/// `ItemManager.destroyItem` of a collar on the ground (the auto destroy) deletes the `pets` row.
+#[test]
+fn a_collar_destroyed_on_the_ground_takes_its_row_with_it() {
+    let mut s = Scene::new(vec![collar()]);
+    s.world.load_ground_items(vec![GroundItemRow {
+        object_id: ObjectId(0x2200_0009),
+        item_id: COLLAR,
+        count: 1,
+        enchant_level: 0,
+        x: X + 10,
+        y: Y,
+        z: Z,
+        drop_time: 1,
+        equipable: false,
+    }]);
+    s.persisted.summon_writes();
+    // Long enough for the default 10 minutes of `AutoDestroyDroppedItemAfter`.
+    s.advance(700_000);
+    assert!(s.world.ground_item(ObjectId(0x2200_0009)).is_none());
+    assert_eq!(
+        s.persisted.summon_writes(),
+        vec![SummonWrite::DeletePet {
+            control_object_id: ObjectId(0x2200_0009)
+        }]
+    );
+}

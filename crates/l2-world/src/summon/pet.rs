@@ -153,6 +153,15 @@ pub struct SavedPetEffect {
     pub remaining_time: i32,
 }
 
+/// The rows of one collar the persistence task read (`WorldCommand::PetRowLoaded`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct PetRowData {
+    /// The `pets` row, `None` when the database really has none (a new pet).
+    pub row: Option<SavedPet>,
+    /// The `character_pet_skills_save` rows of the collar.
+    pub effects: Vec<SavedPetEffect>,
+}
+
 /// What a `pets` write carries (Java binds these in `Pet.storeMe`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PetRowWrite {
@@ -216,6 +225,11 @@ pub struct PetWorld {
     pub(crate) pending_collar: HashMap<ObjectId, ObjectId>,
     /// `Player._petItems` (`havePetInvItems`): the pet had items when it was unsummoned.
     pub(crate) have_inv_items: HashSet<ObjectId>,
+    /// The collars whose `pets` row is known to be absent (read at the login, or answered by the
+    /// persistence task): they make a new pet. A collar neither here nor in `rows` is asked for.
+    pub(crate) no_row: HashSet<ObjectId>,
+    /// Owners waiting for the answer to a row request, with the collar.
+    pub(crate) row_pending: HashMap<ObjectId, ObjectId>,
     /// Owners whose stored pet comes back at their first action, with the tick the spawn
     /// protection ends (`isSpawnProtected` in Java).
     pub(crate) restore_due: HashMap<ObjectId, u64>,
@@ -414,8 +428,81 @@ impl World {
         if !known {
             return;
         }
+        // The `pets` row of a collar that came to the character after the login is not in the
+        // world: it is read first, so a pet that has a row is never made new (D-39).
+        let pet_world = &self.summons.pet_world;
+        if !pet_world.rows.contains_key(&control) && !pet_world.no_row.contains(&control) {
+            if self
+                .summons
+                .pet_world
+                .row_pending
+                .insert(player, control)
+                .is_none()
+            {
+                self.outbox.persist(PersistCommand::PetRowRequest {
+                    owner: player,
+                    control_object_id: control,
+                });
+            }
+            return;
+        }
         if self.summon_pet(player, control).is_none() {
             warn!("Could not spawn pet for player: {player} using item: {control}");
+        }
+    }
+
+    /// `WorldCommand::PetRowLoaded`: the rows of the collar are known now; the summon goes on, as
+    /// a restore when the row exists and as a new pet when the database has none. A failed read
+    /// summons nothing.
+    pub(crate) fn on_pet_row_loaded(
+        &mut self,
+        owner: ObjectId,
+        control: ObjectId,
+        result: Result<PetRowData, ()>,
+    ) {
+        if self.summons.pet_world.row_pending.get(&owner) != Some(&control) {
+            return;
+        }
+        self.summons.pet_world.row_pending.remove(&owner);
+        if !self.players.contains_key(&owner) {
+            return;
+        }
+        let Ok(data) = result else {
+            warn!("Could not read the pet row of collar {control} for {owner}; the pet is not summoned.");
+            return;
+        };
+        match data.row {
+            Some(row) => {
+                self.summons.pet_world.no_row.remove(&control);
+                self.summons.pet_world.rows.insert(control, row);
+            }
+            None => {
+                self.summons.pet_world.rows.remove(&control);
+                self.summons.pet_world.no_row.insert(control);
+            }
+        }
+        self.summons.pet_world.effect_rows.remove(&control);
+        for effect in data.effects {
+            self.summons
+                .pet_world
+                .effect_rows
+                .entry(control)
+                .or_default()
+                .push(SummonSkillSave {
+                    skill_id: effect.skill_id,
+                    skill_level: effect.skill_level,
+                    remaining_time: effect.remaining_time,
+                });
+        }
+        // The state may have changed while the database answered.
+        if self.summon_of(owner).is_some()
+            || self.is_alike_dead(owner)
+            || self.inventory_item(owner, control).is_none()
+        {
+            return;
+        }
+        if self.summon_pet(owner, control).is_none() {
+            warn!("Could not spawn pet for player: {owner} using item: {control}");
         }
     }
 
@@ -1119,6 +1206,7 @@ impl World {
                 restore,
             },
         }));
+        self.summons.pet_world.no_row.remove(&control);
         self.summons.pet_world.rows.insert(
             control,
             SavedPet {
@@ -1459,6 +1547,7 @@ impl World {
     /// collar does) and the world's view of it.
     pub(crate) fn pet_row_deleted(&mut self, control: ObjectId) {
         self.summons.pet_world.rows.remove(&control);
+        self.summons.pet_world.no_row.insert(control);
         self.summons.pet_world.effects.remove(&control);
         self.outbox
             .persist(PersistCommand::Summon(SummonWrite::DeletePet {
@@ -1540,7 +1629,29 @@ impl World {
         let rows = std::mem::take(&mut player.data.profile.pet_rows);
         let effects = std::mem::take(&mut player.data.profile.pet_effects);
         let mut restore = None;
+        // Every collar the character holds without a row is known to make a new pet.
+        let collars: Vec<ObjectId> = {
+            let templates = self.item_templates();
+            self.players
+                .get(&owner)
+                .map(|p| {
+                    p.data
+                        .items
+                        .iter()
+                        .filter(|i| {
+                            templates
+                                .as_deref()
+                                .and_then(|t| t.get(i.item_id))
+                                .is_some_and(|t| t.is_pet_item())
+                        })
+                        .map(|i| i.object_id)
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        self.summons.pet_world.no_row.extend(collars);
         for row in rows {
+            self.summons.pet_world.no_row.remove(&row.control_object_id);
             if row.restore && restore.is_none() {
                 restore = Some(row.control_object_id);
             }
@@ -1616,6 +1727,7 @@ impl World {
     /// `summon_on_owner_leave`; the pet's feed stops with its unsummon.
     pub(crate) fn pet_forget_owner(&mut self, owner: ObjectId) {
         self.summons.pet_world.pending_collar.remove(&owner);
+        self.summons.pet_world.row_pending.remove(&owner);
         self.summons.pet_world.restore_due.remove(&owner);
         self.summons.pet_world.have_inv_items.remove(&owner);
         self.summons.pet_world.saved.remove(&owner);

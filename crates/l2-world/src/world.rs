@@ -316,6 +316,11 @@ impl World {
                 request_id,
                 result,
             } => self.on_path_found(requester, request_id, result),
+            WorldCommand::PetRowLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => self.on_pet_row_loaded(owner, control_object_id, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();

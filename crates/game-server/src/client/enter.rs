@@ -27,8 +27,8 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect,
-    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -248,20 +248,7 @@ impl DbPlayerLoader {
         // missing row.
         match self.pets.pets_of_owner(char_id).await {
             Ok(rows) => {
-                data.profile.pet_rows = rows
-                    .into_iter()
-                    .map(|r| SavedPet {
-                        control_object_id: ObjectId(i32::try_from(r.item_obj_id).unwrap_or(0)),
-                        name: r.name.filter(|n| !n.is_empty()),
-                        level: i32::from(r.level),
-                        cur_hp: i32::try_from(r.cur_hp.unwrap_or(0)).unwrap_or(i32::MAX),
-                        cur_mp: i32::try_from(r.cur_mp.unwrap_or(0)).unwrap_or(i32::MAX),
-                        exp: i64::try_from(r.exp.unwrap_or(0)).unwrap_or(i64::MAX),
-                        sp: i64::from(r.sp.unwrap_or(0)),
-                        fed: i32::try_from(r.fed.unwrap_or(0)).unwrap_or(i32::MAX),
-                        restore: r.restore == "true",
-                    })
-                    .collect();
+                data.profile.pet_rows = rows.into_iter().map(crate::persist::saved_pet_of).collect();
             }
             Err(e) => warn!("Could not restore pet data for {}: {e}", data.name),
         }
@@ -269,12 +256,7 @@ impl DbPlayerLoader {
             Ok(rows) => {
                 data.profile.pet_effects = rows
                     .into_iter()
-                    .map(|r| SavedPetEffect {
-                        control_object_id: ObjectId(r.pet_obj_item_id),
-                        skill_id: r.skill_id,
-                        skill_level: r.skill_level,
-                        remaining_time: r.remaining_time,
-                    })
+                    .map(crate::persist::saved_pet_effect_of)
                     .collect();
             }
             Err(e) => warn!("Could not restore pet effect data for {}: {e}", data.name),

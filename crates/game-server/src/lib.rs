@@ -433,6 +433,10 @@ impl Server {
             .map_err(StartupError::WorldThread)?
         };
 
+        // The persistence task answers the reads the world asked for (the pet rows of a collar)
+        // with a command on the world's channel.
+        left_acks.set_world(world.handle());
+
         // D-14: the path workers answer with `WorldCommand::PathFound` on the world's channel.
         let geo = geo::Geo::start(
             geo_engine,

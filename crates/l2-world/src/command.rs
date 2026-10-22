@@ -249,6 +249,13 @@ pub enum WorldCommand {
         request_id: u64,
         result: l2_geo::PathResult,
     },
+    /// The answer to `PersistCommand::PetRowRequest`: the rows of the collar, or `Err` when the
+    /// read failed (the pet is then not summoned).
+    PetRowLoaded {
+        owner: l2_util::ObjectId,
+        control_object_id: l2_util::ObjectId,
+        result: Result<crate::summon::pet::PetRowData, ()>,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -276,6 +283,15 @@ impl fmt::Debug for WorldCommand {
                 f,
                 "PathFound({requester}, {request_id}, {})",
                 if result.path.is_ok() { "path" } else { "no path" }
+            ),
+            Self::PetRowLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => write!(
+                f,
+                "PetRowLoaded({owner}, {control_object_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
