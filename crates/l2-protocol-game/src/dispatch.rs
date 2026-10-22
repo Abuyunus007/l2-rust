@@ -31,6 +31,10 @@ use crate::client::{
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
+use crate::client::{
+    RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
+    RequestSendFriendMsg,
+};
 use crate::client::{RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem};
 use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
@@ -102,6 +106,18 @@ pub enum ClientPacket {
     RequestAnswerJoinParty(RequestAnswerJoinParty),
     RequestWithDrawalParty(RequestWithDrawalParty),
     RequestOustPartyMember(RequestOustPartyMember),
+    /// `REQUEST_FRIEND_INVITE` (0x77).
+    RequestFriendInvite(RequestFriendInvite),
+    /// `REQUEST_ANSWER_FRIEND_INVITE` (0x78).
+    RequestAnswerFriendInvite(RequestAnswerFriendInvite),
+    /// `REQUEST_FRIEND_LIST` (0x79).
+    RequestFriendList(RequestFriendList),
+    /// `REQUEST_FRIEND_DEL` (0x7A).
+    RequestFriendDel(RequestFriendDel),
+    /// `REQUEST_SEND_FRIEND_MSG` (0x6B).
+    RequestSendFriendMsg(RequestSendFriendMsg),
+    /// `REQUEST_BLOCK` (0xA9).
+    RequestBlock(RequestBlock),
     /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
     RequestChangePartyLeader(RequestChangePartyLeader),
     RequestBuyItem(RequestBuyItem),
@@ -280,6 +296,18 @@ pub fn decode_client(
         RequestOustPartyMember::OPCODE => {
             ClientPacket::RequestOustPartyMember(RequestOustPartyMember::decode(reader)?)
         }
+        RequestFriendInvite::OPCODE => {
+            ClientPacket::RequestFriendInvite(RequestFriendInvite::decode(reader)?)
+        }
+        RequestAnswerFriendInvite::OPCODE => {
+            ClientPacket::RequestAnswerFriendInvite(RequestAnswerFriendInvite::decode(reader)?)
+        }
+        RequestFriendList::OPCODE => ClientPacket::RequestFriendList(RequestFriendList::decode(reader)?),
+        RequestFriendDel::OPCODE => ClientPacket::RequestFriendDel(RequestFriendDel::decode(reader)?),
+        RequestSendFriendMsg::OPCODE => {
+            ClientPacket::RequestSendFriendMsg(RequestSendFriendMsg::decode(reader)?)
+        }
+        RequestBlock::OPCODE => ClientPacket::RequestBlock(RequestBlock::decode(reader)?),
         RequestBuyItem::OPCODE => ClientPacket::RequestBuyItem(RequestBuyItem::decode(reader)?),
         RequestSellItem::OPCODE => ClientPacket::RequestSellItem(RequestSellItem::decode(reader)?),
         TradeRequest::OPCODE => ClientPacket::TradeRequest(TradeRequest::decode(reader)?),
@@ -839,6 +867,53 @@ mod tests {
                 got,
                 in_game.then_some(ClientPacket::RequestBuySellUIClose(RequestBuySellUIClose)),
                 "{state:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn friend_and_block_packets_decode_in_game_only() {
+        // "Hi" as UTF-16LE with the terminator, then the receiver "A".
+        let send_msg = [b'H', 0, b'i', 0, 0, 0, b'A', 0, 0, 0];
+        assert_eq!(
+            decode(InGame, 0x6B, &send_msg).unwrap(),
+            Some(ClientPacket::RequestSendFriendMsg(RequestSendFriendMsg {
+                message: "Hi".into(),
+                receiver: "A".into(),
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x77, &[b'A', 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestFriendInvite(RequestFriendInvite {
+                name: "A".into()
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x78, &[1, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestAnswerFriendInvite(
+                RequestAnswerFriendInvite { response: 1 }
+            ))
+        );
+        assert_eq!(
+            decode(InGame, 0x79, &[]).unwrap(),
+            Some(ClientPacket::RequestFriendList(RequestFriendList))
+        );
+        assert_eq!(
+            decode(InGame, 0x7A, &[b'A', 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestFriendDel(RequestFriendDel {
+                name: "A".into()
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0xA9, &[4, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestBlock(RequestBlock { kind: 4, name: None }))
+        );
+        // Not accepted before the game.
+        for opcode in [0x6B, 0x77, 0x78, 0x79, 0x7A, 0xA9] {
+            assert_eq!(
+                decode(Authenticated, opcode, &ZEROS).unwrap(),
+                None,
+                "{opcode:#04x}"
             );
         }
     }

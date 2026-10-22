@@ -15,7 +15,7 @@
 // - zones: `ExSetCompassZoneCode` and the zone messages
 // - clans, sieges, Seven Signs (the period message), announcements, the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
-// - friends, contacts, teleport bookmarks, the mail check, premium items
+// - contacts, teleport bookmarks, the mail check, premium items (the friend list is in `friends.rs`)
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
 
@@ -24,8 +24,8 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExStorageMaxCount, ExUiSetting,
-    ExVoteSystemInfo, FriendList, HennaInfo, OtherShortcut, QuestList, ShortcutEntry, ShortcutInit,
-    SkillList, SkillListEntry, ValidateLocation,
+    ExVoteSystemInfo, HennaInfo, OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList,
+    SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
     ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ExShowContactList, ItemInfo, ItemList,
@@ -492,6 +492,8 @@ impl World {
         for bytes in self.after_spawn_packets(id) {
             self.send_bytes(id, bytes);
         }
+        // EnterWorld: "YOUR_FRIEND_S1_JUST_LOGGED_IN" to the friends who are online.
+        self.friends_announce_login(id);
         // Java `onPlayerEnter` -> `restoreEffects()`: the buffs of the last logout come back with
         // the time they had left (`effects/save.rs`).
         self.restore_saved_effects(id);
@@ -508,6 +510,8 @@ impl World {
         }
         // "You have recently been dismissed from a clan..." while the join penalty lasts.
         self.clan_join_penalty_message(id);
+        // Java `onPlayerEnter` -> `notifyFriends()`: the friends who are online see the login.
+        self.friends_notify_online(id);
         // Over-enchant protection.
         self.over_enchant_protection_on_enter(id);
 
@@ -642,8 +646,8 @@ impl World {
         // EtcStatusUpdate (the weight penalty comes from refreshOverloaded)
         packets.extend(self.etc_status_update(id).map(|p| p.to_bytes()));
         packets.push(storage_max_count(data, is_gm, &self.settings).to_bytes());
-        // FriendList: not loaded.
-        packets.push(FriendList::default().to_bytes());
+        // FriendList: the friend list the session loaded (M6-FRIEND-01).
+        packets.push(self.friend_list_packet(id).to_bytes());
         packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
         // Seven Signs period message, announcements: not ported. `if (showClanNotice)` the clan
         // notice (validation off), else the server news (not ported).
@@ -674,9 +678,9 @@ impl World {
             ),
             charges: self.charges_of(id),
             charged_souls: self.charged_souls_of(id),
-            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`: the refusal and the
-            // silence mode are not modelled.
-            chat_blocked: self.is_chat_banned(id),
+            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`: the silence mode is not
+            // modelled.
+            chat_blocked: self.is_chat_banned(id) || self.message_refusal(id),
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,

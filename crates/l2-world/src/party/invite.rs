@@ -84,8 +84,16 @@ impl World {
             );
             return;
         }
-        // M6: `BlockList.isBlocked(target, requestor)` ("S1 has placed you on his/her ignore
-        // list"): the block list is loaded with the friend list.
+        // Java `BlockList.isBlocked(target, requestor)`: the target refuses messages or blocks the
+        // requestor.
+        if self.is_blocked(target, requestor) {
+            self.send(
+                requestor,
+                &SystemMessage::new(SystemMessageId::S1HasPlacedYouOnHisHerIgnoreList)
+                    .with(text(&target_name)),
+            );
+            return;
+        }
         if target == requestor {
             self.party_plain_message(requestor, SystemMessageId::YouHaveInvitedTheWrongTarget);
             return;

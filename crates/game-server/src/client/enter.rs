@@ -15,10 +15,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use l2_db::{
-    CharacterRepository, CharacterRow, HennaRepository, HennaRow, ItemLocation, ItemRepository,
-    ItemReuseRepository, ItemReuseRow, MacroRepository, PetRepository, Pool, RecommendationRepository,
-    ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository, SummonRepository,
-    VariableRepository,
+    CharacterRepository, CharacterRow, FriendLink, FriendRepository, HennaRepository, HennaRow, ItemLocation,
+    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, PetRepository, Pool,
+    RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
+    SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::EnterWorld;
@@ -26,9 +26,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, EnchantInput, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
-    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, EnchantInput, FriendEntry, ItemData, LeaveReason, MacroCmdData, MacroData,
+    PacketSink, PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect,
+    ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -81,6 +81,7 @@ pub struct DbPlayerLoader {
     skills: SkillRepository,
     item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
+    friends: FriendRepository,
     hennas: HennaRepository,
     subclasses: SubclassRepository,
     macros: MacroRepository,
@@ -99,6 +100,7 @@ impl DbPlayerLoader {
             skills: SkillRepository::new(pool.clone()),
             item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
+            friends: FriendRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
@@ -304,6 +306,23 @@ impl DbPlayerLoader {
             })
             .collect();
 
+        // Java: Player.restoreFriendList (relation 0) and BlockList's loadList (relation 1). Like Java,
+        // a read that fails is logged and the list starts empty.
+        data.profile.friends = match self.friends.friends_of(char_id).await {
+            Ok(rows) => rows.into_iter().map(friend_entry_of).collect(),
+            Err(e) => {
+                warn!("Could not restore the friend list of {}: {e}", data.name);
+                Vec::new()
+            }
+        };
+        data.profile.block_list = match self.friends.block_list_of(char_id).await {
+            Ok(rows) => rows.into_iter().map(friend_entry_of).collect(),
+            Err(e) => {
+                warn!("Could not load the block list of {}: {e}", data.name);
+                Vec::new()
+            }
+        };
+
         // Java: restoreHenna (the active class index, like the skills and shortcuts)
         data.profile.hennas = henna_slots(&self.hennas.hennas_of(char_id, class_index).await?);
 
@@ -484,6 +503,14 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             clan: Some(clan_state_of(row)),
             ..PlayerProfile::default()
         },
+    }
+}
+
+/// A `character_friends` row as the world keeps it (Java `Player.getFriendList` / `BlockList`).
+fn friend_entry_of(link: FriendLink) -> FriendEntry {
+    FriendEntry {
+        object_id: link.friend_id,
+        name: link.name,
     }
 }
 
@@ -1015,6 +1042,20 @@ impl ClientSession {
                 response: p.response,
             },
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
+            ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },
+            ClientPacket::RequestAnswerFriendInvite(p) => {
+                ClientInput::AnswerFriendInvite { response: p.response }
+            }
+            ClientPacket::RequestFriendList(_) => ClientInput::FriendList,
+            ClientPacket::RequestFriendDel(p) => ClientInput::FriendDel { name: p.name },
+            ClientPacket::RequestSendFriendMsg(p) => ClientInput::SendFriendMsg {
+                message: p.message,
+                receiver: p.receiver,
+            },
+            ClientPacket::RequestBlock(p) => ClientInput::Block {
+                kind: p.kind,
+                name: p.name,
+            },
             // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
             // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
             // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute

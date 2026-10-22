@@ -179,6 +179,19 @@ pub enum ClientInput {
     JoinParty { name: String, distribution_type_id: i32 },
     /// Java `RequestAnswerJoinParty`: 1 accept, 0 decline, -1 the client refuses party requests.
     AnswerJoinParty { response: i32 },
+    /// Java `RequestFriendInvite`: ask `name` to become a friend.
+    FriendInvite { name: String },
+    /// Java `RequestAnswerFriendInvite`: 1 accepts the request, anything else refuses.
+    AnswerFriendInvite { response: i32 },
+    /// Java `RequestFriendList`: the friend list window.
+    FriendList,
+    /// Java `RequestFriendDel`: remove the friend called `name`.
+    FriendDel { name: String },
+    /// Java `RequestSendFriendMsg`: a private message to the friend `receiver`.
+    SendFriendMsg { message: String, receiver: String },
+    /// Java `RequestBlock`: 0 block and 1 unblock (with `name`), 2 the list, 3 refuse all messages,
+    /// 4 accept messages again.
+    Block { kind: i32, name: Option<String> },
     /// Java `RequestWithDrawalParty`: leave the party.
     WithdrawParty,
     /// Java `RequestOustPartyMember`: the leader expels `name`.

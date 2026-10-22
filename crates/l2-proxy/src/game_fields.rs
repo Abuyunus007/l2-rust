@@ -41,6 +41,7 @@ use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
+use l2_protocol_game::server::friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 use l2_protocol_game::server::gm_view::GmViewItemList;
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
@@ -229,6 +230,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestAnswerJoinParty(p) => object!(p => response),
         ClientPacket::RequestWithDrawalParty(_) => json!({}),
         ClientPacket::RequestOustPartyMember(p) => object!(p => name),
+        ClientPacket::RequestFriendInvite(p) => object!(p => name),
+        ClientPacket::RequestAnswerFriendInvite(p) => object!(p => response),
+        ClientPacket::RequestFriendList(_) => json!({}),
+        ClientPacket::RequestFriendDel(p) => object!(p => name),
+        ClientPacket::RequestSendFriendMsg(p) => object!(p => message, receiver),
+        ClientPacket::RequestBlock(p) => object!(p => kind, name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
         ClientPacket::RequestBuyItem(p) => {
             let items = p
@@ -393,6 +400,10 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::NetPing => decoded::<NetPing>(&mut r, net_ping_fields),
         ServerOpcode::LogOutOk => decoded::<LeaveWorld>(&mut r, no_fields),
         ServerOpcode::L2FriendList => decoded::<FriendList>(&mut r, friend_list_fields),
+        ServerOpcode::FriendAddRequest => decoded::<FriendAddRequest>(&mut r, friend_add_request_fields),
+        ServerOpcode::L2Friend => decoded::<FriendPacket>(&mut r, friend_packet_fields),
+        ServerOpcode::L2FriendStatus => decoded::<FriendStatusPacket>(&mut r, friend_status_fields),
+        ServerOpcode::L2FriendSay => decoded::<L2FriendSay>(&mut r, l2_friend_say_fields),
         ServerOpcode::ValidateLocation => decoded::<ValidateLocation>(&mut r, validate_location_fields),
         ServerOpcode::QuestList => decoded::<QuestList>(&mut r, quest_list_fields),
         ServerOpcode::SkillCoolTime => decoded::<SkillCoolTime>(&mut r, skill_cool_time_fields),
@@ -838,6 +849,22 @@ fn restart_response_fields(p: &RestartResponse) -> Value {
 
 fn net_ping_fields(p: &NetPing) -> Value {
     object!(p => game_time)
+}
+
+fn friend_add_request_fields(p: &FriendAddRequest) -> Value {
+    object!(p => requestor_name)
+}
+
+fn friend_packet_fields(p: &FriendPacket) -> Value {
+    object!(p => added, object_id, name, online)
+}
+
+fn friend_status_fields(p: &FriendStatusPacket) -> Value {
+    object!(p => online, name, object_id)
+}
+
+fn l2_friend_say_fields(p: &L2FriendSay) -> Value {
+    object!(p => sender, receiver, message)
 }
 
 fn friend_list_fields(p: &FriendList) -> Value {
@@ -1780,6 +1807,10 @@ mod tests {
         ServerOpcode::NetPing,
         ServerOpcode::LogOutOk,
         ServerOpcode::L2FriendList,
+        ServerOpcode::FriendAddRequest,
+        ServerOpcode::L2Friend,
+        ServerOpcode::L2FriendStatus,
+        ServerOpcode::L2FriendSay,
         ServerOpcode::ValidateLocation,
         ServerOpcode::QuestList,
         ServerOpcode::SkillCoolTime,

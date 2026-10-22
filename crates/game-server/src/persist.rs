@@ -26,6 +26,8 @@
 //   columns of offline members' `characters` rows, with Java's clan statements
 //   (`PersistCommand::Clan`, M6-CLAN-01),
 // - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
+// - `character_friends` rows of the friend list and the block list (`PersistCommand::Friend`,
+//   M6-FRIEND-01),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -51,18 +53,20 @@ use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::{
     BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate, ClanRepository, ClanUpdate,
-    GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository, ItemReuseRepository, ItemUpdate,
-    NewItem, NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
-    PetRepository, PetValues, Pool, PunishmentRepository, RecommendationRepository, ShortcutRepository,
-    SkillLevel, SkillRepository, SummonRepository, VariableRepository,
+    FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation, ItemRepository,
+    ItemReuseRepository, ItemUpdate, NewItem, NewItemReuse, NewPetSkillSave, NewPunishment, NewShortcut,
+    NewSkillSave, NewSummonSkillSave, PetRepository, PetValues, Pool, PunishmentRepository,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
+    VariableRepository,
 };
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    ClanRecord, ClanWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId, PersistCommand, PetRowData,
-    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, SavedEffect, SavedItemReuse,
-    SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent, ObjectId,
+    PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType,
+    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
+    SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -237,6 +241,14 @@ pub trait PlayerStore: Send + 'static {
                 effects: Vec::new(),
             })
         }
+    }
+
+    /// A `character_friends` row change (Java's friend and block list statements, M6-FRIEND-01).
+    fn store_friend_write(
+        &mut self,
+        _write: &FriendWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
     }
 }
 
@@ -602,6 +614,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Friend(write)) => {
+                // Java logs a failed friend statement and goes on (no retry).
+                if let Err(e) = store.store_friend_write(&write).await {
+                    error!("Friend data could NOT be stored ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::BuyList(row)) => {
@@ -1152,6 +1170,7 @@ pub struct DbStore {
     clans: ClanRepository,
     buylists: BuyListRepository,
     crests: CrestRepository,
+    friends: FriendRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -1176,7 +1195,8 @@ impl DbStore {
             punishments: PunishmentRepository::new(pool.clone()),
             buylists: BuyListRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
-            crests: CrestRepository::new(pool),
+            crests: CrestRepository::new(pool.clone()),
+            friends: FriendRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
             rows_written: HashSet::new(),
@@ -2105,6 +2125,17 @@ impl PlayerStore for DbStore {
             row: row.map(saved_pet_of),
             effects: effects.into_iter().map(saved_pet_effect_of).collect(),
         })
+    }
+
+    async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
+        let friends = &self.friends;
+        match write {
+            FriendWrite::AddFriends { first, second } => friends.add_friends(first.0, second.0).await?,
+            FriendWrite::RemoveFriends { first, second } => friends.remove_friends(first.0, second.0).await?,
+            FriendWrite::AddBlock { owner, target } => friends.add_block(owner.0, target.0).await?,
+            FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
+        }
+        Ok(())
     }
 
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
