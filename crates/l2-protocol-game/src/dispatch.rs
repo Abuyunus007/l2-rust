@@ -49,6 +49,7 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
+use crate::client::RequestExFishRanking;
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
     RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
@@ -228,6 +229,8 @@ pub enum ClientPacket {
     RequestDuelStart(RequestDuelStart),
     RequestDuelAnswerStart(RequestDuelAnswerStart),
     RequestDuelSurrender(RequestDuelSurrender),
+    /// `0xD0` 0x0018, an ex packet.
+    RequestExFishRanking(RequestExFishRanking),
     /// The mail packets (`0xD0` 0x0065 to 0x006F), ex packets.
     RequestPostItemList(RequestPostItemList),
     RequestSendPost(RequestSendPost),
@@ -574,6 +577,9 @@ fn decode_ex_client(
         }
         RequestDuelSurrender::EX_OPCODE => {
             ClientPacket::RequestDuelSurrender(RequestDuelSurrender::decode(reader)?)
+        }
+        RequestExFishRanking::EX_OPCODE => {
+            ClientPacket::RequestExFishRanking(RequestExFishRanking::decode(reader)?)
         }
         RequestPostItemList::EX_OPCODE => {
             ClientPacket::RequestPostItemList(RequestPostItemList::decode(reader)?)

@@ -27,6 +27,7 @@ use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
 use l2_protocol_game::server::effect_packets::FlyToLocation;
+use l2_protocol_game::server::fishing::{ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStartCombat};
 use l2_protocol_game::server::enchant::{
     ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
     ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
@@ -386,7 +387,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestChangePetName(p) => object!(p => name),
         ClientPacket::RequestDuelStart(p) => object!(p => player, party_duel),
         ClientPacket::RequestDuelAnswerStart(p) => object!(p => party_duel, unk1, response),
-        ClientPacket::RequestDuelSurrender(_) => json!({}),
+        ClientPacket::RequestDuelSurrender(_) | ClientPacket::RequestExFishRanking(_) => json!({}),
         ClientPacket::RequestPostItemList(_)
         | ClientPacket::RequestReceivedPostList(_)
         | ClientPacket::RequestSentPostList(_) => json!({}),
@@ -716,6 +717,18 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExDuelUpdateUserInfo => {
             decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
         }
+        ServerOpcode::ExFishingStart => {
+            decoded::<ExFishingStart>(&mut r, |p| object!(p => object_id, fish_type, x, y, z, night_lure))
+        }
+        ServerOpcode::ExFishingStartCombat => decoded::<ExFishingStartCombat>(
+            &mut r,
+            |p| object!(p => object_id, time, hp, mode, lure_type, deceptive_mode),
+        ),
+        ServerOpcode::ExFishingHpRegen => decoded::<ExFishingHpRegen>(
+            &mut r,
+            |p| object!(p => object_id, time, fish_hp, hp_mode, good_use, anim, penalty, hp_bar_color),
+        ),
+        ServerOpcode::ExFishingEnd => decoded::<ExFishingEnd>(&mut r, |p| object!(p => object_id, win)),
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
         ServerOpcode::RecipeBookItemList => {
             decoded::<RecipeBookItemList>(&mut r, |p| object!(p => is_common, max_mp, recipes))
@@ -2195,6 +2208,10 @@ mod tests {
         ServerOpcode::ExDuelStart,
         ServerOpcode::ExDuelEnd,
         ServerOpcode::ExDuelUpdateUserInfo,
+        ServerOpcode::ExFishingStart,
+        ServerOpcode::ExFishingStartCombat,
+        ServerOpcode::ExFishingHpRegen,
+        ServerOpcode::ExFishingEnd,
         ServerOpcode::PetDelete,
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,
@@ -4089,6 +4106,55 @@ mod tests {
             message: "Arrows".into(),
         };
         assert_eq!(s2c_fields(&msg.to_bytes())["message"], "Arrows");
+    }
+
+    #[test]
+    fn fishing_packets_show_their_fields() {
+        use l2_protocol_game::client::RequestExFishRanking;
+        use l2_protocol_game::server::fishing::{
+            ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStartCombat,
+        };
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &RequestExFishRanking.to_bytes()),
+            json!({})
+        );
+        let start = ExFishingStart {
+            object_id: 7,
+            fish_type: 4,
+            x: 1,
+            y: 2,
+            z: 3,
+            night_lure: true,
+        };
+        assert_eq!(
+            s2c_fields(&start.to_bytes()),
+            json!({ "object_id": 7, "fish_type": 4, "x": 1, "y": 2, "z": 3, "night_lure": true })
+        );
+        let combat = ExFishingStartCombat {
+            object_id: 7,
+            time: 24,
+            hp: 100,
+            mode: 1,
+            lure_type: 2,
+            deceptive_mode: 0,
+        };
+        assert_eq!(s2c_fields(&combat.to_bytes())["lure_type"], 2);
+        let regen = ExFishingHpRegen {
+            object_id: 7,
+            time: 23,
+            fish_hp: 90,
+            hp_mode: 1,
+            good_use: 1,
+            anim: 2,
+            penalty: 5,
+            hp_bar_color: 1,
+        };
+        assert_eq!(s2c_fields(&regen.to_bytes())["penalty"], 5);
+        let end = ExFishingEnd {
+            object_id: 7,
+            win: true,
+        };
+        assert_eq!(s2c_fields(&end.to_bytes()), json!({ "object_id": 7, "win": true }));
     }
 
     #[test]

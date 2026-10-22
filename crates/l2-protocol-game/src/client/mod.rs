@@ -169,6 +169,7 @@ pub mod duel;
 pub mod enchant;
 pub mod enchant_skill;
 pub mod enterworld;
+pub mod fishing;
 pub mod friend;
 pub mod handshake;
 pub mod ingame;
@@ -205,6 +206,7 @@ pub use enchant_skill::{
     RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
 };
 pub use enterworld::{EnterWorld, RequestKeyMapping};
+pub use fishing::RequestExFishRanking;
 pub use friend::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
