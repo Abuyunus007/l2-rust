@@ -132,8 +132,8 @@ pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{
-    ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, ShowTownMap, SocialAction,
-    StaticObjectInfo, TargetSelected, TargetUnselected,
+    ActionFailed, ChairSit, DoorInfo, DoorStatusUpdate, ExAskCoupleAction, MyTargetSelected, NpcHtmlMessage,
+    ShowTownMap, SocialAction, StaticObjectInfo, TargetSelected, TargetUnselected,
 };
 pub use items::{
     InventoryBlock, InventoryUpdate, ItemInfo, ItemList, ItemUpdate, read_inventory_block, read_item,
@@ -179,8 +179,8 @@ pub use store::{
     SellStoreEntry, StoreCandidate,
 };
 pub use summon::{
-    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
-    SummonInfo,
+    ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate,
+    SetSummonRemainTime, SummonInfo,
 };
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use trade::{

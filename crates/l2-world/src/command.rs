@@ -157,8 +157,18 @@ pub enum ClientInput {
         ctrl_pressed: bool,
         shift_pressed: bool,
     },
+    /// Java `AnswerCoupleAction`: the answer (1 approve, 0 cancel, -1 refused) to the couple
+    /// social action `object_id` asked for (see `actions.rs`).
+    AnswerCoupleAction {
+        action_id: i32,
+        answer: i32,
+        object_id: i32,
+    },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
+    /// The packets about the player's pet (`RequestPetGetItem`, `RequestGiveItemToPet`, ...), see
+    /// `summon/pet_items.rs`.
+    Pet(crate::summon::pet_items::PetInput),
     /// The shop packets (`RequestBuyItem`, `RequestSellItem`, `RequestRefundItem`,
     /// `RequestBuySellUIClose`), see `shop/`.
     Shop(crate::shop::ShopInput),
@@ -249,6 +259,13 @@ pub enum WorldCommand {
         request_id: u64,
         result: l2_geo::PathResult,
     },
+    /// The answer to `PersistCommand::PetRowRequest`: the rows of the collar, or `Err` when the
+    /// read failed (the pet is then not summoned).
+    PetRowLoaded {
+        owner: l2_util::ObjectId,
+        control_object_id: l2_util::ObjectId,
+        result: Result<crate::summon::pet::PetRowData, ()>,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -276,6 +293,15 @@ impl fmt::Debug for WorldCommand {
                 f,
                 "PathFound({requester}, {request_id}, {})",
                 if result.path.is_ok() { "path" } else { "no path" }
+            ),
+            Self::PetRowLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => write!(
+                f,
+                "PetRowLoaded({owner}, {control_object_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),

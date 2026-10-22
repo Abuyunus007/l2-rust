@@ -77,6 +77,7 @@ mod status_params;
 mod steal_abnormal;
 mod summon;
 mod summon_cubic;
+mod summon_pet;
 mod sweeper;
 mod target_me;
 mod teleport;
@@ -251,6 +252,8 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     // M6-SUMMON-01: servitors.
     registry.register("ServitorShare", servitor_share::ServitorShare::create);
     registry.register("Summon", summon::Summon::create);
+    // M6-PET-01.
+    registry.register("SummonPet", summon_pet::SummonPet::create);
     registry.register("Unsummon", unsummon::Unsummon::create);
     registry.register("ImmobilePetBuff", immobile_buff::ImmobilePetBuff::create);
     // M6-CUBIC-01: cubics.

@@ -16,3 +16,10 @@ pub enum DbError {
     #[error("invalid hexid: {0:?}")]
     InvalidHexId(String),
 }
+
+impl DbError {
+    /// The server refused a row because its key exists already (MySQL error 1062).
+    pub fn is_duplicate_key(&self) -> bool {
+        matches!(self, Self::Sqlx(sqlx::Error::Database(e)) if e.is_unique_violation())
+    }
+}

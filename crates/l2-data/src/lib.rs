@@ -28,6 +28,7 @@ pub mod loader;
 pub mod map_region;
 pub mod multisell;
 pub mod npc;
+pub mod pet;
 pub mod pet_skill;
 pub mod player_class;
 pub mod player_template;
@@ -76,6 +77,7 @@ pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
 pub use multisell::{MultisellData, MultisellLoadOptions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
+pub use pet::{PetData, PetDataTable, PetLevelData, PetSkillLearn};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
@@ -154,6 +156,8 @@ pub struct Datapack {
     pub augmentation_data: Arc<AugmentationData>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
+    /// `data/stats/pets/*.xml`: the pets, their food, skills and level numbers (M6-PET-01).
+    pub pets: Arc<PetDataTable>,
     /// `data/EnchantItemData.xml`: the enchant scrolls and support items (M6-ENCHANT-01).
     pub enchant_items: Arc<EnchantItemData>,
     /// `data/EnchantItemGroups.xml`: the success chances (M6-ENCHANT-01).
@@ -308,6 +312,7 @@ impl Datapack {
             augmentation_options,
             augmentation_data,
             pet_skills,
+            pets: Arc::new(PetDataTable::load(root)),
             enchant_items,
             enchant_groups,
             elemental_attributes,

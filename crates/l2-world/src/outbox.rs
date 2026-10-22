@@ -116,6 +116,14 @@ pub enum PersistCommand {
     /// Java `Product.save()`: `INSERT INTO buylists ... ON DUPLICATE KEY UPDATE` for one limited
     /// product whose stock changed, see `shop/`.
     BuyList(crate::shop::ProductRow),
+    /// Asks the persistence task to read the `pets` row and the `character_pet_skills_save` rows
+    /// of a pet collar the world has no row for (a collar that came to the character after the
+    /// login). The answer comes back as `WorldCommand::PetRowLoaded` (M6-PET-01, D-15: the world
+    /// never waits for the database).
+    PetRowRequest {
+        owner: ObjectId,
+        control_object_id: ObjectId,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

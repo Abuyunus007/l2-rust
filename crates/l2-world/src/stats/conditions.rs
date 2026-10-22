@@ -221,9 +221,20 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         },
         Condition::PlayerAgathionId { agathion_id } => a.is_player() && *agathion_id == 0,
         Condition::PlayerCloakStatus { value } => a.is_player() && a.can_equip_cloak() == *value,
-        // `_controlItemIds == null` (the list `0`) is true; otherwise nobody has a pet.
+        // `_controlItemIds == null` (the list `0`) is true; otherwise the effector's summon is a
+        // pet whose collar is one of the ids.
         Condition::PlayerHasPet { control_item_ids } => {
-            control_item_ids.len() == 1 && control_item_ids[0] == 0
+            if control_item_ids.len() == 1 && control_item_ids[0] == 0 {
+                return true;
+            }
+            let world = a.world();
+            let Some(player) = world.acting_player(a.object_id()) else {
+                return false;
+            };
+            world
+                .summon_of(player)
+                .and_then(|summon| world.pet_control_item(summon))
+                .is_some_and(|collar| control_item_ids.contains(&collar.item_id))
         }
         // `player.hasSummon()` and its id in the list (`0` alone is "any summon").
         Condition::PlayerServitorNpcId { npc_ids } => {

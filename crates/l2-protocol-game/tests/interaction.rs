@@ -249,6 +249,37 @@ fn social_action_layout() {
 }
 
 #[test]
+fn chair_sit_layout() {
+    // Java: the player's object id, then the static object id of the chair.
+    let packet = l2_protocol_game::server::ChairSit {
+        object_id: 0x1000_0010,
+        static_object_id: 24_190_001,
+    };
+    let expected = Bytes::default()
+        .byte(0xED)
+        .int(0x1000_0010)
+        .int(24_190_001)
+        .done();
+    check_round_trip(&packet, &expected, 1);
+}
+
+#[test]
+fn ex_ask_couple_action_layout() {
+    // Java `writeImpl`: the action id first, then the object id of the player who asks.
+    let packet = l2_protocol_game::server::ExAskCoupleAction {
+        object_id: 0x1000_0010,
+        action_id: 17,
+    };
+    let expected = Bytes::default()
+        .byte(0xFE)
+        .short(0xBB)
+        .int(17)
+        .int(0x1000_0010)
+        .done();
+    check_round_trip(&packet, &expected, 3);
+}
+
+#[test]
 fn show_town_map_layout() {
     let packet = l2_protocol_game::server::ShowTownMap {
         texture: "town_map.gludio".into(),

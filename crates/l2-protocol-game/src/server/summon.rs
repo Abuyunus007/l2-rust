@@ -568,6 +568,17 @@ server_packet!(
     }
 );
 
+// Java: gameserver/network/serverpackets/ExChangeNpcState.java
+server_packet!(
+    /// The state of an NPC changes (`EX_CHANGE_NPC_STATE`). A pet sends `0x64` to its owner when it
+    /// runs out of food and `0x65` when it has food again (`Pet.setCurrentFed`).
+    ExChangeNpcState,
+    ExChangeNpcState {
+        object_id: i32,
+        state: i32,
+    }
+);
+
 // Java: gameserver/network/serverpackets/PetItemList.java
 /// The pet's inventory (`PET_ITEM_LIST`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

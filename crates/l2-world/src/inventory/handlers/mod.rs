@@ -17,10 +17,11 @@
 // - `consume.rs`: `Player.destroyItem(process, objectId, count, ...)`.
 // - `shots.rs`: the soulshot and spiritshot handlers (M5-SHOT-01); `use_item_with_handler` tries
 //   them first.
+// - `SummonItems` (a pet collar) and `PetFood` are handlers of the pet code (M6-PET-01).
 //
 // # Left out on purpose
-// - Pets: `Playable` is a player here (summons and pets are M6), so every `isPet()` branch is
-//   dead and left out.
+// - Pets: `SummonItems` and `PetFood` are in `summon/pet.rs` and `summon/pet_items.rs`; a pet's
+//   item skills go through `item_skills.rs` with the pet as the user (its two `isPet()` branches).
 // - Events (`isOnEvent`) and the olympiad (`isInOlympiadMode`) are not modelled.
 
 mod book;

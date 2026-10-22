@@ -10,6 +10,7 @@
 //! - Refer to other objects by id ([`ObjectId`]), never by reference (D-11).
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
+pub mod actions;
 pub mod admin;
 pub mod ai;
 pub mod augment;
@@ -124,6 +125,8 @@ pub use stats::{
     StatView,
 };
 pub use status::RegenSettings;
+pub use summon::pet::{PetRowData, PetRowWrite, PetSettings, PetState, SavedPet, SavedPetEffect};
+pub use summon::pet_items::PetInput;
 pub use summon::servitor::{SavedSummonEffect, SummonSkillSave, SummonWrite};
 pub use summon::{Summon, SummonKind, SummonSettings};
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};

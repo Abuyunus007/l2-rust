@@ -73,6 +73,16 @@ impl World {
         })
     }
 
+    /// Java `Summon.getWeapon()` and `getArmor()`: a pet's right hand and chest items, 0 for a
+    /// servitor.
+    fn summon_weapon_and_armor(&self, summon: ObjectId) -> (i32, i32) {
+        if self.is_pet(summon) {
+            (self.pet_weapon_id(summon), self.pet_armor_id(summon))
+        } else {
+            (0, 0)
+        }
+    }
+
     /// The owner's PvP flag and karma (`Summon.getPvpFlag()` / `getKarma()`).
     fn summon_flag_and_karma(&self, summon: ObjectId) -> (i32, i32) {
         match self.summon_owner(summon) {
@@ -86,7 +96,9 @@ impl World {
 
     /// A pet's food or a servitor's life time: `(current, max)`.
     fn summon_fed(&self, summon: ObjectId) -> (i32, i32) {
-        // A pet's food is PET-01's.
+        if self.is_pet(summon) {
+            return (self.pet_current_fed(summon), self.pet_max_fed(summon));
+        }
         self.summon(summon)
             .and_then(|s| s.servitor.as_ref())
             .map_or((0, 0), |s| (s.life_time_remaining, s.life_time))
@@ -107,6 +119,8 @@ impl World {
             SummonKind::Servitor => String::new(),
         };
         let effects = self.abnormal_visual_effects(summon);
+        let is_pet = state.kind == SummonKind::Pet;
+        let (weapon, armor) = self.summon_weapon_and_armor(summon);
         Some(PetInfo {
             summon_type: state.kind.summon_type(),
             object_id: summon.0,
@@ -127,9 +141,9 @@ impl World {
             attack_speed_multiplier: f64::from(common.attack_speed_multiplier),
             collision_radius: f64::from(common.collision_radius),
             collision_height: f64::from(common.collision_height),
-            // `getWeapon()` / `getArmor()`: 0 for a servitor (a pet's are PET-01's).
-            weapon: 0,
-            armor: 0,
+            // `getWeapon()` / `getArmor()`: 0 for a servitor.
+            weapon,
+            armor,
             // "when pet is dead and player exit game, pet doesn't show master name"
             has_owner: self.players.contains_key(&state.owner),
             running: npc.movement.running,
@@ -152,7 +166,11 @@ impl World {
             exp_for_this_level: self.summon_exp_for_this_level(summon),
             exp_for_next_level: self.summon_exp_for_next_level(summon),
             // A servitor carries nothing (`isPet() ? inventory weight : 0`).
-            weight: 0,
+            weight: if is_pet {
+                self.summon_owner(summon).map_or(0, |o| self.pet_total_weight(o))
+            } else {
+                0
+            },
             max_load: stats.max_load(),
             p_atk: stats.p_atk(None) as i32,
             p_def: stats.p_def(None) as i32,
@@ -166,7 +184,7 @@ impl World {
             casting_speed: stats.m_atk_spd(),
             abnormal_visual_effects: effects.0,
             // `isMountable()`: no servitor is (striders and wyverns are pets).
-            mountable: false,
+            mountable: is_pet && l2_data::pet::is_mountable(template.id),
             water_or_flying: common.water_or_flying,
             // `getTeam()`: the owner's; no events set a team yet.
             team_id: 0,
@@ -248,8 +266,8 @@ impl World {
             attack_speed_multiplier: common.attack_speed_multiplier,
             collision_radius: common.collision_radius,
             collision_height: common.collision_height,
-            weapon: 0,
-            armor: 0,
+            weapon: self.summon_weapon_and_armor(summon).0,
+            armor: self.summon_weapon_and_armor(summon).1,
             in_combat: self.summon_in_combat(summon),
             alike_dead: self.is_alike_dead(summon),
             spawn_state: common.spawn_state,
@@ -288,8 +306,12 @@ impl World {
                 self.send(viewer, &info);
             }
             // The PetInfo packet wipes the PartySpelled (list of active spells' icons). Re-add
-            // them. (A pet's `PetItemList` is PET-01's.)
+            // them.
             self.summon_update_effect_icons(summon);
+            if self.is_pet(summon) {
+                let list = self.pet_item_list(owner);
+                self.send(viewer, &list);
+            }
         } else if let Some(info) = self.summon_info(summon, viewer, 0) {
             self.send(viewer, &info);
         }

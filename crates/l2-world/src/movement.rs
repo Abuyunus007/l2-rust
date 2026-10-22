@@ -591,7 +591,8 @@ impl World {
 
         // Finally move to the target location.
         self.set_intention_move_to(id, target_x, target_y, target_z);
-        // Java `player.onActionRequest()`: spawn protection is not modelled.
+        // Java `player.onActionRequest()`: only the pet restore is modelled (`summon/pet.rs`).
+        self.on_action_request(id);
     }
 
     /// Java `ValidatePosition.runImpl`.
@@ -796,8 +797,15 @@ impl World {
         }
     }
 
-    /// Java `CreatureAI.notifyActionArrived`.
+    /// Java `CreatureAI.notifyActionArrived`: the `NextAction` of the `finally` runs after every
+    /// way out of the body (`actions.rs`).
     pub(crate) fn notify_action_arrived(&mut self, id: ObjectId) {
+        self.notify_action_arrived_body(id);
+        self.fire_arrived_next_action(id);
+    }
+
+    /// The `try` block of `CreatureAI.notifyActionArrived`.
+    fn notify_action_arrived_body(&mut self, id: ObjectId) {
         // A summon thinks like any `CreatureAI` (its own think is `SummonAI`'s).
         if self.is_npc(id) || self.is_summon(id) {
             self.npc_notify_action_arrived(id);
@@ -1801,7 +1809,10 @@ impl World {
             return true;
         }
         if let Some(n) = self.npcs.get(&id) {
-            return self.is_alike_dead(id) || n.movement.teleporting;
+            // `isOverloaded()` of a pet that carries too much (`Pet.refreshOverloaded`).
+            return self.is_alike_dead(id)
+                || n.movement.teleporting
+                || self.pet_state(id).is_some_and(|p| p.overloaded);
         }
         self.players.get(&id).is_none_or(|p| {
             self.is_overloaded(p) || p.core.cur_hp < 0.5 || self.is_alike_dead(id) || p.movement.teleporting

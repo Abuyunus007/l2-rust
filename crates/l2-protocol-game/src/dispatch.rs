@@ -19,7 +19,7 @@ use crate::client::{
     RequestTargetCanceld, RequestUnEquipItem, RequestVoteNew, RequestWithDrawalParty, Say2,
     SendBypassBuildCmd, UseItem, ValidatePosition,
 };
-use crate::client::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+use crate::client::{AddTradeItem, AnswerCoupleAction, AnswerTradeRequest, TradeDone, TradeRequest};
 use crate::client::{
     AllyDismiss, AllyLeave, RequestAllyCrest, RequestAllyInfo, RequestAnswerJoinAlly,
     RequestAnswerJoinPledge, RequestDismissAlly, RequestExPledgeCrestLarge, RequestExSetPledgeCrestLarge,
@@ -83,6 +83,7 @@ pub enum ClientPacket {
     /// `ATTACK` (0x01) and `ATTACK_REQUEST` (0x32): Java's `AttackRequest` for both.
     AttackRequest(AttackRequest),
     RequestActionUse(RequestActionUse),
+    AnswerCoupleAction(AnswerCoupleAction),
     RequestRestartPoint(RequestRestartPoint),
     UseItem(UseItem),
     RequestUnEquipItem(RequestUnEquipItem),
@@ -426,6 +427,9 @@ fn decode_ex_client(
         }
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
         RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
+        AnswerCoupleAction::EX_OPCODE => {
+            ClientPacket::AnswerCoupleAction(AnswerCoupleAction::decode(reader)?)
+        }
         RequestChangePartyLeader::EX_OPCODE => {
             ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
         }

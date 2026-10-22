@@ -134,7 +134,14 @@ impl World {
         }
         let mut removed = self.remove_inventory_item(id, object_id)?;
         // `ItemManager.destroyItem`: nothing left, nobody's, nowhere.
-        // NOTE: Java also deletes the `pets` row of a pet collar here; pets are not modelled.
+        // `ItemManager.destroyItem`: "If it's a pet control item, delete the pet as well."
+        if self
+            .item_templates()
+            .and_then(|t| t.get(removed.item_id).map(|t| t.is_pet_item()))
+            .unwrap_or(false)
+        {
+            self.pet_row_deleted(removed.object_id);
+        }
         removed.count = 0;
         removed.loc = LOC_VOID.to_string();
         removed.loc_data = 0;
@@ -234,7 +241,22 @@ impl World {
             count = item.count;
         }
 
-        // A pet collar of an active pet or mount is refused here; pets are not modelled.
+        if template.is_pet_item() {
+            // Check if the player has a summoned pet or mount active with the same object ID.
+            if self
+                .summon_of(id)
+                .is_some_and(|s| self.pet_control_object_id(s) == Some(object_id))
+            {
+                self.send(
+                    id,
+                    &SystemMessage::new(
+                        SystemMessageId::AsYourPetIsCurrentlyOutItsSummoningItemCannotBeDestroyed,
+                    ),
+                );
+                return;
+            }
+            self.pet_row_deleted(object_id);
+        }
 
         if item.loc == LOC_PAPERDOLL {
             self.send(
@@ -337,6 +359,8 @@ impl World {
                     .as_ref()
                     .is_none_or(|i| !i.is_augmented() || settings.alt_allow_augment_trade))
                 && !(gm && settings.gm_trade_restricted_items))
+            // `(item.getItemType() == PET_COLLAR) && player.havePetInvItems()`.
+            || (template.is_some_and(|t| t.is_pet_item()) && self.have_pet_inv_items(id))
             || self.is_inside_zone(id, ZoneId::NoItemDrop);
         let (Some(item), Some(template)) = (item, template) else {
             self.send(id, &discard_refused);

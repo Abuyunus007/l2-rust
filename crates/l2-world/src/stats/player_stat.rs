@@ -279,6 +279,13 @@ impl<'w> StatView<'w> {
 
     /// Java `getCurrentLoad()`.
     pub fn current_load(&self) -> i32 {
+        // `Pet`: the weight of its own inventory.
+        if self.is_pet() {
+            return self
+                .world()
+                .summon_owner(self.object_id())
+                .map_or(0, |o| self.world().pet_total_weight(o));
+        }
         self.player()
             .map_or(0, |p| crate::enter::current_load(&p.data, &*self.world().data))
     }
@@ -286,7 +293,7 @@ impl<'w> StatView<'w> {
     /// Java `Creature.getMaxLoad()`: `floor(CON bonus * 69000 * AltWeightLimit)` through
     /// `WEIGHT_LIMIT`; 0 for anything but a player (and pets, later).
     pub fn max_load(&self) -> i32 {
-        if !self.is_player() {
+        if !self.is_player() && !self.is_pet() {
             return 0;
         }
         let base = (self.bonus(super::BaseStat::Con) * 69_000.0 * self.settings().alt_weight_limit).floor();
@@ -295,7 +302,7 @@ impl<'w> StatView<'w> {
 
     /// Java `getBonusWeightPenalty()`.
     pub fn bonus_weight_penalty(&self) -> i32 {
-        if !self.is_player() {
+        if !self.is_player() && !self.is_pet() {
             return 0;
         }
         self.calc_stat(Stat::WeightPenalty, 1.0, Some(self.object_id()), None) as i32

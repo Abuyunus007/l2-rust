@@ -54,14 +54,21 @@ impl World {
         true
     }
 
-    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory and
-    /// is not the enchant scroll in use.
-    // The control item of a summoned pet, the saddle of a mount and a cursed weapon refuse here as
-    // well; none of them exists yet (summons are a later M6 card, mounts and cursed weapons are
-    // not ported).
+    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory, is
+    /// not the control item of the summoned pet and is not the enchant scroll in use.
+    // The saddle of a mount and a cursed weapon refuse here as well; mounts and cursed weapons are
+    // not ported.
     pub(crate) fn validate_item_manipulation(&self, player: ObjectId, object_id: ObjectId) -> bool {
-        self.inventory_item(player, object_id).is_some()
-            && self.active_enchant_item(player) != Some(object_id)
+        if self.inventory_item(player, object_id).is_none() {
+            return false;
+        }
+        // Pet is summoned and not the item that summoned the pet.
+        if let Some(summon) = self.summon_of(player)
+            && self.pet_control_object_id(summon) == Some(object_id)
+        {
+            return false;
+        }
+        self.active_enchant_item(player) != Some(object_id)
     }
 
     /// Java `Player.checkItemManipulation(objectId, count, action)`: the item if the player owns
