@@ -163,6 +163,12 @@ pub trait StaticData: Send + Sync {
     fn augmentation_option(&self, _id: i32) -> Option<&l2_data::AugmentationOption> {
         None
     }
+
+    /// Java `EnchantSkillGroupsData`: the enchant groups and the enchant routes of the skills.
+    /// The default (no datapack) has none, so no skill is enchantable.
+    fn enchant_skill_groups(&self) -> Option<std::sync::Arc<l2_data::EnchantSkillGroupsData>> {
+        None
+    }
 }
 
 impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
@@ -228,6 +234,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
         (**self).augmentation_option(id)
+    }
+
+    fn enchant_skill_groups(&self) -> Option<std::sync::Arc<l2_data::EnchantSkillGroupsData>> {
+        (**self).enchant_skill_groups()
     }
 }
 

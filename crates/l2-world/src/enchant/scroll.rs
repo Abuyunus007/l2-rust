@@ -78,16 +78,28 @@ impl World {
         ))
     }
 
-    /// Java `Item.setEnchantLevel(level)`: never below 0. The enchant options (`applyEnchantStats`)
-    /// are not modelled. The row is written by the caller (`updateDatabase()`).
+    /// Java `Item.setEnchantLevel(level)`: never below 0. A worn item changes its enchant options
+    /// (`clearEnchantStats()` before, `applyEnchantStats()` after; see `stats/skills.rs`). The row
+    /// is written by the caller (`updateDatabase()`).
     pub(crate) fn set_item_enchant_level(&mut self, id: ObjectId, object_id: ObjectId, level: i32) {
         let new_level = level.max(0);
+        let current = self.inventory_item(id, object_id).map(|i| i.enchant_level);
+        if current == Some(new_level) {
+            // `if (_enchantLevel == newLevel) return;`
+            return;
+        }
+        let mut stats = self.clear_enchant_stats(id, object_id);
         if let Some(item) = self
             .players
             .get_mut(&id)
             .and_then(|p| p.data.items.iter_mut().find(|i| i.object_id == object_id))
         {
             item.enchant_level = new_level;
+        }
+        stats.extend(self.apply_enchant_stats(id, object_id));
+        if !stats.is_empty() {
+            self.broadcast_modified_stats(id, &stats);
+            self.refresh_max_vitals(id, false);
         }
     }
 

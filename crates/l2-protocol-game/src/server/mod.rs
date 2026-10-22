@@ -75,6 +75,7 @@ pub mod combat;
 pub mod duel;
 pub mod effect_packets;
 pub mod enchant;
+pub mod enchant_skill;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -118,6 +119,9 @@ pub use enchant::{
     ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
     ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
     ExShowBaseAttributeCancelWindow,
+};
+pub use enchant_skill::{
+    ExEnchantSkillInfo, ExEnchantSkillInfoDetail, ExEnchantSkillList, ExEnchantSkillResult,
 };
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,

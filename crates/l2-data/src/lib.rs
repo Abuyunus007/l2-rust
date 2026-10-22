@@ -14,6 +14,8 @@ pub mod cubic;
 pub mod door;
 pub mod enchant;
 pub mod enchant_hp_bonus;
+pub mod enchant_options;
+pub mod enchant_skill;
 pub mod experience;
 pub mod fence;
 pub mod henna;
@@ -60,6 +62,8 @@ pub use enchant::{
     EnchantScroll, EnchantSupportItem, EnchantTarget,
 };
 pub use enchant_hp_bonus::EnchantHpBonus;
+pub use enchant_options::EnchantItemOptions;
+pub use enchant_skill::{EnchantSkillGroup, EnchantSkillGroupsData, EnchantSkillHolder, EnchantSkillLearn};
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
 pub use henna::{Henna, Hennas};
@@ -159,6 +163,8 @@ pub struct Datapack {
     pub enchant_groups: Arc<EnchantItemGroups>,
     /// `data/ElementalAttributeData.xml`: the element stones (M6-ENCHANT-01).
     pub elemental_attributes: Arc<ElementalAttributeData>,
+    /// `data/EnchantSkillGroups.xml` and the enchant routes of the skills (M6-ENCHANT-02).
+    pub enchant_skill_groups: Arc<EnchantSkillGroupsData>,
     /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
     pub cubics: Arc<CubicData>,
 }
@@ -256,7 +262,12 @@ impl Datapack {
             skills.get(id, level).is_some()
         }));
         // Java loads ItemData before MultisellData (every ingredient looks its template up).
-        let items = Arc::new(ItemTemplates::load(root, options.custom_items_load));
+        let mut items = ItemTemplates::load(root, options.custom_items_load);
+        // Java loads `EnchantItemOptionsData` after `ItemData` and `OptionData`. The options go to the
+        // templates (`ItemTemplate::enchant_options`) before the table is shared.
+        let enchant_item_options = EnchantItemOptions::load(root, &items, &augmentation_options);
+        items.attach_enchant_options(&enchant_item_options);
+        let items = Arc::new(items);
         let multisell = Arc::new(MultisellData::load(
             root,
             &items,
@@ -270,6 +281,10 @@ impl Datapack {
         let enchant_items = Arc::new(EnchantItemData::load(root, &items));
         let enchant_groups = Arc::new(EnchantItemGroups::load(root));
         let elemental_attributes = Arc::new(ElementalAttributeData::load(root, &items));
+        let enchant_skill_groups = Arc::new(EnchantSkillGroupsData::load(
+            root,
+            options.skills.custom_skills_load,
+        ));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -309,6 +324,7 @@ impl Datapack {
             enchant_items,
             enchant_groups,
             elemental_attributes,
+            enchant_skill_groups,
             cubics: Arc::new(CubicData::load(root)),
         })
     }

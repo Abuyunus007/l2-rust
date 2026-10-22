@@ -386,6 +386,10 @@ impl StaticData for DatapackData {
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
         self.datapack.augmentation_options.get(id)
     }
+
+    fn enchant_skill_groups(&self) -> Option<Arc<l2_data::EnchantSkillGroupsData>> {
+        Some(Arc::clone(&self.datapack.enchant_skill_groups))
+    }
 }
 
 /// The values exp, SP and levels read (Java `RatesConfig`, `PlayerConfig`). `MaxSp` is a `long`
@@ -625,6 +629,10 @@ pub fn enchant_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Enc
         enchant_chance_element_jewel: p.enchant_chance_element_jewel,
         enchant_chance_element_energy: p.enchant_chance_element_energy,
         log_item_enchants: config.general.log_item_enchants,
+        log_skill_enchants: config.general.log_skill_enchants,
+        es_sp_book_needed: p.es_sp_book_needed,
+        normal_enchant_cost_multiplier: config.general.normal_enchant_cost_multiplier,
+        safe_enchant_cost_multiplier: config.general.safe_enchant_cost_multiplier,
         ..EnchantSettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(PlayerConfig::FILE)) {

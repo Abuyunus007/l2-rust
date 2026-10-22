@@ -167,6 +167,7 @@ pub mod combat;
 pub mod couple;
 pub mod duel;
 pub mod enchant;
+pub mod enchant_skill;
 pub mod enterworld;
 pub mod friend;
 pub mod handshake;
@@ -196,6 +197,10 @@ pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 pub use enchant::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
     RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
+};
+pub use enchant_skill::{
+    RequestExEnchantSkill, RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail,
+    RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
 };
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use friend::{

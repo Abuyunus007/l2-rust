@@ -106,13 +106,16 @@ pub fn item_info(item: &ItemData, st: &ItemStatic, template: Option<&ItemTemplat
             item.element_def_attr(element as i32, template) as i16
         }),
         mana: item.mana_left,
+        // `item.getEnchantOptions()`: the low 16 bits of the three option ids.
+        enchant_options: template.map_or([0; 3], |t| {
+            t.enchant_options_at(item.enchant_level).map(|id| id as i16)
+        }),
         // `isTimeLimitedItem() ? (int) (getRemainingTime() / 1000) : -9999`
         time: if item.time > 0 {
             ((item.time - now_ms) / 1000) as i32
         } else {
             -9999
         },
-        ..ItemInfo::plain(item.object_id.0, st.display_id, item.count)
     }
 }
 
@@ -160,6 +163,21 @@ pub fn gm_view_item_list(
     }
 }
 
+/// Java `Player.sendSkillList()`, the `isEnchantable` part: the skill has levels above 99
+/// (`SkillData.isEnchantable`) and an enchant route that the skill's level reached
+/// (`EnchantSkillLearn.getBaseLevel()`).
+pub fn skill_is_enchantable(st: &dyn StaticData, skill_id: i32, level: i32) -> bool {
+    st.stat_data().is_some_and(|d| d.skills.is_enchantable(skill_id))
+        && st
+            .enchant_skill_groups()
+            .and_then(|groups| {
+                groups
+                    .skill_enchantment_by_skill_id(skill_id)
+                    .map(|esl| esl.base_level)
+            })
+            .is_some_and(|base| level >= base)
+}
+
 /// Java `Player.sendSkillList()` for a character without transformation or clan.
 pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
     SkillList {
@@ -170,10 +188,9 @@ pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
                 id: skill.skill_id,
                 level: skill.skill_level,
                 passive: st.skill_is_passive(skill.skill_id),
-                // Java: a clan skill of a clan with negative reputation; `enchanted` needs the
-                // skill enchant tables. Neither exists yet.
+                // Java: a clan skill of a clan with negative reputation: not known here.
                 disabled: false,
-                enchanted: false,
+                enchanted: skill_is_enchantable(st, skill.skill_id, skill.skill_level),
             })
             .collect(),
     }

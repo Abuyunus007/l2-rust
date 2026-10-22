@@ -1111,6 +1111,41 @@ impl ClientSession {
                     element: p.element,
                 })
             }
+            // Java: RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail, RequestExEnchantSkill,
+            // RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain, RequestExEnchantSkillRouteChange
+            ClientPacket::RequestExEnchantSkillInfo(p) => ClientInput::Enchant(EnchantInput::SkillInfo {
+                skill_id: p.skill_id,
+                skill_level: p.skill_level,
+            }),
+            ClientPacket::RequestExEnchantSkillInfoDetail(p) => {
+                ClientInput::Enchant(EnchantInput::SkillInfoDetail {
+                    kind: p.kind,
+                    skill_id: p.skill_id,
+                    skill_level: p.skill_level,
+                })
+            }
+            ClientPacket::RequestExEnchantSkill(p) => ClientInput::Enchant(EnchantInput::EnchantSkill {
+                skill_id: p.skill_id,
+                skill_level: p.skill_level,
+            }),
+            ClientPacket::RequestExEnchantSkillSafe(p) => {
+                ClientInput::Enchant(EnchantInput::EnchantSkillSafe {
+                    skill_id: p.skill_id,
+                    skill_level: p.skill_level,
+                })
+            }
+            ClientPacket::RequestExEnchantSkillUntrain(p) => {
+                ClientInput::Enchant(EnchantInput::UntrainSkill {
+                    skill_id: p.skill_id,
+                    skill_level: p.skill_level,
+                })
+            }
+            ClientPacket::RequestExEnchantSkillRouteChange(p) => {
+                ClientInput::Enchant(EnchantInput::ChangeSkillRoute {
+                    skill_id: p.skill_id,
+                    skill_level: p.skill_level,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
