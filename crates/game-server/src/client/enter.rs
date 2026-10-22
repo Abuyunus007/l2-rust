@@ -16,8 +16,8 @@ use std::time::Duration;
 
 use l2_db::{
     CharacterRepository, CharacterRow, FriendLink, FriendRepository, HennaRepository, HennaRow, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, PetRepository, Pool,
-    RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
+    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, MessageRepository, PetRepository,
+    Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
     SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
@@ -26,9 +26,10 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, EnchantInput, FriendEntry, ItemData, LeaveReason, MacroCmdData, MacroData,
-    MailInput, PacketSink, PetInput, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse,
-    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FriendEntry, ItemData, LeaveReason,
+    MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
+    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
+    WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -90,6 +91,8 @@ pub struct DbPlayerLoader {
     summons: SummonRepository,
     pets: PetRepository,
     clans: l2_db::ClanRepository,
+    messages: MessageRepository,
+    recipes: l2_db::RecipeRepository,
 }
 
 impl DbPlayerLoader {
@@ -108,7 +111,9 @@ impl DbPlayerLoader {
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
             pets: PetRepository::new(pool.clone()),
-            clans: l2_db::ClanRepository::new(pool),
+            clans: l2_db::ClanRepository::new(pool.clone()),
+            messages: MessageRepository::new(pool.clone()),
+            recipes: l2_db::RecipeRepository::new(pool),
         }
     }
 
@@ -204,6 +209,10 @@ impl DbPlayerLoader {
         // account (`_chars`) with their freight, which `RequestPackageSend` adds to. Java catches
         // a failed read ("Could not restore container") and goes on with an empty container.
         data.profile.warehouse = self.load_warehouses(char_id, &data.account).await;
+
+        // Java: Player.load -> restoreRecipeBook(true) and (with `StoreRecipeShopList`)
+        // restoreRecipeShopList(). A failed read is logged and the character goes on without.
+        data.profile.recipes = self.load_recipes(char_id).await;
 
         // Java: restoreSkills
         let mut skills = self.skills.skills_of(char_id, class_index).await?;
@@ -353,12 +362,46 @@ impl DbPlayerLoader {
                 Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
             }
         }
+
+        // The character's mails with their attachments (M6-SYNC-01). Side by side (D-39) the Java
+        // game server may have received, read, deleted or paid out mails since this server loaded
+        // `messages` at its start; the world replaces its copies of exactly these messages when the
+        // player enters. A failed read leaves the world's copies alone (the attachments are read
+        // again before they are handed out).
+        match crate::persist::load_mail_of_character(&self.messages, &self.items, char_id).await {
+            Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
+            Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
+        }
         apply_restore_location(&mut data);
         Ok(data)
     }
 }
 
 impl DbPlayerLoader {
+    // Java: Player.restoreRecipeBook, Player.restoreRecipeShopList
+    async fn load_recipes(&self, char_id: i32) -> RecipeLoad {
+        let mut load = RecipeLoad::default();
+        match self.recipes.recipes_of(char_id).await {
+            Ok(rows) => {
+                load.book = rows
+                    .into_iter()
+                    .map(|r| RecipeBookEntry {
+                        recipe_id: r.recipe_id,
+                        // `rs.getInt(2) == 1`
+                        dwarven: r.kind == 1,
+                        class_index: r.class_index,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore recipe book data:{e}"),
+        }
+        match self.recipes.shop_of(char_id).await {
+            Ok(rows) => load.shop = rows.into_iter().map(|r| (r.recipe_id, r.price)).collect(),
+            Err(e) => warn!("Could not restore recipe shop list data for playerId: {char_id}: {e}"),
+        }
+        load
+    }
+
     // Java: Player.load (the account's other characters), Player.getWarehouse().restore() and
     // getFreight().restore(), ItemContainer.restore
     async fn load_warehouses(&self, char_id: i32, account: &str) -> WarehouseLoad {
@@ -1017,6 +1060,18 @@ impl ClientSession {
             | ClientPacket::RequestPackageSendableItemList(_)) => {
                 ClientInput::Warehouse(warehouse_input(packet))
             }
+            // Java: RequestRecipeBookOpen, RequestRecipeBookDestroy, RequestRecipeItemMakeInfo,
+            // RequestRecipeItemMakeSelf, RequestRecipeShop* (M6-CRAFT-01)
+            ClientPacket::RequestRecipeBookOpen(p) => ClientInput::Craft(CraftInput::BookOpen(p)),
+            ClientPacket::RequestRecipeBookDestroy(p) => ClientInput::Craft(CraftInput::BookDestroy(p)),
+            ClientPacket::RequestRecipeItemMakeInfo(p) => ClientInput::Craft(CraftInput::ItemMakeInfo(p)),
+            ClientPacket::RequestRecipeItemMakeSelf(p) => ClientInput::Craft(CraftInput::ItemMakeSelf(p)),
+            ClientPacket::RequestRecipeShopMessageSet(p) => ClientInput::Craft(CraftInput::ShopMessageSet(p)),
+            ClientPacket::RequestRecipeShopListSet(p) => ClientInput::Craft(CraftInput::ShopListSet(p)),
+            ClientPacket::RequestRecipeShopManageQuit(_) => ClientInput::Craft(CraftInput::ShopManageQuit),
+            ClientPacket::RequestRecipeShopMakeInfo(p) => ClientInput::Craft(CraftInput::ShopMakeInfo(p)),
+            ClientPacket::RequestRecipeShopMakeItem(p) => ClientInput::Craft(CraftInput::ShopMakeItem(p)),
+            ClientPacket::RequestRecipeShopManagePrev(_) => ClientInput::Craft(CraftInput::ShopManagePrev),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
@@ -1146,6 +1201,39 @@ impl ClientSession {
                     skill_level: p.skill_level,
                 })
             }
+            // Java: RequestConfirmTargetItem, RequestConfirmRefinerItem, RequestConfirmGemStone,
+            // RequestRefine, RequestConfirmCancelItem, RequestRefineCancel
+            ClientPacket::RequestConfirmTargetItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestConfirmRefinerItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmRefinerItem {
+                    target_item_object_id: p.target_item_object_id,
+                    refiner_item_object_id: p.refiner_item_object_id,
+                })
+            }
+            ClientPacket::RequestConfirmGemStone(p) => ClientInput::Augment(AugmentInput::ConfirmGemStone {
+                target_item_object_id: p.target_item_object_id,
+                refiner_item_object_id: p.refiner_item_object_id,
+                gemstone_item_object_id: p.gemstone_item_object_id,
+                gemstone_count: p.gemstone_count,
+            }),
+            ClientPacket::RequestRefine(p) => ClientInput::Augment(AugmentInput::Refine {
+                target_item_object_id: p.target_item_object_id,
+                refiner_item_object_id: p.refiner_item_object_id,
+                gemstone_item_object_id: p.gemstone_item_object_id,
+                gemstone_count: p.gemstone_count,
+            }),
+            ClientPacket::RequestConfirmCancelItem(p) => {
+                ClientInput::Augment(AugmentInput::ConfirmCancelItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestRefineCancel(p) => ClientInput::Augment(AugmentInput::RefineCancel {
+                target_item_object_id: p.target_item_object_id,
+            }),
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

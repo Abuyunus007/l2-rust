@@ -7,6 +7,7 @@
 //! without locks (D-10: nothing here is mutable game state).
 
 pub mod armor_set;
+pub mod augment;
 pub mod augmentation;
 pub mod buylist;
 pub mod class_list;
@@ -33,6 +34,7 @@ pub mod pet;
 pub mod pet_skill;
 pub mod player_class;
 pub mod player_template;
+pub mod recipe;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -47,6 +49,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 pub use armor_set::{ArmorSet, ArmorSets};
+pub use augment::{AugmentationChance, AugmentationData};
 pub use augmentation::{AugmentationOption, AugmentationOptions};
 pub use buylist::{
     BuyListDef, BuyListOptions, BuyLists, MerchantPriceConfig, MerchantPriceConfigs, ProductDef,
@@ -84,6 +87,7 @@ pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
+pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -153,6 +157,9 @@ pub struct Datapack {
     pub skills: Arc<SkillTemplates>,
     /// `data/stats/augmentation/options/*.xml`: what the two option ids of an augmentation give.
     pub augmentation_options: Arc<AugmentationOptions>,
+    /// `data/stats/augmentation/{augmentation_skillmap,retailchances,retailchances_accessory}.xml`:
+    /// what an augmentation is rolled from (M6-AUGMENT-01).
+    pub augmentation_data: Arc<AugmentationData>,
     /// `data/PetSkillData.xml`: the skills of summons and pets by NPC id.
     pub pet_skills: Arc<PetSkillData>,
     /// `data/stats/pets/*.xml`: the pets, their food, skills and level numbers (M6-PET-01).
@@ -167,6 +174,8 @@ pub struct Datapack {
     pub enchant_skill_groups: Arc<EnchantSkillGroupsData>,
     /// `data/stats/cubics/*.xml`: the cubic templates by id and level (M6-CUBIC-01).
     pub cubics: Arc<CubicData>,
+    /// `data/Recipes.xml`: the crafting recipes by id (M6-CRAFT-01).
+    pub recipes: Arc<RecipeData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -257,6 +266,7 @@ impl Datapack {
         let spawns = SpawnData::load(root, &npcs, &spawn_options);
         let skills = Arc::new(SkillTemplates::load(root, &options.skills));
         let augmentation_options = Arc::new(AugmentationOptions::load(root, &skills));
+        let augmentation_data = Arc::new(AugmentationData::load(root));
         // Java checks every entry against `SkillData` (loaded before it).
         let pet_skills = Arc::new(PetSkillData::load(root, &|id, level| {
             skills.get(id, level).is_some()
@@ -319,6 +329,7 @@ impl Datapack {
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,
+            augmentation_data,
             pet_skills,
             pets: Arc::new(PetDataTable::load(root)),
             enchant_items,
@@ -326,6 +337,7 @@ impl Datapack {
             elemental_attributes,
             enchant_skill_groups,
             cubics: Arc::new(CubicData::load(root)),
+            recipes: Arc::new(RecipeData::load(root)),
         })
     }
 }

@@ -98,6 +98,7 @@ impl World {
         if self.mail.messages.insert(id, msg).is_none() {
             self.mail.order.push(id);
         }
+        self.mail.local_ids.insert(id);
         if self.players.contains_key(&ObjectId(receiver)) {
             self.send(ObjectId(receiver), &ExNoticePostArrived { show_animation: true });
         }
@@ -163,6 +164,12 @@ impl World {
     /// Java `MailMessage.removeAttachments()`: the container is forgotten (its items went
     /// somewhere else, or are gone) and the flag is cleared in the table.
     pub(crate) fn mail_remove_attachments(&mut self, id: i32) {
+        self.mail_remove_attachments_rows(id, true);
+    }
+
+    /// [`mail_remove_attachments`](Self::mail_remove_attachments); `write_rows` false forgets the
+    /// container in memory only (the expiry task without `MailExpiryDatabaseWrites`).
+    pub(crate) fn mail_remove_attachments_rows(&mut self, id: i32, write_rows: bool) {
         let Some(msg) = self.mail.messages.get_mut(&id) else {
             return;
         };
@@ -172,16 +179,27 @@ impl World {
         }
         msg.attachments.clear();
         msg.has_attachments = false;
-        self.mail_persist(MailWrite::RemoveAttachments(id));
+        if write_rows {
+            self.mail_persist(MailWrite::RemoveAttachments(id));
+        }
     }
 
     /// Java `MailManager.deleteMessageInDb(msgId)`: the row goes, the mail leaves the map and its
     /// id is given back.
     pub(crate) fn mail_delete_message(&mut self, id: i32) {
-        self.mail_persist(MailWrite::Delete(id));
+        self.mail_delete_message_rows(id, true);
+    }
+
+    /// [`mail_delete_message`](Self::mail_delete_message); `write_rows` false only forgets the
+    /// mail in memory (the expiry task without `MailExpiryDatabaseWrites`).
+    pub(crate) fn mail_delete_message_rows(&mut self, id: i32, write_rows: bool) {
+        if write_rows {
+            self.mail_persist(MailWrite::Delete(id));
+        }
         if self.mail.messages.remove(&id).is_some() {
             self.mail.order.retain(|&m| m != id);
         }
+        self.mail.local_ids.remove(&id);
         self.release_item_id(ObjectId(id));
     }
 }

@@ -116,7 +116,38 @@ pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSe
         allow_mail: config.general.allow_mail,
         allow_attachments: config.general.allow_attachments,
         send_interval_ticks: interval,
+        expiry_database_writes: mail_expiry_database_writes(config_dir),
     }
+}
+
+/// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
+/// default). Off, the expiry task of the post box expires the mails in memory only and leaves the
+/// row deletes and the return of the attachments to the Java game server that shares the database
+/// (D-39, D-49). Logs the active mode.
+pub fn mail_expiry_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("MailExpiryDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using MailExpiryDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!("SideBySide: MailExpiryDatabaseWrites = True, the mail expiry writes its rows.");
+    } else {
+        info!(
+            "SideBySide: MailExpiryDatabaseWrites = False, the mail expiry leaves its rows to the Java game server."
+        );
+    }
+    on
 }
 
 /// `ClanMaintenanceDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means
@@ -367,6 +398,7 @@ impl Server {
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let pets = Arc::clone(&datapack.pets);
             let cubics = Arc::clone(&datapack.cubics);
+            let recipes = Arc::clone(&datapack.recipes);
             let class_list = Arc::clone(&datapack.class_list);
             let multisell = (
                 Arc::clone(&datapack.multisell),
@@ -412,6 +444,8 @@ impl Server {
                     world.load_pet_names(pet_names);
                     // Java: CubicData (the cubic templates of `SummonCubic`).
                     world.set_cubic_data(cubics);
+                    // Java: RecipeData (data/Recipes.xml).
+                    world.set_recipe_data(recipes);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: MultisellData (the exchange lists of NPCs).
@@ -422,6 +456,8 @@ impl Server {
                     world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
+                    // Java: AugmentationData (the skill map and the retail chance tables).
+                    world.set_augmentation_data(datapack.augmentation_data.clone());
                     // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
                     // spawns.
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {

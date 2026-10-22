@@ -377,10 +377,14 @@ pub struct WorldSettings {
     pub shop: crate::shop::ShopSettings,
     /// The freight price and slots, the clan warehouse rule, the sorted lists (M6-WH-01).
     pub warehouse: crate::warehouse::WarehouseSettings,
+    /// The crafting switches and rates (M6-CRAFT-01).
+    pub craft: crate::craft::CraftSettings,
     /// The private store ranges and packet limit (M6-STORE-01).
     pub store: crate::trade::StoreSettings,
     /// The enchant and over-enchant settings (M6-ENCHANT-01).
     pub enchant: crate::enchant::EnchantSettings,
+    /// The augmentation chances, blacklist and PvP rule (M6-AUGMENT-01).
+    pub augment: crate::augment::AugmentSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -437,8 +441,10 @@ impl Default for WorldSettings {
             pvp: crate::pvp::PvpSettings::default(),
             shop: crate::shop::ShopSettings::default(),
             warehouse: crate::warehouse::WarehouseSettings::default(),
+            craft: crate::craft::CraftSettings::default(),
             store: crate::trade::StoreSettings::default(),
             enchant: crate::enchant::EnchantSettings::default(),
+            augment: crate::augment::AugmentSettings::default(),
             daily_reset_database_writes: false,
         }
     }

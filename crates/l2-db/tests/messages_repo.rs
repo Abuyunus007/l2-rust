@@ -133,3 +133,46 @@ async fn a_mail_is_stored_loaded_and_changed_like_java_does() {
 
     db.drop_database().await;
 }
+
+/// M6-SYNC-01: the character select reads only the mails of one character, as sender or receiver.
+#[tokio::test]
+async fn the_mails_of_one_character_are_read_as_sender_and_receiver() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = MessageRepository::new(db.pool.clone());
+    let (alice, bob, carol) = (268_500_001, 268_500_002, 268_500_003);
+    let between = |id: i32, sender: i32, receiver: i32, expiration: i64| MessageRow {
+        sender_id: sender,
+        receiver_id: receiver,
+        ..mail(id, expiration)
+    };
+    repo.insert(&between(1_610_612_800, alice, bob, 3_000))
+        .await
+        .unwrap();
+    repo.insert(&between(1_610_612_801, bob, alice, 1_000))
+        .await
+        .unwrap();
+    repo.insert(&between(1_610_612_802, bob, carol, 2_000))
+        .await
+        .unwrap();
+    // A system mail has no sender row to match.
+    repo.insert(&between(1_610_612_803, -1, alice, 4_000))
+        .await
+        .unwrap();
+
+    let of_alice = repo.messages_of_character(alice).await.unwrap();
+    assert_eq!(
+        of_alice.iter().map(|r| r.message_id).collect::<Vec<_>>(),
+        vec![1_610_612_801, 1_610_612_800, 1_610_612_803]
+    );
+    assert_eq!(of_alice[1], between(1_610_612_800, alice, bob, 3_000));
+    assert_eq!(repo.messages_of_character(carol).await.unwrap().len(), 1);
+    assert!(repo.messages_of_character(1).await.unwrap().is_empty());
+
+    // A mail the Java game server deleted is gone from the next read.
+    repo.delete(1_610_612_801).await.unwrap();
+    assert_eq!(repo.messages_of_character(alice).await.unwrap().len(), 2);
+
+    db.drop_database().await;
+}

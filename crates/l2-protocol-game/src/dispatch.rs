@@ -44,6 +44,10 @@ use crate::client::{
 use crate::client::{
     RequestChangePetName, RequestGetItemFromPet, RequestGiveItemToPet, RequestPetGetItem, RequestPetUseItem,
 };
+use crate::client::{
+    RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
+    RequestRefine, RequestRefineCancel,
+};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
@@ -58,6 +62,11 @@ use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
+};
+use crate::client::{
+    RequestRecipeBookDestroy, RequestRecipeBookOpen, RequestRecipeItemMakeInfo, RequestRecipeItemMakeSelf,
+    RequestRecipeShopListSet, RequestRecipeShopMakeInfo, RequestRecipeShopMakeItem,
+    RequestRecipeShopManagePrev, RequestRecipeShopManageQuit, RequestRecipeShopMessageSet,
 };
 use crate::generated::opcodes::{ClientOpcode, ConnectionState, ExClientOpcode};
 
@@ -158,6 +167,17 @@ pub enum ClientPacket {
     SendWareHouseWithDrawList(SendWareHouseWithDrawList),
     RequestPackageSend(RequestPackageSend),
     RequestPackageSendableItemList(RequestPackageSendableItemList),
+    // M6-CRAFT-01: 0xB9 and 0xBD have no Java class (see `client/recipe.rs`).
+    RequestRecipeBookOpen(RequestRecipeBookOpen),
+    RequestRecipeBookDestroy(RequestRecipeBookDestroy),
+    RequestRecipeItemMakeInfo(RequestRecipeItemMakeInfo),
+    RequestRecipeItemMakeSelf(RequestRecipeItemMakeSelf),
+    RequestRecipeShopMessageSet(RequestRecipeShopMessageSet),
+    RequestRecipeShopListSet(RequestRecipeShopListSet),
+    RequestRecipeShopManageQuit(RequestRecipeShopManageQuit),
+    RequestRecipeShopMakeInfo(RequestRecipeShopMakeInfo),
+    RequestRecipeShopMakeItem(RequestRecipeShopMakeItem),
+    RequestRecipeShopManagePrev(RequestRecipeShopManagePrev),
     RequestJoinPledge(RequestJoinPledge),
     RequestAnswerJoinPledge(RequestAnswerJoinPledge),
     RequestWithdrawalPledge(RequestWithdrawalPledge),
@@ -232,6 +252,12 @@ pub enum ClientPacket {
     RequestExEnchantSkillSafe(RequestExEnchantSkillSafe),
     RequestExEnchantSkillUntrain(RequestExEnchantSkillUntrain),
     RequestExEnchantSkillRouteChange(RequestExEnchantSkillRouteChange),
+    RequestConfirmTargetItem(RequestConfirmTargetItem),
+    RequestConfirmRefinerItem(RequestConfirmRefinerItem),
+    RequestConfirmGemStone(RequestConfirmGemStone),
+    RequestRefine(RequestRefine),
+    RequestConfirmCancelItem(RequestConfirmCancelItem),
+    RequestRefineCancel(RequestRefineCancel),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -381,6 +407,36 @@ pub fn decode_client(
         RequestPackageSend::OPCODE => ClientPacket::RequestPackageSend(RequestPackageSend::decode(reader)?),
         RequestPackageSendableItemList::OPCODE => {
             ClientPacket::RequestPackageSendableItemList(RequestPackageSendableItemList::decode(reader)?)
+        }
+        RequestRecipeBookOpen::OPCODE => {
+            ClientPacket::RequestRecipeBookOpen(RequestRecipeBookOpen::decode(reader)?)
+        }
+        RequestRecipeBookDestroy::OPCODE => {
+            ClientPacket::RequestRecipeBookDestroy(RequestRecipeBookDestroy::decode(reader)?)
+        }
+        RequestRecipeItemMakeInfo::OPCODE => {
+            ClientPacket::RequestRecipeItemMakeInfo(RequestRecipeItemMakeInfo::decode(reader)?)
+        }
+        RequestRecipeItemMakeSelf::OPCODE => {
+            ClientPacket::RequestRecipeItemMakeSelf(RequestRecipeItemMakeSelf::decode(reader)?)
+        }
+        RequestRecipeShopMessageSet::OPCODE => {
+            ClientPacket::RequestRecipeShopMessageSet(RequestRecipeShopMessageSet::decode(reader)?)
+        }
+        RequestRecipeShopListSet::OPCODE => {
+            ClientPacket::RequestRecipeShopListSet(RequestRecipeShopListSet::decode(reader)?)
+        }
+        RequestRecipeShopManageQuit::OPCODE => {
+            ClientPacket::RequestRecipeShopManageQuit(RequestRecipeShopManageQuit::decode(reader)?)
+        }
+        RequestRecipeShopMakeInfo::OPCODE => {
+            ClientPacket::RequestRecipeShopMakeInfo(RequestRecipeShopMakeInfo::decode(reader)?)
+        }
+        RequestRecipeShopMakeItem::OPCODE => {
+            ClientPacket::RequestRecipeShopMakeItem(RequestRecipeShopMakeItem::decode(reader)?)
+        }
+        RequestRecipeShopManagePrev::OPCODE => {
+            ClientPacket::RequestRecipeShopManagePrev(RequestRecipeShopManagePrev::decode(reader)?)
         }
         RequestJoinPledge::OPCODE => ClientPacket::RequestJoinPledge(RequestJoinPledge::decode(reader)?),
         RequestAnswerJoinPledge::OPCODE => {
@@ -580,6 +636,21 @@ fn decode_ex_client(
         }
         RequestExEnchantSkillRouteChange::EX_OPCODE => {
             ClientPacket::RequestExEnchantSkillRouteChange(RequestExEnchantSkillRouteChange::decode(reader)?)
+        RequestConfirmTargetItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmTargetItem(RequestConfirmTargetItem::decode(reader)?)
+        }
+        RequestConfirmRefinerItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmRefinerItem(RequestConfirmRefinerItem::decode(reader)?)
+        }
+        RequestConfirmGemStone::EX_OPCODE => {
+            ClientPacket::RequestConfirmGemStone(RequestConfirmGemStone::decode(reader)?)
+        }
+        RequestRefine::EX_OPCODE => ClientPacket::RequestRefine(RequestRefine::decode(reader)?),
+        RequestConfirmCancelItem::EX_OPCODE => {
+            ClientPacket::RequestConfirmCancelItem(RequestConfirmCancelItem::decode(reader)?)
+        }
+        RequestRefineCancel::EX_OPCODE => {
+            ClientPacket::RequestRefineCancel(RequestRefineCancel::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

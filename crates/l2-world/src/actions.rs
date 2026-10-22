@@ -23,8 +23,6 @@
 // `RequestMagicSkillUse`, ...) are not ported (see `ai/mod.rs`).
 //
 // # Left out (markers)
-// - M6-CRAFT: `isCrafting()` is always false here, and the two manufacture actions (37 and 51)
-//   open the `RecipeShopManageList` of the craft card.
 // - M6-MOUNT: `getMountType()`, `isMounted()`, `isInBoat()`, `isInAirShip()` are always false,
 //   action 38 (mount/dismount) and the airship actions (67 to 70) are not ported.
 // - M6-FISHING: `isFishing()` is always false.
@@ -284,8 +282,7 @@ impl World {
             return;
         }
 
-        // M6-CRAFT: `player.isCrafting()`.
-        if self.is_in_store_mode(player) {
+        if self.is_in_store_mode(player) || self.is_crafting(player) {
             self.couple_refusal(
                 player,
                 M::C1IsInPrivateShopModeOrInABattleAndCannotBeRequestedForACoupleAction,
@@ -341,8 +338,7 @@ impl World {
         }
 
         // Checks for partner.
-        // M6-CRAFT: `partner.isCrafting()`.
-        if self.is_in_store_mode(partner) {
+        if self.is_in_store_mode(partner) || self.is_crafting(partner) {
             self.couple_refusal(
                 player,
                 M::C1IsInPrivateShopModeOrInABattleAndCannotBeRequestedForACoupleAction,

@@ -493,7 +493,7 @@ impl World {
         // Offline traders (M5).
         // `!isHPConsumption`: HP consumption does not reach this function yet.
         self.stop_effects_on_damage(id, true);
-        // Crafting and private stores (stand up): not modelled yet. Sitting players stand up,
+        // Crafting and private stores (stand up): Sitting players stand up,
         // a stun may break.
         self.break_states_on_damage(id);
         let mut amount = value;
