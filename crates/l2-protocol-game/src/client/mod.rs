@@ -164,6 +164,7 @@ macro_rules! client_unit_packet {
 
 pub mod charscreen;
 pub mod combat;
+pub mod couple;
 pub mod duel;
 pub mod enchant;
 pub mod enterworld;
@@ -188,6 +189,7 @@ pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
+pub use couple::AnswerCoupleAction;
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 pub use enchant::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,

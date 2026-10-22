@@ -797,8 +797,15 @@ impl World {
         }
     }
 
-    /// Java `CreatureAI.notifyActionArrived`.
+    /// Java `CreatureAI.notifyActionArrived`: the `NextAction` of the `finally` runs after every
+    /// way out of the body (`actions.rs`).
     pub(crate) fn notify_action_arrived(&mut self, id: ObjectId) {
+        self.notify_action_arrived_body(id);
+        self.fire_arrived_next_action(id);
+    }
+
+    /// The `try` block of `CreatureAI.notifyActionArrived`.
+    fn notify_action_arrived_body(&mut self, id: ObjectId) {
         // A summon thinks like any `CreatureAI` (its own think is `SummonAI`'s).
         if self.is_npc(id) || self.is_summon(id) {
             self.npc_notify_action_arrived(id);

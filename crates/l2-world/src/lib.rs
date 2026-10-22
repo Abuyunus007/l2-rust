@@ -10,6 +10,7 @@
 //! - Refer to other objects by id ([`ObjectId`]), never by reference (D-11).
 //! - Randomness only from [`World::rng`] (D-13); delays only through the timer wheel (D-12).
 
+pub mod actions;
 pub mod admin;
 pub mod ai;
 pub mod bypass;

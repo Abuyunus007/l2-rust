@@ -1580,7 +1580,7 @@ impl World {
             if self.summon_auto_attackable_by(pet, player) && !is_owner {
                 self.set_intention_attack(player, pet);
                 self.on_action_request(player);
-            } else if !self.is_inside_radius_2d(pet, player, 150) {
+            } else if !self.pet_inside_radius_2d(pet, player, 150) {
                 self.set_intention_interact(player, pet);
                 self.on_action_request(player);
             } else {
@@ -1599,7 +1599,7 @@ impl World {
     }
 
     /// `Creature.isInsideRadius2D(other, radius)`: strictly inside.
-    fn is_inside_radius_2d(&self, a: ObjectId, b: ObjectId, radius: i32) -> bool {
+    fn pet_inside_radius_2d(&self, a: ObjectId, b: ObjectId, radius: i32) -> bool {
         match (self.position_of(a), self.position_of(b)) {
             (Some(a), Some(b)) => crate::target::distance_2d(a, b) < f64::from(radius),
             _ => false,

@@ -157,6 +157,13 @@ pub enum ClientInput {
         ctrl_pressed: bool,
         shift_pressed: bool,
     },
+    /// Java `AnswerCoupleAction`: the answer (1 approve, 0 cancel, -1 refused) to the couple
+    /// social action `object_id` asked for (see `actions.rs`).
+    AnswerCoupleAction {
+        action_id: i32,
+        answer: i32,
+        object_id: i32,
+    },
     /// The clan packets (`RequestJoinPledge`, `RequestPledge*`, ...), see `clan/`.
     Clan(crate::clan::ClanInput),
     /// The packets about the player's pet (`RequestPetGetItem`, `RequestGiveItemToPet`, ...), see
