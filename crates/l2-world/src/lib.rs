@@ -95,7 +95,7 @@ pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
 pub use l2_util::{ObjectId, WorldRng};
-pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailSettings, MailWrite};
+pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };

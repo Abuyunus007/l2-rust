@@ -268,8 +268,17 @@ impl World {
         true
     }
 
-    /// Java `RequestPostAttachment.runImpl`.
+    /// Java `RequestPostAttachment.runImpl`, up to the point where it reads the attachments: the
+    /// rows are read again first (M6-SYNC-01, see `refresh.rs`) and the answer calls
+    /// [`post_attachment`](Self::post_attachment) with `refreshed`.
     fn on_request_post_attachment(&mut self, id: ObjectId, msg_id: i32) {
+        self.post_attachment(id, msg_id, false);
+    }
+
+    /// Java `RequestPostAttachment.runImpl`. `refreshed` is false for the packet and true when the
+    /// attachment rows were read again; the checks run in both passes, because the state of the
+    /// player may have changed while the database answered.
+    pub(super) fn post_attachment(&mut self, id: ObjectId, msg_id: i32, refreshed: bool) {
         if !self.mail.settings.allow_mail || !self.mail.settings.allow_attachments {
             return;
         }
@@ -315,6 +324,11 @@ impl World {
         // `MAIL` location and carries this message's id (`handleIllegalPlayerAction`
         // "wrong item"). The container is built from exactly those rows, so nothing can fail.
         let items = msg.attachments.clone();
+        if !refreshed {
+            // The Java GS may have given the attachments out already (D-39): ask for the rows.
+            self.mail_request_attachments(id, msg_id, sender_id);
+            return;
+        }
         let (slots, weight) = self.mail_slots_and_weight(id, &items);
 
         // Item Max Limit Check.

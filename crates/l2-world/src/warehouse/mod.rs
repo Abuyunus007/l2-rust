@@ -26,6 +26,12 @@
 // went away whole. `items.loc` is `WAREHOUSE` for the private warehouse, `CLANWH` (owner = clan
 // id) for the clan warehouse and `FREIGHT` (owner = the receiving character) for the freight.
 //
+// # One database, two servers (M6-SYNC-01)
+// The Java GS keeps its own copy of the clan warehouse, so an item a clan member took there is
+// still in this server's `Clan::warehouse`. Opening a clan warehouse window (`WithdrawC`,
+// `WithdrawSortedC`, `DepositC`) therefore reads the clan's `CLANWH` rows again first and replaces
+// the container (`refresh.rs`); the window continues when the persistence task answers.
+//
 // # Left out on purpose (each has a comment where it belongs)
 // - The flood protector `canPerformTransaction`, `setInventoryBlockingStatus(true)` (nothing
 //   reads the 1.5 s inventory lock yet), cursed weapons, the olympiad, a summoned pet's
@@ -39,10 +45,12 @@ mod container;
 mod handlers;
 mod lists;
 mod moves;
+mod refresh;
 mod sorted;
 
 pub use container::ContainerRef;
 pub(crate) use moves::Place;
+pub(crate) use refresh::PendingClanWindow;
 pub use sorted::WarehouseListType;
 
 use std::collections::BTreeMap;
@@ -109,6 +117,8 @@ pub struct PlayerWarehouse {
     pub account_chars: Vec<(ObjectId, String)>,
     /// Java `_activeWarehouse`.
     pub active: Option<ContainerRef>,
+    /// The clan warehouse window waiting for the rows of the clan (M6-SYNC-01, `refresh.rs`).
+    pub(crate) pending_clan: Option<(i32, PendingClanWindow)>,
 }
 
 impl PlayerWarehouse {
@@ -125,6 +135,7 @@ impl PlayerWarehouse {
             freight,
             account_chars: load.account_chars,
             active: None,
+            pending_clan: None,
         }
     }
 }

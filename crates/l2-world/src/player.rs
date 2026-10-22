@@ -219,6 +219,10 @@ pub struct PlayerProfile {
     /// The block list as the session read it (`character_friends` with relation 1). Taken at
     /// enter world like `friends`.
     pub block_list: Vec<crate::friends::FriendEntry>,
+    /// The character's mails as the session read them at `CharacterSelect` (M6-SYNC-01):
+    /// `None` when the read failed. The world replaces its copies of these messages when the
+    /// player enters (`mail/refresh.rs`) and takes it, so snapshots never carry it.
+    pub mail_refresh: Option<Box<crate::mail::MailRefresh>>,
 }
 
 impl Default for PlayerProfile {
@@ -254,6 +258,7 @@ impl Default for PlayerProfile {
             warehouse: crate::warehouse::WarehouseLoad::default(),
             friends: Vec::new(),
             block_list: Vec::new(),
+            mail_refresh: None,
         }
     }
 }

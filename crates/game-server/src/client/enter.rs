@@ -16,8 +16,8 @@ use std::time::Duration;
 
 use l2_db::{
     CharacterRepository, CharacterRow, FriendLink, FriendRepository, HennaRepository, HennaRow, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, PetRepository, Pool,
-    RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
+    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, MessageRepository, PetRepository,
+    Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
     SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
@@ -90,6 +90,7 @@ pub struct DbPlayerLoader {
     summons: SummonRepository,
     pets: PetRepository,
     clans: l2_db::ClanRepository,
+    messages: MessageRepository,
 }
 
 impl DbPlayerLoader {
@@ -108,7 +109,8 @@ impl DbPlayerLoader {
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
             pets: PetRepository::new(pool.clone()),
-            clans: l2_db::ClanRepository::new(pool),
+            clans: l2_db::ClanRepository::new(pool.clone()),
+            messages: MessageRepository::new(pool),
         }
     }
 
@@ -352,6 +354,16 @@ impl DbPlayerLoader {
                 }
                 Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),
             }
+        }
+
+        // The character's mails with their attachments (M6-SYNC-01). Side by side (D-39) the Java
+        // game server may have received, read, deleted or paid out mails since this server loaded
+        // `messages` at its start; the world replaces its copies of exactly these messages when the
+        // player enters. A failed read leaves the world's copies alone (the attachments are read
+        // again before they are handed out).
+        match crate::persist::load_mail_of_character(&self.messages, &self.items, char_id).await {
+            Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
+            Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
         }
         apply_restore_location(&mut data);
         Ok(data)

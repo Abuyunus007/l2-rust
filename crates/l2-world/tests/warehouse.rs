@@ -309,6 +309,10 @@ impl Scene {
         write("data/html/warehouse/30001.htm", PAGE);
         write("data/html/default/30002.htm", "<html><body>hello</body></html>");
         write(
+            "data/html/mods/WhSortedC.htm",
+            "<html><body><a action=\"bypass -h npc_%objectId%_WithdrawSortedC ALL\">sorted</a></body></html>",
+        );
+        write(
             "data/html/mods/WhSortedP.htm",
             "<html><body><a action=\"bypass -h npc_%objectId%_WithdrawSortedP ALL\">sorted</a></body></html>",
         );
@@ -362,14 +366,45 @@ impl Scene {
         self.log.take();
     }
 
-    /// `npc_<keeper>_<command>`.
+    /// `npc_<keeper>_<command>`. A clan warehouse window asks the database for the rows of the
+    /// clan first (M6-SYNC-01); here the database has what the world has, so the request is
+    /// answered at once. The tests of the refresh use [`bypass_unanswered`](Self::bypass_unanswered).
     fn bypass(&mut self, who: ObjectId, command: &str) {
+        self.bypass_unanswered(who, command);
+        for (player, clan_id) in self.take_clan_requests() {
+            let items = self
+                .world
+                .clan(clan_id)
+                .map(|c| c.warehouse.clone())
+                .unwrap_or_default();
+            self.world.handle(WorldCommand::ClanWarehouseLoaded {
+                player,
+                clan_id,
+                result: Ok(items),
+            });
+        }
+    }
+
+    fn bypass_unanswered(&mut self, who: ObjectId, command: &str) {
         self.input(
             who,
             ClientInput::Bypass {
                 command: format!("npc_{}_{command}", self.npc.0),
             },
         );
+    }
+
+    /// The `ClanWarehouseRequest`s in the log, taken out of it.
+    fn take_clan_requests(&self) -> Vec<(ObjectId, i32)> {
+        let mut found = Vec::new();
+        self.log.0.lock().unwrap().retain(|o| match o {
+            Out::Persist(PersistCommand::ClanWarehouseRequest { player, clan_id }) => {
+                found.push((*player, *clan_id));
+                false
+            }
+            _ => true,
+        });
+        found
     }
 
     fn deposit(&mut self, who: ObjectId, items: &[(i32, i64)]) {
@@ -1286,9 +1321,11 @@ fn a_deposit_to_the_clan_warehouse_writes_the_clan_as_owner() {
     // Anybody in a clan of level 1 or more may deposit; `CLAN` = 4. The bound item is not
     // tradeable and the shadow item is a shadow item, so they are not offered
     // (`isDepositable(false)`).
+    // The bypass dispatcher's own ActionFailed now comes before the window: the window waits for
+    // the rows of the clan (M6-SYNC-01).
     assert_eq!(
         names(&out, B),
-        ["ACTION_FAIL", "WAREHOUSE_DEPOSIT_LIST", "ACTION_FAIL"]
+        ["ACTION_FAIL", "ACTION_FAIL", "WAREHOUSE_DEPOSIT_LIST"]
     );
     let list: WareHouseDepositList = decode(of(&out, B, "WAREHOUSE_DEPOSIT_LIST")[0]);
     assert_eq!(list.wh_type, 4);
@@ -1325,7 +1362,8 @@ fn only_members_with_the_privilege_see_the_clan_warehouse() {
     s.bypass(B, "WithdrawC");
     let out = s.log.take();
     // `ACCESS_WAREHOUSE` missing: ActionFailed, then the message, no list.
-    assert_eq!(names(&out, B), ["ACTION_FAIL", "SYSTEM_MESSAGE", "ACTION_FAIL"]);
+    // (The dispatcher's ActionFailed comes first: the window waits for the rows, M6-SYNC-01.)
+    assert_eq!(names(&out, B), ["ACTION_FAIL", "ACTION_FAIL", "SYSTEM_MESSAGE"]);
     assert_eq!(
         message_ids(&out, B),
         [SystemMessageId::YouDoNotHaveTheRightToUseTheClanWarehouse]
@@ -1337,7 +1375,7 @@ fn only_members_with_the_privilege_see_the_clan_warehouse() {
     let out = s.log.take();
     assert_eq!(
         names(&out, C),
-        ["ACTION_FAIL", "WAREHOUSE_WITHDRAW_LIST", "ACTION_FAIL"]
+        ["ACTION_FAIL", "ACTION_FAIL", "WAREHOUSE_WITHDRAW_LIST"]
     );
     let list: WareHouseWithdrawalList = decode(of(&out, C, "WAREHOUSE_WITHDRAW_LIST")[0]);
     assert_eq!(list.wh_type, 4);
@@ -1752,4 +1790,168 @@ fn only_a_warehouse_keeper_serves_the_warehouse_bypasses() {
         },
     );
     assert!(of(&s.log.take(), A, "WAREHOUSE_WITHDRAW_LIST").is_empty());
+}
+
+// ---- one database, two servers (M6-SYNC-01) -----------------------------------------------------
+
+/// The window of the clan warehouse waits for the rows of the clan (D-15: the world asks, the
+/// persistence task answers) and shows the refreshed container: an item the Java GS took is not in
+/// the list, one it added is.
+#[test]
+fn the_clan_warehouse_window_shows_the_refreshed_rows() {
+    let mut s = clan_scene(3, WorldSettings::default());
+    s.enter(clan_data(A, 1, vec![]));
+    s.talk(A);
+
+    s.bypass_unanswered(A, "WithdrawC");
+    assert_eq!(s.take_clan_requests(), [(A, CLAN)]);
+    let waiting = s.log.take();
+    assert!(
+        of(&waiting, A, "WAREHOUSE_WITHDRAW_LIST").is_empty(),
+        "no list before the rows"
+    );
+    assert_eq!(s.world.player(A).unwrap().warehouse.active, None);
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 2);
+
+    // The sword (400) was taken at the Java GS, a cuirass (405) was deposited there.
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![clan_wh(401, PILE, 50), clan_wh(405, CUIRASS, 1)]),
+    });
+    let out = s.log.take();
+    let list: WareHouseWithdrawalList = decode(of(&out, A, "WAREHOUSE_WITHDRAW_LIST")[0]);
+    let mut shown: Vec<i32> = list.items.iter().map(|i| i.object_id).collect();
+    shown.sort_unstable();
+    assert_eq!(shown, [401, 405]);
+    assert_eq!(
+        s.world.player(A).unwrap().warehouse.active,
+        Some(ContainerRef::Clan(CLAN))
+    );
+    let ids: Vec<i32> = s
+        .world
+        .clan(CLAN)
+        .unwrap()
+        .warehouse
+        .iter()
+        .map(|i| i.object_id.0)
+        .collect();
+    assert_eq!(ids, [401, 405]);
+}
+
+/// A withdraw only moves what the refreshed container still has: the item taken elsewhere is
+/// refused like any item that is not there, and no row is written for it.
+#[test]
+fn a_withdraw_does_not_move_an_item_taken_elsewhere() {
+    let mut s = clan_scene(3, WorldSettings::default());
+    s.enter(clan_data(A, 1, vec![]));
+    s.talk(A);
+    s.bypass_unanswered(A, "WithdrawC");
+    s.take_clan_requests();
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![clan_wh(401, PILE, 50)]),
+    });
+    s.log.take();
+
+    s.withdraw(A, &[(400, 1)]);
+    let out = s.log.take();
+    assert!(rows(&out).is_empty(), "{:?}", rows(&out));
+    assert!(s.inventory_of(A).iter().all(|(_, item, _)| *item != SWORD));
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 1);
+
+    // What is still there moves.
+    s.withdraw(A, &[(401, 20)]);
+    let moved = rows(&s.log.take());
+    assert_eq!(moved.len(), 1);
+    assert!(
+        s.inventory_of(A)
+            .iter()
+            .any(|(_, item, count)| *item == PILE && *count == 20)
+    );
+}
+
+/// A failed read opens no window and never shows the container in memory.
+#[test]
+fn a_failed_clan_warehouse_read_opens_nothing() {
+    let mut s = clan_scene(3, WorldSettings::default());
+    s.enter(clan_data(A, 1, vec![inv(100, CUIRASS, 1)]));
+    s.talk(A);
+    s.bypass_unanswered(A, "WithdrawC");
+    s.take_clan_requests();
+    s.log.take();
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Err(()),
+    });
+    let out = s.log.take();
+    assert_eq!(names(&out, A), ["ACTION_FAIL"]);
+    assert_eq!(s.world.player(A).unwrap().warehouse.active, None);
+    assert_eq!(
+        s.world.clan(CLAN).unwrap().warehouse.len(),
+        2,
+        "the old rows are not replaced"
+    );
+
+    // The request is over: a late answer does not open the window.
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![]),
+    });
+    assert!(s.log.take().is_empty());
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 2);
+}
+
+/// `WithdrawC`, `WithdrawSortedC` and `DepositC` all ask first (with the sorting page on,
+/// `WithdrawC` only shows the page); the window continues with the answer.
+#[test]
+fn every_clan_warehouse_window_asks_for_the_rows() {
+    let mut settings = WorldSettings::default();
+    settings.warehouse.sorting_clan = true;
+    let mut s = clan_scene(3, settings);
+    s.enter(clan_data(A, 1, vec![inv(100, CUIRASS, 1)]));
+    s.talk(A);
+
+    s.bypass_unanswered(A, "DepositC");
+    assert_eq!(s.take_clan_requests(), [(A, CLAN)]);
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![clan_wh(401, PILE, 50)]),
+    });
+    let out = s.log.take();
+    assert_eq!(of(&out, A, "WAREHOUSE_DEPOSIT_LIST").len(), 1);
+    assert_eq!(
+        s.world.player(A).unwrap().warehouse.active,
+        Some(ContainerRef::Clan(CLAN))
+    );
+    assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 1);
+
+    // The sorting page is html only; the sorted list asks.
+    s.bypass_unanswered(A, "WithdrawC");
+    assert!(s.take_clan_requests().is_empty());
+    assert_eq!(of(&s.log.take(), A, "NPC_HTML_MESSAGE").len(), 1);
+    s.bypass_unanswered(A, "WithdrawSortedC ALL");
+    assert_eq!(s.take_clan_requests(), [(A, CLAN)]);
+    s.log.take();
+    s.world.handle(WorldCommand::ClanWarehouseLoaded {
+        player: A,
+        clan_id: CLAN,
+        result: Ok(vec![clan_wh(405, CUIRASS, 1), clan_wh(406, PILE, 3)]),
+    });
+    assert_eq!(sorted_ids(&sorted(&s.log.take(), A)).len(), 2);
+}
+
+/// The private warehouse is not shared with other players, so it is not read again.
+#[test]
+fn the_private_warehouse_does_not_ask() {
+    let mut s = Scene::new();
+    s.enter(keeper_client(A, vec![], vec![wh(300, SWORD, 1)]));
+    s.talk(A);
+    s.bypass_unanswered(A, "WithdrawP");
+    assert!(s.take_clan_requests().is_empty());
+    assert_eq!(of(&s.log.take(), A, "WAREHOUSE_WITHDRAW_LIST").len(), 1);
 }

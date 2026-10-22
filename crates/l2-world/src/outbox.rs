@@ -129,6 +129,19 @@ pub enum PersistCommand {
     Friend(crate::friends::FriendWrite),
     /// A write of the `messages` table with Java's statement, see `mail/`.
     Mail(crate::mail::MailWrite),
+    /// Asks the persistence task to read the attachment rows of one mail (`items` with `owner_id`
+    /// = the sender, `loc = 'MAIL'`, `loc_data` = the message id, Java `Mail.restore`) before
+    /// `RequestPostAttachment` hands them out (M6-SYNC-01, D-39: the Java game server shares the
+    /// rows). The answer comes back as `WorldCommand::MailAttachmentsLoaded`. Read in order with
+    /// the other commands, so the answer includes every write sent before it.
+    MailAttachmentsRequest {
+        player: ObjectId,
+        message_id: i32,
+        sender_id: i32,
+    },
+    /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
+    /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
+    ClanWarehouseRequest { player: ObjectId, clan_id: i32 },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

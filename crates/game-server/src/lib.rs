@@ -116,7 +116,38 @@ pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSe
         allow_mail: config.general.allow_mail,
         allow_attachments: config.general.allow_attachments,
         send_interval_ticks: interval,
+        expiry_database_writes: mail_expiry_database_writes(config_dir),
     }
+}
+
+/// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
+/// default). Off, the expiry task of the post box expires the mails in memory only and leaves the
+/// row deletes and the return of the attachments to the Java game server that shares the database
+/// (D-39, D-49). Logs the active mode.
+pub fn mail_expiry_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("MailExpiryDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using MailExpiryDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!("SideBySide: MailExpiryDatabaseWrites = True, the mail expiry writes its rows.");
+    } else {
+        info!(
+            "SideBySide: MailExpiryDatabaseWrites = False, the mail expiry leaves its rows to the Java game server."
+        );
+    }
+    on
 }
 
 /// `ClanMaintenanceDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means
