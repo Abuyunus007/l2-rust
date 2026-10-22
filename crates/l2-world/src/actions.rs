@@ -276,7 +276,7 @@ impl World {
             (Some(a), Some(b)) => distance_2d(a, b) as i32,
             _ => return,
         };
-        if distance > COUPLE_MAX_DISTANCE || distance < COUPLE_MIN_DISTANCE || player == partner {
+        if !(COUPLE_MIN_DISTANCE..=COUPLE_MAX_DISTANCE).contains(&distance) || player == partner {
             self.action_system_message(
                 player,
                 M::TheRequestCannotBeCompletedBecauseTheTargetDoesNotMeetLocationRequirements,
@@ -472,7 +472,7 @@ impl World {
                     return;
                 };
                 let distance = distance_2d(from, to) as i32;
-                if distance > COUPLE_MAX_DISTANCE || distance < COUPLE_MIN_DISTANCE || player == target {
+                if !(COUPLE_MIN_DISTANCE..=COUPLE_MAX_DISTANCE).contains(&distance) || player == target {
                     let id = SystemMessageId::TheRequestCannotBeCompletedBecauseTheTargetDoesNotMeetLocationRequirements;
                     self.action_system_message(player, id);
                     self.action_system_message(target, id);

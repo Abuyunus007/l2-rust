@@ -238,13 +238,6 @@ fn of<'a>(out: &'a [Out], to: ObjectId, name: &str) -> Vec<&'a [u8]> {
         .collect()
 }
 
-fn names(out: &[Out], to: ObjectId) -> Vec<String> {
-    out.iter()
-        .filter(|o| o.0 == to.0)
-        .map(|o| name_of(&o.1))
-        .collect()
-}
-
 fn messages(out: &[Out], to: ObjectId) -> Vec<SystemMessage> {
     of(out, to, "SYSTEM_MESSAGE")
         .iter()
@@ -504,7 +497,9 @@ fn a_couple_action_is_asked_and_approved() {
 
     s.answer(B, 16, 1, A);
     let out = s.log.take();
-    // Alice (1000,1000) looks east at Bob (1050,1000): heading 0; Bob looks west: (int)(180 * 182.044444444) = 32767 (Java truncates).
+    // Java's `player` is the one who answers (Bob), `target` the one who asked (Alice): Bob turns
+    // first, towards Alice (west, (int)(180 * 182.044444444) = 32767), then Alice towards Bob
+    // (east, 0).
     let alice_turn: Vec<ExRotation> = of(&out, A, "EX_ROTATION").iter().map(|r| decode(r)).collect();
     let bob_turn: Vec<ExRotation> = of(&out, B, "EX_ROTATION").iter().map(|r| decode(r)).collect();
     // Each of them hears both rotations (they see each other) and both social actions.
@@ -512,18 +507,18 @@ fn a_couple_action_is_asked_and_approved() {
         alice_turn,
         [
             ExRotation {
-                char_id: A.0,
-                heading: 0
-            },
-            ExRotation {
                 char_id: B.0,
                 heading: 32_767
+            },
+            ExRotation {
+                char_id: A.0,
+                heading: 0
             },
         ]
     );
     assert_eq!(alice_turn, bob_turn);
-    assert_eq!(socials(&out, A), [(A.0, 16), (B.0, 16)]);
-    assert_eq!(socials(&out, B), [(A.0, 16), (B.0, 16)]);
+    assert_eq!(socials(&out, A), [(B.0, 16), (A.0, 16)]);
+    assert_eq!(socials(&out, B), [(B.0, 16), (A.0, 16)]);
     assert_eq!(s.world.player(A).unwrap().core.heading, 0);
     assert_eq!(s.world.player(B).unwrap().core.heading, 32_767);
 
@@ -620,13 +615,13 @@ fn a_couple_action_is_refused_like_java() {
     assert_eq!(name_param(&sent[0]), Some("Bob"));
     assert!(of(&out, B, "EX_ASK_COUPLE_ACTION").is_empty());
 
-    // The partner is already in a couple action (`getMultiSociaAction() > 0`): a third player
-    // asking gets the refusal; the first request stands.
+    // The partner has a couple action of its own going (`getMultiSociaAction() > 0`, set on the
+    // player who asked): Bob asked Alice, so Carol asking Bob gets the refusal.
     let mut busy = Scene::pair(50);
     busy.enter(player(ObjectId(3), "Carol", 1020, 0));
     busy.log.take();
-    busy.target(A, B);
-    busy.action(A, 71);
+    busy.target(B, A);
+    busy.action(B, 71);
     busy.log.take();
     busy.target(ObjectId(3), B);
     busy.action(ObjectId(3), 71);
@@ -662,7 +657,7 @@ fn an_approval_from_the_wrong_distance_is_refused_for_both() {
     // NOTE(java-quirk): the request was not cleared, so Bob can answer again once he is back.
     s.world.player_mut(B).unwrap().core.x = 1100;
     s.answer(B, 16, 1, A);
-    assert_eq!(socials(&s.log.take(), A), [(A.0, 16), (B.0, 16)]);
+    assert_eq!(socials(&s.log.take(), A), [(B.0, 16), (A.0, 16)]);
 }
 
 /// `useCoupleSocial` with a walking player: the question waits for `ARRIVED`

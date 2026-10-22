@@ -800,8 +800,8 @@ impl ClientSession {
                 entry_id: p.entry_id,
                 amount: p.amount,
             },
-            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
-            // ported), RequestPrivateStore*, SetPrivateStore*
+            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions go to
+            // `ClientInput::ActionUse` below), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
                 ClientInput::Store(StoreInput::ActionUse {
                     action_id: p.action_id,
