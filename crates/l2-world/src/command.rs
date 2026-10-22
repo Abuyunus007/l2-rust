@@ -138,6 +138,12 @@ pub enum ClientInput {
     },
     /// Java `TradeDone` (1 = confirm, anything else = cancel).
     TradeDone { response: i32 },
+    /// Java `MultiSellChoose`: run an entry of the open multisell list `amount` times.
+    MultiSellChoose {
+        list_id: i32,
+        entry_id: i32,
+        amount: i64,
+    },
     /// The private store packets (M6-STORE-01): `RequestActionUse` for the three store actions,
     /// `RequestPrivateStore*`, `SetPrivateStore*`.
     Store(crate::trade::StoreInput),
@@ -188,6 +194,9 @@ pub enum ClientInput {
     DuelAnswerStart { party_duel: i32, response: i32 },
     /// Java `RequestDuelSurrender`.
     DuelSurrender,
+    /// The enchant window packets (`RequestEnchantItem`, the attribute stone packets, ...), see
+    /// `enchant/`.
+    Enchant(crate::enchant::EnchantInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

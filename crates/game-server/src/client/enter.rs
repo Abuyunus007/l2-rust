@@ -26,9 +26,9 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    ClanInput, ClientInput, FriendEntry, ItemData, LeaveReason, MacroCmdData, MacroData, PacketSink,
-    PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ClanInput, ClientInput, EnchantInput, FriendEntry, ItemData, LeaveReason, MacroCmdData, MacroData,
+    PacketSink, PlayerData, PlayerProfile, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -462,6 +462,14 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
     }
 }
 
+/// A `character_friends` row as the world keeps it (Java `Player.getFriendList` / `BlockList`).
+fn friend_entry_of(link: FriendLink) -> FriendEntry {
+    FriendEntry {
+        object_id: link.friend_id,
+        name: link.name,
+    }
+}
+
 /// The clan columns of a `characters` row (Java `Player.restore`: `getInt` / `getLong`).
 // Java: Player.restore (wantspeace, clan_join_expiry_time, clan_create_expiry_time, power_grade,
 //       subpledge, apprentice, sponsor, lvl_joined_academy, clanid)
@@ -814,6 +822,12 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
+            // Java: MultiSellChoose
+            ClientPacket::MultiSellChoose(p) => ClientInput::MultiSellChoose {
+                list_id: p.list_id,
+                entry_id: p.entry_id,
+                amount: p.amount,
+            },
             // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions are not
             // ported), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
@@ -996,6 +1010,35 @@ impl ClientSession {
                 kind: p.kind,
                 name: p.name,
             },
+            // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
+            // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
+            // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute
+            ClientPacket::RequestEnchantItem(p) => ClientInput::Enchant(EnchantInput::Enchant {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestExTryToPutEnchantTargetItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutTargetItem {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExTryToPutEnchantSupportItem(p) => {
+                ClientInput::Enchant(EnchantInput::PutSupportItem {
+                    support_object_id: p.support_object_id,
+                    enchant_object_id: p.enchant_object_id,
+                })
+            }
+            ClientPacket::RequestExCancelEnchantItem(_) => ClientInput::Enchant(EnchantInput::CancelEnchant),
+            ClientPacket::RequestExEnchantItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::EnchantAttribute {
+                    object_id: p.object_id,
+                })
+            }
+            ClientPacket::RequestExRemoveItemAttribute(p) => {
+                ClientInput::Enchant(EnchantInput::RemoveAttribute {
+                    object_id: p.object_id,
+                    element: p.element,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),
@@ -1762,13 +1805,5 @@ mod tests {
 
         pool.close().await;
         db.drop_db().await;
-    }
-}
-
-/// A `character_friends` row as the world keeps it (Java `Player.getFriendList` / `BlockList`).
-fn friend_entry_of(link: FriendLink) -> FriendEntry {
-    FriendEntry {
-        object_id: link.friend_id,
-        name: link.name,
     }
 }

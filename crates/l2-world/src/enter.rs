@@ -512,6 +512,8 @@ impl World {
         self.clan_join_penalty_message(id);
         // Java `onPlayerEnter` -> `notifyFriends()`: the friends who are online see the login.
         self.friends_notify_online(id);
+        // Over-enchant protection.
+        self.over_enchant_protection_on_enter(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak

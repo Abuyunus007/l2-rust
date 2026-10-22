@@ -74,6 +74,7 @@ pub mod chat;
 pub mod combat;
 pub mod duel;
 pub mod effect_packets;
+pub mod enchant;
 pub mod enterworld;
 pub mod entry;
 pub mod fence;
@@ -85,6 +86,7 @@ pub mod interaction;
 pub mod items;
 pub mod map_windows;
 pub mod movement;
+pub mod multisell;
 pub mod party;
 pub mod pledge;
 pub mod regen;
@@ -111,6 +113,11 @@ pub use combat::{
 };
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
+pub use enchant::{
+    ChooseInventoryItem, EnchantResult, ExAttributeEnchantResult, ExBaseAttributeCancelResult,
+    ExChooseInventoryAttributeItem, ExPutEnchantSupportItemResult, ExPutEnchantTargetItemResult,
+    ExShowBaseAttributeCancelWindow,
+};
 pub use enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExShowScreenMessage, ExStorageMaxCount,
     ExUiSetting, ExVoteSystemInfo, FriendList, HennaInfo, QuestList, ShortcutInit, ShortcutRegister,
@@ -136,6 +143,9 @@ pub use items::{
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
+pub use multisell::{
+    MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+};
 pub use party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
