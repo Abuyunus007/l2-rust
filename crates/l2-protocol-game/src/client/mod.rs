@@ -164,6 +164,7 @@ macro_rules! client_unit_packet {
 
 pub mod charscreen;
 pub mod combat;
+pub mod couple;
 pub mod duel;
 pub mod enterworld;
 pub mod handshake;
@@ -186,6 +187,7 @@ pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
+pub use couple::AnswerCoupleAction;
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use handshake::{AuthLogin, ProtocolVersion};

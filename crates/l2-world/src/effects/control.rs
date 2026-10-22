@@ -130,6 +130,10 @@ pub(crate) struct CreatureControl {
     pub revive_requested: bool,
     pub revive_power: f64,
     pub revive_pet: bool,
+    /// `AbstractAI._nextAction` (see `actions.rs`).
+    pub next_action: Option<crate::actions::NextAction>,
+    /// `Player._multiSociaAction` and `_multiSocialTarget`.
+    pub multi_social: crate::actions::MultiSocial,
 }
 
 impl CreatureControl {

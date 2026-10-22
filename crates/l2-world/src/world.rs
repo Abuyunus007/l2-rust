@@ -559,6 +559,12 @@ impl World {
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
+            // Java: AnswerCoupleAction (`actions.rs`)
+            ClientInput::AnswerCoupleAction {
+                action_id,
+                answer,
+                object_id,
+            } => self.on_answer_couple_action(id, action_id, answer, object_id),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),

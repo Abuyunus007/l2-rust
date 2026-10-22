@@ -599,6 +599,9 @@ impl World {
         let Some(template) = table.get(skill.id, skill.level) else {
             return;
         };
+        // CreatureAI.setIntentionCast, `finally`: a `NextAction` removed by CAST goes (nothing in
+        // the body reads it, so it can go first).
+        self.clear_next_action_removed_by(id, Intention::Cast);
         // AttackableAI.setIntentionCast: the target first.
         if self.is_attackable_npc(id) {
             self.attackable_before_intention_cast(id, target);
@@ -692,6 +695,8 @@ impl World {
                 None => self.set_intention_idle(id),
             }
         }
-        // CreatureAI: `canHandleAction()` and the FINISH_CASTING `NextAction` (not ported).
+        // CreatureAI: `canHandleAction()` and the FINISH_CASTING `NextAction` (the couple action
+        // of `actions.rs`; the callbacks of the skill packets are not ported).
+        self.fire_finish_casting_next_action(id);
     }
 }

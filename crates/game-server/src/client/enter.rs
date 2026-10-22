@@ -874,6 +874,12 @@ impl ClientSession {
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
             },
+            // Java: AnswerCoupleAction
+            ClientPacket::AnswerCoupleAction(p) => ClientInput::AnswerCoupleAction {
+                action_id: p.action_id,
+                answer: p.answer,
+                object_id: p.object_id,
+            },
             // The pet packets are PET-01's: the world hears them as not ported yet.
             ClientPacket::RequestPetGetItem(_) => ClientInput::Other {
                 opcode: l2_protocol_game::client::RequestPetGetItem::OPCODE.id(),
