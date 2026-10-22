@@ -87,6 +87,9 @@ impl World {
         let clan_leave = self.clan_before_leave(id);
         // `deleteMe`: "If a Party is in progress, leave it".
         self.leave_party(id);
+        // `deleteMe`: the wyvern's skill goes; `stopAllTimers` stops the feed, stores the food of
+        // the mounted pet and ends the rent.
+        self.mount_on_leave(id);
         // `deleteMe`: `stopCubics()` (the cubic ids go; `UserInfo` is sent to the leaving client).
         self.stop_cubics(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."

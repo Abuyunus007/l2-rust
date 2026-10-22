@@ -22,7 +22,9 @@ use l2_data::{
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{GmViewPledgeInfo, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{
+    GmViewPledgeInfo, NpcHtmlMessage, Ride, SetupGauge, SystemMessage, SystemMessageParam,
+};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord, PlayerClanState};
 use l2_world::*;
 
@@ -101,6 +103,9 @@ fn rights() -> AdminRights {
         "transform_menu",
         "ride_horse",
         "ride_bike",
+        "ride_wyvern",
+        "ride_strider",
+        "ride_wolf",
         "unride",
         "unride_wyvern",
         "unride_strider",
@@ -1039,8 +1044,12 @@ fn untransform_of_a_normal_character_is_an_invalid_target() {
     assert_eq!(system_ids_to(&s.log.take(), GM), [SystemMessageId::InvalidTarget]);
 }
 
+/// `//unride`: the horse and the bike leave by untransforming, anything else is `dismount()`.
+// NOTE(java-quirk): `dismount()` has no "is mounted" check, so a player who rides nothing still
+// gets the dismount packets (the food gauge at 0, `Ride` with 1000000 as the NPC id and the user
+// info).
 #[test]
-fn unride_without_a_mount_or_transformation_does_nothing() {
+fn unride_without_a_mount_or_transformation_dismounts_nothing_but_sends_the_packets() {
     let mut s = setup();
     s.enter(GM, 0);
     s.enter(USER, 300);
@@ -1048,8 +1057,61 @@ fn unride_without_a_mount_or_transformation_does_nothing() {
     s.log.take();
 
     run(&mut s, GM, "admin_unride");
-    assert!(s.log.take().is_empty());
+    let sent = s.log.take();
+    let rides = decoded::<Ride>(&sent, USER, "RIDE");
+    assert_eq!(rides.len(), 1);
+    assert_eq!(
+        (rides[0].mounted, rides[0].ride_type, rides[0].ride_npc_id),
+        (false, 0, 0)
+    );
+    assert_eq!(decoded::<SetupGauge>(&sent, USER, "SETUP_GAUGE").len(), 1);
     assert_eq!(s.world.transformation_id(ObjectId(USER)), 0);
+    assert!(!s.world.is_mounted(ObjectId(USER)));
+}
+
+/// `//ride_wyvern`, `//ride_strider` and `//ride_wolf` mount the target (`mount(npcId, 0, false)`);
+/// a target that already rides (or has a summon) is refused with the GM's message; `//unride`
+/// takes the mount away.
+#[test]
+fn ride_commands_mount_the_target_and_unride_dismounts() {
+    use l2_world::mount::MountType;
+    let mut s = setup();
+    s.enter(GM, 0);
+    s.enter(USER, 300);
+    s.target(GM, Some(USER));
+    s.log.take();
+
+    for (command, npc_id, mount_type) in [
+        ("admin_ride_strider", 12526, MountType::Strider),
+        ("admin_ride_wyvern", 12621, MountType::Wyvern),
+        ("admin_ride_wolf", 16041, MountType::Wolf),
+    ] {
+        run(&mut s, GM, command);
+        let sent = s.log.take();
+        let rides = decoded::<Ride>(&sent, USER, "RIDE");
+        assert_eq!(rides.len(), 1, "{command}");
+        assert_eq!(
+            (rides[0].mounted, rides[0].ride_type, rides[0].ride_npc_id),
+            (true, mount_type.ordinal(), npc_id),
+            "{command}"
+        );
+        assert_eq!(s.world.mount_type_of(ObjectId(USER)), mount_type);
+        assert_eq!(s.world.mount_object_id_of(ObjectId(USER)), ObjectId(0));
+
+        // Already mounted: refused, nothing else happens.
+        run(&mut s, GM, "admin_ride_strider");
+        assert_eq!(
+            texts_to(&s.log.take(), GM),
+            ["Target already have a summon."],
+            "{command}"
+        );
+
+        run(&mut s, GM, "admin_unride");
+        let sent = s.log.take();
+        assert!(!s.world.is_mounted(ObjectId(USER)), "{command}");
+        let rides = decoded::<Ride>(&sent, USER, "RIDE");
+        assert_eq!(rides.last().map(|r| r.mounted), Some(false));
+    }
 }
 
 // ------------------------------------------------------------------------------------ skills

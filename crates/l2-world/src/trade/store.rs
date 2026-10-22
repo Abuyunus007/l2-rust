@@ -361,8 +361,11 @@ impl World {
                 return false;
             }
         }
-        // `!_inOlympiadMode` (M8) and `!isMounted()` (no mounts yet) hold for everybody.
-        !self.is_alike_dead(id) && !self.is_inside_zone(id, ZoneId::NoStore) && !self.is_casting_now(id)
+        // `!_inOlympiadMode` (M8) holds for everybody.
+        !self.is_alike_dead(id)
+            && !self.is_mounted(id)
+            && !self.is_inside_zone(id, ZoneId::NoStore)
+            && !self.is_casting_now(id)
     }
 
     /// Java `Player.tryOpenPrivateBuyStore()`.

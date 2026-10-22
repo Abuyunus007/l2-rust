@@ -416,6 +416,8 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         max_bonus_exp: p.max_bonus_exp,
         max_bonus_sp: p.max_bonus_sp,
         alt_party_range: p.alt_party_range,
+        enable_free_strider: config.free_mounts.enable_free_strider,
+        enable_free_wyvern: config.free_mounts.enable_free_wyvern,
         ..ExpSettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {

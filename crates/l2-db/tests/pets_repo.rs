@@ -168,6 +168,30 @@ async fn pet_row_is_inserted_updated_read_and_deleted_like_java() {
     db.drop_database().await;
 }
 
+/// `Player.storePetFood`: only `fed` of the one row changes.
+#[tokio::test]
+async fn update_fed_changes_only_the_food_of_one_row() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = PetRepository::new(db.pool.clone());
+    repo.insert_pet(&buffalo(COLLAR, "Buffy", true)).await.unwrap();
+    repo.insert_pet(&buffalo(OTHER_COLLAR, "Other", false))
+        .await
+        .unwrap();
+    repo.update_fed(COLLAR, 4_321).await.unwrap();
+    let row = repo.pet_of_control_item(COLLAR).await.unwrap().unwrap();
+    assert_eq!(
+        (row.fed, row.name.as_deref(), row.restore.as_str()),
+        (Some(4_321), Some("Buffy"), "true")
+    );
+    let other = repo.pet_of_control_item(OTHER_COLLAR).await.unwrap().unwrap();
+    assert_eq!(other.fed, Some(9));
+    // A collar without a row: nothing happens (Java's UPDATE matches no row).
+    repo.update_fed(1, 5).await.unwrap();
+    db.drop_database().await;
+}
+
 /// The pets of a character are the rows of the collars it holds in its inventory.
 #[tokio::test]
 async fn pets_of_owner_are_the_rows_of_the_collars_in_the_inventory() {

@@ -23,8 +23,9 @@
 //   `doRevive` of a pending revive (a restart point, M4-DEATH-01) are in. `setTarget(null)` is
 //   in (M3-TALK-01).
 // - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
-//   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, flying
-//   mounts below -1005: M4+.
+//   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, and the
+//   `Player.teleToLocation(loc)` override that first sends a flying form below -1005 to -1005:
+//   M4+. A flying creature keeps the z of the target (`_isFlying`, wyverns and flying forms).
 // - A detached client (`GameClient.isDetached`, offline mode) is never teleported "in place".
 
 use l2_geo::Location;
@@ -207,9 +208,13 @@ impl World {
         let mut x = x_value;
         let mut y = y_value;
         // Not flying: the ground under the target.
-        let mut z = geo
-            .as_ref()
-            .map_or(z_value, |geo| geo.height(x_value, y_value, z_value));
+        let flying = self.is_flying(id);
+        let mut z = if flying {
+            z_value
+        } else {
+            geo.as_ref()
+                .map_or(z_value, |geo| geo.height(x_value, y_value, z_value))
+        };
 
         // "Prepare creature for teleport." A player who picked a restart point is revived now,
         // before he leaves (`RequestRestartPoint` set the flag).
@@ -276,7 +281,7 @@ impl World {
             }
 
             // Not flying.
-            if let Some(geo) = &geo {
+            if !flying && let Some(geo) = &geo {
                 let valid = geo.valid_location(
                     Location::new(x_value, y_value, z),
                     Location::new(x, y, z),

@@ -23,6 +23,8 @@ const RESTORE_PETS_OF_OWNER: &str = "SELECT p.item_obj_id, p.name, p.level, p.cu
 const INSERT_PET: &str = "INSERT INTO pets (name,level,curHp,curMp,exp,sp,fed,ownerId,restore,item_obj_id) VALUES (?,?,?,?,?,?,?,?,?,?)";
 // Java: Pet.storeMe (a pet that is in the table)
 const UPDATE_PET: &str = "UPDATE pets SET name=?,level=?,curHp=?,curMp=?,exp=?,sp=?,fed=?,ownerId=?,restore=? WHERE item_obj_id = ?";
+// Java: Player.storePetFood
+const UPDATE_PET_FED: &str = "UPDATE pets SET fed=? WHERE item_obj_id = ?";
 // Java: Pet.destroyControlItem
 const DELETE_PET: &str = "DELETE FROM pets WHERE item_obj_id = ?";
 // Java: CharSummonTable.INIT_PET
@@ -168,6 +170,17 @@ impl PetRepository {
         Ok(())
     }
 
+    /// `UPDATE pets SET fed`: the food a mounted pet had left when its rider got off.
+    // Java: Player.storePetFood
+    pub async fn update_fed(&self, item_obj_id: i32, fed: i32) -> Result<()> {
+        sqlx::query(UPDATE_PET_FED)
+            .bind(fed)
+            .bind(item_obj_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     /// Forgets a pet whose collar is gone.
     // Java: Pet.destroyControlItem
     pub async fn delete_pet(&self, item_obj_id: i32) -> Result<()> {
@@ -262,6 +275,7 @@ mod tests {
         assert_eq!(INSERT_PET.matches('?').count(), 10);
         assert_eq!(UPDATE_PET.matches('?').count(), 10);
         assert_eq!(DELETE_PET.matches('?').count(), 1);
+        assert_eq!(UPDATE_PET_FED.matches('?').count(), 2);
         assert_eq!(CHECK_PET_NAME.matches('?').count(), 2);
         assert_eq!(ADD_SKILL_SAVE.matches('?').count(), 5);
         assert_eq!(RESTORE_SKILL_SAVE.matches('?').count(), 1);

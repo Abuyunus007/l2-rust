@@ -37,6 +37,7 @@ pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod mail;
+pub mod mount;
 pub mod movement;
 pub mod multisell;
 pub mod npc;

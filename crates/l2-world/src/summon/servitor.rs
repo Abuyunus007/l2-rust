@@ -84,6 +84,9 @@ pub enum SummonWrite {
     /// `Pet.destroyControlItem` and `ItemManager.destroyItem` of a collar: `DELETE FROM pets
     /// WHERE item_obj_id = ?`.
     DeletePet { control_object_id: ObjectId },
+    /// `Player.storePetFood`: `UPDATE pets SET fed=? WHERE item_obj_id = ?` (the food of a mounted
+    /// pet, M6-FU-07).
+    PetFed { control_object_id: ObjectId, fed: i32 },
     /// `Pet.storeEffect` / `restoreEffects`: `DELETE FROM character_pet_skills_save WHERE
     /// petObjItemId=?`, then one `INSERT` per row (`buff_index` counts from 1).
     PetEffects {
