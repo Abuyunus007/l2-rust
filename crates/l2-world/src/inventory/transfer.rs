@@ -54,12 +54,14 @@ impl World {
         true
     }
 
-    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory.
-    // The control item of a summoned pet, the saddle of a mount, the enchant scroll in use and a
-    // cursed weapon refuse here; none of them exists yet (summons are a later M6 card, enchanting
-    // and cursed weapons are not ported).
+    /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory and
+    /// is not the enchant scroll in use.
+    // The control item of a summoned pet, the saddle of a mount and a cursed weapon refuse here as
+    // well; none of them exists yet (summons are a later M6 card, mounts and cursed weapons are
+    // not ported).
     pub(crate) fn validate_item_manipulation(&self, player: ObjectId, object_id: ObjectId) -> bool {
         self.inventory_item(player, object_id).is_some()
+            && self.active_enchant_item(player) != Some(object_id)
     }
 
     /// Java `Player.checkItemManipulation(objectId, count, action)`: the item if the player owns
@@ -76,6 +78,10 @@ impl World {
             return None;
         }
         if count > item.count {
+            return None;
+        }
+        // The enchant scroll in use.
+        if self.active_enchant_item(player) == Some(object_id) {
             return None;
         }
         // We cannot put a weapon with augmentation in a warehouse (or trade it) while casting

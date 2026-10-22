@@ -28,8 +28,7 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - The flood protector `canPerformTransaction`, `setInventoryBlockingStatus(true)` (nothing
-//   reads the 1.5 s inventory lock yet), the enchant scroll in use (`isEnchanting`,
-//   `getActiveEnchantItemId`; the enchant card), cursed weapons, the olympiad, a summoned pet's
+//   reads the 1.5 s inventory lock yet), cursed weapons, the olympiad, a summoned pet's
 //   control item.
 // - The recipe level sort of the sorted list (`RecipeData` is the craft card's).
 // - Clan halls and castles (`ClanHallManager`, `FortManager`, the vault): M7.

@@ -7,6 +7,7 @@
 
 use l2_net::{Decode, PacketError, PacketReader};
 
+use crate::client::MultiSellChoose;
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
@@ -36,6 +37,8 @@ use crate::client::{
 };
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
+    RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
+    RequestExRemoveItemAttribute, RequestExTryToPutEnchantSupportItem, RequestExTryToPutEnchantTargetItem,
     RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
 };
 use crate::client::{
@@ -116,6 +119,8 @@ pub enum ClientPacket {
     AddTradeItem(AddTradeItem),
     /// The client's `TRADE_DONE` (confirm or cancel the trade window).
     TradeDone(TradeDone),
+    /// `MULTI_SELL_CHOOSE`: the player picks an entry of the open multisell list.
+    MultiSellChoose(MultiSellChoose),
     RequestPrivateStoreManageSell(RequestPrivateStoreManageSell),
     RequestPrivateStoreManageBuy(RequestPrivateStoreManageBuy),
     RequestPrivateStoreQuitSell(RequestPrivateStoreQuitSell),
@@ -194,6 +199,12 @@ pub enum ClientPacket {
     RequestDeleteSentPost(RequestDeleteSentPost),
     RequestSentPost(RequestSentPost),
     RequestCancelPostAttachment(RequestCancelPostAttachment),
+    RequestEnchantItem(RequestEnchantItem),
+    RequestExTryToPutEnchantTargetItem(RequestExTryToPutEnchantTargetItem),
+    RequestExTryToPutEnchantSupportItem(RequestExTryToPutEnchantSupportItem),
+    RequestExCancelEnchantItem(RequestExCancelEnchantItem),
+    RequestExEnchantItemAttribute(RequestExEnchantItemAttribute),
+    RequestExRemoveItemAttribute(RequestExRemoveItemAttribute),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -291,6 +302,7 @@ pub fn decode_client(
         AnswerTradeRequest::OPCODE => ClientPacket::AnswerTradeRequest(AnswerTradeRequest::decode(reader)?),
         AddTradeItem::OPCODE => ClientPacket::AddTradeItem(AddTradeItem::decode(reader)?),
         TradeDone::OPCODE => ClientPacket::TradeDone(TradeDone::decode(reader)?),
+        MultiSellChoose::OPCODE => ClientPacket::MultiSellChoose(MultiSellChoose::decode(reader)?),
         RequestPrivateStoreManageSell::OPCODE => {
             ClientPacket::RequestPrivateStoreManageSell(RequestPrivateStoreManageSell::decode(reader)?)
         }
@@ -394,6 +406,7 @@ pub fn decode_client(
         RequestChangePetName::OPCODE => {
             ClientPacket::RequestChangePetName(RequestChangePetName::decode(reader)?)
         }
+        RequestEnchantItem::OPCODE => ClientPacket::RequestEnchantItem(RequestEnchantItem::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -492,6 +505,21 @@ fn decode_ex_client(
         RequestSentPost::EX_OPCODE => ClientPacket::RequestSentPost(RequestSentPost::decode(reader)?),
         RequestCancelPostAttachment::EX_OPCODE => {
             ClientPacket::RequestCancelPostAttachment(RequestCancelPostAttachment::decode(reader)?)
+        }
+        RequestExTryToPutEnchantTargetItem::EX_OPCODE => ClientPacket::RequestExTryToPutEnchantTargetItem(
+            RequestExTryToPutEnchantTargetItem::decode(reader)?,
+        ),
+        RequestExTryToPutEnchantSupportItem::EX_OPCODE => ClientPacket::RequestExTryToPutEnchantSupportItem(
+            RequestExTryToPutEnchantSupportItem::decode(reader)?,
+        ),
+        RequestExCancelEnchantItem::EX_OPCODE => {
+            ClientPacket::RequestExCancelEnchantItem(RequestExCancelEnchantItem::decode(reader)?)
+        }
+        RequestExEnchantItemAttribute::EX_OPCODE => {
+            ClientPacket::RequestExEnchantItemAttribute(RequestExEnchantItemAttribute::decode(reader)?)
+        }
+        RequestExRemoveItemAttribute::EX_OPCODE => {
+            ClientPacket::RequestExRemoveItemAttribute(RequestExRemoveItemAttribute::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };

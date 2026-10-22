@@ -1612,7 +1612,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         exp_before_death: player.profile.exp_before_death,
         sp: if base_active { player.sp } else { clamp_i64(row.sp) },
         karma: player.karma,
-        fame: clamp_i32(u64::from(row.fame)),
+        // Java writes `getFame()`: multisell fame ingredients and products change it (M6-MULTISELL-01).
+        fame: player.profile.fame,
         pvp_kills: player.pvp_kills,
         pk_kills: player.pk_kills,
         clan_id: clan.map_or_else(

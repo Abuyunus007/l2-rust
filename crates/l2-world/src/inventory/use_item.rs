@@ -189,9 +189,10 @@ impl crate::world::World {
                 _ => {}
             }
 
-            // FOLLOW-UP: the over-enchant protection (`OverEnchantProtection`, on by default in
-            // Java) destroys an item enchanted past the maximum of `EnchantItemGroupsData`; that
-            // table is not loaded, so nothing is destroyed here.
+            // Over-enchant protection.
+            if self.over_enchant_protection_on_use(id, &item, template) {
+                return;
+            }
 
             // M5: while casting, the equip waits for the cast to finish (`NextAction` on
             // FINISH_CASTING).

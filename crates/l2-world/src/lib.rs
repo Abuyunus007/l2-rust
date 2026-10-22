@@ -23,6 +23,7 @@ pub mod dialog;
 pub mod door;
 pub mod duel;
 pub mod effects;
+pub mod enchant;
 pub mod enter;
 pub mod formulas;
 pub mod ground_item;
@@ -32,6 +33,7 @@ pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod movement;
+pub mod multisell;
 pub mod npc;
 pub mod objects;
 pub mod outbox;
@@ -82,6 +84,7 @@ pub use effects::{
     BuffInfo, BuffInfoId, EffectHandler, EffectList, EffectSettings, EffectType, IconEntry, ListKind,
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
+pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
@@ -91,6 +94,7 @@ pub use l2_util::{ObjectId, WorldRng};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };
+pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
