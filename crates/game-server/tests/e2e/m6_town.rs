@@ -46,9 +46,12 @@ fn sell_lists(batch: &[Vec<u8>]) -> Vec<ExBuySellList> {
 /// Clicks `npc` twice (select, then talk) and returns the page it shows.
 async fn talk_to<H: Harness>(h: &mut H, npc: i32) -> NpcHtmlMessage {
     h.act(Who::A, act::click(npc)).await;
-    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(Who::A, act::click(npc)).await;
-    let page = h.collect_until(Who::A, &|body| is_named(body, "NPC_HTML_MESSAGE")).await;
+    let page = h
+        .collect_until(Who::A, &|body| is_named(body, "NPC_HTML_MESSAGE"))
+        .await;
     all(&page, "NPC_HTML_MESSAGE").remove(0)
 }
 
@@ -75,11 +78,15 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     // ---- the smith's page: its links are what the client may send back ---------------------------
     let page = talk_to(h, smith).await;
     assert!(
-        page.html.contains(&format!("npc_{smith}_Buy {}", m6_data::BUY_LIST)),
+        page.html
+            .contains(&format!("npc_{smith}_Buy {}", m6_data::BUY_LIST)),
         "{}",
         page.html
     );
-    assert!(page.html.contains(&format!("npc_{smith}_multisell {}", m6_data::MULTISELL_LIST)));
+    assert!(
+        page.html
+            .contains(&format!("npc_{smith}_multisell {}", m6_data::MULTISELL_LIST))
+    );
 
     // ---- the buy window: the products with their prices, the sell tab with the gems -----------------
     h.act(
@@ -89,9 +96,15 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     .await;
     let window = h.collect_quiet(Who::A).await;
     let buy = buy_lists(&window).remove(0);
-    assert_eq!((buy.list_id, buy.money), (m6_data::BUY_LIST, m6_data::START_ADENA));
     assert_eq!(
-        buy.products.iter().map(|p| (p.item_id, p.price)).collect::<Vec<_>>(),
+        (buy.list_id, buy.money),
+        (m6_data::BUY_LIST, m6_data::START_ADENA)
+    );
+    assert_eq!(
+        buy.products
+            .iter()
+            .map(|p| (p.item_id, p.price))
+            .collect::<Vec<_>>(),
         [
             (SOULSHOT_ID, m6_data::SOULSHOT_PRICE),
             (m5_data::MANA_POTION, POTION_PRICE)
@@ -116,14 +129,20 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         Who::A,
         act::buy_items(
             m6_data::BUY_LIST,
-            &[(SOULSHOT_ID, SHOTS_BOUGHT), (m5_data::MANA_POTION, POTIONS_BOUGHT)],
+            &[
+                (SOULSHOT_ID, SHOTS_BOUGHT),
+                (m5_data::MANA_POTION, POTIONS_BOUGHT),
+            ],
         ),
     )
     .await;
     let bought = h.collect_quiet(Who::A).await;
     assert!(message_ids(&bought).contains(&SystemMessageId::TheTransactionIsComplete));
     assert!(names(&bought).contains(&"INVENTORY_UPDATE".to_owned()));
-    assert!(sell_lists(&bought).iter().any(|l| l.done), "the window is told it is done");
+    assert!(
+        sell_lists(&bought).iter().any(|l| l.done),
+        "the window is told it is done"
+    );
 
     // ---- selling: the gems go to the refund list, the adena comes ------------------------------------------
     h.act(
@@ -155,14 +174,25 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     .await;
     let shown = h.collect_quiet(Who::A).await;
     let exchange: MultiSellList = all(&shown, "MULTI_SELL_LIST").remove(0);
-    assert_eq!((exchange.list_id, exchange.entries.len()), (m6_data::MULTISELL_LIST, 1));
+    assert_eq!(
+        (exchange.list_id, exchange.entries.len()),
+        (m6_data::MULTISELL_LIST, 1)
+    );
     let entry = &exchange.entries[0];
     assert_eq!(
-        entry.products.iter().map(|p| (p.item_id, p.count)).collect::<Vec<_>>(),
+        entry
+            .products
+            .iter()
+            .map(|p| (p.item_id, p.count))
+            .collect::<Vec<_>>(),
         [(m6_data::INGOT, m6_data::EXCHANGE_INGOTS)]
     );
     assert_eq!(
-        entry.ingredients.iter().map(|i| (i.item_id, i.count)).collect::<Vec<_>>(),
+        entry
+            .ingredients
+            .iter()
+            .map(|i| (i.item_id, i.count))
+            .collect::<Vec<_>>(),
         [
             (m6_data::ORE, m6_data::EXCHANGE_ORE),
             (ADENA_ID, m6_data::EXCHANGE_ADENA)
@@ -177,7 +207,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     let messages = system_messages(&exchanged);
     // The ingredients go first, then the products come ("You have earned 4 Test Ingot(s)").
     assert_eq!(
-        messages.iter().map(|m| (m.id, m.params.clone())).collect::<Vec<_>>(),
+        messages
+            .iter()
+            .map(|m| (m.id, m.params.clone()))
+            .collect::<Vec<_>>(),
         [
             (
                 SystemMessageId::S2S1HasDisappeared,
@@ -205,11 +238,19 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 
     // ---- the warehouse: put 10 gems in (30 adena), take 4 out (free) ---------------------------------------------
     let page = talk_to(h, keeper).await;
-    assert!(page.html.contains(&format!("npc_{keeper}_DepositP")), "{}", page.html);
-    h.act(Who::A, act::bypass(&format!("npc_{keeper}_DepositP"))).await;
+    assert!(
+        page.html.contains(&format!("npc_{keeper}_DepositP")),
+        "{}",
+        page.html
+    );
+    h.act(Who::A, act::bypass(&format!("npc_{keeper}_DepositP")))
+        .await;
     let deposit_window = h.collect_quiet(Who::A).await;
     let deposit_list: WareHouseDepositList = all(&deposit_window, "WAREHOUSE_DEPOSIT_LIST").remove(0);
-    assert_eq!(deposit_list.wh_type, l2_protocol_game::server::warehouse::WH_TYPE_PRIVATE);
+    assert_eq!(
+        deposit_list.wh_type,
+        l2_protocol_game::server::warehouse::WH_TYPE_PRIVATE
+    );
     assert!(deposit_list.items.iter().any(|i| i.item_id == m6_data::GEM));
     h.act(
         Who::A,
@@ -217,12 +258,20 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     )
     .await;
     let deposited = h.collect_quiet(Who::A).await;
-    assert!(names(&deposited).contains(&"INVENTORY_UPDATE".to_owned()), "{:?}", names(&deposited));
+    assert!(
+        names(&deposited).contains(&"INVENTORY_UPDATE".to_owned()),
+        "{:?}",
+        names(&deposited)
+    );
 
-    h.act(Who::A, act::bypass(&format!("npc_{keeper}_WithdrawP"))).await;
+    h.act(Who::A, act::bypass(&format!("npc_{keeper}_WithdrawP")))
+        .await;
     let withdraw_window = h.collect_quiet(Who::A).await;
     let withdraw_list: WareHouseWithdrawalList = all(&withdraw_window, "WAREHOUSE_WITHDRAW_LIST").remove(0);
-    assert_eq!(withdraw_list.wh_type, l2_protocol_game::server::warehouse::WH_TYPE_PRIVATE);
+    assert_eq!(
+        withdraw_list.wh_type,
+        l2_protocol_game::server::warehouse::WH_TYPE_PRIVATE
+    );
     assert_eq!(withdraw_list.items.len(), 1, "{withdraw_list:?}");
     let stored = &withdraw_list.items[0];
     assert_eq!((stored.item_id, stored.count), (m6_data::GEM, GEMS_DEPOSITED));
@@ -232,7 +281,11 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     )
     .await;
     let withdrawn = h.collect_quiet(Who::A).await;
-    assert!(names(&withdrawn).contains(&"INVENTORY_UPDATE".to_owned()), "{:?}", names(&withdrawn));
+    assert!(
+        names(&withdrawn).contains(&"INVENTORY_UPDATE".to_owned()),
+        "{:?}",
+        names(&withdrawn)
+    );
 
     let left = h.leave(Who::A).await;
     Played { left }
@@ -248,24 +301,39 @@ pub fn assert_played(played: &Played) {
         - DEPOSIT_FEE;
     assert_eq!(adena, 3_999_870);
     assert_eq!(left.count_of(ADENA_ID), adena);
-    assert_eq!(left.count_of(SOULSHOT_ID), m5_data::SOULSHOTS_AT_START + SHOTS_BOUGHT);
+    assert_eq!(
+        left.count_of(SOULSHOT_ID),
+        m5_data::SOULSHOTS_AT_START + SHOTS_BOUGHT
+    );
     assert_eq!(
         left.count_of(m5_data::MANA_POTION),
         m5_data::POTIONS_AT_START + POTIONS_BOUGHT
     );
     // The ore is used up and the ingots are new items (D-39: ids of the Rust range).
-    assert_eq!(left.count_of(m6_data::ORE), m6_data::ORE_AT_START - m6_data::EXCHANGE_ORE * EXCHANGES);
-    assert_eq!(left.count_of(m6_data::INGOT), m6_data::EXCHANGE_INGOTS * EXCHANGES);
+    assert_eq!(
+        left.count_of(m6_data::ORE),
+        m6_data::ORE_AT_START - m6_data::EXCHANGE_ORE * EXCHANGES
+    );
+    assert_eq!(
+        left.count_of(m6_data::INGOT),
+        m6_data::EXCHANGE_INGOTS * EXCHANGES
+    );
     let ingots = left.row_of(m6_data::INGOT, "INVENTORY").expect("ingots");
     assert!(ingots.object_id >= l2_world::RUST_FIRST_OBJECT_ID);
     // Gems: 20 - 6 sold - 10 deposited + 4 taken back in the pack, 6 in the warehouse. The
     // sold gems are in no table (they sit in the refund list, which is not stored).
     let in_pack = m6_data::GEMS_AT_START - GEMS_SOLD - GEMS_DEPOSITED + GEMS_WITHDRAWN;
     assert_eq!(left.count_in(m6_data::GEM, "INVENTORY"), in_pack);
-    let kept = left.row_of(m6_data::GEM, "WAREHOUSE").expect("the gems in the warehouse");
+    let kept = left
+        .row_of(m6_data::GEM, "WAREHOUSE")
+        .expect("the gems in the warehouse");
     assert_eq!(kept.count, GEMS_DEPOSITED - GEMS_WITHDRAWN);
     assert_eq!(kept.loc_data, 0);
-    assert!(kept.object_id >= l2_world::RUST_FIRST_OBJECT_ID, "{}", kept.object_id);
+    assert!(
+        kept.object_id >= l2_world::RUST_FIRST_OBJECT_ID,
+        "{}",
+        kept.object_id
+    );
 }
 
 #[tokio::test]

@@ -34,14 +34,26 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 
     // ---- the master's page: the link carries the name the player typed ($clan_name) -----------------------
     h.act(Who::A, act::click(master)).await;
-    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(Who::A, act::click(master)).await;
-    let page = h.collect_until(Who::A, &|body| is_named(body, "NPC_HTML_MESSAGE")).await;
+    let page = h
+        .collect_until(Who::A, &|body| is_named(body, "NPC_HTML_MESSAGE"))
+        .await;
     let page: NpcHtmlMessage = all(&page, "NPC_HTML_MESSAGE").remove(0);
-    assert!(page.html.contains(&format!("npc_{master}_create_clan $clan_name")), "{}", page.html);
+    assert!(
+        page.html
+            .contains(&format!("npc_{master}_create_clan $clan_name")),
+        "{}",
+        page.html
+    );
 
     // ---- creating the clan ---------------------------------------------------------------------------------
-    h.act(Who::A, act::bypass(&format!("npc_{master}_create_clan {CLAN_NAME}"))).await;
+    h.act(
+        Who::A,
+        act::bypass(&format!("npc_{master}_create_clan {CLAN_NAME}")),
+    )
+    .await;
     let created = h.collect_quiet(Who::A).await;
     // Java `ClanTable.createClan`, at its end.
     assert_in_order(
@@ -82,7 +94,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     h.act(Who::B, act::answer_join_pledge(1)).await;
     let joined_a = h.collect_quiet(Who::A).await;
     let joined_b = h.collect_quiet(Who::B).await;
-    assert_in_order(&names(&joined_a), &["SYSTEM_MESSAGE", "PLEDGE_SHOW_MEMBER_LIST_ADD"]);
+    assert_in_order(
+        &names(&joined_a),
+        &["SYSTEM_MESSAGE", "PLEDGE_SHOW_MEMBER_LIST_ADD"],
+    );
     assert_eq!(
         message_of(&joined_a, SystemMessageId::S1HasJoinedTheClan).params,
         [text(NAME_B)]
@@ -95,11 +110,15 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 
     // ---- the levels: SP and adena for 1 and 2, SP and a Blood Mark for 3 ---------------------------------------------
     for (level, (sp, adena)) in LEVEL_COSTS.iter().enumerate() {
-        h.act(Who::A, act::bypass(&format!("npc_{master}_increase_clan_level"))).await;
+        h.act(Who::A, act::bypass(&format!("npc_{master}_increase_clan_level")))
+            .await;
         let up = h.collect_quiet(Who::A).await;
         let messages = system_messages(&up);
         assert_eq!(
-            messages.iter().map(|m| (m.id, m.params.clone())).collect::<Vec<_>>(),
+            messages
+                .iter()
+                .map(|m| (m.id, m.params.clone()))
+                .collect::<Vec<_>>(),
             [
                 (
                     SystemMessageId::S1AdenaDisappeared,
@@ -118,7 +137,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         // The level-up effect (skill 5103) is played for everybody who sees the leader.
         assert!(names(&up).contains(&"MAGIC_SKILL_USE".to_owned()));
     }
-    h.act(Who::A, act::bypass(&format!("npc_{master}_increase_clan_level"))).await;
+    h.act(Who::A, act::bypass(&format!("npc_{master}_increase_clan_level")))
+        .await;
     let up = h.collect_quiet(Who::A).await;
     assert_eq!(
         system_messages(&up)
@@ -166,7 +186,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 
 pub fn assert_played(played: &Played, a: i32) {
     let clan = &played.clans[0];
-    assert_eq!((clan.name.as_str(), clan.level, clan.leader_id), (CLAN_NAME, 3, a));
+    assert_eq!(
+        (clan.name.as_str(), clan.level, clan.leader_id),
+        (CLAN_NAME, 3, a)
+    );
     assert_eq!(played.clans_before_crest[0].level, 3);
     assert_eq!(played.clans_before_crest[0].crest_id, 0);
     // D-39: the clan has an id of the Rust range.
@@ -189,7 +212,10 @@ pub fn assert_played(played: &Played, a: i32) {
     let adena_paid: i64 = LEVEL_COSTS.iter().map(|(_, adena)| adena).sum();
     assert_eq!(leader.sp, m6_data::LEADER_SP - sp_paid);
     assert_eq!(leader.count_of(ADENA_ID), m6_data::START_ADENA - adena_paid);
-    assert_eq!(leader.count_of(m6_data::BLOOD_MARK), m6_data::BLOOD_MARKS_AT_START - 1);
+    assert_eq!(
+        leader.count_of(m6_data::BLOOD_MARK),
+        m6_data::BLOOD_MARKS_AT_START - 1
+    );
     assert_eq!((leader.level, member.level), (m6_data::LEADER_LEVEL, 1));
     assert_eq!(member.sp, 0);
     assert_eq!(member.count_of(ADENA_ID), m6_data::START_ADENA);

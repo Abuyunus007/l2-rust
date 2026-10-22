@@ -79,7 +79,6 @@ pub const BUY_LIST: i32 = 300101;
 pub const SOULSHOT_PRICE: i64 = 20;
 /// The exchange list of the smith: 5 ore and 100 adena for 2 ingots.
 pub const MULTISELL_LIST: i32 = 400101;
-pub const EXCHANGE_ENTRY: i32 = 1;
 pub const EXCHANGE_ORE: i64 = 5;
 pub const EXCHANGE_ADENA: i64 = 100;
 pub const EXCHANGE_INGOTS: i64 = 2;
@@ -435,9 +434,7 @@ pub fn write_social_data(root: &Path) {
     write(
         root,
         "data/EnchantItemData.xml",
-        &format!(
-            "<list><enchant id=\"{ENCHANT_SCROLL_D}\" targetGrade=\"D\" maxEnchant=\"16\" /></list>"
-        ),
+        &format!("<list><enchant id=\"{ENCHANT_SCROLL_D}\" targetGrade=\"D\" maxEnchant=\"16\" /></list>"),
     );
     write(
         root,

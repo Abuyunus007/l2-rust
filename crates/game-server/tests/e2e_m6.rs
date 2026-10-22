@@ -58,12 +58,12 @@ use l2_testkit::fake_game_client::{
 };
 use l2_testkit::fake_login_client::FakeClient as LoginClient;
 use l2_testkit::test_db::{DEFAULT_SERVER_INI, SAMPLE_HEXID, SAMPLE_SERVER_ID, TestDb};
-use l2_world::{
-    ClanWrite, ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
-    MailWrite, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData, SummonWrite, World,
-    WorldCommand, WorldRng,
-};
 use l2_world::clan::CrestWrite;
+use l2_world::{
+    ClanWrite, ClientInput, IdFactory, ItemData, ItemRowOp, LeaveReason, LsEvent, MailWrite, ObjectId,
+    Outbox, PacketSink, PersistCommand, PlayerData, PlayerProfile, SessionId, SkillData, StaticData,
+    SummonWrite, World, WorldCommand, WorldRng,
+};
 use login_server::state::{LoginState, ServerStatus as ListStatus};
 
 use l2_db::Pool;
@@ -538,7 +538,10 @@ mod act {
     }
 
     pub fn shop_ui_close() -> Act {
-        Act::new(ClientInput::Shop(ShopInput::UiClose), &client::RequestBuySellUIClose)
+        Act::new(
+            ClientInput::Shop(ShopInput::UiClose),
+            &client::RequestBuySellUIClose,
+        )
     }
 
     fn warehouse_entries(items: &[(i32, i64)]) -> Vec<client::WarehouseListEntry> {
@@ -675,10 +678,6 @@ impl Who {
             Who::A => 0,
             Who::B => 1,
         }
-    }
-
-    fn name(self) -> &'static str {
-        [NAME_A, NAME_B][self.index()]
     }
 }
 
@@ -1375,6 +1374,13 @@ async fn until_long(mut condition: impl FnMut() -> bool) {
     panic!("condition not met in 30 seconds");
 }
 
+/// `ownerId, summonSkillId, curHp, curMp, time` of `character_summons`.
+type SummonColumns = (u32, u32, Option<u32>, Option<u32>, u32);
+/// `clan_id, clan_name, clan_level, leader_id, crest_id` of `clan_data`.
+type ClanColumns = (i32, Option<String>, Option<i32>, Option<i32>, Option<i32>);
+/// `object_id, item_id, count, enchant_level, loc, loc_data` of `items`.
+type ItemColumns = (i32, Option<i32>, u64, Option<i32>, Option<String>, Option<i32>);
+
 struct Rig {
     db: TestDb,
     ls: login_server::Server,
@@ -1528,9 +1534,26 @@ impl Rig {
         char_id
     }
 
+    /// The persistence task writes after the world sent the command, in order; a third of a
+    /// second is far more than a statement takes.
+    async fn settle(&self) {
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
     /// The rows of `messages`, by message id. The `true`/`false` enums are Java's.
     async fn mail_rows(&self) -> Vec<MailRow> {
-        type Columns = (i32, i32, i32, Option<String>, Option<String>, i64, String, String, String, String);
+        type Columns = (
+            i32,
+            i32,
+            i32,
+            Option<String>,
+            Option<String>,
+            i64,
+            String,
+            String,
+            String,
+            String,
+        );
         let rows: Vec<Columns> = sqlx::query_as(
             "SELECT messageId, senderId, receiverId, subject, content, reqAdena, hasAttachments,              isUnread, isDeletedBySender, isDeletedByReceiver FROM messages ORDER BY messageId",
         )
@@ -1538,26 +1561,39 @@ impl Rig {
         .await
         .unwrap();
         rows.into_iter()
-            .map(|(message_id, sender_id, receiver_id, subject, content, req_adena, att, unread, by_s, by_r)| {
-                MailRow {
+            .map(
+                |(
                     message_id,
                     sender_id,
                     receiver_id,
-                    subject: subject.unwrap_or_default(),
-                    content: content.unwrap_or_default(),
+                    subject,
+                    content,
                     req_adena,
-                    has_attachments: att == "true",
-                    unread: unread == "true",
-                    deleted_by_sender: by_s == "true",
-                    deleted_by_receiver: by_r == "true",
-                }
-            })
+                    att,
+                    unread,
+                    by_s,
+                    by_r,
+                )| {
+                    MailRow {
+                        message_id,
+                        sender_id,
+                        receiver_id,
+                        subject: subject.unwrap_or_default(),
+                        content: content.unwrap_or_default(),
+                        req_adena,
+                        has_attachments: att == "true",
+                        unread: unread == "true",
+                        deleted_by_sender: by_s == "true",
+                        deleted_by_receiver: by_r == "true",
+                    }
+                },
+            )
             .collect()
     }
 
     /// The rows of `character_summons`, by owner.
     async fn summon_rows(&self) -> Vec<SummonDbRow> {
-        let rows: Vec<(u32, u32, Option<u32>, Option<u32>, u32)> = sqlx::query_as(
+        let rows: Vec<SummonColumns> = sqlx::query_as(
             "SELECT ownerId, summonSkillId, curHp, curMp, `time` FROM character_summons ORDER BY ownerId",
         )
         .fetch_all(&self.pool)
@@ -1576,7 +1612,7 @@ impl Rig {
 
     /// The rows of `clan_data` and `crests`, by id.
     async fn clan_rows(&self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
-        let clans: Vec<(i32, Option<String>, Option<i32>, Option<i32>, Option<i32>)> = sqlx::query_as(
+        let clans: Vec<ClanColumns> = sqlx::query_as(
             "SELECT clan_id, clan_name, clan_level, leader_id, crest_id FROM clan_data ORDER BY clan_id",
         )
         .fetch_all(&self.pool)
@@ -1611,14 +1647,13 @@ impl Rig {
 
     /// The rows the scenarios compare: the character's progress and every row of `items` it owns.
     async fn left_of(&self, char_id: i32) -> Left {
-        let (level, exp, sp, clan_id): (Option<u8>, Option<u64>, u64, Option<u32>) = sqlx::query_as(
-            "SELECT level, exp, sp, clanid FROM characters WHERE charId = ?",
-        )
-        .bind(char_id)
-        .fetch_one(&self.pool)
-        .await
-        .unwrap();
-        let rows: Vec<(i32, Option<i32>, u64, Option<i32>, Option<String>, Option<i32>)> = sqlx::query_as(
+        let (level, exp, sp, clan_id): (Option<u8>, Option<u64>, u64, Option<u32>) =
+            sqlx::query_as("SELECT level, exp, sp, clanid FROM characters WHERE charId = ?")
+                .bind(char_id)
+                .fetch_one(&self.pool)
+                .await
+                .unwrap();
+        let rows: Vec<ItemColumns> = sqlx::query_as(
             "SELECT object_id, item_id, `count`, enchant_level, loc, loc_data FROM items \
              WHERE owner_id = ? ORDER BY object_id",
         )
@@ -1633,24 +1668,31 @@ impl Rig {
             clan_id: clan_id.map_or(0, |c| i32::try_from(c).unwrap()),
             items: rows
                 .into_iter()
-                .map(|(object_id, item_id, count, enchant_level, loc, loc_data)| ItemRow {
-                    object_id,
-                    item_id: item_id.unwrap_or(0),
-                    count: i64::try_from(count).unwrap(),
-                    enchant_level: enchant_level.unwrap_or(0),
-                    loc: loc.unwrap_or_default(),
-                    loc_data: loc_data.unwrap_or(0),
-                })
+                .map(
+                    |(object_id, item_id, count, enchant_level, loc, loc_data)| ItemRow {
+                        object_id,
+                        item_id: item_id.unwrap_or(0),
+                        count: i64::try_from(count).unwrap(),
+                        enchant_level: enchant_level.unwrap_or(0),
+                        loc: loc.unwrap_or_default(),
+                        loc_data: loc_data.unwrap_or(0),
+                    },
+                )
                 .collect(),
         }
     }
 }
+
+/// One rig at a time: every real-server test starts a login server, a game server and a
+/// database, and the tests of this file run side by side.
+static ONE_RIG_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The scenario against the real servers.
 struct Net {
     rig: Rig,
     ids: [i32; 2],
     clients: [Option<FakeGameClient>; 2],
+    _turn: tokio::sync::MutexGuard<'static, ()>,
 }
 
 impl Net {
@@ -1658,6 +1700,7 @@ impl Net {
 
     /// `clan_leader`: see `bare_player`.
     async fn start(tag: &str, clan_leader: bool) -> Option<Self> {
+        let turn = ONE_RIG_AT_A_TIME.lock().await;
         let rig = Rig::start(tag).await?;
         let a = rig.create_character_and_leave(ACCOUNT_A, NAME_A).await;
         let b = rig.create_character_and_leave(ACCOUNT_B, NAME_B).await;
@@ -1675,6 +1718,7 @@ impl Net {
             rig,
             ids: [a, b],
             clients: [None, None],
+            _turn: turn,
         })
     }
 
@@ -1762,14 +1806,17 @@ impl Harness for Net {
     }
 
     async fn mail_rows(&mut self) -> Vec<MailRow> {
+        self.rig.settle().await;
         self.rig.mail_rows().await
     }
 
     async fn clan_rows(&mut self) -> (Vec<ClanDbRow>, Vec<CrestDbRow>) {
+        self.rig.settle().await;
         self.rig.clan_rows().await
     }
 
     async fn summon_rows(&mut self) -> Vec<SummonDbRow> {
+        self.rig.settle().await;
         self.rig.summon_rows().await
     }
 }
@@ -1798,3 +1845,6 @@ mod clan;
 
 #[path = "e2e/m6_summon.rs"]
 mod summon;
+
+#[path = "e2e/m6_checks.rs"]
+mod checks;

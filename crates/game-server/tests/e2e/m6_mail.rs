@@ -71,7 +71,12 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     assert_eq!(post_list.mails.len(), 1, "{post_list:?}");
     let entry = &post_list.mails[0];
     assert_eq!(
-        (entry.subject.as_str(), entry.sender_name.as_str(), entry.unread, entry.has_attachments),
+        (
+            entry.subject.as_str(),
+            entry.sender_name.as_str(),
+            entry.unread,
+            entry.has_attachments
+        ),
         (SUBJECT, NAME_A, true, true)
     );
     let message_id = entry.msg_id;
@@ -80,17 +85,30 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     let read = h.collect_quiet(Who::B).await;
     let reply: ExReplyReceivedPost = all(&read, "EX_REPLY_RECEIVED_POST").remove(0);
     assert_eq!(
-        (reply.msg_id, reply.sender_name.as_str(), reply.subject.as_str(), reply.content.as_str()),
+        (
+            reply.msg_id,
+            reply.sender_name.as_str(),
+            reply.subject.as_str(),
+            reply.content.as_str()
+        ),
         (message_id, NAME_A, SUBJECT, TEXT)
     );
     assert_eq!(
-        reply.items.iter().map(|i| (i.item_id, i.count)).collect::<Vec<_>>(),
+        reply
+            .items
+            .iter()
+            .map(|i| (i.item_id, i.count))
+            .collect::<Vec<_>>(),
         [(m6_data::GEM, GEMS_SENT)]
     );
 
     h.act(Who::B, act::post_attachment(message_id)).await;
     let taken = h.collect_quiet(Who::B).await;
-    assert!(names(&taken).contains(&"INVENTORY_UPDATE".to_owned()), "{:?}", names(&taken));
+    assert!(
+        names(&taken).contains(&"INVENTORY_UPDATE".to_owned()),
+        "{:?}",
+        names(&taken)
+    );
     assert!(
         message_ids(&taken).contains(&SystemMessageId::YouHaveAcquiredS2S1),
         "{:?}",
@@ -127,11 +145,21 @@ pub fn assert_played(played: &Played, a: i32, b: i32) {
     assert_eq!(played.mail_after_sending, [letter(true, true)]);
     // Reading marks it read; taking the items clears `hasAttachments`.
     assert_eq!(played.mail_after_taking, [letter(false, false)]);
-    assert!(played.message_id >= l2_world::RUST_FIRST_OBJECT_ID, "{}", played.message_id);
+    assert!(
+        played.message_id >= l2_world::RUST_FIRST_OBJECT_ID,
+        "{}",
+        played.message_id
+    );
 
     // The gems: 7 left A's stack, and B's stack grew by 7 (no row of the mail is left).
-    assert_eq!(played.left_a.count_of(m6_data::GEM), m6_data::GEMS_AT_START - GEMS_SENT);
-    assert_eq!(played.left_b.count_of(m6_data::GEM), m6_data::GEMS_AT_START + GEMS_SENT);
+    assert_eq!(
+        played.left_a.count_of(m6_data::GEM),
+        m6_data::GEMS_AT_START - GEMS_SENT
+    );
+    assert_eq!(
+        played.left_b.count_of(m6_data::GEM),
+        m6_data::GEMS_AT_START + GEMS_SENT
+    );
     for left in [&played.left_a, &played.left_b] {
         assert!(left.items.iter().all(|i| i.loc != "MAIL"), "{:?}", left.items);
         let rows = left.items.iter().filter(|i| i.item_id == m6_data::GEM).count();

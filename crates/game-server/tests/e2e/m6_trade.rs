@@ -2,8 +2,8 @@
 //! then the member walks to a quiet spot, sits down with a store of gems and the leader buys two.
 
 use l2_protocol_game::server::{
-    ChangeWaitType, ItemList, PrivateStoreListSell, PrivateStoreMsgSell, PrivateStoreManageListSell, SendTradeRequest,
-    TradeOtherAdd, TradeOwnAdd, TradeStart,
+    ChangeWaitType, ItemList, PrivateStoreListSell, PrivateStoreManageListSell, PrivateStoreMsgSell,
+    SendTradeRequest, TradeOtherAdd, TradeOwnAdd, TradeStart,
 };
 
 use super::*;
@@ -107,7 +107,11 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     h.act(Who::A, act::trade_done(1)).await;
     let confirmed_a = h.collect_quiet(Who::A).await;
     let confirmed_b = h.collect_quiet(Who::B).await;
-    assert!(!names(&confirmed_a).contains(&"TRADE_DONE".to_owned()), "not yet: {:?}", names(&confirmed_a));
+    assert!(
+        !names(&confirmed_a).contains(&"TRADE_DONE".to_owned()),
+        "not yet: {:?}",
+        names(&confirmed_a)
+    );
     assert_eq!(
         message_of(&confirmed_b, SystemMessageId::C1HasConfirmedTheTrade).params,
         [SystemMessageParam::PlayerName(NAME_A.to_owned())]
@@ -125,7 +129,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     }
 
     // ---- the store: B walks to a quiet spot, opens the manage window, lists the gems ----------------
-    h.act(Who::B, act::move_to(m6_data::STORE_SPOT, m3_data::START)).await;
+    h.act(Who::B, act::move_to(m6_data::STORE_SPOT, m3_data::START))
+        .await;
     h.wait_seconds(4).await;
     h.collect_quiet(Who::B).await;
     h.act(Who::B, act::action_use(10)).await;
@@ -135,7 +140,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     assert!(window.sell_list.is_empty());
     h.act(
         Who::B,
-        act::store_list_sell(false, &[(object_of(&list_b, m6_data::GEM), STORE_GEMS, STORE_PRICE)]),
+        act::store_list_sell(
+            false,
+            &[(object_of(&list_b, m6_data::GEM), STORE_GEMS, STORE_PRICE)],
+        ),
     )
     .await;
     let listed = h.collect_quiet(Who::B).await;
@@ -149,18 +157,26 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     assert_eq!((title.object_id, title.message.as_str()), (b, "Gems"));
     // A, at the start, is told: the member sits and the store's title shows over its head.
     let seen_by_a = h.collect_quiet(Who::A).await;
-    assert!(names(&seen_by_a).contains(&"CHANGE_WAIT_TYPE".to_owned()), "{:?}", names(&seen_by_a));
+    assert!(
+        names(&seen_by_a).contains(&"CHANGE_WAIT_TYPE".to_owned()),
+        "{:?}",
+        names(&seen_by_a)
+    );
     // NOTE(java-quirk): `SetPrivateStoreMsgSell` sends the typed title to its owner only, so A
     // saw the (still empty) title of the moment the list was set.
     let titles: Vec<PrivateStoreMsgSell> = all(&seen_by_a, "PRIVATE_STORE_SELL_MSG");
     assert_eq!(
-        titles.iter().map(|t| (t.object_id, t.message.as_str())).collect::<Vec<_>>(),
+        titles
+            .iter()
+            .map(|t| (t.object_id, t.message.as_str()))
+            .collect::<Vec<_>>(),
         [(b, "")]
     );
 
     // ---- the customer: two clicks (select, then walk up and look), then the purchase ------------------
     h.act(Who::A, act::click(b)).await;
-    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(Who::A, act::click(b)).await;
     let shown = h
         .collect_until(Who::A, &|body| is_named(body, "PRIVATE_STORE_SELL_LIST"))

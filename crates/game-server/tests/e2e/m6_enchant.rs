@@ -25,7 +25,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
             .unwrap_or_else(|| panic!("item {item_id} in {list:?}"))
             .object_id
     };
-    let (scroll, blade) = (object_of(m6_data::ENCHANT_SCROLL_D), object_of(m6_data::TEST_BLADE));
+    let (scroll, blade) = (
+        object_of(m6_data::ENCHANT_SCROLL_D),
+        object_of(m6_data::TEST_BLADE),
+    );
     h.collect_quiet(Who::A).await;
 
     for round in 1..=ENCHANTS {

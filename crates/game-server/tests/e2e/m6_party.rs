@@ -35,10 +35,16 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     assert!(count_named(&entered_b, "CHAR_INFO") >= 1, "B sees A");
     h.collect_until(Who::A, &|body| is_named(body, "CHAR_INFO")).await;
     let attack_before = all::<UserInfo>(&entered_b, "USER_INFO").last().unwrap().p_atk;
+    // The MP the leader starts with: the stat engine makes the maximum more than the 30 of the
+    // template, and a created character starts with the maximum (the bare one with 30).
+    let start_mp = all::<UserInfo>(&entered_a, "USER_INFO").remove(0).current_mp;
 
     // ---- the invitation: loot by turn ----------------------------------------------------------
-    h.act(Who::A, act::join_party(NAME_B, PartyDistributionType::ByTurn.id()))
-        .await;
+    h.act(
+        Who::A,
+        act::join_party(NAME_B, PartyDistributionType::ByTurn.id()),
+    )
+    .await;
     let invited = h.collect_quiet(Who::A).await;
     assert_eq!(
         message_of(&invited, SystemMessageId::C1HasBeenInvitedToTheParty).params,
@@ -68,7 +74,11 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     let window: PartySmallWindowAll = all(&joined_b, "PARTY_SMALL_WINDOW_ALL").remove(0);
     assert_eq!(window.leader_object_id, a);
     assert_eq!(
-        window.members.iter().map(|m| m.vitals.object_id).collect::<Vec<_>>(),
+        window
+            .members
+            .iter()
+            .map(|m| m.vitals.object_id)
+            .collect::<Vec<_>>(),
         [a],
         "the window lists the others"
     );
@@ -112,14 +122,18 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         .expect("B's UserInfo")
         .p_atk;
     assert!(attack_after > attack_before, "{attack_after} > {attack_before}");
-    // The caster paid 4 + 10 MP of its 30 (the regeneration of the cast gives a little back).
+    // The caster paid 4 + 10 MP (the regeneration of the cast gives a little back).
     let mp = last_status(&buffed_a, a, CUR_MP).expect("A's MP changed");
-    let cost = i32::try_from(m6_data::CHANT_MP + m6_data::CHANT_MP_INITIAL).unwrap();
-    assert!((30 - cost..=30 - cost + 4).contains(&mp), "{mp}");
+    let cost = m6_data::CHANT_MP + m6_data::CHANT_MP_INITIAL;
+    assert!(
+        (start_mp - cost..=start_mp - cost + 4).contains(&mp),
+        "{mp} of {start_mp}"
+    );
 
     // ---- the hunt: A kills the rat; both get a share of exp and SP -------------------------------------
     h.act(Who::A, act::click(rat.object_id)).await;
-    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(Who::A, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(Who::A, act::click(rat.object_id)).await;
     let fight = h.collect_until(Who::A, &|body| is_named(body, "DIE")).await;
     let after_fight_b = h.collect_quiet(Who::B).await;
@@ -132,7 +146,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     for (who, batch) in [(Who::A, &fight), (Who::B, &after_fight_b)] {
         assert_eq!(
             message_of(batch, SystemMessageId::YouHaveEarnedS1ExperienceAndS2Sp).params,
-            [SystemMessageParam::LongNumber(exp), SystemMessageParam::LongNumber(sp_shown)],
+            [
+                SystemMessageParam::LongNumber(exp),
+                SystemMessageParam::LongNumber(sp_shown)
+            ],
             "{who:?}"
         );
         assert!(
@@ -188,7 +205,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     );
     // The pile of adena: `Party.distributeAdena` gives each member in range 25 / 2 = 12 and one of
     // them (picked by the world's RNG) the odd one.
-    let share = |batch: &[Vec<u8>]| match message_of(batch, SystemMessageId::YouHaveEarnedS1Adena).params[..] {
+    let share = |batch: &[Vec<u8>]| match message_of(batch, SystemMessageId::YouHaveEarnedS1Adena).params[..]
+    {
         [SystemMessageParam::LongNumber(n)] => n,
         ref other => panic!("{other:?}"),
     };
@@ -214,11 +232,21 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     let party_packets = |batch: &[Vec<u8>]| -> Vec<String> {
         names(batch)
             .into_iter()
-            .filter(|n| n == "SYSTEM_MESSAGE" || n == "PARTY_SMALL_WINDOW_DELETE" || n == "PARTY_SMALL_WINDOW_DELETE_ALL")
+            .filter(|n| {
+                n == "SYSTEM_MESSAGE"
+                    || n == "PARTY_SMALL_WINDOW_DELETE"
+                    || n == "PARTY_SMALL_WINDOW_DELETE_ALL"
+            })
             .collect()
     };
-    assert_eq!(party_packets(&over_a), ["SYSTEM_MESSAGE", "PARTY_SMALL_WINDOW_DELETE_ALL"]);
-    assert_eq!(party_packets(&over_b), ["SYSTEM_MESSAGE", "PARTY_SMALL_WINDOW_DELETE"]);
+    assert_eq!(
+        party_packets(&over_a),
+        ["SYSTEM_MESSAGE", "PARTY_SMALL_WINDOW_DELETE_ALL"]
+    );
+    assert_eq!(
+        party_packets(&over_b),
+        ["SYSTEM_MESSAGE", "PARTY_SMALL_WINDOW_DELETE"]
+    );
     let delete: PartySmallWindowDelete = all(&over_b, "PARTY_SMALL_WINDOW_DELETE").remove(0);
     assert_eq!((delete.object_id, delete.name.as_str()), (a, NAME_A));
 

@@ -33,7 +33,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         "{:?}",
         message_ids(&summoned)
     );
-    assert_in_order(&names(&summoned), &["MAGIC_SKILL_USE", "PET_INFO", "PET_STATUS_UPDATE"]);
+    assert_in_order(
+        &names(&summoned),
+        &["MAGIC_SKILL_USE", "PET_INFO", "PET_STATUS_UPDATE"],
+    );
     let info = all::<PetInfo>(&summoned, "PET_INFO").remove(0);
     // A servitor is summon type 1; its title is the owner's name (Java `Summon.getTitle`).
     assert_eq!((info.summon_type, info.display_id), (1, m6_data::KAT_ID));
@@ -50,7 +53,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         .filter_map(|body| SummonInfo::decode(&mut PacketReader::new(&body[1..])).ok())
         .collect();
     assert!(
-        seen.iter().any(|n| n.object_id == servitor && n.display_id == m6_data::KAT_ID),
+        seen.iter()
+            .any(|n| n.object_id == servitor && n.display_id == m6_data::KAT_ID),
         "B sees the servitor: {:?}",
         names(&seen_by_b)
     );
@@ -100,7 +104,9 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     );
     let watched = h.collect_quiet(Who::B).await;
     assert!(
-        all::<Attack>(&watched, "ATTACK").iter().any(|x| x.attacker_id == servitor),
+        all::<Attack>(&watched, "ATTACK")
+            .iter()
+            .any(|x| x.attacker_id == servitor),
         "B saw the servitor hit: {:?}",
         names(&watched)
     );
@@ -120,7 +126,10 @@ pub fn assert_played(played: &Played) {
     // had and the milliseconds of life it had left.
     assert_eq!(played.summons.len(), 1, "{:?}", played.summons);
     let row = &played.summons[0];
-    assert_eq!((row.owner_id, row.summon_skill_id), (played.owner, m6_data::SUMMON_KAT));
+    assert_eq!(
+        (row.owner_id, row.summon_skill_id),
+        (played.owner, m6_data::SUMMON_KAT)
+    );
     assert!(row.cur_hp > 0 && row.cur_mp > 0, "{row:?}");
     assert!(
         (1..m6_data::KAT_LIFE_SECONDS * 1000).contains(&row.time),
