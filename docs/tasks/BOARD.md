@@ -315,7 +315,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | merged |
 | [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | merged |
 | [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
-| [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | in-progress |
+| [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
 
