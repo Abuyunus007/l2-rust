@@ -46,7 +46,8 @@ impl World {
         let Some(hall_id) = self.doorman_hall(npc) else {
             return;
         };
-        let Some((owner_id, hall_name)) = self.clan_hall(hall_id).map(|h| (h.owner_id, h.name.clone())) else {
+        let Some((owner_id, hall_name)) = self.clan_hall(hall_id).map(|h| (h.owner_id, h.name.clone()))
+        else {
             return;
         };
         let has_evolve = CH_WITH_EVOLVE.contains(&hall_id.0);
@@ -85,7 +86,12 @@ impl World {
     }
 
     /// Java `ClanHallDoorman.onBypassFeedback(player, command)` (and `Doorman`'s).
-    pub(crate) fn clan_hall_doorman_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
+    pub(crate) fn clan_hall_doorman_bypass_feedback(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+    ) {
         let has_evolve = self
             .doorman_hall(npc)
             .is_some_and(|hall| CH_WITH_EVOLVE.contains(&hall.0));

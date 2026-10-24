@@ -308,7 +308,13 @@ impl World {
         if let Some(id) = hideout
             && self.clan_hall_auction(id).is_some()
         {
-            self.request_auction_reread(id, ResidenceReadThen::AuctionCancel { player, auction_id: id });
+            self.request_auction_reread(
+                id,
+                ResidenceReadThen::AuctionCancel {
+                    player,
+                    auction_id: id,
+                },
+            );
         }
         true
     }
@@ -346,7 +352,11 @@ impl World {
                 rep(&mut html, "%AGIT_AUCTION_COUNT%", a.bidders.len());
                 rep(&mut html, "%AGIT_AUCTION_DESC%", &hall.desc);
                 rep(&mut html, "%AGIT_LINK_BACK%", link(npc, "list"));
-                rep(&mut html, "%AGIT_LINK_BIDLIST%", link(npc, &format!("bidlist {}", a.id)));
+                rep(
+                    &mut html,
+                    "%AGIT_LINK_BIDLIST%",
+                    link(npc, &format!("bidlist {}", a.id)),
+                );
                 rep(&mut html, "%AGIT_LINK_RE%", link(npc, &format!("bid1 {}", a.id)));
             }
             None => warn!("Auctioneer Auction null for AuctionId : {auction_id}"),
@@ -426,7 +436,11 @@ impl World {
         let Some(mut html) = self.auction_page(player, npc, "data/html/auction/AgitBid1.htm") else {
             return true;
         };
-        rep(&mut html, "%AGIT_LINK_BACK%", link(npc, &format!("bidding {val}")));
+        rep(
+            &mut html,
+            "%AGIT_LINK_BACK%",
+            link(npc, &format!("bidding {val}")),
+        );
         rep(&mut html, "%PLEDGE_ADENA%", adena);
         rep(&mut html, "%AGIT_AUCTION_MINBID%", minimum_bid);
         rep(
@@ -501,7 +515,13 @@ impl World {
         if let Some(id) = bidded_at
             && self.clan_hall_auction(id).is_some()
         {
-            self.request_auction_reread(id, ResidenceReadThen::AuctionCancelBid { player, auction_id: id });
+            self.request_auction_reread(
+                id,
+                ResidenceReadThen::AuctionCancelBid {
+                    player,
+                    auction_id: id,
+                },
+            );
         }
         true
     }
@@ -546,7 +566,10 @@ impl World {
             i += 1;
             // `getAuctionableHallById(a.getItemId()).getLocation()` throws for an unknown hall.
             let Some(hall) = self.auctionable_hall_info(a.item_id) else {
-                warn!("Auctioneer: the auction {} has no auctionable hall {}.", a.id, a.item_id);
+                warn!(
+                    "Auctioneer: the auction {} has no auctionable hall {}.",
+                    a.id, a.item_id
+                );
                 return true;
             };
             items.push_str("<tr>");
@@ -696,9 +719,9 @@ impl World {
                     rep(&mut html, "%AGIT_LINK_BACK%", link(npc, "start"));
                     rep(&mut html, "%objectId%", npc.0);
                 }
-                None => warn!(
-                    "Clan Hall ID NULL : {hideout} Can be caused by concurent write in ClanHallManager"
-                ),
+                None => {
+                    warn!("Clan Hall ID NULL : {hideout} Can be caused by concurent write in ClanHallManager")
+                }
             }
             self.send_html(player, &html);
         } else {

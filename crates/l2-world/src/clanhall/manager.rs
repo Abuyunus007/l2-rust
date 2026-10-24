@@ -474,7 +474,12 @@ impl World {
     // ------------------------------------------------------------------ bypass
 
     /// Java `ClanHallManager.onBypassFeedback(player, command)`.
-    pub(crate) fn clan_hall_manager_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
+    pub(crate) fn clan_hall_manager_bypass_feedback(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+    ) {
         // `getClanHall()` is null: the first line throws.
         let Some(hall_id) = self.manager_hall(npc) else {
             warn!("ClanHallManager: {npc} has no clan hall.");
@@ -547,7 +552,8 @@ impl World {
             .unwrap_or_default();
         if lease <= 0 {
             self.manager_send_file(npc, player, "data/html/clanHallManager/vault-chs.htm");
-        } else if let Some(mut html) = self.html_from_file(player, npc.0, "data/html/clanHallManager/vault.htm")
+        } else if let Some(mut html) =
+            self.html_from_file(player, npc.0, "data/html/clanHallManager/vault.htm")
         {
             rep(&mut html, "%rent%", lease);
             rep(&mut html, "%date%", date_time(paid_until));
@@ -625,7 +631,10 @@ impl World {
             match self.function_level(hall, HALL_FUNC_TELEPORT) {
                 None => self.manager_send_file(npc, player, not_active),
                 Some(level) => {
-                    let location = self.clan_hall(hall).map(|h| h.location.clone()).unwrap_or_default();
+                    let location = self
+                        .clan_hall(hall)
+                        .map(|h| h.location.clone())
+                        .unwrap_or_default();
                     self.manager_send_file(
                         npc,
                         player,
@@ -662,8 +671,13 @@ impl World {
         } else if let Some(mut html) =
             self.html_from_file(player, npc.0, "data/html/clanHallManager/functions.htm")
         {
-            let level_or_zero = |world: &Self, function: i32| world.function_level(hall, function).unwrap_or(0);
-            rep(&mut html, "%xp_regen%", level_or_zero(self, HALL_FUNC_RESTORE_EXP));
+            let level_or_zero =
+                |world: &Self, function: i32| world.function_level(hall, function).unwrap_or(0);
+            rep(
+                &mut html,
+                "%xp_regen%",
+                level_or_zero(self, HALL_FUNC_RESTORE_EXP),
+            );
             rep(&mut html, "%hp_regen%", level_or_zero(self, HALL_FUNC_RESTORE_HP));
             rep(&mut html, "%mp_regen%", level_or_zero(self, HALL_FUNC_RESTORE_MP));
             self.manager_send(npc, player, html);
@@ -737,7 +751,9 @@ impl World {
             None | Some(0) => return true,
             Some(_) => {}
         }
-        if let Some(mut html) = self.html_from_file(player, npc.0, "data/html/clanHallManager/support-done.htm") {
+        if let Some(mut html) =
+            self.html_from_file(player, npc.0, "data/html/clanHallManager/support-done.htm")
+        {
             rep(&mut html, "%mp%", self.manager_mp(npc));
             self.manager_send(npc, player, html);
         }
@@ -806,8 +822,7 @@ impl World {
         rest: &[String],
     ) -> bool {
         if !self.has_clan_access(player, ClanAccess::HallManageFunctions) {
-            if let Some(html) =
-                self.html_from_file(player, 1, "data/html/clanHallManager/not_authorized.htm")
+            if let Some(html) = self.html_from_file(player, 1, "data/html/clanHallManager/not_authorized.htm")
             {
                 self.manager_send(npc, player, html);
             }
@@ -851,7 +866,10 @@ impl World {
     ) {
         if let Some(sub) = rest.first() {
             if self.clan_hall(hall).is_none_or(|h| h.owner_id == 0) {
-                self.send_message(player, "This clan hall has no owner, you cannot change the configuration.");
+                self.send_message(
+                    player,
+                    "This clan hall has no owner, you cannot change the configuration.",
+                );
                 return;
             }
             let sub = sub.to_lowercase();
@@ -901,7 +919,11 @@ impl World {
             "%cost%",
             format!("{cost}</font>Adena /{days} Day</font>)"),
         );
-        rep(&mut html, "%use%", spec.use_text.replace("{}", &level.to_string()));
+        rep(
+            &mut html,
+            "%use%",
+            spec.use_text.replace("{}", &level.to_string()),
+        );
         rep(
             &mut html,
             "%apply%",
@@ -912,9 +934,11 @@ impl World {
 
     /// `<x> <level>`: buys, changes or stops the function.
     fn manager_apply(&mut self, npc: ObjectId, player: ObjectId, hall: ClanHallId, spec: &Spec, token: &str) {
-        let Some(mut html) =
-            self.html_from_file(player, npc.0, "data/html/clanHallManager/functions-apply_confirmed.htm")
-        else {
+        let Some(mut html) = self.html_from_file(
+            player,
+            npc.0,
+            "data/html/clanHallManager/functions-apply_confirmed.htm",
+        ) else {
             return;
         };
         // `Integer.parseInt(val)` throws for anything else.
@@ -932,9 +956,11 @@ impl World {
             return;
         }
         let fee = if level == 0 {
-            if let Some(cancelled) =
-                self.html_from_file(player, npc.0, "data/html/clanHallManager/functions-cancel_confirmed.htm")
-            {
+            if let Some(cancelled) = self.html_from_file(
+                player,
+                npc.0,
+                "data/html/clanHallManager/functions-cancel_confirmed.htm",
+            ) {
                 html = cancelled;
             }
             0

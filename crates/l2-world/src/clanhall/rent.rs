@@ -104,7 +104,9 @@ impl World {
             return;
         }
         let ClanHallKind::Auctionable {
-            lease, mut paid_until, ..
+            lease,
+            mut paid_until,
+            ..
         } = hall.kind
         else {
             return;

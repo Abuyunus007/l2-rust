@@ -9,7 +9,7 @@
 
 use l2_util::ObjectId;
 
-use crate::residence::{HALL_FUNC_RESTORE_EXP, ClanHallId, ResidenceRef};
+use crate::residence::{ClanHallId, HALL_FUNC_RESTORE_EXP, ResidenceRef};
 use crate::world::World;
 use crate::zones::ZoneId;
 

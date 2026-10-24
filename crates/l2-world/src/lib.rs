@@ -83,6 +83,9 @@ pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
+pub use clanhall::{
+    AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
+};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use craft::{
@@ -134,9 +137,6 @@ pub use punishments::{
 };
 pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
-pub use clanhall::{
-    AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
-};
 pub use residence::{
     CastleId, ClanHallId, FortId, ResidenceLoad, ResidenceRef, ResidenceRefresh, ResidenceSettings,
     ResidenceWrite,

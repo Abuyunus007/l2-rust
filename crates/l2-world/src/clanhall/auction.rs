@@ -432,7 +432,12 @@ impl World {
     }
 
     /// Java `Clan.setAuctionBiddedAt(id, storeInDb)`; `writes` `None` is `storeInDb` false.
-    pub(crate) fn clan_set_auction_bidded_at(&mut self, clan_id: i32, auction_id: i32, writes: Option<Writes>) {
+    pub(crate) fn clan_set_auction_bidded_at(
+        &mut self,
+        clan_id: i32,
+        auction_id: i32,
+        writes: Option<Writes>,
+    ) {
         if let Some(clan) = self.clan_mut(clan_id) {
             clan.auction_bid_at = auction_id;
         }
@@ -592,7 +597,12 @@ impl World {
             return;
         };
         if seller_id > 0 {
-            self.return_item(&auction.seller_clan_name, auction.highest_bidder_max_bid, true, Writes::Job);
+            self.return_item(
+                &auction.seller_clan_name,
+                auction.highest_bidder_max_bid,
+                true,
+                Writes::Job,
+            );
             // `getAuctionableHallById(_itemId).getLease()` throws for an unknown hall: the end
             // stops after the first refund.
             let Some(lease) = self
@@ -600,7 +610,10 @@ impl World {
                 .filter(|h| !h.is_siegable_hall())
                 .map(|h| h.lease())
             else {
-                error!("ClanHallAuction: no auctionable hall {} to end the auction.", auction.item_id);
+                error!(
+                    "ClanHallAuction: no auctionable hall {} to end the auction.",
+                    auction.item_id
+                );
                 return;
             };
             self.return_item(&auction.seller_clan_name, i64::from(lease), false, Writes::Job);
@@ -631,13 +644,21 @@ impl World {
     /// Java `removeBids()`: the bids are deleted; a clan without a hall gets 90% back, a clan that
     /// owns one hears that it won.
     fn remove_bids(&mut self, auction: &mut ClanHallAuction, writes: Writes) {
-        self.auction_write(writes, AuctionWrite::BidsDelete { auction_id: auction.id });
+        self.auction_write(
+            writes,
+            AuctionWrite::BidsDelete {
+                auction_id: auction.id,
+            },
+        );
         let bidders: Vec<Bidder> = auction.bidders.values().cloned().collect();
         for bidder in bidders {
             // `getClanByName(...)` is null for a clan that is gone: Java throws and stops here.
             let Some((clan_id, hideout)) = self.clan_by_name(&bidder.clan_name).map(|c| (c.id, c.hideout_id))
             else {
-                error!("ClanHallAuction: the bidding clan {} does not exist.", bidder.clan_name);
+                error!(
+                    "ClanHallAuction: the bidding clan {} does not exist.",
+                    bidder.clan_name
+                );
                 return;
             };
             if hideout == 0 {
@@ -702,7 +723,9 @@ impl World {
                 return;
             };
             let mut item = self.new_item_data(template, object_id, amount);
-            item.loc = crate::warehouse::ContainerRef::Clan(clan_id).base_location().to_owned();
+            item.loc = crate::warehouse::ContainerRef::Clan(clan_id)
+                .base_location()
+                .to_owned();
             item.loc_data = 0;
             item.enchant_level = template.default_enchant_level;
             if let Some(clan) = self.clan_mut(clan_id) {
@@ -876,7 +899,11 @@ impl World {
         if clan_id == 0 || self.clan_hall_auction(auction_id).is_none() {
             return;
         }
-        self.request_clan_window(player, clan_id, PendingClanWindow::AuctionCancelBid { auction_id });
+        self.request_clan_window(
+            player,
+            clan_id,
+            PendingClanWindow::AuctionCancelBid { auction_id },
+        );
     }
 
     /// `doCancelBid` on fresh rows: Java `cancelBid(clanId)` and the message.
@@ -886,7 +913,10 @@ impl World {
             return;
         }
         if self.auction_cancel_bid_of(auction_id, clan_id, Writes::Player) {
-            self.send(player, &SystemMessage::new(SystemMessageId::YouHaveCanceledYourBid));
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::YouHaveCanceledYourBid),
+            );
         }
     }
 

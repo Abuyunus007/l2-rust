@@ -22,7 +22,8 @@ const SELECT_BIDS: &str = "SELECT bidderId, bidderName, maxBid, clan_name, time_
 // Java: ClanHallAuction.saveAuctionDate
 const UPDATE_END_DATE: &str = "Update auction set endDate = ? where id = ?";
 // Java: ClanHallAuction.updateInDB
-const UPDATE_BID: &str = "UPDATE auction_bid SET bidderId=?, bidderName=?, maxBid=?, time_bid=? WHERE auctionId=? AND bidderId=?";
+const UPDATE_BID: &str =
+    "UPDATE auction_bid SET bidderId=?, bidderName=?, maxBid=?, time_bid=? WHERE auctionId=? AND bidderId=?";
 const INSERT_BID: &str = "INSERT INTO auction_bid (id, auctionId, bidderId, bidderName, maxBid, clan_name, time_bid) VALUES (?, ?, ?, ?, ?, ?, ?)";
 // Java: ClanHallAuction.removeBids
 const DELETE_BIDS: &str = "DELETE FROM auction_bid WHERE auctionId=?";
@@ -34,7 +35,8 @@ const DELETE_BID: &str = "DELETE FROM auction_bid WHERE auctionId=? AND bidderId
 const INSERT_AUCTION: &str = "INSERT INTO auction (id, sellerId, sellerName, sellerClanName, itemType, itemId, itemObjectId, itemName, itemQuantity, startingBid, currentBid, endDate) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
 // Java: ClanHallAuctionManager.initNPC (`ITEM_INIT_DATA`: id, 0, 'NPC', 'NPC Clan', 'ClanHall', id,
 // 0, name, 1, starting bid, 0, end date)
-const INSERT_NPC_AUCTION: &str = "INSERT INTO `auction` VALUES (?, 0, 'NPC', 'NPC Clan', 'ClanHall', ?, 0, ?, 1, ?, 0, ?)";
+const INSERT_NPC_AUCTION: &str =
+    "INSERT INTO `auction` VALUES (?, 0, 'NPC', 'NPC Clan', 'ClanHall', ?, 0, ?, 1, ?, 0, ?)";
 // Java: Clan.setAuctionBiddedAt
 const UPDATE_CLAN_AUCTION_BID_AT: &str = "UPDATE clan_data SET auction_bid_at=? WHERE clan_id=?";
 

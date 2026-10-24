@@ -1556,3 +1556,116 @@ async fn residences_are_read_written_and_read_again_like_java() {
 
     db.drop_db().await;
 }
+
+/// M7-CH-01: the start-up read of the clan hall auctions (`ClanHallAuctionManager.load`), Java's
+/// auction statements through the store and the re-read of one auction before it is acted on
+/// (D-50).
+#[tokio::test]
+async fn clan_hall_auctions_are_read_written_and_read_again_like_java() {
+    use l2_world::ResidenceWrite;
+    use l2_world::clanhall::{AuctionRecord, AuctionWrite};
+    use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    db.exec("INSERT INTO clan_data (clan_id, clan_name) VALUES (500, 'Lions'), (600, 'Wolves')")
+        .await;
+    let mut store = DbStore::new(pool.clone());
+    let write = ResidenceWrite::ClanHallAuction;
+    // `initNPC`, a clan's own sale, a bid and the clan remembering it.
+    for w in [
+        AuctionWrite::NpcAuctionInsert {
+            hall_id: 22,
+            name: "Moonstone Hall".to_owned(),
+            starting_bid: 20_000_000,
+            end_date: 1_073_037_600_000,
+        },
+        AuctionWrite::AuctionInsert(Box::new(AuctionRecord {
+            id: 36,
+            seller_id: 4001,
+            seller_name: "Seller".to_owned(),
+            seller_clan_name: "Wolves".to_owned(),
+            item_type: "ClanHall".to_owned(),
+            item_id: 36,
+            item_object_id: 0,
+            item_name: "The Golden Chamber".to_owned(),
+            starting_bid: 5_000_000,
+            current_bid: 0,
+            end_date: NOW,
+            bidders: Vec::new(),
+        })),
+        AuctionWrite::BidInsert {
+            id: 1,
+            auction_id: 36,
+            bidder_id: 500,
+            bidder_name: "Leader".to_owned(),
+            max_bid: 6_000_000,
+            clan_name: "Lions".to_owned(),
+            time_bid: NOW,
+        },
+        AuctionWrite::ClanBidAt {
+            clan_id: 500,
+            auction_id: 36,
+        },
+    ] {
+        store.store_residence_write(&write(w)).await.unwrap();
+    }
+
+    let records = game_server::persist::load_clan_hall_auctions(&pool).await;
+    assert_eq!(records.iter().map(|r| r.id).collect::<Vec<_>>(), [22, 36]);
+    assert_eq!(records[0].seller_clan_name, "NPC Clan");
+    assert_eq!(records[1].starting_bid, 5_000_000);
+    assert_eq!(records[1].bidders.len(), 1);
+    assert_eq!(
+        (records[1].bidders[0].bidder_id, records[1].bidders[0].max_bid),
+        (500, 6_000_000)
+    );
+    let bid_at: i32 = sqlx::query_scalar("SELECT auction_bid_at FROM clan_data WHERE clan_id = 500")
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+    assert_eq!(bid_at, 36);
+
+    // A bid of the other server shows in the re-read; a deleted auction is `None`.
+    store
+        .store_residence_write(&write(AuctionWrite::BidInsert {
+            id: 2,
+            auction_id: 36,
+            bidder_id: 600,
+            bidder_name: "Wolves leader".to_owned(),
+            max_bid: 7_000_000,
+            clan_name: "Wolves".to_owned(),
+            time_bid: NOW,
+        }))
+        .await
+        .unwrap();
+    match store
+        .load_residence(ResidenceReadKind::Auction, 36)
+        .await
+        .unwrap()
+    {
+        ResidenceRereadRows::Auction {
+            id: 36,
+            record: Some(record),
+        } => {
+            assert_eq!(record.bidders[0].bidder_id, 600);
+            assert_eq!(record.bidders.len(), 2);
+        }
+        other => panic!("{other:?}"),
+    }
+    store
+        .store_residence_write(&write(AuctionWrite::AuctionDelete { item_id: 36 }))
+        .await
+        .unwrap();
+    match store
+        .load_residence(ResidenceReadKind::Auction, 36)
+        .await
+        .unwrap()
+    {
+        ResidenceRereadRows::Auction { id: 36, record: None } => {}
+        other => panic!("{other:?}"),
+    }
+
+    db.drop_db().await;
+}

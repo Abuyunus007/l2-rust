@@ -57,6 +57,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
+use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
     ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
@@ -66,7 +67,6 @@ use l2_db::{
     ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
-use l2_db::{FunctionTable, ResidenceRepository};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -74,6 +74,7 @@ use l2_world::residence::{
     CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, ResidenceReadKind, ResidenceRef,
     ResidenceRefresh, ResidenceRereadRows, ResidenceWrite, SiegableHallRecord,
 };
+use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
     ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId,
@@ -1426,6 +1427,141 @@ async fn load_functions(repo: &ResidenceRepository, table: FunctionTable, id: i3
     }
 }
 
+/// A write of the clan hall auction tables (M7-CH-01).
+async fn store_auction_write(repo: &AuctionRepository, write: &AuctionWrite) -> Result<(), PersistError> {
+    match write {
+        AuctionWrite::EndDate { id, end_date } => repo.update_end_date(*id, *end_date).await?,
+        AuctionWrite::BidUpdate {
+            auction_id,
+            bidder_id,
+            bidder_name,
+            max_bid,
+            time_bid,
+        } => {
+            repo.update_bid(*auction_id, *bidder_id, bidder_name, *max_bid, *time_bid)
+                .await?
+        }
+        AuctionWrite::BidInsert {
+            id,
+            auction_id,
+            bidder_id,
+            bidder_name,
+            max_bid,
+            clan_name,
+            time_bid,
+        } => {
+            repo.insert_bid(
+                *id,
+                *auction_id,
+                *bidder_id,
+                bidder_name,
+                *max_bid,
+                clan_name,
+                *time_bid,
+            )
+            .await?
+        }
+        AuctionWrite::BidsDelete { auction_id } => repo.delete_bids(*auction_id).await?,
+        AuctionWrite::AuctionDelete { item_id } => repo.delete_auction(*item_id).await?,
+        AuctionWrite::BidDelete {
+            auction_id,
+            bidder_id,
+        } => repo.delete_bid(*auction_id, *bidder_id).await?,
+        AuctionWrite::AuctionInsert(record) => {
+            repo.insert_auction(&l2_db::NewAuction {
+                id: record.id,
+                seller_id: record.seller_id,
+                seller_name: record.seller_name.clone(),
+                seller_clan_name: record.seller_clan_name.clone(),
+                item_type: record.item_type.clone(),
+                item_id: record.item_id,
+                item_object_id: record.item_object_id,
+                item_name: record.item_name.clone(),
+                // `_itemQuantity` is a constant 0 in Java.
+                item_quantity: 0,
+                starting_bid: record.starting_bid,
+                current_bid: record.current_bid,
+                end_date: record.end_date,
+            })
+            .await?
+        }
+        AuctionWrite::NpcAuctionInsert {
+            hall_id,
+            name,
+            starting_bid,
+            end_date,
+        } => {
+            repo.insert_npc_auction(*hall_id, name, *starting_bid, *end_date)
+                .await?
+        }
+        AuctionWrite::ClanBidAt { clan_id, auction_id } => {
+            repo.update_clan_auction_bid_at(*clan_id, *auction_id).await?
+        }
+    }
+    Ok(())
+}
+
+/// The clan hall auction rows (`ClanHallAuctionManager.load()`: every `auction` id, each read like
+/// `new ClanHallAuction(id)` with its bids). Only reads (D-39). A failed read is logged like
+/// Java's.
+pub async fn load_clan_hall_auctions(pool: &Pool) -> Vec<AuctionRecord> {
+    let repo = AuctionRepository::new(pool.clone());
+    let mut records = Vec::new();
+    match repo.auction_ids().await {
+        Ok(ids) => {
+            for id in ids {
+                match read_auction_record(&repo, id).await {
+                    Ok(Some(record)) => records.push(record),
+                    // `load()` finds no row: the auction keeps its start values.
+                    Ok(None) => records.push(AuctionRecord {
+                        id,
+                        ..AuctionRecord::default()
+                    }),
+                    Err(e) => warn!("Exception: Auction.load(): {e}"),
+                }
+            }
+        }
+        Err(e) => warn!("ClanHallAuctionManager: Exception: AuctionManager.load(): {e}"),
+    }
+    records
+}
+
+/// One `auction` row with its bids (`ClanHallAuction.load` and `loadBid`).
+async fn read_auction_record(
+    repo: &AuctionRepository,
+    id: i32,
+) -> Result<Option<AuctionRecord>, l2_db::DbError> {
+    let Some(row) = repo.auction(id).await? else {
+        return Ok(None);
+    };
+    let bidders = repo
+        .bids(id)
+        .await?
+        .into_iter()
+        .map(|b| AuctionBidRecord {
+            bidder_id: b.bidder_id,
+            bidder_name: b.bidder_name,
+            max_bid: b.max_bid,
+            clan_name: b.clan_name,
+            time_bid: b.time_bid,
+        })
+        .collect();
+    Ok(Some(AuctionRecord {
+        id,
+        seller_id: row.seller_id,
+        seller_name: row.seller_name,
+        seller_clan_name: row.seller_clan_name,
+        item_type: row.item_type,
+        item_id: row.item_id,
+        item_object_id: row.item_object_id,
+        item_name: row.item_name,
+        starting_bid: row.starting_bid,
+        current_bid: row.current_bid,
+        end_date: row.end_date,
+        bidders,
+    }))
+}
+
 /// The function table of a residence.
 fn function_table(residence: ResidenceRef) -> FunctionTable {
     match residence {
@@ -1821,6 +1957,7 @@ pub struct DbStore {
     friends: FriendRepository,
     championship: FishingChampionshipRepository,
     residences: ResidenceRepository,
+    auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1850,6 +1987,7 @@ impl DbStore {
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             residences: ResidenceRepository::new(pool.clone()),
+            auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
@@ -3004,6 +3142,7 @@ impl PlayerStore for DbStore {
             ResidenceWrite::DeleteCirclets { owner_id, item_id } => {
                 repo.delete_circlets(*owner_id, *item_id).await?
             }
+            ResidenceWrite::ClanHallAuction(write) => store_auction_write(&self.auctions, write).await?,
         }
         Ok(())
     }
@@ -3048,6 +3187,10 @@ impl PlayerStore for DbStore {
                     None => ResidenceRereadRows::Missing,
                 }
             }
+            ResidenceReadKind::Auction => ResidenceRereadRows::Auction {
+                id: residence_id,
+                record: read_auction_record(&self.auctions, residence_id).await?,
+            },
             ResidenceReadKind::SiegableHall => {
                 match repo
                     .siegable_halls()
