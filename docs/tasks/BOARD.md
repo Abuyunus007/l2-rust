@@ -333,12 +333,12 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 |---|---|---|---|---|---|
 | [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | merged |
 | [M7-RES-01](M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | merged |
-| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
+| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | in-progress |
 | [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | ready (refined when deps merge) |
-| [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
-| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | ready (refined when deps merge) |
+| [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | in-progress |
+| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | in-progress |
 | [M7-CHSIEGE-01](M7/M7-CHSIEGE-01.md) | Conquerable clan hall sieges | sonnet | full | CH-01, SIEGE-01 | ready (refined when deps merge) |
-| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | ready (refined when deps merge) |
+| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | in-progress |
 | [M7-TW-01](M7/M7-TW-01.md) | Territory War | opus | full | SIEGE-01 | ready (refined when deps merge) |
 | [M7-ADMIN-06](M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |

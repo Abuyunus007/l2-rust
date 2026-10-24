@@ -32,3 +32,17 @@ castle NPCs, fortresses and clan halls, the manor, Territory War last.
 - Castle tax: `getTotalTaxRate` and the treasury share in shops and multisell (`// M7:` markers of
   SHOP-01 and MULTISELL-01). The treasury add is a per-castle write: only with the switch on while
   both run (Sieghardt collects the real tax).
+
+## The residence API (M7-RES-01, merged)
+All on `World`; types in `l2_world::residence`.
+- Ids/refs: `CastleId`, `FortId`, `ClanHallId`, `ResidenceRef::{Castle,Fort,ClanHall}`; public fields on `Castle`, `Fort`, `ClanHall` (`ClanHallKind::{Auctionable,Siegable}`): `owner_id`, `siege_date`, `time_registration_over(_date)`, `doors`, zone ids, `former_owner`, `first_mid_victory`, `ticket_buy_count`, `state`, `castle_id`, `supply_level`, `last_owned_time`.
+- Lookups: `castle/castles/castle_by_owner/castle_by_name/castle_index/castle_at/castle_contains/castle_distance/nearest_castle/has_owned_castle`, `npc_castle/npc_is_in_town/npc_castle_and_town`; `fort/forts/fort_by_owner/fort_by_name/fort_at/fort_contains/nearest_fort/npc_fort`; `clan_hall/clan_halls/clan_hall_is_free/auctionable_hall_by_owner/clan_hall_by_owner/clan_hall_at/nearby_auctionable_hall/nearby_clan_hall`; `residence_name`, `residence_owner_id`, `residence_doors`, `residence_door`.
+- D-51 writes: `siege_database_writes()`, `siege_write(ResidenceWrite) -> bool` for every global siege-like write, `write_residence(Writes::{Player,Job,Never}, ResidenceWrite)`; `ResidenceWrite` carries Java's statements (incl. `CastleTicketBuyCount`, `FortState`, `FortSupplyLevel`, `SiegableHall`). Add new variants there for new tables.
+- Owners: `castle_set_owner`, `castle_remove_owner`, `castle_update_clans_reputation`; `fort_set_owner(id, clan, update_rep) -> bool`, `fort_remove_owner`, `fort_set_state`, `fort_raise_supply_level`, `fort_set_supply_level`, `fort_save_variables`, `fort_update_clans_reputation`, `fort_set_visible_flag`; `clan_hall_table_set_owner`, `clan_hall_table_set_free`, `clan_hall_set_owner`, `clan_hall_free`.
+- Treasury/tax: `castle_add_to_treasury` (Job), `castle_add_to_treasury_no_tax(id, amount, Writes)`, `castle_set_tax_percent`, `castle_set_show_npc_crest`, `castle_set_ticket_buy_count`.
+- Functions: `residence_function(res, type)`, `residence_functions`, `residence_update_functions(..)`, `residence_remove_function(res, type, Writes)`, `CASTLE_FUNC_*`, `HALL_FUNC_*`.
+- Doors/zones: `residence_open_close_door`, `clan_hall_open_close_doors`, `residence_banish_foreigners`, `castle_oust_all_players`, `agit_deco_info`.
+- Skills: `give_residential_skills` / `remove_residential_skills(res, player)`.
+- Re-read before acting (D-50): `request_residence_reread(res, ResidenceReadThen)` → `WorldCommand::ResidenceReread` → `on_residence_reread`; add your own `ResidenceReadThen` variants; a failed read refuses the follow-up.
+- Siege schedule: `siege_schedule()` (`for_castle(id)`), `set_siege_schedule`. Startup: `load_residences(ResidenceLoad)` (game-server `persist::load_residences`, `persist::load_residence_refresh`, `residence_settings()`).
+- Left markers name their card: SIEGE-01 (`actions.rs`, `pvp.rs`, clan siege skills/states, `summon/cubic.rs`, `mount.rs`, residence `midVictory`/`loadDoorUpgrade`, restart points castle/hall/fort in `death.rs`/`teleport.rs`), FORT-01 (FortUpdater, fort spawns, siege announcements), CH-01 (rent, auction initNPC), CHSIEGE-01 (`updateNextSiege`), MANOR-01 (`resetManorData`), TW-01 (ward skills, `setOwnerClan`), ADMIN-06 (`admin/clan.rs` names).
