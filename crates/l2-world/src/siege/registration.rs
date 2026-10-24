@@ -72,8 +72,10 @@ impl World {
                         CastleId(castle_id),
                         ResidenceReadThen::SiegeAttackerList { player, castle_id },
                     );
+                } else if self.is_siegable_hall_id(castle_id) {
+                    // `SiegeAttackerList(hall)` of a siegable hall (M7-CHSIEGE-01).
+                    self.hall_send_attacker_list(player, crate::residence::ClanHallId(castle_id));
                 }
-                // M7-CHSIEGE-01: `SiegeAttackerList(hall)` of a siegable hall.
             }
             SiegeInput::DefenderList { castle_id } => {
                 if self.castle(CastleId(castle_id)).is_some() {
@@ -109,7 +111,10 @@ impl World {
                         },
                     );
                 }
-                // M7-CHSIEGE-01: the siegable hall branch (`CHSiegeManager.registerClan`).
+                if self.is_siegable_hall_id(castle_id) {
+                    // The siegable hall branch (`CHSiegeManager.registerClan`, M7-CHSIEGE-01).
+                    self.hall_join_siege(player, crate::residence::ClanHallId(castle_id), is_joining);
+                }
             }
             SiegeInput::ConfirmSiegeWaitingList {
                 castle_id,
@@ -293,7 +298,7 @@ impl World {
     }
 
     /// One clan of the siege lists (`None` when `ClanTable` does not know it).
-    fn siege_packet_clan(&self, clan_id: i32) -> Option<PacketClan> {
+    pub(crate) fn siege_packet_clan(&self, clan_id: i32) -> Option<PacketClan> {
         let clan = self.clan(clan_id)?;
         Some(PacketClan {
             clan_id: clan.id,

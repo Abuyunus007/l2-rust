@@ -62,6 +62,10 @@ impl World {
     /// for the script's start NPCs): the script answers instead of `showChatWindow`. `true` when
     /// a script took the talk.
     pub(crate) fn npc_first_talk_on_click(&mut self, npc: ObjectId, player: ObjectId) -> bool {
+        // The conquerable hall scripts (M7-CHSIEGE-01).
+        if self.hall_script_first_talk(npc, player) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -76,6 +80,9 @@ impl World {
     /// `ChatLink` for `Chat 0`: the first talk when the NPC has a listener for it. `true` when a
     /// script took the talk.
     pub(crate) fn npc_first_talk_on_chat(&mut self, npc: ObjectId, player: ObjectId) -> bool {
+        if self.hall_script_first_talk(npc, player) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }

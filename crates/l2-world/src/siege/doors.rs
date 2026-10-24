@@ -110,7 +110,13 @@ impl World {
         let Some(player) = self.acting_player(attacker) else {
             return false;
         };
-        // M7-CHSIEGE-01: the doors of a siegable hall (`doorIsAutoAttackable`).
+        // The doors of a siegable hall (`doorIsAutoAttackable`, M7-CHSIEGE-01).
+        if d.template.clanhall_id > 0 && self.is_siegable_hall_id(d.template.clanhall_id) {
+            let hall = crate::residence::ClanHallId(d.template.clanhall_id);
+            return self.hall_is_in_siege(hall)
+                && self.hall_door_is_auto_attackable(hall)
+                && self.hall_siege_is_attacker(hall, self.clan_id_of(player));
+        }
         // M7-TW-01: during Territory War, everybody but the ally field.
         // Attackable only during siege by everyone (not owner).
         let castle = self.castle_at(d.x, d.y, d.z).filter(|c| c.0 > 0).filter(|c| {

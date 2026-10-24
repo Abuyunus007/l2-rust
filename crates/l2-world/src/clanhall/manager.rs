@@ -485,8 +485,11 @@ impl World {
             warn!("ClanHallManager: {npc} has no clan hall.");
             return;
         };
-        // M7-CHSIEGE-01: `getClanHall().isSiegableHall() && ((SiegableHall) getClanHall()).isInSiege()`
-        // returns here.
+        // `getClanHall().isSiegableHall() && ((SiegableHall) getClanHall()).isInSiege()` returns here
+        // (M7-CHSIEGE-01).
+        if self.hall_is_in_siege(hall_id) {
+            return;
+        }
         let condition = self.manager_condition(Some(hall_id), player);
         if condition <= Condition::AllFalse {
             return;

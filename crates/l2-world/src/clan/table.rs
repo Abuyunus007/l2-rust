@@ -514,7 +514,7 @@ impl World {
             }
         }
         // `for (FortSiege siege : getSieges()) siege.removeAttacker(clan)` of a clan without a
-        // fortress (M7-FORT-01; the registrations of the hall sieges: CHSIEGE-01).
+        // fortress (M7-FORT-01; the hall sieges' are removed below).
         if fort_id == 0 {
             let writes = if write_db {
                 crate::residence::Writes::Player
@@ -522,6 +522,11 @@ impl World {
                 crate::residence::Writes::Never
             };
             self.fort_sieges_remove_attacker(clan_id, writes);
+        }
+        // `hall.removeAttacker(clan)` of every conquerable hall for a clan without a hall
+        // (M7-CHSIEGE-01).
+        if hall_id == 0 {
+            self.hall_sieges_remove_attacker(clan_id);
         }
         // `auction.cancelBid(clan.getId())` (M7-CH-01).
         self.auction_cancel_bid_of_destroyed_clan(clan_id, write_db);

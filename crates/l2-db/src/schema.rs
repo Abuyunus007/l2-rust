@@ -43,6 +43,8 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/clan_wars.sql"),
     include_str!("../sql/game/clanhall.sql"),
     include_str!("../sql/game/clanhall_functions.sql"),
+    include_str!("../sql/game/clanhall_siege_attackers.sql"),
+    include_str!("../sql/game/clanhall_siege_guards.sql"),
     include_str!("../sql/game/crests.sql"),
     include_str!("../sql/game/fishing_championship.sql"),
     include_str!("../sql/game/global_variables.sql"),
@@ -63,8 +65,11 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/olympiad_nobles.sql"),
     include_str!("../sql/game/pets.sql"),
     include_str!("../sql/game/punishments.sql"),
+    include_str!("../sql/game/rainbowsprings_attacker_list.sql"),
     include_str!("../sql/game/seven_signs.sql"),
     include_str!("../sql/game/siegable_clanhall.sql"),
+    include_str!("../sql/game/siegable_hall_flagwar_attackers.sql"),
+    include_str!("../sql/game/siegable_hall_flagwar_attackers_members.sql"),
     include_str!("../sql/game/siege_clans.sql"),
 ];
 

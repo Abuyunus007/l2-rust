@@ -556,7 +556,7 @@ impl World {
                 self.auction_cancel_after_read(player, auction_id);
             }
             // Handled by `fort/` before this is called.
-            ResidenceReadThen::Nothing | ResidenceReadThen::Fort(_) => {}
+            ResidenceReadThen::Nothing | ResidenceReadThen::Fort(_) | ResidenceReadThen::HallSiege(_) => {}
             // The siege follow-ups are `on_residence_reread`'s own (M7-SIEGE-01).
             ResidenceReadThen::SiegeJoin { .. }
             | ResidenceReadThen::SiegeConfirmWaiting { .. }
