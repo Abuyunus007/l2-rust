@@ -711,7 +711,7 @@ impl World {
 
     fn current_hp_percent(&self, id: ObjectId) -> Option<i32> {
         if let Some(door) = self.doors.get(&id) {
-            return Some(((door.current_hp * 100.0) / f64::from(door.max_hp)) as i32);
+            return Some(((door.current_hp() * 100.0) / f64::from(door.max_hp())) as i32);
         }
         let hp = self.core_of(id)?.cur_hp;
         let max = f64::from(self.stats(id)?.max_hp());

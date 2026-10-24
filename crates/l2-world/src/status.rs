@@ -136,9 +136,10 @@ fn need_update(bar: &mut Option<BarCheck>, cur: f64, max: f64) -> bool {
     false
 }
 
-/// Java `Formulas.getRegeneratePeriod` (3 s for a creature) in world ticks.
-fn regen_period_ticks() -> u64 {
-    TimerWheel::ms_to_ticks(u64::try_from(get_regenerate_period(false)).unwrap_or(0))
+/// Java `Formulas.getRegeneratePeriod` (3 s for a creature, 5 minutes for a door) in world
+/// ticks.
+fn regen_period_ticks(is_door: bool) -> u64 {
+    TimerWheel::ms_to_ticks(u64::try_from(get_regenerate_period(is_door)).unwrap_or(0))
 }
 
 /// Java's movement branches of `calcHpRegen` and `calcCpRegen` after `isSitting()` (see
@@ -210,9 +211,10 @@ impl World {
         self.regen = settings;
     }
 
-    /// Whether `id` is one of the creatures this module tracks: a player or an NPC in the world.
+    /// Whether `id` is one of the creatures this module tracks: a player, an NPC or a door
+    /// (Java `Door extends Creature`, M7-SIEGE-02) in the world.
     fn is_tracked(&self, id: ObjectId) -> bool {
-        self.players.contains_key(&id) || self.npcs.contains_key(&id)
+        self.players.contains_key(&id) || self.npcs.contains_key(&id) || self.doors.contains_key(&id)
     }
 
     /// Java `isPlayer()`.
@@ -220,19 +222,23 @@ impl World {
         self.players.contains_key(&id)
     }
 
-    /// The `CreatureCore` of a player or NPC.
+    /// The `CreatureCore` of a player, NPC or door.
     pub(crate) fn core_of(&self, id: ObjectId) -> Option<&CreatureCore> {
         self.players
             .get(&id)
             .map(|p| &p.core)
             .or_else(|| self.npcs.get(&id).map(|n| &n.core))
+            .or_else(|| self.doors.get(&id).map(|d| &d.core))
     }
 
     pub(crate) fn core_of_mut(&mut self, id: ObjectId) -> Option<&mut CreatureCore> {
         if let Some(p) = self.players.get_mut(&id) {
             return Some(&mut p.core);
         }
-        self.npcs.get_mut(&id).map(|n| &mut n.core)
+        if let Some(n) = self.npcs.get_mut(&id) {
+            return Some(&mut n.core);
+        }
+        self.doors.get_mut(&id).map(|d| &mut d.core)
     }
 
     fn status_mut(&mut self, id: ObjectId) -> &mut CreatureStatus {
@@ -240,6 +246,10 @@ impl World {
     }
 
     fn dead_flag(&self, id: ObjectId) -> bool {
+        // A door keeps its flag itself: the geodata checks read it without the world.
+        if let Some(door) = self.doors.get(&id) {
+            return door.dead;
+        }
         self.statuses.get(&id).is_some_and(|s| s.dead)
     }
 
@@ -423,6 +433,11 @@ impl World {
         if !self.is_tracked(id) {
             return;
         }
+        if self.doors.contains_key(&id) {
+            // `Door::dead`, which also decides whether the door blocks.
+            self.set_door_dead(id, dead);
+            return;
+        }
         if dead {
             self.status_mut(id).dead = true;
         } else if let Some(st) = self.statuses.get_mut(&id) {
@@ -451,7 +466,9 @@ impl World {
         // NpcStatus.reduceHp: a duelist who hits an NPC leaves the duel, then the attacker is added
         // to the attack-by list before CreatureStatus.reduceHp, so this comes before the
         // invulnerability check.
-        if let Some(attacker) = attacker {
+        // A door's status is the plain `CreatureStatus` (`DoorStatus` adds nothing), without
+        // `NpcStatus`'s part.
+        if let Some(attacker) = attacker.filter(|_| !self.doors.contains_key(&id)) {
             self.duel_interrupt_on_npc_hit(attacker);
             self.add_attacker_to_attack_by_list(id, attacker);
         }
@@ -574,7 +591,7 @@ impl World {
         if self.statuses.get(&id).is_some_and(|s| s.regen_active || s.dead) {
             return;
         }
-        let due = self.tick + regen_period_ticks();
+        let due = self.tick + regen_period_ticks(self.doors.contains_key(&id));
         let timer = self.timers.schedule_at(due, TimerKind::Regeneration(id));
         let st = self.status_mut(id);
         st.regen_active = true;
@@ -638,7 +655,7 @@ impl World {
         // The fixed rate: the next run is one period after this tick. Timers fire on the tick they
         // are due, so this matches Java's `scheduleAtFixedRate` without a catch-up burst.
         if self.statuses.get(&id).is_some_and(|s| s.regen_active) {
-            let due = self.tick + regen_period_ticks();
+            let due = self.tick + regen_period_ticks(self.doors.contains_key(&id));
             let timer = self.timers.schedule_at(due, TimerKind::Regeneration(id));
             self.status_mut(id).regen_timer = Some(timer);
         }
@@ -880,6 +897,11 @@ impl World {
             self.status_mut(id).self_update_timer = Some(timer);
             return;
         }
+        // `Door.broadcastStatusUpdate`: `StaticObjectInfo`, `DoorStatusUpdate` (M7-SIEGE-02).
+        if self.doors.contains_key(&id) {
+            self.broadcast_door_status(id);
+            return;
+        }
         if !self.npcs.contains_key(&id) {
             return;
         }
@@ -1080,6 +1102,8 @@ mod tests {
 
     #[test]
     fn regen_period_is_three_seconds_of_ticks() {
-        assert_eq!(regen_period_ticks(), 60);
+        assert_eq!(regen_period_ticks(false), 60);
+        // A door regenerates every 5 minutes (`HP_REGENERATE_PERIOD * 100`).
+        assert_eq!(regen_period_ticks(true), 6000);
     }
 }

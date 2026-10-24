@@ -25,6 +25,9 @@
 //   `Npc::movement`.
 // - Guards and siege defenders are `guards.rs`; a master's minions after the first spawn are
 //   `minions.rs`; the fear of an NPC (`notifyActionAfraid`) is `effects/control.rs`.
+// - A siege defender thinks with `SiegeGuardAI` / `FortSiegeGuardAI` ([`siege_guard`],
+//   [`fort_siege_guard`], M7-SIEGE-02); a door has `DoorAI` (`siege/doors.rs`), which ignores
+//   every intention and only calls the defenders when the door is hit.
 //
 // # Left out
 // - Scripts reacting to AI events: D-05, see `attackable.rs`. The NPC's skill use
@@ -35,12 +38,14 @@
 //   (`creature_set_intention_follow`), with `SummonAI`'s around it.
 
 pub mod attackable;
+pub mod fort_siege_guard;
 pub mod guards;
 pub mod idle;
 pub mod minions;
 pub mod npc;
 pub mod npc_skills;
 pub mod player;
+pub mod siege_guard;
 
 use std::collections::HashMap;
 
@@ -119,6 +124,9 @@ pub struct AiWorld {
     pub(crate) creatures: HashMap<ObjectId, AiState>,
     /// The think set, the minion lists and the settings of the attackable AI.
     pub(crate) attackable: attackable::AttackableWorld,
+    /// The `SiegeGuardAI` / `FortSiegeGuardAI` fields of the siege defenders that have an AI
+    /// (M7-SIEGE-02).
+    pub(crate) siege_guards: HashMap<ObjectId, siege_guard::SiegeGuardState>,
 }
 
 impl World {
@@ -137,7 +145,10 @@ impl World {
     pub(crate) fn wake_ai(&mut self, id: ObjectId) {
         if self.is_npc(id) && !self.ai.creatures.contains_key(&id) {
             let mut state = AiState::default();
-            if self.is_attackable_npc(id) {
+            if self.is_siege_guard(id) {
+                // The `SiegeGuardAI` / `FortSiegeGuardAI` constructor (M7-SIEGE-02).
+                state.global_aggro = self.siege_guard_ai_created(id);
+            } else if self.is_attackable_npc(id) {
                 // The `AttackableAI` constructor: `rollGlobalAggro()`.
                 state.global_aggro = self.roll_global_aggro(id);
             }
@@ -148,7 +159,9 @@ impl World {
     /// Java `hasAI()`: players always have one; an NPC once something woke it; a summon from
     /// its constructor on.
     pub fn has_ai(&self, id: ObjectId) -> bool {
-        self.is_player(id) || ((self.is_npc(id) || self.is_summon(id)) && self.ai.creatures.contains_key(&id))
+        self.is_player(id)
+            || ((self.is_npc(id) || self.is_summon(id)) && self.ai.creatures.contains_key(&id))
+            || self.doors.get(&id).is_some_and(|d| d.has_ai)
     }
 
     /// Java `getAI().getIntention()`.
@@ -223,6 +236,10 @@ impl World {
     /// Java `setIntentionAttack(target)`: `AttackableAI`'s (the attack timeout, the AI task) around
     /// `CreatureAI`'s.
     pub fn set_intention_attack(&mut self, id: ObjectId, target: ObjectId) {
+        // `DoorAI.setIntentionAttack` does nothing.
+        if self.doors.contains_key(&id) {
+            return;
+        }
         if self.is_summon(id) {
             // SummonAI.setIntentionAttack: no creature, no attack (and no `ActionFailed`). The
             // pathfinding refusal is left out (`summon/ai.rs`).
@@ -312,6 +329,10 @@ impl World {
     /// Java `notifyActionReadyToAct()`: the attack is over; `PlayerAI` first replays a move asked
     /// during it, then the AI thinks (attacks again).
     pub fn notify_action_ready_to_act(&mut self, id: ObjectId) {
+        // `DoorAI.notifyActionReadyToAct` does nothing.
+        if self.doors.contains_key(&id) {
+            return;
+        }
         // Replay any saved intention from before a CAST.
         if self.is_player(id) && self.next_intention(id).is_some() {
             self.replay_saved_intention(id);
@@ -329,6 +350,11 @@ impl World {
 
     /// Java `notifyActionAttacked(attacker)`.
     pub fn notify_action_attacked(&mut self, id: ObjectId, attacker: ObjectId) {
+        // `DoorAI.notifyActionAttacked`: the defenders around the door come (M7-SIEGE-02).
+        if self.doors.contains_key(&id) {
+            self.door_notify_attacked(id, attacker);
+            return;
+        }
         // Java's callers use `getAI()`, which creates an NPC's AI.
         self.wake_ai(id);
         if self.is_npc(id) {
@@ -355,6 +381,10 @@ impl World {
 
     /// Java `notifyActionCancel()` (`PlayerAI` forgets the saved move first).
     pub fn notify_action_cancel(&mut self, id: ObjectId) {
+        // `DoorAI.notifyActionCancel` does nothing.
+        if self.doors.contains_key(&id) {
+            return;
+        }
         if self.is_player(id) {
             self.clear_saved_intention(id);
         }
@@ -371,6 +401,10 @@ impl World {
 
     /// Java `notifyActionDeath()`: the `Die` broadcast, then the AI forgets everything and stops.
     pub fn notify_action_death(&mut self, id: ObjectId) {
+        // `DoorAI.notifyActionDeath` does nothing: a destroyed door gets no `Die`.
+        if self.doors.contains_key(&id) {
+            return;
+        }
         if !self.can_handle_action(id) {
             return;
         }
@@ -593,6 +627,10 @@ impl World {
     /// Java `setIntentionCast(skill, target)`: `PlayerAI` remembers what the player did before
     /// (not for toggles), then `CreatureAI` waits for a running attack and changes the intention.
     pub fn set_intention_cast(&mut self, id: ObjectId, skill: SkillKey, target: Option<ObjectId>) {
+        // `DoorAI.setIntentionCast` does nothing.
+        if self.doors.contains_key(&id) {
+            return;
+        }
         let Some(table) = self.skill_table() else {
             return;
         };
@@ -602,8 +640,8 @@ impl World {
         // CreatureAI.setIntentionCast, `finally`: a `NextAction` removed by CAST goes (nothing in
         // the body reads it, so it can go first).
         self.clear_next_action_removed_by(id, Intention::Cast);
-        // AttackableAI.setIntentionCast: the target first.
-        if self.is_attackable_npc(id) {
+        // AttackableAI.setIntentionCast: the target first (not `SiegeGuardAI`'s).
+        if self.is_attackable_npc(id) && !self.is_siege_guard(id) {
             self.attackable_before_intention_cast(id, target);
         }
         // SummonAI.setIntentionCast: the attack it interrupts, the avoid task.

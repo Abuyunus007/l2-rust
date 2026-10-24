@@ -50,6 +50,8 @@ impl World {
         } else {
             self.fort.active_zones.remove(&zone);
         }
+        // `Door.isEnemy()` of the fortress doors follows the zone (M7-SIEGE-02).
+        self.fort_doors_set_enemy(fort, active);
     }
 
     /// Java `getPlayersInside()` of the fortress's siege zone.

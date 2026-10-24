@@ -146,7 +146,7 @@ impl World {
             Some(ObjectKind::Door) => self
                 .doors
                 .get(&id)
-                .map_or((0, 0), |d| (d.max_hp, d.current_hp as i32)),
+                .map_or((0, 0), |d| (d.max_hp(), d.current_hp() as i32)),
             // A static object has no hit points of its own: the stat system floors the maximum
             // at 1 and the status never filled the current value.
             Some(ObjectKind::StaticObject) => (1, 0),
