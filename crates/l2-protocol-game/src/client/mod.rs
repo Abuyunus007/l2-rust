@@ -266,8 +266,8 @@ pub use shop::{
 };
 pub use shortcut::{RequestShortCutDel, RequestShortCutReg};
 pub use siege::{
-    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
-    RequestSiegeInfo,
+    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime, RequestSiegeAttackerList,
+    RequestSiegeDefenderList, RequestSiegeInfo,
 };
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,

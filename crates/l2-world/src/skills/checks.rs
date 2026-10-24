@@ -423,8 +423,16 @@ impl World {
         // Skills can be used on walls and doors only during siege.
         if target_kind == Some(ObjectKind::Door) {
             if self.is_inside_zone(target, ZoneId::Siege) {
-                // M6: the door's castle or fort and its siege (`INVALID_TARGET` outside a siege);
-                // no door has a residence yet.
+                // Check if the door belongs to a castle and if the siege is in progress
+                // (M7-SIEGE-01; the fortress doors: M7-FORT-01).
+                let castle = self
+                    .door(target)
+                    .and_then(|d| self.castle_at(d.x, d.y, d.z))
+                    .filter(|c| c.0 > 0);
+                if castle.is_some_and(|c| !self.is_castle_siege_in_progress(c)) {
+                    self.send(id, &SystemMessage::new(SystemMessageId::InvalidTarget));
+                    return false;
+                }
             } else if target_type != TargetType::Unlockable {
                 self.send(id, &SystemMessage::new(SystemMessageId::InvalidTarget));
                 return false;
@@ -491,7 +499,18 @@ impl World {
                 self.send(id, &ActionFailed);
                 return false;
             }
-            // Olympiad, siege friends: M6.
+            // Olympiad: M8.
+            if self.is_siege_friend(id, target) {
+                // M7-TW-01: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY` in Territory War.
+                self.send(
+                    id,
+                    &SystemMessage::new(
+                        SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege,
+                    ),
+                );
+                self.send(id, &ActionFailed);
+                return false;
+            }
             if !self.can_be_attacked(target) && target_kind != Some(ObjectKind::Door) {
                 // If target is not attackable, send a Server->Client packet ActionFailed.
                 self.send(id, &ActionFailed);

@@ -21,10 +21,6 @@ use crate::zones::ZoneId;
 /// Java `World.GRACIA_MAX_X`: a flying form does not leave the Gracia area.
 pub const GRACIA_MAX_X: i32 = -166_168;
 
-/// `FeatureConfig.ALLOW_MOUNTS_DURING_SIEGE` (`AllowRideMountsDuringSiege`, default `False`).
-// FOLLOW-UP(M7): the setting is not in `WorldSettings` yet; the siege card reads it from the config.
-pub(crate) const ALLOW_MOUNTS_DURING_SIEGE: bool = false;
-
 impl World {
     /// The transformations of the datapack (a cheap clone of the shared table, so the caller can
     /// change the world while it holds a form).
@@ -52,7 +48,9 @@ impl World {
         if form.is_flying() && player.core.x > GRACIA_MAX_X {
             return;
         }
-        if !ALLOW_MOUNTS_DURING_SIEGE && form.is_riding() && player.zones.is_inside(ZoneId::Siege) {
+        // `FeatureConfig.ALLOW_MOUNTS_DURING_SIEGE` (`AllowRideMountsDuringSiege`, M7-SIEGE-01).
+        let allow_mounts = self.siege_settings().allow_mounts_during_siege;
+        if !allow_mounts && form.is_riding() && player.zones.is_inside(ZoneId::Siege) {
             return;
         }
         if player.transform.transformation.is_some() {

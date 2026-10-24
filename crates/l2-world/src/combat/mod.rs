@@ -287,8 +287,10 @@ impl World {
         let Some(kind) = self.objects.get(&target).map(|e| e.kind) else {
             return false;
         };
-        // `target.isArtefact()`: castle artefacts are siege NPCs (M5).
-        if kind == crate::objects::ObjectKind::Door {
+        // `target.isDoor() || target.isArtefact()` (M7-SIEGE-01).
+        if kind == crate::objects::ObjectKind::Door
+            || self.npc_template(target).is_some_and(|t| t.is_type("Artefact"))
+        {
             return true;
         }
         let (Some(from), Some(to)) = (self.position_of(id), self.position_of(target)) else {

@@ -121,8 +121,9 @@ impl World {
         if self.is_academy_member(dying) || self.is_academy_member(killer) {
             return;
         }
-        // M7: `|| (isInSiege() && pk.isInSiege())`, the siege states.
-        if !(own.is_at_war_with(pk_id) && pk.is_at_war_with(own_id)) {
+        // `|| (isInSiege() && pk.isInSiege())` (M7-SIEGE-01).
+        let in_siege = self.is_in_siege(dying) && self.is_in_siege(killer);
+        if !((own.is_at_war_with(pk_id) && pk.is_at_war_with(own_id)) || in_siege) {
             return;
         }
         if !self.anti_feed_check(killer, dying) {

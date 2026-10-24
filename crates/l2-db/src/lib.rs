@@ -29,6 +29,7 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{CrestRepository, CrestRow};
+pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use game::{FriendLink, FriendRepository};
 pub use game::{GroundItemRecord, GroundItemRepository};

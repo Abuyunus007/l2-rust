@@ -127,7 +127,18 @@ impl World {
         }
 
         if self.is_player(id) {
-            // Observer mode and siege friends: M5.
+            // Observer mode: not modelled.
+            if self.is_siege_friend(id, target) {
+                // M7-TW-01: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY`.
+                self.send(
+                    id,
+                    &SystemMessage::new(
+                        SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege,
+                    ),
+                );
+                self.send(id, &ActionFailed);
+                return;
+            }
             // Checking if target has moved to peace zone.
             if self.target_is_inside_peace_zone(target, id) {
                 self.set_intention_active(id);

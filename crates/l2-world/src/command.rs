@@ -216,6 +216,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// The siege window packets (M7-SIEGE-01).
+    Siege(crate::siege::SiegeInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

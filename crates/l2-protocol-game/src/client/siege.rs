@@ -62,3 +62,15 @@ client_packet!(
         approved: i32,
     }
 );
+
+// Java: gameserver/network/clientpackets/RequestSetCastleSiegeTime.java
+client_packet!(
+    /// The castle lord picks the hour of the next siege (`REQUEST_SET_CASTLE_SIEGE_TIME`).
+    RequestSetCastleSiegeTime,
+    plain RequestSetCastleSiegeTime {
+        /// The castle id.
+        castle_id: i32,
+        /// The chosen time in unix seconds (Java multiplies it by 1000).
+        time: i32,
+    }
+);

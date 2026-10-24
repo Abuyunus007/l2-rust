@@ -132,6 +132,8 @@ pub struct World {
     pub(crate) fishing: crate::fishing::FishingWorld,
     /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
     pub(crate) residences: crate::residence::ResidenceWorld,
+    /// The castle sieges, the siege state of players and the siege zones (M7-SIEGE-01, `siege/`).
+    pub(crate) sieges: crate::siege::SiegeWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -199,6 +201,7 @@ impl World {
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
             residences: crate::residence::ResidenceWorld::default(),
+            sieges: crate::siege::SiegeWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
         }
@@ -676,6 +679,9 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
+            // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
+            ClientInput::Siege(input) => self.on_siege_input(id, input),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -770,6 +776,8 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
+            // Java: Siege.ScheduleStartSiegeTask, ScheduleEndSiegeTask, FameTask, ...
+            TimerKind::Siege(timer) => self.on_siege_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
             // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),

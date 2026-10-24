@@ -18,7 +18,7 @@
 // `ResidenceHallTeleportZone`, `LandingZone`, `NoLandingZone`, `HqZone`, `ConditionZone`,
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
-// entering it does nothing: `SiegeZone` (needs sieges),
+// entering it does nothing (`SiegeZone` is the siege's, `siege/zone.rs`, M7-SIEGE-01),
 // `OlympiadStadiumZone`, `WaterZone`, `SwampZone`, `BossZone`, `DamageZone`, `FishingZone`,
 // `RespawnZone` (restart points only). `FlagPvPZone` flags the player (M6-DUEL-01); its
 // `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
@@ -264,6 +264,8 @@ enum ZoneKind {
     FlagPvp,
     /// `ClanHallZone` and its `SiegableHallZone` (M7-RES-01).
     ClanHall,
+    /// `SiegeZone` (M7-SIEGE-01, `siege/zone.rs`).
+    Siege,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -293,6 +295,7 @@ impl ZoneKind {
             "EffectZone" => Self::Effect,
             "FlagPvPZone" => Self::FlagPvp,
             "ClanHallZone" | "SiegableHallZone" => Self::ClanHall,
+            "SiegeZone" => Self::Siege,
             _ => Self::Inert,
         }
     }
@@ -443,6 +446,12 @@ impl World {
         self.on_zone_exit(id, zone);
     }
 
+    /// Java `Creature.setInsideZone(zone, state)` of a player, for the zone types outside this
+    /// module (the siege zones).
+    pub(crate) fn set_zone_flag(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
+        self.set_inside(id, zone, state);
+    }
+
     fn set_inside(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
         if let Some(player) = self.players.get_mut(&id) {
             player.zones.set_inside(zone, state);
@@ -535,6 +544,7 @@ impl World {
                 let hall_id = zone.int_param("clanHallId").unwrap_or(0);
                 self.on_clan_hall_zone_enter(id, hall_id);
             }
+            ZoneKind::Siege => self.on_siege_zone_enter(id, zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -624,6 +634,7 @@ impl World {
                 self.broadcast_user_info(id);
             }
             ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
+            ZoneKind::Siege => self.on_siege_zone_exit(id, zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

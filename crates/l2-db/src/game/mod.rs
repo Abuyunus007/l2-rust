@@ -24,6 +24,7 @@ mod recipes;
 mod recommendations;
 mod residences;
 mod shortcuts;
+mod sieges;
 mod skills;
 mod sql_number;
 mod subclasses;
@@ -62,6 +63,9 @@ pub use residences::{
     SiegableHallRow,
 };
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
+pub use sieges::{
+    DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow,
+};
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use subclasses::{SubclassRepository, SubclassRow, SubclassValues};
 pub use summons::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};

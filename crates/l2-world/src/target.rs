@@ -79,13 +79,18 @@ impl World {
     pub fn is_auto_attackable_by(&self, target: ObjectId, attacker: ObjectId) -> bool {
         let karma = self.players.get(&attacker).map_or(0, |p| p.data.karma);
         match self.objects.get(&target).map(|e| e.kind) {
+            // The siege NPCs (towers, headquarters, the artefact, siege guards) have their own
+            // rules (M7-SIEGE-01).
             Some(ObjectKind::Npc) => self
-                .npcs
-                .get(&target)
-                .is_some_and(|n| n.class.auto_attackable_by(karma)),
-            // Doors can be attacked when the template says so; sieges (castle, fort, siegable
-            // clan hall doors) arrive with M5.
-            Some(ObjectKind::Door) => self.doors.get(&target).is_some_and(|d| d.attackable_door),
+                .siege_npc_auto_attackable(target, attacker)
+                .unwrap_or_else(|| {
+                    self.npcs
+                        .get(&target)
+                        .is_some_and(|n| n.class.auto_attackable_by(karma))
+                }),
+            // Doors can be attacked when the template says so, castle doors in a siege
+            // (M7-SIEGE-01; fortress and siegable hall doors: their cards).
+            Some(ObjectKind::Door) => self.door_auto_attackable(target, attacker),
             Some(ObjectKind::Player) => self.is_auto_attackable(target, attacker),
             Some(ObjectKind::Summon) => self.summon_auto_attackable_by(target, attacker),
             _ => false,
@@ -393,6 +398,10 @@ impl World {
             );
             return;
         }
+        // `Tower.onAction` and `SiegeFlag.onAction` do not call `Npc.onAction` (M7-SIEGE-01).
+        if self.siege_npc_click(player, npc, interact) {
+            return;
+        }
         if let Some(p) = self.players.get_mut(&player) {
             p.talk.last_folk_npc = Some(npc);
         }
@@ -495,9 +504,18 @@ impl World {
         if self.target_of(player) != Some(door) {
             self.set_target(player, Some(door));
         } else if interact {
-            // FOLLOW-UP(M4/M5): attacking a siege door, and the clan hall / fortress door
-            // confirmation dialogs (clans).
-            debug!("{player} clicked door {door} twice: attacking and clan doors arrive later");
+            if self.is_auto_attackable_by(door, player) {
+                let dz = match (self.position_of(player), self.position_of(door)) {
+                    (Some(p), Some(d)) => (p.2 - d.2).abs(),
+                    _ => i32::MAX,
+                };
+                if dz < 400 {
+                    self.set_intention_attack(player, door);
+                }
+                return;
+            }
+            // FOLLOW-UP(M7-CH-01, M7-FORT-01): the clan hall / fortress door confirmation dialogs.
+            debug!("{player} clicked door {door} twice: the clan doors arrive with their cards");
         }
     }
 

@@ -131,6 +131,9 @@ pub enum TimerKind {
     Fishing(crate::fishing::FishingTimer),
     /// The fee tasks of the residence functions, see `residence/`.
     Residence(crate::residence::ResidenceTimer),
+    /// The siege schedule, the end countdown, the headquarters' warnings, the fame of the siege
+    /// zone, see `siege/`.
+    Siege(crate::siege::SiegeTimer),
     /// The feed task of a mount, the dismount task of a no-landing zone and the rent task, see
     /// `mount.rs`.
     Mount(crate::mount::MountTimer),

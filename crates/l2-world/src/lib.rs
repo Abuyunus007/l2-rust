@@ -58,6 +58,7 @@ pub mod rewards;
 pub mod runner;
 pub mod shop;
 pub mod shortcuts;
+pub mod siege;
 pub mod skills;
 pub mod snapshot;
 pub mod stats;
@@ -142,6 +143,10 @@ pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
+pub use siege::{
+    CastleSiegeConfig, Siege, SiegeClan, SiegeClanRecord, SiegeClanType, SiegeGuardRecord, SiegeInput,
+    SiegeLoad, SiegeSettings, SiegeTimer, TowerSpawn,
+};
 pub use skills::learn::LearnSettings;
 pub use skills::{CastSettings, CastTimer, MagicUseTask, ReuseTimeStamp, SkillUse};
 pub use snapshot::snapshot_for_store;

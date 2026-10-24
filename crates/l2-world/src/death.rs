@@ -23,7 +23,9 @@
 // - `// M4-DROP-01:` [`World::calculate_rewards`] (`doItemDrop`), [`World::on_die_drop_item`].
 // - What an attackable NPC's AI does around its death (clan help call, the attack-by list, the
 //   minions and their respawn) is `ai/attackable.rs` and `ai/minions.rs`.
-// - `// M5:` clans, sieges. The PvP kill and karma gain of the killer is `pvp.rs`.
+// - The PvP kill and karma gain of the killer is `pvp.rs`; the siege parts (the clan buttons of
+//   `Die`, the restart points of the residences, the attackers' respawn delay, the siege NPCs'
+//   deaths and the siege zone's death penalty) are `siege/` (M7-SIEGE-01).
 
 use std::collections::{HashMap, HashSet};
 
@@ -212,8 +214,12 @@ impl World {
         // to inform.
         self.broadcast_status_update(id);
 
-        // `ZoneManager.getRegion(this).onDeath(this)`: no zone type reacts to a death. Quests
-        // that asked to hear about the death (scripts: D-05), the instance (no instances yet).
+        // `ZoneManager.getRegion(this).onDeath(this)`: the siege zone's Battleground Death
+        // Syndrome (M7-SIEGE-01); `FlagPvPZone.onDieInside` is not ported. Quests that asked to
+        // hear about the death (scripts: D-05), the instance (no instances yet).
+        if self.is_player(id) {
+            self.on_siege_zone_die_inside(id);
+        }
 
         // `killerPlayer.onKillUpdatePvPKarma(this)`: PvP kills, PK kills and the karma the killer
         // gains (`pvp.rs`). `killer.asPlayer()`: a summon's owner is the killer player.
@@ -357,6 +363,8 @@ impl World {
             if self.is_attackable_npc(id) {
                 self.attackable_do_die(id, killer);
             }
+            // `ControlTower`, `FlameTower` and `SiegeFlag.doDie` (M7-SIEGE-01).
+            self.siege_npc_do_die(id);
         }
         true
     }
@@ -433,9 +441,9 @@ impl World {
 
     /// `new Die(creature)` as Java builds and writes it.
     ///
-    /// The four clan buttons (clan hall, castle, siege headquarters, fortress) need clans and
-    /// sieges (M5); Java writes zeros for a creature without them. The blue sweep glow is
-    /// `isSweepActive` (M5-SPOIL-01).
+    /// The four clan buttons (clan hall, castle, siege headquarters, fortress) are the clan's and
+    /// the siege's (`siege/restart.rs`, M7-SIEGE-01); Java writes zeros for a creature that cannot
+    /// teleport, has no clan or is jailed. The blue sweep glow is `isSweepActive` (M5-SPOIL-01).
     pub fn die_packet(&self, id: ObjectId) -> Die {
         let can_teleport = self.can_revive(id) && !self.is_pending_revive(id);
         // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()`: neither exists yet.
@@ -443,16 +451,21 @@ impl World {
             self.have_item_for_self_resurrection(id)
                 || self.data.access_level_allows_fixed_res(p.data.access_level)
         });
+        let (to_clan_hall, to_castle, to_siege_hq, to_fortress) = if can_teleport {
+            self.die_clan_buttons(id)
+        } else {
+            (false, false, false, false)
+        };
         Die {
             object_id: id.0,
             can_teleport,
-            to_clan_hall: false,
-            to_castle: false,
-            to_siege_hq: false,
+            to_clan_hall,
+            to_castle,
+            to_siege_hq,
             // Java `creature.isSweepActive()`: only an attackable with something left to sweep.
             sweepable: self.is_sweep_active(id),
             fixed_res,
-            to_fortress: false,
+            to_fortress,
         }
     }
 
@@ -528,9 +541,9 @@ impl World {
 
     /// Java `RequestRestartPoint.runImpl` + `portPlayer`.
     ///
-    /// Not modelled, so those branches do what Java does for a player without them: clans,
-    /// castles, fortresses, sieges, clan halls (the "To clanhall / castle / fortress / siege HQ"
-    /// buttons are refused), events, fake death, festival participants.
+    /// The clan hall, castle, fortress and siege headquarters restart points and the attackers'
+    /// wait are the siege's (`siege/restart.rs`, M7-SIEGE-01). Not modelled: events, festival
+    /// participants.
     pub(crate) fn on_request_restart_point(&mut self, id: ObjectId, point_type: i32) {
         if !self.players.contains_key(&id) {
             return;
@@ -545,11 +558,16 @@ impl World {
         if !self.is_dead(id) {
             return;
         }
-        // Custom event resurrection, and an attacker's wait in a siege (castle sieges: M5).
+        // Custom event resurrection: events are not modelled.
+        // An attacker of the siege the player lies in waits `AttackerRespawn` (M7-SIEGE-01).
+        if self.siege_delay_attacker_restart(id, point_type) {
+            return;
+        }
         self.port_player(id, point_type);
     }
 
-    fn port_player(&mut self, id: ObjectId, point_type: i32) {
+    /// Java `RequestRestartPoint.portPlayer` (also the attacker's `DeathTask`).
+    pub(crate) fn port_player(&mut self, id: ObjectId, point_type: i32) {
         let name = self
             .players
             .get(&id)
@@ -560,28 +578,40 @@ impl World {
         let mut instance = 0;
         let location: Option<(i32, i32, i32)> = match point_type {
             // To clanhall.
-            1 => {
-                warn!(
-                    "Player [{name}] called RestartPointPacket - To Clanhall and he doesn't have Clanhall!"
-                );
-                return;
-            }
-            // To castle: without a siege in progress it needs a clan with a castle.
-            2 => return,
+            1 => match self.restart_to_clan_hall(id) {
+                Some(location) => location,
+                None => {
+                    warn!(
+                        "Player [{name}] called RestartPointPacket - To Clanhall and he doesn't have Clanhall!"
+                    );
+                    return;
+                }
+            },
+            // To castle: the castle defended in a siege, else the clan's castle.
+            2 => match self.restart_to_castle(id) {
+                Some(location) => location,
+                None => return,
+            },
             // To fortress.
-            3 => {
-                warn!(
-                    "Player [{name}] called RestartPointPacket - To Fortress and he doesn't have Fortress!"
-                );
-                return;
-            }
+            3 => match self.restart_to_fortress(id) {
+                Some(location) => location,
+                None => {
+                    warn!(
+                        "Player [{name}] called RestartPointPacket - To Fortress and he doesn't have Fortress!"
+                    );
+                    return;
+                }
+            },
             // To siege HQ.
-            4 => {
-                warn!(
-                    "Player [{name}] called RestartPointPacket - To Siege HQ and he doesn't have Siege HQ!"
-                );
-                return;
-            }
+            4 => match self.restart_to_siege_hq(id) {
+                Some(location) => location,
+                None => {
+                    warn!(
+                        "Player [{name}] called RestartPointPacket - To Siege HQ and he doesn't have Siege HQ!"
+                    );
+                    return;
+                }
+            },
             // Fixed or Player is a festival participant.
             5 => {
                 let is_gm = self.is_gm(id);

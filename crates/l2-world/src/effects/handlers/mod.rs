@@ -72,6 +72,7 @@ mod resurrection;
 mod ride;
 mod servitor_share;
 mod set_skill;
+mod siege;
 mod silent_move;
 mod skill_calc;
 mod spoil;
@@ -98,6 +99,8 @@ use super::registry::EffectRegistry;
 /// here keeps its `Unported` stand-in.
 pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("AddHate", add_hate::AddHate::create);
+    registry.register("HeadquarterCreate", siege::HeadquarterCreate::create);
+    registry.register("TakeCastle", siege::TakeCastle::create);
     registry.register(
         "ApplySkillEffects",
         apply_skill_effects::ApplySkillEffects::create,

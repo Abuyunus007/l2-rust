@@ -342,7 +342,7 @@ impl World {
         self.residences.castles.push(castle);
         if owned {
             self.load_residence_functions(ResidenceRef::Castle(id), &record.functions);
-            // M7-SIEGE-01: `loadDoorUpgrade()` (`castle_doorupgrade`).
+            // `loadDoorUpgrade()` (`castle_doorupgrade`): `World::load_sieges` (M7-SIEGE-01).
         }
     }
 

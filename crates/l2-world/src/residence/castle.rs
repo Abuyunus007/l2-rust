@@ -388,7 +388,10 @@ impl World {
         {
             self.fort_remove_owner(fort, true);
         }
-        // M7-SIEGE-01: `if (getSiege().isInProgress()) getSiege().midVictory()`.
+        // Java: `if (getSiege().isInProgress()) getSiege().midVictory()` (M7-SIEGE-01).
+        if self.is_castle_siege_in_progress(id) {
+            self.siege_mid_victory(id);
+        }
         // M7-TW-01: `TerritoryWarManager.getTerritory(getResidenceId()).setOwnerClan(clan)`.
         if let Some(clan_id) = clan {
             for member in self.clan_online_members(clan_id, 0) {
@@ -423,7 +426,10 @@ impl World {
             self.broadcast_clan_info_update(clan_id);
         }
         self.castle_update_owner_in_db(id, None);
-        // M7-SIEGE-01: `if (getSiege().isInProgress()) getSiege().midVictory()`.
+        // Java: `if (getSiege().isInProgress()) getSiege().midVictory()` (M7-SIEGE-01).
+        if self.is_castle_siege_in_progress(id) {
+            self.siege_mid_victory(id);
+        }
         self.residence_remove_all_functions(ResidenceRef::Castle(id));
     }
 

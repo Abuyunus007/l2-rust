@@ -56,6 +56,11 @@ pub enum ResidenceRereadRows {
     SiegableHall(SiegableHallRecord),
     /// The database has no row for it (nothing changes).
     Missing,
+    /// A castle (`None`: no row) and every `siege_clans` row (M7-SIEGE-01).
+    SiegeClans {
+        castle: Option<CastleRecord>,
+        rows: Vec<crate::siege::SiegeClanRecord>,
+    },
 }
 
 /// What the world does once a residence was read again. The cards that act on residences add
@@ -65,6 +70,26 @@ pub enum ResidenceRereadRows {
 pub enum ResidenceReadThen {
     /// Only bring this world up to date.
     Nothing,
+    /// `RequestJoinSiege` (M7-SIEGE-01).
+    SiegeJoin {
+        player: ObjectId,
+        castle_id: i32,
+        is_attacker: i32,
+        is_joining: i32,
+    },
+    /// `RequestConfirmSiegeWaitingList` (M7-SIEGE-01).
+    SiegeConfirmWaiting {
+        player: ObjectId,
+        castle_id: i32,
+        clan_id: i32,
+        approved: i32,
+    },
+    /// `RequestSiegeAttackerList` (M7-SIEGE-01).
+    SiegeAttackerList { player: ObjectId, castle_id: i32 },
+    /// `RequestSiegeDefenderList` (M7-SIEGE-01).
+    SiegeDefenderList { player: ObjectId, castle_id: i32 },
+    /// The Java GS ran the siege of a castle: start the schedule again (M7-SIEGE-01, D-51).
+    SiegeRestartSchedule { castle_id: i32 },
 }
 
 impl World {
@@ -184,9 +209,33 @@ impl World {
             ResidenceRereadRows::ClanHall(record) => self.apply_clan_hall_record(record),
             ResidenceRereadRows::SiegableHall(record) => self.apply_siegable_hall_record(record),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
+            ResidenceRereadRows::SiegeClans { castle, rows } => {
+                self.apply_siege_reread(castle.as_ref(), rows)
+            }
         }
         match then {
             ResidenceReadThen::Nothing => {}
+            ResidenceReadThen::SiegeJoin {
+                player,
+                castle_id,
+                is_attacker,
+                is_joining,
+            } => self.siege_join_after_reread(player, CastleId(castle_id), is_attacker, is_joining),
+            ResidenceReadThen::SiegeConfirmWaiting {
+                player,
+                castle_id,
+                clan_id,
+                approved,
+            } => self.siege_confirm_after_reread(player, CastleId(castle_id), clan_id, approved),
+            ResidenceReadThen::SiegeAttackerList { player, castle_id } => {
+                self.send_siege_attacker_list(player, CastleId(castle_id));
+            }
+            ResidenceReadThen::SiegeDefenderList { player, castle_id } => {
+                self.send_siege_defender_list(player, CastleId(castle_id));
+            }
+            ResidenceReadThen::SiegeRestartSchedule { castle_id } => {
+                self.siege_restart_schedule(CastleId(castle_id));
+            }
         }
     }
 
@@ -415,4 +464,6 @@ pub enum ResidenceReadKind {
     ClanHall,
     /// `siegable_clanhall`.
     SiegableHall,
+    /// `castle` (as [`Self::Castle`]) and every `siege_clans` row (M7-SIEGE-01).
+    SiegeClans,
 }

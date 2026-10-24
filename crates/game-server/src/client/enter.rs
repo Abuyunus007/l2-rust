@@ -1252,6 +1252,38 @@ impl ClientSession {
             ClientPacket::RequestRefineCancel(p) => ClientInput::Augment(AugmentInput::RefineCancel {
                 target_item_object_id: p.target_item_object_id,
             }),
+            // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
+            // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
+            // (M7-SIEGE-01)
+            ClientPacket::RequestSiegeInfo(_) => ClientInput::Siege(l2_world::SiegeInput::SiegeInfo),
+            ClientPacket::RequestSiegeAttackerList(p) => {
+                ClientInput::Siege(l2_world::SiegeInput::AttackerList {
+                    castle_id: p.castle_id,
+                })
+            }
+            ClientPacket::RequestSiegeDefenderList(p) => {
+                ClientInput::Siege(l2_world::SiegeInput::DefenderList {
+                    castle_id: p.castle_id,
+                })
+            }
+            ClientPacket::RequestJoinSiege(p) => ClientInput::Siege(l2_world::SiegeInput::JoinSiege {
+                castle_id: p.castle_id,
+                is_attacker: p.is_attacker,
+                is_joining: p.is_joining,
+            }),
+            ClientPacket::RequestConfirmSiegeWaitingList(p) => {
+                ClientInput::Siege(l2_world::SiegeInput::ConfirmSiegeWaitingList {
+                    castle_id: p.castle_id,
+                    clan_id: p.clan_id,
+                    approved: p.approved,
+                })
+            }
+            ClientPacket::RequestSetCastleSiegeTime(p) => {
+                ClientInput::Siege(l2_world::SiegeInput::SetCastleSiegeTime {
+                    castle_id: p.castle_id,
+                    time: p.time,
+                })
+            }
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

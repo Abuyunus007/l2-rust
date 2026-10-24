@@ -41,6 +41,8 @@ pub(crate) enum ItemHandlerKind {
     EnchantAttribute,
     /// `FishShots`: charges a fishing rod (M6-FU-08).
     FishShots,
+    /// `MercTicket`: a castle lord places a mercenary (M7-SIEGE-01).
+    MercTicket,
 }
 
 impl ItemHandlerKind {
@@ -60,6 +62,7 @@ impl ItemHandlerKind {
             "EnchantScrolls" => Self::EnchantScrolls,
             "EnchantAttribute" => Self::EnchantAttribute,
             "FishShots" => Self::FishShots,
+            "MercTicket" => Self::MercTicket,
             _ => return None,
         })
     }
@@ -98,6 +101,7 @@ impl World {
             ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
             ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
             ItemHandlerKind::FishShots => self.fish_shots_on_use(id, item, template),
+            ItemHandlerKind::MercTicket => self.merc_ticket_on_use(id, item),
         }
     }
 

@@ -63,8 +63,8 @@ fn check_round_trip<P: Encode + Decode + PartialEq + std::fmt::Debug>(
 mod siege {
     use super::*;
     use l2_protocol_game::client::{
-        RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
-        RequestSiegeInfo,
+        RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime,
+        RequestSiegeAttackerList, RequestSiegeDefenderList, RequestSiegeInfo,
     };
     use l2_protocol_game::server::siege::{
         CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,
@@ -130,6 +130,15 @@ mod siege {
             },
             // Java reads the castle id, then the clan id, then the answer.
             &Bytes::default().byte(0xAE).int(3).int(44).int(1).done(),
+            1,
+        );
+        check_round_trip(
+            &RequestSetCastleSiegeTime {
+                castle_id: 5,
+                time: 1_793_548_800,
+            },
+            // Java reads the castle id, then the time in seconds (M7-SIEGE-01).
+            &Bytes::default().byte(0xAF).int(5).int(1_793_548_800).done(),
             1,
         );
     }
@@ -1158,6 +1167,11 @@ mod dispatch {
             approved: 1,
         };
         dispatches(&p, ClientPacket::RequestConfirmSiegeWaitingList(p.clone()));
+        let p = RequestSetCastleSiegeTime {
+            castle_id: 5,
+            time: 1_793_548_800,
+        };
+        dispatches(&p, ClientPacket::RequestSetCastleSiegeTime(p.clone()));
         let p = RequestAllFortressInfo;
         dispatches(&p, ClientPacket::RequestAllFortressInfo(p));
         let p = RequestFortressSiegeInfo;

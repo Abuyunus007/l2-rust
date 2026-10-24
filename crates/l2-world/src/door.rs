@@ -16,8 +16,9 @@
 // Not here (out of scope of M3-DOOR-01):
 // - Door timers: `startTimerOpen` / `TimerOpen` (open by time) and `startAutoCloseTask` /
 //   `AutoClose` (`close_time`). `open_door` and `close_door` do not arm them.
-// - Castle, fort and clan hall doors: `isEnemy()` is always false, `useTargetable` is false, and
-//   the clan hall door lists are not filled. Sieges come with M4+.
+// - Castle, fort and clan hall doors: `isEnemy()` is the siege's (`Door::siege_enemy`, set by
+//   `siege/doors.rs` while the castle's siege zone is active, M7-SIEGE-01); `useTargetable` is
+//   false.
 // - Damage: `reduceCurrentHp`, `doDie` and the "gate destroyed" message. [`Door::dead`] and
 //   [`World::set_door_dead`] only carry the state the geodata checks read.
 // - Instances (`Instance.getDoors()`): no instance exists yet, so a geodata check with an
@@ -66,6 +67,10 @@ pub struct Door {
     pub mesh_index: i32,
     /// Java `isDead()`: a dead door does not block.
     pub dead: bool,
+    /// `DoorStat._upgradeHpRatio` (`castle_doorupgrade`): `max_hp` is the template's times this.
+    pub upgrade_hp_ratio: i32,
+    /// Java `isEnemy()`: a door with an HP bar of a castle whose siege zone is active (M7-SIEGE-01).
+    pub siege_enemy: bool,
 }
 
 impl Door {
@@ -85,6 +90,8 @@ impl Door {
             attackable_door: template.attackable,
             mesh_index: 1,
             dead: false,
+            upgrade_hp_ratio: 1,
+            siege_enemy: false,
             template,
         }
     }
@@ -108,9 +115,9 @@ impl Door {
     }
 
     /// Java `Door.isEnemy()`: true for a siege door of an active castle, fort or siegable clan
-    /// hall with a visible hp bar. None of those exist yet.
+    /// hall with a visible hp bar (the castles: M7-SIEGE-01; fortresses and halls: their cards).
     pub fn is_enemy(&self) -> bool {
-        false
+        self.siege_enemy
     }
 
     /// The filter of `DoorData.checkIfDoorsBetween`: closed, alive, collision on and a first
@@ -764,6 +771,38 @@ impl World {
             door.dead = dead;
             self.door_snapshot = None;
         }
+    }
+
+    /// `DoorStat.setUpgradeHpRatio(ratio)`: the maximum HP is the template's times `ratio`.
+    pub(crate) fn set_door_upgrade_hp_ratio(&mut self, id: ObjectId, ratio: i32) {
+        if let Some(door) = self.doors.get_mut(&id) {
+            door.upgrade_hp_ratio = ratio;
+            let base = f64::from(door.template.base_hp_max) as i32;
+            door.max_hp = base.wrapping_mul(ratio);
+        }
+    }
+
+    /// Java `Door.setCurrentHp(hp)`: within 0 and the maximum, then `broadcastStatusUpdate`.
+    pub(crate) fn set_door_current_hp(&mut self, id: ObjectId, hp: f64) {
+        let Some(door) = self.doors.get_mut(&id) else {
+            return;
+        };
+        door.current_hp = hp.clamp(0.0, f64::from(door.max_hp.max(0)));
+        self.broadcast_door_status(id);
+    }
+
+    /// Java `Creature.doRevive()` of a destroyed door: alive again (it blocks again) and
+    /// `Revive` for everybody who sees it.
+    pub(crate) fn revive_door(&mut self, id: ObjectId) {
+        let Some(door) = self.doors.get_mut(&id) else {
+            return;
+        };
+        if !door.dead {
+            return;
+        }
+        door.dead = false;
+        self.door_snapshot = None;
+        self.broadcast_packet(id, &l2_protocol_game::server::Revive { object_id: id.0 });
     }
 
     /// Java `Fence.setState`: changes the state and sends the fence to everybody who sees it.

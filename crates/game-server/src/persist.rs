@@ -66,7 +66,7 @@ use l2_db::{
     ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
-use l2_db::{FunctionTable, ResidenceRepository};
+use l2_db::{FunctionTable, ResidenceRepository, SiegeRepository};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -1261,6 +1261,142 @@ pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
     load
 }
 
+/// Java's siege managers at startup, the database half (M7-SIEGE-01): the registrations
+/// (`Siege.loadSiegeClan`), the guards and hired mercenaries (`SiegeGuardManager`,
+/// `MercTicketManager`) and the door and trap upgrades (`Castle.loadDoorUpgrade`,
+/// `SiegeManager.loadTrapUpgrade`). Only reads (D-39). A failed read is logged like Java's and the
+/// rest goes on.
+pub async fn load_sieges(pool: &Pool) -> l2_world::SiegeLoad {
+    let repo = SiegeRepository::new(pool.clone());
+    let mut load = l2_world::SiegeLoad::default();
+    match repo.siege_clans().await {
+        Ok(rows) => load.siege_clans = rows.into_iter().map(siege_clan_record).collect(),
+        Err(e) => warn!("Exception: loadSiegeClan(): {e}"),
+    }
+    match repo.siege_guards().await {
+        Ok(rows) => {
+            load.siege_guards = rows
+                .into_iter()
+                .map(|r| l2_world::SiegeGuardRecord {
+                    castle_id: r.castle_id,
+                    npc_id: r.npc_id,
+                    x: r.x,
+                    y: r.y,
+                    z: r.z,
+                    heading: r.heading,
+                    respawn_delay: r.respawn_delay,
+                    is_hired: r.is_hired == 1,
+                })
+                .collect();
+        }
+        Err(e) => warn!("Exception: loadMercenaryData(): {e}"),
+    }
+    match repo.door_upgrades().await {
+        Ok(rows) => {
+            load.door_upgrades = rows
+                .into_iter()
+                .map(|r| l2_world::siege::DoorUpgradeRecord {
+                    door_id: r.door_id,
+                    ratio: r.ratio,
+                    castle_id: r.castle_id,
+                })
+                .collect();
+        }
+        Err(e) => warn!("Exception: loadCastleDoorUpgrade(): {e}"),
+    }
+    match repo.trap_upgrades().await {
+        Ok(rows) => {
+            load.trap_upgrades = rows
+                .into_iter()
+                .map(|r| l2_world::siege::TrapUpgradeRecord {
+                    castle_id: r.castle_id,
+                    tower_index: r.tower_index,
+                    level: r.level,
+                })
+                .collect();
+        }
+        Err(e) => warn!("Exception: loadTrapUpgrade(): {e}"),
+    }
+    load
+}
+
+fn siege_clan_record(row: l2_db::SiegeClanRow) -> l2_world::SiegeClanRecord {
+    l2_world::SiegeClanRecord {
+        castle_id: row.castle_id,
+        clan_id: row.clan_id,
+        kind: row.kind,
+    }
+}
+
+/// The siege statements of `PersistCommand::Residence` (M7-SIEGE-01).
+async fn store_siege_write(repo: &SiegeRepository, write: &ResidenceWrite) -> Result<(), l2_db::DbError> {
+    match write {
+        ResidenceWrite::CastleSiegeDate {
+            castle_id,
+            siege_date,
+            reg_time_end,
+            reg_time_over,
+        } => {
+            repo.update_castle_siege_date(*castle_id, *siege_date, *reg_time_end, *reg_time_over)
+                .await
+        }
+        ResidenceWrite::SiegeClanInsert {
+            clan_id,
+            castle_id,
+            kind,
+        } => repo.insert_siege_clan(*clan_id, *castle_id, *kind).await,
+        ResidenceWrite::SiegeClanUpdate {
+            castle_id,
+            clan_id,
+            kind,
+        } => repo.update_siege_clan(*castle_id, *clan_id, *kind).await,
+        ResidenceWrite::SiegeClanDelete { castle_id, clan_id } => {
+            repo.delete_siege_clan(*castle_id, *clan_id).await
+        }
+        ResidenceWrite::SiegeClansDeleteCastle { castle_id } => {
+            repo.delete_siege_clans_of_castle(*castle_id).await
+        }
+        ResidenceWrite::SiegeClansDeleteClan { clan_id } => repo.delete_siege_clans_of_clan(*clan_id).await,
+        ResidenceWrite::SiegeClansDeleteWaiting { castle_id } => {
+            repo.delete_waiting_siege_clans(*castle_id).await
+        }
+        ResidenceWrite::SiegeGuardInsert(guard) => {
+            let new = l2_db::NewSiegeGuard {
+                castle_id: guard.castle_id,
+                npc_id: guard.npc_id,
+                x: guard.x,
+                y: guard.y,
+                z: guard.z,
+                heading: guard.heading,
+                respawn_delay: guard.respawn_delay,
+                is_hired: i32::from(guard.is_hired),
+            };
+            repo.insert_siege_guard(&new).await
+        }
+        ResidenceWrite::SiegeGuardDeleteHired { npc_id, x, y, z } => {
+            repo.delete_hired_guard(*npc_id, *x, *y, *z).await
+        }
+        ResidenceWrite::SiegeGuardsDeleteHired { castle_id } => repo.delete_hired_guards(*castle_id).await,
+        ResidenceWrite::CastleDoorUpgrade {
+            door_id,
+            ratio,
+            castle_id,
+        } => repo.replace_door_upgrade(*door_id, *ratio, *castle_id).await,
+        ResidenceWrite::CastleDoorUpgradesDelete { castle_id } => repo.delete_door_upgrades(*castle_id).await,
+        ResidenceWrite::CastleTrapUpgrade {
+            castle_id,
+            tower_index,
+            level,
+        } => repo.replace_trap_upgrade(*castle_id, *tower_index, *level).await,
+        ResidenceWrite::CastleTrapUpgradesDelete { castle_id } => repo.delete_trap_upgrades(*castle_id).await,
+        ResidenceWrite::ClanBloodAllianceCount { clan_id, count } => {
+            repo.update_blood_alliance_count(*clan_id, *count).await
+        }
+        // The residence statements are `store_residence_write`'s.
+        _ => Ok(()),
+    }
+}
+
 /// The residences of one clan as the database has them now (D-50, D-51): the castle its
 /// `hasCastle` names (`castle_id`, read at `CharacterSelect` with the clan) and the fortresses and
 /// halls whose owner it is, each with its functions.
@@ -1821,6 +1957,7 @@ pub struct DbStore {
     friends: FriendRepository,
     championship: FishingChampionshipRepository,
     residences: ResidenceRepository,
+    sieges: SiegeRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1850,6 +1987,7 @@ impl DbStore {
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             residences: ResidenceRepository::new(pool.clone()),
+            sieges: SiegeRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
@@ -3004,6 +3142,8 @@ impl PlayerStore for DbStore {
             ResidenceWrite::DeleteCirclets { owner_id, item_id } => {
                 repo.delete_circlets(*owner_id, *item_id).await?
             }
+            // The siege statements (M7-SIEGE-01).
+            write => store_siege_write(&self.sieges, write).await?,
         }
         Ok(())
     }
@@ -3065,6 +3205,15 @@ impl PlayerStore for DbStore {
                         ResidenceRereadRows::SiegableHall(record)
                     }
                     None => ResidenceRereadRows::Missing,
+                }
+            }
+            // M7-SIEGE-01: the castle and every registration (D-50).
+            ResidenceReadKind::SiegeClans => {
+                let castle = read_castle_record(repo, residence_id).await?;
+                let rows = self.sieges.siege_clans().await?;
+                ResidenceRereadRows::SiegeClans {
+                    castle: castle.found.then_some(castle),
+                    rows: rows.into_iter().map(siege_clan_record).collect(),
                 }
             }
         };

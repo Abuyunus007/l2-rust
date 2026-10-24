@@ -26,7 +26,6 @@
 // - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
 //   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
 // - Action 65 (the bot report button) is `bot_report.rs`.
-// - M7: `isInSiege()` and `isInHideoutSiege()` are always false (the siege code sets them).
 // - M8: `isInOlympiadMode()` is always false.
 
 use l2_protocol_game::SystemMessageId;
@@ -325,9 +324,23 @@ impl World {
             return;
         }
         // M8: `player.isInOlympiadMode()`.
-        // M7: `player.isInSiege()`.
+        if self.is_in_siege(player) {
+            self.couple_refusal(
+                player,
+                M::C1IsInACastleSiegeAndCannotBeRequestedForACoupleAction,
+                player,
+            );
+            return;
+        }
         // NOTE(java-quirk): the `isInHideoutSiege()` branch of the player has no `return`, the
-        // checks go on after the message (M7: nobody is in a hideout siege yet).
+        // checks go on after the message.
+        if self.is_in_hideout_siege(player) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInAHideoutSiegeAndCannotBeRequestedForACoupleAction,
+                player,
+            );
+        }
         // `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()` (no boats here).
         if self
             .stats(player)
@@ -399,7 +412,22 @@ impl World {
             return;
         }
         // M8: `partner.isInOlympiadMode()`.
-        // M7: `partner.isInHideoutSiege()`, `partner.isInSiege()`.
+        if self.is_in_hideout_siege(partner) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInAHideoutSiegeAndCannotBeRequestedForACoupleAction,
+                partner,
+            );
+            return;
+        }
+        if self.is_in_siege(partner) {
+            self.couple_refusal(
+                player,
+                M::C1IsInACastleSiegeAndCannotBeRequestedForACoupleAction,
+                partner,
+            );
+            return;
+        }
         // `partner.isMounted() || partner.isFlyingMounted() || isInBoat() || isInAirShip()`.
         if self
             .stats(partner)

@@ -1714,6 +1714,112 @@ fn parse_class_multipliers(key: &str, text: &str, table: &mut [f32]) {
     }
 }
 
+/// Name of the siege config file in the config folder (Java `SiegeManager.SIEGE_CONFIG_FILE`).
+pub const SIEGE_FILE: &str = "Siege.ini";
+
+/// Java `SiegeManager.load()` (M7-SIEGE-01): `Siege.ini` with the tower lines and mercenary limits
+/// of each castle (`castles`: id and name, in `CastleManager` order), plus the siege values of
+/// `Feature.ini` (`SiegeHourList`, `AllowRideMountsDuringSiege`), `Player.ini` (the fame of the
+/// castle zone) and `OfflineTrade.ini` (`OfflineFame`).
+pub fn siege_settings(
+    config: &GameConfig,
+    config_dir: &Path,
+    castles: &[(i32, String)],
+) -> l2_world::SiegeSettings {
+    use l2_config::IniFile;
+
+    let path = config_dir.join(SIEGE_FILE);
+    let ini = match IniFile::load(&path) {
+        Ok(ini) => ini,
+        Err(e) => {
+            warn!("Cannot read {}: {e}; using the siege defaults.", path.display());
+            IniFile::empty(SIEGE_FILE)
+        }
+    };
+    let mut s = siege_settings_from_ini(&ini, castles);
+    // `FeatureConfig.SIEGE_HOUR_LIST`: the numeric parts of `SiegeHourList` (`StringUtil.isNumeric`).
+    if let Ok(feature) = IniFile::load(config_dir.join(l2_config::game::FeatureConfig::FILE)) {
+        s.siege_hour_list = feature
+            .get_string("SiegeHourList", "")
+            .split(',')
+            .filter(|h| !h.is_empty() && h.chars().all(|c| c.is_ascii_digit()))
+            .filter_map(|h| h.parse().ok())
+            .collect();
+    }
+    s.allow_mounts_during_siege = config.feature.allow_mounts_during_siege;
+    s.fame_system_enabled = config.player.fame_system_enabled;
+    s.castle_zone_fame_task_frequency = config.player.castle_zone_fame_task_frequency;
+    s.castle_zone_fame_aquire_points = config.player.castle_zone_fame_aquire_points;
+    s.fame_for_dead_players = config.player.fame_for_dead_players;
+    s.offline_fame = config.offline_trade.offline_fame;
+    s
+}
+
+/// The `Siege.ini` part of [`siege_settings`].
+pub fn siege_settings_from_ini(
+    ini: &l2_config::IniFile,
+    castles: &[(i32, String)],
+) -> l2_world::SiegeSettings {
+    let mut s = l2_world::SiegeSettings {
+        siege_cycle: ini.get_int("SiegeCycle", 2),
+        attacker_max_clans: ini.get_int("AttackerMaxClans", 500),
+        attacker_respawn_delay: ini.get_int("AttackerRespawn", 0),
+        defender_max_clans: ini.get_int("DefenderMaxClans", 500),
+        flag_max_count: ini.get_int("MaxFlags", 1),
+        siege_clan_min_level: ini.get_int("SiegeClanMinLevel", 5),
+        siege_length: ini.get_int("SiegeLength", 120),
+        blood_alliance_reward: ini.get_int("BloodAllianceReward", 1),
+        ..l2_world::SiegeSettings::default()
+    };
+    for (id, name) in castles {
+        // `Integer.parseInt` of each token: a token that is not a number (spaces included) skips
+        // the tower with Java's warning.
+        let tower = |key: &str, flame: bool| -> Option<Option<l2_world::TowerSpawn>> {
+            if !ini.contains_key(key) {
+                return None;
+            }
+            let value = ini.get_string(key, "");
+            let tokens: Vec<&str> = value.split(',').filter(|t| !t.is_empty()).collect();
+            // A control tower reads four tokens, a flame tower every token.
+            let wanted = if flame { tokens.len() } else { tokens.len().min(4) };
+            let numbers: Option<Vec<i32>> = tokens[..wanted].iter().map(|t| t.parse::<i32>().ok()).collect();
+            let parsed = numbers.filter(|n| n.len() >= 4).map(|n| l2_world::TowerSpawn {
+                npc_id: n[3],
+                x: n[0],
+                y: n[1],
+                z: n[2],
+                zone_list: n[4..].to_vec(),
+                upgrade_level: 0,
+            });
+            if parsed.is_none() {
+                let kind = if flame { "flame" } else { "control" };
+                warn!("SiegeManager: Error while loading {kind} tower(s) for {name} castle.");
+            }
+            Some(parsed)
+        };
+        let mut config = l2_world::CastleSiegeConfig::default();
+        for i in 1..0xFF {
+            match tower(&format!("{name}ControlTower{i}"), false) {
+                None => break,
+                Some(spawn) => config.control_towers.extend(spawn),
+            }
+        }
+        for i in 1..0xFF {
+            match tower(&format!("{name}FlameTower{i}"), true) {
+                None => break,
+                Some(spawn) => config.flame_towers.extend(spawn),
+            }
+        }
+        let default_max = usize::try_from(id - 1)
+            .ok()
+            .and_then(|i| l2_world::siege::MERCS_MAX_PER_CASTLE.get(i).copied())
+            .unwrap_or(0);
+        config.max_mercenaries = ini.get_int(&format!("{name}MaxMercenaries"), default_max);
+        s.castles.insert(*id, config);
+    }
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;

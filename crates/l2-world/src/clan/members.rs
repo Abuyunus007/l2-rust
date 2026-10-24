@@ -205,7 +205,9 @@ impl World {
             .with(SystemMessageParam::IntNumber(hall.lease()));
             self.send(id, &message);
         }
-        // Sieges, fortress sieges, siegable halls: M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01.
+        // The siege state of a clan in a castle siege (M7-SIEGE-01); fortress sieges, siegable
+        // halls and Territory War: M7-FORT-01, M7-CHSIEGE-01, M7-TW-01.
+        self.siege_on_enter_world(id, clan_id);
         self.send_pledge_show_member_list_all(clan_id, id);
         if let Some(clan) = self.clan(clan_id) {
             let status = Self::pledge_status_changed(clan);
@@ -231,10 +233,16 @@ impl World {
                 clan.leader = Some(id);
             }
         }
-        // `setPlayer` -> `_clan.addSkillEffects(player)`; M7: siege skills of a leader of a clan
-        // above level 3. The `SkillList` of the end of `EnterWorld` is sent from the player's
-        // saved skills only, so the client gets the skills that joined with a second one.
-        if self.clan_add_skill_effects(clan_id, id) {
+        // `setPlayer` -> `_clan.addSkillEffects(player)`, and the siege skills of a leader of a
+        // clan above level 3 (M7-SIEGE-01). The `SkillList` of the end of `EnterWorld` is sent
+        // from the player's saved skills only, so the client gets the skills that joined with a
+        // second one.
+        let mut added = self.clan_add_skill_effects(clan_id, id);
+        if self.clan(clan_id).is_some_and(|c| c.level > 3) && self.is_clan_leader(id) {
+            self.add_siege_skills(id);
+            added = true;
+        }
+        if added {
             self.send_skill_list(id);
         }
         let name = self
@@ -465,7 +473,7 @@ impl World {
                 s.sponsor = 0;
             }
             if leader {
-                // M7: `SiegeManager.removeSiegeSkills(player)`.
+                self.remove_siege_skills(object_id);
                 let create_days = self.clans.settings.alt_clan_create_days;
                 if let Some(s) = self.player_clan_state_mut(object_id) {
                     s.clan_create_expiry_time = unix_ms_now().saturating_add(days_ms(create_days));
@@ -569,9 +577,15 @@ impl World {
         // Scripts: `OnPlayerClanLeaderChange` (D-05).
 
         if ex_leader_online {
-            // The old leader's wyvern lands; the siege skills: M7.
+            // The old leader's wyvern lands and loses the siege skills (M7-SIEGE-01).
             if self.is_flying(ex_leader) {
                 self.dismount(ex_leader);
+            }
+            if self
+                .clan(clan_id)
+                .is_some_and(|c| c.level >= self.siege_settings().siege_clan_min_level)
+            {
+                self.remove_siege_skills(ex_leader);
             }
             self.set_player_privileges_mask(ex_leader, 0);
             self.broadcast_user_info(ex_leader);
@@ -603,7 +617,13 @@ impl World {
         if new_leader_online {
             self.set_pledge_class(member_id);
             self.set_player_privileges_mask(member_id, COMPLETE_PRIVILEGES_MASK);
-            // M7: the siege skills of a clan of the siege level.
+            // The siege skills of a clan of the siege level (M7-SIEGE-01).
+            if self
+                .clan(clan_id)
+                .is_some_and(|c| c.level >= self.siege_settings().siege_clan_min_level)
+            {
+                self.add_siege_skills(member_id);
+            }
             self.broadcast_user_info(member_id);
         } else {
             self.clan_write(ClanWrite::CharClanPrivs {

@@ -9,8 +9,9 @@
 // world yet and is therefore known: nobody is mounted, in a vehicle, in the
 // olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
 // the charges and the souls are the world's (`effects/`, M5-EFX-02).
-// Kinds that read state the Java server has but the world does not model (sieges and territory
-// wars, heroes, parties,
+// The siege kinds are the siege's (`siege/conditions.rs`, M7-SIEGE-01).
+// Kinds that read state the Java server has but the world does not model (territory wars,
+// heroes, parties,
 // categories, the instance type tree, the `Can...` checks, random chance in a read-only stat
 // calculation, positions relative to the target's heading) evaluate to `false` and log one
 // warning per kind: a stat bonus never applies by accident.
@@ -44,8 +45,6 @@ pub(crate) struct CondEnv<'a, 'w> {
 #[repr(usize)]
 enum NotModelled {
     Hero,
-    SiegeZone,
-    SiegeSide,
     Category,
     CanAction,
     TargetNpcType,
@@ -121,9 +120,14 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             .player()
             .is_some_and(|_| *value == i32::from(a.skill_level(239) as i8)),
         Condition::PlayerPkCount { pk } => a.player().is_some_and(|p| p.data.pk_kills <= *pk),
-        Condition::SiegeZone { .. } => not_modelled(NotModelled::SiegeZone, "siegeZone"),
-        Condition::PlayerSiegeSide { .. } => {
-            a.is_player() && not_modelled(NotModelled::SiegeSide, "player siegeSide")
+        // `ConditionSiegeZone` (M7-SIEGE-01): the effector with `self`, else the effected.
+        Condition::SiegeZone { value, own } => {
+            let who = if *own { Some(a.object_id()) } else { env.target };
+            a.world().cond_siege_zone(who, *value)
+        }
+        // `ConditionPlayerSiegeSide` (M7-SIEGE-01).
+        Condition::PlayerSiegeSide { siege_side } => {
+            a.world().cond_player_siege_side(a.object_id(), *siege_side)
         }
         Condition::PlayerCharges { charges } => {
             a.is_player() && a.world().charges_of(a.object_id()) >= *charges
@@ -264,14 +268,29 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             }
             exists == *value
         }
+        // The siege checks (M7-SIEGE-01, `siege/conditions.rs`).
+        Condition::PlayerCanCreateBase { value } => {
+            if !a.is_player() {
+                return !*value;
+            }
+            let skill = env.skill.map(|s| (s.id, s.level));
+            *value == a.world().cond_can_create_base(a.object_id(), skill)
+        }
+        Condition::PlayerCanTakeCastle => {
+            let skill = env.skill.map(|s| (s.id, s.level));
+            a.world().cond_can_take_castle(a.object_id(), env.target, skill)
+        }
+        Condition::PlayerCanSummonSiegeGolem { value } => {
+            if !a.is_player() {
+                return !*value;
+            }
+            *value == a.world().cond_can_summon_siege_golem(a.object_id())
+        }
         Condition::PlayerCallPc { .. }
-        | Condition::PlayerCanCreateBase { .. }
         | Condition::PlayerCanCreateOutpost { .. }
         | Condition::PlayerCanEscape { .. }
         | Condition::PlayerCanRefuelAirship { .. }
         | Condition::PlayerCanResurrect { .. }
-        | Condition::PlayerCanSummonSiegeGolem { .. }
-        | Condition::PlayerCanTakeCastle
         | Condition::PlayerCanTakeFort { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
         }

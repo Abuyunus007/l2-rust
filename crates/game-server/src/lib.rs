@@ -403,6 +403,14 @@ impl Server {
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
         let residence_settings = residence_settings(&config, &paths.config_dir);
+        // Java: SiegeManager (Siege.ini, the registrations, the guards, the upgrades; M7-SIEGE-01).
+        let sieges = persist::load_sieges(&pool).await;
+        let castle_names: Vec<(i32, String)> = residences
+            .castles
+            .iter()
+            .map(|c| (c.id, c.name.clone()))
+            .collect();
+        let siege_settings = world_data::siege_settings(&config, &paths.config_dir, &castle_names);
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -549,6 +557,10 @@ impl Server {
                     world.set_residence_settings(residence_settings);
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
+                    // Java: SiegeManager.getSieges(), Castle.loadDoorUpgrade, MercTicketManager
+                    // (M7-SIEGE-01).
+                    world.set_siege_settings(siege_settings);
+                    world.load_sieges(sieges);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

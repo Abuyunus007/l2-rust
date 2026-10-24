@@ -408,18 +408,27 @@ impl World {
         self.broadcast_info(id);
     }
 
-    /// Java `MapRegionData.getTeleToLocation(player, where)`. Clan halls, castles, fortresses and
-    /// siege flags need clans and sieges (M5): without them a player takes the paths every
-    /// clanless player takes in Java: karma players go outside the town, everybody else to the
-    /// nearest town. The instance exit and the faction base are not modelled either.
+    /// Java `MapRegionData.getTeleToLocation(player, where)`: the clan's hall, castle, fortress or
+    /// siege headquarters (`siege/restart.rs`, M7-SIEGE-01), else outside the town for a karma
+    /// player, far from a castle under siege for its participants while Dawn owns the Seal of
+    /// Strife, else the nearest town. The instance exit and the faction base are not modelled.
     pub fn get_tele_to_location(
         &mut self,
         id: ObjectId,
-        _where: TeleportWhereType,
+        teleport_where: TeleportWhereType,
     ) -> Option<(i32, i32, i32)> {
         let karma = self.players.get(&id)?.data.karma;
+        // `player.getUCState() != UC_STATE_NONE`: the Underground Coliseum is not modelled.
+        if let Some(location) = self.residence_tele_to_location(id, teleport_where) {
+            return Some(location);
+        }
+        // Karma player respawn outside city.
         if karma > 0 {
             return self.nearest_karma_respawn(id);
+        }
+        // Respawn far from castle during siege if clan is participating.
+        if let Some(location) = self.siege_strife_restart_point(id) {
+            return Some(location);
         }
         self.nearest_town_respawn(id)
     }

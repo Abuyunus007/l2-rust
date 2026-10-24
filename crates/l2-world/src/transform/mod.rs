@@ -38,7 +38,6 @@ mod stats;
 
 use std::collections::BTreeMap;
 
-pub(crate) use apply::ALLOW_MOUNTS_DURING_SIEGE;
 pub use apply::GRACIA_MAX_X;
 pub use rules::ACTIONS_ON_TRANSFORM;
 pub(crate) use rules::{can_transform, can_untransform};

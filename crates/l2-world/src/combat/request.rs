@@ -113,8 +113,11 @@ impl World {
         match self.objects.get(&id).map(|e| e.kind) {
             // `Playable.canBeAttacked()`.
             Some(ObjectKind::Player | ObjectKind::Summon) => true,
-            // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`).
-            Some(ObjectKind::Npc) => self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs,
+            // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`); the
+            // siege NPCs override it (M7-SIEGE-01).
+            Some(ObjectKind::Npc) => self
+                .siege_npc_can_be_attacked(id)
+                .unwrap_or_else(|| self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs),
             // Doors, static objects and fences keep `WorldObject`'s false (siege doors: M5).
             _ => false,
         }

@@ -11,11 +11,10 @@
 // `targetReconsider`; `npc_skills.rs`) and the overrides here. A `Defender` (and its
 // `FortCommander`) would use `SiegeGuardAI`, `FortSiegeGuardAI` or `SpecialSiegeGuardAI`
 // depending on the castle, fort or siegable hall it stands in.
-// FOLLOW-UP(sieges): those three AIs and the siege rules of `Defender.isAutoAttackable` /
-// `addDamageHate`, `FortCommander`'s speech and `killedCommander` need castles, forts, sieges and
-// clans, none of which exist in the world. Until then a defender is never attackable, never
-// attacks, and `autoAttackCondition` of those AIs (which starts with `isAutoAttackable`) would
-// never be true anyway.
+// The siege rules of `Defender.isAutoAttackable` / `addDamageHate` and its click are the castle
+// siege's (`siege/npcs.rs`, M7-SIEGE-01; the fortress and hall parts: their cards).
+// FOLLOW-UP(M7-SIEGE-02): the three siege guard AIs; until then a defender has the attackable
+// AI. `FortCommander`'s speech and `killedCommander`: M7-FORT-01.
 //
 // # Left out
 // - The faction system's guards (`FactionSystemConfig.FACTION_GUARDS_ENABLED`, a Custom config
@@ -119,11 +118,19 @@ impl World {
     /// The overrides of `addDamageHate` that refuse an attacker: `Defender` and `FortCommander`
     /// take no hate from defenders, `QuestGuard` none from players. (Both also have a siege rule
     /// for players; sieges are not ported.)
-    pub(crate) fn npc_refuses_hate(&self, npc: ObjectId, attacker: ObjectId) -> bool {
+    pub(crate) fn npc_refuses_hate(
+        &self,
+        npc: ObjectId,
+        attacker: ObjectId,
+        damage: i64,
+        aggro: i64,
+    ) -> bool {
         match self.npc_class(npc) {
-            Some(NpcClass::Defender | NpcClass::FortCommander) => {
+            Some(NpcClass::Defender) => {
                 self.npc_class(attacker).is_some_and(NpcClass::is_defender)
+                    || self.defender_refuses_hate(npc, attacker, damage, aggro)
             }
+            Some(NpcClass::FortCommander) => self.npc_class(attacker).is_some_and(NpcClass::is_defender),
             // `!_isPassive && !attacker.isPlayer()`; `setPassive` is a script call.
             Some(NpcClass::QuestGuard) => self.is_player(attacker),
             _ => false,
@@ -229,9 +236,17 @@ impl World {
             return true;
         }
         if class.is_defender() {
-            // `isAutoAttackable(player)` is false without a siege, so only the interact branch
-            // is left: a defender never opens a dialog.
-            if !self.can_interact(npc, player) {
+            let attackable = self.is_auto_attackable_by(npc, player);
+            // This max heigth difference might need some tweaking.
+            let dz = match (self.position_of(player), self.position_of(npc)) {
+                (Some(p), Some(n)) => (p.2 - n.2).abs(),
+                _ => i32::MAX,
+            };
+            if attackable && !self.is_alike_dead(npc) && dz < 600 {
+                self.set_intention_attack(player, npc);
+            }
+            // Notify the Player AI with INTERACT: a defender never opens a dialog.
+            if !attackable && !self.can_interact(npc, player) {
                 self.set_intention_interact(player, npc);
             }
             return true;

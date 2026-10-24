@@ -537,6 +537,9 @@ impl World {
         self.clan_join_penalty_message(id);
         // Java `onPlayerEnter` -> `notifyFriends()`: the friends who are online see the login.
         self.friends_notify_online(id);
+        // M7-FORT-01: "Remove combat flag before teleporting."
+        // Attacker or spectator logging in to a siege zone (M7-SIEGE-01).
+        self.siege_enter_world_zone_check(id);
         // Over-enchant protection.
         self.over_enchant_protection_on_enter(id);
 
@@ -842,12 +845,9 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         clan_crest_id: world.clan_crest_id_of(core.object_id),
         ally_id: world.ally_id_of(core.object_id),
         ally_crest_id: world.ally_crest_id_of(core.object_id),
-        // `isClanLeader() ? 0x40 : 0`; the siege states are M7.
-        relation: if world.is_clan_leader(core.object_id) {
-            0x40
-        } else {
-            0
-        },
+        // `isClanLeader() ? 0x40 : 0`, then the siege state (M7-SIEGE-01; the territory of
+        // Territory War: M7-TW-01).
+        relation: world.user_info_relation(core.object_id),
         // `getMountType().ordinal()`
         mount_type: view.mount_type().ordinal() as u8,
         private_store_type: player.trade.store_type.id(),

@@ -55,8 +55,8 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{
-    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
-    RequestSiegeInfo,
+    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime, RequestSiegeAttackerList,
+    RequestSiegeDefenderList, RequestSiegeInfo,
 };
 use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
@@ -281,6 +281,8 @@ pub enum ClientPacket {
     RequestJoinSiege(RequestJoinSiege),
     /// `REQUEST_CONFIRM_SIEGE_WAITING_LIST` (0xAE).
     RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList),
+    /// `REQUEST_SET_CASTLE_SIEGE_TIME` (0xAF).
+    RequestSetCastleSiegeTime(RequestSetCastleSiegeTime),
     /// `REQUEST_BUY_SEED` (0xC5).
     RequestBuySeed(RequestBuySeed),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
@@ -559,6 +561,9 @@ pub fn decode_client(
         RequestJoinSiege::OPCODE => ClientPacket::RequestJoinSiege(RequestJoinSiege::decode(reader)?),
         RequestConfirmSiegeWaitingList::OPCODE => {
             ClientPacket::RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList::decode(reader)?)
+        }
+        RequestSetCastleSiegeTime::OPCODE => {
+            ClientPacket::RequestSetCastleSiegeTime(RequestSetCastleSiegeTime::decode(reader)?)
         }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
         other => ClientPacket::Unported(other),

@@ -481,6 +481,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestSiegeDefenderList(_)
             | ClientPacket::RequestJoinSiege(_)
             | ClientPacket::RequestConfirmSiegeWaitingList(_)
+            | ClientPacket::RequestSetCastleSiegeTime(_)
             | ClientPacket::RequestBuySeed(_)
             | ClientPacket::RequestAllFortressInfo(_)
             | ClientPacket::RequestFortressSiegeInfo(_)
