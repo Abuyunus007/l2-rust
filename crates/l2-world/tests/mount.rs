@@ -141,6 +141,9 @@ const ITEMS: &str = r##"<list>
 	<set name="handler" val="PetFood" />
 	<skills><skill id="2048" level="1" /></skills>
 </item>
+<item id="9819" type="EtcItem" name="Fortress Combat Flag">
+	<set name="weight" val="0" />
+</item>
 <item id="9101" type="Weapon" name="Test Sword">
 	<set name="weight" val="30" /><set name="bodypart" val="rhand" /><set name="weapon_type" val="SWORD" />
 </item>
@@ -686,15 +689,14 @@ fn mount_checks_refuse_with_java_s_messages() {
         [SystemMessageId::AStriderCanBeRiddenOnlyWhenStanding]
     );
 
-    // Holding a combat flag (9819).
+    // Holding a combat flag (9819). EnterWorld destroys a flag that the player logs in with
+    // (Java "Remove combat flag before teleporting", M7-FORT-01), so it is added afterwards.
     let mut s = Scene::new(
-        vec![
-            item(CONTROL, STRIDER_COLLAR, 1, "INVENTORY"),
-            item(ObjectId(0x2100_0009), 9819, 1, "INVENTORY"),
-        ],
+        vec![item(CONTROL, STRIDER_COLLAR, 1, "INVENTORY")],
         Some(80),
         false,
     );
+    s.world.add_item(ME, 9819, 1, false);
     s.summon_strider();
     s.me.take();
     s.action(38);

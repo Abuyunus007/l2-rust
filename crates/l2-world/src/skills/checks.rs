@@ -424,12 +424,23 @@ impl World {
         if target_kind == Some(ObjectKind::Door) {
             if self.is_inside_zone(target, ZoneId::Siege) {
                 // Check if the door belongs to a castle and if the siege is in progress
-                // (M7-SIEGE-01; the fortress doors: M7-FORT-01).
+                // (M7-SIEGE-01).
                 let castle = self
                     .door(target)
                     .and_then(|d| self.castle_at(d.x, d.y, d.z))
                     .filter(|c| c.0 > 0);
                 if castle.is_some_and(|c| !self.is_castle_siege_in_progress(c)) {
+                    self.send(id, &SystemMessage::new(SystemMessageId::InvalidTarget));
+                    return false;
+                }
+                // Check if the door belongs to a fort and if the siege is in progress.
+                let door = self.door(target).map(|d| (d.x, d.y, d.z, d.template.show_hp));
+                if let Some((x, y, z, show_hp)) = door
+                    && self
+                        .fort_at(x, y, z)
+                        .filter(|f| f.0 > 0)
+                        .is_some_and(|f| !self.fort_siege_in_progress(f) || !show_hp)
+                {
                     self.send(id, &SystemMessage::new(SystemMessageId::InvalidTarget));
                     return false;
                 }

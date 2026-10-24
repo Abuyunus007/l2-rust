@@ -112,19 +112,28 @@ impl World {
         };
         // M7-CHSIEGE-01: the doors of a siegable hall (`doorIsAutoAttackable`).
         // M7-TW-01: during Territory War, everybody but the ally field.
-        // M7-FORT-01: the doors of a fortress whose zone is active (`isFort`).
+        // Attackable only during siege by everyone (not owner).
         let castle = self.castle_at(d.x, d.y, d.z).filter(|c| c.0 > 0).filter(|c| {
             self.castle(*c)
                 .and_then(|c| c.siege_zone)
                 .is_some_and(|z| self.is_siege_zone_active(z))
         });
-        if let Some(castle) = castle {
-            let clan = self.clan_id_of(player);
-            if clan != 0 && self.castle(castle).is_some_and(|c| c.owner_id == clan) {
+        // `isFort`: the fortress whose zone is active (M7-FORT-01).
+        let fort = self
+            .fort_at(d.x, d.y, d.z)
+            .filter(|f| f.0 > 0)
+            .filter(|f| self.fort_zone_is_active(*f));
+        let clan = self.clan_id_of(player);
+        if let Some(fort) = fort {
+            if clan != 0 && self.fort(fort).is_some_and(|f| f.owner_id == clan) {
                 return false;
             }
-            return true;
+        } else if let Some(castle) = castle
+            && clan != 0
+            && self.castle(castle).is_some_and(|c| c.owner_id == clan)
+        {
+            return false;
         }
-        false
+        castle.is_some() || fort.is_some()
     }
 }

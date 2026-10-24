@@ -211,10 +211,13 @@ impl World {
             .castles()
             .iter()
             .any(|c| self.siege_check_is_registered(Some(clan_id), c.id.0))
-            || self.is_inside_zone(player, ZoneId::Siege)
         {
-            // The castle siege registrations (M7-SIEGE-01), the fortress ones (M7-FORT-01), then
-            // the siege zone.
+            // `SiegeManager.checkIsRegistered(clan, castle)` of every castle (M7-SIEGE-01).
+            Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)
+        } else if self.fort_clan_is_registered(clan_id) {
+            // `FortSiegeManager.checkIsRegistered(clan, fort)` of every fortress (M7-FORT-01).
+            Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)
+        } else if self.is_inside_zone(player, ZoneId::Siege) {
             Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)
         } else if clan.dissolving_expiry_time > unix_ms_now() {
             Some(SystemMessageId::YouHaveAlreadyRequestedTheDissolutionOfYourClan)

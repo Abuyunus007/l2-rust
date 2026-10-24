@@ -33,6 +33,7 @@ pub mod enter;
 pub mod fishing;
 pub mod flood;
 pub mod formulas;
+pub mod fort;
 pub mod friends;
 pub mod ground_item;
 pub mod ids;
@@ -113,6 +114,7 @@ pub use fishing::{
 pub use flood::{
     FloodAction, FloodCheck, FloodConfig, FloodKind, FloodPunishment, FloodSettings, PlayerFlood,
 };
+pub use fort::{FortInput, FortSettings};
 pub use friends::{FriendEntry, FriendWorld, FriendWrite};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};

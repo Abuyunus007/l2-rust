@@ -142,6 +142,8 @@ pub struct World {
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
     pub(crate) flood: crate::flood::FloodWorld,
+    /// The fortress sieges, their spawns and `FortUpdater` (M7-FORT-01, `fort/`).
+    pub(crate) fort: crate::fort::FortWorld,
 }
 
 impl World {
@@ -210,6 +212,7 @@ impl World {
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
+            fort: crate::fort::FortWorld::default(),
         }
     }
 
@@ -651,6 +654,7 @@ impl World {
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
+            ClientInput::Fort(input) => self.on_fort_input(id, input),
             ClientInput::Manor(input) => self.on_manor_input(id, input),
             ClientInput::Craft(input) => self.on_craft_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
@@ -796,6 +800,7 @@ impl World {
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),
             // Java: PetFeedTask, DismountTask, RentPetTask
             TimerKind::Mount(timer) => self.on_mount_timer(timer),
+            TimerKind::Fort(timer) => self.on_fort_timer(timer),
         }
     }
 

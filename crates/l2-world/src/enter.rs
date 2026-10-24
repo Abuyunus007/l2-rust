@@ -450,6 +450,9 @@ impl World {
         // The residences of the clan as the session read them at `CharacterSelect` (M7-RES-01,
         // D-51: the Java GS runs the real sieges).
         self.residence_refresh_player(id);
+        // The siege state of a fortress siege that is going on, and "Remove combat flag before
+        // teleporting" (M7-FORT-01).
+        self.fort_player_entered(id);
         // The mails the session read at `CharacterSelect` replace this server's copies of them
         // (M6-SYNC-01, D-39: the Java GS shares the table).
         self.mail_refresh_player(id);

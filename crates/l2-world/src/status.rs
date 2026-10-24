@@ -707,9 +707,9 @@ impl World {
         })
     }
 
-    /// Java `Formulas.calcHpRegen(player)`. The siege modifier is the siege's (M7-SIEGE-01), the
-    /// clan hall's factor the hall's (M7-CH-01); the festival (M8), castle and fort modifiers and
-    /// the mother tree bonus are not modelled yet.
+    /// Java `Formulas.calcHpRegen(player)`. The siege modifier and the castle and fort factors
+    /// are the siege module's (M7-SIEGE-01), the clan hall's factor the hall's (M7-CH-01); the
+    /// festival (M8) and the mother tree bonus are not modelled yet.
     fn player_hp_regen(&self, id: ObjectId) -> f64 {
         let Some(view) = self.stats(id) else {
             return 0.0;
@@ -729,6 +729,7 @@ impl World {
             .then_some(siege)
             .into_iter()
             .chain(clan_hall)
+            .chain(self.residence_regen_factors(id, crate::residence::CASTLE_FUNC_RESTORE_HP))
             .collect();
         calc_hp_regen(&HpRegenInput {
             kind,
@@ -755,12 +756,17 @@ impl World {
         };
         let rate = |base: f64| view.calc_stat(Stat::RegenerateMpRate, base, None, None);
         let clan_hall = self.clan_hall_regen_factor(id, crate::residence::HALL_FUNC_RESTORE_MP);
+        // Then the castle's and the fortress's (M7-SIEGE-01).
+        let multipliers: Vec<f64> = clan_hall
+            .into_iter()
+            .chain(self.residence_regen_factors(id, crate::residence::CASTLE_FUNC_RESTORE_MP))
+            .collect();
         calc_mp_regen(&MpRegenInput {
             kind,
             is_raid: view.is_raid(),
             mp_regen_multiplier: self.regen.mp_regen_multiplier,
             raid_mp_regen_multiplier: self.regen.raid_mp_regen_multiplier,
-            multipliers: clan_hall.as_slice(),
+            multipliers: &multipliers,
             mother_tree_mp_regen_bonus: 0,
             regenerate_mp_rate: &rate,
         })

@@ -18,6 +18,7 @@ use super::{SiegeGuardRecord, SiegeNpc, SiegeTimer};
 use crate::residence::{CastleId, ResidenceRef, ResidenceWrite, Writes};
 use crate::target::distance_3d;
 use crate::world::World;
+use crate::zones::ZoneId;
 
 /// `HeadquarterCreate.HQ_NPC_ID`.
 pub const HQ_NPC_ID: i32 = 35062;
@@ -259,10 +260,16 @@ impl World {
             .map(|n| n.spawn_point)
             .filter(|p| *p != (0, 0, 0))
             .or_else(|| self.position_of(npc))?;
-        // M7-FORT-01 / M7-CHSIEGE-01: `_fort` and `_hall` (they come first in Java).
-        let castle = self.castle_at(x, y, z)?;
-        let zone = self.castle(castle)?.siege_zone?;
-        self.is_siege_zone_active(zone).then_some(castle.0)
+        // `_fort` (M7-FORT-01) and `_castle`; M7-CHSIEGE-01: `_hall`.
+        let fort = self.fort_at(x, y, z);
+        let castle = self.castle_at(x, y, z);
+        let castle_active = castle
+            .and_then(|c| self.castle(c))
+            .and_then(|c| c.siege_zone)
+            .is_some_and(|zone| self.is_siege_zone_active(zone));
+        let active = fort.is_some_and(|f| self.fort_zone_is_active(f)) || castle_active;
+        // The fortress's id even when only the castle's zone is active, as in Java.
+        active.then(|| fort.map(|f| f.0).or(castle.map(|c| c.0)).unwrap_or(0))
     }
 
     /// `Defender.addDamageHate`'s siege rule: no hate from a registered defender's harmless act.
@@ -334,15 +341,18 @@ impl World {
             return;
         };
         // M7-TW-01: a flag of Territory War (`isTWInProgress`) belongs to no siege.
-        // `SiegeManager.getSiege`, then `FortSiegeManager.getSiege`, then `CHSiegeManager`.
-        // M7-FORT-01 / M7-CHSIEGE-01: the fortress and hall sieges.
-        let Some(castle) = self.siege_at(x, y, z) else {
+        // `SiegeManager.getSiege`, then `FortSiegeManager.getSiege` (M7-FORT-01), then
+        // `CHSiegeManager` (M7-CHSIEGE-01).
+        let siege = if let Some(castle) = self.siege_at(x, y, z) {
+            ResidenceRef::Castle(castle)
+        } else if let Some(fort) = self.fort_siege_at(x, y, z) {
+            ResidenceRef::Fort(fort)
+        } else {
             // Java: "SiegeFlag: Initialization failed." (a NullPointerException).
             warn!("SiegeFlag: Initialization failed.");
             return;
         };
-        let siege = ResidenceRef::Castle(castle);
-        if self.siege_attacker_clan_mut(siege, clan_id).is_none() {
+        if !self.siege_has_attacker_clan(siege, clan_id) {
             warn!("SiegeFlag: Cannot find siege clan.");
             return;
         }
@@ -350,8 +360,16 @@ impl World {
         let Some(flag) = self.spawn_npc_at(HQ_NPC_ID, x, y, z + 50, heading) else {
             return;
         };
-        if let Some(sc) = self.siege_attacker_clan_mut(siege, clan_id) {
-            sc.flags.push(flag);
+        // `SiegeClan.addFlag(this)`.
+        match siege {
+            ResidenceRef::Fort(fort) => {
+                self.fort_siege_add_flag(fort, clan_id, flag);
+            }
+            _ => {
+                if let Some(sc) = self.siege_attacker_clan_mut(siege, clan_id) {
+                    sc.flags.push(flag);
+                }
+            }
         }
         self.sieges.npcs.insert(
             flag,
@@ -386,6 +404,54 @@ impl World {
             Some(flag) if self.check_if_in_range(200, player, *flag, true) => 1.5,
             _ => 0.0,
         }
+    }
+
+    /// Whether the clan is an attacker of the castle or fortress siege (`getAttackerClan(clan)`).
+    fn siege_has_attacker_clan(&mut self, siege: ResidenceRef, clan_id: i32) -> bool {
+        match siege {
+            ResidenceRef::Fort(fort) => self.fort_attacker_clan(fort, clan_id).is_some(),
+            _ => self.siege_attacker_clan_mut(siege, clan_id).is_some(),
+        }
+    }
+
+    /// The castle and fortress parts of `Formulas.calcHpRegen` / `calcMpRegen`: `1 + level / 100`
+    /// of the residence's function when the player stands in the residence zone (`CastleZone`,
+    /// then `FortZone`) of the castle or fortress his clan owns. They come after the clan hall's
+    /// factor.
+    pub(crate) fn residence_regen_factors(&self, player: ObjectId, castle_function: i32) -> Vec<f64> {
+        let Some(clan) = self.clan_of(player) else {
+            return Vec::new();
+        };
+        let (castle_id, fort_id) = (clan.castle_id, clan.fort_id);
+        let in_zone = |zone: Option<i32>, zone_type: &str| {
+            zone.is_some_and(|zone| {
+                self.players.get(&player).is_some_and(|p| {
+                    p.zones
+                        .members()
+                        .iter()
+                        .any(|(id, ty)| *id == zone && ty == zone_type)
+                })
+            })
+        };
+        let mut factors = Vec::new();
+        let castle = CastleId(castle_id);
+        if self.is_inside_zone(player, ZoneId::Castle)
+            && castle_id > 0
+            && in_zone(self.castle(castle).and_then(|c| c.zone), "CastleZone")
+            && let Some(f) = self.residence_function(ResidenceRef::Castle(castle), castle_function)
+        {
+            factors.push(1.0 + f64::from(f.lvl) / 100.0);
+        }
+        // `Fort.FUNC_RESTORE_HP` / `FUNC_RESTORE_MP` have the castle's numbers.
+        let fort = crate::residence::FortId(fort_id);
+        if self.is_inside_zone(player, ZoneId::Fort)
+            && fort_id > 0
+            && in_zone(self.fort(fort).and_then(|f| f.zone), "FortZone")
+            && let Some(f) = self.residence_function(ResidenceRef::Fort(fort), castle_function)
+        {
+            factors.push(1.0 + f64::from(f.lvl) / 100.0);
+        }
+        factors
     }
 
     /// A title the siege gave an NPC (Java `Npc.setTitle`, the headquarters' clan name).
@@ -425,10 +491,12 @@ impl World {
         if !can_talk {
             return;
         }
-        // `getCastle()` / `getFort()` / `getConquerableHall()` of the flag's position.
+        // `getCastle()` / `getFort()` / `getConquerableHall()` of the flag's position (the
+        // halls: M7-CHSIEGE-01).
         let in_siege = self
             .npc_castle(npc)
-            .is_some_and(|c| self.is_castle_siege_in_progress(c));
+            .is_some_and(|c| self.is_castle_siege_in_progress(c))
+            || self.npc_fort(npc).is_some_and(|f| self.fort_siege_in_progress(f));
         if !in_siege || self.clan(clan_id).is_none() {
             return;
         }
@@ -470,11 +538,21 @@ impl World {
             Some(SiegeNpc::FlameTower { .. }) => self.flame_tower_enable_zones(npc, false),
             Some(SiegeNpc::Flag { clan_id, siege, .. }) => {
                 // M7-TW-01: `TerritoryWarManager.removeClanFlag(clan)` of a flag without a siege.
-                if let Some(siege) = siege
-                    && let Some(sc) = self.siege_attacker_clan_mut(siege, clan_id)
-                {
-                    sc.flags.retain(|f| *f != npc);
-                    self.delete_npc(npc);
+                // `getAttackerClan(_clan).removeFlag(this)`.
+                match siege {
+                    Some(ResidenceRef::Fort(fort)) => {
+                        if self.fort_attacker_clan(fort, clan_id).is_some() {
+                            self.fort_siege_killed_flag(fort, npc);
+                            self.delete_npc(npc);
+                        }
+                    }
+                    Some(siege) => {
+                        if let Some(sc) = self.siege_attacker_clan_mut(siege, clan_id) {
+                            sc.flags.retain(|f| *f != npc);
+                            self.delete_npc(npc);
+                        }
+                    }
+                    None => {}
                 }
             }
             _ => {}

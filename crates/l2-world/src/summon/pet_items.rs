@@ -397,7 +397,6 @@ impl World {
             self.send(player, &ActionFailed);
             return;
         }
-        // M7-FORT-01: `FortSiegeManager.isCombat(itemId)` (the combat flag).
         if self.is_dead(pet) || self.is_out_of_control(pet) {
             self.send(player, &ActionFailed);
             return;
@@ -466,7 +465,12 @@ impl World {
             self.send(owner, &ActionFailed);
             return;
         }
-        // Cursed weapons and combat flags: not modelled.
+        // Cursed weapons: not modelled (M8).
+        // `FortSiegeManager.isCombat(itemId)`: a pet leaves the combat flag (M7-FORT-01).
+        let item_id = self.ground_item(object).map_or(0, |g| g.data.item_id);
+        if Self::is_combat_flag_item(item_id) {
+            return;
+        }
         let follow = self.follow_status(pet);
         let templates = self.item_templates();
         let templates = templates.as_deref();

@@ -1,4 +1,5 @@
 //! Fortresses: the fortress table, the owner, the flag pole, the supply level and the state.
+//! The siege, the spawns and `FortUpdater` are `fort/` (M7-FORT-01).
 // Java: managers/FortManager.java
 // Java: mechanics/siege/Fort.java (setOwner, removeOwner, updateOwnerInDB, setOwnerClan,
 //       setVisibleFlag, raiseSupplyLeveL, setSupplyLeveL, saveFortVariables, setFortState,
@@ -6,7 +7,7 @@
 // Java: entity/actor/Npc.java (getFort)
 //
 // The siege of a fortress, `FortUpdater`, the fort spawns (merchants, commanders, envoys) and the
-// castle contracts are M7-FORT-01; their places are marked `// M7-FORT-01:`.
+// castle contracts are `fort/` (M7-FORT-01); this file calls them where Java's `Fort` does.
 
 use std::collections::BTreeMap;
 
@@ -277,7 +278,11 @@ impl World {
         let Some(old_owner) = self.fort(id).map(|f| f.owner_id) else {
             return false;
         };
-        // M7-FORT-01: `getSiege().announceToPlayer(THE_FORTRESS_BATTLE_OF_S1_HAS_FINISHED)`.
+        self.fort_siege_announce(
+            id,
+            &SystemMessage::new(SystemMessageId::TheFortressBattleOfS1HasFinished)
+                .with(SystemMessageParam::CastleName(id.0)),
+        );
         if old_owner != 0 && old_owner != clan_id {
             // Remove points from old owner.
             self.fort_update_clans_reputation(old_owner, true);
@@ -288,21 +293,26 @@ impl World {
             {
                 self.dismount(leader);
             }
-            // M7-FORT-01: `if (getSiege().isInProgress()) getSiege().updatePlayerSiegeStateFlags(true)`.
+            if self.fort_siege_in_progress(id) {
+                self.fort_update_player_siege_state_flags(id, true);
+            }
             self.fort_remove_owner(id, true);
         }
         // Initialize fort state.
         self.fort_set_state(id, 0, 0, Writes::Job);
         // If clan already have castle, don't store him in fortress.
         if self.clan(clan_id).is_some_and(|c| c.castle_id > 0) {
-            // M7-FORT-01: `getSiege().announceToPlayer(THE_REBEL_ARMY_RECAPTURED_THE_FORTRESS)`.
+            self.fort_siege_announce(
+                id,
+                &SystemMessage::new(SystemMessageId::TheRebelArmyRecapturedTheFortress),
+            );
             return false;
         }
         // Give points to new owner.
         if update_clans_reputation {
             self.fort_update_clans_reputation(clan_id, false);
         }
-        // M7-FORT-01: `spawnSpecialEnvoys()`.
+        self.fort_spawn_special_envoys(id);
         // If clan have already fortress, remove it.
         // NOTE(java-quirk): a clan that already owns this fortress loses it here and gets it back
         // below.
@@ -316,7 +326,9 @@ impl World {
         // Update in database.
         self.fort_update_owner_in_db(id, Writes::Job);
         self.fort_save_variables(id, Writes::Job);
-        // M7-FORT-01: `if (getSiege().isInProgress()) getSiege().endSiege()`.
+        if self.fort_siege_in_progress(id) {
+            self.fort_end_siege(id);
+        }
         for member in self.clan_online_members(clan_id, 0) {
             self.give_residential_skills(ResidenceRef::Fort(id), member);
             self.send_skill_list(member);
@@ -387,9 +399,10 @@ impl World {
             }
             self.broadcast_clan_info_update(clan_id);
             self.broadcast_to_clan(clan_id, &PlaySound::with_unknown1(1, "Siege_Victory"));
-            // M7-FORT-01: the two `FortUpdater` tasks are cancelled and scheduled again.
+            // The two `FortUpdater` tasks are cancelled and scheduled again.
+            self.fort_restart_updaters(id, Some(clan_id));
         } else {
-            // M7-FORT-01: the two `FortUpdater` tasks are cancelled.
+            self.fort_restart_updaters(id, None);
         }
     }
 }

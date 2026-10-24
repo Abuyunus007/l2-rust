@@ -8,7 +8,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 
-use crate::residence::ResidenceRef;
+use crate::residence::{FortId, ResidenceRef};
 use crate::world::World;
 use crate::zones::ZoneId;
 
@@ -54,9 +54,8 @@ impl World {
         self.cond_can_create_base(player, skill)
     }
 
-    /// Java `ConditionPlayerCanCreateBase.testImpl`: `canCreateBase` (the player hears why not).
-    // M7-FORT-01: the fortress siege's parts (`fort.getSiege()`), here a fortress counts as a siege
-    // that is not in progress.
+    /// Java `ConditionPlayerCanCreateBase.testImpl`: `canCreateBase` (the player hears why not),
+    /// for a castle siege and a fortress siege (M7-FORT-01's `fort_*`).
     // The `else if` chain of Java with its identical branches is kept to compare it line by line.
     #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_create_base(&self, player: ObjectId, skill: Option<(i32, i32)>) -> bool {
@@ -65,22 +64,30 @@ impl World {
         let mut can = !(self.is_alike_dead(player) || clan.is_none());
         let (castle, fort) = self.castle_and_fort_of(player);
         let siege = castle.and_then(|c| self.castle_siege(c));
+        let fort_attacker = |f: FortId| clan.and_then(|c| self.fort_attacker_clan(f, c));
+        let too_many = |flags: usize, max: i32| i32::try_from(flags).unwrap_or(i32::MAX) >= max;
         if castle.is_none() && fort.is_none() {
             self.send_unsuitable_terms(player, skill);
             can = false;
-        } else if siege.is_some_and(|s| !s.in_progress) || fort.is_some() {
+        } else if siege.is_some_and(|s| !s.in_progress)
+            || fort.is_some_and(|f| !self.fort_siege_in_progress(f))
+        {
             self.send_unsuitable_terms(player, skill);
             can = false;
-        } else if siege.is_some_and(|s| clan.is_none_or(|c| s.attacker_clan(c).is_none())) {
+        } else if siege.is_some_and(|s| clan.is_none_or(|c| s.attacker_clan(c).is_none()))
+            || fort.is_some_and(|f| fort_attacker(f).is_none())
+        {
             self.send_unsuitable_terms(player, skill);
             can = false;
         } else if !self.is_clan_leader(player) {
             self.send_unsuitable_terms(player, skill);
             can = false;
         } else if siege.is_some_and(|s| {
-            clan.and_then(|c| s.attacker_clan(c)).is_some_and(|sc| {
-                i32::try_from(sc.flags.len()).unwrap_or(i32::MAX) >= self.sieges.settings.flag_max_count
-            })
+            clan.and_then(|c| s.attacker_clan(c))
+                .is_some_and(|sc| too_many(sc.flags.len(), self.sieges.settings.flag_max_count))
+        }) || fort.is_some_and(|f| {
+            fort_attacker(f)
+                .is_some_and(|sc| too_many(sc.flags.len(), self.fort_settings().siege.flag_max_count))
         }) {
             self.send_unsuitable_terms(player, skill);
             can = false;
@@ -147,8 +154,8 @@ impl World {
         true
     }
 
-    /// Java `ConditionPlayerCanSummonSiegeGolem.testImpl`: `canSummonSiegeGolem`.
-    // M7-FORT-01: the fortress siege's parts.
+    /// Java `ConditionPlayerCanSummonSiegeGolem.testImpl`: `canSummonSiegeGolem` (castle and
+    /// fortress sieges).
     #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_summon_siege_golem(&self, player: ObjectId) -> bool {
         let clan_id = self.clan_id_of(player);
@@ -162,10 +169,15 @@ impl World {
         if fort.is_some_and(|f| f.0 == 0) || castle.is_some_and(|c| c.0 == 0) {
             self.send(player, &SystemMessage::new(SystemMessageId::InvalidTarget));
             can = false;
-        } else if siege.is_some_and(|s| !s.in_progress) || fort.is_some() {
+        } else if siege.is_some_and(|s| !s.in_progress)
+            || fort.is_some_and(|f| !self.fort_siege_in_progress(f))
+        {
             self.send(player, &SystemMessage::new(SystemMessageId::InvalidTarget));
             can = false;
-        } else if clan_id != 0 && siege.is_some_and(|s| s.attacker_clan(clan_id).is_none()) {
+        } else if clan_id != 0
+            && (siege.is_some_and(|s| s.attacker_clan(clan_id).is_none())
+                || fort.is_some_and(|f| self.fort_attacker_clan(f, clan_id).is_none()))
+        {
             self.send(player, &SystemMessage::new(SystemMessageId::InvalidTarget));
             can = false;
         }

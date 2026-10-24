@@ -11,9 +11,7 @@
 use l2_util::ObjectId;
 
 use super::SiegeTimer;
-use crate::residence::{
-    CASTLE_FUNC_RESTORE_EXP, CastleId, ClanHallId, FortId, HALL_FUNC_RESTORE_EXP, ResidenceRef,
-};
+use crate::residence::{CASTLE_FUNC_RESTORE_EXP, CastleId, FortId, ResidenceRef};
 use crate::teleport::TeleportWhereType;
 use crate::world::World;
 
@@ -108,9 +106,14 @@ impl World {
             }
             // Fortress teleportation: the clan's fortress, or the fortress it owns in a siege.
             TeleportWhereType::Fortress => {
-                // M7-FORT-01: `fort.getSiege().isInProgress() && fort.getOwnerClan() == clan` for
-                // the fortress the player stands in.
-                let fort = self.fort_by_owner(clan_id)?;
+                // NOTE(java-quirk): the second test (the fortress here, in a siege, owned by the
+                // clan) only finds what `getFortByOwner` found already.
+                let fort = self.fort_by_owner(clan_id).or_else(|| {
+                    self.fort_at(x, y, z).filter(|f| {
+                        self.fort_siege_in_progress(*f)
+                            && self.fort(*f).is_some_and(|fort| fort.owner_id == clan_id)
+                    })
+                })?;
                 let zone = self.fort(fort).filter(|f| f.id.0 > 0)?.zone?;
                 self.residence_zone_spawn_for(id, (zone, "FortZone"))
             }
@@ -121,8 +124,12 @@ impl World {
                     let flag = siege.flags_of(clan_id).first().copied()?;
                     return self.position_of(flag);
                 }
-                // M7-FORT-01: the headquarters of a fortress siege (`fort.getSiege().getFlag`).
-                None
+                // The headquarters of a fortress siege (`fort.getSiege().getFlag(clan)`).
+                let fort = self
+                    .fort_at(x, y, z)
+                    .filter(|f| self.fort_siege_in_progress(*f))?;
+                let flag = self.fort_siege_flags(fort, clan_id).first().copied()?;
+                self.position_of(flag)
             }
             TeleportWhereType::Town => None,
         }
@@ -158,8 +165,9 @@ impl World {
             return (false, false, false, false);
         };
         let mut in_castle_defense = false;
-        let in_fort_defense = false;
+        let mut in_fort_defense = false;
         let mut has_flags = false;
+        let fort = self.fort_at(x, y, z).filter(|f| self.fort_siege_in_progress(*f));
         if let Some(siege) = self
             .castle_at(x, y, z)
             .and_then(|c| self.castle_siege(c))
@@ -170,8 +178,13 @@ impl World {
                 Some(sc) => has_flags = !sc.flags.is_empty(),
                 None => in_castle_defense = siege.is_defender(Some(clan.id)),
             }
+        } else if let Some(fort) = fort {
+            // Siege in progress (a fortress, M7-FORT-01).
+            match self.fort_attacker_clan(fort, clan.id) {
+                Some(sc) => has_flags = !sc.flags.is_empty(),
+                None => in_fort_defense = self.fort_check_is_defender(fort, clan.id),
+            }
         }
-        // M7-FORT-01: the fortress siege in progress (`isInFortDefense`, its attackers' flags).
         // M7-TW-01: `TerritoryWarManager.getHQForClan(clan)`.
         // M7-CHSIEGE-01: `getNearbyClanHall(creature).getSiege().checkIsAttacker(clan)`.
         (
@@ -222,13 +235,8 @@ impl World {
             return None;
         }
         let loc = self.get_tele_to_location(id, TeleportWhereType::ClanHall);
-        let level = self
-            .auctionable_hall_by_owner(clan_id)
-            .and_then(|hall: ClanHallId| {
-                self.residence_function(ResidenceRef::ClanHall(hall), HALL_FUNC_RESTORE_EXP)
-            })
-            .map(|f| f.lvl);
-        if let Some(level) = level {
+        // `ClanHallTable.getClanHallByOwner(clan).getFunction(FUNC_RESTORE_EXP)` (M7-CH-01).
+        if let Some(level) = self.clan_hall_restore_exp_level(clan_id) {
             self.restore_exp(id, f64::from(level));
         }
         Some(loc)
@@ -300,13 +308,20 @@ impl World {
         let (x, y, z) = self.position_of(id)?;
         let clan = self.clan_of(id).map(|c| c.id);
         // M7-TW-01: `TerritoryWarManager.getHQForClan(clan)` / `getFlagForClan(clan)`.
-        // M7-FORT-01, M7-CHSIEGE-01: the fortress and hall sieges, and the hall's inner spawns.
-        let has_flag = self
+        // M7-CHSIEGE-01: the hall sieges, and the hall's inner spawns.
+        let castle_siege = self
             .castle_at(x, y, z)
             .and_then(|c| self.castle_siege(c))
-            .filter(|s| s.in_progress)
-            .and_then(|s| clan.and_then(|clan| s.attacker_clan(clan)))
-            .is_some_and(|sc| !sc.flags.is_empty());
+            .filter(|s| s.in_progress);
+        let has_flag = if let Some(siege) = castle_siege {
+            clan.and_then(|clan| siege.attacker_clan(clan))
+                .is_some_and(|sc| !sc.flags.is_empty())
+        } else if let Some(fort) = self.fort_at(x, y, z).filter(|f| self.fort_siege_in_progress(*f)) {
+            clan.and_then(|clan| self.fort_attacker_clan(fort, clan))
+                .is_some_and(|sc| !sc.flags.is_empty())
+        } else {
+            false
+        };
         if !has_flag {
             return None;
         }

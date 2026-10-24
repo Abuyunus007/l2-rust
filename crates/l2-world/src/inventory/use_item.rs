@@ -137,8 +137,11 @@ impl crate::world::World {
 
             // Don't allow to put formal wear while a cursed weapon is equipped: no cursed weapons.
             let _ = FORMAL_WEAR_ID;
-            // Equip or unEquip. `FortSiegeManager.isCombat(itemId)` and `isCombatFlagEquipped`
-            // belong to the sieges: nobody carries a flag.
+            // Equip or unEquip: the combat flag is worn by `FortSiegeManager`, never by the
+            // player (no message), and nothing is worn while a flag is (M7-FORT-01).
+            if crate::world::World::is_combat_flag_item(item.item_id) || self.is_combat_flag_equipped(id) {
+                return;
+            }
 
             let cannot_equip =
                 SystemMessage::new(SystemMessageId::YouDoNotMeetTheRequiredConditionToEquipThatItem);

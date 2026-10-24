@@ -54,6 +54,8 @@ pub enum ResidenceRereadRows {
     Fort(FortRecord),
     ClanHall(ClanHallRecord),
     SiegableHall(SiegableHallRecord),
+    /// A fortress with its registrations for the siege (M7-FORT-01).
+    FortSiege(Box<crate::fort::FortSiegeRows>),
     /// The `auction` row of a hall's auction with its bids; `None` when the database has no such
     /// auction any more (M7-CH-01).
     Auction {
@@ -96,6 +98,8 @@ pub enum ResidenceReadThen {
     SiegeDefenderList { player: ObjectId, castle_id: i32 },
     /// The Java GS ran the siege of a castle: start the schedule again (M7-SIEGE-01, D-51).
     SiegeRestartSchedule { castle_id: i32 },
+    /// A fortress NPC acts on the rows (M7-FORT-01, `fort/`).
+    Fort(crate::fort::FortThen),
     /// The end task of an auction (by its key) is due: decide on the fresh rows (M7-CH-01).
     AuctionEnd(u64),
     /// A clan bids: go on to read its clan warehouse (M7-CH-01).
@@ -227,6 +231,7 @@ impl World {
             ResidenceRereadRows::Fort(record) => self.apply_fort_record(record),
             ResidenceRereadRows::ClanHall(record) => self.apply_clan_hall_record(record),
             ResidenceRereadRows::SiegableHall(record) => self.apply_siegable_hall_record(record),
+            ResidenceRereadRows::FortSiege(rows) => self.apply_fort_siege_rows(rows),
             ResidenceRereadRows::Auction { id, record } => self.apply_auction_rows(*id, record.as_ref()),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
             ResidenceRereadRows::SiegeClans { castle, rows } => {
@@ -256,6 +261,7 @@ impl World {
             ResidenceReadThen::SiegeRestartSchedule { castle_id } => {
                 self.siege_restart_schedule(CastleId(castle_id));
             }
+            ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
             then => self.auction_read_then(then),
         }
     }
@@ -314,6 +320,8 @@ impl World {
         if owner != 0 {
             self.load_residence_functions(ResidenceRef::Fort(id), &record.functions);
         }
+        // M7-FORT-01: the `FortUpdater` tasks follow the owner.
+        self.fort_refresh_updaters(id);
     }
 
     /// An auctionable hall's row as the database has it now.
@@ -483,6 +491,8 @@ pub enum ResidenceReadKind {
     Castle,
     /// `fort`.
     Fort,
+    /// `fort` with `fortsiege_clans` and the blood oaths of the owner (M7-FORT-01).
+    FortSiege,
     /// `clanhall`.
     ClanHall,
     /// `siegable_clanhall`.

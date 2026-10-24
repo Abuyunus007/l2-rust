@@ -221,6 +221,9 @@ pub enum ClientInput {
     FishRanking,
     /// The siege window packets (M7-SIEGE-01).
     Siege(crate::siege::SiegeInput),
+    /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
+    /// `RequestFortressMapInfo`), see `fort/`.
+    Fort(crate::fort::FortInput),
     /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
     AllAgitInfo,
     /// A packet the world doesn't handle yet.

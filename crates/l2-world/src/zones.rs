@@ -264,7 +264,8 @@ enum ZoneKind {
     FlagPvp,
     /// `ClanHallZone` and its `SiegableHallZone` (M7-RES-01).
     ClanHall,
-    /// `SiegeZone` (M7-SIEGE-01, `siege/zone.rs`).
+    /// `SiegeZone` (the castle ones: M7-SIEGE-01, `siege/zone.rs`; the fortress ones: M7-FORT-01,
+    /// `fort/zone.rs`).
     Siege,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
@@ -446,13 +447,7 @@ impl World {
         self.on_zone_exit(id, zone);
     }
 
-    /// Java `Creature.setInsideZone(zone, state)` of a player, for the zone types outside this
-    /// module (the siege zones).
-    pub(crate) fn set_zone_flag(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
-        self.set_inside(id, zone, state);
-    }
-
-    fn set_inside(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
+    pub(crate) fn set_inside(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
         if let Some(player) = self.players.get_mut(&id) {
             player.zones.set_inside(zone, state);
         }
@@ -544,7 +539,13 @@ impl World {
                 let hall_id = zone.int_param("clanHallId").unwrap_or(0);
                 self.on_clan_hall_zone_enter(id, hall_id);
             }
-            ZoneKind::Siege => self.on_siege_zone_enter(id, zone),
+            ZoneKind::Siege => {
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
+                // zones: M7-CHSIEGE-01.
+                if self.fort_siege_zone_on_enter(id, zone).is_none() {
+                    self.on_siege_zone_enter(id, zone);
+                }
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -634,7 +635,13 @@ impl World {
                 self.broadcast_user_info(id);
             }
             ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
-            ZoneKind::Siege => self.on_siege_zone_exit(id, zone),
+            ZoneKind::Siege => {
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
+                // zones: M7-CHSIEGE-01.
+                if self.fort_siege_zone_on_exit(id, zone).is_none() {
+                    self.on_siege_zone_exit(id, zone);
+                }
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

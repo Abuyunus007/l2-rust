@@ -86,6 +86,19 @@ impl World {
 
     /// Java `TeleportHolder.showTeleportList(player, npc)`.
     fn show_teleport_list(&mut self, npc: ObjectId, player: ObjectId, holder: &TeleportHolder) {
+        let bypass = format!("npc_{}_teleport", npc.0);
+        self.show_teleport_list_with(npc, player, holder, &bypass);
+    }
+
+    /// Java `TeleportHolder.showTeleportList(player, npc, bypass)`: the foremen of fortresses
+    /// and the doormen link to their own `goto` command.
+    pub(crate) fn show_teleport_list_with(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        holder: &TeleportHolder,
+        bypass: &str,
+    ) {
         let noble = self.players.get(&player).is_some_and(|p| p.data.profile.noble);
         if holder.is_noblesse() && !noble {
             warn!("{player} requested noblesse teleport without being noble!");
@@ -93,7 +106,6 @@ impl World {
         }
 
         // Build html
-        let bypass = format!("npc_{}_teleport", npc.0);
         let mut list = String::new();
         for location in holder.locations() {
             // A destination without a name prints as "null" in Java.

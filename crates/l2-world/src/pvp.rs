@@ -743,7 +743,8 @@ impl World {
             }
             _ => None,
         };
-        // The siege state (M7-SIEGE-01) and the territory wars (M7-TW-01).
+        // The siege state of a castle or fortress siege (M7-SIEGE-01, M7-FORT-01) and the
+        // territory wars (M7-TW-01).
         let siege_state = self.siege_state_of(subject);
         // The Handy's Block Checker arena (an event) adds INSIEGE/ENEMY/ALLY/ATTACKER: M8.
         RelationInput {

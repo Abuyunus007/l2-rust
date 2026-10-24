@@ -24,8 +24,6 @@ use crate::zones::ZoneId;
 const DISMOUNT_DELAY: i32 = 5;
 /// Battleground Death Syndrome (`onDieInside`).
 const DEATH_SYNDROME: i32 = 5660;
-/// The combat flag of the fortress sieges (`SiegeZone.onExit`).
-const COMBAT_FLAG: i32 = 9819;
 
 /// The siege of an active siege zone (Java `Settings.getSiege()`, a `Siegable`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,7 +45,8 @@ pub(crate) struct SiegeZoneState {
 impl World {
     /// Java `SiegeZone.isActive()`.
     pub fn is_siege_zone_active(&self, zone_id: i32) -> bool {
-        self.sieges.zones.get(&zone_id).is_some_and(|z| z.active)
+        // A fortress's zone keeps its activity in `fort/` (M7-FORT-01).
+        self.sieges.zones.get(&zone_id).is_some_and(|z| z.active) || self.fort.active_zones.contains(&zone_id)
     }
 
     /// Java `SiegeZone.setSiegeInstance(siege)`.
@@ -121,9 +120,9 @@ impl World {
             }
         } else {
             for player in players {
-                self.set_zone_flag(player, ZoneId::Pvp, false);
-                self.set_zone_flag(player, ZoneId::Siege, false);
-                self.set_zone_flag(player, ZoneId::NoSummonFriend, false);
+                self.set_inside(player, ZoneId::Pvp, false);
+                self.set_inside(player, ZoneId::Siege, false);
+                self.set_inside(player, ZoneId::NoSummonFriend, false);
                 self.send(
                     player,
                     &SystemMessage::new(SystemMessageId::YouHaveLeftACombatZone),
@@ -142,10 +141,10 @@ impl World {
         if !state.active {
             return;
         }
-        self.set_zone_flag(id, ZoneId::Pvp, true);
-        self.set_zone_flag(id, ZoneId::Siege, true);
+        self.set_inside(id, ZoneId::Pvp, true);
+        self.set_inside(id, ZoneId::Siege, true);
         // FIXME: Custom ? (Java's own comment)
-        self.set_zone_flag(id, ZoneId::NoSummonFriend, true);
+        self.set_inside(id, ZoneId::NoSummonFriend, true);
         let siegable_id = l2_data::residence::siege_object_id(zone);
         if self.is_registered_on_this_siege_field(id, siegable_id) {
             // In siege.
@@ -205,9 +204,9 @@ impl World {
 
     /// Java `SiegeZone.onExit(creature)` for a player.
     pub(crate) fn on_siege_zone_exit(&mut self, id: ObjectId, zone: &Zone) {
-        self.set_zone_flag(id, ZoneId::Pvp, false);
-        self.set_zone_flag(id, ZoneId::Siege, false);
-        self.set_zone_flag(id, ZoneId::NoSummonFriend, false);
+        self.set_inside(id, ZoneId::Pvp, false);
+        self.set_inside(id, ZoneId::Siege, false);
+        self.set_inside(id, ZoneId::NoSummonFriend, false);
         let state = self.sieges.zones.get(&zone.id).copied().unwrap_or_default();
         if state.active {
             self.send(id, &SystemMessage::new(SystemMessageId::YouHaveLeftACombatZone));
@@ -221,12 +220,7 @@ impl World {
         }
         self.stop_fame_task(id);
         self.set_in_siege(id, false);
-        let fort_siege = matches!(state.siege.map(|s| s.siegable), Some(ResidenceRef::Fort(_)));
-        if fort_siege && self.inventory_item_by_item_id(id, COMBAT_FLAG).is_some() {
-            // M7-FORT-01: drop the combat flag (`FortSiegeManager.dropCombatFlag`) and unsummon
-            // the summon.
-            tracing::debug!("{id} leaves a fortress siege zone with the combat flag");
-        }
+        // The combat flag of a fortress's zone is `fort_siege_zone_on_exit`'s (M7-FORT-01).
     }
 
     /// Java `SiegeZone.onDieInside(creature)`: a participant who dies in an active siege zone gets
