@@ -374,6 +374,15 @@ impl World {
     pub(crate) fn fort_player_left(&mut self, player: ObjectId) {
         self.fort_stop_fame_task(player);
         self.fort.players.remove(&player);
+        // DEVIATION(stale reference): a flag whose bearer leaves the world without having dropped it
+        // (the logout teleport put him out of the fortress first) keeps pointing at the old
+        // `Player` object in Java; here the bearer is forgotten, so the next login starts clean.
+        for flags in self.fort.flags.values_mut() {
+            for flag in flags.iter_mut().filter(|f| f.player == Some(player)) {
+                flag.player = None;
+                flag.worn_item = None;
+            }
+        }
     }
 
     // ------------------------------------------------------------------ the tasks
