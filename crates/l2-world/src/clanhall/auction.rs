@@ -557,6 +557,12 @@ impl World {
             }
             // Handled by `fort/` before this is called.
             ResidenceReadThen::Nothing | ResidenceReadThen::Fort(_) => {}
+            // The siege follow-ups are `on_residence_reread`'s own (M7-SIEGE-01).
+            ResidenceReadThen::SiegeJoin { .. }
+            | ResidenceReadThen::SiegeConfirmWaiting { .. }
+            | ResidenceReadThen::SiegeAttackerList { .. }
+            | ResidenceReadThen::SiegeDefenderList { .. }
+            | ResidenceReadThen::SiegeRestartSchedule { .. } => {}
         }
     }
 

@@ -154,6 +154,8 @@ impl World {
         self.forget_duel(id);
         // `PlayerStat._maxCubicCount` goes with the object.
         self.forget_cubics(id);
+        // `_siegeState`, `_siegeSide`, `_isInSiege` and the fame task (M7-SIEGE-01).
+        self.forget_player_siege_state(id);
         for other in self.players.values_mut() {
             other.known_relations.remove(&id);
         }

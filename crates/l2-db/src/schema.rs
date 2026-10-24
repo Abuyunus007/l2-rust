@@ -9,9 +9,12 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/bot_reported_char_data.sql"),
     include_str!("../sql/game/buylists.sql"),
     include_str!("../sql/game/castle.sql"),
+    include_str!("../sql/game/castle_doorupgrade.sql"),
     include_str!("../sql/game/castle_functions.sql"),
     include_str!("../sql/game/castle_manor_procure.sql"),
     include_str!("../sql/game/castle_manor_production.sql"),
+    include_str!("../sql/game/castle_siege_guards.sql"),
+    include_str!("../sql/game/castle_trapupgrade.sql"),
     include_str!("../sql/game/character_contacts.sql"),
     include_str!("../sql/game/character_friends.sql"),
     include_str!("../sql/game/character_hennas.sql"),
@@ -62,6 +65,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/punishments.sql"),
     include_str!("../sql/game/seven_signs.sql"),
     include_str!("../sql/game/siegable_clanhall.sql"),
+    include_str!("../sql/game/siege_clans.sql"),
 ];
 
 #[cfg(test)]

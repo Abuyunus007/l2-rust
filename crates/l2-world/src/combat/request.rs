@@ -73,8 +73,17 @@ impl World {
     }
 
     /// Java `onForcedAttack(player)`: `Creature`'s for creatures, `WorldObject`'s (only
-    /// `ActionFailed`) for the rest. Siege objects override it in Java (M5).
+    /// `ActionFailed`) for the rest. The siege NPCs override it (M7-SIEGE-01): a tower or a
+    /// headquarters is clicked (`onAction`), an artefact only answers `ActionFailed`.
     pub(crate) fn on_forced_attack(&mut self, target: ObjectId, player: ObjectId) {
+        if self.npc_template(target).is_some_and(|t| t.is_type("Artefact")) {
+            self.send(player, &ActionFailed);
+            return;
+        }
+        if self.siege_npc_click(player, target, true) {
+            self.send(player, &ActionFailed);
+            return;
+        }
         if !self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) {
             self.send(player, &ActionFailed);
             return;
@@ -113,9 +122,13 @@ impl World {
         match self.objects.get(&id).map(|e| e.kind) {
             // `Playable.canBeAttacked()`.
             Some(ObjectKind::Player | ObjectKind::Summon) => true,
-            // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`).
-            Some(ObjectKind::Npc) => self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs,
-            // Doors, static objects and fences keep `WorldObject`'s false (siege doors: M5).
+            // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`); the
+            // siege NPCs override it (M7-SIEGE-01).
+            Some(ObjectKind::Npc) => self
+                .siege_npc_can_be_attacked(id)
+                .unwrap_or_else(|| self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs),
+            // Doors, static objects and fences keep `WorldObject`'s false (Java's attack checks
+            // let doors through on their own: `!target.isDoor()`).
             _ => false,
         }
     }

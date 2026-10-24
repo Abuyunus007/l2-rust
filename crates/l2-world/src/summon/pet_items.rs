@@ -391,7 +391,12 @@ impl World {
             self.send(player, &ActionFailed);
             return;
         }
-        // `MercTicketManager.getTicketCastleId` and `FortSiegeManager.isCombat`: not ported.
+        // A pet does not pick up mercenary tickets (M7-SIEGE-01).
+        let item_id = self.ground_item(object_id).map_or(0, |g| g.data.item_id);
+        if crate::siege::ticket_castle_id(item_id) > 0 {
+            self.send(player, &ActionFailed);
+            return;
+        }
         if self.is_dead(pet) || self.is_out_of_control(pet) {
             self.send(player, &ActionFailed);
             return;
@@ -460,7 +465,12 @@ impl World {
             self.send(owner, &ActionFailed);
             return;
         }
-        // Cursed weapons and combat flags: not modelled.
+        // Cursed weapons: not modelled (M8).
+        // `FortSiegeManager.isCombat(itemId)`: a pet leaves the combat flag (M7-FORT-01).
+        let item_id = self.ground_item(object).map_or(0, |g| g.data.item_id);
+        if Self::is_combat_flag_item(item_id) {
+            return;
+        }
         let follow = self.follow_status(pet);
         let templates = self.item_templates();
         let templates = templates.as_deref();
@@ -535,6 +545,8 @@ impl World {
         let Some(taken) = self.take_ground_item(object) else {
             return;
         };
+        // `Item.pickupMe`: a mercenary ticket takes its hire with it (M7-SIEGE-01).
+        self.merc_on_pickup(&taken);
 
         let herb = template.is_some_and(|t| t.ex_immediate_effect);
         if herb {

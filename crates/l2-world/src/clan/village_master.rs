@@ -207,9 +207,15 @@ impl World {
             Some(SystemMessageId::YouCannotDissolveAClanWhileEngagedInAWar)
         } else if clan.castle_id != 0 || clan.hideout_id != 0 || clan.fort_id != 0 {
             Some(SystemMessageId::YouCannotDissolveAClanWhileOwningAClanHallOrCastle)
+        } else if self
+            .castles()
+            .iter()
+            .any(|c| self.siege_check_is_registered(Some(clan_id), c.id.0))
+        {
+            // `SiegeManager.checkIsRegistered(clan, castle)` of every castle (M7-SIEGE-01).
+            Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)
         } else if self.fort_clan_is_registered(clan_id) {
             // `FortSiegeManager.checkIsRegistered(clan, fort)` of every fortress (M7-FORT-01).
-            // The castle sieges' registrations come before it in Java (M7-SIEGE-01).
             Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)
         } else if self.is_inside_zone(player, ZoneId::Siege) {
             Some(SystemMessageId::YouCannotDissolveAClanDuringASiegeOrWhileProtectingACastle)

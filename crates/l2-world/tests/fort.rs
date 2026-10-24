@@ -119,6 +119,8 @@ const NPC_COMMANDER_2: i32 = 35_677;
 const NPC_COMMANDER_3: i32 = 35_680;
 const NPC_ENVOY: i32 = 36_393;
 const NPC_SIEGE_GUARD: i32 = 35_670;
+/// The headquarters of the castle sieges' `SiegeFlag` (M7-SIEGE-01).
+const NPC_HQ: i32 = 35_062;
 
 fn npc(id: i32, npc_type: &str, name: &str) -> String {
     format!(
@@ -152,6 +154,7 @@ fn npc_xml() -> String {
         npc(NPC_COMMANDER_3, "FortCommander", "Support Commander"),
         npc(NPC_ENVOY, "Folk", "Envoy"),
         npc(NPC_SIEGE_GUARD, "Defender", "Fortress Guard"),
+        npc(NPC_HQ, "Folk", "Headquarters"),
     ]
     .join("\n");
     format!(r#"<?xml version="1.0"?><list>{list}</list>"#)
@@ -816,6 +819,13 @@ impl Scene {
 
     fn take(&mut self) -> Vec<Out> {
         self.log.take()
+    }
+
+    /// A teleport and the client's `Appearing`.
+    fn teleport(&mut self, id: i32, x: i32, y: i32, z: i32) {
+        self.world
+            .tele_to_location(ObjectId(id), TeleportTarget::at(x, y, z));
+        self.appear(id);
     }
 
     /// The client's `Appearing` after a teleport.
@@ -1668,7 +1678,10 @@ fn commanders_are_attackable_for_attackers_only_during_the_siege() {
 fn flag_scene() -> Scene {
     let mut s = siege_scene();
     s.world.fort_start_siege(SHANTY);
-    s.enter(P3, WOLVES, 0);
+    // An attacker who logs in inside a siege zone goes to town (`EnterWorld`, M7-SIEGE-01): the
+    // leader logs in outside and comes in.
+    s.enter_at(P3, WOLVES, X + 10_000, 0);
+    s.teleport(P3, X, Y, Z);
     for npc in [NPC_COMMANDER_1, NPC_COMMANDER_2, NPC_COMMANDER_3] {
         let c = s.one_npc(npc);
         s.world.do_die(c, Some(ObjectId(P3)));
@@ -2891,8 +2904,12 @@ fn the_gm_runs_a_test_siege_with_fortsiege() {
 fn entering_the_world_during_a_siege_sets_the_state() {
     let mut s = siege_scene();
     s.world.fort_start_siege(SHANTY);
-    s.enter(P3, WOLVES, 0);
+    // An attacker who logs in inside a siege zone goes to town (`EnterWorld`, M7-SIEGE-01), so
+    // the player logs in outside and comes in.
+    s.enter_at(P3, WOLVES, X + 10_000, 0);
     assert_eq!(s.world.fort_siege_state_of(ObjectId(P3)), 1);
+    assert!(!s.world.fort_player_in_siege(ObjectId(P3)));
+    s.teleport(P3, X, Y, Z);
     assert!(s.world.fort_player_in_siege(ObjectId(P3)));
     assert!(s.world.is_registered_on_this_siege_field(ObjectId(P3), 101));
     assert!(!s.world.is_registered_on_this_siege_field(ObjectId(P3), 102));
@@ -3044,4 +3061,43 @@ fn the_doorman_teleports_the_owner() {
         s.world.position_of(ObjectId(P1)).map(|p| (p.0, p.1)),
         Some((-70_600, 258_600))
     );
+}
+
+/// The headquarters (`HeadquarterCreate`, `SiegeFlag`) serves the fortress sieges as well
+/// (M7-SIEGE-01): it joins the attacker's flags (`fort_siege_flags`), a dead member of the clan
+/// gets the "to siege HQ" button and restarts at it, and it leaves the list when it dies.
+#[test]
+fn a_headquarters_of_a_fortress_siege_takes_the_dead_back() {
+    let mut s = siege_scene();
+    s.world.fort_start_siege(SHANTY);
+    s.enter_at(P3, WOLVES, X + 10_000, 0);
+    s.teleport(P3, X, Y, Z);
+    s.take();
+    s.world.siege_create_headquarters(ObjectId(P3), false);
+    let flags = s.world.fort_siege_flags(SHANTY, WOLVES);
+    assert_eq!(flags, s.npcs_of(NPC_HQ));
+    assert_eq!(flags.len(), 1);
+    assert_eq!(s.world.npc_custom_title(flags[0]), Some("Wolves"));
+
+    s.teleport(P4, X + 200, Y, Z);
+    s.world.do_die(ObjectId(P4), Some(ObjectId(P1)));
+    let die = s.world.die_packet(ObjectId(P4));
+    assert!(die.to_siege_hq);
+    assert!(!die.to_fortress);
+    // The owner's members defend the fortress.
+    s.world.do_die(ObjectId(P1), Some(ObjectId(P4)));
+    let die = s.world.die_packet(ObjectId(P1));
+    assert!(die.to_fortress && !die.to_siege_hq);
+    s.take();
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(P4).unwrap()),
+        input: ClientInput::RestartPoint { point_type: 4 },
+    });
+    s.run_ms(50);
+    let out = s.take();
+    assert!(!packets_to(&out, P4, "TELEPORT_TO_LOCATION").is_empty());
+
+    s.world.do_die(flags[0], Some(ObjectId(P1)));
+    assert!(s.world.fort_siege_flags(SHANTY, WOLVES).is_empty());
+    assert!(s.npcs_of(NPC_HQ).is_empty());
 }

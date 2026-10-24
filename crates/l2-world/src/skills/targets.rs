@@ -306,8 +306,17 @@ impl World {
         }
         if self.is_player(caster) {
             if self.is_player(target) {
-                // M5/M6: auto play settings, observer mode, siege state/side, event teams. None
-                // exist.
+                // M5/M6: auto play settings, observer mode, event teams. None exist.
+                // The same side of the same siege (M7-SIEGE-01).
+                let state = self.siege_state_of(caster);
+                if has_negative_effect(skill)
+                    && state > 0
+                    && self.is_inside_zone(caster, ZoneId::Siege)
+                    && state == self.siege_state_of(target)
+                    && self.siege_side_of(caster) == self.siege_side_of(target)
+                {
+                    return false;
+                }
                 if has_negative_effect(skill) && self.is_inside_zone(target, ZoneId::Peace) {
                     return false;
                 }
@@ -376,7 +385,16 @@ impl World {
         {
             return false;
         }
-        // M6: siege friend (`FORCE_ATTACK_IS_IMPOSSIBLE_AGAINST_A_TEMPORARY_ALLIED_MEMBER_...`).
+        // Siege (M7-SIEGE-01).
+        if self.is_siege_friend(player, target) {
+            self.send(
+                player,
+                &l2_protocol_game::server::SystemMessage::new(
+                    SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege,
+                ),
+            );
+            return false;
+        }
         // Party (and command channel): only a force attack with a damage skill hits a member.
         if self.is_in_party_with(player, target) {
             return skill.effect_range > 0
@@ -1216,9 +1234,8 @@ impl<R: Rnd> Targeting<'_, R> {
                 if !self.w.skill_add_character(self.caster, obj, radius, true) {
                     continue;
                 }
-                // Check target is not in a active siege zone (`!obj.isInSiege()`: sieges are M7,
-                // nobody takes part in one).
-                if self.w.is_inside_zone(obj, ZoneId::Siege) {
+                // Check target is not in a active siege zone (M7-SIEGE-01).
+                if self.w.is_inside_zone(obj, ZoneId::Siege) && !self.w.is_in_siege(obj) {
                     continue;
                 }
                 self.push(obj);
@@ -1569,9 +1586,8 @@ impl<R: Rnd> Targeting<'_, R> {
             if self.caster_is_player() && (target_player || self.w.is_pet(target)) {
                 let mut cond_good = true;
                 if has_effect(self.skill, EffectKind::Resurrection) && target_player {
-                    // Check target is not in an active siege zone. `isInSiege()` (the player
-                    // takes part in a siege): M6, false.
-                    if self.w.is_inside_zone(target, ZoneId::Siege) {
+                    // Check target is not in an active siege zone (M7-SIEGE-01).
+                    if self.w.is_inside_zone(target, ZoneId::Siege) && !self.w.is_in_siege(target) {
                         cond_good = false;
                         self.out.messages.push(TargetMessage::System(
                             SystemMessageId::ItIsNotPossibleToResurrectInBattlefieldsWhereASiegeWarIsTakingPlace,

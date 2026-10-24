@@ -538,6 +538,14 @@ impl Server {
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
         let residence_settings = residence_settings(&config, &paths.config_dir);
+        // Java: SiegeManager (Siege.ini, the registrations, the guards, the upgrades; M7-SIEGE-01).
+        let sieges = persist::load_sieges(&pool).await;
+        let castle_names: Vec<(i32, String)> = residences
+            .castles
+            .iter()
+            .map(|c| (c.id, c.name.clone()))
+            .collect();
+        let siege_settings = world_data::siege_settings(&config, &paths.config_dir, &castle_names);
         // Java: Fort constructors and FortSiege (fort_spawnlist, fort_siege_guards,
         // fortsiege_clans; M7-FORT-01) and FortSiegeManager (FortSiege.ini).
         let fort_sieges = persist::load_fort_sieges(&pool).await;
@@ -696,6 +704,10 @@ impl Server {
                     world.set_fort_settings(fort_settings);
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
+                    // Java: SiegeManager.getSieges(), Castle.loadDoorUpgrade, MercTicketManager
+                    // (M7-SIEGE-01).
+                    world.set_siege_settings(siege_settings);
+                    world.load_sieges(sieges);
                     // Java: the Fort constructors' spawns, FortSiege, FortSiegeGuardManager
                     // (M7-FORT-01).
                     world.load_fort_data(fort_sieges);

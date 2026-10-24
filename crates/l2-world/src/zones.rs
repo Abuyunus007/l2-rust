@@ -18,7 +18,7 @@
 // `ResidenceHallTeleportZone`, `LandingZone`, `NoLandingZone`, `HqZone`, `ConditionZone`,
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
-// entering it does nothing: `SiegeZone` (needs sieges),
+// entering it does nothing (`SiegeZone` is the siege's, `siege/zone.rs`, M7-SIEGE-01),
 // `OlympiadStadiumZone`, `WaterZone`, `SwampZone`, `BossZone`, `DamageZone`, `FishingZone`,
 // `RespawnZone` (restart points only). `FlagPvPZone` flags the player (M6-DUEL-01); its
 // `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
@@ -264,7 +264,8 @@ enum ZoneKind {
     FlagPvp,
     /// `ClanHallZone` and its `SiegableHallZone` (M7-RES-01).
     ClanHall,
-    /// `SiegeZone` (the fortress ones: M7-FORT-01, `fort/zone.rs`).
+    /// `SiegeZone` (the castle ones: M7-SIEGE-01, `siege/zone.rs`; the fortress ones: M7-FORT-01,
+    /// `fort/zone.rs`).
     Siege,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
@@ -458,8 +459,8 @@ impl World {
         let peace_mode = self.settings.zones.peace_zone_mode;
         match ZoneKind::of(&zone.zone_type) {
             ZoneKind::Town => self.set_inside(id, ZoneId::Town, true),
-            // NOTE(java-quirk): Java skips the flags of a siege participant when
-            // `PeaceZoneMode == 1`; nobody takes part in a siege before M5.
+            // "PVP possible during siege, now for siege participants only." (M7-SIEGE-01)
+            ZoneKind::Peace | ZoneKind::NoPvp if peace_mode == 1 && self.siege_state_of(id) != 0 => {}
             ZoneKind::Peace => {
                 // "Nevit Turn Off on Peace Zone" (before the flag, like Java).
                 self.nevit_on_peace_zone_enter(id);
@@ -539,9 +540,10 @@ impl World {
                 self.on_clan_hall_zone_enter(id, hall_id);
             }
             ZoneKind::Siege => {
-                // The castle and hall siege zones: M7-SIEGE-01, M7-CHSIEGE-01.
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
+                // zones: M7-CHSIEGE-01.
                 if self.fort_siege_zone_on_enter(id, zone).is_none() {
-                    debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type);
+                    self.on_siege_zone_enter(id, zone);
                 }
             }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
@@ -634,9 +636,10 @@ impl World {
             }
             ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
             ZoneKind::Siege => {
-                // The castle and hall siege zones: M7-SIEGE-01, M7-CHSIEGE-01.
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
+                // zones: M7-CHSIEGE-01.
                 if self.fort_siege_zone_on_exit(id, zone).is_none() {
-                    debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type);
+                    self.on_siege_zone_exit(id, zone);
                 }
             }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),

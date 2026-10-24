@@ -264,21 +264,21 @@ impl World {
         let points = self.fort.settings.fortress_zone_fame_aquire_points;
         for (state, members) in groups {
             for member in members {
+                // The player's siege state is the one the castle sieges set too (M7-SIEGE-01).
                 if clear {
-                    self.fort.players.entry(member).or_default().state = 0;
-                    self.fort.players.entry(member).or_default().side = 0;
-                    self.fort.players.entry(member).or_default().in_siege = false;
+                    self.set_siege_state(member, 0);
+                    self.set_siege_side(member, 0);
+                    self.set_in_siege(member, false);
                     self.fort_stop_fame_task(member);
                 } else {
                     let in_zone = self
                         .players
                         .get(&member)
                         .is_some_and(|p| self.fort_check_if_in_zone(fort, p.core.x, p.core.y, p.core.z));
-                    let info = self.fort.players.entry(member).or_default();
-                    info.state = state;
-                    info.side = fort.0;
+                    self.set_siege_state(member, state);
+                    self.set_siege_side(member, fort.0);
                     if in_zone {
-                        info.in_siege = true;
+                        self.set_in_siege(member, true);
                         self.fort_start_fame_task(member, frequency, points);
                     }
                 }
@@ -287,94 +287,34 @@ impl World {
         }
     }
 
-    /// The siege state of a player (`getSiegeState()`): 1 attacker, 2 defender, 0 nothing.
+    /// The siege state of a player (`getSiegeState()`): 1 attacker, 2 defender, 0 nothing. One
+    /// state for castle and fortress sieges, as in Java ([`World::siege_state_of`]).
     pub fn fort_siege_state_of(&self, player: ObjectId) -> u8 {
-        self.fort.players.get(&player).map_or(0, |p| p.state)
+        self.siege_state_of(player)
     }
 
-    /// `isInSiege()` as the fortress sieges set it.
+    /// `isInSiege()` ([`World::is_in_siege`]).
     pub fn fort_player_in_siege(&self, player: ObjectId) -> bool {
-        self.fort.players.get(&player).is_some_and(|p| p.in_siege)
+        self.is_in_siege(player)
     }
 
     // ------------------------------------------------------------------ fame
 
-    /// Java `Player.startFameTask(delay, fameFixRate)`.
+    /// Java `Player.startFameTask(delay, fameFixRate)`: the player's one fame task, shared with
+    /// the castle sieges (`siege/player.rs`).
     pub(crate) fn fort_start_fame_task(&mut self, player: ObjectId, delay_ms: i64, points: i32) {
-        if !self.fort.settings.fame_system_enabled {
-            return;
-        }
-        let Some(p) = self.players.get(&player) else {
-            return;
-        };
-        let class_level = u16::try_from(p.data.class_id).map_or(0, |c| l2_data::ClassId(c).class_level());
-        if p.core.level < 40 || class_level < 2 {
-            return;
-        }
-        let info = self.fort.players.entry(player).or_default();
-        if info.fame_task.is_some() {
-            return;
-        }
-        info.fame_points = points;
-        info.fame_period_ms = u64::try_from(delay_ms).unwrap_or(0);
-        let due = self.tick + TimerWheel::ms_to_ticks(info.fame_period_ms);
-        let timer = self
-            .timers
-            .schedule_at(due, TimerKind::Fort(FortTimer::Fame(player)));
-        if let Some(info) = self.fort.players.get_mut(&player) {
-            info.fame_task = Some(timer);
-        }
+        self.start_fame_task(player, delay_ms, points);
     }
 
     /// Java `Player.stopFameTask()`.
     pub(crate) fn fort_stop_fame_task(&mut self, player: ObjectId) {
-        if let Some(timer) = self
-            .fort
-            .players
-            .get_mut(&player)
-            .and_then(|p| p.fame_task.take())
-        {
-            self.timers.cancel(timer);
-        }
-    }
-
-    /// Java `FameTask.run()` (fixed rate).
-    fn on_fort_fame_task(&mut self, player: ObjectId) {
-        let Some(info) = self.fort.players.get(&player).copied() else {
-            return;
-        };
-        if info.fame_task.is_none() {
-            return;
-        }
-        let due = self.tick + TimerWheel::ms_to_ticks(info.fame_period_ms);
-        let timer = self
-            .timers
-            .schedule_at(due, TimerKind::Fort(FortTimer::Fame(player)));
-        if let Some(info) = self.fort.players.get_mut(&player) {
-            info.fame_task = Some(timer);
-        }
-        if !self.players.contains_key(&player) {
-            return;
-        }
-        if self.is_dead(player) && !self.fort.settings.fame_for_dead_players {
-            return;
-        }
-        let Some(fame) = self.players.get(&player).map(|p| p.data.profile.fame) else {
-            return;
-        };
-        self.set_fame(player, fame.saturating_add(info.fame_points));
-        self.send(
-            player,
-            &SystemMessage::new(SystemMessageId::YouHaveAcquiredS1Reputation)
-                .with(SystemMessageParam::IntNumber(info.fame_points)),
-        );
-        self.send_user_info(player);
+        self.stop_fame_task(player);
     }
 
     /// Forgets what the fortress sieges keep of a player who leaves the world.
     pub(crate) fn fort_player_left(&mut self, player: ObjectId) {
+        // The siege state itself goes with `forget_player_siege_state` (M7-SIEGE-01).
         self.fort_stop_fame_task(player);
-        self.fort.players.remove(&player);
         // DEVIATION(stale reference): a flag whose bearer leaves the world without having dropped it
         // (the logout teleport put him out of the fortress first) keeps pointing at the old
         // `Player` object in Java; here the bearer is forgotten, so the next login starts clean.
@@ -420,7 +360,6 @@ impl World {
                 }
                 self.fort_spawn_suspicious_merchant(fort);
             }
-            FortTimer::Fame(player) => self.on_fort_fame_task(player),
             FortTimer::CommanderCanTalk(npc) => {
                 self.fort.silenced_commanders.remove(&npc);
             }

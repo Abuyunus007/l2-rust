@@ -27,8 +27,8 @@
 // # Relations
 // [`relation_mask`] is `Player.getRelation` over plain inputs ([`RelationInput`]); the world fills
 // the inputs from what exists. Clans, wars and sieges are other cards: until they exist their
-// inputs are empty (`// M7:` in [`World::relation_input`]), so those bits stay 0 and the card
-// that adds the state only has to fill the input. The clan inputs are filled (M6-CLAN-01).
+// inputs are empty until their card fills them. The clan inputs are filled (M6-CLAN-01), the
+// siege state too (M7-SIEGE-01, `siege/player.rs`; Territory War's registration: M7-TW-01).
 
 use std::collections::HashMap;
 
@@ -525,8 +525,16 @@ impl World {
             return;
         }
         // If both players are in SIEGE zone just increase siege kills/deaths.
-        if self.is_inside_zone(killer, ZoneId::Siege) && self.is_inside_zone(killed, ZoneId::Siege) {
-            // M7: `_clan.addSiegeKill()` / `targetClan.addSiegeDeath()` unless `isSiegeFriend`.
+        if self.is_player(target)
+            && self.is_inside_zone(killer, ZoneId::Siege)
+            && self.is_inside_zone(killed, ZoneId::Siege)
+        {
+            if !self.is_siege_friend(killer, killed) {
+                let (mine, theirs) = (self.clan_id_of(killer), self.clan_id_of(killed));
+                if self.clan(mine).is_some() && self.clan(theirs).is_some() {
+                    self.clan_add_siege_kill(mine, theirs);
+                }
+            }
             return;
         }
         // Do nothing when in PVP zone.
@@ -735,23 +743,20 @@ impl World {
             }
             _ => None,
         };
-        // M7-FORT-01: the siege state of a fortress siege. M7: the castle sieges and the
-        // territory wars.
-        let (siege_state, siege_state_differs) = (
-            i32::from(self.fort_siege_state_of(subject)),
-            self.fort_siege_state_of(subject) != self.fort_siege_state_of(viewer),
-        );
+        // The siege state of a castle or fortress siege (M7-SIEGE-01, M7-FORT-01) and the
+        // territory wars (M7-TW-01).
+        let siege_state = self.siege_state_of(subject);
         // The Handy's Block Checker arena (an event) adds INSIEGE/ENEMY/ALLY/ATTACKER: M8.
         RelationInput {
+            siege_state: i32::from(siege_state),
+            territory_war: self.registered_territory_id(subject) != 0,
+            siege_state_differs: siege_state != self.siege_state_of(viewer),
             has_clan: subject_clan.is_some(),
             same_clan: subject_clan.is_some_and(|c| viewer_clan.is_some_and(|v| v.id == c.id)),
             has_ally: self.ally_id_of(subject) != 0,
             is_clan_leader: self.is_clan_leader(subject),
             party_index,
-            siege_state,
-            siege_state_differs,
             clan_war,
-            ..RelationInput::default()
         }
     }
 
@@ -803,8 +808,23 @@ impl World {
                 return false;
             }
             if let (Some(clan), Some(attacker_clan)) = (self.clan_of(subject), self.clan_of(attacker)) {
-                // M7: different clans in a siege (defenders and attackers of the same side do not
-                // hit each other).
+                if clan.id != attacker_clan.id
+                    && let Some(castle) = self.siege_of(subject)
+                    && let Some(siege) = self.castle_siege(castle)
+                {
+                    // Check if a siege is in progress and if attacker and the Player aren't in the
+                    // Defender clan.
+                    if siege.is_defender(Some(attacker_clan.id)) && siege.is_defender(Some(clan.id)) {
+                        return false;
+                    }
+                    // Check if a siege is in progress and if attacker and the Player aren't in the
+                    // Attacker clan.
+                    if siege.is_attacker(Some(attacker_clan.id)) && siege.is_attacker(Some(clan.id)) {
+                        // If first mid victory is achieved, attackers can attack attackers.
+                        let side = crate::residence::CastleId(self.siege_side_of(subject));
+                        return self.castle(side).is_some_and(|c| c.first_mid_victory);
+                    }
+                }
                 // Check if clan is at war (M6-CLAN-01).
                 if self.player_clan_state(subject).wants_peace == 0
                     && self.player_clan_state(attacker).wants_peace == 0
@@ -845,7 +865,15 @@ impl World {
             }
             // The faction system (good against evil): not modelled.
         }
-        // M7: `attacker instanceof Defender && _clan != null` (the siege's attackers).
+        // `attacker instanceof Defender && _clan != null`: a siege guard attacks the attackers of
+        // the castle siege the player stands in (a fortress commander too, NOTE(java-quirk)).
+        if attacker_class.is_some_and(NpcClass::is_defender) && self.clan_of(subject).is_some() {
+            let clan = self.clan_of(subject).map(|c| c.id);
+            return self
+                .siege_of(subject)
+                .and_then(|castle| self.castle_siege(castle))
+                .is_some_and(|siege| siege.is_attacker(clan));
+        }
         if self.is_guard(attacker) {
             // The faction guards: not modelled. Guards attack only PK players.
             return self.karma_of_player(subject) > 0;

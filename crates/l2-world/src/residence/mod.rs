@@ -283,6 +283,58 @@ pub enum ResidenceWrite {
     /// `CastleManager.removeCirclet` of an offline member: `DELETE FROM items WHERE owner_id = ?
     /// and item_id = ?`.
     DeleteCirclets { owner_id: i32, item_id: i32 },
+    /// `Siege.saveSiegeDate`: `UPDATE castle SET siegeDate = ?, regTimeEnd = ?, regTimeOver = ?
+    /// WHERE id = ?` (M7-SIEGE-01).
+    CastleSiegeDate {
+        castle_id: i32,
+        siege_date: i64,
+        reg_time_end: i64,
+        reg_time_over: bool,
+    },
+    /// `Siege.saveSiegeClan` (a new registration): `INSERT INTO siege_clans
+    /// (clan_id,castle_id,type,castle_owner) values (?,?,?,0)`.
+    SiegeClanInsert { clan_id: i32, castle_id: i32, kind: i32 },
+    /// `Siege.saveSiegeClan` (an approval): `UPDATE siege_clans SET type = ? WHERE castle_id = ? AND
+    /// clan_id = ?`.
+    SiegeClanUpdate { castle_id: i32, clan_id: i32, kind: i32 },
+    /// `Siege.removeSiegeClan(clanId)`: `DELETE FROM siege_clans WHERE castle_id=? and clan_id=?`.
+    SiegeClanDelete { castle_id: i32, clan_id: i32 },
+    /// `Siege.clearSiegeClan`: `DELETE FROM siege_clans WHERE castle_id=?`.
+    SiegeClansDeleteCastle { castle_id: i32 },
+    /// `Siege.clearSiegeClan` of an owned castle: `DELETE FROM siege_clans WHERE clan_id=?`.
+    SiegeClansDeleteClan { clan_id: i32 },
+    /// `Siege.clearSiegeWaitingClan`: `DELETE FROM siege_clans WHERE castle_id=? and type = 2`.
+    SiegeClansDeleteWaiting { castle_id: i32 },
+    /// `SiegeGuardManager.saveSiegeGuard`: `Insert Into castle_siege_guards (castleId, npcId, x,
+    /// y, z, heading, respawnDelay, isHired) Values (?, ?, ?, ?, ?, ?, ?, ?)`.
+    SiegeGuardInsert(crate::siege::SiegeGuardRecord),
+    /// `SiegeGuardManager.removeMerc`: `Delete From castle_siege_guards Where npcId = ? And x = ?
+    /// AND y = ? AND z = ? AND isHired = 1`.
+    SiegeGuardDeleteHired { npc_id: i32, x: i32, y: i32, z: i32 },
+    /// `SiegeGuardManager.removeMercs`: `Delete From castle_siege_guards Where castleId = ? And
+    /// isHired = 1`.
+    SiegeGuardsDeleteHired { castle_id: i32 },
+    /// `Castle.setDoorUpgrade(.., save)`: `REPLACE INTO castle_doorupgrade (doorId, ratio,
+    /// castleId) values (?,?,?)`.
+    CastleDoorUpgrade {
+        door_id: i32,
+        ratio: i32,
+        castle_id: i32,
+    },
+    /// `Castle.removeDoorUpgrade`: `DELETE FROM castle_doorupgrade WHERE castleId=?`.
+    CastleDoorUpgradesDelete { castle_id: i32 },
+    /// `Castle.setTrapUpgrade(.., save)`: `REPLACE INTO castle_trapupgrade (castleId, towerIndex,
+    /// level) values (?,?,?)`.
+    CastleTrapUpgrade {
+        castle_id: i32,
+        tower_index: i32,
+        level: i32,
+    },
+    /// `Castle.removeTrapUpgrade`: `DELETE FROM castle_trapupgrade WHERE castleId=?`.
+    CastleTrapUpgradesDelete { castle_id: i32 },
+    /// `Clan.updateBloodAllianceCountInDB`: `UPDATE clan_data SET blood_alliance_count=? WHERE
+    /// clan_id=?`.
+    ClanBloodAllianceCount { clan_id: i32, count: i32 },
     /// The fortress siege tables and the blood oath count (M7-FORT-01, `fort/`).
     FortSiege(crate::fort::FortSiegeWrite),
     /// A write of the clan hall auction tables (`auction`, `auction_bid`, `clan_data.

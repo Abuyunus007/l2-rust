@@ -60,7 +60,10 @@ impl World {
     fn auctioneer_condition(&self, npc: ObjectId) -> Condition {
         // `getCastle() != null && getCastle().getResidenceId() > 0`.
         match self.npc_castle(npc) {
-            // M7-SIEGE-01: `getCastle().getSiege().isInProgress()` -> BusyBecauseOfSiege.
+            // `getCastle().getSiege().isInProgress()` (M7-SIEGE-01).
+            Some(castle) if castle.0 > 0 && self.is_castle_siege_in_progress(castle) => {
+                Condition::BusyBecauseOfSiege
+            }
             Some(castle) if castle.0 > 0 => Condition::Regular,
             _ => Condition::AllFalse,
         }

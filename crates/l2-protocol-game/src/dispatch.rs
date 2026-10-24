@@ -36,6 +36,10 @@ use crate::client::{
     RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
 };
 use crate::client::{
+    RequestAllCastleInfo, RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime,
+    RequestSiegeAttackerList, RequestSiegeDefenderList, RequestSiegeInfo,
+};
+use crate::client::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
 };
@@ -55,10 +59,6 @@ use crate::client::{
 use crate::client::{
     RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
     RequestRefine, RequestRefineCancel,
-};
-use crate::client::{
-    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSiegeAttackerList, RequestSiegeDefenderList,
-    RequestSiegeInfo,
 };
 use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
@@ -283,6 +283,8 @@ pub enum ClientPacket {
     RequestJoinSiege(RequestJoinSiege),
     /// `REQUEST_CONFIRM_SIEGE_WAITING_LIST` (0xAE).
     RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList),
+    /// `REQUEST_SET_CASTLE_SIEGE_TIME` (0xAF).
+    RequestSetCastleSiegeTime(RequestSetCastleSiegeTime),
     /// `REQUEST_BUY_SEED` (0xC5).
     RequestBuySeed(RequestBuySeed),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
@@ -290,6 +292,8 @@ pub enum ClientPacket {
     Unported(ClientOpcode),
     /// The same for ex packets (`0xD0` + `u16`). The ex id is consumed, the body is left unread.
     UnportedEx(ExClientOpcode),
+    /// `REQUEST_ALL_CASTLE_INFO` (`0xD0` 0x003C), an ex packet.
+    RequestAllCastleInfo(RequestAllCastleInfo),
     /// `REQUEST_ALL_FORTRESS_INFO` (`0xD0` 0x003D), an ex packet.
     RequestAllFortressInfo(RequestAllFortressInfo),
     RequestAllAgitInfo(RequestAllAgitInfo),
@@ -563,6 +567,9 @@ pub fn decode_client(
         RequestConfirmSiegeWaitingList::OPCODE => {
             ClientPacket::RequestConfirmSiegeWaitingList(RequestConfirmSiegeWaitingList::decode(reader)?)
         }
+        RequestSetCastleSiegeTime::OPCODE => {
+            ClientPacket::RequestSetCastleSiegeTime(RequestSetCastleSiegeTime::decode(reader)?)
+        }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
@@ -717,6 +724,9 @@ fn decode_ex_client(
         }
         RequestRefineCancel::EX_OPCODE => {
             ClientPacket::RequestRefineCancel(RequestRefineCancel::decode(reader)?)
+        }
+        RequestAllCastleInfo::EX_OPCODE => {
+            ClientPacket::RequestAllCastleInfo(RequestAllCastleInfo::decode(reader)?)
         }
         RequestAllFortressInfo::EX_OPCODE => {
             ClientPacket::RequestAllFortressInfo(RequestAllFortressInfo::decode(reader)?)

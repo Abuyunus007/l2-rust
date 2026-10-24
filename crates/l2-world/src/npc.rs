@@ -1059,12 +1059,12 @@ impl World {
         } else {
             String::new()
         };
-        // Creature._title of an NPC is never set, so it is null (written as empty) unless the
-        // template says to send its own.
+        // Creature._title of an NPC is null (written as empty) unless the template says to send
+        // its own, or the siege gave it one (the headquarters' clan name, M7-SIEGE-01).
         let mut title = if template.using_server_side_title {
             template.title.clone()
         } else {
-            String::new()
+            self.npc_custom_title(subject).unwrap_or_default().to_owned()
         };
         if npc.class.is_monster() && (settings.show_npc_level || settings.show_npc_aggression) {
             let mut t1 = String::new();
@@ -1094,7 +1094,9 @@ impl World {
         Some(NpcInfo {
             object_id: subject.0,
             display_id: template.display_id,
-            attackable: npc.class.auto_attackable_by(viewer_karma),
+            attackable: self
+                .siege_npc_auto_attackable(subject, viewer)
+                .unwrap_or_else(|| npc.class.auto_attackable_by(viewer_karma)),
             x: npc.core.x,
             y: npc.core.y,
             z: npc.core.z,

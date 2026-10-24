@@ -72,7 +72,6 @@ pub use siege::{FortSiegeClan, FortSiegeWrite, FortTeleportWhoType};
 pub use updater::FortUpdaterType;
 
 use crate::residence::FortId;
-use crate::timer::TimerId;
 
 /// What a player asks about the fortresses (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
 /// `RequestFortressMapInfo`).
@@ -129,25 +128,8 @@ pub enum FortTimer {
     SiegeRestore(FortId),
     /// Java `ScheduleSuspiciousMerchantSpawn`.
     SuspiciousMerchantSpawn(FortId),
-    /// Java `FameTask`: the fame of a player inside the siege zone.
-    Fame(ObjectId),
     /// Java `FortCommander.ScheduleTalkTask`: the commander may speak again.
     CommanderCanTalk(ObjectId),
-}
-
-/// The siege state Java keeps on a `Player` (`_siegeState`, `_siegeSide`, `_isInSiege`) and its
-/// fame task, for the players a fortress siege touches.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub struct PlayerFortSiege {
-    /// `_siegeState`: 1 attacker, 2 defender, 0 not involved.
-    pub state: u8,
-    /// `_siegeSide`: the id of the fortress.
-    pub side: i32,
-    /// `_isInSiege`.
-    pub in_siege: bool,
-    pub(crate) fame_task: Option<TimerId>,
-    pub(crate) fame_points: i32,
-    pub(crate) fame_period_ms: u64,
 }
 
 /// One fortress's siege state and spawns (see the module comment).
@@ -167,8 +149,6 @@ pub(crate) struct FortWorld {
     /// Java `FortSiegeManager._flagList`.
     pub(crate) flags: BTreeMap<FortId, Vec<CombatFlag>>,
     pub(crate) forts: BTreeMap<FortId, FortState>,
-    /// The players with a siege state.
-    pub(crate) players: BTreeMap<ObjectId, PlayerFortSiege>,
     /// The siege zones (zone ids) that are active.
     pub(crate) active_zones: BTreeSet<i32>,
     /// The commanders that must not speak (Java `FortCommander._canTalk == false`).

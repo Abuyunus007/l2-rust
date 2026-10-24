@@ -27,9 +27,8 @@
 //
 // # Left out, with the system that brings it
 // - M8: `isCursedWeaponEquipped()` (cursed weapons): disarming is never refused for it.
-// - M7: the siege parts. Mounting in a siege zone is refused for everybody (Java lets the castle
-//   lord of the sieged castle ride a strider); `checkLandingState`'s siege branch is left out;
-//   the siege zone's wyvern and mount rules are the siege card's.
+// - The siege parts (M7-SIEGE-01): the castle lord's strider in a siege zone, the siege branch of
+//   `checkLandingState`; the siege zone's own wyvern and mount rules are `siege/zone.rs`.
 // - The fall damage a wyvern avoids and the flying movement checks of `Creature` are not
 //   modelled by the world yet (see `movement.rs`).
 
@@ -406,10 +405,20 @@ impl World {
             .players
             .get(&id)
             .is_some_and(|p| p.zones.is_inside(ZoneId::Siege));
-        if !crate::transform::ALLOW_MOUNTS_DURING_SIEGE && in_siege {
-            // M7: only the castle lord of the sieged castle may ride a strider there.
-            self.send_message(id, "You cannot mount during a siege.");
-            return false;
+        if !self.siege_settings().allow_mounts_during_siege && in_siege {
+            // Only allow mounting if the pet is a Strider and the player is the castle lord of
+            // the current siege castle.
+            let strider =
+                MountType::find_by_npc_id(self.summon_npc_id(pet).unwrap_or(0)) == MountType::Strider;
+            let lord = self
+                .position_of(id)
+                .and_then(|(x, y, z)| self.castle_at(x, y, z))
+                .and_then(|c| self.castle(c))
+                .is_some_and(|c| self.is_clan_leader(id) && self.clan_id_of(id) == c.owner_id);
+            if !(strider && lord) {
+                self.send_message(id, "You cannot mount during a siege.");
+                return false;
+            }
         }
 
         if !self.disarm_weapons(id) || !self.disarm_shield(id) || self.is_transformed(id) {
@@ -967,10 +976,23 @@ impl World {
         }
     }
 
-    /// Java `Player.checkLandingState()`: a wyvern cannot land here.
-    // M7: the second branch of Java (a sieged castle, unless the rider is its lord).
+    /// Java `Player.checkLandingState()`: a wyvern cannot land here, nor in a siege zone unless
+    /// the rider is the leader of the clan that owns the castle there.
     pub fn check_landing_state(&self, id: ObjectId) -> bool {
-        self.is_inside_zone(id, ZoneId::NoLanding)
+        // Check if char is in a no landing zone.
+        if self.is_inside_zone(id, ZoneId::NoLanding) {
+            return true;
+        }
+        if !self.is_inside_zone(id, ZoneId::Siege) {
+            return false;
+        }
+        // If this is a castle that is currently being sieged, and the rider is NOT a castle
+        // owner, he cannot land.
+        let Some(clan) = self.clan_of(id) else {
+            return true;
+        };
+        let here = self.position_of(id).and_then(|(x, y, z)| self.castle_at(x, y, z));
+        here != self.castle_by_owner(clan.id) || clan.leader != Some(id)
     }
 
     // ------------------------------------------------------------------ rented pets

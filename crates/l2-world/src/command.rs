@@ -219,6 +219,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// The siege window packets (M7-SIEGE-01).
+    Siege(crate::siege::SiegeInput),
     /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
     /// `RequestFortressMapInfo`), see `fort/`.
     Fort(crate::fort::FortInput),

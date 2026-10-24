@@ -1714,6 +1714,113 @@ fn parse_class_multipliers(key: &str, text: &str, table: &mut [f32]) {
     }
 }
 
+/// Name of the siege config file in the config folder (Java `SiegeManager.SIEGE_CONFIG_FILE`).
+pub const SIEGE_FILE: &str = "Siege.ini";
+
+/// Java `SiegeManager.load()` (M7-SIEGE-01): `Siege.ini` with the tower lines and mercenary limits
+/// of each castle (`castles`: id and name, in `CastleManager` order), plus the siege values of
+/// `Feature.ini` (`SiegeHourList`, `AllowRideMountsDuringSiege`), `Player.ini` (the fame of the
+/// castle zone) and `OfflineTrade.ini` (`OfflineFame`).
+pub fn siege_settings(
+    config: &GameConfig,
+    config_dir: &Path,
+    castles: &[(i32, String)],
+) -> l2_world::SiegeSettings {
+    use l2_config::IniFile;
+
+    let path = config_dir.join(SIEGE_FILE);
+    let ini = match IniFile::load(&path) {
+        Ok(ini) => ini,
+        Err(e) => {
+            warn!("Cannot read {}: {e}; using the siege defaults.", path.display());
+            IniFile::empty(SIEGE_FILE)
+        }
+    };
+    let mut s = siege_settings_from_ini(&ini, castles);
+    // `FeatureConfig.SIEGE_HOUR_LIST`: the numeric parts of `SiegeHourList` (`StringUtil.isNumeric`).
+    if let Ok(feature) = IniFile::load(config_dir.join(l2_config::game::FeatureConfig::FILE)) {
+        s.siege_hour_list = feature
+            .get_string("SiegeHourList", "")
+            .split(',')
+            .filter(|h| !h.is_empty() && h.chars().all(|c| c.is_ascii_digit()))
+            .filter_map(|h| h.parse().ok())
+            .collect();
+    }
+    s.allow_mounts_during_siege = config.feature.allow_mounts_during_siege;
+    s.fame_system_enabled = config.player.fame_system_enabled;
+    s.castle_zone_fame_task_frequency = config.player.castle_zone_fame_task_frequency;
+    s.castle_zone_fame_aquire_points = config.player.castle_zone_fame_aquire_points;
+    s.fame_for_dead_players = config.player.fame_for_dead_players;
+    s.offline_fame = config.offline_trade.offline_fame;
+    s.teleport_while_siege_in_progress = config.player.teleport_while_siege_in_progress;
+    s
+}
+
+/// The `Siege.ini` part of [`siege_settings`].
+pub fn siege_settings_from_ini(
+    ini: &l2_config::IniFile,
+    castles: &[(i32, String)],
+) -> l2_world::SiegeSettings {
+    let mut s = l2_world::SiegeSettings {
+        siege_cycle: ini.get_int("SiegeCycle", 2),
+        attacker_max_clans: ini.get_int("AttackerMaxClans", 500),
+        attacker_respawn_delay: ini.get_int("AttackerRespawn", 0),
+        defender_max_clans: ini.get_int("DefenderMaxClans", 500),
+        flag_max_count: ini.get_int("MaxFlags", 1),
+        siege_clan_min_level: ini.get_int("SiegeClanMinLevel", 5),
+        siege_length: ini.get_int("SiegeLength", 120),
+        blood_alliance_reward: ini.get_int("BloodAllianceReward", 1),
+        ..l2_world::SiegeSettings::default()
+    };
+    for (id, name) in castles {
+        // `Integer.parseInt` of each token: a token that is not a number (spaces included) skips
+        // the tower with Java's warning.
+        let tower = |key: &str, flame: bool| -> Option<Option<l2_world::TowerSpawn>> {
+            if !ini.contains_key(key) {
+                return None;
+            }
+            let value = ini.get_string(key, "");
+            let tokens: Vec<&str> = value.split(',').filter(|t| !t.is_empty()).collect();
+            // A control tower reads four tokens, a flame tower every token.
+            let wanted = if flame { tokens.len() } else { tokens.len().min(4) };
+            let numbers: Option<Vec<i32>> = tokens[..wanted].iter().map(|t| t.parse::<i32>().ok()).collect();
+            let parsed = numbers.filter(|n| n.len() >= 4).map(|n| l2_world::TowerSpawn {
+                npc_id: n[3],
+                x: n[0],
+                y: n[1],
+                z: n[2],
+                zone_list: n[4..].to_vec(),
+                upgrade_level: 0,
+            });
+            if parsed.is_none() {
+                let kind = if flame { "flame" } else { "control" };
+                warn!("SiegeManager: Error while loading {kind} tower(s) for {name} castle.");
+            }
+            Some(parsed)
+        };
+        let mut config = l2_world::CastleSiegeConfig::default();
+        for i in 1..0xFF {
+            match tower(&format!("{name}ControlTower{i}"), false) {
+                None => break,
+                Some(spawn) => config.control_towers.extend(spawn),
+            }
+        }
+        for i in 1..0xFF {
+            match tower(&format!("{name}FlameTower{i}"), true) {
+                None => break,
+                Some(spawn) => config.flame_towers.extend(spawn),
+            }
+        }
+        let default_max = usize::try_from(id - 1)
+            .ok()
+            .and_then(|i| l2_world::siege::MERCS_MAX_PER_CASTLE.get(i).copied())
+            .unwrap_or(0);
+        config.max_mercenaries = ini.get_int(&format!("{name}MaxMercenaries"), default_max);
+        s.castles.insert(*id, config);
+    }
+    s
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -2510,5 +2617,49 @@ FloodProtectorPlayerActionInterval = 1
             assert!(!s.get(kind).log_flooding, "{kind:?}");
             assert_eq!(s.get(kind).punishment_limit, 0, "{kind:?}");
         }
+    }
+}
+
+#[cfg(test)]
+mod siege_tests {
+    use super::*;
+
+    /// `SiegeManager.load()` over the lines of the shipped `Siege.ini`: the values, the towers of
+    /// a castle by its name (a flame tower with its trap zones), `MaxMercenaries`, and a broken
+    /// line skipped with Java's warning.
+    #[test]
+    fn siege_ini_reads_like_java() {
+        let text = [
+            "SiegeCycle = 2",
+            "SiegeLength = 120",
+            "MaxFlags = 1",
+            "AttackerRespawn = 0",
+            "BloodAllianceReward = 1",
+            "GludioFlameTower1=-18154,107591,-2560,13004,70017,70019",
+            "GludioControlTower1=-18325,112811,-2377,13002",
+            "GludioControlTower2=-18048,107098,-2378,13002",
+            "GludioControlTower3=-18113,x,-2343,13002",
+            "GludioControlTower5=1,2,3,13002",
+            "GludioMaxMercenaries = 120",
+        ]
+        .join("\n");
+        let ini = l2_config::IniFile::parse("Siege.ini", &text).unwrap();
+        let castles = [(1, "Gludio".to_owned()), (2, "Dion".to_owned())];
+        let s = siege_settings_from_ini(&ini, &castles);
+        assert_eq!((s.siege_cycle, s.siege_length, s.flag_max_count), (2, 120, 1));
+        assert_eq!(s.blood_alliance_reward, 1);
+        let gludio = &s.castles[&1];
+        // Tower 3 does not parse and is skipped; tower 4 is missing, so tower 5 is never read.
+        assert_eq!(gludio.control_towers.len(), 2);
+        assert_eq!(
+            (gludio.control_towers[0].x, gludio.control_towers[0].npc_id),
+            (-18325, 13002)
+        );
+        assert_eq!(gludio.flame_towers.len(), 1);
+        assert_eq!(gludio.flame_towers[0].zone_list, [70017, 70019]);
+        assert_eq!(gludio.max_mercenaries, 120);
+        // Dion has no lines: Java's table value of `MERCS_MAX_PER_CASTLE`.
+        assert!(s.castles[&2].control_towers.is_empty());
+        assert_eq!(s.castles[&2].max_mercenaries, 150);
     }
 }

@@ -142,6 +142,29 @@ impl World {
         created
     }
 
+    /// A spawn the game makes at runtime (Java `new Spawn(npcId)` with its setters, e.g. the
+    /// castle siege guards): its index in the one spawn index space. Nothing is spawned yet.
+    pub(crate) fn add_runtime_spawn(&mut self, spawn: l2_data::spawn::NpcSpawn) -> usize {
+        let index = self.static_spawn_count() + self.death.runtime_spawns.len();
+        self.death.runtime_spawns.push(spawn);
+        index
+    }
+
+    /// Java `Spawn.init()` of a runtime spawn: its `amount` NPCs (the loop stops at the first that
+    /// cannot be made). Returns the NPCs created.
+    pub(crate) fn init_runtime_spawn(&mut self, index: usize) -> Vec<ObjectId> {
+        let amount = self.spawn_def(index).map_or(0, |s| s.amount);
+        let mut created = Vec::new();
+        let mut report = crate::npc::SpawnReport::default();
+        for _ in 0..amount {
+            match self.initialize_npc(index, None, &mut report) {
+                Some(id) => created.push(id),
+                None => break,
+            }
+        }
+        created
+    }
+
     /// The runtime of spawn `index`. Java creates a `Spawn` with `_doRespawn = true` and
     /// `init()` sets it to `_respawnMinDelay > 0` once the first NPCs stand; the loader
     /// (`NpcSpawn::respawn_enabled`) already computed the value `init()` leaves.
@@ -327,6 +350,8 @@ impl World {
         // `WalkingManager.onDeath` (routes: M4-AI-01), the summoner's list (summons: M5), quest
         // timers and script value (scripts: D-05).
         self.npcs.remove(&id);
+        // The siege forgets its towers, headquarters and guards (M7-SIEGE-01).
+        self.siege_forget_npc(id);
     }
 
     // ------------------------------------------------------------------ Spawn.decreaseCount

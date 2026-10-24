@@ -131,6 +131,9 @@ pub enum TimerKind {
     Fishing(crate::fishing::FishingTimer),
     /// The fee tasks of the residence functions, see `residence/`.
     Residence(crate::residence::ResidenceTimer),
+    /// The siege schedule, the end countdown, the headquarters' warnings, the fame of the siege
+    /// zone, see `siege/`.
+    Siege(crate::siege::SiegeTimer),
     /// The mode change of the castle manor and its automatic save, see `manor/`.
     Manor(crate::manor::ManorTimer),
     /// The rent of a clan hall and the end of an auction, see `clanhall/`.

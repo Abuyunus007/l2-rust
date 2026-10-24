@@ -290,8 +290,12 @@ impl World {
         // itself takes no damage, `status.rs`).
         if self.is_invul(target) && target_kind != Some(ObjectKind::Npc) {
             self.send(id, &SystemMessage::new(SystemMessageId::TheAttackHasBeenBlocked));
-        } else if target_kind == Some(ObjectKind::Door) {
-            // (and `ControlTower`, a siege NPC: M5)
+        } else if target_kind == Some(ObjectKind::Door)
+            || self
+                .npc_template(target)
+                .is_some_and(|t| t.is_type("ControlTower"))
+        {
+            // `target.isDoor() || (target instanceof ControlTower)` (M7-SIEGE-01).
             let message = SystemMessage::new(SystemMessageId::YouHitForS1Damage)
                 .with(SystemMessageParam::IntNumber(damage));
             self.send(id, &message);
@@ -338,6 +342,14 @@ impl World {
             return;
         }
         if !self.is_npc(target) {
+            return;
+        }
+        // `Artefact.reduceCurrentHp` does nothing; `SiegeFlag` takes its damage through
+        // `SiegeFlagStatus` and warns its clan (M7-SIEGE-01).
+        if self.npc_template(target).is_some_and(|t| t.is_type("Artefact")) {
+            return;
+        }
+        if self.siege_flag_reduce_hp(target, amount, attacker) {
             return;
         }
         if self.is_attackable_npc(target) {
@@ -387,7 +399,7 @@ impl World {
             return;
         }
         // The overrides of `Defender`, `FortCommander` and `QuestGuard` (`ai/guards.rs`).
-        if self.npc_refuses_hate(npc, attacker) {
+        if self.npc_refuses_hate(npc, attacker, damage, aggro_value) {
             return;
         }
         // `attacker.asPlayer() != null`: a player or a summon.

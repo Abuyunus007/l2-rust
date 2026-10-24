@@ -82,12 +82,6 @@ impl World {
         }
     }
 
-    /// Java `Player.isRegisteredOnThisSiegeField(value)`.
-    pub fn is_registered_on_this_siege_field(&self, player: ObjectId, value: i32) -> bool {
-        let side = self.fort.players.get(&player).map_or(0, |p| p.side);
-        side == value || (81..=89).contains(&side)
-    }
-
     // ------------------------------------------------------------------ onEnter / onExit
 
     /// The hook of `zones.rs`: a player entered a `SiegeZone`. `None` for a zone that is not a
@@ -122,9 +116,7 @@ impl World {
             }
         }
         self.fort_stop_fame_task(player);
-        if let Some(info) = self.fort.players.get_mut(&player) {
-            info.in_siege = false;
-        }
+        self.set_in_siege(player, false);
         // "Drop combat flag." and the summon goes away.
         if self
             .inventory_item_by_item_id(player, COMBAT_FLAG_ITEM_ID)
@@ -158,9 +150,8 @@ impl World {
                 } else {
                     continue;
                 };
-                let info = self.fort.players.entry(player).or_default();
-                info.state = state;
-                info.side = fort.0;
+                self.set_siege_state(player, state);
+                self.set_siege_side(player, fort.0);
             }
         }
         // Remove combat flag before teleporting.
@@ -203,17 +194,7 @@ impl World {
         // FIXME in Java: custom?
         self.set_inside(player, ZoneId::NoSummonFriend, true);
         if self.is_registered_on_this_siege_field(player, fort.0) {
-            if let Some(info) = self.fort.players.get_mut(&player) {
-                info.in_siege = true;
-            } else {
-                self.fort.players.insert(
-                    player,
-                    super::PlayerFortSiege {
-                        in_siege: true,
-                        ..Default::default()
-                    },
-                );
-            }
+            self.set_in_siege(player, true);
             // `giveFame()` is true for a fortress.
             let frequency = self.fort.settings.fortress_zone_fame_task_frequency;
             if frequency > 0 {
@@ -225,7 +206,7 @@ impl World {
             player,
             &SystemMessage::new(SystemMessageId::YouHaveEnteredACombatZone),
         );
-        if crate::transform::ALLOW_MOUNTS_DURING_SIEGE {
+        if self.siege_settings().allow_mounts_during_siege {
             return;
         }
         if self.is_gm(player) {

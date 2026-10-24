@@ -217,15 +217,19 @@ impl World {
         let leader = self.clan(clan_id).and_then(|c| c.leader_member().cloned());
         if let Some(leader) = leader
             && self.member_info(&leader).online
-            && level > 4
         {
-            // M7: `SiegeManager.addSiegeSkills(leader)` (below 5: `removeSiegeSkills`).
-            self.send(
-                leader.object_id,
-                &SystemMessage::new(
-                    SystemMessageId::NowThatYourClanLevelIsAboveLevel5ItCanAccumulateClanReputationPoints,
-                ),
-            );
+            if level > 4 {
+                // The siege skills (M7-SIEGE-01).
+                self.add_siege_skills(leader.object_id);
+                self.send(
+                    leader.object_id,
+                    &SystemMessage::new(
+                        SystemMessageId::NowThatYourClanLevelIsAboveLevel5ItCanAccumulateClanReputationPoints,
+                    ),
+                );
+            } else {
+                self.remove_siege_skills(leader.object_id);
+            }
         }
         // Notify all the members about it.
         self.broadcast_to_clan(

@@ -137,6 +137,7 @@ impl Default for AdminWorld {
         party::register(&mut handlers);
         summon::register(&mut handlers);
         transform::register(&mut handlers);
+        crate::siege::register_admin(&mut handlers);
         crate::fort::register_admin(&mut handlers);
         Self {
             handlers,

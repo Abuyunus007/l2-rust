@@ -504,12 +504,17 @@ impl World {
         self.broadcast_to_clan(clan_id, &SystemMessage::new(SystemMessageId::ClanHasDispersed));
         let castle_id = clan.castle_id;
         let (fort_id, hall_id) = (clan.fort_id, clan.hideout_id);
-        // The siege registrations (M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01).
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
         let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
+        // The castle siege registrations (M7-SIEGE-01) of a clan without a castle.
+        if castle_id == 0 {
+            let castles: Vec<crate::residence::CastleId> = self.castles().iter().map(|c| c.id).collect();
+            for castle in castles {
+                self.siege_remove_siege_clan_of(castle, Some(clan_id));
+            }
+        }
         // `for (FortSiege siege : getSieges()) siege.removeAttacker(clan)` of a clan without a
-        // fortress (M7-FORT-01; the registrations of the castle and hall sieges: SIEGE-01,
-        // CHSIEGE-01).
+        // fortress (M7-FORT-01; the registrations of the hall sieges: CHSIEGE-01).
         if fort_id == 0 {
             let writes = if write_db {
                 crate::residence::Writes::Player

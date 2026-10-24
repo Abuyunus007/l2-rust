@@ -13,7 +13,6 @@
 // which does the checks of the pickup and moves the item into the inventory.
 //
 // # Left out
-// - Merc tickets (`MercTicketManager`): the castle lord rule of `ItemClick`.
 // - Fake death, combat flags, cursed weapons.
 // - The auto equip of bolts for a crossbow: `World::check_and_equip_arrows` is the shared (and
 //   arrow-only) helper of the attack code.
@@ -39,8 +38,14 @@ const PICK_UP_THINK_OFFSET: i32 = 36;
 impl World {
     /// `ItemClick.onAction`: the player walks to the item and picks it up.
     pub(crate) fn item_click(&mut self, player: ObjectId, item: ObjectId) {
-        // Merc tickets can only be picked up by the castle lord (`MercTicketManager`): sieges are
-        // M5. `!player.isFlying()`: nobody flies.
+        // Mercenary tickets can only be picked up by the castle owner (M7-SIEGE-01).
+        if !self.merc_ticket_click_allowed(player, item) {
+            return;
+        }
+        // `!player.isFlying()`: a flyer does not pick up.
+        if self.is_flying(player) {
+            return;
+        }
         // This causes the validate position handler to do the pickup if the location is reached.
         self.set_intention_pick_up(player, item);
     }
@@ -230,6 +235,8 @@ impl World {
         let Some(taken) = self.take_ground_item(object) else {
             return;
         };
+        // `Item.pickupMe`: a mercenary ticket takes its hire with it (M7-SIEGE-01).
+        self.merc_on_pickup(&taken);
 
         let Some(template) = template else {
             // Unknown item: it cannot be told what it is, so it just joins the inventory.

@@ -132,6 +132,8 @@ pub struct World {
     pub(crate) fishing: crate::fishing::FishingWorld,
     /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
     pub(crate) residences: crate::residence::ResidenceWorld,
+    /// The castle sieges, the siege state of players and the siege zones (M7-SIEGE-01, `siege/`).
+    pub(crate) sieges: crate::siege::SiegeWorld,
     /// The castle manor: seeds, the periods, the seeded monsters (M7-MANOR-01, `manor/`).
     pub(crate) manor: crate::manor::ManorWorld,
     /// The clan hall rent, auctions and hall NPCs (M7-CH-01, `clanhall/`).
@@ -205,6 +207,7 @@ impl World {
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
             residences: crate::residence::ResidenceWorld::default(),
+            sieges: crate::siege::SiegeWorld::default(),
             manor: crate::manor::ManorWorld::default(),
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
@@ -689,6 +692,9 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
+            // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
+            ClientInput::Siege(input) => self.on_siege_input(id, input),
             // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -785,6 +791,8 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
+            // Java: Siege.ScheduleStartSiegeTask, ScheduleEndSiegeTask, FameTask, ...
+            TimerKind::Siege(timer) => self.on_siege_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),

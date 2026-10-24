@@ -12,6 +12,13 @@ client_unit_packet!(
     plain RequestSiegeInfo
 );
 
+// Java: gameserver/network/clientpackets/RequestAllCastleInfo.java
+client_unit_packet!(
+    /// Asks for the castle list of the map window (`0xD0` 0x003C, `REQUEST_ALL_CASTLE_INFO`).
+    RequestAllCastleInfo,
+    ex RequestAllCastleInfo
+);
+
 // Java: gameserver/network/clientpackets/RequestSiegeAttackerList.java
 client_packet!(
     /// Asks for the attacker list of a castle or clan hall (`REQUEST_SIEGE_ATTACKER_LIST`).
@@ -60,5 +67,17 @@ client_packet!(
         clan_id: i32,
         /// `1` approve, anything else refuse (Java compares with 1).
         approved: i32,
+    }
+);
+
+// Java: gameserver/network/clientpackets/RequestSetCastleSiegeTime.java
+client_packet!(
+    /// The castle lord picks the hour of the next siege (`REQUEST_SET_CASTLE_SIEGE_TIME`).
+    RequestSetCastleSiegeTime,
+    plain RequestSetCastleSiegeTime {
+        /// The castle id.
+        castle_id: i32,
+        /// The chosen time in unix seconds (Java multiplies it by 1000).
+        time: i32,
     }
 );
