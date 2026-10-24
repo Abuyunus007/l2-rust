@@ -67,6 +67,7 @@ use l2_db::{
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{FunctionTable, ResidenceRepository};
+use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -76,10 +77,10 @@ use l2_world::residence::{
 };
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
-    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId,
-    OfflinePetRows, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord,
-    PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
-    SkillData, StoredPunishment, SummonWrite,
+    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ManorLoad,
+    ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand, PetRowData,
+    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
+    SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -271,6 +272,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_residence_write(
         &mut self,
         _write: &ResidenceWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`,
+    /// M7-MANOR-01).
+    fn store_manor_write(
+        &mut self,
+        _write: &ManorWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -839,6 +849,12 @@ async fn run<S: PlayerStore>(
                     error!("Residence data could NOT be stored ({write:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Manor(write)) => {
+                // Java logs a failed statement and goes on ("Unable to store manor data!").
+                if let Err(e) = store.store_manor_write(&write).await {
+                    error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
                 residence_id,
                 kind,
@@ -1259,6 +1275,71 @@ pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
         Err(e) => warn!("Exception: loadFortData(): {e}"),
     }
     load
+}
+
+/// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
+/// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
+/// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
+/// with empty lists.
+pub async fn load_manor(pool: &Pool) -> ManorLoad {
+    let residences = ResidenceRepository::new(pool.clone());
+    let repo = ManorRepository::new(pool.clone());
+    let mut load = ManorLoad::default();
+    let result: Result<(), l2_db::DbError> = async {
+        for castle_id in residences.castle_ids().await? {
+            for row in repo.production(castle_id).await? {
+                load.production.push(ManorProductionRow {
+                    castle_id: row.castle_id,
+                    seed_id: row.seed_id,
+                    amount: row.amount,
+                    start_amount: row.start_amount,
+                    price: row.price,
+                    next_period: row.next_period,
+                });
+            }
+            for row in repo.procure(castle_id).await? {
+                load.procure.push(ManorProcureRow {
+                    castle_id: row.castle_id,
+                    crop_id: row.crop_id,
+                    amount: row.amount,
+                    start_amount: row.start_amount,
+                    price: row.price,
+                    reward_type: row.reward_type,
+                    next_period: row.next_period,
+                });
+            }
+        }
+        Ok(())
+    }
+    .await;
+    if let Err(e) = result {
+        warn!("CastleManorManager: Unable to load manor data!: {e}");
+        return ManorLoad::default();
+    }
+    load
+}
+
+fn production_row(row: &ManorProductionRow) -> ProductionRow {
+    ProductionRow {
+        castle_id: row.castle_id,
+        seed_id: row.seed_id,
+        amount: row.amount,
+        start_amount: row.start_amount,
+        price: row.price,
+        next_period: row.next_period,
+    }
+}
+
+fn procure_row(row: &ManorProcureRow) -> ProcureRow {
+    ProcureRow {
+        castle_id: row.castle_id,
+        crop_id: row.crop_id,
+        amount: row.amount,
+        start_amount: row.start_amount,
+        price: row.price,
+        reward_type: row.reward_type,
+        next_period: row.next_period,
+    }
 }
 
 /// The residences of one clan as the database has them now (D-50, D-51): the castle its
@@ -1821,6 +1902,7 @@ pub struct DbStore {
     friends: FriendRepository,
     championship: FishingChampionshipRepository,
     residences: ResidenceRepository,
+    manor: ManorRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1850,6 +1932,7 @@ impl DbStore {
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             residences: ResidenceRepository::new(pool.clone()),
+            manor: ManorRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
@@ -2917,6 +3000,33 @@ impl PlayerStore for DbStore {
             FriendWrite::RemoveFriends { first, second } => friends.remove_friends(first.0, second.0).await?,
             FriendWrite::AddBlock { owner, target } => friends.add_block(owner.0, target.0).await?,
             FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
+        }
+        Ok(())
+    }
+
+    async fn store_manor_write(&mut self, write: &ManorWrite) -> Result<(), PersistError> {
+        let repo = &self.manor;
+        match write {
+            ManorWrite::StoreAll { production, procure } => {
+                let production: Vec<ProductionRow> = production.iter().map(production_row).collect();
+                let procure: Vec<ProcureRow> = procure.iter().map(procure_row).collect();
+                repo.store_all(&production, &procure).await?
+            }
+            ManorWrite::ReplaceNextProduction { castle_id, rows } => {
+                let rows: Vec<ProductionRow> = rows.iter().map(production_row).collect();
+                repo.replace_next_production(*castle_id, &rows).await?
+            }
+            ManorWrite::ReplaceNextProcure { castle_id, rows } => {
+                let rows: Vec<ProcureRow> = rows.iter().map(procure_row).collect();
+                repo.replace_next_procure(*castle_id, &rows).await?
+            }
+            ManorWrite::UpdateCurrentProduction { castle_id, amounts } => {
+                repo.update_current_production(*castle_id, amounts).await?
+            }
+            ManorWrite::UpdateCurrentProcure { castle_id, amounts } => {
+                repo.update_current_procure(*castle_id, amounts).await?
+            }
+            ManorWrite::DeleteCastle { castle_id } => repo.delete_castle(*castle_id).await?,
         }
         Ok(())
     }
