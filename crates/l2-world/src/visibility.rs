@@ -134,6 +134,8 @@ impl World {
         self.on_spawn(id);
         // Java `Attackable.onSpawn()`.
         self.npc_on_spawn(id);
+        // The `onSpawn` listeners of the castle scripts (M7-NPC-01).
+        self.residence_npc_on_spawn(id);
         // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.
         self.summon_on_spawn(id);
     }

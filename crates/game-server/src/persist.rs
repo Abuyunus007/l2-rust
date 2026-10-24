@@ -1616,6 +1616,8 @@ async fn read_castle_record(repo: &ResidenceRepository, id: i32) -> Result<Castl
     record.owner_id = repo.castle_owner_ids(id).await?.last().copied().unwrap_or(0);
     if record.owner_id != 0 {
         record.functions = function_records(repo.functions(FunctionTable::Castle, id).await?);
+        // D-50: the owner's proofs of alliance, which the vault keeper hands out.
+        record.owner_blood_alliance_count = repo.blood_alliance_count(record.owner_id).await?;
     }
     Ok(record)
 }

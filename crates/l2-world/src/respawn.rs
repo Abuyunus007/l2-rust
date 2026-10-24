@@ -352,6 +352,8 @@ impl World {
         self.npcs.remove(&id);
         // The siege forgets its towers, headquarters and guards (M7-SIEGE-01).
         self.siege_forget_npc(id);
+        // The quest timers and the script value of the castle NPCs go (M7-NPC-01).
+        self.residence_npc_forget(id);
     }
 
     // ------------------------------------------------------------------ Spawn.decreaseCount

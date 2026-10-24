@@ -112,6 +112,8 @@ pub enum ResidenceReadThen {
     AuctionCancelBid { player: ObjectId, auction_id: i32 },
     /// The owner of the hall cancels its auction (M7-CH-01).
     AuctionCancel { player: ObjectId, auction_id: i32 },
+    /// A castle NPC acts on the rows (M7-NPC-01, `residence/npc/`).
+    Npc(super::npc::NpcThen),
 }
 
 impl World {
@@ -262,6 +264,7 @@ impl World {
                 self.siege_restart_schedule(CastleId(castle_id));
             }
             ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
+            ResidenceReadThen::Npc(then) => self.residence_npc_after_reread(then),
             then => self.auction_read_then(then),
         }
     }
@@ -295,6 +298,12 @@ impl World {
         self.clear_residence_functions(ResidenceRef::Castle(id));
         if owner != 0 {
             self.load_residence_functions(ResidenceRef::Castle(id), &record.functions);
+            // M7-NPC-01 (D-50): the proofs of alliance the vault keeper hands out.
+            if let Some(count) = record.owner_blood_alliance_count
+                && let Some(clan) = self.clan_mut(owner)
+            {
+                clan.blood_alliance_count = count;
+            }
         }
     }
 

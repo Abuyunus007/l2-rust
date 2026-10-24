@@ -354,6 +354,8 @@ impl World {
         } else if is_hall_doorman {
             // Java: ClanHallDoorman.onBypassFeedback (`clanhall/doorman.rs`).
             self.clan_hall_doorman_bypass_feedback(npc, player, command);
+        } else if self.castle_doorman_bypass_feedback(npc, player, command) {
+            // Java: CastleDoorman.onBypassFeedback (`residence/npc/doorman.rs`).
         } else if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
         } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
