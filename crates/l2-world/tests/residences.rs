@@ -574,14 +574,32 @@ fn loading_installs_owners_zones_and_flag_poles_like_java() {
     assert_eq!(h37.owner_id, 0);
     assert!(h37.is_free && h37.paid());
     assert!(s.world.clan_hall_is_free(ClanHallId(37)));
+    let writes = residence_writes(&out);
     assert_eq!(
-        residence_writes(&out),
+        writes
+            .iter()
+            .filter(|w| !matches!(w, ResidenceWrite::SiegableHall { .. }))
+            .cloned()
+            .collect::<Vec<_>>(),
         [ResidenceWrite::ClanHall {
             hall_id: 37,
             owner_id: 0,
             paid_until: 0,
             paid: false
         }]
+    );
+    // The conquerable hall's siege was due within the hour: `updateNextSiege()` moved it and wrote
+    // it (M7-CHSIEGE-01).
+    assert!(
+        writes.iter().any(|w| matches!(
+            w,
+            ResidenceWrite::SiegableHall {
+                hall_id: 21,
+                owner_id: 0,
+                ..
+            }
+        )),
+        "{writes:?}"
     );
     // The conquerable hall is a hall too.
     let h21 = s.world.clan_hall(ClanHallId(21)).unwrap();

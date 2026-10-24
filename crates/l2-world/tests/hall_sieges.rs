@@ -974,17 +974,14 @@ fn no_quests_means_no_sieges() {
 #[test]
 fn a_siege_due_within_an_hour_is_moved_and_written_only_with_the_switch() {
     for switch in [false, true] {
-        let log_scene = Scene::new(switch, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
-        let next = log_scene.world.hall_next_siege_time(H21);
+        let scene = Scene::new(switch, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
+        let next = scene.world.hall_next_siege_time(H21);
         // 2026-11-07T18:30:00.321Z.
         assert_eq!(next, 1_794_076_200_321, "{next}");
     }
     // The write: the scene's load output is not kept, so load again and look at the log.
-    let root_log = {
-        let scene = Scene::new(true, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
-        scene
-    };
-    let out = root_log.log.take();
+    let written = Scene::new(true, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
+    let out = written.log.take();
     assert_eq!(siegable_writes(&out), [(21, 0, 1_794_076_200_321)]);
     let quiet = Scene::new(false, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
     assert!(siegable_writes(&quiet.log.take()).is_empty());

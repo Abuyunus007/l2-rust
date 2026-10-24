@@ -202,7 +202,7 @@ fn set_siege_date(world: &mut World, gm: ObjectId, hall: ClanHallId, parts: &[&s
         || i64::from(year) < year_of(now, offset)
     {
         world.send_sys_message(gm, "Wrong day/month/year gave!");
-    } else if h <= 0 || h > 24 || min < 0 || min >= 60 {
+    } else if h <= 0 || h > 24 || !(0..60).contains(&min) {
         world.send_sys_message(gm, "Wrong hour/minutes gave!");
     } else {
         let when = date_at(

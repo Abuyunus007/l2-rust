@@ -702,7 +702,7 @@ impl World {
                 siege.mission_accomplished = true;
             }
             if let Some(state) = self.flag_war_mut(hall) {
-                state.winner = Some(first).filter(|_| true);
+                state.winner = Some(first);
             }
             self.flag_war_remove_participant(hall, first, false);
             self.hall_end_siege(hall);

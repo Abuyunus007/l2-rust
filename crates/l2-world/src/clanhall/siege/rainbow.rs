@@ -1011,10 +1011,9 @@ impl World {
             }
         }
         let size = self.rainbow().map_or(0, |s| s.accepted.len());
-        for i in 0..size.min(4) {
+        for (i, &(cx, cy, cz)) in CHESTS_SPAWN.iter().enumerate().take(size) {
             for _ in 0..4 {
                 if self.rainbow().is_some_and(|s| s.arena_chests[i] < 4) {
-                    let (cx, cy, cz) = CHESTS_SPAWN[i];
                     let x = cx + self.rng().get(-400, 400);
                     let y = cy + self.rng().get(-400, 400);
                     let chest = self.rainbow_add_spawn(CHEST, (x, y, cz), 0);
