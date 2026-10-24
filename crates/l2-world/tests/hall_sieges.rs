@@ -2257,3 +2257,22 @@ fn a_flag_war_that_cancels_for_lack_of_interest_clears_its_tables() {
     assert!(s.world.hall_siege_attacker_clans(H35).is_empty());
     assert_eq!(s.world.hall_siege_status(H35), Some(SiegeStatus::Registering));
 }
+
+/// A destroyed door of a hall in siege tells everybody around ("The castle gate has been
+/// destroyed.") and comes back with all its HP at the start of the next siege.
+#[test]
+fn the_gates_of_a_hall_fall_and_come_back() {
+    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    s.enter(P3, WOLVES, 21);
+    let door = s.world.residence_doors(ResidenceRef::ClanHall(H21))[0];
+    s.world.hall_add_attacker(H21, WOLVES);
+    s.world.hall_start_siege(H21);
+    s.take();
+    s.world.do_die(door, Some(ObjectId(P3)));
+    let out = s.take();
+    assert!(message_ids(&out, P3).contains(&SystemMessageId::TheCastleGateHasBeenDestroyed));
+    assert!(s.world.is_dead(door));
+    s.world.hall_end_siege(H21);
+    // The end repairs the gates too (`spawnDoor(false)`).
+    assert!(!s.world.is_dead(door));
+}

@@ -300,15 +300,13 @@ impl World {
     /// (half when weak), an open one closes.
     pub(crate) fn hall_spawn_door(&mut self, id: ClanHallId, weak: bool) {
         for door in self.residence_doors(ResidenceRef::ClanHall(id)) {
-            let Some((dead, open, max)) = self.door(door).map(|d| (d.dead, d.open, d.max_hp)) else {
-                continue;
-            };
-            if dead {
-                self.revive_door(door);
+            if self.is_dead(door) {
+                self.do_revive(door);
+                let max = self.stats(door).map_or(0, |v| v.max_hp());
                 let hp = if weak { max / 2 } else { max };
                 self.set_door_current_hp(door, f64::from(hp));
             }
-            if open {
+            if self.door(door).is_some_and(|d| d.open) {
                 self.close_door(door);
             }
         }
