@@ -42,6 +42,7 @@ mod focus;
 mod get_agro;
 mod give_sp;
 mod grow;
+mod harvesting;
 mod hate;
 mod hate_chance;
 mod heal;
@@ -74,6 +75,7 @@ mod servitor_share;
 mod set_skill;
 mod silent_move;
 mod skill_calc;
+mod sow;
 mod spoil;
 mod statset;
 mod status_params;
@@ -224,6 +226,8 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     );
     registry.register("TriggerSkillBySkill", trigger_skill::BySkill::create);
     // M5-SPOIL-01.
+    registry.register("Harvesting", harvesting::Harvesting::create);
+    registry.register("Sow", sow::Sow::create);
     registry.register("Spoil", spoil::Spoil::create);
     registry.register("Sweeper", sweeper::Sweeper::create);
     // M5-EFX-04: damage, Heal, the hate chances.

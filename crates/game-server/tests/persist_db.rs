@@ -1556,3 +1556,102 @@ async fn residences_are_read_written_and_read_again_like_java() {
 
     db.drop_db().await;
 }
+
+/// M7-MANOR-01: the start-up read of the manor tables for every castle, and Java's manor
+/// statements through the store (`storeMe`, the lord's next period, the amounts, the reset).
+#[tokio::test]
+async fn the_manor_is_read_and_written_like_java() {
+    use l2_world::{ManorProcureRow, ManorProductionRow, ManorWrite};
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    db.exec("INSERT INTO castle VALUES (1,'Gludio',10,500,0,'true',0,'false',0),(2,'Dion',0,0,0,'true',0,'false',0)")
+        .await;
+    db.exec("INSERT INTO castle_manor_production VALUES (1, 5016, 40, 100, 7, 0), (1, 5016, 60, 60, 8, 1), (2, 5017, 5, 5, 9, 1)")
+        .await;
+    db.exec("INSERT INTO castle_manor_procure VALUES (1, 5073, 30, 50, 20, 1, 0)")
+        .await;
+
+    let load = game_server::persist::load_manor(&pool).await;
+    assert_eq!(load.production.len(), 3);
+    let current = load
+        .production
+        .iter()
+        .find(|r| r.castle_id == 1 && !r.next_period)
+        .unwrap();
+    assert_eq!(
+        (
+            current.seed_id,
+            current.amount,
+            current.start_amount,
+            current.price
+        ),
+        (5016, 40, 100, 7)
+    );
+    assert!(load.production.iter().any(|r| r.castle_id == 2 && r.next_period));
+    assert_eq!(load.procure.len(), 1);
+    assert_eq!(
+        (
+            load.procure[0].crop_id,
+            load.procure[0].reward_type,
+            load.procure[0].price
+        ),
+        (5073, 1, 20)
+    );
+
+    let production = |castle_id, seed_id, amount, next_period| ManorProductionRow {
+        castle_id,
+        seed_id,
+        amount,
+        start_amount: 100,
+        price: 7,
+        next_period,
+    };
+    let mut store = DbStore::new(pool.clone());
+    // storeMe: both tables are written whole.
+    store
+        .store_manor_write(&ManorWrite::StoreAll {
+            production: vec![production(1, 5016, 10, false), production(1, 5016, 100, true)],
+            procure: vec![ManorProcureRow {
+                castle_id: 1,
+                crop_id: 5073,
+                amount: 1,
+                start_amount: 2,
+                price: 3,
+                reward_type: 2,
+                next_period: false,
+            }],
+        })
+        .await
+        .unwrap();
+    let repo = l2_db::ManorRepository::new(pool.clone());
+    assert_eq!(repo.production(1).await.unwrap().len(), 2);
+    assert!(repo.production(2).await.unwrap().is_empty());
+    // The lord's next period (AltManorSaveAllActions), the amount of a sale, the reset.
+    store
+        .store_manor_write(&ManorWrite::ReplaceNextProduction {
+            castle_id: 1,
+            rows: vec![production(1, 5016, 50, true)],
+        })
+        .await
+        .unwrap();
+    store
+        .store_manor_write(&ManorWrite::UpdateCurrentProduction {
+            castle_id: 1,
+            amounts: vec![(5016, 4)],
+        })
+        .await
+        .unwrap();
+    let rows = repo.production(1).await.unwrap();
+    assert_eq!(rows.iter().find(|r| !r.next_period).map(|r| r.amount), Some(4));
+    assert_eq!(rows.iter().find(|r| r.next_period).map(|r| r.amount), Some(50));
+    store
+        .store_manor_write(&ManorWrite::DeleteCastle { castle_id: 1 })
+        .await
+        .unwrap();
+    assert!(repo.production(1).await.unwrap().is_empty());
+    assert!(repo.procure(1).await.unwrap().is_empty());
+
+    db.drop_db().await;
+}

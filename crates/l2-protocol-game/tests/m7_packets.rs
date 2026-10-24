@@ -626,6 +626,80 @@ mod manor_server {
     };
 
     #[test]
+    fn manor_list_layout() {
+        use l2_protocol_game::server::manor::ExSendManorList;
+        // Java: ExSendManorList.writeImpl: the count, then the id and the lower case name.
+        let packet = ExSendManorList {
+            castles: vec![(1, "gludio".to_owned()), (2, "dion".to_owned())],
+        };
+        let expected = Bytes::default()
+            .byte(0xFE)
+            .short(0x22)
+            .int(2)
+            .int(1)
+            .string("gludio")
+            .int(2)
+            .string("dion")
+            .done();
+        check_round_trip(&packet, &expected, 3);
+    }
+
+    #[test]
+    fn buy_list_seed_layout() {
+        use l2_protocol_game::server::manor::{BuyListSeed, SeedForSale};
+        // Java: BuyListSeed.writeImpl: money, manor id, a short count, then one item row per seed.
+        let packet = BuyListSeed {
+            money: 5000,
+            manor_id: 3,
+            seeds: vec![SeedForSale {
+                seed_id: 5016,
+                amount: 40,
+                price: 12,
+            }],
+        };
+        let expected = Bytes::default()
+            .byte(0xE9)
+            .long(5000)
+            .int(3)
+            .short(1)
+            .int(5016)
+            .int(5016)
+            .int(0)
+            .long(40)
+            .short(5)
+            .short(0)
+            .short(0)
+            .int(0)
+            .short(0)
+            .short(0)
+            .int(0)
+            .int(-1)
+            .int(-9999)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .long(12)
+            .done();
+        check_round_trip(&packet, &expected, 1);
+        // An empty window is the money, the manor and a short 0.
+        let empty = BuyListSeed {
+            money: 1,
+            manor_id: 2,
+            seeds: Vec::new(),
+        };
+        let expected = Bytes::default().byte(0xE9).long(1).int(2).short(0).done();
+        check_round_trip(&empty, &expected, 1);
+    }
+
+    #[test]
     fn default_crop_table_layout() {
         let packet = ExShowManorDefaultInfo {
             hide_buttons: true,

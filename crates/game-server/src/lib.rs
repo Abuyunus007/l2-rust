@@ -193,6 +193,24 @@ pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::R
     }
 }
 
+/// The manor values of `General.ini` (`AllowManor`, `AltManor*`) and `Rates.ini`
+/// (`RateDropManor`). The rows the manor writes on its own follow `SiegeDatabaseWrites`
+/// ([`siege_database_writes`], D-51).
+pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
+    let (general, rates) = (&config.general, &config.rates);
+    l2_world::ManorSettings {
+        allow_manor: general.allow_manor,
+        refresh_time: general.alt_manor_refresh_time,
+        refresh_min: general.alt_manor_refresh_min,
+        approve_time: general.alt_manor_approve_time,
+        approve_min: general.alt_manor_approve_min,
+        maintenance_min: general.alt_manor_maintenance_min,
+        save_all_actions: general.alt_manor_save_all_actions,
+        save_period_rate: general.alt_manor_save_period_rate,
+        rate_drop_manor: rates.rate_drop_manor,
+    }
+}
+
 /// `SiegeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the sieges, the residence owner changes, the castle tax income and the fees the
 /// clan warehouses pay change this world only and leave their rows to the Java game server that
@@ -403,6 +421,13 @@ impl Server {
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
         let residence_settings = residence_settings(&config, &paths.config_dir);
+        // Java: CastleManorManager (after CastleManager): the manor rows, only with `AllowManor`.
+        let manor_settings = manor_settings(&config);
+        let manor_load = if manor_settings.allow_manor {
+            persist::load_manor(&pool).await
+        } else {
+            l2_world::ManorLoad::default()
+        };
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -549,6 +574,11 @@ impl Server {
                     world.set_residence_settings(residence_settings);
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
+                    // Java: CastleManorManager (Seeds.xml, the rows, the mode of the hour; after the
+                    // castles; M7-MANOR-01).
+                    world.set_manor_settings(manor_settings);
+                    world.set_manor_seeds(Arc::clone(&datapack.seeds));
+                    world.load_manor(manor_load);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

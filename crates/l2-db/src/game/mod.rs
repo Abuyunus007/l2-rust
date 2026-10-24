@@ -17,6 +17,7 @@ mod ids;
 mod item_reuse;
 mod items;
 mod macros;
+mod manor;
 mod messages;
 mod pets;
 mod punishments;
@@ -52,6 +53,7 @@ pub use items::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use macros::{MacroRepository, MacroRow, NewMacro};
+pub use manor::{ManorRepository, ProcureRow, ProductionRow};
 pub use messages::{MessageRepository, MessageRow};
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};

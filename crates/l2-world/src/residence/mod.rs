@@ -48,8 +48,9 @@
 // - `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts: M7-FORT-01.
 // - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01.
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
-// - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`):
-//   M7-MANOR-01. The territory ward skills of a castle (`TerritoryWarManager`): M7-TW-01.
+// - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
+//   `manor/lists.rs` (M7-MANOR-01). The territory ward skills of a castle
+//   (`TerritoryWarManager`): M7-TW-01.
 // - The restart points of the residences (`MapRegionData.getTeleToLocation` with a castle, fort
 //   or clan hall): the death and respawn wire-ins of M7-SIEGE-01.
 // - Seven Signs' `CastleManager.validateTaxes` (M8).

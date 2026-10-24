@@ -63,8 +63,8 @@ use l2_protocol_game::server::mail::{
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,
 };
 use l2_protocol_game::server::manor::{
-    ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo,
-    ExShowSeedSetting, ExShowSellCropList,
+    BuyListSeed, ExSendManorList, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
+    ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
 };
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
@@ -883,6 +883,20 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             })
         }),
         ServerOpcode::ExShowSellCropList => decoded::<ExShowSellCropList>(&mut r, sell_crop_list_fields),
+        ServerOpcode::ExSendManorList => decoded::<ExSendManorList>(&mut r, |p| {
+            json!({
+                "castles": p.castles.iter().map(|(id, name)| json!({ "id": id, "name": name })).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::BuyListSeed => decoded::<BuyListSeed>(&mut r, |p| {
+            json!({
+                "money": p.money,
+                "manor_id": p.manor_id,
+                "seeds": p.seeds.iter().map(|s| {
+                    object!(s => seed_id, amount, price)
+                }).collect::<Vec<_>>(),
+            })
+        }),
         ServerOpcode::ExDominionWarStart => {
             decoded::<ExDominionWarStart>(&mut r, |p| object!(p => object_id, territory_id, is_disguised))
         }
@@ -2498,6 +2512,8 @@ mod tests {
         ServerOpcode::ExShowCropSetting,
         ServerOpcode::ExShowProcureCropDetail,
         ServerOpcode::ExShowSellCropList,
+        ServerOpcode::BuyListSeed,
+        ServerOpcode::ExSendManorList,
         ServerOpcode::ExDominionWarStart,
         ServerOpcode::ExDominionWarEnd,
         ServerOpcode::ExShowDominionRegistry,

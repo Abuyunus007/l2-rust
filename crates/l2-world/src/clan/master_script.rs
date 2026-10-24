@@ -153,6 +153,11 @@ impl World {
 
     /// Java `Player.processScriptEvent(scriptName, event)`.
     fn process_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) {
+        // The `ManorManager` script is built in by the manor (`manor/npc.rs`, M7-MANOR-01).
+        if script_name == "ManorManager" {
+            self.manor_process_script_event(player, event);
+            return;
+        }
         let Some(script) = MasterScript::by_name(script_name) else {
             return;
         };
