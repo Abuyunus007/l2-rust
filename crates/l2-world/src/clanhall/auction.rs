@@ -648,6 +648,22 @@ impl World {
         self.auction_write(writes, AuctionWrite::AuctionDelete { item_id });
     }
 
+    /// Java `ClanHallAuctionManager.getAuction(auctionId).deleteAuctionFromDB()` (the `//clanhallset`
+    /// word of AdminSiege): the auction with this id leaves the list and its row is deleted (D-51:
+    /// the row only with `SiegeDatabaseWrites`). Nothing happens without such an auction.
+    pub(crate) fn clan_hall_delete_auction(&mut self, auction_id: i32) {
+        let Some((key, item_id)) = self
+            .clanhall
+            .auctions
+            .iter()
+            .find(|a| a.id == auction_id)
+            .map(|a| (a.key, a.item_id))
+        else {
+            return;
+        };
+        self.delete_auction_from_db(key, item_id, Writes::Job);
+    }
+
     /// Java `removeBids()`: the bids are deleted; a clan without a hall gets 90% back, a clan that
     /// owns one hears that it won.
     fn remove_bids(&mut self, auction: &mut ClanHallAuction, writes: Writes) {
