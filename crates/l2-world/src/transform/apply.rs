@@ -23,7 +23,7 @@ pub const GRACIA_MAX_X: i32 = -166_168;
 
 /// `FeatureConfig.ALLOW_MOUNTS_DURING_SIEGE` (`AllowRideMountsDuringSiege`, default `False`).
 // FOLLOW-UP(M7): the setting is not in `WorldSettings` yet; the siege card reads it from the config.
-const ALLOW_MOUNTS_DURING_SIEGE: bool = false;
+pub(crate) const ALLOW_MOUNTS_DURING_SIEGE: bool = false;
 
 impl World {
     /// The transformations of the datapack (a cheap clone of the shared table, so the caller can
@@ -65,8 +65,10 @@ impl World {
         }
 
         self.set_queued_skill(id, None);
-        // `isMounted()` -> `dismount()`: mounts are not modelled; a mounted player cannot start
-        // the skill anyway (`canTransform`).
+        if self.is_mounted(id) {
+            // Get off the strider or something else if character is mounted.
+            self.dismount(id);
+        }
         if let Some(player) = self.players.get_mut(&id) {
             player.transform.transformation = Some(form.id);
         }

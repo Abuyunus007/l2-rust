@@ -84,6 +84,9 @@ pub enum SummonWrite {
     /// `Pet.destroyControlItem` and `ItemManager.destroyItem` of a collar: `DELETE FROM pets
     /// WHERE item_obj_id = ?`.
     DeletePet { control_object_id: ObjectId },
+    /// `Player.storePetFood`: `UPDATE pets SET fed=? WHERE item_obj_id = ?` (the food of a mounted
+    /// pet, M6-FU-07).
+    PetFed { control_object_id: ObjectId, fed: i32 },
     /// `Pet.storeEffect` / `restoreEffects`: `DELETE FROM character_pet_skills_save WHERE
     /// petObjItemId=?`, then one `INSERT` per row (`buff_index` counts from 1).
     PetEffects {
@@ -626,8 +629,12 @@ impl World {
 
     /// Java `Summon.onDecay()` -> `deleteMe(_owner)`.
     pub(crate) fn summon_on_decay(&mut self, summon: ObjectId) {
-        // The packets of an owner who left reach nobody (Java's old `Player` object).
-        let owner = self.summon(summon).filter(|s| !s.owner_offline).map(|s| s.owner);
+        // The packets of an owner who left reach nobody (Java's old `Player` object). An owner who
+        // logged in again since is told like any online owner.
+        let owner = self
+            .summon(summon)
+            .filter(|s| !s.owner_offline || self.players.contains_key(&s.owner))
+            .map(|s| s.owner);
         self.summon_delete_me(summon, owner);
     }
 

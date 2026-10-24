@@ -69,6 +69,7 @@ mod relax;
 mod restoration;
 mod restoration_random;
 mod resurrection;
+mod ride;
 mod servitor_share;
 mod set_skill;
 mod silent_move;
@@ -148,6 +149,7 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("OpenDoor", open_door::OpenDoor::create);
     registry.register("Recovery", recovery::Recovery::create);
     registry.register("Restoration", restoration::Restoration::create);
+    registry.register("Ride", ride::Ride::create);
     registry.register("SetSkill", set_skill::SetSkill::create);
     registry.register("StealAbnormal", steal_abnormal::StealAbnormal::create);
     registry.register("Teleport", teleport::Teleport::create);

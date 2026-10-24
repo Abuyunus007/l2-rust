@@ -334,6 +334,12 @@ pub(crate) struct MailWorld {
     pub local_ids: std::collections::BTreeSet<i32>,
     /// The attachment packet waiting for the attachment rows: player to message id and packet.
     pub pending_attachments: BTreeMap<ObjectId, (i32, refresh::AttachmentAction)>,
+    /// A `RequestSendPost` waiting for the block list of an offline receiver: sender to the
+    /// receiver's id and the packet (M6-FU-09, see `send.rs`).
+    pub pending_block_checks: BTreeMap<ObjectId, (i32, RequestSendPost)>,
+    /// The answer of that read, used once by the packet when it runs again: sender to the
+    /// receiver's id and whether the receiver has the sender on its block list.
+    pub block_answers: BTreeMap<ObjectId, (i32, bool)>,
 }
 
 #[cfg(test)]

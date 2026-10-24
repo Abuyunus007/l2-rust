@@ -126,7 +126,7 @@ impl<'w> StatView<'w> {
     }
 
     /// `PlayerStat.getRunSpeed()` / `getWalkSpeed()` after `CreatureStat`: `RunSpeedBoost` and
-    /// the `MaxRunSpeed` cap (not for GMs). Mount penalties come with mounts. Other creatures:
+    /// the `MaxRunSpeed` cap (not for GMs), then the penalties of a mount. Other creatures:
     /// unchanged.
     // Java `PlayableStat` also multiplies by a swamp zone's move bonus; swamp zones do not set
     // their flag yet (see `zones.rs`), so it never applies.
@@ -139,7 +139,8 @@ impl<'w> StatView<'w> {
         if value > f64::from(s.max_run_speed) && !self.is_gm() {
             return f64::from(s.max_run_speed);
         }
-        value
+        // Check for mount penalties.
+        self.mount_speed_penalty(value)
     }
 
     /// Java `isGM()`.
@@ -431,6 +432,8 @@ impl World {
                 );
             }
         }
+        // The free mount skills of `rewardSkills()` (its other parts are not ported here).
+        self.give_free_mount_skills(id);
         // `refreshOverloaded()`, `refreshExpertisePenalty()` (Java sends nothing for them here: the
         // character is not in the world yet).
         self.refresh_overloaded(id);

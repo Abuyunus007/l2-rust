@@ -1,12 +1,8 @@
 //! The transformation admin commands: `//transform <id>`, `//untransform`, `//transform_menu`, and
-//! the purple maned horse and jet bike of `//ride_horse` and `//ride_bike`, with `//unride`.
+//! the purple maned horse and jet bike of `//ride_horse` and `//ride_bike`, the mounts of
+//! `//ride_wyvern`, `//ride_strider` and `//ride_wolf`, with `//unride`.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTransform.java
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminRide.java
-//
-// # Left out, with the system that brings it
-// - `//ride_wyvern`, `//ride_strider` and `//ride_wolf`: they mount a pet (`Player.mount`), and
-//   mounts are not ported. Those words are not registered, so they answer "does not exist". The
-//   `isMounted()` / `dismount()` parts of the other commands are no-ops for the same reason.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -14,6 +10,7 @@ use l2_util::ObjectId;
 
 use super::commands::java_split_space;
 use super::{AdminHandler, AdminHandlers, JavaException, is_numeric, parse_int};
+use crate::mount::{ADMIN_RIDE_STRIDER, ADMIN_RIDE_WOLF, ADMIN_RIDE_WYVERN};
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
@@ -31,6 +28,9 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_transform_menu", admin_transform_menu),
         ("admin_ride_horse", admin_ride_horse),
         ("admin_ride_bike", admin_ride_bike),
+        ("admin_ride_wyvern", admin_ride_wyvern),
+        ("admin_ride_strider", admin_ride_strider),
+        ("admin_ride_wolf", admin_ride_wolf),
         ("admin_unride", admin_unride),
         ("admin_unride_wyvern", admin_unride),
         ("admin_unride_strider", admin_unride),
@@ -97,8 +97,11 @@ fn admin_transform(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         );
         return Ok(());
     }
-    // Java `isFlyingMounted() || isMounted()`; `isMounted()` is false until mounts exist.
-    if world.stats(player).is_some_and(|v| v.is_flying_mounted()) {
+    // Java `isFlyingMounted() || isMounted()`.
+    if world
+        .stats(player)
+        .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+    {
         world.send(
             gm,
             &SystemMessage::new(SystemMessageId::YouCannotPolymorphWhileRidingAPet),
@@ -127,12 +130,16 @@ fn ride_target(world: &World, gm: ObjectId) -> ObjectId {
         .unwrap_or(gm)
 }
 
+/// Java `player.isMounted() || player.hasSummon()`.
+fn target_has_summon(world: &World, player: ObjectId) -> bool {
+    world.is_mounted(player) || world.has_servitor(player) || world.has_pet(player)
+}
+
 /// Java `AdminRide.onCommand` for `admin_ride_horse` and `admin_ride_bike`: a summon blocks it;
 /// otherwise the transformation is applied (no message when it is refused by the table).
 fn ride_by_transformation(world: &mut World, gm: ObjectId, transform_id: i32) {
     let player = ride_target(world, gm);
-    // Java `isMounted() || hasSummon()`: mounts are not ported, so only a summon counts.
-    if world.has_servitor(player) || world.has_pet(player) {
+    if target_has_summon(world, player) {
         world.send_sys_message(gm, "Target already have a summon.");
         return;
     }
@@ -158,16 +165,49 @@ fn admin_ride_bike(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     Ok(())
 }
 
+/// Java `AdminRide.onCommand` for the commands that mount a pet NPC: `player.mount(petRideId, 0,
+/// false)`, without food and without a collar.
+fn ride_by_mount(world: &mut World, gm: ObjectId, npc_id: i32) {
+    let player = ride_target(world, gm);
+    if target_has_summon(world, player) {
+        world.send_sys_message(gm, "Target already have a summon.");
+        return;
+    }
+    world.mount_npc(player, npc_id, ObjectId(0), false);
+}
+
+/// Java `AdminRide`, `admin_ride_wyvern`.
+fn admin_ride_wyvern(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    ride_by_mount(world, gm, ADMIN_RIDE_WYVERN);
+    Ok(())
+}
+
+/// Java `AdminRide`, `admin_ride_strider`.
+fn admin_ride_strider(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    ride_by_mount(world, gm, ADMIN_RIDE_STRIDER);
+    Ok(())
+}
+
+/// Java `AdminRide`, `admin_ride_wolf`.
+fn admin_ride_wolf(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    ride_by_mount(world, gm, ADMIN_RIDE_WOLF);
+    Ok(())
+}
+
 /// Java `AdminRide.onCommand`, the `admin_unride*` words: the horse and the bike leave by
-/// untransforming; the dismount of a mount is a no-op until mounts exist (M6 mounts).
+/// untransforming, anything else is `dismount()`.
 fn admin_unride(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     let player = ride_target(world, gm);
     if world.transformation_id(player) == PURPLE_MANED_HORSE_TRANSFORMATION_ID {
         world.untransform(player);
     }
     // Java: a second `if`, then `else dismount()`.
+    // NOTE(java-quirk): after the horse left, the second `if` is false and `dismount()` runs for
+    // a player who is not mounted (it still sends `Ride` and the user info).
     if world.transformation_id(player) == JET_BIKE_TRANSFORMATION_ID {
         world.untransform(player);
+    } else {
+        world.dismount(player);
     }
     Ok(())
 }

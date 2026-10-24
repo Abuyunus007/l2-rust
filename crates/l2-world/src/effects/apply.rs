@@ -65,6 +65,10 @@ impl ApplyMode {
     };
 }
 
+/// Java `MountEnabledSkillList`: the skills with a negative effect a mounted player may use
+/// (Strider Siege Assault and Wyvern Breath).
+const MOUNT_ENABLED_SKILLS: [i32; 2] = [325, 4289];
+
 /// Java `Skill.hasNegativeEffect()`.
 pub(crate) fn has_negative_effect(skill: &SkillTemplate) -> bool {
     skill.effect_point < 0 && skill.target_type != TargetType::SelfTarget
@@ -336,6 +340,26 @@ impl World {
         let Some(skill) = skills.get(key.id, key.level) else {
             return false;
         };
+        // `creature.isPlayer() && isMounted() && hasNegativeEffect() && !MountEnabledSkillList
+        // .contains(_id)`, after the GM exemption (fake players are not ported).
+        let mount_refused = self.stats(creature).is_some_and(|v| {
+            v.is_mounted()
+                && !(v.is_gm() && !v.settings().gm_skill_restriction)
+                && has_negative_effect(skill)
+                && !MOUNT_ENABLED_SKILLS.contains(&skill.id)
+        });
+        if mount_refused {
+            self.send(
+                creature,
+                &SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms).with(
+                    SystemMessageParam::SkillName {
+                        id: skill.id,
+                        level: 1,
+                    },
+                ),
+            );
+            return false;
+        }
         let failed = {
             let Some(view) = self.stats(creature) else {
                 return false;
@@ -344,8 +368,6 @@ impl World {
             if view.is_gm() && !view.settings().gm_skill_restriction {
                 return true;
             }
-            // Mounts are not modelled: the mounted check of skills with a negative effect never
-            // applies.
             if skill.pre_conditions.is_empty() {
                 return true;
             }

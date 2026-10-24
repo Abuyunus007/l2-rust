@@ -23,10 +23,9 @@
 // `RequestMagicSkillUse`, ...) are not ported (see `ai/mod.rs`).
 //
 // # Left out (markers)
-// - M6-MOUNT: `getMountType()`, `isMounted()`, `isInBoat()`, `isInAirShip()` are always false,
-//   action 38 (mount/dismount) and the airship actions (67 to 70) are not ported.
-// - M6-BOTREPORT: action 65 (`BotReportTable.reportBot`) is not ported; Java answers "This feature
-//   is disabled." with `EnableBotReportButton = False`, which is not a world setting yet.
+// - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
+//   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
+// - Action 65 (the bot report button) is `bot_report.rs`.
 // - M7: `isInSiege()` and `isInHideoutSiege()` are always false (the siege code sets them).
 // - M8: `isInOlympiadMode()` is always false.
 
@@ -110,12 +109,15 @@ enum PlayerAction {
     WalkRun,
     Social(i32),
     CoupleSocial(i32),
+    /// 65: `BotReportTable.reportBot` (or "This feature is disabled.").
+    BotReport,
 }
 
 fn player_action(action_id: i32) -> Option<PlayerAction> {
     match action_id {
         0 => Some(PlayerAction::SitStand),
         1 => Some(PlayerAction::WalkRun),
+        65 => Some(PlayerAction::BotReport),
         71..=73 => Some(PlayerAction::CoupleSocial(action_id - COUPLE_ACTION_OFFSET)),
         other => SOCIAL_ACTIONS
             .iter()
@@ -164,6 +166,7 @@ impl World {
             }
             PlayerAction::Social(social_id) => self.try_broadcast_social(player, social_id),
             PlayerAction::CoupleSocial(social_id) => self.use_couple_social(player, social_id),
+            PlayerAction::BotReport => self.on_bot_report_action(player, self.target_of(player)),
         }
         true
     }
@@ -173,7 +176,10 @@ impl World {
     /// Java `RequestActionUse.useSit`: sit on a throne, stand a fake death up, stand up or sit
     /// down.
     fn use_sit(&mut self, player: ObjectId, target: Option<ObjectId>) {
-        // M6-MOUNT: `player.getMountType() != MountType.NONE` returns false.
+        // `player.getMountType() != MountType.NONE` returns false.
+        if self.is_mounted(player) {
+            return;
+        }
         let chair = target.and_then(|t| {
             let object = self.static_objects.get(&t)?;
             (object.kind == STATIC_OBJECT_TYPE_CHAIR).then_some((object.static_object_id, t))
@@ -322,8 +328,11 @@ impl World {
         // M7: `player.isInSiege()`.
         // NOTE(java-quirk): the `isInHideoutSiege()` branch of the player has no `return`, the
         // checks go on after the message (M7: nobody is in a hideout siege yet).
-        // M6-MOUNT: `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()`.
-        if self.stats(player).is_some_and(|v| v.is_flying_mounted()) {
+        // `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()` (no boats here).
+        if self
+            .stats(player)
+            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        {
             self.couple_refusal(
                 player,
                 M::C1IsRidingAShipSteedOrStriderAndCannotBeRequestedForACoupleAction,
@@ -391,8 +400,11 @@ impl World {
         }
         // M8: `partner.isInOlympiadMode()`.
         // M7: `partner.isInHideoutSiege()`, `partner.isInSiege()`.
-        // M6-MOUNT: `partner.isMounted() || isInBoat() || isInAirShip()`.
-        if self.stats(partner).is_some_and(|v| v.is_flying_mounted()) {
+        // `partner.isMounted() || partner.isFlyingMounted() || isInBoat() || isInAirShip()`.
+        if self
+            .stats(partner)
+            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        {
             self.couple_refusal(
                 player,
                 M::C1IsRidingAShipSteedOrStriderAndCannotBeRequestedForACoupleAction,

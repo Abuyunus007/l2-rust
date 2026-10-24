@@ -111,8 +111,10 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
                     a.transformation_id() == *id
                 }
         }
-        // Nobody is mounted (`getMountType()` is NONE).
-        Condition::PlayerIsRidingStrider { value } => a.is_player() && !*value,
+        // `(player.getMountType() == MountType.STRIDER) == _value`.
+        Condition::PlayerIsRidingStrider { value } => {
+            a.is_player() && (a.mount_type() == crate::mount::MountType::Strider) == *value
+        }
         Condition::PlayerHp { hp } => (a.core().cur_hp * 100.0) / f64::from(a.max_hp()) <= f64::from(*hp),
         Condition::PlayerMp { mp } => (a.core().cur_mp * 100.0) / f64::from(a.max_mp()) <= f64::from(*mp),
         Condition::PlayerCp { cp } => (a.core().cur_cp * 100.0) / f64::from(a.max_cp()) >= f64::from(*cp),
@@ -189,7 +191,7 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             Some(clan) => clan.castle_id == *castle,
         },
         Condition::PlayerSex { sex } => a.player().is_some_and(|p| i32::from(p.data.sex != 0) == *sex),
-        // `!isPlayer() || isFlyingMounted() == value`: nobody rides a wyvern.
+        // `!isPlayer() || isFlyingMounted() == value`.
         Condition::PlayerFlyMounted { value } => !a.is_player() || a.is_flying_mounted() == *value,
         // `player == null ? true : isInVehicle() == value`: there are no boats or airships.
         Condition::PlayerVehicleMounted { value } => !a.is_player() || !*value,

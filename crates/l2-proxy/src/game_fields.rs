@@ -106,7 +106,8 @@ use l2_protocol_game::server::store::{
     SellStoreEntry, StoreCandidate,
 };
 use l2_protocol_game::server::summon::{
-    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, Ride,
+    SetSummonRemainTime,
 };
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::territory::{
@@ -779,6 +780,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ),
         ServerOpcode::ExFishingEnd => decoded::<ExFishingEnd>(&mut r, |p| object!(p => object_id, win)),
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::Ride => decoded::<Ride>(&mut r, ride_fields),
         ServerOpcode::RecipeBookItemList => {
             decoded::<RecipeBookItemList>(&mut r, |p| object!(p => is_common, max_mp, recipes))
         }
@@ -2005,6 +2007,10 @@ fn pet_status_update_fields(p: &PetStatusUpdate) -> Value {
     )
 }
 
+fn ride_fields(p: &Ride) -> Value {
+    object!(p => object_id, mounted, ride_type, ride_npc_id, x, y, z)
+}
+
 fn pet_delete_fields(p: &PetDelete) -> Value {
     object!(p => pet_type, pet_object_id)
 }
@@ -2460,6 +2466,7 @@ mod tests {
         ServerOpcode::ExFishingHpRegen,
         ServerOpcode::ExFishingEnd,
         ServerOpcode::PetDelete,
+        ServerOpcode::Ride,
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,
         ServerOpcode::PetInventoryUpdate,
@@ -4831,6 +4838,24 @@ mod tests {
                 .to_bytes()
             ),
             json!({ "pet_type": 1, "pet_object_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &Ride {
+                    object_id: 9,
+                    mounted: true,
+                    ride_type: 2,
+                    ride_npc_id: 12_621,
+                    x: -1,
+                    y: 2,
+                    z: -3
+                }
+                .to_bytes()
+            ),
+            json!({
+                "object_id": 9, "mounted": true, "ride_type": 2, "ride_npc_id": 12_621,
+                "x": -1, "y": 2, "z": -3
+            })
         );
         assert_eq!(
             s2c_fields(

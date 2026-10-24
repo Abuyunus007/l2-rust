@@ -86,6 +86,10 @@ pub struct ExpSettings {
     /// `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`): how far a damage dealer may be from the
     /// monster and still get a share.
     pub alt_party_range: i32,
+    /// `FreeMountsConfig.ENABLE_FREE_STRIDER` (`EnableFreeStrider`, `Custom/FreeMounts.ini`).
+    pub enable_free_strider: bool,
+    /// `FreeMountsConfig.ENABLE_FREE_WYVERN` (`EnableFreeWyvern`).
+    pub enable_free_wyvern: bool,
 }
 
 impl Default for ExpSettings {
@@ -103,6 +107,8 @@ impl Default for ExpSettings {
             max_bonus_exp: 3.5,
             max_bonus_sp: 3.5,
             alt_party_range: 1500,
+            enable_free_strider: false,
+            enable_free_wyvern: false,
         }
     }
 }
@@ -865,7 +871,8 @@ impl World {
         if self.settings.exp.decrease_skill_level && !self.is_gm(id) {
             self.check_player_skills(id, &mut writes);
         }
-        // `FreeMountsConfig` and `RebirthConfig` skills: Custom configs, off by default.
+        self.give_free_mount_skills(id);
+        // The `RebirthConfig` skills: a Custom config, off by default.
 
         self.flush_skill_writes(id, writes);
 

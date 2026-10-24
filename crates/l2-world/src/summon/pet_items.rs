@@ -925,8 +925,8 @@ impl World {
 
     // ------------------------------------------------------------------ pet food
 
-    /// Java `PetFood.onItemUse(playable, item, forceUse)`: a pet eats, a player (no mounts here)
-    /// is told the item cannot be used.
+    /// Java `PetFood.onItemUse(playable, item, forceUse)`: a pet eats, a mounted player feeds its
+    /// mount, any other player is told the item cannot be used.
     pub(crate) fn pet_food_on_use(&mut self, id: ObjectId, item: &ItemData, template: &ItemTemplate) -> bool {
         let is_pet = self.is_pet(id);
         if is_pet && !self.pet_data_of(id).is_some_and(|d| d.can_eat(item.item_id)) {
@@ -984,7 +984,10 @@ impl World {
                 return true;
             }
         } else if self.is_player(id) {
-            // The mount branch (`isMounted()`) needs mounts.
+            // The mount branch: a mounted player feeds its mount (`mount.rs`).
+            if self.mount_use_food(id, skill_id, skill_level, feed, item) {
+                return true;
+            }
             let templates = self.item_templates();
             self.send(
                 id,

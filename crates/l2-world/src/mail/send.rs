@@ -5,14 +5,14 @@ use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{PostAttachment, RequestSendPost};
 use l2_protocol_game::server::SystemMessageParam;
-use l2_protocol_game::server::{ExNoticePostSent, InventoryUpdate, ItemUpdate, SystemMessage};
+use l2_protocol_game::server::{ActionFailed, ExNoticePostSent, InventoryUpdate, ItemUpdate, SystemMessage};
 use l2_util::ObjectId;
 use tracing::warn;
 
 use super::MailMessage;
 use crate::flood::FloodKind;
 use crate::inventory::LOC_PAPERDOLL;
-use crate::outbox::ItemRowOp;
+use crate::outbox::{ItemRowOp, PersistCommand};
 use crate::player::ItemData;
 use crate::warehouse::{ContainerRef, Place};
 use crate::world::{World, unix_ms_now};
@@ -202,11 +202,39 @@ impl World {
         }
 
         // Java `BlockList.isInBlockList(receiverId, player.getObjectId())`: an online receiver's own
-        // lists (`isBlocked`: refusal mode or the block list).
-        // FOLLOW-UP(mail-block-offline): Java also reads an offline receiver's block rows
-        // (`OFFLINE_LIST`/`loadList`); that needs an async read here, so an offline receiver's block
-        // list does not stop the mail yet.
-        if self.is_blocked(ObjectId(receiver_id), id) {
+        // lists (`isBlocked`: refusal mode or the block list); an offline receiver's block rows are
+        // read (`OFFLINE_LIST`/`loadList`).
+        let blocked = if self.players.contains_key(&ObjectId(receiver_id)) {
+            self.is_blocked(ObjectId(receiver_id), id)
+        } else {
+            match self.mail.block_answers.remove(&id) {
+                Some((owner, blocked)) if owner == receiver_id => blocked,
+                _ => {
+                    // The read goes out through the outbox (D-15); the packet runs again from the
+                    // top when the answer is in, so every check sees the state of that moment.
+                    self.mail.pending_block_checks.insert(
+                        id,
+                        (
+                            receiver_id,
+                            RequestSendPost {
+                                receiver,
+                                is_cod,
+                                subject,
+                                text,
+                                items,
+                                req_adena,
+                            },
+                        ),
+                    );
+                    self.outbox.persist(PersistCommand::BlockListRequest {
+                        sender: id,
+                        owner: receiver_id,
+                    });
+                    return;
+                }
+            }
+        };
+        if blocked {
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::C1HasBlockedYouYouCannotSendMailToC1)
@@ -262,6 +290,43 @@ impl World {
             self.send(id, &ExNoticePostSent { show_animation: true });
             self.mail_tell(id, SystemMessageId::MailSuccessfullySent);
         }
+    }
+
+    /// `WorldCommand::BlockListLoaded`: the block list of the offline receiver is in, so the
+    /// mail goes on (`BlockList.isInBlockList(receiverId, senderId)` of the offline list). A
+    /// failed read sends nothing and never falls back to "not blocked" (D-50).
+    pub(crate) fn on_block_list_loaded(
+        &mut self,
+        sender: ObjectId,
+        owner: i32,
+        result: Result<Vec<i32>, ()>,
+    ) {
+        let request = match self.mail.pending_block_checks.get(&sender) {
+            Some((pending, _)) if *pending == owner => {
+                self.mail.pending_block_checks.remove(&sender).map(|(_, r)| r)
+            }
+            // A newer packet replaced it, or the answer is stale.
+            _ => None,
+        };
+        let Some(request) = request else {
+            return;
+        };
+        if !self.players.contains_key(&sender) {
+            return;
+        }
+        let Ok(list) = result else {
+            warn!(
+                "Mail: could not read the block list of character {owner}; the mail of {sender} is not sent."
+            );
+            self.send(sender, &ActionFailed);
+            return;
+        };
+        self.mail
+            .block_answers
+            .insert(sender, (owner, list.contains(&sender.0)));
+        self.on_request_send_post(sender, request);
+        // The answer is for this run only.
+        self.mail.block_answers.remove(&sender);
     }
 
     /// Java `RequestSendPost.removeItems(player, msg)`: the checks of the attachments, the fee,

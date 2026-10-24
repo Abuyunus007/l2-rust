@@ -1,7 +1,8 @@
-//! User commands (`BypassUserCmd`): `/loc` and `/partyinfo`.
+//! User commands (`BypassUserCmd`): `/loc`, `/partyinfo`, `/mount` and `/dismount`.
 // Java: network/clientpackets/BypassUserCmd.java
 // Java: dist/game/data/scripts/handlers/chat/commands/user/Loc.java
 // Java: dist/game/data/scripts/handlers/chat/commands/user/PartyInfo.java
+// Java: dist/game/data/scripts/handlers/chat/commands/user/{Mount,Dismount}.java (`mount.rs`)
 //
 // Java's `//loc` does not exist; the client's `/loc` is user command 0. The other user commands
 // (clan penalty, channels, time ...) belong to their systems; the card of each ports its handler.
@@ -14,6 +15,10 @@ use tracing::{debug, warn};
 use crate::world::World;
 use crate::zones::race_name;
 
+/// User command 61 (`Mount.java`, `/mount`).
+const MOUNT_COMMAND: i32 = 61;
+/// User command 62 (`Dismount.java`, `/dismount`).
+const DISMOUNT_COMMAND: i32 = 62;
 /// The "RespawnZone" zone type of `zones.xml`.
 const RESPAWN_ZONE: &str = "RespawnZone";
 
@@ -27,6 +32,10 @@ impl World {
             self.user_command_loc(id);
         } else if command == crate::party::PARTY_INFO_COMMAND {
             self.user_command_party_info(id);
+        } else if command == MOUNT_COMMAND {
+            self.user_command_mount(id);
+        } else if command == DISMOUNT_COMMAND {
+            self.user_command_dismount(id);
         } else {
             // Java tells a GM "User commandID N not implemented yet." for an id without handler.
             // Handlers that exist in Java but are not ported yet would make that message a lie,

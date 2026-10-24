@@ -1074,8 +1074,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Mail(_)) => "mail",
                 Out::Persist(
                     PersistCommand::MailAttachmentsRequest { .. }
-                    | PersistCommand::ClanWarehouseRequest { .. },
+                    | PersistCommand::ClanWarehouseRequest { .. }
+                    | PersistCommand::BlockListRequest { .. }
+                    | PersistCommand::OfflinePetRowsRequest { .. },
                 ) => "sync read",
+                Out::Persist(PersistCommand::BotReport(_)) => "bot report",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

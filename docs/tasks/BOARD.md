@@ -312,9 +312,9 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | merged |
 | [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | merged |
 | [M6-FU-06](M6/M6-FU-06.md) | Flood protectors | sonnet | full | none | merged |
-| [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | in-progress |
+| [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | merged |
 | [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | in-progress |
-| [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | in-progress |
+| [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
 

@@ -153,7 +153,10 @@ impl crate::world::World {
                         self.send(id, &cannot_equip);
                         return;
                     }
-                    // Mounts are not modelled.
+                    if self.is_mounted(id) {
+                        self.send(id, &cannot_equip);
+                        return;
+                    }
                     if self.is_disarmed(id) {
                         self.send(id, &cannot_equip);
                         return;

@@ -638,3 +638,51 @@ impl Decode for PetInventoryUpdate {
         })
     }
 }
+
+// Java: gameserver/network/serverpackets/Ride.java
+/// A player mounts or dismounts (`RIDE`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Ride {
+    pub object_id: i32,
+    /// `player.isMounted()`, written as an int.
+    pub mounted: bool,
+    /// `getMountType().ordinal()`: 0 none, 1 strider, 2 wyvern, 3 wolf.
+    pub ride_type: i32,
+    /// `getMountNpcId()`: the offset of 1000000 is added on the wire, also for a player that
+    /// rides nothing (the packet then carries 1000000).
+    pub ride_npc_id: i32,
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+impl Ride {
+    pub const OPCODE: ServerOpcode = ServerOpcode::Ride;
+}
+
+impl Encode for Ride {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.object_id)
+            .i32(i32::from(self.mounted))
+            .i32(self.ride_type)
+            .i32(self.ride_npc_id.wrapping_add(SUMMON_ID_OFFSET))
+            .i32(self.x)
+            .i32(self.y)
+            .i32(self.z);
+    }
+}
+
+impl Decode for Ride {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            object_id: r.i32()?,
+            mounted: r.i32()? != 0,
+            ride_type: r.i32()?,
+            ride_npc_id: r.i32()?.wrapping_sub(SUMMON_ID_OFFSET),
+            x: r.i32()?,
+            y: r.i32()?,
+            z: r.i32()?,
+        })
+    }
+}

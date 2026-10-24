@@ -215,7 +215,7 @@ pub use store::{
 };
 pub use summon::{
     ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate,
-    SetSummonRemainTime, SummonInfo,
+    Ride, SetSummonRemainTime, SummonInfo,
 };
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use territory::{

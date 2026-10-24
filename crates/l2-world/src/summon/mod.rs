@@ -38,6 +38,7 @@ pub mod info;
 pub mod party;
 pub mod pet;
 pub mod pet_items;
+pub mod pet_offline;
 pub mod servitor;
 pub mod share;
 pub mod shots;
@@ -307,7 +308,7 @@ impl World {
 
     /// Java `ConditionPlayerCanSummon`'s test: the player (`effector.asPlayer()`) may call a
     /// summon now. Tells the player why not.
-    // Spawn and teleport protection and mounts are not modelled.
+    // Spawn and teleport protection are not modelled.
     pub(crate) fn player_can_summon(&self, id: ObjectId) -> bool {
         let Some(player) = self.acting_player(id) else {
             return false;
@@ -324,6 +325,13 @@ impl World {
                     l2_protocol_game::SystemMessageId::YouMayNotUseMultiplePetsOrServitorsAtTheSameTime,
                 ),
             );
+            return false;
+        }
+        // `else if (player.isFlyingMounted() || player.isMounted()) canSummon = false` (no message).
+        if self
+            .stats(player)
+            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        {
             return false;
         }
         true
