@@ -334,7 +334,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 |---|---|---|---|---|---|
 | [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | merged |
 | [M7-RES-01](M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | merged |
-| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | in-progress |
+| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | merged |
 | [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | ready (refined when deps merge) |
 | [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | merged |
 | [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | merged |
