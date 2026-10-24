@@ -1497,7 +1497,10 @@ impl World {
         // A landed attack keeps the fight alive, the timeout is only for targets that cannot be
         // reached.
         // `SiegeGuardAI` keeps `CreatureAI`'s (M7-SIEGE-02).
-        if self.is_attackable_npc(id) && !self.is_siege_guard(id) && self.intention_of(id) == Intention::Attack {
+        if self.is_attackable_npc(id)
+            && !self.is_siege_guard(id)
+            && self.intention_of(id) == Intention::Attack
+        {
             self.renew_attack_timeout(id);
         }
     }

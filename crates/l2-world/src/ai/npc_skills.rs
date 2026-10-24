@@ -1511,7 +1511,10 @@ impl World {
     /// Java `AttackableAI.notifyActionFinishCasting()`: a finished cast keeps the fight alive.
     pub(crate) fn attackable_finish_casting(&mut self, id: ObjectId) {
         // `SiegeGuardAI` keeps `CreatureAI`'s (M7-SIEGE-02).
-        if self.is_attackable_npc(id) && !self.is_siege_guard(id) && self.intention_of(id) == Intention::Attack {
+        if self.is_attackable_npc(id)
+            && !self.is_siege_guard(id)
+            && self.intention_of(id) == Intention::Attack
+        {
             self.renew_attack_timeout(id);
         }
     }

@@ -262,7 +262,9 @@ impl World {
         if let Some(npc) = self.npcs.get(&id) {
             return Some(StatView::new(self, Who::Npc(npc)));
         }
-        self.doors.get(&id).map(|door| StatView::new(self, Who::Door(door)))
+        self.doors
+            .get(&id)
+            .map(|door| StatView::new(self, Who::Door(door)))
     }
 }
 

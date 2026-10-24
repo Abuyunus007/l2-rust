@@ -47,8 +47,8 @@ use tracing::{debug, warn};
 use crate::ids::{IdError, IdFactory};
 use crate::objects::{ObjectEntry, ObjectKind};
 use crate::player::CreatureCore;
-use crate::stats::{CalcSet, Calculators};
 use crate::region::{RegionGrid, RegionId, region_of};
+use crate::stats::{CalcSet, Calculators};
 use crate::world::World;
 
 /// `FenceData.MAX_Z_DIFF`: a fence only blocks at heights within this distance of its own z.

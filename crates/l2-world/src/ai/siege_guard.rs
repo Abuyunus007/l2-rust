@@ -411,9 +411,7 @@ impl World {
         // Check if target is dead or if timeout is expired to stop this attack.
         let lost = match target {
             None => true,
-            Some(t) => {
-                !self.objects.get(&t).is_some_and(|e| e.kind.is_creature()) || self.is_alike_dead(t)
-            }
+            Some(t) => !self.objects.get(&t).is_some_and(|e| e.kind.is_creature()) || self.is_alike_dead(t),
         };
         if lost || timeout < ticks {
             // Stop hating this target after the attack timeout or if target is dead.
@@ -655,7 +653,12 @@ impl World {
             }
             // `else if (sGuard.getSpawn() != null)` (the fortress AI has no check and would
             // throw without a spawn).
-            let Some(spawn) = self.npcs.get(&id).filter(|n| n.spawn.is_some()).map(|n| n.spawn_point) else {
+            let Some(spawn) = self
+                .npcs
+                .get(&id)
+                .filter(|n| n.spawn.is_some())
+                .map(|n| n.spawn_point)
+            else {
                 return;
             };
             let (Some(me), Some(at)) = (self.position_of(id), self.position_of(target)) else {
@@ -823,7 +826,12 @@ impl World {
             }
             // NOTE(java-quirk): Java reads `getSpawn()` without a check; a guard without a spawn
             // throws there and does nothing here.
-            let Some(spawn) = self.npcs.get(&id).filter(|n| n.spawn.is_some()).map(|n| n.spawn_point) else {
+            let Some(spawn) = self
+                .npcs
+                .get(&id)
+                .filter(|n| n.spawn.is_some())
+                .map(|n| n.spawn_point)
+            else {
                 return;
             };
             let Some(at) = self.position_of(target) else {

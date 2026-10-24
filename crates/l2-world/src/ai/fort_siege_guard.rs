@@ -44,7 +44,10 @@ impl World {
             };
             // `player.getClan().getFortId() == _actor.getFort().getResidenceId()`.
             let guard_fort = self.npc_fort(id).map_or(0, |f| f.0);
-            if self.clan_of(player).is_some_and(|clan| clan.fort_id == guard_fort) {
+            if self
+                .clan_of(player)
+                .is_some_and(|clan| clan.fort_id == guard_fort)
+            {
                 return false;
             }
         }

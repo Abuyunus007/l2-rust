@@ -310,7 +310,13 @@ impl Scene {
         let doors = DoorTemplates::from_xml(&format!(
             "<list>{}{}</list>",
             door_xml(GATE, "gludio_castle_gate", X + 500, Y, ""),
-            door_xml(WALL, "gludio_castle_wall_001", X + 500, Y + 600, r#"is_wall="true""#),
+            door_xml(
+                WALL,
+                "gludio_castle_wall_001",
+                X + 500,
+                Y + 600,
+                r#"is_wall="true""#
+            ),
         ))
         .unwrap();
         world.spawn_doors(&doors, &ids).unwrap();
@@ -688,7 +694,10 @@ fn guards_attack_attackers_and_ignore_defenders() {
     assert_eq!(s.world.intention_of(guard), Intention::Active);
     assert_eq!(s.world.ai_state(guard).unwrap().global_aggro, -9);
     s.run_ms(8000);
-    assert!(s.world.aggro_list(guard).is_empty(), "no aggro during the first 10 s");
+    assert!(
+        s.world.aggro_list(guard).is_empty(),
+        "no aggro during the first 10 s"
+    );
     // Then the attacker gets the hate and the attack (a level 70 guard kills him quickly).
     let mut attacked = Vec::new();
     for _ in 0..(5000 / 50) {

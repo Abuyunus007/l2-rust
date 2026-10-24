@@ -130,7 +130,10 @@ impl World {
             if !self.is_servitor(attacker) {
                 return;
             }
-            if self.npc_template(attacker).is_none_or(|t| t.race != NpcRace::SiegeWeapon) {
+            if self
+                .npc_template(attacker)
+                .is_none_or(|t| t.race != NpcRace::SiegeWeapon)
+            {
                 return;
             }
         }
@@ -152,7 +155,10 @@ impl World {
             .is_some_and(|c| c.0 > 0 && self.is_castle_siege_in_progress(c));
         // M7-CHSIEGE-01: `isHall` (a siegable hall in siege).
         if is_fort || is_castle {
-            self.broadcast_packet(door, &SystemMessage::new(SystemMessageId::TheCastleGateHasBeenDestroyed));
+            self.broadcast_packet(
+                door,
+                &SystemMessage::new(SystemMessageId::TheCastleGateHasBeenDestroyed),
+            );
         }
     }
 
