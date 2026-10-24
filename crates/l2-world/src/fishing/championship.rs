@@ -17,7 +17,7 @@
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
-use tracing::{debug, info};
+use tracing::info;
 
 use super::FishingTimer;
 use crate::outbox::PersistCommand;
@@ -521,8 +521,7 @@ impl World {
     ) -> bool {
         let enabled = self.settings.fishing.championship_enabled;
         if command.eq_ignore_ascii_case("FishSkillList") {
-            // FOLLOW-UP: `showFishSkillList` needs the fishing skill tree, which is not loaded.
-            debug!("{player}: FishSkillList needs the fishing skill tree (not loaded).");
+            self.show_fish_skill_list(player);
             true
         } else if command.starts_with("FishingChampionship") {
             if enabled {

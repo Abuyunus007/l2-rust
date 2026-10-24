@@ -15,6 +15,8 @@
 // - `shots.rs`: the `FishShots` item handler and the lure going to the left hand.
 // - `championship.rs`: `FishingChampionshipManager` (the weekly ranking) and the `Fisherman`
 //   bypasses of it.
+// - `skills.rs`: the `Fisherman` skill list (`FishSkillList`, M6-FU-10); the lesson itself is in
+//   `skills/learn.rs`.
 //
 // # Model
 // A player's fishing state is [`PlayerFishing`] (Java's `_fishing`, `_fish`, `_lure`, `_fishX/Y/Z`,
@@ -27,14 +29,13 @@
 // - `isInBoat()` of the `Fishing` effect: there are no boats yet, so nobody is on one.
 // - `Player.setTarget(player)` around the `FishShots` animation: the target change sends nothing
 //   and is put back at once.
-// - The `Fisherman` skill list (`FishSkillList`): the fishing skill tree is not loaded (see
-//   `skills/learn.rs`).
 // - The `_fishing` check of the mount action (`Player.mount`), which belongs to the mounts card.
 
 mod cast;
 mod championship;
 mod combat;
 mod shots;
+mod skills;
 
 pub(crate) use combat::FishAction;
 pub(crate) use shots::is_usable_while_fishing;
