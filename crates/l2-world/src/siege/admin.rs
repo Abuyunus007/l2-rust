@@ -4,8 +4,9 @@
 //! test siege with them (D-51).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSiege.java (the castle part)
 //
-// The clan hall words of `AdminSiege` (`//clanhall...`) are the clan hall cards' (M7-CH-01,
-// M7-CHSIEGE-01: `admin/chsiege.rs`); the castle list page already lists the halls.
+// The clan hall words of `AdminSiege` (`//clanhall...`) are in `admin/clanhall.rs` (M7-ADMIN-06),
+// the conquerable hall sieges' in `admin/chsiege.rs` (M7-CHSIEGE-01); the castle list page already
+// lists the halls.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

@@ -9,8 +9,6 @@
 // - `//give_clan_skills`, `//give_all_clan_skills` and `//add_clan_skill` (AdminSkill.java): the
 //   pledge skill tree and `Clan.addNewSkill` come with M6-CLAN-03, so these words are not
 //   registered yet and answer "The command '...' does not exist!".
-// - The castle, clan hall and fortress lines of `//clan_info`: sieges are M7. The clan's castle,
-//   hall or fortress id is shown until the names are loaded.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{GmViewPledgeInfo, PledgeMember, SystemMessage, SystemMessageParam};
@@ -19,6 +17,7 @@ use tracing::warn;
 
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, is_numeric, parse_int};
 use crate::clan::Clan;
+use crate::residence::{CastleId, ClanHallId, FortId};
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
@@ -78,6 +77,10 @@ fn clan_id_of(world: &World, player: ObjectId) -> Option<i32> {
     world.clan_of(player).map(|c| c.id)
 }
 
+fn null_pointer() -> JavaException {
+    JavaException("java.lang.NullPointerException".to_owned())
+}
+
 // ------------------------------------------------------------------------------- AdminClan
 
 /// Java `AdminClan.onCommand`, `admin_clan_info`: the clan of the player in `claninfo.htm`.
@@ -95,19 +98,30 @@ fn admin_clan_info(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         return Ok(());
     };
 
-    // M7: `CastleManager`/`ClanHallTable`/`FortManager` names; until then the id is shown.
+    // `CastleManager.getCastleById(..).getName()`, `ClanHallTable.getClanHallById(..)` and
+    // `FortManager.getFortById(..)`: a residence id without a residence is Java's
+    // `NullPointerException`.
     let castle = if clan.castle_id > 0 {
-        format!("castle #{}", clan.castle_id)
+        world
+            .castle(CastleId(clan.castle_id))
+            .map(|c| c.name.clone())
+            .ok_or_else(null_pointer)?
     } else {
         "No".to_owned()
     };
     let hall = if clan.hideout_id > 0 {
-        format!("clan hall #{}", clan.hideout_id)
+        world
+            .clan_hall(ClanHallId(clan.hideout_id))
+            .map(|h| h.name.clone())
+            .ok_or_else(null_pointer)?
     } else {
         "No".to_owned()
     };
     let fortress = if clan.fort_id > 0 {
-        format!("fortress #{}", clan.fort_id)
+        world
+            .fort(FortId(clan.fort_id))
+            .map(|f| f.name.clone())
+            .ok_or_else(null_pointer)?
     } else {
         "No".to_owned()
     };
