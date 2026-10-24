@@ -26,10 +26,10 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FriendEntry, ItemData, LeaveReason,
-    MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
-    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    WarehouseInput, WarehouseLoad, WorldCommand,
+    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, ItemData,
+    LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData, PlayerProfile,
+    RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
+    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1141,6 +1141,13 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestAllFortressInfo, RequestFortressSiegeInfo, RequestFortressMapInfo
+            // (M7-FORT-01)
+            ClientPacket::RequestAllFortressInfo(_) => ClientInput::Fort(FortInput::AllFortressInfo),
+            ClientPacket::RequestFortressSiegeInfo(_) => ClientInput::Fort(FortInput::FortressSiegeInfo),
+            ClientPacket::RequestFortressMapInfo(p) => ClientInput::Fort(FortInput::FortressMapInfo {
+                fortress_id: p.fortress_id,
+            }),
             ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },
             ClientPacket::RequestAnswerFriendInvite(p) => {
                 ClientInput::AnswerFriendInvite { response: p.response }

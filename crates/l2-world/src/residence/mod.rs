@@ -282,6 +282,8 @@ pub enum ResidenceWrite {
     /// `CastleManager.removeCirclet` of an offline member: `DELETE FROM items WHERE owner_id = ?
     /// and item_id = ?`.
     DeleteCirclets { owner_id: i32, item_id: i32 },
+    /// The fortress siege tables and the blood oath count (M7-FORT-01, `fort/`).
+    FortSiege(crate::fort::FortSiegeWrite),
 }
 
 impl World {
@@ -400,7 +402,7 @@ impl World {
     }
 
     /// The players a zone holds (Java `getPlayersInside()`), by object id.
-    fn players_inside_zone(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
+    pub(crate) fn players_inside_zone(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
         let mut inside: Vec<ObjectId> = self
             .players
             .iter()

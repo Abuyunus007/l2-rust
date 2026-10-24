@@ -54,6 +54,8 @@ pub enum ResidenceRereadRows {
     Fort(FortRecord),
     ClanHall(ClanHallRecord),
     SiegableHall(SiegableHallRecord),
+    /// A fortress with its registrations for the siege (M7-FORT-01).
+    FortSiege(Box<crate::fort::FortSiegeRows>),
     /// The database has no row for it (nothing changes).
     Missing,
 }
@@ -65,6 +67,8 @@ pub enum ResidenceRereadRows {
 pub enum ResidenceReadThen {
     /// Only bring this world up to date.
     Nothing,
+    /// A fortress NPC acts on the rows (M7-FORT-01, `fort/`).
+    Fort(crate::fort::FortThen),
 }
 
 impl World {
@@ -183,10 +187,12 @@ impl World {
             ResidenceRereadRows::Fort(record) => self.apply_fort_record(record),
             ResidenceRereadRows::ClanHall(record) => self.apply_clan_hall_record(record),
             ResidenceRereadRows::SiegableHall(record) => self.apply_siegable_hall_record(record),
+            ResidenceRereadRows::FortSiege(rows) => self.apply_fort_siege_rows(rows),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
         }
         match then {
             ResidenceReadThen::Nothing => {}
+            ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
         }
     }
 
@@ -244,6 +250,8 @@ impl World {
         if owner != 0 {
             self.load_residence_functions(ResidenceRef::Fort(id), &record.functions);
         }
+        // M7-FORT-01: the `FortUpdater` tasks follow the owner.
+        self.fort_refresh_updaters(id);
     }
 
     /// An auctionable hall's row as the database has it now.
@@ -411,6 +419,8 @@ pub enum ResidenceReadKind {
     Castle,
     /// `fort`.
     Fort,
+    /// `fort` with `fortsiege_clans` and the blood oaths of the owner (M7-FORT-01).
+    FortSiege,
     /// `clanhall`.
     ClanHall,
     /// `siegable_clanhall`.

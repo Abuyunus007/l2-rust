@@ -508,6 +508,17 @@ impl World {
         // auction bid (M7-CH-01).
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
         let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
+        // `for (FortSiege siege : getSieges()) siege.removeAttacker(clan)` of a clan without a
+        // fortress (M7-FORT-01; the registrations of the castle and hall sieges: SIEGE-01,
+        // CHSIEGE-01).
+        if fort_id == 0 {
+            let writes = if write_db {
+                crate::residence::Writes::Player
+            } else {
+                crate::residence::Writes::Never
+            };
+            self.fort_sieges_remove_attacker(clan_id, writes);
+        }
         // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
         // released) and its row deleted, with the clan's own rows (D-49: left alone without
         // `write_db`).

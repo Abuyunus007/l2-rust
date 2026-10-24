@@ -30,6 +30,7 @@ pub use game::{
 };
 pub use game::{CrestRepository, CrestRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
+pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use game::{FriendLink, FriendRepository};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};

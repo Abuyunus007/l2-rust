@@ -418,6 +418,14 @@ impl World {
         } else {
             format!("{}-{value}", n.npc_id)
         };
+        // `FortLogistics.getHtmlPath`: `logistics.htm` / `logistics-<value>.htm`.
+        if template.npc_type == "FortLogistics" {
+            return Some(if value == 0 {
+                "data/html/fortress/logistics.htm".to_owned()
+            } else {
+                format!("data/html/fortress/logistics-{value}.htm")
+            });
+        }
         if let Some(folder) = html_folder(&template.npc_type) {
             return Some(format!("data/html/{folder}/{pom}.htm"));
         }
@@ -445,6 +453,10 @@ impl World {
     /// Java `Npc.showChatWindow(player)`: the click on an NPC. Gatekeepers on castle ground have
     /// their own windows in Java; no castle is loaded, so none is on castle ground.
     pub fn show_chat_window_default(&mut self, npc: ObjectId, player: ObjectId) {
+        // The fortress NPCs override `showChatWindow(player)` (M7-FORT-01, `fort/npc.rs`).
+        if self.fort_show_chat_window(npc, player) {
+            return;
+        }
         self.show_chat_window(npc, player, 0);
     }
 

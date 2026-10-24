@@ -368,7 +368,6 @@ impl World {
         } else {
             0
         };
-        // M7-FORT-01: the `FortUpdater` tasks of an owned fortress.
         // `loadFlagPoles()`: the first static object of type 3 whose name starts with the name.
         let mut poles: Vec<(ObjectId, &str)> = self
             .static_objects
@@ -403,9 +402,13 @@ impl World {
             }
             self.fort_set_visible_flag(id, true);
             self.load_residence_functions(ResidenceRef::Fort(id), &record.functions);
+            // The `FortUpdater` tasks of an owned fortress (`Fort.load()`; M7-FORT-01). They use
+            // the fortress settings, installed with `set_fort_settings` before the residences.
+            self.fort_start_updaters_on_load(id);
         }
-        // M7-FORT-01: `initNpcs()`, `initSiegeNpcs()`, `initNpcCommanders()`,
-        // `spawnNpcCommanders()`, `initSpecialEnvoys()` and the envoys of an owned fortress.
+        // `initNpcs()`, `initSiegeNpcs()`, `initNpcCommanders()`, `spawnNpcCommanders()`,
+        // `initSpecialEnvoys()` and the envoys of an owned fortress need the rows of
+        // `fort_spawnlist`: they run in `World::load_fort_data` (M7-FORT-01).
         true
     }
 

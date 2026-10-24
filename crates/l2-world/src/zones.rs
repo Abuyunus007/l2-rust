@@ -264,6 +264,8 @@ enum ZoneKind {
     FlagPvp,
     /// `ClanHallZone` and its `SiegableHallZone` (M7-RES-01).
     ClanHall,
+    /// `SiegeZone` (the fortress ones: M7-FORT-01, `fort/zone.rs`).
+    Siege,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -293,6 +295,7 @@ impl ZoneKind {
             "EffectZone" => Self::Effect,
             "FlagPvPZone" => Self::FlagPvp,
             "ClanHallZone" | "SiegableHallZone" => Self::ClanHall,
+            "SiegeZone" => Self::Siege,
             _ => Self::Inert,
         }
     }
@@ -443,7 +446,7 @@ impl World {
         self.on_zone_exit(id, zone);
     }
 
-    fn set_inside(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
+    pub(crate) fn set_inside(&mut self, id: ObjectId, zone: ZoneId, state: bool) {
         if let Some(player) = self.players.get_mut(&id) {
             player.zones.set_inside(zone, state);
         }
@@ -535,6 +538,12 @@ impl World {
                 let hall_id = zone.int_param("clanHallId").unwrap_or(0);
                 self.on_clan_hall_zone_enter(id, hall_id);
             }
+            ZoneKind::Siege => {
+                // The castle and hall siege zones: M7-SIEGE-01, M7-CHSIEGE-01.
+                if self.fort_siege_zone_on_enter(id, zone).is_none() {
+                    debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type);
+                }
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -624,6 +633,12 @@ impl World {
                 self.broadcast_user_info(id);
             }
             ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
+            ZoneKind::Siege => {
+                // The castle and hall siege zones: M7-SIEGE-01, M7-CHSIEGE-01.
+                if self.fort_siege_zone_on_exit(id, zone).is_none() {
+                    debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type);
+                }
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

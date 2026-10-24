@@ -534,7 +534,7 @@ impl World {
     /// Java `Player.setFame(fame)`: within 0 and `MaxPersonalFamePoints`.
     // FOLLOW-UP(fame): the persistence task still writes the fame it loaded (`build_character_update`
     // in `game-server/src/persist.rs` reads the row), so a change here is lost at the next login.
-    fn set_fame(&mut self, player: ObjectId, fame: i32) {
+    pub(crate) fn set_fame(&mut self, player: ObjectId, fame: i32) {
         let max = self.multisell.settings.max_personal_fame_points;
         if let Some(p) = self.players.get_mut(&player) {
             p.data.profile.fame = fame.min(max).max(0);

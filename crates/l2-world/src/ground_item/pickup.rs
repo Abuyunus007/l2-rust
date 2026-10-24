@@ -207,7 +207,10 @@ impl World {
             return;
         }
 
-        // You can pickup only 1 combat flag (`FortSiegeManager`): sieges are M5.
+        // You can pickup only 1 combat flag (`FortSiegeManager`, M7-FORT-01).
+        if World::is_combat_flag_item(item_id) && !self.fort_check_if_can_pickup(id) {
+            return;
+        }
 
         // `if (target.getItemLootShedule() != null && owner == this) target.resetOwnerTimer()`
         // is moot: the timer goes with the item (`take_ground_item`).
@@ -266,6 +269,12 @@ impl World {
                     .with(SystemMessageParam::ItemName(item_id))
             };
             self.broadcast_to_self_and_visible(id, &message);
+        }
+
+        // The combat flag is not distributed: it goes to the player (`addItem(PICKUP, ...)`).
+        if World::is_combat_flag_item(item_id) {
+            self.add_item_object(id, taken.data, true);
+            return;
         }
 
         // Check if a Party is in progress.

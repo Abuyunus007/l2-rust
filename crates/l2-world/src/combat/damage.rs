@@ -366,6 +366,8 @@ impl World {
         if self.is_dead(npc) {
             return;
         }
+        // `FortCommander.addDamage` speaks first (M7-FORT-01) and hands on the attacker.
+        let attacker = self.fort_commander_add_damage(npc, attacker);
         // Walkers stop walking: the walking manager is not ported.
         self.notify_action_attacked(npc, attacker);
         // Calculate the amount of hate this attackable receives from this attack.

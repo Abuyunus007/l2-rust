@@ -193,6 +193,51 @@ pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::R
     }
 }
 
+/// The fortress values of `Feature.ini`, `Player.ini` and `OfflineTrade.ini`, and `FortSiege.ini`
+/// (Java `FortSiegeManager.load`: a missing file is logged and the defaults are used).
+pub fn fort_settings(config: &GameConfig, config_dir: &Path) -> l2_world::fort::FortSettings {
+    let (player, feature) = (&config.player, &config.feature);
+    let path = config_dir.join("FortSiege.ini");
+    let properties: std::collections::BTreeMap<String, String> = match IniFile::load(&path) {
+        Ok(ini) => ini
+            .keys()
+            .filter_map(|key| ini.get_value(key).map(|value| (key.to_owned(), value.to_owned())))
+            .collect(),
+        Err(e) => {
+            warn!("Error while loading Fort Siege Manager settings! {e}");
+            std::collections::BTreeMap::new()
+        }
+    };
+    l2_world::fort::FortSettings {
+        fs_tele_fee_ratio: feature.fs_tele_fee_ratio,
+        fs_tele1_fee: feature.fs_tele1_fee,
+        fs_tele2_fee: feature.fs_tele2_fee,
+        fs_support_fee_ratio: feature.fs_support_fee_ratio,
+        fs_support1_fee: feature.fs_support1_fee,
+        fs_support2_fee: feature.fs_support2_fee,
+        fs_mpreg_fee_ratio: feature.fs_mpreg_fee_ratio,
+        fs_mpreg1_fee: feature.fs_mpreg1_fee,
+        fs_mpreg2_fee: feature.fs_mpreg2_fee,
+        fs_hpreg_fee_ratio: feature.fs_hpreg_fee_ratio,
+        fs_hpreg1_fee: feature.fs_hpreg1_fee,
+        fs_hpreg2_fee: feature.fs_hpreg2_fee,
+        fs_expreg_fee_ratio: feature.fs_expreg_fee_ratio,
+        fs_expreg1_fee: feature.fs_expreg1_fee,
+        fs_expreg2_fee: feature.fs_expreg2_fee,
+        fs_update_frq: feature.fs_update_frq,
+        fs_blood_oath_count: feature.fs_blood_oath_count,
+        fs_fee_for_castle: feature.fs_fee_for_castle,
+        fs_max_own_time: feature.fs_max_own_time,
+        fame_system_enabled: player.fame_system_enabled,
+        fame_for_dead_players: player.fame_for_dead_players,
+        offline_fame: config.offline_trade.offline_fame,
+        fortress_zone_fame_task_frequency: player.fortress_zone_fame_task_frequency,
+        fortress_zone_fame_aquire_points: player.fortress_zone_fame_aquire_points,
+        siege: l2_world::fort::FortSiegeIni::from_properties(&properties),
+        properties,
+    }
+}
+
 /// `SiegeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the sieges, the residence owner changes, the castle tax income and the fees the
 /// clan warehouses pay change this world only and leave their rows to the Java game server that
@@ -403,6 +448,10 @@ impl Server {
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
         let residence_settings = residence_settings(&config, &paths.config_dir);
+        // Java: Fort constructors and FortSiege (fort_spawnlist, fort_siege_guards,
+        // fortsiege_clans; M7-FORT-01) and FortSiegeManager (FortSiege.ini).
+        let fort_sieges = persist::load_fort_sieges(&pool).await;
+        let fort_settings = fort_settings(&config, &paths.config_dir);
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -547,8 +596,12 @@ impl Server {
                     // Java: CHSiegeManager, ClanHallTable (after ClanTable), CastleManager,
                     // FortManager, SiegeScheduleData (M7-RES-01).
                     world.set_residence_settings(residence_settings);
+                    world.set_fort_settings(fort_settings);
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
+                    // Java: the Fort constructors' spawns, FortSiege, FortSiegeGuardManager
+                    // (M7-FORT-01).
+                    world.load_fort_data(fort_sieges);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

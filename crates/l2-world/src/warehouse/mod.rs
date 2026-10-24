@@ -51,6 +51,7 @@ pub use container::ContainerRef;
 pub(crate) use moves::Place;
 pub(crate) use refresh::PendingClanWindow;
 pub use sorted::WarehouseListType;
+pub(crate) use sorted::{A2Z, get_order};
 
 use std::collections::BTreeMap;
 

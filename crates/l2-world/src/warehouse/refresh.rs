@@ -34,7 +34,7 @@ impl World {
     /// Asks for the `CLANWH` rows of `clan_id` and remembers the window. A second request of the
     /// same player replaces the first; the answer of the first one finds nothing waiting and is
     /// dropped.
-    pub(super) fn request_clan_window(&mut self, player: ObjectId, clan_id: i32, window: PendingClanWindow) {
+    pub(crate) fn request_clan_window(&mut self, player: ObjectId, clan_id: i32, window: PendingClanWindow) {
         let Some(p) = self.players.get_mut(&player) else {
             return;
         };

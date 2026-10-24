@@ -338,6 +338,8 @@ impl World {
             self.teleporter_bypass_feedback(npc, player, command);
         } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
             // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).
+        } else if self.fort_npc_bypass_feedback(npc, player, command) {
+            // Java: FortManager, FortDoorman, FortLogistics.onBypassFeedback (`fort/npc.rs`).
         } else if self.is_village_master(npc) {
             // Java: VillageMaster.onBypassFeedback (the clan commands, `clan/village_master.rs`).
             self.village_master_bypass_feedback(npc, player, command);

@@ -735,7 +735,12 @@ impl World {
             }
             _ => None,
         };
-        // M7: `siege_state`, `siege_state_differs` and the territory wars.
+        // M7-FORT-01: the siege state of a fortress siege. M7: the castle sieges and the
+        // territory wars.
+        let (siege_state, siege_state_differs) = (
+            i32::from(self.fort_siege_state_of(subject)),
+            self.fort_siege_state_of(subject) != self.fort_siege_state_of(viewer),
+        );
         // The Handy's Block Checker arena (an event) adds INSIEGE/ENEMY/ALLY/ATTACKER: M8.
         RelationInput {
             has_clan: subject_clan.is_some(),
@@ -743,6 +748,8 @@ impl World {
             has_ally: self.ally_id_of(subject) != 0,
             is_clan_leader: self.is_clan_leader(subject),
             party_index,
+            siege_state,
+            siege_state_differs,
             clan_war,
             ..RelationInput::default()
         }
