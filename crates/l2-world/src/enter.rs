@@ -755,7 +755,12 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
     let speed = |value: f64| crate::stats::java_round(value / move_multiplier) as i32;
     let attack_element = view.attack_element();
     let defense = |element: i8| view.defense_element_value(element) as i16;
-    let enchant_effect = slots[paperdoll::RHAND].map_or(0, |w| w.enchant_level.min(127));
+    // `isMounted() || airShipHelm != 0 ? 0 : getEnchantEffect()`
+    let enchant_effect = if view.is_mounted() {
+        0
+    } else {
+        slots[paperdoll::RHAND].map_or(0, |w| w.enchant_level.min(127))
+    };
     UserInfo {
         x: core.x,
         y: core.y,
@@ -843,7 +848,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         } else {
             0
         },
-        mount_type: 0,
+        // `getMountType().ordinal()`
+        mount_type: view.mount_type().ordinal() as u8,
         private_store_type: player.trade.store_type.id(),
         // `getSkillLevel(CommonSkill.CREATE_DWARVEN) >= 1`
         has_dwarven_craft: data
@@ -870,7 +876,12 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         clan_privileges: world.clan_privileges_of(core.object_id),
         recom_left: player.recom_left as i16,
         recom_have: player.recom_have as i16,
-        mount_npc_id: 0,
+        // `getMountNpcId() > 0 ? getMountNpcId() + 1000000 : 0`
+        mount_npc_id: if view.mount_npc_id() > 0 {
+            view.mount_npc_id() + 1_000_000
+        } else {
+            0
+        },
         inventory_limit: view.inventory_limit() as i16,
         class_id: data.class_id,
         max_cp: view.max_cp(),

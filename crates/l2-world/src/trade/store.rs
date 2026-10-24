@@ -26,7 +26,7 @@
 // - Offline trade (`OfflineTradeEnable`, `OfflineTraderTable`, `setPrivateStoreType`'s
 //   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record): M6-STORE-01 leaves
 //   it, there are no detached clients in the Rust server yet.
-// - The flood protector `canPerformTransaction`, the cursed weapon check, `isSellingBuffs`
+// - The cursed weapon check, `isSellingBuffs`
 //   (`SellBuffsManager`), the olympiad (M8), a mount and a duel (`isInDuel`: M6-DUEL-01).
 
 use l2_protocol_game::SystemMessageId;
@@ -361,8 +361,11 @@ impl World {
                 return false;
             }
         }
-        // `!_inOlympiadMode` (M8) and `!isMounted()` (no mounts yet) hold for everybody.
-        !self.is_alike_dead(id) && !self.is_inside_zone(id, ZoneId::NoStore) && !self.is_casting_now(id)
+        // `!_inOlympiadMode` (M8) holds for everybody.
+        !self.is_alike_dead(id)
+            && !self.is_mounted(id)
+            && !self.is_inside_zone(id, ZoneId::NoStore)
+            && !self.is_casting_now(id)
     }
 
     /// Java `Player.tryOpenPrivateBuyStore()`.

@@ -281,7 +281,13 @@ impl World {
         if old_owner != 0 && old_owner != clan_id {
             // Remove points from old owner.
             self.fort_update_clans_reputation(old_owner, true);
-            // `oldleader.dismount()` of a leader on a wyvern: nobody rides one yet (mounts).
+            // The old leader on a wyvern dismounts.
+            if let Some(leader) = self.clan(old_owner).and_then(|c| c.leader)
+                && self.players.contains_key(&leader)
+                && self.mount_type_of(leader) == crate::mount::MountType::Wyvern
+            {
+                self.dismount(leader);
+            }
             // M7-FORT-01: `if (getSiege().isInProgress()) getSiege().updatePlayerSiegeStateFlags(true)`.
             self.fort_remove_owner(id, true);
         }

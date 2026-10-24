@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::REFUND_LIST_SIZE;
+use crate::flood::FloodKind;
 use crate::player::ItemData;
 use crate::world::World;
 
@@ -157,7 +158,10 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are selling too fast.").
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are selling too fast.");
+            return;
+        }
 
         let list_id = request.list_id;
         // (The decoder already drops an entry below 1; the world input can come from elsewhere.)

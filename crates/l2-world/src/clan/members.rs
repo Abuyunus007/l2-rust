@@ -569,7 +569,10 @@ impl World {
         // Scripts: `OnPlayerClanLeaderChange` (D-05).
 
         if ex_leader_online {
-            // Flying (a wyvern) and the siege skills: M6 mounts, M7.
+            // The old leader's wyvern lands; the siege skills: M7.
+            if self.is_flying(ex_leader) {
+                self.dismount(ex_leader);
+            }
             self.set_player_privileges_mask(ex_leader, 0);
             self.broadcast_user_info(ex_leader);
         } else {

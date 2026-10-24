@@ -8,6 +8,7 @@ use l2_protocol_game::server::{ActionFailed, SystemMessage};
 use l2_util::ObjectId;
 use tracing::warn;
 
+use crate::flood::FloodKind;
 use crate::world::World;
 
 impl World {
@@ -81,7 +82,10 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are using refund too fast.").
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are using refund too fast.");
+            return;
+        }
 
         let list_id = request.list_id;
         let items: Option<Vec<i32>> = request.items.filter(|v| v.len() <= self.max_item_in_packet());

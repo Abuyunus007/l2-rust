@@ -416,6 +416,8 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         max_bonus_exp: p.max_bonus_exp,
         max_bonus_sp: p.max_bonus_sp,
         alt_party_range: p.alt_party_range,
+        enable_free_strider: config.free_mounts.enable_free_strider,
+        enable_free_wyvern: config.free_mounts.enable_free_wyvern,
         ..ExpSettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
@@ -608,6 +610,120 @@ pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
             }
         }
         settings.ban_chat_channels = channels;
+    }
+    settings
+}
+
+/// `BotReportPunishments.xml` (Java `BotReportTable.PunishmentsLoader`): `<punishment
+/// neededReportCount skillId [skillLevel] [sysMessageId]>`. Java reports a bad attribute and then
+/// still calls `addPunishment` with what it has (its `-1` defaults); the skill check of the world
+/// drops that one.
+pub fn bot_report_punishments_from_xml(xml: &str) -> BTreeMap<i32, l2_world::BotPunishment> {
+    let mut punishments = BTreeMap::new();
+    let mut reader = Reader::from_str(xml);
+    loop {
+        match reader.read_event() {
+            Ok(Event::Empty(e) | Event::Start(e)) if e.name().as_ref() == "punishment" => {
+                let number = |key: &str| attribute(&e, key).and_then(|v| v.trim().parse::<i32>().ok());
+                let (Some(needed), Some(skill_id)) = (number("neededReportCount"), number("skillId")) else {
+                    warn!("Problem with BotReportTable: a punishment without neededReportCount or skillId");
+                    continue;
+                };
+                punishments.insert(
+                    needed,
+                    l2_world::BotPunishment {
+                        skill_id,
+                        skill_level: number("skillLevel").unwrap_or(1),
+                        system_message: number("sysMessageId").unwrap_or(-1),
+                    },
+                );
+            }
+            Ok(Event::Eof) | Err(_) => break,
+            Ok(_) => {}
+        }
+    }
+    punishments
+}
+
+/// The bot report values (Java `GeneralConfig.BOTREPORT_*`). The reset hour and the delay are
+/// post-processed in Java (placeholders in the generated config), so they are read from
+/// `General.ini` here; the punishments come from `BotReportPunishments.xml` when the button is on.
+pub fn bot_report_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BotReportSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let mut settings = l2_world::BotReportSettings {
+        enable: config.general.botreport_enable,
+        allow_reports_from_same_clan_members: config.general.botreport_allow_reports_from_same_clan_members,
+        ..l2_world::BotReportSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        // Java: `config.getInt("BotReportDelay", 30) * 60000`.
+        settings.report_delay_ms = i64::from(ini.get_int("BotReportDelay", 30)) * 60_000;
+        // Java: `getString("BotReportPointsResetHour", "00:00").split(":")`, parsed with
+        // `Integer.parseInt`; anything else fails the scheduling (every 24 hours).
+        let text = ini.get_string("BotReportPointsResetHour", "00:00");
+        let mut parts = text.split(':');
+        settings.reset_hour_minute = match (parts.next(), parts.next()) {
+            (Some(hour), Some(minute)) => hour
+                .trim()
+                .parse::<i64>()
+                .ok()
+                .zip(minute.trim().parse::<i64>().ok()),
+            _ => None,
+        };
+    }
+    if settings.enable {
+        let path = config_dir.join("BotReportPunishments.xml");
+        match std::fs::read(&path) {
+            Ok(bytes) => {
+                settings.punishments = bot_report_punishments_from_xml(&String::from_utf8_lossy(&bytes));
+            }
+            Err(e) => warn!(
+                "BotReportTable: Could not load punishments from {}: {e}",
+                path.display()
+            ),
+        }
+    }
+    settings
+}
+
+/// `FloodProtectorConfig.FLOOD_PROTECTOR_CONFIG_FILE`.
+pub const FLOOD_PROTECTOR_FILE: &str = "FloodProtector.ini";
+
+/// `config/FloodProtector.ini` (Java `FloodProtectorConfig.load`): the fifteen flood protectors.
+/// A missing file or key is the Java default of the key.
+pub fn flood_settings(config_dir: &Path) -> l2_world::FloodSettings {
+    use l2_config::IniFile;
+
+    match IniFile::load(config_dir.join(FLOOD_PROTECTOR_FILE)) {
+        Ok(ini) => flood_settings_from_ini(&ini),
+        Err(e) => {
+            warn!("Cannot read {FLOOD_PROTECTOR_FILE}: {e}; using the flood protector defaults.");
+            l2_world::FloodSettings::java_defaults()
+        }
+    }
+}
+
+/// `FloodProtectorConfig.loadFloodProtectorConfig` for every protector.
+pub fn flood_settings_from_ini(ini: &l2_config::IniFile) -> l2_world::FloodSettings {
+    use l2_world::{FloodConfig, FloodKind, FloodPunishment, FloodSettings};
+
+    let mut settings = FloodSettings::java_defaults();
+    for kind in FloodKind::ALL {
+        let key = |suffix: &str| format!("FloodProtector{}{suffix}", kind.config_name());
+        settings.set(
+            kind,
+            FloodConfig {
+                protection_interval: ini.get_int(&key("Interval"), kind.java_default_interval()),
+                log_flooding: ini.get_bool(&key("LogFlooding"), false),
+                punishment_limit: ini.get_int(&key("PunishmentLimit"), 0),
+                punishment_type: FloodPunishment::parse(&ini.get_string(&key("PunishmentType"), "none")),
+                // NOTE(java-quirk): `getInt(...) * 60000` is an int multiplication; a huge number
+                // of minutes overflows before it becomes the long.
+                punishment_time: i64::from(ini.get_int(&key("PunishmentTime"), 0).wrapping_mul(60_000)),
+            },
+        );
     }
     settings
 }
@@ -1547,6 +1663,82 @@ mod tests {
 
     use super::*;
 
+    /// The shipped `BotReportPunishments.xml`: exact counts and the negative range key.
+    #[test]
+    fn the_bot_report_punishments_are_read() {
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<list>
+	<!-- a comment -->
+	<punishment neededReportCount="25" skillId="6038" skillLevel="1" sysMessageId="2473" />
+	<punishment neededReportCount="150" skillId="6057" sysMessageId="2480" />
+	<punishment neededReportCount="-150" skillId="6040" skillLevel="2" />
+	<punishment skillId="1" />
+</list>"#;
+        let punishments = bot_report_punishments_from_xml(xml);
+        let punishment = |skill_id, skill_level, system_message| l2_world::BotPunishment {
+            skill_id,
+            skill_level,
+            system_message,
+        };
+        assert_eq!(
+            punishments,
+            BTreeMap::from([
+                (-150, punishment(6040, 2, -1)),
+                // `skillLevel` defaults to 1.
+                (25, punishment(6038, 1, 2473)),
+                (150, punishment(6057, 1, 2480)),
+            ])
+        );
+    }
+
+    /// `BotReportDelay` is minutes, the reset hour is `HH:MM` (anything else: no hour, the reset
+    /// then runs every 24 hours), the punishments are only read with the button on.
+    #[test]
+    fn the_bot_report_settings_come_from_general_ini() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "EnableBotReportButton = True
+BotReportPointsResetHour = 06:30
+BotReportDelay = 45
+AllowReportsFromSameClanMembers = True
+",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join("BotReportPunishments.xml"),
+            r#"<list><punishment neededReportCount="25" skillId="6038" sysMessageId="2473" /></list>"#,
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert!(settings.enable);
+        assert!(settings.allow_reports_from_same_clan_members);
+        assert_eq!(settings.report_delay_ms, 45 * 60_000);
+        assert_eq!(settings.reset_hour_minute, Some((6, 30)));
+        assert_eq!(settings.punishments.len(), 1);
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "EnableBotReportButton = True
+BotReportPointsResetHour = noon
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert_eq!(settings.reset_hour_minute, None);
+        assert_eq!(settings.report_delay_ms, 30 * 60_000);
+
+        // Off by default: no punishments are read.
+        std::fs::write(dir.path().join("General.ini"), "").unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = bot_report_settings(&config, dir.path());
+        assert!(!settings.enable);
+        assert!(settings.punishments.is_empty());
+        assert_eq!(settings.reset_hour_minute, Some((0, 0)));
+    }
+
     #[test]
     fn the_side_by_side_switch_defaults_to_off_and_reads_the_file() {
         let dir = tempfile::tempdir().unwrap();
@@ -2171,5 +2363,78 @@ ColorForAmount2 = nonsense
         assert_eq!(s.title_color.colors[0], 0x009C_9C9C);
         // Java would throw for a bad colour; the default stays.
         assert_eq!(s.title_color.colors[1], 0x0000_FF00);
+    }
+
+    #[test]
+    fn flood_protector_ini_gives_every_key_and_java_defaults_for_the_rest() {
+        use l2_world::{FloodKind, FloodPunishment};
+
+        // No file: the defaults of `FloodProtectorConfig`, not the numbers of the shipped file.
+        let dir = tempfile::tempdir().unwrap();
+        let defaults = flood_settings(dir.path());
+        assert_eq!(defaults, l2_world::FloodSettings::java_defaults());
+        assert_eq!(defaults.get(FloodKind::UseItem).protection_interval, 4);
+
+        std::fs::write(
+            dir.path().join(FLOOD_PROTECTOR_FILE),
+            "FloodProtectorUseItemInterval = 0
+FloodProtectorTransactionInterval = 7
+FloodProtectorTransactionLogFlooding = True
+FloodProtectorTransactionPunishmentLimit = 12
+FloodProtectorTransactionPunishmentType = ban
+FloodProtectorTransactionPunishmentTime = 5
+FloodProtectorGlobalChatPunishmentType = kick
+FloodProtectorPlayerActionInterval = 1
+",
+        )
+        .unwrap();
+        let s = flood_settings(dir.path());
+        assert_eq!(s.get(FloodKind::UseItem).protection_interval, 0);
+        let transaction = s.get(FloodKind::Transaction);
+        assert_eq!(transaction.protection_interval, 7);
+        assert!(transaction.log_flooding);
+        assert_eq!(transaction.punishment_limit, 12);
+        assert_eq!(transaction.punishment_type, FloodPunishment::Ban);
+        // Minutes in the file, milliseconds in the settings.
+        assert_eq!(transaction.punishment_time, 300_000);
+        assert_eq!(
+            s.get(FloodKind::GlobalChat).punishment_type,
+            FloodPunishment::Kick
+        );
+        assert_eq!(s.get(FloodKind::GlobalChat).protection_interval, 5);
+        assert_eq!(s.get(FloodKind::PlayerAction).protection_interval, 1);
+        // A key that is missing keeps its own default.
+        assert_eq!(s.get(FloodKind::HeroVoice).protection_interval, 100);
+        assert_eq!(
+            s.get(FloodKind::HeroVoice).punishment_type,
+            FloodPunishment::Unknown("none".to_owned())
+        );
+    }
+
+    /// The shipped `FloodProtector.ini` of the reference distribution: all fifteen protectors and
+    /// every one of the five keys is read. Skipped without the reference folder.
+    #[test]
+    fn the_shipped_flood_protector_ini_is_read_completely() {
+        use l2_world::FloodKind;
+
+        let root = PathBuf::from("C:/l2-rust/l2jmobius/dist/game/config");
+        if !root.join(FLOOD_PROTECTOR_FILE).exists() {
+            eprintln!("skipped: the reference config folder is missing");
+            return;
+        }
+        let s = flood_settings(&root);
+        let intervals: Vec<i32> = FloodKind::ALL
+            .iter()
+            .map(|k| s.get(*k).protection_interval)
+            .collect();
+        // The numbers of the shipped file (some differ from the code defaults, e.g. UseItem 0).
+        assert_eq!(
+            intervals,
+            [0, 42, 16, 100, 5, 20, 10, 3, 10, 10, 3, 100, 30, 9, 1]
+        );
+        for kind in FloodKind::ALL {
+            assert!(!s.get(kind).log_flooding, "{kind:?}");
+            assert_eq!(s.get(kind).punishment_limit, 0, "{kind:?}");
+        }
     }
 }

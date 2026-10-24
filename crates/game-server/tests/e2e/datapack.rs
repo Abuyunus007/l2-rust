@@ -13,6 +13,33 @@ fn write(root: &Path, relative: &str, text: &str) {
     std::fs::write(path, text).unwrap();
 }
 
+/// A `FloodProtector.ini` with every interval at 0: the tests send request after request, which
+/// the flood protectors of Java's defaults (e.g. one transaction per second) would refuse.
+// Not every test crate that includes this file writes the config.
+#[allow(dead_code)]
+pub fn no_flood_protection_ini() -> String {
+    [
+        "UseItem",
+        "RollDice",
+        "ItemPetSummon",
+        "HeroVoice",
+        "GlobalChat",
+        "Subclass",
+        "DropItem",
+        "ServerBypass",
+        "MultiSell",
+        "Transaction",
+        "Manufacture",
+        "SendMail",
+        "CharacterSelect",
+        "ItemAuction",
+        "PlayerAction",
+    ]
+    .iter()
+    .map(|name| format!("FloodProtector{name}Interval = 0\n"))
+    .collect()
+}
+
 fn template(class_id: i32, stats: [i32; 6], node: (i32, i32, i32), levels: &[(f64, f64, f64)]) -> String {
     let [str_, con, dex, int, wit, men] = stats;
     let mut xml = format!(

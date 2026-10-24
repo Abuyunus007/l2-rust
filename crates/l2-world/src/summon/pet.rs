@@ -29,7 +29,7 @@
 // tables (`PetWorld::rows`, `saved_effect_rows`).
 //
 // # Left out, with the system that brings it
-// - Mounts (`isMountable()` striders and wyverns are listed, `Player.mount` is not).
+// - Mounts are `mount.rs` (`Player.mount` unsummons the pet through [`World::pet_unsummon`]).
 // - The spawn protection that delays `CharSummonTable.restorePet` until the first action: the
 //   pet comes back at the first `on_action_request` (see `World::pet_on_action_request`).
 // - The flood protector of the pet packets, `PunishmentManager.handleIllegalPlayerAction` for a
@@ -50,6 +50,7 @@ use tracing::warn;
 use super::servitor::{SummonSkillSave, SummonWrite};
 use super::{Summon, SummonAi, SummonEffect, SummonKind, SummonTimer};
 use crate::effects::SkillKey;
+use crate::flood::FloodKind;
 use crate::npc::NpcClass;
 use crate::objects::{Npc, ObjectKind};
 use crate::outbox::PersistCommand;
@@ -370,8 +371,11 @@ impl World {
             self.pet_message(id, SystemMessageId::YourPetCannotCarryThisItem);
             return false;
         }
-        // The flood protector, the block checker arena and the observer mode are not modelled.
-        if self.is_all_skills_disabled(id) || self.is_casting_now(id) {
+        // The block checker arena and the observer mode are not modelled.
+        if !self.flood_allows(id, FloodKind::ItemPetSummon)
+            || self.is_all_skills_disabled(id)
+            || self.is_casting_now(id)
+        {
             return false;
         }
         if self.is_sitting(id) {
@@ -379,7 +383,7 @@ impl World {
             return false;
         }
         // `player.hasSummon() || player.isMounted()`.
-        if self.summon_of(id).is_some() {
+        if self.summon_of(id).is_some() || self.is_mounted(id) {
             self.pet_message(id, SystemMessageId::YouAlreadyHaveAPet);
             return false;
         }
@@ -409,8 +413,8 @@ impl World {
     /// Java `SummonPet.onStart` from the checks on: the collar the player used (the
     /// `PetItemHolder` `SummonItems` attached) makes the pet.
     pub(crate) fn summon_pet_effect(&mut self, player: ObjectId) {
-        // `player.hasSummon() || player.isMounted()`: mounts do not exist yet.
-        if self.summon_of(player).is_some() {
+        // `player.hasSummon() || player.isMounted()`.
+        if self.summon_of(player).is_some() || self.is_mounted(player) {
             self.pet_message(player, SystemMessageId::YouAlreadyHaveAPet);
             return;
         }
@@ -1484,6 +1488,12 @@ impl World {
     /// the pet leaves, its collar is destroyed with its row.
     pub(crate) fn pet_delete_me(&mut self, pet: ObjectId, owner: Option<ObjectId>) {
         let control = self.pet_control_object_id(pet);
+        // An owner who is not in the world: Java's retained `Player` object gets the items and
+        // loses the collar, the database has to do the same (`pet_offline.rs`).
+        let offline_owner = owner
+            .is_none()
+            .then(|| self.summon(pet).map(|s| s.owner))
+            .flatten();
         // `_inventory.transferItemsToOwner()`.
         if let Some(owner) = owner {
             self.pet_transfer_items_to_owner(owner);
@@ -1516,11 +1526,15 @@ impl World {
             self.pet_destroy_control_item(owner, control);
             self.summons.pet_world.saved.remove(&owner);
         }
+        if let (Some(owner), Some(control)) = (offline_owner, control) {
+            self.pet_decayed_offline(owner, control);
+            self.summons.pet_world.saved.remove(&owner);
+        }
     }
 
     /// Java `Pet.destroyControlItem(owner, false)`: the collar leaves the inventory and the `pets`
     /// row goes.
-    fn pet_destroy_control_item(&mut self, owner: ObjectId, control: ObjectId) {
+    pub(crate) fn pet_destroy_control_item(&mut self, owner: ObjectId, control: ObjectId) {
         // The pet instance leaves the world's table (`World.removePet`): done by the caller.
         if self.inventory_item(owner, control).is_some() {
             let templates = self.item_templates();
@@ -1623,6 +1637,14 @@ impl World {
     /// The pet part of the login: the rows of the character's collars become the world's view of
     /// the tables, and a pet that was stored for a restore comes back at the first action.
     pub(crate) fn take_saved_pets(&mut self, owner: ObjectId) {
+        // Java `Player.restorePetInventoryItems`: one `PET` or `PET_EQUIP` row of the owner means
+        // the collar cannot be traded, sold, deposited or mailed (`havePetInvItems`).
+        let has_pet_items = self.pet_item_count(owner) > 0;
+        if has_pet_items {
+            self.summons.pet_world.have_inv_items.insert(owner);
+        } else {
+            self.summons.pet_world.have_inv_items.remove(&owner);
+        }
         let Some(player) = self.players.get_mut(&owner) else {
             return;
         };

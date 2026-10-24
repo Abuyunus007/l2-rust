@@ -303,6 +303,20 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
+    /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
+    OfflinePetRowsLoaded {
+        owner: l2_util::ObjectId,
+        control_object_id: l2_util::ObjectId,
+        result: Result<crate::summon::pet_offline::OfflinePetRows, ()>,
+    },
+    /// The answer to `PersistCommand::BlockListRequest`: the block list rows of the receiver, or
+    /// `Err` when the read failed (the mail is then not sent, M6-FU-09).
+    BlockListLoaded {
+        sender: l2_util::ObjectId,
+        owner: i32,
+        result: Result<Vec<i32>, ()>,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -361,6 +375,24 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::OfflinePetRowsLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => write!(
+                f,
+                "OfflinePetRowsLoaded({owner}, {control_object_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BlockListLoaded {
+                sender,
+                owner,
+                result,
+            } => write!(
+                f,
+                "BlockListLoaded({sender}, {owner}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),

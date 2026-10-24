@@ -15,7 +15,7 @@
 // (`ItemChanges` of the one owner, written at once like `Item.updateDatabase()`).
 //
 // # Left out
-// - The flood protectors (`canPerformTransaction`, `canUseItem`), the enchant cancel of the two
+// - The enchant cancel of the two
 //   item moves (enchanting is not ported), `MercTicketManager` and `FortSiegeManager.isCombat`.
 // - `PunishmentManager.handleIllegalPlayerAction` for a wrong amount: logged, nothing else.
 // - The pet using a non-food item through its own cast (`ItemSkillsTemplate` with a pet): the
@@ -32,6 +32,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 use tracing::warn;
 
+use crate::flood::FloodKind;
 use crate::inventory::handlers::ItemHandlerKind;
 use crate::inventory::item_name_param;
 use crate::player::ItemData;
@@ -620,7 +621,11 @@ impl World {
         if amount <= 0 {
             return;
         }
-        // The flood protector and the enchant cancel: not ported.
+        if !self.flood_allows(player, FloodKind::Transaction) {
+            self.send_message(player, "You are giving items to pet too fast.");
+            return;
+        }
+        // FOLLOW-UP: the enchant cancel (`getActiveEnchantItemId`): not ported.
         // Alt game - Karma punishment.
         if !self.settings.inventory.alt_game_karma_player_can_trade
             && self.players.get(&player).is_some_and(|p| p.data.karma > 0)
@@ -732,6 +737,10 @@ impl World {
         if amount <= 0 {
             return;
         }
+        if !self.flood_allows(player, FloodKind::Transaction) {
+            self.send_message(player, "You get items from pet too fast.");
+            return;
+        }
         let Some(item) = self.pet_item(player, object_id).cloned() else {
             return;
         };
@@ -752,6 +761,9 @@ impl World {
         let Some(pet) = self.summon_of(player).filter(|s| self.is_pet(*s)) else {
             return;
         };
+        if !self.flood_allows(player, FloodKind::UseItem) {
+            return;
+        }
         let Some(item) = self.pet_item(player, object_id).cloned() else {
             return;
         };
@@ -913,8 +925,8 @@ impl World {
 
     // ------------------------------------------------------------------ pet food
 
-    /// Java `PetFood.onItemUse(playable, item, forceUse)`: a pet eats, a player (no mounts here)
-    /// is told the item cannot be used.
+    /// Java `PetFood.onItemUse(playable, item, forceUse)`: a pet eats, a mounted player feeds its
+    /// mount, any other player is told the item cannot be used.
     pub(crate) fn pet_food_on_use(&mut self, id: ObjectId, item: &ItemData, template: &ItemTemplate) -> bool {
         let is_pet = self.is_pet(id);
         if is_pet && !self.pet_data_of(id).is_some_and(|d| d.can_eat(item.item_id)) {
@@ -972,7 +984,10 @@ impl World {
                 return true;
             }
         } else if self.is_player(id) {
-            // The mount branch (`isMounted()`) needs mounts.
+            // The mount branch: a mounted player feeds its mount (`mount.rs`).
+            if self.mount_use_food(id, skill_id, skill_level, feed, item) {
+                return true;
+            }
             let templates = self.item_templates();
             self.send(
                 id,

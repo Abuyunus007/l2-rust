@@ -14,6 +14,7 @@
 //! chat packet has an encoder only). `{}` means decoded, with no fields.
 
 use l2_net::{Decode, PacketError, PacketReader};
+use l2_protocol_game::server::auction::ExItemAuctionInfo;
 use l2_protocol_game::server::charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, CharSelectionInfo,
     NewCharacterSuccess, ServerClose, SsqInfo,
@@ -44,6 +45,7 @@ use l2_protocol_game::server::entry::{
     ExBrExtraUserInfo, ExNevitAdventPointInfo, ExNevitAdventTimeChange, ExQuestItemList, ExRotation,
     ExShowContactList, MacroCommandEntry, MacroEntry, MacroList,
 };
+use l2_protocol_game::server::fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo};
 use l2_protocol_game::server::friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 use l2_protocol_game::server::gm_view::GmViewItemList;
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
@@ -56,6 +58,10 @@ use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
 use l2_protocol_game::server::mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,
+};
+use l2_protocol_game::server::manor::{
+    ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo,
+    ExShowSeedSetting, ExShowSellCropList,
 };
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
@@ -83,6 +89,9 @@ use l2_protocol_game::server::refine::{
 };
 use l2_protocol_game::server::residence::AgitDecoInfo;
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
+use l2_protocol_game::server::siege::{
+    ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
+};
 use l2_protocol_game::server::skills::{
     AbnormalStatusUpdate, AcquireSkillDone, AcquireSkillInfo, AcquireSkillList, EffectIcon, ExAutoSoulShot,
     MagicSkillCanceled, MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate,
@@ -95,9 +104,13 @@ use l2_protocol_game::server::store::{
     SellStoreEntry, StoreCandidate,
 };
 use l2_protocol_game::server::summon::{
-    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, SetSummonRemainTime,
+    PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate, Ride,
+    SetSummonRemainTime,
 };
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::territory::{
+    ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
+};
 use l2_protocol_game::server::trade::{
     SendTradeRequest, TradeDone as ServerTradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone,
     TradeOwnAdd, TradeStart, TradeUpdate,
@@ -434,6 +447,40 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         }
         ClientPacket::RequestConfirmCancelItem(p) => object!(p => object_id),
         ClientPacket::RequestRefineCancel(p) => object!(p => target_item_object_id),
+        ClientPacket::RequestSiegeInfo(_) => json!({}),
+        ClientPacket::RequestSiegeAttackerList(p) => object!(p => castle_id),
+        ClientPacket::RequestSiegeDefenderList(p) => object!(p => castle_id),
+        ClientPacket::RequestJoinSiege(p) => object!(p => castle_id, is_attacker, is_joining),
+        ClientPacket::RequestConfirmSiegeWaitingList(p) => object!(p => castle_id, clan_id, approved),
+        ClientPacket::RequestAllFortressInfo(_)
+        | ClientPacket::RequestFortressSiegeInfo(_)
+        | ClientPacket::RequestManorList(_)
+        | ClientPacket::RequestDominionInfo(_) => json!({}),
+        ClientPacket::RequestFortressMapInfo(p) => object!(p => fortress_id),
+        ClientPacket::RequestBuySeed(p) => json!({
+            "manor_id": p.manor_id,
+            "items": p.items.as_ref().map(|v| v.iter().map(|i| object!(i => item_id, count)).collect::<Vec<_>>()),
+        }),
+        ClientPacket::RequestProcureCropList(p) => json!({
+            "items": p.items.as_ref().map(|v| {
+                v.iter()
+                    .map(|i| object!(i => object_id, item_id, manor_id, count))
+                    .collect::<Vec<_>>()
+            }),
+        }),
+        ClientPacket::RequestSetSeed(p) => json!({
+            "manor_id": p.manor_id,
+            "items": p.items.iter().map(|i| object!(i => item_id, sales, price)).collect::<Vec<_>>(),
+        }),
+        ClientPacket::RequestSetCrop(p) => json!({
+            "manor_id": p.manor_id,
+            "items": p.items.iter()
+                .map(|i| object!(i => item_id, sales, price, reward_type))
+                .collect::<Vec<_>>(),
+        }),
+        ClientPacket::RequestJoinDominionWar(p) => object!(p => territory_id, is_clan, is_joining),
+        ClientPacket::RequestBidItemAuction(p) => object!(p => instance_id, bid),
+        ClientPacket::RequestInfoItemAuction(p) => object!(p => instance_id),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -719,6 +766,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             decoded::<ExDuelUpdateUserInfo>(&mut r, duel_update_user_info_fields)
         }
         ServerOpcode::PetDelete => decoded::<PetDelete>(&mut r, pet_delete_fields),
+        ServerOpcode::Ride => decoded::<Ride>(&mut r, ride_fields),
         ServerOpcode::RecipeBookItemList => {
             decoded::<RecipeBookItemList>(&mut r, |p| object!(p => is_common, max_mp, recipes))
         }
@@ -775,6 +823,65 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             decoded::<ExNoticePostSent>(&mut r, |p| object!(p => show_animation))
         }
         ServerOpcode::ExMailArrived => decoded::<ExMailArrived>(&mut r, |_| json!({})),
+        ServerOpcode::CastleSiegeInfo => decoded::<SiegeInfo>(&mut r, siege_info_fields),
+        ServerOpcode::CastleSiegeAttackerList => {
+            decoded::<SiegeAttackerList>(&mut r, siege_attacker_list_fields)
+        }
+        ServerOpcode::CastleSiegeDefenderList => {
+            decoded::<SiegeDefenderList>(&mut r, siege_defender_list_fields)
+        }
+        ServerOpcode::ExShowCastleInfo => decoded::<ExShowCastleInfo>(&mut r, |p| {
+            json!({
+                "castles": p.castles.iter().map(|c| {
+                    object!(c => residence_id, owner_name, tax_percent, siege_date_secs)
+                }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExShowFortressInfo => decoded::<ExShowFortressInfo>(&mut r, |p| {
+            json!({
+                "forts": p.forts.iter().map(|f| {
+                    object!(f => residence_id, owner_clan_name, siege_in_progress, owned_time)
+                }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExShowFortressSiegeInfo => {
+            decoded::<ExShowFortressSiegeInfo>(&mut r, |p| object!(p => fort_id, barracks_total, barracks))
+        }
+        ServerOpcode::ExShowFortressMapInfo => decoded::<ExShowFortressMapInfo>(
+            &mut r,
+            |p| object!(p => fort_id, siege_in_progress, barracks_total, barracks),
+        ),
+        ServerOpcode::ExShowManorDefaultInfo => {
+            decoded::<ExShowManorDefaultInfo>(&mut r, manor_default_fields)
+        }
+        ServerOpcode::ExShowSeedInfo => decoded::<ExShowSeedInfo>(&mut r, seed_info_fields),
+        ServerOpcode::ExShowCropInfo => decoded::<ExShowCropInfo>(&mut r, crop_info_fields),
+        ServerOpcode::ExShowSeedSetting => decoded::<ExShowSeedSetting>(&mut r, seed_setting_fields),
+        ServerOpcode::ExShowCropSetting => decoded::<ExShowCropSetting>(&mut r, crop_setting_fields),
+        ServerOpcode::ExShowProcureCropDetail => decoded::<ExShowProcureCropDetail>(&mut r, |p| {
+            json!({
+                "crop_id": p.crop_id,
+                "castles": p.castles.iter().map(|c| {
+                    object!(c => castle_id, amount, price, reward)
+                }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExShowSellCropList => decoded::<ExShowSellCropList>(&mut r, sell_crop_list_fields),
+        ServerOpcode::ExDominionWarStart => {
+            decoded::<ExDominionWarStart>(&mut r, |p| object!(p => object_id, territory_id, is_disguised))
+        }
+        ServerOpcode::ExDominionWarEnd => decoded::<ExDominionWarEnd>(&mut r, no_fields),
+        ServerOpcode::ExShowDominionRegistry => {
+            decoded::<ExShowDominionRegistry>(&mut r, dominion_registry_fields)
+        }
+        ServerOpcode::ExReplyDominionInfo => decoded::<ExReplyDominionInfo>(&mut r, |p| {
+            json!({
+                "territories": p.territories.iter().map(|t| {
+                    object!(t => territory_id, name, owner_clan_name, ward_ids, war_start_secs)
+                }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExItemAuctionInfo => decoded::<ExItemAuctionInfo>(&mut r, item_auction_fields),
         ServerOpcode::ExChangePostState => {
             decoded::<ExChangePostState>(&mut r, |p| object!(p => received_board, msg_ids, change_id))
         }
@@ -1890,12 +1997,155 @@ fn pet_status_update_fields(p: &PetStatusUpdate) -> Value {
     )
 }
 
+fn ride_fields(p: &Ride) -> Value {
+    object!(p => object_id, mounted, ride_type, ride_npc_id, x, y, z)
+}
+
 fn pet_delete_fields(p: &PetDelete) -> Value {
     object!(p => pet_type, pet_object_id)
 }
 
 fn set_summon_remain_time_fields(p: &SetSummonRemainTime) -> Value {
     object!(p => max_time, remaining_time)
+}
+
+fn siege_clan_fields(c: &SiegeClan) -> Value {
+    object!(c => clan_id, name, leader_name, crest_id, ally_id, ally_name, ally_crest_id)
+}
+
+fn siege_info_fields(p: &SiegeInfo) -> Value {
+    let time = match &p.time {
+        SiegeTime::Date(date) => json!({ "date": date }),
+        SiegeTime::Hours(hours) => json!({ "hours": hours }),
+    };
+    let owner = p
+        .owner
+        .as_ref()
+        .map(|o| object!(o => name, leader_name, ally_id, ally_name));
+    let mut fields = object!(p => residence_id, viewer_is_owner_leader, owner_id, now_secs);
+    fields["owner"] = json!(owner);
+    fields["time"] = time;
+    fields
+}
+
+fn siege_attacker_list_fields(p: &SiegeAttackerList) -> Value {
+    json!({
+        "residence_id": p.residence_id,
+        "clans": p.clans.iter().map(|c| c.as_ref().map(siege_clan_fields)).collect::<Vec<_>>(),
+    })
+}
+
+fn siege_defender_list_fields(p: &SiegeDefenderList) -> Value {
+    json!({
+        "castle_id": p.castle_id,
+        "clans": p.clans.iter().map(|d| {
+            d.as_ref().map(|d| json!({ "clan": siege_clan_fields(&d.clan), "state": d.state.id() }))
+        }).collect::<Vec<_>>(),
+    })
+}
+
+fn manor_default_fields(p: &ExShowManorDefaultInfo) -> Value {
+    json!({
+        "hide_buttons": p.hide_buttons,
+        "crops": p.crops.iter().map(|c| {
+            object!(c => crop_id, level, seed_price, crop_price, reward_1, reward_2)
+        }).collect::<Vec<_>>(),
+    })
+}
+
+fn seed_info_fields(p: &ExShowSeedInfo) -> Value {
+    json!({
+        "hide_buttons": p.hide_buttons,
+        "manor_id": p.manor_id,
+        "seeds": p.seeds.iter().map(|s| {
+            object!(s => seed_id, left, started, price, level, reward_1, reward_2)
+        }).collect::<Vec<_>>(),
+    })
+}
+
+fn crop_info_fields(p: &ExShowCropInfo) -> Value {
+    json!({
+        "hide_buttons": p.hide_buttons,
+        "manor_id": p.manor_id,
+        "crops": p.crops.iter().map(|c| {
+            object!(c => crop_id, left, started, price, reward, level, reward_1, reward_2)
+        }).collect::<Vec<_>>(),
+    })
+}
+
+fn seed_setting_fields(p: &ExShowSeedSetting) -> Value {
+    json!({
+        "manor_id": p.manor_id,
+        "seeds": p.seeds.iter().map(|s| json!({
+            "seed_id": s.seed_id,
+            "level": s.level,
+            "reward_1": s.reward_1,
+            "reward_2": s.reward_2,
+            "sale_limit": s.sale_limit,
+            "reference_price": s.reference_price,
+            "min_price": s.min_price,
+            "max_price": s.max_price,
+            "current": object!(s.current => amount, price),
+            "next": object!(s.next => amount, price),
+        })).collect::<Vec<_>>(),
+    })
+}
+
+fn crop_setting_fields(p: &ExShowCropSetting) -> Value {
+    json!({
+        "manor_id": p.manor_id,
+        "crops": p.crops.iter().map(|c| json!({
+            "crop_id": c.crop_id,
+            "level": c.level,
+            "reward_1": c.reward_1,
+            "reward_2": c.reward_2,
+            "sale_limit": c.sale_limit,
+            "min_price": c.min_price,
+            "max_price": c.max_price,
+            "current": object!(c.current => amount, price, reward),
+            "next": object!(c.next => amount, price, reward),
+        })).collect::<Vec<_>>(),
+    })
+}
+
+fn sell_crop_list_fields(p: &ExShowSellCropList) -> Value {
+    json!({
+        "manor_id": p.manor_id,
+        "items": p.items.iter().map(|i| json!({
+            "object_id": i.object_id,
+            "item_id": i.item_id,
+            "seed_level": i.seed_level,
+            "reward_1": i.reward_1,
+            "reward_2": i.reward_2,
+            "offer": i.offer.as_ref().map(|o| object!(o => amount, price, reward)),
+            "my_crops": i.my_crops,
+        })).collect::<Vec<_>>(),
+    })
+}
+
+fn dominion_registry_fields(p: &ExShowDominionRegistry) -> Value {
+    let mut fields = object!(
+        p => castle_id, owner_clan_name, owner_leader_name, owner_ally_name, clan_requests,
+        merc_requests, war_time, current_time, clan_registered, merc_registered
+    );
+    fields["territories"] = p
+        .territories
+        .iter()
+        .map(|t| object!(t => territory_id, ward_ids))
+        .collect::<Vec<_>>()
+        .into();
+    fields
+}
+
+fn item_auction_fields(p: &ExItemAuctionInfo) -> Value {
+    let mut fields = object!(p => refresh, instance_id, bid, time_remaining);
+    fields["item"] = item_fields(&p.item);
+    fields["next"] = json!(p.next.as_ref().map(|n| {
+        let mut next = object!(n => init_bid, start_secs);
+        next["item"] = item_fields(&n.item);
+        next
+    }));
+    fields
 }
 
 fn warehouse_list_fields(items: &Option<Vec<l2_protocol_game::client::WarehouseListEntry>>) -> Value {
@@ -2203,6 +2453,7 @@ mod tests {
         ServerOpcode::ExDuelEnd,
         ServerOpcode::ExDuelUpdateUserInfo,
         ServerOpcode::PetDelete,
+        ServerOpcode::Ride,
         ServerOpcode::SetSummonRemainTime,
         ServerOpcode::PetItemList,
         ServerOpcode::PetInventoryUpdate,
@@ -2213,6 +2464,25 @@ mod tests {
         ServerOpcode::ExNoticePostArrived,
         ServerOpcode::ExNoticePostSent,
         ServerOpcode::ExMailArrived,
+        ServerOpcode::CastleSiegeInfo,
+        ServerOpcode::CastleSiegeAttackerList,
+        ServerOpcode::CastleSiegeDefenderList,
+        ServerOpcode::ExShowCastleInfo,
+        ServerOpcode::ExShowFortressInfo,
+        ServerOpcode::ExShowFortressSiegeInfo,
+        ServerOpcode::ExShowFortressMapInfo,
+        ServerOpcode::ExShowManorDefaultInfo,
+        ServerOpcode::ExShowSeedInfo,
+        ServerOpcode::ExShowCropInfo,
+        ServerOpcode::ExShowSeedSetting,
+        ServerOpcode::ExShowCropSetting,
+        ServerOpcode::ExShowProcureCropDetail,
+        ServerOpcode::ExShowSellCropList,
+        ServerOpcode::ExDominionWarStart,
+        ServerOpcode::ExDominionWarEnd,
+        ServerOpcode::ExShowDominionRegistry,
+        ServerOpcode::ExReplyDominionInfo,
+        ServerOpcode::ExItemAuctionInfo,
         ServerOpcode::ExChangePostState,
         ServerOpcode::ExShowReceivedPostList,
         ServerOpcode::ExShowSentPostList,
@@ -3703,6 +3973,97 @@ mod tests {
     }
 
     #[test]
+    fn m7_packets_show_their_fields() {
+        use l2_protocol_game::client::{RequestJoinSiege, RequestSetSeed, SeedSale};
+        use l2_protocol_game::server::auction::ExItemAuctionInfo;
+        use l2_protocol_game::server::fort::ExShowFortressSiegeInfo;
+        use l2_protocol_game::server::siege::{SiegeInfo, SiegeTime};
+        use l2_protocol_game::server::territory::ExDominionWarStart;
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestJoinSiege {
+                    castle_id: 5,
+                    is_attacker: 1,
+                    is_joining: 0,
+                }
+                .to_bytes()
+            ),
+            json!({ "castle_id": 5, "is_attacker": 1, "is_joining": 0 })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestSetSeed {
+                    manor_id: 9,
+                    items: vec![SeedSale {
+                        item_id: 4,
+                        sales: 100,
+                        price: 200,
+                    }],
+                }
+                .to_bytes()
+            ),
+            json!({
+                "manor_id": 9,
+                "items": [{ "item_id": 4, "sales": 100, "price": 200 }],
+            })
+        );
+        assert_eq!(
+            s2c_fields(
+                &SiegeInfo {
+                    residence_id: 21,
+                    viewer_is_owner_leader: true,
+                    owner_id: 0,
+                    owner: None,
+                    now_secs: 1000,
+                    time: SiegeTime::Hours(vec![11, 12]),
+                }
+                .to_bytes()
+            ),
+            json!({
+                "residence_id": 21,
+                "viewer_is_owner_leader": true,
+                "owner_id": 0,
+                "owner": null,
+                "now_secs": 1000,
+                "time": { "hours": [11, 12] },
+            })
+        );
+        assert_eq!(
+            s2c_fields(&ExShowFortressSiegeInfo::new(2, 4, 3, 1).to_bytes()),
+            json!({ "fort_id": 2, "barracks_total": 4, "barracks": [2] })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExDominionWarStart {
+                    object_id: 1000,
+                    territory_id: 85,
+                    is_disguised: false,
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 1000, "territory_id": 85, "is_disguised": false })
+        );
+        let auction = s2c_fields(
+            &ExItemAuctionInfo {
+                refresh: false,
+                instance_id: 2,
+                bid: 500,
+                time_remaining: 60,
+                item: ItemInfo::plain(268_435_457, 57, 5),
+                next: None,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(auction["instance_id"], json!(2));
+        assert_eq!(auction["bid"], json!(500));
+        assert_eq!(auction["refresh"], json!(false));
+        assert_eq!(auction["next"], Value::Null);
+    }
+
+    #[test]
     fn party_packets_show_their_fields() {
         use l2_protocol_game::client::{
             RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
@@ -4427,6 +4788,24 @@ mod tests {
                 .to_bytes()
             ),
             json!({ "pet_type": 1, "pet_object_id": 9 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &Ride {
+                    object_id: 9,
+                    mounted: true,
+                    ride_type: 2,
+                    ride_npc_id: 12_621,
+                    x: -1,
+                    y: 2,
+                    z: -3
+                }
+                .to_bytes()
+            ),
+            json!({
+                "object_id": 9, "mounted": true, "ride_type": 2, "ride_npc_id": 12_621,
+                "x": -1, "y": 2, "z": -3
+            })
         );
         assert_eq!(
             s2c_fields(

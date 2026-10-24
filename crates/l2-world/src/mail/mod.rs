@@ -52,8 +52,6 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isInBlockList` (the ignore list is the friend list card's, `// M6-FRIEND:`).
-// - The flood protector `canPerformTransaction` of the attachment packets (no flood protectors
-//   yet; `canSendMail` is here, see [`MailSettings::send_interval_ticks`]).
 // - `ItemProcessType` logging (`LogItems`), the GM audit.
 // - `CustomMailManager` and the community board mail (`MailBoard`): scripts of a later card.
 //   `MailMessage::new_system` is the constructor they need.
@@ -93,7 +91,7 @@ pub const SENDER_TYPE_NONE: i32 = 2;
 /// `MessageSenderType.ALEGRIA.ordinal()`.
 pub const SENDER_TYPE_ALEGRIA: i32 = 3;
 
-/// The values of `General.ini` and `FloodProtector.ini` the mail reads. `Default` is the Java
+/// The values of `General.ini` the mail reads. `Default` is the Java
 /// default of each key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailSettings {
@@ -101,9 +99,6 @@ pub struct MailSettings {
     pub allow_mail: bool,
     /// `GeneralConfig.ALLOW_ATTACHMENTS` (`AllowAttachments`).
     pub allow_attachments: bool,
-    /// `FloodProtectorSendMailInterval`, in game ticks of 100 ms: the time between two mails of
-    /// a player (`getFloodProtectors().canSendMail()`).
-    pub send_interval_ticks: i32,
     /// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (D-49, default False): the expiry task
     /// deletes the rows of an expired mail and moves its attachments back to the sender. While the
     /// Java GS shares the database it does the same on its own schedule, so by default this server
@@ -116,7 +111,6 @@ impl Default for MailSettings {
         Self {
             allow_mail: true,
             allow_attachments: true,
-            send_interval_ticks: 100,
             expiry_database_writes: false,
         }
     }
@@ -332,8 +326,6 @@ pub(crate) struct MailWorld {
     pub names: BTreeMap<i32, (String, i32)>,
     /// The ids by lowercase name (`getIdByName` ignores the case).
     pub ids_by_name: BTreeMap<String, i32>,
-    /// The game tick each player may send the next mail at (the flood protector `canSendMail`).
-    pub next_send_tick: BTreeMap<ObjectId, i32>,
     /// The timer of the 10 s deletion task.
     pub deletion_timer: Option<TimerId>,
     /// The ids of the mails this server made since it started (`mail_send_message`). The Java GS
@@ -342,6 +334,12 @@ pub(crate) struct MailWorld {
     pub local_ids: std::collections::BTreeSet<i32>,
     /// The attachment packet waiting for the attachment rows: player to message id and packet.
     pub pending_attachments: BTreeMap<ObjectId, (i32, refresh::AttachmentAction)>,
+    /// A `RequestSendPost` waiting for the block list of an offline receiver: sender to the
+    /// receiver's id and the packet (M6-FU-09, see `send.rs`).
+    pub pending_block_checks: BTreeMap<ObjectId, (i32, RequestSendPost)>,
+    /// The answer of that read, used once by the packet when it runs again: sender to the
+    /// receiver's id and whether the receiver has the sender on its block list.
+    pub block_answers: BTreeMap<ObjectId, (i32, bool)>,
 }
 
 #[cfg(test)]

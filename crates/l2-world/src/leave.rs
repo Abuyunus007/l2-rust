@@ -87,6 +87,9 @@ impl World {
         let clan_leave = self.clan_before_leave(id);
         // `deleteMe`: "If a Party is in progress, leave it".
         self.leave_party(id);
+        // `deleteMe`: the wyvern's skill goes; `stopAllTimers` stops the feed, stores the food of
+        // the mounted pet and ends the rent.
+        self.mount_on_leave(id);
         // `deleteMe`: `stopCubics()` (the cubic ids go; `UserInfo` is sent to the leaving client).
         self.stop_cubics(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
@@ -128,6 +131,8 @@ impl World {
         // block list goes with the object (M6-FRIEND-01).
         self.friends_notify_offline(id, &leaving_name);
         self.forget_social_lists(id);
+        // The flood protectors belong to the client (M6-FU-06).
+        self.forget_flood(id, reason);
         // `Creature.deleteMe`: every effect goes without broadcasting
         // (`stopAllEffectsWithoutExclusions(false, false)`); the messages still reach a client
         // that is connected. Then the `BuffFinishTask` stops with the object.

@@ -104,18 +104,12 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
     }
 }
 
-/// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`) and
-/// `FloodProtectorSendMailInterval` of `FloodProtector.ini` (game ticks of 100 ms, default 100;
-/// the flood protector settings are not part of `GameConfig` yet).
+/// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`); the send interval is the
+/// `SendMail` flood protector ([`world_data::flood_settings`]).
 pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSettings {
-    let interval = match IniFile::load(config_dir.join("FloodProtector.ini")) {
-        Ok(ini) => ini.get_int("FloodProtectorSendMailInterval", 100),
-        Err(_) => 100,
-    };
     l2_world::MailSettings {
         allow_mail: config.general.allow_mail,
         allow_attachments: config.general.allow_attachments,
-        send_interval_ticks: interval,
         expiry_database_writes: mail_expiry_database_writes(config_dir),
     }
 }
@@ -386,6 +380,16 @@ impl Server {
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
         let mail = persist::load_mail(&pool).await;
         let mail_settings = mail_settings(&config, &paths.config_dir);
+        // Java: BotReportTable.getInstance (only with EnableBotReportButton): the punishments and
+        // the reports of the table, read only.
+        let bot_report_settings = world_data::bot_report_settings(&config, &paths.config_dir);
+        let bot_reports = if bot_report_settings.enable {
+            persist::load_bot_reports(&pool).await
+        } else {
+            Vec::new()
+        };
+        // Java: FloodProtectorConfig.load (FloodProtector.ini).
+        let flood_settings = world_data::flood_settings(&paths.config_dir);
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -531,8 +535,17 @@ impl Server {
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
                     // Java: MailManager, MessageDeletionTaskManager.
+                    // Java: FloodProtectors (per client, the settings are shared).
+                    world.set_flood_settings(flood_settings);
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
+                    // Java: BotReportTable (after the skills: a punishment needs its skill).
+                    let bot_report_on = bot_report_settings.enable;
+                    world.set_bot_report(bot_report_settings);
+                    if bot_report_on {
+                        world.load_bot_reports(bot_reports);
+                        world.start_bot_report_reset_task();
+                    }
                     // Java: BuyListData (the products' stock the last run left).
                     world.set_buy_lists(buy_lists, price_configs);
                     world.load_buy_list_stock(buy_list_stock);

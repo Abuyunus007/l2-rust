@@ -130,6 +130,10 @@ pub struct World {
     pub(crate) augment: crate::augment::AugmentWorld,
     /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
     pub(crate) residences: crate::residence::ResidenceWorld,
+    /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
+    pub(crate) bot_report: crate::bot_report::BotReportWorld,
+    /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
+    pub(crate) flood: crate::flood::FloodWorld,
 }
 
 impl World {
@@ -192,6 +196,8 @@ impl World {
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
             residences: crate::residence::ResidenceWorld::default(),
+            bot_report: crate::bot_report::BotReportWorld::default(),
+            flood: crate::flood::FloodWorld::default(),
         }
     }
 
@@ -347,6 +353,16 @@ impl World {
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
+            WorldCommand::OfflinePetRowsLoaded {
+                owner,
+                control_object_id,
+                result,
+            } => self.on_offline_pet_rows_loaded(owner, control_object_id, result),
+            WorldCommand::BlockListLoaded {
+                sender,
+                owner,
+                result,
+            } => self.on_block_list_loaded(sender, owner, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -719,6 +735,8 @@ impl World {
             // Java: RecoGiveTask, DailyResetManager.onReset
             TimerKind::RecoGive(id) => self.on_reco_give_timer(id),
             TimerKind::DailyReset => self.on_daily_reset_timer(),
+            // Java: BotReportTable.ResetPointTask
+            TimerKind::BotReportReset => self.on_bot_report_reset_timer(),
             // Java: BuffFinishTask, EffectTickTask, EffectList's icon task,
             // Player.updateAndBroadcastStatus
             TimerKind::BuffFinish(id) => self.on_buff_finish_timer(id),
@@ -746,6 +764,8 @@ impl World {
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
+            // Java: PetFeedTask, DismountTask, RentPetTask
+            TimerKind::Mount(timer) => self.on_mount_timer(timer),
         }
     }
 

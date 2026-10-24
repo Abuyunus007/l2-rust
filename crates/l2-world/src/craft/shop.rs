@@ -15,6 +15,7 @@ use l2_protocol_game::server::{
 use l2_util::ObjectId;
 
 use super::ManufactureItem;
+use crate::flood::FloodKind;
 use crate::trade::PrivateStoreType;
 use crate::world::World;
 use crate::zones::ZoneId;
@@ -169,11 +170,15 @@ impl World {
 
     /// `RequestActionUse` actions 37 (dwarven manufacture) and 51 (general manufacture): the
     /// manage window of the shop.
-    // Action 37 also refuses a mounted player and one who sells buffs (`SellBuffsManager`); the
-    // card for actions is `M6-ACTION-01`, mounts and buff shops do not exist yet.
+    // Action 37 also refuses one who sells buffs (`SellBuffsManager`); buff shops do not exist yet.
     pub(crate) fn action_manufacture(&mut self, id: ObjectId, dwarven: bool) {
         // Player shouldn't be able to set stores if he/she is alike dead (dead or fake death).
         if self.is_alike_dead(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
+        // Action 37 only (`if (player.isMounted())`): action 51 has no such check in Java.
+        if dwarven && self.is_mounted(id) {
             self.send(id, &ActionFailed);
             return;
         }
@@ -320,13 +325,15 @@ impl World {
     }
 
     /// Java `RequestRecipeShopMakeItem.runImpl`.
-    // The flood protector `canManufacture` is not modelled.
     pub(crate) fn on_request_recipe_shop_make_item(
         &mut self,
         id: ObjectId,
         manufacturer: i32,
         recipe_id: i32,
     ) {
+        if !self.flood_allows(id, FloodKind::Manufacture) {
+            return;
+        }
         let manufacturer = ObjectId(manufacturer);
         if !self.players.contains_key(&manufacturer) {
             return;

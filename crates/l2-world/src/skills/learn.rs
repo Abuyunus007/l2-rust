@@ -26,7 +26,6 @@
 //   those requests find no `SkillLearn` and are ignored, which is what Java does for a skill that
 //   is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are therefore
 //   silent too.
-// - `isMounted()` (M6: the mounts).
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
@@ -701,8 +700,7 @@ impl World {
         if !self.players.contains_key(&player) {
             return;
         }
-        // `|| player.isMounted()`: mounts are not modelled.
-        if self.is_transformed(player) {
+        if self.is_transformed(player) || self.is_mounted(player) {
             self.send(
                 player,
                 &SystemMessage::new(

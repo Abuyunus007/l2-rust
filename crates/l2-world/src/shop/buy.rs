@@ -13,6 +13,7 @@ use tracing::warn;
 use super::CUSTOM_CB_SELL_LIST;
 use super::packets::is_siege_guard_item;
 use crate::dialog::INTERACTION_DISTANCE;
+use crate::flood::FloodKind;
 use crate::target::distance_3d;
 use crate::world::World;
 
@@ -126,7 +127,10 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
-        // FOLLOW-UP: the flood protector `canPerformTransaction` ("You are buying too fast.").
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are buying too fast.");
+            return;
+        }
 
         let list_id = request.list_id;
         // `readImpl` left the list null: a bad count, a bad length or a bad entry.

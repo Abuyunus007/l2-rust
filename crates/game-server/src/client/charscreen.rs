@@ -15,7 +15,7 @@
 
 use std::collections::HashSet;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use l2_config::GameConfig;
 use l2_data::{ClassId, Datapack};
@@ -27,12 +27,13 @@ use l2_net::{Control, Encode};
 use l2_protocol_game::ConnectionState;
 use l2_protocol_game::client::{CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect};
 use l2_protocol_game::server::{
-    CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, NewCharTemplate,
-    NewCharacterSuccess, ServerClose, SsqInfo,
+    CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, LeaveWorld,
+    NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo,
 };
 use l2_util::time::now_millis;
 use l2_util::{ObjectId, WorldRng};
-use l2_world::IdFactory;
+use l2_world::flood::MILLIS_IN_TICK;
+use l2_world::{FloodConfig, FloodKind, FloodPunishment, IdFactory};
 use tracing::{debug, error, info, warn};
 
 use super::BoxFuture;
@@ -282,8 +283,12 @@ pub struct CharScreen {
     /// Names of fake players, lower case (Java `FakePlayerData.getProperName`). NPCs are not
     /// loaded yet, so the set is empty in the server.
     pub reserved_names: HashSet<String>,
-    /// `FloodProtectorCharacterSelectInterval` times 100 ms.
-    pub select_interval: Duration,
+    /// The `CharacterSelect` flood protector of `FloodProtector.ini` (a client at the character
+    /// screen has no player in the world, so this one is checked here, with the shared
+    /// [`FloodAction`] state machine of the world crate).
+    pub select_flood: FloodConfig,
+    /// The game ticks of 100 ms count from here (`GameTimeTaskManager`).
+    pub started: Instant,
     /// Java `synchronized (CharInfoTable.getInstance())`: count, name check and insert are one step.
     pub create_lock: tokio::sync::Mutex<()>,
 }
@@ -317,9 +322,23 @@ impl CharScreen {
             stat_bonus,
             item_max_mp,
             reserved_names: HashSet::new(),
-            select_interval: Duration::from_millis(u64::try_from(select_interval_ticks).unwrap_or(0) * 100),
+            select_flood: FloodConfig::with_interval(select_interval_ticks),
+            started: Instant::now(),
             create_lock: tokio::sync::Mutex::new(()),
         }
+    }
+
+    /// Replaces the `CharacterSelect` flood protector with the full settings of
+    /// `FloodProtector.ini` (the interval alone is what [`new`](Self::new) takes).
+    pub fn with_select_flood(mut self, config: FloodConfig) -> Self {
+        self.select_flood = config;
+        self
+    }
+
+    /// `GameTimeTaskManager.getGameTicks()`: ticks of 100 ms.
+    fn game_ticks(&self) -> i32 {
+        i32::try_from(self.started.elapsed().as_millis() / u128::from(MILLIS_IN_TICK.unsigned_abs()))
+            .unwrap_or(i32::MAX)
     }
 
     /// The templates of `NewCharacter`.
@@ -556,14 +575,51 @@ impl ClientSession {
         found
     }
 
-    /// Java `FloodProtectorAction.canPerformAction` for `CharacterSelect`.
-    fn can_select_character(&mut self) -> bool {
-        let now = Instant::now();
-        if self.next_select.is_some_and(|next| now < next) {
-            return false;
+    /// Java `getFloodProtectors().canSelectCharacter()` (`FloodProtectorAction.canPerformAction`
+    /// for `CharacterSelect`): false when the request came too soon. The kick punishment closes
+    /// the connection.
+    // NOTE: the `ban` punishment is the world's `PunishmentManager` (the account ban rows and the
+    // login server access level), which a client at the character screen cannot reach: it is
+    // logged and skipped. `jail` needs a player, which Java does not have here either.
+    async fn can_select_character(&mut self, ctl: &mut Control<'_>) -> bool {
+        let screen = Arc::clone(&self.ctx);
+        let screen = &screen.charscreen;
+        let kind = FloodKind::CharacterSelect;
+        let who = self.account.clone().unwrap_or_else(|| self.ip.to_string());
+        let check = self.select_flood.check(&screen.select_flood, screen.game_ticks());
+        if let Some(ms) = check.log_flooding_ms {
+            warn!(
+                "{}: {who} called command {} ~{ms} ms after previous command.",
+                kind.type_name(),
+                kind.type_name()
+            );
         }
-        self.next_select = Some(now + self.ctx.charscreen.select_interval);
-        true
+        if let Some(extra) = check.log_extra {
+            warn!(
+                "{}: {who} issued {extra} extra requests within ~{} ms.",
+                kind.type_name(),
+                screen
+                    .select_flood
+                    .protection_interval
+                    .wrapping_mul(MILLIS_IN_TICK)
+            );
+        }
+        if check.punish {
+            match &screen.select_flood.punishment_type {
+                FloodPunishment::Kick => {
+                    warn!("{}: {who} kicked for flooding", kind.type_name());
+                    ctl.send_and_close(LeaveWorld.to_bytes());
+                }
+                FloodPunishment::Ban | FloodPunishment::Jail => warn!(
+                    "{}: {who} would be punished for flooding; only kick is supported at the character screen",
+                    kind.type_name()
+                ),
+                FloodPunishment::Unknown(text) => {
+                    warn!("FloodProtector: Unknown punishment type configured: {text}");
+                }
+            }
+        }
+        check.allowed
     }
 
     /// Java `CharacterDelete.runImpl`.
@@ -605,7 +661,7 @@ impl ClientSession {
 
     /// Java `CharacterRestore.runImpl`.
     pub(super) async fn on_character_restore(&mut self, packet: CharacterRestore, ctl: &mut Control<'_>) {
-        if !self.can_select_character() {
+        if !self.can_select_character(ctl).await {
             return;
         }
         let screen = Arc::clone(&self.ctx);
@@ -637,7 +693,7 @@ impl ClientSession {
     /// Java `CharacterSelect.runImpl`: the player is loaded (see [`super::enter`]) and the client
     /// is told; the world takes the character over at `EnterWorld`.
     pub(super) async fn on_character_select(&mut self, packet: CharacterSelect, ctl: &mut Control<'_>) {
-        if !self.can_select_character() {
+        if !self.can_select_character(ctl).await {
             return;
         }
         let Some(key) = self.session_key else {

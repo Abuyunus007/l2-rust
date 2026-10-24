@@ -379,6 +379,8 @@ pub struct Player {
     pub multisell: Option<crate::multisell::PreparedList>,
     /// The recipe books, the manufacture shop and the crafting flag (see `craft/`).
     pub craft: crate::craft::PlayerCraft,
+    /// Java `_mountType`, `_mountNpcId`, the food of the mount and its tasks (see `mount.rs`).
+    pub mount: crate::mount::MountState,
 }
 
 impl Player {
@@ -435,6 +437,7 @@ impl Player {
             warehouse,
             multisell: None,
             craft,
+            mount: crate::mount::MountState::default(),
         }
     }
 

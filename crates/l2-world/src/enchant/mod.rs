@@ -35,7 +35,6 @@
 // `ChangeWeapon` condition give up (`isEnchanting`).
 //
 // # Left out on purpose
-// - Mounts (`isMounted`): not modelled, so the scroll never refuses a mounted player.
 // - The Java GS "enchant.items" log file: the lines go to `tracing` with the target `enchant.items`
 //   (`LogItemEnchants`).
 

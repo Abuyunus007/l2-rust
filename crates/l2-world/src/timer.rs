@@ -88,6 +88,9 @@ pub enum TimerKind {
     /// Java `DailyResetManager`'s daily run at 6:30 (server local time), see
     /// `rewards/recommendations.rs`.
     DailyReset,
+    /// Java `BotReportTable.ResetPointTask`: the daily reset of the report points, see
+    /// `bot_report.rs`.
+    BotReportReset,
     /// Java `BuffFinishTask`'s 1 s run for one creature: its timed buffs count down, see
     /// `effects/list.rs`.
     BuffFinish(ObjectId),
@@ -125,6 +128,9 @@ pub enum TimerKind {
     Craft(crate::craft::CraftTimer),
     /// The fee tasks of the residence functions, see `residence/`.
     Residence(crate::residence::ResidenceTimer),
+    /// The feed task of a mount, the dismount task of a no-landing zone and the rent task, see
+    /// `mount.rs`.
+    Mount(crate::mount::MountTimer),
 }
 
 #[derive(Debug, Default)]

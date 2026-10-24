@@ -155,6 +155,22 @@ pub enum PersistCommand {
         kind: crate::residence::ResidenceReadKind,
         then: crate::residence::ResidenceReadThen,
     },
+    /// Java `BotReportTable.saveReportedCharData`, one row at a time (M6-FU-09, see
+    /// `bot_report.rs`): `INSERT INTO bot_reported_char_data VALUES (?,?,?)`, replacing the report
+    /// date of a row that exists.
+    BotReport(crate::bot_report::BotReportRow),
+    /// Asks the persistence task to read the block list of a character that is not online
+    /// (`character_friends` with `relation = 1`, Java `BlockList.loadList`) before
+    /// `RequestSendPost` sends a mail to it (M6-FU-09). The answer comes back as
+    /// `WorldCommand::BlockListLoaded`.
+    BlockListRequest { sender: ObjectId, owner: i32 },
+    /// Asks the persistence task to read the `PET`, `PET_EQUIP`, `INVENTORY` and `PAPERDOLL` rows
+    /// of a character that is offline while its dead pet's corpse decays (`Pet.deleteMe`, M6-FU-09).
+    /// The answer comes back as `WorldCommand::OfflinePetRowsLoaded`.
+    OfflinePetRowsRequest {
+        owner: ObjectId,
+        control_object_id: ObjectId,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

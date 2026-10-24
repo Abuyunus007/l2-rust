@@ -109,8 +109,7 @@ pub(crate) fn can_transform(a: &StatView<'_>) -> bool {
     } else if a.in_water() {
         tell(SystemMessageId::YouCannotPolymorphIntoTheDesiredFormInWater);
         false
-    } else if a.is_flying_mounted() {
-        // `|| player.isMounted()`: mounts are not modelled.
+    } else if a.is_flying_mounted() || a.is_mounted() {
         tell(SystemMessageId::YouCannotPolymorphWhileRidingAPet);
         false
     } else {

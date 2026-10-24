@@ -32,7 +32,6 @@
 // `SiegeDatabaseWrites`).
 //
 // # What is left out, with the system that brings it
-// - The flood protector `canPerformTransaction` of the three packets (no flood protectors yet).
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 // - `Wear` (`ShopPreviewList`) and `BuyShadowItem`: separate bypasses, not in this card.
 

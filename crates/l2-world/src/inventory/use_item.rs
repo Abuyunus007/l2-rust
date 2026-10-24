@@ -14,6 +14,7 @@ use super::paperdoll::{body_part_of_paperdoll_slot, body_part_of_worn_item};
 use super::{LOC_PAPERDOLL, is_equipable, item_name_param};
 use crate::effects::EffectType;
 use crate::enter::storage_max_count;
+use crate::flood::FloodKind;
 use crate::zones::ZoneId;
 
 /// Java `Race.KAMAEL.ordinal()`; `Race.DWARF` is `crate::data::RACE_DWARF`.
@@ -26,7 +27,10 @@ const FORMAL_WEAR_ID: i32 = 6408;
 impl crate::world::World {
     /// Java `UseItem.runImpl`.
     pub(crate) fn on_use_item(&mut self, id: ObjectId, object_id: i32, ctrl_pressed: bool) {
-        // Flood protect UseItem: the flood protectors are the session's, not the world's.
+        // Flood protect UseItem.
+        if !self.flood_allows(id, FloodKind::UseItem) {
+            return;
+        }
 
         // Jail restriction.
         if self.is_inside_zone(id, ZoneId::Jail) {
@@ -142,7 +146,10 @@ impl crate::world::World {
                         self.send(id, &cannot_equip);
                         return;
                     }
-                    // Mounts are not modelled.
+                    if self.is_mounted(id) {
+                        self.send(id, &cannot_equip);
+                        return;
+                    }
                     if self.is_disarmed(id) {
                         self.send(id, &cannot_equip);
                         return;

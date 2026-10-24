@@ -29,6 +29,7 @@ use tracing::warn;
 
 use super::{LOC_PAPERDOLL, item_name_param};
 use crate::enter::current_load;
+use crate::flood::FloodKind;
 use crate::player::ItemData;
 use crate::stats::skills::java_hash_map_order;
 use crate::world::World;
@@ -175,7 +176,10 @@ impl World {
             }
             return;
         }
-        // Flood protector `canPerformTransaction`: not modelled.
+        if !self.flood_allows(id, FloodKind::Transaction) {
+            self.send_message(id, "You are destroying items too fast.");
+            return;
+        }
         if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
@@ -246,6 +250,7 @@ impl World {
             if self
                 .summon_of(id)
                 .is_some_and(|s| self.pet_control_object_id(s) == Some(object_id))
+                || (self.is_mounted(id) && self.mount_object_id_of(id) == object_id)
             {
                 self.send(
                     id,
@@ -334,7 +339,10 @@ impl World {
         if self.is_alike_dead(id) {
             return;
         }
-        // Flood protect drop to avoid packet lag: the flood protectors are the session's.
+        // Flood protect drop to avoid packet lag.
+        if !self.flood_allows(id, FloodKind::DropItem) {
+            return;
+        }
 
         let object_id = ObjectId(object_id);
         let gm = self.is_gm(id);
@@ -348,7 +356,7 @@ impl World {
 
         let discard_refused = SystemMessage::new(SystemMessageId::ThisItemCannotBeDiscarded);
         // `validateItemManipulation` (owner, summon, mount, active enchant scroll, cursed weapon):
-        // the summon, mount and cursed weapon parts are not modelled.
+        // the cursed weapon part is not modelled.
         let refused = template.is_none()
             || !self.validate_item_manipulation(id, object_id)
             || count == 0
@@ -423,8 +431,8 @@ impl World {
             return;
         }
 
-        // Transactions (a trade or an open request) and private stores. Fishing, flying and a
-        // skill that consumes the item or is being cast (`isCastingNow`): none of them exist yet.
+        // Transactions (a trade or an open request) and private stores. Fishing and a skill that
+        // consumes the item or is being cast (`isCastingNow`): not modelled yet.
         if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
@@ -432,6 +440,10 @@ impl World {
                     SystemMessageId::WhileOperatingAPrivateStoreOrWorkshopYouCannotDiscardDestroyOrTradeAnItem,
                 ),
             );
+            return;
+        }
+        // A flying player (a wyvern rider) drops nothing.
+        if self.is_flying(id) {
             return;
         }
 

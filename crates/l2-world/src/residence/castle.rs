@@ -361,7 +361,13 @@ impl World {
                         self.remove_clan_circlets(owner_id, id.0, Writes::Job);
                     }
                 }
-                // `oldleader.dismount()` of a leader on a wyvern: nobody rides one yet (mounts).
+                // The old leader on a wyvern dismounts.
+                if let Some(leader) = self.clan(owner_id).and_then(|c| c.leader)
+                    && self.players.contains_key(&leader)
+                    && self.mount_type_of(leader) == crate::mount::MountType::Wyvern
+                {
+                    self.dismount(leader);
+                }
                 // Unset has castle flag for old owner.
                 if let Some(old) = self.clan_mut(owner_id) {
                     old.castle_id = 0;

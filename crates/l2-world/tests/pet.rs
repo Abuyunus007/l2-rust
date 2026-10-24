@@ -13,8 +13,8 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusUpdate, SummonInfo,
-    SystemMessage,
+    ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusUpdate,
+    PrivateStoreManageListSell, SummonInfo, SystemMessage,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
@@ -1776,5 +1776,276 @@ fn a_collar_destroyed_on_the_ground_takes_its_row_with_it() {
         vec![SummonWrite::DeletePet {
             control_object_id: ObjectId(0x2200_0009)
         }]
+    );
+}
+
+// ---- M6-FU-09: the collar rule and the decay of an offline owner's pet -----------------------------
+
+/// The collar and its pet's ore, after the pet was sent away with the ore still in its inventory.
+fn scene_with_a_pet_that_kept_its_items() -> Scene {
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 10, "INVENTORY")]);
+    let pet = s.use_collar();
+    s.pet_input(PetInput::GiveItemToPet {
+        object_id: ORE_STACK.0,
+        amount: 4,
+    });
+    s.world.pet_set_current_fed(pet, 20);
+    s.action(19);
+    assert_eq!(s.world.summon_of(ME), None);
+    s.me.take();
+    s
+}
+
+/// The object ids of the inventory items the private sell store window offers
+/// (`getAvailableItems(sellList)`, which asks `Item.isAvailable`).
+fn store_window_items(s: &mut Scene) -> Vec<i32> {
+    s.input(ClientInput::Store(StoreInput::ActionUse { action_id: 10 }));
+    let packets = s.me.take();
+    let raw = of(&packets, "PRIVATE_STORE_SELL_MANAGE_LIST");
+    assert!(
+        !raw.is_empty(),
+        "{:?} {:?}",
+        names(&packets),
+        message_ids(&packets)
+    );
+    let window: PrivateStoreManageListSell = decode(raw[0]);
+    window.item_list.iter().map(|c| c.item.object_id).collect()
+}
+
+/// Java `Item.isAvailable`: the control item of the summoned pet is not available, and a pet collar
+/// is not while `player.havePetInvItems()`. Trade, shops, warehouses and the post item list all
+/// ask it, the sell store window stands for them here.
+#[test]
+fn a_collar_whose_pet_is_out_or_kept_items_is_not_available() {
+    // No pet out, no pet items: the collar is offered.
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 10, "INVENTORY")]);
+    assert_eq!(store_window_items(&mut s), vec![CONTROL.0, ORE_STACK.0]);
+
+    // The pet is out: "Not Control item of currently summoned pet."
+    // (A store next to the pet itself is refused by `ShopMinRangeFromNpc`, so the range is off.)
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 10, "INVENTORY")]);
+    s.world.set_settings(WorldSettings {
+        store: StoreSettings {
+            shop_min_range_from_npc: 0,
+            shop_min_range_from_player: 0,
+            ..StoreSettings::default()
+        },
+        ..WorldSettings::default()
+    });
+    s.use_collar();
+    s.me.take();
+    assert_eq!(store_window_items(&mut s), vec![ORE_STACK.0]);
+
+    // The pet went away with items (`havePetInvItems`): no collar, the rest stays.
+    let mut s = scene_with_a_pet_that_kept_its_items();
+    assert!(s.world.have_pet_inv_items(ME));
+    assert_eq!(store_window_items(&mut s), vec![ORE_STACK.0]);
+}
+
+/// `Player.restorePetInventoryItems` at the login: one `PET` row of the owner is enough.
+#[test]
+fn pet_items_in_the_rows_at_the_login_block_the_collar() {
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 4, "PET")]);
+    assert!(s.world.have_pet_inv_items(ME));
+    assert_eq!(store_window_items(&mut s), Vec::<i32>::new());
+
+    let s = Scene::new(vec![collar()]);
+    assert!(!s.world.have_pet_inv_items(ME));
+}
+
+impl Persisted {
+    /// The offline pet reads the world asked for, taken out of the log.
+    fn offline_pet_requests(&self) -> Vec<(ObjectId, ObjectId)> {
+        let mut commands = self.0.lock().unwrap();
+        let found = commands
+            .iter()
+            .filter_map(|c| match c {
+                PersistCommand::OfflinePetRowsRequest {
+                    owner,
+                    control_object_id,
+                } => Some((*owner, *control_object_id)),
+                _ => None,
+            })
+            .collect();
+        commands.retain(|c| !matches!(c, PersistCommand::OfflinePetRowsRequest { .. }));
+        found
+    }
+
+    /// The ops of the `ItemRows` commands since the last call.
+    fn item_row_ops(&self) -> Vec<ItemRowOp> {
+        let mut commands = self.0.lock().unwrap();
+        let ops = commands
+            .iter()
+            .flat_map(|c| match c {
+                PersistCommand::ItemRows { tracked, ops } => {
+                    assert_eq!(*tracked, None, "the owner is offline");
+                    ops.clone()
+                }
+                _ => Vec::new(),
+            })
+            .collect();
+        commands.retain(|c| !matches!(c, PersistCommand::ItemRows { .. }));
+        ops
+    }
+}
+
+const PET_ORE: ObjectId = ObjectId(0x2100_0010);
+const PET_STICK: ObjectId = ObjectId(0x2100_0011);
+
+/// A dead pet whose owner logged out, until its corpse decays and the world asks for the rows.
+fn decayed_while_the_owner_is_offline() -> Scene {
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 10, "INVENTORY")]);
+    let pet = s.use_collar();
+    s.world.reduce_current_hp(pet, 100_000.0, Some(P2));
+    s.input(ClientInput::Logout);
+    assert!(s.world.player(ME).is_none());
+    // The dead pet stayed.
+    assert!(s.world.object(pet).is_some());
+    s.persisted.summon_writes();
+    s.persisted.item_row_ops();
+    s.advance(86_400_000 / 50 * 50 / 1000 * 1000 + 1000);
+    assert!(s.world.object(pet).is_none());
+    s
+}
+
+/// `Pet.deleteMe(owner)` of an owner who is offline: Java's retained `Player` object gets the
+/// items and loses the collar, with the rows written. The world reads the rows first (D-15); a
+/// stack goes to the owner's stack, a single item moves (a worn one comes off), the collar's row
+/// and the `pets` row are deleted.
+#[test]
+fn a_corpse_that_decays_while_the_owner_is_offline_returns_the_items_in_the_rows() {
+    let mut s = decayed_while_the_owner_is_offline();
+    assert_eq!(s.persisted.offline_pet_requests(), vec![(ME, CONTROL)]);
+    // Nothing is written before the answer.
+    assert!(s.persisted.item_row_ops().is_empty());
+    assert!(s.persisted.summon_writes().is_empty());
+
+    s.world.handle(WorldCommand::OfflinePetRowsLoaded {
+        owner: ME,
+        control_object_id: CONTROL,
+        result: Ok(OfflinePetRows {
+            pet_items: vec![
+                item(PET_ORE, ORE, 4, "PET"),
+                // Not stackable, worn by the pet.
+                ItemData {
+                    loc_data: 6,
+                    ..item(PET_STICK, SWORD, 1, "PET_EQUIP")
+                },
+            ],
+            inventory: vec![collar(), item(ORE_STACK, ORE, 6, "INVENTORY")],
+        }),
+    });
+    assert_eq!(
+        s.persisted.item_row_ops(),
+        vec![
+            // The ore joins the owner's stack; the pet's row is gone.
+            ItemRowOp::Update {
+                owner_id: ME.0,
+                item: item(ORE_STACK, ORE, 10, "INVENTORY"),
+            },
+            ItemRowOp::Delete { object_id: PET_ORE },
+            // The single item is an inventory row now.
+            ItemRowOp::Update {
+                owner_id: ME.0,
+                item: item(PET_STICK, SWORD, 1, "INVENTORY"),
+            },
+            // `destroyControlItem`.
+            ItemRowOp::Delete { object_id: CONTROL },
+        ]
+    );
+    assert_eq!(
+        s.persisted.summon_writes(),
+        vec![SummonWrite::DeletePet {
+            control_object_id: CONTROL
+        }]
+    );
+}
+
+/// `ItemContainer.transferItem` of a stackable item the owner has no stack of: a new item with a new
+/// object id is added (`addItem(process, itemId, count)`) and the pet's row is destroyed.
+#[test]
+fn a_stack_the_offline_owner_does_not_have_becomes_a_new_item() {
+    let mut s = decayed_while_the_owner_is_offline();
+    s.persisted.offline_pet_requests();
+    s.world.handle(WorldCommand::OfflinePetRowsLoaded {
+        owner: ME,
+        control_object_id: CONTROL,
+        result: Ok(OfflinePetRows {
+            pet_items: vec![item(PET_ORE, ORE, 4, "PET")],
+            inventory: vec![collar()],
+        }),
+    });
+    let ops = s.persisted.item_row_ops();
+    assert_eq!(ops.len(), 3, "{ops:?}");
+    match &ops[0] {
+        ItemRowOp::Insert { owner_id, item } => {
+            assert_eq!(*owner_id, ME.0);
+            assert_eq!(
+                (item.item_id, item.count, item.loc.as_str()),
+                (ORE, 4, "INVENTORY")
+            );
+            // A new id of the Rust range, not the pet row's.
+            assert!(item.object_id != PET_ORE && item.object_id.0 >= 0x6000_0000);
+        }
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(ops[1], ItemRowOp::Delete { object_id: PET_ORE });
+    assert_eq!(ops[2], ItemRowOp::Delete { object_id: CONTROL });
+}
+
+/// A failed read changes nothing: the items stay with the pet, the collar and its row stay.
+#[test]
+fn a_failed_read_leaves_the_offline_pets_rows_alone() {
+    let mut s = decayed_while_the_owner_is_offline();
+    s.persisted.offline_pet_requests();
+    s.world.handle(WorldCommand::OfflinePetRowsLoaded {
+        owner: ME,
+        control_object_id: CONTROL,
+        result: Err(()),
+    });
+    assert!(s.persisted.item_row_ops().is_empty());
+    assert!(s.persisted.summon_writes().is_empty());
+}
+
+/// An owner who logged in again before the decay is told like any online owner: the items and the
+/// collar are the ones of its new session.
+#[test]
+fn an_owner_who_is_back_online_gets_the_online_decay() {
+    let mut s = Scene::new(vec![collar(), item(ORE_STACK, ORE, 10, "INVENTORY")]);
+    let pet = s.use_collar();
+    s.world.reduce_current_hp(pet, 100_000.0, Some(P2));
+    s.input(ClientInput::Logout);
+    // The same character enters again, the pet's ore among its rows.
+    s.world.handle(WorldCommand::EnterWorld {
+        session: SessionId(3),
+        player: Box::new(player_data(
+            ME,
+            X,
+            vec![
+                collar(),
+                item(ORE_STACK, ORE, 6, "INVENTORY"),
+                item(PET_ORE, ORE, 4, "PET"),
+            ],
+            PlayerProfile::default(),
+        )),
+        sink: Box::new(Sink(s.me.clone())),
+        ip: None,
+    });
+    s.advance(1000);
+    s.persisted.summon_writes();
+    s.me.take();
+    s.advance(86_400_000 / 50 * 50 / 1000 * 1000 + 1000);
+    // Online: no read, the owner's memory is changed and it hears about the collar.
+    assert!(s.persisted.offline_pet_requests().is_empty());
+    assert!(message_ids(&s.me.take()).contains(&SystemMessageId::S1HasDisappeared));
+    assert_eq!(count_of(&s.world, ME, ORE, false), 10);
+    assert!(
+        s.world
+            .player(ME)
+            .unwrap()
+            .data
+            .items
+            .iter()
+            .all(|i| i.item_id != COLLAR)
     );
 }
