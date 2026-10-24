@@ -197,7 +197,7 @@ impl World {
                 }
                 self.script_give_items(player, BLOOD_ALLIANCE, i64::from(count));
                 // `clan.resetBloodAllianceCount()`: the lord's own action, written.
-                // FOLLOW-UP(D-50): the count is not read again first (see the module comment).
+                // (The count was read again first, D-50: `NpcThen::Warehouse`.)
                 if let Some(clan) = self.clan_mut(clan_id) {
                     clan.blood_alliance_count = 0;
                 }

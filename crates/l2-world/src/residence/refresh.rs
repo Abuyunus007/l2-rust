@@ -298,6 +298,12 @@ impl World {
         self.clear_residence_functions(ResidenceRef::Castle(id));
         if owner != 0 {
             self.load_residence_functions(ResidenceRef::Castle(id), &record.functions);
+            // M7-NPC-01 (D-50): the proofs of alliance the vault keeper hands out.
+            if let Some(count) = record.owner_blood_alliance_count
+                && let Some(clan) = self.clan_mut(owner)
+            {
+                clan.blood_alliance_count = count;
+            }
         }
     }
 

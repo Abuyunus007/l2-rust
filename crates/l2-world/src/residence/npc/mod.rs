@@ -32,7 +32,9 @@
 // The chamberlain acts on the castle row (owner, tax rate, treasury, functions), which Sieghardt
 // changes while Kain runs: every chamberlain command that is not a static page asks for the
 // castle to be read again first (`ResidenceReadThen::Npc`) and goes on with the fresh rows; a
-// failed read refuses the command. What a player does himself (a tax rate, a deposit or a
+// failed read refuses the command. The vault keeper's "Receive" and count page read the castle
+// with its owner's `blood_alliance_count` (`CastleRecord::owner_blood_alliance_count`), which the
+// Java game server adds to at the end of its sieges. What a player does himself (a tax rate, a deposit or a
 // withdrawal, a function, a door or trap upgrade, the dawn tickets) is written; the fee tasks of
 // the functions are RES-01's. The envoys' timer-driven decision (`DESPAWN`) is a fortress job
 // (`Writes::Job`), the owner's choice at the envoy a player's action.
@@ -44,8 +46,6 @@
 //   badges of the mercenary captain and its shouting timer, `MINTWBADGEFORSTRIDERS` and
 //   `MINTWBADGEFORBIGSTRIDER` (`TerritoryWar.ini`): M7-TW-01.
 // - `getConquerableHall().showSiegeInfo/isInSiege` of the siege manager: M7-CHSIEGE-01.
-// - The blood alliance count of a clan is not read again before "Receive" (D-50): the castle
-//   re-read does not carry it. Follow-up for the persistence side.
 
 mod ambassador;
 mod captain;
@@ -300,6 +300,13 @@ pub enum NpcThen {
         npc: ObjectId,
         event: String,
     },
+    /// "Receive" or the count page of the vault keeper; the castle and its owner's proofs of
+    /// alliance were read.
+    Warehouse {
+        player: ObjectId,
+        npc: ObjectId,
+        event: String,
+    },
     /// The owner's choice at an envoy (`signed`, `rejected`); the fortress was read.
     Ambassador {
         player: ObjectId,
@@ -522,17 +529,26 @@ impl World {
         player: ObjectId,
     ) {
         // The chamberlain acts on the castle row: it is read again first (D-50).
-        if script == CastleScript::Chamberlain && chamberlain::needs_reread(event) {
+        // The vault keeper hands out the proofs of alliance the Java game server adds to: the
+        // castle (with its owner's count) is read again before it shows or gives them (D-50).
+        let reread = match script {
+            CastleScript::Chamberlain if chamberlain::needs_reread(event) => true,
+            CastleScript::Warehouse => matches!(event, "Receive" | "warehouse-04.html"),
+            _ => false,
+        };
+        if reread {
+            let (player, npc, event) = (player, npc, event.to_owned());
+            let then = if script == CastleScript::Chamberlain {
+                NpcThen::Chamberlain { player, npc, event }
+            } else {
+                NpcThen::Warehouse { player, npc, event }
+            };
             match self.npc_castle(npc) {
                 Some(castle) => self.request_residence_reread(
                     crate::residence::ResidenceRef::Castle(castle),
-                    crate::residence::ResidenceReadThen::Npc(NpcThen::Chamberlain {
-                        player,
-                        npc,
-                        event: event.to_owned(),
-                    }),
+                    crate::residence::ResidenceReadThen::Npc(then),
                 ),
-                None => warn!("{player}: the chamberlain {npc} stands at no castle."),
+                None => warn!("{player}: the castle NPC {npc} stands at no castle."),
             }
             return;
         }
@@ -573,6 +589,12 @@ impl World {
                     return;
                 }
                 self.castle_script_run_event(CastleScript::Chamberlain, &event, npc, player);
+            }
+            NpcThen::Warehouse { player, npc, event } => {
+                if !self.players.contains_key(&player) || !self.npcs.contains_key(&npc) {
+                    return;
+                }
+                self.castle_script_run_event(CastleScript::Warehouse, &event, npc, player);
             }
             NpcThen::Ambassador { player, npc, event } => {
                 if !self.players.contains_key(&player) || !self.npcs.contains_key(&npc) {

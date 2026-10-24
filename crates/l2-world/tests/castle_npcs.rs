@@ -970,6 +970,17 @@ impl Scene {
         });
     }
 
+    /// A vault keeper command; "Receive" and the count page read the castle again first, and the
+    /// answer carries the owner's proofs of alliance as `blood` (D-50).
+    fn warehouse(&mut self, player: i32, event: &str, blood: Option<i32>) {
+        self.take();
+        self.script(player, "CastleWarehouse", event);
+        let asked = self.take();
+        if !reread_requests(&asked).is_empty() {
+            self.answer_castle(&asked, |c| c.owner_blood_alliance_count = blood);
+        }
+    }
+
     /// A chamberlain command and the re-read it asks for, answered with the unchanged castle.
     fn chamberlain_fresh(&mut self, player: i32, event: &str) -> Vec<Out> {
         self.take();
@@ -1818,25 +1829,25 @@ fn the_vault_keeper_hands_out_the_blood_alliance_items() {
     s.script(P1, "CastleWarehouse", "warehouse-02.html");
     assert_eq!(last_page(&s.take(), P1), "warehouse-02");
     // The whole page is sent as it is: `%blood%` is replaced, `%objectId%` is not.
-    s.script(P1, "CastleWarehouse", "warehouse-04.html");
+    s.warehouse(P1, "warehouse-04.html", Some(0));
     assert_eq!(last_page(&s.take(), P1), "BLOOD 0 %objectId%");
     // A stranger and a member who is no leader.
     for p in [P5, P2] {
         s.talk(p, WAREHOUSE);
         s.take();
-        s.script(p, "CastleWarehouse", "Receive");
+        s.warehouse(p, "Receive", Some(0));
         assert_eq!(last_page(&s.take(), p), "warehouse-no");
     }
-    s.script(P1, "CastleWarehouse", "Receive");
+    s.warehouse(P1, "Receive", Some(0));
     assert_eq!(last_page(&s.take(), P1), "warehouse-05");
     // Sieges gave the clan three alliance proofs.
     let mut s = Scene::build(true, 3);
     s.enter_all();
     s.talk(P1, WAREHOUSE);
     s.take();
-    s.script(P1, "CastleWarehouse", "warehouse-04.html");
+    s.warehouse(P1, "warehouse-04.html", Some(3));
     assert_eq!(last_page(&s.take(), P1), "BLOOD 3 %objectId%");
-    s.script(P1, "CastleWarehouse", "Receive");
+    s.warehouse(P1, "Receive", Some(3));
     let out = s.take();
     assert_eq!(last_page(&out, P1), "warehouse-06");
     assert_eq!(item_count(&s, P1, BLOOD_ALLIANCE), 3);
@@ -1861,6 +1872,48 @@ fn the_vault_keeper_hands_out_the_blood_alliance_items() {
     // Any other event is `null`.
     s.script(P1, "CastleWarehouse", "bogus");
     assert!(pages_to(&s.take(), P1).is_empty());
+}
+
+/// D-50: the proofs of alliance are read again before they are shown or handed out, because the
+/// Java game server adds to them at the end of its sieges. The fresh count is what counts (the
+/// same proofs are never given twice), and a failed read gives nothing.
+#[test]
+fn the_vault_keeper_reads_the_blood_alliance_count_again() {
+    let mut s = Scene::build(true, 3);
+    s.enter_all();
+    s.talk(P1, WAREHOUSE);
+    s.take();
+    // Sieghardt's siege added two: the page and the handout show five.
+    s.warehouse(P1, "warehouse-04.html", Some(5));
+    assert_eq!(last_page(&s.take(), P1), "BLOOD 5 %objectId%");
+    s.warehouse(P1, "Receive", Some(5));
+    let out = s.take();
+    assert_eq!(item_count(&s, P1, BLOOD_ALLIANCE), 5);
+    assert!(
+        residence_writes(&out).contains(&ResidenceWrite::ClanBloodAllianceCount {
+            clan_id: LIONS,
+            count: 0
+        })
+    );
+    // Sieghardt's lord took them in the meantime: this world says 5, the row says 0.
+    let mut stale = Scene::build(true, 5);
+    stale.enter_all();
+    stale.talk(P1, WAREHOUSE);
+    stale.take();
+    stale.warehouse(P1, "Receive", Some(0));
+    assert_eq!(last_page(&stale.take(), P1), "warehouse-05");
+    assert_eq!(item_count(&stale, P1, BLOOD_ALLIANCE), 0);
+    // A failed read refuses the command: nothing is shown or given.
+    s.script(P1, "CastleWarehouse", "Receive");
+    let asked = s.take();
+    let then = reread_requests(&asked).pop().expect("a re-read request");
+    s.world.handle(WorldCommand::ResidenceReread {
+        result: Err(()),
+        then,
+    });
+    let out = s.take();
+    assert!(pages_to(&out, P1).is_empty());
+    assert_eq!(item_count(&s, P1, BLOOD_ALLIANCE), 5);
 }
 
 /// `CastleBlacksmith`: the lord, a member with the manor right and a GM; the second page only
