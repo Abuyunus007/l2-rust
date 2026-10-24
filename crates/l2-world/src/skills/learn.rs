@@ -20,12 +20,12 @@
 // new `SkillList` and shows the list again.
 //
 // # What is left out, with the system that brings it
-// - Only the class tree (`AcquireSkillType.CLASS`) is learned here, and the clan trees at the clan
-//   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03). The fishing, collect,
-//   transform, transfer and sub-class trees are not loaded (the card names them out of scope), so
-//   those requests find no `SkillLearn` and are ignored, which is what Java does for a skill that
-//   is not in a tree. Fishermen (`showFishSkillList`) and Tolonis (collect skills) are therefore
-//   silent too.
+// - The class tree (`AcquireSkillType.CLASS`) is learned here, the clan trees at the clan
+//   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03) and the fishing tree at the
+//   fisherman (`FISHING`, `fishing/skills.rs`, M6-FU-10). The collect, transform, transfer and
+//   sub-class trees are not loaded (the card names them out of scope), so those requests find no
+//   `SkillLearn` and are ignored, which is what Java does for a skill that is not in a tree.
+//   Tolonis (collect skills) is therefore silent too.
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
@@ -143,7 +143,7 @@ fn available_in<'a>(
 
 /// Java `SkillTreeData.getMinLevelForNewSkill(player, skillTree)`: the lowest level above the
 /// player's at which a trainer teaches something new, 0 if there is none.
-fn min_level_for_new_skill(tree: &[&SkillLearn], player_level: i32) -> i32 {
+pub(crate) fn min_level_for_new_skill(tree: &[&SkillLearn], player_level: i32) -> i32 {
     let mut min_level = 0;
     for skill in tree {
         if skill.learned_by_npc
@@ -194,7 +194,7 @@ impl World {
     }
 
     /// The skills a player knows, id to level (Java `getSkills()`).
-    fn known_skills_of(&self, id: ObjectId) -> BTreeMap<i32, i32> {
+    pub(crate) fn known_skills_of(&self, id: ObjectId) -> BTreeMap<i32, i32> {
         self.players
             .get(&id)
             .map(|p| p.core.skills.iter().copied().collect())
@@ -210,7 +210,7 @@ impl World {
     }
 
     /// `SkillData.getSkill(id, level) != null`.
-    fn skill_template_exists(&self, skill_id: i32, level: i32) -> bool {
+    pub(crate) fn skill_template_exists(&self, skill_id: i32, level: i32) -> bool {
         self.data
             .stat_data()
             .is_some_and(|d| d.skills.get_skill(skill_id, level).is_some())
@@ -599,7 +599,7 @@ impl World {
             return;
         }
         if self.npc_type_of(trainer).as_deref() == Some("Fisherman") {
-            // FOLLOW-UP: `Fisherman.showFishSkillList` (the fishing tree is not loaded).
+            self.show_fish_skill_list(player);
             return;
         }
         if let Some(class) = self.learning_class_of(player) {
@@ -638,11 +638,20 @@ impl World {
             self.on_pledge_acquire_skill_info(player, skill_id, level, skill_type);
             return;
         }
+        // NOTE(java-quirk): the fishing line is looked up whatever NPC the player talked to last;
+        // Java does not check that it is a fisherman.
+        if skill_type == AcquireSkillType::Fishing {
+            let Some(learn) = self.rewards.skill_trees.fishing_skill(skill_id, level).cloned() else {
+                return;
+            };
+            self.send_plain_acquire_skill_info(player, skill_type, &learn);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
-        // Only the class and clan trees are loaded: `getSkillLearn` finds nothing for the other
-        // types.
+        // Only the class, clan and fishing trees are loaded: `getSkillLearn` finds nothing for
+        // the other types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkillInfo of {skill_type:?} is not ported");
             return;
@@ -683,6 +692,34 @@ impl World {
                 skill_id: learn.skill_id,
                 level: learn.skill_level,
                 sp_cost: custom_sp,
+                requirements,
+            },
+        );
+    }
+
+    /// `new AcquireSkillInfo(type, skillLearn)`: the cost in the tree, every item it lists (except
+    /// the Divine Inspiration book when `DivineInspirationSpBookNeeded` is off).
+    fn send_plain_acquire_skill_info(
+        &mut self,
+        player: ObjectId,
+        skill_type: AcquireSkillType,
+        learn: &SkillLearn,
+    ) {
+        let divine_sp_book_needed = self.settings.learn.divine_sp_book_needed;
+        let mut requirements = Vec::new();
+        for item in &learn.required_items {
+            if !divine_sp_book_needed && learn.skill_id == DIVINE_INSPIRATION_ID {
+                continue;
+            }
+            requirements.push(AcquireSkillRequirement::item(item.item_id, item.count));
+        }
+        self.send(
+            player,
+            &AcquireSkillInfo {
+                skill_type,
+                skill_id: learn.skill_id,
+                level: learn.skill_level,
+                sp_cost: learn.level_up_sp,
                 requirements,
             },
         );
@@ -768,8 +805,19 @@ impl World {
             }
             _ => {}
         }
-        // Only the class and clan trees are loaded: `getSkillLearn` finds nothing for the other
-        // types.
+        // The fishing skills are bought with SP and items like the class ones. NOTE(java-quirk):
+        // Java does not check that the trainer is a fisherman, nor the race of the line.
+        if skill_type == AcquireSkillType::Fishing {
+            let Some(learn) = self.rewards.skill_trees.fishing_skill(skill_id, level).cloned() else {
+                return;
+            };
+            if self.check_player_skill(player, trainer, &learn, skill_type) {
+                self.give_skill(player, trainer, skill_id, level, skill_type);
+            }
+            return;
+        }
+        // Only the class, clan and fishing trees are loaded: `getSkillLearn` finds nothing for the
+        // other types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkill of {skill_type:?} is not ported");
             return;

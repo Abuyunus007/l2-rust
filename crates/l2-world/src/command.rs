@@ -174,6 +174,9 @@ pub enum ClientInput {
     Shop(crate::shop::ShopInput),
     /// The warehouse and freight packets (`SendWareHouseDepositList`, ...), see `warehouse/`.
     Warehouse(crate::warehouse::WarehouseInput),
+    /// The manor packets (`RequestManorList`, `RequestSetSeed`, `RequestSetCrop`, `RequestBuySeed`,
+    /// `RequestProcureCropList`), see `manor/`.
+    Manor(crate::manor::ManorInput),
     /// The crafting packets (`RequestRecipeBookOpen`, `RequestRecipeShop*`, ...), see `craft/`.
     Craft(crate::craft::CraftInput),
     /// Java `RequestJoinParty`: invite `name` to the party. `distribution_type_id` is the raw int
@@ -218,6 +221,8 @@ pub enum ClientInput {
     FishRanking,
     /// The siege window packets (M7-SIEGE-01).
     Siege(crate::siege::SiegeInput),
+    /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
+    AllAgitInfo,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

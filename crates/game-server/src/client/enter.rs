@@ -1076,6 +1076,15 @@ impl ClientSession {
             | ClientPacket::RequestPackageSendableItemList(_)) => {
                 ClientInput::Warehouse(warehouse_input(packet))
             }
+            // Java: RequestManorList, RequestSetSeed, RequestSetCrop, RequestBuySeed,
+            // RequestProcureCropList (M7-MANOR-01)
+            ClientPacket::RequestManorList(_) => ClientInput::Manor(l2_world::ManorInput::ManorList),
+            ClientPacket::RequestSetSeed(p) => ClientInput::Manor(l2_world::ManorInput::SetSeed(p)),
+            ClientPacket::RequestSetCrop(p) => ClientInput::Manor(l2_world::ManorInput::SetCrop(p)),
+            ClientPacket::RequestBuySeed(p) => ClientInput::Manor(l2_world::ManorInput::BuySeed(p)),
+            ClientPacket::RequestProcureCropList(p) => {
+                ClientInput::Manor(l2_world::ManorInput::ProcureCropList(p))
+            }
             // Java: RequestRecipeBookOpen, RequestRecipeBookDestroy, RequestRecipeItemMakeInfo,
             // RequestRecipeItemMakeSelf, RequestRecipeShop* (M6-CRAFT-01)
             ClientPacket::RequestRecipeBookOpen(p) => ClientInput::Craft(CraftInput::BookOpen(p)),
@@ -1141,6 +1150,8 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestAllAgitInfo
+            ClientPacket::RequestAllAgitInfo(_) => ClientInput::AllAgitInfo,
             ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },
             ClientPacket::RequestAnswerFriendInvite(p) => {
                 ClientInput::AnswerFriendInvite { response: p.response }

@@ -43,6 +43,10 @@ pub(crate) enum ItemHandlerKind {
     FishShots,
     /// `MercTicket`: a castle lord places a mercenary (M7-SIEGE-01).
     MercTicket,
+    /// `Seed`: sows a manor seed on the target monster (M7-MANOR-01).
+    Seed,
+    /// `Harvester`: harvests the dead monster the player sowed (M7-MANOR-01).
+    Harvester,
 }
 
 impl ItemHandlerKind {
@@ -63,6 +67,8 @@ impl ItemHandlerKind {
             "EnchantAttribute" => Self::EnchantAttribute,
             "FishShots" => Self::FishShots,
             "MercTicket" => Self::MercTicket,
+            "Seed" => Self::Seed,
+            "Harvester" => Self::Harvester,
             _ => return None,
         })
     }
@@ -102,6 +108,8 @@ impl World {
             ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
             ItemHandlerKind::FishShots => self.fish_shots_on_use(id, item, template),
             ItemHandlerKind::MercTicket => self.merc_ticket_on_use(id, item),
+            ItemHandlerKind::Seed => self.seed_on_use(id, item, template),
+            ItemHandlerKind::Harvester => self.harvester_on_use(id, template),
         }
     }
 

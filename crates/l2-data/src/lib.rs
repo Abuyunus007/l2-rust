@@ -37,6 +37,7 @@ pub mod player_class;
 pub mod player_template;
 pub mod recipe;
 pub mod residence;
+pub mod seed;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -92,6 +93,7 @@ pub use player_template::{
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
+pub use seed::{Seed, Seeds};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -188,6 +190,8 @@ pub struct Datapack {
     pub fishing_monsters: Arc<FishingMonstersData>,
     /// `config/SiegeSchedule.xml`: the siege day and hour of each castle (M7-RES-01).
     pub siege_schedule: Arc<SiegeSchedule>,
+    /// `data/Seeds.xml`: the manor seeds and their crops (M7-MANOR-01).
+    pub seeds: Arc<Seeds>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -307,6 +311,9 @@ impl Datapack {
             root,
             options.skills.custom_skills_load,
         ));
+        // Java loads `CastleManorManager` (`Seeds.xml`) after `ItemData`: the seeds take their
+        // reference prices from the item templates.
+        let seeds = Arc::new(Seeds::load(root, &items));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -354,6 +361,7 @@ impl Datapack {
             fishing_rods: Arc::new(FishingRodsData::load(root)),
             fishing_monsters: Arc::new(FishingMonstersData::load(root)),
             siege_schedule: Arc::new(SiegeSchedule::load(root)),
+            seeds,
         })
     }
 }

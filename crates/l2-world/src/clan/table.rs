@@ -507,13 +507,15 @@ impl World {
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
         let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
         // The castle siege registrations (M7-SIEGE-01); the fortress and hall ones (M7-FORT-01,
-        // M7-CHSIEGE-01) and the clan hall auction bid (M7-CH-01).
+        // M7-CHSIEGE-01).
         if castle_id == 0 {
             let castles: Vec<crate::residence::CastleId> = self.castles().iter().map(|c| c.id).collect();
             for castle in castles {
                 self.siege_remove_siege_clan_of(castle, Some(clan_id));
             }
         }
+        // `auction.cancelBid(clan.getId())` (M7-CH-01).
+        self.auction_cancel_bid_of_destroyed_clan(clan_id, write_db);
         // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
         // released) and its row deleted, with the clan's own rows (D-49: left alone without
         // `write_db`).

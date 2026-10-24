@@ -193,6 +193,93 @@ pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::R
     }
 }
 
+/// The manor values of `General.ini` (`AllowManor`, `AltManor*`) and `Rates.ini`
+/// (`RateDropManor`). The rows the manor writes on its own follow `SiegeDatabaseWrites`
+/// ([`siege_database_writes`], D-51).
+pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
+    let (general, rates) = (&config.general, &config.rates);
+    l2_world::ManorSettings {
+        allow_manor: general.allow_manor,
+        refresh_time: general.alt_manor_refresh_time,
+        refresh_min: general.alt_manor_refresh_min,
+        approve_time: general.alt_manor_approve_time,
+        approve_min: general.alt_manor_approve_min,
+        maintenance_min: general.alt_manor_maintenance_min,
+        save_all_actions: general.alt_manor_save_all_actions,
+        save_period_rate: general.alt_manor_save_period_rate,
+        rate_drop_manor: rates.rate_drop_manor,
+    }
+}
+
+/// The clan hall fee tables of `Feature.ini` and `AltClanHallMpBuffFree` (M7-CH-01).
+pub fn clan_hall_settings(config: &GameConfig) -> l2_world::ClanHallSettings {
+    use l2_world::clanhall::ClanHallFunctionSettings as Fees;
+    let f = &config.feature;
+    l2_world::ClanHallSettings {
+        tele: Fees::new(f.ch_tele_fee_ratio, [f.ch_tele1_fee, f.ch_tele2_fee]),
+        support: Fees::new(
+            f.ch_support_fee_ratio,
+            [
+                f.ch_support1_fee,
+                f.ch_support2_fee,
+                f.ch_support3_fee,
+                f.ch_support4_fee,
+                f.ch_support5_fee,
+                f.ch_support6_fee,
+                f.ch_support7_fee,
+                f.ch_support8_fee,
+            ],
+        ),
+        mp: Fees::new(
+            f.ch_mpreg_fee_ratio,
+            [
+                f.ch_mpreg1_fee,
+                f.ch_mpreg2_fee,
+                f.ch_mpreg3_fee,
+                f.ch_mpreg4_fee,
+                f.ch_mpreg5_fee,
+            ],
+        ),
+        hp: Fees::new(
+            f.ch_hpreg_fee_ratio,
+            [
+                f.ch_hpreg1_fee,
+                f.ch_hpreg2_fee,
+                f.ch_hpreg3_fee,
+                f.ch_hpreg4_fee,
+                f.ch_hpreg5_fee,
+                f.ch_hpreg6_fee,
+                f.ch_hpreg7_fee,
+                f.ch_hpreg8_fee,
+                f.ch_hpreg9_fee,
+                f.ch_hpreg10_fee,
+                f.ch_hpreg11_fee,
+                f.ch_hpreg12_fee,
+                f.ch_hpreg13_fee,
+            ],
+        ),
+        exp: Fees::new(
+            f.ch_expreg_fee_ratio,
+            [
+                f.ch_expreg1_fee,
+                f.ch_expreg2_fee,
+                f.ch_expreg3_fee,
+                f.ch_expreg4_fee,
+                f.ch_expreg5_fee,
+                f.ch_expreg6_fee,
+                f.ch_expreg7_fee,
+            ],
+        ),
+        item: Fees::new(
+            f.ch_item_fee_ratio,
+            [f.ch_item1_fee, f.ch_item2_fee, f.ch_item3_fee],
+        ),
+        curtain: Fees::new(f.ch_curtain_fee_ratio, [f.ch_curtain1_fee, f.ch_curtain2_fee]),
+        front: Fees::new(f.ch_front_fee_ratio, [f.ch_front1_fee, f.ch_front2_fee]),
+        buff_free: f.ch_buff_free,
+    }
+}
+
 /// `SiegeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the sieges, the residence owner changes, the castle tax income and the fees the
 /// clan warehouses pay change this world only and leave their rows to the Java game server that
@@ -402,6 +489,9 @@ impl Server {
         let clan_settings = clan_settings(&config, &paths.config_dir);
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
+        // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
+        let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
+        let clan_hall_settings = clan_hall_settings(&config);
         let residence_settings = residence_settings(&config, &paths.config_dir);
         // Java: SiegeManager (Siege.ini, the registrations, the guards, the upgrades; M7-SIEGE-01).
         let sieges = persist::load_sieges(&pool).await;
@@ -411,6 +501,13 @@ impl Server {
             .map(|c| (c.id, c.name.clone()))
             .collect();
         let siege_settings = world_data::siege_settings(&config, &paths.config_dir, &castle_names);
+        // Java: CastleManorManager (after CastleManager): the manor rows, only with `AllowManor`.
+        let manor_settings = manor_settings(&config);
+        let manor_load = if manor_settings.allow_manor {
+            persist::load_manor(&pool).await
+        } else {
+            l2_world::ManorLoad::default()
+        };
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -561,6 +658,13 @@ impl Server {
                     // (M7-SIEGE-01).
                     world.set_siege_settings(siege_settings);
                     world.load_sieges(sieges);
+                    // Java: CastleManorManager (Seeds.xml, the rows, the mode of the hour; after the
+                    // castles; M7-MANOR-01).
+                    world.set_manor_settings(manor_settings);
+                    world.set_manor_seeds(Arc::clone(&datapack.seeds));
+                    world.load_manor(manor_load);
+                    world.set_clan_hall_settings(clan_hall_settings);
+                    world.load_clan_hall_auctions(clan_hall_auctions);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

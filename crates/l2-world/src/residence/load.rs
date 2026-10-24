@@ -175,6 +175,8 @@ impl World {
         info!("ClanHallTable: Loaded {owned} clan halls");
         info!("ClanHallTable: Loaded {free} free clan halls");
         self.bind_clan_hall_doors_and_zones();
+        // `_loaded = true`: the rent and the auctions wait for it.
+        self.clanhall.loaded = true;
 
         // Java: CastleManager.loadInstances.
         for record in &load.castles {
@@ -284,12 +286,11 @@ impl World {
             if let Some(hall) = self.clan_hall_mut(id) {
                 hall.is_free = false;
             }
-            // M7-CH-01: `initialyzeTask(false)` (the rent).
+            self.clan_hall_initialize_rent_task(id, false);
             self.load_residence_functions(ResidenceRef::ClanHall(id), &record.functions);
         }
-        if !owned && record.lease > 0 {
-            // M7-CH-01: `ClanHallAuctionManager.initNPC(id)` when the hall has no auction.
-        }
+        // `ClanHallAuctionManager.initNPC(id)` for a free hall without an auction runs when the
+        // auctions are installed (`World::load_clan_hall_auctions`).
         owned
     }
 

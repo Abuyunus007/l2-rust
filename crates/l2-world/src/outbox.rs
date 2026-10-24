@@ -152,6 +152,9 @@ pub enum PersistCommand {
     /// A residence row write with Java's statement (`castle`, `fort`, `clanhall`, the function
     /// tables, `hasCastle`), see `residence/` (M7-RES-01). Applied in order with the other commands.
     Residence(crate::residence::ResidenceWrite),
+    /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`),
+    /// see `manor/` (M7-MANOR-01). Applied in order with the other commands.
+    Manor(crate::manor::ManorWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {

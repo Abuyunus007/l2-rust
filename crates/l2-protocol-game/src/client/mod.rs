@@ -185,6 +185,7 @@ pub mod party;
 pub mod pledge;
 pub mod recipe;
 pub mod refine;
+pub mod residence;
 pub mod shop;
 pub mod shortcut;
 pub mod siege;
@@ -261,6 +262,7 @@ pub use refine::{
     RequestConfirmCancelItem, RequestConfirmGemStone, RequestConfirmRefinerItem, RequestConfirmTargetItem,
     RequestRefine, RequestRefineCancel,
 };
+pub use residence::RequestAllAgitInfo;
 pub use shop::{
     BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,
 };

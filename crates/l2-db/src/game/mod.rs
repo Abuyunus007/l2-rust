@@ -4,6 +4,7 @@
 //! the Java SQL as constants with a `// Java:` comment, runtime queries, row structs that
 //! mirror the column types.
 
+mod auctions;
 mod bot_reports;
 mod buylists;
 mod characters;
@@ -17,6 +18,7 @@ mod ids;
 mod item_reuse;
 mod items;
 mod macros;
+mod manor;
 mod messages;
 mod pets;
 mod punishments;
@@ -31,6 +33,7 @@ mod subclasses;
 mod summons;
 mod variables;
 
+pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
@@ -53,6 +56,7 @@ pub use items::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use macros::{MacroRepository, MacroRow, NewMacro};
+pub use manor::{ManorRepository, ProcureRow, ProductionRow};
 pub use messages::{MessageRepository, MessageRow};
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};

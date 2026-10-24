@@ -635,6 +635,80 @@ mod manor_server {
     };
 
     #[test]
+    fn manor_list_layout() {
+        use l2_protocol_game::server::manor::ExSendManorList;
+        // Java: ExSendManorList.writeImpl: the count, then the id and the lower case name.
+        let packet = ExSendManorList {
+            castles: vec![(1, "gludio".to_owned()), (2, "dion".to_owned())],
+        };
+        let expected = Bytes::default()
+            .byte(0xFE)
+            .short(0x22)
+            .int(2)
+            .int(1)
+            .string("gludio")
+            .int(2)
+            .string("dion")
+            .done();
+        check_round_trip(&packet, &expected, 3);
+    }
+
+    #[test]
+    fn buy_list_seed_layout() {
+        use l2_protocol_game::server::manor::{BuyListSeed, SeedForSale};
+        // Java: BuyListSeed.writeImpl: money, manor id, a short count, then one item row per seed.
+        let packet = BuyListSeed {
+            money: 5000,
+            manor_id: 3,
+            seeds: vec![SeedForSale {
+                seed_id: 5016,
+                amount: 40,
+                price: 12,
+            }],
+        };
+        let expected = Bytes::default()
+            .byte(0xE9)
+            .long(5000)
+            .int(3)
+            .short(1)
+            .int(5016)
+            .int(5016)
+            .int(0)
+            .long(40)
+            .short(5)
+            .short(0)
+            .short(0)
+            .int(0)
+            .short(0)
+            .short(0)
+            .int(0)
+            .int(-1)
+            .int(-9999)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .short(0)
+            .long(12)
+            .done();
+        check_round_trip(&packet, &expected, 1);
+        // An empty window is the money, the manor and a short 0.
+        let empty = BuyListSeed {
+            money: 1,
+            manor_id: 2,
+            seeds: Vec::new(),
+        };
+        let expected = Bytes::default().byte(0xE9).long(1).int(2).short(0).done();
+        check_round_trip(&empty, &expected, 1);
+    }
+
+    #[test]
     fn default_crop_table_layout() {
         let packet = ExShowManorDefaultInfo {
             hide_buttons: true,
@@ -1129,6 +1203,66 @@ mod auction {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Clan halls
+// ---------------------------------------------------------------------------------------------
+
+mod clan_hall {
+    use super::*;
+    use l2_protocol_game::client::RequestAllAgitInfo;
+    use l2_protocol_game::server::residence::{AgitInfo, ExShowAgitInfo};
+
+    #[test]
+    fn the_list_request_is_the_bare_ex_opcode() {
+        check_round_trip(
+            &RequestAllAgitInfo,
+            &Bytes::default().byte(0xD0).short(0x3E).done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn clan_hall_list_matches_java_layout() {
+        // Java: count, then per hall the id, the owner clan, its leader and `grade < 1` as an int.
+        let packet = ExShowAgitInfo {
+            halls: vec![
+                AgitInfo {
+                    hall_id: 22,
+                    owner_clan_name: String::new(),
+                    leader_name: String::new(),
+                    grade_below_one: true,
+                },
+                AgitInfo {
+                    hall_id: 36,
+                    owner_clan_name: "Wolves".into(),
+                    leader_name: "Fenrir".into(),
+                    grade_below_one: false,
+                },
+            ],
+        };
+        let expected = Bytes::default()
+            .byte(0xFE)
+            .short(0x16)
+            .int(2)
+            .int(22)
+            .string("")
+            .string("")
+            .int(1)
+            .int(36)
+            .string("Wolves")
+            .string("Fenrir")
+            .int(0)
+            .done();
+        check_round_trip(&packet, &expected, 3);
+        // No hall at all.
+        check_round_trip(
+            &ExShowAgitInfo::default(),
+            &Bytes::default().byte(0xFE).short(0x16).int(0).done(),
+            3,
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------------------------
 
@@ -1176,6 +1310,8 @@ mod dispatch {
         dispatches(&p, ClientPacket::RequestAllCastleInfo(p));
         let p = RequestAllFortressInfo;
         dispatches(&p, ClientPacket::RequestAllFortressInfo(p));
+        let p = RequestAllAgitInfo;
+        dispatches(&p, ClientPacket::RequestAllAgitInfo(p));
         let p = RequestFortressSiegeInfo;
         dispatches(&p, ClientPacket::RequestFortressSiegeInfo(p));
         let p = RequestFortressMapInfo { fortress_id: 3 };

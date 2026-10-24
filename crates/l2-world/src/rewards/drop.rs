@@ -23,8 +23,9 @@
 // - Spoil: the state (`Attackable._spoilerObjectId`, `_sweepItems`) and its checks are at the end
 //   of this file (M5-SPOIL-01); the `Spoil` / `Sweeper` effects are in `effects/handlers/`.
 //   `isInLooterParty` is `party/mod.rs` (M6-PARTY-01).
-// - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion), seeds (manor) and
-//   the premium system (`PremiumSystem.ini`, off by default; there is no premium status).
+// - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion) and the premium
+//   system (`PremiumSystem.ini`, off by default; there is no premium status). A seeded monster
+//   (`manor/farming.rs`, M7-MANOR-01) keeps only adena and the seal stones.
 // - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
 // - Parties: the leader of the party that did the most damage is the one the loot belongs to
 //   when its members together beat the single biggest dealer; auto loot is shared by
@@ -183,7 +184,8 @@ pub struct DropVictim {
     pub raid: bool,
     /// `isChampion()`: nobody is one yet.
     pub champion: bool,
-    /// `isMonster() && isSeeded()`: manor seeds are M5.
+    /// `isMonster() && isSeeded()`: a seeded monster only drops adena and seal stones (the manor,
+    /// M7-MANOR-01).
     pub seeded: bool,
 }
 
@@ -995,7 +997,7 @@ impl World {
             level: victim_level,
             raid,
             champion: false,
-            seeded: false,
+            seeded: self.is_seeded(dying),
         };
         let settings = self.settings.drops.clone();
         let drop_template_id = self.chest_drop_template_id(dying, npc_id);

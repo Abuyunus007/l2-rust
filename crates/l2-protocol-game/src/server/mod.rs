@@ -164,9 +164,10 @@ pub use mail::{
     SentPostEntry,
 };
 pub use manor::{
-    CropOffer, CropProcureInfo, CropSettingInfo, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
-    ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList, ManorDefaultCrop,
-    PeriodCropSales, PeriodSales, ProcureCastle, SeedProductionInfo, SeedSettingInfo, SellCropItem,
+    BuyListSeed, CropOffer, CropProcureInfo, CropSettingInfo, ExSendManorList, ExShowCropInfo,
+    ExShowCropSetting, ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting,
+    ExShowSellCropList, ManorDefaultCrop, PeriodCropSales, PeriodSales, ProcureCastle, SeedForSale,
+    SeedProductionInfo, SeedSettingInfo, SellCropItem,
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
@@ -198,7 +199,7 @@ pub use refine::{
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 pub use regen::ExRegenMax;
-pub use residence::AgitDecoInfo;
+pub use residence::{AgitDecoInfo, AgitInfo, ExShowAgitInfo};
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use siege::{
     CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,

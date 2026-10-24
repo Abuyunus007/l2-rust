@@ -33,10 +33,12 @@ use crate::client::{
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
 use crate::client::{
+    RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
+};
+use crate::client::{
     RequestAllCastleInfo, RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime,
     RequestSiegeAttackerList, RequestSiegeDefenderList, RequestSiegeInfo,
 };
-use crate::client::{RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo};
 use crate::client::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
@@ -294,6 +296,7 @@ pub enum ClientPacket {
     RequestAllCastleInfo(RequestAllCastleInfo),
     /// `REQUEST_ALL_FORTRESS_INFO` (`0xD0` 0x003D), an ex packet.
     RequestAllFortressInfo(RequestAllFortressInfo),
+    RequestAllAgitInfo(RequestAllAgitInfo),
     /// `REQUEST_FORTRESS_SIEGE_INFO` (`0xD0` 0x003F), an ex packet.
     RequestFortressSiegeInfo(RequestFortressSiegeInfo),
     /// `REQUEST_FORTRESS_MAP_INFO` (`0xD0` 0x0048), an ex packet.
@@ -727,6 +730,9 @@ fn decode_ex_client(
         }
         RequestAllFortressInfo::EX_OPCODE => {
             ClientPacket::RequestAllFortressInfo(RequestAllFortressInfo::decode(reader)?)
+        }
+        RequestAllAgitInfo::EX_OPCODE => {
+            ClientPacket::RequestAllAgitInfo(RequestAllAgitInfo::decode(reader)?)
         }
         RequestFortressSiegeInfo::EX_OPCODE => {
             ClientPacket::RequestFortressSiegeInfo(RequestFortressSiegeInfo::decode(reader)?)
