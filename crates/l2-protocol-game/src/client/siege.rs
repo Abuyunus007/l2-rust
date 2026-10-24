@@ -12,6 +12,13 @@ client_unit_packet!(
     plain RequestSiegeInfo
 );
 
+// Java: gameserver/network/clientpackets/RequestAllCastleInfo.java
+client_unit_packet!(
+    /// Asks for the castle list of the map window (`0xD0` 0x003C, `REQUEST_ALL_CASTLE_INFO`).
+    RequestAllCastleInfo,
+    ex RequestAllCastleInfo
+);
+
 // Java: gameserver/network/clientpackets/RequestSiegeAttackerList.java
 client_packet!(
     /// Asks for the attacker list of a castle or clan hall (`REQUEST_SIEGE_ATTACKER_LIST`).

@@ -1172,6 +1172,8 @@ mod dispatch {
             time: 1_793_548_800,
         };
         dispatches(&p, ClientPacket::RequestSetCastleSiegeTime(p.clone()));
+        let p = RequestAllCastleInfo;
+        dispatches(&p, ClientPacket::RequestAllCastleInfo(p));
         let p = RequestAllFortressInfo;
         dispatches(&p, ClientPacket::RequestAllFortressInfo(p));
         let p = RequestFortressSiegeInfo;

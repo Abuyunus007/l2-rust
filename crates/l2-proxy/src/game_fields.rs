@@ -456,7 +456,8 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestJoinSiege(p) => object!(p => castle_id, is_attacker, is_joining),
         ClientPacket::RequestConfirmSiegeWaitingList(p) => object!(p => castle_id, clan_id, approved),
         ClientPacket::RequestSetCastleSiegeTime(p) => object!(p => castle_id, time),
-        ClientPacket::RequestAllFortressInfo(_)
+        ClientPacket::RequestAllCastleInfo(_)
+        | ClientPacket::RequestAllFortressInfo(_)
         | ClientPacket::RequestFortressSiegeInfo(_)
         | ClientPacket::RequestManorList(_)
         | ClientPacket::RequestDominionInfo(_) => json!({}),

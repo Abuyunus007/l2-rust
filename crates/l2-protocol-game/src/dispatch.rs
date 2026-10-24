@@ -55,8 +55,8 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{
-    RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime, RequestSiegeAttackerList,
-    RequestSiegeDefenderList, RequestSiegeInfo,
+    RequestAllCastleInfo, RequestConfirmSiegeWaitingList, RequestJoinSiege, RequestSetCastleSiegeTime,
+    RequestSiegeAttackerList, RequestSiegeDefenderList, RequestSiegeInfo,
 };
 use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
@@ -290,6 +290,8 @@ pub enum ClientPacket {
     Unported(ClientOpcode),
     /// The same for ex packets (`0xD0` + `u16`). The ex id is consumed, the body is left unread.
     UnportedEx(ExClientOpcode),
+    /// `REQUEST_ALL_CASTLE_INFO` (`0xD0` 0x003C), an ex packet.
+    RequestAllCastleInfo(RequestAllCastleInfo),
     /// `REQUEST_ALL_FORTRESS_INFO` (`0xD0` 0x003D), an ex packet.
     RequestAllFortressInfo(RequestAllFortressInfo),
     /// `REQUEST_FORTRESS_SIEGE_INFO` (`0xD0` 0x003F), an ex packet.
@@ -719,6 +721,9 @@ fn decode_ex_client(
         }
         RequestRefineCancel::EX_OPCODE => {
             ClientPacket::RequestRefineCancel(RequestRefineCancel::decode(reader)?)
+        }
+        RequestAllCastleInfo::EX_OPCODE => {
+            ClientPacket::RequestAllCastleInfo(RequestAllCastleInfo::decode(reader)?)
         }
         RequestAllFortressInfo::EX_OPCODE => {
             ClientPacket::RequestAllFortressInfo(RequestAllFortressInfo::decode(reader)?)

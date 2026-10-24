@@ -2618,3 +2618,47 @@ FloodProtectorPlayerActionInterval = 1
         }
     }
 }
+
+#[cfg(test)]
+mod siege_tests {
+    use super::*;
+
+    /// `SiegeManager.load()` over the lines of the shipped `Siege.ini`: the values, the towers of
+    /// a castle by its name (a flame tower with its trap zones), `MaxMercenaries`, and a broken
+    /// line skipped with Java's warning.
+    #[test]
+    fn siege_ini_reads_like_java() {
+        let text = [
+            "SiegeCycle = 2",
+            "SiegeLength = 120",
+            "MaxFlags = 1",
+            "AttackerRespawn = 0",
+            "BloodAllianceReward = 1",
+            "GludioFlameTower1=-18154,107591,-2560,13004,70017,70019",
+            "GludioControlTower1=-18325,112811,-2377,13002",
+            "GludioControlTower2=-18048,107098,-2378,13002",
+            "GludioControlTower3=-18113,x,-2343,13002",
+            "GludioControlTower5=1,2,3,13002",
+            "GludioMaxMercenaries = 120",
+        ]
+        .join("\n");
+        let ini = l2_config::IniFile::parse("Siege.ini", &text).unwrap();
+        let castles = [(1, "Gludio".to_owned()), (2, "Dion".to_owned())];
+        let s = siege_settings_from_ini(&ini, &castles);
+        assert_eq!((s.siege_cycle, s.siege_length, s.flag_max_count), (2, 120, 1));
+        assert_eq!(s.blood_alliance_reward, 1);
+        let gludio = &s.castles[&1];
+        // Tower 3 does not parse and is skipped; tower 4 is missing, so tower 5 is never read.
+        assert_eq!(gludio.control_towers.len(), 2);
+        assert_eq!(
+            (gludio.control_towers[0].x, gludio.control_towers[0].npc_id),
+            (-18325, 13002)
+        );
+        assert_eq!(gludio.flame_towers.len(), 1);
+        assert_eq!(gludio.flame_towers[0].zone_list, [70017, 70019]);
+        assert_eq!(gludio.max_mercenaries, 120);
+        // Dion has no lines: Java's table value of `MERCS_MAX_PER_CASTLE`.
+        assert!(s.castles[&2].control_towers.is_empty());
+        assert_eq!(s.castles[&2].max_mercenaries, 150);
+    }
+}

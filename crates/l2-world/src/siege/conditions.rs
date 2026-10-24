@@ -48,6 +48,12 @@ impl World {
         self.send(player, &message);
     }
 
+    /// Whether the player may build a headquarters now (the `canCreateBase` condition of Build
+    /// Headquarters, with the skill whose name the messages carry).
+    pub fn siege_create_headquarters_allowed(&self, player: ObjectId, skill: Option<(i32, i32)>) -> bool {
+        self.cond_can_create_base(player, skill)
+    }
+
     /// Java `ConditionPlayerCanCreateBase.testImpl`: `canCreateBase` (the player hears why not).
     // M7-FORT-01: the fortress siege's parts (`fort.getSiege()`), here a fortress counts as a siege
     // that is not in progress.

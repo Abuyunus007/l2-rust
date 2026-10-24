@@ -1556,3 +1556,95 @@ async fn residences_are_read_written_and_read_again_like_java() {
 
     db.drop_db().await;
 }
+
+/// M7-SIEGE-01: the start-up read of the sieges (`loadSiegeClan`, `castle_siege_guards`, the door
+/// and trap upgrades), Java's siege statements through the store and the re-read of a castle with
+/// every registration (D-50).
+#[tokio::test]
+async fn sieges_are_read_written_and_read_again_like_java() {
+    use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
+    use l2_world::{ResidenceWrite, SiegeClanRecord, SiegeGuardRecord};
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    db.exec("INSERT INTO castle VALUES (1,'Gludio',10,500,1700000000000,'false',0,'true',3)")
+        .await;
+    db.exec("INSERT INTO clan_data (clan_id, clan_name, hasCastle) VALUES (500, 'Lions', 1), (600, 'Wolves', 0)")
+        .await;
+    db.exec("INSERT INTO siege_clans VALUES (1, 600, 1, 0)").await;
+    db.exec("INSERT INTO castle_siege_guards (castleId,id,npcId,x,y,z,heading,respawnDelay,isHired) VALUES (1,1,35085,-18460,113107,-2759,15608,10800,0),(1,2,35010,-18000,113000,-2700,0,0,1)")
+        .await;
+    db.exec("INSERT INTO castle_doorupgrade VALUES (19210001, 2, 1)").await;
+    db.exec("INSERT INTO castle_trapupgrade VALUES (1, 0, 3)").await;
+
+    let load = game_server::persist::load_sieges(&pool).await;
+    assert_eq!(
+        load.siege_clans,
+        vec![SiegeClanRecord {
+            castle_id: 1,
+            clan_id: 600,
+            kind: 1
+        }]
+    );
+    assert_eq!(load.siege_guards.len(), 2);
+    assert_eq!(
+        load.siege_guards[1],
+        SiegeGuardRecord {
+            castle_id: 1,
+            npc_id: 35010,
+            x: -18000,
+            y: 113000,
+            z: -2700,
+            heading: 0,
+            respawn_delay: 0,
+            is_hired: true,
+        }
+    );
+    assert_eq!((load.door_upgrades[0].door_id, load.door_upgrades[0].ratio), (19210001, 2));
+    assert_eq!((load.trap_upgrades[0].tower_index, load.trap_upgrades[0].level), (0, 3));
+
+    let mut store = DbStore::new(pool.clone());
+    for write in [
+        ResidenceWrite::SiegeClanInsert {
+            clan_id: 500,
+            castle_id: 2,
+            kind: 2,
+        },
+        ResidenceWrite::CastleSiegeDate {
+            castle_id: 1,
+            siege_date: 1_800_000_000_000,
+            reg_time_end: 1_799_000_000_000,
+            reg_time_over: true,
+        },
+        ResidenceWrite::SiegeGuardsDeleteHired { castle_id: 1 },
+        ResidenceWrite::ClanBloodAllianceCount { clan_id: 500, count: 2 },
+    ] {
+        store.store_residence_write(&write).await.unwrap();
+    }
+    let scalar = |sql: &'static str| {
+        let pool = pool.clone();
+        async move { sqlx::query_scalar::<_, i64>(sql).fetch_one(&pool).await.unwrap() }
+    };
+    assert_eq!(scalar("SELECT CAST(COUNT(*) AS SIGNED) FROM siege_clans").await, 2);
+    assert_eq!(
+        scalar("SELECT CAST(siegeDate AS SIGNED) FROM castle WHERE id = 1").await,
+        1_800_000_000_000
+    );
+    assert_eq!(scalar("SELECT CAST(COUNT(*) AS SIGNED) FROM castle_siege_guards").await, 1);
+    assert_eq!(
+        scalar("SELECT CAST(blood_alliance_count AS SIGNED) FROM clan_data WHERE clan_id = 500").await,
+        2
+    );
+
+    match store.load_residence(ResidenceReadKind::SiegeClans, 1).await.unwrap() {
+        ResidenceRereadRows::SiegeClans { castle, rows } => {
+            let castle = castle.unwrap();
+            assert_eq!((castle.owner_id, castle.siege_date), (500, 1_800_000_000_000));
+            assert!(castle.time_registration_over);
+            assert_eq!(rows.len(), 2);
+        }
+        other => panic!("{other:?}"),
+    }
+    db.drop_db().await;
+}

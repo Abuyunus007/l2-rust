@@ -29,6 +29,8 @@ use crate::world::World;
 pub enum SiegeInput {
     /// `RequestSiegeInfo`: Java answers nothing.
     SiegeInfo,
+    /// `RequestAllCastleInfo`: `ExShowCastleInfo` (and the party member positions).
+    AllCastleInfo,
     /// `RequestSiegeAttackerList`.
     AttackerList { castle_id: i32 },
     /// `RequestSiegeDefenderList`.
@@ -56,6 +58,14 @@ impl World {
     pub(crate) fn on_siege_input(&mut self, player: ObjectId, input: SiegeInput) {
         match input {
             SiegeInput::SiegeInfo => {}
+            SiegeInput::AllCastleInfo => {
+                self.send(player, &self.castle_info_packet());
+                // Update PartyMemberPosition when player is in a party.
+                if let Some(party) = self.party_of(player) {
+                    let positions = self.party_member_position(party);
+                    self.send(player, &positions);
+                }
+            }
             SiegeInput::AttackerList { castle_id } => {
                 if self.castle(CastleId(castle_id)).is_some() {
                     self.request_siege_reread(
@@ -200,6 +210,34 @@ impl World {
         }
         // Update the defender list.
         self.send_siege_defender_list(player, id);
+    }
+
+    /// Java `new ExShowCastleInfo()`: every castle with its owner's name, tax rate and siege date.
+    pub fn castle_info_packet(&self) -> l2_protocol_game::server::siege::ExShowCastleInfo {
+        let castles = self
+            .castles()
+            .iter()
+            .map(|c| {
+                let owner_name = if c.owner_id > 0 {
+                    self.clan(c.owner_id).map(|clan| clan.name.clone()).unwrap_or_else(|| {
+                        warn!(
+                            "Castle owner with no name! Castle: {} has an OwnerId = {} who does not have a  name!",
+                            c.name, c.owner_id
+                        );
+                        String::new()
+                    })
+                } else {
+                    String::new()
+                };
+                l2_protocol_game::server::siege::CastleInfo {
+                    residence_id: c.id.0,
+                    owner_name,
+                    tax_percent: c.tax_percent,
+                    siege_date_secs: i32::try_from(c.siege_date / 1000).unwrap_or(i32::MAX),
+                }
+            })
+            .collect();
+        l2_protocol_game::server::siege::ExShowCastleInfo { castles }
     }
 
     /// Java `new SiegeInfo(castle, player)`.

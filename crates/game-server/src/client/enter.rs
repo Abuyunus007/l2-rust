@@ -1256,6 +1256,7 @@ impl ClientSession {
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             // (M7-SIEGE-01)
             ClientPacket::RequestSiegeInfo(_) => ClientInput::Siege(l2_world::SiegeInput::SiegeInfo),
+            ClientPacket::RequestAllCastleInfo(_) => ClientInput::Siege(l2_world::SiegeInput::AllCastleInfo),
             ClientPacket::RequestSiegeAttackerList(p) => {
                 ClientInput::Siege(l2_world::SiegeInput::AttackerList {
                     castle_id: p.castle_id,

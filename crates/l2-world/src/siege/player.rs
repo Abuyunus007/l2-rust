@@ -259,7 +259,7 @@ impl World {
 
     /// The relation `UserInfo` writes: the clan leader bit, then the siege state (attacker
     /// `0x180`, or `0x1000` for a Territory War registration; defender `0x80`).
-    pub(crate) fn user_info_relation(&self, player: ObjectId) -> i32 {
+    pub fn user_info_relation(&self, player: ObjectId) -> i32 {
         let mut relation = if self.is_clan_leader(player) { 0x40 } else { 0 };
         match self.siege_state_of(player) {
             1 if self.registered_territory_id(player) == 0 => relation |= 0x180,
