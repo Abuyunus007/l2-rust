@@ -18,6 +18,7 @@ pub mod bot_report;
 pub mod bypass;
 pub mod chat;
 pub mod clan;
+pub mod clanhall;
 pub mod combat;
 pub mod command;
 pub mod craft;
@@ -133,6 +134,9 @@ pub use punishments::{
 };
 pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
+pub use clanhall::{
+    AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
+};
 pub use residence::{
     CastleId, ClanHallId, FortId, ResidenceLoad, ResidenceRef, ResidenceRefresh, ResidenceSettings,
     ResidenceWrite,

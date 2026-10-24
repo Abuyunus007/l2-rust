@@ -504,10 +504,11 @@ impl World {
         self.broadcast_to_clan(clan_id, &SystemMessage::new(SystemMessageId::ClanHasDispersed));
         let castle_id = clan.castle_id;
         let (fort_id, hall_id) = (clan.fort_id, clan.hideout_id);
-        // The siege registrations (M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01) and the clan hall
-        // auction bid (M7-CH-01).
+        // The siege registrations (M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01).
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
         let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
+        // `auction.cancelBid(clan.getId())` (M7-CH-01).
+        self.auction_cancel_bid_of_destroyed_clan(clan_id, write_db);
         // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
         // released) and its row deleted, with the clan's own rows (D-49: left alone without
         // `write_db`).

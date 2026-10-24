@@ -132,6 +132,8 @@ pub struct World {
     pub(crate) fishing: crate::fishing::FishingWorld,
     /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
     pub(crate) residences: crate::residence::ResidenceWorld,
+    /// The clan hall rent, auctions and hall NPCs (M7-CH-01, `clanhall/`).
+    pub(crate) clanhall: crate::clanhall::ClanHallWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -199,6 +201,7 @@ impl World {
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
             residences: crate::residence::ResidenceWorld::default(),
+            clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
         }
@@ -770,6 +773,7 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
+            TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
             // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),

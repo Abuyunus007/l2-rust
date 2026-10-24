@@ -28,13 +28,17 @@ pub(crate) enum PendingClanWindow {
     /// `SendWareHouseWithDrawList` on the clan warehouse: the packet waits for the rows and then
     /// runs on the refreshed container.
     WithdrawPacket(Vec<WarehouseListEntry>),
+    /// A clan hall auction bid takes its adena from the clan warehouse (M7-CH-01).
+    AuctionBid { auction_id: i32, bid: i64 },
+    /// A cancelled bid gives 90% of its adena back to the clan warehouse (M7-CH-01).
+    AuctionCancelBid { auction_id: i32 },
 }
 
 impl World {
     /// Asks for the `CLANWH` rows of `clan_id` and remembers the window. A second request of the
     /// same player replaces the first; the answer of the first one finds nothing waiting and is
     /// dropped.
-    pub(super) fn request_clan_window(&mut self, player: ObjectId, clan_id: i32, window: PendingClanWindow) {
+    pub(crate) fn request_clan_window(&mut self, player: ObjectId, clan_id: i32, window: PendingClanWindow) {
         let Some(p) = self.players.get_mut(&player) else {
             return;
         };
@@ -81,6 +85,12 @@ impl World {
             PendingClanWindow::Withdraw(sorted) => self.show_clan_withdraw_window(player, sorted),
             PendingClanWindow::Deposit => self.show_clan_deposit_window(player, clan_id),
             PendingClanWindow::WithdrawPacket(items) => self.warehouse_withdraw(player, items, true),
+            PendingClanWindow::AuctionBid { auction_id, bid } => {
+                self.auction_set_bid(player, auction_id, bid);
+            }
+            PendingClanWindow::AuctionCancelBid { auction_id } => {
+                self.auction_cancel_bid(player, auction_id);
+            }
         }
     }
 }

@@ -122,7 +122,7 @@ impl World {
     }
 
     /// Java `TeleportHolder.doTeleport(player, npc, locId)`.
-    fn do_teleport(&mut self, _npc: ObjectId, player: ObjectId, holder: &TeleportHolder, location_id: i32) {
+    pub(crate) fn do_teleport(&mut self, _npc: ObjectId, player: ObjectId, holder: &TeleportHolder, location_id: i32) {
         // Check if player is dead before other checks.
         if self.is_alike_dead(player) {
             return;
