@@ -17,14 +17,14 @@ use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
 use l2_data::{
-    ArmorSets, DoorTemplates, EnchantHpBonus, ExperienceLoss, ExperienceTable, Hennas, HtmCache, ItemTemplates,
-    KarmaLoss, MapRegions, NpcLoadOptions, NpcTemplates, PlayerTemplates, SkillLoadOptions, SkillTemplates,
-    SkillTrees, SpawnData, SpawnLoadOptions, StaticObjectTemplates, Zones,
+    ArmorSets, DoorTemplates, EnchantHpBonus, ExperienceLoss, ExperienceTable, Hennas, HtmCache,
+    ItemTemplates, KarmaLoss, MapRegions, NpcLoadOptions, NpcTemplates, PlayerTemplates, SkillLoadOptions,
+    SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions, StaticObjectTemplates, Zones,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, NpcHtmlMessage, NpcSay, SystemMessage,
-    SystemMessageParam,
+    ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, NpcHtmlMessage, NpcSay,
+    SystemMessage, SystemMessageParam,
 };
 use l2_protocol_game::{NpcStringId, ServerOpcode, SystemMessageId};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
@@ -32,7 +32,7 @@ use l2_world::fort::{
     FortSettings, FortSiegeFortLoad, FortSiegeGuardRecord, FortSiegeLoad, FortSiegeRows, FortSiegeWrite,
     FortSpawnRecord, FortThen, LogisticsCommand,
 };
-use l2_world::residence::{FortRecord, FunctionRecord, ResidenceReadThen, ResidenceRereadRows, Writes};
+use l2_world::residence::{FortRecord, ResidenceReadThen, ResidenceRereadRows};
 use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
@@ -173,6 +173,21 @@ fn stat_data() -> StatData {
     }
 }
 
+/// The lists of the foreman (`tel1`) and of the doorman (`OTHER`).
+const TELEPORTERS: &str = r#"<?xml version="1.0"?><list>
+  <npc id="35663">
+    <teleport name="tel1" type="OTHER">
+      <location name="Barracks" x="-70000" y="258000" z="-3100" />
+    </teleport>
+  </npc>
+  <npc id="35667">
+    <teleport type="OTHER">
+      <location name="Out of the gate" x="-70500" y="258500" z="-3100" />
+      <location name="Into the gate" x="-70600" y="258600" z="-3100" />
+    </teleport>
+  </npc>
+</list>"#;
+
 /// Access level 100 is a GM.
 struct Data(StatData, AdminRights);
 
@@ -307,11 +322,26 @@ const PAGES: &[(&str, &str)] = &[
 <a action="bypass -h npc_%objectId%_manage_vault">Clan Warehouse.</a>
 <a action="bypass -h npc_%objectId%_manage">Fortress Management.</a></body></html>"#,
     ),
-    ("data/html/fortress/foreman-no.htm", "<html><body>FOREMAN NO</body></html>"),
-    ("data/html/fortress/foreman-busy.htm", "<html><body>FOREMAN BUSY</body></html>"),
-    ("data/html/fortress/foreman-nac.htm", "<html><body>FOREMAN NAC</body></html>"),
-    ("data/html/fortress/foreman-noprivs.htm", "<html><body>NOPRIVS</body></html>"),
-    ("data/html/fortress/foreman-report.htm", "<html><body>REPORT %hr% %min%</body></html>"),
+    (
+        "data/html/fortress/foreman-no.htm",
+        "<html><body>FOREMAN NO</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-busy.htm",
+        "<html><body>FOREMAN BUSY</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-nac.htm",
+        "<html><body>FOREMAN NAC</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-noprivs.htm",
+        "<html><body>NOPRIVS</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-report.htm",
+        "<html><body>REPORT %hr% %min%</body></html>",
+    ),
     (
         "data/html/fortress/foreman-castlereport.htm",
         "<html><body>CASTLEREPORT %hr% %min% %castle% %hr2% %min2%</body></html>",
@@ -320,9 +350,18 @@ const PAGES: &[(&str, &str)] = &[
         "data/html/fortress/foreman-expel.htm",
         r#"<html><body>EXPEL <a action="bypass -h npc_%objectId%_banish_foreigner">Expel.</a></body></html>"#,
     ),
-    ("data/html/fortress/foreman-expeled.htm", "<html><body>EXPELED</body></html>"),
-    ("data/html/fortress/foreman-opened.htm", "<html><body>OPENED</body></html>"),
-    ("data/html/fortress/foreman-closed.htm", "<html><body>CLOSED</body></html>"),
+    (
+        "data/html/fortress/foreman-expeled.htm",
+        "<html><body>EXPELED</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-opened.htm",
+        "<html><body>OPENED</body></html>",
+    ),
+    (
+        "data/html/fortress/foreman-closed.htm",
+        "<html><body>CLOSED</body></html>",
+    ),
     (
         "data/html/fortress/foreman-functions.htm",
         r#"<html><body>FUNCTIONS hp %hp_regen% mp %mp_regen% xp %xp_regen%
@@ -365,14 +404,26 @@ const PAGES: &[(&str, &str)] = &[
         "data/html/fortress/functions-cancel_confirmed.htm",
         "<html><body>CANCEL CONFIRMED</body></html>",
     ),
-    ("data/html/fortress/functions-used.htm", "<html><body>USED %val%</body></html>"),
-    ("data/html/fortress/low_adena.htm", "<html><body>LOW ADENA</body></html>"),
+    (
+        "data/html/fortress/functions-used.htm",
+        "<html><body>USED %val%</body></html>",
+    ),
+    (
+        "data/html/fortress/low_adena.htm",
+        "<html><body>LOW ADENA</body></html>",
+    ),
     (
         "data/html/fortress/support1.htm",
         r#"<html><body>SUPPORT1 mp %mp% <a action="bypass -h npc_%objectId%_support 4342 2">Wind Walk</a></body></html>"#,
     ),
-    ("data/html/fortress/support-done.htm", "<html><body>SUPPORT DONE %mp%</body></html>"),
-    ("data/html/fortress/support-no_mana.htm", "<html><body>NO MANA %mp%</body></html>"),
+    (
+        "data/html/fortress/support-done.htm",
+        "<html><body>SUPPORT DONE %mp%</body></html>",
+    ),
+    (
+        "data/html/fortress/support-no_mana.htm",
+        "<html><body>NO MANA %mp%</body></html>",
+    ),
     (
         "data/html/fortress/35663-d.htm",
         r#"<html><body>DOORS %npcname%
@@ -389,28 +440,66 @@ const PAGES: &[(&str, &str)] = &[
         "data/html/fortress/logistics-rewards.htm",
         r#"<html><body>REWARDS %bloodoath% <a action="bypass -h npc_%objectId%_blood">Receive</a></body></html>"#,
     ),
-    ("data/html/fortress/logistics-blood.htm", "<html><body>BLOOD</body></html>"),
-    ("data/html/fortress/logistics-noblood.htm", "<html><body>NOBLOOD</body></html>"),
-    ("data/html/fortress/logistics-noprivs.htm", "<html><body>LOGISTICS NOPRIVS</body></html>"),
-    ("data/html/fortress/logistics-supply.htm", "<html><body>SUPPLY</body></html>"),
-    ("data/html/fortress/logistics-nosupply.htm", "<html><body>NOSUPPLY</body></html>"),
-    ("data/html/fortress/logistics-siege.htm", "<html><body>SIEGE</body></html>"),
+    (
+        "data/html/fortress/logistics-blood.htm",
+        "<html><body>BLOOD</body></html>",
+    ),
+    (
+        "data/html/fortress/logistics-noblood.htm",
+        "<html><body>NOBLOOD</body></html>",
+    ),
+    (
+        "data/html/fortress/logistics-noprivs.htm",
+        "<html><body>LOGISTICS NOPRIVS</body></html>",
+    ),
+    (
+        "data/html/fortress/logistics-supply.htm",
+        "<html><body>SUPPLY</body></html>",
+    ),
+    (
+        "data/html/fortress/logistics-nosupply.htm",
+        "<html><body>NOSUPPLY</body></html>",
+    ),
+    (
+        "data/html/fortress/logistics-siege.htm",
+        "<html><body>SIEGE</body></html>",
+    ),
     (
         "data/html/fortress/logistics-supplylvl.htm",
         r#"<html><body>SUPPLYLVL %supplylvl% <a action="bypass -h npc_%objectId%_supply">Receive supplies.</a></body></html>"#,
     ),
-    ("data/html/fortress/logistics-1.htm", "<html><body>LOGISTICS ONE</body></html>"),
+    (
+        "data/html/fortress/logistics-1.htm",
+        "<html><body>LOGISTICS ONE</body></html>",
+    ),
     (
         "data/html/doorman/35667.htm",
         r#"<html><body>DOORMAN OWNER
 <a action="bypass -h npc_%objectId%_open_doors 5, 18220001, 18220002">Open</a>
 <a action="bypass -h npc_%objectId%_close_doors 5, 18220001, 18220002">Close</a>
-<a action="bypass -h npc_%objectId%_open_doors 18220001, 18220002">Open without a leading number</a></body></html>"#,
+<a action="bypass -h npc_%objectId%_open_doors 18220001, 18220002">Open without a leading number</a>
+<a action="bypass -h npc_%objectId%_tele 1">Teleport</a></body></html>"#,
     ),
-    ("data/html/doorman/35667-no.htm", "<html><body>DOORMAN NO</body></html>"),
-    ("data/html/doorman/35667-busy.htm", "<html><body>DOORMAN BUSY</body></html>"),
-    ("data/html/admin/forts.htm", "<html><body>FORTS %forts%</body></html>"),
-    ("data/html/admin/fort.htm", "<html><body>FORT %fortName% %fortId%</body></html>"),
+    (
+        "data/html/doorman/35667-no.htm",
+        "<html><body>DOORMAN NO</body></html>",
+    ),
+    (
+        "data/html/doorman/35667-busy.htm",
+        "<html><body>DOORMAN BUSY</body></html>",
+    ),
+    (
+        "data/html/teleporter/teleports.htm",
+        "<html><body>TELEPORTS %locations%</body></html>",
+    ),
+    (
+        "data/html/admin/forts.htm",
+        "<html><body>FORTS %forts%</body></html>",
+    ),
+    (
+        "data/html/admin/fort.htm",
+        "<html><body>FORT %fortName% %fortId%</body></html>",
+    ),
 ];
 
 /// The pages of the two scripts (`FortressSiegeManager-NN.html` ... ).
@@ -500,9 +589,18 @@ fn clan_record(clan_id: i32, name: &str, level: i32, leader: i32, other: i32, ad
 
 fn commander_properties() -> BTreeMap<String, String> {
     [
-        ("ShantyCommander1", format!("{},{},{},0,{NPC_COMMANDER_1}", X + 100, Y, Z)),
-        ("ShantyCommander2", format!("{},{},{},0,{NPC_COMMANDER_2}", X + 200, Y, Z)),
-        ("ShantyCommander3", format!("{},{},{},0,{NPC_COMMANDER_3}", X + 300, Y, Z)),
+        (
+            "ShantyCommander1",
+            format!("{},{},{},0,{NPC_COMMANDER_1}", X + 100, Y, Z),
+        ),
+        (
+            "ShantyCommander2",
+            format!("{},{},{},0,{NPC_COMMANDER_2}", X + 200, Y, Z),
+        ),
+        (
+            "ShantyCommander3",
+            format!("{},{},{},0,{NPC_COMMANDER_3}", X + 300, Y, Z),
+        ),
         ("ShantyFlag1", format!("{},{},{},{FLAG_ITEM}", X + 400, Y, Z)),
         ("ShantyFlag2", format!("{},{},{},{FLAG_ITEM}", X + 410, Y, Z)),
     ]
@@ -595,7 +693,12 @@ impl Scene {
         Self::with(siege_database_writes, fort, siege_clans, settings())
     }
 
-    fn with(siege_database_writes: bool, fort: FortRecord, siege_clans: Vec<i32>, settings: FortSettings) -> Self {
+    fn with(
+        siege_database_writes: bool,
+        fort: FortRecord,
+        siege_clans: Vec<i32>,
+        settings: FortSettings,
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -634,6 +737,7 @@ impl Scene {
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+        world.set_teleporter_data(Arc::new(l2_data::TeleporterData::from_xml(TELEPORTERS).unwrap()));
         world.set_zone_data(
             Arc::new(Zones::load(root.path())),
             Arc::new(MapRegions::load(root.path())),
@@ -876,7 +980,9 @@ fn pages_to(out: &[Out], to: i32) -> Vec<String> {
 fn fort_writes(out: &[Out]) -> Vec<FortSiegeWrite> {
     out.iter()
         .filter_map(|o| match o {
-            Out::Persist(PersistCommand::Residence(l2_world::ResidenceWrite::FortSiege(w))) => Some(w.clone()),
+            Out::Persist(PersistCommand::Residence(l2_world::ResidenceWrite::FortSiege(w))) => {
+                Some(w.clone())
+            }
             _ => None,
         })
         .collect()
@@ -988,8 +1094,14 @@ fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch(
         ]
     );
     let off = Scene::new(false, LIONS, vec![WOLVES], 0);
-    assert!(off.world.fort_attacker_clans(SHANTY).is_empty(), "cleared in this world");
-    assert!(fort_writes(&off.loaded).is_empty(), "but nothing is written without the switch");
+    assert!(
+        off.world.fort_attacker_clans(SHANTY).is_empty(),
+        "cleared in this world"
+    );
+    assert!(
+        fort_writes(&off.loaded).is_empty(),
+        "but nothing is written without the switch"
+    );
 }
 
 /// `checkAutoTask` with a date ahead and a registered clan: the registration stays, the countdown
@@ -1063,11 +1175,18 @@ fn registering_follows_javas_codes_and_charges_the_first_clan() {
         }
     );
     // `setSiegeDateTime(false)`: an hour from now.
-    let FortSiegeWrite::SiegeDate { fort_id: 101, siege_date } = writes[1] else {
+    let FortSiegeWrite::SiegeDate {
+        fort_id: 101,
+        siege_date,
+    } = writes[1]
+    else {
         panic!("{writes:?}");
     };
     let expected = now_ms() + 3_600_000;
-    assert!((siege_date - expected).abs() < 60_000, "{siege_date} vs {expected}");
+    assert!(
+        (siege_date - expected).abs() < 60_000,
+        "{siege_date} vs {expected}"
+    );
     assert_eq!(s.world.fort(SHANTY).unwrap().siege_date, siege_date);
     // The owner is told ("A fortress is under attack").
     assert!(message_ids(&out, P1).contains(&SystemMessageId::AFortressIsUnderAttack));
@@ -1198,7 +1317,10 @@ fn the_countdown_announces_and_starts_the_siege() {
         .map(|m| int_param(&m, 0))
         .collect();
     assert_eq!(minutes, [10, 5, 1]);
-    assert!(s.npcs_of(NPC_MERCHANT).is_empty(), "the merchant leaves 10 minutes before");
+    assert!(
+        s.npcs_of(NPC_MERCHANT).is_empty(),
+        "the merchant leaves 10 minutes before"
+    );
     // The owner hears it too, the bystander does not.
     assert!(
         message_ids(&out, P1).contains(&SystemMessageId::S1MinuteSUntilTheFortressBattleStarts),
@@ -1213,7 +1335,9 @@ fn the_countdown_announces_and_starts_the_siege() {
         all.extend(
             messages_to(out, P3)
                 .iter()
-                .filter(|m| !m.params.is_empty() && m.id != SystemMessageId::S1MinuteSUntilTheFortressBattleStarts)
+                .filter(|m| {
+                    !m.params.is_empty() && m.id != SystemMessageId::S1MinuteSUntilTheFortressBattleStarts
+                })
                 .map(|m| (m.id, int_param(m, 0))),
         );
     }
@@ -1305,7 +1429,13 @@ fn starting_a_siege_sets_up_the_fortress() {
     assert!(!message_ids(&out, P5).contains(&SystemMessageId::TheFortressBattleS1HasBegun));
     // The bystander in the zone is told it is a combat zone.
     assert!(message_ids(&out, P5).contains(&SystemMessageId::YouHaveEnteredACombatZone));
-    assert!(s.world.player(ObjectId(P5)).unwrap().zones.is_inside(ZoneId::Siege));
+    assert!(
+        s.world
+            .player(ObjectId(P5))
+            .unwrap()
+            .zones
+            .is_inside(ZoneId::Siege)
+    );
     // saveFortSiege: the date goes to 0.
     assert!(fort_writes(&out).contains(&FortSiegeWrite::SiegeDate {
         fort_id: 101,
@@ -1423,9 +1553,15 @@ fn killing_the_commanders_follows_javas_barracks() {
         says[0].npc_string,
         NpcStringId::YouMayHaveBrokenOurArrowsButYouWillNeverBreakOurWillArchersRetreat as i32
     );
-    assert_eq!((says[0].text_type, says[0].npc_id, says[0].object_id), (23, NPC_COMMANDER_1, c1.0));
+    assert_eq!(
+        (says[0].text_type, says[0].npc_id, says[0].object_id),
+        (23, NPC_COMMANDER_1, c1.0)
+    );
     for p in [P1, P3, P4] {
-        assert!(message_ids(&out, p).contains(&SystemMessageId::TheBarracksHaveBeenSeized), "P{p:x}");
+        assert!(
+            message_ids(&out, p).contains(&SystemMessageId::TheBarracksHaveBeenSeized),
+            "P{p:x}"
+        );
     }
     assert!(!message_ids(&out, P5).contains(&SystemMessageId::TheBarracksHaveBeenSeized));
     assert_eq!(s.world.fort_commanders_alive(SHANTY), 2);
@@ -1563,7 +1699,10 @@ fn the_leader_of_an_attacker_picks_up_and_wears_the_flag() {
     // The flag is worn.
     let worn = s
         .world
-        .paperdoll_object(ObjectId(P3), l2_protocol_game::server::charscreen::paperdoll::RHAND)
+        .paperdoll_object(
+            ObjectId(P3),
+            l2_protocol_game::server::charscreen::paperdoll::RHAND,
+        )
         .expect("worn in the right hand");
     assert_eq!(worn, flags[0], "the item that lay there is the item worn");
     let messages = messages_to(&out, P3);
@@ -1626,7 +1765,10 @@ fn the_end_of_the_siege_removes_every_flag() {
     assert!(!s.world.is_combat_flag_equipped(ObjectId(P3)));
     assert!(flags_on_ground(&s).is_empty());
     assert_eq!(
-        s.world.paperdoll_object(ObjectId(P3), l2_protocol_game::server::charscreen::paperdoll::RHAND),
+        s.world.paperdoll_object(
+            ObjectId(P3),
+            l2_protocol_game::server::charscreen::paperdoll::RHAND
+        ),
         None
     );
 }
@@ -1830,11 +1972,13 @@ fn the_periodic_update_charges_the_contract_with_the_switch() {
     s.take();
     s.run_ms(60_000);
     assert_eq!(s.world.fort(SHANTY).unwrap().state, 1);
-    assert!(residence_writes(&s.take()).contains(&l2_world::ResidenceWrite::FortState {
-        fort_id: 101,
-        state: 1,
-        castle_id: 0
-    }));
+    assert!(
+        residence_writes(&s.take()).contains(&l2_world::ResidenceWrite::FortState {
+            fort_id: 101,
+            state: 1,
+            castle_id: 0
+        })
+    );
 }
 
 #[test]
@@ -1882,7 +2026,9 @@ fn the_owner_loses_the_fortress_after_the_maximum_time() {
 
 fn place(s: &mut Scene, npc_id: i32, dx: i32) -> ObjectId {
     let (x, y, z) = at(dx);
-    s.world.spawn_npc_at(npc_id, x, y, z, 0).expect("the NPC template exists")
+    s.world
+        .spawn_npc_at(npc_id, x, y, z, 0)
+        .expect("the NPC template exists")
 }
 
 /// The foreman's windows: the owner's page, the other clans' "no" page, the busy page during a
@@ -1897,7 +2043,11 @@ fn the_foreman_shows_a_page_by_the_clan_and_the_report() {
     s.talk(P1, foreman);
     let pages = pages_to(&s.take(), P1);
     assert_eq!(pages.len(), 1, "{pages:?}");
-    assert!(pages[0].contains(&format!("FOREMAN {} Foreman", foreman.0)), "{}", pages[0]);
+    assert!(
+        pages[0].contains(&format!("FOREMAN {} Foreman", foreman.0)),
+        "{}",
+        pages[0]
+    );
     s.talk(P3, foreman);
     assert!(pages_to(&s.take(), P3)[0].contains("FOREMAN NO"));
 
@@ -1909,7 +2059,9 @@ fn the_foreman_shows_a_page_by_the_clan_and_the_report() {
     let next = s.world.fort_time_till_next_update(SHANTY);
     let (hour2, minutes2) = (next / 3600, (next - next / 3600 * 3600) / 60);
     assert!(
-        page.contains(&format!("CASTLEREPORT {hour} {minutes} Gludio {hour2} {minutes2}")),
+        page.contains(&format!(
+            "CASTLEREPORT {hour} {minutes} Gludio {hour2} {minutes2}"
+        )),
         "{page}"
     );
     // Without a contract the other report.
@@ -2061,7 +2213,12 @@ fn the_foreman_sells_and_cancels_functions() {
         &mut s,
         P1,
         foreman,
-        &["manage", "manage recovery", "manage recovery edit_hp 300", "manage recovery hp 300"],
+        &[
+            "manage",
+            "manage recovery",
+            "manage recovery edit_hp 300",
+            "manage recovery hp 300",
+        ],
     );
     assert!(page.contains("USED 300%"), "{page}");
     assert_eq!(adena_of(&s, P1), before - 2000);
@@ -2078,7 +2235,11 @@ fn the_foreman_sells_and_cancels_functions() {
     // Cancel it: level 0 and lease 0 remove the function.
     assert!(walk(&mut s, P1, foreman, &["manage recovery hp_cancel"]).contains("manage recovery hp 0"));
     assert!(walk(&mut s, P1, foreman, &["manage recovery hp 0"]).contains("CANCEL CONFIRMED"));
-    assert!(s.world.residence_function(ResidenceRef::Fort(SHANTY), 2).is_none());
+    assert!(
+        s.world
+            .residence_function(ResidenceRef::Fort(SHANTY), 2)
+            .is_none()
+    );
 }
 
 /// A leader that cannot pay gets "low adena" twice (the page object is sent again at the end of
@@ -2102,7 +2263,11 @@ fn a_purchase_without_adena_sends_the_low_adena_page_twice() {
     let pages = pages_to(&s.take(), P1);
     assert_eq!(pages.len(), 2, "{pages:?}");
     assert!(pages.iter().all(|p| p.contains("LOW ADENA")));
-    assert!(s.world.residence_function(ResidenceRef::Fort(SHANTY), 2).is_none());
+    assert!(
+        s.world
+            .residence_function(ResidenceRef::Fort(SHANTY), 2)
+            .is_none()
+    );
 }
 
 /// The teleport and support functions: no function, "nac" page; the support page shows the
@@ -2194,7 +2359,10 @@ fn logistics_hands_out_blood_oaths() {
     s.enter(P5, BEARS, 0);
     s.talk(P1, officer);
     let page = pages_to(&s.take(), P1).remove(0);
-    assert!(page.contains(&format!("LOGISTICS Lions {NPC_LOGISTICS}")), "{page}");
+    assert!(
+        page.contains(&format!("LOGISTICS Lions {NPC_LOGISTICS}")),
+        "{page}"
+    );
 
     // The rewards: the blood oaths are read again.
     s.bypass(P1, officer, "rewards");
@@ -2282,10 +2450,12 @@ fn logistics_gives_the_supply_box_and_resets_the_level() {
         (officer_pos.0 - 23, officer_pos.1 + 41, officer_pos.2)
     );
     assert_eq!(s.world.fort(SHANTY).unwrap().supply_level, 0);
-    assert!(residence_writes(&out).contains(&l2_world::ResidenceWrite::FortSupplyLevel {
-        fort_id: 101,
-        supply_level: 0
-    }));
+    assert!(
+        residence_writes(&out).contains(&l2_world::ResidenceWrite::FortSupplyLevel {
+            fort_id: 101,
+            supply_level: 0
+        })
+    );
     // No more supplies: the answer of the read says level 0 now.
     s.talk(P1, officer);
     logistics(&mut s, P1, officer, "supplylvl", 0);
@@ -2338,4 +2508,540 @@ fn a_failed_reread_refuses_the_logistics_command() {
         then: requests[0].clone(),
     });
     assert!(pages_to(&s.take(), P1).is_empty());
+}
+
+// ---------------------------------------------------------------------------------- the scripts
+
+/// A siege manager (the suspicious merchant) of Shanty, which the Lions own, and the page it shows.
+fn manager_scene(fort: FortRecord, settings: FortSettings) -> (Scene, ObjectId) {
+    let mut fort = fort;
+    fort.siege_date = now_ms() + 30 * 60_000;
+    let mut s = Scene::with(true, fort, vec![], settings);
+    let merchant = place(&mut s, NPC_MERCHANT, 40);
+    (s, merchant)
+}
+
+/// Sends `Script FortressSiegeManager <command>`, answers the re-read it asks for with the rows
+/// of the database, and returns the pages the player got.
+fn siege_command(s: &mut Scene, player: i32, command: &str, clans: Vec<i32>) -> Vec<String> {
+    s.take();
+    s.script(player, &format!("FortressSiegeManager {command}"));
+    let requests = reread_requests(&s.take());
+    assert_eq!(requests.len(), 1, "{command}: one re-read");
+    let owner = s.world.fort(SHANTY).unwrap().owner_id;
+    answer_reread(s, requests[0].clone(), owner, clans, None);
+    pages_to(&s.take(), player)
+}
+
+/// Talks to the merchant and opens the page with the registration links.
+fn open_registration_page(s: &mut Scene, player: i32, merchant: ObjectId) {
+    s.talk(player, merchant);
+    s.script(player, "FortressSiegeManager FortressSiegeManager-11.html");
+}
+
+/// The suspicious merchant opens with a page by the owner: the clan name and the way to the
+/// registration pages; the pages pass through without a read.
+#[test]
+fn the_siege_manager_talks_and_shows_its_pages() {
+    let (mut s, merchant) = manager_scene(shanty(0), settings());
+    s.enter(P3, WOLVES, 0);
+    s.talk(P3, merchant);
+    assert!(pages_to(&s.take(), P3)[0].contains("MERCHANT FREE"));
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(P3, WOLVES, 0);
+    s.talk(P3, merchant);
+    let page = pages_to(&s.take(), P3).remove(0);
+    assert!(
+        page.contains(&format!("MERCHANT OF Lions {}", merchant.0)),
+        "{page}"
+    );
+    // The link to the story needs no read.
+    s.script(P3, "FortressSiegeManager FortressSiegeManager-11.html");
+    let out = s.take();
+    assert!(reread_requests(&out).is_empty());
+    assert!(pages_to(&out, P3)[0].contains("PAGE 11"));
+}
+
+#[test]
+fn the_siege_manager_registers_a_clan_after_reading_the_rows_again() {
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(P3, WOLVES, 0);
+    open_registration_page(&mut s, P3, merchant);
+    let before = adena_of(&s, P3);
+    let pages = siege_command(&mut s, P3, "register", vec![]);
+    assert!(pages[0].contains("PAGE 05"), "{pages:?}");
+    assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
+    assert_eq!(adena_of(&s, P3), before - 250_000);
+}
+
+#[test]
+fn registering_tells_the_clan_and_writes_the_row() {
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(P3, WOLVES, 0);
+    open_registration_page(&mut s, P3, merchant);
+    s.take();
+    s.script(P3, "FortressSiegeManager register");
+    let requests = reread_requests(&s.take());
+    assert_eq!(
+        requests,
+        [ResidenceReadThen::Fort(FortThen::Register {
+            player: ObjectId(P3),
+            npc: merchant
+        })]
+    );
+    answer_reread(&mut s, requests[0].clone(), LIONS, vec![], None);
+    let out = s.take();
+    let registered: Vec<SystemMessage> = messages_to(&out, P3)
+        .into_iter()
+        .filter(|m| m.id == SystemMessageId::YourClanHasBeenRegisteredToS1SFortressBattle)
+        .collect();
+    assert_eq!(registered.len(), 1);
+    assert_eq!(text_param(&registered[0], 0), "Shanty");
+    assert_eq!(
+        fort_writes(&out)[0],
+        FortSiegeWrite::AddAttacker {
+            fort_id: 101,
+            clan_id: WOLVES
+        }
+    );
+}
+
+/// The refusals of `onEvent` "register", in Java's order.
+#[test]
+fn the_siege_manager_refuses_a_clan_for_the_reasons_of_java() {
+    // No clan.
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(GM, 0, 0);
+    open_registration_page(&mut s, GM, merchant);
+    assert!(siege_command(&mut s, GM, "register", vec![])[0].contains("PAGE 02"));
+    // A member without the siege privilege.
+    s.enter(P4, WOLVES, 0);
+    open_registration_page(&mut s, P4, merchant);
+    assert!(siege_command(&mut s, P4, "register", vec![])[0].contains("PAGE 10"));
+    // A clan below `SiegeClanMinLevel` (4): the Bears are level 3.
+    s.enter(P5, BEARS, 0);
+    open_registration_page(&mut s, P5, merchant);
+    assert!(siege_command(&mut s, P5, "register", vec![])[0].contains("PAGE 04"));
+    // The owner's clan: the owner page.
+    s.enter(P1, LIONS, 0);
+    open_registration_page(&mut s, P1, merchant);
+    assert!(siege_command(&mut s, P1, "register", vec![])[0].contains("OWNER PAGE Lions"));
+    // Not enough adena for the first clan.
+    let mut poor = pdata(P3, WOLVES, X, 0);
+    poor.items[0].count = 1000;
+    s.enter_with(poor);
+    open_registration_page(&mut s, P3, merchant);
+    assert!(siege_command(&mut s, P3, "register", vec![])[0].contains("PAGE 03"));
+}
+
+#[test]
+fn the_siege_manager_refuses_the_lord_of_the_contracted_castle_and_a_late_registration() {
+    // The Bears own Gludio, the castle of the contract.
+    let mut low = settings();
+    low.siege.siege_clan_min_level = 3;
+    let fort = FortRecord {
+        state: 2,
+        castle_id: 1,
+        ..shanty(LIONS)
+    };
+    let (mut s, merchant) = manager_scene(fort, low.clone());
+    s.enter(P5, BEARS, 0);
+    open_registration_page(&mut s, P5, merchant);
+    assert!(siege_command(&mut s, P5, "register", vec![])[0].contains("PAGE 18"));
+    // Seven days after the owner took it, the rebel army comes within two hours.
+    let fort = FortRecord {
+        last_owned_time: now_ms() - 167 * 3_600_000,
+        ..shanty(LIONS)
+    };
+    let (mut s, merchant) = manager_scene(fort, settings());
+    s.enter(P3, WOLVES, 0);
+    open_registration_page(&mut s, P3, merchant);
+    assert!(siege_command(&mut s, P3, "register", vec![])[0].contains("PAGE 19"));
+    // Without a contract the castle's lord registers like everybody else.
+    let (mut s, merchant) = manager_scene(shanty(LIONS), low);
+    s.enter(P5, BEARS, 0);
+    open_registration_page(&mut s, P5, merchant);
+    assert!(siege_command(&mut s, P5, "register", vec![])[0].contains("PAGE 05"));
+}
+
+/// A clan that the rows say is registered already gets page 06 and pays nothing.
+#[test]
+fn the_siege_manager_reads_the_registrations_before_it_registers() {
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(P3, WOLVES, 0);
+    open_registration_page(&mut s, P3, merchant);
+    let before = adena_of(&s, P3);
+    // The database (the Java game server) registered the Wolves meanwhile.
+    let pages = siege_command(&mut s, P3, "register", vec![WOLVES]);
+    assert!(pages[0].contains("PAGE 06"), "{pages:?}");
+    assert_eq!(adena_of(&s, P3), before);
+    assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
+}
+
+#[test]
+fn the_siege_manager_cancels_and_tells_the_war_info() {
+    let (mut s, merchant) = manager_scene(shanty(LIONS), settings());
+    s.enter(P3, WOLVES, 0);
+    s.enter(P4, WOLVES, 0);
+    open_registration_page(&mut s, P3, merchant);
+    // Not registered.
+    assert!(siege_command(&mut s, P3, "cancel", vec![])[0].contains("PAGE 09"));
+    open_registration_page(&mut s, P3, merchant);
+    assert!(siege_command(&mut s, P3, "warInfo", vec![])[0].contains("PAGE 20"));
+    open_registration_page(&mut s, P3, merchant);
+    assert!(siege_command(&mut s, P3, "warInfo", vec![WOLVES])[0].contains("PAGE 21"));
+    // Registered: a member without the privilege cannot cancel, the leader can.
+    open_registration_page(&mut s, P4, merchant);
+    assert!(siege_command(&mut s, P4, "cancel", vec![WOLVES])[0].contains("PAGE 10"));
+    open_registration_page(&mut s, P3, merchant);
+    let pages = siege_command(&mut s, P3, "cancel", vec![WOLVES]);
+    assert!(pages[0].contains("PAGE 08"), "{pages:?}");
+    assert!(s.world.fort_attacker_clans(SHANTY).is_empty());
+}
+
+/// A registration this world holds without a row (the switch is off) survives the read of the
+/// rows; with the switch on the rows are the truth.
+#[test]
+fn a_local_registration_survives_a_reread_only_without_the_switch() {
+    for switch in [false, true] {
+        let mut fort = shanty(LIONS);
+        fort.siege_date = now_ms() + 30 * 60_000;
+        let mut s = Scene::with(switch, fort, vec![], settings());
+        s.enter(P3, WOLVES, 0);
+        assert_eq!(s.world.fort_add_attacker(SHANTY, ObjectId(P3), false), 4);
+        // The rows know the Bears only.
+        answer_reread(&mut s, ResidenceReadThen::Nothing, LIONS, vec![BEARS], None);
+        let clans = s.world.fort_attacker_clans(SHANTY);
+        if switch {
+            assert_eq!(clans, [BEARS]);
+        } else {
+            assert_eq!(clans, [BEARS, WOLVES]);
+        }
+    }
+}
+
+/// `FortressArcherCaptain`: a page for the owner's clan, another for everybody else.
+#[test]
+fn the_archer_captain_has_two_pages() {
+    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let captain = s.one_npc(NPC_CAPTAIN_ARCHER);
+    s.enter(P1, LIONS, 0);
+    s.enter(P3, WOLVES, 0);
+    s.enter(GM, 0, 0);
+    s.talk(P1, captain);
+    assert!(pages_to(&s.take(), P1)[0].contains("CAPTAIN OWN"));
+    s.talk(P3, captain);
+    assert!(pages_to(&s.take(), P3)[0].contains("CAPTAIN OTHER"));
+    s.talk(GM, captain);
+    assert!(pages_to(&s.take(), GM)[0].contains("CAPTAIN OTHER"));
+}
+
+// ---------------------------------------------------------------------------------- windows
+
+/// `ExShowFortressInfo`: every fortress with its owner's name, whether it is under siege and for
+/// how long the owner has held it.
+#[test]
+fn the_fortress_list_names_owner_siege_and_time() {
+    let mut s = Scene::new(true, LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
+    s.enter(P1, LIONS, 0);
+    s.take();
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(P1).unwrap()),
+        input: ClientInput::Fort(l2_world::FortInput::AllFortressInfo),
+    });
+    let out = s.take();
+    let list = decode::<ExShowFortressInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_INFO")[0]);
+    assert_eq!(list.forts.len(), 1);
+    let fort = &list.forts[0];
+    assert_eq!(
+        (
+            fort.residence_id,
+            fort.owner_clan_name.as_str(),
+            fort.siege_in_progress
+        ),
+        (101, "Lions", false)
+    );
+    assert!((fort.owned_time - 3600).abs() <= 2, "{}", fort.owned_time);
+    s.world.fort_start_siege(SHANTY);
+    assert!(s.world.exshow_fortress_info().forts[0].siege_in_progress);
+}
+
+/// `ExShowFortressSiegeInfo` and `ExShowFortressMapInfo`: the barracks, taken (1) or not (0).
+#[test]
+fn the_barracks_windows_follow_the_commanders() {
+    let mut s = Scene::new(true, LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
+    s.enter(P1, LIONS, 0);
+    let request = |s: &mut Scene, input| {
+        s.take();
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(P1).unwrap()),
+            input: ClientInput::Fort(input),
+        });
+        s.take()
+    };
+    // No siege: no siege windows, and the map is all zeros.
+    let out = request(&mut s, l2_world::FortInput::FortressSiegeInfo);
+    assert!(packets_to(&out, P1, "EX_SHOW_FORTRESS_SIEGE_INFO").is_empty());
+    let out = request(&mut s, l2_world::FortInput::FortressMapInfo { fortress_id: 101 });
+    let map = decode::<ExShowFortressMapInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_MAP_INFO")[0]);
+    assert_eq!(
+        (map.fort_id, map.siege_in_progress, map.barracks_total),
+        (101, false, 3)
+    );
+    assert_eq!(map.barracks, [0, 0, 0]);
+    // The siege: three commanders alive.
+    s.world.fort_start_siege(SHANTY);
+    let out = request(&mut s, l2_world::FortInput::FortressSiegeInfo);
+    let info = decode::<ExShowFortressSiegeInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_SIEGE_INFO")[0]);
+    assert_eq!(
+        (info.fort_id, info.barracks_total, info.barracks.clone()),
+        (101, 3, vec![0])
+    );
+    let out = request(&mut s, l2_world::FortInput::FortressMapInfo { fortress_id: 101 });
+    let map = decode::<ExShowFortressMapInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_MAP_INFO")[0]);
+    assert_eq!(map.barracks, [0, 0, 0]);
+    // The second commander dies: one barracks is taken.
+    let c2 = s.one_npc(NPC_COMMANDER_2);
+    s.world.do_die(c2, Some(ObjectId(P1)));
+    let out = request(&mut s, l2_world::FortInput::FortressSiegeInfo);
+    let info = decode::<ExShowFortressSiegeInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_SIEGE_INFO")[0]);
+    assert_eq!(info.barracks, [1]);
+    let out = request(&mut s, l2_world::FortInput::FortressMapInfo { fortress_id: 101 });
+    let map = decode::<ExShowFortressMapInfo>(&packets_to(&out, P1, "EX_SHOW_FORTRESS_MAP_INFO")[0]);
+    assert!(map.siege_in_progress);
+    assert_eq!(map.barracks, [0, 1, 0]);
+    // A fortress that does not exist: `ActionFailed`.
+    let out = request(&mut s, l2_world::FortInput::FortressMapInfo { fortress_id: 5 });
+    assert_eq!(packets_to(&out, P1, "ACTION_FAIL").len(), 1);
+    assert!(packets_to(&out, P1, "EX_SHOW_FORTRESS_MAP_INFO").is_empty());
+}
+
+// ---------------------------------------------------------------------------------- //fortsiege
+
+fn gm_command(s: &mut Scene, command: &str) -> Vec<Out> {
+    s.take();
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(GM).unwrap()),
+        input: ClientInput::BuildCmd {
+            command: command.to_owned(),
+        },
+    });
+    s.take()
+}
+
+/// `AdminFortSiege`: the fortress list, the fortress page, and the commands on a fortress.
+#[test]
+fn the_gm_runs_a_test_siege_with_fortsiege() {
+    let mut s = Scene::new(false, LIONS, vec![], now_ms() + 30 * 60_000);
+    s.enter(GM, 0, 100);
+    s.enter(P3, WOLVES, 0);
+    s.enter(P1, LIONS, 0);
+    // The list of fortresses.
+    let out = gm_command(&mut s, "fortsiege");
+    let page = pages_to(&out, GM).remove(0);
+    assert!(
+        page.contains("FORTS ") && page.contains("Shanty id: 101"),
+        "{page}"
+    );
+    // A fortress that does not exist shows the list too.
+    assert!(pages_to(&gm_command(&mut s, "fortsiege 7"), GM)[0].contains("FORTS "));
+    let page = pages_to(&gm_command(&mut s, "fortsiege 101"), GM).remove(0);
+    assert!(page.contains("FORT Shanty 101"), "{page}");
+    // The targeted player's clan is added as an attacker ...
+    let out = gm_command(&mut s, "add_fortattacker 101");
+    assert!(message_ids(&out, GM).contains(&SystemMessageId::ThatIsAnIncorrectTarget));
+    s.world.set_target(ObjectId(GM), Some(ObjectId(P3)));
+    let out = gm_command(&mut s, "add_fortattacker 101");
+    assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
+    assert!(message_ids(&out, P3).contains(&SystemMessageId::YourClanHasBeenRegisteredToS1SFortressBattle));
+    // ... the siege starts and ends at the GM's word, whatever the switch says ...
+    gm_command(&mut s, "startfortsiege 101");
+    assert!(s.world.fort_siege_in_progress(SHANTY));
+    assert_eq!(s.npcs_of(NPC_COMMANDER_1).len(), 1);
+    gm_command(&mut s, "endfortsiege 101");
+    assert!(!s.world.fort_siege_in_progress(SHANTY));
+    // ... the targeted clan takes the fortress, and loses it again (the teleport of the attackers
+    // dropped the GM's target).
+    s.appear(P3);
+    s.world.set_target(ObjectId(GM), Some(ObjectId(P3)));
+    gm_command(&mut s, "setfort 101");
+    assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, WOLVES);
+    gm_command(&mut s, "removefort 101");
+    assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, 0);
+    // Registrations are cleared.
+    gm_command(&mut s, "add_fortattacker 101");
+    assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
+    gm_command(&mut s, "clear_fortsiege_list 101");
+    assert!(s.world.fort_attacker_clans(SHANTY).is_empty());
+    // A plain player cannot.
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(P3).unwrap()),
+        input: ClientInput::BuildCmd {
+            command: "startfortsiege 101".to_owned(),
+        },
+    });
+    assert!(!s.world.fort_siege_in_progress(SHANTY));
+}
+
+// ---------------------------------------------------------------------------------- the rest
+
+/// `EnterWorld`: a member of a clan in a siege that is going on gets the siege state; entering
+/// the active zone marks the player as in the siege.
+#[test]
+fn entering_the_world_during_a_siege_sets_the_state() {
+    let mut s = siege_scene();
+    s.world.fort_start_siege(SHANTY);
+    s.enter(P3, WOLVES, 0);
+    assert_eq!(s.world.fort_siege_state_of(ObjectId(P3)), 1);
+    assert!(s.world.fort_player_in_siege(ObjectId(P3)));
+    assert!(s.world.is_registered_on_this_siege_field(ObjectId(P3), 101));
+    assert!(!s.world.is_registered_on_this_siege_field(ObjectId(P3), 102));
+    // The state is gone with the player.
+    s.world.handle(WorldCommand::Disconnected {
+        session: SessionId(u64::try_from(P3).unwrap()),
+    });
+    assert_eq!(s.world.fort_siege_state_of(ObjectId(P3)), 0);
+}
+
+/// `SiegeZone.onPlayerLogoutInside`: whoever logs out in the zone of a fortress is brought to
+/// town before the character is stored.
+#[test]
+fn logging_out_inside_the_zone_stores_the_position_in_town() {
+    let mut s = siege_scene();
+    s.world.fort_start_siege(SHANTY);
+    s.take();
+    s.world.handle(WorldCommand::Disconnected {
+        session: SessionId(u64::try_from(P5).unwrap()),
+    });
+    let out = s.take();
+    let stored = out
+        .iter()
+        .find_map(|o| match o {
+            Out::Persist(PersistCommand::StorePlayer(data)) => Some(data.clone()),
+            _ => None,
+        })
+        .expect("the character is stored");
+    assert!(
+        (stored.x + 84_318).abs() <= 60 && (stored.y - 244_579).abs() <= 60,
+        "{} {}",
+        stored.x,
+        stored.y
+    );
+}
+
+/// D-50: the rows of a fortress read again replace its owner; the owner's updater follows.
+#[test]
+fn a_reread_that_moves_the_owner_moves_the_updater_too() {
+    let mut s = Scene::new(false, LIONS, vec![], now_ms() + 30 * 60_000);
+    s.enter(P3, WOLVES, 0);
+    assert!(s.world.fort_time_till_next_update(SHANTY) > 0);
+    // Sieghardt decided: the Wolves own Shanty.
+    answer_reread(&mut s, ResidenceReadThen::Nothing, WOLVES, vec![], Some(3));
+    assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, WOLVES);
+    assert_eq!((s.clan(WOLVES).fort_id, s.clan(LIONS).fort_id), (101, 0));
+    assert_eq!(blood_oaths(&s, WOLVES), 3);
+    assert!(s.world.fort_time_till_next_update(SHANTY) > 0);
+    // The owner is the same afterwards: the tasks run on.
+    let after = s.world.fort_time_till_next_update(SHANTY);
+    answer_reread(&mut s, ResidenceReadThen::Nothing, WOLVES, vec![], Some(3));
+    assert_eq!(s.world.fort_time_till_next_update(SHANTY), after);
+    // No owner at all.
+    answer_reread(&mut s, ResidenceReadThen::Nothing, 0, vec![], None);
+    assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, 0);
+    assert_eq!(s.world.fort_time_till_next_update(SHANTY), 0);
+}
+
+/// `Defender.isAutoAttackable` in a fortress: during the siege by everybody but the owners
+/// registered on this field.
+#[test]
+fn siege_guards_are_attackable_during_the_siege_except_for_the_owners() {
+    let mut s = siege_scene();
+    s.enter(P3, WOLVES, 0);
+    s.world.fort_start_siege(SHANTY);
+    let guard = s.npcs_of(NPC_SIEGE_GUARD)[0];
+    assert!(s.world.is_auto_attackable_by(guard, ObjectId(P3)), "an attacker");
+    assert!(s.world.is_auto_attackable_by(guard, ObjectId(P5)), "a bystander");
+    assert!(!s.world.is_auto_attackable_by(guard, ObjectId(P1)), "an owner");
+    s.world.fort_end_siege(SHANTY);
+    assert!(!s.world.is_auto_attackable_by(guard, ObjectId(P3)), "no siege");
+}
+
+/// `Player.getRelation`: the siege bits of a fortress siege (attacker against defender).
+#[test]
+fn the_siege_relation_bits_follow_the_fortress_siege() {
+    const IN_SIEGE: i32 = 0x200;
+    const ATTACKER: i32 = 0x400;
+    const ALLY: i32 = 0x800;
+    const ENEMY: i32 = 0x1000;
+    let mut s = siege_scene();
+    s.enter(P3, WOLVES, 0);
+    assert_eq!(
+        s.world.relation(ObjectId(P3), ObjectId(P1)) & (IN_SIEGE | ENEMY),
+        0
+    );
+    s.world.fort_start_siege(SHANTY);
+    let attacker_seen_by_owner = s.world.relation(ObjectId(P3), ObjectId(P1));
+    assert_eq!(
+        attacker_seen_by_owner & (IN_SIEGE | ENEMY | ATTACKER | ALLY),
+        IN_SIEGE | ENEMY | ATTACKER
+    );
+    let owner_seen_by_attacker = s.world.relation(ObjectId(P1), ObjectId(P3));
+    assert_eq!(
+        owner_seen_by_attacker & (IN_SIEGE | ENEMY | ATTACKER | ALLY),
+        IN_SIEGE | ENEMY
+    );
+    // Two attackers are allies.
+    let other = s.world.relation(ObjectId(P3), ObjectId(P4));
+    assert_eq!(
+        other & (IN_SIEGE | ENEMY | ATTACKER | ALLY),
+        IN_SIEGE | ALLY | ATTACKER
+    );
+}
+
+/// The teleport function: the list of the level (`tel<level>`), and `goto` (only with the
+/// function) takes the player to the place.
+#[test]
+fn the_foreman_teleports_with_the_function() {
+    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let foreman = place(&mut s, NPC_FOREMAN, 80);
+    s.enter(P1, LIONS, 0);
+    s.talk(P1, foreman);
+    walk(
+        &mut s,
+        P1,
+        foreman,
+        &["manage", "manage other", "manage other edit_tele 1"],
+    );
+    assert!(walk(&mut s, P1, foreman, &["manage other tele 1"]).contains("APPLY CONFIRMED"));
+    let f = s.world.residence_function(ResidenceRef::Fort(SHANTY), 1).unwrap();
+    assert_eq!((f.lvl, f.lease, f.rate), (1, 1000, 604_800_000));
+    s.talk(P1, foreman);
+    walk(&mut s, P1, foreman, &["functions"]);
+    let page = walk(&mut s, P1, foreman, &["functions tele"]);
+    assert!(
+        page.contains(&format!("npc_{}_goto tel1 0", foreman.0)) && page.contains("Barracks"),
+        "{page}"
+    );
+    walk(&mut s, P1, foreman, &["goto tel1 0"]);
+    s.appear(P1);
+    assert_eq!(
+        s.world.position_of(ObjectId(P1)).map(|p| (p.0, p.1)),
+        Some((-70_000, 258_000))
+    );
+}
+
+/// `Doorman` `tele <n>`: the list named after the type, for the owner clan.
+#[test]
+fn the_doorman_teleports_the_owner() {
+    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let doorman = place(&mut s, NPC_DOORMAN, 60);
+    s.enter(P1, LIONS, 0);
+    s.talk(P1, doorman);
+    s.take();
+    s.bypass(P1, doorman, "tele 1");
+    s.appear(P1);
+    assert_eq!(
+        s.world.position_of(ObjectId(P1)).map(|p| (p.0, p.1)),
+        Some((-70_600, 258_600))
+    );
 }

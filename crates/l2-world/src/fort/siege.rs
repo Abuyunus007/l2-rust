@@ -271,8 +271,9 @@ impl World {
                     self.fort_stop_fame_task(member);
                 } else {
                     let in_zone = self
-                        .position_of(member)
-                        .is_some_and(|(x, y, z)| self.fort_check_if_in_zone(fort, x, y, z));
+                        .players
+                        .get(&member)
+                        .is_some_and(|p| self.fort_check_if_in_zone(fort, p.core.x, p.core.y, p.core.z));
                     let info = self.fort.players.entry(member).or_default();
                     info.state = state;
                     info.side = fort.0;
@@ -814,19 +815,9 @@ impl World {
             fort_id: fort.0,
             owner_clan_id: owner,
         });
-        // The owner clan's registrations at the other fortresses go with its rows.
-        if let Some(owner) = owner {
-            let others: Vec<FortId> = self.fort.forts.keys().copied().collect();
-            for other in others {
-                if other != fort {
-                    self.fort
-                        .state_mut(other)
-                        .siege
-                        .attackers
-                        .retain(|c| c.clan_id != owner);
-                }
-            }
-        }
+        // NOTE(java-quirk): the owner's registrations at the other fortresses are deleted from
+        // the table only; the other sieges keep the clan in their lists until they are loaded
+        // again.
         self.fort.state_mut(fort).siege.attackers.clear();
         // If siege is in progress, end siege.
         if self.fort_siege_in_progress(fort) {

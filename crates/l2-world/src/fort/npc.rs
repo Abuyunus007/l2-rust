@@ -356,6 +356,28 @@ impl World {
             && !self.fort_check_is_defender(fort, self.clan_id_of(attacker))
     }
 
+    /// Java `Defender.isAutoAttackable(attacker)` for a defender that stands in a fortress (the
+    /// `_fort` of `Defender.onSpawn`): during the siege, by anybody who is not a defender
+    /// registered on this field (the Territory War ally check, M7-TW-01, is false while no war
+    /// runs). The castle and hall branches are M7-SIEGE-01 and M7-CHSIEGE-01.
+    pub(crate) fn fort_defender_auto_attackable(&self, defender: ObjectId, attacker: ObjectId) -> bool {
+        let Some((x, y, z)) = self.position_of(defender) else {
+            return false;
+        };
+        let Some(fort) = self.fort_at(x, y, z) else {
+            return false;
+        };
+        if !self.fort_zone_is_active(fort) {
+            return false;
+        }
+        // `attacker.isPlayable()`, then `asPlayer()`.
+        let Some(player) = self.acting_player(attacker) else {
+            return false;
+        };
+        let state = self.fort_siege_state_of(player);
+        state != 2 || !self.is_registered_on_this_siege_field(player, fort.0)
+    }
+
     /// The speech of `FortCommander.addDamage(creature, damage, skill)`. Returns the attacker the
     /// damage goes on with (the owner of a summon for the second commander).
     pub(crate) fn fort_commander_add_damage(&mut self, npc: ObjectId, attacker: ObjectId) -> ObjectId {

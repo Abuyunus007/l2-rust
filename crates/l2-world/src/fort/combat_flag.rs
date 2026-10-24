@@ -71,6 +71,13 @@ impl CombatFlag {
 }
 
 impl World {
+    /// Java `FortManager.getFort(player)`: the fortress whose siege zone holds the player, by the
+    /// player's own coordinates (the player may not be spawned yet, as at `EnterWorld`).
+    pub(crate) fn fort_of_player(&self, player: ObjectId) -> Option<FortId> {
+        let p = self.players.get(&player)?;
+        self.fort_at(p.core.x, p.core.y, p.core.z)
+    }
+
     /// Java `FortSiegeManager.isCombat(itemId)`.
     pub fn is_combat_flag_item(item_id: i32) -> bool {
         item_id == COMBAT_FLAG_ITEM_ID
@@ -158,9 +165,7 @@ impl World {
             return false;
         }
         let clan = self.clan_id_of(player);
-        let fort = self
-            .position_of(player)
-            .and_then(|(x, y, z)| self.fort_at(x, y, z));
+        let fort = self.fort_of_player(player);
         let Some(fort) = fort.filter(|f| f.0 > 0) else {
             return false;
         };
@@ -184,9 +189,7 @@ impl World {
         if !self.fort_check_if_can_pickup(player) {
             return false;
         }
-        let fort = self
-            .position_of(player)
-            .and_then(|(x, y, z)| self.fort_at(x, y, z));
+        let fort = self.fort_of_player(player);
         // `getFort(player).getResidenceId()` fails for no fortress: checkIfCanPickup refused.
         let Some(fort) = fort else {
             return false;
@@ -316,9 +319,7 @@ impl World {
         else {
             return;
         };
-        let fort = self
-            .position_of(player)
-            .and_then(|(x, y, z)| self.fort_at(x, y, z));
+        let fort = self.fort_of_player(player);
         match fort {
             Some(fort) => self.fort_drop_combat_flag(player, fort),
             None => self.fort_destroy_worn_flag(player, item),
@@ -331,10 +332,7 @@ impl World {
         if !self.fort_activate_combat_flag(player, item) {
             return;
         }
-        let Some(fort) = self
-            .position_of(player)
-            .and_then(|(x, y, z)| self.fort_at(x, y, z))
-        else {
+        let Some(fort) = self.fort_of_player(player) else {
             return;
         };
         let name = self
@@ -371,10 +369,7 @@ impl EffectHandler for TakeFort {
         if !world.is_player(player) {
             return;
         }
-        let Some(fort) = world
-            .position_of(player)
-            .and_then(|(x, y, z)| world.fort_at(x, y, z))
-        else {
+        let Some(fort) = world.fort_of_player(player) else {
             return;
         };
         if let Some(clan) = world.clan_of(player).map(|c| c.id) {
@@ -406,9 +401,7 @@ impl EffectHandler for TakeFortStart {
         if !world.is_player(player) {
             return;
         }
-        let fort = world
-            .position_of(player)
-            .and_then(|(x, y, z)| world.fort_at(x, y, z));
+        let fort = world.fort_of_player(player);
         let clan = world.clan_of(player).map(|c| c.name.clone());
         if let (Some(fort), Some(name)) = (fort, clan) {
             let message = SystemMessage::new(SystemMessageId::S1ClanIsTryingToDisplayAFlag)

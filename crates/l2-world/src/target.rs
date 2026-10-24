@@ -85,6 +85,15 @@ impl World {
         {
             return self.fort_commander_auto_attackable(target, attacker);
         }
+        // `Defender.isAutoAttackable` in a fortress (M7-FORT-01).
+        if self
+            .npcs
+            .get(&target)
+            .is_some_and(|n| n.class == crate::npc::NpcClass::Defender)
+            && self.fort_defender_auto_attackable(target, attacker)
+        {
+            return true;
+        }
         let karma = self.players.get(&attacker).map_or(0, |p| p.data.karma);
         match self.objects.get(&target).map(|e| e.kind) {
             Some(ObjectKind::Npc) => self

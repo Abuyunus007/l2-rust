@@ -44,8 +44,8 @@
 // # Left to other cards (each has its marker where it belongs)
 // - Sieges of every kind (`Castle.getSiege()`, `Fort.getSiege()`, the siege zones' activity,
 //   `midVictory`, siege skills, siege guards, merc tickets, door and trap upgrades): M7-SIEGE-01,
-//   M7-FORT-01, M7-CHSIEGE-01 (`// M7-SIEGE-01:` and friends).
-// - `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts: M7-FORT-01.
+//   M7-CHSIEGE-01 (the fortress siege itself is in `fort/`) (`// M7-SIEGE-01:` and friends).
+// - (done in `fort/`, M7-FORT-01) `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts.
 // - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01.
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
 // - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`):
