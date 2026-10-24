@@ -146,20 +146,40 @@ async fn siege_clans_with_javas_statements() {
         ]
     );
     // `castle_owner` is always written 0.
-    assert_eq!(db.scalar("SELECT castle_owner FROM siege_clans WHERE clan_id = 600").await, 0);
+    assert_eq!(
+        db.scalar("SELECT castle_owner FROM siege_clans WHERE clan_id = 600")
+            .await,
+        0
+    );
     // The primary key (clan_id, castle_id) refuses a second registration, as in Java.
     assert!(repo.insert_siege_clan(600, 1, 1).await.is_err());
 
     // Approval, the waiting list, one clan, a castle, an owner.
     repo.update_siege_clan(1, 700, 0).await.unwrap();
-    assert_eq!(db.scalar("SELECT type FROM siege_clans WHERE castle_id = 1 AND clan_id = 700").await, 0);
+    assert_eq!(
+        db.scalar("SELECT type FROM siege_clans WHERE castle_id = 1 AND clan_id = 700")
+            .await,
+        0
+    );
     repo.insert_siege_clan(900, 1, 2).await.unwrap();
     repo.delete_waiting_siege_clans(1).await.unwrap();
-    assert_eq!(db.scalar("SELECT COUNT(*) FROM siege_clans WHERE castle_id = 1").await, 2);
+    assert_eq!(
+        db.scalar("SELECT COUNT(*) FROM siege_clans WHERE castle_id = 1")
+            .await,
+        2
+    );
     repo.delete_siege_clan(1, 600).await.unwrap();
-    assert_eq!(db.scalar("SELECT COUNT(*) FROM siege_clans WHERE castle_id = 1").await, 1);
+    assert_eq!(
+        db.scalar("SELECT COUNT(*) FROM siege_clans WHERE castle_id = 1")
+            .await,
+        1
+    );
     repo.delete_siege_clans_of_clan(700).await.unwrap();
-    assert_eq!(db.scalar("SELECT COUNT(*) FROM siege_clans WHERE clan_id = 700").await, 0);
+    assert_eq!(
+        db.scalar("SELECT COUNT(*) FROM siege_clans WHERE clan_id = 700")
+            .await,
+        0
+    );
     repo.delete_siege_clans_of_castle(3).await.unwrap();
     assert_eq!(db.scalar("SELECT COUNT(*) FROM siege_clans").await, 0);
     db.drop_database().await;
@@ -171,13 +191,23 @@ async fn siege_date_guards_upgrades_and_blood_alliance() {
         return;
     };
     let repo = SiegeRepository::new(db.pool.clone());
-    db.exec("INSERT INTO castle VALUES (1,'Gludio',0,0,0,'true',0,'false',0)").await;
+    db.exec("INSERT INTO castle VALUES (1,'Gludio',0,0,0,'true',0,'false',0)")
+        .await;
     repo.update_castle_siege_date(1, 1_793_548_800_789, 1_792_672_496_789, false)
         .await
         .unwrap();
-    assert_eq!(db.scalar("SELECT siegeDate FROM castle WHERE id = 1").await, 1_793_548_800_789);
-    assert_eq!(db.scalar("SELECT regTimeEnd FROM castle WHERE id = 1").await, 1_792_672_496_789);
-    assert_eq!(db.text("SELECT regTimeOver FROM castle WHERE id = 1").await, "false");
+    assert_eq!(
+        db.scalar("SELECT siegeDate FROM castle WHERE id = 1").await,
+        1_793_548_800_789
+    );
+    assert_eq!(
+        db.scalar("SELECT regTimeEnd FROM castle WHERE id = 1").await,
+        1_792_672_496_789
+    );
+    assert_eq!(
+        db.text("SELECT regTimeOver FROM castle WHERE id = 1").await,
+        "false"
+    );
 
     // Two guards of the datapack and a mercenary.
     db.exec("INSERT INTO castle_siege_guards (castleId,id,npcId,x,y,z,heading,respawnDelay,isHired) VALUES (1,1,35085,-18460,113107,-2759,15608,10800,0)").await;
@@ -194,12 +224,22 @@ async fn siege_date_guards_upgrades_and_blood_alliance() {
     repo.insert_siege_guard(&merc).await.unwrap();
     let guards = repo.siege_guards().await.unwrap();
     assert_eq!(guards.len(), 2);
-    assert_eq!((guards[0].npc_id, guards[0].respawn_delay, guards[0].is_hired), (35085, 10800, 0));
-    assert_eq!((guards[1].npc_id, guards[1].x, guards[1].is_hired), (35010, -18000, 1));
+    assert_eq!(
+        (guards[0].npc_id, guards[0].respawn_delay, guards[0].is_hired),
+        (35085, 10800, 0)
+    );
+    assert_eq!(
+        (guards[1].npc_id, guards[1].x, guards[1].is_hired),
+        (35010, -18000, 1)
+    );
     // `removeMerc` only takes a hired row at that spot; `removeMercs` every hired row.
-    repo.delete_hired_guard(35085, -18460, 113107, -2759).await.unwrap();
+    repo.delete_hired_guard(35085, -18460, 113107, -2759)
+        .await
+        .unwrap();
     assert_eq!(repo.siege_guards().await.unwrap().len(), 2);
-    repo.delete_hired_guard(35010, -18000, 113000, -2700).await.unwrap();
+    repo.delete_hired_guard(35010, -18000, 113000, -2700)
+        .await
+        .unwrap();
     assert_eq!(repo.siege_guards().await.unwrap().len(), 1);
     repo.insert_siege_guard(&merc).await.unwrap();
     repo.delete_hired_guards(1).await.unwrap();
@@ -211,16 +251,27 @@ async fn siege_date_guards_upgrades_and_blood_alliance() {
     repo.replace_trap_upgrade(1, 0, 2).await.unwrap();
     let doors = repo.door_upgrades().await.unwrap();
     assert_eq!(doors.len(), 1);
-    assert_eq!((doors[0].door_id, doors[0].ratio, doors[0].castle_id), (19210001, 3, 1));
+    assert_eq!(
+        (doors[0].door_id, doors[0].ratio, doors[0].castle_id),
+        (19210001, 3, 1)
+    );
     let traps = repo.trap_upgrades().await.unwrap();
-    assert_eq!((traps[0].castle_id, traps[0].tower_index, traps[0].level), (1, 0, 2));
+    assert_eq!(
+        (traps[0].castle_id, traps[0].tower_index, traps[0].level),
+        (1, 0, 2)
+    );
     repo.delete_door_upgrades(1).await.unwrap();
     repo.delete_trap_upgrades(1).await.unwrap();
     assert!(repo.door_upgrades().await.unwrap().is_empty());
     assert!(repo.trap_upgrades().await.unwrap().is_empty());
 
-    db.exec("INSERT INTO clan_data (clan_id, clan_name) VALUES (900, 'Lions')").await;
+    db.exec("INSERT INTO clan_data (clan_id, clan_name) VALUES (900, 'Lions')")
+        .await;
     repo.update_blood_alliance_count(900, 3).await.unwrap();
-    assert_eq!(db.scalar("SELECT blood_alliance_count FROM clan_data WHERE clan_id = 900").await, 3);
+    assert_eq!(
+        db.scalar("SELECT blood_alliance_count FROM clan_data WHERE clan_id = 900")
+            .await,
+        3
+    );
     db.drop_database().await;
 }

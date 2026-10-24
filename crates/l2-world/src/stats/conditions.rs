@@ -280,6 +280,11 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             let skill = env.skill.map(|s| (s.id, s.level));
             a.world().cond_can_take_castle(a.object_id(), env.target, skill)
         }
+        // `ConditionPlayerCanResurrect` (M7-SIEGE-01: its siege rules).
+        Condition::PlayerCanResurrect { value } => {
+            let skill = env.skill.map(|s| (s.id, s.level));
+            *value == a.world().cond_can_resurrect(a.object_id(), env.target, skill)
+        }
         Condition::PlayerCanSummonSiegeGolem { value } => {
             if !a.is_player() {
                 return !*value;
@@ -290,7 +295,6 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         | Condition::PlayerCanCreateOutpost { .. }
         | Condition::PlayerCanEscape { .. }
         | Condition::PlayerCanRefuelAirship { .. }
-        | Condition::PlayerCanResurrect { .. }
         | Condition::PlayerCanTakeFort { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
         }

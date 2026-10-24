@@ -16,9 +16,9 @@ use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
 use l2_data::{
-    ArmorSets, DoorTemplates, EnchantHpBonus, ExperienceLoss, ExperienceTable, Hennas, HtmCache, ItemTemplates,
-    KarmaLoss, MapRegions, NpcLoadOptions, NpcTemplates, PlayerTemplates, SiegeSchedule, SkillLoadOptions,
-    SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions, Zones,
+    ArmorSets, DoorTemplates, EnchantHpBonus, ExperienceLoss, ExperienceTable, Hennas, HtmCache,
+    ItemTemplates, KarmaLoss, MapRegions, NpcLoadOptions, NpcTemplates, PlayerTemplates, SiegeSchedule,
+    SkillLoadOptions, SkillTemplates, SkillTrees, SpawnData, SpawnLoadOptions, Zones,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::siege::{DefenderState, SiegeDefenderList, SiegeInfo, SiegeTime};
@@ -300,7 +300,13 @@ struct Scene {
 impl Scene {
     /// Gludio owned by `owner` (0 for none), its next siege at `siege_date`, the switch as given.
     fn new(siege_database_writes: bool, owner: i32, siege_date: i64) -> Self {
-        Self::with(siege_database_writes, owner, siege_date, SiegeLoad::default(), |_| {})
+        Self::with(
+            siege_database_writes,
+            owner,
+            siege_date,
+            SiegeLoad::default(),
+            |_| {},
+        )
     }
 
     fn with(
@@ -371,7 +377,10 @@ impl Scene {
         world.set_siege_schedule(Arc::new(SiegeSchedule::from_xml(SCHEDULE).unwrap()));
         world.load_clans(vec![lions(), wolves(), bears()], Vec::new());
         world.load_residences(ResidenceLoad {
-            castles: vec![castle(1, "Gludio", owner, siege_date), castle(2, "Dion", 0, NEXT_SIEGE)],
+            castles: vec![
+                castle(1, "Gludio", owner, siege_date),
+                castle(2, "Dion", 0, NEXT_SIEGE),
+            ],
             ..ResidenceLoad::default()
         });
         let mut siege = SiegeSettings {
@@ -434,7 +443,8 @@ impl Scene {
 
     /// `teleToLocation`, then the client's `Appearing`.
     fn teleport(&mut self, id: i32, x: i32, y: i32, z: i32) {
-        self.world.tele_to_location(ObjectId(id), TeleportTarget::at(x, y, z));
+        self.world
+            .tele_to_location(ObjectId(id), TeleportTarget::at(x, y, z));
         self.input(id, ClientInput::Appearing);
     }
 
@@ -674,7 +684,10 @@ fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved_only_with_the_switch(
     s.enter_all();
     s.admin(P9, "admin_setsiegetime Gludio hour 20");
     let out = s.take();
-    assert_eq!(s.world.castle(CastleId(1)).unwrap().siege_date, NEXT_SIEGE + 4 * 3_600_000);
+    assert_eq!(
+        s.world.castle(CastleId(1)).unwrap().siege_date,
+        NEXT_SIEGE + 4 * 3_600_000
+    );
     assert!(residence_writes(&out).contains(&ResidenceWrite::CastleSiegeDate {
         castle_id: 1,
         siege_date: NEXT_SIEGE + 4 * 3_600_000,
@@ -692,7 +705,10 @@ fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved_only_with_the_switch(
     let html = decode::<NpcHtmlMessage>(page.last().unwrap()).html;
     // `Date.toString()` of the new date; today is Wednesday, so Saturday is day 297 (10/24, the
     // month counted from 0) and Sunday day 298.
-    assert_eq!(html, "<html><body>Gludio Sun Nov 01 20:00:00 GMT+00:00 2026 298 9/25 297 9/24</body></html>");
+    assert_eq!(
+        html,
+        "<html><body>Gludio Sun Nov 01 20:00:00 GMT+00:00 2026 298 9/25 297 9/24</body></html>"
+    );
 
     let mut off = Scene::new(false, LIONS, 0);
     off.enter_all();
@@ -735,7 +751,10 @@ fn the_start_task_starts_the_siege_only_with_the_switch() {
     let out = off.take();
     let requests = reread_requests(&out);
     assert_eq!(requests.len(), 1);
-    assert_eq!(requests[0], (1, ResidenceReadThen::SiegeRestartSchedule { castle_id: 1 }));
+    assert_eq!(
+        requests[0],
+        (1, ResidenceReadThen::SiegeRestartSchedule { castle_id: 1 })
+    );
     // Sieghardt moved the date two weeks on and cleared the registrations.
     let then = requests[0].1.clone();
     off.world.handle(WorldCommand::ResidenceReread {
@@ -771,7 +790,11 @@ fn joining_reads_the_registrations_again_and_saves_the_attacker() {
     s.answer_reread(&out, vec![]);
     let out = s.take();
     assert_eq!(
-        s.siege().attacker_clans().iter().map(|c| c.clan_id).collect::<Vec<_>>(),
+        s.siege()
+            .attacker_clans()
+            .iter()
+            .map(|c| c.clan_id)
+            .collect::<Vec<_>>(),
         [WOLVES]
     );
     assert_eq!(
@@ -786,7 +809,10 @@ fn joining_reads_the_registrations_again_and_saves_the_attacker() {
     assert_eq!((info.residence_id, info.owner_id), (1, LIONS));
     assert!(!info.viewer_is_owner_leader);
     assert_eq!(info.now_secs, i32::try_from(NOW / 1000).unwrap());
-    assert_eq!(info.time, SiegeTime::Date(i32::try_from(NEXT_SIEGE / 1000).unwrap()));
+    assert_eq!(
+        info.time,
+        SiegeTime::Date(i32::try_from(NEXT_SIEGE / 1000).unwrap())
+    );
 
     // A failed read changes nothing and refuses the follow-up.
     s.input(
@@ -799,7 +825,10 @@ fn joining_reads_the_registrations_again_and_saves_the_attacker() {
     );
     let out = s.take();
     let then = reread_requests(&out).pop().unwrap().1;
-    s.world.handle(WorldCommand::ResidenceReread { result: Err(()), then });
+    s.world.handle(WorldCommand::ResidenceReread {
+        result: Err(()),
+        then,
+    });
     assert_eq!(s.siege().attacker_clans().len(), 1);
     assert!(s.take().is_empty());
 
@@ -858,7 +887,10 @@ fn the_registration_rules_send_javas_messages() {
     // A second request.
     join(&mut s, P3, 1);
     let out = join(&mut s, P3, 1);
-    assert_eq!(message_ids(&out, P3), [SystemMessageId::YouHaveAlreadyRequestedACastleSiege]);
+    assert_eq!(
+        message_ids(&out, P3),
+        [SystemMessageId::YouHaveAlreadyRequestedACastleSiege]
+    );
     // A member without the clan privilege (`CASTLE_SIEGE`).
     s.input(
         P4,
@@ -869,7 +901,10 @@ fn the_registration_rules_send_javas_messages() {
         }),
     );
     let out = s.take();
-    assert_eq!(message_ids(&out, P4), [SystemMessageId::YouAreNotAuthorizedToDoThat]);
+    assert_eq!(
+        message_ids(&out, P4),
+        [SystemMessageId::YouAreNotAuthorizedToDoThat]
+    );
     assert!(reread_requests(&out).is_empty());
 
     // A castle without an owner has no defenders.
@@ -966,7 +1001,10 @@ fn the_lord_approves_a_waiting_defender() {
         .flatten()
         .map(|d| (d.clan.clan_id, d.state))
         .collect();
-    assert_eq!(states, [(LIONS, DefenderState::Owner), (WOLVES, DefenderState::Defender)]);
+    assert_eq!(
+        states,
+        [(LIONS, DefenderState::Owner), (WOLVES, DefenderState::Defender)]
+    );
     assert!(s.siege().defender_waiting_clans().is_empty());
 }
 
@@ -986,7 +1024,10 @@ fn unsaved_registrations_survive_a_reread() {
     s.admin(P9, "admin_add_attacker Gludio");
     let out = s.take();
     assert_eq!(s.siege().attacker_clans().len(), 1);
-    assert!(residence_writes(&out).is_empty(), "D-51: the registration row is not written");
+    assert!(
+        residence_writes(&out).is_empty(),
+        "D-51: the registration row is not written"
+    );
     s.input(P5, ClientInput::Siege(SiegeInput::AttackerList { castle_id: 1 }));
     let out = s.take();
     // The Java GS has Bears as attackers of Gludio.
@@ -1055,8 +1096,7 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     let of_p3 = relations
         .iter()
         .flat_map(|r| r.relations.iter())
-        .filter(|e| e.object_id == P3)
-        .last()
+        .rfind(|e| e.object_id == P3)
         .unwrap();
     assert_eq!(of_p3.relation & 0x1E00, 0x200 | 0x1000 | 0x400);
     // The zone is active: everybody inside gets the combat zone message and its flags.
@@ -1076,7 +1116,11 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     let tower = npcs_of(&s.world, CONTROL_TOWER)[0];
     assert!(s.world.is_auto_attackable_by(tower, ObjectId(P3)));
     assert!(!s.world.is_auto_attackable_by(tower, ObjectId(P1)));
-    assert!(residence_writes(&out).is_empty(), "D-51: {:?}", residence_writes(&out));
+    assert!(
+        residence_writes(&out).is_empty(),
+        "D-51: {:?}",
+        residence_writes(&out)
+    );
 
     // The end: the defender holds the castle.
     s.admin(P9, "admin_endsiege Gludio");
@@ -1114,7 +1158,9 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     assert!(!gludio.time_registration_over);
     assert_eq!(gludio.time_registration_over_date, NOW + 86_400_000);
     assert!(
-        !residence_writes(&out).iter().any(|w| !matches!(w, ResidenceWrite::ClanBloodAllianceCount { .. })),
+        !residence_writes(&out)
+            .iter()
+            .any(|w| !matches!(w, ResidenceWrite::ClanBloodAllianceCount { .. })),
         "D-51: {:?}",
         residence_writes(&out)
     );
@@ -1130,11 +1176,16 @@ fn a_siege_without_attackers_is_called_off() {
     s.admin(P9, "admin_startsiege Gludio");
     let out = s.take();
     assert!(!s.siege().in_progress);
-    assert!(message_ids(&out, P5).contains(&SystemMessageId::S1SSiegeWasCanceledBecauseThereWereNoClansThatParticipated));
-    assert!(residence_writes(&out).contains(&ResidenceWrite::ClanBloodAllianceCount {
-        clan_id: LIONS,
-        count: 1
-    }));
+    assert!(
+        message_ids(&out, P5)
+            .contains(&SystemMessageId::S1SSiegeWasCanceledBecauseThereWereNoClansThatParticipated)
+    );
+    assert!(
+        residence_writes(&out).contains(&ResidenceWrite::ClanBloodAllianceCount {
+            clan_id: LIONS,
+            count: 1
+        })
+    );
     let mut free = Scene::new(true, 0, NEXT_SIEGE);
     free.enter_all();
     free.admin(P9, "admin_startsiege Gludio");
@@ -1146,9 +1197,17 @@ fn a_siege_without_attackers_is_called_off() {
 /// conclusion.", ..., "This castle siege will end in 10 second(s)!"), then the end.
 #[test]
 fn the_end_task_counts_down_to_both_sides() {
-    let mut s = Scene::with(true, LIONS, NEXT_SIEGE, SiegeLoad::default(), |s| s.siege_length = 11);
+    let mut s = Scene::with(true, LIONS, NEXT_SIEGE, SiegeLoad::default(), |s| {
+        s.siege_length = 11
+    });
     s.enter_all();
-    s.input(P9, ClientInput::Action { object_id: P3, action_id: 0 });
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
     s.admin(P9, "admin_add_attacker Gludio");
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
@@ -1183,7 +1242,13 @@ fn engraving_the_artefact_changes_the_owner_in_the_middle() {
     let mut s = Scene::new(true, LIONS, NEXT_SIEGE);
     s.enter_all();
     let artefact = s.world.spawn_npc_at(ARTEFACT, X + 300, Y, Z, 0).unwrap();
-    s.input(P9, ClientInput::Action { object_id: P3, action_id: 0 });
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
     s.admin(P9, "admin_add_attacker Gludio");
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
@@ -1226,7 +1291,12 @@ fn engraving_the_artefact_changes_the_owner_in_the_middle() {
         .unwrap();
     assert_eq!(victory.params[0], SystemMessageParam::Text("Wolves".to_owned()));
     // A new owner: the ticket count starts again (a siege job write), no blood alliance.
-    assert!(residence_writes(&out).contains(&ResidenceWrite::CastleTicketBuyCount { castle_id: 1, count: 0 }));
+    assert!(
+        residence_writes(&out).contains(&ResidenceWrite::CastleTicketBuyCount {
+            castle_id: 1,
+            count: 0
+        })
+    );
     assert_eq!(s.world.clan(WOLVES).unwrap().blood_alliance_count, 0);
     // `updateClansReputation`: the old owner loses `LooseCastlePoints` (3000, below 0 is
     // allowed), the new owner takes at most what the old one had (0 here).
@@ -1242,23 +1312,44 @@ fn headquarters_stand_warn_their_clan_and_take_the_dead_back() {
     let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
     s.enter_all();
     // Outside a siege the condition refuses ("cannot be used due to unsuitable terms").
-    assert!(!s.world.siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1))));
+    assert!(
+        !s.world
+            .siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1)))
+    );
     let out = s.take();
-    assert_eq!(message_ids(&out, P3), [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]);
+    assert_eq!(
+        message_ids(&out, P3),
+        [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]
+    );
 
-    s.input(P9, ClientInput::Action { object_id: P3, action_id: 0 });
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
     s.admin(P9, "admin_add_attacker Gludio");
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
     // The leader stands outside the headquarters zone.
-    assert!(!s.world.siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1))));
+    assert!(
+        !s.world
+            .siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1)))
+    );
     let out = s.take();
     assert_eq!(message_ids(&out, P3), [SystemMessageId::YouCannotSetUpABaseHere]);
     // A member is no leader.
     s.teleport(P4, X - 1000, Y, Z);
     s.teleport(P3, X - 1000, Y, Z);
-    assert!(!s.world.siege_create_headquarters_allowed(ObjectId(P4), Some((247, 1))));
-    assert!(s.world.siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1))));
+    assert!(
+        !s.world
+            .siege_create_headquarters_allowed(ObjectId(P4), Some((247, 1)))
+    );
+    assert!(
+        s.world
+            .siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1)))
+    );
     s.take();
     s.world.siege_create_headquarters(ObjectId(P3), false);
     let flag = npcs_of(&s.world, HQ)[0];
@@ -1268,7 +1359,10 @@ fn headquarters_stand_warn_their_clan_and_take_the_dead_back() {
     assert_eq!(s.world.npc_custom_title(flag), Some("Wolves"));
     assert_eq!(s.siege().flags_of(WOLVES), [flag]);
     // `MaxFlags` (1): no second one.
-    assert!(!s.world.siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1))));
+    assert!(
+        !s.world
+            .siege_create_headquarters_allowed(ObjectId(P3), Some((247, 1)))
+    );
     s.take();
 
     // Damage warns the clan, then not again for 20 seconds.
@@ -1312,7 +1406,13 @@ fn headquarters_stand_warn_their_clan_and_take_the_dead_back() {
 fn kills_in_the_siege_count_for_the_clans() {
     let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
     s.enter_all();
-    s.input(P9, ClientInput::Action { object_id: P3, action_id: 0 });
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
     s.admin(P9, "admin_add_attacker Gludio");
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
@@ -1337,16 +1437,22 @@ fn the_castle_restart_point_is_the_castle_zones() {
     let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
     s.enter_all();
     assert_eq!(
-        s.world.get_tele_to_location(ObjectId(P2), TeleportWhereType::Castle),
+        s.world
+            .get_tele_to_location(ObjectId(P2), TeleportWhereType::Castle),
         Some((X + 2000, Y, Z))
     );
     s.world.player_mut(ObjectId(P2)).unwrap().data.karma = 100;
     assert_eq!(
-        s.world.get_tele_to_location(ObjectId(P2), TeleportWhereType::Castle),
+        s.world
+            .get_tele_to_location(ObjectId(P2), TeleportWhereType::Castle),
         Some((X + 2100, Y, Z))
     );
     // A clan without a castle has no castle restart point (the town: no regions here).
-    assert_eq!(s.world.get_tele_to_location(ObjectId(P3), TeleportWhereType::Castle), None);
+    assert_eq!(
+        s.world
+            .get_tele_to_location(ObjectId(P3), TeleportWhereType::Castle),
+        None
+    );
     let die = {
         s.world.do_die(ObjectId(P1), None);
         s.world.die_packet(ObjectId(P1))
@@ -1435,7 +1541,9 @@ fn mercenary_tickets_hire_and_can_be_taken_back_by_the_lord() {
     let text = decode::<SystemMessage>(&packets_to(&out, P3, "SYSTEM_MESSAGE")[0]);
     assert_eq!(
         text.params,
-        [SystemMessageParam::Text("Only the castle lord can pickup mercenaries.".to_owned())]
+        [SystemMessageParam::Text(
+            "Only the castle lord can pickup mercenaries.".to_owned()
+        )]
     );
     assert!(s.world.ground_item(ticket).is_some());
     // The lord picks it up: the hire goes (`removeMerc`).
@@ -1443,12 +1551,14 @@ fn mercenary_tickets_hire_and_can_be_taken_back_by_the_lord() {
     let out = s.take();
     assert!(s.world.ground_item(ticket).is_none());
     assert!(s.world.dropped_merc_tickets().is_empty());
-    assert!(residence_writes(&out).contains(&ResidenceWrite::SiegeGuardDeleteHired {
-        npc_id: MERC,
-        x: X,
-        y: Y,
-        z: Z
-    }));
+    assert!(
+        residence_writes(&out).contains(&ResidenceWrite::SiegeGuardDeleteHired {
+            npc_id: MERC,
+            x: X,
+            y: Y,
+            z: Z
+        })
+    );
 }
 
 /// `MercTicketManager.load`: a ticket on the ground for every hired mercenary at startup; the
@@ -1657,7 +1767,13 @@ fn the_lord_picks_the_siege_hour() {
 fn the_zone_sorts_owners_attackers_and_spectators() {
     let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
     s.enter_all();
-    s.input(P9, ClientInput::Action { object_id: P3, action_id: 0 });
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
     s.admin(P9, "admin_add_attacker Gludio");
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
@@ -1668,12 +1784,14 @@ fn the_zone_sorts_owners_attackers_and_spectators() {
     owners.sort_unstable();
     assert_eq!(owners, [ObjectId(P1), ObjectId(P2)]);
     assert_eq!(s.world.siege_spectators_in_zone(CastleId(1)), [ObjectId(P9)]);
-    s.world
-        .siege_teleport_player(CastleId(1), SiegeTeleportWhoType::Spectator, TeleportWhereType::Town);
+    s.world.siege_teleport_player(
+        CastleId(1),
+        SiegeTeleportWhoType::Spectator,
+        TeleportWhereType::Town,
+    );
     // The GM stays (and there is no town in this scene).
     assert_eq!(s.world.position_of(ObjectId(P9)), Some((X + 40, Y, Z)));
 }
-
 
 /// `SiegeManager.loadTrapUpgrade` of an owned castle and `FlameTower.setZoneList`: an upgraded
 /// flame tower switches the first `2 * level` trap zones on, its death switches them off.
@@ -1713,8 +1831,132 @@ fn the_castle_window_lists_owners_taxes_and_siege_dates() {
     let lines: Vec<(i32, String, i32, i32)> = info
         .castles
         .iter()
-        .map(|c| (c.residence_id, c.owner_name.clone(), c.tax_percent, c.siege_date_secs))
+        .map(|c| {
+            (
+                c.residence_id,
+                c.owner_name.clone(),
+                c.tax_percent,
+                c.siege_date_secs,
+            )
+        })
         .collect();
     let date = i32::try_from(NEXT_SIEGE / 1000).unwrap();
-    assert_eq!(lines, [(1, "Lions".to_owned(), 0, date), (2, String::new(), 0, date)]);
+    assert_eq!(
+        lines,
+        [(1, "Lions".to_owned(), 0, date), (2, String::new(), 0, date)]
+    );
+}
+
+/// `ConditionPlayerCanResurrect`: a living target is refused ("cannot be used due to unsuitable
+/// terms"); in a castle siege in progress every branch refuses (Java's quirk), a defender of a
+/// castle without towers with "The guardian tower has been destroyed...", an attacker without
+/// headquarters with "If a base camp does not exist...", and only the Blessed Scroll of
+/// Battlefield Resurrection (2393) passes.
+#[test]
+fn resurrection_follows_the_siege_rules() {
+    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    s.enter_all();
+    assert!(
+        !s.world
+            .cond_can_resurrect(ObjectId(P2), Some(ObjectId(P1)), Some((1016, 1)))
+    );
+    let out = s.take();
+    assert_eq!(
+        message_ids(&out, P2),
+        [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]
+    );
+    // Dead outside a siege: yes.
+    s.world.do_die(ObjectId(P1), None);
+    assert!(
+        s.world
+            .cond_can_resurrect(ObjectId(P2), Some(ObjectId(P1)), Some((1016, 1)))
+    );
+    s.world.do_revive(ObjectId(P1));
+
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
+    s.admin(P9, "admin_add_attacker Gludio");
+    s.admin(P9, "admin_startsiege Gludio");
+    s.take();
+    s.world.do_die(ObjectId(P4), None);
+    assert!(
+        !s.world
+            .cond_can_resurrect(ObjectId(P3), Some(ObjectId(P4)), Some((1016, 1)))
+    );
+    let out = s.take();
+    assert_eq!(
+        message_ids(&out, P3),
+        [SystemMessageId::IfABaseCampDoesNotExistResurrectionIsNotPossible]
+    );
+    assert!(
+        s.world
+            .cond_can_resurrect(ObjectId(P3), Some(ObjectId(P4)), Some((2393, 1)))
+    );
+    // The defender's tower falls.
+    let tower = npcs_of(&s.world, CONTROL_TOWER)[0];
+    s.world.do_die(tower, Some(ObjectId(P3)));
+    s.world.do_die(ObjectId(P2), None);
+    s.take();
+    assert!(
+        !s.world
+            .cond_can_resurrect(ObjectId(P1), Some(ObjectId(P2)), Some((1016, 1)))
+    );
+    let out = s.take();
+    assert_eq!(
+        message_ids(&out, P1),
+        [SystemMessageId::TheGuardianTowerHasBeenDestroyedAndResurrectionIsNotPossible]
+    );
+}
+
+/// `ConditionPlayerCanTakeCastle`: the attacker's leader next to his castle's artefact may cast
+/// Seal of Ruler, and the defenders hear "The opposing clan has started to engrave the holy
+/// artifact."; too far away the casting stops.
+#[test]
+fn seal_of_ruler_needs_the_leader_at_the_artefact() {
+    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    s.enter_all();
+    let artefact = s.world.spawn_npc_at(ARTEFACT, X + 300, Y, Z, 0).unwrap();
+    s.input(
+        P9,
+        ClientInput::Action {
+            object_id: P3,
+            action_id: 0,
+        },
+    );
+    s.admin(P9, "admin_add_attacker Gludio");
+    s.admin(P9, "admin_startsiege Gludio");
+    s.take();
+    // Too far (the leader stands 280 away).
+    assert!(
+        !s.world
+            .cond_can_take_castle(ObjectId(P3), Some(artefact), Some((246, 1)))
+    );
+    let out = s.take();
+    assert_eq!(
+        message_ids(&out, P3),
+        [SystemMessageId::TheDistanceIsTooFarAndSoTheCastingHasBeenStopped]
+    );
+    s.teleport(P3, X + 250, Y, Z);
+    s.take();
+    assert!(
+        s.world
+            .cond_can_take_castle(ObjectId(P3), Some(artefact), Some((246, 1)))
+    );
+    let out = s.take();
+    assert!(
+        message_ids(&out, P1).contains(&SystemMessageId::TheOpposingClanHasStartedToEngraveTheHolyArtifact)
+    );
+    assert!(
+        !message_ids(&out, P3).contains(&SystemMessageId::TheOpposingClanHasStartedToEngraveTheHolyArtifact)
+    );
+    // A member is no leader.
+    assert!(
+        !s.world
+            .cond_can_take_castle(ObjectId(P4), Some(artefact), Some((246, 1)))
+    );
 }

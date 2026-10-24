@@ -57,6 +57,8 @@ impl World {
     /// Java `ConditionPlayerCanCreateBase.testImpl`: `canCreateBase` (the player hears why not).
     // M7-FORT-01: the fortress siege's parts (`fort.getSiege()`), here a fortress counts as a siege
     // that is not in progress.
+    // The `else if` chain of Java with its identical branches is kept to compare it line by line.
+    #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_create_base(&self, player: ObjectId, skill: Option<(i32, i32)>) -> bool {
         let clan = self.clan_of(player).map(|c| c.id);
         // `isCursedWeaponEquipped()`: cursed weapons are M8.
@@ -95,7 +97,7 @@ impl World {
     /// Java `ConditionPlayerCanTakeCastle.testImpl`: a clan leader attacking the castle he stands
     /// in, next to (within 200, not below, at most 45 above) the castle's artefact. The defenders
     /// hear that the engraving started.
-    pub(crate) fn cond_can_take_castle(
+    pub fn cond_can_take_castle(
         &self,
         player: ObjectId,
         target: Option<ObjectId>,
@@ -147,6 +149,7 @@ impl World {
 
     /// Java `ConditionPlayerCanSummonSiegeGolem.testImpl`: `canSummonSiegeGolem`.
     // M7-FORT-01: the fortress siege's parts.
+    #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_summon_siege_golem(&self, player: ObjectId) -> bool {
         let clan_id = self.clan_id_of(player);
         // `isCursedWeaponEquipped()`: cursed weapons are M8.
@@ -211,6 +214,91 @@ impl World {
                 && self.is_registered_on_this_siege_field(player, residence_id)
                 && state == 2)
             || (value & neutral != 0 && state == 0)
+    }
+
+    /// Java `ConditionPlayerCanResurrect.testImpl`: `canResurrect` of the target (the caster hears
+    /// why not). A skill with an affect range always passes ("Need skill rework").
+    // NOTE(java-quirk): in a castle siege in progress every branch refuses, so only the Blessed
+    // Scroll of Battlefield Resurrection (2393) brings a player back there.
+    pub fn cond_can_resurrect(
+        &self,
+        effector: ObjectId,
+        effected: Option<ObjectId>,
+        skill: Option<(i32, i32)>,
+    ) -> bool {
+        let affect_range = skill
+            .and_then(|(id, level)| self.skill_table()?.get(id, level).map(|s| s.affect_range))
+            .unwrap_or(0);
+        if affect_range > 0 {
+            return true;
+        }
+        let Some(effected) = effected else {
+            return false;
+        };
+        let tell = |message: SystemMessage| {
+            if self.is_player(effector) {
+                self.send(effector, &message);
+            }
+        };
+        let blocked = |id| self.is_affected(id, crate::effects::effect_flag::BLOCK_RESURRECTION);
+        let mut can = true;
+        if self.is_player(effected) {
+            if !self.is_dead(effected) {
+                can = false;
+                let mut message = SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms);
+                if let Some((id, level)) = skill {
+                    message = message.with(SystemMessageParam::SkillName { id, level });
+                }
+                tell(message);
+            } else if blocked(effected) {
+                can = false;
+                tell(SystemMessage::new(SystemMessageId::RejectResurrection));
+            } else if self.is_revive_requested(effected) {
+                can = false;
+                tell(SystemMessage::new(
+                    SystemMessageId::ResurrectionHasAlreadyBeenProposed,
+                ));
+            } else if skill.is_none_or(|(id, _)| id != 2393) {
+                // Blessed Scroll of Battlefield Resurrection (2393) passes.
+                if let Some(siege) = self.siege_of(effected).and_then(|c| self.castle_siege(c)) {
+                    let clan = self.clan_of(effected).map(|c| c.id);
+                    can = false;
+                    let message = match clan {
+                        None => SystemMessageId::ItIsNotPossibleToResurrectInBattlefieldsWhereASiegeWarIsTakingPlace,
+                        Some(c) if siege.is_defender(Some(c)) && siege.control_tower_count == 0 => {
+                            SystemMessageId::TheGuardianTowerHasBeenDestroyedAndResurrectionIsNotPossible
+                        }
+                        Some(c) if siege.attacker_clan(c).is_some_and(|sc| sc.flags.is_empty()) => {
+                            SystemMessageId::IfABaseCampDoesNotExistResurrectionIsNotPossible
+                        }
+                        Some(_) => SystemMessageId::ItIsNotPossibleToResurrectInBattlefieldsWhereASiegeWarIsTakingPlace,
+                    };
+                    tell(SystemMessage::new(message));
+                }
+            }
+        } else if self.is_summon(effected) {
+            if !self.is_dead(effected) {
+                can = false;
+                let mut message = SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms);
+                if let Some((id, level)) = skill {
+                    message = message.with(SystemMessageParam::SkillName { id, level });
+                }
+                tell(message);
+            } else if blocked(effected) {
+                can = false;
+                tell(SystemMessage::new(SystemMessageId::RejectResurrection));
+            } else if self
+                .summon_owner(effected)
+                .is_some_and(|owner| self.is_reviving_pet(owner))
+            {
+                can = false;
+                // Resurrection is already been proposed.
+                tell(SystemMessage::new(
+                    SystemMessageId::ResurrectionHasAlreadyBeenProposed,
+                ));
+            }
+        }
+        can
     }
 
     /// Java `ConditionPlayerSiegeSide.testImpl`: the acting player's `getSiegeSide()`.

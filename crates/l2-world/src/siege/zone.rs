@@ -222,11 +222,11 @@ impl World {
         self.stop_fame_task(id);
         self.set_in_siege(id, false);
         let fort_siege = matches!(state.siege.map(|s| s.siegable), Some(ResidenceRef::Fort(_)));
-        if !fort_siege || self.inventory_item_by_item_id(id, COMBAT_FLAG).is_none() {
-            return;
+        if fort_siege && self.inventory_item_by_item_id(id, COMBAT_FLAG).is_some() {
+            // M7-FORT-01: drop the combat flag (`FortSiegeManager.dropCombatFlag`) and unsummon
+            // the summon.
+            tracing::debug!("{id} leaves a fortress siege zone with the combat flag");
         }
-        // M7-FORT-01: drop the combat flag (`FortSiegeManager.dropCombatFlag`) and unsummon the
-        // summon.
     }
 
     /// Java `SiegeZone.onDieInside(creature)`: a participant who dies in an active siege zone gets

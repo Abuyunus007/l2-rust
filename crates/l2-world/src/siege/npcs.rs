@@ -10,7 +10,7 @@
 // Java: managers/TerritoryWarManager.java (isAllyField)
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{ActionFailed, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -312,10 +312,10 @@ impl World {
             let attackable = self.siege_npc_auto_attackable(npc, player).unwrap_or(false);
             if attackable && dz < 100 && (!tower || self.can_see_target(player, npc)) {
                 self.set_intention_attack(player, npc);
-            } else if !tower {
-                self.send(player, &ActionFailed);
             }
         }
+        // The `ActionFailed` of `Tower.onAction` (and of the flag that is not attacked) is the
+        // one every click ends with (`on_action_object`).
         true
     }
 
@@ -370,6 +370,21 @@ impl World {
         let viewers = self.visible_players(flag);
         for viewer in viewers {
             self.send_npc_info(flag, viewer);
+        }
+    }
+
+    /// Java `Formulas.calcSiegeRegenModifier(player)`: 1.5 within 200 of the first headquarters
+    /// of the player's clan in the castle siege he stands in, else 0.
+    pub fn siege_regen_modifier(&self, player: ObjectId) -> f64 {
+        let Some(clan) = self.clan_of(player).map(|c| c.id) else {
+            return 0.0;
+        };
+        let Some(siege) = self.siege_of(player).and_then(|c| self.castle_siege(c)) else {
+            return 0.0;
+        };
+        match siege.attacker_clan(clan).and_then(|sc| sc.flags.first()) {
+            Some(flag) if self.check_if_in_range(200, player, *flag, true) => 1.5,
+            _ => 0.0,
         }
     }
 
@@ -619,9 +634,7 @@ impl World {
     fn siege_save_siege_guard(
         &mut self,
         id: CastleId,
-        x: i32,
-        y: i32,
-        z: i32,
+        (x, y, z): (i32, i32, i32),
         heading: i32,
         npc_id: i32,
         hired: bool,
@@ -646,7 +659,7 @@ impl World {
             return;
         };
         let heading = self.heading_of(player);
-        self.siege_save_siege_guard(id, x, y, z, heading, npc_id, false);
+        self.siege_save_siege_guard(id, (x, y, z), heading, npc_id, false);
     }
 
     /// Java `SiegeGuardManager.hireMerc(x, y, z, heading, npcId)`.
@@ -659,7 +672,7 @@ impl World {
         heading: i32,
         npc_id: i32,
     ) {
-        self.siege_save_siege_guard(id, x, y, z, heading, npc_id, true);
+        self.siege_save_siege_guard(id, (x, y, z), heading, npc_id, true);
     }
 
     /// Java `SiegeGuardManager.removeMerc(npcId, x, y, z)`: the castle lord picked a ticket up.

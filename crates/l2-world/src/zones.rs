@@ -464,8 +464,8 @@ impl World {
         let peace_mode = self.settings.zones.peace_zone_mode;
         match ZoneKind::of(&zone.zone_type) {
             ZoneKind::Town => self.set_inside(id, ZoneId::Town, true),
-            // NOTE(java-quirk): Java skips the flags of a siege participant when
-            // `PeaceZoneMode == 1`; nobody takes part in a siege before M5.
+            // "PVP possible during siege, now for siege participants only." (M7-SIEGE-01)
+            ZoneKind::Peace | ZoneKind::NoPvp if peace_mode == 1 && self.siege_state_of(id) != 0 => {}
             ZoneKind::Peace => {
                 // "Nevit Turn Off on Peace Zone" (before the flag, like Java).
                 self.nevit_on_peace_zone_enter(id);

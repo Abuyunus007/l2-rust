@@ -756,7 +756,6 @@ impl World {
             is_clan_leader: self.is_clan_leader(subject),
             party_index,
             clan_war,
-            ..RelationInput::default()
         }
     }
 

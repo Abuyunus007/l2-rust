@@ -1752,6 +1752,7 @@ pub fn siege_settings(
     s.castle_zone_fame_aquire_points = config.player.castle_zone_fame_aquire_points;
     s.fame_for_dead_players = config.player.fame_for_dead_players;
     s.offline_fame = config.offline_trade.offline_fame;
+    s.teleport_while_siege_in_progress = config.player.teleport_while_siege_in_progress;
     s
 }
 

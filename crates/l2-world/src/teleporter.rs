@@ -4,8 +4,8 @@
 //       shouldPayFee, calculateFee, getItemName)
 //
 // # What is left out, with the system that brings it
-// - Sieges (`castleId` of a destination, `getCastle().getSiege()`, a gatekeeper on castle ground):
-//   castles are M5. No castle is loaded, so none is under siege and none is "on castle ground".
+// - The castle gatekeepers' own page (`Teleporter.showChatWindow` on castle ground): the castle
+//   NPCs (M7-NPC-01). The siege checks of `doTeleport` are here (M7-SIEGE-01).
 // - `isAffectedBySkill(FROG/CHILD/NATIVE_TRANSFORM)` (effects, M5) and `isCombatFlagEquipped`
 //   (territory wars).
 //
@@ -122,7 +122,7 @@ impl World {
     }
 
     /// Java `TeleportHolder.doTeleport(player, npc, locId)`.
-    fn do_teleport(&mut self, _npc: ObjectId, player: ObjectId, holder: &TeleportHolder, location_id: i32) {
+    fn do_teleport(&mut self, npc: ObjectId, player: ObjectId, holder: &TeleportHolder, location_id: i32) {
         // Check if player is dead before other checks.
         if self.is_alike_dead(player) {
             return;
@@ -148,9 +148,43 @@ impl World {
             return;
         };
 
-        // Check if castle is in siege: FOLLOW-UP(M5) `loc.getCastleId()`.
+        // Check if castle is in siege (M7-SIEGE-01).
+        let allow_in_siege = self.siege_settings().teleport_while_siege_in_progress;
+        if !allow_in_siege {
+            // NOTE(java-quirk): Java throws for a castle id that does not exist.
+            let besieged = location
+                .castle_ids
+                .iter()
+                .any(|id| self.is_castle_siege_in_progress(crate::residence::CastleId(*id)));
+            if besieged {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::YouCannotTeleportToAVillageThatIsInASiege),
+                );
+                return;
+            }
+        }
 
         // Validate conditions for NORMAL teleport.
+        if holder.kind() == TeleportType::Normal
+            && !allow_in_siege
+            && self
+                .npc_castle(npc)
+                .is_some_and(|c| self.is_castle_siege_in_progress(c))
+        {
+            let name = self.npc_template(npc).map(|t| t.name.clone()).unwrap_or_default();
+            let html = self
+                .get_htm(player, "data/html/teleporter/castleteleporter-busy.htm")
+                .unwrap_or_else(|| {
+                    "<html><body>My Text is missing:<br>data/html/teleporter/castleteleporter-busy.htm</body></html>"
+                        .to_owned()
+                })
+                .replace("%npcname%", &name);
+            if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(npc.0, &html) {
+                self.send_html(player, &message);
+            }
+            return;
+        }
         if holder.kind() == TeleportType::Normal && !self.settings.talk.karma_player_can_use_gk && karma > 0 {
             self.send_message(player, "Go away, you're not welcome here.");
             return;

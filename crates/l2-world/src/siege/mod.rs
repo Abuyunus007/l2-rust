@@ -187,6 +187,8 @@ pub struct SiegeSettings {
     pub fame_for_dead_players: bool,
     /// `OfflineTradeConfig.OFFLINE_FAME` (`OfflineFame`).
     pub offline_fame: bool,
+    /// `PlayerConfig.TELEPORT_WHILE_SIEGE_IN_PROGRESS` (`TeleportWhileSiegeInProgress`).
+    pub teleport_while_siege_in_progress: bool,
     /// For tests: Java's `System.currentTimeMillis()` at world tick 0 (the siege clock then runs
     /// with the ticks). `None`: the wall clock.
     pub clock_override_unix_ms: Option<i64>,
@@ -214,6 +216,7 @@ impl Default for SiegeSettings {
             castle_zone_fame_aquire_points: 125,
             fame_for_dead_players: true,
             offline_fame: true,
+            teleport_while_siege_in_progress: true,
             clock_override_unix_ms: None,
             zone_offset_override_ms: None,
         }

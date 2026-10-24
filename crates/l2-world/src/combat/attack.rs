@@ -13,7 +13,8 @@
 //
 // # Left out (each has its card)
 // - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, cursed weapons, observer mode,
-//   siege friends, transformations, effects (`POLEARM_SINGLE_TARGET`).
+//   transformations, effects (`POLEARM_SINGLE_TARGET`). The siege friends are refused
+//   (M7-SIEGE-01).
 // - PvP flagging after the attack (`updatePvPStatus`) is `pvp.rs`.
 
 use l2_data::Stat;
@@ -550,8 +551,9 @@ impl World {
                     self.objects.get(&obj).map(|e| e.kind),
                     Some(ObjectKind::Player | ObjectKind::Npc)
                 ) {
-                    // Doors and static objects are creatures in Java too, but never auto
-                    // attackable without a siege (M5).
+                    // Doors and static objects are creatures in Java too; a castle door in a
+                    // siege is auto attackable, but doors cannot take damage yet
+                    // (FOLLOW-UP(M7-SIEGE-02)).
                     continue;
                 }
                 // Skip dead or fake dead target.

@@ -707,8 +707,9 @@ impl World {
         })
     }
 
-    /// Java `Formulas.calcHpRegen(player)`. The festival, siege, clan hall, castle and fort
-    /// modifiers and the mother tree bonus are not modelled yet, so no factor is passed.
+    /// Java `Formulas.calcHpRegen(player)`. The siege modifier is the siege's (M7-SIEGE-01);
+    /// the festival (M8), clan hall, castle and fort modifiers and the mother tree bonus are not
+    /// modelled yet.
     fn player_hp_regen(&self, id: ObjectId) -> f64 {
         let Some(view) = self.stats(id) else {
             return 0.0;
@@ -720,13 +721,17 @@ impl World {
             posture: self.regen_posture(id),
         };
         let rate = |base: f64| view.calc_stat(Stat::RegenerateHpRate, base, None, None);
+        // `calcSiegeRegenModifier(player)` when positive (the festival comes first: M8).
+        let siege = self.siege_regen_modifier(id);
+        let siege_factor = [siege];
+        let multipliers: &[f64] = if siege > 0.0 { &siege_factor } else { &[] };
         calc_hp_regen(&HpRegenInput {
             kind,
             is_raid: view.is_raid(),
             hp_regen_multiplier: self.regen.hp_regen_multiplier,
             raid_hp_regen_multiplier: self.regen.raid_hp_regen_multiplier,
             champion_hp_regen: None,
-            multipliers: &[],
+            multipliers,
             mother_tree_hp_regen_bonus: 0,
             regenerate_hp_rate: &rate,
         })
