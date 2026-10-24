@@ -33,13 +33,37 @@ impl World {
         configs.for_zones(&zone_ids).cloned()
     }
 
-    /// Java `MerchantPriceConfig.getTotalTaxRate()` of the merchant: `(castleTax + baseTax) / 100`.
-    // M7: the castle's `taxPercent` (`hasCastle() ? _castle.getTaxPercent() + _baseTax : _baseTax`)
-    // and, in `RequestBuyItem`, `castle.addToTreasury(subTotal * castleTaxRate)`.
+    /// Java `MerchantPriceConfig.getTotalTaxRate()` of the merchant: `getTotalTax() / 100.0`,
+    /// where `getTotalTax()` is `hasCastle() ? castle.getTaxPercent() + baseTax : baseTax`
+    /// (M7-RES-01; the castle of the config counts whether it has an owner or not).
     pub(crate) fn merchant_total_tax_rate(&self, npc: ObjectId) -> f64 {
         // Java would throw a NullPointerException for a merchant without a config.
+        self.merchant_price_config(npc).map_or(0.0, |config| {
+            let castle_tax = self.price_config_castle(&config).map_or(0, |c| c.tax_percent);
+            f64::from(castle_tax + config.base_tax) / 100.0
+        })
+    }
+
+    /// Java `MerchantPriceConfig.getCastleTaxRate()` of the merchant: the castle's `getTaxRate()`,
+    /// 0 without a castle.
+    pub(crate) fn merchant_castle_tax_rate(&self, npc: ObjectId) -> f64 {
         self.merchant_price_config(npc)
-            .map_or(0.0, |config| f64::from(config.base_tax) / 100.0)
+            .and_then(|config| self.price_config_castle(&config).map(|c| c.tax_rate))
+            .unwrap_or(0.0)
+    }
+
+    /// Java `MerchantPriceConfig.getBaseTaxRate()` of the merchant.
+    pub(crate) fn merchant_base_tax_rate(&self, npc: ObjectId) -> f64 {
+        self.merchant_price_config(npc)
+            .map_or(0.0, |config| config.base_tax_rate())
+    }
+
+    /// Java `MerchantPriceConfig.updateReferences()`: `castleId > 0 ?
+    /// CastleManager.getCastleById(castleId) : null`.
+    fn price_config_castle(&self, config: &MerchantPriceConfig) -> Option<&crate::residence::Castle> {
+        (config.castle_id > 0)
+            .then(|| self.castle(crate::residence::CastleId(config.castle_id)))
+            .flatten()
     }
 
     /// Java `new BuyList(buyList, player.getAdena(), taxRate)`.

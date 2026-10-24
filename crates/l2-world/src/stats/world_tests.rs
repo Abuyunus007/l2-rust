@@ -571,3 +571,66 @@ fn java_hash_map_order_of_integer_keys() {
         [1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 13, 48, 16]
     );
 }
+
+/// `ConditionPlayerHasClanHall`, `ConditionPlayerHasFort`, `ConditionPlayerHasCastle`: without a
+/// clan only "none" (0) holds; with one, `-1` is any and otherwise the clan's own hall, fortress or
+/// castle must be named (M7-RES-01).
+#[test]
+fn residence_conditions_read_the_clan() {
+    use l2_data::Condition;
+
+    use super::conditions::{CondEnv, test};
+    use crate::clan::{ClanDataRecord, ClanRecord};
+
+    let mut world = world_with(stat_data(), player(vec![]));
+    let check = |world: &World, cond: &Condition| {
+        let view = world.stats(ME).unwrap();
+        test(
+            cond,
+            &CondEnv {
+                actor: &view,
+                target: None,
+                skill: None,
+            },
+        )
+    };
+    let hall = |ids: &[i32]| Condition::PlayerHasClanHall {
+        clan_hall: ids.to_vec(),
+    };
+    let fort = |fort: i32| Condition::PlayerHasFort { fort };
+    let castle = |castle: i32| Condition::PlayerHasCastle { castle };
+    assert!(check(&world, &hall(&[0])));
+    assert!(!check(&world, &hall(&[-1])));
+    assert!(!check(&world, &hall(&[0, 36])));
+    assert!(check(&world, &fort(0)));
+    assert!(!check(&world, &fort(-1)));
+    assert!(check(&world, &castle(0)));
+
+    world.load_clans(
+        vec![ClanRecord {
+            clan_id: 500,
+            data: Some(ClanDataRecord {
+                name: Some("Lions".to_owned()),
+                ..ClanDataRecord::default()
+            }),
+            ..ClanRecord::default()
+        }],
+        Vec::new(),
+    );
+    world.player_clan_state_mut(ME).unwrap().clan_id = 500;
+    // A clan without a hall: `_clanHall.contains(getHideoutId())` finds the 0.
+    assert!(check(&world, &hall(&[0])));
+    assert!(!check(&world, &hall(&[-1])));
+    assert!(!check(&world, &fort(-1)));
+    assert!(check(&world, &fort(0)));
+    let clan = world.clan_mut(500).unwrap();
+    clan.hideout_id = 36;
+    clan.fort_id = 101;
+    assert!(check(&world, &hall(&[-1])));
+    assert!(check(&world, &hall(&[35, 36])));
+    assert!(!check(&world, &hall(&[35])));
+    assert!(check(&world, &fort(-1)));
+    assert!(check(&world, &fort(101)));
+    assert!(!check(&world, &fort(102)));
+    assert!(!check(&world, &castle(-1)));
+}

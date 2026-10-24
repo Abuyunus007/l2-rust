@@ -30,6 +30,10 @@
 //   M6-FRIEND-01),
 // - `character_recipebook` (a recipe learned or forgotten, `PersistCommand::Recipe`) and
 //   `character_recipeshoplist` (with the store, `StoreRecipeShopList`; M6-CRAFT-01),
+// - the residence tables (`castle`, `fort`, `clanhall`, `siegable_clanhall`, the function tables,
+//   `clan_data.hasCastle`) and the circlet rows of offline clan members, with Java's residence
+//   statements (`PersistCommand::Residence`, M7-RES-01; the world sends the siege-like ones only
+//   with `SiegeDatabaseWrites = True` in `SideBySide.ini`, D-51),
 // with the statements the repositories copied from Java. It never runs bulk updates or cleanup
 // on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
 // runs the same ones every day.
@@ -62,8 +66,13 @@ use l2_db::{
     ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
+use l2_db::{FunctionTable, ResidenceRepository};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
+};
+use l2_world::residence::{
+    CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, ResidenceReadKind, ResidenceRef,
+    ResidenceRefresh, ResidenceRereadRows, ResidenceWrite, SiegableHallRecord,
 };
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
@@ -256,6 +265,23 @@ pub trait PlayerStore: Send + 'static {
         _data: &ChampionshipData,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// A residence row write with Java's statement (`Castle`, `Fort`, `ClanHall`, M7-RES-01).
+    fn store_residence_write(
+        &mut self,
+        _write: &ResidenceWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// One residence read again (D-50, D-51, M7-RES-01). A store without a database has no rows.
+    fn load_residence(
+        &mut self,
+        _kind: ResidenceReadKind,
+        _residence_id: i32,
+    ) -> impl Future<Output = Result<ResidenceRereadRows, PersistError>> + Send {
+        async { Ok(ResidenceRereadRows::Missing) }
     }
 
     /// Java `Pet.restore` and `Pet.restoreEffects` for one collar: its `pets` row and its saved
@@ -807,6 +833,31 @@ async fn run<S: PlayerStore>(
                     );
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Residence(write)) => {
+                // Java logs a failed residence statement and goes on (no retry).
+                if let Err(e) = store.store_residence_write(&write).await {
+                    error!("Residence data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
+                residence_id,
+                kind,
+                then,
+            }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is reported
+                // as a failure; the world then changes nothing (D-50).
+                let result = match store.load_residence(kind, residence_id).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not read residence {residence_id} ({kind:?}) again: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::ResidenceReread { result, then };
+                if !acks.send_to_world(answer) {
+                    warn!("Residence {residence_id} could not be handed to the world.");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Recipe(write)) => {
                 // Java logs a failed statement and goes on ("SQL exception while inserting
                 // recipe", no retry).
@@ -1143,6 +1194,244 @@ pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
             warn!("CrestTable: There was an error while loading crests from database: {e}");
             Vec::new()
         }
+    }
+}
+
+/// Java's residence managers at startup, the database half (M7-RES-01): the conquerable halls
+/// (`CHSiegeManager`), the auctionable halls (`ClanHallTable`), the castles
+/// (`CastleManager.loadInstances`, `new Castle(id)`) and the fortresses (`FortManager`), each with
+/// the functions of an owned residence. Only reads (D-39). A failed read is logged like Java's and
+/// the rest goes on.
+pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
+    let repo = ResidenceRepository::new(pool.clone());
+    let mut load = ResidenceLoad::default();
+    match repo.siegable_halls().await {
+        Ok(rows) => {
+            for row in rows {
+                let mut record = siegable_hall_record(row);
+                if record.owner_id != 0 {
+                    record.functions = load_functions(&repo, FunctionTable::ClanHall, record.id).await;
+                }
+                load.siegable_halls.push(record);
+            }
+        }
+        Err(e) => warn!("CHSiegeManager: Could not load siegable clan halls!:{e}"),
+    }
+    match repo.clan_halls().await {
+        Ok(rows) => {
+            for row in rows {
+                let mut record = clan_hall_record(row);
+                if record.owner_id != 0 {
+                    record.functions = load_functions(&repo, FunctionTable::ClanHall, record.id).await;
+                }
+                load.clan_halls.push(record);
+            }
+        }
+        Err(e) => warn!("Exception: ClanHallManager.load(): {e}"),
+    }
+    match repo.castle_ids().await {
+        Ok(ids) => {
+            for id in ids {
+                load.castles.push(load_castle_record(&repo, id).await);
+            }
+        }
+        Err(e) => warn!("Exception: loadCastleData(): {e}"),
+    }
+    match repo.fort_ids().await {
+        Ok(ids) => {
+            for id in ids {
+                match repo.fort(id).await {
+                    Ok(Some(row)) => load.forts.push(load_fort_record(&repo, row).await),
+                    Ok(None) => load.forts.push(FortRecord {
+                        id,
+                        ..FortRecord::default()
+                    }),
+                    Err(e) => {
+                        warn!("Exception: loadFortData(): {e}");
+                        load.forts.push(FortRecord {
+                            id,
+                            ..FortRecord::default()
+                        });
+                    }
+                }
+            }
+        }
+        Err(e) => warn!("Exception: loadFortData(): {e}"),
+    }
+    load
+}
+
+/// The residences of one clan as the database has them now (D-50, D-51): the castle its
+/// `hasCastle` names (`castle_id`, read at `CharacterSelect` with the clan) and the fortresses and
+/// halls whose owner it is, each with its functions.
+pub async fn load_residence_refresh(
+    repo: &ResidenceRepository,
+    clan_id: i32,
+    castle_id: i32,
+) -> Result<ResidenceRefresh, l2_db::DbError> {
+    let mut refresh = ResidenceRefresh {
+        clan_id,
+        castle_id,
+        ..ResidenceRefresh::default()
+    };
+    if castle_id > 0 {
+        refresh.castle = Some(read_castle_record(repo, castle_id).await?);
+    }
+    for row in repo.forts_of_owner(clan_id).await? {
+        let mut record = fort_record(row);
+        record.functions = function_records(repo.functions(FunctionTable::Fort, record.id).await?);
+        refresh.forts.push(record);
+    }
+    for row in repo.clan_halls_of_owner(clan_id).await? {
+        let mut record = clan_hall_record(row);
+        record.functions = function_records(repo.functions(FunctionTable::ClanHall, record.id).await?);
+        refresh.clan_halls.push(record);
+    }
+    for row in repo.siegable_halls_of_owner(clan_id).await? {
+        let mut record = siegable_hall_record(row);
+        record.functions = function_records(repo.functions(FunctionTable::ClanHall, record.id).await?);
+        refresh.siegable_halls.push(record);
+    }
+    Ok(refresh)
+}
+
+/// Java `new Castle(id)`'s reads with Java's error handling: a failed row read is logged and the
+/// castle keeps its defaults, failed functions are logged and the castle has none.
+async fn load_castle_record(repo: &ResidenceRepository, id: i32) -> CastleRecord {
+    let mut record = CastleRecord {
+        id,
+        time_registration_over: true,
+        ..CastleRecord::default()
+    };
+    match repo.castle(id).await {
+        Ok(Some(row)) => apply_castle_row(&mut record, row),
+        Ok(None) => {}
+        Err(e) => warn!("Exception: loadCastleData(): {e}"),
+    }
+    match repo.castle_owner_ids(id).await {
+        Ok(owners) => record.owner_id = owners.last().copied().unwrap_or(0),
+        Err(e) => warn!("Exception: loadCastleData(): {e}"),
+    }
+    if record.owner_id != 0 {
+        record.functions = load_functions(repo, FunctionTable::Castle, id).await;
+    }
+    record
+}
+
+/// A castle read again: any failure fails the read (D-50).
+async fn read_castle_record(repo: &ResidenceRepository, id: i32) -> Result<CastleRecord, l2_db::DbError> {
+    let mut record = CastleRecord {
+        id,
+        time_registration_over: true,
+        ..CastleRecord::default()
+    };
+    if let Some(row) = repo.castle(id).await? {
+        apply_castle_row(&mut record, row);
+    }
+    record.owner_id = repo.castle_owner_ids(id).await?.last().copied().unwrap_or(0);
+    if record.owner_id != 0 {
+        record.functions = function_records(repo.functions(FunctionTable::Castle, id).await?);
+    }
+    Ok(record)
+}
+
+fn apply_castle_row(record: &mut CastleRecord, row: l2_db::CastleRow) {
+    record.found = true;
+    record.name = row.name;
+    record.tax_percent = row.tax_percent;
+    record.treasury = row.treasury;
+    record.siege_date = row.siege_date;
+    // `Boolean.parseBoolean(rs.getString(...))`.
+    record.time_registration_over = row.reg_time_over.eq_ignore_ascii_case("true");
+    record.time_registration_over_date = row.reg_time_end;
+    record.show_npc_crest = row.show_npc_crest.eq_ignore_ascii_case("true");
+    record.ticket_buy_count = row.ticket_buy_count;
+}
+
+/// Java `new Fort(id)`'s reads: the functions of an owned fortress.
+async fn load_fort_record(repo: &ResidenceRepository, row: l2_db::FortRow) -> FortRecord {
+    let mut record = fort_record(row);
+    if record.owner_id > 0 {
+        record.functions = load_functions(repo, FunctionTable::Fort, record.id).await;
+    }
+    record
+}
+
+fn fort_record(row: l2_db::FortRow) -> FortRecord {
+    FortRecord {
+        id: row.id,
+        name: row.name,
+        siege_date: row.siege_date,
+        last_owned_time: row.last_owned_time,
+        owner_id: row.owner,
+        fort_type: row.fort_type,
+        state: row.state,
+        castle_id: row.castle_id,
+        supply_level: row.supply_level,
+        functions: Vec::new(),
+    }
+}
+
+fn clan_hall_record(row: l2_db::ClanHallRow) -> ClanHallRecord {
+    ClanHallRecord {
+        id: row.id,
+        name: row.name,
+        owner_id: row.owner_id,
+        lease: row.lease,
+        desc: row.desc,
+        location: row.location,
+        paid_until: row.paid_until,
+        grade: row.grade,
+        paid: row.paid,
+        functions: Vec::new(),
+    }
+}
+
+/// `getInt` / `getLong` of NULL is 0; `getString` of NULL is `null` (an empty name here).
+fn siegable_hall_record(row: l2_db::SiegableHallRow) -> SiegableHallRecord {
+    SiegableHallRecord {
+        id: row.clan_hall_id,
+        name: row.name.unwrap_or_default(),
+        owner_id: row.owner_id.unwrap_or(0),
+        desc: row.desc.unwrap_or_default(),
+        location: row.location.unwrap_or_default(),
+        next_siege: row.next_siege.unwrap_or(0),
+        siege_length: i64::from(row.siege_length.unwrap_or(0)),
+        schedule_config: row.schedule_config,
+        functions: Vec::new(),
+    }
+}
+
+fn function_records(rows: Vec<l2_db::FunctionRow>) -> Vec<FunctionRecord> {
+    rows.into_iter()
+        .map(|r| FunctionRecord {
+            function_type: r.function_type,
+            lvl: r.lvl,
+            lease: r.lease,
+            rate: r.rate,
+            end_time: r.end_time,
+        })
+        .collect()
+}
+
+/// Java `loadFunctions()`: a failed read is logged ("Exception: Castle.loadFunctions(): ...") and
+/// the residence has no functions.
+async fn load_functions(repo: &ResidenceRepository, table: FunctionTable, id: i32) -> Vec<FunctionRecord> {
+    match repo.functions(table, id).await {
+        Ok(rows) => function_records(rows),
+        Err(e) => {
+            error!("Exception: {table:?}.loadFunctions(): {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// The function table of a residence.
+fn function_table(residence: ResidenceRef) -> FunctionTable {
+    match residence {
+        ResidenceRef::Castle(_) => FunctionTable::Castle,
+        ResidenceRef::Fort(_) => FunctionTable::Fort,
+        ResidenceRef::ClanHall(_) => FunctionTable::ClanHall,
     }
 }
 
@@ -1531,6 +1820,7 @@ pub struct DbStore {
     crests: CrestRepository,
     friends: FriendRepository,
     championship: FishingChampionshipRepository,
+    residences: ResidenceRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1559,6 +1849,7 @@ impl DbStore {
             recipes: RecipeRepository::new(pool.clone()),
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
+            residences: ResidenceRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
@@ -2630,6 +2921,156 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_residence_write(&mut self, write: &ResidenceWrite) -> Result<(), PersistError> {
+        let repo = &self.residences;
+        match write {
+            ResidenceWrite::CastleTreasury { castle_id, treasury } => {
+                repo.update_castle_treasury(*castle_id, *treasury).await?
+            }
+            ResidenceWrite::CastleTaxPercent {
+                castle_id,
+                tax_percent,
+            } => repo.update_castle_tax_percent(*castle_id, *tax_percent).await?,
+            ResidenceWrite::CastleShowNpcCrest { castle_id, show } => {
+                repo.update_castle_show_npc_crest(*castle_id, *show).await?
+            }
+            ResidenceWrite::CastleTicketBuyCount { castle_id, count } => {
+                repo.update_castle_ticket_buy_count(*castle_id, *count).await?
+            }
+            ResidenceWrite::CastleOwner { castle_id, clan_id } => {
+                repo.update_castle_owner(*castle_id, *clan_id).await?
+            }
+            ResidenceWrite::FortOwner {
+                fort_id,
+                owner,
+                last_owned_time,
+            } => repo.update_fort_owner(*fort_id, *owner, *last_owned_time).await?,
+            ResidenceWrite::FortState {
+                fort_id,
+                state,
+                castle_id,
+            } => repo.update_fort_state(*fort_id, *state, *castle_id).await?,
+            ResidenceWrite::FortSupplyLevel {
+                fort_id,
+                supply_level,
+            } => repo.update_fort_supply_level(*fort_id, *supply_level).await?,
+            ResidenceWrite::ClanHall {
+                hall_id,
+                owner_id,
+                paid_until,
+                paid,
+            } => {
+                repo.update_clan_hall(*hall_id, *owner_id, *paid_until, *paid)
+                    .await?
+            }
+            ResidenceWrite::SiegableHall {
+                hall_id,
+                owner_id,
+                next_siege,
+            } => {
+                repo.update_siegable_hall(*hall_id, *owner_id, *next_siege)
+                    .await?
+            }
+            ResidenceWrite::FunctionSave {
+                residence,
+                function_type,
+                lvl,
+                lease,
+                rate,
+                end_time,
+            } => {
+                let save = l2_db::FunctionSave {
+                    table: function_table(*residence),
+                    residence_id: residence.residence_id(),
+                    function_type: *function_type,
+                    lvl: *lvl,
+                    lease: *lease,
+                    rate: *rate,
+                    end_time: *end_time,
+                };
+                repo.save_function(&save).await?
+            }
+            ResidenceWrite::FunctionDelete {
+                residence,
+                function_type,
+            } => {
+                repo.delete_function(
+                    function_table(*residence),
+                    residence.residence_id(),
+                    *function_type,
+                )
+                .await?
+            }
+            ResidenceWrite::DeleteCirclets { owner_id, item_id } => {
+                repo.delete_circlets(*owner_id, *item_id).await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_residence(
+        &mut self,
+        kind: ResidenceReadKind,
+        residence_id: i32,
+    ) -> Result<ResidenceRereadRows, PersistError> {
+        let repo = &self.residences;
+        let rows = match kind {
+            ResidenceReadKind::Castle => {
+                ResidenceRereadRows::Castle(read_castle_record(repo, residence_id).await?)
+            }
+            ResidenceReadKind::Fort => match repo.fort(residence_id).await? {
+                Some(row) => {
+                    let mut record = fort_record(row);
+                    if record.owner_id > 0 {
+                        record.functions =
+                            function_records(repo.functions(FunctionTable::Fort, residence_id).await?);
+                    }
+                    ResidenceRereadRows::Fort(record)
+                }
+                None => ResidenceRereadRows::Missing,
+            },
+            ResidenceReadKind::ClanHall => {
+                match repo
+                    .clan_halls()
+                    .await?
+                    .into_iter()
+                    .find(|r| r.id == residence_id)
+                {
+                    Some(row) => {
+                        let mut record = clan_hall_record(row);
+                        if record.owner_id != 0 {
+                            record.functions = function_records(
+                                repo.functions(FunctionTable::ClanHall, residence_id).await?,
+                            );
+                        }
+                        ResidenceRereadRows::ClanHall(record)
+                    }
+                    None => ResidenceRereadRows::Missing,
+                }
+            }
+            ResidenceReadKind::SiegableHall => {
+                match repo
+                    .siegable_halls()
+                    .await?
+                    .into_iter()
+                    .find(|r| r.clan_hall_id == residence_id)
+                {
+                    Some(row) => {
+                        let mut record = siegable_hall_record(row);
+                        if record.owner_id != 0 {
+                            record.functions = function_records(
+                                repo.functions(FunctionTable::ClanHall, residence_id).await?,
+                            );
+                        }
+                        ResidenceRereadRows::SiegableHall(record)
+                    }
+                    None => ResidenceRereadRows::Missing,
+                }
+            }
+        };
+        Ok(rows)
+    }
+
     async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
         let clans = &self.clans;
         match write {
@@ -3176,6 +3617,37 @@ mod tests {
                         effects: vec![]
                     })
                 );
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// A residence re-read (M7-RES-01, D-50) is not a write either: the store is asked and the
+    /// rows go back to the world as `WorldCommand::ResidenceReread` with the follow-up the world
+    /// named.
+    #[tokio::test]
+    async fn a_residence_reread_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(Recording::default(), rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
+            residence_id: 1,
+            kind: ResidenceReadKind::Castle,
+            then: l2_world::residence::ResidenceReadThen::Nothing,
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::ResidenceReread { result, then } => {
+                assert_eq!(result, Ok(ResidenceRereadRows::Missing));
+                assert_eq!(then, l2_world::residence::ResidenceReadThen::Nothing);
             }
             other => panic!("{other:?}"),
         }

@@ -36,6 +36,7 @@ pub mod pet_skill;
 pub mod player_class;
 pub mod player_template;
 pub mod recipe;
+pub mod residence;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -90,6 +91,7 @@ pub use player_template::{
     Collision, DEFAULT_MAX_PLAYER_LEVEL, Location, PAPERDOLL_TOTAL_SLOTS, PlayerTemplate, PlayerTemplates,
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
+pub use residence::{SiegeSchedule, SiegeScheduleDate};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -184,6 +186,8 @@ pub struct Datapack {
     pub fishing_rods: Arc<FishingRodsData>,
     /// `data/stats/fishing/fishingMonsters.xml`: what can come out of the water (M6-FU-08).
     pub fishing_monsters: Arc<FishingMonstersData>,
+    /// `config/SiegeSchedule.xml`: the siege day and hour of each castle (M7-RES-01).
+    pub siege_schedule: Arc<SiegeSchedule>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -349,6 +353,7 @@ impl Datapack {
             fish: Arc::new(FishData::load(root)),
             fishing_rods: Arc::new(FishingRodsData::load(root)),
             fishing_monsters: Arc::new(FishingMonstersData::load(root)),
+            siege_schedule: Arc::new(SiegeSchedule::load(root)),
         })
     }
 }

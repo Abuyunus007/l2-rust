@@ -6,6 +6,8 @@
 pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/bot_reported_char_data.sql"),
     include_str!("../sql/game/buylists.sql"),
+    include_str!("../sql/game/castle.sql"),
+    include_str!("../sql/game/castle_functions.sql"),
     include_str!("../sql/game/character_contacts.sql"),
     include_str!("../sql/game/character_friends.sql"),
     include_str!("../sql/game/character_hennas.sql"),
@@ -32,9 +34,13 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/clan_skills.sql"),
     include_str!("../sql/game/clan_subpledges.sql"),
     include_str!("../sql/game/clan_wars.sql"),
+    include_str!("../sql/game/clanhall.sql"),
+    include_str!("../sql/game/clanhall_functions.sql"),
     include_str!("../sql/game/crests.sql"),
     include_str!("../sql/game/fishing_championship.sql"),
     include_str!("../sql/game/global_variables.sql"),
+    include_str!("../sql/game/fort.sql"),
+    include_str!("../sql/game/fort_functions.sql"),
     include_str!("../sql/game/heroes.sql"),
     include_str!("../sql/game/item_attributes.sql"),
     include_str!("../sql/game/item_elementals.sql"),
@@ -48,6 +54,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/pets.sql"),
     include_str!("../sql/game/punishments.sql"),
     include_str!("../sql/game/seven_signs.sql"),
+    include_str!("../sql/game/siegable_clanhall.sql"),
 ];
 
 #[cfg(test)]

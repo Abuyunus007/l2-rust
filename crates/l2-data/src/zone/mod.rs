@@ -387,6 +387,14 @@ impl Zones {
             .flat_map(|(_, map)| map.iter().map(|(_, i)| &self.zones[i]))
     }
 
+    /// Every zone in the order Java created them (files in load order, zones in file order),
+    /// including zones a later one with the same id and type replaced in its class map. Java's
+    /// `setParameter` side effects (a `ClanHallZone` registering with its clan hall) happen in
+    /// this order (M7-RES-01).
+    pub fn created(&self) -> impl Iterator<Item = &Zone> {
+        self.zones.iter()
+    }
+
     /// Java `getAllZones(Class)`: the zones of exactly this class (no subclasses, like the Java
     /// map lookup). Empty for an unknown class.
     pub fn all_of_type(&self, zone_type: &str) -> Vec<&Zone> {

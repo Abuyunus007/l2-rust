@@ -25,10 +25,13 @@
 // leaves). The result is the same: a sold item is gone from the database as long as it is in the
 // refund list, and gone for good when the player leaves.
 //
+// # Tax
+// `MerchantPriceConfig.getTotalTaxRate()` adds the castle's `taxPercent` to the town's base tax
+// (`MerchantPriceConfig.xml`), and a purchase pays `subTotal * castleTaxRate` into the treasury of
+// the merchant's castle (`residence/castle.rs`, M7-RES-01; D-51: the treasury row only with
+// `SiegeDatabaseWrites`).
+//
 // # What is left out, with the system that brings it
-// - The castle tax. `MerchantPriceConfig.getTotalTaxRate()` adds the castle's `taxPercent` and the
-//   treasury gets `subTotal * castleTaxRate`; castles are M7 (`// M7:` where it belongs). The
-//   base tax of the town (`MerchantPriceConfig.xml`) is applied.
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 // - `Wear` (`ShopPreviewList`) and `BuyShadowItem`: separate bypasses, not in this card.
 

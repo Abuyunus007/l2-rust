@@ -155,6 +155,14 @@ fn lists() -> Vec<(i32, String)> {
 </list>"#
                 .to_owned(),
         ),
+        // A list that applies the castle tax: 10 adena plus the tax of 1000 adena (M7-RES-01).
+        (
+            9,
+            r#"<list applyTaxes="true"><npcs><npc>5000</npc></npcs>
+  <item><ingredient count="10" id="57"/><ingredient count="1000" id="57" isTaxIngredient="true"/><production count="1" id="400"/></item>
+</list>"#
+                .to_owned(),
+        ),
     ]
 }
 
@@ -1218,4 +1226,57 @@ fn clan_reputation_needs_a_clan_and_its_leader() {
         message_ids(&s.log.take()),
         [SystemMessageId::YouAreNotAClanMemberAndCannotPerformThisAction]
     );
+}
+
+/// M7-RES-01: `PreparedListContainer` applies the tax of the castle that owns the NPC's town
+/// (`isInTown() && getCastle().getOwnerId() > 0`): the tax ingredient's adena times the tax rate,
+/// `Math.round`ed, joins the adena; `MultiSellChoose` pays `getTaxAmount() * amount` into the
+/// castle's treasury.
+#[test]
+fn an_apply_taxes_list_pays_the_castle_tax() {
+    let mut s = Scene::with_player(vec![inv(10, ADENA, 1000)]);
+    let zones = tempfile::tempdir().unwrap();
+    let dir = zones.path().join("data/zones");
+    std::fs::create_dir_all(&dir).unwrap();
+    std::fs::write(
+        dir.join("town.xml"),
+        format!(
+            r#"<list enabled="true"><zone id="11025" name="gludin" type="TownZone" shape="Cuboid" minZ="-5000" maxZ="5000">
+<stat name="taxById" val="1" /><node X="{}" Y="{}" /><node X="{}" Y="{}" /></zone></list>"#,
+            X - 500,
+            Y - 500,
+            X + 500,
+            Y + 500
+        ),
+    )
+    .unwrap();
+    s.world.set_zone_data(
+        Arc::new(l2_data::Zones::load(zones.path())),
+        Arc::new(l2_data::MapRegions::load(zones.path())),
+    );
+    s.world.load_residences(ResidenceLoad {
+        castles: vec![residence::CastleRecord {
+            id: 1,
+            found: true,
+            name: "Gludio".to_owned(),
+            tax_percent: 10,
+            owner_id: 500,
+            ..residence::CastleRecord::default()
+        }],
+        ..ResidenceLoad::default()
+    });
+    s.world.open_multisell(9, A, Some(s.npc), false);
+    let out = s.log.take();
+    let list = &lists_sent(&out)[0];
+    // 10 + `Math.round(1000 * 0.1)`.
+    let adena: Vec<i64> = list.entries[0]
+        .ingredients
+        .iter()
+        .filter(|i| i.item_id == ADENA)
+        .map(|i| i.count)
+        .collect();
+    assert_eq!(adena, [110]);
+    s.choose(9, 100_000, 2);
+    assert_eq!(s.count_of(ADENA), 1000 - 220);
+    assert_eq!(s.world.castle(CastleId(1)).unwrap().treasury, 200);
 }

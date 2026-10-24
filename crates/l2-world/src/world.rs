@@ -130,6 +130,8 @@ pub struct World {
     pub(crate) augment: crate::augment::AugmentWorld,
     /// The fish, rods and fishing monsters, and the fishing championship (M6-FU-08, `fishing/`).
     pub(crate) fishing: crate::fishing::FishingWorld,
+    /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
+    pub(crate) residences: crate::residence::ResidenceWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -196,6 +198,7 @@ impl World {
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
+            residences: crate::residence::ResidenceWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
         }
@@ -352,6 +355,7 @@ impl World {
                 clan_id,
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
+            WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -765,6 +769,7 @@ impl World {
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
+            TimerKind::Residence(timer) => self.on_residence_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
             // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),

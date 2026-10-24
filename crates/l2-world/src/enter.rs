@@ -447,6 +447,9 @@ impl World {
         // Java `Player.restore`, the clan part (`ClanTable.getClan`, rank, privileges, pledge
         // class): before anything shows the player.
         self.clan_restore_player(id);
+        // The residences of the clan as the session read them at `CharacterSelect` (M7-RES-01,
+        // D-51: the Java GS runs the real sieges).
+        self.residence_refresh_player(id);
         // The mails the session read at `CharacterSelect` replace this server's copies of them
         // (M6-SYNC-01, D-39: the Java GS shares the table).
         self.mail_refresh_player(id);

@@ -149,6 +149,16 @@ pub enum PersistCommand {
     /// row) and the `fishing_championship` rows (`DELETE`, then one `INSERT` per row), see
     /// `fishing/championship.rs`. Only sent with `FishingChampionshipDatabaseWrites` (D-49).
     FishingChampionship(Box<crate::fishing::ChampionshipData>),
+    /// A residence row write with Java's statement (`castle`, `fort`, `clanhall`, the function
+    /// tables, `hasCastle`), see `residence/` (M7-RES-01). Applied in order with the other commands.
+    Residence(crate::residence::ResidenceWrite),
+    /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
+    /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
+    ResidenceRereadRequest {
+        residence_id: i32,
+        kind: crate::residence::ResidenceReadKind,
+        then: crate::residence::ResidenceReadThen,
+    },
     /// Java `BotReportTable.saveReportedCharData`, one row at a time (M6-FU-09, see
     /// `bot_report.rs`): `INSERT INTO bot_reported_char_data VALUES (?,?,?)`, replacing the report
     /// date of a row that exists.

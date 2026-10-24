@@ -52,6 +52,7 @@ mod player_view;
 pub mod punishments;
 pub mod pvp;
 pub mod region;
+pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
@@ -132,6 +133,10 @@ pub use punishments::{
 };
 pub use pvp::{PvpSettings, PvpTitleColorSettings};
 pub use region::{RegionId, region_of};
+pub use residence::{
+    CastleId, ClanHallId, FortId, ResidenceLoad, ResidenceRef, ResidenceRefresh, ResidenceSettings,
+    ResidenceWrite,
+};
 pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;

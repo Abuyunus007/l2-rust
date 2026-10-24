@@ -22,8 +22,8 @@
 // database with `update_item_in_db`, like Java's `product.updateDatabase()`.
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - Castle taxes: `applyTaxes` lists add the castle's tax to the adena ingredient and pay it into
-//   the castle treasury; castles are M7, so no list pays tax yet.
+// - (Castle taxes are in since M7-RES-01: an `applyTaxes` list adds the tax of the castle that
+//   owns the NPC's town to the adena ingredient and pays it into that castle's treasury.)
 // - `ItemProcessType` logging and the GM audit.
 // - PC cafe points (`-100`): the world does not model them yet, so a player has 0.
 // - Fame is changed in the world but the persistence task does not write it back yet.
@@ -332,12 +332,13 @@ impl World {
         }
     }
 
-    /// Java `PreparedListContainer`'s tax rate: the tax of the castle that owns the town the NPC
-    /// stands in, `None` when there is none.
-    // M7: `npc.isInTown() && npc.getCastle().getOwnerId() > 0` -> `npc.getCastle().getTaxRate()`.
-    // There are no castles yet, so no list applies taxes.
-    fn multisell_tax_rate(&self, _npc: ObjectId) -> Option<f64> {
-        None
+    /// Java `PreparedListContainer`'s tax rate: `npc.isInTown() && npc.getCastle().getOwnerId() >
+    /// 0` gives `npc.getCastle().getTaxRate()` (the castle of the town the NPC stands in,
+    /// M7-RES-01), `None` otherwise.
+    fn multisell_tax_rate(&self, npc: ObjectId) -> Option<f64> {
+        let (castle, in_town) = self.npc_castle_and_town(npc)?;
+        let castle = self.castle(castle).filter(|_| in_town)?;
+        (castle.owner_id > 0).then_some(castle.tax_rate)
     }
 
     /// Java `MultisellData.separateAndSend(listId, player, npc, inventoryOnly, productMultiplier,
@@ -969,10 +970,13 @@ impl World {
         self.send_item_list(id, false);
         self.send_cur_load(id);
 
-        // Finally, give the tax to the castle.
-        // M7: `if (npc != null && entry.getTaxAmount() > 0) npc.getCastle().addToTreasury(tax *
-        // amount)`. No list pays tax before castles exist (`multisell_tax_rate`).
-        let _ = (npc, entry.tax_amount);
+        // Finally, give the tax to the castle (M7-RES-01; D-51: the treasury row only with
+        // `SiegeDatabaseWrites`).
+        if entry.tax_amount > 0
+            && let Some(castle) = npc.and_then(|n| self.npc_castle(n))
+        {
+            self.castle_add_to_treasury(castle, entry.tax_amount.wrapping_mul(amount));
+        }
     }
 
     fn multisell_player_name(&self, id: ObjectId) -> String {

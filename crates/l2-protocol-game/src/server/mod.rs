@@ -98,6 +98,7 @@ pub mod pledge;
 pub mod recipe;
 pub mod refine;
 pub mod regen;
+pub mod residence;
 pub mod shop;
 pub mod siege;
 pub mod skills;
@@ -197,6 +198,7 @@ pub use refine::{
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 pub use regen::ExRegenMax;
+pub use residence::AgitDecoInfo;
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use siege::{
     CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,

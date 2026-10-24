@@ -193,13 +193,29 @@ impl World {
         self.send(id, &skills);
         self.notify_clan_members(clan_id, id);
         self.notify_sponsor_or_apprentice(id);
-        // Clan hall payment, sieges, fortress sieges, siegable halls: M7.
+        // The clan hall payment (M7-RES-01): an auctionable hall of the clan that is not paid.
+        if let Some(hall) = self
+            .auctionable_hall_by_owner(clan_id)
+            .and_then(|hall| self.clan_hall(hall))
+            .filter(|hall| !hall.paid())
+        {
+            let message = SystemMessage::new(
+                SystemMessageId::PaymentForYourClanHallHasNotBeenMadePleaseMakePaymentToYourClanWarehouseByS1Tomorrow,
+            )
+            .with(SystemMessageParam::IntNumber(hall.lease()));
+            self.send(id, &message);
+        }
+        // Sieges, fortress sieges, siegable halls: M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01.
         self.send_pledge_show_member_list_all(clan_id, id);
         if let Some(clan) = self.clan(clan_id) {
             let status = Self::pledge_status_changed(clan);
             self.send(id, &status);
         }
-        // Residential skills of a castle or fortress: M7.
+        // Residential skills support (M7-RES-01). The `SkillList` of the end of `EnterWorld` is
+        // sent from the saved skills, so the client gets these with a second one.
+        if self.give_clan_residential_skills(clan_id, id) {
+            self.send_skill_list(id);
+        }
     }
 
     /// Java `EnterWorld.notifyClanMembers`.
@@ -429,7 +445,15 @@ impl World {
                 sponsor: 0,
             });
         }
-        // M7: `REMOVE_CASTLE_CIRCLETS` (`CastleManager.removeCirclet`).
+        // `REMOVE_CASTLE_CIRCLETS` (`CastleManager.removeCirclet`, M7-RES-01). An offline member's
+        // rows follow the rest of the leave (`write_db`).
+        if self.residences.settings.remove_castle_circlets {
+            let castle_id = self.clan(clan_id).map_or(0, |c| c.castle_id);
+            let online = ex_member.has_player && self.players.contains_key(&object_id);
+            if online || write_db {
+                self.remove_member_circlet_of_ex_member(object_id, castle_id, online);
+            }
+        }
 
         let online = ex_member.has_player && self.players.contains_key(&object_id);
         if online {
@@ -447,8 +471,10 @@ impl World {
                     s.clan_create_expiry_time = unix_ms_now().saturating_add(days_ms(create_days));
                 }
             }
-            // Remove Clan skills from Player; M7: residential skills.
+            // Remove Clan skills from Player.
             self.clan_remove_skill_effects(clan_id, object_id);
+            // Remove Residential skills (M7-RES-01).
+            self.remove_clan_residential_skills(clan_id, object_id);
             self.send_skill_list(object_id);
             self.leave_clan_state(object_id);
             // NOTE(java-quirk): "Players leaving from clan academy have no penalty" reads

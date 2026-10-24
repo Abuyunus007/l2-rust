@@ -299,6 +299,12 @@ pub enum WorldCommand {
         clan_id: i32,
         result: Result<Vec<crate::player::ItemData>, ()>,
     },
+    /// The answer to `PersistCommand::ResidenceRereadRequest`: the residence's rows, or `Err` when
+    /// the read failed (the follow-up `then` is then refused, M7-RES-01).
+    ResidenceReread {
+        result: Result<crate::residence::ResidenceRereadRows, ()>,
+        then: crate::residence::ResidenceReadThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -366,6 +372,11 @@ impl fmt::Debug for WorldCommand {
             } => write!(
                 f,
                 "ClanWarehouseLoaded({player}, {clan_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::ResidenceReread { result, then } => write!(
+                f,
+                "ResidenceReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

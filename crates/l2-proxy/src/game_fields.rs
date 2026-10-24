@@ -90,6 +90,7 @@ use l2_protocol_game::server::refine::{
     ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
+use l2_protocol_game::server::residence::AgitDecoInfo;
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::siege::{
     ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
@@ -709,6 +710,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::AgitDecoInfo => decoded::<AgitDecoInfo>(&mut r, agit_deco_info_fields),
         ServerOpcode::ChooseInventoryItem => {
             decoded::<ChooseInventoryItem>(&mut r, choose_inventory_item_fields)
         }
@@ -1980,6 +1982,10 @@ fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
 
+fn agit_deco_info_fields(p: &AgitDecoInfo) -> Value {
+    object!(p => hall_id, fireplace, carpet_statue, chandelier, mirror, crystal, curtain, magic_curtain, flag, front_platform, item_create)
+}
+
 fn duel_ask_start_fields(p: &ExDuelAskStart) -> Value {
     object!(p => requestor_name, party_duel)
 }
@@ -2436,6 +2442,7 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::AgitDecoInfo,
         ServerOpcode::ChooseInventoryItem,
         ServerOpcode::EnchantResult,
         ServerOpcode::ExPutEnchantTargetItemResult,
@@ -2529,6 +2536,21 @@ mod tests {
 
     fn c2s_fields(state: ConnectionState, bytes: &[u8]) -> Value {
         c2s(state, bytes).expect("the packet has fields")
+    }
+
+    #[test]
+    fn agit_deco_info_shows_its_fields() {
+        let packet = AgitDecoInfo {
+            hall_id: 36,
+            fireplace: 2,
+            mirror: 1,
+            ..AgitDecoInfo::default()
+        };
+        let fields = s2c_fields(&packet.to_bytes());
+        assert_eq!(fields["hall_id"], 36);
+        assert_eq!(fields["fireplace"], 2);
+        assert_eq!(fields["mirror"], 1);
+        assert_eq!(fields["item_create"], 0);
     }
 
     #[test]
