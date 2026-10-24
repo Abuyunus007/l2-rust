@@ -1,6 +1,7 @@
 //! Class skill trees, reduced to what character creation needs: skill id, skill level, the level a
 //! skill is learned at and its auto-learn flags. Skill definitions and effects are not loaded here.
-//! The clan trees (`pledgeSkillTree`, `subPledgeSkillTree`) are kept too (M6-CLAN-03).
+//! The clan trees (`pledgeSkillTree`, `subPledgeSkillTree`) are kept too (M6-CLAN-03), and the
+//! fishing tree (`fishingSkillTree`, M6-FU-10).
 //!
 //! Java: `gameserver/data/xml/SkillTreeData.java` (`classSkillTree` parsing, the parent class chain,
 //! `getCompleteClassSkillTree`, `getAvailableSkills`) and `network/clientpackets/CharacterCreate.java`
@@ -126,6 +127,8 @@ pub struct SkillTrees {
     pledge: Vec<SkillLearn>,
     /// Java `_subPledgeSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     sub_pledge: Vec<SkillLearn>,
+    /// Java `_fishingSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    fishing: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -158,6 +161,16 @@ impl SkillTrees {
             ),
         );
         log_loaded(Self::LOADER, gathered.sub_pledge.len(), "sub-pledge skills");
+        let dwarven_only = gathered
+            .fishing
+            .values()
+            .filter(|l| l.races.contains(&Race::Dwarf))
+            .count();
+        log_loaded(
+            Self::LOADER,
+            gathered.fishing.len(),
+            &format!("fishing skills, {dwarven_only} Dwarven only fishing skills"),
+        );
         Self::build(gathered)
     }
 
@@ -183,6 +196,8 @@ impl SkillTrees {
             pledge_order,
             sub_pledge,
             sub_pledge_order,
+            fishing,
+            fishing_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -221,6 +236,7 @@ impl SkillTrees {
             java_order,
             pledge: in_java_order(pledge, pledge_order),
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
+            fishing: in_java_order(fishing, fishing_order),
         }
     }
 
@@ -280,6 +296,20 @@ impl SkillTrees {
     /// Java `getSubPledgeSkillTree().values()`: the squad skills, in Java's map order.
     pub fn sub_pledge_skills(&self) -> &[SkillLearn] {
         &self.sub_pledge
+    }
+
+    /// Java `getFishingSkillTree().values()`: the fishing skills, in the order of Java's
+    /// `ConcurrentHashMap` (`getAvailableFishingSkills` follows it, so the list the fisherman
+    /// shows).
+    pub fn fishing_skills(&self) -> &[SkillLearn] {
+        &self.fishing
+    }
+
+    /// Java `getFishingSkill(id, level)`.
+    pub fn fishing_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.fishing
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
     }
 
     /// Java `getPledgeSkill(id, level)`.
@@ -446,6 +476,9 @@ struct Gathered {
     /// Java `_subPledgeSkillTree` and the keys in the order they were first put.
     sub_pledge: BTreeMap<(i32, i32), SkillLearn>,
     sub_pledge_order: Vec<(i32, i32)>,
+    /// Java `_fishingSkillTree` and the keys in the order they were first put.
+    fishing: BTreeMap<(i32, i32), SkillLearn>,
+    fishing_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -462,12 +495,16 @@ impl Gathered {
                     }
                 }
             }
-            // The clan trees are kept for the clan trainers (M6-CLAN-03).
-            if tree.kind == "pledgeSkillTree" || tree.kind == "subPledgeSkillTree" {
-                let (map, order) = if tree.kind == "pledgeSkillTree" {
-                    (&mut self.pledge, &mut self.pledge_order)
-                } else {
-                    (&mut self.sub_pledge, &mut self.sub_pledge_order)
+            // The clan trees are kept for the clan trainers (M6-CLAN-03), the fishing tree for the
+            // fishermen (M6-FU-10).
+            if matches!(
+                tree.kind.as_str(),
+                "pledgeSkillTree" | "subPledgeSkillTree" | "fishingSkillTree"
+            ) {
+                let (map, order) = match tree.kind.as_str() {
+                    "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
+                    "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
+                    _ => (&mut self.fishing, &mut self.fishing_order),
                 };
                 for skill in tree.skills {
                     let learn = skill.into_learn();
@@ -478,7 +515,7 @@ impl Gathered {
                 }
                 continue;
             }
-            // Only class and clan trees are kept. Other trees (transfer, fishing, ...) are not M2 data.
+            // Only class, clan and fishing trees are kept. Other trees (transfer, collect, ...) are not loaded.
             if tree.kind != "classSkillTree" {
                 continue;
             }
@@ -968,6 +1005,48 @@ mod tests {
         assert!(trees.pledge_skill(611, 1).is_none());
         assert!(trees.is_clan_skill(370, 1) && trees.is_clan_skill(611, 1));
         assert!(!trees.is_clan_skill(370, 2));
+    }
+
+    #[test]
+    fn fishing_tree_is_kept_with_races_items_and_java_order() {
+        let xml = r#"<list>
+			<skillTree type="fishingSkillTree">
+				<skill skillName="Fishing" skillId="1312" skillLevel="1" getLevel="1" learnedByNpc="true">
+					<item id="57" count="1000" />
+				</skill>
+				<skill skillName="Expand Dwarven Craft" skillId="1368" skillLevel="1" getLevel="5" learnedByNpc="true">
+					<race>DWARF</race>
+					<item id="7609" count="2000" />
+				</skill>
+				<skill skillName="Expertise" skillId="1315" skillLevel="1" getLevel="1" learnedByNpc="true" />
+			</skillTree>
+		</list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        // The class part is untouched.
+        assert!(trees.is_empty());
+        assert_eq!(trees.fishing_skills().len(), 3);
+        let dwarven = trees.fishing_skill(1368, 1).unwrap();
+        assert_eq!(dwarven.races, vec![Race::Dwarf]);
+        assert_eq!(
+            dwarven.required_items,
+            vec![SkillLearnItem {
+                item_id: 7609,
+                count: 2000
+            }]
+        );
+        assert!(trees.fishing_skill(1368, 2).is_none());
+        // Worked out by hand, h = id * 1021 + 1 and bin = (h ^ h >>> 16) & 15: 1312 -> 5,
+        // 1368 -> 12, 1315 -> 12 (1368 was put first, so it stays first in the bin).
+        assert_eq!(
+            trees
+                .fishing_skills()
+                .iter()
+                .map(|l| l.skill_id)
+                .collect::<Vec<_>>(),
+            vec![1312, 1368, 1315]
+        );
+        // Clan lookups do not see fishing lines.
+        assert!(!trees.is_clan_skill(1312, 1));
     }
 
     #[test]

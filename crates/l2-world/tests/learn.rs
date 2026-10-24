@@ -387,6 +387,11 @@ impl Scene {
             "data/html/trainer/1101.htm",
             "<html><body><a action=\"bypass -h npc_%objectId%_SkillList\">Learn skills.</a></body></html>",
         );
+        // The page of a fisherman, with its FishSkillList link.
+        write(
+            "data/html/fisherman/1200.htm",
+            "<html><body><a action=\"bypass -h npc_%objectId%_FishSkillList\">Learn fishing skills.</a></body></html>",
+        );
         write(
             "data/html/trainer/1100-noteach.htm",
             "<html><body>Wrong teacher %objectId%.</body></html>",
@@ -1113,6 +1118,313 @@ fn alt_game_skill_learn_shows_a_class_menu_and_charges_more() {
     s.learn(3, 1);
     assert_eq!(s.me().data.sp, 700);
     assert_eq!(skills_of(s.me()), vec![(3, 1)]);
+}
+
+// ------------------------------------------------------------------ the fisherman (M6-FU-10)
+
+/// The fishing tree: Fishing (1312), Fishing Expertise (1315, three levels) and the Dwarven-only
+/// Expand Dwarven Craft (1368), all for adena. Hash order of the keys (`id * 1021 + level`) at 16
+/// bins, worked out by hand with `(h ^ h >>> 16) & 15`: 1312/1 bin 5, 1315/1 bin 12, 1368/1
+/// bin 12 (put after 1315/1), 1315/2 bin 13, 1315/3 bin 14.
+const FISH_TREES: &str = r#"<list>
+<skillTree type="classSkillTree" classId="0" />
+<skillTree type="fishingSkillTree">
+<skill skillName="Fishing" skillId="1312" skillLevel="1" getLevel="1" learnedByNpc="true"><item id="57" count="1000" /></skill>
+<skill skillName="Fishing Expertise" skillId="1315" skillLevel="1" getLevel="1" learnedByNpc="true"><item id="57" count="10" /></skill>
+<skill skillName="Fishing Expertise" skillId="1315" skillLevel="2" getLevel="4" learnedByNpc="true"><item id="57" count="50" /></skill>
+<skill skillName="Fishing Expertise" skillId="1315" skillLevel="3" getLevel="7" learnedByNpc="true"><item id="57" count="200" /></skill>
+<skill skillName="Expand Dwarven Craft" skillId="1368" skillLevel="1" getLevel="5" learnedByNpc="true"><race>DWARF</race><item id="57" count="2000" /></skill>
+</skillTree>
+</list>"#;
+
+const FISHERMAN: i32 = 1200;
+const ADENA: i32 = 57;
+
+fn adena(count: i64) -> ItemData {
+    ItemData {
+        object_id: ObjectId(0x1000_0004),
+        item_id: ADENA,
+        ..token(count)
+    }
+}
+
+fn fish_scene() -> Scene {
+    let npcs = r#"<?xml version="1.0"?><list>
+        <npc id="1200" type="Fisherman" level="10" name="Fisher" usingServerSideName="true"/>
+        <npc id="1100" type="Trainer" level="10" name="Auron" usingServerSideName="true"/></list>"#;
+    let skills = format!(
+        "<list>{}{}{}{}</list>",
+        passive(1312, 1),
+        passive(1315, 3),
+        passive(1368, 1),
+        passive(3, 3)
+    );
+    Scene::build(
+        WorldSettings::default(),
+        Arc::new(SkillTrees::from_xml(FISH_TREES).unwrap()),
+        Arc::new(SkillLearnData::from_xml(SKILL_LEARN).unwrap()),
+        npcs,
+        &skills,
+    )
+}
+
+impl Scene {
+    fn fish_skill_list(&mut self, player: i32, npc: ObjectId) {
+        self.input(
+            player,
+            ClientInput::Bypass {
+                command: format!("npc_{}_FishSkillList", npc.0),
+            },
+        );
+    }
+
+    /// Talks to an existing NPC (its page allows the bypass).
+    fn talk_again(&mut self, player: i32, npc: ObjectId) {
+        for _ in 0..2 {
+            self.input(
+                player,
+                ClientInput::Action {
+                    object_id: npc.0,
+                    action_id: 0,
+                },
+            );
+        }
+    }
+
+    fn fish_info(&mut self, id: i32, level: i32) {
+        self.input(
+            ME,
+            ClientInput::AcquireSkillInfo {
+                id,
+                level,
+                skill_type: AcquireSkillType::Fishing,
+            },
+        );
+    }
+
+    fn fish_learn(&mut self, id: i32, level: i32) {
+        self.input(
+            ME,
+            ClientInput::AcquireSkill {
+                id,
+                level,
+                skill_type: AcquireSkillType::Fishing,
+                sub_type: 0,
+            },
+        );
+    }
+}
+
+fn skill_row(skill_id: i32, skill_level: i32) -> SkillData {
+    SkillData {
+        skill_id,
+        skill_level,
+    }
+}
+
+/// The fisherman lists the level 1 lines the player's level reaches, type FISHING, with the
+/// tree's SP (0) and 1 as the last value; the Dwarven-only line is not shown to a human.
+#[test]
+fn the_fisherman_lists_the_fishing_skills_of_the_players_race() {
+    let mut s = fish_scene();
+    s.enter(player_data(ME, 10, 0));
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.log.take();
+
+    s.fish_skill_list(ME, npc);
+    let sent = s.log.take();
+    let shown = lists(&sent);
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].skill_type, AcquireSkillType::Fishing);
+    // 1312/1 (bin 5) and 1315/1 (bin 12); the Dwarven line is skipped.
+    assert_eq!(entries(&shown[0]), vec![(1312, 1, 1, 0, 1), (1315, 1, 1, 0, 1)]);
+
+    // A Dwarf (class 53) also sees Expand Dwarven Craft, after 1315/1 in the same bin.
+    let mut dwarf = player_data(MAGE, 10, 0);
+    dwarf.class_id = 53;
+    dwarf.base_class = 53;
+    s.enter(dwarf);
+    s.talk_again(MAGE, npc);
+    s.log.take();
+    s.fish_skill_list(MAGE, npc);
+    let list: Vec<AcquireSkillList> = decoded(&s.log.take(), MAGE, "ACQUIRE_SKILL_LIST");
+    assert_eq!(
+        entries(&list[0]),
+        vec![(1312, 1, 1, 0, 1), (1315, 1, 1, 0, 1), (1368, 1, 1, 0, 1)]
+    );
+}
+
+/// With nothing on offer the fisherman says at which level to come back, or that there is
+/// nothing more; a known skill offers its next level at the player's level.
+#[test]
+fn the_fisherman_says_when_to_come_back_or_that_there_is_nothing_more() {
+    let mut s = fish_scene();
+    let mut data = player_data(ME, 1, 0);
+    data.skills = vec![skill_row(1312, 1), skill_row(1315, 1)];
+    s.enter(data);
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.log.take();
+
+    // Level 1: Fishing Expertise 2 needs level 4, the lowest level above the player's.
+    s.fish_skill_list(ME, npc);
+    let sent = s.log.take();
+    assert!(lists(&sent).is_empty());
+    let messages = messages(&sent, ME);
+    assert_eq!(
+        messages[0].id,
+        SystemMessageId::YouDoNotHaveAnyFurtherSkillsToLearnComeBackWhenYouHaveReachedLevelS1
+    );
+    assert_eq!(messages[0].params, vec![SystemMessageParam::IntNumber(4)]);
+
+    // Level 4: the next level is on offer.
+    assert!(s.world.add_level(ObjectId(ME), 3));
+    s.log.take();
+    s.fish_skill_list(ME, npc);
+    let shown = lists(&s.log.take());
+    assert_eq!(entries(&shown[0]), vec![(1315, 2, 2, 0, 1)]);
+
+    // Level 20 with everything a human can learn: no line is above his level, so nothing more.
+    let mut done = player_data(MAGE, 20, 0);
+    done.skills = vec![skill_row(1312, 1), skill_row(1315, 3)];
+    s.enter(done);
+    s.talk_again(MAGE, npc);
+    s.log.take();
+    s.fish_skill_list(MAGE, npc);
+    let sent = s.log.take();
+    assert_eq!(
+        message_ids(&sent, MAGE),
+        vec![SystemMessageId::ThereAreNoOtherSkillsToLearn]
+    );
+}
+
+/// `AcquireSkillInfo` of a fishing line: the plain constructor (SP of the tree, every item).
+#[test]
+fn the_info_of_a_fishing_skill_lists_its_items() {
+    let mut s = fish_scene();
+    s.enter(player_data(ME, 10, 0));
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.fish_skill_list(ME, npc);
+    s.log.take();
+
+    s.fish_info(1312, 1);
+    let infos: Vec<AcquireSkillInfo> = decoded(&s.log.take(), ME, "ACQUIRE_SKILL_INFO");
+    assert_eq!(infos.len(), 1);
+    assert_eq!(infos[0].skill_type, AcquireSkillType::Fishing);
+    assert_eq!(
+        (infos[0].skill_id, infos[0].level, infos[0].sp_cost),
+        (1312, 1, 0)
+    );
+    assert_eq!(
+        infos[0].requirements,
+        vec![AcquireSkillRequirement::item(ADENA, 1000)]
+    );
+
+    // Not in the fishing tree (a class skill, a missing level): nothing.
+    s.fish_info(3, 1);
+    s.fish_info(1312, 2);
+    assert!(s.log.take().is_empty());
+}
+
+/// Learning Fishing: the adena is taken, the skill is added with its row, the list is shown again
+/// (the fisherman's, not a class list).
+#[test]
+fn learning_a_fishing_skill_takes_the_adena_and_stores_the_row() {
+    let mut s = fish_scene();
+    let mut data = player_data(ME, 10, 0);
+    data.items = vec![adena(1500)];
+    s.enter(data);
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.fish_skill_list(ME, npc);
+    s.log.take();
+
+    s.fish_learn(1312, 1);
+    s.ticks(10);
+    let sent = s.log.take();
+    assert_eq!(skills_of(s.me()), vec![(1312, 1)]);
+    assert_eq!(s.persisted.skill_changes(), vec![(vec![(1312, 1)], vec![])]);
+    assert_eq!(
+        s.me()
+            .data
+            .items
+            .iter()
+            .map(|i| (i.item_id, i.count))
+            .collect::<Vec<_>>(),
+        vec![(ADENA, 500)]
+    );
+    // The adena goes (S1_ADENA_DISAPPEARED), then the earned message.
+    assert_eq!(
+        message_ids(&sent, ME),
+        vec![
+            SystemMessageId::S1AdenaDisappeared,
+            SystemMessageId::YouHaveEarnedS12
+        ]
+    );
+    // The fisherman's list again: Expertise 1 (the Fishing line is learned).
+    let shown = lists(&sent);
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].skill_type, AcquireSkillType::Fishing);
+    assert_eq!(entries(&shown[0]), vec![(1315, 1, 1, 0, 1)]);
+    assert!(names(&sent, ME).contains(&"ACQUIRE_SKILL_DONE".to_owned()));
+    assert!(names(&sent, ME).contains(&"SKILL_LIST".to_owned()));
+
+    // The same level again is ignored.
+    s.persisted.clear();
+    s.fish_learn(1312, 1);
+    assert!(s.persisted.skill_changes().is_empty());
+}
+
+/// Not enough adena: the message, the list again, nothing taken and nothing learned.
+#[test]
+fn a_fishing_skill_without_the_adena_is_refused() {
+    let mut s = fish_scene();
+    let mut data = player_data(ME, 10, 0);
+    data.items = vec![adena(999)];
+    s.enter(data);
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.fish_skill_list(ME, npc);
+    s.log.take();
+
+    s.fish_learn(1312, 1);
+    let sent = s.log.take();
+    assert_eq!(
+        message_ids(&sent, ME),
+        vec![SystemMessageId::YouDoNotHaveTheNecessaryMaterialsOrPrerequisitesToLearnThisSkill]
+    );
+    assert_eq!(names(&sent, ME), vec!["SYSTEM_MESSAGE", "ACQUIRE_SKILL_LIST"]);
+    assert!(skills_of(s.me()).is_empty());
+    assert_eq!(s.me().data.items[0].count, 999);
+    assert!(s.persisted.skill_changes().is_empty());
+}
+
+/// A level beyond the player's: the level requirement is checked, and the previous level must be
+/// known.
+#[test]
+fn the_fishing_level_and_the_previous_level_are_checked() {
+    let mut s = fish_scene();
+    let mut data = player_data(ME, 3, 0);
+    data.items = vec![adena(10_000)];
+    data.skills = vec![skill_row(1315, 1)];
+    s.enter(data);
+    let npc = s.talk_to(ME, FISHERMAN);
+    s.fish_skill_list(ME, npc);
+    s.log.take();
+
+    // Level 2 needs character level 4.
+    s.fish_learn(1315, 2);
+    let sent = s.log.take();
+    assert_eq!(
+        message_ids(&sent, ME),
+        vec![SystemMessageId::YouDoNotMeetTheSkillLevelRequirements]
+    );
+    // Level 3 skips a level.
+    s.fish_learn(1315, 3);
+    let sent = s.log.take();
+    assert_eq!(
+        message_ids(&sent, ME),
+        vec![SystemMessageId::ThePreviousLevelSkillHasNotBeenLearned]
+    );
+    assert_eq!(skills_of(s.me()), vec![(1315, 1)]);
+    assert_eq!(s.me().data.items[0].count, 10_000);
 }
 
 // ------------------------------------------------------------------ the real datapack
