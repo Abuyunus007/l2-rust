@@ -299,7 +299,7 @@ const COMMANDS: &[&str] = &[
     "tele",
     "evolve",
     "Chat",
-    "ClanWarehouse",
+    "DepositC",
 ];
 
 fn page_text(file: &str) -> String {
@@ -2531,16 +2531,162 @@ fn the_manager_keeps_the_clan_warehouse() {
     s.talk(P3, manager);
     s.talk(P1, manager);
     s.take();
-    s.bypass(P1, manager, "ClanWarehouse DepositC");
+    s.bypass(P1, manager, "DepositC");
     assert!(
         !s.take()
             .iter()
             .any(|o| matches!(o, Out::Persist(PersistCommand::ClanWarehouseRequest { .. })))
     );
-    s.bypass(P3, manager, "ClanWarehouse DepositC");
+    s.bypass(P3, manager, "DepositC");
     let out = s.take();
     assert!(out.iter().any(|o| matches!(
         o,
         Out::Persist(PersistCommand::ClanWarehouseRequest { clan_id: WOLVES, .. })
     )));
+}
+
+/// A hall the Java game server gave to a clan (read again, D-50) starts its rent here too, as
+/// `new AuctionableHall(set)` does; a hall that went back to nobody stops paying.
+#[test]
+fn a_hall_read_again_with_an_owner_starts_its_rent() {
+    let mut s = Scene::new(true);
+    s.load(vec![hall(39, 0, 100_000, 1, 0, false)], vec![]);
+    s.run_ms(100);
+    s.take();
+    let record = ClanHallRecord {
+        owner_id: LIONS,
+        paid_until: now_ms() - 10,
+        paid: true,
+        ..hall(39, 0, 100_000, 1, 0, true)
+    };
+    s.world.handle(WorldCommand::ResidenceReread {
+        result: Ok(ResidenceRereadRows::ClanHall(record)),
+        then: ResidenceReadThen::Nothing,
+    });
+    s.take();
+    s.run_ms(100);
+    let out = s.take();
+    assert_eq!(s.world.clan_hall(ClanHallId(39)).unwrap().owner_id, LIONS);
+    assert_eq!(warehouse_adena(&s, LIONS), 0);
+    assert!(residence_writes(&out).iter().any(|w| matches!(
+        w,
+        ResidenceWrite::ClanHall {
+            hall_id: 39,
+            paid: true,
+            ..
+        }
+    )));
+    // Back to nobody: the task finds a free hall and ends without charging.
+    s.world.handle(WorldCommand::ResidenceReread {
+        result: Ok(ResidenceRereadRows::ClanHall(hall(39, 0, 100_000, 1, 0, false))),
+        then: ResidenceReadThen::Nothing,
+    });
+    s.take();
+    s.run_ms(1000);
+    assert!(residence_writes(&s.take()).is_empty());
+}
+
+/// `RequestAllAgitInfo`: every auctionable hall by id with its owner clan and the clan's leader;
+/// the flag is `grade < 1`.
+#[test]
+fn the_clan_hall_list_names_the_owners() {
+    use l2_protocol_game::server::ExShowAgitInfo;
+    let (mut s, _) = auction_scene(true);
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(P2).unwrap()),
+        input: ClientInput::AllAgitInfo,
+    });
+    let out = s.take();
+    let packets = packets_to(&out, P2, "EX_SHOW_AGIT_INFO");
+    assert_eq!(packets.len(), 1);
+    let list: ExShowAgitInfo = decode(&packets[0]);
+    let halls: Vec<(i32, &str, &str, bool)> = list
+        .halls
+        .iter()
+        .map(|h| {
+            (
+                h.hall_id,
+                h.owner_clan_name.as_str(),
+                h.leader_name.as_str(),
+                h.grade_below_one,
+            )
+        })
+        .collect();
+    // Hall 36 (grade 2) is the Wolves'; hall 39 (grade 1) is for sale.
+    assert_eq!(halls, [(36, "Wolves", "P3", false), (39, "", "", false)]);
+}
+
+// ---------------------------------------------------------------------------------- real pages
+
+/// The datapack's pages (skipped without it): the links the code builds and the ones it replaces
+/// in the pages are the ones the client sends, so the bypass validation lets the commands through.
+const DIST_GAME: &str = r"C:\l2-rust\l2jmobius\dist\game";
+
+/// Installs the datapack's html; `false` (with a printed note) when it is not there.
+fn real_pages(s: &mut Scene) -> bool {
+    let root = std::path::Path::new(DIST_GAME);
+    if !root.join("data/html/auction/AgitBid1.htm").is_file() {
+        eprintln!("skipped: the datapack pages are not at {DIST_GAME}");
+        return false;
+    }
+    s.world.set_html_cache(Arc::new(HtmCache::load(root, false)));
+    true
+}
+
+#[test]
+fn the_real_auction_pages_lead_to_a_bid() {
+    let (mut s, npc) = auction_scene(true);
+    if !real_pages(&mut s) {
+        return;
+    }
+    s.talk(P2, npc);
+    assert!(last_page(&s.take(), P2).contains("selectedItems"));
+    s.bypass(P2, npc, "list");
+    assert!(last_page(&s.take(), P2).contains("Auction 39"));
+    s.bypass(P2, npc, "bidding 39");
+    let page = last_page(&s.take(), P2);
+    assert!(page.contains("Description of hall 39"), "{page}");
+    s.bypass(P2, npc, "bid1 39");
+    let page = last_page(&s.take(), P2);
+    assert!(page.contains("100000") && page.contains("1000"), "{page}");
+    // The bid button: `npc_%objectId%_bid $bidprice` became `npc_<id>_bid 39 $bidprice`.
+    s.bypass(P2, npc, "bid 39 1500");
+    assert!(s.take().iter().any(|o| matches!(
+        o,
+        Out::Persist(PersistCommand::ResidenceRereadRequest {
+            then: ResidenceReadThen::AuctionBid { bid: 1500, .. },
+            ..
+        })
+    )));
+}
+
+#[test]
+fn the_real_chamberlain_pages_lead_to_a_purchase() {
+    let (mut s, manager, _) = hall_scene(true, vec![]);
+    if !real_pages(&mut s) {
+        return;
+    }
+    s.talk(P3, manager);
+    assert!(last_page(&s.take(), P3).contains("Clan hall managment"));
+    s.bypass(P3, manager, "manage");
+    assert!(last_page(&s.take(), P3).contains("Manage Clan Hall"));
+    s.bypass(P3, manager, "manage recovery");
+    let page = last_page(&s.take(), P3);
+    assert!(
+        page.contains(&format!("npc_{}_manage recovery edit_hp 80", manager.0)),
+        "{page}"
+    );
+    s.bypass(P3, manager, "manage recovery edit_hp 80");
+    let page = last_page(&s.take(), P3);
+    // The OK button of the page: `manage %apply%`.
+    assert!(
+        page.contains(&format!("npc_{}_manage recovery hp 80", manager.0)),
+        "{page}"
+    );
+    s.bypass(P3, manager, "manage recovery hp 80");
+    assert!(
+        s.world
+            .residence_function(ResidenceRef::ClanHall(ClanHallId(36)), 3)
+            .is_some()
+    );
 }

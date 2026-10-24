@@ -1141,6 +1141,8 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestAllAgitInfo
+            ClientPacket::RequestAllAgitInfo(_) => ClientInput::AllAgitInfo,
             ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },
             ClientPacket::RequestAnswerFriendInvite(p) => {
                 ClientInput::AnswerFriendInvite { response: p.response }

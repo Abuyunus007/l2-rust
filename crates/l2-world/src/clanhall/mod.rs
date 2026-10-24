@@ -18,6 +18,7 @@
 // - `manager.rs`: the `ClanHallManager` NPC.
 // - `doorman.rs`: the `ClanHallDoorman` NPC.
 // - `functions.rs`: the regeneration factors of the hall functions and the exp of a resurrection.
+// - this file: the settings, the timers and the list of the halls (`RequestAllAgitInfo`).
 //
 // # Side by side with the Java game server (D-39, D-49, D-50, D-51)
 // - Global writes of a scheduled job go out only with `SiegeDatabaseWrites` ([`World::siege_write`]):
@@ -169,5 +170,37 @@ impl World {
             _ => return false,
         }
         true
+    }
+}
+
+impl World {
+    /// Java `RequestAllAgitInfo.runImpl`: `ExShowAgitInfo`, the auctionable halls by id with their
+    /// owner clan and its leader.
+    pub(crate) fn on_request_all_agit_info(&mut self, id: ObjectId) {
+        if !self.players.contains_key(&id) {
+            return;
+        }
+        let halls = self
+            .clan_halls()
+            .filter(|h| !h.is_siegable_hall())
+            .map(|h| {
+                // `getClan(ownerId).getName()` throws for a clan that is gone; the line is empty.
+                let (owner_clan_name, leader_name) = if h.owner_id <= 0 {
+                    (String::new(), String::new())
+                } else {
+                    self.clan(h.owner_id).map_or_else(
+                        || (String::new(), String::new()),
+                        |clan| (clan.name.clone(), auction::leader_name_of(clan)),
+                    )
+                };
+                l2_protocol_game::server::AgitInfo {
+                    hall_id: h.id.0,
+                    owner_clan_name,
+                    leader_name,
+                    grade_below_one: h.grade() < 1,
+                }
+            })
+            .collect();
+        self.send(id, &l2_protocol_game::server::ExShowAgitInfo { halls });
     }
 }

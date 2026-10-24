@@ -1120,6 +1120,66 @@ mod auction {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Clan halls
+// ---------------------------------------------------------------------------------------------
+
+mod clan_hall {
+    use super::*;
+    use l2_protocol_game::client::RequestAllAgitInfo;
+    use l2_protocol_game::server::residence::{AgitInfo, ExShowAgitInfo};
+
+    #[test]
+    fn the_list_request_is_the_bare_ex_opcode() {
+        check_round_trip(
+            &RequestAllAgitInfo,
+            &Bytes::default().byte(0xD0).short(0x3E).done(),
+            3,
+        );
+    }
+
+    #[test]
+    fn clan_hall_list_matches_java_layout() {
+        // Java: count, then per hall the id, the owner clan, its leader and `grade < 1` as an int.
+        let packet = ExShowAgitInfo {
+            halls: vec![
+                AgitInfo {
+                    hall_id: 22,
+                    owner_clan_name: String::new(),
+                    leader_name: String::new(),
+                    grade_below_one: true,
+                },
+                AgitInfo {
+                    hall_id: 36,
+                    owner_clan_name: "Wolves".into(),
+                    leader_name: "Fenrir".into(),
+                    grade_below_one: false,
+                },
+            ],
+        };
+        let expected = Bytes::default()
+            .byte(0xFE)
+            .short(0x16)
+            .int(2)
+            .int(22)
+            .string("")
+            .string("")
+            .int(1)
+            .int(36)
+            .string("Wolves")
+            .string("Fenrir")
+            .int(0)
+            .done();
+        check_round_trip(&packet, &expected, 3);
+        // No hall at all.
+        check_round_trip(
+            &ExShowAgitInfo::default(),
+            &Bytes::default().byte(0xFE).short(0x16).int(0).done(),
+            3,
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 // Dispatch
 // ---------------------------------------------------------------------------------------------
 
@@ -1160,6 +1220,8 @@ mod dispatch {
         dispatches(&p, ClientPacket::RequestConfirmSiegeWaitingList(p.clone()));
         let p = RequestAllFortressInfo;
         dispatches(&p, ClientPacket::RequestAllFortressInfo(p));
+        let p = RequestAllAgitInfo;
+        dispatches(&p, ClientPacket::RequestAllAgitInfo(p));
         let p = RequestFortressSiegeInfo;
         dispatches(&p, ClientPacket::RequestFortressSiegeInfo(p));
         let p = RequestFortressMapInfo { fortress_id: 3 };

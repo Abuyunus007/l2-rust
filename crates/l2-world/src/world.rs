@@ -679,6 +679,8 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestAllAgitInfo
+            ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
