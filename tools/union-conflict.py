@@ -12,7 +12,12 @@ for line in open(path, encoding='utf-8').read().split('\n'):
     elif line.startswith('=======') and state == 'ours':
         state = 'theirs'
     elif line.startswith('>>>>>>> ') and state == 'theirs':
-        out.extend(ours + [l for l in theirs if l not in ours])
+        # Drop only repeated declaration lines (`mod x;`, `use ...;`, `pub use ...;`, a Cargo.toml
+        # key): a repeated `}` or `];` closes code that both sides need.
+        def is_decl(l):
+            t = l.strip()
+            return (t.endswith(';') and (t.startswith(('mod ', 'pub mod ', 'use ', 'pub use ', 'pub(crate) mod ', 'pub(crate) use ')))) or ('=' in t and not t.startswith(('//', '#', '}', ')', ']')) and path.endswith('.toml'))
+        out.extend(ours + [l for l in theirs if not (l in ours and is_decl(l))])
         state = None
     elif state == 'ours':
         ours.append(line)
