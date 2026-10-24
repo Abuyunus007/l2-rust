@@ -315,6 +315,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | merged |
 | [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | merged |
 | [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
+| [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
 
@@ -336,9 +337,9 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | in-progress |
 | [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | ready (refined when deps merge) |
 | [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | in-progress |
-| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | in-progress |
+| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | merged |
 | [M7-CHSIEGE-01](M7/M7-CHSIEGE-01.md) | Conquerable clan hall sieges | sonnet | full | CH-01, SIEGE-01 | ready (refined when deps merge) |
-| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | in-progress |
+| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | merged |
 | [M7-TW-01](M7/M7-TW-01.md) | Territory War | opus | full | SIEGE-01 | ready (refined when deps merge) |
 | [M7-ADMIN-06](M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, FORT-01, CH-01 | ready (refined when deps merge) |

@@ -46,10 +46,11 @@
 //   `midVictory`, siege skills, siege guards, merc tickets, door and trap upgrades): M7-SIEGE-01,
 //   M7-CHSIEGE-01 (the fortress siege itself is in `fort/`) (`// M7-SIEGE-01:` and friends).
 // - (done in `fort/`, M7-FORT-01) `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts.
-// - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01.
+// - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01 (`clanhall/`, done).
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
-// - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`):
-//   M7-MANOR-01. The territory ward skills of a castle (`TerritoryWarManager`): M7-TW-01.
+// - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
+//   `manor/lists.rs` (M7-MANOR-01). The territory ward skills of a castle
+//   (`TerritoryWarManager`): M7-TW-01.
 // - The restart points of the residences (`MapRegionData.getTeleToLocation` with a castle, fort
 //   or clan hall): the death and respawn wire-ins of M7-SIEGE-01.
 // - Seven Signs' `CastleManager.validateTaxes` (M8).
@@ -284,6 +285,9 @@ pub enum ResidenceWrite {
     DeleteCirclets { owner_id: i32, item_id: i32 },
     /// The fortress siege tables and the blood oath count (M7-FORT-01, `fort/`).
     FortSiege(crate::fort::FortSiegeWrite),
+    /// A write of the clan hall auction tables (`auction`, `auction_bid`, `clan_data.
+    /// auction_bid_at`), see `clanhall/` (M7-CH-01).
+    ClanHallAuction(crate::clanhall::AuctionWrite),
 }
 
 impl World {

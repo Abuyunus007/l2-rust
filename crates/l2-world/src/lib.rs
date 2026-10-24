@@ -18,6 +18,7 @@ pub mod bot_report;
 pub mod bypass;
 pub mod chat;
 pub mod clan;
+pub mod clanhall;
 pub mod combat;
 pub mod command;
 pub mod craft;
@@ -41,6 +42,7 @@ pub mod inventory;
 pub mod item_ops;
 pub mod leave;
 pub mod mail;
+pub mod manor;
 pub mod mount;
 pub mod movement;
 pub mod multisell;
@@ -83,6 +85,9 @@ pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
+pub use clanhall::{
+    AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
+};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use craft::{
@@ -117,6 +122,10 @@ pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
 pub use l2_util::{ObjectId, WorldRng};
 pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};
+pub use manor::{
+    CropProcure, ManorInput, ManorLoad, ManorMode, ManorProcureRow, ManorProductionRow, ManorSettings,
+    ManorTimer, ManorWrite, SeedProduction,
+};
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
 };

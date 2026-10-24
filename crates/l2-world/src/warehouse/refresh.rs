@@ -28,6 +28,10 @@ pub(crate) enum PendingClanWindow {
     /// `SendWareHouseWithDrawList` on the clan warehouse: the packet waits for the rows and then
     /// runs on the refreshed container.
     WithdrawPacket(Vec<WarehouseListEntry>),
+    /// A clan hall auction bid takes its adena from the clan warehouse (M7-CH-01).
+    AuctionBid { auction_id: i32, bid: i64 },
+    /// A cancelled bid gives 90% of its adena back to the clan warehouse (M7-CH-01).
+    AuctionCancelBid { auction_id: i32 },
 }
 
 impl World {
@@ -81,6 +85,12 @@ impl World {
             PendingClanWindow::Withdraw(sorted) => self.show_clan_withdraw_window(player, sorted),
             PendingClanWindow::Deposit => self.show_clan_deposit_window(player, clan_id),
             PendingClanWindow::WithdrawPacket(items) => self.warehouse_withdraw(player, items, true),
+            PendingClanWindow::AuctionBid { auction_id, bid } => {
+                self.auction_set_bid(player, auction_id, bid);
+            }
+            PendingClanWindow::AuctionCancelBid { auction_id } => {
+                self.auction_cancel_bid(player, auction_id);
+            }
         }
     }
 }

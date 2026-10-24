@@ -478,8 +478,11 @@ impl World {
 
         // Stop movement when trying to talk to a moving NPC: NPCs do not move before M4.
         // Open a chat window on client with the text of the Npc. `ON_NPC_FIRST_TALK` and
-        // `ON_NPC_QUEST_START` are script listeners (D-05).
-        self.show_chat_window_default(npc, player);
+        // `ON_NPC_QUEST_START` are script listeners (D-05): the ones that exist are built in
+        // (`ManorManager`, M7-MANOR-01).
+        if !self.npc_first_talk_on_click(npc, player) {
+            self.show_chat_window_default(npc, player);
+        }
 
         if self.settings.player_movement_block_time_ms > 0 {
             self.update_not_move_until(player);

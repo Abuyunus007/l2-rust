@@ -41,6 +41,10 @@ pub(crate) enum ItemHandlerKind {
     EnchantAttribute,
     /// `FishShots`: charges a fishing rod (M6-FU-08).
     FishShots,
+    /// `Seed`: sows a manor seed on the target monster (M7-MANOR-01).
+    Seed,
+    /// `Harvester`: harvests the dead monster the player sowed (M7-MANOR-01).
+    Harvester,
 }
 
 impl ItemHandlerKind {
@@ -60,6 +64,8 @@ impl ItemHandlerKind {
             "EnchantScrolls" => Self::EnchantScrolls,
             "EnchantAttribute" => Self::EnchantAttribute,
             "FishShots" => Self::FishShots,
+            "Seed" => Self::Seed,
+            "Harvester" => Self::Harvester,
             _ => return None,
         })
     }
@@ -98,6 +104,8 @@ impl World {
             ItemHandlerKind::EnchantScrolls => self.enchant_scrolls_on_use(id, item),
             ItemHandlerKind::EnchantAttribute => self.enchant_attribute_on_use(id, item),
             ItemHandlerKind::FishShots => self.fish_shots_on_use(id, item, template),
+            ItemHandlerKind::Seed => self.seed_on_use(id, item, template),
+            ItemHandlerKind::Harvester => self.harvester_on_use(id, template),
         }
     }
 

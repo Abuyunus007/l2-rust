@@ -13,6 +13,7 @@ mod pool;
 mod schema;
 
 pub use error::{DbError, Result};
+pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use game::{BotReportDbRow, BotReportRepository};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
@@ -39,6 +40,7 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{ManorRepository, ProcureRow, ProductionRow};
 pub use game::{MessageRepository, MessageRow};
 pub use game::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};

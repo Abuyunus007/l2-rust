@@ -15,8 +15,8 @@
 //
 // # What is left out, with the system that brings it
 // - The community board, `come_here`, `item_` item scripts, `_match`, `_diary`, `_olympiad`,
-//   `manor_menu_select`, `report` (captcha): later cards. They are accepted by the validation
-//   and then only logged.
+//   `report` (captcha): later cards. They are accepted by the validation and then only logged.
+//   `manor_menu_select` is the manor's (`manor/npc.rs`, M7-MANOR-01).
 // - `admin_` commands do not use this registry: they go to the `admin` module
 //   ([`World::admin_command`]), as Java hands them to `AdminCommandHandler`.
 // - The `ON_PLAYER_BYPASS` script event.
@@ -194,7 +194,11 @@ fn chat_handler(world: &mut World, player: ObjectId, command: &str, target: Opti
         .get(5..)
         .and_then(|rest| rest.parse::<i32>().ok())
         .unwrap_or(0);
-    // `ON_NPC_FIRST_TALK` listeners are scripts (D-05).
+    // `ON_NPC_FIRST_TALK` listeners are scripts (D-05): the ones that exist are built in
+    // (`ManorManager`, M7-MANOR-01).
+    if value == 0 && world.npc_first_talk_on_chat(npc, player) {
+        return false;
+    }
     world.show_chat_window(npc, player, value);
     false
 }
@@ -261,10 +265,12 @@ impl World {
         } else if command.starts_with("_match")
             || command.starts_with("_diary")
             || command.starts_with("_olympiad?command")
-            || command.starts_with("manor_menu_select")
-            || command.starts_with("report")
         {
-            debug!("{id}: bypass {command}: heroes, manor and the captcha are not ported yet");
+            debug!("{id}: bypass {command}: heroes and the olympiad are not ported yet");
+        } else if command.starts_with("manor_menu_select") {
+            self.manor_menu_select(id, command);
+        } else if command.starts_with("report") {
+            debug!("{id}: bypass {command}: the captcha is not ported yet");
         } else if let Some(handler) = self.talk.bypass_handlers.get(command) {
             let target = if origin > 0 {
                 self.find_object(ObjectId(origin))
@@ -334,7 +340,21 @@ impl World {
             .and_then(|n| self.npc_world.template(n.npc_id))
             .map(|t| t.npc_type.as_str());
         let (is_teleporter, is_fisherman) = (npc_type == Some("Teleporter"), npc_type == Some("Fisherman"));
-        if is_teleporter {
+        let (is_auctioneer, is_hall_manager, is_hall_doorman) = (
+            npc_type == Some("Auctioneer"),
+            npc_type == Some("ClanHallManager"),
+            npc_type == Some("ClanHallDoorman"),
+        );
+        if is_auctioneer {
+            // Java: Auctioneer.onBypassFeedback (the auction board, `clanhall/auctioneer.rs`).
+            self.auctioneer_bypass_feedback(npc, player, command);
+        } else if is_hall_manager {
+            // Java: ClanHallManager.onBypassFeedback (`clanhall/manager.rs`).
+            self.clan_hall_manager_bypass_feedback(npc, player, command);
+        } else if is_hall_doorman {
+            // Java: ClanHallDoorman.onBypassFeedback (`clanhall/doorman.rs`).
+            self.clan_hall_doorman_bypass_feedback(npc, player, command);
+        } else if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
         } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
             // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).

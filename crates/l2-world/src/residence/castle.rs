@@ -436,7 +436,8 @@ impl World {
             castle.owner_id = owner_id;
         }
         if clan.is_none() {
-            // M7-MANOR-01: `CastleManorManager.getInstance().resetManorData(getResidenceId())`.
+            // Remove owner: the castle loses its manor.
+            self.manor_reset_data(id.0);
         }
         self.siege_write(ResidenceWrite::CastleOwner {
             castle_id: id.0,

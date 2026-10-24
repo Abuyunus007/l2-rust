@@ -591,3 +591,119 @@ impl Decode for ExShowSellCropList {
         Ok(Self { manor_id, items })
     }
 }
+
+// Java: gameserver/network/serverpackets/ExSendManorList.java
+/// The answer to `RequestManorList` (`EX_SEND_MANOR_LIST`): the castles by id, each with its name
+/// in lower case (the client looks the manor name up by it).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExSendManorList {
+    /// `(castle id, lower case name)`.
+    pub castles: Vec<(i32, String)>,
+}
+
+impl ExSendManorList {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExSendManorList;
+}
+
+impl Encode for ExSendManorList {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.castles.len() as i32);
+        for (id, name) in &self.castles {
+            w.i32(*id).string(name);
+        }
+    }
+}
+
+impl Decode for ExSendManorList {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let count = read_count(r, "manor castle count")?;
+        let mut castles = Vec::new();
+        for _ in 0..count {
+            let id = r.i32()?;
+            castles.push((id, r.string()));
+        }
+        Ok(Self { castles })
+    }
+}
+
+// Java: gameserver/network/serverpackets/BuyListSeed.java
+/// One seed the castle sells in the seed purchase window (a `SeedProduction` with an amount and a
+/// price above 0). Java writes it as an item row; only the id, the amount and the price vary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SeedForSale {
+    pub seed_id: i32,
+    /// Java `getAmount()`: how many are left to buy.
+    pub amount: i64,
+    /// Java `getPrice()`.
+    pub price: i64,
+}
+
+/// The seed purchase window (`BUY_LIST_SEED`, 0xE9).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuyListSeed {
+    /// The adena of the buyer.
+    pub money: i64,
+    pub manor_id: i32,
+    pub seeds: Vec<SeedForSale>,
+}
+
+impl BuyListSeed {
+    pub const OPCODE: ServerOpcode = ServerOpcode::BuyListSeed;
+}
+
+/// The bytes of an item row after the amount and before the price, up to the `skip` of the
+/// decoder: custom types and equipped (3 shorts), body part, enchant, custom type, augment, mana,
+/// time, the element, the six defences and the three enchant effects.
+const SEED_ROW_FILLER: usize = 6 + 4 + 2 + 2 + 4 + 4 + 4 + 2 + 2 + 12 + 6;
+
+impl Encode for BuyListSeed {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i64(self.money).i32(self.manor_id);
+        // Java writes the size as a short (and a bare 0 for an empty list).
+        w.u16(u16::try_from(self.seeds.len()).unwrap_or(u16::MAX));
+        for seed in &self.seeds {
+            // The item row: object id and item id are both the seed id.
+            w.i32(seed.seed_id).i32(seed.seed_id).i32(0);
+            w.i64(seed.amount);
+            // Custom type 2 (5 = etc item), custom type 1, equipped.
+            w.i16(5).i16(0).i16(0);
+            // Body part, enchant, custom type, augment, mana (-1), time (-9999).
+            w.i32(0).i16(0).i16(0).i32(0).i32(-1).i32(-9999);
+            // Element type and power, the six element defences, the three enchant effects.
+            w.i16(0).i16(0);
+            for _ in 0..9 {
+                w.i16(0);
+            }
+            w.i64(seed.price);
+        }
+    }
+}
+
+impl Decode for BuyListSeed {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let money = r.i64()?;
+        let manor_id = r.i32()?;
+        let count = usize::from(r.u16()?);
+        let mut seeds = Vec::new();
+        for _ in 0..count {
+            let seed_id = r.i32()?;
+            r.i32()?;
+            r.i32()?;
+            let amount = r.i64()?;
+            r.skip(SEED_ROW_FILLER)?;
+            let price = r.i64()?;
+            seeds.push(SeedForSale {
+                seed_id,
+                amount,
+                price,
+            });
+        }
+        Ok(Self {
+            money,
+            manor_id,
+            seeds,
+        })
+    }
+}

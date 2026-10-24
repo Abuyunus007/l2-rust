@@ -57,6 +57,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
+use l2_db::FortSiegeRepository;
+use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
     ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
@@ -66,7 +68,7 @@ use l2_db::{
     ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
-use l2_db::{FortSiegeRepository, FunctionTable, ResidenceRepository};
+use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -77,12 +79,13 @@ use l2_world::residence::{
     CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, ResidenceReadKind, ResidenceRef,
     ResidenceRefresh, ResidenceRereadRows, ResidenceWrite, SiegableHallRecord,
 };
+use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
-    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId,
-    OfflinePetRows, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord,
-    PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
-    SkillData, StoredPunishment, SummonWrite,
+    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ManorLoad,
+    ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand, PetRowData,
+    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
+    SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -274,6 +277,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_residence_write(
         &mut self,
         _write: &ResidenceWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`,
+    /// M7-MANOR-01).
+    fn store_manor_write(
+        &mut self,
+        _write: &ManorWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -842,6 +854,12 @@ async fn run<S: PlayerStore>(
                     error!("Residence data could NOT be stored ({write:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Manor(write)) => {
+                // Java logs a failed statement and goes on ("Unable to store manor data!").
+                if let Err(e) = store.store_manor_write(&write).await {
+                    error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
                 residence_id,
                 kind,
@@ -1326,6 +1344,71 @@ pub async fn load_fort_sieges(pool: &Pool) -> FortSiegeLoad {
     load
 }
 
+/// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
+/// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
+/// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
+/// with empty lists.
+pub async fn load_manor(pool: &Pool) -> ManorLoad {
+    let residences = ResidenceRepository::new(pool.clone());
+    let repo = ManorRepository::new(pool.clone());
+    let mut load = ManorLoad::default();
+    let result: Result<(), l2_db::DbError> = async {
+        for castle_id in residences.castle_ids().await? {
+            for row in repo.production(castle_id).await? {
+                load.production.push(ManorProductionRow {
+                    castle_id: row.castle_id,
+                    seed_id: row.seed_id,
+                    amount: row.amount,
+                    start_amount: row.start_amount,
+                    price: row.price,
+                    next_period: row.next_period,
+                });
+            }
+            for row in repo.procure(castle_id).await? {
+                load.procure.push(ManorProcureRow {
+                    castle_id: row.castle_id,
+                    crop_id: row.crop_id,
+                    amount: row.amount,
+                    start_amount: row.start_amount,
+                    price: row.price,
+                    reward_type: row.reward_type,
+                    next_period: row.next_period,
+                });
+            }
+        }
+        Ok(())
+    }
+    .await;
+    if let Err(e) = result {
+        warn!("CastleManorManager: Unable to load manor data!: {e}");
+        return ManorLoad::default();
+    }
+    load
+}
+
+fn production_row(row: &ManorProductionRow) -> ProductionRow {
+    ProductionRow {
+        castle_id: row.castle_id,
+        seed_id: row.seed_id,
+        amount: row.amount,
+        start_amount: row.start_amount,
+        price: row.price,
+        next_period: row.next_period,
+    }
+}
+
+fn procure_row(row: &ManorProcureRow) -> ProcureRow {
+    ProcureRow {
+        castle_id: row.castle_id,
+        crop_id: row.crop_id,
+        amount: row.amount,
+        start_amount: row.start_amount,
+        price: row.price,
+        reward_type: row.reward_type,
+        next_period: row.next_period,
+    }
+}
+
 /// The residences of one clan as the database has them now (D-50, D-51): the castle its
 /// `hasCastle` names (`castle_id`, read at `CharacterSelect` with the clan) and the fortresses and
 /// halls whose owner it is, each with its functions.
@@ -1489,6 +1572,141 @@ async fn load_functions(repo: &ResidenceRepository, table: FunctionTable, id: i3
             Vec::new()
         }
     }
+}
+
+/// A write of the clan hall auction tables (M7-CH-01).
+async fn store_auction_write(repo: &AuctionRepository, write: &AuctionWrite) -> Result<(), PersistError> {
+    match write {
+        AuctionWrite::EndDate { id, end_date } => repo.update_end_date(*id, *end_date).await?,
+        AuctionWrite::BidUpdate {
+            auction_id,
+            bidder_id,
+            bidder_name,
+            max_bid,
+            time_bid,
+        } => {
+            repo.update_bid(*auction_id, *bidder_id, bidder_name, *max_bid, *time_bid)
+                .await?
+        }
+        AuctionWrite::BidInsert {
+            id,
+            auction_id,
+            bidder_id,
+            bidder_name,
+            max_bid,
+            clan_name,
+            time_bid,
+        } => {
+            repo.insert_bid(
+                *id,
+                *auction_id,
+                *bidder_id,
+                bidder_name,
+                *max_bid,
+                clan_name,
+                *time_bid,
+            )
+            .await?
+        }
+        AuctionWrite::BidsDelete { auction_id } => repo.delete_bids(*auction_id).await?,
+        AuctionWrite::AuctionDelete { item_id } => repo.delete_auction(*item_id).await?,
+        AuctionWrite::BidDelete {
+            auction_id,
+            bidder_id,
+        } => repo.delete_bid(*auction_id, *bidder_id).await?,
+        AuctionWrite::AuctionInsert(record) => {
+            repo.insert_auction(&l2_db::NewAuction {
+                id: record.id,
+                seller_id: record.seller_id,
+                seller_name: record.seller_name.clone(),
+                seller_clan_name: record.seller_clan_name.clone(),
+                item_type: record.item_type.clone(),
+                item_id: record.item_id,
+                item_object_id: record.item_object_id,
+                item_name: record.item_name.clone(),
+                // `_itemQuantity` is a constant 0 in Java.
+                item_quantity: 0,
+                starting_bid: record.starting_bid,
+                current_bid: record.current_bid,
+                end_date: record.end_date,
+            })
+            .await?
+        }
+        AuctionWrite::NpcAuctionInsert {
+            hall_id,
+            name,
+            starting_bid,
+            end_date,
+        } => {
+            repo.insert_npc_auction(*hall_id, name, *starting_bid, *end_date)
+                .await?
+        }
+        AuctionWrite::ClanBidAt { clan_id, auction_id } => {
+            repo.update_clan_auction_bid_at(*clan_id, *auction_id).await?
+        }
+    }
+    Ok(())
+}
+
+/// The clan hall auction rows (`ClanHallAuctionManager.load()`: every `auction` id, each read like
+/// `new ClanHallAuction(id)` with its bids). Only reads (D-39). A failed read is logged like
+/// Java's.
+pub async fn load_clan_hall_auctions(pool: &Pool) -> Vec<AuctionRecord> {
+    let repo = AuctionRepository::new(pool.clone());
+    let mut records = Vec::new();
+    match repo.auction_ids().await {
+        Ok(ids) => {
+            for id in ids {
+                match read_auction_record(&repo, id).await {
+                    Ok(Some(record)) => records.push(record),
+                    // `load()` finds no row: the auction keeps its start values.
+                    Ok(None) => records.push(AuctionRecord {
+                        id,
+                        ..AuctionRecord::default()
+                    }),
+                    Err(e) => warn!("Exception: Auction.load(): {e}"),
+                }
+            }
+        }
+        Err(e) => warn!("ClanHallAuctionManager: Exception: AuctionManager.load(): {e}"),
+    }
+    records
+}
+
+/// One `auction` row with its bids (`ClanHallAuction.load` and `loadBid`).
+async fn read_auction_record(
+    repo: &AuctionRepository,
+    id: i32,
+) -> Result<Option<AuctionRecord>, l2_db::DbError> {
+    let Some(row) = repo.auction(id).await? else {
+        return Ok(None);
+    };
+    let bidders = repo
+        .bids(id)
+        .await?
+        .into_iter()
+        .map(|b| AuctionBidRecord {
+            bidder_id: b.bidder_id,
+            bidder_name: b.bidder_name,
+            max_bid: b.max_bid,
+            clan_name: b.clan_name,
+            time_bid: b.time_bid,
+        })
+        .collect();
+    Ok(Some(AuctionRecord {
+        id,
+        seller_id: row.seller_id,
+        seller_name: row.seller_name,
+        seller_clan_name: row.seller_clan_name,
+        item_type: row.item_type,
+        item_id: row.item_id,
+        item_object_id: row.item_object_id,
+        item_name: row.item_name,
+        starting_bid: row.starting_bid,
+        current_bid: row.current_bid,
+        end_date: row.end_date,
+        bidders,
+    }))
 }
 
 /// The function table of a residence.
@@ -1887,6 +2105,8 @@ pub struct DbStore {
     championship: FishingChampionshipRepository,
     residences: ResidenceRepository,
     fort_sieges: FortSiegeRepository,
+    manor: ManorRepository,
+    auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1917,6 +2137,8 @@ impl DbStore {
             crests: CrestRepository::new(pool.clone()),
             residences: ResidenceRepository::new(pool.clone()),
             fort_sieges: FortSiegeRepository::new(pool.clone()),
+            manor: ManorRepository::new(pool.clone()),
+            auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
@@ -2988,6 +3210,33 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_manor_write(&mut self, write: &ManorWrite) -> Result<(), PersistError> {
+        let repo = &self.manor;
+        match write {
+            ManorWrite::StoreAll { production, procure } => {
+                let production: Vec<ProductionRow> = production.iter().map(production_row).collect();
+                let procure: Vec<ProcureRow> = procure.iter().map(procure_row).collect();
+                repo.store_all(&production, &procure).await?
+            }
+            ManorWrite::ReplaceNextProduction { castle_id, rows } => {
+                let rows: Vec<ProductionRow> = rows.iter().map(production_row).collect();
+                repo.replace_next_production(*castle_id, &rows).await?
+            }
+            ManorWrite::ReplaceNextProcure { castle_id, rows } => {
+                let rows: Vec<ProcureRow> = rows.iter().map(procure_row).collect();
+                repo.replace_next_procure(*castle_id, &rows).await?
+            }
+            ManorWrite::UpdateCurrentProduction { castle_id, amounts } => {
+                repo.update_current_production(*castle_id, amounts).await?
+            }
+            ManorWrite::UpdateCurrentProcure { castle_id, amounts } => {
+                repo.update_current_procure(*castle_id, amounts).await?
+            }
+            ManorWrite::DeleteCastle { castle_id } => repo.delete_castle(*castle_id).await?,
+        }
+        Ok(())
+    }
+
     async fn store_residence_write(&mut self, write: &ResidenceWrite) -> Result<(), PersistError> {
         let repo = &self.residences;
         match write {
@@ -3092,6 +3341,7 @@ impl PlayerStore for DbStore {
                     }
                 }
             }
+            ResidenceWrite::ClanHallAuction(write) => store_auction_write(&self.auctions, write).await?,
         }
         Ok(())
     }
@@ -3158,6 +3408,10 @@ impl PlayerStore for DbStore {
                     None => ResidenceRereadRows::Missing,
                 }
             }
+            ResidenceReadKind::Auction => ResidenceRereadRows::Auction {
+                id: residence_id,
+                record: read_auction_record(&self.auctions, residence_id).await?,
+            },
             ResidenceReadKind::SiegableHall => {
                 match repo
                     .siegable_halls()

@@ -63,8 +63,8 @@ use l2_protocol_game::server::mail::{
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,
 };
 use l2_protocol_game::server::manor::{
-    ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo,
-    ExShowSeedSetting, ExShowSellCropList,
+    BuyListSeed, ExSendManorList, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
+    ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
 };
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
@@ -90,7 +90,7 @@ use l2_protocol_game::server::refine::{
     ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
-use l2_protocol_game::server::residence::AgitDecoInfo;
+use l2_protocol_game::server::residence::{AgitDecoInfo, ExShowAgitInfo};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::siege::{
     ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
@@ -456,6 +456,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestJoinSiege(p) => object!(p => castle_id, is_attacker, is_joining),
         ClientPacket::RequestConfirmSiegeWaitingList(p) => object!(p => castle_id, clan_id, approved),
         ClientPacket::RequestAllFortressInfo(_)
+        | ClientPacket::RequestAllAgitInfo(_)
         | ClientPacket::RequestFortressSiegeInfo(_)
         | ClientPacket::RequestManorList(_)
         | ClientPacket::RequestDominionInfo(_) => json!({}),
@@ -853,6 +854,13 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
                 }).collect::<Vec<_>>(),
             })
         }),
+        ServerOpcode::ExShowAgitInfo => decoded::<ExShowAgitInfo>(&mut r, |p| {
+            json!({
+                "halls": p.halls.iter().map(|h| {
+                    object!(h => hall_id, owner_clan_name, leader_name, grade_below_one)
+                }).collect::<Vec<_>>(),
+            })
+        }),
         ServerOpcode::ExShowFortressInfo => decoded::<ExShowFortressInfo>(&mut r, |p| {
             json!({
                 "forts": p.forts.iter().map(|f| {
@@ -883,6 +891,20 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             })
         }),
         ServerOpcode::ExShowSellCropList => decoded::<ExShowSellCropList>(&mut r, sell_crop_list_fields),
+        ServerOpcode::ExSendManorList => decoded::<ExSendManorList>(&mut r, |p| {
+            json!({
+                "castles": p.castles.iter().map(|(id, name)| json!({ "id": id, "name": name })).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::BuyListSeed => decoded::<BuyListSeed>(&mut r, |p| {
+            json!({
+                "money": p.money,
+                "manor_id": p.manor_id,
+                "seeds": p.seeds.iter().map(|s| {
+                    object!(s => seed_id, amount, price)
+                }).collect::<Vec<_>>(),
+            })
+        }),
         ServerOpcode::ExDominionWarStart => {
             decoded::<ExDominionWarStart>(&mut r, |p| object!(p => object_id, territory_id, is_disguised))
         }
@@ -2443,6 +2465,7 @@ mod tests {
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
         ServerOpcode::AgitDecoInfo,
+        ServerOpcode::ExShowAgitInfo,
         ServerOpcode::ChooseInventoryItem,
         ServerOpcode::EnchantResult,
         ServerOpcode::ExPutEnchantTargetItemResult,
@@ -2498,6 +2521,8 @@ mod tests {
         ServerOpcode::ExShowCropSetting,
         ServerOpcode::ExShowProcureCropDetail,
         ServerOpcode::ExShowSellCropList,
+        ServerOpcode::BuyListSeed,
+        ServerOpcode::ExSendManorList,
         ServerOpcode::ExDominionWarStart,
         ServerOpcode::ExDominionWarEnd,
         ServerOpcode::ExShowDominionRegistry,
@@ -2551,6 +2576,37 @@ mod tests {
         assert_eq!(fields["fireplace"], 2);
         assert_eq!(fields["mirror"], 1);
         assert_eq!(fields["item_create"], 0);
+    }
+
+    #[test]
+    fn the_clan_hall_list_shows_its_fields() {
+        use l2_protocol_game::client::RequestAllAgitInfo;
+        use l2_protocol_game::server::residence::AgitInfo;
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &RequestAllAgitInfo.to_bytes()),
+            json!({})
+        );
+        let packet = ExShowAgitInfo {
+            halls: vec![
+                AgitInfo {
+                    hall_id: 22,
+                    owner_clan_name: String::new(),
+                    leader_name: String::new(),
+                    grade_below_one: true,
+                },
+                AgitInfo {
+                    hall_id: 36,
+                    owner_clan_name: "Wolves".to_owned(),
+                    leader_name: "Fenrir".to_owned(),
+                    grade_below_one: false,
+                },
+            ],
+        };
+        let fields = s2c_fields(&packet.to_bytes());
+        assert_eq!(fields["halls"][0]["hall_id"], 22);
+        assert_eq!(fields["halls"][0]["grade_below_one"], true);
+        assert_eq!(fields["halls"][1]["owner_clan_name"], "Wolves");
+        assert_eq!(fields["halls"][1]["leader_name"], "Fenrir");
     }
 
     #[test]

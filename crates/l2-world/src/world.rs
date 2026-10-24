@@ -132,6 +132,10 @@ pub struct World {
     pub(crate) fishing: crate::fishing::FishingWorld,
     /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
     pub(crate) residences: crate::residence::ResidenceWorld,
+    /// The castle manor: seeds, the periods, the seeded monsters (M7-MANOR-01, `manor/`).
+    pub(crate) manor: crate::manor::ManorWorld,
+    /// The clan hall rent, auctions and hall NPCs (M7-CH-01, `clanhall/`).
+    pub(crate) clanhall: crate::clanhall::ClanHallWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -201,6 +205,8 @@ impl World {
             augment: crate::augment::AugmentWorld::default(),
             fishing: crate::fishing::FishingWorld::default(),
             residences: crate::residence::ResidenceWorld::default(),
+            manor: crate::manor::ManorWorld::default(),
+            clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
@@ -382,6 +388,8 @@ impl World {
                 self.clan_table_shutdown();
                 // Java Shutdown: "Save Fishing tournament data."
                 self.championship_shutdown();
+                // Java Shutdown: "Save all manor data."
+                self.manor_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -644,6 +652,7 @@ impl World {
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             ClientInput::Fort(input) => self.on_fort_input(id, input),
+            ClientInput::Manor(input) => self.on_manor_input(id, input),
             ClientInput::Craft(input) => self.on_craft_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
@@ -680,6 +689,8 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestAllAgitInfo
+            ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -774,6 +785,8 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
+            TimerKind::Manor(timer) => self.on_manor_timer(timer),
+            TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
             // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),

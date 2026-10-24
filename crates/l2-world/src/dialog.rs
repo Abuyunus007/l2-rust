@@ -457,6 +457,10 @@ impl World {
         if self.fort_show_chat_window(npc, player) {
             return;
         }
+        // The clan hall NPCs override `showChatWindow(player)` (`clanhall/`).
+        if self.clan_hall_npc_show_chat_window(npc, player) {
+            return;
+        }
         self.show_chat_window(npc, player, 0);
     }
 

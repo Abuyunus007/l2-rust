@@ -9,7 +9,7 @@
 // Java: network/serverpackets/AgitDecoInfo.java (the decoration levels)
 //
 // The rent of an auctionable hall (`AuctionableHall.FeeTask`, the "please pay" messages and the
-// loss of a hall a week overdue) and the auctions are M7-CH-01 (`// M7-CH-01:`); the conquerable
+// loss of a hall a week overdue) and the auctions are `clanhall/` (M7-CH-01); the conquerable
 // halls' siege and schedule are M7-CHSIEGE-01.
 
 use std::collections::BTreeMap;
@@ -151,7 +151,7 @@ impl World {
     }
 
     /// The zone of a hall, from the zone table.
-    fn clan_hall_zone(&self, id: ClanHallId) -> Option<&l2_data::Zone> {
+    pub(crate) fn clan_hall_zone(&self, id: ClanHallId) -> Option<&l2_data::Zone> {
         let (zone_id, zone_type) = self.clan_hall(id)?.zone.as_ref()?;
         self.zoning.zones.as_ref()?.get_of_type(*zone_id, zone_type)
     }
@@ -207,7 +207,7 @@ impl World {
     // ------------------------------------------------------------------ owner
 
     /// Java `ClanHallTable.setOwner(chId, clan)`: an owned hall is freed first, then the clan
-    /// gets it (`ClanHall.setOwner`). The rent (`initialyzeTask(true)`) is M7-CH-01.
+    /// gets it (`ClanHall.setOwner`) and its rent starts (`initialyzeTask(true)`).
     pub fn clan_hall_table_set_owner(&mut self, id: ClanHallId, clan_id: i32) {
         if self.clan_hall(id).is_some_and(|h| h.owner_id > 0) {
             self.clan_hall_free(id);
@@ -243,7 +243,7 @@ impl World {
             self.clan_hall_mut(id).map(|h| &mut h.kind)
         {
             *paid_until = unix_ms_now();
-            // M7-CH-01: `initialyzeTask(true)` (the rent).
+            self.clan_hall_initialize_rent_task(id, true);
         }
     }
 
@@ -272,6 +272,8 @@ impl World {
         } else {
             return;
         }
+        // A free hall pays no rent (the task would find `isFree()` and end).
+        self.clan_hall_cancel_rent_task(id);
         self.residence_remove_all_functions_with(ResidenceRef::ClanHall(id), writes);
         // NOTE(java-quirk): `ClanHall.free()` writes the row before `AuctionableHall.free()` resets
         // `paidUntil` and `paid`, so the row keeps the old values with owner 0.
@@ -285,7 +287,7 @@ impl World {
     }
 
     /// Java `updateDb()` of the hall's class (D-51: only with `SiegeDatabaseWrites`).
-    fn clan_hall_update_db(&mut self, id: ClanHallId, writes: Writes) {
+    pub(crate) fn clan_hall_update_db(&mut self, id: ClanHallId, writes: Writes) {
         let Some(hall) = self.clan_hall(id) else {
             return;
         };

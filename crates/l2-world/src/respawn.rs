@@ -207,9 +207,8 @@ impl World {
                 .map_or(i64::from(self.settings.death.default_corpse_time), |t| {
                     i64::from(t.corpse_time)
                 });
-            // `isAttackable() && (isSpoiled() || isSeeded())` adds `SpoiledCorpseExtendTime`
-            // (seeds: the manor, later).
-            if self.is_attackable_npc(id) && self.is_spoiled(id) {
+            // `isAttackable() && (isSpoiled() || isSeeded())` adds `SpoiledCorpseExtendTime`.
+            if self.is_attackable_npc(id) && (self.is_spoiled(id) || self.is_seeded(id)) {
                 delay += i64::from(self.settings.death.spoiled_corpse_extend_time);
             }
             delay
@@ -315,6 +314,8 @@ impl World {
         // The spoiler and the sweep items go with the corpse; the object id comes back on
         // respawn (`Attackable.onSpawn` clears them).
         self.death.spoil.remove(&id);
+        // So does the manor's seeded state (M7-MANOR-01: `onSpawn` clears `_seeded`, `_seed`...).
+        self.manor_forget_monster(id);
         self.forget_combat(id);
         self.forget_status(id);
         // `ZoneRegion.removeFromZones`: NPCs have no zone state.
