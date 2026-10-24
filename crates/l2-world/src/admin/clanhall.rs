@@ -4,11 +4,8 @@
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSiege.java (the clan hall part)
 //
 // The conquerable halls' words are `//chsiege_*` (AdminCHSiege, M7-CHSIEGE-01), not these.
-//
-// # Left out, with the system that brings it
-// - `//clanhallset` of an auctionable hall deletes the hall's auction (`ClanHallAuction`
-//   `deleteAuctionFromDB`). The auction list is private to `clanhall/auction.rs`: until a
-//   crate-level accessor exists the auction stays, see the `// M7-ADMIN-06:` marker below.
+// `//clanhallset` of an auctionable hall deletes the hall's auction, through
+// `clanhall/auction.rs` (`clan_hall_delete_auction`).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -79,9 +76,8 @@ fn admin_clanhall(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             }
             if world.clan_hall(hall).is_some_and(|h| !h.is_siegable_hall()) {
                 world.clan_hall_table_set_owner(hall, clan);
-                // M7-ADMIN-06: Java then deletes the hall's auction row
-                // (`ClanHallAuctionManager.getAuction(id).deleteAuctionFromDB()`); blocked on an
-                // accessor in `clanhall/auction.rs`.
+                // `ClanHallAuctionManager.getAuction(id)` then `deleteAuctionFromDB()`.
+                world.clan_hall_delete_auction(hall.0);
             } else {
                 // `clanhall.setOwner(clan)` and `clan.setHideoutId(id)`.
                 world.clan_hall_set_owner(hall, clan);

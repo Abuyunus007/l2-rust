@@ -569,6 +569,24 @@ fn a_clan_with_a_hall_cannot_take_another() {
     assert_eq!(s.world.clan_hall(ClanHallId(21)).unwrap().owner_id, 0);
 }
 
+/// `admin_clanhallset` of a free hall that has its auction (`ClanHallAuctionManager.getAuction(id)`
+/// then `deleteAuctionFromDB()`): the auction leaves the list, so it cannot end and give the hall
+/// away again.
+#[test]
+fn clanhallset_ends_the_auction_of_the_hall() {
+    let mut s = Scene::new();
+    s.enter_all();
+    // Freeing hall 36 puts it up for auction.
+    s.admin("clanhalldel 36");
+    s.take();
+    assert!(s.world.clan_hall_auctions().iter().any(|a| a.item_id == 36));
+    s.world.set_target(ObjectId(GM), Some(ObjectId(P1)));
+    s.admin("clanhallset 36");
+    assert!(texts_to(&s.take(), GM).is_empty());
+    assert_eq!(s.world.clan_hall(ClanHallId(36)).unwrap().owner_id, LIONS);
+    assert!(!s.world.clan_hall_auctions().iter().any(|a| a.item_id == 36));
+}
+
 /// `admin_clanhallset` without a target: Java's `INVALID_TARGET`.
 #[test]
 fn clanhallset_without_a_target_is_refused() {
