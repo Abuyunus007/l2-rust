@@ -354,7 +354,10 @@ impl World {
         let npc_id = self.castle_npc_id(npc);
         let no_rights = || page("chamberlain-21.html");
         match first {
-            "chamberlain-01.html" | "manor-help-01.html" | "manor-help-02.html" | "manor-help-03.html"
+            "chamberlain-01.html"
+            | "manor-help-01.html"
+            | "manor-help-02.html"
+            | "manor-help-03.html"
             | "manor-help-04.html" => page(event),
             "fort_status" => {
                 if !self.fort_is_my_lord(npc, player) {
@@ -375,7 +378,13 @@ impl World {
                         " : <font color=\"00FFFF\"><fstring>{status}</fstring></font><br>"
                     ));
                 }
-                self.castle_script_send_packet(SCRIPT, player, npc, "chamberlain-28.html", &[("%list%", list)]);
+                self.castle_script_send_packet(
+                    SCRIPT,
+                    player,
+                    npc,
+                    "chamberlain-28.html",
+                    &[("%list%", list)],
+                );
                 Ok(None)
             }
             "siege_functions" => {
@@ -419,7 +428,10 @@ impl World {
                 let level = parse_int(args.get(1).ok_or(ScriptFailed)?)?;
                 let price = self.chamberlain_door_upgrade_price(kind, level);
                 // `event.substring("upgrade_doors".length() + 1)`.
-                let rest = event.get("upgrade_doors".len() + 1..).unwrap_or_default().to_owned();
+                let rest = event
+                    .get("upgrade_doors".len() + 1..)
+                    .unwrap_or_default()
+                    .to_owned();
                 self.castle_script_send_packet(
                     SCRIPT,
                     player,
@@ -429,7 +441,9 @@ impl World {
                 );
                 Ok(None)
             }
-            "upgrade_doors_confirm" => self.chamberlain_upgrade_doors_confirm(args, npc, player, castle, siege),
+            "upgrade_doors_confirm" => {
+                self.chamberlain_upgrade_doors_confirm(args, npc, player, castle, siege)
+            }
             "manage_trap" => {
                 if !self.chamberlain_may(player, npc, ClanAccess::CastleManageFunctions) {
                     return no_rights();
@@ -504,7 +518,10 @@ impl World {
                         player,
                         npc,
                         "chamberlain-03.html",
-                        &[("%tax_rate%", tax.to_string()), ("%next_tax_rate%", "0".to_owned())],
+                        &[
+                            ("%tax_rate%", tax.to_string()),
+                            ("%next_tax_rate%", "0".to_owned()),
+                        ],
                     );
                     Ok(None)
                 } else {
@@ -588,7 +605,10 @@ impl World {
                         // A player's own deposit: written (D-51).
                         self.castle_add_to_treasury_no_tax(castle, amount, crate::residence::Writes::Player);
                     } else {
-                        self.send(player, &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena));
+                        self.send(
+                            player,
+                            &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena),
+                        );
                     }
                 }
                 page("chamberlain-01.html")
@@ -675,7 +695,11 @@ impl World {
                     let door = parse_int(door)?;
                     self.residence_open_close_door(player, residence, door, open);
                 }
-                page(if open { "chamberlain-05.html" } else { "chamberlain-06.html" })
+                page(if open {
+                    "chamberlain-05.html"
+                } else {
+                    "chamberlain-06.html"
+                })
             }
             "additional_functions" => {
                 if self.chamberlain_may(player, npc, ClanAccess::CastleManageFunctions) {
@@ -692,7 +716,8 @@ impl World {
                 self.chamberlain_func_replace(castle, CASTLE_FUNC_RESTORE_HP, "HP", &mut replace);
                 self.chamberlain_func_replace(castle, CASTLE_FUNC_RESTORE_MP, "MP", &mut replace);
                 self.chamberlain_func_replace(castle, CASTLE_FUNC_RESTORE_EXP, "XP", &mut replace);
-                let replace: Vec<(&str, String)> = replace.iter().map(|(p, v)| (p.as_str(), v.clone())).collect();
+                let replace: Vec<(&str, String)> =
+                    replace.iter().map(|(p, v)| (p.as_str(), v.clone())).collect();
                 self.castle_script_send_packet(SCRIPT, player, npc, "castledeco-AR01.html", &replace);
                 Ok(None)
             }
@@ -703,7 +728,8 @@ impl World {
                 let mut replace = Vec::new();
                 self.chamberlain_func_replace(castle, CASTLE_FUNC_TELEPORT, "TP", &mut replace);
                 self.chamberlain_func_replace(castle, CASTLE_FUNC_SUPPORT, "BF", &mut replace);
-                let replace: Vec<(&str, String)> = replace.iter().map(|(p, v)| (p.as_str(), v.clone())).collect();
+                let replace: Vec<(&str, String)> =
+                    replace.iter().map(|(p, v)| (p.as_str(), v.clone())).collect();
                 self.castle_script_send_packet(SCRIPT, player, npc, "castledeco-AE01.html", &replace);
                 Ok(None)
             }
@@ -768,7 +794,9 @@ impl World {
                 if !self.chamberlain_may(player, npc, ClanAccess::CastleFunctions) {
                     return no_rights();
                 }
-                let Some(level) = self.residence_function(residence, CASTLE_FUNC_TELEPORT).map(|f| f.lvl)
+                let Some(level) = self
+                    .residence_function(residence, CASTLE_FUNC_TELEPORT)
+                    .map(|f| f.lvl)
                 else {
                     return page("castlefuncdisabled.html");
                 };
@@ -795,7 +823,9 @@ impl World {
                 if !self.chamberlain_may(player, npc, ClanAccess::CastleFunctions) {
                     return no_rights();
                 }
-                let Some(level) = self.residence_function(residence, CASTLE_FUNC_SUPPORT).map(|f| f.lvl)
+                let Some(level) = self
+                    .residence_function(residence, CASTLE_FUNC_SUPPORT)
+                    .map(|f| f.lvl)
                 else {
                     return page("castlefuncdisabled.html");
                 };
@@ -835,7 +865,13 @@ impl World {
                     "castlenotenoughmp.html"
                 };
                 let mp_left = self.core_of(npc).map_or(0, |c| c.cur_mp as i32);
-                self.castle_script_send_packet(SCRIPT, player, npc, file, &[("%MPLeft%", mp_left.to_string())]);
+                self.castle_script_send_packet(
+                    SCRIPT,
+                    player,
+                    npc,
+                    file,
+                    &[("%MPLeft%", mp_left.to_string())],
+                );
                 Ok(None)
             }
             "list_siege_clans" => {
@@ -1000,7 +1036,13 @@ impl World {
         // `getFlameTowers(id).get(index)` throws for an index the list does not have.
         let current_level = usize::try_from(index)
             .ok()
-            .filter(|i| self.sieges.settings.castles.get(&castle.0).is_some_and(|c| *i < c.flame_towers.len()))
+            .filter(|i| {
+                self.sieges
+                    .settings
+                    .castles
+                    .get(&castle.0)
+                    .is_some_and(|c| *i < c.flame_towers.len())
+            })
             .map(|i| self.castle_trap_upgrade_level(castle, i))
             .ok_or(ScriptFailed)?;
         if current_level >= level {
@@ -1086,7 +1128,8 @@ impl World {
         if siege {
             return page("chamberlain-08.html");
         }
-        if !(self.seven_signs_player_cabal(player) == CABAL_DAWN && self.seven_signs_is_competition_period()) {
+        if !(self.seven_signs_player_cabal(player) == CABAL_DAWN && self.seven_signs_is_competition_period())
+        {
             return page("ssq_notdawnorevent.html");
         }
         let s = self.residence_npc.settings.clone();
@@ -1125,7 +1168,11 @@ impl World {
         let total_cost = i64::from(s.ssq_dawn_ticket_price.wrapping_mul(s.ssq_dawn_ticket_bundle));
         if self.adena_of(player) >= total_cost {
             self.script_take_items(player, l2_data::item::ADENA_ID, total_cost);
-            self.script_give_items(player, s.ssq_manors_agreement_id, i64::from(s.ssq_dawn_ticket_bundle));
+            self.script_give_items(
+                player,
+                s.ssq_manors_agreement_id,
+                i64::from(s.ssq_dawn_ticket_bundle),
+            );
             self.castle_set_ticket_buy_count(castle, ticket_count + 1);
             Ok(None)
         } else {

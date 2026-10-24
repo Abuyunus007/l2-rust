@@ -59,9 +59,9 @@ const BLUE_GREAT_HEAL: i32 = 10424;
 const WHITE_FIRE: i32 = 10421;
 /// `COMMON_TALISMANS`.
 const COMMON_TALISMANS: [i32; 43] = [
-    9914, 9915, 9920, 9921, 9922, 9933, 9934, 9935, 9936, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944, 9945,
-    9946, 9947, 9948, 9949, 9950, 9952, 9953, 9954, 9955, 9956, 9957, 9958, 9959, 9960, 9961, 9962, 9963, 9964,
-    9965, 10418, 10420, 10519, 10422, 10423, 10419,
+    9914, 9915, 9920, 9921, 9922, 9933, 9934, 9935, 9936, 9937, 9938, 9939, 9940, 9941, 9942, 9943, 9944,
+    9945, 9946, 9947, 9948, 9949, 9950, 9952, 9953, 9954, 9955, 9956, 9957, 9958, 9959, 9960, 9961, 9962,
+    9963, 9964, 9965, 10418, 10420, 10519, 10422, 10423, 10419,
 ];
 
 /// The talisman for the two rolls of `giveTalisman`: `category` is `getRandom(100)` and `chance`
@@ -94,7 +94,9 @@ pub(super) fn pick_talisman(category: i32, chance: i32) -> i32 {
             _ => BLUE_GREAT_HEAL,
         }
     } else if chance <= 42 {
-        COMMON_TALISMANS[usize::try_from(chance).unwrap_or(0).min(COMMON_TALISMANS.len() - 1)]
+        COMMON_TALISMANS[usize::try_from(chance)
+            .unwrap_or(0)
+            .min(COMMON_TALISMANS.len() - 1)]
     } else {
         WHITE_FIRE
     }
@@ -103,7 +105,8 @@ pub(super) fn pick_talisman(category: i32, chance: i32) -> i32 {
 impl World {
     /// `onEvent` of the court magician.
     pub(super) fn court_magician_on_event(&mut self, event: &str, npc: ObjectId, player: ObjectId) -> Reply {
-        let in_owner_clan = self.clan_of(player).is_some() && self.clan_id_of(player) == self.castle_owner_of_npc(npc);
+        let in_owner_clan =
+            self.clan_of(player).is_some() && self.clan_id_of(player) == self.castle_owner_of_npc(npc);
         if !in_owner_clan {
             return Ok(Some("courtmagician-01.html".to_owned()));
         }
@@ -207,7 +210,11 @@ impl World {
             false
         };
         if self.is_alike_dead(target) {
-            return refuse(self, SystemMessageId::C1IsDeadAtTheMomentAndCannotBeSummoned, true);
+            return refuse(
+                self,
+                SystemMessageId::C1IsDeadAtTheMomentAndCannotBeSummoned,
+                true,
+            );
         }
         if self.is_in_store_mode(target) {
             return refuse(
@@ -217,14 +224,22 @@ impl World {
             );
         }
         if self.is_rooted(target) || self.is_in_combat(target) {
-            return refuse(self, SystemMessageId::C1IsEngagedInCombatAndCannotBeSummoned, true);
+            return refuse(
+                self,
+                SystemMessageId::C1IsEngagedInCombatAndCannotBeSummoned,
+                true,
+            );
         }
         // M8: `isInOlympiadMode()` and `isRegisteredInComp()`
         // (YOU_CANNOT_SUMMON_PLAYERS_WHO_ARE_CURRENTLY_PARTICIPATING_IN_THE_GRAND_OLYMPIAD),
         // `isFestivalParticipant()`; `isOnEvent()` and `inObserverMode()` are not modelled.
         let flying = self.stats(target).is_some_and(|v| v.is_flying_mounted());
         if flying || self.is_combat_flag_equipped(target) {
-            return refuse(self, SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning, false);
+            return refuse(
+                self,
+                SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning,
+                false,
+            );
         }
         if self.is_inside_zone(target, ZoneId::NoSummonFriend) || self.is_inside_zone(target, ZoneId::Jail) {
             return refuse(self, SystemMessageId::C1IsInAnAreaWhichBlocksSummoning, true);

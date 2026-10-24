@@ -92,7 +92,12 @@ impl World {
     }
 
     /// `onEvent` of the mercenary manager.
-    pub(super) fn mercenary_manager_on_event(&mut self, event: &str, npc: ObjectId, player: ObjectId) -> Reply {
+    pub(super) fn mercenary_manager_on_event(
+        &mut self,
+        event: &str,
+        npc: ObjectId,
+        player: ObjectId,
+    ) -> Reply {
         let st = words(event);
         match *st.first().ok_or(ScriptFailed)? {
             "limit" => {
@@ -240,6 +245,7 @@ impl World {
     /// `onEvent` of the blacksmith.
     pub(super) fn blacksmith_on_event(&self, event: &str, npc: ObjectId, player: ObjectId) -> Option<String> {
         let page = format!("{}-02.html", self.castle_npc_id(npc));
-        (event.eq_ignore_ascii_case(&page) && self.blacksmith_has_rights(player, npc)).then(|| event.to_owned())
+        (event.eq_ignore_ascii_case(&page) && self.blacksmith_has_rights(player, npc))
+            .then(|| event.to_owned())
     }
 }

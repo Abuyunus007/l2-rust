@@ -10,7 +10,7 @@ use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, NpcSay};
 use l2_util::ObjectId;
 
-use super::{ResidenceNpcTimer, Reply, ScriptFailed};
+use super::{Reply, ResidenceNpcTimer, ScriptFailed};
 use crate::residence::CastleId;
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::World;
@@ -24,7 +24,9 @@ impl World {
     /// `siege.isInProgress() && siege.getControlTowerCount() == 0`.
     fn teleporter_towers_fell(&self, castle: CastleId) -> bool {
         self.is_castle_siege_in_progress(castle)
-            && self.castle_siege(castle).is_some_and(|s| s.control_tower_count == 0)
+            && self
+                .castle_siege(castle)
+                .is_some_and(|s| s.control_tower_count == 0)
     }
 
     /// `onFirstTalk` of the mass gatekeeper.
@@ -54,8 +56,10 @@ impl World {
                 NORMAL_MS
             };
             let due = self.tick + TimerWheel::ms_to_ticks(time);
-            self.timers
-                .schedule_at(due, TimerKind::ResidenceNpc(ResidenceNpcTimer::TeleporterExecute(npc)));
+            self.timers.schedule_at(
+                due,
+                TimerKind::ResidenceNpc(ResidenceNpcTimer::TeleporterExecute(npc)),
+            );
             self.residence_npc.teleporting.insert(npc);
         }
         Ok(Some("teleporter-03.html".to_owned()))

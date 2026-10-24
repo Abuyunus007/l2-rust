@@ -88,7 +88,12 @@ impl World {
     }
 
     /// `onEvent` of an envoy; the pages go out here and the script returns `null`.
-    pub(super) fn ambassador_on_event(&mut self, event: &str, npc: ObjectId, player: Option<ObjectId>) -> Option<String> {
+    pub(super) fn ambassador_on_event(
+        &mut self,
+        event: &str,
+        npc: ObjectId,
+        player: Option<ObjectId>,
+    ) -> Option<String> {
         // The owner's choice reads the fortress again first (D-50).
         if matches!(event, "signed" | "rejected")
             && let Some(player) = player

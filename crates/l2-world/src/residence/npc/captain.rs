@@ -23,7 +23,9 @@ const SCRIPT: CastleScript = CastleScript::MercenaryCaptain;
 /// `MercenaryCaptain.NPCS`: the badge item each captain takes (the Territory badges of Gludio to
 /// Schuttgart).
 fn badge_of(npc_id: i32) -> Option<i32> {
-    (36481..=36489).contains(&npc_id).then(|| 13757 + (npc_id - 36481))
+    (36481..=36489)
+        .contains(&npc_id)
+        .then(|| 13757 + (npc_id - 36481))
 }
 
 /// `STRIDER_WIND`.
@@ -54,7 +56,11 @@ impl World {
     /// no owner, nobody registered, no territory.
     // M7-TW-01: the territory's owner clan and alliance, the registered clans and mercenaries, the
     // start of the war and the territories with the wards they own.
-    pub(crate) fn dominion_registry_packet(&self, castle: CastleId, _player: ObjectId) -> ExShowDominionRegistry {
+    pub(crate) fn dominion_registry_packet(
+        &self,
+        castle: CastleId,
+        _player: ObjectId,
+    ) -> ExShowDominionRegistry {
         let now = i32::try_from(crate::world::unix_ms_now() / 1000).unwrap_or(i32::MAX);
         ExShowDominionRegistry {
             castle_id: castle.0,

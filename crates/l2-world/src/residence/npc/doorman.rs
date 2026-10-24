@@ -24,7 +24,8 @@ fn door_tokens(text: &str) -> impl Iterator<Item = &str> {
 impl World {
     /// Whether the NPC is a `CastleDoorman`.
     fn is_castle_doorman(&self, npc: ObjectId) -> bool {
-        self.npc_template(npc).is_some_and(|t| t.npc_type == "CastleDoorman")
+        self.npc_template(npc)
+            .is_some_and(|t| t.npc_type == "CastleDoorman")
     }
 
     /// `getConquerableHall()`.
@@ -87,7 +88,12 @@ impl World {
     }
 
     /// `Doorman.onBypassFeedback(player, command)` of a castle doorman. `false` for any other NPC.
-    pub(crate) fn castle_doorman_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) -> bool {
+    pub(crate) fn castle_doorman_bypass_feedback(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+    ) -> bool {
         if !self.is_castle_doorman(npc) {
             return false;
         }
@@ -127,7 +133,13 @@ impl World {
 
     /// `CastleDoorman.openDoors` / `closeDoors`: "open_doors 1, 19210005, 19210006". The first
     /// number is skipped (`st.nextToken()`); `None` where Java throws.
-    fn castle_doorman_doors(&mut self, npc: ObjectId, player: ObjectId, command: &str, open: bool) -> Option<()> {
+    fn castle_doorman_doors(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+        open: bool,
+    ) -> Option<()> {
         let skip = if open { 10 } else { 11 };
         let mut tokens = door_tokens(command.get(skip..)?);
         tokens.next()?;

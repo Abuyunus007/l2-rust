@@ -349,7 +349,11 @@ pub(crate) fn format_adena(amount: i64) -> String {
         }
         grouped.push(c);
     }
-    if amount < 0 { format!("-{grouped}") } else { grouped }
+    if amount < 0 {
+        format!("-{grouped}")
+    } else {
+        grouped
+    }
 }
 
 /// Year, month (1 to 12) and day of the month of a day count since 1970-01-01 (the proleptic
@@ -409,7 +413,12 @@ impl World {
     /// The first talk: `NpcClick` (`from_click`, which also makes a start NPC the quest NPC of
     /// the player: `ON_NPC_QUEST_START`) and `Chat 0` (`ChatLink`). `true` when a script of this
     /// module answered.
-    pub(crate) fn residence_npc_first_talk(&mut self, npc: ObjectId, player: ObjectId, from_click: bool) -> bool {
+    pub(crate) fn residence_npc_first_talk(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        from_click: bool,
+    ) -> bool {
         let Some(script) = self.castle_script_of(npc) else {
             return false;
         };
@@ -446,7 +455,8 @@ impl World {
             CastleScript::Teleporter => Ok(Some(self.castle_teleporter_first_talk(npc))),
             CastleScript::Blacksmith => Ok(Some(self.blacksmith_first_talk(npc, player))),
             CastleScript::CourtMagician => Ok(Some(
-                if self.clan_of(player).is_some() && self.clan_id_of(player) == self.castle_owner_of_npc(npc) {
+                if self.clan_of(player).is_some() && self.clan_id_of(player) == self.castle_owner_of_npc(npc)
+                {
                     "courtmagician.html"
                 } else {
                     "courtmagician-01.html"
@@ -465,7 +475,12 @@ impl World {
 
     /// Java `Player.processScriptEvent(scriptName, event)` for the scripts of this module. `false`
     /// when the script is another one.
-    pub(crate) fn residence_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) -> bool {
+    pub(crate) fn residence_script_event(
+        &mut self,
+        player: ObjectId,
+        script_name: &str,
+        event: &str,
+    ) -> bool {
         let Some(script) = CastleScript::by_name(script_name) else {
             return false;
         };
@@ -499,7 +514,13 @@ impl World {
     }
 
     /// `Quest.notifyEvent(event, npc, player)`: `onEvent`, then `showResult`.
-    fn castle_script_notify_event(&mut self, script: CastleScript, event: &str, npc: ObjectId, player: ObjectId) {
+    fn castle_script_notify_event(
+        &mut self,
+        script: CastleScript,
+        event: &str,
+        npc: ObjectId,
+        player: ObjectId,
+    ) {
         // The chamberlain acts on the castle row: it is read again first (D-50).
         if script == CastleScript::Chamberlain && chamberlain::needs_reread(event) {
             match self.npc_castle(npc) {
@@ -519,7 +540,13 @@ impl World {
     }
 
     /// `onEvent` and `showResult`.
-    fn castle_script_run_event(&mut self, script: CastleScript, event: &str, npc: ObjectId, player: ObjectId) {
+    fn castle_script_run_event(
+        &mut self,
+        script: CastleScript,
+        event: &str,
+        npc: ObjectId,
+        player: ObjectId,
+    ) {
         let reply = match script {
             CastleScript::Chamberlain => self.chamberlain_on_event(event, npc, player),
             CastleScript::SiegeManager => Ok(None),
@@ -594,8 +621,7 @@ impl World {
     /// `CastleChamberlain.isOwner(player, npc)`.
     pub(crate) fn castle_script_is_owner(&self, player: ObjectId, npc: ObjectId) -> bool {
         self.is_gm(player)
-            || (self.clan_of(player).is_some()
-                && self.clan_id_of(player) == self.castle_owner_of_npc(npc))
+            || (self.clan_of(player).is_some() && self.clan_id_of(player) == self.castle_owner_of_npc(npc))
     }
 
     /// `npc.getCastle().getSiege().isInProgress()`; `None` where Java's `getCastle()` is null.
@@ -648,7 +674,12 @@ impl World {
 
     /// Java `Quest.getHtm(player, fileName)`: the script's folder, then
     /// `data/scripts/quests/<name>`.
-    pub(crate) fn castle_script_htm(&self, script: CastleScript, player: ObjectId, file: &str) -> Option<String> {
+    pub(crate) fn castle_script_htm(
+        &self,
+        script: CastleScript,
+        player: ObjectId,
+        file: &str,
+    ) -> Option<String> {
         [
             format!("data/scripts/{}/{file}", script.path()),
             format!("data/scripts/quests/{}/{file}", script.name()),
@@ -724,7 +755,8 @@ impl World {
         } else {
             self.send(
                 player,
-                &SystemMessage::new(SystemMessageId::YouHaveEarnedS1).with(SystemMessageParam::ItemName(item_id)),
+                &SystemMessage::new(SystemMessageId::YouHaveEarnedS1)
+                    .with(SystemMessageParam::ItemName(item_id)),
             );
         }
         self.send_cur_load(player);
@@ -738,5 +770,34 @@ impl World {
     /// Java `Quest.hasQuestItems(player, itemId)`.
     pub(crate) fn script_has_items(&self, player: ObjectId, item_id: i32) -> bool {
         self.inventory_item_by_item_id(player, item_id).is_some()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn adena_is_grouped_by_thousands_like_number_format() {
+        assert_eq!(format_adena(0), "0");
+        assert_eq!(format_adena(999), "999");
+        assert_eq!(format_adena(1000), "1,000");
+        assert_eq!(format_adena(1_234_567), "1,234,567");
+        assert_eq!(format_adena(-1_234_567), "-1,234,567");
+        assert_eq!(format_adena(99_900_000_000), "99,900,000,000");
+    }
+
+    #[test]
+    fn the_calendar_fields_of_a_function_end() {
+        assert_eq!(civil_from_days(0), (1970, 1, 1));
+        assert_eq!(civil_from_days(19_723), (2024, 1, 1));
+        assert_eq!(civil_from_days(11_016), (2000, 2, 29));
+    }
+
+    #[test]
+    fn a_string_tokenizer_skips_empty_words() {
+        assert_eq!(words("  a  b c "), ["a", "b", "c"]);
+        assert!(words("   ").is_empty());
+        assert!(parse_int("12").is_ok() && parse_int("1x").is_err() && parse_int("").is_err());
     }
 }
