@@ -128,6 +128,8 @@ pub struct World {
     pub(crate) craft: crate::craft::CraftWorld,
     /// The augmentation skill map and retail chance tables (M6-AUGMENT-01, `augment.rs`).
     pub(crate) augment: crate::augment::AugmentWorld,
+    /// Castles, fortresses and clan halls (M7-RES-01, `residence/`).
+    pub(crate) residences: crate::residence::ResidenceWorld,
 }
 
 impl World {
@@ -189,6 +191,7 @@ impl World {
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
+            residences: crate::residence::ResidenceWorld::default(),
         }
     }
 
@@ -343,6 +346,7 @@ impl World {
                 clan_id,
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
+            WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -740,6 +744,7 @@ impl World {
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
+            TimerKind::Residence(timer) => self.on_residence_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
         }
     }

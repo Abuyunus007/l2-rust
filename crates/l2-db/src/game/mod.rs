@@ -20,6 +20,7 @@ mod pets;
 mod punishments;
 mod recipes;
 mod recommendations;
+mod residences;
 mod shortcuts;
 mod skills;
 mod sql_number;
@@ -52,6 +53,10 @@ pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValue
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};
+pub use residences::{
+    CastleRow, ClanHallRow, FortRow, FunctionRow, FunctionSave, FunctionTable, ResidenceRepository,
+    SiegableHallRow,
+};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use subclasses::{SubclassRepository, SubclassRow, SubclassValues};

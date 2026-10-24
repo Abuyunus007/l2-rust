@@ -145,6 +145,16 @@ pub enum PersistCommand {
     /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
     /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
     ClanWarehouseRequest { player: ObjectId, clan_id: i32 },
+    /// A residence row write with Java's statement (`castle`, `fort`, `clanhall`, the function
+    /// tables, `hasCastle`), see `residence/` (M7-RES-01). Applied in order with the other commands.
+    Residence(crate::residence::ResidenceWrite),
+    /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
+    /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
+    ResidenceRereadRequest {
+        residence_id: i32,
+        kind: crate::residence::ResidenceReadKind,
+        then: crate::residence::ResidenceReadThen,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

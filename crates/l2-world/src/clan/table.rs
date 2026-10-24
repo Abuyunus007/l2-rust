@@ -503,7 +503,9 @@ impl World {
         };
         self.broadcast_to_clan(clan_id, &SystemMessage::new(SystemMessageId::ClanHasDispersed));
         let castle_id = clan.castle_id;
-        // Sieges, fortress sieges, siegable halls and the clan hall auction: M7.
+        let (fort_id, hall_id) = (clan.fort_id, clan.hideout_id);
+        // The siege registrations (M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01) and the clan hall
+        // auction bid (M7-CH-01).
         let members: Vec<ObjectId> = clan.members().iter().map(|m| m.object_id).collect();
         let warehouse: Vec<ObjectId> = clan.warehouse.iter().map(|i| i.object_id).collect();
         // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
@@ -537,7 +539,25 @@ impl World {
         if write_db {
             self.clan_write(ClanWrite::Delete { clan_id, castle_id });
         }
-        // Fortress and siegable hall owners: M7.
+        // The fortress and the conquerable hall of the clan (M7-RES-01), written with the clan's
+        // rows. NOTE(java-quirk): Java leaves an auctionable hall and the castle owner alone.
+        let writes = if write_db {
+            crate::residence::Writes::Player
+        } else {
+            crate::residence::Writes::Never
+        };
+        let fort = crate::residence::FortId(fort_id);
+        if fort_id != 0 && self.fort(fort).is_some_and(|f| f.owner_id == clan_id) {
+            self.fort_remove_owner_with(fort, true, writes);
+        }
+        let hall = crate::residence::ClanHallId(hall_id);
+        if hall_id != 0
+            && self
+                .clan_hall(hall)
+                .is_some_and(|h| h.is_siegable_hall() && h.owner_id == clan_id)
+        {
+            self.clan_hall_free_with(hall, writes);
+        }
         info!(
             "ClanTable: Clan {clan_id} destroyed (leader {}).",
             leader.unwrap_or_default()

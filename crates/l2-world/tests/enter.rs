@@ -1075,6 +1075,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     PersistCommand::MailAttachmentsRequest { .. }
                     | PersistCommand::ClanWarehouseRequest { .. },
                 ) => "sync read",
+                Out::Persist(
+                    PersistCommand::Residence(_) | PersistCommand::ResidenceRereadRequest { .. },
+                ) => "residence",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

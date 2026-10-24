@@ -18,7 +18,7 @@
 // `ResidenceHallTeleportZone`, `LandingZone`, `NoLandingZone`, `HqZone`, `ConditionZone`,
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
-// entering it does nothing: `ClanHallZone`, `SiegableHallZone`, `SiegeZone` (needs sieges),
+// entering it does nothing: `SiegeZone` (needs sieges),
 // `OlympiadStadiumZone`, `WaterZone`, `SwampZone`, `BossZone`, `DamageZone`, `FishingZone`,
 // `RespawnZone` (restart points only). `FlagPvPZone` flags the player (M6-DUEL-01); its
 // `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
@@ -31,6 +31,9 @@
 // - `isAffected`: the `affectedClassType` check (needs the class list), the instance template
 //   check (no instance worlds yet)
 // - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone, `checkWaterState`
+//
+// `ClanHallZone` and `SiegableHallZone` set the `CLAN_HALL` flag and show the hall's decorations
+// (`AgitDecoInfo`, M7-RES-01, `residence/clan_hall.rs`).
 //
 // NPCs and other creatures have no zone state in M3: their zones are inert.
 
@@ -258,6 +261,8 @@ enum ZoneKind {
     Effect,
     /// `FlagPvPZone`: the PvP flag follows the player in and out.
     FlagPvp,
+    /// `ClanHallZone` and its `SiegableHallZone` (M7-RES-01).
+    ClanHall,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -286,6 +291,7 @@ impl ZoneKind {
             "DerbyTrackZone" => Self::DerbyTrack,
             "EffectZone" => Self::Effect,
             "FlagPvPZone" => Self::FlagPvp,
+            "ClanHallZone" | "SiegableHallZone" => Self::ClanHall,
             _ => Self::Inert,
         }
     }
@@ -519,6 +525,12 @@ impl World {
                 self.send_message(id, "You entered a PvP Flag zone.");
                 self.broadcast_user_info(id);
             }
+            ZoneKind::ClanHall => {
+                // Set as in clan hall, then the decorations of an auctionable hall.
+                self.set_inside(id, ZoneId::ClanHall, true);
+                let hall_id = zone.int_param("clanHallId").unwrap_or(0);
+                self.on_clan_hall_zone_enter(id, hall_id);
+            }
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -604,6 +616,7 @@ impl World {
                 self.send_message(id, "You left the PvP Flag zone.");
                 self.broadcast_user_info(id);
             }
+            ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

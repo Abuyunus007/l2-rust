@@ -183,6 +183,52 @@ pub fn clan_maintenance_database_writes(config_dir: &Path) -> bool {
     on
 }
 
+/// The residence values of `Player.ini` and `Feature.ini`, and `SiegeDatabaseWrites` of
+/// `SideBySide.ini` (D-51).
+pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ResidenceSettings {
+    let (player, feature) = (&config.player, &config.feature);
+    l2_world::ResidenceSettings {
+        siege_database_writes: siege_database_writes(config_dir),
+        remove_castle_circlets: player.remove_castle_circlets,
+        take_castle_points: feature.take_castle_points,
+        loose_castle_points: feature.loose_castle_points,
+        castle_defended_points: feature.castle_defended_points,
+        take_fort_points: feature.take_fort_points,
+        loose_fort_points: feature.loose_fort_points,
+        fs_max_supply_level: feature.fs_max_supply_level,
+    }
+}
+
+/// `SiegeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
+/// default). Off, the sieges, the residence owner changes, the castle tax income and the fees the
+/// clan warehouses pay change this world only and leave their rows to the Java game server that
+/// shares the database and runs the real sieges (D-39, D-51). Logs the active mode.
+pub fn siege_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("SiegeDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using SiegeDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!("SideBySide: SiegeDatabaseWrites = True, the sieges and residences write their rows.");
+    } else {
+        info!(
+            "SideBySide: SiegeDatabaseWrites = False, the sieges and residences leave their rows to the Java game server."
+        );
+    }
+    on
+}
+
 /// File names inside the config directory.
 pub const DATABASE_CONFIG_FILE: &str = "Database.ini";
 pub const INTERFACE_CONFIG_FILE: &str = "Interface.ini";
@@ -343,6 +389,9 @@ impl Server {
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
+        // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
+        let residences = persist::load_residences(&pool).await;
+        let residence_settings = residence_settings(&config, &paths.config_dir);
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -476,6 +525,11 @@ impl Server {
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
+                    // Java: CHSiegeManager, ClanHallTable (after ClanTable), CastleManager,
+                    // FortManager, SiegeScheduleData (M7-RES-01).
+                    world.set_residence_settings(residence_settings);
+                    world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
+                    world.load_residences(residences);
                     // Java: MailManager, MessageDeletionTaskManager.
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
@@ -780,6 +834,30 @@ mod tests {
 
     use super::*;
     use crate::test_support::idle_server;
+
+    #[test]
+    fn siege_database_writes_defaults_to_off_and_reads_the_file() {
+        let dir = tempfile::tempdir().unwrap();
+        // A missing file means the default (D-51).
+        assert!(!siege_database_writes(dir.path()));
+        let file = dir.path().join(world_data::SIDE_BY_SIDE_FILE);
+        std::fs::write(&file, "SiegeDatabaseWrites = True\n").unwrap();
+        assert!(siege_database_writes(dir.path()));
+        // The example file is the default and spells the key out.
+        let example = include_str!("../config-examples/SideBySide.ini");
+        assert!(example.contains("SiegeDatabaseWrites = False"));
+        std::fs::write(&file, example).unwrap();
+        assert!(!siege_database_writes(dir.path()));
+        // The other residence values come from Player.ini and Feature.ini.
+        let config = GameConfig::default();
+        let settings = residence_settings(&config, dir.path());
+        assert!(!settings.siege_database_writes);
+        assert_eq!(settings.take_castle_points, config.feature.take_castle_points);
+        assert_eq!(
+            settings.remove_castle_circlets,
+            config.player.remove_castle_circlets
+        );
+    }
 
     #[test]
     fn paths_follow_the_java_dist_layout() {

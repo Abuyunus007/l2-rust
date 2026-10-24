@@ -19,6 +19,10 @@ pub use game::{
     IdRepository, NewCharacter, UsedIds,
 };
 pub use game::{
+    CastleRow, ClanHallRow, FortRow, FunctionRow, FunctionSave, FunctionTable, ResidenceRepository,
+    SiegableHallRow,
+};
+pub use game::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
     RecommendationRepository, VariableRepository,

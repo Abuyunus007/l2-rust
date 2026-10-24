@@ -158,16 +158,16 @@ impl World {
 
         // The tax comes from the merchant the player is talking to; a GM without one pays none.
         let mut base_tax_rate = 0.0;
+        let mut castle_tax_rate = 0.0_f64;
         if let Some(npc) = merchant {
             let npc_id = self.npcs.get(&npc).map_or(0, |n| n.npc_id);
             if !list.is_npc_allowed(npc_id) {
                 self.send(id, &ActionFailed);
                 return;
             }
-            // M7: `castleTaxRate = mpc.getCastleTaxRate()`.
-            base_tax_rate = self.merchant_total_tax_rate(npc);
+            castle_tax_rate = self.merchant_castle_tax_rate(npc);
+            base_tax_rate = self.merchant_base_tax_rate(npc);
         }
-        let castle_tax_rate = 0.0_f64;
 
         let Some(templates) = self.item_templates() else {
             self.send(id, &ActionFailed);
@@ -302,7 +302,11 @@ impl World {
             }
         }
 
-        // M7: add to castle treasury (`castle.addToTreasury((long) (subTotal * castleTaxRate))`).
+        // Add to castle treasury: `((Merchant) merchant).getCastle()` (the castle of the merchant's
+        // town, M7-RES-01), which may be another one than the price config's.
+        if let Some(castle) = merchant.and_then(|npc| self.npc_castle(npc)) {
+            self.castle_add_to_treasury(castle, (sub_total as f64 * castle_tax_rate) as i64);
+        }
 
         self.send_cur_load(id);
         self.send_ex_buy_sell_list(id, true);

@@ -247,7 +247,8 @@ impl World {
             clan_id,
             &SystemMessage::new(SystemMessageId::S1HasJoinedTheClan).with(SystemMessageParam::Text(name)),
         );
-        // Residential skills of the clan's castle or fortress: M7.
+        // The residential skills of the clan's castle and fortress (M7-RES-01).
+        self.give_clan_residential_skills(clan_id, player);
         self.send_skill_list(player);
         if let Some(add) = self.pledge_member_add_of_player(player) {
             self.broadcast_to_other_clan_members(clan_id, &add, player);

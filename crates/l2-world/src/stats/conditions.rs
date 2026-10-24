@@ -9,8 +9,8 @@
 // world yet and is therefore known: nobody is mounted, in a vehicle, in the
 // olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
 // the charges and the souls are the world's (`effects/`, M5-EFX-02).
-// Kinds that read state the Java server has but the world does not model (the halls and forts
-// of clans, sieges and territory wars, heroes, parties,
+// Kinds that read state the Java server has but the world does not model (sieges and territory
+// wars, heroes, parties,
 // categories, the instance type tree, the `Can...` checks, random chance in a read-only stat
 // calculation, positions relative to the target's heading) evaluate to `false` and log one
 // warning per kind: a stat bonus never applies by accident.
@@ -46,8 +46,6 @@ enum NotModelled {
     Hero,
     SiegeZone,
     SiegeSide,
-    ClanHall,
-    Fort,
     Category,
     CanAction,
     TargetNpcType,
@@ -163,23 +161,20 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
                 }
             }
         }
-        // Without a clan: `[0]` asks for "no clan hall". A clan's hall comes with the clan hall
-        // tables (M7).
-        Condition::PlayerHasClanHall { clan_hall } => match a.player() {
-            None => false,
-            Some(_) if a.world().clan_of(a.object_id()).is_none() => {
-                clan_hall.len() == 1 && clan_hall[0] == 0
-            }
-            Some(_) => not_modelled(
-                NotModelled::ClanHall,
-                "player clanHall of a clan (clan halls, M7)",
-            ),
+        // `ConditionPlayerHasClanHall`: without a clan `[0]` asks for "no clan hall"; `[-1]` is any
+        // hall; otherwise the clan's hall must be in the list (M7-RES-01).
+        Condition::PlayerHasClanHall { clan_hall } => match (a.player(), a.world().clan_of(a.object_id())) {
+            (None, _) => false,
+            (Some(_), None) => clan_hall.len() == 1 && clan_hall[0] == 0,
+            (Some(_), Some(clan)) if clan_hall.len() == 1 && clan_hall[0] == -1 => clan.hideout_id > 0,
+            (Some(_), Some(clan)) => clan_hall.contains(&clan.hideout_id),
         },
-        // Without a clan: `0` asks for "no fortress". A clan's fortress comes with the forts (M7).
-        Condition::PlayerHasFort { fort } => match a.player() {
-            None => false,
-            Some(_) if a.world().clan_of(a.object_id()).is_none() => *fort == 0,
-            Some(_) => not_modelled(NotModelled::Fort, "player fort of a clan (fortresses, M7)"),
+        // `ConditionPlayerHasFort`: without a clan `0` asks for "no fortress"; `-1` is any (M7-RES-01).
+        Condition::PlayerHasFort { fort } => match (a.player(), a.world().clan_of(a.object_id())) {
+            (None, _) => false,
+            (Some(_), None) => *fort == 0,
+            (Some(_), Some(clan)) if *fort == -1 => clan.fort_id > 0,
+            (Some(_), Some(clan)) => clan.fort_id == *fort,
         },
         // `ConditionPlayerHasCastle`: the clan's castle (`clan_data.hasCastle`); `-1` is any.
         Condition::PlayerHasCastle { castle } => match a.world().clan_of(a.object_id()) {

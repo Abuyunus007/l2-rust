@@ -91,6 +91,7 @@ pub struct DbPlayerLoader {
     summons: SummonRepository,
     pets: PetRepository,
     clans: l2_db::ClanRepository,
+    residences: l2_db::ResidenceRepository,
     messages: MessageRepository,
     recipes: l2_db::RecipeRepository,
 }
@@ -112,6 +113,7 @@ impl DbPlayerLoader {
             summons: SummonRepository::new(pool.clone()),
             pets: PetRepository::new(pool.clone()),
             clans: l2_db::ClanRepository::new(pool.clone()),
+            residences: l2_db::ResidenceRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
             recipes: l2_db::RecipeRepository::new(pool),
         }
@@ -357,6 +359,20 @@ impl DbPlayerLoader {
             match crate::persist::load_clan(&self.clans, clan_id).await {
                 Ok(mut record) => {
                     record.warehouse = crate::persist::load_clan_warehouse(&self.items, clan_id).await;
+                    // The clan's castle, fortresses and halls as the database has them now
+                    // (M7-RES-01, D-50, D-51: the Java GS runs the real sieges). A failed read
+                    // leaves the world's residences alone.
+                    if let Some(castle_id) = record.data.as_ref().map(|d| d.castle_id) {
+                        match crate::persist::load_residence_refresh(&self.residences, clan_id, castle_id)
+                            .await
+                        {
+                            Ok(refresh) => data.profile.residence_refresh = Some(Box::new(refresh)),
+                            Err(e) => warn!(
+                                "Could not read the residences of clan {clan_id} of {}: {e}",
+                                data.name
+                            ),
+                        }
+                    }
                     data.profile.clan_record = Some(Box::new(record));
                 }
                 Err(e) => warn!("Could not read clan {clan_id} of {}: {e}", data.name),

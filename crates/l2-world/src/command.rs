@@ -297,6 +297,12 @@ pub enum WorldCommand {
         clan_id: i32,
         result: Result<Vec<crate::player::ItemData>, ()>,
     },
+    /// The answer to `PersistCommand::ResidenceRereadRequest`: the residence's rows, or `Err` when
+    /// the read failed (the follow-up `then` is then refused, M7-RES-01).
+    ResidenceReread {
+        result: Result<crate::residence::ResidenceRereadRows, ()>,
+        then: crate::residence::ResidenceReadThen,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -350,6 +356,11 @@ impl fmt::Debug for WorldCommand {
             } => write!(
                 f,
                 "ClanWarehouseLoaded({player}, {clan_id}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::ResidenceReread { result, then } => write!(
+                f,
+                "ResidenceReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),

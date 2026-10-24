@@ -123,6 +123,8 @@ pub enum TimerKind {
     Mail(crate::mail::MailTimer),
     /// The passes of an alt crafting (`RecipeItemMaker`), see `craft/`.
     Craft(crate::craft::CraftTimer),
+    /// The fee tasks of the residence functions, see `residence/`.
+    Residence(crate::residence::ResidenceTimer),
 }
 
 #[derive(Debug, Default)]

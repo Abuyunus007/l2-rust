@@ -1430,3 +1430,129 @@ async fn the_mail_and_clan_warehouse_reads_see_what_the_database_has_now() {
 
     db.drop_db().await;
 }
+
+/// M7-RES-01: the start-up read of the residences (`CastleManager`, `FortManager`,
+/// `ClanHallTable`, `CHSiegeManager`), Java's residence statements through the store, the re-read
+/// on demand and the `CharacterSelect` read of a clan's residences (D-50, D-51).
+#[tokio::test]
+async fn residences_are_read_written_and_read_again_like_java() {
+    use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
+    use l2_world::{FortId, ResidenceRef, ResidenceWrite};
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    db.exec("INSERT INTO castle VALUES (1,'Gludio',10,500,1700000000000,'false',0,'true',3),(2,'Dion',0,0,0,'true',0,'false',0)")
+        .await;
+    db.exec(
+        "INSERT INTO clan_data (clan_id, clan_name, hasCastle) VALUES (500, 'Lions', 1), (600, 'Wolves', 0)",
+    )
+    .await;
+    db.exec("INSERT INTO castle_functions VALUES (1, 2, 40, 1000, 86400000, 5), (2, 1, 1, 1, 1, 1)")
+        .await;
+    db.exec(
+        "INSERT INTO fort VALUES (101,'Shanty',0,1700000000000,500,0,0,0,2),(102,'Southern',0,0,0,1,0,0,0)",
+    )
+    .await;
+    db.exec("INSERT INTO clanhall VALUES ('36','Hall','600','500000','d','Aden','1700000000000','2','1')")
+        .await;
+    db.exec("INSERT INTO siegable_clanhall (`clanHallId`, `name`, `ownerId`, `desc`, `location`, `nextSiege`, `siegeLength`, `schedule_config`) VALUES (21, 'Fortress of Resistance', 0, 'c', 'Dion', 0, 3600000, '14;0;0;12;00')")
+        .await;
+
+    let load = game_server::persist::load_residences(&pool).await;
+    assert_eq!(load.castles.len(), 2);
+    let gludio = &load.castles[0];
+    assert!(gludio.found);
+    assert_eq!(
+        (gludio.owner_id, gludio.tax_percent, gludio.treasury),
+        (500, 10, 500)
+    );
+    assert_eq!(gludio.siege_date, NOW);
+    assert!(!gludio.time_registration_over && gludio.show_npc_crest);
+    assert_eq!(gludio.ticket_buy_count, 3);
+    assert_eq!(gludio.functions.len(), 1);
+    assert_eq!(
+        (
+            gludio.functions[0].function_type,
+            gludio.functions[0].rate,
+            gludio.functions[0].end_time
+        ),
+        (2, 86_400_000, 5)
+    );
+    // Dion has no owner, so its functions are not read (Java `if (_ownerId != 0) loadFunctions()`).
+    assert_eq!(load.castles[1].owner_id, 0);
+    assert!(load.castles[1].functions.is_empty());
+    assert_eq!(load.forts.len(), 2);
+    assert_eq!((load.forts[0].owner_id, load.forts[0].supply_level), (500, 2));
+    assert_eq!(load.forts[1].fort_type, 1);
+    assert_eq!(load.clan_halls.len(), 1);
+    assert_eq!((load.clan_halls[0].owner_id, load.clan_halls[0].grade), (600, 2));
+    assert!(load.clan_halls[0].paid);
+    assert_eq!(load.siegable_halls.len(), 1);
+    assert_eq!(load.siegable_halls[0].siege_length, 3_600_000);
+
+    // Java's statements through the store.
+    let mut store = DbStore::new(pool.clone());
+    store
+        .store_residence_write(&ResidenceWrite::CastleOwner {
+            castle_id: 1,
+            clan_id: 600,
+        })
+        .await
+        .unwrap();
+    store
+        .store_residence_write(&ResidenceWrite::FunctionSave {
+            residence: ResidenceRef::Fort(FortId(101)),
+            function_type: 1,
+            lvl: 2,
+            lease: 100,
+            rate: 1000,
+            end_time: 7,
+        })
+        .await
+        .unwrap();
+    store
+        .store_residence_write(&ResidenceWrite::CastleTreasury {
+            castle_id: 1,
+            treasury: 900,
+        })
+        .await
+        .unwrap();
+
+    // The re-read on demand sees them.
+    match store.load_residence(ResidenceReadKind::Castle, 1).await.unwrap() {
+        ResidenceRereadRows::Castle(record) => {
+            assert_eq!((record.owner_id, record.treasury), (600, 900));
+            assert_eq!(record.functions.len(), 1);
+        }
+        other => panic!("{other:?}"),
+    }
+    match store
+        .load_residence(ResidenceReadKind::ClanHall, 36)
+        .await
+        .unwrap()
+    {
+        ResidenceRereadRows::ClanHall(record) => assert_eq!(record.owner_id, 600),
+        other => panic!("{other:?}"),
+    }
+    assert_eq!(
+        store.load_residence(ResidenceReadKind::Fort, 999).await.unwrap(),
+        ResidenceRereadRows::Missing
+    );
+
+    // `CharacterSelect`: the Lions lost Gludio (their `hasCastle` is 0 now) and keep Shanty.
+    let repo = l2_db::ResidenceRepository::new(pool.clone());
+    let refresh = game_server::persist::load_residence_refresh(&repo, 500, 0)
+        .await
+        .unwrap();
+    assert!(refresh.castle.is_none());
+    assert_eq!(refresh.forts.len(), 1);
+    assert_eq!(refresh.forts[0].functions.len(), 1);
+    let refresh = game_server::persist::load_residence_refresh(&repo, 600, 1)
+        .await
+        .unwrap();
+    assert_eq!(refresh.castle.as_ref().map(|c| c.owner_id), Some(600));
+    assert_eq!(refresh.clan_halls.len(), 1);
+
+    db.drop_db().await;
+}

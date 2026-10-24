@@ -1359,3 +1359,91 @@ fn the_town_zone_picks_the_base_tax() {
     s.buy(100, &[(SHOT, 2)]);
     assert_eq!(s.adena(), 5000 - 52);
 }
+
+// ---- the castle tax (M7-RES-01) -----------------------------------------------------------------
+
+/// `MerchantPriceConfig.getTotalTaxRate()` with a castle: Gludin's config names castle 1, whose
+/// `taxPercent` (10) joins the base tax (30). `RequestBuyItem` charges `price * (1 + castleTaxRate +
+/// baseTaxRate)` and pays `(long) (subTotal * castleTaxRate)` into the treasury of the merchant's
+/// castle (`Npc.getCastle()`: the town's `taxById`). D-51: the treasury row only with
+/// `SiegeDatabaseWrites`.
+#[test]
+fn the_castle_tax_goes_into_the_treasury() {
+    for switch in [false, true] {
+        let zone = format!(
+            "<zone id=\"11025\" name=\"gludin\" type=\"TownZone\" shape=\"Cuboid\" minZ=\"-5000\" maxZ=\"5000\">\
+             <stat name=\"taxById\" val=\"1\" />\
+             <node X=\"{}\" Y=\"{}\"/><node X=\"{}\" Y=\"{}\"/></zone>",
+            X - 500,
+            Y - 500,
+            X + 500,
+            Y + 500
+        );
+        let mut s = Scene::with(
+            &format!("castle_tax_{switch}"),
+            WorldSettings::default(),
+            Some(&zone),
+        );
+        s.world.set_residence_settings(ResidenceSettings {
+            siege_database_writes: switch,
+            ..ResidenceSettings::default()
+        });
+        s.world.load_clans(
+            vec![ClanRecord {
+                clan_id: 500,
+                data: Some(clan::ClanDataRecord {
+                    name: Some("Lions".to_owned()),
+                    castle_id: 1,
+                    ..clan::ClanDataRecord::default()
+                }),
+                ..ClanRecord::default()
+            }],
+            Vec::new(),
+        );
+        s.world.load_residences(ResidenceLoad {
+            castles: vec![residence::CastleRecord {
+                id: 1,
+                found: true,
+                name: "Gludio".to_owned(),
+                tax_percent: 10,
+                owner_id: 500,
+                ..residence::CastleRecord::default()
+            }],
+            ..ResidenceLoad::default()
+        });
+        let npc = s.start(vec![inv(1001, ADENA, 5000)]);
+        assert_eq!(s.world.npc_castle(npc), Some(CastleId(1)));
+        assert!(s.world.npc_is_in_town(npc));
+        s.open_window(npc, 100);
+        let out = s.log.take();
+        let list = &buy_lists(&out)[0];
+        let price = |item_id: i32| list.products.iter().find(|p| p.item_id == item_id).unwrap().price;
+        // `(long) (100 * (1 + 0.4))`
+        assert_eq!(price(LIMITED), 140);
+        assert_eq!(price(SHOT), 28);
+        // 2 x `(long) (20 * (1 + 0.1 + 0.3))` = 56; the castle gets `(long) (56 * 0.1)` = 5.
+        s.buy(100, &[(SHOT, 2)]);
+        assert_eq!(s.adena(), 5000 - 56);
+        assert_eq!(s.world.castle(CastleId(1)).unwrap().treasury, 5);
+        let writes: Vec<ResidenceWrite> = s
+            .log
+            .take()
+            .into_iter()
+            .filter_map(|o| match o {
+                Out::Persist(PersistCommand::Residence(w)) => Some(w),
+                _ => None,
+            })
+            .collect();
+        if switch {
+            assert_eq!(
+                writes,
+                [ResidenceWrite::CastleTreasury {
+                    castle_id: 1,
+                    treasury: 5
+                }]
+            );
+        } else {
+            assert!(writes.is_empty());
+        }
+    }
+}
