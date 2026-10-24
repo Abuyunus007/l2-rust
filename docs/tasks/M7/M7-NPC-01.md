@@ -39,6 +39,7 @@ Port the packets this card needs yourself in `crates/l2-protocol-game/src/{clien
 - [ ] report delivered in the agent's report format
 
 ## Notes from the orchestrator
+- Also: the `CastleAmbassador` dialog (FORT-01 left `fort_castle_id_by_ambassador` and `fort_contracted_castle` for it) and the guard AIs: `SiegeGuards` for castles and Java's `FortSiegeGuardAI` (FORT-01 spawns the fort guards but has no AI for them). The manor link of the chamberlain is a page link only (MANOR-01 wired `on_npc_manor_bypass`).
 - Read CLAUDE.md (safety rules), `docs/DECISIONS.md` (D-39, D-49, D-50, D-51), `docs/design/m6-social.md` and `docs/design/m7-residences.md` first.
 - Up to seven workers run at the same time. In shared files (`world.rs`, `command.rs`, `timer.rs`, `outbox.rs`, `player.rs`, `pvp.rs`, `zones.rs`, `dispatch.rs`, `client/enter.rs`, `persist.rs`) only add your lines: no reformatting or moving code.
 - Use `-j 4` and CARGO_INCREMENTAL=0. Before your final checks run `git merge main` and resolve conflicts keeping both sides; make sure no test crate fails to compile.
