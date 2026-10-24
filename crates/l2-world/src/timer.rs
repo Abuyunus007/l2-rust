@@ -133,6 +133,8 @@ pub enum TimerKind {
     Residence(crate::residence::ResidenceTimer),
     /// The mode change of the castle manor and its automatic save, see `manor/`.
     Manor(crate::manor::ManorTimer),
+    /// The rent of a clan hall and the end of an auction, see `clanhall/`.
+    ClanHall(crate::clanhall::ClanHallTimer),
     /// The feed task of a mount, the dismount task of a no-landing zone and the rent task, see
     /// `mount.rs`.
     Mount(crate::mount::MountTimer),

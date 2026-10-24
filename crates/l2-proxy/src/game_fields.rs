@@ -90,7 +90,7 @@ use l2_protocol_game::server::refine::{
     ExPutItemResultForVariationCancel, ExPutItemResultForVariationMake, ExShowVariationCancelWindow,
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
-use l2_protocol_game::server::residence::AgitDecoInfo;
+use l2_protocol_game::server::residence::{AgitDecoInfo, ExShowAgitInfo};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::siege::{
     ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
@@ -456,6 +456,7 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestJoinSiege(p) => object!(p => castle_id, is_attacker, is_joining),
         ClientPacket::RequestConfirmSiegeWaitingList(p) => object!(p => castle_id, clan_id, approved),
         ClientPacket::RequestAllFortressInfo(_)
+        | ClientPacket::RequestAllAgitInfo(_)
         | ClientPacket::RequestFortressSiegeInfo(_)
         | ClientPacket::RequestManorList(_)
         | ClientPacket::RequestDominionInfo(_) => json!({}),
@@ -850,6 +851,13 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             json!({
                 "castles": p.castles.iter().map(|c| {
                     object!(c => residence_id, owner_name, tax_percent, siege_date_secs)
+                }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExShowAgitInfo => decoded::<ExShowAgitInfo>(&mut r, |p| {
+            json!({
+                "halls": p.halls.iter().map(|h| {
+                    object!(h => hall_id, owner_clan_name, leader_name, grade_below_one)
                 }).collect::<Vec<_>>(),
             })
         }),
@@ -2457,6 +2465,7 @@ mod tests {
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
         ServerOpcode::AgitDecoInfo,
+        ServerOpcode::ExShowAgitInfo,
         ServerOpcode::ChooseInventoryItem,
         ServerOpcode::EnchantResult,
         ServerOpcode::ExPutEnchantTargetItemResult,
@@ -2567,6 +2576,37 @@ mod tests {
         assert_eq!(fields["fireplace"], 2);
         assert_eq!(fields["mirror"], 1);
         assert_eq!(fields["item_create"], 0);
+    }
+
+    #[test]
+    fn the_clan_hall_list_shows_its_fields() {
+        use l2_protocol_game::client::RequestAllAgitInfo;
+        use l2_protocol_game::server::residence::AgitInfo;
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &RequestAllAgitInfo.to_bytes()),
+            json!({})
+        );
+        let packet = ExShowAgitInfo {
+            halls: vec![
+                AgitInfo {
+                    hall_id: 22,
+                    owner_clan_name: String::new(),
+                    leader_name: String::new(),
+                    grade_below_one: true,
+                },
+                AgitInfo {
+                    hall_id: 36,
+                    owner_clan_name: "Wolves".to_owned(),
+                    leader_name: "Fenrir".to_owned(),
+                    grade_below_one: false,
+                },
+            ],
+        };
+        let fields = s2c_fields(&packet.to_bytes());
+        assert_eq!(fields["halls"][0]["hall_id"], 22);
+        assert_eq!(fields["halls"][0]["grade_below_one"], true);
+        assert_eq!(fields["halls"][1]["owner_clan_name"], "Wolves");
+        assert_eq!(fields["halls"][1]["leader_name"], "Fenrir");
     }
 
     #[test]

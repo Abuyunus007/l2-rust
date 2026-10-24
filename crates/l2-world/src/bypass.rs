@@ -340,7 +340,21 @@ impl World {
             .and_then(|n| self.npc_world.template(n.npc_id))
             .map(|t| t.npc_type.as_str());
         let (is_teleporter, is_fisherman) = (npc_type == Some("Teleporter"), npc_type == Some("Fisherman"));
-        if is_teleporter {
+        let (is_auctioneer, is_hall_manager, is_hall_doorman) = (
+            npc_type == Some("Auctioneer"),
+            npc_type == Some("ClanHallManager"),
+            npc_type == Some("ClanHallDoorman"),
+        );
+        if is_auctioneer {
+            // Java: Auctioneer.onBypassFeedback (the auction board, `clanhall/auctioneer.rs`).
+            self.auctioneer_bypass_feedback(npc, player, command);
+        } else if is_hall_manager {
+            // Java: ClanHallManager.onBypassFeedback (`clanhall/manager.rs`).
+            self.clan_hall_manager_bypass_feedback(npc, player, command);
+        } else if is_hall_doorman {
+            // Java: ClanHallDoorman.onBypassFeedback (`clanhall/doorman.rs`).
+            self.clan_hall_doorman_bypass_feedback(npc, player, command);
+        } else if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
         } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
             // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).

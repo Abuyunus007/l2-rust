@@ -46,7 +46,7 @@
 //   `midVictory`, siege skills, siege guards, merc tickets, door and trap upgrades): M7-SIEGE-01,
 //   M7-FORT-01, M7-CHSIEGE-01 (`// M7-SIEGE-01:` and friends).
 // - `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts: M7-FORT-01.
-// - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01.
+// - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01 (`clanhall/`, done).
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
 // - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
 //   `manor/lists.rs` (M7-MANOR-01). The territory ward skills of a castle
@@ -283,6 +283,9 @@ pub enum ResidenceWrite {
     /// `CastleManager.removeCirclet` of an offline member: `DELETE FROM items WHERE owner_id = ?
     /// and item_id = ?`.
     DeleteCirclets { owner_id: i32, item_id: i32 },
+    /// A write of the clan hall auction tables (`auction`, `auction_bid`, `clan_data.
+    /// auction_bid_at`), see `clanhall/` (M7-CH-01).
+    ClanHallAuction(crate::clanhall::AuctionWrite),
 }
 
 impl World {

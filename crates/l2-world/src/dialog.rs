@@ -445,6 +445,10 @@ impl World {
     /// Java `Npc.showChatWindow(player)`: the click on an NPC. Gatekeepers on castle ground have
     /// their own windows in Java; no castle is loaded, so none is on castle ground.
     pub fn show_chat_window_default(&mut self, npc: ObjectId, player: ObjectId) {
+        // The clan hall NPCs override `showChatWindow(player)` (`clanhall/`).
+        if self.clan_hall_npc_show_chat_window(npc, player) {
+            return;
+        }
         self.show_chat_window(npc, player, 0);
     }
 

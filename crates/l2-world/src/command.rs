@@ -219,6 +219,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
+    AllAgitInfo,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

@@ -199,7 +199,7 @@ pub use refine::{
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 pub use regen::ExRegenMax;
-pub use residence::AgitDecoInfo;
+pub use residence::{AgitDecoInfo, AgitInfo, ExShowAgitInfo};
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use siege::{
     CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,

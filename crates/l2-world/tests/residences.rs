@@ -875,6 +875,8 @@ fn a_due_fee_is_paid_from_the_clan_warehouse_or_the_function_goes() {
             end_time: 0,
         },
     ];
+    // The Wolves' rent is paid for a long time (M7-CH-01: it runs on the same ticks).
+    load.clan_halls[0].paid_until = i64::MAX / 2;
     s.load(load);
     // Both are due at once: type 2 pays 4000 (10,000 left: 6000), type 3 cannot pay 7000.
     s.run_ms(50);

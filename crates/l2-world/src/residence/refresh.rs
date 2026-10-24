@@ -54,6 +54,12 @@ pub enum ResidenceRereadRows {
     Fort(FortRecord),
     ClanHall(ClanHallRecord),
     SiegableHall(SiegableHallRecord),
+    /// The `auction` row of a hall's auction with its bids; `None` when the database has no such
+    /// auction any more (M7-CH-01).
+    Auction {
+        id: i32,
+        record: Option<crate::clanhall::AuctionRecord>,
+    },
     /// The database has no row for it (nothing changes).
     Missing,
 }
@@ -65,6 +71,18 @@ pub enum ResidenceRereadRows {
 pub enum ResidenceReadThen {
     /// Only bring this world up to date.
     Nothing,
+    /// The end task of an auction (by its key) is due: decide on the fresh rows (M7-CH-01).
+    AuctionEnd(u64),
+    /// A clan bids: go on to read its clan warehouse (M7-CH-01).
+    AuctionBid {
+        player: ObjectId,
+        auction_id: i32,
+        bid: i64,
+    },
+    /// A clan cancels its bid (M7-CH-01).
+    AuctionCancelBid { player: ObjectId, auction_id: i32 },
+    /// The owner of the hall cancels its auction (M7-CH-01).
+    AuctionCancel { player: ObjectId, auction_id: i32 },
 }
 
 impl World {
@@ -176,6 +194,7 @@ impl World {
     ) {
         let Ok(rows) = result else {
             warn!("A residence could not be read again; {then:?} is refused.");
+            self.auction_read_failed(&then);
             return;
         };
         match &rows {
@@ -183,10 +202,12 @@ impl World {
             ResidenceRereadRows::Fort(record) => self.apply_fort_record(record),
             ResidenceRereadRows::ClanHall(record) => self.apply_clan_hall_record(record),
             ResidenceRereadRows::SiegableHall(record) => self.apply_siegable_hall_record(record),
+            ResidenceRereadRows::Auction { id, record } => self.apply_auction_rows(*id, record.as_ref()),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
         }
         match then {
             ResidenceReadThen::Nothing => {}
+            then => self.auction_read_then(then),
         }
     }
 
@@ -265,6 +286,8 @@ impl World {
             *paid = record.paid;
         }
         self.apply_hall_owner(id, record.owner_id, &record.functions);
+        // `new AuctionableHall(set)` starts the rent of an owned hall.
+        self.clan_hall_rent_after_reread(id);
     }
 
     /// A conquerable hall's row as the database has it now.
@@ -415,4 +438,6 @@ pub enum ResidenceReadKind {
     ClanHall,
     /// `siegable_clanhall`.
     SiegableHall,
+    /// `auction` and `auction_bid` of a hall's auction (M7-CH-01).
+    Auction,
 }

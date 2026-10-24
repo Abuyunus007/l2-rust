@@ -18,6 +18,7 @@ pub mod bot_report;
 pub mod bypass;
 pub mod chat;
 pub mod clan;
+pub mod clanhall;
 pub mod combat;
 pub mod command;
 pub mod craft;
@@ -83,6 +84,9 @@ pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
+pub use clanhall::{
+    AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
+};
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use craft::{
