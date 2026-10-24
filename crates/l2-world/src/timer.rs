@@ -143,6 +143,9 @@ pub enum TimerKind {
     Mount(crate::mount::MountTimer),
     /// The fortress siege tasks, `FortUpdater` and the fame of the siege zone, see `fort/`.
     Fort(crate::fort::FortTimer),
+    /// The quest timers of the castle NPCs (the mass gatekeeper, the envoys), see
+    /// `residence/npc/`.
+    ResidenceNpc(crate::residence::npc::ResidenceNpcTimer),
 }
 
 #[derive(Debug, Default)]

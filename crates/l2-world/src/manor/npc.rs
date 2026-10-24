@@ -62,6 +62,10 @@ impl World {
     /// for the script's start NPCs): the script answers instead of `showChatWindow`. `true` when
     /// a script took the talk.
     pub(crate) fn npc_first_talk_on_click(&mut self, npc: ObjectId, player: ObjectId) -> bool {
+        // The castle NPCs (M7-NPC-01, `residence/npc/`).
+        if self.residence_npc_on_click(npc, player) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -76,6 +80,10 @@ impl World {
     /// `ChatLink` for `Chat 0`: the first talk when the NPC has a listener for it. `true` when a
     /// script took the talk.
     pub(crate) fn npc_first_talk_on_chat(&mut self, npc: ObjectId, player: ObjectId) -> bool {
+        // The castle NPCs (M7-NPC-01, `residence/npc/`).
+        if self.residence_npc_first_talk(npc, player, false) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }

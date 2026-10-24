@@ -112,6 +112,8 @@ pub enum ResidenceReadThen {
     AuctionCancelBid { player: ObjectId, auction_id: i32 },
     /// The owner of the hall cancels its auction (M7-CH-01).
     AuctionCancel { player: ObjectId, auction_id: i32 },
+    /// A castle NPC acts on the rows (M7-NPC-01, `residence/npc/`).
+    Npc(super::npc::NpcThen),
 }
 
 impl World {
@@ -262,6 +264,7 @@ impl World {
                 self.siege_restart_schedule(CastleId(castle_id));
             }
             ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
+            ResidenceReadThen::Npc(then) => self.residence_npc_after_reread(then),
             then => self.auction_read_then(then),
         }
     }
