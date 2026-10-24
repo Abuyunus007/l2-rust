@@ -29,6 +29,7 @@ pub mod duel;
 pub mod effects;
 pub mod enchant;
 pub mod enter;
+pub mod fishing;
 pub mod flood;
 pub mod formulas;
 pub mod friends;
@@ -99,6 +100,9 @@ pub use effects::{
     SavedEffect, SkillFinishType, SkillKey, effect_flag,
 };
 pub use enchant::{EnchantInput, EnchantSettings, EnchantState, EnchantWorld};
+pub use fishing::{
+    ChampionshipData, ChampionshipRow, FishingSettings, FishingTimer, FishingWorld, PlayerFishing,
+};
 pub use flood::{
     FloodAction, FloodCheck, FloodConfig, FloodKind, FloodPunishment, FloodSettings, PlayerFlood,
 };

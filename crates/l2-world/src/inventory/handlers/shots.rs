@@ -29,8 +29,8 @@
 //   [`World::skill_uses_soul_shot`] / [`World::skill_uses_spirit_shot`] like the Java handlers.
 //
 // # Left out
-// - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) are `summon/shots.rs`; fishing shots are
-//   not ported.
+// - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) are `summon/shots.rs`; fishing shots
+//   (`FishShots`, M6-FU-08) are `fishing/shots.rs`.
 // - The olympiad (`OlympiadConfig.OLYMPIAD_DISABLE_BLESSED_SPIRITSHOTS`, `disableAutoShotsAll`
 //   at the start of a match): no olympiad yet.
 // - Fake players (`FAKE_PLAYER_USE_SHOTS`).
@@ -333,7 +333,7 @@ impl World {
     }
 
     /// `broadcastPacket(new MagicSkillUse(this, this, skillId, level, 0, 0))`.
-    fn broadcast_self_skill_use(&self, id: ObjectId, skill_id: i32, level: i32) {
+    pub(crate) fn broadcast_self_skill_use(&self, id: ObjectId, skill_id: i32, level: i32) {
         if let Some(packet) = self.self_skill_use(id, skill_id, level) {
             self.broadcast_creature_packet(id, &packet);
         }

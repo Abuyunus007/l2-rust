@@ -9,6 +9,7 @@ mod buylists;
 mod characters;
 mod clans;
 mod crests;
+mod fishing;
 mod friends;
 mod ground_items;
 mod hennas;
@@ -39,6 +40,7 @@ pub use clans::{
     ClanUpdate, ClanWarRow, NewClan,
 };
 pub use crests::{CrestRepository, CrestRow};
+pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use friends::{FriendLink, FriendRepository};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hennas::{HennaRepository, HennaRow};

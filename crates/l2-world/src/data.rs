@@ -385,6 +385,8 @@ pub struct WorldSettings {
     pub enchant: crate::enchant::EnchantSettings,
     /// The augmentation chances, blacklist and PvP rule (M6-AUGMENT-01).
     pub augment: crate::augment::AugmentSettings,
+    /// The fishing switches and the championship prizes (M6-FU-08).
+    pub fishing: crate::fishing::FishingSettings,
     /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
@@ -445,6 +447,7 @@ impl Default for WorldSettings {
             store: crate::trade::StoreSettings::default(),
             enchant: crate::enchant::EnchantSettings::default(),
             augment: crate::augment::AugmentSettings::default(),
+            fishing: crate::fishing::FishingSettings::default(),
             daily_reset_database_writes: false,
         }
     }

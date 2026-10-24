@@ -268,6 +268,7 @@ impl World {
     pub fn can_duel(&self, id: ObjectId) -> Result<(), SystemMessageId> {
         use SystemMessageId::{
             C1CannotDuelBecauseC1IsAlreadyEngagedInADuel, C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle,
+            C1CannotDuelBecauseC1IsCurrentlyFishing,
             C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
             C1CannotMakeAChallengeToADuelBecauseC1IsCurrentlyInADuelProhibitedAreaPeacefulZoneSevenSignsZoneNearWaterRestartProhibitedArea as InProhibitedArea,
             ThereIsNoOpponentToReceiveYourChallengeForADuel,
@@ -300,7 +301,10 @@ impl World {
         if self.is_mounted(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider);
         }
-        // Boats and fishing: not modelled.
+        // Boats: not modelled.
+        if self.is_fishing(id) {
+            return Err(C1CannotDuelBecauseC1IsCurrentlyFishing);
+        }
         if self.is_inside_zone(id, ZoneId::Pvp)
             || self.is_inside_zone(id, ZoneId::Peace)
             || self.is_inside_zone(id, ZoneId::Siege)

@@ -126,6 +126,9 @@ pub enum TimerKind {
     Mail(crate::mail::MailTimer),
     /// The passes of an alt crafting (`RecipeItemMaker`), see `craft/`.
     Craft(crate::craft::CraftTimer),
+    /// The bite task and the fight of a fisher, and the two tasks of the championship, see
+    /// `fishing/`.
+    Fishing(crate::fishing::FishingTimer),
     /// The feed task of a mount, the dismount task of a no-landing zone and the rent task, see
     /// `mount.rs`.
     Mount(crate::mount::MountTimer),

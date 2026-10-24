@@ -25,7 +25,6 @@
 // # Left out (markers)
 // - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
 //   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
-// - M6-FISHING: `isFishing()` is always false.
 // - Action 65 (the bot report button) is `bot_report.rs`.
 // - M7: `isInSiege()` and `isInHideoutSiege()` are always false (the siege code sets them).
 // - M8: `isInOlympiadMode()` is always false.
@@ -232,7 +231,13 @@ impl World {
 
     /// Java `RequestActionUse.tryBroadcastSocial`.
     fn try_broadcast_social(&mut self, player: ObjectId, social_id: i32) {
-        // M6-FISHING: `player.isFishing()` sends YOU_CANNOT_DO_THAT_WHILE_FISHING_3.
+        if self.is_fishing(player) {
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing3),
+            );
+            return;
+        }
         if self.can_make_social_action(player) {
             self.broadcast_creature_packet(
                 player,
@@ -304,7 +309,13 @@ impl World {
             );
             return;
         }
-        // M6-FISHING: `player.isFishing()` sends YOU_CANNOT_DO_THAT_WHILE_FISHING_3.
+        if self.is_fishing(player) {
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing3),
+            );
+            return;
+        }
         if self.karma_of_player(player) > 0 {
             self.couple_refusal(
                 player,
@@ -371,7 +382,14 @@ impl World {
             );
             return;
         }
-        // M6-FISHING: `partner.isFishing()` (C1_IS_FISHING_AND_CANNOT_BE_REQUESTED...).
+        if self.is_fishing(partner) {
+            self.couple_refusal(
+                player,
+                M::C1IsFishingAndCannotBeRequestedForACoupleAction,
+                partner,
+            );
+            return;
+        }
         if self.karma_of_player(partner) > 0 {
             self.couple_refusal(
                 player,

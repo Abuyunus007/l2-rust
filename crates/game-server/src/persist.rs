@@ -61,15 +61,16 @@ use l2_db::{
     Pool, PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository,
     ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
 };
+use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
 use l2_world::{
-    BotReportRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow, ItemData, ItemRowOp, LsEvent,
-    MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId, OfflinePetRows, PersistCommand,
-    PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite,
-    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
-    SummonWrite,
+    BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
+    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ObjectId,
+    OfflinePetRows, PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord,
+    PunishmentType, RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData,
+    SkillData, StoredPunishment, SummonWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -244,6 +245,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_recipe_write(
         &mut self,
         _write: &RecipeWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// Java `FishingChampionshipManager.shutdown()`: `fishChampionshipEnd` and the rows of
+    /// `fishing_championship` (M6-FU-08).
+    fn store_fishing_championship(
+        &mut self,
+        _data: &ChampionshipData,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -804,6 +814,12 @@ async fn run<S: PlayerStore>(
                     error!("The recipe book row could NOT be written ({write:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::FishingChampionship(data)) => {
+                // Java logs a failed save and goes on (no retry).
+                if let Err(e) = store.store_fishing_championship(&data).await {
+                    error!("Fishing Championship Manager: can't update infos: {e}");
+                }
+            }
             OutboxMessage::Ls(LsEvent::PlayerInGame { account }) => {
                 let _ = notices.send(LsNotice::PlayerInGame { account });
             }
@@ -813,6 +829,32 @@ async fn run<S: PlayerStore>(
         }
     }
     debug!("Outbox closed, persistence task done.");
+}
+
+/// Java `FishingChampionshipManager.restoreData()`: the rows of `fishing_championship` and the
+/// global variable `fishChampionshipEnd`. Only reads (D-39). A database error is logged and the
+/// championship starts empty, like Java.
+pub async fn load_fishing_championship(pool: &Pool) -> ChampionshipData {
+    let repo = FishingChampionshipRepository::new(pool.clone());
+    let mut data = ChampionshipData::default();
+    match repo.end_date().await {
+        Ok(end_date) => data.end_date = end_date,
+        Err(e) => warn!("FishingChampionshipManager: can't restore the end of the period: {e}"),
+    }
+    match repo.load_rows().await {
+        Ok(rows) => {
+            data.rows = rows
+                .into_iter()
+                .map(|r| ChampionshipRow {
+                    name: r.player_name,
+                    length: r.fish_length,
+                    rewarded: r.rewarded,
+                })
+                .collect();
+        }
+        Err(e) => warn!("FishingChampionshipManager: can't restore fishing championship info: {e}"),
+    }
+    data
 }
 
 /// Java `BuyListData.load()`, the database half: the rows of `buylists`, which hold the stock and
@@ -1488,6 +1530,7 @@ pub struct DbStore {
     recipes: RecipeRepository,
     crests: CrestRepository,
     friends: FriendRepository,
+    championship: FishingChampionshipRepository,
     bot_reports: BotReportRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -1517,6 +1560,7 @@ impl DbStore {
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
+            championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -2514,6 +2558,20 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_fishing_championship(&mut self, data: &ChampionshipData) -> Result<(), PersistError> {
+        let rows: Vec<FishingChampionshipRow> = data
+            .rows
+            .iter()
+            .map(|r| FishingChampionshipRow {
+                player_name: r.name.clone(),
+                fish_length: r.length,
+                rewarded: r.rewarded,
+            })
+            .collect();
+        self.championship.save(data.end_date, &rows).await?;
+        Ok(())
+    }
+
     async fn load_pet_row(&mut self, control: ObjectId) -> Result<PetRowData, PersistError> {
         let row = self.pets.pet_of_control_item(control.0).await?;
         let effects = self.pets.effects_of(control.0).await?;
@@ -2741,6 +2799,8 @@ mod tests {
         OfflinePetRows(i32),
         /// A recipe book row.
         Recipe(RecipeWrite),
+        /// The fishing championship: the end of the period and the number of rows.
+        Championship(i64, usize),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -2982,6 +3042,14 @@ mod tests {
 
         async fn store_recipe_write(&mut self, write: &RecipeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Recipe(write.clone()));
+            Ok(())
+        }
+
+        async fn store_fishing_championship(&mut self, data: &ChampionshipData) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::Championship(data.end_date, data.rows.len()));
             Ok(())
         }
 
@@ -3396,6 +3464,34 @@ mod tests {
         )
         .await;
         assert_eq!(calls, vec![Call::Recipe(insert), Call::Recipe(delete)]);
+    }
+
+    /// The championship goes to the store as one command with the end of the period and every row.
+    #[tokio::test]
+    async fn the_fishing_championship_reaches_the_store() {
+        let data = ChampionshipData {
+            end_date: 1_792_000_000_000,
+            rows: vec![
+                ChampionshipRow {
+                    name: "Alpha".into(),
+                    length: 80.5,
+                    rewarded: 1,
+                },
+                ChampionshipRow {
+                    name: "Bravo".into(),
+                    length: 70.25,
+                    rewarded: 0,
+                },
+            ],
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![OutboxMessage::Persist(PersistCommand::FishingChampionship(
+                Box::new(data),
+            ))],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::Championship(1_792_000_000_000, 2)]);
     }
 
     #[tokio::test]

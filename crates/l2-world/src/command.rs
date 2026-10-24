@@ -214,6 +214,8 @@ pub enum ClientInput {
     /// The augmentation window packets (`RequestRefine`, `RequestConfirmTargetItem`, ...), see
     /// `augment.rs`.
     Augment(crate::augment::AugmentInput),
+    /// Java `RequestExFishRanking`: the fishing ranking of the week.
+    FishRanking,
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

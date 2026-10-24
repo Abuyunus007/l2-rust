@@ -328,13 +328,16 @@ impl World {
 
     /// Java `Npc.onBypassFeedback(player, command)` with the override of the NPC's class.
     pub(crate) fn npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
-        let is_teleporter = self
+        let npc_type = self
             .npcs
             .get(&npc)
             .and_then(|n| self.npc_world.template(n.npc_id))
-            .is_some_and(|t| t.npc_type == "Teleporter");
+            .map(|t| t.npc_type.as_str());
+        let (is_teleporter, is_fisherman) = (npc_type == Some("Teleporter"), npc_type == Some("Fisherman"));
         if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
+        } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
+            // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).
         } else if self.is_village_master(npc) {
             // Java: VillageMaster.onBypassFeedback (the clan commands, `clan/village_master.rs`).
             self.village_master_bypass_feedback(npc, player, command);

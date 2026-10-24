@@ -26,7 +26,6 @@
 //   `storePetFood`, the only statement the mount adds).
 //
 // # Left out, with the system that brings it
-// - M6-FISHING: `isFishing()` (the fishing card): the mounting check never refuses for it.
 // - M8: `isCursedWeaponEquipped()` (cursed weapons): disarming is never refused for it.
 // - M7: the siege parts. Mounting in a siege zone is refused for everybody (Java lets the castle
 //   lord of the sieged castle ride a strider); `checkLandingState`'s siege branch is left out;
@@ -477,7 +476,9 @@ impl World {
                 Some(Some(SystemMessageId::AStriderCannotBeRiddenWhileInBattle))
             } else if self.is_sitting(id) {
                 Some(Some(SystemMessageId::AStriderCanBeRiddenOnlyWhenStanding))
-            // M6-FISHING: `_fishing` sends YOU_CANNOT_DO_THAT_WHILE_FISHING_2 here.
+            } else if self.is_fishing(id) {
+                // You can't mount, dismount, break and drop items while fishing.
+                Some(Some(SystemMessageId::YouCannotDoThatWhileFishing2))
             } else if self.is_transformed(id) {
                 // No message needed, player while transformed doesn't have mount action.
                 Some(None)

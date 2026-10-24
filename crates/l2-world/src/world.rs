@@ -128,6 +128,8 @@ pub struct World {
     pub(crate) craft: crate::craft::CraftWorld,
     /// The augmentation skill map and retail chance tables (M6-AUGMENT-01, `augment.rs`).
     pub(crate) augment: crate::augment::AugmentWorld,
+    /// The fish, rods and fishing monsters, and the fishing championship (M6-FU-08, `fishing/`).
+    pub(crate) fishing: crate::fishing::FishingWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -193,6 +195,7 @@ impl World {
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
+            fishing: crate::fishing::FishingWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
         }
@@ -370,6 +373,8 @@ impl World {
                 self.save_ground_items();
                 // Java Shutdown.saveData: `ClanTable.getInstance().shutdown()`.
                 self.clan_table_shutdown();
+                // Java Shutdown: "Save Fishing tournament data."
+                self.championship_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -665,6 +670,8 @@ impl World {
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
             // Java: RequestRefine and the other augmentation window packets
             ClientInput::Augment(input) => self.on_augment_input(id, input),
+            // Java: RequestExFishRanking
+            ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -759,6 +766,8 @@ impl World {
             // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
+            // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
+            TimerKind::Fishing(timer) => self.on_fishing_timer(timer),
             // Java: PetFeedTask, DismountTask, RentPetTask
             TimerKind::Mount(timer) => self.on_mount_timer(timer),
         }

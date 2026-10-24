@@ -1221,6 +1221,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        fishing: fishing_settings(config, config_dir),
         enchant: enchant_settings(config, config_dir),
         augment: augment_settings(config, config_dir),
         shop: l2_world::ShopSettings {
@@ -1309,6 +1310,62 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
 
 /// Name of the Rust-only side-by-side settings file in the config folder (D-36).
 pub const SIDE_BY_SIDE_FILE: &str = "SideBySide.ini";
+
+/// The fishing values of `General.ini` (`AllowFishing`, the `AltFishChampionship*` keys) and
+/// `FishingChampionshipDatabaseWrites` of `SideBySide.ini` (D-49).
+pub fn fishing_settings(config: &GameConfig, config_dir: &Path) -> l2_world::FishingSettings {
+    let g = &config.general;
+    l2_world::FishingSettings {
+        allow_fishing: g.allow_fishing,
+        championship_enabled: g.alt_fish_championship_enabled,
+        championship_reward_item: g.alt_fish_championship_reward_item,
+        championship_rewards: [
+            g.alt_fish_championship_reward_1,
+            g.alt_fish_championship_reward_2,
+            g.alt_fish_championship_reward_3,
+            g.alt_fish_championship_reward_4,
+            g.alt_fish_championship_reward_5,
+        ],
+        championship_database_writes: fishing_championship_database_writes(config_dir),
+        clock_override_night: None,
+        clock_override_unix_ms: None,
+    }
+}
+
+/// `FishingChampionshipDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file
+/// means the default). Off, the championship keeps its ranking in memory and leaves the
+/// `fishing_championship` rows and the `fishChampionshipEnd` variable to the Java game server that
+/// shares the database (D-39, D-49): its `shutdown()` deletes and rewrites every row. Logs the
+/// active mode.
+pub fn fishing_championship_database_writes(config_dir: &Path) -> bool {
+    use l2_config::IniFile;
+
+    let path = config_dir.join(SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("FishingChampionshipDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using FishingChampionshipDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!(
+            "SideBySide: FishingChampionshipDatabaseWrites = True, the fishing championship writes its rows."
+        );
+    } else {
+        info!(
+            "SideBySide: FishingChampionshipDatabaseWrites = False, the fishing championship leaves its rows to the Java game server."
+        );
+    }
+    on
+}
 
 /// `DailyResetDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the daily reset leaves the global `character_reco_bonus` `UPDATE`s to the Java
@@ -1776,6 +1833,23 @@ BotReportPointsResetHour = noon
         assert!(!daily_reset_database_writes(dir.path()));
         // The example text is also the only place the key is spelled out for owners.
         assert!(example.contains("DailyResetDatabaseWrites = False"));
+    }
+
+    #[test]
+    fn the_fishing_championship_switch_defaults_to_off() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(!fishing_championship_database_writes(dir.path()));
+        let example = include_str!("../config-examples/SideBySide.ini");
+        std::fs::write(dir.path().join(SIDE_BY_SIDE_FILE), example).unwrap();
+        assert!(!fishing_championship_database_writes(dir.path()));
+        assert!(example.contains("FishingChampionshipDatabaseWrites = False"));
+        std::fs::write(
+            dir.path().join(SIDE_BY_SIDE_FILE),
+            "FishingChampionshipDatabaseWrites = True
+",
+        )
+        .unwrap();
+        assert!(fishing_championship_database_writes(dir.path()));
     }
 
     fn test_player() -> PlayerData {

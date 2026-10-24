@@ -8,6 +8,7 @@
 use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::MultiSellChoose;
+use crate::client::RequestExFishRanking;
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
@@ -238,6 +239,8 @@ pub enum ClientPacket {
     RequestDuelStart(RequestDuelStart),
     RequestDuelAnswerStart(RequestDuelAnswerStart),
     RequestDuelSurrender(RequestDuelSurrender),
+    /// `0xD0` 0x0018, an ex packet.
+    RequestExFishRanking(RequestExFishRanking),
     /// The mail packets (`0xD0` 0x0065 to 0x006F), ex packets.
     RequestPostItemList(RequestPostItemList),
     RequestSendPost(RequestSendPost),
@@ -630,6 +633,9 @@ fn decode_ex_client(
         }
         RequestDuelSurrender::EX_OPCODE => {
             ClientPacket::RequestDuelSurrender(RequestDuelSurrender::decode(reader)?)
+        }
+        RequestExFishRanking::EX_OPCODE => {
+            ClientPacket::RequestExFishRanking(RequestExFishRanking::decode(reader)?)
         }
         RequestPostItemList::EX_OPCODE => {
             ClientPacket::RequestPostItemList(RequestPostItemList::decode(reader)?)

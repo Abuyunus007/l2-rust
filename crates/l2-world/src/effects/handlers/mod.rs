@@ -35,6 +35,7 @@ mod enemy_charge;
 mod escape;
 mod fake_death;
 mod fear;
+mod fishing;
 mod flags;
 mod fly;
 mod focus;
@@ -268,6 +269,10 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
         "OpenDwarfRecipeBook",
         open_recipe_book::OpenDwarfRecipeBook::create,
     );
+    // M6-FU-08: fishing.
+    registry.register("Fishing", fishing::Fishing::create);
+    registry.register("Pumping", fishing::Pumping::create);
+    registry.register("Reeling", fishing::Reeling::create);
     // M6-CUBIC-01: cubics.
     registry.register("CubicMastery", summon_cubic::CubicMastery::create);
     registry.register("SummonCubic", summon_cubic::SummonCubic::create);

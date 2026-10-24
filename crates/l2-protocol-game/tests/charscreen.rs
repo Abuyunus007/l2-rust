@@ -446,6 +446,7 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestDuelStart(_)
             | ClientPacket::RequestDuelAnswerStart(_)
             | ClientPacket::RequestDuelSurrender(_)
+            | ClientPacket::RequestExFishRanking(_)
             | ClientPacket::RequestPostItemList(_)
             | ClientPacket::RequestSendPost(_)
             | ClientPacket::RequestReceivedPostList(_)

@@ -19,6 +19,7 @@ pub mod enchant_options;
 pub mod enchant_skill;
 pub mod experience;
 pub mod fence;
+pub mod fishing;
 pub mod henna;
 pub mod hit_condition_bonus;
 pub mod html;
@@ -69,6 +70,7 @@ pub use enchant_options::EnchantItemOptions;
 pub use enchant_skill::{EnchantSkillGroup, EnchantSkillGroupsData, EnchantSkillHolder, EnchantSkillLearn};
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
+pub use fishing::{Fish, FishData, FishingMonster, FishingMonstersData, FishingRod, FishingRodsData};
 pub use henna::{Henna, Hennas};
 pub use hit_condition_bonus::HitConditionBonus;
 pub use html::HtmCache;
@@ -176,6 +178,12 @@ pub struct Datapack {
     pub cubics: Arc<CubicData>,
     /// `data/Recipes.xml`: the crafting recipes by id (M6-CRAFT-01).
     pub recipes: Arc<RecipeData>,
+    /// `data/stats/fishing/fishes.xml`: the fish by grade (M6-FU-08).
+    pub fish: Arc<FishData>,
+    /// `data/stats/fishing/fishingRods.xml`: the fishing rods by item id (M6-FU-08).
+    pub fishing_rods: Arc<FishingRodsData>,
+    /// `data/stats/fishing/fishingMonsters.xml`: what can come out of the water (M6-FU-08).
+    pub fishing_monsters: Arc<FishingMonstersData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -338,6 +346,9 @@ impl Datapack {
             enchant_skill_groups,
             cubics: Arc::new(CubicData::load(root)),
             recipes: Arc::new(RecipeData::load(root)),
+            fish: Arc::new(FishData::load(root)),
+            fishing_rods: Arc::new(FishingRodsData::load(root)),
+            fishing_monsters: Arc::new(FishingMonstersData::load(root)),
         })
     }
 }
@@ -442,5 +453,8 @@ mod tests {
         assert!(pack.hennas.is_empty());
         assert!(pack.skills.is_empty());
         assert!(pack.multisell.is_empty());
+        assert!(pack.fish.is_empty());
+        assert!(pack.fishing_rods.is_empty());
+        assert!(pack.fishing_monsters.is_empty());
     }
 }

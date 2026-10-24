@@ -329,6 +329,13 @@ impl Server {
         let punishments = persist::load_punishments(&pool).await;
         let char_names = persist::load_char_names(&pool).await;
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
+        // Java: FishingChampionshipManager (GameServer, with AltFishChampionshipEnabled): the rows of
+        // `fishing_championship` and `fishChampionshipEnd`, read only.
+        let fishing_championship = if config.general.alt_fish_championship_enabled {
+            Some(persist::load_fishing_championship(&pool).await)
+        } else {
+            None
+        };
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
@@ -403,6 +410,11 @@ impl Server {
             let pets = Arc::clone(&datapack.pets);
             let cubics = Arc::clone(&datapack.cubics);
             let recipes = Arc::clone(&datapack.recipes);
+            let fishing = (
+                Arc::clone(&datapack.fish),
+                Arc::clone(&datapack.fishing_rods),
+                Arc::clone(&datapack.fishing_monsters),
+            );
             let class_list = Arc::clone(&datapack.class_list);
             let multisell = (
                 Arc::clone(&datapack.multisell),
@@ -450,6 +462,9 @@ impl Server {
                     world.set_cubic_data(cubics);
                     // Java: RecipeData (data/Recipes.xml).
                     world.set_recipe_data(recipes);
+                    // Java: FishData, FishingRodsData, FishingMonstersData.
+                    let (fish, fishing_rods, fishing_monsters) = fishing;
+                    world.set_fishing_data(fish, fishing_rods, fishing_monsters);
                     // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
                     // Java: MultisellData (the exchange lists of NPCs).
@@ -497,6 +512,10 @@ impl Server {
                     world.load_buy_list_stock(buy_list_stock);
                     // Java: CrestTable (after ClanTable: it clears the crests clans lost).
                     world.load_crests(crests);
+                    // Java: FishingChampionshipManager.getInstance (GameServer, after the managers).
+                    if let Some(data) = fishing_championship {
+                        world.load_fishing_championship(data);
+                    }
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )

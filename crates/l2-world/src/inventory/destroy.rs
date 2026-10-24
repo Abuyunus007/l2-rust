@@ -431,14 +431,22 @@ impl World {
             return;
         }
 
-        // Transactions (a trade or an open request) and private stores. Fishing and a skill that
-        // consumes the item or is being cast (`isCastingNow`): not modelled yet.
+        // Transactions (a trade or an open request) and private stores. A skill that consumes the
+        // item or is being cast (`isCastingNow`): not modelled yet.
         if self.is_processing_transaction(id) || self.is_in_store_mode(id) {
             self.send(
                 id,
                 &SystemMessage::new(
                     SystemMessageId::WhileOperatingAPrivateStoreOrWorkshopYouCannotDiscardDestroyOrTradeAnItem,
                 ),
+            );
+            return;
+        }
+        if self.is_fishing(id) {
+            // You can't mount, dismount, break and drop items while fishing.
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotDoThatWhileFishing2),
             );
             return;
         }

@@ -373,6 +373,8 @@ pub struct Player {
     pub multisell: Option<crate::multisell::PreparedList>,
     /// The recipe books, the manufacture shop and the crafting flag (see `craft/`).
     pub craft: crate::craft::PlayerCraft,
+    /// Java `_fishing`, `_fish`, `_lure`, the bite task and `_fishCombat` (see `fishing/`).
+    pub fishing: crate::fishing::PlayerFishing,
     /// Java `_mountType`, `_mountNpcId`, the food of the mount and its tasks (see `mount.rs`).
     pub mount: crate::mount::MountState,
 }
@@ -431,6 +433,7 @@ impl Player {
             warehouse,
             multisell: None,
             craft,
+            fishing: crate::fishing::PlayerFishing::default(),
             mount: crate::mount::MountState::default(),
         }
     }

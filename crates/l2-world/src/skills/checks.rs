@@ -8,8 +8,7 @@
 // Java: mechanics/skill/Skill.java (isContinuous, getTargetList: the messages the handlers send)
 //
 // # Not modelled (each refuses a cast in Java; none of these states exists yet)
-// Fishing (`_fishing`, only the "no fish to fight" refusal of pumping and reeling is reachable),
-// observer mode, duels, olympiad, siege friends and territory wars, event
+// Observer mode, duels, olympiad, siege friends and territory wars, event
 // monsters, castle and fort sieges of doors (a door in a siege zone has no castle or fort yet),
 // the access level's `allowPeaceAttack` (not loaded: no level has it), signets in peace zones
 // (`checkEffectRangeInsidePeaceZone`, the channelizer is not ported).
@@ -333,9 +332,21 @@ impl World {
             return false;
         }
 
-        // `_fishing`: nobody fishes yet. Pumping and reeling are refused here, so that no reuse
-        // delay is applied when there is no fish to fight (`_fishCombat == null`).
-        if self.skill_has_effect_type(skill, &[EffectType::Fishing]) {
+        if self.is_fishing(id)
+            && !self.skill_has_effect_type(skill, &[EffectType::Fishing, EffectType::FishingStart])
+        {
+            // Only fishing skills are available.
+            // NOTE(java-quirk): this refusal sends no `ActionFailed`.
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::OnlyFishingSkillsMayBeUsedAtThisTime),
+            );
+            return false;
+        }
+
+        // Pumping and reeling are refused here, so that no reuse delay is applied when there is
+        // no fish to fight (`_fishCombat == null`).
+        if !self.has_fish_combat(id) && self.skill_has_effect_type(skill, &[EffectType::Fishing]) {
             let message = if skill.id == PUMPING {
                 SystemMessageId::YouMayOnlyUseThePumpingSkillWhileYouAreFishing
             } else {
