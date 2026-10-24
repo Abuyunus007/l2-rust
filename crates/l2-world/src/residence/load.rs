@@ -51,6 +51,9 @@ pub struct CastleRecord {
     pub owner_id: i32,
     /// `castle_functions` (read only for an owned castle).
     pub functions: Vec<FunctionRecord>,
+    /// `clan_data.blood_alliance_count` of the owner, read again on demand (D-50: the Java game
+    /// server adds to it); `None` at startup and for a castle without an owner.
+    pub owner_blood_alliance_count: Option<i32>,
 }
 
 /// A fortress as `new Fort(id)` reads it.

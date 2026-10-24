@@ -54,6 +54,10 @@ impl World {
         attacker: Option<ObjectId>,
         skill: &SkillTemplate,
     ) {
+        // `Door.reduceCurrentHpByDOT`: "doors can't be damaged by DOTs" (M7-SIEGE-02).
+        if self.doors.contains_key(&target) {
+            return;
+        }
         let consumption = self.is_player(target) && skill.is_toggle();
         self.reduce_hp_special(target, amount, attacker, !skill.is_toggle(), true, consumption);
     }

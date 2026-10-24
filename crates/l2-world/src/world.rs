@@ -144,6 +144,8 @@ pub struct World {
     pub(crate) flood: crate::flood::FloodWorld,
     /// The fortress sieges, their spawns and `FortUpdater` (M7-FORT-01, `fort/`).
     pub(crate) fort: crate::fort::FortWorld,
+    /// The castle NPCs: chamberlain, siege manager, envoys, ... (M7-NPC-01, `residence/npc/`).
+    pub(crate) residence_npc: crate::residence::npc::ResidenceNpcWorld,
 }
 
 impl World {
@@ -213,6 +215,7 @@ impl World {
             bot_report: crate::bot_report::BotReportWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
+            residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
         }
     }
 
@@ -803,6 +806,8 @@ impl World {
             // Java: PetFeedTask, DismountTask, RentPetTask
             TimerKind::Mount(timer) => self.on_mount_timer(timer),
             TimerKind::Fort(timer) => self.on_fort_timer(timer),
+            // Java: the quest timers of CastleTeleporter and CastleAmbassador
+            TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
         }
     }
 

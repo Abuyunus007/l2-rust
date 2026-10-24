@@ -31,7 +31,7 @@ impl<'w> StatView<'w> {
     pub fn npc_template(&self) -> Option<&'w NpcTemplate> {
         match self.who {
             Who::Npc(n) => self.world().npc_world.template(n.npc_id),
-            Who::Player(_) => None,
+            Who::Player(_) | Who::Door(_) => None,
         }
     }
 

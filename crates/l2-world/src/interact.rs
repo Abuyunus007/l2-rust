@@ -334,6 +334,8 @@ impl World {
                 .get(&id)
                 .and_then(|n| self.npc_world.template(n.npc_id))
                 .map_or(0, |t| t.collision_radius_int()),
+            // `DoorData.insertCollisionData` (M7-SIEGE-02).
+            Some(ObjectKind::Door) => self.doors.get(&id).map_or(0, |d| d.template.collision_radius),
             _ => 0,
         }
     }

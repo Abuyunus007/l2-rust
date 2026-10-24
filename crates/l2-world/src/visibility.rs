@@ -61,6 +61,8 @@ impl World {
             ObjectKind::Door => {
                 if let Some(d) = self.doors.get_mut(&id) {
                     (d.x, d.y, d.z) = (x, y, z);
+                    // The creature part of the door keeps the same position (M7-SIEGE-02).
+                    (d.core.x, d.core.y, d.core.z) = (x, y, z);
                 }
             }
             ObjectKind::Fence => {
@@ -134,6 +136,8 @@ impl World {
         self.npc_on_spawn(id);
         // `ON_NPC_SPAWN` of the clan hall scripts (M7-CHSIEGE-01).
         self.hall_script_on_spawn(id);
+        // The `onSpawn` listeners of the castle scripts (M7-NPC-01).
+        self.residence_npc_on_spawn(id);
         // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.
         self.summon_on_spawn(id);
     }

@@ -549,11 +549,10 @@ impl World {
                 }
                 if !matches!(
                     self.objects.get(&obj).map(|e| e.kind),
-                    Some(ObjectKind::Player | ObjectKind::Npc)
+                    Some(ObjectKind::Player | ObjectKind::Npc | ObjectKind::Door)
                 ) {
-                    // Doors and static objects are creatures in Java too; a castle door in a
-                    // siege is auto attackable, but doors cannot take damage yet
-                    // (FOLLOW-UP(M7-SIEGE-02)).
+                    // Static objects are creatures in Java too, but nothing makes them auto
+                    // attackable; a door in a siege is (M7-SIEGE-02).
                     continue;
                 }
                 // Skip dead or fake dead target.

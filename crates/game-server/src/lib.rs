@@ -270,6 +270,48 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// The values of `Feature.ini` the castle NPCs read: the fees of the castle functions, the door
+/// and trap upgrade prices and the dawn tickets (M7-NPC-01). The badge prices of the mercenary
+/// captain are `TerritoryWar.ini`'s (M7-TW-01) and stay at Java's defaults.
+pub fn residence_npc_settings(config: &GameConfig) -> l2_world::residence::npc::ResidenceNpcSettings {
+    let f = &config.feature;
+    l2_world::residence::npc::ResidenceNpcSettings {
+        cs_tele_fee_ratio: f.cs_tele_fee_ratio,
+        cs_tele1_fee: f.cs_tele1_fee,
+        cs_tele2_fee: f.cs_tele2_fee,
+        cs_support_fee_ratio: f.cs_support_fee_ratio,
+        cs_support1_fee: f.cs_support1_fee,
+        cs_support2_fee: f.cs_support2_fee,
+        cs_mpreg_fee_ratio: f.cs_mpreg_fee_ratio,
+        cs_mpreg1_fee: f.cs_mpreg1_fee,
+        cs_mpreg2_fee: f.cs_mpreg2_fee,
+        cs_hpreg_fee_ratio: f.cs_hpreg_fee_ratio,
+        cs_hpreg1_fee: f.cs_hpreg1_fee,
+        cs_hpreg2_fee: f.cs_hpreg2_fee,
+        cs_expreg_fee_ratio: f.cs_expreg_fee_ratio,
+        cs_expreg1_fee: f.cs_expreg1_fee,
+        cs_expreg2_fee: f.cs_expreg2_fee,
+        outer_door_upgrade_price2: f.outer_door_upgrade_price2,
+        outer_door_upgrade_price3: f.outer_door_upgrade_price3,
+        outer_door_upgrade_price5: f.outer_door_upgrade_price5,
+        inner_door_upgrade_price2: f.inner_door_upgrade_price2,
+        inner_door_upgrade_price3: f.inner_door_upgrade_price3,
+        inner_door_upgrade_price5: f.inner_door_upgrade_price5,
+        wall_upgrade_price2: f.wall_upgrade_price2,
+        wall_upgrade_price3: f.wall_upgrade_price3,
+        wall_upgrade_price5: f.wall_upgrade_price5,
+        trap_upgrade_price1: f.trap_upgrade_price1,
+        trap_upgrade_price2: f.trap_upgrade_price2,
+        trap_upgrade_price3: f.trap_upgrade_price3,
+        trap_upgrade_price4: f.trap_upgrade_price4,
+        ssq_dawn_ticket_quantity: f.ssq_dawn_ticket_quantity,
+        ssq_dawn_ticket_price: f.ssq_dawn_ticket_price,
+        ssq_dawn_ticket_bundle: f.ssq_dawn_ticket_bundle,
+        ssq_manors_agreement_id: f.ssq_manors_agreement_id,
+        ..l2_world::residence::npc::ResidenceNpcSettings::default()
+    }
+}
+
 /// The clan hall fee tables of `Feature.ini` and `AltClanHallMpBuffFree` (M7-CH-01).
 pub fn clan_hall_settings(config: &GameConfig) -> l2_world::ClanHallSettings {
     use l2_world::clanhall::ClanHallFunctionSettings as Fees;
@@ -551,6 +593,7 @@ impl Server {
         // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
+        let residence_npc_settings = residence_npc_settings(&config);
         let residence_settings = residence_settings(&config, &paths.config_dir);
         // Java: SiegeManager (Siege.ini, the registrations, the guards, the upgrades; M7-SIEGE-01).
         let sieges = persist::load_sieges(&pool).await;
@@ -739,6 +782,9 @@ impl Server {
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
                     world.set_clan_hall_settings(clan_hall_settings);
+                    // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
+                    // dawn tickets; M7-NPC-01).
+                    world.set_residence_npc_settings(residence_npc_settings);
                     world.load_clan_hall_auctions(clan_hall_auctions);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).

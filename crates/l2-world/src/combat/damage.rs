@@ -312,6 +312,11 @@ impl World {
     /// Java `target.reduceCurrentHp(amount, attacker, null)` with the overrides of `Player` and
     /// `Attackable`, down to the status classes' `reduceHp`.
     pub fn reduce_current_hp(&mut self, target: ObjectId, amount: f64, attacker: Option<ObjectId>) {
+        // `Door.reduceCurrentHp`: the wall rule, then `CreatureStatus.reduceHp` (M7-SIEGE-02).
+        if self.doors.contains_key(&target) {
+            self.door_reduce_current_hp(target, amount, attacker);
+            return;
+        }
         if self.is_player(target) {
             self.player_reduce_hp(target, amount, attacker);
             return;

@@ -61,6 +61,7 @@ mod clan_hall;
 mod fort;
 mod functions;
 mod load;
+pub mod npc;
 mod refresh;
 mod skills;
 

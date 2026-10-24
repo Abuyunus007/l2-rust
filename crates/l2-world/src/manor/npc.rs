@@ -66,6 +66,10 @@ impl World {
         if self.hall_script_first_talk(npc, player) {
             return true;
         }
+        // The castle NPCs (M7-NPC-01, `residence/npc/`).
+        if self.residence_npc_on_click(npc, player) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -81,6 +85,10 @@ impl World {
     /// script took the talk.
     pub(crate) fn npc_first_talk_on_chat(&mut self, npc: ObjectId, player: ObjectId) -> bool {
         if self.hall_script_first_talk(npc, player) {
+            return true;
+        }
+        // The castle NPCs (M7-NPC-01, `residence/npc/`).
+        if self.residence_npc_first_talk(npc, player, false) {
             return true;
         }
         if !self.is_manor_manager(npc) {

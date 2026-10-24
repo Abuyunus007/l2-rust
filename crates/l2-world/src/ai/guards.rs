@@ -13,8 +13,8 @@
 // depending on the castle, fort or siegable hall it stands in.
 // The siege rules of `Defender.isAutoAttackable` / `addDamageHate` and its click are the castle
 // siege's (`siege/npcs.rs`, M7-SIEGE-01; the fortress and hall parts: their cards).
-// FOLLOW-UP(M7-SIEGE-02): the three siege guard AIs; until then a defender has the attackable
-// AI. `FortCommander`'s speech and `killedCommander`: M7-FORT-01.
+// The three siege guard AIs are `siege_guard.rs` and `fort_siege_guard.rs` (M7-SIEGE-02).
+// `FortCommander`'s speech and `killedCommander`: M7-FORT-01.
 //
 // # Left out
 // - The faction system's guards (`FactionSystemConfig.FACTION_GUARDS_ENABLED`, a Custom config

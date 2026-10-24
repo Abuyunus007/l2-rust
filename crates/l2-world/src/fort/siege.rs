@@ -560,20 +560,20 @@ impl World {
         }
     }
 
-    /// Java `Fort.resetDoors()`: the doors close, come back to life and are repaired.
+    /// Java `Fort.resetDoors()`: the doors close, come back to life (`doRevive`) and are
+    /// repaired (`setCurrentHp(getMaxHp())`, which tells everybody who sees them).
     pub fn fort_reset_doors(&mut self, fort: FortId) {
         let doors = self.fort(fort).map(|f| f.doors.clone()).unwrap_or_default();
         for door in doors {
             if self.doors.get(&door).is_some_and(|d| d.open) {
                 self.close_door(door);
             }
-            if self.doors.get(&door).is_some_and(|d| d.dead) {
-                self.set_door_dead(door, false);
+            if self.is_dead(door) {
+                self.do_revive(door);
             }
-            if let Some(d) = self.doors.get_mut(&door)
-                && d.current_hp < f64::from(d.max_hp)
-            {
-                d.current_hp = f64::from(d.max_hp);
+            let max = self.stats(door).map_or(0, |v| v.max_hp());
+            if self.door(door).is_some_and(|d| d.current_hp() < f64::from(max)) {
+                self.set_door_current_hp(door, f64::from(max));
             }
         }
         // `loadDoorUpgrade()` ("Check for any upgrade the doors may have").

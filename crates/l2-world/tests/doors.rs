@@ -270,7 +270,7 @@ fn doors_spawn_with_java_defaults() {
     let d1 = w.door_by_door_id(1).unwrap();
     assert!(d1.open, "default_status open");
     assert!(!w.door_by_door_id(3).unwrap().open);
-    assert_eq!((d1.max_hp, d1.current_hp), (1000, 1000.0));
+    assert_eq!((d1.max_hp(), d1.current_hp()), (1000, 1000.0));
     assert_eq!(d1.damage(), 0);
     assert_eq!(d1.mesh_index, 1);
     assert!(
@@ -508,7 +508,7 @@ fn a_hurt_door_reports_its_damage_grade() {
         (1.0, 5),
         (0.0, 6),
     ] {
-        door.current_hp = hp;
+        door.core.cur_hp = hp;
         assert_eq!(door.damage(), grade, "hp {hp}");
     }
 }

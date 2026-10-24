@@ -43,10 +43,8 @@
 // - A castle lord's mercenary tickets are his own action (`Writes::Player`), like the tax rate.
 //
 // # Left to other cards
-// - `SiegeGuardAI` (the defenders' AI) and the damage of doors and walls (doors are not creatures
-//   of the stat engine yet): the defenders and doors become attackable during a siege here, but
-//   the combat code still treats a door as no target and a defender has the plain attackable AI.
-//   FOLLOW-UP(M7-SIEGE-02).
+// - `SiegeGuardAI` (the defenders' AI) is `ai/siege_guard.rs`; the damage and destruction of
+//   doors and walls is `doors.rs` (M7-SIEGE-02).
 // - The fortress sieges (M7-FORT-01), the conquerable halls (M7-CHSIEGE-01) and Territory War
 //   (M7-TW-01) set the player siege state and the siege zones through the API in `player.rs` and
 //   `zone.rs`; their parts of the shared code are marked with their card.

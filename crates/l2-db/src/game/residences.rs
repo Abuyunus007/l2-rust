@@ -29,6 +29,8 @@ const SELECT_CASTLE_IDS: &str = "SELECT id FROM castle ORDER BY id";
 // Java: Castle.load (ps1, ps2)
 const SELECT_CASTLE: &str = "SELECT * FROM castle WHERE id = ?";
 const SELECT_CASTLE_OWNER: &str = "SELECT clan_id FROM clan_data WHERE hasCastle = ?";
+// Rust-only (D-50): the count `CastleWarehouse` hands out.
+const SELECT_BLOOD_ALLIANCE_COUNT: &str = "SELECT blood_alliance_count FROM clan_data WHERE clan_id = ?";
 // Java: Castle.loadFunctions, CastleFunction.dbSave, Castle.removeFunction
 const SELECT_CASTLE_FUNCTIONS: &str = "SELECT * FROM castle_functions WHERE castle_id = ?";
 const REPLACE_CASTLE_FUNCTION: &str =
@@ -356,6 +358,16 @@ impl ResidenceRepository {
             .fetch_all(&self.pool)
             .await?;
         Ok(ids)
+    }
+
+    /// Rust-only (D-50): the clan's proofs of alliance as the table has them (`None` for no such
+    /// clan). The Java game server adds to them at the end of its sieges.
+    pub async fn blood_alliance_count(&self, clan_id: i32) -> Result<Option<i32>> {
+        let count = sqlx::query_scalar::<_, u16>(SELECT_BLOOD_ALLIANCE_COUNT)
+            .bind(clan_id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(count.map(i32::from))
     }
 
     // Java: Castle.addToTreasuryNoTax
