@@ -276,7 +276,7 @@ impl World {
 
     /// `npc.setTarget(old)` after a cast: puts the creature's own target back, `None` included
     /// (which, unlike `set_creature_target(None)`, leaves the AI's target alone).
-    fn restore_npc_target(&mut self, id: ObjectId, old: Option<ObjectId>) {
+    pub(crate) fn restore_npc_target(&mut self, id: ObjectId, old: Option<ObjectId>) {
         match old {
             Some(target) => self.set_npc_target(id, Some(target)),
             None => {
@@ -319,7 +319,7 @@ impl World {
 
     /// Java `Npc.isInMyClan(other)`: `getTemplate().isClan(other.getTemplate().getClans())`. An
     /// empty clan set is Java's `null`.
-    fn is_in_my_clan(&self, me: ObjectId, other: ObjectId) -> bool {
+    pub(crate) fn is_in_my_clan(&self, me: ObjectId, other: ObjectId) -> bool {
         let (Some(mine), Some(theirs)) = (self.npc_template(me), self.npc_template(other)) else {
             return false;
         };
@@ -1510,7 +1510,8 @@ impl World {
 
     /// Java `AttackableAI.notifyActionFinishCasting()`: a finished cast keeps the fight alive.
     pub(crate) fn attackable_finish_casting(&mut self, id: ObjectId) {
-        if self.is_attackable_npc(id) && self.intention_of(id) == Intention::Attack {
+        // `SiegeGuardAI` keeps `CreatureAI`'s (M7-SIEGE-02).
+        if self.is_attackable_npc(id) && !self.is_siege_guard(id) && self.intention_of(id) == Intention::Attack {
             self.renew_attack_timeout(id);
         }
     }

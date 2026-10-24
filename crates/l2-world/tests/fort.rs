@@ -3101,3 +3101,28 @@ fn a_headquarters_of_a_fortress_siege_takes_the_dead_back() {
     assert!(s.world.fort_siege_flags(SHANTY, WOLVES).is_empty());
     assert!(s.npcs_of(NPC_HQ).is_empty());
 }
+
+/// `Defender.initAI`: no castle and no siegable hall within 10000, so a fortress guard thinks
+/// with `FortSiegeGuardAI` (M7-SIEGE-02). Its `attackPrepare` never attacks a defender of the
+/// fortress (`getFort().getSiege().checkIsDefender`, the owner's clan): sent at the owner it stops
+/// hating him and gives up; sent at a bystander it keeps him as its target.
+#[test]
+fn fortress_guards_think_with_the_fort_guard_ai_and_spare_the_owners() {
+    use l2_world::ai::siege_guard::SiegeGuardAiKind;
+    use l2_world::movement::Intention;
+    let mut s = siege_scene();
+    s.world.fort_start_siege(SHANTY);
+    s.take();
+    let guard = s.npcs_of(NPC_SIEGE_GUARD)[0];
+    let state = s
+        .world
+        .siege_guard_state(guard)
+        .expect("the players around made its AI");
+    assert_eq!(state.kind, SiegeGuardAiKind::Fort);
+    s.world.set_intention_attack(guard, ObjectId(P1));
+    assert_ne!(s.world.intention_of(guard), Intention::Attack, "never the owner");
+    assert_ne!(s.world.attack_target_of(guard), Some(ObjectId(P1)));
+    s.world.set_intention_attack(guard, ObjectId(P5));
+    assert_eq!(s.world.intention_of(guard), Intention::Attack);
+    assert_eq!(s.world.attack_target_of(guard), Some(ObjectId(P5)));
+}

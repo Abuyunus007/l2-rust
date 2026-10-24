@@ -3,9 +3,10 @@
 // Java: entity/actor/templates/CreatureTemplate.java (the base values and their defaults)
 // Java: entity/actor/Creature.java (getLevelMod, getAttackType, getMaxLoad, getBonusWeightPenalty)
 //
-// Java's `CreatureStat` / `PlayableStat` / `PlayerStat` / `NpcStat` subclasses are one view
-// here: a getter that a subclass overrides asks `self.who` which kind of creature it is. The
-// player-only parts are in `player_stat.rs`, the NPC-only parts in `npc_stat.rs`.
+// Java's `CreatureStat` / `PlayableStat` / `PlayerStat` / `NpcStat` / `DoorStat` subclasses are
+// one view here: a getter that a subclass overrides asks `self.who` which kind of creature it is.
+// The player-only parts are in `player_stat.rs`, the NPC-only parts in `npc_stat.rs`; a door
+// (`Who::Door`, M7-SIEGE-02) reads its `DoorTemplate` and `DoorStat`'s upgrade ratio.
 
 use l2_data::item::WeaponType;
 use l2_data::npc::NpcRace;
@@ -15,6 +16,7 @@ use tracing::warn;
 
 use super::calculators::Calculators;
 use super::{BaseStat, CalcSkill, ClassBalance, StatData, StatSettings, java_round, std_funcs};
+use crate::door::Door;
 use crate::objects::Npc;
 use crate::player::{CreatureCore, Player};
 use crate::world::World;
@@ -41,6 +43,8 @@ pub enum MoveType {
 pub(crate) enum Who<'w> {
     Player(&'w Player),
     Npc(&'w Npc),
+    /// Java `Door extends Creature` (M7-SIEGE-02).
+    Door(&'w Door),
 }
 
 /// A read-only view of one creature's stats (Java `Creature.getStat()`), built from `&World`
@@ -136,6 +140,18 @@ impl Base {
                 t.run_speed,
                 t.walk_speed,
             ],
+            ..Base::JAVA_DEFAULT
+        }
+    }
+
+    /// A door template: `DoorData` hands the XML attributes to `CreatureTemplate` as they are,
+    /// so a door has `baseHpMax` (1 when missing), `basePDef` and `baseMDef`, everything else is
+    /// Java's default.
+    pub fn of_door(t: &l2_data::DoorTemplate) -> Base {
+        Base {
+            hp_max: t.base_hp_max,
+            p_def: t.base_p_def,
+            m_def: t.base_m_def,
             ..Base::JAVA_DEFAULT
         }
     }
@@ -238,12 +254,15 @@ const DEFENCE_ELEMENT_STATS: [Stat; 6] = [
 ];
 
 impl World {
-    /// The stats of a player or NPC (Java `getStat()`); `None` for any other id.
+    /// The stats of a player, NPC or door (Java `getStat()`); `None` for any other id.
     pub fn stats(&self, id: ObjectId) -> Option<StatView<'_>> {
         if let Some(player) = self.players.get(&id) {
             return Some(StatView::new(self, Who::Player(player)));
         }
-        self.npcs.get(&id).map(|npc| StatView::new(self, Who::Npc(npc)))
+        if let Some(npc) = self.npcs.get(&id) {
+            return Some(StatView::new(self, Who::Npc(npc)));
+        }
+        self.doors.get(&id).map(|door| StatView::new(self, Who::Door(door)))
     }
 }
 
@@ -293,6 +312,7 @@ impl<'w> StatView<'w> {
         match self.who {
             Who::Player(p) => &p.core,
             Who::Npc(n) => &n.core,
+            Who::Door(d) => &d.core,
         }
     }
 
@@ -303,14 +323,22 @@ impl<'w> StatView<'w> {
     pub fn player(&self) -> Option<&'w Player> {
         match self.who {
             Who::Player(p) => Some(p),
-            Who::Npc(_) => None,
+            Who::Npc(_) | Who::Door(_) => None,
         }
     }
 
     pub fn npc(&self) -> Option<&'w Npc> {
         match self.who {
             Who::Npc(n) => Some(n),
-            Who::Player(_) => None,
+            Who::Player(_) | Who::Door(_) => None,
+        }
+    }
+
+    /// The door (Java `asDoor()`).
+    pub fn door(&self) -> Option<&'w Door> {
+        match self.who {
+            Who::Door(d) => Some(d),
+            Who::Player(_) | Who::Npc(_) => None,
         }
     }
 
@@ -346,6 +374,7 @@ impl<'w> StatView<'w> {
         match self.who {
             Who::Player(_) => self.player_template().map_or(Base::JAVA_DEFAULT, Base::of_player),
             Who::Npc(_) => self.npc_template().map_or(Base::JAVA_DEFAULT, Base::of_npc),
+            Who::Door(d) => Base::of_door(&d.template),
         }
     }
 
@@ -356,6 +385,8 @@ impl<'w> StatView<'w> {
             // `PetStat` keeps its own level.
             Who::Npc(n) if self.is_pet() => n.core.level,
             Who::Npc(_) => self.npc_level(),
+            // `Door.getLevel()`: the template's.
+            Who::Door(d) => d.template.level,
         }
     }
 
@@ -379,6 +410,8 @@ impl<'w> StatView<'w> {
                 .and_then(|r| NpcRace::ALL.get(r))
                 .copied(),
             Who::Npc(_) => self.npc_template().map(|t| t.race),
+            // A door template has no race.
+            Who::Door(_) => None,
         }
     }
 
@@ -387,6 +420,7 @@ impl<'w> StatView<'w> {
         match self.who {
             Who::Player(p) => p.zones.is_inside(ZoneId::Water),
             Who::Npc(n) => n.in_water,
+            Who::Door(_) => false,
         }
     }
 
@@ -395,6 +429,7 @@ impl<'w> StatView<'w> {
         match self.who {
             Who::Player(p) => p.movement.running,
             Who::Npc(n) => n.movement.running,
+            Who::Door(_) => false,
         }
     }
 
@@ -542,6 +577,11 @@ impl<'w> StatView<'w> {
         let base = match self.who {
             Who::Player(_) => self.player_level_value(|t, l| t.base_hp_max(l)),
             Who::Npc(_) => self.pet_level_data().map_or(self.base().hp_max, |l| l.max_hp),
+            // `DoorStat.getMaxHp()`: `super.getMaxHp() * _upgradeHpRatio` (int arithmetic).
+            Who::Door(d) => {
+                let value = self.calc(Stat::MaxHp, f64::from(self.base().hp_max)) as i32;
+                return value.wrapping_mul(d.upgrade_hp_ratio);
+            }
         };
         let value = self.calc(Stat::MaxHp, f64::from(base)) as i32;
         // `Servitor.getMaxHp()`: plus the owner's share (`summon/share.rs`).
@@ -558,6 +598,7 @@ impl<'w> StatView<'w> {
         let base = match self.who {
             Who::Player(_) => self.player_level_value(|t, l| t.base_mp_max(l)),
             Who::Npc(_) => self.pet_level_data().map_or(self.base().mp_max, |l| l.max_mp),
+            Who::Door(_) => self.base().mp_max,
         };
         let value = self.calc(Stat::MaxMp, f64::from(base)) as i32;
         // `Servitor.getMaxMp()`.
@@ -573,7 +614,7 @@ impl<'w> StatView<'w> {
     pub fn max_cp(&self) -> i32 {
         let base = match self.who {
             Who::Player(_) => self.player_level_value(|t, l| t.base_cp_max(l)),
-            Who::Npc(_) => self.base().cp_max,
+            Who::Npc(_) | Who::Door(_) => self.base().cp_max,
         };
         self.calc(Stat::MaxCp, f64::from(base)) as i32
     }
@@ -995,6 +1036,8 @@ impl<'w> StatView<'w> {
                 .map_or_else(|| self.player_collision().0, |t| t.collision_radius),
             Who::Player(_) => self.player_collision().0,
             Who::Npc(_) => self.npc_template().map_or(0.0, |t| t.collision_radius),
+            // `DoorData.insertCollisionData`.
+            Who::Door(d) => d.template.collision_radius as f32,
         }
     }
 
@@ -1009,6 +1052,7 @@ impl<'w> StatView<'w> {
                 .map_or_else(|| self.player_collision().1, |t| t.collision_height),
             Who::Player(_) => self.player_collision().1,
             Who::Npc(_) => self.npc_template().map_or(0.0, |t| t.collision_height),
+            Who::Door(d) => d.template.collision_height as f32,
         }
     }
 }

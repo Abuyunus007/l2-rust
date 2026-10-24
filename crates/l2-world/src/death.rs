@@ -363,6 +363,11 @@ impl World {
         if !self.creature_do_die(id, killer) {
             return false;
         }
+        // `Door.doDie`: "The castle gate has been destroyed." in a siege (M7-SIEGE-02).
+        if self.doors.contains_key(&id) {
+            self.door_do_die(id);
+            return true;
+        }
         if self.is_npc(id) {
             self.npc_do_die(id, killer);
             if self.is_attackable_npc(id) {

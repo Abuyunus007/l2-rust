@@ -1655,14 +1655,14 @@ fn door_upgrades_multiply_the_gate_and_the_siege_raises_it_again() {
     let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
     s.enter_all();
     let gate = s.world.door_by_door_id(DOOR).unwrap().object_id;
-    assert_eq!(s.world.door(gate).unwrap().max_hp, 3000);
-    assert!((s.world.door(gate).unwrap().current_hp - 3000.0).abs() < f64::EPSILON);
+    assert_eq!(s.world.door(gate).unwrap().max_hp(), 3000);
+    assert!((s.world.door(gate).unwrap().current_hp() - 3000.0).abs() < f64::EPSILON);
     s.world.set_door_dead(gate, true);
     s.world.open_door(gate);
     s.admin(P9, "admin_startsiege Gludio");
     let door = s.world.door(gate).unwrap();
     assert!(!door.dead && !door.open);
-    assert!((door.current_hp - 3000.0).abs() < f64::EPSILON);
+    assert!((door.current_hp() - 3000.0).abs() < f64::EPSILON);
     // Attackable in the siege by everybody but the owner.
     assert!(s.world.is_auto_attackable_by(gate, ObjectId(P3)));
     assert!(!s.world.is_auto_attackable_by(gate, ObjectId(P1)));

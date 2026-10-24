@@ -205,6 +205,8 @@ impl<'w> StatView<'w> {
                 Some(item) => self.item_template(item.item_id),
                 None => self.item_template(fists_item_id(p.data.class_id)),
             },
+            // `Door.getActiveWeaponItem()`: null.
+            Who::Door(_) => None,
             Who::Npc(_) if self.is_summon() => None,
             Who::Npc(_) => {
                 let id = self.npc_template()?.rhand_id;

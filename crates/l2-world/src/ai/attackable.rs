@@ -30,7 +30,8 @@
 //   `isCoreAIDisabled` is always false.
 // - Fake players, the faction system, dimensional rifts, festival monsters,
 //   `WalkingManager` (nothing is a walker), champions.
-// - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): see `guards.rs`.
+// - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): `siege_guard.rs` and
+//   `fort_siege_guard.rs` (M7-SIEGE-02); the entry points here hand a defender over to them.
 //
 // # Guards and minions
 // The `Guard` branches of the think are here (`isAggressiveTowards`, `targetReconsider`), what a
@@ -308,7 +309,13 @@ impl World {
     }
 
     pub(crate) fn renew_attack_timeout(&mut self, id: ObjectId) {
-        let value = MAX_ATTACK_TIMEOUT.saturating_add(self.game_ticks());
+        // `SiegeGuardAI.MAX_ATTACK_TIMEOUT` is 30 seconds (M7-SIEGE-02).
+        let max = if self.is_siege_guard(id) {
+            super::siege_guard::MAX_ATTACK_TIMEOUT
+        } else {
+            MAX_ATTACK_TIMEOUT
+        };
+        let value = max.saturating_add(self.game_ticks());
         self.set_attack_timeout(id, value);
     }
 
@@ -334,7 +341,7 @@ impl World {
         out
     }
 
-    fn has_visible_player(&self, id: ObjectId) -> bool {
+    pub(crate) fn has_visible_player(&self, id: ObjectId) -> bool {
         let Some(region) = self.objects.get(&id).and_then(|e| e.region) else {
             return false;
         };
@@ -401,6 +408,7 @@ impl World {
     pub(crate) fn detach_ai(&mut self, id: ObjectId) {
         self.stop_ai_task(id);
         self.ai.creatures.remove(&id);
+        self.ai.siege_guards.remove(&id);
         if let Some(npc) = self.npcs.get_mut(&id) {
             npc.movement.pawn = crate::interact::PawnState::default();
         }
@@ -410,6 +418,7 @@ impl World {
     pub(crate) fn forget_npc_ai(&mut self, id: ObjectId) {
         self.stop_ai_task(id);
         self.ai.creatures.remove(&id);
+        self.ai.siege_guards.remove(&id);
         self.combat.creatures.remove(&id);
         if let Some(master) = self.leader_of(id)
             && let Some(list) = self.ai.attackable.minions.get_mut(&master)
@@ -471,9 +480,9 @@ impl World {
         if self.ai.creatures.get(&id).is_none_or(|a| a.thinking) {
             return;
         }
-        // A siege defender runs `SiegeGuardAI` / `FortSiegeGuardAI`, which are not ported (see
-        // `guards.rs`): it stands where it is, and does not wander like a monster.
-        if self.npcs.get(&id).is_some_and(|n| n.class.is_defender()) {
+        // A siege defender runs `SiegeGuardAI` / `FortSiegeGuardAI` (`siege_guard.rs`).
+        if self.is_siege_guard(id) {
+            self.siege_guard_notify_think(id);
             return;
         }
         // Check if region and its neighbors are active.
@@ -1433,6 +1442,11 @@ impl World {
 
     /// Java `AttackableAI.setIntentionIdle()`.
     pub(crate) fn attackable_set_intention_idle(&mut self, id: ObjectId) {
+        // `SiegeGuardAI.setIntentionIdle` promotes on a visible player only (M7-SIEGE-02).
+        if self.is_siege_guard(id) {
+            self.siege_guard_set_intention_idle(id);
+            return;
+        }
         if self.should_promote_idle_to_active(id) {
             self.set_intention_active(id);
             return;
@@ -1446,8 +1460,10 @@ impl World {
 
     /// Java `AttackableAI.setIntentionActive()`.
     pub(crate) fn attackable_set_intention_active(&mut self, id: ObjectId) {
-        // Cancel attack timeout.
-        self.set_attack_timeout(id, i32::MAX);
+        // Cancel attack timeout (`SiegeGuardAI.setIntentionActive` keeps it).
+        if !self.is_siege_guard(id) {
+            self.set_attack_timeout(id, i32::MAX);
+        }
         self.creature_set_intention_active(id);
         self.start_ai_task(id);
     }
@@ -1480,7 +1496,8 @@ impl World {
     pub(crate) fn attackable_ready_to_act(&mut self, id: ObjectId) {
         // A landed attack keeps the fight alive, the timeout is only for targets that cannot be
         // reached.
-        if self.is_attackable_npc(id) && self.intention_of(id) == Intention::Attack {
+        // `SiegeGuardAI` keeps `CreatureAI`'s (M7-SIEGE-02).
+        if self.is_attackable_npc(id) && !self.is_siege_guard(id) && self.intention_of(id) == Intention::Attack {
             self.renew_attack_timeout(id);
         }
     }
@@ -1539,6 +1556,11 @@ impl World {
     }
 
     fn attackable_notify_attacked(&mut self, id: ObjectId, attacker: ObjectId) {
+        // `SiegeGuardAI.notifyActionAttacked` (M7-SIEGE-02).
+        if self.is_siege_guard(id) {
+            self.siege_guard_notify_attacked(id, attacker);
+            return;
+        }
         // Calculate the attack timeout.
         self.renew_attack_timeout(id);
 
@@ -1759,6 +1781,11 @@ impl World {
 
     /// Java `AttackableAI.notifyActionAggression(target, aggro)`.
     pub(crate) fn notify_action_aggression(&mut self, id: ObjectId, target: ObjectId, aggro: i64) {
+        // `SiegeGuardAI.notifyActionAggression` (M7-SIEGE-02).
+        if self.is_siege_guard(id) {
+            self.siege_guard_notify_aggression(id, target, aggro);
+            return;
+        }
         if !self.is_attackable_npc(id) {
             return;
         }
@@ -1881,6 +1908,14 @@ impl World {
         let Some(kind) = self.objects.get(&subject).map(|e| e.kind) else {
             return;
         };
+        // A door is a creature too: `getAI()` makes its `DoorAI` (M7-SIEGE-02). A door never
+        // moves, so `describeStateToPlayer` has nothing to tell.
+        if kind == ObjectKind::Door {
+            if let Some(door) = self.doors.get_mut(&subject) {
+                door.has_ai = true;
+            }
+            return;
+        }
         if !matches!(kind, ObjectKind::Player | ObjectKind::Npc | ObjectKind::Summon) {
             return;
         }
@@ -1906,10 +1941,13 @@ impl World {
         self.set_running(id, false);
         // Check the region where this mob is, do not activate the AI if region is inactive.
         if self.has_ai(id) {
-            // Roll the aggro timeout again, the AI object survives a respawn.
-            let roll = self.roll_global_aggro(id);
-            if let Some(state) = self.ai.creatures.get_mut(&id) {
-                state.global_aggro = roll;
+            // Roll the aggro timeout again, the AI object survives a respawn
+            // (`getAI() instanceof AttackableAI`: not the siege guards' AIs).
+            if !self.is_siege_guard(id) {
+                let roll = self.roll_global_aggro(id);
+                if let Some(state) = self.ai.creatures.get_mut(&id) {
+                    state.global_aggro = roll;
+                }
             }
             // Set the intention of the Attackable to ACTIVE.
             self.set_intention_active(id);

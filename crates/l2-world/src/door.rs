@@ -13,14 +13,23 @@
 // height piece) and static object, so they come from the Rust `IdFactory` here. The ids the
 // client knows them by (`Door.getId()`, `StaticObject.getId()`) are the template ids.
 //
+// # A door is a creature (M7-SIEGE-02)
+// Java's `Door extends Creature`: it has hit points, a level, the standard door calculators
+// (`Formulas.getStdDoorCalculators`) and a status. Here a door carries a [`CreatureCore`] like a
+// player or an NPC, so the stat engine (`World::stats`, `Who::Door`), the vitals of `status.rs`
+// (`set_current_hp`, the dead flag, the 5 minute regeneration of `getRegeneratePeriod`) and the
+// generic damage and death code take doors. What only a door does is in `siege/doors.rs`:
+// `Door.reduceCurrentHp` (the wall rule), `doDie` (the "gate destroyed" message), `DoorAI` (the
+// defenders it calls) and `DoorStat.getMaxHp` (the upgrade ratio).
+// The dead flag of a door is [`Door::dead`] (the geodata checks read it without the world);
+// `World::is_dead` / `World::set_dead` read and write it for doors.
+//
 // Not here (out of scope of M3-DOOR-01):
 // - Door timers: `startTimerOpen` / `TimerOpen` (open by time) and `startAutoCloseTask` /
 //   `AutoClose` (`close_time`). `open_door` and `close_door` do not arm them.
 // - Castle, fort and clan hall doors: `isEnemy()` is the siege's (`Door::siege_enemy`, set by
-//   `siege/doors.rs` while the castle's siege zone is active, M7-SIEGE-01); `useTargetable` is
-//   false.
-// - Damage: `reduceCurrentHp`, `doDie` and the "gate destroyed" message. [`Door::dead`] and
-//   [`World::set_door_dead`] only carry the state the geodata checks read.
+//   `siege/doors.rs` while the castle's or the fortress's siege zone is active; M7-CHSIEGE-01:
+//   the siegable halls).
 // - Instances (`Instance.getDoors()`): no instance exists yet, so a geodata check with an
 //   instance id of 1 or more finds no door, like Java's `doors == null` for an unknown instance.
 
@@ -37,6 +46,8 @@ use tracing::{debug, warn};
 
 use crate::ids::{IdError, IdFactory};
 use crate::objects::{ObjectEntry, ObjectKind};
+use crate::player::CreatureCore;
+use crate::stats::{CalcSet, Calculators};
 use crate::region::{RegionGrid, RegionId, region_of};
 use crate::world::World;
 
@@ -55,10 +66,11 @@ pub struct Door {
     pub z: i32,
     /// Java `_open`, from the template's `default_status` at the start.
     pub open: bool,
-    /// Java `getCurrentHp()`.
-    pub current_hp: f64,
-    /// Java `getMaxHp()`: `(int) baseHpMax` (doors have no hp modifiers).
-    pub max_hp: i32,
+    /// The creature part of the door (Java `Door extends Creature`): `cur_hp` is
+    /// `getCurrentHp()`, `max_hp` the last `getMaxHp()` (`DoorStat`: the template's times
+    /// [`Door::upgrade_hp_ratio`]), `level` the template's, the standard door calculators.
+    /// `x`/`y`/`z` mirror the door's own (doors never move).
+    pub core: CreatureCore,
     /// Java `_isTargetable`.
     pub targetable: bool,
     /// Java `_isAttackableDoor`.
@@ -69,14 +81,37 @@ pub struct Door {
     pub dead: bool,
     /// `DoorStat._upgradeHpRatio` (`castle_doorupgrade`): `max_hp` is the template's times this.
     pub upgrade_hp_ratio: i32,
-    /// Java `isEnemy()`: a door with an HP bar of a castle whose siege zone is active (M7-SIEGE-01).
+    /// Java `isEnemy()`: a door with an HP bar of a castle or fortress whose siege zone is active
+    /// (M7-SIEGE-01, M7-SIEGE-02).
     pub siege_enemy: bool,
+    /// Java `hasAI()`: the `DoorAI` exists once something asked `getAI()`, which
+    /// `World.addVisibleObject` does when a player sees the door.
+    pub has_ai: bool,
 }
 
 impl Door {
     // Java: Door constructor + DoorData.makeDoor (`setCurrentHp(getMaxHp())`)
     pub fn new(object_id: ObjectId, template: Arc<DoorTemplate>) -> Self {
-        let max_hp = f64::from(template.base_hp_max) as i32;
+        // `getMaxHp()` with the standard door calculators: nothing changes MAX_HP, so it is
+        // `(int) baseHpMax`.
+        let max_hp = f64::from(f64::from(template.base_hp_max) as i32);
+        let core = CreatureCore {
+            object_id,
+            x: template.pos_x,
+            y: template.pos_y,
+            z: template.pos_z,
+            heading: 0,
+            level: template.level,
+            cur_hp: max_hp,
+            max_hp,
+            cur_mp: 0.0,
+            max_mp: 0.0,
+            cur_cp: 0.0,
+            max_cp: 0.0,
+            // `Creature`'s constructor: `if (isDoor()) _calculators = getStdDoorCalculators()`.
+            calculators: Calculators::own(CalcSet::std_door()),
+            skills: Vec::new(),
+        };
         Self {
             object_id,
             door_id: template.id,
@@ -84,23 +119,39 @@ impl Door {
             y: template.pos_y,
             z: template.pos_z,
             open: template.open_by_default,
-            current_hp: f64::from(max_hp),
-            max_hp,
+            core,
             targetable: template.targetable,
             attackable_door: template.attackable,
             mesh_index: 1,
             dead: false,
             upgrade_hp_ratio: 1,
             siege_enemy: false,
+            has_ai: false,
             template,
         }
+    }
+
+    /// Java `getCurrentHp()`.
+    pub fn current_hp(&self) -> f64 {
+        self.core.cur_hp
+    }
+
+    /// Java `getMaxHp()` (`DoorStat`: the template's times the upgrade ratio), as last computed.
+    pub fn max_hp(&self) -> i32 {
+        self.core.max_hp as i32
+    }
+
+    /// Java `Door.isWall()`.
+    pub fn is_wall(&self) -> bool {
+        self.template.is_wall
     }
 
     /// Java `Door.getDamage()`: 0 (unhurt) to 6 (almost destroyed), the damage grade of the
     /// client's hp bar.
     pub fn damage(&self) -> i32 {
         // Java int arithmetic: `6 - (int) Math.ceil(hp / maxHp * 6)`, then clamped to 0..=6.
-        let dmg = 6_i32.wrapping_sub(((self.current_hp / f64::from(self.max_hp)) * 6.0).ceil() as i32);
+        let ratio = self.current_hp() / f64::from(self.max_hp());
+        let dmg = 6_i32.wrapping_sub((ratio * 6.0).ceil() as i32);
         dmg.clamp(0, 6)
     }
 
@@ -152,8 +203,8 @@ impl Door {
             mesh_index: self.mesh_index,
             closed: !self.open,
             is_enemy: self.is_enemy(),
-            current_hp: self.current_hp as i32,
-            max_hp: self.max_hp,
+            current_hp: self.current_hp() as i32,
+            max_hp: self.max_hp(),
             show_hp: self.template.show_hp,
             damage_grade: self.damage(),
         };
@@ -163,8 +214,8 @@ impl Door {
             damage: self.damage(),
             is_enemy: self.is_enemy(),
             door_id: self.door_id,
-            current_hp: self.current_hp as i32,
-            max_hp: self.max_hp,
+            current_hp: self.current_hp() as i32,
+            max_hp: self.max_hp(),
         };
         let trigger = (self.template.emitter > 0).then_some(OnEventTrigger {
             emitter_id: self.template.emitter,
@@ -764,8 +815,10 @@ impl World {
         self.broadcast_door_status(id);
     }
 
-    /// Marks a door dead or alive. Java's `doDie` / revival belong to combat (M4); this carries
-    /// the one thing the geodata checks read, since a dead door does not block.
+    /// The dead flag of a door alone (Java `Creature.setDead`), without the rest of `doDie` or
+    /// `doRevive`: what the geodata checks read, since a dead door does not block. The world's
+    /// [`World::set_dead`] writes the same flag; kill and revive a door with
+    /// [`World::do_die`] / [`World::do_revive`].
     pub fn set_door_dead(&mut self, id: ObjectId, dead: bool) {
         if let Some(door) = self.doors.get_mut(&id) {
             door.dead = dead;
@@ -775,34 +828,20 @@ impl World {
 
     /// `DoorStat.setUpgradeHpRatio(ratio)`: the maximum HP is the template's times `ratio`.
     pub(crate) fn set_door_upgrade_hp_ratio(&mut self, id: ObjectId, ratio: i32) {
+        let Some(door) = self.doors.get_mut(&id) else {
+            return;
+        };
+        door.upgrade_hp_ratio = ratio;
+        let max = self.stats(id).map_or(0, |v| v.max_hp());
         if let Some(door) = self.doors.get_mut(&id) {
-            door.upgrade_hp_ratio = ratio;
-            let base = f64::from(door.template.base_hp_max) as i32;
-            door.max_hp = base.wrapping_mul(ratio);
+            door.core.max_hp = f64::from(max);
         }
     }
 
-    /// Java `Door.setCurrentHp(hp)`: within 0 and the maximum, then `broadcastStatusUpdate`.
+    /// Java `Door.setCurrentHp(hp)`: `CreatureStatus.setCurrentHp` (capped at the maximum, the
+    /// regeneration, `broadcastStatusUpdate` when the integer HP changed).
     pub(crate) fn set_door_current_hp(&mut self, id: ObjectId, hp: f64) {
-        let Some(door) = self.doors.get_mut(&id) else {
-            return;
-        };
-        door.current_hp = hp.clamp(0.0, f64::from(door.max_hp.max(0)));
-        self.broadcast_door_status(id);
-    }
-
-    /// Java `Creature.doRevive()` of a destroyed door: alive again (it blocks again) and
-    /// `Revive` for everybody who sees it.
-    pub(crate) fn revive_door(&mut self, id: ObjectId) {
-        let Some(door) = self.doors.get_mut(&id) else {
-            return;
-        };
-        if !door.dead {
-            return;
-        }
-        door.dead = false;
-        self.door_snapshot = None;
-        self.broadcast_packet(id, &l2_protocol_game::server::Revive { object_id: id.0 });
+        self.set_current_hp(id, hp, true);
     }
 
     /// Java `Fence.setState`: changes the state and sends the fence to everybody who sees it.
@@ -905,11 +944,26 @@ impl World {
 
     // ---- packets
 
-    /// Java `Door.broadcastStatusUpdate`: every player who can see the door gets its state.
-    fn broadcast_door_status(&self, id: ObjectId) {
+    /// Java `Door.broadcastStatusUpdate`: every player who can see the door gets its state. A
+    /// door of a castle or a fortress (`useTargetable`) is sent targetable to everybody, any
+    /// other door only to GMs.
+    pub(crate) fn broadcast_door_status(&self, id: ObjectId) {
+        let Some(door) = self.doors.get(&id) else {
+            return;
+        };
+        // `getCastle() != null && getCastle().getResidenceId() > 0`, the same for the fort.
+        let (x, y, z) = (door.x, door.y, door.z);
+        let use_targetable = self.castle_at(x, y, z).is_some_and(|c| c.0 > 0)
+            || self.fort_at(x, y, z).is_some_and(|f| f.0 > 0);
         for viewer in self.visible_players(id) {
-            if self.is_visible_for(id, viewer) {
-                self.send_door_info(id, viewer);
+            if !self.is_visible_for(id, viewer) {
+                continue;
+            }
+            let (info, status, trigger) = door.info_packets(self.is_gm(viewer) || use_targetable);
+            self.send(viewer, &info);
+            self.send(viewer, &status);
+            if let Some(trigger) = trigger {
+                self.send(viewer, &trigger);
             }
         }
     }

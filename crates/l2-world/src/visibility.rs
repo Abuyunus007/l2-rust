@@ -61,6 +61,8 @@ impl World {
             ObjectKind::Door => {
                 if let Some(d) = self.doors.get_mut(&id) {
                     (d.x, d.y, d.z) = (x, y, z);
+                    // The creature part of the door keeps the same position (M7-SIEGE-02).
+                    (d.core.x, d.core.y, d.core.z) = (x, y, z);
                 }
             }
             ObjectKind::Fence => {
