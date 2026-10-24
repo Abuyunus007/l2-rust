@@ -24,6 +24,7 @@
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
 pub mod clan;
+pub mod clanhall;
 pub mod combat;
 pub mod commands;
 pub mod create_item;
@@ -33,6 +34,7 @@ pub mod html;
 pub mod invul;
 pub mod karma;
 pub mod level;
+pub mod manor;
 pub mod party;
 pub mod punishments;
 pub mod rights;
@@ -139,6 +141,8 @@ impl Default for AdminWorld {
         transform::register(&mut handlers);
         crate::siege::register_admin(&mut handlers);
         crate::fort::register_admin(&mut handlers);
+        clanhall::register(&mut handlers);
+        manor::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
