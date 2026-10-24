@@ -279,22 +279,27 @@ impl World {
             // Clear resurrect xp calculation.
             self.set_exp_before_death(id, 0);
 
-            // Cursed weapons and combat flags (territory wars, fort sieges) are not modelled, so
-            // the `else` branch of Java's cursed/flag checks always runs.
-            let inside_pvp_zone = self.is_inside_zone(id, ZoneId::Pvp);
-            let inside_siege_zone = self.is_inside_zone(id, ZoneId::Siege);
-            // `pk == null || !pk.isCursedWeaponEquipped()`: nobody has a cursed weapon.
-            // Check if any item should be dropped.
-            self.on_die_drop_item(id, killer);
-            // Clan reputation for a kill in a clan war (`clan/war.rs`).
-            if !inside_pvp_zone && !inside_siege_zone {
-                self.clan_war_kill_reputation(id, killer);
-            }
+            // Cursed weapons (M8) and territory ward flags (M7-TW-01) are not modelled. The
+            // combat flag of a fortress siege is dropped and nothing else happens (the `else if
+            // (_combatFlagEquippedId)` of Java, M7-FORT-01).
+            if self.is_combat_flag_equipped(id) {
+                self.fort_remove_combat_flag(id);
+            } else {
+                let inside_pvp_zone = self.is_inside_zone(id, ZoneId::Pvp);
+                let inside_siege_zone = self.is_inside_zone(id, ZoneId::Siege);
+                // `pk == null || !pk.isCursedWeaponEquipped()`: nobody has a cursed weapon.
+                // Check if any item should be dropped.
+                self.on_die_drop_item(id, killer);
+                // Clan reputation for a kill in a clan war (`clan/war.rs`).
+                if !inside_pvp_zone && !inside_siege_zone {
+                    self.clan_war_kill_reputation(id, killer);
+                }
 
-            // Should not penalize player when lucky, in a non siege PvP zone, has advent blessing
-            // or is in an event.
-            if inside_siege_zone || !inside_pvp_zone {
-                self.calculate_death_exp_penalty(id, killer);
+                // Should not penalize player when lucky, in a non siege PvP zone, has advent
+                // blessing or is in an event.
+                if inside_siege_zone || !inside_pvp_zone {
+                    self.calculate_death_exp_penalty(id, killer);
+                }
             }
         }
 
@@ -357,6 +362,8 @@ impl World {
             if self.is_attackable_npc(id) {
                 self.attackable_do_die(id, killer);
             }
+            // `FortCommander.doDie` (M7-FORT-01).
+            self.fort_commander_died(id);
         }
         true
     }

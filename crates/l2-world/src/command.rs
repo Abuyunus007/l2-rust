@@ -219,6 +219,9 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
+    /// `RequestFortressMapInfo`), see `fort/`.
+    Fort(crate::fort::FortInput),
     /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
     AllAgitInfo,
     /// A packet the world doesn't handle yet.

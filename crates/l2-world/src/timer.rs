@@ -138,6 +138,8 @@ pub enum TimerKind {
     /// The feed task of a mount, the dismount task of a no-landing zone and the rent task, see
     /// `mount.rs`.
     Mount(crate::mount::MountTimer),
+    /// The fortress siege tasks, `FortUpdater` and the fame of the siege zone, see `fort/`.
+    Fort(crate::fort::FortTimer),
 }
 
 #[derive(Debug, Default)]

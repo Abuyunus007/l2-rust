@@ -67,7 +67,7 @@ pub(crate) struct PendingRespawn {
 
 impl World {
     /// The number of spawns of the datapack. Runtime spawns come after them in the index space.
-    fn static_spawn_count(&self) -> usize {
+    pub(crate) fn static_spawn_count(&self) -> usize {
         self.npc_world.spawn_data().map_or(0, |s| s.spawns().len())
     }
 

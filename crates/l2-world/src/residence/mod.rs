@@ -44,8 +44,8 @@
 // # Left to other cards (each has its marker where it belongs)
 // - Sieges of every kind (`Castle.getSiege()`, `Fort.getSiege()`, the siege zones' activity,
 //   `midVictory`, siege skills, siege guards, merc tickets, door and trap upgrades): M7-SIEGE-01,
-//   M7-FORT-01, M7-CHSIEGE-01 (`// M7-SIEGE-01:` and friends).
-// - `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts: M7-FORT-01.
+//   M7-CHSIEGE-01 (the fortress siege itself is in `fort/`) (`// M7-SIEGE-01:` and friends).
+// - (done in `fort/`, M7-FORT-01) `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts.
 // - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01 (`clanhall/`, done).
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
 // - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
@@ -283,6 +283,8 @@ pub enum ResidenceWrite {
     /// `CastleManager.removeCirclet` of an offline member: `DELETE FROM items WHERE owner_id = ?
     /// and item_id = ?`.
     DeleteCirclets { owner_id: i32, item_id: i32 },
+    /// The fortress siege tables and the blood oath count (M7-FORT-01, `fort/`).
+    FortSiege(crate::fort::FortSiegeWrite),
     /// A write of the clan hall auction tables (`auction`, `auction_bid`, `clan_data.
     /// auction_bid_at`), see `clanhall/` (M7-CH-01).
     ClanHallAuction(crate::clanhall::AuctionWrite),
@@ -404,7 +406,7 @@ impl World {
     }
 
     /// The players a zone holds (Java `getPlayersInside()`), by object id.
-    fn players_inside_zone(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
+    pub(crate) fn players_inside_zone(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
         let mut inside: Vec<ObjectId> = self
             .players
             .iter()

@@ -57,6 +57,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
+use l2_db::FortSiegeRepository;
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -70,6 +71,9 @@ use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
+};
+use l2_world::fort::{
+    FortSiegeFortLoad, FortSiegeGuardRecord, FortSiegeLoad, FortSiegeRows, FortSiegeWrite, FortSpawnRecord,
 };
 use l2_world::residence::{
     CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, ResidenceReadKind, ResidenceRef,
@@ -1278,6 +1282,68 @@ pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
     load
 }
 
+/// Java's fortress constructors and `FortSiege` constructors at startup, the database half
+/// (M7-FORT-01): `fort_spawnlist`, `fort_siege_guards` and `fortsiege_clans` of every fortress.
+/// Only reads (D-39). A failed read is logged like Java's and that fortress goes without.
+pub async fn load_fort_sieges(pool: &Pool) -> FortSiegeLoad {
+    let residences = ResidenceRepository::new(pool.clone());
+    let repo = FortSiegeRepository::new(pool.clone());
+    let mut load = FortSiegeLoad::default();
+    let ids = match residences.fort_ids().await {
+        Ok(ids) => ids,
+        Err(e) => {
+            warn!("Exception: loadFortData(): {e}");
+            return load;
+        }
+    };
+    for id in ids {
+        let mut fort = FortSiegeFortLoad {
+            fort_id: id,
+            ..FortSiegeFortLoad::default()
+        };
+        match repo.spawns(id).await {
+            Ok(rows) => {
+                fort.spawns = rows
+                    .into_iter()
+                    .map(|r| FortSpawnRecord {
+                        id: r.id,
+                        npc_id: r.npc_id,
+                        x: r.x,
+                        y: r.y,
+                        z: r.z,
+                        heading: r.heading,
+                        spawn_type: r.spawn_type,
+                        castle_id: r.castle_id,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Fort {id} initNpcs: Spawn could not be initialized: {e}"),
+        }
+        match repo.siege_guards(id).await {
+            Ok(rows) => {
+                fort.siege_guards = rows
+                    .into_iter()
+                    .map(|r| FortSiegeGuardRecord {
+                        npc_id: r.npc_id,
+                        x: r.x,
+                        y: r.y,
+                        z: r.z,
+                        heading: r.heading,
+                        respawn_delay: r.respawn_delay,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Error loading siege guard for fort {id}: {e}"),
+        }
+        match repo.siege_clans(id).await {
+            Ok(clans) => fort.siege_clans = clans,
+            Err(e) => warn!("Exception: loadSiegeClan(): {e}"),
+        }
+        load.forts.push(fort);
+    }
+    load
+}
+
 /// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
 /// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
 /// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
@@ -2038,6 +2104,7 @@ pub struct DbStore {
     friends: FriendRepository,
     championship: FishingChampionshipRepository,
     residences: ResidenceRepository,
+    fort_sieges: FortSiegeRepository,
     manor: ManorRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
@@ -2069,6 +2136,7 @@ impl DbStore {
             clans: ClanRepository::new(pool.clone()),
             crests: CrestRepository::new(pool.clone()),
             residences: ResidenceRepository::new(pool.clone()),
+            fort_sieges: FortSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
@@ -3252,6 +3320,27 @@ impl PlayerStore for DbStore {
             ResidenceWrite::DeleteCirclets { owner_id, item_id } => {
                 repo.delete_circlets(*owner_id, *item_id).await?
             }
+            ResidenceWrite::FortSiege(write) => {
+                let repo = &self.fort_sieges;
+                match write {
+                    FortSiegeWrite::SiegeDate { fort_id, siege_date } => {
+                        repo.update_siege_date(*fort_id, *siege_date).await?
+                    }
+                    FortSiegeWrite::AddAttacker { fort_id, clan_id } => {
+                        repo.insert_siege_clan(*clan_id, *fort_id).await?
+                    }
+                    FortSiegeWrite::RemoveAttackers { fort_id, clan_id } => {
+                        repo.delete_siege_clan(*fort_id, *clan_id).await?
+                    }
+                    FortSiegeWrite::ClearSiegeClans {
+                        fort_id,
+                        owner_clan_id,
+                    } => repo.clear_siege_clans(*fort_id, *owner_clan_id).await?,
+                    FortSiegeWrite::BloodOathCount { clan_id, count } => {
+                        repo.update_blood_oath_count(*clan_id, *count).await?
+                    }
+                }
+            }
             ResidenceWrite::ClanHallAuction(write) => store_auction_write(&self.auctions, write).await?,
         }
         Ok(())
@@ -3275,6 +3364,28 @@ impl PlayerStore for DbStore {
                             function_records(repo.functions(FunctionTable::Fort, residence_id).await?);
                     }
                     ResidenceRereadRows::Fort(record)
+                }
+                None => ResidenceRereadRows::Missing,
+            },
+            ResidenceReadKind::FortSiege => match repo.fort(residence_id).await? {
+                Some(row) => {
+                    let mut fort = fort_record(row);
+                    if fort.owner_id > 0 {
+                        fort.functions =
+                            function_records(repo.functions(FunctionTable::Fort, residence_id).await?);
+                    }
+                    let sieges = &self.fort_sieges;
+                    let clans = sieges.siege_clans(residence_id).await?;
+                    let owner_blood_oath_count = if fort.owner_id > 0 {
+                        sieges.blood_oath_count(fort.owner_id).await?
+                    } else {
+                        None
+                    };
+                    ResidenceRereadRows::FortSiege(Box::new(FortSiegeRows {
+                        fort,
+                        clans,
+                        owner_blood_oath_count,
+                    }))
                 }
                 None => ResidenceRereadRows::Missing,
             },

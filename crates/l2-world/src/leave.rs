@@ -72,6 +72,9 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
+        // Java `deleteMe`: `zone.onPlayerLogoutInside(this)` of the fortress siege zones, then
+        // "Remove combat flag." (M7-FORT-01).
+        self.fort_player_leaving(id);
         // Java `deleteMe`: the Nevit logout listener and `storeRecommendations(false)` come before
         // the store (they change what is stored), `stopAllTimers` ends the vitality task.
         self.nevit_on_leave(id);

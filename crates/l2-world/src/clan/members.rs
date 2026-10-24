@@ -205,7 +205,8 @@ impl World {
             .with(SystemMessageParam::IntNumber(hall.lease()));
             self.send(id, &message);
         }
-        // Sieges, fortress sieges, siegable halls: M7-SIEGE-01, M7-FORT-01, M7-CHSIEGE-01.
+        // The siege state of a fortress siege is set by `fort_player_entered` (M7-FORT-01, called
+        // from `on_entered`); castle sieges and siegable halls: M7-SIEGE-01, M7-CHSIEGE-01.
         self.send_pledge_show_member_list_all(clan_id, id);
         if let Some(clan) = self.clan(clan_id) {
             let status = Self::pledge_status_changed(clan);

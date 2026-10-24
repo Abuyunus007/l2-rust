@@ -296,7 +296,11 @@ impl World {
         {
             self.drop_overflow_item(player, added.item.object_id, true);
         }
-        // Cursed weapons, combat flags and territory wards (M5).
+        // Cursed weapons (M8), the combat flag of a fortress siege (M7-FORT-01) and territory
+        // wards (M7-TW-01).
+        else if World::is_combat_flag_item(added.item.item_id) {
+            self.fort_on_combat_flag_added(player, added.item.object_id);
+        }
         Some(added)
     }
 
