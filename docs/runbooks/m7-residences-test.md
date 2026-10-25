@@ -32,8 +32,8 @@ residence owners and registrations before acting on them (D-50).
 
 ### CP-M7c: fortresses and clan halls
 1. Register at a fortress (the suspicious merchant), `//startfortsiege <id>`, kill the commanders,
-   carry the combat flag to the pole. **Known gap until M7-FU-02 lands:** Flag Display at the pole
-   does not take the fortress yet; a GM ends it with `//setfort <id>`.
+   carry the combat flag to the pole and use Flag Display: your clan owns the fortress, the
+   fortress NPCs and the castle contract.
 2. Clan hall auction: list, bid (adena from the clan warehouse), the hall changes hands at the end;
    the hall manager (teleport, buffs, regen, decorations), the doorman, the hall warehouse.
 3. A conquerable hall siege (Fortress of Resistance, Devastated Castle or Fortress of the Dead) via
@@ -60,7 +60,6 @@ residence owners and registrations before acting on them (D-50).
 | `//territory_war`, `//territory_war_start`, `//territory_war_end`, wards list | Territory War |
 
 ## 3. Known limits in M7
-- Flag Display does not take a fortress yet (M7-FU-02 is on it); use `//setfort`.
 - Territory War quests and their points, the noblesse quests (`MakeMeNoble`): with the quests (D-05).
 - Seven Signs effects on castles (seal of strife, ticket prices): M8; the castle NPCs show the
   neutral state.
