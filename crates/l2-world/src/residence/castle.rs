@@ -446,10 +446,11 @@ impl World {
             // Remove owner: the castle loses its manor.
             self.manor_reset_data(id.0);
         }
-        self.siege_write(ResidenceWrite::CastleOwner {
+        let written = self.siege_write(ResidenceWrite::CastleOwner {
             castle_id: id.0,
             clan_id: owner_id,
         });
+        self.set_residence_owner_source(ResidenceRef::Castle(id), written);
         // Announce to clan members.
         if let Some(clan_id) = clan
             && self.clan(clan_id).is_some()

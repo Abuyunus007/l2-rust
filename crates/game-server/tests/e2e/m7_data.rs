@@ -386,10 +386,8 @@ fn skills(flag_condition: bool) -> String {
 
 /// Adds the M7 data below `root` (the folder that holds `data/`). Call after `write_social_data`.
 ///
-/// `flag_condition`: whether Flag Display carries its shipped condition `canTakeFort`. The world
-/// does not model that condition yet (`stats/conditions.rs`: `NotModelled::CanAction`), and a skill
-/// whose condition cannot be answered is not cast; the fortress scenarios leave it out, one ignored
-/// test keeps it in.
+/// `flag_condition`: whether Flag Display carries its shipped condition `canTakeFort` (the real
+/// way of the fortress scenario); the scenarios that never cast it leave it out.
 pub fn write_residence_data(root: &Path, flag_condition: bool) {
     write(root, "data/zones/m7.xml", &zones());
     write(root, "data/stats/skills/m7_skills.xml", &skills(flag_condition));

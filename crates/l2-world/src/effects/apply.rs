@@ -325,10 +325,14 @@ impl World {
         false
     }
 
-    /// Whether `id` is a player, an NPC or a door in the world (Java's `Creature` argument:
-    /// `Door extends Creature`, so `OpenDoor` and `DetectHiddenObjects` run on doors).
+    /// Whether `id` is a player, an NPC, a door or a static object in the world (Java's
+    /// `Creature` argument: `Door` and `StaticObject` extend `Creature`, so `OpenDoor`,
+    /// `DetectHiddenObjects` and `TakeFort` (target: the flag pole) run on them).
     fn is_creature(&self, id: ObjectId) -> bool {
-        self.players.contains_key(&id) || self.npcs.contains_key(&id) || self.doors.contains_key(&id)
+        self.players.contains_key(&id)
+            || self.npcs.contains_key(&id)
+            || self.doors.contains_key(&id)
+            || self.static_objects.contains_key(&id)
     }
 
     /// Java `Skill.checkCondition(creature, object, false)`: the skill's conditions for
@@ -372,6 +376,7 @@ impl World {
                 return true;
             }
             let ctx = calc_skill(skill);
+            // `object instanceof Creature`: a static object (the flag pole) is one in Java.
             let target = self.is_creature(target).then_some(target);
             skill
                 .pre_conditions

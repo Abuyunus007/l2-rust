@@ -3,9 +3,10 @@
 //! the hall's manager. Java: `Auctioneer`, `ClanHallAuction`, `ClanHallManager`,
 //! `ClanHallAuctionManager`, `AuctionableHall`.
 //!
-//! The bid and the function are a player's own actions and are written whatever the switch says.
-//! The end of the auction (the hall changes hands, the auction and its bids are deleted) is a job:
-//! its rows only with `SiegeDatabaseWrites = True` (D-51).
+//! The bid is a player's own action and is written whatever the switch says. The end of the auction
+//! (the hall changes hands, the auction and its bids are deleted) is a job: its rows only with
+//! `SiegeDatabaseWrites = True` (D-51). The function is a player's write too, but not for an owner
+//! that exists only in this world: without the switch no function row is written.
 
 use l2_protocol_game::server::{NpcHtmlMessage, NpcInfo, PledgeShowInfoUpdate};
 
@@ -238,8 +239,19 @@ pub fn assert_played(played: &Played, writes: bool) {
         m6_data::START_ADENA - i64::from(HP_FEE),
         "the function is paid from the leader's adena"
     );
-    // `ClanHallFunction.dbSave`: `REPLACE INTO clanhall_functions`, a player's write.
+    // The rows of the auction and the hall are in the state the end of the auction left them.
+    assert_eq!(played.rows_end.halls, played.rows_won.halls);
+    assert_eq!(played.rows_end.bids, played.rows_won.bids);
     let functions = &played.rows_end.functions;
+    if !writes {
+        // D-51: the owner row of the hall is a job's and did not go out, so the database thinks the
+        // hall is free; the function the new owner bought exists in this world only (the purchase
+        // is a player's write, but a function row of a hall nobody owns there is not written).
+        assert_eq!(played.rows_end.hall(HALL).owner_id, 0);
+        assert!(functions.is_empty(), "{functions:?}");
+        return;
+    }
+    // `ClanHallFunction.dbSave`: `REPLACE INTO clanhall_functions`, a player's write.
     assert_eq!(functions.len(), 1, "{functions:?}");
     let function = &functions[0];
     assert_eq!(
@@ -264,16 +276,6 @@ pub fn assert_played(played: &Played, writes: bool) {
         function.end_time > played.won_at,
         "the next fee is due later: {function:?}"
     );
-    // The rows of the auction and the hall are in the state the end of the auction left them.
-    assert_eq!(played.rows_end.halls, played.rows_won.halls);
-    assert_eq!(played.rows_end.bids, played.rows_won.bids);
-    if !writes {
-        // NOTE: the function row is a player's write and goes out; the owner row of the hall is a
-        // job's and does not, so the database holds a function of a hall it thinks is free (the
-        // first owner Sieghardt gives the hall would find it, `ClanHall.load` reads the functions
-        // of an owned hall). Reported as a finding of M7-E2E-01.
-        assert_eq!(played.rows_end.hall(HALL).owner_id, 0);
-    }
 }
 
 /// D-50: the adena of a bid comes out of the clan warehouse as the database has it *now*. The Java

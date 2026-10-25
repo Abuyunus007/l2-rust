@@ -280,6 +280,14 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             let skill = env.skill.map(|s| (s.id, s.level));
             a.world().cond_can_take_castle(a.object_id(), env.target, skill)
         }
+        // `_value == canTakeFort` (M7-FU-02, `siege/conditions.rs`).
+        Condition::PlayerCanTakeFort { value } => {
+            if !a.is_player() {
+                return !*value;
+            }
+            let skill = env.skill.map(|s| (s.id, s.level));
+            *value == a.world().cond_can_take_fort(a.object_id(), env.target, skill)
+        }
         // `ConditionPlayerCanResurrect` (M7-SIEGE-01: its siege rules).
         Condition::PlayerCanResurrect { value } => {
             let skill = env.skill.map(|s| (s.id, s.level));
@@ -300,8 +308,7 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         }
         Condition::PlayerCallPc { .. }
         | Condition::PlayerCanEscape { .. }
-        | Condition::PlayerCanRefuelAirship { .. }
-        | Condition::PlayerCanTakeFort { .. } => {
+        | Condition::PlayerCanRefuelAirship { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
         }
         // `_value == canTransform`; the checks tell the player why not.
