@@ -127,6 +127,7 @@ impl World {
             ChatType::Whisper => self.chat_whisper(id, target.as_deref(), &text),
             ChatType::HeroVoice => self.chat_hero_voice(id),
             ChatType::Party => self.chat_party(id, &text),
+            ChatType::Battlefield => self.chat_battlefield(id, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }
     }
@@ -439,6 +440,40 @@ impl World {
             }
             None => {
                 self.send(id, &SystemMessage::new(SystemMessageId::ThatPlayerIsNotOnline));
+            }
+        }
+    }
+
+    // Java: ChatBattlefield.onChat (M7-TW-01): while the Territory War channel is open, everybody
+    // of the speaker's side hears it.
+    fn chat_battlefield(&self, id: ObjectId, text: &str) {
+        let side = self.siege_side_of(id);
+        if !self.is_tw_channel_open() || side <= 0 {
+            return;
+        }
+        if self.is_chat_banned(id)
+            && self
+                .punishment_settings()
+                .ban_chat_channels
+                .contains(&ChatType::Battlefield)
+        {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::ChattingIsCurrentlyProhibitedIfYouTryToChatBeforeTheProhibitionIsRemovedTheProhibitionTimeWillIncreaseEvenFurther,
+                ),
+            );
+            return;
+        }
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
+        let packet = self.say_packet(id, ChatType::Battlefield, &player.data.name, text);
+        let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
+        ids.sort_unstable();
+        for to in ids {
+            if self.siege_side_of(to) == side {
+                self.send(to, &packet);
             }
         }
     }

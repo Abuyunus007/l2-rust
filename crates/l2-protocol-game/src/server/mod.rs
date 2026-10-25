@@ -223,7 +223,7 @@ pub use summon::{
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use territory::{
     DominionTerritory, ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
-    TerritoryWards,
+    ExShowOwnthingPos, TerritoryWards, WardPosition,
 };
 pub use trade::{
     SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,

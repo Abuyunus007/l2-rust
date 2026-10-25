@@ -560,6 +560,8 @@ impl World {
             | ResidenceReadThen::Fort(_)
             | ResidenceReadThen::HallSiege(_)
             | ResidenceReadThen::Npc(_) => {}
+            // The Territory War's (M7-TW-01).
+            ResidenceReadThen::Territory(_) => {}
             // The siege follow-ups are `on_residence_reread`'s own (M7-SIEGE-01).
             ResidenceReadThen::SiegeJoin { .. }
             | ResidenceReadThen::SiegeConfirmWaiting { .. }

@@ -84,6 +84,8 @@ impl Default for BypassHandlers {
         handlers.register("ReleaseAttribute", crate::enchant::release_attribute_handler);
         // dist/game/data/scripts/handlers/bypass/npc/Augment.java (M6-AUGMENT-01)
         handlers.register("Augment", crate::augment::augment_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/TerritoryStatus.java (M7-TW-01)
+        handlers.register("TerritoryStatus", crate::territory::territory_status_handler);
         handlers
     }
 }

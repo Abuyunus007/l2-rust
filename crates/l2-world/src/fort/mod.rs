@@ -40,8 +40,8 @@
 // - The castle ambassador's dialog (`CastleAmbassador`: the choice between a contract with the
 //   castle and independence): M7-NPC-01. The fortress side of it (`setFortState`, the envoys
 //   and the castle each speaks for) is here.
-// - `FortSiegeGuardAI` (what a `Defender` does inside a fortress), `TerritoryWarManager`'s
-//   registration windows (M7-TW-01), the control room.
+// - `FortSiegeGuardAI` (what a `Defender` does inside a fortress), the control room.
+//   `TerritoryWarManager`'s registration windows are checked in `fort_add_attacker` (M7-TW-01).
 
 mod admin;
 mod combat_flag;

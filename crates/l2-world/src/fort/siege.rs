@@ -677,8 +677,15 @@ impl World {
                 // Player does not have enough adena to register.
                 return 1;
             }
-            // M7-TW-01: "Is not right time to register Fortress now" while a Territory War is
-            // about to start or is open (`TerritoryWarManager`).
+            // "Is not right time to register Fortress now": the Territory War's registration is
+            // over before its start, or its channel is open after it (M7-TW-01).
+            let now = self.tw_now_ms();
+            let tw_start = self.tw_start_time_ms();
+            if (now < tw_start && self.is_tw_registration_over())
+                || (now > tw_start && self.is_tw_channel_open())
+            {
+                return 2;
+            }
             let forts: Vec<FortId> = self.residences.forts.iter().map(|f| f.id).collect();
             for other in forts {
                 if self.fort_check_is_attacker(other, clan) {

@@ -729,6 +729,8 @@ impl Db {
             },
             // No conquerable hall in the seed.
             ResidenceReadKind::SiegableHall | ResidenceReadKind::HallSiege => ResidenceRereadRows::Missing,
+            // No territory in the seed (M7-TW-01).
+            ResidenceReadKind::Territory => ResidenceRereadRows::Territory(Box::default()),
             ResidenceReadKind::SiegeClans => {
                 let castle = self.castle_record(id);
                 ResidenceRereadRows::SiegeClans {

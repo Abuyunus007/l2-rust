@@ -300,6 +300,8 @@ impl World {
         // wards (M7-TW-01).
         else if World::is_combat_flag_item(added.item.item_id) {
             self.fort_on_combat_flag_added(player, added.item.object_id);
+        } else if crate::territory::is_ward_item(added.item.item_id) {
+            self.territory_ward_item_added(player, added.item.object_id, added.item.item_id);
         }
         Some(added)
     }
@@ -361,6 +363,10 @@ impl World {
             && (!template.stackable || created.change != InventoryUpdate::MODIFIED)
         {
             self.drop_overflow_item(player, created.item.object_id, false);
+        }
+        // Cursed weapons (M8); a territory ward is worn (M7-TW-01).
+        else if crate::territory::is_ward_item(item_id) {
+            self.territory_ward_item_added(player, created.item.object_id, item_id);
         }
         Some(created.item.object_id)
     }

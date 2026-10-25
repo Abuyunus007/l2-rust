@@ -75,6 +75,8 @@ impl World {
         // Java `deleteMe`: `zone.onPlayerLogoutInside(this)` of the fortress siege zones, then
         // "Remove combat flag." (M7-FORT-01).
         self.fort_player_leaving(id);
+        // `else if (_combatFlagEquippedId)`: a ward carrier drops the ward (M7-TW-01).
+        self.territory_player_leaving(id);
         // Java `deleteMe`: the Nevit logout listener and `storeRecommendations(false)` come before
         // the store (they change what is stored), `stopAllTimers` ends the vitality task.
         self.nevit_on_leave(id);

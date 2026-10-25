@@ -71,6 +71,9 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/siegable_hall_flagwar_attackers.sql"),
     include_str!("../sql/game/siegable_hall_flagwar_attackers_members.sql"),
     include_str!("../sql/game/siege_clans.sql"),
+    include_str!("../sql/game/territories.sql"),
+    include_str!("../sql/game/territory_registrations.sql"),
+    include_str!("../sql/game/territory_spawnlist.sql"),
 ];
 
 #[cfg(test)]

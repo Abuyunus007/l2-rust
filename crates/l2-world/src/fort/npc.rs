@@ -358,8 +358,8 @@ impl World {
 
     /// Java `Defender.isAutoAttackable(attacker)` for a defender that stands in a fortress (the
     /// `_fort` of `Defender.onSpawn`): during the siege, by anybody who is not a defender
-    /// registered on this field (the Territory War ally check, M7-TW-01, is false while no war
-    /// runs). A defender of a castle or a siegable hall is answered by `siege_npc_auto_attackable`.
+    /// registered on this field, nor an attacker of the territory the fortress belongs to.
+    /// A defender of a castle or a siegable hall is answered by `siege_npc_auto_attackable`.
     pub(crate) fn fort_defender_auto_attackable(&self, defender: ObjectId, attacker: ObjectId) -> bool {
         let Some((x, y, z)) = self.position_of(defender) else {
             return false;
@@ -375,7 +375,10 @@ impl World {
             return false;
         };
         let state = self.fort_siege_state_of(player);
-        state != 2 || !self.is_registered_on_this_siege_field(player, fort.0)
+        // An attacker of the Territory War is no enemy of his territory's fortress (M7-TW-01).
+        (state == 2 && !self.is_registered_on_this_siege_field(player, fort.0))
+            || (state == 1 && !self.is_ally_field(player, fort.0))
+            || state == 0
     }
 
     /// The speech of `FortCommander.addDamage(creature, damage, skill)`. Returns the attacker the

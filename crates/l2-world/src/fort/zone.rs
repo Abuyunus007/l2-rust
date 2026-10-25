@@ -197,10 +197,22 @@ impl World {
         self.set_inside(player, ZoneId::NoSummonFriend, true);
         if self.is_registered_on_this_siege_field(player, fort.0) {
             self.set_in_siege(player, true);
-            // `giveFame()` is true for a fortress.
-            let frequency = self.fort.settings.fortress_zone_fame_task_frequency;
+            // `giveFame()` is true for a fortress; with the Territory War as the zone's siege its
+            // castle zone values (M7-TW-01).
+            let (frequency, points) = if self.territory.fort_zones.contains(&fort.0) {
+                let s = self.siege_settings();
+                (
+                    s.castle_zone_fame_task_frequency,
+                    s.castle_zone_fame_aquire_points,
+                )
+            } else {
+                let s = &self.fort.settings;
+                (
+                    s.fortress_zone_fame_task_frequency,
+                    s.fortress_zone_fame_aquire_points,
+                )
+            };
             if frequency > 0 {
-                let points = self.fort.settings.fortress_zone_fame_aquire_points;
                 self.fort_start_fame_task(player, i64::from(frequency) * 1000, points);
             }
         }
