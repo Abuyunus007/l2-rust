@@ -20,6 +20,7 @@ use l2_protocol_game::server::siege::{SiegeAttackerList, SiegeInfo, SiegeTime};
 use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
+use l2_world::ai::siege_guard::SiegeGuardAiKind;
 use l2_world::residence::{ResidenceRereadRows, SiegableHallRecord};
 use l2_world::siege::{SiegeInput, SiegeSettings};
 use l2_world::*;
@@ -123,6 +124,9 @@ const RAINBOW_CARETAKER: i32 = 35603;
 const YETI_1: i32 = 35596;
 const GOURD_1: i32 = 35588;
 const GUARD: i32 = 35413;
+/// A `CastleDoorman` and a `Defender` standing at a siegable hall.
+const DOORMAN: i32 = 35990;
+const HALL_DEFENDER: i32 = 35991;
 
 fn npc(id: i32, npc_type: &str) -> String {
     format!(
@@ -169,6 +173,8 @@ fn npc_xml() -> String {
     for id in 35428..=35432 {
         list.push(npc(id, "Monster"));
     }
+    list.push(npc(DOORMAN, "CastleDoorman"));
+    list.push(npc(HALL_DEFENDER, "Defender"));
     for id in 35588..=35591 {
         list.push(npc(id, "Monster"));
     }
@@ -511,6 +517,15 @@ impl Scene {
              <respawnPoint X=\"-84318\" Y=\"244579\" Z=\"-3730\" />\n</region>\n</list>\n",
         );
         write("data/html/admin/siegablehall.htm", ADMIN_PAGE);
+        for (name, body) in [("", "OWNER"), ("-no", "NO"), ("-busy", "BUSY")] {
+            let links = ["open_doors", "close_doors"]
+                .map(|c| format!(r#"<a action="bypass -h npc_%objectId%_{c} $e">x</a>"#))
+                .concat();
+            write(
+                &format!("data/html/doorman/35990{name}.htm"),
+                &format!("<html><body>DOORMAN {body}{links}</body></html>"),
+            );
+        }
         for (path, text) in script_pages() {
             write(&path, &text);
         }
@@ -2275,4 +2290,86 @@ fn the_gates_of_a_hall_fall_and_come_back() {
     s.world.hall_end_siege(H21);
     // The end repairs the gates too (`spawnDoor(false)`).
     assert!(!s.world.is_dead(door));
+}
+
+/// `CastleDoorman` at a siegable hall: the hall's owner opens and closes the hall's doors (no
+/// castle needed), and while the hall is in siege (`hall.isInSiege()`) the doors are not
+/// touched and the "busy" page comes instead.
+#[test]
+fn the_doorman_of_a_siegable_hall_serves_its_owner_and_waits_for_the_siege_to_end() {
+    let mut s = Scene::new(false, all_halls(LIONS), hall_load(vec![]));
+    s.enter(P1, LIONS, 21);
+    s.enter(P3, WOLVES, 21);
+    let doorman = s.spawn_at_hall(DOORMAN, 21);
+    let door = s.world.residence_doors(ResidenceRef::ClanHall(H21))[0];
+    let bypass = |s: &mut Scene, player: i32, command: &str| {
+        s.talk(player, doorman);
+        s.take();
+        s.input(
+            player,
+            ClientInput::Bypass {
+                command: format!("npc_{}_{command}", doorman.0),
+            },
+        );
+        s.run_ms(100);
+    };
+    // The window follows the owner of the hall.
+    s.talk(P1, doorman);
+    assert!(page_has(&s.take(), P1, "DOORMAN OWNER"));
+    s.talk(P3, doorman);
+    assert!(page_has(&s.take(), P3, "DOORMAN NO"));
+    // The owner opens and closes the door of the hall; another clan does nothing.
+    assert!(!s.world.door(door).unwrap().open);
+    bypass(&mut s, P3, "open_doors 1, 21000001");
+    assert!(!s.world.door(door).unwrap().open);
+    bypass(&mut s, P1, "open_doors 1, 21000001");
+    assert!(s.world.door(door).unwrap().open);
+    bypass(&mut s, P1, "close_doors 1, 21000001");
+    assert!(!s.world.door(door).unwrap().open);
+    // In siege the doorman is busy: the doors stay as the siege left them.
+    s.world.hall_add_attacker(H21, WOLVES);
+    s.world.hall_start_siege(H21);
+    assert!(s.world.hall_is_in_siege(H21));
+    assert!(!s.world.door(door).unwrap().open);
+    bypass(&mut s, P1, "open_doors 1, 21000001");
+    assert!(page_has(&s.take(), P1, "DOORMAN BUSY"));
+    assert!(!s.world.door(door).unwrap().open);
+    // The siege is over: the doorman serves again.
+    s.world.hall_end_siege(H21);
+    assert!(!s.world.hall_is_in_siege(H21));
+    bypass(&mut s, P1, "open_doors 1, 21000001");
+    assert!(s.world.door(door).unwrap().open);
+}
+
+/// `SpecialSiegeGuardAI.autoAttackCondition`: a guard of a siegable hall (a `Defender` with a hall
+/// and no castle within 10000) never takes a player of its allied list for a target, any other
+/// enemy of the siege it does.
+#[test]
+fn a_hall_siege_guard_leaves_its_allied_players_alone() {
+    let mut s = Scene::new(false, all_halls(LIONS), hall_load(vec![]));
+    let (x, y) = hall_xy(21);
+    // Both stand a few units from the guards, well inside a sword's range.
+    s.enter_at(P7, TIGERS, x + 40, y + 30, 0);
+    s.enter_at(P8, TIGERS, x + 40, y + 31, 0);
+    s.world.hall_add_attacker(H21, WOLVES);
+    s.world.hall_start_siege(H21);
+    assert!(s.world.hall_is_in_siege(H21));
+    let allied = s.spawn_at_hall(HALL_DEFENDER, 21);
+    let plain = s.spawn_at_hall(HALL_DEFENDER, 21);
+    s.world.hall_siege_guard_add_allies(allied, &[P7]);
+    assert_eq!(s.world.hall_siege_allies_of(allied), [P7]);
+    assert!(s.world.hall_siege_allies_of(plain).is_empty());
+    // The first seconds after the spawn the guard is not aggressive (`_globalAggro = -10`).
+    s.run_ms(20_000);
+    assert!(s.world.siege_guard_state(allied).is_some());
+    assert_eq!(s.world.siege_guard_state(allied).unwrap().kind, SiegeGuardAiKind::Hall);
+    // The plain guard has put both players on its aggro list (the hate itself comes and goes
+    // with the attack timeouts), the allied one only the player who is not its ally.
+    let listed = |s: &mut Scene, guard: ObjectId, player: i32| {
+        s.world.aggro_list(guard).iter().any(|a| a.attacker == ObjectId(player))
+    };
+    assert!(listed(&mut s, plain, P7));
+    assert!(listed(&mut s, plain, P8));
+    assert!(!listed(&mut s, allied, P7));
+    assert!(listed(&mut s, allied, P8));
 }
