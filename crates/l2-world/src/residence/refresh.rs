@@ -411,6 +411,8 @@ impl World {
         let Some(old) = self.castle(id).map(|c| c.owner_id) else {
             return;
         };
+        // The owner is the database's now (D-50).
+        self.residences.world_only_owners.remove(&ResidenceRef::Castle(id));
         if old == owner {
             return;
         }
@@ -447,6 +449,8 @@ impl World {
         let Some(old) = self.fort(id).map(|f| f.owner_id) else {
             return;
         };
+        // The owner is the database's now (D-50).
+        self.residences.world_only_owners.remove(&ResidenceRef::Fort(id));
         if old == owner {
             return;
         }
@@ -484,6 +488,8 @@ impl World {
         let Some(old) = self.clan_hall(id).map(|h| h.owner_id) else {
             return;
         };
+        // The owner is the database's now (D-50).
+        self.residences.world_only_owners.remove(&ResidenceRef::ClanHall(id));
         if let Some(hall) = self.clan_hall_mut(id) {
             hall.owner_id = owner;
             hall.is_free = owner == 0;

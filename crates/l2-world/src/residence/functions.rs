@@ -289,7 +289,18 @@ impl World {
             residence,
             function_type,
         };
-        self.write_residence(writes, write);
+        self.function_write(residence, writes, write);
+    }
+
+    /// Hands a function row write to the persistence task as `writes` says, unless the owner
+    /// exists only in this world: the database thinks the residence is free (or someone else's),
+    /// so a row of its functions would be a function of a residence nobody owns there (D-51).
+    fn function_write(&mut self, residence: ResidenceRef, writes: Writes, write: ResidenceWrite) -> bool {
+        if self.residence_owner_world_only(residence) {
+            tracing::debug!("SideBySide: not written (the owner exists only in this world): {write:?}");
+            return false;
+        }
+        self.write_residence(writes, write)
     }
 
     /// Java `for (Integer fc : _function.keySet()) removeFunction(fc); _function.clear();` of an
@@ -323,7 +334,8 @@ impl World {
             rate: f.rate,
             end_time: f.end_time,
         };
-        self.residence_write(write);
+        let residence = task.residence;
+        self.function_write(residence, Writes::Player, write);
     }
 
     /// Java `FunctionTask.run()`.

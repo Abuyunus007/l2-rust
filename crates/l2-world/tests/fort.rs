@@ -3126,3 +3126,42 @@ fn fortress_guards_think_with_the_fort_guard_ai_and_spare_the_owners() {
     assert_eq!(s.world.intention_of(guard), Intention::Attack);
     assert_eq!(s.world.attack_target_of(guard), Some(ObjectId(P5)));
 }
+
+// ---------------------------------------------------------------------------------- canTakeFort
+
+/// `ConditionPlayerCanTakeFort`: the leader of an attacker, on the fortress's own flag pole.
+/// Everything else tells the player why not (`INVALID_TARGET`, "unsuitable terms").
+#[test]
+fn can_take_fort_wants_the_leader_of_an_attacker_at_the_flag_pole() {
+    let mut s = flag_scene();
+    let pole = s.world.fort(SHANTY).unwrap().flag_pole.unwrap();
+    s.take();
+    // The leader of the Wolves, next to the pole.
+    assert!(s.world.cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1))));
+    assert!(s.take().is_empty());
+    // Not the pole: "Invalid target".
+    let other = s.npcs_of(NPC_SIEGE_GUARD)[0];
+    assert!(!s.world.cond_can_take_fort(ObjectId(P3), Some(other), Some((3318, 1))));
+    assert!(!s.world.cond_can_take_fort(ObjectId(P3), None, Some((3318, 1))));
+    let out = s.take();
+    assert_eq!(
+        message_ids(&out, P3),
+        [SystemMessageId::InvalidTarget, SystemMessageId::InvalidTarget]
+    );
+    // Too far from the pole.
+    s.teleport(P3, X + 500, Y, Z);
+    s.take();
+    assert!(!s.world.cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1))));
+    assert_eq!(
+        message_ids(&s.take(), P3),
+        [SystemMessageId::TheDistanceIsTooFarAndSoTheCastingHasBeenStopped]
+    );
+    // A clan that does not attack: "unsuitable terms", with the skill's name.
+    s.enter(P5, BEARS, 0);
+    s.take();
+    assert!(!s.world.cond_can_take_fort(ObjectId(P5), Some(pole), Some((3318, 1))));
+    let out = s.take();
+    let unsuitable: Vec<SystemMessage> = messages_to(&out, P5);
+    assert_eq!(unsuitable.len(), 1);
+    assert_eq!(unsuitable[0].id, SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms);
+}

@@ -1275,3 +1275,51 @@ fn a_destroyed_clan_frees_its_fortress() {
         }
     )));
 }
+
+/// M7-FU-02 (D-51): a castle that has its owner in this world only (a GM test siege without
+/// `SiegeDatabaseWrites`) gets no function row: the database thinks it is free. The purchase itself
+/// works in this world; with the switch the owner row went out and the function row follows.
+#[test]
+fn a_function_of_an_owner_that_exists_only_in_this_world_writes_no_row() {
+    for switch in [false, true] {
+        let mut s = Scene::new(switch);
+        s.load(standard_load());
+        let mut p1 = pdata(P1, LIONS, X);
+        p1.items.push(ItemData {
+            object_id: ObjectId(0x6000_3000),
+            item_id: ADENA,
+            count: 100_000,
+            loc: "INVENTORY".to_owned(),
+            ..Default::default()
+        });
+        s.enter(p1);
+        let dion = ResidenceRef::Castle(CastleId(2));
+        s.world.castle_set_owner(CastleId(2), Some(LIONS));
+        assert_eq!(s.world.residence_owner_world_only(dion), !switch);
+        // The startup owner of Gludio came from the database.
+        assert!(!s.world.residence_owner_world_only(ResidenceRef::Castle(CastleId(1))));
+        s.take();
+        assert!(
+            s.world
+                .residence_update_functions(ObjectId(P1), dion, 4, 1, 1000, 86_400_000, true)
+        );
+        s.run_ms(50);
+        assert!(s.world.residence_function(dion, 4).is_some());
+        let writes = residence_writes(&s.take());
+        let saves = writes
+            .iter()
+            .filter(|w| matches!(w, ResidenceWrite::FunctionSave { .. }))
+            .count();
+        assert_eq!(saves, usize::from(switch), "switch {switch}: {writes:?}");
+        // A removal by the player is not written either.
+        assert!(
+            s.world
+                .residence_update_functions(ObjectId(P1), dion, 4, 0, 0, 0, false)
+        );
+        let deletes = residence_writes(&s.take())
+            .iter()
+            .filter(|w| matches!(w, ResidenceWrite::FunctionDelete { .. }))
+            .count();
+        assert_eq!(deletes, usize::from(switch), "switch {switch}");
+    }
+}

@@ -214,6 +214,10 @@ pub struct ResidenceWorld {
     /// The function objects (see `functions.rs`), by their own key.
     pub(crate) function_objects: BTreeMap<u64, functions::FunctionTask>,
     pub(crate) next_function_task: u64,
+    /// The residences whose current owner exists only in this world (D-51): a GM test siege or
+    /// `//clanhallset` gave it with `SiegeDatabaseWrites` off, so the owner row was not written.
+    /// A residence not in the set has the owner the database has (startup, or a D-50 re-read).
+    pub(crate) world_only_owners: std::collections::HashSet<ResidenceRef>,
 }
 
 /// The residence timers (one `TimerKind::Residence`).
@@ -390,6 +394,24 @@ impl World {
         } else {
             tracing::debug!("SideBySide: not written (SiegeDatabaseWrites = False): {write:?}");
             false
+        }
+    }
+
+    /// Whether the current owner of a residence exists only in this world (see
+    /// `ResidenceWorld::world_only_owners`).
+    pub fn residence_owner_world_only(&self, residence: ResidenceRef) -> bool {
+        self.residences.world_only_owners.contains(&residence)
+    }
+
+    /// Records where the owner a residence has now came from: `in_database` when its owner row
+    /// went out (or the owner was read from the database), else only this world has it. A residence
+    /// without an owner has no source.
+    pub(crate) fn set_residence_owner_source(&mut self, residence: ResidenceRef, in_database: bool) {
+        let owned = self.residence_owner_id(residence) != 0;
+        if in_database || !owned {
+            self.residences.world_only_owners.remove(&residence);
+        } else {
+            self.residences.world_only_owners.insert(residence);
         }
     }
 

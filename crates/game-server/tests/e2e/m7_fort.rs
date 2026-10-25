@@ -7,13 +7,8 @@
 //! With `SiegeDatabaseWrites = False` (D-51) the world plays all of it but writes no fortress row
 //! (the registration, the dates, the owner); with `True` the rows are Java's.
 //!
-//! NOTE: the fortress is not taken by the skill in the world as merged. Flag Display targets the
-//! flag pole, a static object, and the cast launches only at creatures: the escape-range check of
-//! `onMagicLaunchedTimer` (`effectRange` 400) leaves no target and aborts the cast, like Java's
-//! (whose target list holds a `null`). The shipped condition `canTakeFort` is not modelled either.
-//! So the scenario ends the way a GM does, `//setfort 101` on the raider, which calls the same
-//! `Fort.endOfSiege(clan)` as the effect; `flag_display_takes_the_fortress` keeps the real way as
-//! an ignored test.
+//! The siege ends two ways: the real one, Flag Display on the flag pole (`TakeFort`), and the GM's
+//! `//setfort 101` on the raider, which calls the same `Fort.endOfSiege(clan)`.
 
 use l2_protocol_game::server::{
     ExShowFortressInfo, NpcHtmlMessage, NpcInfo, NpcSay, PledgeShowInfoUpdate, SpawnItem, StaticObjectInfo,
@@ -284,7 +279,8 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
         .await;
     h.collect_quiet(Who::Raider).await;
     h.act(Who::Raider, act::use_skill(m7_data::FLAG_DISPLAY)).await;
-    h.wait_seconds(4).await;
+    // The cast takes `FLAG_DISPLAY_CAST_MS`: the start is heard first, `TakeFort` at its end.
+    h.wait_seconds(1).await;
     let displaying = h.collect_quiet(Who::Raider).await;
     // `TakeFortStart`: the clan is announced to the siege when the cast begins.
     assert_eq!(
@@ -292,6 +288,8 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
         [text(m7_seed::WOLVES_NAME)]
     );
     let ended_at;
+    // What the raider heard of the ending (`collect_until` takes everything up to the message).
+    let mut won = Vec::new();
     match finish {
         Finish::Skill => {
             // The cast ends with `TakeFort` and the clan has the fortress.
@@ -307,6 +305,7 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
                 message_of(&taken, SystemMessageId::S1IsVictoriousInTheFortressBattleOfS2).params,
                 [text(m7_seed::WOLVES_NAME), SystemMessageParam::CastleName(SHANTY)]
             );
+            won = taken;
         }
         Finish::Gm => {
             // The GM gives the fortress to his target's clan, as `TakeFort` would (`Fort.endOfSiege`).
@@ -322,7 +321,7 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
             ended_at = now_ms();
         }
     }
-    let won = h.collect_quiet(Who::Raider).await;
+    won.extend(h.collect_quiet(Who::Raider).await);
     // `Fort.endOfSiege` -> `setOwner(clan, true)`: "S1 is victorious in the fortress battle of S2" to
     // everybody, the siege over, the fortress on the clan's window (`TakeFortPoints`: reputation).
     assert_eq!(
@@ -428,10 +427,6 @@ async fn a_gm_started_fortress_siege_runs_on_the_real_servers_and_writes_javas_r
 
 /// The real way: the flag is displayed with the skill and `TakeFort` gives the clan the fortress.
 #[tokio::test]
-#[ignore = "Flag Display does not take the fortress in the world as merged: its target is the flag \
-            pole (a static object), the escape-range check of the cast drops targets that are no \
-            creatures and aborts the cast (Java's list holds a null there), and the shipped \
-            condition canTakeFort is not modelled (stats/conditions.rs). Needs its own card."]
 async fn flag_display_takes_the_fortress() {
     let mut world = BareWorld::start(&opts(true, true));
     let played = play(&mut world, true, Finish::Skill).await;

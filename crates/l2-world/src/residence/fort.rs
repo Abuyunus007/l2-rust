@@ -376,7 +376,7 @@ impl World {
         if let Some(fort) = self.fort_mut(id) {
             fort.last_owned_time = last_owned_time;
         }
-        self.write_residence(
+        let written = self.write_residence(
             writes,
             ResidenceWrite::FortOwner {
                 fort_id: id.0,
@@ -384,6 +384,7 @@ impl World {
                 last_owned_time,
             },
         );
+        self.set_residence_owner_source(ResidenceRef::Fort(id), written);
         // Announce to clan members.
         if let Some((clan_id, name)) = clan {
             if let Some(c) = self.clan_mut(clan_id) {

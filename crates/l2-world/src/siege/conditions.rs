@@ -154,6 +154,44 @@ impl World {
         true
     }
 
+    /// Java `ConditionPlayerCanTakeFort.testImpl`: a living clan leader attacking the fortress he
+    /// stands in, within 200 of the fortress's flag pole. The player hears why not.
+    // Java: mechanics/conditions/ConditionPlayerCanTakeFort.java
+    pub fn cond_can_take_fort(
+        &self,
+        player: ObjectId,
+        target: Option<ObjectId>,
+        skill: Option<(i32, i32)>,
+    ) -> bool {
+        if !self.is_player(player) {
+            return false;
+        }
+        // `isCursedWeaponEquipped()`: cursed weapons are M8.
+        let mut can = !(self.is_alike_dead(player) || !self.is_clan_leader(player));
+        let clan = self.clan_of(player).map(|c| c.id);
+        let fort = self
+            .fort_of_player(player)
+            .filter(|f| f.0 > 0 && self.fort_siege_in_progress(*f))
+            .filter(|f| clan.is_some_and(|c| self.fort_attacker_clan(*f, c).is_some()));
+        if let Some(fort) = fort {
+            // `fort.getFlagPole() != effected`
+            if self.fort(fort).and_then(|f| f.flag_pole) != target {
+                self.send(player, &SystemMessage::new(SystemMessageId::InvalidTarget));
+                can = false;
+            } else if !target.is_some_and(|t| self.check_if_in_range(200, player, t, true)) {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::TheDistanceIsTooFarAndSoTheCastingHasBeenStopped),
+                );
+                can = false;
+            }
+        } else {
+            self.send_unsuitable_terms(player, skill);
+            can = false;
+        }
+        can
+    }
+
     /// Java `ConditionPlayerCanSummonSiegeGolem.testImpl`: `canSummonSiegeGolem` (castle and
     /// fortress sieges).
     #[allow(clippy::if_same_then_else)]
