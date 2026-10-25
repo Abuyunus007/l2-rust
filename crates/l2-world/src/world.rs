@@ -146,6 +146,9 @@ pub struct World {
     pub(crate) fort: crate::fort::FortWorld,
     /// The castle NPCs: chamberlain, siege manager, envoys, ... (M7-NPC-01, `residence/npc/`).
     pub(crate) residence_npc: crate::residence::npc::ResidenceNpcWorld,
+    /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
+    /// `territory/`).
+    pub(crate) territory: crate::territory::TerritoryWorld,
 }
 
 impl World {
@@ -216,6 +219,7 @@ impl World {
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
+            territory: crate::territory::TerritoryWorld::default(),
         }
     }
 
@@ -658,6 +662,8 @@ impl World {
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             ClientInput::Fort(input) => self.on_fort_input(id, input),
+            // Java: RequestJoinDominionWar, RequestDominionInfo (M7-TW-01)
+            ClientInput::Territory(input) => self.on_territory_input(id, input),
             ClientInput::Manor(input) => self.on_manor_input(id, input),
             ClientInput::Craft(input) => self.on_craft_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
@@ -806,6 +812,8 @@ impl World {
             TimerKind::Fort(timer) => self.on_fort_timer(timer),
             // Java: the quest timers of CastleTeleporter and CastleAmbassador
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
+            // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
+            TimerKind::Territory(timer) => self.on_territory_timer(timer),
         }
     }
 

@@ -50,7 +50,7 @@
 // - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
 // - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
 //   `manor/lists.rs` (M7-MANOR-01). The territory ward skills of a castle
-//   (`TerritoryWarManager`): M7-TW-01.
+//   (`TerritoryWarManager`) are `territory/` (M7-TW-01).
 // - The restart points of the residences (`MapRegionData.getTeleToLocation` with a castle, fort
 //   or clan hall): the death and respawn wire-ins of M7-SIEGE-01.
 // - Seven Signs' `CastleManager.validateTaxes` (M8).
@@ -82,6 +82,7 @@ pub use functions::{
 };
 pub use load::{CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, SiegableHallRecord};
 pub use refresh::{ResidenceReadKind, ResidenceReadThen, ResidenceRefresh, ResidenceRereadRows};
+pub(crate) use skills::residential_skills_of;
 
 use crate::outbox::PersistCommand;
 use crate::world::World;
@@ -341,6 +342,9 @@ pub enum ResidenceWrite {
     /// A write of the clan hall auction tables (`auction`, `auction_bid`, `clan_data.
     /// auction_bid_at`), see `clanhall/` (M7-CH-01).
     ClanHallAuction(crate::clanhall::AuctionWrite),
+    /// A write of the Territory War tables (`territory_registrations`, `territories`, the
+    /// `nextTWStartDate` global variable), see `territory/` (M7-TW-01).
+    Territory(crate::territory::TerritoryWrite),
 }
 
 impl World {

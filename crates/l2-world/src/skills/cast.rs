@@ -1648,7 +1648,9 @@ impl World {
                 .collect();
             let not_static = !skill.is_static();
             for npc in watchers {
-                // ON_NPC_SKILL_SEE: script event (D-05).
+                // ON_NPC_SKILL_SEE: script event (D-05); the outpost's of
+                // `TerritoryWarSuperClass` (M7-TW-01).
+                self.territory_on_skill_see(npc, player, skill.id, &targets);
                 if !self.is_attackable_npc(npc) {
                     continue;
                 }

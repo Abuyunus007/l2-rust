@@ -66,6 +66,9 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/seven_signs.sql"),
     include_str!("../sql/game/siegable_clanhall.sql"),
     include_str!("../sql/game/siege_clans.sql"),
+    include_str!("../sql/game/territories.sql"),
+    include_str!("../sql/game/territory_registrations.sql"),
+    include_str!("../sql/game/territory_spawnlist.sql"),
 ];
 
 #[cfg(test)]

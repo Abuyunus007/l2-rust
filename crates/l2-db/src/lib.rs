@@ -43,6 +43,9 @@ pub use game::{
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use game::{ManorRepository, ProcureRow, ProductionRow};
 pub use game::{MessageRepository, MessageRow};
+pub use game::{
+    NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
+};
 pub use game::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};

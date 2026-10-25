@@ -83,13 +83,15 @@ impl World {
         item_id == COMBAT_FLAG_ITEM_ID
     }
 
-    /// Java `Player.isCombatFlagEquipped()`.
+    /// Java `Player.isCombatFlagEquipped()`: a fortress's combat flag or a territory ward
+    /// (M7-TW-01).
     pub fn is_combat_flag_equipped(&self, player: ObjectId) -> bool {
         self.fort
             .flags
             .values()
             .flatten()
             .any(|flag| flag.player == Some(player))
+            || self.is_ward_carrier(player)
     }
 
     // ------------------------------------------------------------------ on the ground

@@ -457,6 +457,14 @@ impl World {
     fn on_zone_enter(&mut self, id: ObjectId, zone: &Zone, rules: &ZoneRules) {
         use SystemMessageId::YouHaveEnteredACombatZone;
         let peace_mode = self.settings.zones.peace_zone_mode;
+        // `PeaceZone.onEnter`: a ward carrier loses the ward to where he picked it up while the
+        // Territory War runs (M7-TW-01).
+        if matches!(ZoneKind::of(&zone.zone_type), ZoneKind::Peace)
+            && self.is_combat_flag_equipped(id)
+            && self.is_tw_in_progress()
+        {
+            self.territory_drop_combat_flag(id, false, true);
+        }
         match ZoneKind::of(&zone.zone_type) {
             ZoneKind::Town => self.set_inside(id, ZoneId::Town, true),
             // "PVP possible during siege, now for siege participants only." (M7-SIEGE-01)

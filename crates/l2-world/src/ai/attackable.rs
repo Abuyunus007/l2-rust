@@ -1585,11 +1585,12 @@ impl World {
             self.set_running(id, true);
         }
 
-        // (`!me.isCoreAIDisabled()`)
+        // (`!me.isCoreAIDisabled()`: a territory ward never fights back, M7-TW-01)
         // Set the Intention to ATTACK.
-        if self.intention_of(id) != Intention::Attack {
+        let core_ai_disabled = self.npc_template(id).is_some_and(|t| t.is_type("TerritoryWard"));
+        if !core_ai_disabled && self.intention_of(id) != Intention::Attack {
             self.set_intention_attack(id, attacker);
-        } else if self.aggro_most_hated(id) != self.attack_target_of(id) {
+        } else if !core_ai_disabled && self.aggro_most_hated(id) != self.attack_target_of(id) {
             // NOTE(java-quirk): the attacker becomes the target, not the most hated.
             self.set_intention_attack(id, attacker);
         }

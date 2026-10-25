@@ -256,9 +256,41 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// `config/TerritoryWar.ini` (Java `TerritoryWarManager.load`'s `ConfigReader`: a missing file
+/// or key means Java's default). The badge prices of the mercenary captain are read here too
+/// (M7-TW-01).
+pub fn territory_settings(config_dir: &Path) -> l2_world::TerritorySettings {
+    const FILE: &str = "TerritoryWar.ini";
+    let path = config_dir.join(FILE);
+    let ini = match IniFile::load(&path) {
+        Ok(ini) => ini,
+        Err(e) => {
+            warn!(
+                "Cannot read {}: {e}; using the Territory War defaults.",
+                path.display()
+            );
+            IniFile::empty(FILE)
+        }
+    };
+    l2_world::TerritorySettings {
+        defender_max_clans: ini.get_int("DefenderMaxClans", 500),
+        defender_max_players: ini.get_int("DefenderMaxPlayers", 500),
+        clan_min_level: ini.get_int("ClanMinLevel", 0),
+        player_min_level: ini.get_int("PlayerMinLevel", 40),
+        war_length_ms: ini.get_long("WarLength", 120).wrapping_mul(60_000),
+        player_with_ward_can_be_killed_in_peace_zone: ini
+            .get_bool("PlayerWithWardCanBeKilledInPeaceZone", false),
+        spawn_wards_when_tw_is_not_in_progress: ini.get_bool("SpawnWardsWhenTWIsNotInProgress", false),
+        return_wards_when_tw_starts: ini.get_bool("ReturnWardsWhenTWStarts", false),
+        min_tw_badge_for_nobless: ini.get_int("MinTerritoryBadgeForNobless", 100),
+        min_tw_badge_for_striders: ini.get_int("MinTerritoryBadgeForStriders", 50),
+        min_tw_badge_for_big_strider: ini.get_int("MinTerritoryBadgeForBigStrider", 80),
+    }
+}
+
 /// The values of `Feature.ini` the castle NPCs read: the fees of the castle functions, the door
 /// and trap upgrade prices and the dawn tickets (M7-NPC-01). The badge prices of the mercenary
-/// captain are `TerritoryWar.ini`'s (M7-TW-01) and stay at Java's defaults.
+/// captain are `TerritoryWar.ini`'s ([`territory_settings`]).
 pub fn residence_npc_settings(config: &GameConfig) -> l2_world::residence::npc::ResidenceNpcSettings {
     let f = &config.feature;
     l2_world::residence::npc::ResidenceNpcSettings {
@@ -294,7 +326,6 @@ pub fn residence_npc_settings(config: &GameConfig) -> l2_world::residence::npc::
         ssq_dawn_ticket_price: f.ssq_dawn_ticket_price,
         ssq_dawn_ticket_bundle: f.ssq_dawn_ticket_bundle,
         ssq_manors_agreement_id: f.ssq_manors_agreement_id,
-        ..l2_world::residence::npc::ResidenceNpcSettings::default()
     }
 }
 
@@ -593,6 +624,10 @@ impl Server {
         // fortsiege_clans; M7-FORT-01) and FortSiegeManager (FortSiege.ini).
         let fort_sieges = persist::load_fort_sieges(&pool).await;
         let fort_settings = fort_settings(&config, &paths.config_dir);
+        // Java: TerritoryWarManager (TerritoryWar.ini, territory_spawnlist, territories,
+        // territory_registrations, the nextTWStartDate global variable; M7-TW-01).
+        let territory_load = persist::load_territories(&pool).await;
+        let territory_settings = territory_settings(&paths.config_dir);
         // Java: CastleManorManager (after CastleManager): the manor rows, only with `AllowManor`.
         let manor_settings = manor_settings(&config);
         let manor_load = if manor_settings.allow_manor {
@@ -754,6 +789,11 @@ impl Server {
                     // Java: the Fort constructors' spawns, FortSiege, FortSiegeGuardManager
                     // (M7-FORT-01).
                     world.load_fort_data(fort_sieges);
+                    // Java: TerritoryWarManager.getInstance(), then the TerritoryWarSuperClass
+                    // and MercenaryCaptain constructors (the next war date, the shouts;
+                    // M7-TW-01).
+                    world.set_territory_settings(territory_settings);
+                    world.load_territories(territory_load);
                     // Java: CastleManorManager (Seeds.xml, the rows, the mode of the hour; after the
                     // castles; M7-MANOR-01).
                     world.set_manor_settings(manor_settings);

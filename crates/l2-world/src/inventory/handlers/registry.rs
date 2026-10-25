@@ -47,6 +47,8 @@ pub(crate) enum ItemHandlerKind {
     Seed,
     /// `Harvester`: harvests the dead monster the player sowed (M7-MANOR-01).
     Harvester,
+    /// `Disguise`: the Territory War disguise scroll of the player's territory (M7-TW-01).
+    Disguise,
 }
 
 impl ItemHandlerKind {
@@ -69,6 +71,7 @@ impl ItemHandlerKind {
             "MercTicket" => Self::MercTicket,
             "Seed" => Self::Seed,
             "Harvester" => Self::Harvester,
+            "Disguise" => Self::Disguise,
             _ => return None,
         })
     }
@@ -110,6 +113,7 @@ impl World {
             ItemHandlerKind::MercTicket => self.merc_ticket_on_use(id, item),
             ItemHandlerKind::Seed => self.seed_on_use(id, item, template),
             ItemHandlerKind::Harvester => self.harvester_on_use(id, template),
+            ItemHandlerKind::Disguise => self.disguise_on_use(id, item),
         }
     }
 

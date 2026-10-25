@@ -147,7 +147,19 @@ impl World {
         if !(self.is_playable(target) && self.is_playable(attacker)) {
             return false;
         }
-        // Instances (`isPvP`) and territory wards: M5.
+        // Instances (`isPvP`): M8.
+        // A ward carrier may be killed in a peace zone during the war with
+        // `PlayerWithWardCanBeKilledInPeaceZone` (M7-TW-01).
+        if self
+            .territory
+            .settings
+            .player_with_ward_can_be_killed_in_peace_zone
+            && self.is_tw_in_progress()
+            && self.is_player(target)
+            && self.is_combat_flag_equipped(target)
+        {
+            return false;
+        }
         if self.settings.combat.karma_player_can_be_killed_in_peacezone {
             // Allows red to be attacked and red to attack flagged players.
             // NOTE(java-quirk): Java asks `asPlayer()` of `this` (the creature the method runs on),

@@ -146,6 +146,9 @@ pub enum TimerKind {
     /// The quest timers of the castle NPCs (the mass gatekeeper, the envoys), see
     /// `residence/npc/`.
     ResidenceNpc(crate::residence::npc::ResidenceNpcTimer),
+    /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
+    /// the side by side re-read, the mercenary captains' shout), see `territory/`.
+    Territory(crate::territory::TerritoryTimer),
 }
 
 #[derive(Debug, Default)]

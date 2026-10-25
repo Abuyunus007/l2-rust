@@ -283,6 +283,10 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     // M7-FORT-01: the fortress siege.
     registry.register("TakeFort", crate::fort::TakeFort::create);
     registry.register("TakeFortStart", crate::fort::TakeFortStart::create);
+    // M7-TW-01: the Territory War's outposts and flags.
+    registry.register("OutpostCreate", crate::territory::OutpostCreate::create);
+    registry.register("OutpostDestroy", crate::territory::OutpostDestroy::create);
+    registry.register("TakeTerritoryFlag", crate::territory::TakeTerritoryFlag::create);
     // M6-CUBIC-01: cubics.
     registry.register("CubicMastery", summon_cubic::CubicMastery::create);
     registry.register("SummonCubic", summon_cubic::SummonCubic::create);

@@ -141,6 +141,7 @@ impl Default for AdminWorld {
         transform::register(&mut handlers);
         crate::siege::register_admin(&mut handlers);
         crate::fort::register_admin(&mut handlers);
+        crate::territory::register_admin(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
         Self {

@@ -69,6 +69,8 @@ pub enum ResidenceRereadRows {
         castle: Option<CastleRecord>,
         rows: Vec<crate::siege::SiegeClanRecord>,
     },
+    /// The Territory War's territories, registrations and next date (M7-TW-01).
+    Territory(Box<crate::territory::TerritoryRows>),
 }
 
 /// What the world does once a residence was read again. The cards that act on residences add
@@ -114,6 +116,8 @@ pub enum ResidenceReadThen {
     AuctionCancel { player: ObjectId, auction_id: i32 },
     /// A castle NPC acts on the rows (M7-NPC-01, `residence/npc/`).
     Npc(super::npc::NpcThen),
+    /// The Territory War acts on its rows (M7-TW-01, `territory/`).
+    Territory(crate::territory::TerritoryThen),
 }
 
 impl World {
@@ -239,6 +243,7 @@ impl World {
             ResidenceRereadRows::SiegeClans { castle, rows } => {
                 self.apply_siege_reread(castle.as_ref(), rows)
             }
+            ResidenceRereadRows::Territory(rows) => self.apply_territory_rows(rows),
         }
         match then {
             ResidenceReadThen::Nothing => {}
@@ -265,6 +270,7 @@ impl World {
             }
             ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
             ResidenceReadThen::Npc(then) => self.residence_npc_after_reread(then),
+            ResidenceReadThen::Territory(then) => self.on_territory_reread(then),
             then => self.auction_read_then(then),
         }
     }
@@ -402,6 +408,9 @@ impl World {
         if let Some(castle) = self.castle_mut(id) {
             castle.owner_id = owner;
         }
+        // The territory follows the castle (M7-TW-01).
+        let clan = (owner != 0).then_some(owner);
+        self.territory_set_owner_clan(id.0, clan);
         let residence = ResidenceRef::Castle(id);
         if old != 0 && self.clan(old).is_some() {
             if let Some(clan) = self.clan_mut(old)
@@ -510,4 +519,7 @@ pub enum ResidenceReadKind {
     SiegeClans,
     /// `auction` and `auction_bid` of a hall's auction (M7-CH-01).
     Auction,
+    /// `territories`, `territory_registrations` and the `nextTWStartDate` global variable
+    /// (M7-TW-01; the residence id is 0).
+    Territory,
 }

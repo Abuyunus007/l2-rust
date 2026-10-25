@@ -357,6 +357,10 @@ impl World {
         if self.siege_flag_reduce_hp(target, amount, attacker) {
             return;
         }
+        // `TerritoryWard.reduceCurrentHp`: only the enemies of its field in the war (M7-TW-01).
+        if self.territory_ward_refuses_damage(target, attacker) {
+            return;
+        }
         if self.is_attackable_npc(target) {
             // Raid command channel looting rights: parties are M5.
             // Add damage and hate to the attacker AggroInfo of the Attackable _aggroList.

@@ -188,8 +188,11 @@ impl World {
 
     /// Java `ConditionSiegeZone.testImpl` for `target` (the effector with `self="true"`).
     pub(crate) fn cond_siege_zone(&self, target: Option<ObjectId>, value: i32) -> bool {
-        // M7-TW-01: `isTWInProgress()` and `isTWChannelOpen()` (no Territory War yet).
-        if value & (COND_TW_PROGRESS | COND_TW_CHANNEL) != 0 {
+        // `isTWInProgress()` and `isTWChannelOpen()` (M7-TW-01).
+        if value & COND_TW_PROGRESS != 0 && !self.is_tw_in_progress() {
+            return false;
+        }
+        if value & COND_TW_CHANNEL != 0 && !self.is_tw_channel_open() {
             return false;
         }
         let (castle, fort) = target.map_or((None, None), |t| self.castle_and_fort_of(t));

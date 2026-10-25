@@ -354,6 +354,8 @@ impl World {
         self.siege_forget_npc(id);
         // The quest timers and the script value of the castle NPCs go (M7-NPC-01).
         self.residence_npc_forget(id);
+        // The mercenary captain's shout goes with it (M7-TW-01).
+        self.territory_forget_npc(id);
     }
 
     // ------------------------------------------------------------------ Spawn.decreaseCount

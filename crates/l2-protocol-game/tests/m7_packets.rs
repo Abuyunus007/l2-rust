@@ -997,8 +997,48 @@ mod territory {
     use l2_protocol_game::client::{RequestDominionInfo, RequestJoinDominionWar};
     use l2_protocol_game::server::territory::{
         DominionTerritory, ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
-        TerritoryWards,
+        ExShowOwnthingPos, TerritoryWards, WardPosition,
     };
+
+    #[test]
+    fn ward_positions_layout() {
+        let packet = ExShowOwnthingPos {
+            wards: vec![
+                WardPosition {
+                    territory_id: 81,
+                    x: -18_000,
+                    y: 110_000,
+                    z: -2_500,
+                },
+                WardPosition {
+                    territory_id: 85,
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
+            ],
+        };
+        let expected = Bytes::default()
+            .byte(0xFE)
+            .short(0x93)
+            .int(2)
+            .int(81)
+            .int(-18_000)
+            .int(110_000)
+            .int(-2_500)
+            .int(85)
+            .int(0)
+            .int(0)
+            .int(0)
+            .done();
+        check_round_trip(&packet, &expected, 3);
+        // Outside the war Java writes only the count.
+        check_round_trip(
+            &ExShowOwnthingPos::default(),
+            &Bytes::default().byte(0xFE).short(0x93).int(0).done(),
+            3,
+        );
+    }
 
     #[test]
     fn client_packets() {
