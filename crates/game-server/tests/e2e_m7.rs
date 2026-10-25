@@ -561,6 +561,55 @@ trait Harness {
     async fn leave(&mut self, who: Who) -> Left;
     /// The residence tables as the store has them now.
     async fn rows(&mut self) -> Rows;
+    /// The Java game server (Sieghardt) changes a shared table while this one runs (D-39).
+    async fn sieghardt(&mut self, change: Sieghardt);
+}
+
+/// What the Java game server does to the tables the two game servers share.
+#[derive(Debug, Clone, Copy)]
+enum Sieghardt {
+    /// `Siege.saveSiegeClan`: a clan registers as an attacker (`siege_clans`, type 1).
+    RegisterAttacker { castle_id: i32, clan_id: i32 },
+    /// A withdrawal from the clan warehouse of the Wolves leaves this much adena in the stack.
+    WolvesAdenaLeft { count: i64 },
+}
+
+impl Sieghardt {
+    /// The statement of Java.
+    fn sql(self) -> String {
+        match self {
+            Sieghardt::WolvesAdenaLeft { count } => format!(
+                "UPDATE items SET `count` = {count} WHERE object_id = {}",
+                m7_seed::WOLVES_WAREHOUSE_ITEM
+            ),
+            Sieghardt::RegisterAttacker { castle_id, clan_id } => format!(
+                "INSERT INTO siege_clans (clan_id, castle_id, `type`, castle_owner) VALUES ({clan_id}, {castle_id}, 1, 0)"
+            ),
+        }
+    }
+
+    /// The same change for the model of the tables of the bare world.
+    fn command(self) -> PersistCommand {
+        match self {
+            Sieghardt::RegisterAttacker { castle_id, clan_id } => {
+                PersistCommand::Residence(l2_world::ResidenceWrite::SiegeClanInsert {
+                    clan_id,
+                    castle_id,
+                    kind: 1,
+                })
+            }
+            Sieghardt::WolvesAdenaLeft { count } => PersistCommand::ItemRows {
+                tracked: None,
+                ops: vec![l2_world::ItemRowOp::Update {
+                    owner_id: m7_seed::WOLVES,
+                    item: ItemData {
+                        count,
+                        ..Seed::warehouse_adena()
+                    },
+                }],
+            },
+        }
+    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1038,6 +1087,11 @@ impl Harness for BareWorld {
 
     async fn rows(&mut self) -> Rows {
         self.db().rows()
+    }
+
+    async fn sieghardt(&mut self, change: Sieghardt) {
+        // Into the history of the tables, not to the world: it learns of it by reading.
+        self.persisted.0.lock().unwrap().push(change.command());
     }
 }
 
@@ -1628,6 +1682,10 @@ impl Harness for Net {
     async fn rows(&mut self) -> Rows {
         self.rig.settle().await;
         self.rig.rows().await
+    }
+
+    async fn sieghardt(&mut self, change: Sieghardt) {
+        self.rig.db.exec(&change.sql()).await;
     }
 }
 

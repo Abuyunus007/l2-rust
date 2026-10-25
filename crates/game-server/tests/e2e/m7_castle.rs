@@ -467,6 +467,59 @@ async fn a_gm_started_castle_siege_runs_in_a_bare_world_and_writes_javas_rows() 
     assert_played(&played, true);
 }
 
+/// D-50, D-51: Sieghardt registered the Wolves for the siege while this server runs. The raider's
+/// request reads the registrations first and finds his clan on the list: Java's "You have already
+/// requested a castle siege." and no second row.
+pub async fn play_sieghardt_registered_first<H: Harness>(h: &mut H) {
+    h.enter(Who::Lord).await;
+    h.enter(Who::Raider).await;
+    h.collect_quiet(Who::Raider).await;
+    let before = h.rows().await;
+    assert!(before.siege_clans.is_empty());
+
+    h.sieghardt(Sieghardt::RegisterAttacker {
+        castle_id: GLUDIO,
+        clan_id: WOLVES,
+    })
+    .await;
+    h.act(Who::Raider, act::join_siege(GLUDIO, 1, 1)).await;
+    let refused = h.collect_quiet(Who::Raider).await;
+    assert!(has_message(
+        &refused,
+        SystemMessageId::YouHaveAlreadyRequestedACastleSiege
+    ));
+    assert_eq!(
+        h.rows().await.siege_clans,
+        [(GLUDIO, WOLVES, 1)],
+        "the one row of Sieghardt"
+    );
+
+    // The list shows what the database has.
+    h.act(Who::Raider, act::siege_attacker_list(GLUDIO)).await;
+    let attackers: SiegeAttackerList =
+        all(&h.collect_quiet(Who::Raider).await, "CASTLE_SIEGE_ATTACKER_LIST").remove(0);
+    assert_eq!(attackers.clans.len(), 1);
+    assert_eq!(attackers.clans[0].as_ref().unwrap().name, m7_seed::WOLVES_NAME);
+    h.leave(Who::Raider).await;
+    h.leave(Who::Lord).await;
+}
+
+#[tokio::test]
+async fn a_registration_of_sieghardt_is_found_by_the_reread_in_a_bare_world() {
+    let mut world = BareWorld::start(&opts(false));
+    play_sieghardt_registered_first(&mut world).await;
+}
+
+#[tokio::test]
+async fn a_registration_of_sieghardt_is_found_by_the_reread_on_the_real_servers() {
+    let options = opts(false);
+    let Some(mut net) = Net::start("e2em7c2", &options).await else {
+        return;
+    };
+    play_sieghardt_registered_first(&mut net).await;
+    net.finish().await;
+}
+
 /// D-50: a registration is acted on only after the registrations were read again; a read that
 /// fails changes nothing and refuses it (the world never falls back to its memory).
 #[tokio::test]

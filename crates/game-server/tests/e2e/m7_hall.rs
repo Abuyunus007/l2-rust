@@ -276,6 +276,76 @@ pub fn assert_played(played: &Played, writes: bool) {
     }
 }
 
+/// D-50: the adena of a bid comes out of the clan warehouse as the database has it *now*. The Java
+/// game server took most of it out; the world, which remembers 5,000,000, reads the stack again,
+/// finds 100,000 and refuses the bid. When the adena is back the same bid is accepted.
+pub async fn play_sieghardt_took_the_adena<H: Harness>(h: &mut H) {
+    let entered = h.enter(Who::Raider).await;
+    let auctioneer = all::<NpcInfo>(&entered, "NPC_INFO")
+        .into_iter()
+        .find(|n| n.display_id == m7_data::AUCTIONEER_ID)
+        .expect("the auctioneer is in view")
+        .object_id;
+    h.collect_quiet(Who::Raider).await;
+    let page = talk_to(h, Who::Raider, auctioneer).await;
+    let list = follow(h, Who::Raider, &page, &format!("npc_{auctioneer}_list")).await;
+    let info = follow(h, Who::Raider, &list, &format!("npc_{auctioneer}_bidding {HALL}")).await;
+    let bid_page = follow(h, Who::Raider, &info, &format!("npc_{auctioneer}_bid1 {HALL}")).await;
+    let bid = format!("npc_{auctioneer}_bid {HALL} {BID}");
+    assert!(
+        bid_page
+            .html
+            .contains(&format!("npc_{auctioneer}_bid {HALL} $bid"))
+    );
+
+    h.sieghardt(Sieghardt::WolvesAdenaLeft { count: 100_000 }).await;
+    h.act(Who::Raider, act::bypass(&bid)).await;
+    let refused = h.collect_quiet(Who::Raider).await;
+    assert!(has_message(
+        &refused,
+        SystemMessageId::ThereIsNotEnoughAdenaInTheClanHallWarehouse
+    ));
+    assert!(!has_message(
+        &refused,
+        SystemMessageId::YourBidHasBeenSuccessfullyPlaced
+    ));
+    let rows = h.rows().await;
+    assert!(rows.bids.is_empty());
+    assert_eq!(rows.adena_of(WOLVES), 100_000, "what Sieghardt left");
+    assert_eq!(rows.clan(WOLVES).auction_bid_at, 0);
+
+    h.sieghardt(Sieghardt::WolvesAdenaLeft {
+        count: m7_seed::WOLVES_WAREHOUSE_ADENA,
+    })
+    .await;
+    h.act(Who::Raider, act::bypass(&bid)).await;
+    let placed = h.collect_quiet(Who::Raider).await;
+    assert!(has_message(
+        &placed,
+        SystemMessageId::YourBidHasBeenSuccessfullyPlaced
+    ));
+    let rows = h.rows().await;
+    assert_eq!(rows.bids.len(), 1);
+    assert_eq!(rows.adena_of(WOLVES), m7_seed::WOLVES_WAREHOUSE_ADENA - BID);
+    h.leave(Who::Raider).await;
+}
+
+#[tokio::test]
+async fn a_bid_reads_the_clan_warehouse_again_in_a_bare_world() {
+    let mut world = BareWorld::start(&opts(true, 600_000));
+    play_sieghardt_took_the_adena(&mut world).await;
+}
+
+#[tokio::test]
+async fn a_bid_reads_the_clan_warehouse_again_on_the_real_servers() {
+    let options = opts(true, 600_000);
+    let Some(mut net) = Net::start("e2em7h2", &options).await else {
+        return;
+    };
+    play_sieghardt_took_the_adena(&mut net).await;
+    net.finish().await;
+}
+
 #[tokio::test]
 async fn a_hall_auction_and_function_run_in_a_bare_world_without_global_writes() {
     let mut world = BareWorld::start(&opts(false, 6_000));
