@@ -3137,11 +3137,17 @@ fn can_take_fort_wants_the_leader_of_an_attacker_at_the_flag_pole() {
     let pole = s.world.fort(SHANTY).unwrap().flag_pole.unwrap();
     s.take();
     // The leader of the Wolves, next to the pole.
-    assert!(s.world.cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1))));
+    assert!(
+        s.world
+            .cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1)))
+    );
     assert!(s.take().is_empty());
     // Not the pole: "Invalid target".
     let other = s.npcs_of(NPC_SIEGE_GUARD)[0];
-    assert!(!s.world.cond_can_take_fort(ObjectId(P3), Some(other), Some((3318, 1))));
+    assert!(
+        !s.world
+            .cond_can_take_fort(ObjectId(P3), Some(other), Some((3318, 1)))
+    );
     assert!(!s.world.cond_can_take_fort(ObjectId(P3), None, Some((3318, 1))));
     let out = s.take();
     assert_eq!(
@@ -3151,7 +3157,10 @@ fn can_take_fort_wants_the_leader_of_an_attacker_at_the_flag_pole() {
     // Too far from the pole.
     s.teleport(P3, X + 500, Y, Z);
     s.take();
-    assert!(!s.world.cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1))));
+    assert!(
+        !s.world
+            .cond_can_take_fort(ObjectId(P3), Some(pole), Some((3318, 1)))
+    );
     assert_eq!(
         message_ids(&s.take(), P3),
         [SystemMessageId::TheDistanceIsTooFarAndSoTheCastingHasBeenStopped]
@@ -3159,9 +3168,15 @@ fn can_take_fort_wants_the_leader_of_an_attacker_at_the_flag_pole() {
     // A clan that does not attack: "unsuitable terms", with the skill's name.
     s.enter(P5, BEARS, 0);
     s.take();
-    assert!(!s.world.cond_can_take_fort(ObjectId(P5), Some(pole), Some((3318, 1))));
+    assert!(
+        !s.world
+            .cond_can_take_fort(ObjectId(P5), Some(pole), Some((3318, 1)))
+    );
     let out = s.take();
     let unsuitable: Vec<SystemMessage> = messages_to(&out, P5);
     assert_eq!(unsuitable.len(), 1);
-    assert_eq!(unsuitable[0].id, SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms);
+    assert_eq!(
+        unsuitable[0].id,
+        SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms
+    );
 }

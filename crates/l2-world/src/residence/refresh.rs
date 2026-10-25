@@ -412,7 +412,9 @@ impl World {
             return;
         };
         // The owner is the database's now (D-50).
-        self.residences.world_only_owners.remove(&ResidenceRef::Castle(id));
+        self.residences
+            .world_only_owners
+            .remove(&ResidenceRef::Castle(id));
         if old == owner {
             return;
         }
@@ -489,7 +491,9 @@ impl World {
             return;
         };
         // The owner is the database's now (D-50).
-        self.residences.world_only_owners.remove(&ResidenceRef::ClanHall(id));
+        self.residences
+            .world_only_owners
+            .remove(&ResidenceRef::ClanHall(id));
         if let Some(hall) = self.clan_hall_mut(id) {
             hall.owner_id = owner;
             hall.is_free = owner == 0;

@@ -1297,7 +1297,10 @@ fn a_function_of_an_owner_that_exists_only_in_this_world_writes_no_row() {
         s.world.castle_set_owner(CastleId(2), Some(LIONS));
         assert_eq!(s.world.residence_owner_world_only(dion), !switch);
         // The startup owner of Gludio came from the database.
-        assert!(!s.world.residence_owner_world_only(ResidenceRef::Castle(CastleId(1))));
+        assert!(
+            !s.world
+                .residence_owner_world_only(ResidenceRef::Castle(CastleId(1)))
+        );
         s.take();
         assert!(
             s.world
