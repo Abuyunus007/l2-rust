@@ -33,6 +33,7 @@ mod skills;
 mod sql_number;
 mod subclasses;
 mod summons;
+mod territories;
 mod variables;
 
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
@@ -77,4 +78,7 @@ pub use sieges::{
 pub use skills::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use subclasses::{SubclassRepository, SubclassRow, SubclassValues};
 pub use summons::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
+pub use territories::{
+    NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
+};
 pub use variables::VariableRepository;

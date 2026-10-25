@@ -75,6 +75,7 @@ use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
 
 pub(crate) use admin::register as register_admin;
+pub(crate) use admin::{civil_from_days, days_from_civil, days_in_month, java_date_string};
 pub use merc::{MERC_ITEM_IDS, MERC_NPC_IDS, MERCS_MAX_PER_CASTLE, ticket_castle_id};
 pub use player::PlayerSiegeState;
 pub use registration::SiegeInput;

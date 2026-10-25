@@ -218,6 +218,10 @@ impl World {
         if template.is_type("Defender") {
             return Some(self.defender_auto_attackable(npc, attacker));
         }
+        // `TerritoryWard.isAutoAttackable` (M7-TW-01).
+        if let Some(attackable) = self.territory_ward_auto_attackable(npc, attacker) {
+            return Some(attackable);
+        }
         match self.sieges.npcs.get(&npc)? {
             SiegeNpc::ControlTower { castle, .. } | SiegeNpc::FlameTower { castle, .. } => Some(
                 self.is_player(attacker)
@@ -302,16 +306,18 @@ impl World {
         self.siege_state_of(player) == 2 && self.is_registered_on_this_siege_field(player, active_siege_id)
     }
 
-    /// Java `TerritoryWarManager.isAllyField(player, fieldId)`.
-    // M7-TW-01: the territory's fortress (`fieldId > 100`).
+    /// Java `TerritoryWarManager.isAllyField(player, fieldId)` (`territory/`).
     pub fn is_ally_field(&self, player: ObjectId, field_id: i32) -> bool {
-        let side = self.siege_side_of(player);
-        side != 0 && side - 80 == field_id
+        self.territory_is_ally_field(player, field_id)
     }
 
     /// The clicks of `Tower.onAction` and `SiegeFlag.onAction`: `true` when the NPC is one of them
     /// and the click is handled.
     pub(crate) fn siege_npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) -> bool {
+        // `TerritoryWard.onAction` (M7-TW-01).
+        if self.territory_ward_click(player, npc, interact) {
+            return true;
+        }
         let tower = match self.sieges.npcs.get(&npc) {
             Some(SiegeNpc::ControlTower { .. } | SiegeNpc::FlameTower { .. }) => true,
             Some(SiegeNpc::Flag { .. }) => false,
@@ -349,7 +355,11 @@ impl World {
         let Some((x, y, z)) = self.position_of(player) else {
             return;
         };
-        // M7-TW-01: a flag of Territory War (`isTWInProgress`) belongs to no siege.
+        // A flag of Territory War (`isTWInProgress`) belongs to no siege (M7-TW-01).
+        if self.is_tw_in_progress() {
+            self.territory_spawn_flag(player, HQ_NPC_ID, advanced, false);
+            return;
+        }
         // `SiegeManager.getSiege`, then `FortSiegeManager.getSiege` (M7-FORT-01), then
         // `CHSiegeManager` (M7-CHSIEGE-01).
         let siege = if let Some(castle) = self.siege_at(x, y, z) {
@@ -553,8 +563,8 @@ impl World {
             }
             Some(SiegeNpc::FlameTower { .. }) => self.flame_tower_enable_zones(npc, false),
             Some(SiegeNpc::Flag { clan_id, siege, .. }) => {
-                // M7-TW-01: `TerritoryWarManager.removeClanFlag(clan)` of a flag without a siege.
-                // `getAttackerClan(_clan).removeFlag(this)`.
+                // `getAttackerClan(_clan).removeFlag(this)`; a flag of Territory War (no siege):
+                // `TerritoryWarManager.removeClanFlag(clan)` (M7-TW-01).
                 match siege {
                     Some(ResidenceRef::Fort(fort)) => {
                         if self.fort_attacker_clan(fort, clan_id).is_some() {
@@ -568,7 +578,7 @@ impl World {
                             self.delete_npc(npc);
                         }
                     }
-                    None => {}
+                    None => self.territory_remove_clan_flag(clan_id),
                 }
             }
             _ => {}

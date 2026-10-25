@@ -1157,6 +1157,17 @@ impl ClientSession {
             ClientPacket::RequestFortressMapInfo(p) => ClientInput::Fort(FortInput::FortressMapInfo {
                 fortress_id: p.fortress_id,
             }),
+            // Java: RequestJoinDominionWar, RequestDominionInfo (M7-TW-01)
+            ClientPacket::RequestJoinDominionWar(p) => {
+                ClientInput::Territory(l2_world::TerritoryInput::JoinDominionWar {
+                    territory_id: p.territory_id,
+                    is_clan: p.is_clan,
+                    is_joining: p.is_joining,
+                })
+            }
+            ClientPacket::RequestDominionInfo(_) => {
+                ClientInput::Territory(l2_world::TerritoryInput::DominionInfo)
+            }
             // Java: RequestAllAgitInfo
             ClientPacket::RequestAllAgitInfo(_) => ClientInput::AllAgitInfo,
             ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },

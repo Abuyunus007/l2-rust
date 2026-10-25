@@ -185,7 +185,8 @@ impl World {
                 None => in_fort_defense = self.fort_check_is_defender(fort, clan.id),
             }
         }
-        // M7-TW-01: `TerritoryWarManager.getHQForClan(clan)`.
+        // `TerritoryWarManager.getHQForClan(clan) != null` (M7-TW-01).
+        let territory_hq = self.territory_hq_for_clan(clan.id).is_some();
         // `getNearbyClanHall(creature).getSiege().checkIsAttacker(clan)` (M7-CHSIEGE-01).
         let hall_attacker = self
             .nearby_siegable_hall(x, y, 10_000)
@@ -193,7 +194,7 @@ impl World {
         (
             clan.hideout_id > 0,
             clan.castle_id > 0 || in_castle_defense,
-            (has_flags && !in_castle_defense && !in_fort_defense) || hall_attacker,
+            territory_hq || (has_flags && !in_castle_defense && !in_fort_defense) || hall_attacker,
             clan.fort_id > 0 || in_fort_defense,
         )
     }
@@ -310,7 +311,10 @@ impl World {
     pub(crate) fn restart_to_siege_hq(&mut self, id: ObjectId) -> Option<Option<(i32, i32, i32)>> {
         let (x, y, z) = self.position_of(id)?;
         let clan = self.clan_of(id).map(|c| c.id);
-        // M7-TW-01: `TerritoryWarManager.getHQForClan(clan)` / `getFlagForClan(clan)`.
+        // `TerritoryWarManager.getHQForClan(clan)`, else `getFlagForClan(clan)` (M7-TW-01).
+        let territory_flag = clan.is_some_and(|c| {
+            self.territory_hq_for_clan(c).is_some() || self.territory_flag_for_clan(c).is_some()
+        });
         let hall = self.nearby_siegable_hall(x, y, 10_000);
         let castle_siege = self
             .castle_at(x, y, z)
@@ -329,7 +333,7 @@ impl World {
         } else {
             false
         };
-        if !has_flag {
+        if !has_flag && !territory_flag {
             // Check if the clan hall has inner spawns.
             if let Some(hall) = hall
                 && let Some(loc) = self.hall_inner_spawn_loc(hall, id)

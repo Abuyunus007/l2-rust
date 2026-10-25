@@ -316,7 +316,7 @@ fn show_siege_time_page(world: &mut World, gm: ObjectId, castle: CastleId) {
 
 /// Java `Date.toString()`: `EEE MMM dd HH:mm:ss zzz yyyy`. The zone is written as `GMT+hh:mm`
 /// (the machine's zone name is not known here).
-fn java_date_string(utc: i64, offset: i64) -> String {
+pub(crate) fn java_date_string(utc: i64, offset: i64) -> String {
     const DAYS: [&str; 7] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const MONTHS: [&str; 12] = [
         "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
@@ -349,7 +349,7 @@ fn java_date_string(utc: i64, offset: i64) -> String {
 }
 
 /// Days since 1970-01-01 to `(year, month 1..12, day 1..31)` (proleptic Gregorian).
-fn civil_from_days(days: i64) -> (i64, i64, i64) {
+pub(crate) fn civil_from_days(days: i64) -> (i64, i64, i64) {
     let z = days + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z.rem_euclid(146_097);
@@ -363,7 +363,7 @@ fn civil_from_days(days: i64) -> (i64, i64, i64) {
 }
 
 /// `(year, month 1..12, day)` to days since 1970-01-01.
-fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
+pub(crate) fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     let y = if month <= 2 { year - 1 } else { year };
     let era = y.div_euclid(400);
     let yoe = y.rem_euclid(400);
@@ -373,7 +373,7 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
     era * 146_097 + doe - 719_468
 }
 
-fn days_in_month(year: i64, month: i64) -> i64 {
+pub(crate) fn days_in_month(year: i64, month: i64) -> i64 {
     let (next_year, next_month) = if month == 12 {
         (year + 1, 1)
     } else {

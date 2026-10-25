@@ -151,9 +151,23 @@ impl World {
                     increase = true;
                 }
             }
-            // Upgrade to 11: a territory (`TerritoryWarManager`, M7) is needed; no clan owns one
-            // yet, so the conditions are never met.
-            10 => {}
+            // Upgrade to 11: the clan owns a territory (`TerritoryWarManager.getAllTerritories()`,
+            // M7-TW-01).
+            10 => {
+                let has_territory = self
+                    .owned_territories()
+                    .iter()
+                    .any(|t| t.owner_clan == Some(clan_id));
+                let cost = settings.clan_level_costs[5];
+                if has_territory
+                    && reputation >= cost
+                    && members_enough(members, settings.clan_level_requirements[5])
+                {
+                    self.set_reputation_score(clan_id, reputation - cost);
+                    self.send_reputation_deducted(player, cost);
+                    increase = true;
+                }
+            }
             _ => return false,
         }
 

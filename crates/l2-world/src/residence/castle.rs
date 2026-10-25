@@ -392,7 +392,8 @@ impl World {
         if self.is_castle_siege_in_progress(id) {
             self.siege_mid_victory(id);
         }
-        // M7-TW-01: `TerritoryWarManager.getTerritory(getResidenceId()).setOwnerClan(clan)`.
+        // `TerritoryWarManager.getTerritory(getResidenceId()).setOwnerClan(clan)` (M7-TW-01).
+        self.territory_set_owner_clan(id.0, clan);
         if let Some(clan_id) = clan {
             for member in self.clan_online_members(clan_id, 0) {
                 self.give_residential_skills(ResidenceRef::Castle(id), member);

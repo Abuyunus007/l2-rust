@@ -60,6 +60,7 @@ use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
 use l2_db::HallSiegeRepository;
 use l2_db::SiegeRepository;
+use l2_db::TerritoryRepository;
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -80,6 +81,10 @@ use l2_world::fort::{
 use l2_world::residence::{
     CastleRecord, ClanHallRecord, FortRecord, FunctionRecord, ResidenceLoad, ResidenceReadKind, ResidenceRef,
     ResidenceRefresh, ResidenceRereadRows, ResidenceWrite, SiegableHallRecord,
+};
+use l2_world::territory::{
+    TerritoryLoad, TerritoryRecord, TerritoryRegistrationRecord, TerritoryRows, TerritorySpawnRecord,
+    TerritoryWrite,
 };
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
@@ -1409,6 +1414,89 @@ pub async fn load_fort_sieges(pool: &Pool) -> FortSiegeLoad {
     load
 }
 
+/// A `territories` row for the world.
+fn territory_record(row: l2_db::TerritoryRow) -> TerritoryRecord {
+    TerritoryRecord {
+        territory_id: row.territory_id,
+        castle_id: row.castle_id,
+        fort_id: row.fort_id,
+        owned_ward_ids: row.owned_ward_ids,
+    }
+}
+
+/// `GlobalVariablesManager.getLong(name, 0)`: no row, an empty value or one that is not a number
+/// is 0 (Java throws for the last; the war then uses its own date).
+fn parse_global_long(value: Option<&str>) -> i64 {
+    match value {
+        None => 0,
+        Some(text) => text.trim().parse::<i64>().unwrap_or_else(|_| {
+            warn!("GlobalVariables: nextTWStartDate is not a number: {text}");
+            0
+        }),
+    }
+}
+
+/// Java `TerritoryWarManager.load()` and `GlobalVariablesManager` (`nextTWStartDate`), the
+/// database half (M7-TW-01): the spawn list, the territories, the registrations. Only reads
+/// (D-39); a failed read is logged like Java's and that part is empty.
+pub async fn load_territories(pool: &Pool) -> TerritoryLoad {
+    let repo = TerritoryRepository::new(pool.clone());
+    let spawns = match repo.spawns().await {
+        Ok(rows) => Some(
+            rows.into_iter()
+                .map(|r| TerritorySpawnRecord {
+                    id: r.id,
+                    castle_id: r.castle_id,
+                    npc_id: r.npc_id,
+                    x: r.x,
+                    y: r.y,
+                    z: r.z,
+                    heading: r.heading,
+                    spawn_type: r.spawn_type,
+                })
+                .collect(),
+        ),
+        Err(e) => {
+            warn!("TerritoryWarManager: SpawnList error: {e}");
+            None
+        }
+    };
+    let territories = match repo.territories().await {
+        Ok(rows) => Some(rows.into_iter().map(territory_record).collect()),
+        Err(e) => {
+            warn!("TerritoryWarManager: territory list error(): {e}");
+            None
+        }
+    };
+    let registrations = match repo.registrations().await {
+        Ok(rows) => Some(
+            rows.into_iter()
+                .map(|r| TerritoryRegistrationRecord {
+                    castle_id: r.castle_id,
+                    registered_id: r.registered_id,
+                })
+                .collect(),
+        ),
+        Err(e) => {
+            warn!("TerritoryWarManager: registration list error: {e}");
+            None
+        }
+    };
+    let next_tw_start_date = match repo.next_tw_start_date().await {
+        Ok(value) => parse_global_long(value.as_deref()),
+        Err(e) => {
+            warn!("GlobalVariablesManager: could not read nextTWStartDate: {e}");
+            0
+        }
+    };
+    TerritoryLoad {
+        spawns,
+        territories,
+        registrations,
+        next_tw_start_date,
+    }
+}
+
 /// Java's conquerable hall scripts at startup, the database half (M7-CHSIEGE-01):
 /// `clanhall_siege_attackers`, `clanhall_siege_guards` and, for the scripts that have them, the
 /// flag war tables and `rainbowsprings_attacker_list`. Only reads (D-39). A failed read is logged
@@ -2327,6 +2415,7 @@ pub struct DbStore {
     residences: ResidenceRepository,
     sieges: SiegeRepository,
     fort_sieges: FortSiegeRepository,
+    territories: TerritoryRepository,
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
     auctions: AuctionRepository,
@@ -2361,6 +2450,7 @@ impl DbStore {
             residences: ResidenceRepository::new(pool.clone()),
             sieges: SiegeRepository::new(pool.clone()),
             fort_sieges: FortSiegeRepository::new(pool.clone()),
+            territories: TerritoryRepository::new(pool.clone()),
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
@@ -3599,6 +3689,27 @@ impl PlayerStore for DbStore {
                 }
             }
             ResidenceWrite::ClanHallAuction(write) => store_auction_write(&self.auctions, write).await?,
+            // The Territory War tables (M7-TW-01).
+            ResidenceWrite::Territory(write) => {
+                let repo = &self.territories;
+                match write {
+                    TerritoryWrite::RegistrationInsert {
+                        castle_id,
+                        registered_id,
+                    } => repo.insert_registration(*castle_id, *registered_id).await?,
+                    TerritoryWrite::RegistrationDelete {
+                        castle_id,
+                        registered_id,
+                    } => repo.delete_registration(*castle_id, *registered_id).await?,
+                    TerritoryWrite::OwnedWardIds {
+                        territory_id,
+                        ward_ids,
+                    } => repo.update_owned_ward_ids(*territory_id, ward_ids).await?,
+                    TerritoryWrite::NextTwStartDate(start_ms) => {
+                        repo.store_next_tw_start_date(*start_ms).await?
+                    }
+                }
+            }
             // The siege statements (M7-SIEGE-01).
             write => store_siege_write(&self.sieges, write).await?,
         }
@@ -3689,6 +3800,24 @@ impl PlayerStore for DbStore {
                     }
                     None => ResidenceRereadRows::Missing,
                 }
+            }
+            // M7-TW-01: the territories, the registrations and the next war date (D-50, D-51).
+            ResidenceReadKind::Territory => {
+                let repo = &self.territories;
+                let territories = repo.territories().await?;
+                let registrations = repo.registrations().await?;
+                let next = repo.next_tw_start_date().await?;
+                ResidenceRereadRows::Territory(Box::new(TerritoryRows {
+                    territories: territories.into_iter().map(territory_record).collect(),
+                    registrations: registrations
+                        .into_iter()
+                        .map(|r| TerritoryRegistrationRecord {
+                            castle_id: r.castle_id,
+                            registered_id: r.registered_id,
+                        })
+                        .collect(),
+                    next_tw_start_date: parse_global_long(next.as_deref()),
+                }))
             }
             // M7-CHSIEGE-01: a conquerable hall and its registration tables (D-50).
             ResidenceReadKind::HallSiege => {

@@ -220,8 +220,16 @@ impl World {
                 && self.hall_door_is_auto_attackable(hall)
                 && self.hall_siege_is_attacker(hall, self.clan_id_of(player));
         }
-        // M7-TW-01: during Territory War, everybody but the ally field.
         // Attackable only during siege by everyone (not owner).
+        // During Territory War everybody but the ally field (M7-TW-01).
+        if self.is_tw_in_progress() {
+            let active_siege_id = self
+                .fort_at(d.x, d.y, d.z)
+                .map(|f| f.0)
+                .or_else(|| self.castle_at(d.x, d.y, d.z).map(|c| c.0))
+                .unwrap_or(0);
+            return !self.is_ally_field(player, active_siege_id);
+        }
         let castle = self.castle_at(d.x, d.y, d.z).filter(|c| c.0 > 0).filter(|c| {
             self.castle(*c)
                 .and_then(|c| c.siege_zone)

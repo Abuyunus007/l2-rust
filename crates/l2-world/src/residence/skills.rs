@@ -37,9 +37,12 @@ impl World {
     /// Java `giveResidentialSkills(player)`: `player.addSkill(skill, false)` for each (not stored).
     /// Returns whether the player got any.
     pub fn give_residential_skills(&mut self, residence: ResidenceRef, player: ObjectId) -> bool {
-        // M7-TW-01: a castle first gives the skills of the territory wards its territory owns
-        // (`TerritoryWarManager.getTerritory(id).getOwnedWardIds()`).
+        // A castle first gives the skills of the territory wards its territory owns
+        // (`TerritoryWarManager.getTerritory(id).getOwnedWardIds()`, M7-TW-01).
         let mut added = false;
+        if let ResidenceRef::Castle(castle) = residence {
+            added |= self.territory_give_castle_ward_skills(castle.0, player);
+        }
         for (skill_id, level) in self.residential_skills(residence) {
             added |= self.add_skill(player, skill_id, level);
         }
@@ -49,7 +52,10 @@ impl World {
     /// Java `removeResidentialSkills(player)`: `player.removeSkill(skill, false)` for each (the
     /// effects are cancelled).
     pub fn remove_residential_skills(&mut self, residence: ResidenceRef, player: ObjectId) {
-        // M7-TW-01: a castle first removes the skills of its territory's wards.
+        // A castle first removes the skills of its territory's wards (M7-TW-01).
+        if let ResidenceRef::Castle(castle) = residence {
+            self.territory_remove_castle_ward_skills(castle.0, player);
+        }
         for (skill_id, _) in self.residential_skills(residence) {
             self.remove_skill(player, skill_id, true);
         }

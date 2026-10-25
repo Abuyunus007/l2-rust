@@ -512,13 +512,14 @@ impl World {
             }
             // Olympiad: M8.
             if self.is_siege_friend(id, target) {
-                // M7-TW-01: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY` in Territory War.
-                self.send(
-                    id,
-                    &SystemMessage::new(
-                        SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege,
-                    ),
-                );
+                // `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY` in Territory War
+                // (M7-TW-01).
+                let message = if self.is_tw_in_progress() {
+                    SystemMessageId::YouCannotForceAttackAMemberOfTheSameTerritory
+                } else {
+                    SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege
+                };
+                self.send(id, &SystemMessage::new(message));
                 self.send(id, &ActionFailed);
                 return false;
             }

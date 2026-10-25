@@ -243,3 +243,52 @@ impl Decode for ExReplyDominionInfo {
         Ok(Self { territories })
     }
 }
+
+/// Where one ward is (`ExShowOwnthingPos`): on the ground as an NPC, with the player who carries
+/// it, or `0, 0, 0` when it is neither.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct WardPosition {
+    /// The territory the ward belongs to (81 to 89).
+    pub territory_id: i32,
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+// Java: gameserver/network/serverpackets/ExShowOwnthingPos.java
+/// The positions of the territory wards on the map (`EX_SHOW_OWNTHING_POS`). Java writes the
+/// wards only while the war runs; otherwise the list is empty (a count of 0).
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ExShowOwnthingPos {
+    pub wards: Vec<WardPosition>,
+}
+
+impl ExShowOwnthingPos {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExShowOwnthingPos;
+}
+
+impl Encode for ExShowOwnthingPos {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.wards.len() as i32);
+        for ward in &self.wards {
+            w.i32(ward.territory_id).i32(ward.x).i32(ward.y).i32(ward.z);
+        }
+    }
+}
+
+impl Decode for ExShowOwnthingPos {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let count = read_count(r, "ward count")?;
+        let mut wards = Vec::new();
+        for _ in 0..count {
+            wards.push(WardPosition {
+                territory_id: r.i32()?,
+                x: r.i32()?,
+                y: r.i32()?,
+                z: r.i32()?,
+            });
+        }
+        Ok(Self { wards })
+    }
+}

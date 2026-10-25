@@ -304,9 +304,8 @@ impl World {
     }
 
     /// The Territory War territory a player is registered for (Java
-    /// `TerritoryWarManager.getRegisteredTerritoryId(player)`): 0 until M7-TW-01.
-    // M7-TW-01: the registrations of Territory War.
-    pub fn registered_territory_id(&self, _player: ObjectId) -> i32 {
-        0
+    /// `TerritoryWarManager.getRegisteredTerritoryId(player)`, `territory/`).
+    pub fn registered_territory_id(&self, player: ObjectId) -> i32 {
+        self.territory_registered_id(player)
     }
 }

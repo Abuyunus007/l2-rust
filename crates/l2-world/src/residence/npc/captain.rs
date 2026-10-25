@@ -3,19 +3,17 @@
 // Java: dist/game/data/scripts/ai/others/MercenaryCaptain/MercenaryCaptain.java
 // Java: network/serverpackets/ExShowDominionRegistry.java
 //
-// M7-TW-01: the captains stand where the Territory War puts them. What is the war's here:
-// `isTWInProgress()` (false until the war exists), the badge counts of `TerritoryWar.ini`
-// (`ResidenceNpcSettings`), the territories and registrations of `ExShowDominionRegistry`, and the
-// hourly shout (`startQuestTimer("say", DELAY, spawn.getNpc(), null, true)` for each territory
-// spawn), which the war starts and which calls [`World::captain_say`].
+// The captains stand where the Territory War puts them (`territory/`, M7-TW-01): the war spawns
+// them with the town NPCs of an owned territory, starts their hourly shout
+// (`startQuestTimer("say", DELAY, spawn.getNpc(), null, true)`, which calls
+// [`World::captain_say`]), and owns `isTWInProgress()`, the badge counts of `TerritoryWar.ini` and
+// the registration window (`ExShowDominionRegistry`).
 
 use l2_protocol_game::NpcStringId;
-use l2_protocol_game::server::territory::{ExShowDominionRegistry, NO_ALLY, NO_OWNER};
 use l2_protocol_game::server::{ChatType, NpcSay};
 use l2_util::ObjectId;
 
 use super::{CastleScript, Reply, ScriptFailed, words};
-use crate::residence::CastleId;
 use crate::world::World;
 
 const SCRIPT: CastleScript = CastleScript::MercenaryCaptain;
@@ -46,37 +44,6 @@ const MIN_LEVEL: i32 = 40;
 const CLASS_LEVEL: i32 = 2;
 
 impl World {
-    /// `TerritoryWarManager.isTWInProgress()`.
-    // M7-TW-01: the war.
-    fn territory_war_in_progress(&self) -> bool {
-        false
-    }
-
-    /// `new ExShowDominionRegistry(castleId, player)` with what exists before the Territory War:
-    /// no owner, nobody registered, no territory.
-    // M7-TW-01: the territory's owner clan and alliance, the registered clans and mercenaries, the
-    // start of the war and the territories with the wards they own.
-    pub(crate) fn dominion_registry_packet(
-        &self,
-        castle: CastleId,
-        _player: ObjectId,
-    ) -> ExShowDominionRegistry {
-        let now = i32::try_from(crate::world::unix_ms_now() / 1000).unwrap_or(i32::MAX);
-        ExShowDominionRegistry {
-            castle_id: castle.0,
-            owner_clan_name: NO_OWNER.to_owned(),
-            owner_leader_name: NO_OWNER.to_owned(),
-            owner_ally_name: NO_ALLY.to_owned(),
-            clan_requests: 0,
-            merc_requests: 0,
-            war_time: now,
-            current_time: now,
-            clan_registered: false,
-            merc_registered: false,
-            territories: Vec::new(),
-        }
-    }
-
     /// `onFirstTalk` of the captain.
     pub(super) fn captain_first_talk(&self, npc: ObjectId, player: ObjectId) -> String {
         let class_level = self
@@ -85,7 +52,7 @@ impl World {
             .and_then(|p| u16::try_from(p.data.class_id).ok())
             .map_or(0, |c| l2_data::ClassId(c).class_level());
         let level = self.players.get(&player).map_or(0, |p| p.core.level);
-        let in_war = self.castle_siege_running_at(npc).unwrap_or(false) || self.territory_war_in_progress();
+        let in_war = self.castle_siege_running_at(npc).unwrap_or(false) || self.is_tw_in_progress();
         if level < MIN_LEVEL || class_level < CLASS_LEVEL {
             "36481-08.html".to_owned()
         } else if self.fort_is_my_lord(npc, player) {
@@ -104,7 +71,7 @@ impl World {
         match *st.first().ok_or(ScriptFailed)? {
             "36481-02.html" => Ok(Some(event.to_owned())),
             "36481-03.html" => {
-                let s = &self.residence_npc.settings;
+                let s = &self.territory.settings;
                 let replace = [
                     ("%strider%", s.min_tw_badge_for_striders.to_string()),
                     ("%gstrider%", s.min_tw_badge_for_big_strider.to_string()),
@@ -121,9 +88,9 @@ impl World {
             "strider" => {
                 let kind = *st.get(1).ok_or(ScriptFailed)?;
                 let price = if kind == "3" {
-                    self.residence_npc.settings.min_tw_badge_for_big_strider
+                    self.territory.settings.min_tw_badge_for_big_strider
                 } else {
-                    self.residence_npc.settings.min_tw_badge_for_striders
+                    self.territory.settings.min_tw_badge_for_striders
                 };
                 let badge = badge_of(npc_id).ok_or(ScriptFailed)?;
                 if self.inventory_item_count(player, badge) < i64::from(price) {
@@ -163,13 +130,13 @@ impl World {
         }
     }
 
-    /// The `say` event of the captain (no player): shouts about the war, or about hiring.
-    // M7-TW-01: the war starts the repeating timer of each of its territory spawns.
+    /// The `say` event of the captain (no player): shouts about the war, or about hiring. The war
+    /// arms the repeating timer of each captain it spawned (`territory/war.rs`).
     pub fn captain_say(&mut self, npc: ObjectId) {
         if !self.npcs.contains_key(&npc) {
             return;
         }
-        let string = if self.territory_war_in_progress() {
+        let string = if self.is_tw_in_progress() {
             NpcStringId::ChargeChargeCharge
         } else if self.rng().below(2) == 0 {
             NpcStringId::CourageAmbitionPassionMercenariesWhoWantToRealizeTheirDreamOfFightingInTheTerritoryWarComeToMeFortuneAndGloryAreWaitingForYou

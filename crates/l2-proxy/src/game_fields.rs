@@ -112,7 +112,7 @@ use l2_protocol_game::server::summon::{
 };
 use l2_protocol_game::server::system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 use l2_protocol_game::server::territory::{
-    ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
+    ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry, ExShowOwnthingPos,
 };
 use l2_protocol_game::server::trade::{
     SendTradeRequest, TradeDone as ServerTradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone,
@@ -919,6 +919,11 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
                 "territories": p.territories.iter().map(|t| {
                     object!(t => territory_id, name, owner_clan_name, ward_ids, war_start_secs)
                 }).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExShowOwnthingPos => decoded::<ExShowOwnthingPos>(&mut r, |p| {
+            json!({
+                "wards": p.wards.iter().map(|w| object!(w => territory_id, x, y, z)).collect::<Vec<_>>(),
             })
         }),
         ServerOpcode::ExItemAuctionInfo => decoded::<ExItemAuctionInfo>(&mut r, item_auction_fields),
@@ -2529,6 +2534,7 @@ mod tests {
         ServerOpcode::ExDominionWarEnd,
         ServerOpcode::ExShowDominionRegistry,
         ServerOpcode::ExReplyDominionInfo,
+        ServerOpcode::ExShowOwnthingPos,
         ServerOpcode::ExItemAuctionInfo,
         ServerOpcode::ExChangePostState,
         ServerOpcode::ExShowReceivedPostList,

@@ -453,6 +453,8 @@ impl World {
         // The siege state of a fortress siege that is going on, and "Remove combat flag before
         // teleporting" (M7-FORT-01).
         self.fort_player_entered(id);
+        // A player registered for the Territory War gets his side (M7-TW-01).
+        self.territory_player_entered(id);
         // The mails the session read at `CharacterSelect` replace this server's copies of them
         // (M6-SYNC-01, D-39: the Java GS shares the table).
         self.mail_refresh_player(id);
@@ -848,8 +850,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         clan_crest_id: world.clan_crest_id_of(core.object_id),
         ally_id: world.ally_id_of(core.object_id),
         ally_crest_id: world.ally_crest_id_of(core.object_id),
-        // `isClanLeader() ? 0x40 : 0`, then the siege state (M7-SIEGE-01; the territory of
-        // Territory War: M7-TW-01).
+        // `isClanLeader() ? 0x40 : 0`, then the siege state (M7-SIEGE-01) and the territory of
+        // Territory War (`registered_territory_id`, M7-TW-01).
         relation: world.user_info_relation(core.object_id),
         // `getMountType().ordinal()`
         mount_type: view.mount_type().ordinal() as u8,

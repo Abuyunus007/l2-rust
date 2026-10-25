@@ -29,6 +29,10 @@ impl World {
         skill: &SkillTemplate,
     ) {
         let mut amount = amount;
+        // `TerritoryWard.reduceCurrentHp`: no skill damage (`skill != null`, M7-TW-01).
+        if self.territory_ward_refuses_skill_damage(target) {
+            return;
+        }
         // A ranged skill cannot hurt a player behind an obstacle.
         if self.is_player(target)
             && skill.cast_range > 0
@@ -56,6 +60,10 @@ impl World {
     ) {
         // `Door.reduceCurrentHpByDOT`: "doors can't be damaged by DOTs" (M7-SIEGE-02).
         if self.doors.contains_key(&target) {
+            return;
+        }
+        // `TerritoryWard.reduceCurrentHpByDOT`: "wards can't be damaged by DOTs" (M7-TW-01).
+        if self.territory_ward_refuses_skill_damage(target) {
             return;
         }
         let consumption = self.is_player(target) && skill.is_toggle();

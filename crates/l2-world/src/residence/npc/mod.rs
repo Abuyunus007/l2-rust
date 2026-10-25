@@ -42,9 +42,9 @@
 // # Left to other cards (each has its marker where it belongs)
 // - Seven Signs (`seven_signs.rs`): M8. The state is the neutral one (no seal owner, the seal
 //   validation period), which the other castle code assumes as well.
-// - Territory War: `ExShowDominionRegistry`'s territories and registrations, `isTWInProgress`, the
-//   badges of the mercenary captain and its shouting timer, `MINTWBADGEFORSTRIDERS` and
-//   `MINTWBADGEFORBIGSTRIDER` (`TerritoryWar.ini`): M7-TW-01.
+// - Territory War (`territory/`, M7-TW-01) owns `ExShowDominionRegistry`, `isTWInProgress`, the
+//   captain's shouting timer and the badge prices of `TerritoryWar.ini`; the Territory Managers
+//   are a script of this module whose pages are in `territory/managers.rs`.
 // - `getConquerableHall().showSiegeInfo/isInSiege` of the siege manager: M7-CHSIEGE-01.
 
 mod ambassador;
@@ -91,6 +91,8 @@ pub const BLACKSMITHS: [i32; 9] = [35098, 35140, 35182, 35224, 35272, 35314, 353
 pub const COURT_MAGICIANS: [i32; 9] = [35648, 35649, 35650, 35651, 35652, 35653, 35654, 35655, 35656];
 /// `MercenaryCaptain.NPCS` (the keys): the captain of each castle's Territory War mercenaries.
 pub const MERCENARY_CAPTAINS: [i32; 9] = [36481, 36482, 36483, 36484, 36485, 36486, 36487, 36488, 36489];
+/// `TerritoryManagers`: `addFirstTalkId(36490 + i)` for the nine territories (M7-TW-01).
+pub const TERRITORY_MANAGERS: [i32; 9] = [36490, 36491, 36492, 36493, 36494, 36495, 36496, 36497, 36498];
 
 /// The scripts of this module.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,6 +106,8 @@ pub enum CastleScript {
     CourtMagician,
     Ambassador,
     MercenaryCaptain,
+    /// `TerritoryManagers` (M7-TW-01, `territory/managers.rs`).
+    TerritoryManagers,
 }
 
 impl CastleScript {
@@ -119,6 +123,7 @@ impl CastleScript {
             "CastleCourtMagician" => Self::CourtMagician,
             "CastleAmbassador" => Self::Ambassador,
             "MercenaryCaptain" => Self::MercenaryCaptain,
+            "TerritoryManagers" => Self::TerritoryManagers,
             _ => return None,
         })
     }
@@ -134,6 +139,7 @@ impl CastleScript {
             Self::CourtMagician => "CastleCourtMagician",
             Self::Ambassador => "CastleAmbassador",
             Self::MercenaryCaptain => "MercenaryCaptain",
+            Self::TerritoryManagers => "TerritoryManagers",
         }
     }
 
@@ -158,6 +164,8 @@ impl CastleScript {
             Self::Ambassador
         } else if in_list(&MERCENARY_CAPTAINS) {
             Self::MercenaryCaptain
+        } else if in_list(&TERRITORY_MANAGERS) {
+            Self::TerritoryManagers
         } else {
             return None;
         })
@@ -219,11 +227,6 @@ pub struct ResidenceNpcSettings {
     pub ssq_dawn_ticket_bundle: i32,
     /// `SevenSignsManorsAgreementId`.
     pub ssq_manors_agreement_id: i32,
-    /// `MinTerritoryBadgeForStriders` (`TerritoryWar.ini`).
-    // M7-TW-01: read from `TerritoryWar.ini` with the rest of the war's configuration.
-    pub min_tw_badge_for_striders: i32,
-    /// `MinTerritoryBadgeForBigStrider` (`TerritoryWar.ini`).
-    pub min_tw_badge_for_big_strider: i32,
 }
 
 impl Default for ResidenceNpcSettings {
@@ -262,8 +265,6 @@ impl Default for ResidenceNpcSettings {
             ssq_dawn_ticket_price: 1000,
             ssq_dawn_ticket_bundle: 10,
             ssq_manors_agreement_id: 6388,
-            min_tw_badge_for_striders: 50,
-            min_tw_badge_for_big_strider: 80,
         }
     }
 }
@@ -475,6 +476,7 @@ impl World {
                 Ok(None)
             }
             CastleScript::MercenaryCaptain => Ok(Some(self.captain_first_talk(npc, player))),
+            CastleScript::TerritoryManagers => Ok(Some(self.territory_manager_first_talk(npc, player))),
         }
     }
 
@@ -573,6 +575,7 @@ impl World {
             CastleScript::CourtMagician => self.court_magician_on_event(event, npc, player),
             CastleScript::Ambassador => Ok(self.ambassador_on_event(event, npc, Some(player))),
             CastleScript::MercenaryCaptain => self.captain_on_event(event, npc, player),
+            CastleScript::TerritoryManagers => self.territory_manager_on_event(event, npc, player),
         };
         match reply {
             Ok(result) => self.castle_script_result(script, player, result.as_deref(), npc),

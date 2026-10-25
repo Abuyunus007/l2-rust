@@ -299,8 +299,14 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             }
             *value == a.world().cond_can_summon_siege_golem(a.object_id())
         }
+        // `ConditionPlayerCanCreateOutpost` (M7-TW-01, `territory/flags.rs`).
+        Condition::PlayerCanCreateOutpost { value } => {
+            if !a.is_player() {
+                return !*value;
+            }
+            *value == a.world().cond_can_create_outpost(a.object_id())
+        }
         Condition::PlayerCallPc { .. }
-        | Condition::PlayerCanCreateOutpost { .. }
         | Condition::PlayerCanEscape { .. }
         | Condition::PlayerCanRefuelAirship { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")

@@ -70,6 +70,7 @@ pub mod summon;
 pub mod target;
 pub mod teleport;
 pub mod teleporter;
+pub mod territory;
 pub mod timer;
 pub mod trade;
 pub mod transform;
@@ -174,6 +175,7 @@ pub use summon::pet_offline::OfflinePetRows;
 pub use summon::servitor::{SavedSummonEffect, SummonSkillSave, SummonWrite};
 pub use summon::{Summon, SummonKind, SummonSettings};
 pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWhereType};
+pub use territory::{TerritoryInput, TerritoryLoad, TerritorySettings, TerritoryWrite};
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use trade::{
     AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,

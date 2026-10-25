@@ -224,6 +224,9 @@ pub enum ClientInput {
     /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
     /// `RequestFortressMapInfo`), see `fort/`.
     Fort(crate::fort::FortInput),
+    /// The Territory War packets (`RequestJoinDominionWar`, `RequestDominionInfo`), see
+    /// `territory/`.
+    Territory(crate::territory::TerritoryInput),
     /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
     AllAgitInfo,
     /// A packet the world doesn't handle yet.

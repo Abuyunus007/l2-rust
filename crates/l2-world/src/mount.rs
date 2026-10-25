@@ -614,7 +614,11 @@ impl World {
         else {
             return true;
         };
-        // M8: "Don't allow disarming a cursed weapon." M7: "... a Combat Flag or Territory Ward."
+        // M8: "Don't allow disarming a cursed weapon."
+        // Don't allow disarming a Combat Flag or Territory Ward (M7-TW-01).
+        if self.is_combat_flag_equipped(id) {
+            return false;
+        }
         let templates = self.item_templates();
         let Some(template) = templates.as_deref().and_then(|t| t.get(weapon.item_id)) else {
             return true;

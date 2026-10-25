@@ -130,13 +130,17 @@ impl World {
         if self.is_player(id) {
             // Observer mode: not modelled.
             if self.is_siege_friend(id, target) {
-                // M7-TW-01: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY`.
-                self.send(
-                    id,
-                    &SystemMessage::new(
-                        SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege,
-                    ),
-                );
+                // During Territory War: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY`
+                // (M7-TW-01).
+                // NOTE(java-quirk): a territory side (81..89) is no castle id, so `isSiegeFriend`
+                // is false between players of one territory; the message only shows for a castle
+                // siege that runs during the war.
+                let message = if self.is_tw_in_progress() {
+                    SystemMessageId::YouCannotForceAttackAMemberOfTheSameTerritory
+                } else {
+                    SystemMessageId::ForceAttackIsImpossibleAgainstATemporaryAlliedMemberDuringASiege
+                };
+                self.send(id, &SystemMessage::new(message));
                 self.send(id, &ActionFailed);
                 return;
             }
