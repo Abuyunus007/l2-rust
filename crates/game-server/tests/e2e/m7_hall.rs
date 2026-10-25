@@ -348,14 +348,14 @@ async fn a_bid_reads_the_clan_warehouse_again_on_the_real_servers() {
 
 #[tokio::test]
 async fn a_hall_auction_and_function_run_in_a_bare_world_without_global_writes() {
-    let mut world = BareWorld::start(&opts(false, 6_000));
+    let mut world = BareWorld::start(&opts(false, 10_000));
     let played = play(&mut world, false).await;
     assert_played(&played, false);
 }
 
 #[tokio::test]
 async fn a_hall_auction_and_function_run_in_a_bare_world_and_write_javas_rows() {
-    let mut world = BareWorld::start(&opts(true, 6_000));
+    let mut world = BareWorld::start(&opts(true, 10_000));
     let played = play(&mut world, true).await;
     assert_played(&played, true);
 }

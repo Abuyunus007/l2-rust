@@ -61,8 +61,8 @@ use game_server::world_data::{
     world_settings,
 };
 use game_server::{
-    Paths, Server, clan_hall_settings, clan_settings, fort_settings, geo, hexid, mail_settings, npcs,
-    residence_npc_settings, residence_settings,
+    Paths, Server, clan_hall_settings, clan_settings, fort_settings, geo, hall_siege_settings, hexid,
+    mail_settings, npcs, residence_npc_settings, residence_settings,
 };
 use l2_config::GameConfig;
 use l2_data::{BuyListOptions, BuyLists, Datapack, DatapackOptions, MerchantPriceConfigs};
@@ -873,6 +873,8 @@ impl BareWorld {
         world.set_siege_settings(siege_settings(&config, &config_dir, &castle_names));
         world.load_sieges(seed.sieges());
         world.load_fort_data(seed.fort_sieges());
+        world.set_hall_siege_settings(hall_siege_settings(&config));
+        world.load_hall_sieges(l2_world::HallSiegeLoad::default());
         world.set_clan_hall_settings(clan_hall_settings(&config));
         world.set_residence_npc_settings(residence_npc_settings(&config));
         world.load_clan_hall_auctions(seed.auctions());

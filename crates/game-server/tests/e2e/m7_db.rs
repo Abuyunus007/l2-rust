@@ -727,7 +727,8 @@ impl Db {
                     record
                 }),
             },
-            ResidenceReadKind::SiegableHall => ResidenceRereadRows::Missing,
+            // No conquerable hall in the seed.
+            ResidenceReadKind::SiegableHall | ResidenceReadKind::HallSiege => ResidenceRereadRows::Missing,
             ResidenceReadKind::SiegeClans => {
                 let castle = self.castle_record(id);
                 ResidenceRereadRows::SiegeClans {
