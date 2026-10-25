@@ -359,7 +359,7 @@ impl World {
     /// Java `Defender.isAutoAttackable(attacker)` for a defender that stands in a fortress (the
     /// `_fort` of `Defender.onSpawn`): during the siege, by anybody who is not a defender
     /// registered on this field (the Territory War ally check, M7-TW-01, is false while no war
-    /// runs). The castle and hall branches are M7-SIEGE-01 and M7-CHSIEGE-01.
+    /// runs). A defender of a castle or a siegable hall is answered by `siege_npc_auto_attackable`.
     pub(crate) fn fort_defender_auto_attackable(&self, defender: ObjectId, attacker: ObjectId) -> bool {
         let Some((x, y, z)) = self.position_of(defender) else {
             return false;

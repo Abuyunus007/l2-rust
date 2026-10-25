@@ -157,6 +157,10 @@ impl World {
         if self.fort_script_event(player, script_name, event) {
             return;
         }
+        // The conquerable hall scripts (M7-CHSIEGE-01, `clanhall/siege/`).
+        if self.hall_script_event(player, script_name, event) {
+            return;
+        }
         // The castle scripts (M7-NPC-01, `residence/npc/`).
         if self.residence_script_event(player, script_name, event) {
             return;

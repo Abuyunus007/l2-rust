@@ -23,6 +23,7 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod chsiege;
 pub mod clan;
 pub mod clanhall;
 pub mod combat;
@@ -141,6 +142,7 @@ impl Default for AdminWorld {
         transform::register(&mut handlers);
         crate::siege::register_admin(&mut handlers);
         crate::fort::register_admin(&mut handlers);
+        chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
         Self {

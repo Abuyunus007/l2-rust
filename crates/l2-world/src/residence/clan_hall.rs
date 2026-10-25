@@ -10,7 +10,7 @@
 //
 // The rent of an auctionable hall (`AuctionableHall.FeeTask`, the "please pay" messages and the
 // loss of a hall a week overdue) and the auctions are `clanhall/` (M7-CH-01); the conquerable
-// halls' siege and schedule are M7-CHSIEGE-01.
+// halls' siege and schedule are `clanhall/siege/` (M7-CHSIEGE-01).
 
 use std::collections::BTreeMap;
 
@@ -40,7 +40,7 @@ pub enum ClanHallKind {
     },
     /// Java `SiegableHall` (the `siegable_clanhall` table, conquered by siege).
     Siegable {
-        /// `nextSiege` (epoch milliseconds) as read; `updateNextSiege` is M7-CHSIEGE-01.
+        /// `nextSiege` (epoch milliseconds); `clanhall/siege/` moves it (`updateNextSiege`).
         next_siege: i64,
         /// `_siegeLength` (milliseconds).
         siege_length: i64,
