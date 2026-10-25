@@ -131,10 +131,10 @@ pub const HALL_MANAGER_ID: i32 = 35_437;
 pub const HALL_MANAGER_POS: (i32, i32, i32) = (HALL_CENTER.0, HALL_CENTER.1 + 100, Z);
 /// `30767` the auctioneer.
 pub const AUCTIONEER_ID: i32 = 30_767;
-pub const AUCTIONEER_POS: (i32, i32, i32) = (HALL_CENTER.0 + 600, HALL_CENTER.1, Z);
-/// Where the bidder stands (next to the auctioneer) and where the owner stands at the manager.
-pub const BIDDER_POS: (i32, i32, i32) = (HALL_CENTER.0 + 650, HALL_CENTER.1, Z);
-pub const HALL_OWNER_POS: (i32, i32, i32) = (HALL_CENTER.0, HALL_CENTER.1 + 50, Z);
+pub const AUCTIONEER_POS: (i32, i32, i32) = (HALL_CENTER.0 + 150, HALL_CENTER.1 - 100, Z);
+/// Where the bidder (and later the owner) stands: within talking range of the auctioneer and of
+/// the manager.
+pub const BIDDER_POS: (i32, i32, i32) = (HALL_CENTER.0 + 80, HALL_CENTER.1, Z);
 
 // ---- the admin rights ----------------------------------------------------------------------------
 

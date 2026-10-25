@@ -527,6 +527,8 @@ struct Opts {
 /// event); `collect_quiet` returns what arrives in a quiet moment.
 trait Harness {
     fn object_id(&self, who: Who) -> i32;
+    /// Where the player entered the world (`Opts::positions`): what his client believes.
+    fn start_position(&self, who: Who) -> (i32, i32, i32);
     /// Logs in, selects and enters the world; returns every packet up to the closing `SKILL_LIST`.
     async fn enter(&mut self, who: Who) -> Vec<Vec<u8>>;
     async fn act(&mut self, who: Who, act: Act);
@@ -613,6 +615,7 @@ struct BareWorld {
     /// How many of the persistence commands were looked at for reads that need an answer.
     answered: usize,
     players: [PlayerData; 3],
+    opts: Opts,
     /// Keeps the folder of the datapack (nothing reads it after the start).
     _root: tempfile::TempDir,
 }
@@ -825,6 +828,7 @@ impl BareWorld {
             seed,
             answered: 0,
             players,
+            opts: *opts,
             _root: root,
         }
     }
@@ -894,6 +898,10 @@ impl BareWorld {
 impl Harness for BareWorld {
     fn object_id(&self, who: Who) -> i32 {
         BARE_IDS[who.index()]
+    }
+
+    fn start_position(&self, who: Who) -> (i32, i32, i32) {
+        self.opts.positions[who.index()]
     }
 
     async fn enter(&mut self, who: Who) -> Vec<Vec<u8>> {
@@ -1451,6 +1459,7 @@ static ONE_RIG_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new
 struct Net {
     rig: Rig,
     ids: [i32; 3],
+    opts: Opts,
     clients: [Option<FakeGameClient>; 3],
     _turn: tokio::sync::MutexGuard<'static, ()>,
 }
@@ -1495,6 +1504,7 @@ impl Net {
         Some(Self {
             rig,
             ids,
+            opts: *opts,
             clients: [None, None, None],
             _turn: turn,
         })
@@ -1516,6 +1526,10 @@ impl Net {
 impl Harness for Net {
     fn object_id(&self, who: Who) -> i32 {
         self.ids[who.index()]
+    }
+
+    fn start_position(&self, who: Who) -> (i32, i32, i32) {
+        self.opts.positions[who.index()]
     }
 
     async fn enter(&mut self, who: Who) -> Vec<Vec<u8>> {
@@ -1603,6 +1617,12 @@ impl Harness for Net {
 
 #[path = "e2e/m7_castle.rs"]
 mod castle;
+
+#[path = "e2e/m7_tax.rs"]
+mod tax;
+
+#[path = "e2e/m7_hall.rs"]
+mod hall;
 
 #[path = "e2e/m7_checks.rs"]
 mod checks;
