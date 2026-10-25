@@ -1648,7 +1648,8 @@ impl World {
                 .collect();
             let not_static = !skill.is_static();
             for npc in watchers {
-                // ON_NPC_SKILL_SEE: script event (D-05).
+                // ON_NPC_SKILL_SEE: the clan hall scripts (M7-CHSIEGE-01); the others are D-05.
+                self.hall_script_on_skill_see(npc, caster, skill.id, &targets);
                 if !self.is_attackable_npc(npc) {
                     continue;
                 }

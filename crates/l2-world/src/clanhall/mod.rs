@@ -40,6 +40,7 @@ mod format;
 mod functions;
 mod manager;
 mod rent;
+pub mod siege;
 
 use std::collections::BTreeMap;
 
@@ -47,6 +48,10 @@ use l2_util::ObjectId;
 
 pub use auction::{AuctionBidRecord, AuctionRecord, AuctionWrite, Bidder, ClanHallAuction};
 pub use functions::ClanHallFunctionSettings;
+pub use siege::{
+    FlagWarData, FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
+    HallSiegeSettings, HallSiegeTimer, HallSiegeWorld, HallSiegeWrite, HallThen, SiegeStatus,
+};
 
 use crate::residence::ClanHallId;
 use crate::timer::TimerId;
@@ -110,6 +115,8 @@ pub enum ClanHallTimer {
     Rent(ClanHallId),
     /// Java `ClanHallAuction.AutoEndTask`: an auction (by its key) is over.
     AutoEnd(u64),
+    /// The conquerable hall sieges (M7-CHSIEGE-01), see `siege/`.
+    HallSiege(siege::HallSiegeTimer),
 }
 
 /// The clan hall state of the world (Java `ClanHallAuctionManager`, the pending auctions of the
@@ -132,6 +139,8 @@ pub struct ClanHallWorld {
     /// `ClanHallManager._clanHallId` and `ClanHallDoorman._clanHall`: the hall the NPC belongs to,
     /// found at its first use.
     pub(crate) npc_halls: BTreeMap<ObjectId, Option<ClanHallId>>,
+    /// The conquerable hall sieges (`CHSiegeManager`, the engines and their scripts).
+    pub(crate) siege: siege::HallSiegeWorld,
 }
 
 impl World {
@@ -150,6 +159,7 @@ impl World {
         match timer {
             ClanHallTimer::Rent(id) => self.on_rent_due(id),
             ClanHallTimer::AutoEnd(key) => self.on_auction_auto_end(key),
+            ClanHallTimer::HallSiege(timer) => self.on_hall_siege_timer(timer),
         }
     }
 }

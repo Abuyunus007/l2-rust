@@ -14,9 +14,9 @@
 // [`World::door_reduce_current_hp`], `do_die` to [`World::door_do_die`], `notify_action_attacked`
 // to [`World::door_notify_attacked`].
 //
-// M7-CHSIEGE-01: the doors of a siegable clan hall (`_clanHall.isSiegableHall()`): their
-// `isEnemy`, `isAutoAttackable` (`doorIsAutoAttackable`, `checkIsAttacker`) and the "gate
-// destroyed" message while the hall is in siege.
+// The doors of a siegable clan hall (`_clanHall.isSiegableHall()`): their `isEnemy`
+// (`clanhall/siege/zone.rs`), `isAutoAttackable` (`doorIsAutoAttackable`, `checkIsAttacker`) and
+// the "gate destroyed" message while the hall is in siege are here (M7-CHSIEGE-01).
 
 use l2_data::npc::NpcRace;
 use l2_protocol_game::SystemMessageId;
@@ -153,8 +153,13 @@ impl World {
         let is_castle = self
             .castle_at(x, y, z)
             .is_some_and(|c| c.0 > 0 && self.is_castle_siege_in_progress(c));
-        // M7-CHSIEGE-01: `isHall` (a siegable hall in siege).
-        if is_fort || is_castle {
+        // `isHall`: a door of a siegable hall in siege (M7-CHSIEGE-01).
+        let is_hall = self.door(door).is_some_and(|d| {
+            d.template.clanhall_id > 0
+                && self.is_siegable_hall_id(d.template.clanhall_id)
+                && self.hall_is_in_siege(crate::residence::ClanHallId(d.template.clanhall_id))
+        });
+        if is_fort || is_castle || is_hall {
             self.broadcast_packet(
                 door,
                 &SystemMessage::new(SystemMessageId::TheCastleGateHasBeenDestroyed),
@@ -208,7 +213,13 @@ impl World {
         let Some(player) = self.acting_player(attacker) else {
             return false;
         };
-        // M7-CHSIEGE-01: the doors of a siegable hall (`doorIsAutoAttackable`).
+        // The doors of a siegable hall (`doorIsAutoAttackable`, M7-CHSIEGE-01).
+        if d.template.clanhall_id > 0 && self.is_siegable_hall_id(d.template.clanhall_id) {
+            let hall = crate::residence::ClanHallId(d.template.clanhall_id);
+            return self.hall_is_in_siege(hall)
+                && self.hall_door_is_auto_attackable(hall)
+                && self.hall_siege_is_attacker(hall, self.clan_id_of(player));
+        }
         // M7-TW-01: during Territory War, everybody but the ally field.
         // Attackable only during siege by everyone (not owner).
         let castle = self.castle_at(d.x, d.y, d.z).filter(|c| c.0 > 0).filter(|c| {

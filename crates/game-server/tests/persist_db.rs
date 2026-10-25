@@ -1557,6 +1557,147 @@ async fn residences_are_read_written_and_read_again_like_java() {
     db.drop_db().await;
 }
 
+/// M7-CHSIEGE-01: the start-up read of the conquerable hall scripts' tables, their statements
+/// through the store, and the re-read of a flag war hall (D-50, D-51).
+#[tokio::test]
+async fn hall_sieges_are_read_written_and_read_again_like_java() {
+    use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
+    use l2_world::{HallSiegeWrite, ResidenceWrite};
+
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    db.exec("INSERT INTO siegable_clanhall (`clanHallId`, `name`, `ownerId`, `desc`, `location`, `nextSiege`, `siegeLength`, `schedule_config`) VALUES (35, 'Bandit Stronghold', 0, 'c', 'Dion', 0, 3600000, '14;0;0;12;00')")
+        .await;
+    db.exec("INSERT INTO clanhall_siege_attackers VALUES (21, 900), (21, 901), (34, 902)")
+        .await;
+    db.exec("INSERT INTO clanhall_siege_guards VALUES (21,35408,1,2,3,4,7200,'false'), (35,35413,5,6,7,8,0,'true')")
+        .await;
+    db.exec("INSERT INTO siegable_hall_flagwar_attackers VALUES (35, 35422, 35428, 900)")
+        .await;
+    db.exec("INSERT INTO siegable_hall_flagwar_attackers_members VALUES (35, 900, 1610612737), (35, 900, 1610612738)")
+        .await;
+    db.exec("INSERT INTO rainbowsprings_attacker_list VALUES (900, 12)")
+        .await;
+
+    let load = game_server::persist::load_hall_sieges(&pool).await;
+    assert_eq!(load.halls.len(), 6);
+    let resistance = load.halls.iter().find(|h| h.hall_id == 21).unwrap();
+    assert_eq!(resistance.attackers, [900, 901]);
+    assert_eq!(resistance.guards.len(), 1);
+    assert_eq!(resistance.guards[0].respawn_delay, 7200);
+    let bandit = load.halls.iter().find(|h| h.hall_id == 35).unwrap();
+    assert!(bandit.attackers.is_empty(), "the flag war keeps its own tables");
+    assert_eq!(bandit.flag_war.len(), 1);
+    assert_eq!(
+        (
+            bandit.flag_war[0].clan_id,
+            bandit.flag_war[0].flag,
+            bandit.flag_war[0].npc
+        ),
+        (900, 35422, 35428)
+    );
+    assert_eq!(bandit.flag_war[0].members, [1_610_612_737, 1_610_612_738]);
+    assert_eq!(bandit.guards[0].respawn_delay, 0);
+    let rainbow = load.halls.iter().find(|h| h.hall_id == 62).unwrap();
+    assert_eq!(rainbow.rainbow, [(900, 12)]);
+
+    // Java's statements through the store.
+    let mut store = DbStore::new(pool.clone());
+    for write in [
+        HallSiegeWrite::SaveAttackers {
+            hall_id: 21,
+            clans: vec![903],
+        },
+        HallSiegeWrite::FlagWarClan {
+            hall_id: 35,
+            flag: 35423,
+            clan_id: 901,
+        },
+        HallSiegeWrite::FlagWarNpc {
+            npc: 35429,
+            clan_id: 901,
+        },
+        HallSiegeWrite::FlagWarMember {
+            hall_id: 35,
+            clan_id: 901,
+            object_id: 1_610_612_739,
+        },
+        HallSiegeWrite::RainbowAdd {
+            clan_id: 901,
+            count: 3,
+        },
+        HallSiegeWrite::RainbowRemove { clan_id: 900 },
+    ] {
+        store
+            .store_residence_write(&ResidenceWrite::HallSiege(write))
+            .await
+            .unwrap();
+    }
+    let load = game_server::persist::load_hall_sieges(&pool).await;
+    assert_eq!(
+        load.halls.iter().find(|h| h.hall_id == 21).unwrap().attackers,
+        [903]
+    );
+    assert_eq!(
+        load.halls.iter().find(|h| h.hall_id == 34).unwrap().attackers,
+        [902]
+    );
+    assert_eq!(
+        load.halls.iter().find(|h| h.hall_id == 62).unwrap().rainbow,
+        [(901, 3)]
+    );
+
+    // The re-read of a flag war hall: its row and both tables.
+    match store
+        .load_residence(ResidenceReadKind::HallSiege, 35)
+        .await
+        .unwrap()
+    {
+        ResidenceRereadRows::HallSiege(rows) => {
+            assert_eq!(rows.hall_id, 35);
+            assert_eq!(rows.hall.as_ref().map(|h| h.siege_length), Some(3_600_000));
+            assert_eq!(rows.flag_war.len(), 2);
+            let tigers = rows.flag_war.iter().find(|c| c.clan_id == 901).unwrap();
+            assert_eq!(
+                (tigers.npc, tigers.members.as_slice()),
+                (35429, &[1_610_612_739][..])
+            );
+            assert!(rows.rainbow.is_empty(), "only Rainbow Springs reads its table");
+        }
+        other => panic!("{other:?}"),
+    }
+    store
+        .store_residence_write(&ResidenceWrite::HallSiege(HallSiegeWrite::FlagWarClear {
+            hall_id: 35,
+        }))
+        .await
+        .unwrap();
+    store
+        .store_residence_write(&ResidenceWrite::HallSiege(HallSiegeWrite::RainbowClear))
+        .await
+        .unwrap();
+    let load = game_server::persist::load_hall_sieges(&pool).await;
+    assert!(
+        load.halls
+            .iter()
+            .find(|h| h.hall_id == 35)
+            .unwrap()
+            .flag_war
+            .is_empty()
+    );
+    assert!(
+        load.halls
+            .iter()
+            .find(|h| h.hall_id == 62)
+            .unwrap()
+            .rainbow
+            .is_empty()
+    );
+
+    db.drop_db().await;
+}
+
 /// M7-MANOR-01: the start-up read of the manor tables for every castle, and Java's manor
 /// statements through the store (`storeMe`, the lord's next period, the amounts, the reset).
 #[tokio::test]

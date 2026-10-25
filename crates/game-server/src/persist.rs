@@ -58,6 +58,7 @@ use l2_config::IniFile;
 use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
+use l2_db::HallSiegeRepository;
 use l2_db::SiegeRepository;
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
@@ -87,6 +88,10 @@ use l2_world::{
     ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand, PetRowData,
     PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
     SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+};
+use l2_world::{
+    FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
+    HallSiegeWrite,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -1404,6 +1409,83 @@ pub async fn load_fort_sieges(pool: &Pool) -> FortSiegeLoad {
     load
 }
 
+/// Java's conquerable hall scripts at startup, the database half (M7-CHSIEGE-01):
+/// `clanhall_siege_attackers`, `clanhall_siege_guards` and, for the scripts that have them, the
+/// flag war tables and `rainbowsprings_attacker_list`. Only reads (D-39). A failed read is logged
+/// like Java's and that part goes without. Java reads the guards at the first siege; they are read
+/// here because the world never waits for the database (D-15).
+pub async fn load_hall_sieges(pool: &Pool) -> HallSiegeLoad {
+    let repo = HallSiegeRepository::new(pool.clone());
+    let mut load = HallSiegeLoad::default();
+    for script in HallScript::ALL {
+        let id = script.hall_id();
+        let mut hall = HallSiegeHallLoad {
+            hall_id: id,
+            ..HallSiegeHallLoad::default()
+        };
+        let flag_war = matches!(
+            script,
+            HallScript::BanditStronghold | HallScript::WildBeastReserve
+        );
+        let rainbow = script == HallScript::RainbowSpringsChateau;
+        if flag_war {
+            match repo.flag_war_clans(id).await {
+                Ok(rows) => {
+                    for row in rows {
+                        let members = match repo.flag_war_members(row.clan_id).await {
+                            Ok(members) => members,
+                            Err(e) => {
+                                warn!("{}.loadAttackerMembers()->{e}", script.name());
+                                Vec::new()
+                            }
+                        };
+                        hall.flag_war.push(FlagWarRecord {
+                            clan_id: row.clan_id,
+                            flag: row.flag,
+                            npc: row.npc,
+                            members,
+                        });
+                    }
+                }
+                Err(e) => warn!("{}.loadAttackers()->{e}", script.name()),
+            }
+        } else if rainbow {
+            match repo.rainbow_attackers().await {
+                Ok(rows) => {
+                    hall.rainbow = rows
+                        .into_iter()
+                        .map(|r| (r.clan_id, r.war_decrees_count))
+                        .collect();
+                }
+                Err(e) => warn!("{}.loadAttackers()->{e}", script.name()),
+            }
+        } else {
+            match repo.attackers(id).await {
+                Ok(attackers) => hall.attackers = attackers,
+                Err(e) => warn!("{}: Could not load siege attackers! {e}", script.name()),
+            }
+        }
+        match repo.guards(id).await {
+            Ok(rows) => {
+                hall.guards = rows
+                    .into_iter()
+                    .map(|r| HallGuardRecord {
+                        npc_id: r.npc_id,
+                        x: r.x,
+                        y: r.y,
+                        z: r.z,
+                        heading: r.heading,
+                        respawn_delay: r.respawn_delay,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("{}: Could not load siege guards! {e}", script.name()),
+        }
+        load.halls.push(hall);
+    }
+    load
+}
+
 /// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
 /// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
 /// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
@@ -2245,6 +2327,7 @@ pub struct DbStore {
     residences: ResidenceRepository,
     sieges: SiegeRepository,
     fort_sieges: FortSiegeRepository,
+    hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
@@ -2278,6 +2361,7 @@ impl DbStore {
             residences: ResidenceRepository::new(pool.clone()),
             sieges: SiegeRepository::new(pool.clone()),
             fort_sieges: FortSiegeRepository::new(pool.clone()),
+            hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
@@ -3482,6 +3566,38 @@ impl PlayerStore for DbStore {
                     }
                 }
             }
+            ResidenceWrite::HallSiege(write) => {
+                let repo = &self.hall_sieges;
+                match write {
+                    HallSiegeWrite::SaveAttackers { hall_id, clans } => {
+                        repo.save_attackers(*hall_id, clans).await?
+                    }
+                    HallSiegeWrite::FlagWarClan {
+                        hall_id,
+                        flag,
+                        clan_id,
+                    } => repo.insert_flag_war_clan(*hall_id, *flag, 0, *clan_id).await?,
+                    HallSiegeWrite::FlagWarNpc { npc, clan_id } => {
+                        repo.update_flag_war_npc(*npc, *clan_id).await?
+                    }
+                    HallSiegeWrite::FlagWarMember {
+                        hall_id,
+                        clan_id,
+                        object_id,
+                    } => {
+                        repo.insert_flag_war_member(*hall_id, *clan_id, *object_id)
+                            .await?
+                    }
+                    HallSiegeWrite::FlagWarClear { hall_id } => repo.clear_flag_war(*hall_id).await?,
+                    HallSiegeWrite::RainbowAdd { clan_id, count } => {
+                        repo.insert_rainbow_attacker(*clan_id, *count).await?
+                    }
+                    HallSiegeWrite::RainbowRemove { clan_id } => {
+                        repo.delete_rainbow_attacker(*clan_id).await?
+                    }
+                    HallSiegeWrite::RainbowClear => repo.clear_rainbow_attackers().await?,
+                }
+            }
             ResidenceWrite::ClanHallAuction(write) => store_auction_write(&self.auctions, write).await?,
             // The siege statements (M7-SIEGE-01).
             write => store_siege_write(&self.sieges, write).await?,
@@ -3573,6 +3689,52 @@ impl PlayerStore for DbStore {
                     }
                     None => ResidenceRereadRows::Missing,
                 }
+            }
+            // M7-CHSIEGE-01: a conquerable hall and its registration tables (D-50).
+            ResidenceReadKind::HallSiege => {
+                let hall = match repo
+                    .siegable_halls()
+                    .await?
+                    .into_iter()
+                    .find(|r| r.clan_hall_id == residence_id)
+                {
+                    Some(row) => {
+                        let mut record = siegable_hall_record(row);
+                        if record.owner_id != 0 {
+                            record.functions = function_records(
+                                repo.functions(FunctionTable::ClanHall, residence_id).await?,
+                            );
+                        }
+                        Some(record)
+                    }
+                    None => None,
+                };
+                let halls = &self.hall_sieges;
+                let mut flag_war = Vec::new();
+                for row in halls.flag_war_clans(residence_id).await? {
+                    flag_war.push(FlagWarRecord {
+                        clan_id: row.clan_id,
+                        flag: row.flag,
+                        npc: row.npc,
+                        members: halls.flag_war_members(row.clan_id).await?,
+                    });
+                }
+                let rainbow = if residence_id == l2_world::clanhall::siege::RAINBOW_SPRINGS {
+                    halls
+                        .rainbow_attackers()
+                        .await?
+                        .into_iter()
+                        .map(|r| (r.clan_id, r.war_decrees_count))
+                        .collect()
+                } else {
+                    Vec::new()
+                };
+                ResidenceRereadRows::HallSiege(Box::new(HallSiegeRows {
+                    hall_id: residence_id,
+                    hall,
+                    flag_war,
+                    rainbow,
+                }))
             }
             // M7-SIEGE-01: the castle and every registration (D-50).
             ResidenceReadKind::SiegeClans => {

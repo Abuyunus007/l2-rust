@@ -14,6 +14,7 @@ mod fishing;
 mod fort_sieges;
 mod friends;
 mod ground_items;
+mod hall_sieges;
 mod hennas;
 mod ids;
 mod item_reuse;
@@ -50,6 +51,7 @@ pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingC
 pub use fort_sieges::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use friends::{FriendLink, FriendRepository};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
+pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};

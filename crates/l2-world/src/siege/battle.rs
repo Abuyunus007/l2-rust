@@ -527,9 +527,9 @@ impl World {
                 .attacker_clans_mut()
                 .iter_mut()
                 .find(|sc| sc.clan_id == clan_id),
-            // The fortress siege clans are `fort_attacker_clan`'s (M7-FORT-01); the halls':
-            // M7-CHSIEGE-01.
-            ResidenceRef::Fort(_) | ResidenceRef::ClanHall(_) => None,
+            // The fortress siege clans are `fort_attacker_clan`'s (M7-FORT-01).
+            ResidenceRef::Fort(_) => None,
+            ResidenceRef::ClanHall(hall) => self.hall_siege_attacker_clan_mut(hall, clan_id),
         }
     }
 }

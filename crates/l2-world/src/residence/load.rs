@@ -217,7 +217,7 @@ impl World {
             kind: ClanHallKind::Siegable {
                 next_siege: record.next_siege,
                 siege_length: record.siege_length,
-                schedule_config: record.schedule_config,
+                schedule_config: record.schedule_config.clone(),
             },
         };
         self.residences.clan_halls.insert(id, hall);
@@ -234,7 +234,15 @@ impl World {
                 warn!("Exception: SiegableHall.updateDb(): the owner of {id} does not exist.");
             }
         }
-        // M7-CHSIEGE-01: `updateNextSiege()` when the next siege is due within an hour (writes).
+        // `updateNextSiege()` when the next siege is due within an hour (a write, D-51).
+        if record.next_siege - self.siege_now_ms() - 3_600_000 < 0 {
+            let name = self.clan_hall(id).map(|h| h.name.clone()).unwrap_or_default();
+            let config = crate::clanhall::siege::schedule::parse_schedule_config(
+                &name,
+                record.schedule_config.as_deref(),
+            );
+            self.hall_update_next_siege_with(id, config);
+        }
         if self.clan_hall(id).is_some_and(|h| h.owner_id != 0) {
             if let Some(hall) = self.clan_hall_mut(id) {
                 hall.is_free = false;
