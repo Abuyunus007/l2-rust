@@ -88,39 +88,42 @@ pub const CASTLE_TAX: i32 = 10;
 
 /// The middle of the siege zone of Shanty fortress (`fortId` 101).
 pub const FORT: (i32, i32) = (START.0, START.1 - 5_000);
-const FORT_SIEGE_HALF: i32 = 2_000;
-const FORT_ZONE_HALF: i32 = 800;
+const FORT_SIEGE_HALF: i32 = 1_200;
+const FORT_ZONE_HALF: i32 = 600;
 /// `35663` the foreman (a `FortManager`), always there.
 pub const FORT_FOREMAN_ID: i32 = 35_663;
 pub const FORT_FOREMAN_POS: (i32, i32, i32) = (FORT.0 - 300, FORT.1 + 300, Z);
 /// `35659` the suspicious merchant of Shanty, who registers a clan for the siege
-/// (`FortressSiegeManager`). He stands outside the siege zone.
+/// (`FortressSiegeManager`). He stands outside the siege zone, so the start of the siege does not
+/// send the registered clan to town.
 pub const FORT_MERCHANT_ID: i32 = 35_659;
-pub const FORT_MERCHANT_POS: (i32, i32, i32) = (FORT.0 - 2_400, FORT.1, Z);
+pub const FORT_MERCHANT_POS: (i32, i32, i32) = (FORT.0 - FORT_SIEGE_HALF - 150, FORT.1, Z);
 /// Where the raider stands to talk to the merchant.
-pub const FORT_REGISTER_POS: (i32, i32, i32) = (FORT.0 - 2_350, FORT.1, Z);
+pub const FORT_REGISTER_POS: (i32, i32, i32) = (FORT.0 - FORT_SIEGE_HALF - 80, FORT.1, Z);
 /// `35670` a guard of the siege.
 pub const FORT_GUARD_ID: i32 = 35_670;
 pub const FORT_GUARD_POS: (i32, i32, i32) = (FORT.0 - 100, FORT.1 - 300, Z);
 /// The commanders of the siege (`FortSiege.ini`) and the fortress gate.
 pub const FORT_COMMANDER_1: i32 = 35_683;
-pub const FORT_COMMANDER_1_POS: (i32, i32, i32) = (FORT.0 + 300, FORT.1 + 200, Z);
+pub const FORT_COMMANDER_1_POS: (i32, i32, i32) = (FORT.0 + 250, FORT.1 + 150, Z);
 pub const FORT_COMMANDER_2: i32 = 35_677;
-pub const FORT_COMMANDER_2_POS: (i32, i32, i32) = (FORT.0 + 300, FORT.1 - 200, Z);
+pub const FORT_COMMANDER_2_POS: (i32, i32, i32) = (FORT.0 + 250, FORT.1 - 150, Z);
 pub const FORT_GATE_ID: i32 = 22_140_001;
-pub const FORT_GATE_POS: (i32, i32, i32) = (FORT.0 + 450, FORT.1, Z);
+pub const FORT_GATE_POS: (i32, i32, i32) = (FORT.0 + 350, FORT.1, Z);
 /// `9819` the combat flag, lying at this place after the last commander fell, and `3318` Flag
 /// Display, the skill that hangs it on the flag pole.
 pub const COMBAT_FLAG_ITEM: i32 = 9_819;
-pub const FORT_FLAG_POS: (i32, i32, i32) = (FORT.0 + 600, FORT.1 + 100, Z);
+pub const FORT_FLAG_POS: (i32, i32, i32) = (FORT.0 + 450, FORT.1 + 80, Z);
 pub const FLAG_DISPLAY: i32 = 3_318;
 /// NOTE: the shipped skill casts for 180 s; here 2 s.
 pub const FLAG_DISPLAY_CAST_MS: i32 = 2_000;
-/// The flag pole (a static object of type 3 named like the fortress).
-pub const FLAG_POLE_POS: (i32, i32, i32) = (FORT.0 + 900, FORT.1, Z);
+/// The flag pole (a static object of type 3 named like the fortress) and the place from which the
+/// flag reaches it (the cast range is 85).
+pub const FLAG_POLE_POS: (i32, i32, i32) = (FORT.0 + 700, FORT.1, Z);
 pub const FLAG_POLE_STATIC_ID: i32 = 18_220_500;
+pub const FLAG_POLE_STAND: (i32, i32, i32) = (FORT.0 + 660, FORT.1, Z);
 /// Where the GM stands in the fortress.
-pub const FORT_GM_POS: (i32, i32, i32) = (FORT.0 + 400, FORT.1, Z);
+pub const FORT_GM_POS: (i32, i32, i32) = (FORT.0 + 100, FORT.1, Z);
 
 // ---- the clan hall -------------------------------------------------------------------------------
 
@@ -202,7 +205,11 @@ pub fn write_admin_config(config_dir: &Path) {
             format!("\t<admin command=\"{word}\" accessLevel=\"{GM_LEVEL}\" />\n")
         })
         .collect();
-    write(config_dir, "AdminCommands.xml", &format!("<list>\n{commands}</list>"));
+    write(
+        config_dir,
+        "AdminCommands.xml",
+        &format!("<list>\n{commands}</list>"),
+    );
 }
 
 // ---- NPCs ----------------------------------------------------------------------------------------
@@ -311,7 +318,12 @@ fn zones() -> String {
 
 // ---- skills --------------------------------------------------------------------------------------
 
-fn skills() -> String {
+fn skills(flag_condition: bool) -> String {
+    let flag_condition = if flag_condition {
+        "<conditions><player canTakeFort=\"true\" /></conditions>"
+    } else {
+        ""
+    };
     format!(
         r##"<list>
 	<skill id="{SEAL_OF_RULER}" levels="1" name="Seal of Ruler">
@@ -358,9 +370,7 @@ fn skills() -> String {
 		<isMagic>2</isMagic>
 		<magicLevel>80</magicLevel>
 		<reuseDelay>5000</reuseDelay>
-		<conditions>
-			<player canTakeFort="true" />
-		</conditions>
+		{flag_condition}
 		<startEffects>
 			<effect name="TakeFortStart" />
 		</startEffects>
@@ -375,9 +385,14 @@ fn skills() -> String {
 // ---- the writer ----------------------------------------------------------------------------------
 
 /// Adds the M7 data below `root` (the folder that holds `data/`). Call after `write_social_data`.
-pub fn write_residence_data(root: &Path) {
+///
+/// `flag_condition`: whether Flag Display carries its shipped condition `canTakeFort`. The world
+/// does not model that condition yet (`stats/conditions.rs`: `NotModelled::CanAction`), and a skill
+/// whose condition cannot be answered is not cast; the fortress scenarios leave it out, one ignored
+/// test keeps it in.
+pub fn write_residence_data(root: &Path, flag_condition: bool) {
     write(root, "data/zones/m7.xml", &zones());
-    write(root, "data/stats/skills/m7_skills.xml", &skills());
+    write(root, "data/stats/skills/m7_skills.xml", &skills(flag_condition));
 
     // The gates: doors with an HP bar (`hp_showable` defaults to true), so they are enemies while a
     // siege runs.

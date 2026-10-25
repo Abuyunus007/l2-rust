@@ -22,7 +22,6 @@ use l2_world::{
     ClanRecord, ItemData, ItemRowOp, PersistCommand, ResidenceRef, ResidenceWrite, SiegeClanRecord,
 };
 
-use super::m7_data;
 use super::m7_seed::{self, Seed};
 
 /// One row of `castle`.
@@ -159,24 +158,6 @@ impl Rows {
             .find(|c| c.clan_id == clan_id)
             .map_or(0, |c| c.adena)
     }
-
-    /// The tables a siege-like job writes (D-51): everything but a clan's own columns.
-    pub fn global(&self) -> Self {
-        Self {
-            clans: self
-                .clans
-                .iter()
-                .map(|c| ClanDbRow {
-                    reputation: 0,
-                    blood_alliance_count: 0,
-                    blood_oath_count: 0,
-                    auction_bid_at: 0,
-                    ..c.clone()
-                })
-                .collect(),
-            ..self.clone()
-        }
-    }
 }
 
 /// The model.
@@ -193,8 +174,6 @@ pub struct Db {
     functions: BTreeMap<(&'static str, i32, i32), FunctionRow>,
     auctions: BTreeMap<i32, AuctionRecord>,
     items: BTreeMap<i32, (i32, ItemData)>,
-    /// The clans' leaders, for the bidder names.
-    leader_names: BTreeMap<i32, String>,
 }
 
 /// The table name of a residence's function table.
@@ -249,7 +228,7 @@ impl Db {
         );
         db.hall_static.insert(hall.id, hall);
         db.auctions.insert(m7_seed::HALL, seed.auction_record());
-        for (clan, _, owns_castle, leader) in Seed::clans() {
+        for (clan, _, owns_castle, _) in Seed::clans() {
             db.clans.insert(
                 clan,
                 ClanDbRow {
@@ -261,8 +240,6 @@ impl Db {
                     auction_bid_at: 0,
                 },
             );
-            db.leader_names
-                .insert(clan, Seed::name_of(leader).to_owned());
         }
         let adena = Seed::warehouse_adena();
         db.items.insert(adena.object_id.0, (m7_seed::WOLVES, adena));
@@ -311,8 +288,9 @@ impl Db {
             PersistCommand::StorePlayer(data) => {
                 // A full store replaces the character's inventory and worn rows.
                 let owner = data.object_id.0;
-                self.items
-                    .retain(|_, (o, item)| !(*o == owner && matches!(item.loc.as_str(), "INVENTORY" | "PAPERDOLL")));
+                self.items.retain(|_, (o, item)| {
+                    !(*o == owner && matches!(item.loc.as_str(), "INVENTORY" | "PAPERDOLL"))
+                });
                 for item in &data.items {
                     self.items.insert(item.object_id.0, (owner, item.clone()));
                 }
@@ -322,14 +300,12 @@ impl Db {
     }
 
     fn apply_clan(&mut self, write: &ClanWrite) {
-        match write {
-            ClanWrite::Update(row) => {
-                if let Some(clan) = self.clans.get_mut(&row.clan_id) {
-                    clan.reputation = row.reputation_score;
-                }
-            }
-            // The rows of the clan scenarios of M6 (levels, crests, members) are not looked at here.
-            _ => {}
+        // The other clan rows (levels, crests, members of the scenarios of M6) are not looked at
+        // here.
+        if let ClanWrite::Update(row) = write
+            && let Some(clan) = self.clans.get_mut(&row.clan_id)
+        {
+            clan.reputation = row.reputation_score;
         }
     }
 
@@ -338,7 +314,10 @@ impl Db {
             ResidenceWrite::CastleTreasury { castle_id, treasury } => {
                 self.castle_mut(*castle_id).treasury = *treasury;
             }
-            ResidenceWrite::CastleTaxPercent { castle_id, tax_percent } => {
+            ResidenceWrite::CastleTaxPercent {
+                castle_id,
+                tax_percent,
+            } => {
                 self.castle_mut(*castle_id).tax_percent = *tax_percent;
             }
             ResidenceWrite::CastleShowNpcCrest { castle_id, show } => {
@@ -377,7 +356,10 @@ impl Db {
                 fort.state = *state;
                 fort.castle_id = *castle_id;
             }
-            ResidenceWrite::FortSupplyLevel { fort_id, supply_level } => {
+            ResidenceWrite::FortSupplyLevel {
+                fort_id,
+                supply_level,
+            } => {
                 self.fort_mut(*fort_id).supply_level = *supply_level;
             }
             ResidenceWrite::ClanHall {
@@ -418,8 +400,11 @@ impl Db {
                 residence,
                 function_type,
             } => {
-                self.functions
-                    .remove(&(function_table(*residence), residence.residence_id(), *function_type));
+                self.functions.remove(&(
+                    function_table(*residence),
+                    residence.residence_id(),
+                    *function_type,
+                ));
             }
             ResidenceWrite::CastleSiegeDate {
                 castle_id,
@@ -451,7 +436,8 @@ impl Db {
                 }
             }
             ResidenceWrite::SiegeClanDelete { castle_id, clan_id } => {
-                self.siege_clans.retain(|r| !(r.0 == *castle_id && r.1 == *clan_id));
+                self.siege_clans
+                    .retain(|r| !(r.0 == *castle_id && r.1 == *clan_id));
             }
             ResidenceWrite::SiegeClansDeleteCastle { castle_id } => {
                 self.siege_clans.retain(|r| r.0 != *castle_id);
@@ -463,7 +449,8 @@ impl Db {
                 self.siege_clans.retain(|r| !(r.0 == *castle_id && r.2 == 2));
             }
             ResidenceWrite::SiegeGuardInsert(record) => {
-                self.guards.push((record.castle_id, record.npc_id, record.is_hired));
+                self.guards
+                    .push((record.castle_id, record.npc_id, record.is_hired));
             }
             ResidenceWrite::SiegeGuardDeleteHired { npc_id, .. } => {
                 if let Some(index) = self.guards.iter().position(|g| g.1 == *npc_id && g.2) {
@@ -568,7 +555,10 @@ impl Db {
             AuctionWrite::AuctionDelete { item_id } => {
                 self.auctions.retain(|_, a| a.item_id != *item_id);
             }
-            AuctionWrite::BidDelete { auction_id, bidder_id } => {
+            AuctionWrite::BidDelete {
+                auction_id,
+                bidder_id,
+            } => {
                 if let Some(auction) = self.auctions.get_mut(auction_id) {
                     auction.bidders.retain(|b| b.bidder_id != *bidder_id);
                 }
@@ -712,7 +702,12 @@ impl Db {
                     let owner = fort.owner_id;
                     ResidenceRereadRows::FortSiege(Box::new(FortSiegeRows {
                         fort,
-                        clans: self.fort_clans.iter().filter(|r| r.0 == id).map(|r| r.1).collect(),
+                        clans: self
+                            .fort_clans
+                            .iter()
+                            .filter(|r| r.0 == id)
+                            .map(|r| r.1)
+                            .collect(),
                         owner_blood_oath_count: (owner > 0)
                             .then(|| self.clans.get(&owner).map(|c| c.blood_oath_count))
                             .flatten(),

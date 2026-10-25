@@ -119,7 +119,8 @@ fn game_server_ini(ls_port: u16) -> String {
 
 /// The `Shanty` lines of `FortSiege.ini`: where the commanders and the combat flags stand.
 fn fort_siege_ini() -> String {
-    let commander = |i: i32, id: i32, (x, y, z): (i32, i32, i32)| format!("ShantyCommander{i} = {x},{y},{z},0,{id}\n");
+    let commander =
+        |i: i32, id: i32, (x, y, z): (i32, i32, i32)| format!("ShantyCommander{i} = {x},{y},{z},0,{id}\n");
     let flag = |i: i32, (x, y, z): (i32, i32, i32)| {
         format!("ShantyFlag{i} = {x},{y},{z},{}\n", m7_data::COMBAT_FLAG_ITEM)
     };
@@ -128,7 +129,14 @@ fn fort_siege_ini() -> String {
         commander(1, m7_data::FORT_COMMANDER_1, m7_data::FORT_COMMANDER_1_POS),
         commander(2, m7_data::FORT_COMMANDER_2, m7_data::FORT_COMMANDER_2_POS),
         flag(1, m7_data::FORT_FLAG_POS),
-        flag(2, (m7_data::FORT_FLAG_POS.0, m7_data::FORT_FLAG_POS.1 - 200, m7_data::FORT_FLAG_POS.2)),
+        flag(
+            2,
+            (
+                m7_data::FORT_FLAG_POS.0,
+                m7_data::FORT_FLAG_POS.1 - 200,
+                m7_data::FORT_FLAG_POS.2
+            )
+        ),
     )
 }
 
@@ -173,10 +181,17 @@ fn write_game_config(config_dir: &Path, ls_port: u16, siege_writes: bool) {
     .unwrap();
     std::fs::write(
         config_dir.join("SideBySide.ini"),
-        format!("SiegeDatabaseWrites = {}\n", if siege_writes { "True" } else { "False" }),
+        format!(
+            "SiegeDatabaseWrites = {}\n",
+            if siege_writes { "True" } else { "False" }
+        ),
     )
     .unwrap();
-    std::fs::write(config_dir.join("Siege.ini"), "SiegeClanMinLevel = 5\nSiegeLength = 120\n").unwrap();
+    std::fs::write(
+        config_dir.join("Siege.ini"),
+        "SiegeClanMinLevel = 5\nSiegeLength = 120\n",
+    )
+    .unwrap();
     std::fs::write(config_dir.join("FortSiege.ini"), fort_siege_ini()).unwrap();
     m7_data::write_admin_config(config_dir);
     hexid::save(config_dir, SAMPLE_SERVER_ID, SAMPLE_HEXID);
@@ -184,13 +199,13 @@ fn write_game_config(config_dir: &Path, ls_port: u16, siege_writes: bool) {
 
 /// The datapack of this test: the base classes and items, the world data of M3, the hunting data
 /// of M4, the skills and items of M5, the social data of M6 and the residences of M7.
-fn write_datapack(root: &Path) {
+fn write_datapack(root: &Path, flag_condition: bool) {
     datapack::write_datapack(root);
     m3_data::write_world_data(root);
     m4_data::write_hunting_data(root);
     m5_data::write_skill_data(root);
     m6_data::write_social_data(root);
-    m7_data::write_residence_data(root);
+    m7_data::write_residence_data(root, flag_condition);
 }
 
 // ------------------------------------------------------------------------------------------
@@ -520,6 +535,9 @@ struct Opts {
     /// How long the auction of the hall runs, in milliseconds. The bare world needs a few
     /// seconds, the real servers more (they log in and start up on the clock).
     auction_ms: i64,
+    /// Whether the skill Flag Display carries its shipped condition `canTakeFort` (see
+    /// `m7_data::write_residence_data`).
+    flag_condition: bool,
 }
 
 /// The two ways to play a scenario. `collect_until` returns everything the player's client got
@@ -543,8 +561,6 @@ trait Harness {
     async fn leave(&mut self, who: Who) -> Left;
     /// The residence tables as the store has them now.
     async fn rows(&mut self) -> Rows;
-    /// Prints what the world sent to the store (debugging; the real servers print nothing).
-    fn debug_commands(&self) {}
 }
 
 // ------------------------------------------------------------------------------------------
@@ -616,6 +632,8 @@ struct BareWorld {
     answered: usize,
     players: [PlayerData; 3],
     opts: Opts,
+    /// Answer the reads of the world with a failure (a test of D-50).
+    fail_reads: bool,
     /// Keeps the folder of the datapack (nothing reads it after the start).
     _root: tempfile::TempDir,
 }
@@ -737,7 +755,7 @@ impl BareWorld {
         let config_dir = root.path().join("config");
         write_game_config(&config_dir, 4242, opts.siege_writes);
         let data_root = root.path().join("datapack");
-        write_datapack(&data_root);
+        write_datapack(&data_root, opts.flag_condition);
         let seed = Seed::new(now_ms(), opts.auction_ms);
 
         let config = GameConfig::load(&config_dir).unwrap();
@@ -829,6 +847,7 @@ impl BareWorld {
             answered: 0,
             players,
             opts: *opts,
+            fail_reads: false,
             _root: root,
         }
     }
@@ -875,10 +894,9 @@ impl BareWorld {
                         let db = Db::replay(&self.seed, &commands[..self.answered - 1]);
                         let rows: ResidenceRereadRows = db.reread(kind, residence_id);
                         let _: ResidenceReadKind = kind;
-                        self.world.handle(WorldCommand::ResidenceReread {
-                            result: Ok(rows),
-                            then,
-                        });
+                        // A read that fails: the persistence task could not ask the database.
+                        let result = if self.fail_reads { Err(()) } else { Ok(rows) };
+                        self.world.handle(WorldCommand::ResidenceReread { result, then });
                     }
                     PersistCommand::ClanWarehouseRequest { player, clan_id } => {
                         let db = Db::replay(&self.seed, &commands[..self.answered - 1]);
@@ -1021,13 +1039,6 @@ impl Harness for BareWorld {
     async fn rows(&mut self) -> Rows {
         self.db().rows()
     }
-
-    fn debug_commands(&self) {
-        for command in self.persisted.commands() {
-            let text = format!("{command:?}");
-            eprintln!("persist {}", &text[..text.len().min(220)]);
-        }
-    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1046,6 +1057,9 @@ async fn until_long(mut condition: impl FnMut() -> bool) {
     panic!("condition not met in 30 seconds");
 }
 
+/// `id, taxPercent, treasury, siegeDate, regTimeOver, regTimeEnd, showNpcCrest, ticketBuyCount` of
+/// `castle` (cast to numbers where the column is one).
+type CastleColumns = (i64, i64, i64, i64, String, i64, String, i64);
 /// `object_id, item_id, count, loc` of `items`.
 type ItemColumns = (i32, Option<i32>, u64, Option<String>);
 
@@ -1066,7 +1080,7 @@ impl Rig {
     /// A throwaway database with both schemas and the residence rows of `seed`, the login server,
     /// and the game server registered with it. `None` (and a printed note) without
     /// `L2_TEST_DATABASE_URL`.
-    async fn start(tag: &str, seed: &Seed, siege_writes: bool) -> Option<Self> {
+    async fn start(tag: &str, seed: &Seed, opts: &Opts) -> Option<Self> {
         let db = TestDb::create(tag).await?;
         for file in GAME_SCHEMA {
             let text: String = file
@@ -1098,8 +1112,8 @@ impl Rig {
 
         let gs_root = tempfile::tempdir().unwrap();
         db.write_server_folder(gs_root.path(), &game_server_ini(link_port));
-        write_game_config(&gs_root.path().join("config"), link_port, siege_writes);
-        write_datapack(&gs_root.path().join("datapack"));
+        write_game_config(&gs_root.path().join("config"), link_port, opts.siege_writes);
+        write_datapack(&gs_root.path().join("datapack"), opts.flag_condition);
         let gs = Server::start(&Paths::resolve(gs_root.path(), Path::new("./config")))
             .await
             .unwrap();
@@ -1219,7 +1233,7 @@ impl Rig {
             AuctionRow, BidRow, CastleRow, ClanAdena, ClanDbRow, FortRow, FunctionRow, GuardRow, HallRow,
         };
         let pool = &self.pool;
-        let castles: Vec<(i64, i64, i64, i64, String, i64, String, i64)> = sqlx::query_as(
+        let castles: Vec<CastleColumns> = sqlx::query_as(
             "SELECT CAST(id AS SIGNED), CAST(taxPercent AS SIGNED), CAST(treasury AS SIGNED), \
              CAST(siegeDate AS SIGNED), regTimeOver, CAST(regTimeEnd AS SIGNED), showNpcCrest, \
              CAST(ticketBuyCount AS SIGNED) FROM castle ORDER BY id",
@@ -1291,19 +1305,20 @@ impl Rig {
                 "clanhall",
             ),
         ] {
-            let rows: Vec<(i64, i64, i64, i64, i64, i64)> = sqlx::query_as(query)
-                .fetch_all(pool)
-                .await
-                .unwrap();
-            functions.extend(rows.into_iter().map(|(id, kind, lvl, lease, rate, end_time)| FunctionRow {
-                table: label,
-                residence_id: i32::try_from(id).unwrap(),
-                function_type: i32::try_from(kind).unwrap(),
-                lvl: i32::try_from(lvl).unwrap(),
-                lease: i32::try_from(lease).unwrap(),
-                rate,
-                end_time,
-            }));
+            let rows: Vec<(i64, i64, i64, i64, i64, i64)> =
+                sqlx::query_as(query).fetch_all(pool).await.unwrap();
+            functions.extend(
+                rows.into_iter()
+                    .map(|(id, kind, lvl, lease, rate, end_time)| FunctionRow {
+                        table: label,
+                        residence_id: i32::try_from(id).unwrap(),
+                        function_type: i32::try_from(kind).unwrap(),
+                        lvl: i32::try_from(lvl).unwrap(),
+                        lease: i32::try_from(lease).unwrap(),
+                        rate,
+                        end_time,
+                    }),
+            );
         }
         let auctions: Vec<(i64, i64, i64, i64, i64)> = sqlx::query_as(
             "SELECT CAST(id AS SIGNED), CAST(sellerId AS SIGNED), CAST(startingBid AS SIGNED), \
@@ -1385,7 +1400,10 @@ impl Rig {
                     supply_level: i(supply),
                 })
                 .collect(),
-            fort_clans: fort_clans.into_iter().map(|(fort, clan)| (i(fort), i(clan))).collect(),
+            fort_clans: fort_clans
+                .into_iter()
+                .map(|(fort, clan)| (i(fort), i(clan)))
+                .collect(),
             halls: halls
                 .into_iter()
                 .map(|(id, owner, paid_until, paid)| HallRow {
@@ -1470,7 +1488,7 @@ impl Net {
     async fn start(tag: &str, opts: &Opts) -> Option<Self> {
         let turn = ONE_RIG_AT_A_TIME.lock().await;
         let seed = Seed::new(now_ms(), opts.auction_ms);
-        let rig = Rig::start(tag, &seed, opts.siege_writes).await?;
+        let rig = Rig::start(tag, &seed, opts).await?;
         let mut ids = [0; 3];
         for who in Who::ALL {
             let i = who.index();
@@ -1585,7 +1603,9 @@ impl Harness for Net {
         if wait > 0 {
             tokio::time::sleep(Duration::from_millis(u64::try_from(wait).unwrap())).await;
         }
-        tokio::time::sleep(Duration::from_secs(2)).await;
+        // The task that ends the auction reads the rows first and starts again when the end is
+        // not due yet.
+        tokio::time::sleep(Duration::from_secs(4)).await;
     }
 
     async fn leave(&mut self, who: Who) -> Left {
@@ -1623,6 +1643,9 @@ mod tax;
 
 #[path = "e2e/m7_hall.rs"]
 mod hall;
+
+#[path = "e2e/m7_fort.rs"]
+mod fort;
 
 #[path = "e2e/m7_checks.rs"]
 mod checks;

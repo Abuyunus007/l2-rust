@@ -27,6 +27,7 @@ pub fn opts(siege_writes: bool) -> Opts {
         positions: [m7_data::LORD_POS, m7_data::RAIDER_START, m7_data::GM_POS],
         // The hall's auction is not part of this scenario: far away.
         auction_ms: 86_400_000,
+        flag_condition: false,
     }
 }
 
@@ -83,8 +84,14 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         .find(|s| s.kind == StaticObjectInfo::KIND_DOOR)
         .expect("the gate is in view of the lord");
     assert_eq!(gate.static_object_id, m7_data::GATE_ID);
-    assert_eq!((gate.current_hp, gate.max_hp), (m7_data::GATE_HP, m7_data::GATE_HP));
-    assert!(gate.show_hp && gate.closed && !gate.is_enemy, "peace: the gate is no enemy");
+    assert_eq!(
+        (gate.current_hp, gate.max_hp),
+        (m7_data::GATE_HP, m7_data::GATE_HP)
+    );
+    assert!(
+        gate.show_hp && gate.closed && !gate.is_enemy,
+        "peace: the gate is no enemy"
+    );
     let artefact = all::<NpcInfo>(&lord_enter, "NPC_INFO")
         .into_iter()
         .find(|n| n.display_id == m7_data::ARTEFACT_ID)
@@ -123,7 +130,11 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     let ticket_on_ground: SpawnItem = all(&hired, "SPAWN_ITEM").remove(0);
     assert_eq!(ticket_on_ground.display_id, m7_data::MERC_TICKET);
     assert_eq!(
-        message_of(&hired, SystemMessageId::PlaceS1InTheCurrentLocationAndDirectionDoYouWishToContinue).params,
+        message_of(
+            &hired,
+            SystemMessageId::PlaceS1InTheCurrentLocationAndDirectionDoYouWishToContinue
+        )
+        .params,
         [SystemMessageParam::ItemName(m7_data::MERC_TICKET)]
     );
     // The player's ticket is used up.
@@ -169,7 +180,8 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         "the siege is announced for the date of the castle"
     );
     h.act(Who::Raider, act::siege_attacker_list(GLUDIO)).await;
-    let attackers: SiegeAttackerList = all(&h.collect_quiet(Who::Raider).await, "CASTLE_SIEGE_ATTACKER_LIST").remove(0);
+    let attackers: SiegeAttackerList =
+        all(&h.collect_quiet(Who::Raider).await, "CASTLE_SIEGE_ATTACKER_LIST").remove(0);
     assert_eq!(attackers.clans.len(), 1);
     assert_eq!(attackers.clans[0].as_ref().unwrap().name, m7_seed::WOLVES_NAME);
     // The row of `Siege.saveSiegeClan` only with the switch (D-51).
@@ -223,26 +235,27 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     let built = h.collect_until(Who::Raider, &|b| is_named(b, "NPC_INFO")).await;
     assert!(has_message(&built, SystemMessageId::UseS1));
     // The headquarters stands 50 above the leader; the clan's name is its title.
-    let flag_info = h
-        .collect_quiet(Who::Raider)
-        .await
+    let mut seen = built.clone();
+    seen.extend(h.collect_quiet(Who::Raider).await);
+    let flag_info = all::<NpcInfo>(&seen, "NPC_INFO")
         .into_iter()
-        .chain(built.clone())
-        .filter(|b| is_named(b, "NPC_INFO"))
-        .map(|b| decode_any::<NpcInfo>(&b))
-        .filter(|n| n.display_id == m7_data::HQ_ID)
-        .next_back()
+        .rfind(|n| n.display_id == m7_data::HQ_ID)
         .expect("the headquarters");
     assert_eq!(flag_info.title, m7_seed::WOLVES_NAME);
     assert_eq!(flag_info.z, m7_data::RAIDER_POS.2 + 50);
 
     // ---- the gate: the attackers break it down -----------------------------------------------------------
     walk(h, Who::Raider, m7_data::RAIDER_POS, m7_data::GATE_APPROACH).await;
-    h.act(Who::Raider, act::click(gate.object_id, m7_data::GATE_APPROACH)).await;
+    h.act(Who::Raider, act::click(gate.object_id, m7_data::GATE_APPROACH))
+        .await;
     h.collect_quiet(Who::Raider).await;
-    h.act(Who::Raider, act::click(gate.object_id, m7_data::GATE_APPROACH)).await;
+    h.act(Who::Raider, act::click(gate.object_id, m7_data::GATE_APPROACH))
+        .await;
     let broken = h
-        .collect_until(Who::Raider, &is_message(SystemMessageId::TheCastleGateHasBeenDestroyed))
+        .collect_until(
+            Who::Raider,
+            &is_message(SystemMessageId::TheCastleGateHasBeenDestroyed),
+        )
         .await;
     let status: Vec<DoorStatusUpdate> = all(&broken, "DOOR_STATUS_UPDATE");
     assert!(status.iter().all(|s| s.is_enemy && s.door_id == m7_data::GATE_ID));
@@ -253,11 +266,15 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     assert_eq!(status.last().map(|s| s.current_hp), Some(0));
     // The defenders see the gate fall too.
     let lord_saw = h.collect_quiet(Who::Lord).await;
-    assert!(has_message(&lord_saw, SystemMessageId::TheCastleGateHasBeenDestroyed));
+    assert!(has_message(
+        &lord_saw,
+        SystemMessageId::TheCastleGateHasBeenDestroyed
+    ));
 
     // ---- the artefact: target it and cast Seal of Ruler -------------------------------------------------------
     walk(h, Who::Raider, m7_data::GATE_APPROACH, m7_data::RAIDER_POS).await;
-    h.act(Who::Raider, act::click(artefact, m7_data::RAIDER_POS)).await;
+    h.act(Who::Raider, act::click(artefact, m7_data::RAIDER_POS))
+        .await;
     let targeted = h.collect_quiet(Who::Raider).await;
     assert!(names(&targeted).contains(&"MY_TARGET_SELECTED".to_owned()));
     h.act(Who::Raider, act::use_skill(m7_data::SEAL_OF_RULER)).await;
@@ -268,7 +285,11 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         )
         .await;
     assert_eq!(
-        message_of(&engraved, SystemMessageId::ClanS1HasSuccessfullyEngravedTheHolyArtifact).params,
+        message_of(
+            &engraved,
+            SystemMessageId::ClanS1HasSuccessfullyEngravedTheHolyArtifact
+        )
+        .params,
         [text(m7_seed::WOLVES_NAME)]
     );
     // The new owner's clan window shows the castle at once.
@@ -285,13 +306,20 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     ));
     h.act(Who::Raider, act::all_castle_info()).await;
     let info = castle_info_of(&h.collect_quiet(Who::Raider).await);
-    assert_eq!(info.owner_name, m7_seed::WOLVES_NAME, "the castle changed hands in this world");
+    assert_eq!(
+        info.owner_name,
+        m7_seed::WOLVES_NAME,
+        "the castle changed hands in this world"
+    );
     // `Castle.setOwner` writes the owner, `removeMercs` the old owner's mercenaries: siege jobs.
     let rows_engraved = h.rows().await;
     if writes {
         assert_eq!(rows_engraved.clan(WOLVES).has_castle, GLUDIO);
         assert_eq!(rows_engraved.clan(LIONS).has_castle, 0);
-        assert!(rows_engraved.guards.is_empty(), "the mercenaries went with the owner");
+        assert!(
+            rows_engraved.guards.is_empty(),
+            "the mercenaries went with the owner"
+        );
         assert_eq!(rows_engraved.siege_clans, rows_registered.siege_clans);
     } else {
         assert_eq!(rows_engraved, rows_registered, "D-51: no global row changed");
@@ -311,7 +339,10 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
             message_of(batch, SystemMessageId::ClanS1IsVictoriousOverS2SCastleSiege).params,
             [text(m7_seed::WOLVES_NAME), text("Gludio")]
         );
-        assert!(has_message(batch, SystemMessageId::S1HasAnnouncedTheNextCastleSiegeTime));
+        assert!(has_message(
+            batch,
+            SystemMessageId::S1HasAnnouncedTheNextCastleSiegeTime
+        ));
         assert!(has_message(batch, SystemMessageId::YouHaveLeftACombatZone));
     }
     // `Castle.updateClansReputation`: the Wolves take `TakeCastlePoints` (1500) from the Lions, who
@@ -333,11 +364,17 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         [SystemMessageParam::IntNumber(3000)]
     );
     assert_eq!(
-        (last_pledge_info(&raider_end).castle_id, last_pledge_info(&raider_end).reputation_score),
+        (
+            last_pledge_info(&raider_end).castle_id,
+            last_pledge_info(&raider_end).reputation_score
+        ),
         (GLUDIO, m7_seed::CLAN_REPUTATION + 1500)
     );
     assert_eq!(
-        (last_pledge_info(&lord_end).castle_id, last_pledge_info(&lord_end).reputation_score),
+        (
+            last_pledge_info(&lord_end).castle_id,
+            last_pledge_info(&lord_end).reputation_score
+        ),
         (0, m7_seed::CLAN_REPUTATION - 3000)
     );
     let rows_end = h.rows().await;
@@ -385,11 +422,18 @@ pub fn assert_played(played: &Played, writes: bool) {
             "the registration for the next siege is open for a day: {castle:?}"
         );
         assert_eq!(castle.ticket_buy_count, 0);
-        assert_eq!((castle.tax_percent, castle.treasury), (m7_data::CASTLE_TAX, 1_000));
+        assert_eq!(
+            (castle.tax_percent, castle.treasury),
+            (m7_data::CASTLE_TAX, 1_000)
+        );
         // `clearSiegeClan`: the registrations go; `removeMercs`: so do the old owner's mercenaries.
         assert!(end.siege_clans.is_empty());
         assert!(end.guards.is_empty());
-        assert_eq!(played.owner_after_relog, m7_seed::WOLVES_NAME, "the database agrees");
+        assert_eq!(
+            played.owner_after_relog,
+            m7_seed::WOLVES_NAME,
+            "the database agrees"
+        );
     } else {
         // D-51: the only row that changed is the hire of the player, which was written when it
         // happened.
@@ -421,6 +465,39 @@ async fn a_gm_started_castle_siege_runs_in_a_bare_world_and_writes_javas_rows() 
     let mut world = BareWorld::start(&opts(true));
     let played = play(&mut world, true).await;
     assert_played(&played, true);
+}
+
+/// D-50: a registration is acted on only after the registrations were read again; a read that
+/// fails changes nothing and refuses it (the world never falls back to its memory).
+#[tokio::test]
+async fn a_failed_reread_refuses_the_registration_in_a_bare_world() {
+    let mut world = BareWorld::start(&opts(true));
+    world.enter(Who::Lord).await;
+    world.enter(Who::Raider).await;
+    world.collect_quiet(Who::Raider).await;
+
+    world.fail_reads = true;
+    world.act(Who::Raider, act::join_siege(GLUDIO, 1, 1)).await;
+    let refused = world.collect_quiet(Who::Raider).await;
+    assert!(
+        !names(&refused).contains(&"CASTLE_SIEGE_INFO".to_owned()),
+        "nothing is shown for a refused registration: {:?}",
+        names(&refused)
+    );
+    assert!(world.rows().await.siege_clans.is_empty());
+    world.act(Who::Raider, act::siege_attacker_list(GLUDIO)).await;
+    let list = world.collect_quiet(Who::Raider).await;
+    assert!(
+        !names(&list).contains(&"CASTLE_SIEGE_ATTACKER_LIST".to_owned()),
+        "the list waits for the read too"
+    );
+
+    // The next read works: the same request is accepted and written.
+    world.fail_reads = false;
+    world.act(Who::Raider, act::join_siege(GLUDIO, 1, 1)).await;
+    let joined = world.collect_quiet(Who::Raider).await;
+    assert!(names(&joined).contains(&"CASTLE_SIEGE_INFO".to_owned()));
+    assert_eq!(world.rows().await.siege_clans, [(GLUDIO, WOLVES, 1)]);
 }
 
 #[tokio::test]

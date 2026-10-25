@@ -22,18 +22,16 @@ const HP_LEVEL: i32 = 40;
 /// `ClanHallHpRegenerationFunctionFeeRatio`: one day.
 const FUNCTION_RATE: i64 = 86_400_000;
 
-
 pub fn opts(siege_writes: bool, auction_ms: i64) -> Opts {
     Opts {
         siege_writes,
         positions: [m7_data::GM_POS, m7_data::BIDDER_POS, m7_data::GM_POS],
         auction_ms,
+        flag_condition: false,
     }
 }
 
 pub struct Played {
-    pub rows_start: Rows,
-    pub rows_bid: Rows,
     pub rows_won: Rows,
     pub rows_end: Rows,
     pub raider: Left,
@@ -44,9 +42,12 @@ pub struct Played {
 async fn talk_to<H: Harness>(h: &mut H, who: Who, npc: i32) -> NpcHtmlMessage {
     let origin = h.start_position(who);
     h.act(who, act::click(npc, origin)).await;
-    h.collect_until(who, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(who, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(who, act::click(npc, origin)).await;
-    let page = h.collect_until(who, &|body| is_named(body, "NPC_HTML_MESSAGE")).await;
+    let page = h
+        .collect_until(who, &|body| is_named(body, "NPC_HTML_MESSAGE"))
+        .await;
     all(&page, "NPC_HTML_MESSAGE").remove(0)
 }
 
@@ -58,7 +59,9 @@ async fn follow<H: Harness>(h: &mut H, who: Who, page: &NpcHtmlMessage, command:
         page.html
     );
     h.act(who, act::bypass(command)).await;
-    let answer = h.collect_until(who, &|body| is_named(body, "NPC_HTML_MESSAGE")).await;
+    let answer = h
+        .collect_until(who, &|body| is_named(body, "NPC_HTML_MESSAGE"))
+        .await;
     all(&answer, "NPC_HTML_MESSAGE").remove(0)
 }
 
@@ -91,33 +94,49 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     let info = follow(h, Who::Raider, &list, &format!("npc_{auctioneer}_bidding {HALL}")).await;
     assert!(info.html.contains(HALL_NAME_TEXT), "{}", info.html);
     assert!(
-        info.html.contains(&format!("minimum bid {}", m7_seed::HALL_STARTING_BID)),
+        info.html
+            .contains(&format!("minimum bid {}", m7_seed::HALL_STARTING_BID)),
         "{}",
         info.html
     );
     let bid_page = follow(h, Who::Raider, &info, &format!("npc_{auctioneer}_bid1 {HALL}")).await;
     assert!(
-        bid_page.html.contains(&format!("Clan adena {}", m7_seed::WOLVES_WAREHOUSE_ADENA)),
+        bid_page
+            .html
+            .contains(&format!("Clan adena {}", m7_seed::WOLVES_WAREHOUSE_ADENA)),
         "{}",
         bid_page.html
     );
     // The edit field's `$bid` is what the player typed.
     assert!(
-        bid_page.html.contains(&format!("npc_{auctioneer}_bid {HALL} $bid")),
+        bid_page
+            .html
+            .contains(&format!("npc_{auctioneer}_bid {HALL} $bid")),
         "{}",
         bid_page.html
     );
 
     // ---- a bid below the starting bid is refused, then the real one is placed ---------------------------------------
-    h.act(Who::Raider, act::bypass(&format!("npc_{auctioneer}_bid {HALL} 1000"))).await;
+    h.act(
+        Who::Raider,
+        act::bypass(&format!("npc_{auctioneer}_bid {HALL} 1000")),
+    )
+    .await;
     let refused = h.collect_quiet(Who::Raider).await;
     assert!(has_message(
         &refused,
         SystemMessageId::YourBidPriceMustBeHigherThanTheMinimumPriceCurrentlyBeingBid
     ));
-    h.act(Who::Raider, act::bypass(&format!("npc_{auctioneer}_bid {HALL} {BID}"))).await;
+    h.act(
+        Who::Raider,
+        act::bypass(&format!("npc_{auctioneer}_bid {HALL} {BID}")),
+    )
+    .await;
     let placed = h.collect_quiet(Who::Raider).await;
-    assert!(has_message(&placed, SystemMessageId::YourBidHasBeenSuccessfullyPlaced));
+    assert!(has_message(
+        &placed,
+        SystemMessageId::YourBidHasBeenSuccessfullyPlaced
+    ));
     // The adena of the bid comes out of the clan warehouse (read again first, D-50); the bid and
     // the clan's mark are the player's own rows.
     let rows_bid = h.rows().await;
@@ -139,7 +158,9 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     h.wait_until(auction_end).await;
     let won = h.collect_quiet(Who::Raider).await;
     let won_at = now_ms();
-    let clan_info: PledgeShowInfoUpdate = all(&won, "PLEDGE_SHOW_INFO_UPDATE").pop().expect("the clan window");
+    let clan_info: PledgeShowInfoUpdate = all(&won, "PLEDGE_SHOW_INFO_UPDATE")
+        .pop()
+        .expect("the clan window");
     assert_eq!(clan_info.hideout_id, HALL, "the clan owns the hall in this world");
     let rows_won = h.rows().await;
     if writes {
@@ -200,8 +221,6 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     let rows_end = h.rows().await;
     let raider = h.leave(Who::Raider).await;
     Played {
-        rows_start,
-        rows_bid,
         rows_won,
         rows_end,
         raider,
@@ -241,7 +260,10 @@ pub fn assert_played(played: &Played, writes: bool) {
             FUNCTION_RATE
         )
     );
-    assert!(function.end_time > played.won_at, "the next fee is due later: {function:?}");
+    assert!(
+        function.end_time > played.won_at,
+        "the next fee is due later: {function:?}"
+    );
     // The rows of the auction and the hall are in the state the end of the auction left them.
     assert_eq!(played.rows_end.halls, played.rows_won.halls);
     assert_eq!(played.rows_end.bids, played.rows_won.bids);
@@ -252,7 +274,6 @@ pub fn assert_played(played: &Played, writes: bool) {
         // of an owned hall). Reported as a finding of M7-E2E-01.
         assert_eq!(played.rows_end.hall(HALL).owner_id, 0);
     }
-    let _ = (&played.rows_start, &played.rows_bid);
 }
 
 #[tokio::test]

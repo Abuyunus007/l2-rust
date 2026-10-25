@@ -26,6 +26,7 @@ pub fn opts(siege_writes: bool) -> Opts {
             m7_data::GM_POS,
         ],
         auction_ms: 86_400_000,
+        flag_condition: false,
     }
 }
 
@@ -60,7 +61,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 
     // ---- the smith's page, then the buy window with the tax in the prices ----------------------------------
     h.act(Who::Raider, act::click(smith, origin)).await;
-    h.collect_until(Who::Raider, &|body| is_named(body, "MY_TARGET_SELECTED")).await;
+    h.collect_until(Who::Raider, &|body| is_named(body, "MY_TARGET_SELECTED"))
+        .await;
     h.act(Who::Raider, act::click(smith, origin)).await;
     let page = h
         .collect_until(Who::Raider, &|body| is_named(body, "NPC_HTML_MESSAGE"))
@@ -85,7 +87,10 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         .expect("the buy tab");
     // `BuyList(.., taxRate)`: the base price times (1 + the town's base tax + the castle's tax).
     assert_eq!(
-        buy.products.iter().map(|p| (p.item_id, p.price)).collect::<Vec<_>>(),
+        buy.products
+            .iter()
+            .map(|p| (p.item_id, p.price))
+            .collect::<Vec<_>>(),
         [
             (SOULSHOT_ID, with_tax(m6_data::SOULSHOT_PRICE)),
             (m5_data::MANA_POTION, with_tax(POTION_PRICE))
@@ -130,7 +135,10 @@ pub fn assert_played(played: &Played, writes: bool) {
         played.raider.count_of(SOULSHOT_ID),
         m5_data::SOULSHOTS_AT_START + SHOTS
     );
-    let (start, end) = (played.rows_start.castle(m7_data::GLUDIO), played.rows_end.castle(m7_data::GLUDIO));
+    let (start, end) = (
+        played.rows_start.castle(m7_data::GLUDIO),
+        played.rows_end.castle(m7_data::GLUDIO),
+    );
     if writes {
         // `Castle.addToTreasury(subTotal * castleTaxRate)`: 10 % of 180 = 18.
         assert_eq!(end.treasury, start.treasury + 18);
