@@ -263,8 +263,8 @@ impl World {
 
     /// Java `Attackable.doDie(killer)` after `Npc.doDie`.
     fn attackable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
-        // ON_ATTACKABLE_KILL: script event (D-05).
-        let _ = killer;
+        // ON_ATTACKABLE_KILL: the clan hall scripts (M7-CHSIEGE-01); the others are D-05.
+        self.hall_script_killed(id, killer);
         // Notify to minions if there are.
         self.minions_on_die(id);
     }

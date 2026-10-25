@@ -206,9 +206,12 @@ impl World {
             self.send(id, &message);
         }
         // The siege state of a clan in a castle siege (M7-SIEGE-01); the fortress siege's is set by
-        // `fort_player_entered` (M7-FORT-01, called from `on_entered`), the Territory War's by
-        // `territory_player_entered` (M7-TW-01, the same); siegable halls: M7-CHSIEGE-01.
+        // `fort_player_entered` (M7-FORT-01, called from `on_entered`); the siegable halls' is
+        // `hall_siege_on_enter_world` (M7-CHSIEGE-01); the Territory War's is
+        // `territory_player_entered` (M7-TW-01, called from `on_entered`).
         self.siege_on_enter_world(id, clan_id);
+        // The conquerable halls in siege (M7-CHSIEGE-01).
+        self.hall_siege_on_enter_world(id, clan_id);
         self.send_pledge_show_member_list_all(clan_id, id);
         if let Some(clan) = self.clan(clan_id) {
             let status = Self::pledge_status_changed(clan);

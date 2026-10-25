@@ -62,6 +62,8 @@ pub enum ResidenceRereadRows {
         id: i32,
         record: Option<crate::clanhall::AuctionRecord>,
     },
+    /// A conquerable hall with its siege tables (M7-CHSIEGE-01).
+    HallSiege(Box<crate::clanhall::HallSiegeRows>),
     /// The database has no row for it (nothing changes).
     Missing,
     /// A castle (`None`: no row) and every `siege_clans` row (M7-SIEGE-01).
@@ -102,6 +104,8 @@ pub enum ResidenceReadThen {
     SiegeRestartSchedule { castle_id: i32 },
     /// A fortress NPC acts on the rows (M7-FORT-01, `fort/`).
     Fort(crate::fort::FortThen),
+    /// A conquerable hall's registration or script acts on the rows (M7-CHSIEGE-01).
+    HallSiege(crate::clanhall::HallThen),
     /// The end task of an auction (by its key) is due: decide on the fresh rows (M7-CH-01).
     AuctionEnd(u64),
     /// A clan bids: go on to read its clan warehouse (M7-CH-01).
@@ -206,6 +210,15 @@ impl World {
     /// `WorldCommand::ResidenceReread` and goes on with `then` (D-50, D-15).
     pub fn request_residence_reread(&mut self, residence: ResidenceRef, then: ResidenceReadThen) {
         let kind = match residence {
+            // The registrations of a flag war or Rainbow Springs are in their own tables.
+            ResidenceRef::ClanHall(_)
+                if matches!(
+                    &then,
+                    ResidenceReadThen::HallSiege(crate::clanhall::HallThen::ScriptEvent { .. })
+                ) =>
+            {
+                ResidenceReadKind::HallSiege
+            }
             ResidenceRef::ClanHall(id) if self.clan_hall(id).is_some_and(|h| h.is_siegable_hall()) => {
                 ResidenceReadKind::SiegableHall
             }
@@ -238,6 +251,7 @@ impl World {
             ResidenceRereadRows::ClanHall(record) => self.apply_clan_hall_record(record),
             ResidenceRereadRows::SiegableHall(record) => self.apply_siegable_hall_record(record),
             ResidenceRereadRows::FortSiege(rows) => self.apply_fort_siege_rows(rows),
+            ResidenceRereadRows::HallSiege(rows) => self.apply_hall_siege_rows(rows),
             ResidenceRereadRows::Auction { id, record } => self.apply_auction_rows(*id, record.as_ref()),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
             ResidenceRereadRows::SiegeClans { castle, rows } => {
@@ -269,6 +283,7 @@ impl World {
                 self.siege_restart_schedule(CastleId(castle_id));
             }
             ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
+            ResidenceReadThen::HallSiege(then) => self.on_hall_siege_reread(then),
             ResidenceReadThen::Npc(then) => self.residence_npc_after_reread(then),
             ResidenceReadThen::Territory(then) => self.on_territory_reread(then),
             then => self.auction_read_then(then),
@@ -522,4 +537,6 @@ pub enum ResidenceReadKind {
     /// `territories`, `territory_registrations` and the `nextTWStartDate` global variable
     /// (M7-TW-01; the residence id is 0).
     Territory,
+    /// `siegable_clanhall` with the flag war and Rainbow Springs tables (M7-CHSIEGE-01).
+    HallSiege,
 }

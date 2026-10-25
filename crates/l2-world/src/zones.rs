@@ -548,8 +548,8 @@ impl World {
                 self.on_clan_hall_zone_enter(id, hall_id);
             }
             ZoneKind::Siege => {
-                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
-                // zones: M7-CHSIEGE-01.
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); a hall's siege
+                // zone is the castle code's with the hall's id (`clanhall/siege/zone.rs`).
                 if self.fort_siege_zone_on_enter(id, zone).is_none() {
                     self.on_siege_zone_enter(id, zone);
                 }
@@ -644,8 +644,8 @@ impl World {
             }
             ZoneKind::ClanHall => self.set_inside(id, ZoneId::ClanHall, false),
             ZoneKind::Siege => {
-                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); the hall siege
-                // zones: M7-CHSIEGE-01.
+                // A fortress's zone (M7-FORT-01), else a castle's (M7-SIEGE-01); a hall's siege
+                // zone is the castle code's with the hall's id (`clanhall/siege/zone.rs`).
                 if self.fort_siege_zone_on_exit(id, zone).is_none() {
                     self.on_siege_zone_exit(id, zone);
                 }

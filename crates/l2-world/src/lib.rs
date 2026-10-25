@@ -89,6 +89,8 @@ pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
 pub use clanhall::{
     AuctionBidRecord, AuctionRecord, AuctionWrite, ClanHallAuction, ClanHallSettings, ClanHallWorld,
+    FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
+    HallSiegeSettings, HallSiegeWrite, SiegeStatus,
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};

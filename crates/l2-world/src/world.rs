@@ -396,6 +396,8 @@ impl World {
                 self.save_ground_items();
                 // Java Shutdown.saveData: `ClanTable.getInstance().shutdown()`.
                 self.clan_table_shutdown();
+                // Java Shutdown: `CHSiegeManager.onServerShutDown` (M7-CHSIEGE-01).
+                self.hall_sieges_shutdown();
                 // Java Shutdown: "Save Fishing tournament data."
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."

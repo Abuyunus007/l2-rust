@@ -47,7 +47,8 @@
 //   M7-CHSIEGE-01 (the fortress siege itself is in `fort/`) (`// M7-SIEGE-01:` and friends).
 // - (done in `fort/`, M7-FORT-01) `FortUpdater`, the fort spawns (`fort_spawnlist`), envoys and the castle contracts.
 // - The clan hall rent (`AuctionableHall.FeeTask`) and the auctions: M7-CH-01 (`clanhall/`, done).
-// - The schedule of the conquerable halls (`SiegableHall.updateNextSiege`): M7-CHSIEGE-01.
+// - (done in `clanhall/siege/`, M7-CHSIEGE-01) The schedule of the conquerable halls
+//   (`SiegableHall.updateNextSiege`).
 // - The manor reset of a castle that loses its owner (`CastleManorManager.resetManorData`) is
 //   `manor/lists.rs` (M7-MANOR-01). The territory ward skills of a castle
 //   (`TerritoryWarManager`) are `territory/` (M7-TW-01).
@@ -345,6 +346,9 @@ pub enum ResidenceWrite {
     /// A write of the Territory War tables (`territory_registrations`, `territories`, the
     /// `nextTWStartDate` global variable), see `territory/` (M7-TW-01).
     Territory(crate::territory::TerritoryWrite),
+    /// The conquerable hall siege tables (`clanhall_siege_attackers`, the flag war tables,
+    /// `rainbowsprings_attacker_list`), see `clanhall/siege/` (M7-CHSIEGE-01).
+    HallSiege(crate::clanhall::HallSiegeWrite),
 }
 
 impl World {

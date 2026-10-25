@@ -264,16 +264,25 @@ impl World {
             .map(|n| n.spawn_point)
             .filter(|p| *p != (0, 0, 0))
             .or_else(|| self.position_of(npc))?;
-        // `_fort` (M7-FORT-01) and `_castle`; M7-CHSIEGE-01: `_hall`.
+        // `_fort` (M7-FORT-01), `_castle` and `_hall` (`getConquerableHall()`, M7-CHSIEGE-01).
         let fort = self.fort_at(x, y, z);
         let castle = self.castle_at(x, y, z);
+        let hall = self.hall_siege_near(x, y);
         let castle_active = castle
             .and_then(|c| self.castle(c))
             .and_then(|c| c.siege_zone)
             .is_some_and(|zone| self.is_siege_zone_active(zone));
-        let active = fort.is_some_and(|f| self.fort_zone_is_active(f)) || castle_active;
+        let hall_active = hall
+            .and_then(|h| self.hall_siege_zone(h))
+            .is_some_and(|zone| self.is_siege_zone_active(zone));
+        let active = fort.is_some_and(|f| self.fort_zone_is_active(f)) || castle_active || hall_active;
         // The fortress's id even when only the castle's zone is active, as in Java.
-        active.then(|| fort.map(|f| f.0).or(castle.map(|c| c.0)).unwrap_or(0))
+        active.then(|| {
+            fort.map(|f| f.0)
+                .or(castle.map(|c| c.0))
+                .or(hall.map(|h| h.0))
+                .unwrap_or(0)
+        })
     }
 
     /// `Defender.addDamageHate`'s siege rule: no hate from a registered defender's harmless act.
@@ -357,6 +366,9 @@ impl World {
             ResidenceRef::Castle(castle)
         } else if let Some(fort) = self.fort_siege_at(x, y, z) {
             ResidenceRef::Fort(fort)
+        } else if let Some(hall) = self.hall_siege_near(x, y).filter(|h| self.hall_has_siege(*h)) {
+            // `CHSiegeManager.getSiege(player)` (M7-CHSIEGE-01).
+            ResidenceRef::ClanHall(hall)
         } else {
             // Java: "SiegeFlag: Initialization failed." (a NullPointerException).
             warn!("SiegeFlag: Initialization failed.");
@@ -420,6 +432,7 @@ impl World {
     fn siege_has_attacker_clan(&mut self, siege: ResidenceRef, clan_id: i32) -> bool {
         match siege {
             ResidenceRef::Fort(fort) => self.fort_attacker_clan(fort, clan_id).is_some(),
+            ResidenceRef::ClanHall(hall) => self.hall_siege_attacker_clan(hall, clan_id).is_some(),
             _ => self.siege_attacker_clan_mut(siege, clan_id).is_some(),
         }
     }
@@ -501,12 +514,15 @@ impl World {
         if !can_talk {
             return;
         }
-        // `getCastle()` / `getFort()` / `getConquerableHall()` of the flag's position (the
-        // halls: M7-CHSIEGE-01).
+        // `getCastle()` / `getFort()` / `getConquerableHall()` of the flag's position.
         let in_siege = self
             .npc_castle(npc)
             .is_some_and(|c| self.is_castle_siege_in_progress(c))
-            || self.npc_fort(npc).is_some_and(|f| self.fort_siege_in_progress(f));
+            || self.npc_fort(npc).is_some_and(|f| self.fort_siege_in_progress(f))
+            || self
+                .position_of(npc)
+                .and_then(|(x, y, _)| self.hall_siege_near(x, y))
+                .is_some_and(|h| self.hall_is_in_siege(h));
         if !in_siege || self.clan(clan_id).is_none() {
             return;
         }

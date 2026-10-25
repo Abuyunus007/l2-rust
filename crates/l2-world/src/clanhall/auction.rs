@@ -555,8 +555,11 @@ impl World {
             ResidenceReadThen::AuctionCancel { player, auction_id } => {
                 self.auction_cancel_after_read(player, auction_id);
             }
-            // Handled by `fort/` and `residence/npc/` before this is called.
-            ResidenceReadThen::Nothing | ResidenceReadThen::Fort(_) | ResidenceReadThen::Npc(_) => {}
+            // Handled by `fort/`, `clanhall/siege/` and `residence/npc/` before this is called.
+            ResidenceReadThen::Nothing
+            | ResidenceReadThen::Fort(_)
+            | ResidenceReadThen::HallSiege(_)
+            | ResidenceReadThen::Npc(_) => {}
             // The Territory War's (M7-TW-01).
             ResidenceReadThen::Territory(_) => {}
             // The siege follow-ups are `on_residence_reread`'s own (M7-SIEGE-01).

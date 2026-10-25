@@ -187,11 +187,14 @@ impl World {
         }
         // `TerritoryWarManager.getHQForClan(clan) != null` (M7-TW-01).
         let territory_hq = self.territory_hq_for_clan(clan.id).is_some();
-        // M7-CHSIEGE-01: `getNearbyClanHall(creature).getSiege().checkIsAttacker(clan)`.
+        // `getNearbyClanHall(creature).getSiege().checkIsAttacker(clan)` (M7-CHSIEGE-01).
+        let hall_attacker = self
+            .nearby_siegable_hall(x, y, 10_000)
+            .is_some_and(|hall| self.hall_siege_is_attacker(hall, clan.id));
         (
             clan.hideout_id > 0,
             clan.castle_id > 0 || in_castle_defense,
-            territory_hq || (has_flags && !in_castle_defense && !in_fort_defense),
+            territory_hq || (has_flags && !in_castle_defense && !in_fort_defense) || hall_attacker,
             clan.fort_id > 0 || in_fort_defense,
         )
     }
@@ -312,7 +315,7 @@ impl World {
         let territory_flag = clan.is_some_and(|c| {
             self.territory_hq_for_clan(c).is_some() || self.territory_flag_for_clan(c).is_some()
         });
-        // M7-CHSIEGE-01: the hall sieges, and the hall's inner spawns.
+        let hall = self.nearby_siegable_hall(x, y, 10_000);
         let castle_siege = self
             .castle_at(x, y, z)
             .and_then(|c| self.castle_siege(c))
@@ -323,10 +326,20 @@ impl World {
         } else if let Some(fort) = self.fort_at(x, y, z).filter(|f| self.fort_siege_in_progress(*f)) {
             clan.and_then(|clan| self.fort_attacker_clan(fort, clan))
                 .is_some_and(|sc| !sc.flags.is_empty())
+        } else if let Some(hall) = hall.filter(|h| self.hall_is_in_siege(*h)) {
+            // `hall.isInSiege()`: the hall's attacker clan (M7-CHSIEGE-01).
+            clan.and_then(|clan| self.hall_siege_attacker_clan(hall, clan))
+                .is_some_and(|sc| !sc.flags.is_empty())
         } else {
             false
         };
         if !has_flag && !territory_flag {
+            // Check if the clan hall has inner spawns.
+            if let Some(hall) = hall
+                && let Some(loc) = self.hall_inner_spawn_loc(hall, id)
+            {
+                return Some(Some((loc.x, loc.y, loc.z)));
+            }
             return None;
         }
         Some(self.get_tele_to_location(id, TeleportWhereType::SiegeFlag))

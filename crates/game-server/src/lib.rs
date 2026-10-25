@@ -193,6 +193,20 @@ pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::R
     }
 }
 
+/// `ConquerableHallSiege.ini` (Java `ConquerableHallSiegeConfig`) and `NoQuests`.
+pub fn hall_siege_settings(config: &GameConfig) -> l2_world::HallSiegeSettings {
+    let hall = &config.conquerable_hall_siege;
+    l2_world::HallSiegeSettings {
+        min_clan_level: hall.chs_clan_minlevel,
+        max_attackers: hall.chs_max_attackers,
+        max_flags_per_clan: hall.chs_max_flags_per_clan,
+        enable_fame: hall.chs_enable_fame,
+        fame_amount: hall.chs_fame_amount,
+        fame_frequency: hall.chs_fame_frequency,
+        no_quests: config.development.no_quests,
+    }
+}
+
 /// The fortress values of `Feature.ini`, `Player.ini` and `OfflineTrade.ini`, and `FortSiege.ini`
 /// (Java `FortSiegeManager.load`: a missing file is logged and the defaults are used).
 pub fn fort_settings(config: &GameConfig, config_dir: &Path) -> l2_world::fort::FortSettings {
@@ -628,6 +642,10 @@ impl Server {
         // territory_registrations, the nextTWStartDate global variable; M7-TW-01).
         let territory_load = persist::load_territories(&pool).await;
         let territory_settings = territory_settings(&paths.config_dir);
+        // Java: the conquerable hall scripts (`clanhall_siege_*`, the flag war tables,
+        // `rainbowsprings_attacker_list`) and ConquerableHallSiege.ini (M7-CHSIEGE-01).
+        let hall_sieges = persist::load_hall_sieges(&pool).await;
+        let hall_siege_settings = hall_siege_settings(&config);
         // Java: CastleManorManager (after CastleManager): the manor rows, only with `AllowManor`.
         let manor_settings = manor_settings(&config);
         let manor_load = if manor_settings.allow_manor {
@@ -794,6 +812,10 @@ impl Server {
                     // M7-TW-01).
                     world.set_territory_settings(territory_settings);
                     world.load_territories(territory_load);
+                    // Java: the conquerable hall scripts, after the zones, the NPCs and the
+                    // residences (M7-CHSIEGE-01).
+                    world.set_hall_siege_settings(hall_siege_settings);
+                    world.load_hall_sieges(hall_sieges);
                     // Java: CastleManorManager (Seeds.xml, the rows, the mode of the hour; after the
                     // castles; M7-MANOR-01).
                     world.set_manor_settings(manor_settings);
