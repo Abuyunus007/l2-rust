@@ -346,7 +346,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M7-FU-01](M7/M7-FU-01.md) | Hall siege guard AI, doorman hall branch | sonnet | spot | SIEGE-02, CHSIEGE-01, NPC-01 | merged |
 | [M7-FU-02](M7/M7-FU-02.md) | Fixes from the M7 end-to-end tests (Flag Display, function rows) | sonnet | full | E2E-01 | in-progress |
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |
-| [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
+| [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
 ## Milestone test results
 
