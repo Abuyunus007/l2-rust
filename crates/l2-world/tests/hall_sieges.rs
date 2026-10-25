@@ -19,8 +19,8 @@ use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::siege::{SiegeAttackerList, SiegeInfo, SiegeTime};
 use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
-use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
 use l2_world::ai::siege_guard::SiegeGuardAiKind;
+use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
 use l2_world::residence::{ResidenceRereadRows, SiegableHallRecord};
 use l2_world::siege::{SiegeInput, SiegeSettings};
 use l2_world::*;
@@ -2362,11 +2362,17 @@ fn a_hall_siege_guard_leaves_its_allied_players_alone() {
     // The first seconds after the spawn the guard is not aggressive (`_globalAggro = -10`).
     s.run_ms(20_000);
     assert!(s.world.siege_guard_state(allied).is_some());
-    assert_eq!(s.world.siege_guard_state(allied).unwrap().kind, SiegeGuardAiKind::Hall);
+    assert_eq!(
+        s.world.siege_guard_state(allied).unwrap().kind,
+        SiegeGuardAiKind::Hall
+    );
     // The plain guard has put both players on its aggro list (the hate itself comes and goes
     // with the attack timeouts), the allied one only the player who is not its ally.
     let listed = |s: &mut Scene, guard: ObjectId, player: i32| {
-        s.world.aggro_list(guard).iter().any(|a| a.attacker == ObjectId(player))
+        s.world
+            .aggro_list(guard)
+            .iter()
+            .any(|a| a.attacker == ObjectId(player))
     };
     assert!(listed(&mut s, plain, P7));
     assert!(listed(&mut s, plain, P8));
