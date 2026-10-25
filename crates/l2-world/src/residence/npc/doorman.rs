@@ -48,9 +48,8 @@ impl World {
 
     /// `CastleDoorman.isUnderSiege()`.
     fn castle_doorman_is_under_siege(&self, npc: ObjectId) -> bool {
-        if self.doorman_conquerable_hall(npc).is_some() {
-            // M7-CHSIEGE-01: `hall.isInSiege()`.
-            return false;
+        if let Some(hall) = self.doorman_conquerable_hall(npc) {
+            return self.hall_is_in_siege(hall);
         }
         // `getCastle().getZone().isActive()`.
         self.npc_castle(npc)
@@ -149,13 +148,7 @@ impl World {
             let door = token.parse::<i32>().ok()?;
             if let Some(hall) = hall {
                 // `SiegableHall.openCloseDoor(doorId, open)`: no owner check.
-                if let Some(object) = self.residence_door(ResidenceRef::ClanHall(hall), door) {
-                    if open {
-                        self.open_door(object);
-                    } else {
-                        self.close_door(object);
-                    }
-                }
+                self.hall_open_close_door(hall, door, open);
             } else {
                 // `getCastle().openDoor(player, doorId)`: a null castle throws.
                 self.residence_open_close_door(player, ResidenceRef::Castle(castle?), door, open);

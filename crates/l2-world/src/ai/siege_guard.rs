@@ -1,6 +1,6 @@
-//! `SiegeGuardAI`: the brain of a castle's siege defenders (and, with an empty allied list, of a
-//! siegable hall's `SpecialSiegeGuardAI`). It attacks the enemies of the siege only, never the
-//! defenders, heals its friends, calls its clan, and goes home when nobody is left.
+//! `SiegeGuardAI`: the brain of a castle's siege defenders (and, with the allied list of
+//! `World::hall_siege_allies_of`, of a siegable hall's `SpecialSiegeGuardAI`). It attacks the
+//! enemies of the siege only, never the defenders, heals its friends, calls its clan, and goes home when nobody is left.
 // Java: ai/SiegeGuardAI.java, ai/SpecialSiegeGuardAI.java
 // Java: ai/CreatureAI.java (SelfAnalysis)
 // Java: entity/actor/instance/Defender.java (initAI, returnHome)
@@ -18,8 +18,8 @@
 //
 // # Which AI a defender gets (`Defender.initAI`)
 // No siegable hall within 10000 and no castle within 10000: `FortSiegeGuardAI`; a castle within
-// 10000: `SiegeGuardAI`; else (a hall): `SpecialSiegeGuardAI`, whose allied list only scripts fill
-// (D-05), so it thinks like `SiegeGuardAI`.
+// 10000: `SiegeGuardAI`; else (a hall): `SpecialSiegeGuardAI`, which thinks like `SiegeGuardAI` but
+// never takes a player of its `_allied` list (a flag war warrior's clan) for a target.
 //
 // # Java behaviour kept as is
 // - NOTE(java-quirk): a guard only looks for enemies within its *physical attack range*
@@ -106,6 +106,18 @@ impl World {
     /// `Defender`).
     pub(crate) fn is_siege_guard(&self, id: ObjectId) -> bool {
         self.npcs.get(&id).is_some_and(|n| n.class.is_defender())
+    }
+
+    /// Java `((SpecialSiegeGuardAI) guard.getAI()).getAlly().addAll(players)`: the players (object
+    /// ids) a hall siege guard leaves alone. The flag war scripts fill it for their warriors
+    /// (`hall_siege_allies_of` reads it back).
+    pub fn hall_siege_guard_add_allies(&mut self, npc: ObjectId, players: &[i32]) {
+        self.clanhall
+            .siege
+            .allies
+            .entry(npc)
+            .or_default()
+            .extend_from_slice(players);
     }
 
     /// The siege guard fields of a guard's AI, while it has one.
@@ -281,10 +293,12 @@ impl World {
     pub(crate) fn siege_guard_auto_attack_condition(&self, id: ObjectId, target: ObjectId) -> bool {
         match self.siege_guard_kind_of(id) {
             SiegeGuardAiKind::Fort => self.fort_siege_guard_auto_attack_condition(id, target),
-            // `SpecialSiegeGuardAI`: `_allied.contains(target)` first; only scripts fill the
-            // list (D-05).
-            SiegeGuardAiKind::Castle | SiegeGuardAiKind::Hall => {
-                self.castle_siege_guard_auto_attack_condition(id, target)
+            SiegeGuardAiKind::Castle => self.castle_siege_guard_auto_attack_condition(id, target),
+            // `SpecialSiegeGuardAI.autoAttackCondition`: a target in `_allied` (the players of
+            // a flag war clan, CHSIEGE-01) is left alone before `SiegeGuardAI`'s checks.
+            SiegeGuardAiKind::Hall => {
+                !self.hall_siege_allies_of(id).contains(&target.0)
+                    && self.castle_siege_guard_auto_attack_condition(id, target)
             }
         }
     }
