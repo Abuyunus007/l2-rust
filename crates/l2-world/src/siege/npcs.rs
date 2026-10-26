@@ -132,8 +132,7 @@ impl World {
 
     /// Whether a castle trap zone (`castle_trap.xml`) was switched on or off by a flame tower;
     /// `None` when no tower touched it (the zone's `default_enabled` applies).
-    // FOLLOW-UP(zones): `SwampZone` and `DamageZone` are not ported (`zones.rs`), so nothing reads
-    // this yet.
+    /// `SwampZone` and `DamageZone` read it (`zone_trap.rs`, M7-FU-03).
     pub fn trap_zone_enabled(&self, zone_id: i32) -> Option<bool> {
         self.sieges.trap_zones.get(&zone_id).copied()
     }

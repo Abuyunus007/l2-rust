@@ -263,6 +263,10 @@ fn zones_xml() -> String {
     <spawn X="{}" Y="{}" Z="{}" /><spawn X="{}" Y="{}" Z="{}" type="chaotic" /><spawn X="{}" Y="{}" Z="{}" type="other" /></zone>
   <zone name="gludio_castle_headquarter_territory1" type="HqZone" {}<stat name="castleId" val="1" /></zone>
   <zone name="dion_castle_battlefield_territory" type="SiegeZone" {}<stat name="castleId" val="2" /></zone>
+  <zone name="gludio_slow_1" id="70001" type="SwampZone" {}<stat name="default_enabled" val="false" />
+    <stat name="move_bonus" val="0.2" /><stat name="castleId" val="1" /><stat name="eventId" val="2418002" /></zone>
+  <zone name="gludio_damage_1" id="70002" type="DamageZone" {}<stat name="default_enabled" val="false" />
+    <stat name="dmgHPSec" val="10" /><stat name="castleId" val="1" /></zone>
 </list>"#,
         cuboid(X, Y, 3000),
         cuboid(X + 2000, Y, 300),
@@ -277,6 +281,8 @@ fn zones_xml() -> String {
         Z,
         cuboid(X - 1000, Y, 500),
         cuboid(X + 60_000, Y, 2000),
+        cuboid(X - 2200, Y, 300),
+        cuboid(X - 2800, Y, 150),
     )
 }
 
@@ -1816,6 +1822,112 @@ fn an_upgraded_flame_tower_switches_its_trap_zones() {
     let tower = npcs_of(&s.world, FLAME_TOWER)[0];
     s.world.do_die(tower, Some(ObjectId(P3)));
     assert_eq!(s.world.trap_zone_enabled(70001), Some(false));
+}
+
+/// `SwampZone` and `DamageZone` of `castle_trap.xml` (M7-FU-03): off until a flame tower of the
+/// castle switches them on, then only during the siege and not for the defenders. A swamp slows
+/// by its `move_bonus` and sends the zone's event; a damage zone hurts every `reuse` ms.
+#[test]
+fn the_castle_traps_slow_and_hurt_the_attackers_during_the_siege() {
+    use l2_world::zones::ZoneId;
+
+    let load = SiegeLoad {
+        trap_upgrades: vec![l2_world::siege::TrapUpgradeRecord {
+            castle_id: 1,
+            tower_index: 0,
+            level: 1,
+        }],
+        siege_clans: vec![wolves_row()],
+        ..SiegeLoad::default()
+    };
+    let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
+    // Level 1: the class of the scene has hit points for that level only (100).
+    for (id, clan) in [(P1, LIONS), (P3, WOLVES), (P9, 0)] {
+        let mut data = pdata(id, clan, X + 20);
+        data.level = 1;
+        if id == P9 {
+            data.access_level = 100;
+            data.profile.clan = None;
+        }
+        s.enter(data);
+    }
+    s.take();
+    let swamp = (X - 2200, Y, Z);
+    let damage = (X - 2800, Y, Z);
+    let hp = |s: &Scene, who: i32| s.world.player(ObjectId(who)).unwrap().core.cur_hp;
+    let run_speed = |s: &Scene, who: i32| s.world.stats(ObjectId(who)).unwrap().run_speed();
+    let swamped = |s: &Scene, who: i32| s.world.is_inside_zone(ObjectId(who), ZoneId::Swamp);
+
+    // Off before the siege: the tower has not switched them on, and the siege is not running.
+    let normal = run_speed(&s, P3);
+    s.teleport(P3, swamp.0, swamp.1, swamp.2);
+    assert!(!swamped(&s, P3));
+    assert_eq!(run_speed(&s, P3), normal);
+    s.teleport(P3, damage.0, damage.1, damage.2);
+    s.run_ms(6000);
+    assert_eq!(hp(&s, P3), 100.0);
+    s.teleport(P3, X + 20, Y, Z);
+
+    s.admin(P9, "admin_startsiege Gludio");
+    s.take();
+    assert_eq!(s.world.trap_zone_enabled(70001), Some(true));
+    // The defenders are not slowed.
+    s.teleport(P1, swamp.0, swamp.1, swamp.2);
+    assert!(!swamped(&s, P1));
+
+    // An attacker is, and gets the zone's event and a `UserInfo`.
+    s.take();
+    s.teleport(P3, swamp.0, swamp.1, swamp.2);
+    let out = s.take();
+    assert!(swamped(&s, P3));
+    let triggers = packets_to(&out, P3, "EVENT_TRIGGER");
+    assert_eq!(triggers.len(), 1);
+    let trigger = decode::<l2_protocol_game::server::OnEventTrigger>(&triggers[0]);
+    assert_eq!((trigger.emitter_id, trigger.enabled), (2_418_002, true));
+    assert!(!packets_to(&out, P3, "USER_INFO").is_empty());
+    // `move_bonus` 0.2 on both the run and the walk speed.
+    assert!(
+        (run_speed(&s, P3) - normal * 0.2).abs() < 1e-9,
+        "{}",
+        run_speed(&s, P3)
+    );
+    let walk = s.world.stats(ObjectId(P3)).unwrap().walk_speed();
+    s.teleport(P3, X + 20, Y, Z);
+    assert!(!swamped(&s, P3));
+    assert!((s.world.stats(ObjectId(P3)).unwrap().walk_speed() - walk / 0.2).abs() < 1e-6);
+    let out = s.take();
+    let triggers = packets_to(&out, P3, "EVENT_TRIGGER");
+    assert_eq!(triggers.len(), 1);
+    assert!(!decode::<l2_protocol_game::server::OnEventTrigger>(&triggers[0]).enabled);
+
+    // The damage zone: the first pass comes at once, then every `reuse` (5 s); a defender is spared.
+    s.teleport(P1, damage.0, damage.1, damage.2);
+    s.teleport(P3, damage.0, damage.1, damage.2);
+    s.run_ms(100);
+    assert_eq!(hp(&s, P3), 90.0);
+    assert_eq!(hp(&s, P1), 100.0);
+    // The hit points regenerate a little between the passes, so the numbers are ranges.
+    s.run_ms(2000);
+    assert!(
+        (90.0..93.0).contains(&hp(&s, P3)),
+        "not before the 5 s are over: {}",
+        hp(&s, P3)
+    );
+    s.run_ms(3000);
+    assert!((78.0..86.0).contains(&hp(&s, P3)), "{}", hp(&s, P3));
+    // Leaving stops it (the last one out cancels the task): twelve seconds, no more damage.
+    s.teleport(P3, X + 20, Y, Z);
+    s.teleport(P1, X, Y, Z);
+    let before = hp(&s, P3);
+    s.run_ms(12_000);
+    assert!(hp(&s, P3) >= before, "{} < {before}", hp(&s, P3));
+
+    // The siege is over: a castle zone hurts nobody any more.
+    s.admin(P9, "admin_endsiege Gludio");
+    s.teleport(P3, damage.0, damage.1, damage.2);
+    let before = hp(&s, P3);
+    s.run_ms(6000);
+    assert!(hp(&s, P3) >= before, "{} < {before}", hp(&s, P3));
 }
 
 /// `RequestAllCastleInfo`: `ExShowCastleInfo` with each castle's owner, tax and siege date.

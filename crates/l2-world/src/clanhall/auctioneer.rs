@@ -16,7 +16,7 @@ use tracing::warn;
 use super::auction::{ClanHallAuction, leader_name_of};
 use super::format::{bid_date, date_short, date_time};
 use crate::clan::ClanAccess;
-use crate::residence::{ClanHallId, ResidenceReadThen};
+use crate::residence::{ClanHallId, ResidenceReadKind, ResidenceReadThen};
 use crate::world::{World, unix_ms_now};
 
 /// `Auctioneer.COND_*`.
@@ -533,6 +533,29 @@ impl World {
 
     /// `list [page]`: the auctions, 15 to a page.
     fn auctioneer_list(&mut self, npc: ObjectId, player: ObjectId, val: &str) -> bool {
+        // D-50: the Java game server shares the `auction` rows, so the list is built from rows
+        // read just now (M7-FU-03); a failed read shows nothing.
+        self.request_auction_rows(
+            0,
+            ResidenceReadKind::Auctions,
+            ResidenceReadThen::AuctionList {
+                npc,
+                player,
+                val: val.to_owned(),
+            },
+        );
+        true
+    }
+
+    /// The rows are in: the page of `list` from them.
+    pub(crate) fn auctioneer_list_after_read(&mut self, npc: ObjectId, player: ObjectId, val: &str) {
+        if !self.players.contains_key(&player) || self.auctioneer_condition(npc) != Condition::Regular {
+            return;
+        }
+        self.auctioneer_list_page(npc, player, val);
+    }
+
+    fn auctioneer_list_page(&mut self, npc: ObjectId, player: ObjectId, val: &str) -> bool {
         let mut limit: usize = 15;
         let npage = self.clan_hall_auctions().len().div_ceil(limit);
         let start = if val.is_empty() {

@@ -949,6 +949,13 @@ impl BareWorld {
                         let result = if self.fail_reads { Err(()) } else { Ok(rows) };
                         self.world.handle(WorldCommand::ResidenceReread { result, then });
                     }
+                    // The seed has no crests (M7-FU-03).
+                    PersistCommand::CrestIdsRequest { ticket } => {
+                        self.world.handle(WorldCommand::CrestIdsLoaded {
+                            ticket,
+                            result: Ok(Vec::new()),
+                        });
+                    }
                     PersistCommand::ClanWarehouseRequest { player, clan_id } => {
                         let db = Db::replay(&self.seed, &commands[..self.answered - 1]);
                         self.world.handle(WorldCommand::ClanWarehouseLoaded {

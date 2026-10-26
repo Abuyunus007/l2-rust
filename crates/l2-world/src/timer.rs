@@ -149,6 +149,8 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The damage task of a `DamageZone`, see `zone_trap.rs`.
+    Zone(crate::zone_trap::ZoneTimer),
 }
 
 #[derive(Debug, Default)]
