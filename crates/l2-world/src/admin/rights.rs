@@ -31,6 +31,11 @@ pub struct AdminRights {
     commands: HashMap<String, CommandRight>,
     /// Java `_highestLevel` (starts at 0).
     highest: i32,
+    /// Java `_adminCommandAccessRights` is a `LinkedHashMap`: the commands in file order (for
+    /// `//commands`).
+    order: Vec<String>,
+    /// Java `AccessRight.getDescription()` by full command (`description` of the row).
+    descriptions: HashMap<String, String>,
 }
 
 /// Cap for walking a `childAccess` chain (a cycle in the file would make Java overflow its
@@ -49,8 +54,30 @@ impl AdminRights {
     /// Java `AdminData.parseDocument`, `<admin>`: `command` is the name without `admin_`,
     /// `level` is `accessLevel` (default 100), `confirm` is `confirmDlg` (default false).
     pub fn add_command(&mut self, command: &str, level: i32, confirm: bool) {
-        self.commands
-            .insert(format!("admin_{command}"), CommandRight { level, confirm });
+        let full = format!("admin_{command}");
+        if !self.commands.contains_key(&full) {
+            self.order.push(full.clone());
+        }
+        self.commands.insert(full, CommandRight { level, confirm });
+    }
+
+    /// Java `AccessRight.getDescription()`: the `description` attribute of an `<admin>` row.
+    /// `command` is the name without `admin_`.
+    pub fn set_description(&mut self, command: &str, description: &str) {
+        self.descriptions
+            .insert(format!("admin_{command}"), description.to_owned());
+    }
+
+    /// Java `getAdminCommandAccessRights()`: every command row in file order, as the full command
+    /// (`admin_` prefix included) and its description (`null` when the row had none).
+    pub fn command_rows(&self) -> Vec<(String, String)> {
+        self.order
+            .iter()
+            .map(|full| {
+                let description = self.descriptions.get(full).map_or("null", String::as_str);
+                (full.clone(), description.to_owned())
+            })
+            .collect()
     }
 
     /// Number of access levels (Java: "Loaded N access levels.").
