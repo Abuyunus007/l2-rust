@@ -16,6 +16,10 @@
 //!   other (they carry `requester` and `id` for that reason).
 //! * **Shutdown.** [`PathPool::shutdown`] (also on drop) stops taking requests, discards the queue,
 //!   lets running searches finish (their results are dropped) and joins the threads.
+//! * **Edited geodata (L-07).** The engine given to the pool is only the default. A request can
+//!   carry the world's current engine ([`PathRequest::with_geo`]), like it carries the doors: the
+//!   world edits its engine copy-on-write, so a request searches the geodata as it was when the
+//!   request was made and the pool never needs a lock or a "new engine" message.
 
 use std::collections::{HashMap, VecDeque};
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -47,6 +51,9 @@ pub struct PathRequest {
     pub playable: bool,
     /// Door / fence view for the postfilter, taken when the request was made.
     pub obstacles: Arc<dyn DynamicObstacles>,
+    /// The geodata to search, taken when the request was made (the world's engine after runtime
+    /// edits). `None`: the engine the pool was started with.
+    pub geo: Option<Arc<GeoEngine>>,
 }
 
 impl PathRequest {
@@ -66,7 +73,14 @@ impl PathRequest {
             instance_id: 0,
             playable: false,
             obstacles,
+            geo: None,
         }
+    }
+
+    /// Searches this engine instead of the pool's (a snapshot of the world's edited geodata).
+    pub fn with_geo(mut self, geo: Arc<GeoEngine>) -> PathRequest {
+        self.geo = Some(geo);
+        self
     }
 
     pub fn with_instance(mut self, instance_id: i32) -> PathRequest {
@@ -89,6 +103,7 @@ impl std::fmt::Debug for PathRequest {
             .field("to", &self.to)
             .field("instance_id", &self.instance_id)
             .field("playable", &self.playable)
+            .field("own_geo", &self.geo.is_some())
             .finish_non_exhaustive()
     }
 }
@@ -432,9 +447,10 @@ fn worker_loop(shared: &Shared, mut finder: PathFinder, options: &PathOptions) {
         };
 
         let started = Instant::now();
+        let engine = request.geo.as_ref().unwrap_or(&shared.engine);
         let searched = catch_unwind(AssertUnwindSafe(|| {
             finder.find_path_detailed(
-                &shared.engine,
+                engine,
                 request.obstacles.as_ref(),
                 request.from,
                 request.to,
@@ -559,6 +575,51 @@ mod tests {
             Some(path)
         );
         assert_eq!(pool.stats().delivered, 1);
+    }
+
+    /// L-07: the world edits its engine copy-on-write and hands the new one along with the
+    /// request; the pool's own engine (and any older snapshot) keeps the old geodata.
+    #[test]
+    fn a_request_searches_the_edited_geodata_it_carries() {
+        let started_with = arc_engine();
+        let (tx, rx) = mpsc::channel();
+        let pool = PathPool::new(1, Arc::clone(&started_with), Arc::new(tx)).unwrap();
+
+        // The world's handle on the same engine; opening the wall copies the engine (the pool
+        // still holds it) and, inside it, only the edited region.
+        let mut world_geo = Arc::clone(&started_with);
+        for y in RY + 960..RY + 1040 {
+            Arc::make_mut(&mut world_geo).set_nearest_nswe(RX + 1000, y, 0, crate::cell::NSWE_ALL);
+        }
+        assert!(!Arc::ptr_eq(&world_geo, &started_with));
+        assert!(!Arc::ptr_eq(
+            world_geo.set().region_arc(20, 18).unwrap(),
+            started_with.set().region_arc(20, 18).unwrap()
+        ));
+        assert!(started_with.is_completely_blocked(RX + 1000, RY + 1000, 0));
+        assert!(!world_geo.is_completely_blocked(RX + 1000, RY + 1000, 0));
+
+        // Without its own engine the request walks around the wall; with the edited one it goes
+        // straight through.
+        pool.request(request(1, 1)).unwrap();
+        let around = rx.recv_timeout(WAIT).unwrap().path.unwrap();
+        pool.request(request(2, 1).with_geo(Arc::clone(&world_geo)))
+            .unwrap();
+        let through = rx.recv_timeout(WAIT).unwrap().path.unwrap();
+        assert_ne!(around, through);
+        let mut finder = PathFinder::new(PathOptions::shipped()).unwrap();
+        let req = request(2, 1);
+        assert_eq!(
+            finder.find_path(&world_geo, &NoObstacles, req.from, req.to, 0, true),
+            Some(through)
+        );
+
+        // A second edit while nobody else holds the edited engine changes it in place.
+        drop(pool);
+        let before = Arc::as_ptr(&world_geo);
+        Arc::make_mut(&mut world_geo).unset_nearest_nswe(RX + 1000, RY + 1000, 0, crate::cell::NSWE_ALL);
+        assert_eq!(Arc::as_ptr(&world_geo), before);
+        assert!(world_geo.is_completely_blocked(RX + 1000, RY + 1000, 0));
     }
 
     #[test]

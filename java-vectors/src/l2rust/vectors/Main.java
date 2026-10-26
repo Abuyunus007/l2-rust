@@ -27,7 +27,7 @@ public final class Main
 	{
 		if (args.length < 1)
 		{
-			System.err.println("usage: Main <crypto|login-packets|all> [outDir]");
+			System.err.println("usage: Main <crypto|login-packets|geo-edit|all> [outDir]");
 			System.err.println("       Main geo|geo-engine|geo-path [outDir] <geodataDownloadDir> <geodataConvertedDir>");
 			System.exit(2);
 		}
@@ -112,11 +112,13 @@ public final class Main
 				}
 			}
 			case "login-packets" -> LoginPacketVectors.generate(out);
+			case "geo-edit" -> GeoEditVectors.generate(out);
 			case "all" ->
 			{
 				// Add new generators here (geo needs its own arguments, see above).
 				CryptoVectors.generate(out);
 				LoginPacketVectors.generate(out);
+				GeoEditVectors.generate(out);
 			}
 			default ->
 			{

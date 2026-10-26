@@ -40,6 +40,10 @@ pub const GEO_OVERRIDE_FILE: &str = "GeoOverride.ini";
 pub const GEODATA_PATH_KEY: &str = "GeoDataPath";
 /// Java default of `GeoDataPath`.
 pub const GEODATA_PATH_DEFAULT: &str = "geodata";
+/// Key of `GeoEngine.ini`: where `//geosave` writes regions, relative to `DatapackRoot`.
+pub const GEOEDIT_PATH_KEY: &str = "GeoEditPath";
+/// Java default of `GeoEditPath`.
+pub const GEOEDIT_PATH_DEFAULT: &str = "saves";
 /// Key of `GeoOverride.ini`: number of path worker threads.
 pub const PATH_WORKER_THREADS_KEY: &str = "PathWorkerThreads";
 /// Upper bound for `PathWorkerThreads`: more threads than this only compete for the same buffers.
@@ -50,6 +54,8 @@ pub const MAX_PATH_WORKER_THREADS: usize = 64;
 pub struct GeoSettings {
     /// `GeoDataPath` resolved against `DatapackRoot`.
     pub geodata_path: PathBuf,
+    /// `GeoEditPath` resolved against `DatapackRoot` (`//geosave`, `//geosaveall`).
+    pub geoedit_path: PathBuf,
     /// The second geodata set of `GeoOverride.ini` (D-26), if configured.
     pub override_: Option<GeoOverride>,
     /// What the engine itself reads (`PathFinding`, `AvoidObstructedPathNodes`).
@@ -113,6 +119,10 @@ impl GeoSettings {
                 datapack_root,
                 &geo_ini.get_string(GEODATA_PATH_KEY, GEODATA_PATH_DEFAULT),
             ),
+            geoedit_path: resolve_geodata_path(
+                datapack_root,
+                &geo_ini.get_string(GEOEDIT_PATH_KEY, GEOEDIT_PATH_DEFAULT),
+            ),
             override_: over_ini.and_then(|ini| GeoOverride::from_ini(ini, datapack_root)),
             engine: GeoEngineOptions::from(geo),
             path,
@@ -140,7 +150,9 @@ fn path_threads(over_ini: Option<&IniFile>, cpus: usize) -> usize {
 /// Loads the geodata (blocking: about a second in release, 1 to 1.6 GB of memory). Never fails.
 // Java: GeoEngine constructor
 pub fn load_engine(settings: &GeoSettings) -> Arc<GeoEngine> {
-    let spec = GeoLoadSpec::new(&settings.geodata_path).with_override(settings.override_.clone());
+    let spec = GeoLoadSpec::new(&settings.geodata_path)
+        .with_override(settings.override_.clone())
+        .with_geoedit_path(&settings.geoedit_path);
     let (engine, report) = GeoEngine::load(&spec, settings.engine);
     for error in &report.failed {
         warn!("GeoEngine: {error}");
@@ -373,6 +385,10 @@ mod tests {
         // Missing key: Java default "geodata".
         let s = GeoSettings::resolve(&config, &ini(""), None, &root, 4);
         assert_eq!(s.geodata_path, root.join("geodata"));
+        // `GeoEditPath` (L-07): Java default "saves", same resolution.
+        assert_eq!(s.geoedit_path, root.join("saves"));
+        let s = GeoSettings::resolve(&config, &ini("GeoEditPath = ./saves/"), None, &root, 4);
+        assert_eq!(s.geoedit_path, root.join("./saves/"));
         let s = GeoSettings::resolve(&config, &ini("GeoDataPath = data/geo"), None, &root, 4);
         assert_eq!(s.geodata_path, root.join("data").join("geo"));
         // Backslashes are separators, like in DatapackRoot.

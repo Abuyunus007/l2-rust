@@ -1495,9 +1495,13 @@ impl World {
         };
         self.next_path_request_id += 1;
         let request_id = self.next_path_request_id;
-        let request = PathRequest::new(requester_of(id), request_id, from, to, obstacles?)
+        let mut request = PathRequest::new(requester_of(id), request_id, from, to, obstacles?)
             .with_instance(instance)
             .with_playable(playable);
+        // L-07: the geodata as it is now travels with the request too (GM edits are copy-on-write).
+        if let Some(geo) = &self.geo {
+            request = request.with_geo(std::sync::Arc::clone(geo));
+        }
         if sink.request(request) {
             Some(request_id)
         } else {
