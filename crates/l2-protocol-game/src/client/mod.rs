@@ -183,6 +183,7 @@ pub mod manor;
 pub mod movement;
 pub mod multisell;
 pub mod party;
+pub mod petition;
 pub mod pledge;
 pub mod recipe;
 pub mod refine;
@@ -245,6 +246,7 @@ pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
 };
+pub use petition::{RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit};
 pub use pledge::{
     AllyDismiss, AllyLeave, RequestAllyCrest, RequestAllyInfo, RequestAnswerJoinAlly,
     RequestAnswerJoinPledge, RequestDismissAlly, RequestExPledgeCrestLarge, RequestExSetPledgeCrestLarge,

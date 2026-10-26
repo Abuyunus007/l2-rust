@@ -74,6 +74,7 @@ use crate::client::{
     RequestExEnchantSkill, RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail,
     RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
 };
+use crate::client::{RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit};
 use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
@@ -249,6 +250,14 @@ pub enum ClientPacket {
     RequestGiveItemToPet(RequestGiveItemToPet),
     RequestPetUseItem(RequestPetUseItem),
     RequestChangePetName(RequestChangePetName),
+    /// `REQUEST_PETITION` (0x89).
+    RequestPetition(RequestPetition),
+    /// `REQUEST_PETITION_CANCEL` (0x8A).
+    RequestPetitionCancel(RequestPetitionCancel),
+    /// `REQUEST_PETITION_FEEDBACK` (0xC9).
+    RequestPetitionFeedback(RequestPetitionFeedback),
+    /// `SNOOP_QUIT` (0xB4).
+    SnoopQuit(SnoopQuit),
     RequestDuelStart(RequestDuelStart),
     RequestDuelAnswerStart(RequestDuelAnswerStart),
     RequestDuelSurrender(RequestDuelSurrender),
@@ -426,6 +435,14 @@ pub fn decode_client(
             ClientPacket::RequestSendFriendMsg(RequestSendFriendMsg::decode(reader)?)
         }
         RequestBlock::OPCODE => ClientPacket::RequestBlock(RequestBlock::decode(reader)?),
+        RequestPetition::OPCODE => ClientPacket::RequestPetition(RequestPetition::decode(reader)?),
+        RequestPetitionCancel::OPCODE => {
+            ClientPacket::RequestPetitionCancel(RequestPetitionCancel::decode(reader)?)
+        }
+        RequestPetitionFeedback::OPCODE => {
+            ClientPacket::RequestPetitionFeedback(RequestPetitionFeedback::decode(reader)?)
+        }
+        SnoopQuit::OPCODE => ClientPacket::SnoopQuit(SnoopQuit::decode(reader)?),
         RequestBuyItem::OPCODE => ClientPacket::RequestBuyItem(RequestBuyItem::decode(reader)?),
         RequestSellItem::OPCODE => ClientPacket::RequestSellItem(RequestSellItem::decode(reader)?),
         TradeRequest::OPCODE => ClientPacket::TradeRequest(TradeRequest::decode(reader)?),

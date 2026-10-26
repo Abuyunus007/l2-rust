@@ -4,6 +4,7 @@
 //! the Java SQL as constants with a `// Java:` comment, runtime queries, row structs that
 //! mirror the column types.
 
+mod announcements;
 mod auctions;
 mod bot_reports;
 mod buylists;
@@ -23,6 +24,7 @@ mod macros;
 mod manor;
 mod messages;
 mod offline_trades;
+mod petition_feedback;
 mod pets;
 mod punishments;
 mod recipes;
@@ -37,6 +39,7 @@ mod summons;
 mod territories;
 mod variables;
 
+pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
@@ -65,6 +68,7 @@ pub use macros::{MacroRepository, MacroRow, NewMacro};
 pub use manor::{ManorRepository, ProcureRow, ProductionRow};
 pub use messages::{MessageRepository, MessageRow};
 pub use offline_trades::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
+pub use petition_feedback::PetitionFeedbackRepository;
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};

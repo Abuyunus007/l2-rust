@@ -237,6 +237,11 @@ pub enum ClientInput {
     Territory(crate::territory::TerritoryInput),
     /// Java `RequestAllAgitInfo`: the list of the auctionable clan halls.
     AllAgitInfo,
+    /// The petition packets (`RequestPetition`, `RequestPetitionCancel`,
+    /// `RequestPetitionFeedback`), see `petition.rs`.
+    Petition(crate::petition::PetitionInput),
+    /// Java `SnoopQuit`: the GM stops snooping the player with this object id.
+    SnoopQuit { snoop_id: i32 },
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }
@@ -365,6 +370,23 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::Announcement(Insert)`: the id the database gave the row, or
+    /// `Err` when the INSERT failed (`//announces add`, see `admin/announce.rs`).
+    AnnouncementStored {
+        ticket: u32,
+        result: Result<i32, ()>,
+    },
+    /// The answer to `ControlRequest::ReloadHtml` (`//reload html`, see `admin/reload.rs`).
+    HtmlReloaded {
+        requester: l2_util::ObjectId,
+        path: Option<String>,
+        result: crate::admin::reload::HtmlReloadResult,
+    },
+    /// The login server registered the game server under this name (Java
+    /// `LoginServerThread._serverName`, shown by `//server_login`).
+    LoginServerRegistered {
+        name: String,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -451,6 +473,19 @@ impl fmt::Debug for WorldCommand {
                 "BlockListLoaded({sender}, {owner}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::AnnouncementStored { ticket, result } => write!(
+                f,
+                "AnnouncementStored({ticket}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::HtmlReloaded {
+                requester,
+                path,
+                result,
+            } => {
+                write!(f, "HtmlReloaded({requester}, {path:?}, {result:?})")
+            }
+            Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
         }

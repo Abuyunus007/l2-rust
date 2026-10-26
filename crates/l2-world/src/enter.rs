@@ -13,7 +13,7 @@
 // packets are therefore not sent either):
 // - visibility (M3): `spawnMe` and every `NpcInfo`/`CharInfo`, `broadcastUserInfo`'s `CharInfo`
 // - zones: `ExSetCompassZoneCode` and the zone messages
-// - clans, sieges, Seven Signs (the period message), announcements, the server news HTML
+// - clans, sieges, Seven Signs (the period message), the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
 // - contacts, teleport bookmarks, the mail check, premium items (the friend list is in `friends.rs`)
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
@@ -473,6 +473,8 @@ impl World {
         {
             self.set_invul(id, true);
         }
+        // Java `EnterWorld`: `AdminData.addGm(player, hidden)` for a GM (M7-ADMIN-10).
+        self.admin_on_player_enter(id);
         // `new Player(...)` -> `startVitalityTask()`.
         self.start_vitality_task(id);
 
@@ -688,10 +690,20 @@ impl World {
         // FriendList: the friend list the session loaded (M6-FRIEND-01).
         packets.push(self.friend_list_packet(id).to_bytes());
         packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
-        // Seven Signs period message, announcements: not ported. `if (showClanNotice)` the clan
-        // notice (validation off), else the server news (not ported).
+        // Seven Signs period message: not ported. `AnnouncementsTable.showAnnouncements(player)`.
+        for say in self.announcement_packets(id) {
+            packets.push(say.to_bytes());
+        }
+        // `if (showClanNotice)` the clan notice (validation off), else the server news (not
+        // ported).
         if let Some(notice) = self.clan_notice_page(id) {
             packets.push(notice.to_bytes());
+        }
+        // `if (PETITIONING_ALLOWED) PetitionManager.checkPetitionMessages(player)`.
+        if self.admin.ctl.settings.petitioning_allowed {
+            for say in self.check_petition_messages(id) {
+                packets.push(say.to_bytes());
+            }
         }
         // "Dead or fake dead": no broadcast needed since the player will already spawn dead to
         // others.

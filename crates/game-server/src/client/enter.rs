@@ -1181,6 +1181,20 @@ impl ClientSession {
             }
             // Java: RequestAllAgitInfo
             ClientPacket::RequestAllAgitInfo(_) => ClientInput::AllAgitInfo,
+            // Java: RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit
+            // (M7-ADMIN-10)
+            ClientPacket::RequestPetition(p) => ClientInput::Petition(l2_world::PetitionInput::Submit {
+                content: p.content,
+                kind: p.kind,
+            }),
+            ClientPacket::RequestPetitionCancel(_) => ClientInput::Petition(l2_world::PetitionInput::Cancel),
+            ClientPacket::RequestPetitionFeedback(p) => {
+                ClientInput::Petition(l2_world::PetitionInput::Feedback {
+                    rate: p.rate,
+                    message: p.message,
+                })
+            }
+            ClientPacket::SnoopQuit(p) => ClientInput::SnoopQuit { snoop_id: p.snoop_id },
             ClientPacket::RequestFriendInvite(p) => ClientInput::FriendInvite { name: p.name },
             ClientPacket::RequestAnswerFriendInvite(p) => {
                 ClientInput::AnswerFriendInvite { response: p.response }

@@ -156,6 +156,9 @@ pub enum TimerKind {
     Territory(crate::territory::TerritoryTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
+    /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
+    /// `admin/control.rs`.
+    Admin(crate::admin::control::AdminTimer),
 }
 
 #[derive(Debug, Default)]

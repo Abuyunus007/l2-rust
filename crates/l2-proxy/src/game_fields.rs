@@ -262,6 +262,10 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::RequestVoteNew(p) => object!(p => target_id),
+        ClientPacket::RequestPetition(p) => object!(p => content, kind),
+        ClientPacket::RequestPetitionCancel(_) => json!({}),
+        ClientPacket::RequestPetitionFeedback(p) => object!(p => unknown, rate, message),
+        ClientPacket::SnoopQuit(p) => object!(p => snoop_id),
         ClientPacket::AnswerCoupleAction(p) => object!(p => action_id, answer, object_id),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
         ClientPacket::RequestJoinParty(p) => object!(p => name, party_distribution_type_id),
@@ -964,6 +968,33 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             &mut r,
             |p| json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() }),
         ),
+        ServerOpcode::Snoop => decoded::<l2_protocol_game::server::Snoop>(&mut r, |p| {
+            json!({
+                "convo_id": p.convo_id,
+                "name": p.name,
+                "chat_type": p.chat_type.client_id(),
+                "speaker": p.speaker,
+                "message": p.message,
+            })
+        }),
+        ServerOpcode::ShowBoard => {
+            decoded::<l2_protocol_game::server::ShowBoard>(&mut r, |p| object!(p => show, content))
+        }
+        ServerOpcode::ExServerPrimitive => {
+            decoded::<l2_protocol_game::server::ExServerPrimitive>(&mut r, |p| {
+                json!({
+                    "name": p.name,
+                    "x": p.x,
+                    "y": p.y,
+                    "z": p.z,
+                    "points": p.points.len(),
+                    "lines": p.lines.len(),
+                })
+            })
+        }
+        ServerOpcode::PetitionVote => {
+            decoded::<l2_protocol_game::server::PetitionVotePacket>(&mut r, no_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })

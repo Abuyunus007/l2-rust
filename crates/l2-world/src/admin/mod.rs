@@ -23,21 +23,28 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod announce;
 pub mod chsiege;
 pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
+pub mod control;
 pub mod create_item;
+pub mod debug;
 pub mod enchant;
 pub mod exp_sp;
+pub mod forge;
+pub mod gm_tools;
 pub mod html;
 pub mod invul;
 pub mod karma;
 pub mod level;
 pub mod manor;
 pub mod party;
+pub mod petition;
 pub mod punishments;
+pub mod reload;
 pub mod rights;
 pub mod skills;
 pub mod summon;
@@ -121,6 +128,9 @@ pub(crate) struct AdminWorld {
     /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
     /// Java keeps one such list for the whole server, so this is one list too.
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
+    /// The state of the server control, GM tool, announcement, petition and debug handlers
+    /// (M7-ADMIN-10, see `control.rs`).
+    pub(crate) ctl: control::ControlWorld,
 }
 
 impl Default for AdminWorld {
@@ -146,11 +156,20 @@ impl Default for AdminWorld {
         chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
+        // M7-ADMIN-10: server control, GM tools, announcements, petitions, reload, forge, debug.
+        control::register(&mut handlers);
+        gm_tools::register(&mut handlers);
+        announce::register(&mut handlers);
+        petition::register(&mut handlers);
+        reload::register(&mut handlers);
+        forge::register(&mut handlers);
+        debug::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
+            ctl: control::ControlWorld::default(),
         }
     }
 }

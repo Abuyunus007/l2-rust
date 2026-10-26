@@ -69,6 +69,7 @@ macro_rules! server_unit_packet {
     };
 }
 
+pub mod admin_support;
 pub mod auction;
 pub mod charscreen;
 pub mod chat;
@@ -114,6 +115,10 @@ pub mod userinfo;
 pub mod visibility;
 pub mod warehouse;
 
+pub use admin_support::{
+    AdminForgePacket, ExServerPrimitive, ForgePart, PetitionVotePacket, PrimitiveLine, PrimitivePoint,
+    ShowBoard, Snoop,
+};
 pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
