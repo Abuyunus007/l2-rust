@@ -14,7 +14,7 @@ use l2_data::{
     HtmCache, ItemTemplates, MapRegions, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions, Zones,
 };
 use l2_geo::coords::{geo_x, geo_y};
-use l2_geo::{GeoEngine, GeoEngineOptions, GeoSet, Region};
+use l2_geo::{GeoEngine, GeoEngineOptions, GeoLoadSpec, GeoSet, PathRequest, Region};
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
@@ -491,6 +491,26 @@ fn every_command_of_the_handlers_is_registered_or_answers_like_java() {
         "admin_zone_build_toggle",
         "admin_zone_build_clear",
         "admin_path_find",
+        // The geodata edits (L-07).
+        "admin_geoenablenorth",
+        "admin_en",
+        "admin_geodisablenorth",
+        "admin_dn",
+        "admin_geoenablesouth",
+        "admin_es",
+        "admin_geodisablesouth",
+        "admin_ds",
+        "admin_geoenableeast",
+        "admin_ee",
+        "admin_geodisableeast",
+        "admin_de",
+        "admin_geoenablewest",
+        "admin_ew",
+        "admin_geodisablewest",
+        "admin_dw",
+        "admin_geosave",
+        "admin_geosaveall",
+        "admin_geomap_reload",
     ];
     for command in registered {
         s.run(command);
@@ -498,37 +518,268 @@ fn every_command_of_the_handlers_is_registered_or_answers_like_java() {
         let missing = s.said(&out).iter().any(|t| t.contains("does not exist"));
         assert!(!missing, "{command} has no handler");
     }
-    // The edit commands need an editable geoengine (see the report): no handler, like Java for a
-    // command nobody registered.
-    for command in [
-        "geoenablenorth",
-        "en",
-        "geodisablenorth",
-        "dn",
-        "geoenablesouth",
-        "es",
-        "geodisablesouth",
-        "ds",
-        "geoenableeast",
-        "ee",
-        "geodisableeast",
-        "de",
-        "geoenablewest",
-        "ew",
-        "geodisablewest",
-        "dw",
-        "geosave",
-        "geosaveall",
-        "geomap_reload",
+}
+
+// ---------------------------------------------------------------------------------- geodata edits (L-07)
+
+/// The region of [`engine_with_cell`] as a file in `<root>/geodata`, loaded the way the server
+/// does (`GeoEngine::load`), with `GeoEditPath` = `<root>/saves`. Returns the GM's cell, the region
+/// tile name (`17_25`) and the engine.
+fn loaded_engine(root: &Path, closed_south: bool) -> ((i32, i32), String, Arc<GeoEngine>) {
+    let ((gx, gy), engine) = engine_with_cell(closed_south, 2);
+    let (rx, ry) = (gx / 2048, gy / 2048);
+    let tile = format!("{rx}_{ry}");
+    let bytes = engine.set().region(rx as u32, ry as u32).unwrap().to_bytes();
+    write_bytes(&root.join("geodata").join(format!("{tile}.l2j")), &bytes);
+    let spec = GeoLoadSpec::new(root.join("geodata")).with_geoedit_path(root.join("saves"));
+    let (engine, report) = GeoEngine::load(&spec, GeoEngineOptions::shipped());
+    assert_eq!(report.loaded, 1);
+    ((gx, gy), tile, Arc::new(engine))
+}
+
+fn write_bytes(path: &Path, bytes: &[u8]) {
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(path, bytes).unwrap();
+}
+
+fn open(world: &World, gx: i32, gy: i32, nswe: u16) -> bool {
+    world.geo().unwrap().check_nearest_nswe(gx, gy, Z, nswe as u8)
+}
+
+#[test]
+fn the_edit_commands_open_and_close_one_side_of_a_cell() {
+    let ((gx, gy), engine) = engine_with_cell(false, 2);
+    let mut s = setup(Some(Arc::clone(&engine)), false);
+    s.enter(GM, 0);
+    s.log.take();
+
+    // The long forms edit the GM's own cell and send nothing.
+    s.run("admin_geodisablesouth");
+    assert!(s.log.take().is_empty());
+    assert!(!open(&s.world, gx, gy, SOUTH));
+    assert!(open(&s.world, gx, gy, NORTH));
+    // The engine the world started with (what a running path search holds) is not changed.
+    assert!(engine.check_nearest_nswe(gx, gy, Z, SOUTH as u8));
+    assert!(!Arc::ptr_eq(s.world.geo().unwrap(), &engine));
+
+    // The short forms take coordinates and show the cell page again (`admin_ge gx gy`).
+    s.run(&format!("admin_es {gx} {gy}"));
+    assert!(open(&s.world, gx, gy, SOUTH));
+    let boards = boards_to(&s.log.take(), GM);
+    assert_eq!(boards.len(), 3);
+    assert!(
+        boards[0]
+            .content
+            .contains(&format!("bypass admin_ds {gx} {gy}\""))
+    );
+
+    for (close, open_again, side) in [
+        ("de", "ee", EAST),
+        ("dw", "ew", WEST),
+        ("ds", "es", SOUTH),
+        ("dn", "en", NORTH),
     ] {
-        s.run(&format!("admin_{command}"));
-        let out = s.log.take();
+        s.run(&format!("admin_{close} {gx} {gy}"));
+        assert!(!open(&s.world, gx, gy, side), "{close}");
+        let page = &boards_to(&s.log.take(), GM)[0].content;
+        assert!(
+            page.contains(&format!("bypass admin_{open_again} {gx} {gy}\"")),
+            "{page}"
+        );
+        s.run(&format!("admin_{open_again} {gx} {gy}"));
+        assert!(open(&s.world, gx, gy, side), "{open_again}");
+        s.log.take();
+    }
+
+    // A cell of a flat block becomes a complex block when a side is closed.
+    let flat = (gx + 8, gy);
+    let region = |w: &World| {
+        w.geo()
+            .unwrap()
+            .region_at(flat.0, flat.1)
+            .unwrap()
+            .block_type(flat.0, flat.1)
+    };
+    assert_eq!(region(&s.world), l2_geo::BlockType::Flat);
+    s.run(&format!("admin_geoenableeast {} {}", flat.0, flat.1));
+    assert_eq!(
+        region(&s.world),
+        l2_geo::BlockType::Flat,
+        "opening a flat cell changes nothing"
+    );
+    s.run(&format!("admin_geodisableeast {} {}", flat.0, flat.1));
+    assert_eq!(region(&s.world), l2_geo::BlockType::Complex);
+    assert!(!open(&s.world, flat.0, flat.1, EAST));
+    assert!(open(&s.world, flat.0, flat.1, WEST));
+
+    // No region there.
+    s.run("admin_en 0 0");
+    assert_eq!(s.said(&s.log.take()), ["There is no geodata at this position."]);
+    // NOTE(java-quirk): `dn` without coordinates takes its X from `getGeoY(getX())`, a cell of
+    // another region (not loaded here).
+    s.run("admin_dn");
+    assert_eq!(s.said(&s.log.take()), ["There is no geodata at this position."]);
+    assert!(open(&s.world, gx, gy, NORTH));
+    // `en` without coordinates is the GM's own cell.
+    s.run("admin_geodisablenorth 1 2");
+    s.log.take();
+    s.run(&format!("admin_dn {gx} {gy}"));
+    s.run("admin_en");
+    assert!(open(&s.world, gx, gy, NORTH));
+    // A coordinate that is not a number: Java's NumberFormatException.
+    s.log.take();
+    s.run("admin_en x");
+    let said = s.said(&s.log.take());
+    assert_eq!(said.len(), 1);
+    assert!(said[0].contains("NumberFormatException"), "{said:?}");
+}
+
+#[test]
+fn the_path_workers_get_the_edited_geodata_with_the_request() {
+    #[derive(Clone, Default)]
+    struct Requests(Arc<Mutex<Vec<PathRequest>>>);
+    struct Recording(Requests);
+    impl PathRequests for Recording {
+        fn request(&mut self, request: PathRequest) -> bool {
+            self.0.0.lock().unwrap().push(request);
+            true
+        }
+        fn cancel(&mut self, _requester: u64) {}
+    }
+
+    let ((gx, gy), engine) = engine_with_cell(false, 2);
+    let mut s = setup(Some(Arc::clone(&engine)), false);
+    let requests = Requests::default();
+    s.world.set_path_requests(Box::new(Recording(requests.clone())));
+    s.enter(GM, 0);
+    s.log.take();
+
+    // Close the GM's cell to the east: a move east is blocked, so the world asks for a path.
+    s.run(&format!("admin_geodisableeast {gx} {gy}"));
+    s.click(X + 200, Y, Z);
+    let sent = requests.0.lock().unwrap().clone();
+    assert_eq!(sent.len(), 1, "the straight line is blocked by the edit");
+    let geo = sent[0]
+        .geo
+        .as_ref()
+        .expect("the request carries the world's geodata");
+    assert!(Arc::ptr_eq(geo, s.world.geo().unwrap()));
+    assert!(!geo.check_nearest_nswe(gx, gy, Z, EAST as u8));
+    // The pool's own engine (the one loaded at startup) still has the old data.
+    assert!(engine.check_nearest_nswe(gx, gy, Z, EAST as u8));
+}
+
+#[test]
+fn geosave_writes_the_region_and_geomap_reload_reads_it_back() {
+    let mut s = setup(None, false);
+    let root = s.root.path().to_path_buf();
+    let ((gx, gy), tile, engine) = loaded_engine(&root, false);
+    s.world.set_geo(engine);
+    s.enter(GM, 0);
+    s.log.take();
+
+    s.run("admin_geodisablesouth");
+    assert!(!open(&s.world, gx, gy, SOUTH));
+    s.run("admin_geosave");
+    assert_eq!(
+        s.said(&s.log.take()),
+        [format!("Saved region {tile} at {tile}.l2j")]
+    );
+    let saved = std::fs::read(root.join("saves").join(format!("{tile}.l2j"))).unwrap();
+    let (rx, ry) = ((gx / 2048) as u32, (gy / 2048) as u32);
+    assert_eq!(
+        saved,
+        s.world.geo().unwrap().set().region(rx, ry).unwrap().to_bytes()
+    );
+    // The saved file is a valid region with the edit in it.
+    assert!(
+        !Region::parse(&saved)
+            .unwrap()
+            .check_nearest_nswe(gx, gy, Z, SOUTH as u8)
+    );
+
+    // Reload from GeoDataPath (the GM's tile): the edit is gone.
+    s.run("admin_geomap_reload");
+    assert_eq!(
+        s.said(&s.log.take()),
+        [format!("GeoMap: {tile} reloaded successfully.")]
+    );
+    assert!(open(&s.world, gx, gy, SOUTH));
+
+    // Put the saved file in place and reload by name: the edit is back.
+    write_bytes(&root.join("geodata").join(format!("{tile}.l2j")), &saved);
+    s.run(&format!("admin_geomap_reload {tile}"));
+    assert_eq!(
+        s.said(&s.log.take()),
+        [format!("GeoMap: {tile} reloaded successfully.")]
+    );
+    assert!(!open(&s.world, gx, gy, SOUTH));
+
+    // A tile without a file, and arguments Java cannot parse.
+    s.run("admin_geomap_reload 12_10");
+    assert_eq!(s.said(&s.log.take()), ["Failed to reload GeoMap: 12_10"]);
+    for bad in ["17", "a_b", "_25", "17_"] {
+        s.run(&format!("admin_geomap_reload {bad}"));
         assert_eq!(
-            s.said(&out),
-            [format!("The command '{command}' does not exist!")],
-            "{command}"
+            s.said(&s.log.take()),
+            ["Could not parse geomap_reload command parameters."],
+            "{bad}"
         );
     }
+
+    // Save everything: the one loaded region, then the count.
+    std::fs::remove_dir_all(root.join("saves")).unwrap();
+    s.run("admin_geosaveall");
+    assert_eq!(
+        s.said(&s.log.take()),
+        [
+            format!("Saved region {tile} at {tile}.l2j"),
+            "Saved 1 regions.".to_owned()
+        ]
+    );
+    assert_eq!(
+        std::fs::read(root.join("saves").join(format!("{tile}.l2j"))).unwrap(),
+        saved
+    );
+}
+
+#[test]
+fn geosave_without_a_region_or_a_save_folder() {
+    // An engine without the GM's region but with `GeoEditPath`.
+    let mut s = setup(None, false);
+    let root = s.root.path().to_path_buf();
+    std::fs::create_dir_all(root.join("geodata")).unwrap();
+    let spec = GeoLoadSpec::new(root.join("geodata")).with_geoedit_path(root.join("saves"));
+    let (engine, _) = GeoEngine::load(&spec, GeoEngineOptions::shipped());
+    s.world.set_geo(Arc::new(engine));
+    s.enter(GM, 0);
+    s.log.take();
+    s.run("admin_geosave");
+    assert_eq!(s.said(&s.log.take()), ["Could not find region: 17_25"]);
+    s.run("admin_geosaveall");
+    assert_eq!(s.said(&s.log.take()), ["Saved 0 regions."]);
+    // A reload turns the null region into a region when the file appears.
+    let (_, tile, _) = loaded_engine(&root, true);
+    s.run("admin_geomap_reload");
+    assert_eq!(
+        s.said(&s.log.take()),
+        [format!("GeoMap: {tile} reloaded successfully.")]
+    );
+    s.run("admin_geosave");
+    assert_eq!(
+        s.said(&s.log.take()),
+        [format!("Saved region {tile} at {tile}.l2j")]
+    );
+
+    // No `GeoEditPath` (an engine built without a source): the folder cannot be made.
+    let (_, engine) = engine_with_cell(false, 2);
+    let mut s = setup(Some(engine), false);
+    s.enter(GM, 0);
+    s.log.take();
+    s.run("admin_geosave");
+    assert_eq!(s.said(&s.log.take()), ["Could not create output directory."]);
+    s.run("admin_geomap_reload");
+    assert_eq!(s.said(&s.log.take()), ["Failed to reload GeoMap: 17_25"]);
 }
 
 #[test]

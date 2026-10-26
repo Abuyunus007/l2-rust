@@ -189,17 +189,31 @@ impl BlockRef<'_> {
     /// An exact match wins immediately; on equal distance the layer that comes first in the file
     /// wins (strict `<`). Only valid for multilayer blocks (returns 0 otherwise).
     fn nearest_layer(&self, geo_x: i32, geo_y: i32, world_z: i32) -> u16 {
+        self.nearest_layer_index(geo_x, geo_y, world_z)
+            .and_then(|i| self.layers(geo_x, geo_y).nth(i))
+            .unwrap_or(0)
+    }
+
+    /// Which layer of the cell [`nearest_layer`](Self::nearest_layer) picks (0 = first in the
+    /// file). `None` for a block that is not multilayer.
+    ///
+    /// Also the layer `MultilayerBlock.setNearestNswe` / `unsetNearestNswe` edit: their search loop
+    /// is the same (exact match first, then the first of the nearest).
+    pub(crate) fn nearest_layer_index(&self, geo_x: i32, geo_y: i32, world_z: i32) -> Option<usize> {
+        if !matches!(self, Self::Multilayer { .. }) {
+            return None;
+        }
         let mut nearest_dz = 0;
-        let mut nearest = 0;
+        let mut nearest = None;
         for (i, layer) in self.layers(geo_x, geo_y).enumerate() {
             let z = cell_height(layer);
             if z == world_z {
-                return layer;
+                return Some(i);
             }
             let dz = (z - world_z).abs();
             if i == 0 || dz < nearest_dz {
                 nearest_dz = dz;
-                nearest = layer;
+                nearest = Some(i);
             }
         }
         nearest

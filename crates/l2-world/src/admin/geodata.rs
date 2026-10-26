@@ -4,13 +4,15 @@
 // Java: AdminPathNode}.java
 // Java: util/GeoUtils.java (debugGrid, hideDebugGrid), util/HtmlUtil.java (sendCBHtml)
 //
-// Left out, with the system that brings it:
-// - The geodata EDITS: `geoenablenorth`/`en`, `geodisablenorth`/`dn` (and south, east, west),
-//   `geosave`, `geosaveall`, `geomap_reload`. The geoengine is immutable and shared with the path
-//   workers (D-14); `l2-geo` has no runtime NSWE edit, no region reload and no `saveToFile`
-//   (`TODO(M3)` in `region.rs`). They answer "The command '...' does not exist!" like Java does
-//   for a command without a handler. The edit links of the `//geoedit` cell page need them.
-// - `admin_geo_spawn_pos` is registered: Java gives it the same body as `admin_geo_pos`.
+// The geodata edits (L-07): `geoenablenorth`/`en`, `geodisablenorth`/`dn` (and south, east,
+// west), `geosave`, `geosaveall`, `geomap_reload`. The world's engine is shared with the path
+// workers (D-14), so it is edited copy-on-write ([`World::edit_geo`]): a search that is running
+// keeps the geodata it started with, the next path request carries the edited engine.
+// Saving writes on the world thread like Java writes on the command thread (`GeoEditPath`).
+//
+// `admin_geo_spawn_pos` is registered: Java gives it the same body as `admin_geo_pos`.
+
+use std::sync::Arc;
 
 use l2_geo::cell::{NSWE_EAST, NSWE_NORTH, NSWE_SOUTH, NSWE_WEST};
 use l2_geo::coords::{geo_x, geo_y, world_x, world_y};
@@ -22,8 +24,8 @@ use l2_util::ObjectId;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
 use crate::dialog::{HtmlActionScope, build_html_action_cache};
 use crate::region::{
-    OFFSET_X, OFFSET_Y, SHIFT_BY, TILE_SIZE, TILE_X_MIN, TILE_Y_MIN, TILE_ZERO_COORD_X, TILE_ZERO_COORD_Y,
-    WORLD_X_MIN, WORLD_Y_MIN, WORLD_Z_MIN, Z_REGION_SIZE,
+    OFFSET_X, OFFSET_Y, SHIFT_BY, TILE_SIZE, TILE_X_MAX, TILE_X_MIN, TILE_Y_MAX, TILE_Y_MIN,
+    TILE_ZERO_COORD_X, TILE_ZERO_COORD_Y, WORLD_X_MIN, WORLD_Y_MIN, WORLD_Z_MIN, Z_REGION_SIZE,
 };
 use crate::world::World;
 
@@ -39,7 +41,26 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_geo_can_see", admin_geodata),
         ("admin_geogrid", admin_geodata),
         ("admin_geomap", admin_geodata),
+        ("admin_geomap_reload", admin_geodata),
         ("admin_geocell", admin_geodata),
+        ("admin_geosave", admin_geodata),
+        ("admin_geosaveall", admin_geodata),
+        ("admin_geoenablenorth", admin_geodata),
+        ("admin_en", admin_geodata),
+        ("admin_geodisablenorth", admin_geodata),
+        ("admin_dn", admin_geodata),
+        ("admin_geoenablesouth", admin_geodata),
+        ("admin_es", admin_geodata),
+        ("admin_geodisablesouth", admin_geodata),
+        ("admin_ds", admin_geodata),
+        ("admin_geoenableeast", admin_geodata),
+        ("admin_ee", admin_geodata),
+        ("admin_geodisableeast", admin_geodata),
+        ("admin_de", admin_geodata),
+        ("admin_geoenablewest", admin_geodata),
+        ("admin_ew", admin_geodata),
+        ("admin_geodisablewest", admin_geodata),
+        ("admin_dw", admin_geodata),
         ("admin_geoedit", admin_geodata),
         ("admin_ge", admin_geodata),
         ("admin_region", admin_regions),
@@ -103,6 +124,27 @@ impl Geo<'_> {
 impl World {
     fn geo_view(&self) -> Geo<'_> {
         Geo(self.geo.as_deref())
+    }
+
+    /// Changes the world's geodata (L-07, D-14). The engine is shared with the path workers and
+    /// edited copy-on-write: when a running search still holds it, it is cloned first (cheap, the
+    /// regions are shared) and [`l2_geo::GeoSet::region_mut`] copies only the edited region; the
+    /// search finishes on the old data and the next request carries the new engine. Without
+    /// another holder the engine is edited in place. `None` when the world has no engine.
+    pub(crate) fn edit_geo<R>(&mut self, edit: impl FnOnce(&mut GeoEngine) -> R) -> Option<R> {
+        let mut geo = self.geo.take()?;
+        // The zone context holds a second handle on the same engine (`set_geo`); let go of it so
+        // that it does not force a copy, and hand it the edited engine afterwards.
+        let shared_with_zoning = self.zoning.geo.as_ref().is_some_and(|z| Arc::ptr_eq(z, &geo));
+        if shared_with_zoning {
+            self.zoning.geo = None;
+        }
+        let result = edit(Arc::make_mut(&mut geo));
+        if shared_with_zoning {
+            self.zoning.geo = Some(Arc::clone(&geo));
+        }
+        self.geo = Some(geo);
+        Some(result)
     }
 
     fn gm_position(&self, gm: ObjectId) -> Result<(i32, i32, i32), JavaException> {
@@ -230,6 +272,48 @@ fn admin_geodata(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             );
             world.send_sys_message(gm, &text);
         }
+        "admin_geomap_reload" => {
+            let (x, y) = match st.next_token() {
+                Some(token) => {
+                    // `token.split("_")` + `Integer.parseInt` of the first two parts; any failure
+                    // (also a missing second part) is the same message.
+                    let mut split = token.split('_');
+                    let parsed = (
+                        split.next().map(super::parse_int),
+                        split.next().map(super::parse_int),
+                    );
+                    let (Some(Ok(x)), Some(Ok(y))) = parsed else {
+                        world.send_sys_message(gm, "Could not parse geomap_reload command parameters.");
+                        return Ok(());
+                    };
+                    (x, y)
+                }
+                None => {
+                    let (px, py, _) = world.gm_position(gm)?;
+                    (
+                        ((px - WORLD_X_MIN) >> 15) + TILE_X_MIN,
+                        ((py - WORLD_Y_MIN) >> 15) + TILE_Y_MIN,
+                    )
+                }
+            };
+            let reloaded = world.edit_geo(|geo| geo.reload_region(x, y)).unwrap_or(false);
+            let text = if reloaded {
+                format!("GeoMap: {x}_{y} reloaded successfully.")
+            } else {
+                format!("Failed to reload GeoMap: {x}_{y}")
+            };
+            world.send_sys_message(gm, &text);
+        }
+        "admin_geosave" => geo_save(world, gm)?,
+        "admin_geosaveall" => geo_save_all(world, gm)?,
+        "admin_geoenablenorth" | "admin_en" => edit_cell(world, gm, &mut st, actual, NSWE_NORTH, true)?,
+        "admin_geodisablenorth" | "admin_dn" => edit_cell(world, gm, &mut st, actual, NSWE_NORTH, false)?,
+        "admin_geoenablesouth" | "admin_es" => edit_cell(world, gm, &mut st, actual, NSWE_SOUTH, true)?,
+        "admin_geodisablesouth" | "admin_ds" => edit_cell(world, gm, &mut st, actual, NSWE_SOUTH, false)?,
+        "admin_geoenableeast" | "admin_ee" => edit_cell(world, gm, &mut st, actual, NSWE_EAST, true)?,
+        "admin_geodisableeast" | "admin_de" => edit_cell(world, gm, &mut st, actual, NSWE_EAST, false)?,
+        "admin_geoenablewest" | "admin_ew" => edit_cell(world, gm, &mut st, actual, NSWE_WEST, true)?,
+        "admin_geodisablewest" | "admin_dw" => edit_cell(world, gm, &mut st, actual, NSWE_WEST, false)?,
         "admin_geocell" => {
             let (x, y, z) = world.gm_position(gm)?;
             let (gx, gy) = (geo_x(x), geo_y(y));
@@ -252,6 +336,133 @@ fn admin_geodata(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         }
         _ => {}
     }
+    Ok(())
+}
+
+/// Java `admin_geoenable*` / `admin_geodisable*` and the short forms (`en`, `dn`, ...): opens or
+/// closes one side of a cell (the GM's cell, or `<geoX> <geoY>`) at the GM's Z. The short forms
+/// show the `//ge` cell page again afterwards.
+fn edit_cell(
+    world: &mut World,
+    gm: ObjectId,
+    st: &mut Tokens<'_>,
+    actual: &str,
+    nswe: u8,
+    enable: bool,
+) -> Outcome {
+    let (px, py, pz) = world.gm_position(gm)?;
+    let gx = match st.next_token() {
+        Some(token) => parse_int(token)?,
+        // NOTE(java-quirk): `admin_geodisablenorth` / `admin_dn` take the default X from
+        // `GeoEngine.getGeoY(activeChar.getX())`, so without coordinates they edit another cell.
+        None if nswe == NSWE_NORTH && !enable => geo_y(px),
+        None => geo_x(px),
+    };
+    let gy = match st.next_token() {
+        Some(token) => parse_int(token)?,
+        None => geo_y(py),
+    };
+    if world.geo_view().has_pos(gx, gy) {
+        world.edit_geo(|geo| {
+            if enable {
+                geo.set_nearest_nswe(gx, gy, pz, nswe);
+            } else {
+                geo.unset_nearest_nswe(gx, gy, pz, nswe);
+            }
+        });
+        if !actual.contains("geo") {
+            world.admin_command(gm, &format!("admin_ge {gx} {gy}"), false);
+        }
+    } else {
+        world.send_sys_message(gm, "There is no geodata at this position.");
+    }
+    Ok(())
+}
+
+/// `Files.createDirectories(GeoEngineConfig.GEOEDIT_PATH)`: the save folder, `None` (and the
+/// Java message) when it cannot be made. A world without an engine, or an engine without a
+/// configured `GeoEditPath` (tests, tools), has none.
+fn geo_save_dir(world: &mut World, gm: ObjectId) -> Option<std::path::PathBuf> {
+    let dir = world
+        .geo
+        .as_ref()
+        .and_then(|g| g.geoedit_path().map(std::path::Path::to_path_buf));
+    match dir {
+        Some(dir) if std::fs::create_dir_all(&dir).is_ok() => Some(dir),
+        _ => {
+            world.send_sys_message(gm, "Could not create output directory.");
+            None
+        }
+    }
+}
+
+/// Java `admin_geosave`: the region under the GM to `GeoEditPath/X_Y.l2j`.
+fn geo_save(world: &mut World, gm: ObjectId) -> Outcome {
+    // Create the saves directory if it does not exist.
+    let Some(dir) = geo_save_dir(world, gm) else {
+        return Ok(());
+    };
+    let (px, py, _) = world.gm_position(gm)?;
+    let x = ((px - WORLD_X_MIN) >> 15) + TILE_X_MIN;
+    let y = ((py - WORLD_Y_MIN) >> 15) + TILE_Y_MIN;
+    let file_name = format!("{x}_{y}.l2j");
+    let text = match world.geo.as_ref().and_then(|g| g.region_at(geo_x(px), geo_y(py))) {
+        None => format!("Could not find region: {x}_{y}"),
+        Some(region) => save_region(region, &dir, &file_name, x, y).0,
+    };
+    world.send_sys_message(gm, &text);
+    Ok(())
+}
+
+/// `Region.saveToFile(fileName)` and the message of the result.
+fn save_region(
+    region: &l2_geo::Region,
+    dir: &std::path::Path,
+    file_name: &str,
+    x: i32,
+    y: i32,
+) -> (String, bool) {
+    match region.save_to_file(&dir.join(file_name)) {
+        Ok(()) => (format!("Saved region {x}_{y} at {file_name}"), true),
+        Err(e) => {
+            tracing::warn!("GeoEngine: could not save region {x}_{y}: {e}");
+            (format!("Could not save region {x}_{y}"), false)
+        }
+    }
+}
+
+/// Java `admin_geosaveall`: every loaded region of the tiles `10..=26` x `9..=26`, one message
+/// per region, then the count.
+fn geo_save_all(world: &mut World, gm: ObjectId) -> Outcome {
+    let Some(dir) = geo_save_dir(world, gm) else {
+        return Ok(());
+    };
+    let mut messages = Vec::new();
+    let mut count = 0;
+    if let Some(geo) = world.geo.clone() {
+        // Top left Gracia coordinates.
+        let mut world_x_pos = -327680;
+        for _region_x in TILE_X_MIN - 1..=TILE_X_MAX {
+            let mut world_y_pos = -262144;
+            for _region_y in TILE_Y_MIN - 1..=TILE_Y_MAX {
+                if let Some(region) = geo.region_at(geo_x(world_x_pos), geo_y(world_y_pos)) {
+                    let x = ((world_x_pos - WORLD_X_MIN) >> 15) + TILE_X_MIN;
+                    let y = ((world_y_pos - WORLD_Y_MIN) >> 15) + TILE_Y_MIN;
+                    let (text, saved) = save_region(region, &dir, &format!("{x}_{y}.l2j"), x, y);
+                    if saved {
+                        count += 1;
+                    }
+                    messages.push(text);
+                }
+                world_y_pos += TILE_SIZE;
+            }
+            world_x_pos += TILE_SIZE;
+        }
+    }
+    for text in &messages {
+        world.send_sys_message(gm, text);
+    }
+    world.send_sys_message(gm, &format!("Saved {count} regions."));
     Ok(())
 }
 
