@@ -61,8 +61,10 @@ residence owners and registrations before acting on them (D-50).
 | `//chsiege_*` | conquerable hall sieges |
 | `//manor` | manor mode, next change, costs |
 | `//territory_war`, `//territory_war_start`, `//territory_war_end`, wards list | Territory War |
+| `//admin` panel (M7-ADMIN-08..12) | the whole GM panel: effects, menus, edit char (name, title, colours, class, sex, noble, fame, access level), spawn index, gmshop, doors, fences, delete, search, kick, ban/jail, GM chat, snoop, announcements, petitions, server switches and `//server_shutdown`/`//server_restart` (Kain only), geodata info, regions, zones, zone builder, flags (`gmliston`, `silence`, `diet`, `tradeoff`), `//setconfig` rates, `//repair` |
 
 ## 3. Known limits in M7
+- Admin commands not there yet: geodata edits (`//geoenablenorth` ... `//geosave`), `//fight_calculator`, `//respawnall`, `//spawn_reload`, `//spawn_misc`, `//list_pools`, `//reload` of anything but html (restart instead), and the M8/script ones (Olympiad, heroes, instances, grand bosses, cursed weapons, quests). They answer "The command ... does not exist!".
 - Territory War quests and their points, the noblesse quests (`MakeMeNoble`): with the quests (D-05).
 - Seven Signs effects on castles (seal of strife, ticket prices): M8; the castle NPCs show the
   neutral state.
