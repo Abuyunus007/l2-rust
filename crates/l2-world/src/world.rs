@@ -122,6 +122,8 @@ pub struct World {
     pub(crate) mail: crate::mail::MailWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
+    /// The PC cafe settings and each player's retail timer (M6-FU-11, `pccafe.rs`).
+    pub(crate) pccafe: crate::pccafe::PcCafeWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
     /// The recipes and the makers waiting on the timer wheel (M6-CRAFT-01, `craft/`).
@@ -209,6 +211,7 @@ impl World {
             friends: crate::friends::FriendWorld::default(),
             mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
+            pccafe: crate::pccafe::PcCafeWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
@@ -385,6 +388,8 @@ impl World {
                 clan_id,
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
+            WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
+            WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
@@ -818,6 +823,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: PcCafePointsManager.giveRetailPcCafePont
+            TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
             // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
@@ -827,6 +834,8 @@ impl World {
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
             // Java: Siege.ScheduleStartSiegeTask, ScheduleEndSiegeTask, FameTask, ...
             TimerKind::Siege(timer) => self.on_siege_timer(timer),
+            // Java: DamageZone.ApplyDamage
+            TimerKind::Zone(timer) => self.on_zone_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),

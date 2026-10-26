@@ -469,7 +469,7 @@ impl World {
         // A door's status is the plain `CreatureStatus` (`DoorStatus` adds nothing), without
         // `NpcStatus`'s part.
         if let Some(attacker) = attacker.filter(|_| !self.doors.contains_key(&id)) {
-            self.duel_interrupt_on_npc_hit(attacker);
+            self.duel_interrupt_on_hit(id, attacker);
             self.add_attacker_to_attack_by_list(id, attacker);
         }
         // "invul handling": `isInvul() && !(isDOT || isHPConsumption)`. DOT and HP consumption do

@@ -334,6 +334,17 @@ pub enum WorldCommand {
         clan_id: i32,
         result: Result<Vec<crate::player::ItemData>, ()>,
     },
+    /// The answer to `PersistCommand::CrestIdsRequest`: the used crest ids, or `Err` when the read
+    /// failed (the crest is then not created, M7-FU-03).
+    CrestIdsLoaded {
+        ticket: u32,
+        result: Result<Vec<i32>, ()>,
+    },
+    /// The `INSERT` of a crest failed (the primary key is taken); the world retries once with a
+    /// fresh read of the used ids (M7-FU-03).
+    CrestInsertFailed {
+        crest_id: i32,
+    },
     /// The answer to `PersistCommand::ResidenceRereadRequest`: the residence's rows, or `Err` when
     /// the read failed (the follow-up `then` is then refused, M7-RES-01).
     ResidenceReread {
@@ -402,6 +413,12 @@ impl fmt::Debug for WorldCommand {
                 "MailAttachmentsLoaded({player}, {message_id}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::CrestIdsLoaded { ticket, result } => write!(
+                f,
+                "CrestIdsLoaded({ticket}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::CrestInsertFailed { crest_id } => write!(f, "CrestInsertFailed({crest_id})"),
             Self::ClanWarehouseLoaded {
                 player,
                 clan_id,

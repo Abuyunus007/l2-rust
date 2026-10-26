@@ -62,6 +62,8 @@ pub enum ResidenceRereadRows {
         id: i32,
         record: Option<crate::clanhall::AuctionRecord>,
     },
+    /// Every `auction` row with its bids, for the auctioneer's list (M7-FU-03).
+    Auctions(Vec<crate::clanhall::AuctionRecord>),
     /// A conquerable hall with its siege tables (M7-CHSIEGE-01).
     HallSiege(Box<crate::clanhall::HallSiegeRows>),
     /// The database has no row for it (nothing changes).
@@ -118,6 +120,12 @@ pub enum ResidenceReadThen {
     AuctionCancelBid { player: ObjectId, auction_id: i32 },
     /// The owner of the hall cancels its auction (M7-CH-01).
     AuctionCancel { player: ObjectId, auction_id: i32 },
+    /// The auctioneer's `list` bypass waits for the fresh auction rows (M7-FU-03, D-50).
+    AuctionList {
+        npc: ObjectId,
+        player: ObjectId,
+        val: String,
+    },
     /// A castle NPC acts on the rows (M7-NPC-01, `residence/npc/`).
     Npc(super::npc::NpcThen),
     /// The Territory War acts on its rows (M7-TW-01, `territory/`).
@@ -253,6 +261,7 @@ impl World {
             ResidenceRereadRows::FortSiege(rows) => self.apply_fort_siege_rows(rows),
             ResidenceRereadRows::HallSiege(rows) => self.apply_hall_siege_rows(rows),
             ResidenceRereadRows::Auction { id, record } => self.apply_auction_rows(*id, record.as_ref()),
+            ResidenceRereadRows::Auctions(records) => self.apply_all_auction_rows(records),
             ResidenceRereadRows::Missing => debug!("A residence read again has no row."),
             ResidenceRereadRows::SiegeClans { castle, rows } => {
                 self.apply_siege_reread(castle.as_ref(), rows)
@@ -544,6 +553,8 @@ pub enum ResidenceReadKind {
     SiegeClans,
     /// `auction` and `auction_bid` of a hall's auction (M7-CH-01).
     Auction,
+    /// Every `auction` row with its bids (M7-FU-03: the auctioneer's list).
+    Auctions,
     /// `territories`, `territory_registrations` and the `nextTWStartDate` global variable
     /// (M7-TW-01; the residence id is 0).
     Territory,

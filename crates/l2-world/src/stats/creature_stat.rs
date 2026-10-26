@@ -909,7 +909,16 @@ impl<'w> StatView<'w> {
         } else {
             self.calc(Stat::MoveSpeed, base)
         };
-        self.player_speed_cap(value) * self.pet_speed_factor()
+        self.player_speed_cap(value) * self.pet_speed_factor() * self.swamp_factor()
+    }
+
+    /// `PlayableStat.getRunSpeed` / `getWalkSpeed`: the move bonus of the swamp zone the player
+    /// stands in (M7-FU-03), 1 elsewhere.
+    fn swamp_factor(&self) -> f64 {
+        match self.who {
+            Who::Player(p) => self.world.swamp_move_bonus(p.core.object_id).unwrap_or(1.0),
+            _ => 1.0,
+        }
     }
 
     /// Java `getWalkSpeed()`.
@@ -924,7 +933,7 @@ impl<'w> StatView<'w> {
         } else {
             self.calc(Stat::MoveSpeed, base)
         };
-        self.player_speed_cap(value) * self.pet_speed_factor()
+        self.player_speed_cap(value) * self.pet_speed_factor() * self.swamp_factor()
     }
 
     /// Java `getSwimRunSpeed()`.

@@ -177,11 +177,14 @@ impl World {
         // `Options.apply` sends the skill list for every option of an augmented item.
         let skills_listed =
             self.skill_list_changes_on_equip(id, slot, item) || self.augmentation_sends_skill_list(item);
-        let stats = self.on_equip(id, item);
+        let (stats, time_stamp) = self.on_equip_with_time_stamp(id, item);
         self.broadcast_modified_stats(id, &stats);
         self.refresh_max_vitals(id, false);
         if skills_listed {
             self.send_skill_list(id);
+            if time_stamp {
+                self.send(id, &self.skill_cool_time(id));
+            }
         }
         // ChangeRecorder
         changed.push(item.object_id);
@@ -209,7 +212,7 @@ impl World {
             }
         }
         // ArmorSetListener, ItemSkillsListener, StatsListener
-        let stats = self.on_unequip(id, item, slot);
+        let (stats, time_stamp) = self.on_unequip_with_time_stamp(id, item, slot);
         // `ArmorSetListener`: "player.checkItemRestriction(); player.sendSkillList();"
         if set_removal {
             self.check_item_restriction(id, changed);
@@ -225,6 +228,9 @@ impl World {
         self.refresh_max_vitals(id, false);
         if skills_listed {
             self.send_skill_list(id);
+            if time_stamp {
+                self.send(id, &self.skill_cool_time(id));
+            }
         }
         // ChangeRecorder
         changed.push(item.object_id);

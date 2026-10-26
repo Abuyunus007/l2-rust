@@ -374,6 +374,11 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// The ids of every `crests` row (M7-FU-03): a new crest takes the lowest free one.
+    fn load_crest_ids(&mut self) -> impl Future<Output = Result<Vec<i32>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
     /// One row of `bot_reported_char_data` (Java `BotReportTable.saveReportedCharData`, M6-FU-09).
     fn store_bot_report(
         &mut self,
@@ -826,6 +831,21 @@ async fn run<S: PlayerStore>(
                     warn!("The block list of character {owner} could not be handed to the world.");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::CrestIdsRequest { ticket }) => {
+                // Not a write either: see above. Read in order, so the ids include every crest
+                // inserted before the request.
+                let result = match store.load_crest_ids().await {
+                    Ok(ids) => Ok(ids),
+                    Err(e) => {
+                        warn!("Could not read the used crest ids: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::CrestIdsLoaded { ticket, result };
+                if !acks.send_to_world(answer) {
+                    warn!("The used crest ids could not be handed to the world.");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::ClanWarehouseRequest { player, clan_id }) => {
                 // Not a write either: see above.
                 let result = match store.load_clan_warehouse(clan_id).await {
@@ -848,6 +868,14 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed clan statement and goes on (no retry).
                 if let Err(e) = store.store_clan_write(&write).await {
                     error!("Clan data could NOT be stored ({}): {e}", clan_write_name(&write));
+                    // The other server may have taken the crest id (M7-FU-03): the world retries
+                    // once under a fresh read.
+                    if let ClanWrite::Crest(CrestWrite::Insert { crest_id, .. }) = &write
+                        && !acks
+                            .send_to_world(l2_world::WorldCommand::CrestInsertFailed { crest_id: *crest_id })
+                    {
+                        warn!("The failed insert of crest {crest_id} could not be handed to the world.");
+                    }
                 }
             }
             OutboxMessage::Persist(PersistCommand::BotReport(row)) => {
@@ -3166,7 +3194,9 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         },
         language: row.language.clone(),
         faction: i32::from(row.faction),
-        pccafe_points: row.pccafe_points,
+        // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it
+        // (M6-FU-11).
+        pccafe_points: player.profile.pccafe_points,
     }
 }
 
@@ -3678,6 +3708,10 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn load_crest_ids(&mut self) -> Result<Vec<i32>, PersistError> {
+        Ok(self.crests.ids().await?)
+    }
+
     async fn load_block_list(&mut self, owner: i32) -> Result<Vec<i32>, PersistError> {
         Ok(self
             .friends
@@ -3956,6 +3990,16 @@ impl PlayerStore for DbStore {
                 id: residence_id,
                 record: read_auction_record(&self.auctions, residence_id).await?,
             },
+            ResidenceReadKind::Auctions => {
+                // Like `ClanHallAuctionManager.load()`: every `auction` id with its bids.
+                let mut records = Vec::new();
+                for id in self.auctions.auction_ids().await? {
+                    if let Some(record) = read_auction_record(&self.auctions, id).await? {
+                        records.push(record);
+                    }
+                }
+                ResidenceRereadRows::Auctions(records)
+            }
             ResidenceReadKind::SiegableHall => {
                 match repo
                     .siegable_halls()
@@ -4215,6 +4259,10 @@ mod tests {
         ClanWarehouse(i32),
         /// The read of an offline receiver's block list (M6-FU-09).
         BlockList(i32),
+        /// The read of the used crest ids (M7-FU-03).
+        CrestIds,
+        /// A crest insert (M7-FU-03): the id.
+        CrestInsert(i32),
         /// One bot report row: bot, reporter, date (M6-FU-09).
         BotReport(i32, i32, i64),
         OfflineTrade(OfflineTradeWrite),
@@ -4438,6 +4486,23 @@ mod tests {
             } else {
                 OfflinePetRows::default()
             })
+        }
+
+        /// Crests 1 and 2 are used.
+        async fn load_crest_ids(&mut self) -> Result<Vec<i32>, PersistError> {
+            self.calls.lock().unwrap().push(Call::CrestIds);
+            Ok(vec![1, 2])
+        }
+
+        /// The insert of crest 1 fails (the primary key is taken).
+        async fn store_clan_write(&mut self, write: &ClanWrite) -> Result<(), PersistError> {
+            if let ClanWrite::Crest(CrestWrite::Insert { crest_id, .. }) = write {
+                self.calls.lock().unwrap().push(Call::CrestInsert(*crest_id));
+                if *crest_id == 1 {
+                    return Err(PersistError::NoSuchCharacter(*crest_id));
+                }
+            }
+            Ok(())
         }
 
         /// A character 6 has character 4 on its block list; a character below 0 cannot be read.
@@ -4796,6 +4861,56 @@ mod tests {
             calls.lock().unwrap().clone(),
             vec![Call::BotReport(3, 4, 5_000_000_000)]
         );
+    }
+
+    /// M7-FU-03: the used crest ids go back to the world, and an insert that fails is reported so
+    /// the world retries once under a fresh read.
+    #[tokio::test]
+    async fn the_crest_ids_are_read_and_a_failed_insert_is_reported() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Persist(PersistCommand::CrestIdsRequest {
+            ticket: 7,
+        }))
+        .unwrap();
+        for crest_id in [3, 1] {
+            tx.send(OutboxMessage::Persist(PersistCommand::Clan(ClanWrite::Crest(
+                CrestWrite::Insert {
+                    crest_id,
+                    data: vec![1],
+                    crest_type: 1,
+                },
+            ))))
+            .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::CrestIds, Call::CrestInsert(3), Call::CrestInsert(1)]
+        );
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert_eq!(answers.len(), 2);
+        match &answers[0] {
+            l2_world::WorldCommand::CrestIdsLoaded { ticket, result } => {
+                assert_eq!(*ticket, 7);
+                assert_eq!(result.as_ref().unwrap(), &vec![1, 2]);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[1],
+            l2_world::WorldCommand::CrestInsertFailed { crest_id: 1 }
+        ));
     }
 
     /// M6-FU-09: the block list read goes back to the world as a command, `Err` when it failed.

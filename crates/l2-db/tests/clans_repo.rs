@@ -323,6 +323,10 @@ async fn crests_and_wars_use_javas_statements() {
     crests.insert(3, &[9], 3).await.unwrap();
     let rows = crests.all().await.unwrap();
     assert_eq!(rows.iter().map(|r| r.crest_id).collect::<Vec<_>>(), [7, 3, 1]);
+    // M7-FU-03: the used ids, to take the lowest free one.
+    let mut ids = crests.ids().await.unwrap();
+    ids.sort_unstable();
+    assert_eq!(ids, [1, 3, 7]);
     assert_eq!(
         (rows[0].data.len(), rows[0].crest_type, rows[2].data.as_slice()),
         (300, 2, &[1u8, 2, 3][..])

@@ -161,6 +161,8 @@ const Y: i32 = 258_271;
 const Z: i32 = -3_104;
 /// Hall 36's zone is around this x.
 const HALL_X: i32 = X + 20_000;
+/// The door of hall 36 in `hall_scene`.
+const HALL_DOOR: i32 = 22_000_036;
 /// Lions (P1 leader, P2) and Wolves (P3 leader, P4); P5 is the leader of the level 1 Bears.
 const P1: i32 = 0x6000_0001;
 const P2: i32 = 0x6000_0002;
@@ -413,6 +415,10 @@ fn zones_xml() -> String {
 struct Scene {
     world: World,
     log: Log,
+    /// A test that answers the auction list reads itself sets this (M7-FU-03); else `bypass`
+    /// answers with what the world has.
+    hold_list_reads: bool,
+    ids: Arc<IdFactory>,
     _root: tempfile::TempDir,
 }
 
@@ -464,6 +470,8 @@ impl Scene {
         Self {
             world,
             log,
+            hold_list_reads: false,
+            ids,
             _root: root,
         }
     }
@@ -529,6 +537,60 @@ impl Scene {
             input: ClientInput::Bypass {
                 command: format!("npc_{}_{command}", npc.0),
             },
+        });
+        if !self.hold_list_reads {
+            // The persistence task reads the `auction` rows: here they are what the world has.
+            let requests = self.take_list_requests();
+            for then in requests {
+                let rows = self
+                    .world
+                    .clan_hall_auctions()
+                    .iter()
+                    .map(|a| a.to_record())
+                    .collect();
+                self.world.handle(WorldCommand::ResidenceReread {
+                    result: Ok(ResidenceRereadRows::Auctions(rows)),
+                    then,
+                });
+            }
+        }
+    }
+
+    /// The auction list reads in the log, taken out of it.
+    fn take_list_requests(&mut self) -> Vec<ResidenceReadThen> {
+        let mut log = self.log.0.lock().unwrap();
+        let mut thens = Vec::new();
+        log.retain(|o| match o {
+            Out::Persist(PersistCommand::ResidenceRereadRequest {
+                kind: ResidenceReadKind::Auctions,
+                then,
+                ..
+            }) => {
+                thens.push(then.clone());
+                false
+            }
+            _ => true,
+        });
+        thens
+    }
+
+    /// The answer of the persistence task to the auction list read in `out`.
+    fn answer_list_read(&mut self, out: &[Out], rows: Result<Vec<AuctionRecord>, ()>) {
+        let then = out
+            .iter()
+            .rev()
+            .find_map(|o| match o {
+                Out::Persist(PersistCommand::ResidenceRereadRequest {
+                    kind: ResidenceReadKind::Auctions,
+                    then,
+                    ..
+                }) => Some(then.clone()),
+                _ => None,
+            })
+            .expect("an auction list read was requested");
+        self.world.handle(WorldCommand::ResidenceReread {
+            result: rows.map(ResidenceRereadRows::Auctions),
+            then,
         });
     }
 
@@ -1601,6 +1663,90 @@ fn the_list_has_fifteen_auctions_to_a_page() {
     assert!(second.contains("Auction 55") && !second.contains("Auction 54"));
 }
 
+/// M7-FU-03 (D-50): the list is built from `auction` rows read just now, not from memory.
+#[test]
+fn the_list_is_built_from_rows_read_again() {
+    let mut s = Scene::new(true);
+    let halls: Vec<ClanHallRecord> = (40..=43).map(|id| hall(id, 0, 0, 1, 0, false)).collect();
+    let auctions: Vec<AuctionRecord> = (40..=42)
+        .map(|id| auction_record(id, 1000 + i64::from(id), now_ms() + 3_600_000))
+        .collect();
+    s.load(halls, auctions);
+    let npc = s.spawn(AUCTIONEER, X + 50);
+    s.enter(pdata(P2, LIONS, X, 0, 0));
+    s.take();
+    s.talk(P2, npc);
+    s.take();
+    // The Java game server changed the starting bid of 41, ended 40 (the row is gone) and added 43
+    // (a hall the world has no auction for).
+    s.hold_list_reads = true;
+    s.bypass(P2, npc, "list");
+    let out = s.take();
+    // Nothing is shown before the rows are in.
+    assert!(
+        out.iter()
+            .all(|o| !matches!(o, Out::Packet(id, body) if *id == P2 && name_of(body) == "NPC_HTML_MESSAGE")),
+        "the page waited for the rows"
+    );
+    assert!(out.iter().any(|o| matches!(
+        o,
+        Out::Persist(PersistCommand::ResidenceRereadRequest {
+            kind: ResidenceReadKind::Auctions,
+            then: ResidenceReadThen::AuctionList { .. },
+            ..
+        })
+    )));
+    let mut changed = auction_record(41, 7777, now_ms() + 3_600_000);
+    changed.item_name = "Changed 41".to_owned();
+    let added = auction_record(43, 4343, now_ms() + 3_600_000);
+    s.answer_list_read(
+        &out,
+        Ok(vec![
+            auction_record(42, 1042, now_ms() + 3_600_000),
+            changed,
+            added,
+        ]),
+    );
+    let page = field(&last_page(&s.take(), P2), "itemsField");
+    assert!(!page.contains("Auction 40"), "{page}");
+    assert!(
+        page.contains("Changed 41") && page.contains("<td>7777</td>"),
+        "{page}"
+    );
+    assert!(
+        page.contains("Auction 42") && page.contains("Auction 43"),
+        "{page}"
+    );
+    // The world's own copy follows the rows.
+    let ids: Vec<i32> = s.world.clan_hall_auctions().iter().map(|a| a.id).collect();
+    assert!(!ids.contains(&40) && ids.contains(&43), "{ids:?}");
+}
+
+/// M7-FU-03: a read that fails shows no list (never the copy in memory).
+#[test]
+fn a_failed_read_shows_no_auction_list() {
+    let mut s = Scene::new(true);
+    s.load(
+        vec![hall(40, 0, 0, 1, 0, false)],
+        vec![auction_record(40, 1040, now_ms() + 3_600_000)],
+    );
+    let npc = s.spawn(AUCTIONEER, X + 50);
+    s.enter(pdata(P2, LIONS, X, 0, 0));
+    s.take();
+    s.talk(P2, npc);
+    s.take();
+    s.hold_list_reads = true;
+    s.bypass(P2, npc, "list");
+    let out = s.take();
+    s.answer_list_read(&out, Err(()));
+    assert!(
+        s.take()
+            .iter()
+            .all(|o| !matches!(o, Out::Packet(id, body) if *id == P2 && name_of(body) == "NPC_HTML_MESSAGE"))
+    );
+    assert!(s.world.clan_hall_auction(40).is_some());
+}
+
 /// `bidlist`: the clans that bid with the date of the bid (no padding).
 #[test]
 fn the_bidder_list_shows_the_bids() {
@@ -2062,6 +2208,108 @@ fn hall_scene(switch: bool, functions: Vec<FunctionRecord>) -> (Scene, ObjectId,
     s.enter(pdata(P5, 0, HALL_X, 0, 0));
     s.take();
     (s, manager, doorman)
+}
+
+/// `DoorClick.onAction` and `DlgAnswer` (M7-FU-03): the owner clan of a clan hall is asked whether
+/// to open or close the hall's door.
+#[test]
+fn the_owner_of_a_hall_is_asked_to_open_and_close_its_door() {
+    use l2_protocol_game::server::ConfirmDlg;
+
+    let (mut s, _manager, _doorman) = hall_scene(true, vec![]);
+    // The door of hall 36 (`clanhall_id`), next to the people in the hall (not in `hall_scene`:
+    // another spawn would shift the other tests' random numbers).
+    let doors = l2_data::DoorTemplates::from_xml(&format!(
+        r#"<list><door id="{HALL_DOOR}" name="hall_door" height="150" baseHpMax="1000" clanhall_id="36"
+            pos="{},{Y},{Z}" node1="{},{}" node2="{},{}" node3="{},{}" node4="{},{}" nodeZ="{}"/></list>"#,
+        HALL_X + 100,
+        HALL_X + 90,
+        Y - 50,
+        HALL_X + 110,
+        Y - 50,
+        HALL_X + 110,
+        Y + 50,
+        HALL_X + 90,
+        Y + 50,
+        Z - 10
+    ))
+    .unwrap();
+    s.world.spawn_doors(&doors, &s.ids).unwrap();
+    let door = s.world.door_by_door_id(HALL_DOOR).unwrap().object_id;
+    let click = |s: &mut Scene, who: i32| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(who).unwrap()),
+            input: ClientInput::Action {
+                object_id: door.0,
+                action_id: 0,
+            },
+        });
+    };
+    let dialogs = |out: &[Out], who: i32| -> Vec<SystemMessageId> {
+        out.iter()
+            .filter_map(|o| match o {
+                Out::Packet(to, body) if *to == who && name_of(body) == "CONFIRM_DLG" => {
+                    let mut r = PacketReader::new(&body[1..]);
+                    Some(ConfirmDlg::decode(&mut r).unwrap().message.id)
+                }
+                _ => None,
+            })
+            .collect()
+    };
+    let answer = |s: &mut Scene, who: i32, id: SystemMessageId, answer: i32| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(who).unwrap()),
+            input: ClientInput::DlgAnswer {
+                message_id: id.id(),
+                answer,
+                requester_id: 0,
+            },
+        });
+    };
+
+    // Another clan, a clan without the hall and a player without a clan are not asked.
+    for who in [P1, P5, GM] {
+        click(&mut s, who);
+        click(&mut s, who);
+    }
+    assert!(s.take().iter().all(|o| match o {
+        Out::Packet(_, body) => name_of(body) != "CONFIRM_DLG",
+        Out::Persist(_) => true,
+    }));
+
+    // The first click targets, the second asks (the leader stands next to the door).
+    click(&mut s, P3);
+    assert!(dialogs(&s.take(), P3).is_empty());
+    click(&mut s, P3);
+    assert_eq!(
+        dialogs(&s.take(), P3),
+        [SystemMessageId::WouldYouLikeToOpenTheGate]
+    );
+    answer(&mut s, P3, SystemMessageId::WouldYouLikeToOpenTheGate, 1);
+    assert!(s.world.door(door).unwrap().open);
+
+    click(&mut s, P3);
+    assert_eq!(
+        dialogs(&s.take(), P3),
+        [SystemMessageId::WouldYouLikeToCloseTheGate]
+    );
+    answer(&mut s, P3, SystemMessageId::WouldYouLikeToCloseTheGate, 0);
+    assert!(s.world.door(door).unwrap().open);
+    click(&mut s, P3);
+    answer(&mut s, P3, SystemMessageId::WouldYouLikeToCloseTheGate, 1);
+    assert!(!s.world.door(door).unwrap().open);
+
+    // Too far from the door: the player walks to it instead (no dialog yet).
+    s.world
+        .tele_to_location(ObjectId(P4), TeleportTarget::at(HALL_X + 1_000, Y, Z));
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(u64::try_from(P4).unwrap()),
+        input: ClientInput::Appearing,
+    });
+    s.take();
+    click(&mut s, P4);
+    click(&mut s, P4);
+    assert!(dialogs(&s.take(), P4).is_empty());
 }
 
 fn function(function_type: i32, lvl: i32, lease: i32, rate: i64) -> FunctionRecord {

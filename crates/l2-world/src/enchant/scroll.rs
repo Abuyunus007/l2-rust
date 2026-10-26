@@ -282,7 +282,7 @@ impl World {
     // ------------------------------------------------------------------ RequestEnchantItem
 
     /// `player.sendPacket(new EnchantResult(result, crystal, count))`.
-    fn send_enchant_result(&self, id: ObjectId, result: i32, crystal: i32, count: i64) {
+    pub(crate) fn send_enchant_result(&self, id: ObjectId, result: i32, crystal: i32, count: i64) {
         self.send(
             id,
             &EnchantResult {

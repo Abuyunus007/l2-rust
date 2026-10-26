@@ -298,6 +298,109 @@ impl World {
         self.cast_state_mut(id).current_skill_world_position = position;
     }
 
+    /// The talisman part of `Creature.doCast`: "Reduce talisman mana on skill use". `false` when
+    /// the cast must abort (the talisman has less mana than the skill costs).
+    ///
+    /// NOTE(java-quirk): Java reads `skill.getReferenceItemId()`, a field of the shared skill
+    /// object that `Inventory` sets to the id of the last item that was equipped with the skill.
+    /// The templates are immutable here, so the worn DECO item that carries this skill is looked
+    /// up instead; that is the same item unless two worn items share a skill.
+    fn reduce_talisman_mana(&mut self, caster: ObjectId, skill: &SkillTemplate) -> bool {
+        let Some(player) = self.players.get(&caster) else {
+            return true;
+        };
+        let Some(templates) = self.item_templates() else {
+            return true;
+        };
+        let worn = player.data.items.iter().find(|item| {
+            item.loc == crate::inventory::LOC_PAPERDOLL
+                && templates.get(item.item_id).is_some_and(|t| {
+                    t.body_part == l2_data::item::types::BodyPart::Deco
+                        && t.skills
+                            .item_skills
+                            .iter()
+                            .flatten()
+                            .any(|s| s.id == skill.id && s.level == skill.level)
+                })
+        });
+        let Some((object_id, mana, dis_time)) = worn.map(|item| {
+            let dis_time = templates.get(item.item_id).map_or(0, |t| t.use_skill_dis_time);
+            (item.object_id, item.mana_left, dis_time)
+        }) else {
+            return true;
+        };
+        // Only a shadow item has mana (`getMana()` is the stored value, -1 otherwise).
+        if mana < dis_time {
+            return false;
+        }
+        self.decrease_item_mana(caster, object_id, dis_time);
+        true
+    }
+
+    /// Java `Item.decreaseMana(false, count)`: the mana of a shadow item goes down (never below
+    /// 0), the owner gets the 10 / 5 / 1 warnings, and at 0 the item comes off and is destroyed.
+    pub(crate) fn decrease_item_mana(&mut self, owner: ObjectId, object_id: ObjectId, count: i32) {
+        use crate::inventory::{LOC_PAPERDOLL, item_name_param};
+        use l2_protocol_game::server::{InventoryUpdate, SystemMessage};
+        let Some(player) = self.players.get_mut(&owner) else {
+            return;
+        };
+        let Some(item) = player.data.items.iter_mut().find(|i| i.object_id == object_id) else {
+            return;
+        };
+        // `isShadowItem()`.
+        if item.mana_left < 0 {
+            return;
+        }
+        item.mana_left = if item.mana_left - count >= 0 {
+            item.mana_left - count
+        } else {
+            0
+        };
+        let (mana, item_id, equipped, slot) = (
+            item.mana_left,
+            item.item_id,
+            item.loc == LOC_PAPERDOLL,
+            usize::try_from(item.loc_data).unwrap_or(0),
+        );
+        let templates = self.item_templates();
+        let name = item_name_param(templates.as_deref(), item_id);
+        let message = match mana {
+            10 => SystemMessageId::S1SRemainingManaIsNow10,
+            5 => SystemMessageId::S1SRemainingManaIsNow5,
+            1 => SystemMessageId::S1SRemainingManaIsNow1ItWillDisappearSoon,
+            _ => SystemMessageId::S1SRemainingManaIsNow0AndTheItemHasDisappeared,
+        };
+        if matches!(mana, 10 | 5 | 1) {
+            self.send(owner, &SystemMessage::new(message).with(name.clone()));
+        }
+        // The life time has expired.
+        if mana != 0 {
+            return;
+        }
+        self.send(owner, &SystemMessage::new(message).with(name));
+        // Unequip.
+        if equipped {
+            let unequipped = self.unequip_item_in_slot_and_record(owner, slot);
+            for item in &unequipped {
+                self.un_charge_all_shots(*item);
+            }
+            let entries = unequipped
+                .iter()
+                .filter_map(|o| self.modified_entry(owner, *o))
+                .collect();
+            self.send_inventory_update_now(owner, entries);
+            self.broadcast_user_info(owner);
+        }
+        // Destroy.
+        let count = self.inventory_item(owner, object_id).map_or(0, |i| i.count);
+        if let Some(removed) = self.destroy_inventory_item(owner, object_id, count) {
+            let entry = self.update_entry(&removed, InventoryUpdate::REMOVED);
+            self.send_inventory_update_now(owner, vec![entry]);
+            self.send_cur_load(owner);
+        }
+    }
+
     /// Java `npc.setTarget(target)`: what an NPC's next `doCast` aims at (M5-AI-03 sets it the
     /// way `AttackableAI` does, and puts the old one back after the cast). The same field as
     /// [`World::set_creature_target`].
@@ -777,8 +880,11 @@ impl World {
             self.abort_cast(caster);
             return;
         }
-        // M6: a playable's talisman loses mana (`getReferenceItemId()` of item skills on a DECO
-        // item; the template does not carry the reference id yet).
+        // Reduce talisman mana on skill use.
+        if !self.reduce_talisman_mana(caster, skill) {
+            self.abort_cast(caster);
+            return;
+        }
 
         // Broadcast fly effect if needed.
         if let Some(fly_type) = skill.fly_type

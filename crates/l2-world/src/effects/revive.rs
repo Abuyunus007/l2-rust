@@ -148,8 +148,8 @@ impl World {
     }
 
     /// Java `DlgAnswer.runImpl`: the answers the world handles (the two resurrection questions and
-    /// the confirmation of an admin command). The dialogs of the other branches (offline
-    /// commands, engagement, summon requests, gates) are not sent yet.
+    /// the confirmation of an admin command, the gate questions of M7-FU-03). The dialogs of the
+    /// other branches (offline commands, engagement, summon requests) are not sent yet.
     pub(crate) fn on_dlg_answer(
         &mut self,
         player: ObjectId,
@@ -171,6 +171,10 @@ impl World {
             || message_id == SystemMessageId::YourCharmOfCourageIsTryingToResurrectYouWouldYouLikeToResurrectNow.id()
         {
             self.revive_answer(player, answer);
+        } else if message_id == SystemMessageId::WouldYouLikeToOpenTheGate.id() {
+            self.door_dialog_answer(player, answer, true);
+        } else if message_id == SystemMessageId::WouldYouLikeToCloseTheGate.id() {
+            self.door_dialog_answer(player, answer, false);
         }
     }
 }

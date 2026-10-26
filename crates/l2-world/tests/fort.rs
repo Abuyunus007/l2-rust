@@ -751,7 +751,7 @@ impl Scene {
         let doors = DoorTemplates::from_xml(&format!(
             "<list>{}{}</list>",
             door_xml(18_220_001, r#"hp_showable="false""#),
-            door_xml(18_220_002, "")
+            door_xml(18_220_002, r#"open_method="8""#)
         ))
         .unwrap();
         world.spawn_doors(&doors, &ids).unwrap();
@@ -1670,6 +1670,111 @@ fn commanders_are_attackable_for_attackers_only_during_the_siege() {
     assert!(!s.world.is_auto_attackable_by(c1, ObjectId(P1)), "not the owner");
     s.world.fort_end_siege(SHANTY);
     s.world.fort_start_siege(SHANTY);
+}
+
+// ---------------------------------------------------------------------------------- door dialogs
+
+/// `DoorClick.onAction` and `DlgAnswer` (M7-FU-03): the owner clan of the fortress is asked
+/// whether to open the door that can be opened, only outside a siege, and a yes opens it while it
+/// is still the target.
+#[test]
+fn the_owner_of_a_fortress_is_asked_to_open_and_close_its_door() {
+    use l2_protocol_game::server::ConfirmDlg;
+
+    let mut s = siege_scene();
+    let door = s.world.door_by_door_id(18_220_002).unwrap().object_id;
+    let click = |s: &mut Scene, who: i32| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(who).unwrap()),
+            input: ClientInput::Action {
+                object_id: door.0,
+                action_id: 0,
+            },
+        });
+    };
+    let dialogs = |out: &[Out], who: i32| -> Vec<SystemMessageId> {
+        packets_to(out, who, "CONFIRM_DLG")
+            .iter()
+            .map(|b| decode::<ConfirmDlg>(b).message.id)
+            .collect()
+    };
+    let answer = |s: &mut Scene, who: i32, id: SystemMessageId, answer: i32| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(who).unwrap()),
+            input: ClientInput::DlgAnswer {
+                message_id: id.id(),
+                answer,
+                requester_id: 0,
+            },
+        });
+    };
+
+    // The first click only targets the door; a clan that does not own the fortress is not asked.
+    click(&mut s, P4);
+    click(&mut s, P4);
+    assert!(dialogs(&s.take(), P4).is_empty());
+
+    click(&mut s, P1);
+    assert!(dialogs(&s.take(), P1).is_empty());
+    click(&mut s, P1);
+    assert_eq!(
+        dialogs(&s.take(), P1),
+        [SystemMessageId::WouldYouLikeToOpenTheGate]
+    );
+
+    // A no leaves it closed; the holder is gone, so a late yes does nothing either.
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToOpenTheGate, 0);
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToOpenTheGate, 1);
+    assert!(!s.world.door(door).unwrap().open);
+
+    click(&mut s, P1);
+    assert_eq!(
+        dialogs(&s.take(), P1),
+        [SystemMessageId::WouldYouLikeToOpenTheGate]
+    );
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToOpenTheGate, 1);
+    assert!(s.world.door(door).unwrap().open);
+
+    // An open door asks to close it. A yes to the other question takes the holder too and opens
+    // an open door: nothing changes.
+    click(&mut s, P1);
+    assert_eq!(
+        dialogs(&s.take(), P1),
+        [SystemMessageId::WouldYouLikeToCloseTheGate]
+    );
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToOpenTheGate, 1);
+    assert!(s.world.door(door).unwrap().open);
+    click(&mut s, P1);
+    s.take();
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToCloseTheGate, 1);
+    assert!(!s.world.door(door).unwrap().open);
+
+    // The target changed meanwhile: the yes is ignored.
+    click(&mut s, P1);
+    s.take();
+    s.world.set_target(ObjectId(P1), None);
+    answer(&mut s, P1, SystemMessageId::WouldYouLikeToOpenTheGate, 1);
+    assert!(!s.world.door(door).unwrap().open);
+
+    // The door that cannot be opened by a skill (`isOpenableBySkill`) never asks.
+    let other = s.world.door_by_door_id(18_220_001).unwrap().object_id;
+    for _ in 0..2 {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(P1).unwrap()),
+            input: ClientInput::Action {
+                object_id: other.0,
+                action_id: 0,
+            },
+        });
+    }
+    assert!(dialogs(&s.take(), P1).is_empty());
+
+    // During the siege nobody is asked (`!getSiege().isInProgress()`).
+    s.world.fort_start_siege(SHANTY);
+    s.take();
+    click(&mut s, P1);
+    click(&mut s, P1);
+    assert!(dialogs(&s.take(), P1).is_empty());
 }
 
 // ---------------------------------------------------------------------------------- combat flag

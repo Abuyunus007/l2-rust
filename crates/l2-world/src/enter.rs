@@ -578,6 +578,8 @@ impl World {
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
         self.send(id, &skill_list(&p.data, &*self.data));
         debug!("enter-world packets sent to {id}");
+        // `PcCafePointsManager.run(player)` (M6-FU-11).
+        self.pc_cafe_on_enter(id);
         // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
         self.punishment_on_player_login(id);
     }

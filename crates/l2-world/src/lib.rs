@@ -50,6 +50,7 @@ pub mod npc;
 pub mod objects;
 pub mod outbox;
 pub mod party;
+pub mod pccafe;
 pub mod player;
 mod player_view;
 pub mod punishments;
@@ -78,6 +79,7 @@ pub mod user_command;
 mod visibility;
 pub mod warehouse;
 pub mod world;
+pub mod zone_trap;
 pub mod zones;
 
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
@@ -140,6 +142,7 @@ pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{
     CommandChannelId, CommandChannelWorld, PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld,
 };
+pub use pccafe::PcCafeSettings;
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,

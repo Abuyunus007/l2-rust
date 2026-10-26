@@ -262,6 +262,12 @@ struct Scene {
     log: Log,
     outs: Outs,
     vm: Option<ObjectId>,
+    /// The `crests` ids the database has (M7-FU-03): what the persistence task answers to a
+    /// `CrestIdsRequest`.
+    db_crest_ids: Vec<i32>,
+    /// A test that answers the requests itself sets this.
+    hold_crest_answers: bool,
+    answered_tickets: Vec<u32>,
     _root: tempfile::TempDir,
 }
 
@@ -309,6 +315,9 @@ impl Scene {
             log: Log::default(),
             outs,
             vm: None,
+            db_crest_ids: Vec::new(),
+            hold_crest_answers: false,
+            answered_tickets: Vec::new(),
             _root: root,
         }
     }
@@ -336,6 +345,34 @@ impl Scene {
 
     fn clan_input(&mut self, id: i32, input: ClanInput) {
         self.input(id, ClientInput::Clan(input));
+        if !self.hold_crest_answers {
+            self.answer_crest_requests();
+        }
+    }
+
+    /// The tickets of the `CrestIdsRequest`s in the log that were not answered yet.
+    fn crest_requests(&self) -> Vec<u32> {
+        let outs = self.outs.0.lock().unwrap();
+        outs.iter()
+            .filter_map(|o| match o {
+                PersistCommand::CrestIdsRequest { ticket } if !self.answered_tickets.contains(ticket) => {
+                    Some(*ticket)
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// What the persistence task does for a `CrestIdsRequest`: it reads the ids of the table.
+    fn answer_crest_requests(&mut self) {
+        for ticket in self.crest_requests() {
+            self.answered_tickets.push(ticket);
+            let used = self.db_crest_ids.clone();
+            self.world.handle(WorldCommand::CrestIdsLoaded {
+                ticket,
+                result: Ok(used),
+            });
+        }
     }
 
     /// The player talks to the village master (spawned on first use): its page is cached.
@@ -850,6 +887,166 @@ fn a_crest_upload_is_checked_like_request_set_pledge_crest() {
         ids_to(&s.take(), P1),
         [SystemMessageId::AsYouAreCurrentlyScheduleForClanDissolutionYouCannotRegisterOrDeleteAClanCrest]
     );
+}
+
+/// M7-FU-03: a new crest takes the lowest free id, not `max + 1`.
+#[test]
+fn a_new_crest_takes_the_lowest_free_id() {
+    let mut s = Scene::new();
+    s.load(vec![lions_of_three(3, 0)]);
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.take();
+    // The other server wrote 1, 2 and 4; 3 is free.
+    s.db_crest_ids = vec![4, 1, 2];
+    s.clan_input(
+        P1,
+        ClanInput::SetPledgeCrest {
+            length: 2,
+            data: Some(vec![8, 8]),
+        },
+    );
+    assert_eq!(s.clan().crest_id, 3);
+    assert!(
+        clan_writes(&s.outs.take()).contains(&ClanWrite::Crest(CrestWrite::Insert {
+            crest_id: 3,
+            data: vec![8, 8],
+            crest_type: 1
+        }))
+    );
+    // `_nextId` is still above the highest id the world gave out.
+    assert_eq!(s.world.crest_table().next_id(), 4);
+    assert_eq!(
+        ids_to(&s.take(), P1),
+        [SystemMessageId::TheCrestWasSuccessfullyRegistered]
+    );
+}
+
+/// M7-FU-03: without a gap the id is `max + 1`.
+#[test]
+fn a_new_crest_without_a_gap_takes_max_plus_one() {
+    let mut s = Scene::new();
+    s.load(vec![lions_of_three(3, 0)]);
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.take();
+    s.db_crest_ids = vec![1, 2, 3];
+    s.clan_input(
+        P1,
+        ClanInput::SetPledgeCrest {
+            length: 1,
+            data: Some(vec![1]),
+        },
+    );
+    assert_eq!(s.clan().crest_id, 4);
+}
+
+/// M7-FU-03: two uploads asked before the first answer (the answer of the second does not list
+/// the first insert) still get two ids.
+#[test]
+fn two_crests_asked_together_do_not_collide() {
+    let mut s = Scene::new();
+    s.load(vec![lions_of_three(3, 0)]);
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.take();
+    s.hold_crest_answers = true;
+    for data in [vec![1], vec![2]] {
+        s.clan_input(
+            P1,
+            ClanInput::SetPledgeCrest {
+                length: 1,
+                data: Some(data),
+            },
+        );
+    }
+    let tickets = s.crest_requests();
+    assert_eq!(tickets.len(), 2);
+    for ticket in tickets {
+        s.world.handle(WorldCommand::CrestIdsLoaded {
+            ticket,
+            result: Ok(Vec::new()),
+        });
+    }
+    // 1, then 2 (the first crest is replaced by the second and deleted).
+    assert_eq!(s.clan().crest_id, 2);
+    let inserts: Vec<i32> = clan_writes(&s.outs.take())
+        .into_iter()
+        .filter_map(|w| match w {
+            ClanWrite::Crest(CrestWrite::Insert { crest_id, .. }) => Some(crest_id),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(inserts, [1, 2]);
+}
+
+/// M7-FU-03: an insert that fails is retried once under a fresh read of the ids.
+#[test]
+fn a_failed_crest_insert_is_retried_once_with_a_fresh_read() {
+    let mut s = Scene::new();
+    s.load(vec![lions_of_three(3, 0)]);
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.take();
+    s.clan_input(
+        P1,
+        ClanInput::SetPledgeCrest {
+            length: 1,
+            data: Some(vec![5]),
+        },
+    );
+    assert_eq!(s.clan().crest_id, 1);
+    s.outs.take();
+    // The other server took id 1 meanwhile: the insert failed.
+    s.hold_crest_answers = true;
+    s.world.handle(WorldCommand::CrestInsertFailed { crest_id: 1 });
+    let tickets = s.crest_requests();
+    assert_eq!(tickets.len(), 1);
+    s.world.handle(WorldCommand::CrestIdsLoaded {
+        ticket: tickets[0],
+        result: Ok(vec![1]),
+    });
+    assert_eq!(s.clan().crest_id, 2);
+    assert!(s.world.crest(1).is_none());
+    assert_eq!(s.world.crest(2).map(|c| c.data.clone()), Some(vec![5]));
+    assert_eq!(
+        clan_writes(&s.outs.take()),
+        [
+            ClanWrite::Crest(CrestWrite::Insert {
+                crest_id: 2,
+                data: vec![5],
+                crest_type: 1
+            }),
+            ClanWrite::Crest(CrestWrite::ClanCrest {
+                clan_id: CLAN,
+                crest_id: 2
+            }),
+        ]
+    );
+    // A second failure of the new id is not retried again.
+    s.world.handle(WorldCommand::CrestInsertFailed { crest_id: 2 });
+    assert!(s.crest_requests().is_empty());
+}
+
+/// M7-FU-03: a failed read creates nothing.
+#[test]
+fn a_failed_crest_id_read_creates_no_crest() {
+    let mut s = Scene::new();
+    s.load(vec![lions_of_three(3, 0)]);
+    s.enter(member_data(P1, CLAN, 1, 0));
+    s.take();
+    s.hold_crest_answers = true;
+    s.clan_input(
+        P1,
+        ClanInput::SetPledgeCrest {
+            length: 1,
+            data: Some(vec![5]),
+        },
+    );
+    let tickets = s.crest_requests();
+    s.world.handle(WorldCommand::CrestIdsLoaded {
+        ticket: tickets[0],
+        result: Err(()),
+    });
+    assert_eq!(s.clan().crest_id, 0);
+    assert!(s.world.crest_table().is_empty());
+    assert!(ids_to(&s.take(), P1).is_empty());
 }
 
 #[test]

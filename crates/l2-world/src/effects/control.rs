@@ -130,6 +130,9 @@ pub(crate) struct CreatureControl {
     pub revive_requested: bool,
     pub revive_power: f64,
     pub revive_pet: bool,
+    /// `DoorRequestHolder`: the door the open/close `ConfirmDlg` of a clan hall or fortress door
+    /// was sent for (M7-FU-03, `target.rs`); `DlgAnswer` takes it.
+    pub door_request: Option<ObjectId>,
     /// `AbstractAI._nextAction` (see `actions.rs`).
     pub next_action: Option<crate::actions::NextAction>,
     /// `Player._multiSociaAction` and `_multiSocialTarget`.

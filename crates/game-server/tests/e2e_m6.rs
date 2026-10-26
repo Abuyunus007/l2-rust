@@ -1269,6 +1269,20 @@ impl BareWorld {
                         result: Ok(items),
                     });
                 }
+                PersistCommand::CrestIdsRequest { ticket } => {
+                    // The ids of the `crests` rows after the writes sent before the request.
+                    let ids = self
+                        .persisted
+                        .clan_tables()
+                        .1
+                        .iter()
+                        .map(|c| c.crest_id)
+                        .collect();
+                    self.world.handle(WorldCommand::CrestIdsLoaded {
+                        ticket,
+                        result: Ok(ids),
+                    });
+                }
                 PersistCommand::ClanWarehouseRequest { player, clan_id } => {
                     let items = self
                         .persisted

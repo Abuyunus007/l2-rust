@@ -211,13 +211,15 @@ impl World {
     }
 
     /// Java `Player.setTeam(team)`: the team, then `broadcastUserInfo()`.
-    // M6-SUMMON: `_summon.broadcastStatusUpdate()` when the player has a summon.
     fn set_team(&mut self, id: ObjectId, team: u8) {
         if !self.players.contains_key(&id) {
             return;
         }
         self.duel.players.entry(id).or_default().team = team;
         self.broadcast_user_info(id);
+        if let Some(summon) = self.summon_of(id) {
+            self.broadcast_status_update(summon);
+        }
     }
 
     /// Java `Player.setStartingDuel()`.
@@ -267,8 +269,9 @@ impl World {
     // caller reads it right after `canDuel()` returned false, so a plain `Result` is the same.
     pub fn can_duel(&self, id: ObjectId) -> Result<(), SystemMessageId> {
         use SystemMessageId::{
-            C1CannotDuelBecauseC1IsAlreadyEngagedInADuel, C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle,
-            C1CannotDuelBecauseC1IsCurrentlyFishing,
+            C1CannotDuelBecauseC1IsAlreadyEngagedInADuel,
+            C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture,
+            C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle, C1CannotDuelBecauseC1IsCurrentlyFishing,
             C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
             C1CannotMakeAChallengeToADuelBecauseC1IsCurrentlyInADuelProhibitedAreaPeacefulZoneSevenSignsZoneNearWaterRestartProhibitedArea as InProhibitedArea,
             ThereIsNoOpponentToReceiveYourChallengeForADuel,
@@ -296,7 +299,9 @@ impl World {
         }
         // M8: `_inOlympiadMode` (C1_CANNOT_DUEL_BECAUSE_C1_IS_PARTICIPATING_IN_THE_OLYMPIAD).
         // M8: `isCursedWeaponEquipped()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_IN_A_CHAOTIC_STATE).
-        // M6-STORE: `_privateStoreType != NONE` (..._ENGAGED_IN_A_PRIVATE_STORE_OR_MANUFACTURE).
+        if self.is_in_store_mode(id) {
+            return Err(C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture);
+        }
         // `isMounted() || isInBoat()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_CURRENTLY_RIDING_A_BOAT_STEED_OR_STRIDER).
         if self.is_mounted(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider);
@@ -1125,8 +1130,12 @@ impl World {
             self.set_intention_active(temp);
             self.set_target(temp, None);
             self.send(temp, &ActionFailed);
-            // M6-SUMMON: the same for the summon of `temp` if it is alive (`abortCast`,
-            // `setIntentionActive`, `setTarget(null)`, `ActionFailed`).
+            if let Some(summon) = self.summon_of(temp).filter(|s| !self.is_dead(*s)) {
+                self.abort_cast(summon);
+                self.set_intention_active(summon);
+                self.set_creature_target(summon, None);
+                self.send(summon, &ActionFailed);
+            }
         }
     }
 
@@ -1368,9 +1377,11 @@ impl World {
     /// The duel part of `PlayerStatus.reduceHp` for a hit by `attacker`: `true` when the damage is
     /// ignored (the duelist is already beaten or has won).
     pub(crate) fn duel_ignores_damage(&mut self, player: ObjectId, attacker: ObjectId) -> bool {
-        // M6-SUMMON: `attacker.asPlayer()` of a summon is its owner.
-        let attacker_player = attacker;
-        if !self.players.contains_key(&attacker_player) || !self.is_in_duel(player) {
+        // `attacker.asPlayer()`: a summon is its owner.
+        let Some(attacker_player) = self.acting_player(attacker) else {
+            return false;
+        };
+        if !self.is_in_duel(player) {
             return false;
         }
         match self.duel_state_of(player) {
@@ -1407,11 +1418,34 @@ impl World {
         true
     }
 
+    /// The duel part of `NpcStatus.reduceHp` and `SummonStatus.reduceHp` for a hit on `victim`.
+    pub(crate) fn duel_interrupt_on_hit(&mut self, victim: ObjectId, attacker: ObjectId) {
+        if self.is_summon(victim) {
+            self.duel_interrupt_on_summon_hit(victim, attacker);
+        } else {
+            self.duel_interrupt_on_npc_hit(attacker);
+        }
+    }
+
+    /// The duel part of `SummonStatus.reduceHp`: whoever hits a summon (its player, for a summon
+    /// attacker) leaves his duel unless the summon's owner is in the same one.
+    fn duel_interrupt_on_summon_hit(&mut self, summon: ObjectId, attacker: ObjectId) {
+        let Some(attacker_player) = self.acting_player(attacker) else {
+            return;
+        };
+        let owner_duel = self.summon_owner(summon).map(|owner| self.duel_id_of(owner));
+        if owner_duel != Some(self.duel_id_of(attacker_player)) {
+            self.set_duel_state(attacker_player, DuelState::Interrupted);
+        }
+    }
+
     /// The duel part of `NpcStatus.reduceHp`: a duelist who hits an NPC leaves the duel.
     pub(crate) fn duel_interrupt_on_npc_hit(&mut self, attacker: ObjectId) {
-        // M6-SUMMON: `attacker.asPlayer()` of a summon is its owner.
-        if self.players.contains_key(&attacker) && self.is_in_duel(attacker) {
-            self.set_duel_state(attacker, DuelState::Interrupted);
+        // `attacker.asPlayer()`: a summon is its owner.
+        if let Some(owner) = self.acting_player(attacker)
+            && self.is_in_duel(owner)
+        {
+            self.set_duel_state(owner, DuelState::Interrupted);
         }
     }
 }

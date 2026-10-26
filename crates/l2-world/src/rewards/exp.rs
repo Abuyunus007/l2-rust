@@ -24,7 +24,7 @@
 // - Parties: `reward_party_share` is the party branch of `calculateRewards`;
 //   `Party.distributeXpAndSp` itself is `party/rewards.rs` (M6-PARTY-01). The servitor penalty
 //   is missing.
-// - PC cafe points (`PcCafePointsManager`). Vitality and Nevit are in `vitality.rs` and `nevit.rs`
+// - Vitality and Nevit are in `vitality.rs` and `nevit.rs`
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
 // - The over-hit bonus (a skill effect,
@@ -341,7 +341,7 @@ impl World {
             if add_exp > 0 && use_vitality {
                 let points = self.kill_vitality_points(dying, level, damage);
                 self.update_vitality_points(attacker, points, true, false);
-                // `PcCafePointsManager.givePcCafePoint`: see the module comment.
+                self.give_pc_cafe_point(attacker, exp);
             }
         }
     }

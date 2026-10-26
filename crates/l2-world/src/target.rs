@@ -18,8 +18,10 @@
 // - `isOutOfControl`, vehicles, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
 //   `on_target_canceled`.)
 
+use l2_data::door::OPEN_BY_SKILL;
+use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ActionFailed, MoveToPawn, MyTargetSelected, NpcHtmlMessage, ShowTownMap, TargetSelected,
+    ActionFailed, ConfirmDlg, MoveToPawn, MyTargetSelected, NpcHtmlMessage, ShowTownMap, TargetSelected,
     TargetUnselected, ValidateLocation,
 };
 use l2_util::ObjectId;
@@ -29,6 +31,7 @@ use crate::dialog::INTERACTION_DISTANCE;
 use crate::effects::control::ACTION_BLOCK_ID;
 use crate::flood::FloodKind;
 use crate::objects::ObjectKind;
+use crate::residence::ClanHallId;
 use crate::world::World;
 
 /// Java `calculateDistance2D`: `sqrt(dx² + dy²)` with the differences taken in `int` first.
@@ -534,8 +537,87 @@ impl World {
                 }
                 return;
             }
-            // FOLLOW-UP(M7-CH-01, M7-FORT-01): the clan hall / fortress door confirmation dialogs.
-            debug!("{player} clicked door {door} twice: the clan doors arrive with their cards");
+            self.door_click_owner_dialog(player, door);
+        }
+    }
+
+    /// The rest of `DoorClick.onAction`: the owner clan of a clan hall or a fortress is asked
+    /// whether to open or close the door (M7-FU-03). Java reads `player.getClan()` first; a player
+    /// without a clan never reaches either branch.
+    fn door_click_owner_dialog(&mut self, player: ObjectId, door: ObjectId) {
+        let clan_id = self.clan_id_of(player);
+        if clan_id == 0 {
+            return;
+        }
+        let Some(d) = self.doors.get(&door) else {
+            return;
+        };
+        let (hall_id, open, openable_by_skill, pos) = (
+            d.template.clanhall_id,
+            d.open,
+            d.template.open_type & OPEN_BY_SKILL == OPEN_BY_SKILL,
+            (d.x, d.y, d.z),
+        );
+        // `door.getClanHall()` is set only for a hall the table knows.
+        let hall = ClanHallId(hall_id);
+        // A hall the player's clan does not own falls through to the fortress branch.
+        if hall_id > 0 && self.clan_hall(hall).is_some_and(|h| h.owner_id == clan_id) {
+            if !self.inside_interaction_radius(player, pos) {
+                self.set_intention_interact(player, door);
+            } else if !self.is_siegable_hall_id(hall_id) || !self.hall_is_in_siege(hall) {
+                self.ask_door_dialog(player, door, open);
+            }
+            return;
+        }
+        let Some(fort) = self.fort_at(pos.0, pos.1, pos.2) else {
+            return;
+        };
+        if self.fort(fort).is_some_and(|f| f.owner_id == clan_id)
+            && openable_by_skill
+            && !self.fort_siege_in_progress(fort)
+        {
+            if !self.inside_interaction_radius(player, pos) {
+                self.set_intention_interact(player, door);
+            } else {
+                self.ask_door_dialog(player, door, open);
+            }
+        }
+    }
+
+    /// `isInsideRadius2D(player, Npc.INTERACTION_DISTANCE)` of the door.
+    fn inside_interaction_radius(&self, player: ObjectId, door: (i32, i32, i32)) -> bool {
+        self.position_of(player)
+            .is_some_and(|me| distance_2d(me, door) < f64::from(INTERACTION_DISTANCE))
+    }
+
+    /// `player.addScript(new DoorRequestHolder(door))` and `ConfirmDlg(1140)` for a closed door,
+    /// `ConfirmDlg(1141)` for an open one.
+    fn ask_door_dialog(&mut self, player: ObjectId, door: ObjectId, open: bool) {
+        if let Some(control) = self.control_mut(player) {
+            control.door_request = Some(door);
+        }
+        let message = if open {
+            SystemMessageId::WouldYouLikeToCloseTheGate
+        } else {
+            SystemMessageId::WouldYouLikeToOpenTheGate
+        };
+        self.send(player, &ConfirmDlg::new(message));
+    }
+
+    /// Java `DlgAnswer` for `WOULD_YOU_LIKE_TO_OPEN_THE_GATE` (`open`) and
+    /// `WOULD_YOU_LIKE_TO_CLOSE_THE_GATE`: the holder is removed whatever the answer; the door is
+    /// moved only for a yes and while it is still the player's target.
+    pub(crate) fn door_dialog_answer(&mut self, player: ObjectId, answer: i32, open: bool) {
+        let holder = self.control_mut(player).and_then(|c| c.door_request.take());
+        if let Some(door) = holder
+            && self.target_of(player) == Some(door)
+            && answer == 1
+        {
+            if open {
+                self.open_door(door);
+            } else {
+                self.close_door(door);
+            }
         }
     }
 

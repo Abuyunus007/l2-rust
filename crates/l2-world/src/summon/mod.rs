@@ -17,8 +17,8 @@
 // - A pet (PET-01) is a `Summon` of kind [`SummonKind::Pet`] with its own pet state next to it.
 //
 // # Left out, with the system that brings it
-// - Cubics are in `cubic.rs` (CUBIC-01). Duels (`setDuelState(DUELSTATE_INTERRUPTED)` in
-//   `SummonStatus`): DUEL-01.
+// - Cubics are in `cubic.rs` (CUBIC-01). The duel part of `SummonStatus.reduceHp` is
+//   `duel_interrupt_on_summon_hit` in `duel.rs`.
 // - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
 //   as "not in one".
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn

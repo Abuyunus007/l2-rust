@@ -143,6 +143,8 @@ pub struct PlayerProfile {
     pub title_color: i32,
     /// `characters.vitality_points`.
     pub vitality_points: i32,
+    /// `characters.pccafe_points` (M6-FU-11, `pccafe.rs`).
+    pub pccafe_points: i32,
     /// `characters.bookmarkslot`.
     pub bookmark_slot: i32,
     /// `characters.death_penalty_level`.
@@ -248,6 +250,7 @@ impl Default for PlayerProfile {
             noble: false,
             title_color: DEFAULT_TITLE_COLOR,
             vitality_points: 0,
+            pccafe_points: 0,
             bookmark_slot: 0,
             death_penalty_level: 0,
             exp_before_death: 0,

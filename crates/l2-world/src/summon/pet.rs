@@ -1028,6 +1028,29 @@ impl World {
         true
     }
 
+    /// Java `PlayableStat.removeExp(amount)` of a pet: never below 1 exp, and the level drops to
+    /// what the exp makes. `false` without an experience table.
+    pub(crate) fn pet_remove_exp(&mut self, pet: ObjectId, amount: i64) -> bool {
+        let Some(max_level) = self.exp_table_max_pet_level() else {
+            return false;
+        };
+        let exp = self.summon(pet).map_or(0, |s| s.exp);
+        let mut value = amount;
+        if exp - value < 0 {
+            value = exp - 1;
+        }
+        if let Some(state) = self.summon_mut(pet) {
+            state.exp = exp - value;
+        }
+        let minimum = self.pet_min_level(pet);
+        let level = self.pet_level_for_exp(pet, max_level);
+        let current = self.npcs.get(&pet).map_or(1, |n| n.core.level);
+        if level != current && level >= minimum {
+            self.pet_add_level(pet, level - current);
+        }
+        true
+    }
+
     /// Java `PetStat.addLevel(value)` with `PlayableStat.addLevel`: `true` when the level went up.
     pub(crate) fn pet_add_level(&mut self, pet: ObjectId, amount: i32) -> bool {
         let Some(max_level) = self.exp_table_max_pet_level() else {

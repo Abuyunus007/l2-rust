@@ -142,6 +142,9 @@ pub enum PersistCommand {
         message_id: i32,
         sender_id: i32,
     },
+    /// Asks the persistence task for the used crest ids (`SELECT crest_id FROM crests`) before a
+    /// crest is created (M7-FU-03). The answer comes back as `WorldCommand::CrestIdsLoaded`.
+    CrestIdsRequest { ticket: u32 },
     /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
     /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
     ClanWarehouseRequest { player: ObjectId, clan_id: i32 },

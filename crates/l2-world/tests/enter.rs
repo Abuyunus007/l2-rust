@@ -1075,6 +1075,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(
                     PersistCommand::MailAttachmentsRequest { .. }
                     | PersistCommand::ClanWarehouseRequest { .. }
+                    | PersistCommand::CrestIdsRequest { .. }
                     | PersistCommand::BlockListRequest { .. }
                     | PersistCommand::OfflinePetRowsRequest { .. },
                 ) => "sync read",
