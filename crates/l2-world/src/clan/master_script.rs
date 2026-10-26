@@ -165,6 +165,10 @@ impl World {
         if self.residence_script_event(player, script_name, event) {
             return;
         }
+        // The wedding priest (M8-MISC-01, `wedding.rs`).
+        if self.wedding_script_event(player, script_name, event) {
+            return;
+        }
         // The `ManorManager` script is built in by the manor (`manor/npc.rs`, M7-MANOR-01).
         if script_name == "ManorManager" {
             self.manor_process_script_event(player, event);

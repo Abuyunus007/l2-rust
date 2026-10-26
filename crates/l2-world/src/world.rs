@@ -153,6 +153,12 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
+    pub(crate) walking: crate::walking::WalkingWorld,
+    /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
+    pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
+    /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
+    pub(crate) wedding: crate::wedding::WeddingWorld,
 }
 
 impl World {
@@ -226,6 +232,9 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            walking: crate::walking::WalkingWorld::default(),
+            event_drops: crate::rewards::event_drop::EventDropWorld::default(),
+            wedding: crate::wedding::WeddingWorld::default(),
         }
     }
 
@@ -875,6 +884,10 @@ impl World {
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
+            // Java: WalkingManager's start, repeat and arrival tasks
+            TimerKind::Walking(timer) => self.on_walking_timer(timer),
+            // Java: Wedding.EscapeFinalizer
+            TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
         }
     }
 

@@ -655,9 +655,10 @@ impl World {
 
         // Random monster spawns (custom RandomSpawns.ini): a monster with a fixed heading
         // spawns up to MaxSpawnMobRange away, if it can walk and see there.
-        // WalkingManager.isTargeted (walker routes) and instances: M4.
+        // Instances: M4.
         if settings.random_monster_spawns
             && heading != -1
+            && !self.walking_is_targeted(template.id)
             && class.is_monster()
             && !template.quest_monster
             && !template.undying

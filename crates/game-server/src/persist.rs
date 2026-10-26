@@ -417,6 +417,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(0) }
     }
 
+    /// A write of `mods_wedding` (Java's `Couple` statements, M8-MISC-01).
+    fn store_wedding(
+        &mut self,
+        _write: &l2_world::wedding::WeddingWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
     fn store_petition_feedback(
         &mut self,
@@ -946,6 +954,12 @@ async fn run<S: PlayerStore>(
                     }
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Wedding(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_wedding(&write).await {
+                    error!("A couple could NOT be stored ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::BotReport(row)) => {
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_bot_report(&row).await {
@@ -1382,6 +1396,28 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
             .collect(),
         Err(e) => {
             warn!("PunishmentManager: Error while loading punishments: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `CoupleManager.load()`, the database half (only with `AllowWedding`): the couples of
+/// `mods_wedding`. A database that cannot be read gives none, like Java.
+pub async fn load_couples(pool: &Pool) -> Vec<l2_world::wedding::Couple> {
+    match l2_db::WeddingRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| l2_world::wedding::Couple {
+                id: row.id,
+                player1_id: row.player1_id,
+                player2_id: row.player2_id,
+                married: row.married,
+                affiance_date: row.affiance_date,
+                wedding_date: row.wedding_date,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Exception: CoupleManager.load(): {e}");
             Vec::new()
         }
     }
@@ -2706,6 +2742,7 @@ pub struct DbStore {
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
     announcements: AnnouncementRepository,
+    wedding: l2_db::WeddingRepository,
     petition_feedback: PetitionFeedbackRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -2745,6 +2782,7 @@ impl DbStore {
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool.clone()),
             announcements: AnnouncementRepository::new(pool.clone()),
+            wedding: l2_db::WeddingRepository::new(pool.clone()),
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -3913,6 +3951,27 @@ impl PlayerStore for DbStore {
                 Ok(0)
             }
         }
+    }
+
+    async fn store_wedding(&mut self, write: &l2_world::wedding::WeddingWrite) -> Result<(), PersistError> {
+        use l2_world::wedding::WeddingWrite;
+        match write {
+            WeddingWrite::Insert(couple) => {
+                self.wedding
+                    .insert(&l2_db::CoupleRow {
+                        id: couple.id,
+                        player1_id: couple.player1_id,
+                        player2_id: couple.player2_id,
+                        married: couple.married,
+                        affiance_date: couple.affiance_date,
+                        wedding_date: couple.wedding_date,
+                    })
+                    .await?;
+            }
+            WeddingWrite::Marry { id, wedding_date } => self.wedding.marry(*id, *wedding_date).await?,
+            WeddingWrite::Divorce { id } => self.wedding.delete(*id).await?,
+        }
+        Ok(())
     }
 
     async fn store_petition_feedback(

@@ -1086,9 +1086,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::BotReport(_)) => "bot report",
                 Out::Persist(PersistCommand::OfflineTrade(_)) => "offline trade",
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
-                Out::Persist(PersistCommand::Announcement(_) | PersistCommand::PetitionFeedback { .. }) => {
-                    "admin"
-                }
+                Out::Persist(
+                    PersistCommand::Announcement(_)
+                    | PersistCommand::PetitionFeedback { .. }
+                    | PersistCommand::Wedding(_),
+                ) => "admin",
                 Out::Packet(..) => "packet",
                 Out::Left(..) => "sink",
                 Out::Ls(_) => "ls",

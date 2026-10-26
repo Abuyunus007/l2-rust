@@ -70,6 +70,10 @@ impl World {
         if self.residence_npc_on_click(npc, player) {
             return true;
         }
+        // The wedding priest (M8-MISC-01).
+        if self.wedding_first_talk(npc, player, true) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -89,6 +93,10 @@ impl World {
         }
         // The castle NPCs (M7-NPC-01, `residence/npc/`).
         if self.residence_npc_first_talk(npc, player, false) {
+            return true;
+        }
+        // The wedding priest (M8-MISC-01).
+        if self.wedding_first_talk(npc, player, false) {
             return true;
         }
         if !self.is_manor_manager(npc) {
