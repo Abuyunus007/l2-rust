@@ -91,6 +91,7 @@ pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
 pub mod items;
+pub mod leftover;
 pub mod mail;
 pub mod manor;
 pub mod map_windows;
@@ -169,6 +170,7 @@ pub use items::{
     read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
     write_item_updates,
 };
+pub use leftover::{ExRpItemLink, ShopPreviewInfo};
 pub use mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,

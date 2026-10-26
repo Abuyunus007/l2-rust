@@ -33,6 +33,11 @@ use crate::client::{
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
 use crate::client::{
+    FinishRotating, MoveWithDelta, RequestCrystallizeItem, RequestDeleteMacro, RequestExMagicSkillUseGround,
+    RequestExRqItemLink, RequestMakeMacro, RequestPreviewItem, RequestRecordInfo, RequestSaveInventoryOrder,
+    RequestSaveKeyMapping, RequestShowMiniMap, RequestSkillList, StartRotating,
+};
+use crate::client::{
     RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
 };
 use crate::client::{
@@ -100,6 +105,25 @@ pub enum ClientPacket {
     RequestGotoLobby(RequestGotoLobby),
     EnterWorld(EnterWorld),
     RequestKeyMapping(RequestKeyMapping),
+    // L-02 (`client/leftover.rs`)
+    RequestMakeMacro(RequestMakeMacro),
+    RequestDeleteMacro(RequestDeleteMacro),
+    RequestCrystallizeItem(RequestCrystallizeItem),
+    RequestPreviewItem(RequestPreviewItem),
+    /// `REQUEST_EX_RQ_ITEM_LINK` (`0xD0` 0x001E), an ex packet.
+    RequestExRqItemLink(RequestExRqItemLink),
+    /// `REQUEST_SAVE_KEY_MAPPING` (`0xD0` 0x0022), an ex packet.
+    RequestSaveKeyMapping(RequestSaveKeyMapping),
+    /// `REQUEST_SAVE_INVENTORY_ORDER` (`0xD0` 0x0024), an ex packet.
+    RequestSaveInventoryOrder(RequestSaveInventoryOrder),
+    /// `REQUEST_EX_MAGIC_SKILL_USE_GROUND` (`0xD0` 0x0044), an ex packet.
+    RequestExMagicSkillUseGround(RequestExMagicSkillUseGround),
+    RequestShowMiniMap(RequestShowMiniMap),
+    RequestRecordInfo(RequestRecordInfo),
+    RequestSkillList(RequestSkillList),
+    MoveWithDelta(MoveWithDelta),
+    StartRotating(StartRotating),
+    FinishRotating(FinishRotating),
     Say2(Say2),
     Logout(Logout),
     RequestRestart(RequestRestart),
@@ -599,6 +623,18 @@ pub fn decode_client(
             ClientPacket::RequestSetCastleSiegeTime(RequestSetCastleSiegeTime::decode(reader)?)
         }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
+        RequestMakeMacro::OPCODE => ClientPacket::RequestMakeMacro(RequestMakeMacro::decode(reader)?),
+        RequestDeleteMacro::OPCODE => ClientPacket::RequestDeleteMacro(RequestDeleteMacro::decode(reader)?),
+        RequestCrystallizeItem::OPCODE => {
+            ClientPacket::RequestCrystallizeItem(RequestCrystallizeItem::decode(reader)?)
+        }
+        RequestPreviewItem::OPCODE => ClientPacket::RequestPreviewItem(RequestPreviewItem::decode(reader)?),
+        RequestShowMiniMap::OPCODE => ClientPacket::RequestShowMiniMap(RequestShowMiniMap::decode(reader)?),
+        RequestRecordInfo::OPCODE => ClientPacket::RequestRecordInfo(RequestRecordInfo::decode(reader)?),
+        RequestSkillList::OPCODE => ClientPacket::RequestSkillList(RequestSkillList::decode(reader)?),
+        MoveWithDelta::OPCODE => ClientPacket::MoveWithDelta(MoveWithDelta::decode(reader)?),
+        StartRotating::OPCODE => ClientPacket::StartRotating(StartRotating::decode(reader)?),
+        FinishRotating::OPCODE => ClientPacket::FinishRotating(FinishRotating::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -624,6 +660,18 @@ fn decode_ex_client(
             ClientPacket::RequestAutoSoulShot(RequestAutoSoulShot::decode(reader)?)
         }
         RequestDispel::EX_OPCODE => ClientPacket::RequestDispel(RequestDispel::decode(reader)?),
+        RequestExRqItemLink::EX_OPCODE => {
+            ClientPacket::RequestExRqItemLink(RequestExRqItemLink::decode(reader)?)
+        }
+        RequestSaveKeyMapping::EX_OPCODE => {
+            ClientPacket::RequestSaveKeyMapping(RequestSaveKeyMapping::decode(reader)?)
+        }
+        RequestSaveInventoryOrder::EX_OPCODE => {
+            ClientPacket::RequestSaveInventoryOrder(RequestSaveInventoryOrder::decode(reader)?)
+        }
+        RequestExMagicSkillUseGround::EX_OPCODE => {
+            ClientPacket::RequestExMagicSkillUseGround(RequestExMagicSkillUseGround::decode(reader)?)
+        }
         RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
         AnswerCoupleAction::EX_OPCODE => {
             ClientPacket::AnswerCoupleAction(AnswerCoupleAction::decode(reader)?)
