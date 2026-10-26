@@ -298,7 +298,13 @@ fn geo_edit(world: &mut World, gm: ObjectId) -> Outcome {
 }
 
 /// The page of `admin_geoedit` for a player at geo cell `cell` looking `direction`.
-fn geo_edit_page(mut content: String, direction: i32, geo: &Geo<'_>, cell: (i32, i32), player_z: i32) -> String {
+fn geo_edit_page(
+    mut content: String,
+    direction: i32,
+    geo: &Geo<'_>,
+    cell: (i32, i32),
+    player_z: i32,
+) -> String {
     // Follow player heading.
     let [n, e, s, w] = compass(direction);
     content = content.replace("%N%", n);
@@ -316,7 +322,10 @@ fn geo_edit_page(mut content: String, direction: i32, geo: &Geo<'_>, cell: (i32,
                 _ => (-dy, dx),
             };
             let (gx, gy) = (cell.0 + dx, cell.1 + dy);
-            content = content.replace(&format!("xy_{translated_dx}_{translated_dy}"), &format!("{gx} {gy}"));
+            content = content.replace(
+                &format!("xy_{translated_dx}_{translated_dy}"),
+                &format!("{gx} {gy}"),
+            );
             let z = geo.nearest_z(gx, gy, player_z);
             let all_open = [NSWE_NORTH, NSWE_EAST, NSWE_SOUTH, NSWE_WEST]
                 .iter()
@@ -343,7 +352,13 @@ fn geo_edit_cell(world: &mut World, gm: ObjectId, st: &mut Tokens<'_>) -> Outcom
 }
 
 /// The page of `admin_ge` for the cell `(gx, gy)`.
-fn geo_edit_cell_page(mut content: String, direction: i32, geo: &Geo<'_>, cell: (i32, i32), player_z: i32) -> String {
+fn geo_edit_cell_page(
+    mut content: String,
+    direction: i32,
+    geo: &Geo<'_>,
+    cell: (i32, i32),
+    player_z: i32,
+) -> String {
     // Follow player heading: the placeholders turn with it.
     if direction == 0 {
         content = content.replace('%', "");
@@ -415,7 +430,12 @@ fn debug_grid(world: &mut World, gm: ObjectId) -> Outcome {
                         i_packet += 1;
                         packets.push(done);
                     }
-                    current = Some(ExServerPrimitive::new(&format!("DebugGrid_{i_packet}"), px, py, -16000));
+                    current = Some(ExServerPrimitive::new(
+                        &format!("DebugGrid_{i_packet}"),
+                        px,
+                        py,
+                        -16000,
+                    ));
                 }
                 let Some(exsp) = current.as_mut() else {
                     continue;
@@ -477,7 +497,12 @@ fn hide_debug_grid(world: &mut World, gm: ObjectId) -> Outcome {
                     i_packet += 1;
                     packets.push(done);
                 }
-                current = Some(ExServerPrimitive::new(&format!("DebugGrid_{i_packet}"), px, py, -16000));
+                current = Some(ExServerPrimitive::new(
+                    &format!("DebugGrid_{i_packet}"),
+                    px,
+                    py,
+                    -16000,
+                ));
             }
             let Some(exsp) = current.as_mut() else {
                 continue;
@@ -584,7 +609,8 @@ fn admin_path_find(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let options = world.admin.path.options.clone().unwrap_or_default();
     let mut finder = match world.admin.path.finder.take() {
         Some(finder) => finder,
-        None => PathFinder::new(options).map_err(|e| JavaException(format!("java.lang.IllegalStateException: {e}")))?,
+        None => PathFinder::new(options)
+            .map_err(|e| JavaException(format!("java.lang.IllegalStateException: {e}")))?,
     };
     let path = finder.find_path(&geo, &world.obstacles(), from, to, instance, true);
     world.admin.path.finder = Some(finder);
@@ -623,7 +649,10 @@ mod tests {
         let geo = Geo(None);
         let page = geo_edit_cell_page(template.clone(), 0, &geo, (5, 6), 0);
         // No geodata: every side is open, so the buttons switch it off.
-        assert_eq!(page, "N|L2UI_CH3.minibar_food|dn 5 6|L2UI_CH3.minibar_food|de 5 6");
+        assert_eq!(
+            page,
+            "N|L2UI_CH3.minibar_food|dn 5 6|L2UI_CH3.minibar_food|de 5 6"
+        );
         // Facing east: the north button is the east side, shown as "E".
         let page = geo_edit_cell_page(template, 1, &geo, (5, 6), 0);
         assert!(page.starts_with("E|"));

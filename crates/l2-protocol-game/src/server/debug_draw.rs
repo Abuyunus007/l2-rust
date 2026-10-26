@@ -81,7 +81,15 @@ impl ExServerPrimitive {
     }
 
     /// Java `addPoint(name, color, isNameColored, x, y, z)`.
-    pub fn add_named_point(&mut self, name: &str, color: PrimitiveColor, name_colored: bool, x: i32, y: i32, z: i32) {
+    pub fn add_named_point(
+        &mut self,
+        name: &str,
+        color: PrimitiveColor,
+        name_colored: bool,
+        x: i32,
+        y: i32,
+        z: i32,
+    ) {
         self.points.push(Primitive {
             name: name.to_owned(),
             color,
@@ -166,8 +174,10 @@ impl Decode for ExServerPrimitive {
             let (ex, ey, ez) = (r.i32()?, r.i32()?, r.i32()?);
             // `Color.getRGB()` has the alpha byte set; the wire has no alpha.
             let color = PrimitiveColor(
-                (0xFF00_0000_u32 | ((red as u32 & 0xFF) << 16) | ((green as u32 & 0xFF) << 8) | (blue as u32 & 0xFF))
-                    as i32,
+                (0xFF00_0000_u32
+                    | ((red as u32 & 0xFF) << 16)
+                    | ((green as u32 & 0xFF) << 8)
+                    | (blue as u32 & 0xFF)) as i32,
             );
             match kind {
                 1 => packet.add_named_point(&entry_name, color, name_colored, ex, ey, ez),

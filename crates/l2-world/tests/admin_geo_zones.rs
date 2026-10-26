@@ -10,7 +10,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use l2_data::{HtmCache, ItemTemplates, MapRegions, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions, Zones};
+use l2_data::{
+    HtmCache, ItemTemplates, MapRegions, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions, Zones,
+};
 use l2_geo::coords::{geo_x, geo_y};
 use l2_geo::{GeoEngine, GeoEngineOptions, GeoSet, Region};
 use l2_net::{Decode, PacketReader};
@@ -78,7 +80,8 @@ fn rights() -> AdminRights {
     rights
 }
 
-const ITEMS: &str = r#"<list><item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item></list>"#;
+const ITEMS: &str =
+    r#"<list><item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item></list>"#;
 
 struct Fake {
     rights: AdminRights,
@@ -248,7 +251,11 @@ fn write(root: &Path, path: &str, text: &str) {
 /// `geo`: the engine to install; `zones`: install the zone table and the map region.
 fn setup(geo: Option<Arc<GeoEngine>>, zones: bool) -> Setup {
     let root = tempfile::tempdir().unwrap();
-    write(root.path(), "data/spawns/none.xml", r#"<?xml version="1.0"?><list enabled="true"></list>"#);
+    write(
+        root.path(),
+        "data/spawns/none.xml",
+        r#"<?xml version="1.0"?><list enabled="true"></list>"#,
+    );
     write(root.path(), "data/html/admin/zone.htm", ZONE_PAGE);
     write(root.path(), "data/html/admin/zone_builder.htm", BUILDER_PAGE);
     write(root.path(), "data/html/admin/geoedit.htm", GEOEDIT_PAGE);
@@ -436,7 +443,11 @@ fn engine_with_cell(closed_south: bool, pathfinding: i32) -> ((i32, i32), Arc<Ge
     let own = if closed_south { all & !SOUTH } else { all };
     // Cell index inside the block: `(geoX % 8) * 8 + (geoY % 8)`.
     let cell = ((gx & 7) * 8 + (gy & 7)) as usize;
-    let region = Region::parse(&region_bytes(Z as i16, Some((block, cell, height | all, height | own)))).unwrap();
+    let region = Region::parse(&region_bytes(
+        Z as i16,
+        Some((block, cell, height | all, height | own)),
+    ))
+    .unwrap();
     let mut set = GeoSet::new();
     assert!(set.insert(rx as u32, ry as u32, region));
     let options = GeoEngineOptions {
@@ -484,10 +495,7 @@ fn every_command_of_the_handlers_is_registered_or_answers_like_java() {
     for command in registered {
         s.run(command);
         let out = s.log.take();
-        let missing = s
-            .said(&out)
-            .iter()
-            .any(|t| t.contains("does not exist"));
+        let missing = s.said(&out).iter().any(|t| t.contains("does not exist"));
         assert!(!missing, "{command} has no handler");
     }
     // The edit commands need an editable geoengine (see the report): no handler, like Java for a
@@ -538,7 +546,7 @@ fn geo_pos_names_the_cell_and_its_height() {
     s.log.take();
     s.run("admin_geo_pos");
     let expected = format!("WorldX: {X}, WorldY: {Y}, WorldZ: {Z}, GeoX: {gx}, GeoY: {gy}, GeoZ: {Z}");
-    assert_eq!(s.said(&s.log.take()), [expected.clone()]);
+    assert_eq!(s.said(&s.log.take()), std::slice::from_ref(&expected));
     // Java gives `geo_spawn_pos` the same body.
     s.run("admin_geo_spawn_pos");
     assert_eq!(s.said(&s.log.take()), [expected]);
@@ -645,9 +653,14 @@ fn geoedit_shows_the_cells_around_the_player_on_the_board() {
     // Heading 0 looks north: the letters stay.
     assert!(page.contains("N E S W"));
     // Cell (0, 0) of the page is the GM's own, closed to the south: the arrow icon.
-    assert!(page.contains(&format!("bypass admin_ge {gx} {gy}\" back=\"L2UI_CH3.minibar_arrow\"")));
+    assert!(page.contains(&format!(
+        "bypass admin_ge {gx} {gy}\" back=\"L2UI_CH3.minibar_arrow\""
+    )));
     // The cell east of it (dx 1, dy 0) is open on every side.
-    assert!(page.contains(&format!("bypass admin_ge {} {gy}\" back=\"L2UI_CH3.minibar_food\"", gx + 1)));
+    assert!(page.contains(&format!(
+        "bypass admin_ge {} {gy}\" back=\"L2UI_CH3.minibar_food\"",
+        gx + 1
+    )));
     // dy -1 is the cell north of it.
     assert!(page.contains(&format!("bypass admin_ge {gx} {}\"", gy - 1)));
     assert!(!page.contains("xy_") && !page.contains("bg_"));
@@ -694,7 +707,9 @@ fn geoedit_turns_with_the_heading() {
     s.run("admin_ge x 2");
     assert_eq!(
         s.said(&s.log.take()),
-        ["Exception during execution of  'admin_ge x 2': java.lang.NumberFormatException: For input string: \"x\""]
+        [
+            "Exception during execution of  'admin_ge x 2': java.lang.NumberFormatException: For input string: \"x\""
+        ]
     );
 }
 
@@ -705,7 +720,8 @@ fn geoedit_cuts_a_long_page_into_three_parts() {
     s.enter(GM, 0);
     let long = format!("<html><body>{}</body></html>", "x".repeat(16_300));
     write(s.root.path(), "data/html/admin/geoedit.htm", &long);
-    s.world.set_html_cache(Arc::new(HtmCache::load(s.root.path(), false)));
+    s.world
+        .set_html_cache(Arc::new(HtmCache::load(s.root.path(), false)));
     s.log.take();
     s.run("admin_geoedit");
     let boards = boards_to(&s.log.take(), GM);
@@ -731,7 +747,11 @@ fn region_draws_the_surrounding_world_regions_and_clear_wipes_them() {
     // 27 boxes of 12 lines (the player is deep inside the grid); the player's own is orange, and
     // is the first of the list.
     assert_eq!(p.lines().len(), 27 * 12);
-    let orange: Vec<_> = p.lines().iter().filter(|l| l.color == PrimitiveColor::ORANGE).collect();
+    let orange: Vec<_> = p
+        .lines()
+        .iter()
+        .filter(|l| l.color == PrimitiveColor::ORANGE)
+        .collect();
     assert_eq!(orange.len(), 12);
     assert!(p.lines()[..12].iter().all(|l| l.color == PrimitiveColor::ORANGE));
     assert!(p.lines()[12..].iter().all(|l| l.color == PrimitiveColor::GREEN));
@@ -777,7 +797,12 @@ fn path_find_tells_the_nodes_or_why_not() {
     s.run("admin_path_find");
     let lines = s.said(&s.log.take());
     assert!(!lines.is_empty());
-    assert!(lines.iter().all(|l| l.starts_with("x:") && l.contains(" y:") && l.contains(" z:")), "{lines:?}");
+    assert!(
+        lines
+            .iter()
+            .all(|l| l.starts_with("x:") && l.contains(" y:") && l.contains(" z:")),
+        "{lines:?}"
+    );
 
     // Only an exact word runs.
     s.run("admin_path_find now");
@@ -810,7 +835,10 @@ fn zone_check_shows_the_flags_the_zones_and_the_restart_points() {
     let pages = html_to(&out, GM);
     assert_eq!(pages.len(), 1);
     let page = &pages[0].html;
-    assert!(page.contains(&format!("peace {} pvp NO town NO", yes())), "{page}");
+    assert!(
+        page.contains(&format!("peace {} pvp NO town NO", yes())),
+        "{page}"
+    );
     // The ScriptZone sets its flag; the zones are listed: a named one with its id below 300000,
     // the unnamed one by its id only.
     assert!(page.contains(&format!("script {}", yes())));
@@ -828,7 +856,11 @@ fn zone_check_shows_the_flags_the_zones_and_the_restart_points() {
     assert!(texts[3].starts_with("TeleToLocation (Castle): x:"));
     assert!(texts[4].starts_with("TeleToLocation (ClanHall): x:"));
     assert!(texts[5].starts_with("TeleToLocation (SiegeFlag): x:"));
-    assert!(texts[6].starts_with("TeleToLocation (Town): x:-84141 y:244623 z:-3730"), "{}", texts[6]);
+    assert!(
+        texts[6].starts_with("TeleToLocation (Town): x:-84141 y:244623 z:-3730"),
+        "{}",
+        texts[6]
+    );
 
     s.bypass("admin_zone_check");
     assert_eq!(html_to(&s.log.take(), GM).len(), 1);
@@ -859,7 +891,10 @@ fn zone_visual_drops_markers_along_the_border_and_clear_takes_them() {
 
     s.run("admin_zone_visual_clear");
     let out = s.log.take();
-    assert_eq!(decoded::<DeleteObject>(&out, GM, "DELETE_OBJECT").len(), 80 + 80 + 62 + 40);
+    assert_eq!(
+        decoded::<DeleteObject>(&out, GM, "DELETE_OBJECT").len(),
+        80 + 80 + 62 + 40
+    );
     assert!(s.world.ground_item_ids().is_empty());
     assert_eq!(html_to(&out, GM).len(), 1);
 
@@ -995,7 +1030,14 @@ fn zone_build_splits_long_drawings_delete_and_clear() {
     assert_eq!(wipes[0].name, "ZoneBuilder1");
     assert_eq!(wipes[1].name, "ZoneBuilder2");
     assert_eq!(wipes[0].points()[0].color, PrimitiveColor::GREEN);
-    assert_eq!((wipes[0].points()[0].x, wipes[0].points()[0].y, wipes[0].points()[0].z), (0, 0, -32768));
+    assert_eq!(
+        (
+            wipes[0].points()[0].x,
+            wipes[0].points()[0].y,
+            wipes[0].points()[0].z
+        ),
+        (0, 0, -32768)
+    );
     assert!(!page_of(&out).contains("<table"));
 
     // Deleting down to one point clears the whole list.
@@ -1021,7 +1063,9 @@ fn zone_build_save_asks_and_writes_the_zone_file() {
     assert_eq!(dialogs[0].message.id, SystemMessageId::S13);
     assert_eq!(
         dialogs[0].message.params,
-        [SystemMessageParam::Text("Do you wish to save the zone?".to_owned())]
+        [SystemMessageParam::Text(
+            "Do you wish to save the zone?".to_owned()
+        )]
     );
     s.answer(1);
     assert_eq!(s.said(&s.log.take()), ["No path entries to save."]);
@@ -1046,7 +1090,11 @@ fn zone_build_save_asks_and_writes_the_zone_file() {
     let out = s.log.take();
     let said = s.said(&out);
     assert_eq!(said.len(), 1);
-    assert!(said[0].starts_with("Zone saved at data/zones/P100-"), "{}", said[0]);
+    assert!(
+        said[0].starts_with("Zone saved at data/zones/P100-"),
+        "{}",
+        said[0]
+    );
     let dir = s.root.path().join("data").join("zones");
     let file = std::fs::read_dir(&dir)
         .unwrap()
@@ -1078,7 +1126,8 @@ fn page_of_or_none(out: &Sent) -> Option<NpcHtmlMessage> {
 fn zone_build_save_to_a_missing_folder_fails_like_java() {
     let mut s = setup(None, false);
     s.enter(GM, 0);
-    s.world.set_zone_build_dir(PathBuf::from("/this/folder/does/not/exist"));
+    s.world
+        .set_zone_build_dir(PathBuf::from("/this/folder/does/not/exist"));
     s.run("admin_zone_build_toggle");
     s.click(1, 2, 3);
     s.run("admin_zone_build_save");
@@ -1111,7 +1160,13 @@ fn the_builder_forgets_a_gm_who_left() {
 #[test]
 fn the_real_pages_have_no_placeholder_left() {
     let root = PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game");
-    if !root.join("data").join("html").join("admin").join("geoedit.htm").is_file() {
+    if !root
+        .join("data")
+        .join("html")
+        .join("admin")
+        .join("geoedit.htm")
+        .is_file()
+    {
         eprintln!("skipped: {} has no admin pages", root.display());
         return;
     }
@@ -1127,7 +1182,12 @@ fn the_real_pages_have_no_placeholder_left() {
     let page: String = boards
         .iter()
         .enumerate()
-        .map(|(i, b)| b.content.strip_prefix(&format!("10{}\u{8}", i + 1)).unwrap().to_owned())
+        .map(|(i, b)| {
+            b.content
+                .strip_prefix(&format!("10{}\u{8}", i + 1))
+                .unwrap()
+                .to_owned()
+        })
         .collect::<Vec<_>>()
         .join("");
     let page = &page;

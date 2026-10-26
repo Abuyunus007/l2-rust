@@ -768,7 +768,8 @@ impl Server {
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
             let geo_engine = Arc::clone(&geo_engine);
             // `//path_find` and `//zone_build_save` (admin/geodata.rs, admin/zone_tools.rs).
-            let (path_options, zone_build_dir) = (geo_settings.path.clone(), paths.root.join("data").join("zones"));
+            let (path_options, zone_build_dir) =
+                (geo_settings.path.clone(), paths.root.join("data").join("zones"));
             let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
             let (html, teleporters) = (Arc::clone(&datapack.html), Arc::clone(&datapack.teleporters));
             let hit_condition_bonus = Arc::clone(&datapack.hit_condition_bonus);

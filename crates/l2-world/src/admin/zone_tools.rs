@@ -21,8 +21,8 @@ use std::path::PathBuf;
 
 use l2_data::ZoneForm;
 use l2_data::map_region::MapRegions;
-use l2_protocol_game::server::{ConfirmDlg, ExServerPrimitive, PrimitiveColor, SystemMessageParam};
 use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::{ConfirmDlg, ExServerPrimitive, PrimitiveColor, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -214,7 +214,12 @@ fn admin_zone(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 regions.closest_town_name(x, y).to_owned(),
             ),
             // No map regions installed: the tile numbers still follow from the position.
-            None => (MapRegions::map_region_x(x), MapRegions::map_region_y(y), 0, "Aden Castle Town".to_owned()),
+            None => (
+                MapRegions::map_region_x(x),
+                MapRegions::map_region_y(y),
+                0,
+                "Aden Castle Town".to_owned(),
+            ),
         };
         world.send_sys_message(gm, &format!("MapRegion: x:{map_x} y:{map_y} ({loc_id})"));
         // getGeoRegionXY
@@ -417,12 +422,24 @@ impl World {
     /// Java `ZoneBuildManager.displayZones`: the points in red, joined by green lines, ten to a
     /// packet.
     fn zone_build_display(&mut self, gm: ObjectId) {
-        let Some(points) = self.admin.zones.points.get(&gm).filter(|p| !p.is_empty()).cloned() else {
+        let Some(points) = self
+            .admin
+            .zones
+            .points
+            .get(&gm)
+            .filter(|p| !p.is_empty())
+            .cloned()
+        else {
             return;
         };
         let mut packet_count = 1;
         let first = points[0];
-        let mut packet = ExServerPrimitive::new(&format!("ZoneBuilder{packet_count}"), first.0, first.1, 65535 + first.2);
+        let mut packet = ExServerPrimitive::new(
+            &format!("ZoneBuilder{packet_count}"),
+            first.0,
+            first.1,
+            65535 + first.2,
+        );
         packet.add_named_point("0", PrimitiveColor::RED, true, first.0, first.1, first.2);
         for i in 1..points.len() {
             if i % POINTS_PER_PACKET == 0 {
@@ -462,7 +479,11 @@ impl World {
             if i % POINTS_PER_PACKET == 0 {
                 packet_count += 1;
                 self.send(gm, &packet);
-                packet = wipe(format!("ZoneBuilder{packet_count}"), points[i - 1].0, points[i - 1].1);
+                packet = wipe(
+                    format!("ZoneBuilder{packet_count}"),
+                    points[i - 1].0,
+                    points[i - 1].1,
+                );
             }
         }
         self.send(gm, &packet);
@@ -495,7 +516,14 @@ impl World {
 
     /// Java `ZoneBuildManager.buildZone`: writes the xml and clears the points.
     fn zone_build_save(&mut self, gm: ObjectId) {
-        let Some(points) = self.admin.zones.points.get(&gm).filter(|p| !p.is_empty()).cloned() else {
+        let Some(points) = self
+            .admin
+            .zones
+            .points
+            .get(&gm)
+            .filter(|p| !p.is_empty())
+            .cloned()
+        else {
             self.send_message(gm, "No path entries to save.");
             return;
         };
