@@ -727,6 +727,9 @@ impl World {
         let now_world = self.world_ms();
         self.ground_item_ids()
             .into_iter()
+            // The markers of `//zone_visual` are `spawnMe`d, never `dropMe`d: the manager does not
+            // know them.
+            .filter(|id| !self.admin.zones.debug_items.contains(id))
             .filter_map(|id| self.ground.items.get(&id))
             .map(|item| GroundItemRow {
                 object_id: item.object_id(),

@@ -767,6 +767,8 @@ impl Server {
             let store = DbStore::new(pool.clone());
             let (data, settings) = (Arc::clone(&static_data), world_settings.clone());
             let geo_engine = Arc::clone(&geo_engine);
+            // `//path_find` and `//zone_build_save` (admin/geodata.rs, admin/zone_tools.rs).
+            let (path_options, zone_build_dir) = (geo_settings.path.clone(), paths.root.join("data").join("zones"));
             let (zones, map_regions) = (Arc::clone(&datapack.zones), Arc::clone(&datapack.map_regions));
             let (html, teleporters) = (Arc::clone(&datapack.html), Arc::clone(&datapack.teleporters));
             let hit_condition_bonus = Arc::clone(&datapack.hit_condition_bonus);
@@ -812,6 +814,8 @@ impl Server {
                     world.set_summon_settings(summon_settings);
                     world.set_pc_cafe_settings(pc_cafe_settings);
                     world.set_geo(geo_engine);
+                    world.set_admin_path_options(path_options);
+                    world.set_zone_build_dir(zone_build_dir);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);
                     // The pages of NPC dialogs and the gatekeeper lists (always preloaded).
