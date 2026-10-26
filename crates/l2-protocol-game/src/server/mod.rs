@@ -97,6 +97,7 @@ pub mod multisell;
 pub mod party;
 pub mod pccafe;
 pub mod pledge;
+pub mod primitive;
 pub mod recipe;
 pub mod refine;
 pub mod regen;
@@ -115,6 +116,7 @@ pub mod visibility;
 pub mod warehouse;
 
 pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
+pub use primitive::{ExServerPrimitive, PrimitiveLine, PrimitivePoint};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
