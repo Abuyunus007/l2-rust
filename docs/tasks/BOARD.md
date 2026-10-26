@@ -318,7 +318,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
 | [M6-FU-11](M6/M6-FU-11.md) | Stale M6 markers: duel, summon and store checks, GM pet views, SkillCoolTime, talisman mana, PC cafe points | sonnet | full | none | in-progress |
 | [M6-FU-12](M6/M6-FU-12.md) | Skill channelizer, weapon and option trigger skills | sonnet | full | none | merged |
-| [M6-FU-13](M6/M6-FU-13.md) | Command channels | sonnet | full | none | in-progress |
+| [M6-FU-13](M6/M6-FU-13.md) | Command channels | sonnet | full | none | merged |
 | [M6-FU-14](M6/M6-FU-14.md) | Pet evolve and offline trade | sonnet | full | none | in-progress |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
