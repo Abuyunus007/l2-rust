@@ -37,6 +37,7 @@ pub mod element;
 pub mod enchant;
 pub mod exp_sp;
 pub mod gm;
+pub mod geodata;
 pub mod html;
 pub mod invul;
 pub mod karma;
@@ -54,6 +55,7 @@ pub mod summon;
 pub mod teleport;
 pub mod transform;
 pub mod vitality;
+pub mod zone_tools;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -133,6 +135,10 @@ pub(crate) struct AdminWorld {
     /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
     /// Java keeps one such list for the whole server, so this is one list too.
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
+    /// The zone builder and the zone markers (`zone_tools.rs`).
+    pub(crate) zones: zone_tools::ZoneAdmin,
+    /// The path search of `//path_find` (`geodata.rs`).
+    pub(crate) path: geodata::PathAdmin,
 }
 
 impl Default for AdminWorld {
@@ -169,11 +175,15 @@ impl Default for AdminWorld {
         chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
+        geodata::register(&mut handlers);
+        zone_tools::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
+            zones: zone_tools::ZoneAdmin::default(),
+            path: geodata::PathAdmin::default(),
         }
     }
 }
@@ -365,6 +375,10 @@ impl World {
     /// answer to the confirmation of an admin command. A yes runs the command again with the
     /// confirmation off; a no forgets it. Without a waiting command nothing happens.
     pub(crate) fn admin_confirm_answer(&mut self, player: ObjectId, answer: i32) {
+        // `PlayerAction.ADMIN_SAVE_ZONE` is checked before `ADMIN_COMMAND`.
+        if self.zone_save_answer(player, answer) {
+            return;
+        }
         let Some(command) = self.admin.pending_confirm.remove(&player) else {
             return;
         };

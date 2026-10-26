@@ -28,6 +28,7 @@ use l2_protocol_game::server::command_channel::{
     ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
     ExMultiPartyCommandChannelInfo, ExOpenMpcc,
 };
+use l2_protocol_game::server::debug_draw::{ExServerPrimitive, ShowBoard};
 use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
@@ -741,6 +742,8 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::Sunset => decoded::<SunSet>(&mut r, no_fields),
         ServerOpcode::ExRedSky => decoded::<ExRedSky>(&mut r, ex_red_sky_fields),
         ServerOpcode::SpecialCamera => decoded::<SpecialCamera>(&mut r, special_camera_fields),
+        ServerOpcode::ExServerPrimitive => decoded::<ExServerPrimitive>(&mut r, server_primitive_fields),
+        ServerOpcode::ShowBoard => decoded::<ShowBoard>(&mut r, show_board_fields),
         ServerOpcode::AgitDecoInfo => decoded::<AgitDecoInfo>(&mut r, agit_deco_info_fields),
         ServerOpcode::ChooseInventoryItem => {
             decoded::<ChooseInventoryItem>(&mut r, choose_inventory_item_fields)
@@ -2083,6 +2086,28 @@ fn special_camera_fields(p: &SpecialCamera) -> Value {
     object!(p => id, force, angle1, angle2, time, duration, rel_yaw, rel_pitch, is_wide, rel_angle, unk)
 }
 
+fn server_primitive_fields(p: &ExServerPrimitive) -> Value {
+    let entry = |e: &l2_protocol_game::server::Primitive| {
+        json!({
+            "name": e.name,
+            "color": e.color.0,
+            "name_colored": e.name_colored,
+            "x": e.x, "y": e.y, "z": e.z,
+            "end": e.end.map(|(x, y, z)| json!({ "x": x, "y": y, "z": z })),
+        })
+    };
+    json!({
+        "name": p.name,
+        "x": p.x, "y": p.y, "z": p.z,
+        "points": p.points().iter().map(entry).collect::<Vec<_>>(),
+        "lines": p.lines().iter().map(entry).collect::<Vec<_>>(),
+    })
+}
+
+fn show_board_fields(p: &ShowBoard) -> Value {
+    object!(p => show, content)
+}
+
 fn agit_deco_info_fields(p: &AgitDecoInfo) -> Value {
     object!(p => hall_id, fireplace, carpet_statue, chandelier, mirror, crystal, curtain, magic_curtain, flag, front_platform, item_create)
 }
@@ -2555,6 +2580,8 @@ mod tests {
         ServerOpcode::Sunset,
         ServerOpcode::ExRedSky,
         ServerOpcode::SpecialCamera,
+        ServerOpcode::ExServerPrimitive,
+        ServerOpcode::ShowBoard,
         ServerOpcode::AgitDecoInfo,
         ServerOpcode::ExShowAgitInfo,
         ServerOpcode::ChooseInventoryItem,
