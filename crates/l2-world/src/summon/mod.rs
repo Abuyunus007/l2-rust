@@ -34,6 +34,7 @@ pub mod ai;
 pub mod baby_pet;
 pub mod cubic;
 pub mod cubic_formulas;
+pub mod evolve;
 pub mod info;
 pub mod party;
 pub mod pet;
@@ -87,6 +88,10 @@ pub enum SummonTimer {
     BabyCast(ObjectId),
     /// A cubic's action task and disappear task, see `cubic.rs`.
     Cubic(cubic::CubicTimer),
+    /// `PetManager.EvolveFinalizer`: 900 ms after an evolve or restore (M6-FU-14, `evolve.rs`).
+    EvolveFinalizer(ObjectId),
+    /// `PetManager.EvolveFeedWait`: a minute after an evolve of a starving pet (`evolve.rs`).
+    EvolveFeedWait(ObjectId),
 }
 
 /// The `SummonAI` fields (Java `ai/SummonAI.java`).
@@ -220,6 +225,8 @@ impl World {
             SummonTimer::PetFeed(id) => self.on_pet_feed_timer(id),
             SummonTimer::BabyCast(id) => self.on_baby_cast_timer(id),
             SummonTimer::Cubic(timer) => self.on_cubic_timer(timer),
+            SummonTimer::EvolveFinalizer(id) => self.on_pet_evolve_finalizer(id),
+            SummonTimer::EvolveFeedWait(id) => self.on_pet_evolve_feed_wait(id),
         }
     }
 

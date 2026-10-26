@@ -356,6 +356,9 @@ impl World {
         } else if is_hall_doorman {
             // Java: ClanHallDoorman.onBypassFeedback (`clanhall/doorman.rs`).
             self.clan_hall_doorman_bypass_feedback(npc, player, command);
+        } else if npc_type == Some("PetManager") {
+            // Java: PetManager.onBypassFeedback (exchange, evolve, restore, `summon/evolve.rs`).
+            self.pet_manager_bypass_feedback(npc, player, command);
         } else if self.castle_doorman_bypass_feedback(npc, player, command) {
             // Java: CastleDoorman.onBypassFeedback (`residence/npc/doorman.rs`).
         } else if is_teleporter {
