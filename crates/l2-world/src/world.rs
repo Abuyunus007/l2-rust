@@ -357,11 +357,12 @@ impl World {
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
             WorldCommand::ReleaseOfflineTrader { object_id, done } => {
-                let was_trader = self.is_offline_trader(object_id);
-                if was_trader {
-                    self.leave(object_id, LeaveReason::Disconnected);
-                }
+                let was_trader = self.release_offline_trader_quietly(object_id);
                 done(was_trader);
+            }
+            WorldCommand::ReleaseOfflineAccount { account, done } => {
+                let released = self.release_offline_account(&account);
+                done(released);
             }
             WorldCommand::Admin(query) => self.on_admin(query),
             WorldCommand::PathFound {

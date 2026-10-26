@@ -145,7 +145,10 @@ impl World {
             object_id: id,
             // Java sends `PlayerLogout` when the connection ends (`GameClient.onDisconnection`),
             // not when the player goes back to the character screen.
-            logout: reason != LeaveReason::Restart && !was_trader,
+            // A trader's account was freed when it went offline, but only with the database
+            // switch (D-52); without it the account is held until the trader leaves.
+            logout: reason != LeaveReason::Restart
+                && !(was_trader && (self.offline.settings.database_writes || self.offline.quiet_release)),
         });
         // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);

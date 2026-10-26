@@ -200,7 +200,19 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         server.spawn(async move {
             while let Some(kick) = kicks.recv().await {
                 if registry.kick(&kick.account, &world) == KickOutcome::NotConnected {
-                    link.player_logout(&kick.account).await;
+                    // No connection: an offline trader of the account is released first; its
+                    // final store then frees the account (D-52).
+                    let (tx, rx) = tokio::sync::oneshot::channel();
+                    let sent = world.send(l2_world::WorldCommand::ReleaseOfflineAccount {
+                        account: kick.account.clone(),
+                        done: Box::new(move |released| {
+                            let _ = tx.send(released);
+                        }),
+                    });
+                    let released = sent && rx.await.unwrap_or(false);
+                    if !released {
+                        link.player_logout(&kick.account).await;
+                    }
                 }
             }
         });

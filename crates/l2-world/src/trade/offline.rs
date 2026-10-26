@@ -14,9 +14,13 @@
 // `World::players` that has no entry in `World::sinks`; the rest of the world already reads it so
 // (`siege/player.rs`, `pvp.rs`, `effects/buff_info.rs`). [`OfflineWorld::traders`] lists them with
 // the time they went offline (`getOfflineStartTime`). The connection is closed with `ServerClose`
-// like Java's `client.close(ServerClose.STATIC_PACKET)`, the login server hears `PlayerLogout`
-// at once (Java `GameClient.onDisconnection` -> `sendLogout`; the account is free for a login
-// while the trader stays), and the character is stored with `online = 2`
+// like Java's `client.close(ServerClose.STATIC_PACKET)`. With `OfflineTradeDatabaseWrites` the
+// login server hears `PlayerLogout` at once (Java `GameClient.onDisconnection` -> `sendLogout`;
+// the account is free for a login while the trader stays). Without it (side by side, D-52) the
+// account stays on this server: the owner could otherwise log the character into the Java server,
+// which loads the items from the database while this trader still sells them. A login elsewhere
+// kicks the account, and the trader is stored and deleted then (`release_offline_account`; its
+// final `PlayerLeft` frees the account). The character is stored with `online = 2`
 // (`Player.isOnlineInt()` of a detached client).
 //
 // # The database rows (D-52)
@@ -123,6 +127,8 @@ pub(crate) struct OfflineWorld {
     pub(crate) settings: OfflineSettings,
     /// The players without a client (`World.OFFLINE_TRADE_COUNT` is its length).
     pub(crate) traders: HashMap<ObjectId, OfflineTrader>,
+    /// A release that must not tell the login server (the account is in use by a new session).
+    pub(crate) quiet_release: bool,
 }
 
 /// One line of `character_offline_trade_items`.
@@ -334,8 +340,14 @@ impl World {
             self.outbox
                 .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
         }
-        // `GameClient.onDisconnection` -> `sendLogout(account)`.
-        if let Some(account) = account {
+        // `GameClient.onDisconnection` -> `sendLogout(account)`: only with the database switch.
+        // Side by side (D-52) the account stays on this server for the login server: the owner
+        // could otherwise log the character into the Java server, which loads its items from the
+        // database while this trader keeps selling them. A login elsewhere kicks the account and
+        // the trader is released then (`release_offline_account`).
+        if self.offline.settings.database_writes
+            && let Some(account) = account
+        {
             self.outbox.ls_event(LsEvent::PlayerLogout { account });
         }
         info!("Entered offline mode, {id}.");
@@ -454,6 +466,36 @@ impl World {
                     char_id: id,
                 }));
         }
+    }
+
+    /// The login server kicked `account` and no connection of it exists: its offline traders are
+    /// stored and deleted (the final `PlayerLeft` then frees the account at the login server).
+    /// `true` when there was one.
+    pub(crate) fn release_offline_account(&mut self, account: &str) -> bool {
+        let mut ids: Vec<ObjectId> = self
+            .offline
+            .traders
+            .keys()
+            .copied()
+            .filter(|id| self.players.get(id).is_some_and(|p| p.data.account == account))
+            .collect();
+        ids.sort();
+        for id in &ids {
+            self.leave(*id, LeaveReason::Disconnected);
+        }
+        !ids.is_empty()
+    }
+
+    /// `CharacterSelect`: "Disconnect offline trader." The account is in use by the new session,
+    /// so the login server is not told.
+    pub(crate) fn release_offline_trader_quietly(&mut self, id: ObjectId) -> bool {
+        if !self.is_offline_trader(id) {
+            return false;
+        }
+        self.offline.quiet_release = true;
+        self.leave(id, LeaveReason::Disconnected);
+        self.offline.quiet_release = false;
+        true
     }
 
     /// `Player.setPrivateStoreType`'s `OFFLINE_DISCONNECT_FINISHED` branch: a trader whose store
