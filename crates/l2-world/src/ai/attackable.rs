@@ -287,7 +287,7 @@ impl World {
     }
 
     /// Java `WorldObject.isInInstance()`.
-    fn is_in_instance(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_in_instance(&self, id: ObjectId) -> bool {
         self.objects.get(&id).is_some_and(|e| e.instance_id != 0)
     }
 
