@@ -60,9 +60,25 @@ fn rights() -> AdminRights {
     ] {
         rights.add_level(level, child);
     }
-    for command in ["spawn", "delete"] {
+    for command in [
+        "spawn",
+        "delete",
+        "circlespawn",
+        "spawn_index",
+        "npc_index",
+        "show_npcs",
+        "spawnnight",
+        "spawnday",
+        "spawn_debug_menu",
+        "spawn_debug_print",
+        "spawn_debug_print_menu",
+        "topspawncount",
+        "top_spawn_count",
+    ] {
         rights.add_command(command, 100, false);
     }
+    // `unspawnall` asks first in the shipped `AdminCommands.xml`.
+    rights.add_command("unspawnall", 100, true);
     // `delete_group` and `deleteNpcByObjectId` have `confirmDlg="true"` in the shipped
     // `AdminCommands.xml`; `scan` is level 30.
     rights.add_command("delete_group", 100, true);
@@ -154,6 +170,11 @@ impl Root {
         let page = dir.path().join("data/html/admin/scan.htm");
         std::fs::create_dir_all(page.parent().unwrap()).unwrap();
         std::fs::write(page, "<html><body>SCAN %pages% %data%</body></html>").unwrap();
+        // The panels the spawn words send as they are.
+        for name in ["spawns.htm", "npcs.htm", "spawns_debug.htm"] {
+            let page = dir.path().join("data/html/admin").join(name);
+            std::fs::write(page, format!("<html><body>PANEL {name}</body></html>")).unwrap();
+        }
         Self(dir)
     }
 
@@ -413,4 +434,134 @@ fn delete_npc_by_object_id_refuses_a_bad_id() {
             "NPC does not exist or object_id does not belong to an NPC".to_owned(),
         ]
     );
+}
+
+// --------------------------------------------------------------------------- the spawn words
+
+#[test]
+fn circlespawn_puts_the_npcs_on_a_circle_and_says_how_many() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    cmd(&mut s, "circlespawn 2000 4 100 60 true");
+    assert_eq!(rats(&s).len(), 4, "four rats on the circle");
+    assert_eq!(texts(&s.log.take()), vec!["Spawn circle created: 4Rat".to_owned()]);
+}
+
+#[test]
+fn circlespawn_by_name_and_bad_words() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    cmd(&mut s, "circlespawn nosuch 2 50");
+    cmd(&mut s, "circlespawn 2000 two 50");
+    assert_eq!(
+        texts(&s.log.take()),
+        vec![
+            "NPC not found.".to_owned(),
+            "Us: //circlespawn <npcId|name> <quantity> <radio> [respawn] [permanent]".to_owned(),
+        ]
+    );
+    assert!(rats(&s).is_empty());
+    cmd(&mut s, "circlespawn Rat 1 10");
+    assert_eq!(rats(&s).len(), 1, "a name works with the default respawn");
+}
+
+#[test]
+fn topspawncount_counts_the_npcs_per_template() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    spawn_rat(&mut s);
+    spawn_rat(&mut s);
+    s.log.take();
+    cmd(&mut s, "topspawncount");
+    assert_eq!(
+        texts(&s.log.take()),
+        vec!["Top 5 spawn count.".to_owned(), "Rat (2000): 2".to_owned()]
+    );
+}
+
+#[test]
+fn spawn_index_lists_the_monsters_of_a_level() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    cmd(&mut s, "spawn_index 3");
+    let html = pages(&s.log.take());
+    assert_eq!(html.len(), 1);
+    assert!(html[0].contains("Total NPCs : 1"), "{}", html[0]);
+    assert!(html[0].contains("admin_spawn_monster 2000\">Rat"), "{}", html[0]);
+    // A level that is not a number is the spawn panel.
+    cmd(&mut s, "spawn_index abc");
+    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns.htm</body></html>".to_owned()]);
+}
+
+#[test]
+fn npc_index_and_show_npcs_show_the_panels() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    cmd(&mut s, "npc_index R");
+    let html = pages(&s.log.take());
+    assert!(html[0].contains("There are 0 Npcs whose name starts with R:"), "{}", html[0]);
+    cmd(&mut s, "show_npcs");
+    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]);
+    cmd(&mut s, "npc_index R x");
+    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]);
+}
+
+#[test]
+fn unspawnall_removes_every_npc_and_tells_the_gms() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    spawn_rat(&mut s);
+    spawn_rat(&mut s);
+    s.log.take();
+    // `unspawnall` asks first: the typed word only shows the dialog.
+    cmd(&mut s, "unspawnall");
+    assert_eq!(rats(&s).len(), 2, "the dialog comes first");
+    s.world.admin_command(ObjectId(GM), "admin_unspawnall", false);
+    assert!(rats(&s).is_empty(), "no NPC is left");
+    let out = s.log.take();
+    assert!(
+        texts(&out).contains(&"NPC unspawn completed!".to_owned()),
+        "{:?}",
+        texts(&out)
+    );
+}
+
+#[test]
+fn spawn_day_and_night_run_without_a_message() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    cmd(&mut s, "spawnday");
+    cmd(&mut s, "spawnnight");
+    assert!(texts(&s.log.take()).is_empty());
+}
+
+#[test]
+fn spawn_debug_print_needs_an_npc_target() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    let rat = spawn_rat(&mut s);
+    s.log.take();
+    cmd(&mut s, "spawn_debug_menu");
+    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]);
+    cmd(&mut s, "spawn_debug_print 1");
+    assert_eq!(system_ids(&s.log.take()), vec![SystemMessageId::InvalidTarget], "no target");
+    s.world.set_target(ObjectId(GM), Some(rat));
+    cmd(&mut s, "spawn_debug_print_menu 2");
+    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]);
+}
+
+fn system_ids(out: &Sent) -> Vec<SystemMessageId> {
+    out.iter()
+        .filter(|(_, b)| name_of(b) == ServerOpcode::SystemMessage.name())
+        .filter_map(|(_, b)| {
+            let skip = if b[0] == 0xFE { 3 } else { 1 };
+            let m = SystemMessage::decode(&mut PacketReader::new(&b[skip..])).ok()?;
+            (m.id != SystemMessageId::S12).then_some(m.id)
+        })
+        .collect()
 }
