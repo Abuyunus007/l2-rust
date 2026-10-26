@@ -293,8 +293,7 @@ fn rats(s: &Setup) -> Vec<ObjectId> {
 /// `//spawn 2000` at the GM's place: one rat for the target to point at.
 fn spawn_rat(s: &mut Setup) -> ObjectId {
     cmd(s, "spawn 2000");
-    let rat = *rats(s).last().expect("the rat is spawned");
-    rat
+    *rats(s).last().expect("the rat is spawned")
 }
 
 #[test]
@@ -306,10 +305,7 @@ fn delete_removes_the_target_npc_and_says_so() {
     s.world.set_target(ObjectId(GM), Some(rat));
     cmd(&mut s, "delete");
     assert!(rats(&s).is_empty(), "the rat is gone");
-    assert_eq!(
-        texts(&s.log.take()),
-        vec![format!("Deleted Rat from {}.", rat.0)]
-    );
+    assert_eq!(texts(&s.log.take()), vec![format!("Deleted Rat from {}.", rat.0)]);
 }
 
 #[test]
@@ -354,7 +350,9 @@ fn pages(out: &Sent) -> Vec<String> {
         .filter(|(_, b)| name_of(b) == ServerOpcode::NpcHtmlMessage.name())
         .map(|(_, b)| {
             let skip = if b[0] == 0xFE { 3 } else { 1 };
-            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..])).unwrap().html
+            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..]))
+                .unwrap()
+                .html
         })
         .collect()
 }
@@ -370,7 +368,11 @@ fn scan_lists_the_npcs_around_with_their_delete_links() {
     let html = pages(&raw);
     assert_eq!(html.len(), 1);
     assert!(html[0].starts_with("<html><body>SCAN "), "{}", html[0]);
-    assert!(html[0].contains("<td width=\"45\">2000</td>"), "the template id: {}", html[0]);
+    assert!(
+        html[0].contains("<td width=\"45\">2000</td>"),
+        "the template id: {}",
+        html[0]
+    );
     assert!(html[0].contains("Rat"), "{}", html[0]);
     assert!(
         html[0].contains(&format!("admin_deleteNpcByObjectId objectId={}", rat.0)),
@@ -388,10 +390,18 @@ fn scan_filters_by_template_id_and_by_name() {
     s.log.take();
     cmd(&mut s, "scan id=1001");
     let html = pages(&s.log.take());
-    assert!(!html[0].contains("admin_move_to"), "no NPC has id 1001: {}", html[0]);
+    assert!(
+        !html[0].contains("admin_move_to"),
+        "no NPC has id 1001: {}",
+        html[0]
+    );
     cmd(&mut s, "scan name=ra");
     let html = pages(&s.log.take());
-    assert!(html[0].contains("admin_move_to"), "the rat starts with ra: {}", html[0]);
+    assert!(
+        html[0].contains("admin_move_to"),
+        "the rat starts with ra: {}",
+        html[0]
+    );
     cmd(&mut s, "scan name=wolf");
     let html = pages(&s.log.take());
     assert!(!html[0].contains("admin_move_to"), "{}", html[0]);
@@ -421,7 +431,8 @@ fn delete_npc_by_object_id_refuses_a_bad_id() {
     enter_gm(&mut s);
     s.log.take();
     // The confirmed word: the answer runs it (here `admin_command` with the confirmation off).
-    s.world.admin_command(ObjectId(GM), "admin_deleteNpcByObjectId", false);
+    s.world
+        .admin_command(ObjectId(GM), "admin_deleteNpcByObjectId", false);
     s.world
         .admin_command(ObjectId(GM), "admin_deleteNpcByObjectId objectId=0", false);
     s.world
@@ -445,7 +456,10 @@ fn circlespawn_puts_the_npcs_on_a_circle_and_says_how_many() {
     s.log.take();
     cmd(&mut s, "circlespawn 2000 4 100 60 true");
     assert_eq!(rats(&s).len(), 4, "four rats on the circle");
-    assert_eq!(texts(&s.log.take()), vec!["Spawn circle created: 4Rat".to_owned()]);
+    assert_eq!(
+        texts(&s.log.take()),
+        vec!["Spawn circle created: 4Rat".to_owned()]
+    );
 }
 
 #[test]
@@ -493,7 +507,10 @@ fn spawn_index_lists_the_monsters_of_a_level() {
     assert!(html[0].contains("admin_spawn_monster 2000\">Rat"), "{}", html[0]);
     // A level that is not a number is the spawn panel.
     cmd(&mut s, "spawn_index abc");
-    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns.htm</body></html>".to_owned()]);
+    assert_eq!(
+        pages(&s.log.take()),
+        vec!["<html><body>PANEL spawns.htm</body></html>".to_owned()]
+    );
 }
 
 #[test]
@@ -503,11 +520,21 @@ fn npc_index_and_show_npcs_show_the_panels() {
     s.log.take();
     cmd(&mut s, "npc_index R");
     let html = pages(&s.log.take());
-    assert!(html[0].contains("There are 0 Npcs whose name starts with R:"), "{}", html[0]);
+    assert!(
+        html[0].contains("There are 0 Npcs whose name starts with R:"),
+        "{}",
+        html[0]
+    );
     cmd(&mut s, "show_npcs");
-    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]);
+    assert_eq!(
+        pages(&s.log.take()),
+        vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]
+    );
     cmd(&mut s, "npc_index R x");
-    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]);
+    assert_eq!(
+        pages(&s.log.take()),
+        vec!["<html><body>PANEL npcs.htm</body></html>".to_owned()]
+    );
 }
 
 #[test]
@@ -547,12 +574,22 @@ fn spawn_debug_print_needs_an_npc_target() {
     let rat = spawn_rat(&mut s);
     s.log.take();
     cmd(&mut s, "spawn_debug_menu");
-    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]);
+    assert_eq!(
+        pages(&s.log.take()),
+        vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]
+    );
     cmd(&mut s, "spawn_debug_print 1");
-    assert_eq!(system_ids(&s.log.take()), vec![SystemMessageId::InvalidTarget], "no target");
+    assert_eq!(
+        system_ids(&s.log.take()),
+        vec![SystemMessageId::InvalidTarget],
+        "no target"
+    );
     s.world.set_target(ObjectId(GM), Some(rat));
     cmd(&mut s, "spawn_debug_print_menu 2");
-    assert_eq!(pages(&s.log.take()), vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]);
+    assert_eq!(
+        pages(&s.log.take()),
+        vec!["<html><body>PANEL spawns_debug.htm</body></html>".to_owned()]
+    );
 }
 
 fn system_ids(out: &Sent) -> Vec<SystemMessageId> {

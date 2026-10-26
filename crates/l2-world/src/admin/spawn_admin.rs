@@ -103,7 +103,11 @@ fn show_npcs(world: &mut World, gm: ObjectId, starting: &str, from: usize) {
         &mobs,
         from,
         "<br><center><button value=\"Back\" action=\"bypass -h admin_show_npcs\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>",
-        |next| format!("<br><center><button value=\"Next\" action=\"bypass -h admin_npc_index {starting} {next}\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"><button value=\"Back\" action=\"bypass -h admin_show_npcs\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>"),
+        |next| {
+            format!(
+                "<br><center><button value=\"Next\" action=\"bypass -h admin_npc_index {starting} {next}\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"><button value=\"Back\" action=\"bypass -h admin_show_npcs\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>"
+            )
+        },
     );
 }
 
@@ -130,7 +134,11 @@ fn show_monsters(world: &mut World, gm: ObjectId, level: i32, from: usize) {
         &mobs,
         from,
         "<br><center><button value=\"Back\" action=\"bypass -h admin_show_spawns\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>",
-        |next| format!("<br><center><button value=\"Next\" action=\"bypass -h admin_spawn_index {level} {next}\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"><button value=\"Back\" action=\"bypass -h admin_show_spawns\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>"),
+        |next| {
+            format!(
+                "<br><center><button value=\"Next\" action=\"bypass -h admin_spawn_index {level} {next}\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"><button value=\"Back\" action=\"bypass -h admin_show_spawns\" width=40 height=15 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\"></center></body></html>"
+            )
+        },
     );
 }
 
@@ -354,12 +362,15 @@ fn admin_spawn_debug_print(world: &mut World, gm: ObjectId, command: &str) -> Ou
     let Some(spawn) = world.spawn_def(index) else {
         return Ok(());
     };
-    let (x, y, z, h) = (spawn.location.x, spawn.location.y, spawn.location.z, spawn.heading);
+    let (x, y, z, h) = (
+        spawn.location.x,
+        spawn.location.y,
+        spawn.location.z,
+        spawn.heading,
+    );
     let id = npc.0;
     match kind {
-        1 => info!(
-            "<spawn npcId=\"{id}\" x=\"{x}\" y=\"{y}\" z=\"{z}\" heading=\"{h}\" respawn=\"0\" />"
-        ),
+        1 => info!("<spawn npcId=\"{id}\" x=\"{x}\" y=\"{y}\" z=\"{z}\" heading=\"{h}\" respawn=\"0\" />"),
         2 => info!("{{ {id}, {x}, {y}, {z}, {h} }},"),
         _ => info!("('',1,{id},{x},{y},{z},0,0,{h},60,0,0),"),
     }

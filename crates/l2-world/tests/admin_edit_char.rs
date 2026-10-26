@@ -473,10 +473,7 @@ fn setfame_sets_the_fame_and_tells_both() {
         texts_to(&out, P1),
         vec!["A GM changed your Reputation points to 1234".to_owned()]
     );
-    assert_eq!(
-        texts_to(&out, GM),
-        vec!["P1's Fame changed to 1234".to_owned()]
-    );
+    assert_eq!(texts_to(&out, GM), vec!["P1's Fame changed to 1234".to_owned()]);
 }
 
 #[test]
@@ -503,10 +500,7 @@ fn rec_sets_the_recommendations_and_stores_them() {
         texts_to(&out, P1),
         vec!["A GM changed your Recommend points to 7".to_owned()]
     );
-    assert_eq!(
-        texts_to(&out, GM),
-        vec!["P1's Recommend changed to 7".to_owned()]
-    );
+    assert_eq!(texts_to(&out, GM), vec!["P1's Recommend changed to 7".to_owned()]);
     let stored = s.persisted.0.lock().unwrap();
     assert!(
         stored.iter().any(|c| matches!(
@@ -532,9 +526,7 @@ fn settitle_cuts_a_long_title_like_java() {
     assert_eq!(s.p(P1).data.title, "12345678901234567890");
     s.cmd(GM, "settitle Hero");
     assert_eq!(s.p(P1).data.title, "Hero");
-    assert!(
-        texts_to(&s.take(), P1).contains(&"Your title has been changed by a GM".to_owned())
-    );
+    assert!(texts_to(&s.take(), P1).contains(&"Your title has been changed by a GM".to_owned()));
 }
 
 #[test]
@@ -581,10 +573,7 @@ fn set_hp_sets_the_vital_of_the_target() {
     s.cmd(GM, "set_cp 3");
     assert_eq!(s.world.player(ObjectId(P1)).unwrap().core.cur_cp as i32, 3);
     s.cmd(GM, "set_hp abc");
-    assert_eq!(
-        texts_to(&s.take(), GM),
-        vec!["Usage: //set_hp 1000".to_owned()]
-    );
+    assert_eq!(texts_to(&s.take(), GM), vec!["Usage: //set_hp 1000".to_owned()]);
 }
 
 #[test]
@@ -593,10 +582,7 @@ fn set_hp_without_a_creature_target_is_the_invalid_target() {
     s.enter_gm();
     s.take();
     s.cmd(GM, "set_hp 10");
-    assert_eq!(
-        system_ids_to(&s.take(), GM),
-        vec![SystemMessageId::InvalidTarget]
-    );
+    assert_eq!(system_ids_to(&s.take(), GM), vec![SystemMessageId::InvalidTarget]);
 }
 
 #[test]
@@ -609,9 +595,7 @@ fn setsex_flips_the_sex_of_the_target() {
     assert_eq!(s.p(P1).data.sex, 1);
     s.cmd(GM, "setsex");
     assert_eq!(s.p(P1).data.sex, 0);
-    assert!(
-        texts_to(&s.take(), P1).contains(&"Your gender has been changed by a GM".to_owned())
-    );
+    assert!(texts_to(&s.take(), P1).contains(&"Your gender has been changed by a GM".to_owned()));
 }
 
 #[test]
@@ -660,10 +644,7 @@ fn changename_refuses_a_taken_name_and_stores_the_new_one() {
     assert_eq!(s.p(P1).data.name, "Renamed");
     assert!(s.persist_count() > before, "the character is stored");
     let out = s.take();
-    assert_eq!(
-        texts_to(&out, GM),
-        vec!["Changed name to Renamed".to_owned()]
-    );
+    assert_eq!(texts_to(&out, GM), vec!["Changed name to Renamed".to_owned()]);
     assert!(texts_to(&out, P1).contains(&"Your name has been changed by a GM.".to_owned()));
 }
 
@@ -678,10 +659,7 @@ fn setclass_changes_the_class_and_the_base_class() {
     assert_eq!(s.p(P1).data.base_class, 1);
     let out = s.take();
     assert!(texts_to(&out, P1).contains(&"A GM changed your class to Warrior.".to_owned()));
-    assert_eq!(
-        texts_to(&out, GM),
-        vec!["P1 is a Warrior.".to_owned()]
-    );
+    assert_eq!(texts_to(&out, GM), vec!["P1 is a Warrior.".to_owned()]);
 }
 
 #[test]
@@ -715,7 +693,11 @@ fn setclass_of_a_kamael_follows_the_class_sex() {
     s.target(GM, P1);
     s.cmd(GM, "setclass 123");
     assert_eq!(s.p(P1).data.class_id, 123);
-    assert_eq!(s.p(P1).data.sex, 0, "a male Kamael class makes the character male");
+    assert_eq!(
+        s.p(P1).data.sex,
+        0,
+        "a male Kamael class makes the character male"
+    );
 }
 
 #[test]
@@ -778,7 +760,11 @@ fn character_info_names_a_player_or_uses_the_target() {
     let html = html_to(&out, GM);
     assert_eq!(html.len(), 1);
     assert!(html[0].html.contains("INFO P1 40"), "{}", html[0].html);
-    assert!(html[0].html.contains("10.0.0.5"), "the client address: {}", html[0].html);
+    assert!(
+        html[0].html.contains("10.0.0.5"),
+        "the client address: {}",
+        html[0].html
+    );
     assert_eq!(s.world.target_of(ObjectId(GM)), Some(ObjectId(P1)));
 
     // Without a name and without a target: the invalid target.
@@ -832,8 +818,16 @@ fn character_list_shows_the_players_with_their_names() {
     let out = s.take();
     let html = html_to(&out, GM);
     assert_eq!(html.len(), 1);
-    assert!(html[0].html.contains("admin_character_info Alpha"), "{}", html[0].html);
-    assert!(html[0].html.contains("Human Fighter"), "the class name: {}", html[0].html);
+    assert!(
+        html[0].html.contains("admin_character_info Alpha"),
+        "{}",
+        html[0].html
+    );
+    assert!(
+        html[0].html.contains("Human Fighter"),
+        "the class name: {}",
+        html[0].html
+    );
 }
 
 #[test]
@@ -871,9 +865,7 @@ fn find_ip_refuses_a_malformed_address() {
     s.enter_player(P1, "Alpha", None);
     s.cmd(GM, "find_ip 300.1.1.1");
     let out = s.take();
-    assert!(
-        texts_to(&out, GM).contains(&"Usage: //find_ip <www.xxx.yyy.zzz>".to_owned())
-    );
+    assert!(texts_to(&out, GM).contains(&"Usage: //find_ip <www.xxx.yyy.zzz>".to_owned()));
     assert_eq!(html_to(&out, GM).len(), 1, "the list follows");
 }
 

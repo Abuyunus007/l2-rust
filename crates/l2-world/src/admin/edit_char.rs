@@ -111,7 +111,11 @@ fn client_ip_string(world: &World, id: ObjectId) -> Option<String> {
     if world.is_offline_trader(id) {
         return None;
     }
-    world.players.get(&id).and_then(|p| p.client_ip).map(|ip| ip.to_string())
+    world
+        .players
+        .get(&id)
+        .and_then(|p| p.client_ip)
+        .map(|ip| ip.to_string())
 }
 
 /// Java `client.isDetached()`: an offline trader has no client any more.
@@ -164,7 +168,12 @@ fn list_characters(world: &mut World, gm: ObjectId, page: i32) {
                 .get_by_id(p.data.class_id)
                 .map(|c| c.name.clone())
                 .unwrap_or_default();
-            Some((p.data.name.clone(), world.is_offline_trader(*id), class, p.data.level))
+            Some((
+                p.data.name.clone(),
+                world.is_offline_trader(*id),
+                class,
+                p.data.level,
+            ))
         })
         .collect();
     let result: PageResult = build_page(&rows, 20, "bypass -h admin_show_characters", page, |row, sb| {
@@ -416,8 +425,7 @@ fn java_hashmap_order(keys: &[String]) -> Vec<String> {
 /// Java `String.hashCode()`: `s[0]*31^(n-1) + ... + s[n-1]` over the UTF-16 units, wrapping.
 fn java_string_hash(text: &str) -> u32 {
     text.encode_utf16()
-        .fold(0_i32, |h, unit| h.wrapping_mul(31).wrapping_add(i32::from(unit)))
-        as u32
+        .fold(0_i32, |h, unit| h.wrapping_mul(31).wrapping_add(i32::from(unit))) as u32
 }
 
 /// Java `admin_find_dualbox [n]`: the IPs with at least `n` (default 2) players on them.
@@ -618,11 +626,14 @@ fn gather_character_info(world: &mut World, gm: ObjectId, player: ObjectId, file
     html.replace("%account%", &data.account);
     html.replace("%ip%", &ip);
     // The protocol version is not kept by the world (see the module note).
-    html.replace("%protocol%", if world.players.get(&player).and_then(|p| p.client_ip).is_some() && !offline {
-        "N/A"
-    } else {
-        "NULL"
-    });
+    html.replace(
+        "%protocol%",
+        if world.players.get(&player).and_then(|p| p.client_ip).is_some() && !offline {
+            "N/A"
+        } else {
+            "NULL"
+        },
+    );
     // No hardware info exists (HWID is not ported): Java shows `Unknown` for a client without it.
     html.replace("%hwid%", "Unknown");
     html.replace("%ai%", ai);
@@ -856,7 +867,9 @@ fn admin_changename(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 /// Java `Player.storeMe()`: the whole character is written with the next outbox turn.
 fn store_me(world: &mut World, id: ObjectId) {
     if let Some(snapshot) = world.store_snapshot(id) {
-        world.outbox.persist(PersistCommand::StorePlayer(Box::new(snapshot)));
+        world
+            .outbox
+            .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
     }
 }
 
@@ -930,7 +943,9 @@ fn java_parse_double(text: &str) -> Option<f64> {
     let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
     let mantissa_ok = match mantissa.split_once('.') {
         Some((whole, frac)) => {
-            (whole.is_empty() || digits(whole)) && (frac.is_empty() || digits(frac)) && !(whole.is_empty() && frac.is_empty())
+            (whole.is_empty() || digits(whole))
+                && (frac.is_empty() || digits(frac))
+                && !(whole.is_empty() && frac.is_empty())
         }
         None => digits(mantissa),
     };

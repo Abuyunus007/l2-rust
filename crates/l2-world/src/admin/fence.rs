@@ -113,7 +113,10 @@ fn admin_setfencestate(world: &mut World, gm: ObjectId, command: &str) -> Outcom
         Some((object, ordinal))
     })();
     let Some((object, ordinal)) = values else {
-        world.send_sys_message(gm, "Format mustr be: //setfencestate <fenceObjectId> <fenceState>");
+        world.send_sys_message(
+            gm,
+            "Format mustr be: //setfencestate <fenceObjectId> <fenceState>",
+        );
         return Ok(());
     };
     if !(0..STATE_COUNT).contains(&ordinal) {
@@ -201,41 +204,44 @@ fn admin_gofence(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminFence.sendHtml(activeChar, page)`: `fences.htm` with the fences of the page.
 fn send_html(world: &mut World, gm: ObjectId, page: i32) {
-    let mut fences: Vec<(i32, String)> = world
-        .fences()
-        .map(|f| (f.object_id.0, f.name.clone()))
-        .collect();
+    let mut fences: Vec<(i32, String)> = world.fences().map(|f| (f.object_id.0, f.name.clone())).collect();
     fences.sort_by_key(|(id, _)| *id);
-    let result = build_page(&fences, 10, "bypass -h admin_listfence", page, |(id, name), sb| {
-        let shown = if name.is_empty() {
-            id.to_string()
-        } else {
-            name.clone()
-        };
-        sb.push_str("<tr><td>");
-        sb.push_str(&shown);
-        sb.push_str("</td><td>");
-        sb.push_str(&format!(
+    let result = build_page(
+        &fences,
+        10,
+        "bypass -h admin_listfence",
+        page,
+        |(id, name), sb| {
+            let shown = if name.is_empty() {
+                id.to_string()
+            } else {
+                name.clone()
+            };
+            sb.push_str("<tr><td>");
+            sb.push_str(&shown);
+            sb.push_str("</td><td>");
+            sb.push_str(&format!(
             "<button value=\"Go\" action=\"bypass -h admin_gofence {id}\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\">"
         ));
-        sb.push_str("</td><td>");
-        sb.push_str(&format!(
+            sb.push_str("</td><td>");
+            sb.push_str(&format!(
             "<button value=\"Hide\" action=\"bypass -h admin_setfencestate {id} 0\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\">"
         ));
-        sb.push_str("</td><td>");
-        sb.push_str(&format!(
+            sb.push_str("</td><td>");
+            sb.push_str(&format!(
             "<button value=\"Off\" action=\"bypass -h admin_setfencestate {id} 1\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\">"
         ));
-        sb.push_str("</td><td>");
-        sb.push_str(&format!(
+            sb.push_str("</td><td>");
+            sb.push_str(&format!(
             "<button value=\"On\" action=\"bypass -h admin_setfencestate {id} 2\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\">"
         ));
-        sb.push_str("</td><td>");
-        sb.push_str(&format!(
+            sb.push_str("</td><td>");
+            sb.push_str(&format!(
             "<button value=\"X\" action=\"bypass -h admin_removefence {id}\" width=30 height=21 back=\"L2UI_ct1.button_df\" fore=\"L2UI_ct1.button_df\">"
         ));
-        sb.push_str("</td></tr>");
-    });
+            sb.push_str("</td></tr>");
+        },
+    );
     let mut html = world.admin_html_file(gm, "data/html/admin/fences.htm");
     html.replace("%pages%", &result.pager_html());
     html.replace("%fences%", &result.body);

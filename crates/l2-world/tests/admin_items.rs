@@ -11,9 +11,7 @@ use l2_data::{HtmCache, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOption
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{
-    BuyList, InventoryUpdate, NpcHtmlMessage, SystemMessage, SystemMessageParam,
-};
+use l2_protocol_game::server::{BuyList, InventoryUpdate, NpcHtmlMessage, SystemMessage, SystemMessageParam};
 use l2_world::*;
 
 type Sent = Vec<(i32, Vec<u8>)>;
@@ -52,7 +50,14 @@ fn rights() -> AdminRights {
     for (level, child) in [(0, 0), (70, 0), (100, 70)] {
         rights.add_level(level, child);
     }
-    for command in ["destroy_items", "destroy_all_items", "destroyitems", "destroyallitems", "gmshop", "buy"] {
+    for command in [
+        "destroy_items",
+        "destroy_all_items",
+        "destroyitems",
+        "destroyallitems",
+        "gmshop",
+        "buy",
+    ] {
         rights.add_command(command, 100, false);
     }
     rights
@@ -256,9 +261,17 @@ fn destroy_items_keeps_the_worn_ones_and_the_warehouse() {
     enter_gm(&mut s);
     s.log.take();
     cmd(&mut s, "destroy_items");
-    assert_eq!(item_ids(&s), vec![201, 204], "the inventory goes, the worn item and the warehouse stay");
+    assert_eq!(
+        item_ids(&s),
+        vec![201, 204],
+        "the inventory goes, the worn item and the warehouse stay"
+    );
     let out = s.log.take();
-    assert_eq!(names(&out, ServerOpcode::InventoryUpdate.name()), 1, "one inventory update");
+    assert_eq!(
+        names(&out, ServerOpcode::InventoryUpdate.name()),
+        1,
+        "one inventory update"
+    );
     let update = out
         .iter()
         .find(|(_, b)| name_of(b) == ServerOpcode::InventoryUpdate.name())
@@ -275,7 +288,11 @@ fn destroy_all_items_takes_the_worn_ones_too() {
     enter_gm(&mut s);
     s.log.take();
     cmd(&mut s, "destroy_all_items");
-    assert_eq!(item_ids(&s), vec![204], "the warehouse item is not in the inventory");
+    assert_eq!(
+        item_ids(&s),
+        vec![204],
+        "the warehouse item is not in the inventory"
+    );
 }
 
 #[test]

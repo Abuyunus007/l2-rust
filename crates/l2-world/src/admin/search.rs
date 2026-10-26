@@ -117,7 +117,10 @@ fn results(world: &mut World, gm: ObjectId, text: &str, page: i32) -> Outcome {
 
     let mut html = world.admin_html_file(gm, "data/html/admin/search.htm");
     if items.is_empty() {
-        html.replace("%items%", &format!("<tr><td>No items found with word {text}.</td></tr>"));
+        html.replace(
+            "%items%",
+            &format!("<tr><td>No items found with word {text}.</td></tr>"),
+        );
         html.replace("%pages%", "");
         world.send_admin_html(gm, &html);
         return Ok(());

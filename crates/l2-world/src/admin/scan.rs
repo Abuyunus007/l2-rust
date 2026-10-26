@@ -17,6 +17,9 @@ use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
 
+/// One NPC of the scan: object id, template id, name, place and the distance from the GM.
+type ScanRow = (ObjectId, i32, String, (i32, i32, i32), i64);
+
 /// Java `AdminScan.ADMIN_COMMANDS`.
 pub(crate) fn register(handlers: &mut AdminHandlers) {
     let table: &[(&str, AdminHandler)] = &[
@@ -84,7 +87,7 @@ fn admin_scan(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         .collect();
 
     let gm_position = world.position_of(gm).unwrap_or((0, 0, 0));
-    let rows: Vec<(ObjectId, i32, String, (i32, i32, i32), i64)> = npcs
+    let rows: Vec<ScanRow> = npcs
         .iter()
         .map(|npc| {
             let template = world.npcs.get(npc).map_or(0, |n| n.npc_id);
@@ -108,10 +111,7 @@ fn admin_scan(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         sb.push_str(&format!(
             "<td><a action=\"bypass -h admin_move_to {x} {y} {z}\">{shown}</a></td>"
         ));
-        sb.push_str(&format!(
-            "<td width=\"60\">{}</td>",
-            format_adena(*distance)
-        ));
+        sb.push_str(&format!("<td width=\"60\">{}</td>", format_adena(*distance)));
         sb.push_str(&format!(
             "<td width=\"54\"><a action=\"bypass -h admin_deleteNpcByObjectId objectId={}\"><font color=\"LEVEL\">Delete</font></a></td>",
             object_id.0
@@ -184,7 +184,11 @@ mod tests {
         assert_eq!(param(command, "name"), Some("Big"));
         assert_eq!(int_param(command, "radius", 1), 300);
         assert_eq!(int_param(command, "range", 7), 7);
-        assert_eq!(int_param("admin_scan id=x", "id", 9), 9, "a bad number is the default");
+        assert_eq!(
+            int_param("admin_scan id=x", "id", 9),
+            9,
+            "a bad number is the default"
+        );
         assert_eq!(param("admin_scan id=", "id"), None, "the value needs a character");
     }
 

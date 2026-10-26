@@ -45,15 +45,7 @@ impl Outbox for NullOutbox {
 
 fn rights() -> AdminRights {
     let mut rights = AdminRights::default();
-    for (level, child) in [
-        (0, 0),
-        (30, 0),
-        (40, 30),
-        (50, 40),
-        (60, 50),
-        (70, 60),
-        (100, 70),
-    ] {
+    for (level, child) in [(0, 0), (30, 0), (40, 30), (50, 40), (60, 50), (70, 60), (100, 70)] {
         rights.add_level(level, child);
     }
     rights.add_command("skill_test", 100, false);
@@ -289,7 +281,11 @@ fn the_nothing_words_are_registered_and_do_nothing() {
     for word in ["gmon", "set_mod"] {
         s.cmd(word);
         let out = s.log.take();
-        assert!(texts(&out).is_empty(), "{word} sends no message: {:?}", texts(&out));
+        assert!(
+            texts(&out).is_empty(),
+            "{word} sends no message: {:?}",
+            texts(&out)
+        );
         assert!(
             casts(&out).is_empty() && out.iter().all(|(to, _)| *to != P1),
             "{word} sends nothing to the others"

@@ -225,7 +225,9 @@ fn pages(out: &Sent) -> Vec<String> {
         .filter(|(_, b)| name_of(b) == ServerOpcode::NpcHtmlMessage.name())
         .map(|(_, b)| {
             let skip = if b[0] == 0xFE { 3 } else { 1 };
-            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..])).unwrap().html
+            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..]))
+                .unwrap()
+                .html
         })
         .collect()
 }
@@ -246,7 +248,11 @@ fn addfence_makes_a_closed_fence_where_the_gm_stands() {
     assert_eq!((fence.x, fence.y, fence.z), (X, Y, Z));
     assert_eq!((fence.width, fence.length), (200, 300));
     assert_eq!(fence.state, FenceState::Closed);
-    assert_eq!(fence.height_fences.len(), 1, "a height of two has one extra piece");
+    assert_eq!(
+        fence.height_fences.len(),
+        1,
+        "a height of two has one extra piece"
+    );
 }
 
 #[test]
@@ -277,10 +283,22 @@ fn listfence_shows_the_fences_with_their_buttons() {
     let html = pages(&s.log.take());
     assert_eq!(html.len(), 1);
     let id = only_fence(&s);
-    assert!(html[0].contains(&format!("<td>{id}</td>")), "a fence without a name shows its id: {}", html[0]);
+    assert!(
+        html[0].contains(&format!("<td>{id}</td>")),
+        "a fence without a name shows its id: {}",
+        html[0]
+    );
     assert!(html[0].contains(&format!("admin_gofence {id}")), "{}", html[0]);
-    assert!(html[0].contains(&format!("admin_setfencestate {id} 2")), "{}", html[0]);
-    assert!(html[0].contains(&format!("admin_removefence {id}")), "{}", html[0]);
+    assert!(
+        html[0].contains(&format!("admin_setfencestate {id} 2")),
+        "{}",
+        html[0]
+    );
+    assert!(
+        html[0].contains(&format!("admin_removefence {id}")),
+        "{}",
+        html[0]
+    );
 }
 
 #[test]

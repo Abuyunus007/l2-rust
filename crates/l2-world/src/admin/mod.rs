@@ -23,25 +23,21 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod admin_page;
 pub mod chsiege;
 pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
-pub mod admin_page;
 pub mod create_item;
 pub mod delete;
 pub mod destroy_items;
 pub mod door;
 pub mod edit_char;
 pub mod enchant;
+pub mod exp_sp;
 pub mod fence;
 pub mod gm_shop;
-pub mod scan;
-pub mod search;
-pub mod skill_test;
-pub mod spawn_admin;
-pub mod exp_sp;
 pub mod html;
 pub mod invul;
 pub mod karma;
@@ -50,7 +46,11 @@ pub mod manor;
 pub mod party;
 pub mod punishments;
 pub mod rights;
+pub mod scan;
+pub mod search;
+pub mod skill_test;
 pub mod skills;
+pub mod spawn_admin;
 pub mod summon;
 pub mod transform;
 

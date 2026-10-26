@@ -203,6 +203,12 @@ mod tests {
         bytes.extend([0, 0]);
         bytes.extend([0_u8; 4 * 3 + 4 + 4 * 3]);
         let err = ExServerPrimitive::decode(&mut PacketReader::new(&bytes[3..])).unwrap_err();
-        assert!(matches!(err, PacketError::Invalid { field: "primitive type", .. }));
+        assert!(matches!(
+            err,
+            PacketError::Invalid {
+                field: "primitive type",
+                ..
+            }
+        ));
     }
 }

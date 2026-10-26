@@ -17,7 +17,10 @@ type Outcome = Result<(), JavaException>;
 
 /// Java `AdminDelete.ADMIN_COMMANDS`.
 pub(crate) fn register(handlers: &mut AdminHandlers) {
-    let table: &[(&str, AdminHandler)] = &[("admin_delete", admin_delete), ("admin_delete_group", admin_delete)];
+    let table: &[(&str, AdminHandler)] = &[
+        ("admin_delete", admin_delete),
+        ("admin_delete_group", admin_delete),
+    ];
     for (command, handler) in table {
         handlers.register(command, *handler);
     }
@@ -70,9 +73,7 @@ fn handle_delete_group(world: &mut World, gm: ObjectId) {
 /// The spawn index of an NPC, with its territory name (`None` when it is not a territory spawn).
 fn spawn_of(world: &World, npc: ObjectId) -> Option<(usize, Option<String>)> {
     let index = world.npcs.get(&npc)?.spawn?;
-    let territory = world
-        .spawn_def(index)
-        .and_then(|s| s.territory.clone());
+    let territory = world.spawn_def(index).and_then(|s| s.territory.clone());
     Some((index, territory))
 }
 

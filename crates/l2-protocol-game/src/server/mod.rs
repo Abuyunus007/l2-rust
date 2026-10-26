@@ -116,7 +116,6 @@ pub mod visibility;
 pub mod warehouse;
 
 pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
-pub use primitive::{ExServerPrimitive, PrimitiveLine, PrimitivePoint};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
@@ -198,6 +197,7 @@ pub use pledge::{
     PledgeShowMemberListUpdate, PledgeSkillEntry, PledgeSkillList, PledgeSkillListAdd, PledgeStatusChanged,
     RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
 };
+pub use primitive::{ExServerPrimitive, PrimitiveLine, PrimitivePoint};
 pub use recipe::{
     ManufactureEntry, RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList,
     RecipeShopMsg, RecipeShopSellList,

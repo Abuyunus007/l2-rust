@@ -22,8 +22,8 @@ type Outcome = Result<(), JavaException>;
 
 /// `Color.BLACK`, `Color.GREEN` and `Color.RED` as `0xRRGGBB`.
 const BLACK: i32 = 0x000000;
-const GREEN: i32 = 0x00FF_00;
-const RED: i32 = 0xFF_0000;
+const GREEN: i32 = 0x0000_FF00;
+const RED: i32 = 0x00FF_0000;
 /// The z of the drawing: far under the map, so the primitive sits in the sky of the GM's view.
 const DRAW_Z: i32 = -16_000;
 

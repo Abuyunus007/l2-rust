@@ -237,7 +237,9 @@ fn pages(out: &Sent) -> Vec<String> {
         .filter(|(_, b)| name_of(b) == ServerOpcode::NpcHtmlMessage.name())
         .map(|(_, b)| {
             let skip = if b[0] == 0xFE { 3 } else { 1 };
-            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..])).unwrap().html
+            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..]))
+                .unwrap()
+                .html
         })
         .collect()
 }
@@ -273,7 +275,10 @@ fn search_lists_the_matching_items_with_their_add_button() {
     let text = &html[0];
     assert!(text.contains("admin_create_item 57"), "{text}");
     assert!(text.contains("<font color=\"LEVEL\">Adena</font>"), "{text}");
-    assert!(text.contains("color=008000 size=-1>ST"), "stackable is green: {text}");
+    assert!(
+        text.contains("color=008000 size=-1>ST"),
+        "stackable is green: {text}"
+    );
     assert!(!text.contains("%items%") && !text.contains("%pages%"), "{text}");
 }
 
@@ -288,7 +293,11 @@ fn a_crystal_grade_is_written_with_java_markup() {
         "{}",
         html[0]
     );
-    assert!(html[0].contains("color=ff0000 size=-1>ST"), "not stackable: {}", html[0]);
+    assert!(
+        html[0].contains("color=ff0000 size=-1>ST"),
+        "not stackable: {}",
+        html[0]
+    );
 }
 
 #[test]
@@ -296,7 +305,11 @@ fn an_unknown_word_says_so() {
     let mut s = setup();
     cmd(&mut s, "search nothing");
     let html = pages(&s.log.take());
-    assert!(html[0].contains("No items found with word nothing."), "{}", html[0]);
+    assert!(
+        html[0].contains("No items found with word nothing."),
+        "{}",
+        html[0]
+    );
 }
 
 #[test]
@@ -308,12 +321,24 @@ fn many_matches_are_paged_fifteen_a_page() {
     assert_eq!(first.len(), 1);
     let rows = first[0].matches("admin_create_item").count();
     assert_eq!(rows, 15, "the first page has fifteen items");
-    assert!(first[0].contains("admin_search Iron 2"), "the link to page 2: {}", first[0]);
-    assert!(first[0].contains("1&nbsp;"), "the current page is plain: {}", first[0]);
+    assert!(
+        first[0].contains("admin_search Iron 2"),
+        "the link to page 2: {}",
+        first[0]
+    );
+    assert!(
+        first[0].contains("1&nbsp;"),
+        "the current page is plain: {}",
+        first[0]
+    );
 
     cmd(&mut s, "search Iron 2");
     let second = pages(&s.log.take());
-    assert_eq!(second[0].matches("admin_create_item").count(), 6, "the last six items");
+    assert_eq!(
+        second[0].matches("admin_create_item").count(),
+        6,
+        "the last six items"
+    );
     assert!(second[0].contains("admin_search Iron 1"));
 }
 

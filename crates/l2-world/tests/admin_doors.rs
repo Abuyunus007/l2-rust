@@ -288,7 +288,11 @@ fn showdoors_draws_the_doors_in_view_and_off_erases_them() {
     cmd(&mut s, GM, "showdoors off");
     let erased = primitives_to(&s.log.take(), GM);
     assert_eq!(erased.len(), 2, "every shown door is erased");
-    assert!(erased.iter().all(|p| p.lines.len() == 1 && p.lines[0].point.color == 0));
+    assert!(
+        erased
+            .iter()
+            .all(|p| p.lines.len() == 1 && p.lines[0].point.color == 0)
+    );
 }
 
 #[test]
