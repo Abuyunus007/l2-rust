@@ -358,6 +358,44 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |
 | [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
+## Leftovers of M0..M7 (2026-10-27)
+
+Gaps found after M7: client packets without a handler, old markers, admin words, config keys.
+
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [L-01](L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | ready |
+| [L-02](L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | ready |
+| [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | ready |
+| [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | ready |
+| [L-05](L/L-05.md) | Item auctions | sonnet | full | none | ready |
+| [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | ready |
+| [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | ready |
+| [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | ready |
+| [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | ready |
+| [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | ready |
+
+## M8: Olympiad, heroes, Seven Signs, instances and the big systems (approved 2026-10-27)
+
+Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the global cycles; Kain writes them only with `CycleDatabaseWrites`). Petitions moved to M7-ADMIN-10.
+
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | ready |
+| [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | ready |
+| [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | ready |
+| [M8-HERO-01](M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | ready |
+| [M8-SS-01](M8/M8-SS-01.md) | Seven Signs | opus | full | GPROTO-11 | ready |
+| [M8-FEST-01](M8/M8-FEST-01.md) | Festival of Darkness and Dimensional Rift | sonnet | full | SS-01, INST-01 | ready |
+| [M8-BOSS-01](M8/M8-BOSS-01.md) | Grand and raid boss states, raid points | sonnet | full | none | ready |
+| [M8-VEHICLE-01](M8/M8-VEHICLE-01.md) | Boats and airships | sonnet | full | GPROTO-11 | ready |
+| [M8-CURSED-01](M8/M8-CURSED-01.md) | Cursed weapons | sonnet | full | none | ready |
+| [M8-GAMES-01](M8/M8-GAMES-01.md) | Mini games | sonnet | full | INST-01, GPROTO-11 | ready |
+| [M8-MISC-01](M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | ready |
+| [M8-ADMIN-07](M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | ready |
+| [M8-E2E-01](M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | ready |
+| [M8-RUN-01](M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
