@@ -24,6 +24,10 @@ use l2_protocol_game::server::combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, Revive,
 };
+use l2_protocol_game::server::command_channel::{
+    ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
+    ExMultiPartyCommandChannelInfo, ExOpenMpcc,
+};
 use l2_protocol_game::server::duel::{
     ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo,
 };
@@ -270,6 +274,10 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestSendFriendMsg(p) => object!(p => message, receiver),
         ClientPacket::RequestBlock(p) => object!(p => kind, name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::RequestExAskJoinMpcc(p) => object!(p => name),
+        ClientPacket::RequestExAcceptJoinMpcc(p) => object!(p => response),
+        ClientPacket::RequestExOustFromMpcc(p) => object!(p => name),
+        ClientPacket::RequestExMpccShowPartyMembersInfo(p) => object!(p => party_leader_id),
         ClientPacket::RequestBuyItem(p) => {
             let items = p
                 .items
@@ -621,6 +629,18 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        ServerOpcode::ExOpenMpcc => decoded::<ExOpenMpcc>(&mut r, no_fields),
+        ServerOpcode::ExCloseMpcc => decoded::<ExCloseMpcc>(&mut r, no_fields),
+        ServerOpcode::ExAskJoinMpcc => decoded::<ExAskJoinMpcc>(&mut r, ask_join_mpcc_fields),
+        ServerOpcode::ExMpccPartyInfoUpdate => {
+            decoded::<ExMpccPartyInfoUpdate>(&mut r, mpcc_party_info_update_fields)
+        }
+        ServerOpcode::ExMpccShowPartyMemberInfo => {
+            decoded::<ExMpccShowPartyMemberInfo>(&mut r, mpcc_show_party_member_info_fields)
+        }
+        ServerOpcode::ExMultiPartyCommandChannelInfo => {
+            decoded::<ExMultiPartyCommandChannelInfo>(&mut r, multi_party_command_channel_info_fields)
         }
         // One id for two packets: the first int is 0 for the merchant's list, 1 for the sell side.
         ServerOpcode::ExBuySellList => {
@@ -1603,6 +1623,34 @@ fn pet_window_delete_fields(p: &ExPartyPetWindowDelete) -> Value {
     object!(p => summon_object_id, owner_object_id, summon_name)
 }
 
+fn ask_join_mpcc_fields(p: &ExAskJoinMpcc) -> Value {
+    object!(p => requestor_name)
+}
+
+fn mpcc_party_info_update_fields(p: &ExMpccPartyInfoUpdate) -> Value {
+    object!(p => leader_name, leader_object_id, member_count, mode)
+}
+
+fn mpcc_show_party_member_info_fields(p: &ExMpccShowPartyMemberInfo) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|m| object!(m => name, object_id, class_id))
+        .collect();
+    json!({ "members": members })
+}
+
+fn multi_party_command_channel_info_fields(p: &ExMultiPartyCommandChannelInfo) -> Value {
+    let parties: Vec<Value> = p
+        .parties
+        .iter()
+        .map(|e| object!(e => leader_name, leader_object_id, member_count))
+        .collect();
+    let mut fields = object!(p => leader_name, channel_loot, member_count);
+    fields["parties"] = json!(parties);
+    fields
+}
+
 fn send_trade_request_fields(p: &SendTradeRequest) -> Value {
     object!(p => sender_id)
 }
@@ -2423,6 +2471,12 @@ mod tests {
         ServerOpcode::ExPartyPetWindowAdd,
         ServerOpcode::ExPartyPetWindowUpdate,
         ServerOpcode::ExPartyPetWindowDelete,
+        ServerOpcode::ExOpenMpcc,
+        ServerOpcode::ExCloseMpcc,
+        ServerOpcode::ExAskJoinMpcc,
+        ServerOpcode::ExMpccPartyInfoUpdate,
+        ServerOpcode::ExMpccShowPartyMemberInfo,
+        ServerOpcode::ExMultiPartyCommandChannelInfo,
         ServerOpcode::ExBuySellList,
         ServerOpcode::TradeRequest,
         ServerOpcode::TradeStart,
@@ -4145,6 +4199,94 @@ mod tests {
         assert_eq!(auction["bid"], json!(500));
         assert_eq!(auction["refresh"], json!(false));
         assert_eq!(auction["next"], Value::Null);
+    }
+
+    #[test]
+    fn command_channel_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            RequestExAcceptJoinMpcc, RequestExAskJoinMpcc, RequestExMpccShowPartyMembersInfo,
+            RequestExOustFromMpcc,
+        };
+        use l2_protocol_game::server::command_channel::{MpccMember, MpccPartyEntry};
+
+        let in_game = ConnectionState::InGame;
+        assert_eq!(
+            c2s_fields(in_game, &RequestExAskJoinMpcc { name: "Eve".into() }.to_bytes()),
+            json!({ "name": "Eve" })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestExAcceptJoinMpcc { response: 1 }.to_bytes()),
+            json!({ "response": 1 })
+        );
+        assert_eq!(
+            c2s_fields(in_game, &RequestExOustFromMpcc { name: "Eve".into() }.to_bytes()),
+            json!({ "name": "Eve" })
+        );
+        assert_eq!(
+            c2s_fields(
+                in_game,
+                &RequestExMpccShowPartyMembersInfo { party_leader_id: 7 }.to_bytes()
+            ),
+            json!({ "party_leader_id": 7 })
+        );
+
+        assert_eq!(s2c_fields(&ExOpenMpcc.to_bytes()), json!({}));
+        assert_eq!(s2c_fields(&ExCloseMpcc.to_bytes()), json!({}));
+        assert_eq!(
+            s2c_fields(
+                &ExAskJoinMpcc {
+                    requestor_name: "Ann".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "requestor_name": "Ann" })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExMpccPartyInfoUpdate {
+                    leader_name: "Ann".into(),
+                    leader_object_id: 5,
+                    member_count: 3,
+                    mode: 1
+                }
+                .to_bytes()
+            ),
+            json!({ "leader_name": "Ann", "leader_object_id": 5, "member_count": 3, "mode": 1 })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExMpccShowPartyMemberInfo {
+                    members: vec![MpccMember {
+                        name: "Ann".into(),
+                        object_id: 5,
+                        class_id: 88
+                    }]
+                }
+                .to_bytes()
+            ),
+            json!({ "members": [{ "name": "Ann", "object_id": 5, "class_id": 88 }] })
+        );
+        assert_eq!(
+            s2c_fields(
+                &ExMultiPartyCommandChannelInfo {
+                    leader_name: "Ann".into(),
+                    channel_loot: 0,
+                    member_count: 4,
+                    parties: vec![MpccPartyEntry {
+                        leader_name: "Ann".into(),
+                        leader_object_id: 5,
+                        member_count: 4
+                    }]
+                }
+                .to_bytes()
+            ),
+            json!({
+                "leader_name": "Ann",
+                "channel_loot": 0,
+                "member_count": 4,
+                "parties": [{ "leader_name": "Ann", "leader_object_id": 5, "member_count": 4 }]
+            })
+        );
     }
 
     #[test]

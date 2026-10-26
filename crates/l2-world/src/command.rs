@@ -203,6 +203,14 @@ pub enum ClientInput {
     OustPartyMember { name: String },
     /// Java `RequestChangePartyLeader`: the leader hands the party to `name`.
     ChangePartyLeader { name: String },
+    /// Java `RequestExAskJoinMPCC`: invite the party of `name` into the command channel.
+    AskJoinMpcc { name: String },
+    /// Java `RequestExAcceptJoinMPCC`: 1 accepts.
+    AcceptJoinMpcc { response: i32 },
+    /// Java `RequestExOustFromMPCC`: dismiss the party of `name` from the channel.
+    OustFromMpcc { name: String },
+    /// Java `RequestExMPCCShowPartyMembersInfo`: the members of the party of this leader.
+    MpccShowPartyMembersInfo { party_leader_id: i32 },
     /// Java `RequestDuelStart`: challenge the player `name`; `party_duel` is 1 for a party duel.
     DuelStart { name: String, party_duel: i32 },
     /// Java `RequestDuelAnswerStart`: 1 accept, -1 the client refuses duels, else decline.

@@ -362,7 +362,10 @@ impl World {
             return;
         }
         if self.is_attackable_npc(target) {
-            // Raid command channel looting rights: parties are M5.
+            // Raid command channel looting rights.
+            if let Some(attacker) = attacker {
+                self.raid_command_channel_attacked(target, attacker);
+            }
             // Add damage and hate to the attacker AggroInfo of the Attackable _aggroList.
             if let Some(attacker) = attacker {
                 self.attackable_add_damage(target, attacker, amount as i32);

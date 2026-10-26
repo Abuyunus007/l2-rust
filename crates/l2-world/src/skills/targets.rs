@@ -14,7 +14,7 @@
 // Java's handlers call `getAffectLimit()`, so a seeded world replays them.
 //
 // # What is not there yet (each marked `// M6:` or `// M5:` where it would act)
-// - Summons, pets, servitors, command channels, clans, alliances, duels, olympiad, sieges,
+// - Summons, pets, servitors, clans, alliances, duels, olympiad, sieges,
 //   events, auto play, observer mode: none exist. Java's code path for "none of these" is
 //   followed: clan = only the caster, summon targets find nothing. Parties are real since
 //   M6-PARTY-01 (`party/`).
@@ -320,8 +320,8 @@ impl World {
                 if has_negative_effect(skill) && self.is_inside_zone(target, ZoneId::Peace) {
                     return false;
                 }
-                // Same party (a command channel would be the same; there are none).
-                if self.is_in_party_with(caster, target) {
+                // Same party, or same command channel.
+                if self.is_in_party_with(caster, target) || self.is_in_same_command_channel(caster, target) {
                     return false;
                 }
                 if !source_in_arena
@@ -396,7 +396,14 @@ impl World {
             return false;
         }
         // Party (and command channel): only a force attack with a damage skill hits a member.
-        if self.is_in_party_with(player, target) {
+        let target_player = self.acting_player(target).unwrap_or(target);
+        if self.is_in_party_with(player, target)
+            || (self.is_in_party(player)
+                && self.is_in_party(target_player)
+                && self
+                    .command_channel_of(player)
+                    .is_some_and(|channel| self.command_channel_contains(channel, target_player)))
+        {
             return skill.effect_range > 0
                 && ctx.ctrl_pressed
                 && self.target_of(player) == Some(target)
@@ -837,8 +844,11 @@ impl<R: Rnd> Targeting<'_, R> {
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
-            // Same clan / ally (true); M6: a command channel member would be true as well.
-            if self.w.is_in_clan_with(player, target) || self.w.is_in_ally_with(player, target) {
+            // Same clan / ally / command channel.
+            if self.w.is_in_clan_with(player, target)
+                || self.w.is_in_ally_with(player, target)
+                || self.w.is_in_command_channel_with(player, target)
+            {
                 return true;
             }
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
@@ -973,8 +983,11 @@ impl<R: Rnd> Targeting<'_, R> {
             if self.w.is_inside_zone(target, ZoneId::Pvp) {
                 return false;
             }
-            // Same clan / ally (true); M6: a command channel member would be true as well.
-            if self.w.is_in_clan_with(player, target) || self.w.is_in_ally_with(player, target) {
+            // Same clan / ally / command channel.
+            if self.w.is_in_clan_with(player, target)
+                || self.w.is_in_ally_with(player, target)
+                || self.w.is_in_command_channel_with(player, target)
+            {
                 return true;
             }
             if self.w.pvp_flag_of(target) > 0 || self.w.karma_of(target) > 0 {
@@ -1194,8 +1207,12 @@ impl<R: Rnd> Targeting<'_, R> {
         };
         let radius = self.skill.affect_range;
         let max_targets = self.affect_limit();
-        // M6: the members of the command channel, when the party is in one (there are none).
-        for member in self.w.party_members(party) {
+        // The members of the command channel, when the party is in one.
+        let members = match self.w.command_channel_of_party(party) {
+            Some(channel) => self.w.command_channel_members(channel),
+            None => self.w.party_members(party),
+        };
+        for member in members {
             if member == self.caster {
                 continue;
             }

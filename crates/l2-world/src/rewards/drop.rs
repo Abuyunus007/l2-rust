@@ -29,7 +29,8 @@
 // - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
 // - Parties: the leader of the party that did the most damage is the one the loot belongs to
 //   when its members together beat the single biggest dealer; auto loot is shared by
-//   `Party.distributeItem` (`party/loot.rs`, M6-PARTY-01). Only the command channel is missing.
+//   `Party.distributeItem` (`party/loot.rs`, M6-PARTY-01). The raid boss loot right of a command
+//   channel is `party/command_channel.rs` and `ground_item.rs`.
 
 use std::collections::BTreeMap;
 

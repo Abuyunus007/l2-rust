@@ -32,6 +32,13 @@ impl World {
             self.user_command_loc(id);
         } else if command == crate::party::PARTY_INFO_COMMAND {
             self.user_command_party_info(id);
+        } else if matches!(
+            command,
+            crate::party::CHANNEL_DELETE_COMMAND
+                | crate::party::CHANNEL_LEAVE_COMMAND
+                | crate::party::CHANNEL_INFO_COMMAND
+        ) {
+            self.user_command_channel(id, command);
         } else if command == MOUNT_COMMAND {
             self.user_command_mount(id);
         } else if command == DISMOUNT_COMMAND {
