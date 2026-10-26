@@ -16,7 +16,9 @@ use std::sync::mpsc;
 use std::thread::JoinHandle;
 
 use l2_util::WorldRng;
-use l2_world::{DEFAULT_AUTOSAVE_INTERVAL, LsEvent, Outbox, PersistCommand, World, WorldCommand};
+use l2_world::{
+    ControlRequest, DEFAULT_AUTOSAVE_INTERVAL, LsEvent, Outbox, PersistCommand, World, WorldCommand,
+};
 use tokio::sync::{mpsc::UnboundedReceiver, mpsc::UnboundedSender, oneshot};
 use tokio::task;
 use tracing::{debug, error, info, warn};
@@ -28,6 +30,9 @@ use crate::state::WorldHandle;
 pub enum OutboxMessage {
     Persist(PersistCommand),
     Ls(LsEvent),
+    /// A request to the process around the world (the GM shutdown countdown ended, the html
+    /// files are to be read again).
+    Control(ControlRequest),
 }
 
 /// [`Outbox`] over a channel. Never blocks (the world must not wait, D-15).
@@ -55,6 +60,10 @@ impl Outbox for ChannelOutbox {
 
     fn ls_event(&mut self, event: LsEvent) {
         self.push(OutboxMessage::Ls(event));
+    }
+
+    fn control(&mut self, request: ControlRequest) {
+        self.push(OutboxMessage::Control(request));
     }
 }
 

@@ -131,6 +131,7 @@ impl World {
                 self.chat_command_channel(id, chat_type, &text)
             }
             ChatType::Battlefield => self.chat_battlefield(id, &text),
+            ChatType::PetitionPlayer | ChatType::PetitionGm => self.chat_petition(id, chat_type, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }
     }
@@ -203,7 +204,7 @@ impl World {
     /// The first lines of the channel handlers: `isChatBanned() && BAN_CHAT_CHANNELS.contains(type)`
     /// ("chatting is prohibited") and, with `jail` (every channel but general), `JAIL_DISABLE_CHAT &&
     /// isJailed() && !isGM()`. `true` when the message must not go out.
-    fn channel_refuses(&self, id: ObjectId, chat_type: ChatType, jail: bool) -> bool {
+    pub(crate) fn channel_refuses(&self, id: ObjectId, chat_type: ChatType, jail: bool) -> bool {
         if self.is_chat_banned(id) && self.punishment_settings().ban_chat_channels.contains(&chat_type) {
             self.send(
                 id,

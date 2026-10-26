@@ -62,6 +62,7 @@ use l2_db::HallSiegeRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
+use l2_db::{AnnouncementRepository, AutoColumns, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -87,6 +88,7 @@ use l2_world::territory::{
     TerritoryLoad, TerritoryRecord, TerritoryRegistrationRecord, TerritoryRows, TerritorySpawnRecord,
     TerritoryWrite,
 };
+use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
@@ -121,6 +123,12 @@ pub enum LsNotice {
     PlayerLogout { account: String },
     /// Java `LoginServerThread.sendAccessLevel` -> `ChangeAccessLevel` (a ban is -1, its end 0).
     AccessLevel { account: String, level: i32 },
+    /// Java `LoginServerThread.setServerStatus`: the list status.
+    SetServerStatus(i32),
+    /// Java `LoginServerThread.setMaxPlayer`.
+    SetMaxPlayer(i32),
+    /// Java `LoginServerThread.sendServerStatus(id, value)`.
+    ServerStatus { id: i32, value: i32 },
 }
 
 /// Why a store failed.
@@ -394,6 +402,27 @@ pub trait PlayerStore: Send + 'static {
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
+
+    /// A write of the `announcements` table (`//announces`, M7-ADMIN-10). An insert returns the
+    /// id the database gave the row; the other writes return 0.
+    fn store_announcement(
+        &mut self,
+        _write: &AnnouncementWrite,
+    ) -> impl Future<Output = Result<i32, PersistError>> + Send {
+        async { Ok(0) }
+    }
+
+    /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
+    fn store_petition_feedback(
+        &mut self,
+        _character: &str,
+        _gm: &str,
+        _rate: i32,
+        _message: &str,
+        _time: i64,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
 }
 
 /// How often a failed store is tried again before it is given up (and logged as lost).
@@ -425,9 +454,28 @@ pub struct LeftAcks {
     /// The way back to the world, for the answers of reads the world asked for (the pet rows of
     /// a collar, M6-PET-01). Set once the world thread runs.
     world: Arc<std::sync::OnceLock<crate::state::WorldHandle>>,
+    /// Who carries out the requests of the world that are not the world's to do: the GM
+    /// shutdown and the html reload (M7-ADMIN-10). Set once the server runs.
+    control: Arc<std::sync::OnceLock<ControlHandler>>,
 }
 
+/// Carries out a [`l2_world::ControlRequest`].
+pub type ControlHandler = Arc<dyn Fn(l2_world::ControlRequest) + Send + Sync>;
+
 impl LeftAcks {
+    /// Installs the handler of the world's control requests (once; later calls are ignored).
+    pub fn set_control(&self, handler: ControlHandler) {
+        let _ = self.control.set(handler);
+    }
+
+    /// Hands a control request on. Without a handler (a test) it is logged and dropped.
+    pub fn control(&self, request: l2_world::ControlRequest) {
+        match self.control.get() {
+            Some(handler) => handler(request),
+            None => debug!("No control handler: {request:?} ignored."),
+        }
+    }
+
     /// Installs the world's handle (once; later calls are ignored).
     pub fn set_world(&self, handle: crate::state::WorldHandle) {
         let _ = self.world.set(handle);
@@ -964,6 +1012,51 @@ async fn run<S: PlayerStore>(
             OutboxMessage::Ls(LsEvent::PlayerLogout { account }) => {
                 let _ = notices.send(LsNotice::PlayerLogout { account });
             }
+            OutboxMessage::Ls(LsEvent::SetServerStatus(status)) => {
+                let _ = notices.send(LsNotice::SetServerStatus(status));
+            }
+            OutboxMessage::Ls(LsEvent::SetMaxPlayer(max_players)) => {
+                let _ = notices.send(LsNotice::SetMaxPlayer(max_players));
+            }
+            OutboxMessage::Ls(LsEvent::ServerStatus { id, value }) => {
+                let _ = notices.send(LsNotice::ServerStatus { id, value });
+            }
+            OutboxMessage::Control(request) => acks.control(request),
+            OutboxMessage::Persist(PersistCommand::Announcement(write)) => {
+                // Java logs a failed statement and goes on (no retry). An insert is answered with
+                // the id the database gave the row, or with a failure.
+                let result = store.store_announcement(&write).await;
+                if let AnnouncementWrite::Insert { ticket, .. } = &write {
+                    let answer = l2_world::WorldCommand::AnnouncementStored {
+                        ticket: *ticket,
+                        result: match &result {
+                            Ok(id) => Ok(*id),
+                            Err(_) => Err(()),
+                        },
+                    };
+                    if !acks.send_to_world(answer) {
+                        warn!("The id of a new announcement could not be handed to the world.");
+                    }
+                }
+                if let Err(e) = result {
+                    warn!("Announcement: Couldn't store announcement ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::PetitionFeedback {
+                character,
+                gm,
+                rate,
+                message,
+                time,
+            }) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store
+                    .store_petition_feedback(&character, &gm, rate, &message, time)
+                    .await
+                {
+                    warn!("RequestPetitionFeedback: Error while saving petition feedback: {e}");
+                }
+            }
         }
     }
     debug!("Outbox closed, persistence task done.");
@@ -1269,6 +1362,30 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
             .collect(),
         Err(e) => {
             warn!("PunishmentManager: Error while loading punishments: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `AnnouncementsTable.load()`, the database half: the rows of `announcements`. A database
+/// error is logged and the server goes on without announcements, like Java. The world sorts out
+/// the types (`World::load_announcements`).
+pub async fn load_announcements(pool: &Pool) -> Vec<AnnouncementRecord> {
+    match AnnouncementRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| AnnouncementRecord {
+                id: i32::try_from(row.id).unwrap_or(0),
+                kind: row.kind,
+                initial: row.initial,
+                delay: row.delay,
+                repeat: row.repeat,
+                author: row.author,
+                content: row.content,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("AnnouncementsTable: Failed loading announcements: {e}");
             Vec::new()
         }
     }
@@ -2568,6 +2685,8 @@ pub struct DbStore {
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
+    announcements: AnnouncementRepository,
+    petition_feedback: PetitionFeedbackRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -2605,6 +2724,8 @@ impl DbStore {
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool.clone()),
+            announcements: AnnouncementRepository::new(pool.clone()),
+            petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -3722,6 +3843,67 @@ impl PlayerStore for DbStore {
             .collect())
     }
 
+    async fn store_announcement(&mut self, write: &AnnouncementWrite) -> Result<i32, PersistError> {
+        let auto = |auto: &Option<(i64, i64, i32)>| {
+            auto.map(|(initial, delay, repeat)| AutoColumns {
+                initial,
+                delay,
+                repeat,
+            })
+        };
+        match write {
+            AnnouncementWrite::Insert {
+                kind,
+                content,
+                author,
+                auto: columns,
+                ..
+            } => {
+                let id = self
+                    .announcements
+                    .insert(*kind, content, author, auto(columns))
+                    .await?;
+                Ok(i32::try_from(id).unwrap_or(0))
+            }
+            AnnouncementWrite::Update {
+                id,
+                kind,
+                content,
+                author,
+                auto: columns,
+            } => {
+                self.announcements
+                    .update(
+                        u32::try_from(*id).unwrap_or(0),
+                        *kind,
+                        content,
+                        author,
+                        auto(columns),
+                    )
+                    .await?;
+                Ok(0)
+            }
+            AnnouncementWrite::Delete { id } => {
+                self.announcements.delete(u32::try_from(*id).unwrap_or(0)).await?;
+                Ok(0)
+            }
+        }
+    }
+
+    async fn store_petition_feedback(
+        &mut self,
+        character: &str,
+        gm: &str,
+        rate: i32,
+        message: &str,
+        time: i64,
+    ) -> Result<(), PersistError> {
+        self.petition_feedback
+            .insert(character, gm, rate, message, time)
+            .await?;
+        Ok(())
+    }
+
     async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
         let friends = &self.friends;
         match write {
@@ -4272,6 +4454,10 @@ mod tests {
         Recipe(RecipeWrite),
         /// The fishing championship: the end of the period and the number of rows.
         Championship(i64, usize),
+        /// An `announcements` write (M7-ADMIN-10).
+        Announcement(AnnouncementWrite),
+        /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
+        PetitionFeedback(String, String, i32, String, i64),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -4453,6 +4639,36 @@ mod tests {
 
         async fn store_offline_trade(&mut self, write: &OfflineTradeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::OfflineTrade(write.clone()));
+            Ok(())
+        }
+
+        /// An insert gets the id 42; an announcement with the content "fail" cannot be stored.
+        async fn store_announcement(&mut self, write: &AnnouncementWrite) -> Result<i32, PersistError> {
+            self.calls.lock().unwrap().push(Call::Announcement(write.clone()));
+            match write {
+                AnnouncementWrite::Insert { content, .. } if content == "fail" => {
+                    Err(PersistError::NoSuchCharacter(0))
+                }
+                AnnouncementWrite::Insert { .. } => Ok(42),
+                _ => Ok(0),
+            }
+        }
+
+        async fn store_petition_feedback(
+            &mut self,
+            character: &str,
+            gm: &str,
+            rate: i32,
+            message: &str,
+            time: i64,
+        ) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::PetitionFeedback(
+                character.to_owned(),
+                gm.to_owned(),
+                rate,
+                message.to_owned(),
+                time,
+            ));
             Ok(())
         }
 
@@ -5685,5 +5901,150 @@ mod tests {
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(300));
         std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(1));
+    }
+
+    /// M7-ADMIN-10: the login server switches of the admin commands reach the link in order.
+    #[tokio::test]
+    async fn the_login_server_switches_become_notices() {
+        let (calls, notices) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Ls(LsEvent::SetServerStatus(5)),
+                OutboxMessage::Ls(LsEvent::SetMaxPlayer(150)),
+                OutboxMessage::Ls(LsEvent::ServerStatus { id: 2, value: 6 }),
+                OutboxMessage::Ls(LsEvent::SetServerStatus(0)),
+            ],
+        )
+        .await;
+        assert!(calls.is_empty());
+        assert_eq!(
+            notices,
+            vec![
+                LsNotice::SetServerStatus(5),
+                LsNotice::SetMaxPlayer(150),
+                LsNotice::ServerStatus { id: 2, value: 6 },
+                LsNotice::SetServerStatus(0),
+            ]
+        );
+    }
+
+    /// M7-ADMIN-10: the id of a new announcement comes back to the world; a failure too.
+    #[tokio::test]
+    async fn an_announcement_insert_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let insert = |ticket: u32, content: &str| AnnouncementWrite::Insert {
+            ticket,
+            kind: 0,
+            content: content.to_owned(),
+            author: "GM".to_owned(),
+            auto: None,
+        };
+        for write in [
+            insert(1, "hello"),
+            insert(2, "fail"),
+            AnnouncementWrite::Update {
+                id: 42,
+                kind: 0,
+                content: "x".to_owned(),
+                author: "GM".to_owned(),
+                auto: None,
+            },
+            AnnouncementWrite::Delete { id: 42 },
+        ] {
+            tx.send(OutboxMessage::Persist(PersistCommand::Announcement(write)))
+                .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert!(matches!(
+            answers.as_slice(),
+            [
+                l2_world::WorldCommand::AnnouncementStored {
+                    ticket: 1,
+                    result: Ok(42)
+                },
+                l2_world::WorldCommand::AnnouncementStored {
+                    ticket: 2,
+                    result: Err(())
+                },
+            ]
+        ));
+        // The update and the delete are writes without an answer.
+        assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    /// M7-ADMIN-10: a petition feedback is a write of its own.
+    #[tokio::test]
+    async fn petition_feedback_is_stored() {
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![OutboxMessage::Persist(PersistCommand::PetitionFeedback {
+                character: "Ann".to_owned(),
+                gm: "Bob".to_owned(),
+                rate: 4,
+                message: "thanks".to_owned(),
+                time: 99,
+            })],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![Call::PetitionFeedback(
+                "Ann".to_owned(),
+                "Bob".to_owned(),
+                4,
+                "thanks".to_owned(),
+                99
+            )]
+        );
+    }
+
+    /// M7-ADMIN-10: the requests of the world that are not its to do go to the control handler.
+    #[tokio::test]
+    async fn control_requests_reach_the_handler() {
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let acks = LeftAcks::default();
+        // Without a handler a request is dropped.
+        acks.control(l2_world::ControlRequest::Shutdown { restart: false });
+        let sink = Arc::clone(&seen);
+        acks.set_control(Arc::new(move |request| sink.lock().unwrap().push(request)));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(Recording::default(), rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Control(l2_world::ControlRequest::Shutdown {
+            restart: true,
+        }))
+        .unwrap();
+        tx.send(OutboxMessage::Control(l2_world::ControlRequest::ReloadHtml {
+            requester: ObjectId(7),
+            path: Some("admin/x.htm".to_owned()),
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            seen.lock().unwrap().as_slice(),
+            [
+                l2_world::ControlRequest::Shutdown { restart: true },
+                l2_world::ControlRequest::ReloadHtml {
+                    requester: ObjectId(7),
+                    path: Some("admin/x.htm".to_owned())
+                },
+            ]
+        );
     }
 }

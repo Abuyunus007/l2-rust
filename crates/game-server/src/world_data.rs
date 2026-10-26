@@ -1155,6 +1155,35 @@ pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
     }
 }
 
+/// The configuration the server control commands, the announcements, the petition system and
+/// `//debug` read (M7-ADMIN-10): `ServerGMOnly`, `ServerListType`, `ServerListAge`,
+/// `ServerListBrackets`, `MaximumOnlineUsers`, `GMShowAnnouncerName`, `GMStartupAutoList`,
+/// `PetitioningAllowed`, `MaxPetitionsPending`, `MaxPetitionsPerPlayer`, `DebugClientPackets`.
+pub fn admin_settings(config: &GameConfig, config_dir: &Path) -> l2_world::AdminSettings {
+    use l2_config::IniFile;
+
+    use crate::ls_link::server_type_id;
+    // `ServerListType` is one of the settings the config crate leaves to hand-written code.
+    let server_list_type = IniFile::load(config_dir.join(crate::SERVER_CONFIG_FILE))
+        .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
+        .unwrap_or_else(|_| server_type_id("Free"));
+    l2_world::AdminSettings {
+        gm_announcer_name: config.general.gm_announcer_name,
+        gm_startup_auto_list: config.general.gm_startup_auto_list,
+        server_gmonly: config.general.server_gmonly,
+        server_list_type,
+        server_list_age: config.server.server_list_age,
+        server_list_brackets: config.server.server_list_bracket,
+        maximum_online_users: config.server.maximum_online_users,
+        petitioning_allowed: config.player.petitioning_allowed,
+        max_petitions_pending: config.player.max_petitions_pending,
+        max_petitions_per_player: config.player.max_petitions_per_player,
+        debug_client_packets: config.development.debug_client_packets,
+        // `GameServer.getStartTime()`.
+        server_start_ms: l2_util::time::now_millis(),
+    }
+}
+
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
     use l2_config::game::GeneralConfig;
