@@ -193,7 +193,11 @@ impl World {
     pub fn tele_to_location(&mut self, id: ObjectId, target: TeleportTarget) {
         let is_npc = self.npcs.contains_key(&id);
         // "Prevent teleporting for players that disconnected unexpectedly."
-        if !is_npc && (!self.players.contains_key(&id) || !self.sinks.contains_key(&id)) {
+        // (`isOnline()`: an offline trader without a connection is online.)
+        if !is_npc
+            && (!self.players.contains_key(&id)
+                || !(self.sinks.contains_key(&id) || self.is_offline_trader(id)))
+        {
             return;
         }
         let TeleportTarget {
@@ -322,7 +326,7 @@ impl World {
 
         // Java completes the teleport right here only for a detached client; everybody else
         // waits for `Appearing`. An NPC has no client: `onTeleported()` at once.
-        if is_npc {
+        if is_npc || self.is_offline_trader(id) {
             self.on_teleported(id);
         }
 

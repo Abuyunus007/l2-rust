@@ -236,6 +236,9 @@ pub struct PlayerProfile {
     /// `storeRecipeShopList`, only with `StoreRecipeShopList` and a shop): `(recipeId, price)` in
     /// the order of the shop. `None` leaves the rows alone.
     pub recipe_shop_to_store: Option<Vec<(i32, i64)>>,
+    /// `characters.online` of the next store: 1, or 2 for a player without a client (offline
+    /// trade, Java `isOnlineInt()`).
+    pub online_status: i32,
 }
 
 impl Default for PlayerProfile {
@@ -275,6 +278,7 @@ impl Default for PlayerProfile {
             residence_refresh: None,
             recipes: crate::craft::RecipeLoad::default(),
             recipe_shop_to_store: None,
+            online_status: 1,
         }
     }
 }

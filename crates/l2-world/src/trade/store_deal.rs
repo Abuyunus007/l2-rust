@@ -173,9 +173,11 @@ impl World {
             BuyResult::Exception => return,
         }
 
-        // Update offline trade record, if realtime saving is enabled: offline trade is not ported.
+        // Update offline trade record, if realtime saving is enabled.
+        let remaining = self.sell_list_copy(store).item_count();
+        self.offline_after_store_deal(store, remaining);
 
-        if self.sell_list_copy(store).item_count() == 0 {
+        if remaining == 0 {
             self.set_private_store_type(store, PrivateStoreType::None);
             self.broadcast_user_info(store);
         }
@@ -492,9 +494,11 @@ impl World {
             return;
         }
 
-        // Update offline trade record, if realtime saving is enabled: offline trade is not ported.
+        // Update offline trade record, if realtime saving is enabled.
+        let remaining = self.buy_list_copy(store).item_count();
+        self.offline_after_store_deal(store, remaining);
 
-        if self.buy_list_copy(store).item_count() == 0 {
+        if remaining == 0 {
             self.set_private_store_type(store, PrivateStoreType::None);
             self.broadcast_user_info(store);
         }

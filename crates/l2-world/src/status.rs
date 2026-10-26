@@ -507,7 +507,11 @@ impl World {
         if self.is_invul(id) {
             return;
         }
-        // Offline traders (M5).
+        // "If OFFLINE_MODE_NO_DAMAGE is enabled and player is offline and he is in store/craft
+        // mode, no damage is taken."
+        if self.offline_takes_no_damage(id) {
+            return;
+        }
         // `!isHPConsumption`: HP consumption does not reach this function yet.
         self.stop_effects_on_damage(id, true);
         // Crafting and private stores (stand up): Sitting players stand up,

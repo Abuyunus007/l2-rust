@@ -54,6 +54,10 @@ impl World {
         if let Some(clan) = snapshot.profile.clan.as_mut() {
             clan.privileges = crate::clan::ClanPrivilegesRef::Own(self.clan_privileges_of(id));
         }
+        // `isOnlineInt()`: 2 for a detached client (an offline trader).
+        if self.is_offline_trader(id) {
+            snapshot.profile.online_status = 2;
+        }
         Some(snapshot)
     }
 

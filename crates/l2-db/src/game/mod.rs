@@ -22,6 +22,7 @@ mod items;
 mod macros;
 mod manor;
 mod messages;
+mod offline_trades;
 mod pets;
 mod punishments;
 mod recipes;
@@ -63,6 +64,7 @@ pub use items::{
 pub use macros::{MacroRepository, MacroRow, NewMacro};
 pub use manor::{ManorRepository, ProcureRow, ProductionRow};
 pub use messages::{MessageRepository, MessageRow};
+pub use offline_trades::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};

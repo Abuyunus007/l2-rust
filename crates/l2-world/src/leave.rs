@@ -31,6 +31,10 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
+        // `OfflineTraderTable.enteredOfflineMode(player)`: the shop stays, the connection goes.
+        if self.entered_offline_mode(id) {
+            return;
+        }
         self.leave(id, LeaveReason::Logout);
     }
 
@@ -47,15 +51,22 @@ impl World {
             self.send(id, &RestartResponse { result: false });
             return;
         }
+        // `OfflineTraderTable.enteredOfflineMode(player)` (only a crafting player gets here with
+        // `OfflineCraftEnable`): the client is closed, not sent back to the character screen.
+        if self.entered_offline_mode(id) {
+            return;
+        }
         self.leave(id, LeaveReason::Restart);
     }
 
     /// `LoginServerThread.doKickPlayer`: `Disconnection.of(client).storeAndDeleteWith(msg)`.
     pub(crate) fn kick_account(&mut self, account: &str) {
+        // An offline trader is no longer the account's client (`sendLogout` freed the account when
+        // it went offline): only a player with a connection is kicked.
         let found = self
             .players
             .values()
-            .find(|p| p.data.account == account)
+            .find(|p| p.data.account == account && self.sinks.contains_key(&p.core.object_id))
             .map(|p| p.core.object_id);
         if let Some(id) = found {
             self.send(
@@ -108,6 +119,8 @@ impl World {
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
         // after the player's `decayMe()`; here before, while the player is still in the tables).
         self.summon_on_owner_leave(id);
+        // A trader without a client left the login server's books when it went offline.
+        let was_trader = self.offline.traders.remove(&id).is_some();
         let Some(_player) = self.players.remove(&id) else {
             return;
         };
@@ -128,7 +141,7 @@ impl World {
             object_id: id,
             // Java sends `PlayerLogout` when the connection ends (`GameClient.onDisconnection`),
             // not when the player goes back to the character screen.
-            logout: reason != LeaveReason::Restart,
+            logout: reason != LeaveReason::Restart && !was_trader,
         });
         // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);

@@ -721,6 +721,9 @@ impl ClientSession {
         let Some(account) = self.account.clone() else {
             return;
         };
+        // Java: "Disconnect offline trader." The trader of the character is stored and removed
+        // before the character is read, so the read sees what the shop sold (M6-FU-14).
+        self.release_offline_trader(info.entry.object_id).await;
         // Java: `client.load(slot)`. A character that cannot be loaded is not selected; Java
         // logs it and sends nothing.
         let player = match ctx.loader.load_player(&account, info.entry.object_id).await {
@@ -790,6 +793,35 @@ impl ClientSession {
         // The world takes it over at `EnterWorld`.
         self.pending = Some(Box::new(player));
         debug!("Character {} selected by {}.", entry.object_id, self.ip);
+    }
+
+    /// Java `CharacterSelect`: `World.getPlayer(objectId)` is the character's offline trader, if
+    /// there is one; `Disconnection.of(player).storeAndDelete()`. The world answers whether it
+    /// was one, and the final store is awaited (a bounded wait, like the restart's).
+    async fn release_offline_trader(&self, char_id: i32) {
+        const WAIT: std::time::Duration = std::time::Duration::from_secs(10);
+        let id = ObjectId(char_id);
+        // Registered before the command, so the acknowledgement cannot be missed.
+        let stored = self.ctx.left_acks.wait_for(id);
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let sent = self.ctx.world.send(l2_world::WorldCommand::ReleaseOfflineTrader {
+            object_id: id,
+            done: Box::new(move |was_trader| {
+                let _ = tx.send(was_trader);
+            }),
+        });
+        if !sent {
+            self.ctx.left_acks.cancel_wait(id);
+            return;
+        }
+        match tokio::time::timeout(WAIT, rx).await {
+            Ok(Ok(true)) => {
+                if tokio::time::timeout(WAIT, stored).await.is_err() {
+                    warn!("The store of the offline trader {char_id} took too long; continuing.");
+                }
+            }
+            _ => self.ctx.left_acks.cancel_wait(id),
+        }
     }
 
     /// The client left after `CharacterSelect` but before the world took the character over:

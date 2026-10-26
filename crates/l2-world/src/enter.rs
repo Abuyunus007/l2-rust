@@ -542,6 +542,8 @@ impl World {
         self.clan_join_penalty_message(id);
         // Java `onPlayerEnter` -> `notifyFriends()`: the friends who are online see the login.
         self.friends_notify_online(id);
+        // The shop rows of the character's offline trader, if any, are old now.
+        self.offline_on_enter_world(id);
         // M7-FORT-01: "Remove combat flag before teleporting."
         // Attacker or spectator logging in to a siege zone (M7-SIEGE-01).
         self.siege_enter_world_zone_check(id);
@@ -902,7 +904,10 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         fish_x: player.fishing.fish_x,
         fish_y: player.fishing.fish_y,
         fish_z: player.fishing.fish_z,
-        name_color: access.name_color,
+        // `OfflineSetNameColor`: the colour of a trader without a client.
+        name_color: world
+            .offline_name_color(core.object_id)
+            .unwrap_or(access.name_color),
         running: view.is_running(),
         // Java `_pledgeClass` (set at restore and by the clan code, see `clan/`).
         pledge_class: world.pledge_class_of(core.object_id),
