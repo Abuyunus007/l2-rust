@@ -442,6 +442,38 @@ pub fn siege_database_writes(config_dir: &Path) -> bool {
     on
 }
 
+/// `CycleDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
+/// default). Off, the global cycles of M8 (Olympiad periods and nobles, heroes, Seven Signs, boss
+/// states, item auction ends, cursed weapons) stay in this server's memory and the Java game server
+/// that shares the database keeps running them (D-39, D-53). Logs the active mode.
+pub fn cycle_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("CycleDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using CycleDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!(
+            "SideBySide: CycleDatabaseWrites = True, this server writes the Olympiad, Seven Signs, boss and other global cycle rows."
+        );
+    } else {
+        info!(
+            "SideBySide: CycleDatabaseWrites = False, the global cycles stay in memory (the Java game server runs them)."
+        );
+    }
+    on
+}
+
 /// `OfflineTradeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the offline traders live in memory until this server stops: it writes no row of
 /// `character_offline_trade` and `character_offline_trade_items`, removes none and restores none,
