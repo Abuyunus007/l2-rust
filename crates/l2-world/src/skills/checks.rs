@@ -10,8 +10,7 @@
 // # Not modelled (each refuses a cast in Java; none of these states exists yet)
 // Observer mode, duels, olympiad, siege friends and territory wars, event
 // monsters, castle and fort sieges of doors (a door in a siege zone has no castle or fort yet),
-// the access level's `allowPeaceAttack` (not loaded: no level has it), signets in peace zones
-// (`checkEffectRangeInsidePeaceZone`, the channelizer is not ported).
+// the access level's `allowPeaceAttack` (not loaded: no level has it).
 
 use l2_data::SkillTemplate;
 use l2_data::skill::{FlyType, TargetType};
@@ -172,6 +171,38 @@ impl World {
             .map(|_| target)
     }
 
+    /// Java `ZoneRegion.checkEffectRangeInsidePeaceZone(skill, x, y, z)` for the region of
+    /// `(region_x, region_y)`: no peace zone of the region contains the point or one of the four
+    /// points a skill's effect range away.
+    // NOTE(java-quirk): `left` is `x + range` and `right` is `x - range`; the order does not matter
+    // for the result.
+    pub(crate) fn check_effect_range_inside_peace_zone(
+        &self,
+        skill: &SkillTemplate,
+        region_x: i32,
+        region_y: i32,
+        x: i32,
+        y: i32,
+        z: i32,
+    ) -> bool {
+        let Some(zones) = self.zoning.zones.as_ref() else {
+            return true;
+        };
+        let range = skill.effect_range;
+        let points = [
+            (x, y.wrapping_add(range)),
+            (x, y.wrapping_sub(range)),
+            (x.wrapping_add(range), y),
+            (x.wrapping_sub(range), y),
+            (x, y),
+        ];
+        !zones
+            .region_zones(region_x, region_y)
+            .into_iter()
+            .filter(|zone| zone.is_a("PeaceZone"))
+            .any(|zone| points.iter().any(|&(px, py)| zone.is_inside_zone(px, py, z)))
+    }
+
     /// `isPlayable()`: players and summons.
     pub(crate) fn is_playable(&self, id: ObjectId) -> bool {
         self.is_player(id) || self.is_summon(id)
@@ -248,8 +279,30 @@ impl World {
         }
 
         // Prevent casting signets to peace zone.
-        // M5: `ZoneRegion.checkEffectRangeInsidePeaceZone` for channeling skills (signets); the
-        // skill channelizer is not ported, so no signet is cast.
+        if is_channeling(skill) && skill.channeling_skill_id > 0 && !self.is_in_instance(id) {
+            let origin = if skill.target_type == TargetType::Ground && self.is_player(id) {
+                // NOTE: Java would throw on a ground skill without a ground point; no point, no check.
+                self.cast
+                    .creatures
+                    .get(&id)
+                    .and_then(|c| c.current_skill_world_position)
+            } else {
+                self.position_of(id)
+            };
+            let can_cast = origin.is_none_or(|(x, y, z)| {
+                self.position_of(id).is_none_or(|(rx, ry, _)| {
+                    self.check_effect_range_inside_peace_zone(skill, rx, ry, x, y, z)
+                })
+            });
+            if !can_cast {
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms)
+                        .with(skill_name_param(skill)),
+                );
+                return false;
+            }
+        }
 
         // Check if the caster's weapon is limited to use only its own skills.
         let weapon_refuses = self.stats(id).is_some_and(|v| {
