@@ -18,7 +18,7 @@ Java size, for scale: `mechanics/olympiad` + `mechanics/sevensigns` 11,700 lines
 `OlympiadGame*`, `Hero`, `SevenSigns`, `SevenSignsFestival`, `DimensionalRift`), `InstanceManager`
 and the instance templates, `GrandBossManager`, `RaidBossSpawnManager`, `BoatManager`,
 `AirShipManager`, `CursedWeaponsManager`, `undergroundColiseum/*`, `krateisCube/*`,
-`HandysBlockCheckerManager`, `PetitionManager`, `CoupleManager`, `FishingChampionshipManager`.
+`HandysBlockCheckerManager`, `CoupleManager`, `FishingChampionshipManager`.
 The boss AIs, the instance scripts and the event scripts are **scripts** (D-05) and come with the
 script milestone after M8; M8 ports the engines they run on.
 
@@ -36,7 +36,7 @@ script milestone after M8; M8 ports the engines they run on.
 | M8-VEHICLE-01 | Boats and airships | sonnet | GPROTO-11 | `BoatManager`, `AirShipManager`, vehicle movement and boarding, the boat routes (the boat route scripts as the engine needs them) |
 | M8-CURSED-01 | Cursed weapons | sonnet | — | `CursedWeaponsManager` (`cursed_weapons` rows), Zariche and Akamanah: drop, ownership, the transformation, kills, the timer; the M6 cursed weapon markers |
 | M8-GAMES-01 | Mini games | sonnet | INST-01 | Underground Coliseum, Kratei's Cube, Handy's Block Checker |
-| M8-MISC-01 | Petitions, weddings, fishing championship, event drops | sonnet | — | `PetitionManager`, `CoupleManager` (`mods_wedding`), `FishingChampionshipManager`, `EventDropManager`, `WalkingManager` (NPC routes) |
+| M8-MISC-01 | Weddings, fishing championship, event drops | sonnet | — | `CoupleManager` (`mods_wedding`), `FishingChampionshipManager`, `EventDropManager`, `WalkingManager` (NPC routes) |
 | M8-ADMIN-07 | Admin commands for M8 | haiku | OLY-01, SS-01, INST-01 | `//olympiad`, `//hero`, `//sevensigns`, `//instance`, `//cw`, `//grandboss`, ... as Java registers them |
 | M8-E2E-01 | End to end: an olympiad match, Seven Signs registration, an instance | sonnet | OLY-01, SS-01, INST-01 | |
 | M8-RUN-01 | Runbook and milestone checks | opus | E2E-01 | |
