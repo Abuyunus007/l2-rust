@@ -129,6 +129,8 @@ pub struct SkillTrees {
     sub_pledge: Vec<SkillLearn>,
     /// Java `_fishingSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     fishing: Vec<SkillLearn>,
+    /// Java `_nobleSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    noble: Vec<SkillLearn>,
     /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree` (`//switch_gm_buffs`), in the
     /// order of Java's `ConcurrentHashMap`.
     game_master: Vec<SkillLearn>,
@@ -202,6 +204,8 @@ impl SkillTrees {
             sub_pledge_order,
             fishing,
             fishing_order,
+            noble,
+            noble_order,
             game_master,
             game_master_order,
             game_master_aura,
@@ -245,6 +249,7 @@ impl SkillTrees {
             pledge: in_java_order(pledge, pledge_order),
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
             fishing: in_java_order(fishing, fishing_order),
+            noble: in_java_order(noble, noble_order),
             game_master: in_java_order(game_master, game_master_order),
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
         }
@@ -306,6 +311,11 @@ impl SkillTrees {
     /// Java `getSubPledgeSkillTree().values()`: the squad skills, in Java's map order.
     pub fn sub_pledge_skills(&self) -> &[SkillLearn] {
         &self.sub_pledge
+    }
+
+    /// Java `getNobleSkillTree().values()`: the skills `Player.setNoble` gives and takes.
+    pub fn noble_skills(&self) -> &[SkillLearn] {
+        &self.noble
     }
 
     /// Java `getFishingSkillTree().values()`: the fishing skills, in the order of Java's
@@ -499,6 +509,9 @@ struct Gathered {
     /// Java `_fishingSkillTree` and the keys in the order they were first put.
     fishing: BTreeMap<(i32, i32), SkillLearn>,
     fishing_order: Vec<(i32, i32)>,
+    /// Java `_nobleSkillTree` and the keys in the order they were first put.
+    noble: BTreeMap<(i32, i32), SkillLearn>,
+    noble_order: Vec<(i32, i32)>,
     /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree`, with their keys in put order.
     game_master: BTreeMap<(i32, i32), SkillLearn>,
     game_master_order: Vec<(i32, i32)>,
@@ -527,12 +540,14 @@ impl Gathered {
                 "pledgeSkillTree"
                     | "subPledgeSkillTree"
                     | "fishingSkillTree"
+                    | "nobleSkillTree"
                     | "gameMasterSkillTree"
                     | "gameMasterAuraSkillTree"
             ) {
                 let (map, order) = match tree.kind.as_str() {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
                     "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
+                    "nobleSkillTree" => (&mut self.noble, &mut self.noble_order),
                     "gameMasterSkillTree" => (&mut self.game_master, &mut self.game_master_order),
                     "gameMasterAuraSkillTree" => {
                         (&mut self.game_master_aura, &mut self.game_master_aura_order)
@@ -1123,5 +1138,18 @@ mod tests {
         assert_eq!(trees.game_master_aura_skills().len(), 2);
         // Not a class, clan or fishing tree: nothing else is kept.
         assert!(trees.pledge_skills().is_empty() && trees.fishing_skills().is_empty());
+    }
+
+    #[test]
+    fn the_noble_tree_is_kept() {
+        let xml = r#"<list><skillTree type="nobleSkillTree">
+            <skill skillName="Noblesse Blessing" skillId="1323" skillLevel="1" getLevel="1" />
+            <skill skillName="Wyvern Aegis" skillId="327" skillLevel="1" getLevel="1" />
+        </skillTree></list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        let mut ids: Vec<i32> = trees.noble_skills().iter().map(|l| l.skill_id).collect();
+        ids.sort_unstable();
+        assert_eq!(ids, vec![327, 1323]);
+        assert!(trees.fishing_skills().is_empty());
     }
 }

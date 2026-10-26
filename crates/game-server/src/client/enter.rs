@@ -827,6 +827,8 @@ impl ClientSession {
             ctl.send_and_close(LeaveWorld.to_bytes());
             return;
         }
+        // `client.setClientTracert(_tracert)`: queued behind the `EnterWorld`, for `//tracert`.
+        self.forward(ClientInput::Tracert { hops: packet.tracert });
         // After the send, so a kick that sees the flag queues its `Kick` behind the
         // `EnterWorld`.
         self.in_world.store(true, Ordering::Release);

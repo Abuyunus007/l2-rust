@@ -199,6 +199,9 @@ impl AccessLevels {
                         .and_then(|v| v.trim().parse::<i32>().ok())
                         .unwrap_or(0);
                     table.rights.add_level(level, child);
+                    if let Some(name) = attribute(&e, "name") {
+                        table.rights.set_level_name(level, &name);
+                    }
                     if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
                         table.fixed_res.insert(level);
                     }
@@ -1168,8 +1171,8 @@ pub fn admin_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Admin
         .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
         .unwrap_or_else(|_| server_type_id("Free"));
     l2_world::AdminSettings {
-        gm_announcer_name: config.general.gm_announcer_name,
         gm_startup_auto_list: config.general.gm_startup_auto_list,
+        gm_announcer_name: config.general.gm_announcer_name,
         server_gmonly: config.general.server_gmonly,
         server_list_type,
         server_list_age: config.server.server_list_age,
@@ -1214,6 +1217,9 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         gm_audit: config.general.gmaudit,
         gm_startup_builder_hide: config.general.gm_startup_builder_hide,
         gm_startup_invulnerable: config.general.gm_startup_invulnerable,
+        gm_startup_silence: config.general.gm_startup_silence,
+        gm_startup_diet_mode: config.general.gm_startup_diet_mode,
+        silence_mode_exclude: config.player.silence_mode_exclude,
         use_super_haste_as_gm_speed: config.general.use_super_haste_as_gm_speed,
         gm_give_special_skills: config.general.gm_give_special_skills,
         gm_give_special_aura_skills: config.general.gm_give_special_aura_skills,

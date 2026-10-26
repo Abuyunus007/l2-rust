@@ -156,6 +156,11 @@ pub enum TimerKind {
     Territory(crate::territory::TerritoryTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
+    /// Java `new Untransform(player)` of `//setsex` and `//setclass`, 200 ms after the
+    /// transformation 105 (`admin/edit_char.rs`).
+    Untransform(ObjectId),
+    /// Java `setPlayerClass`'s `finally`: `sendSkillList()` 100 ms later (`admin/edit_char.rs`).
+    ClassChangeSkillList(ObjectId),
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),

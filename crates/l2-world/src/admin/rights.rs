@@ -27,6 +27,8 @@ struct CommandRight {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AdminRights {
     levels: BTreeMap<i32, LevelRow>,
+    /// Java `AccessLevel.getName()` of each listed level (`name` of `AccessLevels.xml`).
+    names: BTreeMap<i32, String>,
     /// Keyed by the full command, `admin_` prefix included (Java `AccessRight.getCommand`).
     commands: HashMap<String, CommandRight>,
     /// Java `_highestLevel` (starts at 0).
@@ -49,6 +51,29 @@ impl AdminRights {
             self.highest = level;
         }
         self.levels.insert(level, LevelRow { level, child });
+    }
+
+    /// `name` of an `<access>` row (Java `AccessLevel.getName()`); call after `add_level`.
+    pub fn set_level_name(&mut self, level: i32, name: &str) {
+        self.names.insert(level, name.to_owned());
+    }
+
+    /// Java `AdminData.hasAccessLevel(level)`: the file lists the level.
+    pub fn has_level(&self, level: i32) -> bool {
+        self.levels.contains_key(&level)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).getName()`: a level the file does not list is
+    /// `new AccessLevel()`, named "User"; below 0 is the row -1 (empty when the file has none,
+    /// where Java would throw).
+    pub fn level_name(&self, level: i32) -> String {
+        if level < 0 {
+            return self.names.get(&-1).cloned().unwrap_or_default();
+        }
+        match self.levels.get(&level) {
+            Some(_) => self.names.get(&level).cloned().unwrap_or_default(),
+            None => "User".to_owned(),
+        }
     }
 
     /// Java `AdminData.parseDocument`, `<admin>`: `command` is the name without `admin_`,
@@ -195,6 +220,18 @@ mod tests {
         assert!(!rights.has_access("admin_admin", 0));
         assert!(rights.has_access("admin_kill", 100));
         assert!(!rights.has_access("admin_kill", 70));
+    }
+
+    #[test]
+    fn level_names_come_from_the_file() {
+        let mut rights = shipped();
+        rights.set_level_name(100, "Master");
+        rights.set_level_name(-1, "Banned");
+        assert!(rights.has_level(100));
+        assert!(!rights.has_level(55));
+        assert_eq!(rights.level_name(100), "Master");
+        assert_eq!(rights.level_name(-9), "Banned");
+        assert_eq!(rights.level_name(55), "User");
     }
 
     #[test]

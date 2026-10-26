@@ -62,7 +62,14 @@ impl World {
     /// Java `PlayerInventory.validateWeight(weight)`: the load plus `weight` stays within the
     /// limit.
     pub fn validate_weight(&self, player: ObjectId, weight: i64) -> bool {
-        // The GM diet mode (`getDietMode`) is not modelled.
+        // Disable weight check for GMs in diet mode (their level must allow transactions).
+        if let Some(p) = self.players.get(&player)
+            && p.gm.diet
+            && self.is_gm(player)
+            && self.data.access_level_allows_transaction(p.data.access_level)
+        {
+            return true;
+        }
         let Some(view) = self.stats(player) else {
             return false;
         };

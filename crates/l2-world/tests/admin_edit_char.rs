@@ -71,6 +71,7 @@ fn rights() -> AdminRights {
         (100, 70),
     ] {
         rights.add_level(level, child);
+        rights.set_level_name(level, &format!("Lvl{level}"));
     }
     for (command, level, confirm) in [
         ("current_player", 30, false),
@@ -94,6 +95,19 @@ fn rights() -> AdminRights {
         ("set_hp", 100, false),
         ("set_mp", 100, false),
         ("set_cp", 100, false),
+        ("setcolor", 100, false),
+        ("tracert", 100, false),
+        ("strict_find_dualbox", 100, false),
+        ("changelvl", 100, false),
+        ("repair", 100, false),
+        ("restore", 100, false),
+        ("gmliston", 100, false),
+        ("gmlistoff", 100, false),
+        ("silence", 100, false),
+        ("diet", 100, false),
+        ("tradeoff", 100, false),
+        ("setconfig", 100, false),
+        ("config_server", 100, false),
     ] {
         rights.add_command(command, level, confirm);
     }
@@ -264,6 +278,7 @@ impl Root {
         write("data/html/admin/charlist.htm", CHARLIST);
         write("data/html/admin/ipfind.htm", IPFIND);
         write("data/html/admin/dualbox.htm", DUALBOX);
+        write("data/html/admin/gm_menu.htm", "<html><body>GM MENU</body></html>");
         write(
             "data/html/admin/accountinfo.htm",
             "<html><body>ACC %account% %player% %characters%</body></html>",
@@ -439,21 +454,15 @@ fn registered_words_exist_and_left_out_ones_do_not() {
         "set_hp",
         "set_mp",
         "set_cp",
+        "setcolor",
+        "tracert",
+        "strict_find_dualbox",
     ] {
         s.cmd(GM, word);
         let texts = texts_to(&s.take(), GM);
         assert!(
             texts.iter().all(|t| !t.starts_with("The command")),
             "{word} must be registered, got {texts:?}"
-        );
-    }
-    for word in ["tracert", "strict_find_dualbox", "setcolor"] {
-        s.cmd(GM, word);
-        let texts = texts_to(&s.take(), GM);
-        assert_eq!(
-            texts,
-            vec![format!("The command '{word}' does not exist!")],
-            "{word} is left out"
         );
     }
 }
@@ -914,4 +923,305 @@ fn find_account_shows_the_account_of_the_player() {
     let html = html_to(&s.take(), GM);
     assert_eq!(html.len(), 1);
     assert!(html[0].html.contains("ACC acc1 Alpha"), "{}", html[0].html);
+}
+
+// --------------------------------------------------------------------------- M7-ADMIN-12
+
+fn html_texts(out: &Sent, to: i32) -> Vec<String> {
+    html_to(out, to).into_iter().map(|m| m.html).collect()
+}
+
+#[test]
+fn setcolor_sets_the_name_colour_of_the_target() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", None);
+    s.target(GM, P1);
+    s.take();
+    s.cmd(GM, "setcolor FF00FF");
+    assert_eq!(s.p(P1).gm.name_color, Some(0x00FF_00FF));
+    assert!(texts_to(&s.take(), P1).contains(&"Your name color has been changed by a GM".to_owned()));
+    s.cmd(GM, "setcolor zz");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["You need to specify a valid new color.".to_owned()]
+    );
+    assert_eq!(s.p(P1).gm.name_color, Some(0x00FF_00FF));
+}
+
+#[test]
+fn tracert_prints_the_five_hops() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", Some("10.0.0.1"));
+    s.input(
+        P1,
+        ClientInput::Tracert {
+            hops: [[1, 2, 3, 4], [5, 6, 7, 8], [0; 4], [0; 4], [9, 9, 9, 9]],
+        },
+    );
+    s.take();
+    s.cmd(GM, "tracert P1");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec![
+            "Hop0: 1.2.3.4".to_owned(),
+            "Hop1: 5.6.7.8".to_owned(),
+            "Hop2: 0.0.0.0".to_owned(),
+            "Hop3: 0.0.0.0".to_owned(),
+            "Hop4: 9.9.9.9".to_owned(),
+        ]
+    );
+    // No name and no player target: the invalid target message.
+    s.cmd(GM, "tracert");
+    assert_eq!(system_ids_to(&s.take(), GM), vec![SystemMessageId::InvalidTarget]);
+}
+
+#[test]
+fn strict_find_dualbox_needs_the_same_hops_as_well() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", Some("10.0.0.1"));
+    s.enter_player(P2, "P2", Some("10.0.0.1"));
+    s.enter_player(P3, "P3", Some("10.0.0.1"));
+    let hops = [[1, 1, 1, 1]; 5];
+    s.input(P1, ClientInput::Tracert { hops });
+    s.input(P2, ClientInput::Tracert { hops });
+    s.input(
+        P3,
+        ClientInput::Tracert {
+            hops: [[2, 2, 2, 2]; 5],
+        },
+    );
+    s.take();
+    s.cmd(GM, "strict_find_dualbox");
+    let pages = html_texts(&s.take(), GM);
+    assert_eq!(pages.len(), 1);
+    // P1 and P2 share the pack, P3 stands alone: one entry with a count of 2.
+    assert!(pages[0].contains("10.0.0.1 (2)"), "{}", pages[0]);
+    assert!(pages[0].contains("strict_"), "{}", pages[0]);
+    s.cmd(GM, "strict_find_dualbox 0");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["Usage: //strict_find_dualbox [number > 0]".to_owned()]
+    );
+}
+
+#[test]
+fn gmliston_and_gmlistoff_change_the_list() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", None);
+    s.take();
+    // A GM starts hidden: the public list is empty for a player.
+    s.input(P1, ClientInput::GmList);
+    assert_eq!(
+        system_ids_to(&s.take(), P1),
+        vec![SystemMessageId::ThereAreNoGmsCurrentlyVisibleInThePublicListAsTheyMayBePerformingOtherFunctionsAtTheMoment]
+    );
+    s.cmd(GM, "gmliston");
+    let out = s.take();
+    assert_eq!(texts_to(&out, GM), vec!["Registered into GM list.".to_owned()]);
+    assert_eq!(html_texts(&out, GM).len(), 1);
+    s.input(P1, ClientInput::GmList);
+    let out = s.take();
+    assert_eq!(
+        system_ids_to(&out, P1),
+        vec![SystemMessageId::GmList, SystemMessageId::GmC1]
+    );
+    s.cmd(GM, "gmlistoff");
+    assert_eq!(texts_to(&s.take(), GM), vec!["Removed from GM list.".to_owned()]);
+}
+
+#[test]
+fn silence_toggles_and_blocks_whispers() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", None);
+    s.take();
+    s.cmd(GM, "silence");
+    assert!(s.p(GM).gm.silence);
+    assert!(system_ids_to(&s.take(), GM).contains(&SystemMessageId::MessageRefusalMode));
+    // A whisper to the silent GM is answered as if he was offline.
+    s.input(
+        P1,
+        ClientInput::Say {
+            chat_type: 2,
+            text: "hi".into(),
+            target: Some("Gamemaster".into()),
+        },
+    );
+    let out = s.take();
+    assert_eq!(
+        system_ids_to(&out, P1),
+        vec![SystemMessageId::ThatPlayerIsNotOnline]
+    );
+    assert!(out.iter().all(|(to, _)| *to != GM));
+    s.cmd(GM, "silence");
+    assert!(!s.p(GM).gm.silence);
+    assert!(system_ids_to(&s.take(), GM).contains(&SystemMessageId::MessageAcceptanceMode));
+}
+
+#[test]
+fn diet_follows_the_java_word_quirk() {
+    let mut s = setup();
+    s.enter_gm();
+    s.take();
+    s.cmd(GM, "diet on");
+    assert!(s.p(GM).gm.diet);
+    assert!(texts_to(&s.take(), GM).contains(&"Diet mode on".to_owned()));
+    // `//diet off` has no third word, so it toggles (here: off).
+    s.cmd(GM, "diet off");
+    assert!(!s.p(GM).gm.diet);
+    assert!(texts_to(&s.take(), GM).contains(&"Diet mode off".to_owned()));
+    // And once more `//diet off` toggles back on.
+    s.cmd(GM, "diet off");
+    assert!(s.p(GM).gm.diet);
+    s.take();
+    // A second word that is not "on" with a third that is not "off": nothing changes.
+    s.cmd(GM, "diet x y");
+    assert!(s.p(GM).gm.diet);
+    assert!(texts_to(&s.take(), GM).is_empty());
+    s.cmd(GM, "diet x off");
+    assert!(!s.p(GM).gm.diet);
+}
+
+#[test]
+fn tradeoff_sets_and_toggles_the_refusal() {
+    let mut s = setup();
+    s.enter_gm();
+    s.take();
+    s.cmd(GM, "tradeoff on");
+    assert!(s.p(GM).trade.refusal);
+    assert!(texts_to(&s.take(), GM).contains(&"Trade refusal enabled".to_owned()));
+    s.cmd(GM, "tradeoff off");
+    assert!(!s.p(GM).trade.refusal);
+    assert!(texts_to(&s.take(), GM).contains(&"Trade refusal disabled".to_owned()));
+    // No mode: toggles.
+    s.cmd(GM, "tradeoff");
+    assert!(s.p(GM).trade.refusal);
+    // An unknown mode: nothing.
+    s.take();
+    s.cmd(GM, "tradeoff maybe");
+    assert!(s.p(GM).trade.refusal);
+    assert!(texts_to(&s.take(), GM).is_empty());
+}
+
+#[test]
+fn changelvl_changes_the_target_or_a_named_character() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", None);
+    s.target(GM, P1);
+    s.take();
+    s.cmd(GM, "changelvl 70");
+    assert_eq!(s.p(P1).data.access_level, 70);
+    let out = s.take();
+    assert_eq!(
+        texts_to(&out, P1),
+        vec!["Your access level has been changed to Lvl70 (70).".to_owned()]
+    );
+    assert_eq!(
+        texts_to(&out, GM),
+        vec!["P1's access level has been changed to Lvl70 (70).".to_owned()]
+    );
+    s.cmd(GM, "changelvl 55");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec![
+            "You are trying to set unexisting access level: 55 please try again with a valid one!".to_owned()
+        ]
+    );
+    // A bad number with a target: the usage line.
+    s.cmd(GM, "changelvl x");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["Usage: //changelvl <target_new_level> | <player_name> <new_level>".to_owned()]
+    );
+    // By name, an online player.
+    s.cmd(GM, "changelvl P1 0");
+    assert_eq!(s.p(P1).data.access_level, 0);
+    // Unknown name.
+    s.take();
+    s.cmd(GM, "changelvl Nobody 10");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["Character not found or access level unaltered.".to_owned()]
+    );
+    // A ban: the player is told and leaves the world.
+    s.cmd(GM, "changelvl -1");
+    let out = s.take();
+    assert_eq!(
+        texts_to(&out, P1),
+        vec!["Your character has been banned. Bye.".to_owned()]
+    );
+    assert!(s.world.player(ObjectId(P1)).is_none());
+}
+
+#[test]
+fn repair_and_restore_queue_the_statements() {
+    let mut s = setup();
+    s.enter_gm();
+    let before = s.persist_count();
+    s.cmd(GM, "repair Stuck");
+    s.cmd(GM, "restore Other");
+    // Wrong number of words: nothing.
+    s.cmd(GM, "repair");
+    s.cmd(GM, "repair a b");
+    let cmds = s.persisted.0.lock().unwrap();
+    let names: Vec<&str> = cmds[before..]
+        .iter()
+        .filter_map(|c| match c {
+            PersistCommand::RepairChar { name } => Some(name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(names, vec!["Stuck", "Other"]);
+}
+
+#[test]
+fn setconfig_changes_a_rate_and_shows_the_page() {
+    let mut s = setup();
+    s.enter_gm();
+    s.take();
+    s.cmd(GM, "setconfig RateXp 5");
+    let out = s.take();
+    assert_eq!(
+        texts_to(&out, GM),
+        vec!["Config parameter RateXp set to 5".to_owned()]
+    );
+    let pages = html_texts(&out, GM);
+    assert_eq!(pages.len(), 1);
+    assert!(pages[0].contains("Rate EXP</font> = 5.0"), "{}", pages[0]);
+    s.cmd(GM, "setconfig RateXp");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["Usage: //setconfig <parameter> <value>".to_owned()]
+    );
+    s.cmd(GM, "setconfig RateXp abc");
+    assert_eq!(
+        texts_to(&s.take(), GM),
+        vec!["Usage: //setconfig <parameter> <value>".to_owned()]
+    );
+    s.cmd(GM, "config_server");
+    let pages = html_texts(&s.take(), GM);
+    assert!(pages[0].contains("Config Server Panel"));
+    assert!(pages[0].contains("Rate EXP</font> = 5.0"));
+}
+
+#[test]
+fn setclass_tells_the_player_about_the_transfer() {
+    let mut s = setup();
+    s.enter_gm();
+    s.enter_player(P1, "P1", None);
+    s.target(GM, P1);
+    s.take();
+    s.cmd(GM, "setclass 1");
+    let out = s.take();
+    assert!(
+        system_ids_to(&out, P1).contains(&SystemMessageId::CongratulationsYouVeCompletedAClassTransfer),
+        "{:?}",
+        system_ids_to(&out, P1)
+    );
+    assert_eq!(s.p(P1).data.class_id, 1);
 }

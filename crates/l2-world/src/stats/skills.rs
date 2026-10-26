@@ -770,8 +770,9 @@ impl World {
         }
         let weight_proc =
             i64::from(view.current_load() - view.bonus_weight_penalty()) * 1000 / i64::from(max_load);
-        // `_dietMode` (the admin diet command) is not modelled: off.
+        let diet = self.players.get(&id).is_some_and(|p| p.gm.diet);
         let penalty = match weight_proc {
+            _ if diet => 0,
             ..500 => 0,
             500..666 => 1,
             666..800 => 2,

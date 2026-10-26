@@ -54,6 +54,11 @@ const SELECT_NAME_BY_ID: &str = "SELECT char_name,accesslevel FROM characters WH
 const COUNT_BY_NAME: &str = "SELECT COUNT(*) as count FROM characters WHERE char_name=?";
 // Java: CharInfoTable.getAccountCharacterCount
 const COUNT_BY_ACCOUNT: &str = "SELECT COUNT(char_name) as count FROM characters WHERE account_name=?";
+// Java: AdminRepairChar.handleRepair
+const REPAIR_MOVE: &str = "UPDATE characters SET x=-84318, y=244579, z=-3730 WHERE char_name=?";
+const REPAIR_SELECT_ID: &str = "SELECT charId FROM characters where char_name=?";
+const REPAIR_SHORTCUTS: &str = "DELETE FROM character_shortcuts WHERE charId=?";
+const REPAIR_ITEMS: &str = "UPDATE items SET loc='INVENTORY' WHERE owner_id=?";
 // Java: PunishmentManager.changeCharAccessLevel
 const UPDATE_ACCESS_LEVEL: &str = "UPDATE characters SET accessLevel=? WHERE charId=?";
 
@@ -812,6 +817,31 @@ impl CharacterRepository {
             .fetch_one(&self.pool)
             .await?;
         Ok(count)
+    }
+
+    /// `//repair` and `//restore`: the character stands in Talking Island again, loses its
+    /// shortcuts and every item goes back to the inventory. Nothing happens past the first
+    /// statement for a name that has no character.
+    // Java: AdminRepairChar.handleRepair
+    pub async fn repair_character(&self, name: &str) -> Result<()> {
+        sqlx::query(REPAIR_MOVE).bind(name).execute(&self.pool).await?;
+        let char_id = sqlx::query_scalar::<_, i32>(REPAIR_SELECT_ID)
+            .bind(name)
+            .fetch_optional(&self.pool)
+            .await?;
+        // `objId == 0` in Java: no row.
+        let Some(char_id) = char_id.filter(|id| *id != 0) else {
+            return Ok(());
+        };
+        sqlx::query(REPAIR_SHORTCUTS)
+            .bind(char_id)
+            .execute(&self.pool)
+            .await?;
+        sqlx::query(REPAIR_ITEMS)
+            .bind(char_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     /// Sets the character's `accesslevel` (ban/unban through the punishment manager).

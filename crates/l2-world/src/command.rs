@@ -190,6 +190,11 @@ pub enum ClientInput {
     AnswerFriendInvite { response: i32 },
     /// Java `RequestFriendList`: the friend list window.
     FriendList,
+    /// Java `RequestGmList`: the GM list (`admin/flags.rs`).
+    GmList,
+    /// Java `GameClient.setClientTracert`: the five hops of the `EnterWorld` packet, sent right
+    /// after the enter command (`//tracert`, `//strict_find_dualbox`).
+    Tracert { hops: [[u8; 4]; 5] },
     /// Java `RequestFriendDel`: remove the friend called `name`.
     FriendDel { name: String },
     /// Java `RequestSendFriendMsg`: a private message to the friend `receiver`.

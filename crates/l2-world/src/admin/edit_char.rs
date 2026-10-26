@@ -6,23 +6,14 @@
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java
 //
 // # Left out, with the system that brings it
-// - `//setcolor` (the name colour): a player's name colour is not stored in the world (only the
-//   colour of the access level), so the word is not registered and answers "does not exist".
-// - `//tracert` and `//strict_find_dualbox`: the five trace hops of `EnterWorld` are parsed but
-//   not handed to the world, so these words are not registered.
-// - The texture refresh of `//setsex` and of a `//setclass` that changes sex or race: Java
-//   transforms the player into 105 and untransforms it 200 ms later (`ThreadPool.schedule`), and
-//   the timer wheel has no such task yet. The refresh is skipped.
-// - `//setclass` does the class id, the base class, the academy graduation and the store, but not
-//   `setClassTemplate`, the skill and henna changes, the `MagicSkillUse` effect and the party and
-//   clan class icons (the class change itself is not ported yet, see `clan/academy.rs`).
-// - `//setnoble` sets the flag only: the noble skill tree is not in the world.
-// - `//setfame` does not check `EnableFameSystem` (not in the world settings); the default is on.
+// - `//setclass`: the henna loop of `setPlayerClass` ("Remove class permitted hennas": the dye
+//   removal, its refund and its `character_hennas` delete are not in the world) and
+//   `getInventory().applyItemSkills()` are not ported. `setClassTemplate` is the class id: the
+//   stats read the class of the player.
 // - `//changename` checks the name against the GM's Java `CharInfoTable` lookup only (online and
-//   the startup table), not the name format of character creation (`CnameTemplate`, which lives
-//   with the game server's config).
-// - `%access%` of the info page shows the level only: the names of `AccessLevels.xml` are not
-//   kept by the rights table. `%protocol%` shows `N/A` for a connected client (the protocol version
+//   the startup table). Java checks no name format there (`Player.setName` only updates the name
+//   table), so none is checked here either.
+// - `%protocol%` shows `N/A` for a connected client (the protocol version
 //   is not in the world), `%hwid%` shows `Unknown` (no hardware info exists), `%autoplay%` is empty
 //   (AutoPlay is not ported).
 // - `%inst%` links to `admin_instance_spawns`, which belongs to the instances (M8).
@@ -33,7 +24,10 @@ use std::str::FromStr;
 
 use l2_data::ClassId;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{NicknameChanged, PartySmallWindowDeleteAll, SystemMessage};
+use l2_protocol_game::server::{
+    MagicSkillUse, NicknameChanged, PartySmallWindowDeleteAll, PartySmallWindowUpdate, SkillPosition,
+    SystemMessage,
+};
 use l2_util::ObjectId;
 
 use super::commands::java_split_space;
@@ -57,6 +51,9 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_edit_character", admin_edit_character),
         ("admin_find_dualbox", admin_find_dualbox),
         ("admin_setfame", admin_setfame),
+        ("admin_setcolor", admin_setcolor),
+        ("admin_tracert", admin_tracert),
+        ("admin_strict_find_dualbox", admin_strict_find_dualbox),
         ("admin_rec", admin_rec),
         ("admin_setclass", admin_setclass),
         ("admin_settitle", admin_settitle),
@@ -405,15 +402,23 @@ fn find_characters_per_account(world: &mut World, gm: ObjectId, player: ObjectId
 // NOTE(java-quirk): a bucket that Java turns into a tree (eight keys in one bucket of a table of
 // at least 64) iterates differently; a dualbox list never gets that big.
 fn java_hashmap_order(keys: &[String]) -> Vec<String> {
+    let hashed: Vec<(u32, String)> = keys
+        .iter()
+        .map(|key| (java_string_hash(key), key.clone()))
+        .collect();
+    java_hashmap_order_hashed(&hashed)
+}
+
+/// [`java_hashmap_order`] for keys whose `hashCode()` is given, in insertion order.
+fn java_hashmap_order_hashed<T: Clone>(keys: &[(u32, T)]) -> Vec<T> {
     let mut capacity: u32 = 16;
     while keys.len() as u32 > capacity / 4 * 3 {
         capacity *= 2;
     }
-    let mut keyed: Vec<(u32, usize, String)> = keys
+    let mut keyed: Vec<(u32, usize, T)> = keys
         .iter()
         .enumerate()
-        .map(|(order, key)| {
-            let hash = java_string_hash(key);
+        .map(|(order, (hash, key))| {
             let spread = hash ^ (hash >> 16);
             (spread & (capacity - 1), order, key.clone())
         })
@@ -483,6 +488,130 @@ fn find_dualbox(world: &mut World, gm: ObjectId, multibox: i32) {
     html.replace("%results%", &results);
     html.replace("%strict%", "");
     world.send_admin_html(gm, &html);
+}
+
+/// Java `AdminEditChar.IpPack`: the IP and the five trace hops of a client.
+#[derive(Clone, PartialEq, Eq)]
+struct IpPack {
+    ip: String,
+    hops: [[u8; 4]; 5],
+}
+
+impl IpPack {
+    /// Java `IpPack.hashCode()`: `31 * result + ...` over the IP and `Arrays.hashCode(hop)`.
+    fn hash_code(&self) -> u32 {
+        let mut result = 1_i32;
+        result = result
+            .wrapping_mul(31)
+            .wrapping_add(java_string_hash(&self.ip) as i32);
+        for hop in &self.hops {
+            let hop_hash = hop
+                .iter()
+                .fold(1_i32, |h, b| h.wrapping_mul(31).wrapping_add(i32::from(*b)));
+            result = result.wrapping_mul(31).wrapping_add(hop_hash);
+        }
+        result as u32
+    }
+}
+
+/// Java `admin_strict_find_dualbox [n]`.
+fn admin_strict_find_dualbox(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    // `Integer.parseInt(command.substring(26))`; a failure keeps the default 2.
+    let multibox = command
+        .get(26..)
+        .and_then(|value| parse_int(value).ok())
+        .unwrap_or(2);
+    if multibox < 1 {
+        world.send_sys_message(gm, "Usage: //strict_find_dualbox [number > 0]");
+        return Ok(());
+    }
+    find_dualbox_strict(world, gm, multibox);
+    Ok(())
+}
+
+/// Java `AdminEditChar.findDualboxStrict`: like `findDualbox`, but two clients are the same box
+/// only when their five trace hops match as well.
+// NOTE: a client whose trace never arrived counts as five hops of 0.0.0.0 (Java's
+// `EnterWorld` always sets it before the player is in the world).
+fn find_dualbox_strict(world: &mut World, gm: ObjectId, multibox: i32) {
+    let mut sizes: Vec<(IpPack, i32)> = Vec::new();
+    let mut counts: Vec<(IpPack, i32)> = Vec::new();
+    for id in players_by_uptime(world) {
+        if is_detached(world, id) {
+            continue;
+        }
+        let Some(ip) = client_ip_string(world, id) else {
+            continue;
+        };
+        let hops = world
+            .players
+            .get(&id)
+            .and_then(|p| p.gm.trace)
+            .unwrap_or_default();
+        let pack = IpPack { ip, hops };
+        let size = match sizes.iter_mut().find(|(p, _)| *p == pack) {
+            Some((_, size)) => {
+                *size += 1;
+                *size
+            }
+            None => {
+                sizes.push((pack.clone(), 1));
+                1
+            }
+        };
+        if size >= multibox {
+            match counts.iter_mut().find(|(p, _)| *p == pack) {
+                Some((_, count)) => *count += 1,
+                None => counts.push((pack, multibox)),
+            }
+        }
+    }
+
+    let hashed: Vec<(u32, (IpPack, i32))> = counts.into_iter().map(|c| (c.0.hash_code(), c)).collect();
+    let mut keys = java_hashmap_order_hashed(&hashed);
+    keys.sort_by_key(|(_, count)| std::cmp::Reverse(*count));
+    let mut results = String::new();
+    for (pack, count) in &keys {
+        let ip = &pack.ip;
+        results.push_str(&format!(
+            "<a action=\"bypass -h admin_find_ip {ip}\">{ip} ({count})</a><br1>"
+        ));
+    }
+    let mut html = world.admin_html_file(gm, "data/html/admin/dualbox.htm");
+    html.replace("%multibox%", &multibox.to_string());
+    html.replace("%results%", &results);
+    html.replace("%strict%", "strict_");
+    world.send_admin_html(gm, &html);
+}
+
+/// Java `admin_tracert [name]`: the five hops the client sent with `EnterWorld`.
+fn admin_tracert(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let data = java_split_space(command);
+    let target = if data.len() > 1 {
+        world.player_by_name(data[1])
+    } else {
+        target_player(world, gm)
+    };
+    let Some(target) = target else {
+        invalid_target(world, gm);
+        return Ok(());
+    };
+    if is_detached(world, target) {
+        world.send_sys_message(gm, "Client is detached.");
+        return Ok(());
+    }
+    let hops = world
+        .players
+        .get(&target)
+        .and_then(|p| p.gm.trace)
+        .unwrap_or_default();
+    for (i, hop) in hops.iter().enumerate() {
+        world.send_sys_message(
+            gm,
+            &format!("Hop{i}: {}.{}.{}.{}", hop[0], hop[1], hop[2], hop[3]),
+        );
+    }
+    Ok(())
 }
 
 // ------------------------------------------------------------------------- info pages
@@ -621,8 +750,12 @@ fn gather_character_info(world: &mut World, gm: ObjectId, player: ObjectId, file
     html.replace("%runspeed%", &run_speed.to_string());
     html.replace("%patkspd%", &(p_atk_spd as i32).to_string());
     html.replace("%matkspd%", &m_atk_spd.to_string());
-    // NOTE: the access level name is not in the rights table (see the module note).
-    html.replace("%access%", &access.to_string());
+    // `getAccessLevel().getLevel() + " (" + getName() + ")"`
+    let (access_level, access_name) = world.data.admin_rights().map_or_else(
+        || (access, String::new()),
+        |rights| (rights.effective_level(access), rights.level_name(access)),
+    );
+    html.replace("%access%", &format!("{access_level} ({access_name})"));
     html.replace("%account%", &data.account);
     html.replace("%ip%", &ip);
     // The protocol version is not kept by the world (see the module note).
@@ -711,6 +844,11 @@ fn admin_edit_character(world: &mut World, gm: ObjectId, command: &str) -> Outco
 /// Java `admin_setfame <fame>`: `Player.setFame` (clamped), the player's `UserInfo` and two
 /// messages. See the module note for the `EnableFameSystem` check.
 fn admin_setfame(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    // `PlayerConfig.FAME_SYSTEM_ENABLED` (`EnableFameSystem`), kept with the siege settings.
+    if !world.sieges.settings.fame_system_enabled {
+        world.send_message(gm, "Fame system is not enabled on the server!");
+        return Ok(());
+    }
     let Some(fame) = command.get(14..).and_then(|v| parse_int(v).ok()) else {
         world.send_sys_message(gm, "Usage: //setfame <new_fame_value>");
         return Ok(());
@@ -802,6 +940,28 @@ fn broadcast_title_info(world: &mut World, id: ObjectId) {
     );
 }
 
+/// Java `admin_setcolor <hex>`: the name colour of the target, until it leaves the world.
+fn admin_setcolor(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    // `command.substring(15)` first, as in Java: a missing value is the message even without a target.
+    let Some(text) = command.get(15..) else {
+        world.send_sys_message(gm, "You need to specify a valid new color.");
+        return Ok(());
+    };
+    let Some(target) = target_player(world, gm) else {
+        return Ok(());
+    };
+    let Some(color) = decode_hex_color(text) else {
+        world.send_sys_message(gm, "You need to specify a valid new color.");
+        return Ok(());
+    };
+    if let Some(player) = world.players.get_mut(&target) {
+        player.gm.name_color = Some(color);
+    }
+    world.send_message(target, "Your name color has been changed by a GM");
+    world.broadcast_user_info(target);
+    Ok(())
+}
+
 /// Java `admin_settcolor <hex>`: the title colour of the target.
 fn admin_settcolor(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     // `command.substring(16)` first, as in Java: a missing value is the message even without a target.
@@ -885,6 +1045,7 @@ fn admin_setsex(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     }
     world.send_message(target, "Your gender has been changed by a GM");
     world.broadcast_user_info(target);
+    refresh_textures(world, target);
     Ok(())
 }
 
@@ -911,9 +1072,8 @@ fn admin_setnoble(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     let Some(player) = player else {
         return Ok(());
     };
-    if let Some(p) = world.players.get_mut(&player) {
-        p.data.profile.noble = !p.data.profile.noble;
-    }
+    let noble = world.players.get(&player).is_some_and(|p| p.data.profile.noble);
+    set_noble(world, player, !noble);
     if player != gm {
         let name = world.object_name(player).unwrap_or_default();
         world.send_sys_message(gm, &format!("You've changed nobless status of: {name}"));
@@ -922,10 +1082,27 @@ fn admin_setnoble(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     Ok(())
 }
 
+/// Java `Player.setNoble(value)`: the skills of the noble skill tree are given or taken (not
+/// stored), the flag, and the new skill list.
+fn set_noble(world: &mut World, id: ObjectId, value: bool) {
+    let trees = std::sync::Arc::clone(&world.rewards.skill_trees);
+    for skill in trees.noble_skills() {
+        if value {
+            world.add_skill(id, skill.skill_id, skill.skill_level);
+        } else {
+            world.remove_skill(id, skill.skill_id, true);
+        }
+    }
+    if let Some(p) = world.players.get_mut(&id) {
+        p.data.profile.noble = value;
+    }
+    world.send_skill_list(id);
+}
+
 /// Java `Double.parseDouble(text)` for the forms an admin types: optional surrounding white space,
 /// a sign, digits with an optional point and exponent, an optional `d`/`f` suffix, `NaN` and
 /// `Infinity`.
-fn java_parse_double(text: &str) -> Option<f64> {
+pub(super) fn java_parse_double(text: &str) -> Option<f64> {
     let text = text.trim_matches(|c: char| c <= ' ');
     let body = text.strip_suffix(['d', 'D', 'f', 'F']).unwrap_or(text);
     let unsigned = body.strip_prefix(['+', '-']).unwrap_or(body);
@@ -1043,20 +1220,29 @@ fn admin_setclass(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         .players
         .get(&target)
         .is_some_and(|p| p.data.class_id != p.data.base_class);
-    world.academy_graduation(target, new_class);
+    let (race, old_mage) = world.players.get(&target).map_or((0, false), |p| {
+        (
+            p.data.race,
+            ClassId(u16::try_from(p.data.class_id).unwrap_or(0)).is_mage(),
+        )
+    });
+    set_player_class(world, target, new_class);
+    if let Some(player) = world.players.get_mut(&target)
+        && !sub_active
+    {
+        player.data.base_class = new_class;
+    }
     let kamael_female = [124, 126, 129, 130, 133, 134];
     let kamael_male = [123, 125, 127, 128, 131, 132];
+    let mut sex_change = false;
     if let Some(player) = world.players.get_mut(&target) {
-        player.data.class_id = new_class;
-        if !sub_active {
-            player.data.base_class = new_class;
-        }
-        // Java's sex rule for a Kamael: the class decides the sex (the appearance is changed here,
-        // the texture refresh is not).
+        // Java's sex rule for a Kamael: the class decides the sex.
         if player.data.race == 5 {
-            if kamael_male.contains(&new_class) {
+            if kamael_male.contains(&new_class) && player.data.sex == 1 {
+                sex_change = true;
                 player.data.sex = 0;
-            } else if kamael_female.contains(&new_class) {
+            } else if kamael_female.contains(&new_class) && player.data.sex != 1 {
+                sex_change = true;
                 player.data.sex = 1;
             }
         }
@@ -1067,7 +1253,82 @@ fn admin_setclass(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     world.broadcast_user_info(target);
     let name = world.object_name(target).unwrap_or_default();
     world.send_message(gm, &format!("{name} is a {new_name}."));
+
+    // If necessary transform-untransform player quickly to force the client to reload the
+    // character textures. (`race` never changes here; Java compares it anyway.)
+    let new_mage = ClassId(u16::try_from(new_class).unwrap_or(0)).is_mage();
+    if sex_change || ((race == 0 || race == 3) && old_mage != new_mage) {
+        refresh_textures(world, target);
+    }
     Ok(())
+}
+
+/// `TransformData.transformPlayer(105, player)` and `ThreadPool.schedule(new Untransform(player),
+/// 200)`: the client reloads the character's textures.
+fn refresh_textures(world: &mut World, id: ObjectId) {
+    world.transform_player(105, id);
+    let due = world.tick + crate::timer::TimerWheel::ms_to_ticks(200);
+    world
+        .timers
+        .schedule_at(due, crate::timer::TimerKind::Untransform(id));
+}
+
+/// Java `Player.setPlayerClass(id)` for a character who is not changing sub class: the academy
+/// graduation, the effect, the class, the messages, the party and clan icons, the skills.
+// NOTE: the henna loop ("Remove class permitted hennas") and `applyItemSkills()` are not ported,
+// see the module note.
+fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
+    world.academy_graduation(id, new_class);
+    world.set_target(id, Some(id));
+    // `broadcastSkillPacket(new MagicSkillUse(this, 5103, 1, 0, 0), this)`
+    if let Some((x, y, z)) = world.position_of(id) {
+        let at = SkillPosition { x, y, z };
+        world.broadcast_creature_packet(
+            id,
+            &MagicSkillUse {
+                creature_id: id.0,
+                target_id: id.0,
+                skill_id: 5103,
+                skill_level: 1,
+                hit_time: 0,
+                reuse_delay: 0,
+                creature: at,
+                ground_location: None,
+                target: at,
+            },
+        );
+    }
+    // `setClassTemplate(id)`: the stats read the class of the player.
+    if let Some(player) = world.players.get_mut(&id) {
+        player.data.class_id = new_class;
+    }
+    let third = ClassId(u16::try_from(new_class).unwrap_or(0)).class_level() == 3;
+    world.send(
+        id,
+        &SystemMessage::new(if third {
+            SystemMessageId::CongratulationsYouVeCompletedYourThirdClassTransferQuest
+        } else {
+            SystemMessageId::CongratulationsYouVeCompletedAClassTransfer
+        }),
+    );
+    // "Update class icon in party and clan."
+    if let Some(party) = world.party_of(id)
+        && let Some(member) = world.party_member_vitals(id)
+    {
+        world.broadcast_party(party, &PartySmallWindowUpdate { member });
+    }
+    if let Some(clan) = world.clan_of(id).map(|c| c.id)
+        && let Some(update) = world.pledge_member_update_of_player(id)
+    {
+        world.broadcast_to_clan(clan, &update);
+    }
+    // "Add AutoGet skills and normal skills and/or learnByFS depending on configurations."
+    world.reward_skills(id);
+    // The `finally` block: `applyItemSkills(); sendSkillList()` after 100 ms.
+    let due = world.tick + crate::timer::TimerWheel::ms_to_ticks(100);
+    world
+        .timers
+        .schedule_at(due, crate::timer::TimerKind::ClassChangeSkillList(id));
 }
 
 #[cfg(test)]

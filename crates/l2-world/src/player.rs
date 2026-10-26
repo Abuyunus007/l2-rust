@@ -390,6 +390,8 @@ pub struct Player {
     pub fishing: crate::fishing::PlayerFishing,
     /// Java `_mountType`, `_mountNpcId`, the food of the mount and its tasks (see `mount.rs`).
     pub mount: crate::mount::MountState,
+    /// The GM list entry, silence and diet mode (see `admin/flags.rs`).
+    pub gm: crate::admin::flags::GmFlags,
 }
 
 impl Player {
@@ -448,6 +450,7 @@ impl Player {
             craft,
             fishing: crate::fishing::PlayerFishing::default(),
             mount: crate::mount::MountState::default(),
+            gm: crate::admin::flags::GmFlags::default(),
         }
     }
 
