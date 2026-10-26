@@ -23,15 +23,22 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod admin_page;
 pub mod chsiege;
 pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
 pub mod create_item;
+pub mod delete;
+pub mod destroy_items;
+pub mod door;
+pub mod edit_char;
 pub mod enchant;
 pub mod exp_sp;
+pub mod fence;
 pub mod geodata;
+pub mod gm_shop;
 pub mod html;
 pub mod invul;
 pub mod karma;
@@ -40,7 +47,11 @@ pub mod manor;
 pub mod party;
 pub mod punishments;
 pub mod rights;
+pub mod scan;
+pub mod search;
+pub mod skill_test;
 pub mod skills;
+pub mod spawn_admin;
 pub mod summon;
 pub mod transform;
 pub mod zone_tools;
@@ -123,6 +134,8 @@ pub(crate) struct AdminWorld {
     /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
     /// Java keeps one such list for the whole server, so this is one list too.
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
+    /// `AdminDoorControl.PLAYER_SHOWN_DOORS`: the door ids each GM's `//showdoors` has drawn.
+    pub(crate) shown_doors: HashMap<ObjectId, std::collections::BTreeSet<i32>>,
     /// The zone builder and the zone markers (`zone_tools.rs`).
     pub(crate) zones: zone_tools::ZoneAdmin,
     /// The path search of `//path_find` (`geodata.rs`).
@@ -137,6 +150,17 @@ impl Default for AdminWorld {
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
         create_item::register(&mut handlers);
+        edit_char::register(&mut handlers);
+        door::register(&mut handlers);
+        destroy_items::register(&mut handlers);
+        gm_shop::register(&mut handlers);
+        delete::register(&mut handlers);
+        scan::register(&mut handlers);
+        search::register(&mut handlers);
+        fence::register(&mut handlers);
+        skill_test::register(&mut handlers);
+        admin_page::register(&mut handlers);
+        spawn_admin::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
@@ -159,6 +183,7 @@ impl Default for AdminWorld {
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
+            shown_doors: HashMap::new(),
             zones: zone_tools::ZoneAdmin::default(),
             path: geodata::PathAdmin::default(),
         }
