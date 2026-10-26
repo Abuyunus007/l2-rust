@@ -19,8 +19,8 @@
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
 // entering it does nothing (`SiegeZone` is the siege's, `siege/zone.rs`, M7-SIEGE-01),
-// `OlympiadStadiumZone`, `WaterZone`, `SwampZone`, `BossZone`, `DamageZone`, `FishingZone`,
-// `RespawnZone` (restart points only). `FlagPvPZone` flags the player (M6-DUEL-01); its
+// `OlympiadStadiumZone`, `WaterZone`, `BossZone`, `FishingZone`, `RespawnZone` (restart points
+// only). `SwampZone` and `DamageZone`, the castle traps, are in `zone_trap.rs` (M7-FU-03). `FlagPvPZone` flags the player (M6-DUEL-01); its
 // `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
 // exist.
 //
@@ -102,6 +102,8 @@ pub(crate) struct ZoneContext {
     pub zones: Option<Arc<Zones>>,
     pub map_regions: Option<Arc<MapRegions>>,
     pub geo: Option<Arc<GeoEngine>>,
+    /// The running `DamageZone` tasks by zone id (`zone_trap.rs`).
+    pub damage_tasks: std::collections::HashMap<i32, crate::timer::TimerId>,
 }
 
 /// The zones a zone holds a creature in, as Java's `_characterList` identifies them: a zone id
@@ -267,6 +269,10 @@ enum ZoneKind {
     /// `SiegeZone` (the castle ones: M7-SIEGE-01, `siege/zone.rs`; the fortress ones: M7-FORT-01,
     /// `fort/zone.rs`).
     Siege,
+    /// `SwampZone` (M7-FU-03, `zone_trap.rs`).
+    Swamp,
+    /// `DamageZone` (M7-FU-03, `zone_trap.rs`).
+    Damage,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -297,6 +303,8 @@ impl ZoneKind {
             "FlagPvPZone" => Self::FlagPvp,
             "ClanHallZone" | "SiegableHallZone" => Self::ClanHall,
             "SiegeZone" => Self::Siege,
+            "SwampZone" => Self::Swamp,
+            "DamageZone" => Self::Damage,
             _ => Self::Inert,
         }
     }
@@ -408,6 +416,7 @@ impl World {
 
     /// Java `ZoneType.revalidateInZone(creature)`.
     fn revalidate_in_zone(&mut self, id: ObjectId, zone: &Zone) {
+        let trap_override = self.trap_zone_override(zone);
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
@@ -421,7 +430,11 @@ impl World {
         if player.zones.is_member(zone) {
             return;
         }
-        let rules = ZoneRules::of(zone);
+        let mut rules = ZoneRules::of(zone);
+        // The flame towers switch the castle trap zones (`setEnabled`, M7-FU-03).
+        if let Some(enabled) = trap_override {
+            rules.enabled = enabled;
+        }
         // "If the character can't be affected by this zone return."
         if !rules.affects(player) {
             return;
@@ -554,6 +567,8 @@ impl World {
                     self.on_siege_zone_enter(id, zone);
                 }
             }
+            ZoneKind::Swamp => self.swamp_zone_enter(id, zone),
+            ZoneKind::Damage => self.damage_zone_enter(id, zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -650,6 +665,8 @@ impl World {
                     self.on_siege_zone_exit(id, zone);
                 }
             }
+            ZoneKind::Swamp => self.swamp_zone_exit(id, zone),
+            ZoneKind::Damage => self.damage_zone_exit(zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

@@ -374,6 +374,8 @@ impl World {
                 clan_id,
                 result,
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
+            WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
+            WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
@@ -814,6 +816,8 @@ impl World {
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
             // Java: Siege.ScheduleStartSiegeTask, ScheduleEndSiegeTask, FameTask, ...
             TimerKind::Siege(timer) => self.on_siege_timer(timer),
+            // Java: DamageZone.ApplyDamage
+            TimerKind::Zone(timer) => self.on_zone_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),

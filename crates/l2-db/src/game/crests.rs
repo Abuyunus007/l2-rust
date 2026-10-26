@@ -11,6 +11,8 @@ use crate::pool::Pool;
 
 // Java: CrestTable.load
 const SELECT_CRESTS: &str = "SELECT `crest_id`, `data`, `type` FROM `crests` ORDER BY `crest_id` DESC";
+// Kain only (M7-FU-03): the used ids, to take the lowest free one.
+const SELECT_CREST_IDS: &str = "SELECT `crest_id` FROM `crests`";
 // Java: CrestTable.createCrest
 const INSERT_CREST: &str = "INSERT INTO `crests`(`crest_id`, `data`, `type`) VALUES(?, ?, ?)";
 // Java: CrestTable.removeCrest
@@ -47,6 +49,12 @@ impl CrestRepository {
         Ok(rows)
     }
 
+    /// The ids of every crest (M7-FU-03: a new crest takes the lowest free one).
+    pub async fn ids(&self) -> Result<Vec<i32>> {
+        let rows: Vec<(i32,)> = sqlx::query_as(SELECT_CREST_IDS).fetch_all(&self.pool).await?;
+        Ok(rows.into_iter().map(|(id,)| id).collect())
+    }
+
     // Java: CrestTable.createCrest
     pub async fn insert(&self, crest_id: i32, data: &[u8], crest_type: i32) -> Result<()> {
         sqlx::query(INSERT_CREST)
@@ -76,6 +84,7 @@ mod tests {
     fn statements_have_one_placeholder_per_bind() {
         let count = |s: &str| s.matches('?').count();
         assert_eq!(count(SELECT_CRESTS), 0);
+        assert_eq!(count(SELECT_CREST_IDS), 0);
         assert_eq!(count(INSERT_CREST), 3);
         assert_eq!(count(DELETE_CREST), 1);
     }

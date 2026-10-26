@@ -260,7 +260,7 @@ impl ClanHallAuction {
     }
 
     /// The rows of this auction as `confirmAuction` writes them and a re-read returns them.
-    pub(crate) fn to_record(&self) -> AuctionRecord {
+    pub fn to_record(&self) -> AuctionRecord {
         let mut bidders: Vec<AuctionBidRecord> = self
             .bidders
             .iter()
@@ -504,9 +504,14 @@ impl World {
     /// Asks the persistence task for the `auction` row and bids of a hall's auction; the answer
     /// goes on with `then` (D-50).
     pub(crate) fn request_auction_reread(&mut self, auction_id: i32, then: ResidenceReadThen) {
+        self.request_auction_rows(auction_id, ResidenceReadKind::Auction, then);
+    }
+
+    /// The read of one auction (`Auction`) or of every auction (`Auctions`, id 0).
+    pub(crate) fn request_auction_rows(&mut self, id: i32, kind: ResidenceReadKind, then: ResidenceReadThen) {
         self.outbox.persist(PersistCommand::ResidenceRereadRequest {
-            residence_id: auction_id,
-            kind: ResidenceReadKind::Auction,
+            residence_id: id,
+            kind,
             then,
         });
     }
@@ -540,6 +545,26 @@ impl World {
         }
     }
 
+    /// Every `auction` row read again (the auctioneer's list, M7-FU-03): the auctions the
+    /// database has replace this world's copies, new ones are added, and an auction whose row is
+    /// gone is dropped when its row is expected there (a player's sale always; the NPC auction of
+    /// a free hall only with `SiegeDatabaseWrites`, else Kain never wrote it).
+    pub(crate) fn apply_all_auction_rows(&mut self, records: &[AuctionRecord]) {
+        for record in records {
+            self.apply_auction_rows(record.id, Some(record));
+        }
+        let gone: Vec<i32> = self
+            .clan_hall_auctions()
+            .iter()
+            .filter(|a| !records.iter().any(|r| r.id == a.id))
+            .filter(|a| a.seller_id != 0 || self.residences.settings.siege_database_writes)
+            .map(|a| a.id)
+            .collect();
+        for id in gone {
+            self.apply_auction_rows(id, None);
+        }
+    }
+
     /// The follow-up of a read that came back with rows.
     pub(crate) fn auction_read_then(&mut self, then: ResidenceReadThen) {
         match then {
@@ -554,6 +579,9 @@ impl World {
             }
             ResidenceReadThen::AuctionCancel { player, auction_id } => {
                 self.auction_cancel_after_read(player, auction_id);
+            }
+            ResidenceReadThen::AuctionList { npc, player, val } => {
+                self.auctioneer_list_after_read(npc, player, &val);
             }
             // Handled by `fort/`, `clanhall/siege/` and `residence/npc/` before this is called.
             ResidenceReadThen::Nothing

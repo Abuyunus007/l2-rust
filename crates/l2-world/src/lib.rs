@@ -78,6 +78,7 @@ pub mod user_command;
 mod visibility;
 pub mod warehouse;
 pub mod world;
+pub mod zone_trap;
 pub mod zones;
 
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};

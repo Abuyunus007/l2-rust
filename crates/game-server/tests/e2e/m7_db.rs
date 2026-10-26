@@ -727,6 +727,17 @@ impl Db {
                     record
                 }),
             },
+            // Every auction row (M7-FU-03: the auctioneer's list), the highest bid first.
+            ResidenceReadKind::Auctions => ResidenceRereadRows::Auctions(
+                self.auctions
+                    .values()
+                    .map(|a| {
+                        let mut record = a.clone();
+                        record.bidders.sort_by_key(|b| std::cmp::Reverse(b.max_bid));
+                        record
+                    })
+                    .collect(),
+            ),
             // No conquerable hall in the seed.
             ResidenceReadKind::SiegableHall | ResidenceReadKind::HallSiege => ResidenceRereadRows::Missing,
             // No territory in the seed (M7-TW-01).

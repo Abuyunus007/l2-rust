@@ -18,21 +18,32 @@
 // gone. Those are global writes; they run only with `ClanMaintenanceDatabaseWrites = True`
 // (`config/SideBySide.ini`). The world applies the same changes to its own state either way.
 //
-// NOTE: Java allocates a crest id as `max(crest_id) + 1` read at its start, and the Rust server
-// does the same, so two servers that both register a crest in one session can pick the same id
-// (the second `INSERT` then fails on the primary key and is logged). Crest ids are not
-// partitioned like object ids (D-39) because the client keys its crest cache on the id.
+// # Crest ids (M7-FU-03)
+// Java allocates a crest id as `max(crest_id) + 1` read at its start, so two servers that both
+// register a crest in one session pick the same id and the second `INSERT` fails on the primary
+// key. Java never takes an id below the maximum it read at its start, so Kain takes the **lowest
+// free id above 0**: `createCrest` asks the persistence task for the used ids
+// (`PersistCommand::CrestIdsRequest`, D-15) and the crest is set when the answer comes
+// (`WorldCommand::CrestIdsLoaded`). The ids the world itself holds count as used too (the answer
+// may not include an insert still in the queue). Only when there is no gap is the id `max + 1`
+// (logged). An insert that fails (the other server took the id meanwhile) is retried once under a
+// fresh read: the crest is renumbered (`WorldCommand::CrestInsertFailed`).
+//
+// Caveat: the client keeps the crests it has seen in its cache by id. A low id that an old,
+// deleted crest used can show that old picture on a client that cached it, until the client's
+// crest cache is cleared; Java avoids it by never reusing an id below its maximum.
 
 use std::collections::{HashMap, HashSet};
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::SystemMessage;
 use l2_protocol_game::server::pledge::{AllyCrest, ExPledgeEmblem, PledgeCrest};
+use l2_protocol_game::server::{ActionFailed, SystemMessage};
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
 use super::model::ClanAccess;
 use super::{ClanWrite, CrestWrite};
+use crate::outbox::PersistCommand;
 use crate::world::{World, unix_ms_now};
 
 /// Java `CrestType`.
@@ -87,6 +98,46 @@ pub struct CrestTable {
     crests: HashMap<i32, Crest>,
     /// Java `_nextId`, starts at 1.
     next_id: i32,
+    /// The id requests waiting for the persistence task (M7-FU-03).
+    pending: Vec<PendingCrest>,
+    next_ticket: u32,
+    /// The ids a retry gave out; an insert of one of them that fails again is only logged.
+    renumbered: HashSet<i32>,
+}
+
+/// What a crest id answer is for.
+#[derive(Debug, Clone)]
+enum PendingCrestKind {
+    /// `createCrest` followed by the `change*Crest` of `target`.
+    New {
+        player: ObjectId,
+        data: Vec<u8>,
+        kind: CrestType,
+        target: CrestTarget,
+    },
+    /// The insert of crest `old_id` failed: it gets a new id.
+    Renumber { old_id: i32 },
+}
+
+#[derive(Debug, Clone)]
+struct PendingCrest {
+    ticket: u32,
+    what: PendingCrestKind,
+}
+
+/// The clan column a new crest goes into.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CrestTarget {
+    Pledge {
+        clan_id: i32,
+    },
+    PledgeLarge {
+        clan_id: i32,
+    },
+    /// `changeAllyCrest(id, false)` of the alliance leader's clan.
+    Ally {
+        leader_clan_id: i32,
+    },
 }
 
 impl Default for CrestTable {
@@ -94,6 +145,9 @@ impl Default for CrestTable {
         Self {
             crests: HashMap::new(),
             next_id: 1,
+            pending: Vec::new(),
+            next_ticket: 0,
+            renumbered: HashSet::new(),
         }
     }
 }
@@ -222,12 +276,60 @@ impl World {
         }
     }
 
-    /// Java `CrestTable.createCrest(data, type)`: the crest is cached now and inserted by the
-    /// persistence task. The new crest's id.
-    pub(crate) fn create_crest(&mut self, data: Vec<u8>, kind: CrestType) -> i32 {
+    /// Java `CrestTable.createCrest(data, type)` plus the `change*Crest` that follows it: asks the
+    /// persistence task for the used crest ids; the crest is made when the answer comes
+    /// ([`World::on_crest_ids_loaded`]).
+    pub(crate) fn request_new_crest(
+        &mut self,
+        player: ObjectId,
+        data: Vec<u8>,
+        kind: CrestType,
+        target: CrestTarget,
+    ) {
+        self.push_crest_request(PendingCrestKind::New {
+            player,
+            data,
+            kind,
+            target,
+        });
+    }
+
+    fn push_crest_request(&mut self, what: PendingCrestKind) {
         let table = &mut self.clans.crests;
-        let id = table.next_id;
-        table.next_id = id.wrapping_add(1);
+        let ticket = table.next_ticket;
+        table.next_ticket = ticket.wrapping_add(1);
+        table.pending.push(PendingCrest { ticket, what });
+        self.outbox.persist(PersistCommand::CrestIdsRequest { ticket });
+    }
+
+    /// The lowest id above 0 that neither the database (`used`) nor the cache has.
+    fn free_crest_id(&self, used: &[i32]) -> i32 {
+        let taken: HashSet<i32> = used
+            .iter()
+            .copied()
+            .chain(self.clans.crests.crests.keys().copied())
+            .collect();
+        let max = taken.iter().copied().max().unwrap_or(0);
+        match (1..=i32::MAX).find(|id| !taken.contains(id)) {
+            Some(id) if id <= max => id,
+            Some(id) => {
+                info!("CrestTable: no free crest id below the maximum, taking {id}.");
+                id
+            }
+            None => {
+                // Every id is taken (not reachable with a real table).
+                warn!("CrestTable: no free crest id left, reusing the next one.");
+                self.clans.crests.next_id
+            }
+        }
+    }
+
+    /// Makes a crest of `data` under `id` and inserts it.
+    fn add_crest(&mut self, id: i32, data: Vec<u8>, kind: CrestType) {
+        let table = &mut self.clans.crests;
+        if id >= table.next_id {
+            table.next_id = id.wrapping_add(1);
+        }
         table.crests.insert(
             id,
             Crest {
@@ -241,7 +343,131 @@ impl World {
             data,
             crest_type: kind.id(),
         }));
-        id
+    }
+
+    /// `WorldCommand::CrestIdsLoaded`: the used crest ids are in; the crest gets the lowest free
+    /// one. A failed read creates nothing (the player gets `ActionFailed`).
+    pub(crate) fn on_crest_ids_loaded(&mut self, ticket: u32, result: Result<Vec<i32>, ()>) {
+        let table = &mut self.clans.crests;
+        let Some(pos) = table.pending.iter().position(|p| p.ticket == ticket) else {
+            return;
+        };
+        let pending = table.pending.remove(pos);
+        let used = match result {
+            Ok(used) => used,
+            Err(()) => {
+                warn!("CrestTable: could not read the used crest ids; the crest is not created.");
+                if let PendingCrestKind::New { player, .. } = pending.what {
+                    self.send(player, &ActionFailed);
+                }
+                return;
+            }
+        };
+        let id = self.free_crest_id(&used);
+        match pending.what {
+            PendingCrestKind::New {
+                player,
+                data,
+                kind,
+                target,
+            } => self.finish_new_crest(player, id, data, kind, target),
+            PendingCrestKind::Renumber { old_id } => self.renumber_crest(old_id, id),
+        }
+    }
+
+    fn finish_new_crest(
+        &mut self,
+        player: ObjectId,
+        id: i32,
+        data: Vec<u8>,
+        kind: CrestType,
+        target: CrestTarget,
+    ) {
+        // The clan may be gone while the database answered.
+        let clan_id = match target {
+            CrestTarget::Pledge { clan_id } | CrestTarget::PledgeLarge { clan_id } => clan_id,
+            CrestTarget::Ally { leader_clan_id } => leader_clan_id,
+        };
+        if self.clan(clan_id).is_none() {
+            return;
+        }
+        self.add_crest(id, data, kind);
+        let message = match target {
+            CrestTarget::Pledge { clan_id } => {
+                self.change_clan_crest(clan_id, id);
+                SystemMessageId::TheCrestWasSuccessfullyRegistered
+            }
+            CrestTarget::PledgeLarge { clan_id } => {
+                self.change_large_crest(clan_id, id);
+                SystemMessageId::TheClanCrestWasSuccessfullyRegisteredRememberOnlyAClanThatOwnsAClanHallOrCastleCanDisplayACrest
+            }
+            CrestTarget::Ally { leader_clan_id } => {
+                self.change_ally_crest(leader_clan_id, id, false);
+                SystemMessageId::TheCrestWasSuccessfullyRegistered
+            }
+        };
+        self.send(player, &SystemMessage::new(message));
+    }
+
+    /// `WorldCommand::CrestInsertFailed`: the `INSERT` of the crest failed (the other server took
+    /// the id). It is retried once under a fresh read of the used ids.
+    pub(crate) fn on_crest_insert_failed(&mut self, crest_id: i32) {
+        let table = &self.clans.crests;
+        if !table.crests.contains_key(&crest_id) {
+            return;
+        }
+        if table.renumbered.contains(&crest_id) {
+            warn!("CrestTable: the insert of crest {crest_id} failed again; it stays in memory only.");
+            return;
+        }
+        warn!("CrestTable: the insert of crest {crest_id} failed; reading the used ids again.");
+        self.push_crest_request(PendingCrestKind::Renumber { old_id: crest_id });
+    }
+
+    /// The crest `old_id` (whose insert failed) moves to `new_id`; the clans that use it follow.
+    fn renumber_crest(&mut self, old_id: i32, new_id: i32) {
+        let Some(crest) = self.clans.crests.crests.remove(&old_id) else {
+            return;
+        };
+        self.clans.crests.renumbered.insert(new_id);
+        self.add_crest(new_id, crest.data, crest.kind);
+        let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
+        for clan_id in ids {
+            let Some(clan) = self.clan_mut(clan_id) else {
+                continue;
+            };
+            let mut writes = Vec::new();
+            if clan.crest_id == old_id {
+                clan.crest_id = new_id;
+                writes.push(CrestWrite::ClanCrest {
+                    clan_id,
+                    crest_id: new_id,
+                });
+            }
+            if clan.crest_large_id == old_id {
+                clan.crest_large_id = new_id;
+                writes.push(CrestWrite::ClanLargeCrest {
+                    clan_id,
+                    crest_id: new_id,
+                });
+            }
+            if clan.ally_crest_id == old_id {
+                clan.ally_crest_id = new_id;
+                writes.push(CrestWrite::AllyCrestOfClan {
+                    clan_id,
+                    crest_id: new_id,
+                });
+            }
+            if writes.is_empty() {
+                continue;
+            }
+            for write in writes {
+                self.clan_write(ClanWrite::Crest(write));
+            }
+            for member in self.clan_online_members(clan_id, 0) {
+                self.broadcast_user_info(member);
+            }
+        }
     }
 
     /// Java `CrestTable.removeCrest(crestId)`.
@@ -438,11 +664,11 @@ impl World {
                 );
                 return;
             }
-            let id = self.create_crest(data.unwrap_or_default(), CrestType::Pledge);
-            self.change_clan_crest(clan_id, id);
-            self.send(
+            self.request_new_crest(
                 player,
-                &SystemMessage::new(SystemMessageId::TheCrestWasSuccessfullyRegistered),
+                data.unwrap_or_default(),
+                CrestType::Pledge,
+                CrestTarget::Pledge { clan_id },
             );
         }
     }
@@ -508,13 +734,11 @@ impl World {
                 );
                 return;
             }
-            let id = self.create_crest(data, CrestType::PledgeLarge);
-            self.change_large_crest(clan_id, id);
-            self.send(
+            self.request_new_crest(
                 player,
-                &SystemMessage::new(
-                    SystemMessageId::TheClanCrestWasSuccessfullyRegisteredRememberOnlyAClanThatOwnsAClanHallOrCastleCanDisplayACrest,
-                ),
+                data,
+                CrestType::PledgeLarge,
+                CrestTarget::PledgeLarge { clan_id },
             );
         }
     }
@@ -561,11 +785,13 @@ impl World {
                 self.change_ally_crest(leader_id, 0, false);
             }
         } else {
-            let id = self.create_crest(data.unwrap_or_default(), CrestType::Ally);
-            self.change_ally_crest(leader_id, id, false);
-            self.send(
+            self.request_new_crest(
                 player,
-                &SystemMessage::new(SystemMessageId::TheCrestWasSuccessfullyRegistered),
+                data.unwrap_or_default(),
+                CrestType::Ally,
+                CrestTarget::Ally {
+                    leader_clan_id: leader_id,
+                },
             );
         }
     }
