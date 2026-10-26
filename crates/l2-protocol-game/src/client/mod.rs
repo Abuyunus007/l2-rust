@@ -163,6 +163,7 @@ macro_rules! client_unit_packet {
 }
 
 pub mod auction;
+pub mod boss;
 pub mod charscreen;
 pub mod combat;
 pub mod command_channel;
@@ -180,8 +181,10 @@ pub mod interaction;
 pub mod item;
 pub mod mail;
 pub mod manor;
+pub mod minigame;
 pub mod movement;
 pub mod multisell;
+pub mod olympiad;
 pub mod party;
 pub mod petition;
 pub mod pledge;
@@ -192,14 +195,17 @@ pub mod shop;
 pub mod shortcut;
 pub mod siege;
 pub mod skills;
+pub mod ssq;
 pub mod store;
 pub mod summon;
 pub mod territory;
 pub mod trade;
+pub mod vehicle;
 pub mod vote;
 pub mod warehouse;
 
 pub use auction::{RequestBidItemAuction, RequestInfoItemAuction};
+pub use boss::{RequestCursedWeaponList, RequestCursedWeaponLocation, RequestGetBossRecord};
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
@@ -240,8 +246,13 @@ pub use manor::{
     CropSale, CropSaleItem, RequestBuySeed, RequestManorList, RequestProcureCropList, RequestSetCrop,
     RequestSetSeed, SeedPurchase, SeedSale,
 };
+pub use minigame::{EndScenePlayer, RequestExCubeGameChangeTeam, RequestExCubeGameReadyAnswer};
 pub use movement::{Appearing, CannotMoveAnymore, MoveToLocation, ValidatePosition};
 pub use multisell::MultiSellChoose;
+pub use olympiad::{
+    ObserverReturn, RequestExOlympiadMatchListRefresh, RequestOlympiadMatchList, RequestOlympiadObserverEnd,
+    RequestWriteHeroWords,
+};
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
@@ -280,6 +291,7 @@ pub use siege::{
 pub use skills::{
     RequestAcquireSkill, RequestAcquireSkillInfo, RequestAutoSoulShot, RequestDispel, RequestMagicSkillUse,
 };
+pub use ssq::{RequestSeedPhase, RequestSsqStatus};
 pub use store::{
     BuyListEntry, RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SellListEntry,
@@ -291,6 +303,10 @@ pub use summon::{
 };
 pub use territory::{RequestDominionInfo, RequestJoinDominionWar};
 pub use trade::{AddTradeItem, AnswerTradeRequest, TradeDone, TradeRequest};
+pub use vehicle::{
+    CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip, RequestGetOffVehicle,
+    RequestGetOnVehicle, RequestMoveToLocationInVehicle,
+};
 pub use vote::RequestVoteNew;
 pub use warehouse::{
     RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,

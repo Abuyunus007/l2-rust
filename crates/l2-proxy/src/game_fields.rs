@@ -15,6 +15,7 @@
 
 use l2_net::{Decode, PacketError, PacketReader};
 use l2_protocol_game::server::auction::ExItemAuctionInfo;
+use l2_protocol_game::server::boss::{ExCursedWeaponList, ExCursedWeaponLocation, ExGetBossRecord};
 use l2_protocol_game::server::charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, CharSelectionInfo,
     NewCharacterSuccess, ServerClose, SsqInfo,
@@ -71,8 +72,18 @@ use l2_protocol_game::server::manor::{
     BuyListSeed, ExSendManorList, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
     ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
 };
+use l2_protocol_game::server::minigame::{
+    ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam, ExCubeGameChangeTimeToStart,
+    ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints, ExCubeGameRemovePlayer,
+    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent,
+    ExStartScenePlayer,
+};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
+use l2_protocol_game::server::olympiad::{
+    ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo,
+};
 use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
@@ -108,6 +119,7 @@ use l2_protocol_game::server::skills::{
     SkillPosition,
 };
 use l2_protocol_game::server::sound::PlaySound;
+use l2_protocol_game::server::ssq::{ExShowSeedMapInfo, SsqScore, SsqStatus, SsqStatusBody};
 use l2_protocol_game::server::store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
@@ -126,6 +138,12 @@ use l2_protocol_game::server::trade::{
     TradeOwnAdd, TradeStart, TradeUpdate,
 };
 use l2_protocol_game::server::userinfo::UserInfo;
+use l2_protocol_game::server::vehicle::{
+    ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip, ExGetOnAirShip,
+    ExMoveToLocationAirShip, ExMoveToLocationInAirShip, ExStopMoveInAirShip, ExValidateLocationInAirShip,
+    GetOffVehicle, GetOnVehicle, MoveToLocationInVehicle, StopMoveInVehicle, ValidateLocationInVehicle,
+    VehicleCheckLocation, VehicleDeparture, VehicleInfo, VehicleStarted,
+};
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
 };
@@ -502,6 +520,29 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestJoinDominionWar(p) => object!(p => territory_id, is_clan, is_joining),
         ClientPacket::RequestBidItemAuction(p) => object!(p => instance_id, bid),
         ClientPacket::RequestInfoItemAuction(p) => object!(p => instance_id),
+        ClientPacket::ObserverReturn(_)
+        | ClientPacket::RequestOlympiadMatchList(_)
+        | ClientPacket::RequestOlympiadObserverEnd(_)
+        | ClientPacket::RequestExOlympiadMatchListRefresh(_)
+        | ClientPacket::RequestSeedPhase(_)
+        | ClientPacket::RequestCursedWeaponList(_)
+        | ClientPacket::RequestCursedWeaponLocation(_) => json!({}),
+        ClientPacket::RequestWriteHeroWords(p) => object!(p => hero_words),
+        ClientPacket::RequestSsqStatus(p) => object!(p => page),
+        ClientPacket::RequestGetBossRecord(p) => object!(p => boss_id),
+        ClientPacket::RequestGetOnVehicle(p) => object!(p => boat_id, x, y, z),
+        ClientPacket::RequestGetOffVehicle(p) => object!(p => boat_id, x, y, z),
+        ClientPacket::RequestMoveToLocationInVehicle(p) => object!(
+            p => boat_id, target_x, target_y, target_z, origin_x, origin_y, origin_z
+        ),
+        ClientPacket::CannotMoveAnymoreInVehicle(p) => object!(p => boat_id, x, y, z, heading),
+        ClientPacket::RequestExCubeGameChangeTeam(p) => object!(p => arena, team),
+        ClientPacket::RequestExCubeGameReadyAnswer(p) => object!(p => arena, answer),
+        ClientPacket::EndScenePlayer(p) => object!(p => movie_id),
+        ClientPacket::MoveToLocationAirShip(p) => object!(p => command, param1, param2),
+        ClientPacket::MoveToLocationInAirShip(p) => object!(
+            p => ship_id, target_x, target_y, target_z, origin_x, origin_y, origin_z
+        ),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -989,6 +1030,122 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetitionVote => {
             decoded::<l2_protocol_game::server::PetitionVotePacket>(&mut r, no_fields)
         }
+        // M8: Olympiad, hero, Seven Signs, boats and air ships, Cube game, boss records.
+        ServerOpcode::ExOlympiadMatchEnd => decoded::<ExOlympiadMatchEnd>(&mut r, no_fields),
+        ServerOpcode::ExOlympiadMode => decoded::<ExOlympiadMode>(&mut r, |p| object!(p => mode)),
+        ServerOpcode::ExReceiveOlympiad => receive_olympiad_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExOlympiadUserInfo => decoded::<ExOlympiadUserInfo>(
+            &mut r,
+            |p| object!(p => side, object_id, name, class_id, cur_hp, max_hp, cur_cp, max_cp),
+        ),
+        ServerOpcode::ExOlympiadSpelledInfo => decoded::<ExOlympiadSpelledInfo>(&mut r, |p| {
+            json!({
+                "player_id": p.player_id,
+                "effects": p.effects.iter().map(|e| object!(e => skill_id, level, time)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExHeroList => decoded::<ExHeroList>(&mut r, |p| {
+            json!({
+                "heroes": p.heroes.iter().map(|h| object!(
+                    h => name, class_id, clan_name, clan_crest, ally_name, ally_crest, count
+                )).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::SsqStatus => decoded::<SsqStatus>(&mut r, ssq_status_fields),
+        ServerOpcode::ExShowSeedMapInfo => decoded::<ExShowSeedMapInfo>(&mut r, |p| {
+            json!({
+                "entries": p.entries.iter().map(|e| object!(e => x, y, z, state)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::VehicleInfo => {
+            decoded::<VehicleInfo>(&mut r, |p| object!(p => object_id, x, y, z, heading))
+        }
+        ServerOpcode::VehicleDeparture => decoded::<VehicleDeparture>(
+            &mut r,
+            |p| object!(p => object_id, move_speed, rotation_speed, x, y, z),
+        ),
+        ServerOpcode::VehicleStart => decoded::<VehicleStarted>(&mut r, |p| object!(p => object_id, state)),
+        ServerOpcode::VehicleCheckLocation => {
+            decoded::<VehicleCheckLocation>(&mut r, |p| object!(p => object_id, x, y, z, heading))
+        }
+        ServerOpcode::GetOnVehicle => {
+            decoded::<GetOnVehicle>(&mut r, |p| object!(p => object_id, boat_object_id, x, y, z))
+        }
+        ServerOpcode::GetOffVehicle => {
+            decoded::<GetOffVehicle>(&mut r, |p| object!(p => object_id, boat_object_id, x, y, z))
+        }
+        ServerOpcode::MoveToLocationInVehicle => decoded::<MoveToLocationInVehicle>(
+            &mut r,
+            |p| object!(p => object_id, boat_id, destination_x, destination_y, destination_z, origin_x, origin_y, origin_z),
+        ),
+        ServerOpcode::StopMoveInVehicle => {
+            decoded::<StopMoveInVehicle>(&mut r, |p| object!(p => object_id, boat_id, x, y, z, heading))
+        }
+        ServerOpcode::ValidateLocationInVehicle => decoded::<ValidateLocationInVehicle>(
+            &mut r,
+            |p| object!(p => object_id, boat_object_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExAirshipInfo => decoded::<ExAirShipInfo>(&mut r, |p| {
+            object!(p => ship_object_id, x, y, z, heading, captain_id, move_speed, rotation_speed,
+                helm_object_id, helm_points, fuel, max_fuel)
+        }),
+        ServerOpcode::ExAirshipTeleportList => decoded::<ExAirShipTeleportList>(&mut r, |p| {
+            json!({
+                "dock_id": p.dock_id,
+                "teleports": p.teleports.iter().map(|t| object!(t => index, fuel, x, y, z)).collect::<Vec<_>>(),
+            })
+        }),
+        // Both air ship stop packets share `EX_STOP_MOVE_AIRSHIP` and five ints, so the wire cannot
+        // tell them apart; the proxy shows the player layout.
+        ServerOpcode::ExStopMoveAirship => {
+            decoded::<ExAirShipStopMove>(&mut r, |p| object!(p => air_ship_id, player_id, x, y, z))
+        }
+        ServerOpcode::ExStopMoveInAirship => decoded::<ExStopMoveInAirShip>(
+            &mut r,
+            |p| object!(p => player_id, ship_object_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExValidateLocationInAirship => decoded::<ExValidateLocationInAirShip>(
+            &mut r,
+            |p| object!(p => player_id, ship_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExGetOnAirship => {
+            decoded::<ExGetOnAirShip>(&mut r, |p| object!(p => player_id, air_ship_id, x, y, z))
+        }
+        ServerOpcode::ExGetOffAirship => {
+            decoded::<ExGetOffAirShip>(&mut r, |p| object!(p => player_id, air_ship_id, x, y, z))
+        }
+        ServerOpcode::ExMoveToLocationAirship => decoded::<ExMoveToLocationAirShip>(
+            &mut r,
+            |p| object!(p => object_id, destination_x, destination_y, destination_z, x, y, z),
+        ),
+        ServerOpcode::ExMoveToLocationInAirship => decoded::<ExMoveToLocationInAirShip>(
+            &mut r,
+            |p| object!(p => object_id, air_ship_id, destination_x, destination_y, destination_z, heading),
+        ),
+        ServerOpcode::ExBlockUpSetList => block_list_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExBlockUpSetState => block_state_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExPvpMatchRecord => decoded::<ExPvpMatchRecord>(&mut r, pvp_record_fields),
+        ServerOpcode::ExPvpMatchUserDie => {
+            decoded::<ExPvpMatchUserDie>(&mut r, |p| object!(p => red_kills, blue_kills))
+        }
+        ServerOpcode::ExStartScenePlayer => decoded::<ExStartScenePlayer>(&mut r, |p| object!(p => movie_id)),
+        ServerOpcode::ExSendUiEvent => decoded::<ExSendUiEvent>(
+            &mut r,
+            |p| object!(p => object_id, hide, count_up, start_time, end_time, npc_string_id, params),
+        ),
+        ServerOpcode::ExGetBossRecord => decoded::<ExGetBossRecord>(&mut r, |p| {
+            json!({
+                "ranking": p.ranking,
+                "total_points": p.total_points,
+                "records": p.records.iter().map(|x| object!(x => boss_id, points)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExCursedWeaponList => decoded::<ExCursedWeaponList>(&mut r, |p| object!(p => ids)),
+        ServerOpcode::ExCursedWeaponLocation => decoded::<ExCursedWeaponLocation>(&mut r, |p| {
+            json!({
+                "locations": p.locations.iter().map(|l| object!(l => id, activated, x, y, z)).collect::<Vec<_>>(),
+            })
+        }),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -1291,6 +1448,135 @@ fn screen_message_fields(p: &ExShowScreenMessage) -> Value {
 
 fn login_fail_fields(p: &LoginFail) -> Value {
     object!(p => reason)
+}
+
+/// The first int of a body with several meanings (the Cube game lists and states, the Olympiad
+/// result or match list), which picks the packet. `None` when the body is shorter than that.
+fn peek_sub(body: &[u8]) -> Option<i32> {
+    PacketReader::new(body).i32().ok()
+}
+
+fn unknown_sub(sub: Option<i32>) -> Value {
+    json!({ "unknown_sub": sub })
+}
+
+fn receive_olympiad_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExOlympiadMatchList>(&mut r, |p| {
+            json!({
+                "games": p.games.iter().map(|g| object!(
+                    g => stadium_id, game_kind, state, player_1, player_2
+                )).collect::<Vec<_>>(),
+            })
+        }),
+        Some(1) => decoded::<ExOlympiadMatchResult>(&mut r, match_result_fields),
+        _ => unknown_sub(sub),
+    }
+}
+
+fn match_result_fields(p: &ExOlympiadMatchResult) -> Value {
+    json!({
+        "tie": p.tie,
+        "winner_name": p.winner_name,
+        "win_team": p.win_team,
+        "lose_team": p.lose_team,
+        "winners": p.winners.iter().map(|e| object!(
+            e => name, clan_name, clan_id, class_id, damage, current_points, diff_points
+        )).collect::<Vec<_>>(),
+        "losers": p.losers.iter().map(|e| object!(
+            e => name, clan_name, clan_id, class_id, damage, current_points, diff_points
+        )).collect::<Vec<_>>(),
+    })
+}
+
+fn block_list_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExCubeGameTeamList>(&mut r, cube_team_list_fields),
+        Some(1) => decoded::<ExCubeGameAddPlayer>(&mut r, |p| object!(p => red_team, object_id, name)),
+        Some(2) => decoded::<ExCubeGameRemovePlayer>(&mut r, |p| object!(p => red_team, object_id)),
+        Some(3) => decoded::<ExCubeGameChangeTimeToStart>(&mut r, |p| object!(p => seconds)),
+        Some(4) => decoded::<ExCubeGameRequestReady>(&mut r, no_fields),
+        Some(5) => decoded::<ExCubeGameChangeTeam>(&mut r, |p| object!(p => object_id, from_red_team)),
+        Some(-1) => decoded::<ExCubeGameCloseUi>(&mut r, no_fields),
+        _ => unknown_sub(sub),
+    }
+}
+
+fn block_state_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExCubeGameExtendedChangePoints>(
+            &mut r,
+            |p| object!(p => time_left, blue_points, red_points, red_team, object_id, player_points),
+        ),
+        Some(1) => decoded::<ExCubeGameEnd>(&mut r, |p| object!(p => red_team_win)),
+        Some(2) => {
+            decoded::<ExCubeGameChangePoints>(&mut r, |p| object!(p => time_left, blue_points, red_points))
+        }
+        _ => unknown_sub(sub),
+    }
+}
+
+fn cube_team_list_fields(p: &ExCubeGameTeamList) -> Value {
+    json!({
+        "room": p.room,
+        "blue": p.blue.iter().map(|c| object!(c => object_id, name)).collect::<Vec<_>>(),
+        "red": p.red.iter().map(|c| object!(c => object_id, name)).collect::<Vec<_>>(),
+    })
+}
+
+fn pvp_record_fields(p: &ExPvpMatchRecord) -> Value {
+    json!({
+        "record_type": p.record_type,
+        "winner_team": p.winner_team,
+        "blue_kills": p.blue_kills,
+        "red_kills": p.red_kills,
+        "blue": p.blue.iter().map(|m| object!(m => name, kills, deaths)).collect::<Vec<_>>(),
+        "red": p.red.iter().map(|m| object!(m => name, kills, deaths)).collect::<Vec<_>>(),
+    })
+}
+
+fn score_fields(score: &SsqScore) -> Value {
+    object!(score => stone_score, festival_score, total_score, percent)
+}
+
+fn ssq_status_fields(p: &SsqStatus) -> Value {
+    let body = match &p.body {
+        SsqStatusBody::None => json!({}),
+        SsqStatusBody::Cycle(c) => json!({
+            "cycle": c.cycle,
+            "period_message": c.period_message,
+            "deadline_message": c.deadline_message,
+            "player_cabal": c.player_cabal,
+            "player_seal": c.player_seal,
+            "stone_contrib": c.stone_contrib,
+            "adena_collect": c.adena_collect,
+            "dusk": score_fields(&c.dusk),
+            "dawn": score_fields(&c.dawn),
+        }),
+        SsqStatusBody::Festivals(list) => json!(
+            list.iter()
+                .map(|f| object!(
+                    f => level_score, dusk_score, dusk_members, dawn_score, dawn_members
+                ))
+                .collect::<Vec<_>>()
+        ),
+        SsqStatusBody::Seals(seals) => json!({
+            "retain_limit": seals.retain_limit,
+            "claim_limit": seals.claim_limit,
+            "rows": seals.rows.iter().map(|r| object!(r => seal, owner, dusk_percent, dawn_percent)).collect::<Vec<_>>(),
+        }),
+        SsqStatusBody::Predicted(predicted) => json!({
+            "winner": predicted.winner,
+            "seals": predicted.seals.iter().map(|s| object!(s => seal, owner, message)).collect::<Vec<_>>(),
+        }),
+    };
+    json!({ "page": p.page, "period": p.period, "body": body })
 }
 
 fn ssq_info_fields(p: &SsqInfo) -> Value {
@@ -2677,6 +2963,41 @@ mod tests {
         ServerOpcode::RecipeShopManageList,
         ServerOpcode::RecipeShopMsg,
         ServerOpcode::RecipeShopSellList,
+        ServerOpcode::ExOlympiadMatchEnd,
+        ServerOpcode::ExOlympiadMode,
+        ServerOpcode::ExReceiveOlympiad,
+        ServerOpcode::ExOlympiadUserInfo,
+        ServerOpcode::ExOlympiadSpelledInfo,
+        ServerOpcode::ExHeroList,
+        ServerOpcode::SsqStatus,
+        ServerOpcode::ExShowSeedMapInfo,
+        ServerOpcode::VehicleInfo,
+        ServerOpcode::VehicleDeparture,
+        ServerOpcode::VehicleStart,
+        ServerOpcode::VehicleCheckLocation,
+        ServerOpcode::GetOnVehicle,
+        ServerOpcode::GetOffVehicle,
+        ServerOpcode::MoveToLocationInVehicle,
+        ServerOpcode::StopMoveInVehicle,
+        ServerOpcode::ValidateLocationInVehicle,
+        ServerOpcode::ExAirshipInfo,
+        ServerOpcode::ExAirshipTeleportList,
+        ServerOpcode::ExStopMoveAirship,
+        ServerOpcode::ExStopMoveInAirship,
+        ServerOpcode::ExValidateLocationInAirship,
+        ServerOpcode::ExGetOnAirship,
+        ServerOpcode::ExGetOffAirship,
+        ServerOpcode::ExMoveToLocationAirship,
+        ServerOpcode::ExMoveToLocationInAirship,
+        ServerOpcode::ExBlockUpSetList,
+        ServerOpcode::ExBlockUpSetState,
+        ServerOpcode::ExPvpMatchRecord,
+        ServerOpcode::ExPvpMatchUserDie,
+        ServerOpcode::ExStartScenePlayer,
+        ServerOpcode::ExSendUiEvent,
+        ServerOpcode::ExGetBossRecord,
+        ServerOpcode::ExCursedWeaponList,
+        ServerOpcode::ExCursedWeaponLocation,
     ];
 
     /// The ex id of a server packet the way the relay reads it.

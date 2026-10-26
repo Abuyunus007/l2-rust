@@ -71,6 +71,7 @@ macro_rules! server_unit_packet {
 
 pub mod admin_support;
 pub mod auction;
+pub mod boss;
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
@@ -94,8 +95,10 @@ pub mod items;
 pub mod mail;
 pub mod manor;
 pub mod map_windows;
+pub mod minigame;
 pub mod movement;
 pub mod multisell;
+pub mod olympiad;
 pub mod party;
 pub mod pccafe;
 pub mod pledge;
@@ -108,17 +111,22 @@ pub mod shop;
 pub mod siege;
 pub mod skills;
 pub mod sound;
+pub mod ssq;
 pub mod store;
 pub mod summon;
 pub mod system_message;
 pub mod territory;
 pub mod trade;
 pub mod userinfo;
+pub mod vehicle;
 pub mod visibility;
 pub mod warehouse;
 
 pub use admin_support::{AdminForgePacket, ForgePart, PetitionVotePacket, Snoop};
 pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
+pub use boss::{
+    BossRecordEntry, CursedWeaponLocation, ExCursedWeaponList, ExCursedWeaponLocation, ExGetBossRecord,
+};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
     CharSelectionInfo, NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo, active_slot,
@@ -181,9 +189,20 @@ pub use manor::{
     SeedProductionInfo, SeedSettingInfo, SellCropItem,
 };
 pub use map_windows::{ShowCalculator, ShowMiniMap};
+pub use minigame::{
+    CubePlayer, ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam,
+    ExCubeGameChangeTimeToStart, ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints,
+    ExCubeGameRemovePlayer, ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchRecord, ExPvpMatchUserDie,
+    ExSendUiEvent, ExStartScenePlayer, PvpMember,
+};
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 pub use multisell::{
     MultiSellEntry, MultiSellIngredient, MultiSellItemDetail, MultiSellList, MultiSellProduct,
+};
+pub use olympiad::{
+    ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo, HeroEntry, OlympiadMatchEntry, OlympiadResultEntry,
+    OlympiadSpelledEffect,
 };
 pub use party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
@@ -224,6 +243,7 @@ pub use skills::{
     MagicSkillLaunched, MagicSkillUse, PartySpelled, ShortBuffStatusUpdate, SkillPosition,
 };
 pub use sound::PlaySound;
+pub use ssq::{ExShowSeedMapInfo, SevenSignsView, SsqStatus};
 pub use store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
@@ -243,6 +263,13 @@ pub use trade::{
     TradeUpdate,
 };
 pub use userinfo::UserInfo;
+pub use vehicle::{
+    AirShipTeleport, ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip,
+    ExGetOnAirShip, ExMoveToLocationAirShip, ExMoveToLocationInAirShip, ExStopMoveAirShip,
+    ExStopMoveInAirShip, ExValidateLocationInAirShip, GetOffVehicle, GetOnVehicle, MoveToLocationInVehicle,
+    StopMoveInVehicle, ValidateLocationInVehicle, VehicleCheckLocation, VehicleDeparture, VehicleInfo,
+    VehicleStarted,
+};
 pub use visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NicknameChanged, NpcInfo, RelationChanged, RelationEntry,
     StatusUpdate,
