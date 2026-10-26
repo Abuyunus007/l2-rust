@@ -289,8 +289,7 @@ pub fn calc_atk_break_for(world: &World, target: ObjectId, dmg: f64, rng: &mut i
     };
     let cancel = |rate: f64| t.calc(Stat::AttackCancel, rate);
     let input = AtkBreakInput {
-        // M6: channeling (the skill channelizer is not ported).
-        is_channeling: false,
+        is_channeling: world.is_channeling(target),
         is_casting_now: world.is_casting_now(target),
         is_attacking_now: world.is_attacking_now(target),
         active_weapon_is_bow: weapon_type(&t) == Some(WeaponType::Bow),

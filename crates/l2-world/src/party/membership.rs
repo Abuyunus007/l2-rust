@@ -210,10 +210,15 @@ impl World {
         }
         self.recalculate_party_level(party);
 
-        // Festival participants (`SevenSignsFestival.updateParticipants`) and channeling
-        // (`abortCast`/`abortChannelization`): neither exists yet.
+        // Festival participants (`SevenSignsFestival.updateParticipants`): no Seven Signs yet.
         if self.is_in_duel(player) {
             self.duel_on_remove_from_party(player);
+        }
+        // Channeling a player!
+        if self.is_channeling(player) && self.has_channelized(player) {
+            self.abort_cast(player);
+        } else if self.is_channelized(player) {
+            self.abort_channelization(player);
         }
 
         let name = self.name_of_player(player);

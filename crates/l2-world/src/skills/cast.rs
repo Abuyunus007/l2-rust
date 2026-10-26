@@ -25,8 +25,9 @@
 //
 // # Left for other cards (markers)
 // - `// M5-EFX-03:` `Attackable.reduceHate`.
-// - `// M6:` summons, olympiad, transformations, the channelizer
-//   (signets), talisman mana, trigger and weapon skills.
+// - `// M6:` summons, olympiad, transformations, talisman mana.
+// The channelizer is `channelizer.rs`, the option trigger skills and the weapon's chance skills
+// are `triggers.rs` (M6-FU-12).
 
 use std::collections::HashMap;
 
@@ -157,6 +158,8 @@ pub enum CastTimer {
     },
     /// `QueuedMagicUseTask`: the skill the player pressed during the cast.
     QueuedMagicUse { player: ObjectId, queued: SkillUse },
+    /// `SkillChannelizer.run()`: one tick of a channeling skill (`channelizer.rs`).
+    ChannelTick { channelizer: ObjectId },
 }
 
 /// The cast fields of one creature (Java `Creature` and `Player`).
@@ -181,6 +184,13 @@ pub struct CastState {
     pub(crate) current_skill_world_position: Option<(i32, i32, i32)>,
     /// The reuse stamps and disabled skills (`reuse.rs`).
     pub(crate) reuse: ReuseState,
+    /// `Creature._channelizer`: the channeling skill this creature casts (`channelizer.rs`).
+    pub(crate) channelizer: super::channelizer::Channelizer,
+    /// `Creature._channelized`: who channels a skill at this creature (`channelizer.rs`).
+    pub(crate) channelized: super::channelizer::SkillChannelized,
+    /// `Creature._triggerSkills`: the activation skills of the worn item options, by skill id in
+    /// insertion order (`triggers.rs`).
+    pub(crate) trigger_skills: Vec<l2_data::augmentation::OptionSkillHolder>,
 }
 
 /// The cast table of the world.
@@ -299,8 +309,15 @@ impl World {
 
     /// Drops the cast state of a creature whose object is gone (its timers stop with it).
     pub(crate) fn forget_cast(&mut self, id: ObjectId) {
+        // The creatures it channeled a skill at forget it (`stopChanneling`).
+        if self.is_channeling(id) {
+            self.stop_channeling(id);
+        }
         if let Some(state) = self.cast.creatures.remove(&id) {
-            for timer in [state.skill_cast, state.skill_cast2].into_iter().flatten() {
+            for timer in [state.skill_cast, state.skill_cast2, state.channelizer.task()]
+                .into_iter()
+                .flatten()
+            {
                 self.timers.cancel(timer);
             }
         }
@@ -857,7 +874,9 @@ impl World {
             if self.is_player(caster) && !simultaneously {
                 self.send(caster, &SetupGauge::new(caster.0, SetupGauge::BLUE, skill_time));
             }
-            // M6: `getSkillChannelizer().startChanneling(skill)` for channeling skills.
+            if is_channeling(skill) && skill.channeling_skill_id > 0 {
+                self.start_channeling(caster, skill);
+            }
             // For client animation reasons (party buffs especially) 400 ms before!
             let delay = (skill_time - LAUNCH_BEFORE_HIT_MS).max(0);
             let slot = if simultaneously {
@@ -971,6 +990,7 @@ impl World {
     /// A casting timer fired.
     pub(crate) fn on_cast_timer(&mut self, timer: CastTimer) {
         match timer {
+            CastTimer::ChannelTick { channelizer } => self.on_channel_tick(channelizer),
             CastTimer::MagicUse(task) => {
                 if !self.is_in_world(task.caster) {
                     return;
@@ -1380,7 +1400,9 @@ impl World {
                 );
             }
         }
-        // M6: `getSkillChannelizer().stopChanneling()`.
+        if self.is_channeling(caster) {
+            self.stop_channeling(caster);
+        }
     }
 
     // ------------------------------------------------------------------ abort / break
@@ -1399,7 +1421,10 @@ impl World {
         for timer in [normal, simultaneous].into_iter().flatten() {
             self.timers.cancel(timer);
         }
-        // M6: stop the channelizer (TODO in Java: handle removing the spawned npc).
+        // TODO in Java: handle removing the spawned npc.
+        if self.is_channeling(id) {
+            self.stop_channeling(id);
+        }
         if self
             .cast
             .creatures
@@ -1554,8 +1579,9 @@ impl World {
                 return;
             }
             // M5: over-hit (`overhitEnabled(true)` on an attackable) is not modelled.
-            // Static skills not trigger any chance skills.
-            // M6: the weapon's `castOnMagicSkill` and the `_triggerSkills` of options.
+            // Static skills not trigger any chance skills; the weapon's `castOnMagicSkill` and the
+            // `_triggerSkills` of the options.
+            self.trigger_skills_on_call_skill(caster, target, skill);
         }
 
         // Launch the magic skill and calculate its effects.
