@@ -129,6 +129,8 @@ pub struct SkillTrees {
     sub_pledge: Vec<SkillLearn>,
     /// Java `_fishingSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     fishing: Vec<SkillLearn>,
+    /// Java `_nobleSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    noble: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -198,6 +200,8 @@ impl SkillTrees {
             sub_pledge_order,
             fishing,
             fishing_order,
+            noble,
+            noble_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -237,6 +241,7 @@ impl SkillTrees {
             pledge: in_java_order(pledge, pledge_order),
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
             fishing: in_java_order(fishing, fishing_order),
+            noble: in_java_order(noble, noble_order),
         }
     }
 
@@ -296,6 +301,11 @@ impl SkillTrees {
     /// Java `getSubPledgeSkillTree().values()`: the squad skills, in Java's map order.
     pub fn sub_pledge_skills(&self) -> &[SkillLearn] {
         &self.sub_pledge
+    }
+
+    /// Java `getNobleSkillTree().values()`: the skills `Player.setNoble` gives and takes.
+    pub fn noble_skills(&self) -> &[SkillLearn] {
+        &self.noble
     }
 
     /// Java `getFishingSkillTree().values()`: the fishing skills, in the order of Java's
@@ -479,6 +489,9 @@ struct Gathered {
     /// Java `_fishingSkillTree` and the keys in the order they were first put.
     fishing: BTreeMap<(i32, i32), SkillLearn>,
     fishing_order: Vec<(i32, i32)>,
+    /// Java `_nobleSkillTree` and the keys in the order they were first put.
+    noble: BTreeMap<(i32, i32), SkillLearn>,
+    noble_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -499,11 +512,12 @@ impl Gathered {
             // fishermen (M6-FU-10).
             if matches!(
                 tree.kind.as_str(),
-                "pledgeSkillTree" | "subPledgeSkillTree" | "fishingSkillTree"
+                "pledgeSkillTree" | "subPledgeSkillTree" | "fishingSkillTree" | "nobleSkillTree"
             ) {
                 let (map, order) = match tree.kind.as_str() {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
                     "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
+                    "nobleSkillTree" => (&mut self.noble, &mut self.noble_order),
                     _ => (&mut self.fishing, &mut self.fishing_order),
                 };
                 for skill in tree.skills {

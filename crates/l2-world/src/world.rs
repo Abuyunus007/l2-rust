@@ -717,6 +717,12 @@ impl World {
                 self.on_request_answer_friend_invite(id, response)
             }
             ClientInput::FriendList => self.on_request_friend_list(id),
+            ClientInput::GmList => self.send_gm_list(id),
+            ClientInput::Tracert { hops } => {
+                if let Some(player) = self.players.get_mut(&id) {
+                    player.gm.trace = Some(hops);
+                }
+            }
             ClientInput::FriendDel { name } => self.on_request_friend_del(id, &name),
             ClientInput::SendFriendMsg { message, receiver } => {
                 self.on_request_send_friend_msg(id, &message, &receiver)
@@ -775,6 +781,8 @@ impl World {
             }
             TimerKind::CharInfo(id) => self.on_char_info_timer(id),
             TimerKind::SkillList(id) => self.on_skill_list_timer(id),
+            TimerKind::Untransform(id) => self.untransform(id),
+            TimerKind::ClassChangeSkillList(id) => self.send_skill_list(id),
             TimerKind::ItemList(id) => self.on_item_list_timer(id),
             TimerKind::Regeneration(id) => self.on_regeneration_timer(id),
             TimerKind::SelfStatusUpdate(id) => self.on_self_update_timer(id),

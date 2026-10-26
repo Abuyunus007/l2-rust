@@ -196,6 +196,9 @@ impl AccessLevels {
                         .and_then(|v| v.trim().parse::<i32>().ok())
                         .unwrap_or(0);
                     table.rights.add_level(level, child);
+                    if let Some(name) = attribute(&e, "name") {
+                        table.rights.set_level_name(level, &name);
+                    }
                     if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
                         table.fixed_res.insert(level);
                     }
@@ -1182,6 +1185,10 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         gm_audit: config.general.gmaudit,
         gm_startup_builder_hide: config.general.gm_startup_builder_hide,
         gm_startup_invulnerable: config.general.gm_startup_invulnerable,
+        gm_startup_silence: config.general.gm_startup_silence,
+        gm_startup_auto_list: config.general.gm_startup_auto_list,
+        gm_startup_diet_mode: config.general.gm_startup_diet_mode,
+        silence_mode_exclude: config.player.silence_mode_exclude,
         zones: ZoneSettings {
             peace_zone_mode: config.general.peace_zone_mode,
             jail_is_pvp: config.general.jail_is_pvp,

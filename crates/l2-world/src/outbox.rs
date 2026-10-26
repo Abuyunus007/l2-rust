@@ -106,6 +106,9 @@ pub enum PersistCommand {
     /// Java `PunishmentManager.changeCharAccessLevel`: `UPDATE characters SET accessLevel=? WHERE
     /// charId=?`.
     CharAccessLevel { char_id: i32, level: i32 },
+    /// Java `AdminRepairChar.handleRepair` (`//repair`, `//restore`): the character `name` is moved
+    /// to Talking Island, its shortcuts are deleted and its items go back to the inventory.
+    RepairChar { name: String },
     /// The summon tables (`character_summons`, `character_summon_skills_save`), see
     /// `summon/servitor.rs`. Applied in order with the character's other commands.
     Summon(crate::summon::servitor::SummonWrite),

@@ -389,13 +389,14 @@ impl World {
     }
 
     // Java: ChatWhisper.onChat
-    fn chat_whisper(&self, id: ObjectId, target: Option<&str>, text: &str) {
+    fn chat_whisper(&mut self, id: ObjectId, target: Option<&str>, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
         if self.channel_refuses(id, ChatType::Whisper, true) {
             return;
         }
+        let sender_silent = player.gm.silence;
         // "Return if no target is set."
         let Some(target) = target else {
             return;
@@ -409,6 +410,13 @@ impl World {
                 .values()
                 .find(|p| p.data.name.to_lowercase() == wanted)
         };
+        // Java `receiver.isSilenceMode(activeChar.getObjectId())`: a receiver in silence mode is
+        // answered like an offline one.
+        let receiver = receiver.filter(|r| {
+            !r.gm
+                .is_silent_for(id, self.settings.silence_mode_exclude)
+        });
+        let mut excluded_for = None;
         match receiver {
             Some(receiver) => {
                 let receiver_id = receiver.core.object_id;
@@ -440,10 +448,19 @@ impl World {
                     self.say_packet(id, ChatType::Whisper, &format!("->{}", receiver.data.name), text);
                 self.send(receiver.core.object_id, &to_receiver);
                 self.send(id, &to_sender);
+                // "Allow receiver to send PMs to this char, which is in silence mode."
+                if self.settings.silence_mode_exclude && sender_silent {
+                    excluded_for = Some(receiver.core.object_id);
+                }
             }
             None => {
                 self.send(id, &SystemMessage::new(SystemMessageId::ThatPlayerIsNotOnline));
             }
+        }
+        if let Some(receiver) = excluded_for
+            && let Some(sender) = self.players.get_mut(&id)
+        {
+            sender.gm.add_silence_exclusion(receiver);
         }
     }
 

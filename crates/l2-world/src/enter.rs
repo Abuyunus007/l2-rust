@@ -473,6 +473,8 @@ impl World {
         {
             self.set_invul(id, true);
         }
+        // Java `EnterWorld`: GMStartupSilence, GMStartupDietMode and the GM list.
+        self.gm_flags_on_enter(id);
         // `new Player(...)` -> `startVitalityTask()`.
         self.start_vitality_task(id);
 
@@ -711,15 +713,19 @@ impl World {
         let player = self.players.get(&id)?;
         let data = &player.data;
         Some(EtcStatusUpdate {
-            weight_penalty: weight_penalty(
-                current_load(data, &*self.data),
-                self.stats(id).map_or(0, |s| s.max_load()),
-            ),
+            // Java `getWeightPenalty()`: 0 in diet mode.
+            weight_penalty: if player.gm.diet {
+                0
+            } else {
+                weight_penalty(
+                    current_load(data, &*self.data),
+                    self.stats(id).map_or(0, |s| s.max_load()),
+                )
+            },
             charges: self.charges_of(id),
             charged_souls: self.charged_souls_of(id),
-            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`: the silence mode is not
-            // modelled.
-            chat_blocked: self.is_chat_banned(id) || self.message_refusal(id),
+            // `getMessageRefusal() || isChatBanned() || isSilenceMode()`
+            chat_blocked: self.is_chat_banned(id) || self.message_refusal(id) || player.gm.silence,
             danger_area: player.zones.is_inside(crate::zones::ZoneId::DangerArea),
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,
@@ -909,6 +915,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         // `OfflineSetNameColor`: the colour of a trader without a client.
         name_color: world
             .offline_name_color(core.object_id)
+            .or(player.gm.name_color)
             .unwrap_or(access.name_color),
         running: view.is_running(),
         // Java `_pledgeClass` (set at restore and by the clan code, see `clan/`).

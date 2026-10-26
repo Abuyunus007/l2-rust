@@ -329,6 +329,18 @@ pub struct WorldSettings {
     /// `GeneralConfig.GM_STARTUP_INVULNERABLE` (`GMStartupInvulnerable`): a GM with `admin_invul`
     /// access is invulnerable from the moment they enter the world.
     pub gm_startup_invulnerable: bool,
+    /// `GeneralConfig.GM_STARTUP_SILENCE` (`GMStartupSilence`): a GM with `admin_silence` access
+    /// enters in silence mode.
+    pub gm_startup_silence: bool,
+    /// `GeneralConfig.GM_STARTUP_AUTO_LIST` (`GMStartupAutoList`): a GM with `admin_gmliston`
+    /// access is in the public GM list from the start.
+    pub gm_startup_auto_list: bool,
+    /// `GeneralConfig.GM_STARTUP_DIET_MODE` (`GMStartupDietMode`): a GM with `admin_diet` access
+    /// enters in diet mode.
+    pub gm_startup_diet_mode: bool,
+    /// `PlayerConfig.SILENCE_MODE_EXCLUDE` (`SilenceModeExclude`): a player in silence mode can be
+    /// answered by the players he whispered to.
+    pub silence_mode_exclude: bool,
     /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
@@ -424,6 +436,10 @@ impl Default for WorldSettings {
             gm_audit: false,
             gm_startup_builder_hide: false,
             gm_startup_invulnerable: false,
+            gm_startup_silence: false,
+            gm_startup_auto_list: false,
+            gm_startup_diet_mode: false,
+            silence_mode_exclude: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),

@@ -237,6 +237,11 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// Java `AdminRepairChar.handleRepair`.
+    fn repair_char(&mut self, _name: &str) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// Java `Product.save`: the `buylists` row of a limited product whose stock changed.
     fn store_buy_list_product(
         &mut self,
@@ -715,6 +720,21 @@ async fn run<S: PlayerStore>(
                 }
                 if let Err(e) = result {
                     error!("The access level of character {char_id} could NOT be stored: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::RepairChar { name }) => {
+                let mut result = store.repair_char(&name).await;
+                for attempt in 2..=attempts {
+                    let Err(e) = &result else { break };
+                    warn!(
+                        "Could not repair the character {name} (try {} of {attempts}): {e}",
+                        attempt - 1
+                    );
+                    tokio::time::sleep(retry.delay).await;
+                    result = store.repair_char(&name).await;
+                }
+                if let Err(e) = result {
+                    error!("The character {name} could NOT be repaired: {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Summon(write)) => {
@@ -3446,6 +3466,11 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn repair_char(&mut self, name: &str) -> Result<(), PersistError> {
+        self.characters.repair_character(name).await?;
+        Ok(())
+    }
+
     async fn store_mail_write(&mut self, write: &MailWrite) -> Result<(), PersistError> {
         match write {
             // Java: MailManager.sendMessage (MailMessage.getStatement)
@@ -4249,6 +4274,8 @@ mod tests {
         EndPunishment(i32, String, &'static str, &'static str, i64),
         /// `changeCharAccessLevel`: character, level.
         AccessLevel(i32, i32),
+        /// `AdminRepairChar`: the name.
+        Repair(String),
         /// `Product.save`: list id, item id, count, next restock time.
         BuyList(i32, i32, i64, i64),
         /// `Mail` (M6-MAIL-01): the write.
@@ -4416,6 +4443,11 @@ mod tests {
 
         async fn change_char_access_level(&mut self, char_id: i32, level: i32) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::AccessLevel(char_id, level));
+            Ok(())
+        }
+
+        async fn repair_char(&mut self, name: &str) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Repair(name.to_owned()));
             Ok(())
         }
 
@@ -5300,6 +5332,15 @@ mod tests {
                 Call::Offline(1),
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn a_repair_reaches_the_store_with_the_name() {
+        let messages = vec![OutboxMessage::Persist(PersistCommand::RepairChar {
+            name: "Stuck".into(),
+        })];
+        let (calls, _) = run_all(Recording::default(), messages).await;
+        assert_eq!(calls, vec![Call::Repair("Stuck".into())]);
     }
 
     #[tokio::test]

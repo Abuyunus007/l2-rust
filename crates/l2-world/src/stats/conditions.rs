@@ -138,8 +138,7 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerWeight { weight } => match a.player() {
             Some(_) if a.max_load() > 0 => {
                 let proc = (a.current_load() - a.bonus_weight_penalty()) * 100 / a.max_load();
-                // Java's `getDietMode()` (the `//diet` admin command) is not modelled: off.
-                proc < *weight
+                proc < *weight || a.world().players.get(&a.object_id()).is_some_and(|p| p.gm.diet)
             }
             _ => true,
         },
@@ -442,8 +441,9 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             None => false,
         },
         Condition::TargetWeight { weight } => target(env).is_some_and(|t| {
-            // `getDietMode()` is not modelled: off.
+            // Java: false for a target in diet mode.
             t.player().is_some()
+                && !t.world().players.get(&t.object_id()).is_some_and(|p| p.gm.diet)
                 && t.max_load() > 0
                 && (t.current_load() - t.bonus_weight_penalty()) * 100 / t.max_load() < *weight
         }),

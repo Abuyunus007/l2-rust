@@ -23,6 +23,7 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod access_level;
 pub mod admin_page;
 pub mod chsiege;
 pub mod clan;
@@ -37,6 +38,7 @@ pub mod edit_char;
 pub mod enchant;
 pub mod exp_sp;
 pub mod fence;
+pub mod flags;
 pub mod geodata;
 pub mod gm_shop;
 pub mod html;
@@ -46,6 +48,7 @@ pub mod level;
 pub mod manor;
 pub mod party;
 pub mod punishments;
+pub mod repair;
 pub mod rights;
 pub mod scan;
 pub mod search;
@@ -158,6 +161,9 @@ impl Default for AdminWorld {
         scan::register(&mut handlers);
         search::register(&mut handlers);
         fence::register(&mut handlers);
+        flags::register(&mut handlers);
+        access_level::register(&mut handlers);
+        repair::register(&mut handlers);
         skill_test::register(&mut handlers);
         admin_page::register(&mut handlers);
         spawn_admin::register(&mut handlers);
