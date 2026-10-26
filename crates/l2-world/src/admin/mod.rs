@@ -23,33 +23,57 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod admin_page;
 pub mod announce;
+pub mod augment;
+pub mod camera;
 pub mod chsiege;
 pub mod clan;
+pub mod clan_skills;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
 pub mod control;
 pub mod create_item;
 pub mod debug;
+pub mod delete;
+pub mod destroy_items;
+pub mod door;
+pub mod edit_char;
+pub mod effects;
+pub mod element;
 pub mod enchant;
 pub mod exp_sp;
+pub mod fence;
 pub mod forge;
 pub mod geodata;
+pub mod gm;
+pub mod gm_shop;
 pub mod gm_tools;
 pub mod html;
 pub mod invul;
 pub mod karma;
 pub mod level;
 pub mod manor;
+pub mod menu;
+pub mod messages;
+pub mod page;
 pub mod party;
+pub mod pccafe;
 pub mod petition;
 pub mod punishments;
 pub mod reload;
 pub mod rights;
+pub mod scan;
+pub mod search;
+pub mod skill_test;
 pub mod skills;
+pub mod sound;
+pub mod spawn_admin;
 pub mod summon;
+pub mod teleport;
 pub mod transform;
+pub mod vitality;
 pub mod zone_tools;
 
 use std::collections::HashMap;
@@ -133,6 +157,10 @@ pub(crate) struct AdminWorld {
     /// The state of the server control, GM tool, announcement, petition and debug handlers
     /// (M7-ADMIN-10, see `control.rs`).
     pub(crate) ctl: control::ControlWorld,
+    /// `AdminDoorControl.PLAYER_SHOWN_DOORS`: the door ids each GM's `//showdoors` has drawn.
+    pub(crate) shown_doors: HashMap<ObjectId, std::collections::BTreeSet<i32>>,
+    /// Java `CreatureStat._gmSpeedMultiplier` of each creature `//gmspeed` changed (`gm.rs`).
+    pub(crate) gm_speed: HashMap<ObjectId, f64>,
     /// The zone builder and the zone markers (`zone_tools.rs`).
     pub(crate) zones: zone_tools::ZoneAdmin,
     /// The path search of `//path_find` (`geodata.rs`).
@@ -143,10 +171,33 @@ impl Default for AdminWorld {
     fn default() -> Self {
         let mut handlers = AdminHandlers::default();
         commands::register_core(&mut handlers);
+        effects::register(&mut handlers);
+        menu::register(&mut handlers);
+        teleport::register(&mut handlers);
+        gm::register(&mut handlers);
+        camera::register(&mut handlers);
+        page::register(&mut handlers);
+        messages::register(&mut handlers);
+        vitality::register(&mut handlers);
+        augment::register(&mut handlers);
+        element::register(&mut handlers);
+        clan_skills::register(&mut handlers);
+        pccafe::register(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
         create_item::register(&mut handlers);
+        edit_char::register(&mut handlers);
+        door::register(&mut handlers);
+        destroy_items::register(&mut handlers);
+        gm_shop::register(&mut handlers);
+        delete::register(&mut handlers);
+        scan::register(&mut handlers);
+        search::register(&mut handlers);
+        fence::register(&mut handlers);
+        skill_test::register(&mut handlers);
+        admin_page::register(&mut handlers);
+        spawn_admin::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
@@ -178,6 +229,8 @@ impl Default for AdminWorld {
             pending_confirm: HashMap::new(),
             skill_stash: None,
             ctl: control::ControlWorld::default(),
+            shown_doors: HashMap::new(),
+            gm_speed: HashMap::new(),
             zones: zone_tools::ZoneAdmin::default(),
             path: geodata::PathAdmin::default(),
         }

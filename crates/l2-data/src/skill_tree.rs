@@ -129,6 +129,10 @@ pub struct SkillTrees {
     sub_pledge: Vec<SkillLearn>,
     /// Java `_fishingSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     fishing: Vec<SkillLearn>,
+    /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree` (`//switch_gm_buffs`), in the
+    /// order of Java's `ConcurrentHashMap`.
+    game_master: Vec<SkillLearn>,
+    game_master_aura: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -198,6 +202,10 @@ impl SkillTrees {
             sub_pledge_order,
             fishing,
             fishing_order,
+            game_master,
+            game_master_order,
+            game_master_aura,
+            game_master_aura_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -237,6 +245,8 @@ impl SkillTrees {
             pledge: in_java_order(pledge, pledge_order),
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
             fishing: in_java_order(fishing, fishing_order),
+            game_master: in_java_order(game_master, game_master_order),
+            game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
         }
     }
 
@@ -301,6 +311,16 @@ impl SkillTrees {
     /// Java `getFishingSkillTree().values()`: the fishing skills, in the order of Java's
     /// `ConcurrentHashMap` (`getAvailableFishingSkills` follows it, so the list the fisherman
     /// shows).
+    /// Java `getGMSkillTree().values()` source: the Game Master skills (`gameMasterSkillTree`).
+    pub fn game_master_skills(&self) -> &[SkillLearn] {
+        &self.game_master
+    }
+
+    /// Java `getGMAuraSkillTree().values()` source: the Game Master aura skills.
+    pub fn game_master_aura_skills(&self) -> &[SkillLearn] {
+        &self.game_master_aura
+    }
+
     pub fn fishing_skills(&self) -> &[SkillLearn] {
         &self.fishing
     }
@@ -479,6 +499,11 @@ struct Gathered {
     /// Java `_fishingSkillTree` and the keys in the order they were first put.
     fishing: BTreeMap<(i32, i32), SkillLearn>,
     fishing_order: Vec<(i32, i32)>,
+    /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree`, with their keys in put order.
+    game_master: BTreeMap<(i32, i32), SkillLearn>,
+    game_master_order: Vec<(i32, i32)>,
+    game_master_aura: BTreeMap<(i32, i32), SkillLearn>,
+    game_master_aura_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -499,11 +524,19 @@ impl Gathered {
             // fishermen (M6-FU-10).
             if matches!(
                 tree.kind.as_str(),
-                "pledgeSkillTree" | "subPledgeSkillTree" | "fishingSkillTree"
+                "pledgeSkillTree"
+                    | "subPledgeSkillTree"
+                    | "fishingSkillTree"
+                    | "gameMasterSkillTree"
+                    | "gameMasterAuraSkillTree"
             ) {
                 let (map, order) = match tree.kind.as_str() {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
                     "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
+                    "gameMasterSkillTree" => (&mut self.game_master, &mut self.game_master_order),
+                    "gameMasterAuraSkillTree" => {
+                        (&mut self.game_master_aura, &mut self.game_master_aura_order)
+                    }
                     _ => (&mut self.fishing, &mut self.fishing_order),
                 };
                 for skill in tree.skills {
@@ -1065,5 +1098,30 @@ mod tests {
 			<skill skillId="1" skillLevel="1" autoGet="true" />
 		</skillTree></list>"#;
         assert!(matches!(SkillTrees::from_xml(xml), Err(DataError::Xml { .. })));
+    }
+
+    #[test]
+    fn game_master_trees_are_kept_apart() {
+        let xml = r#"<list>
+			<skillTree type="gameMasterSkillTree">
+				<skill skillName="GM Haste" skillId="7029" skillLevel="1" getLevel="1" learnedByNpc="false"/>
+			</skillTree>
+			<skillTree type="gameMasterAuraSkillTree">
+				<skill skillName="Aura" skillId="7041" skillLevel="1" getLevel="1" learnedByNpc="false"/>
+				<skill skillName="Aura 2" skillId="7042" skillLevel="1" getLevel="1" learnedByNpc="false"/>
+			</skillTree>
+		</list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        assert_eq!(
+            trees
+                .game_master_skills()
+                .iter()
+                .map(|s| s.skill_id)
+                .collect::<Vec<_>>(),
+            vec![7029]
+        );
+        assert_eq!(trees.game_master_aura_skills().len(), 2);
+        // Not a class, clan or fishing tree: nothing else is kept.
+        assert!(trees.pledge_skills().is_empty() && trees.fishing_skills().is_empty());
     }
 }

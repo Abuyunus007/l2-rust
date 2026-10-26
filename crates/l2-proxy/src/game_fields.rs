@@ -97,6 +97,7 @@ use l2_protocol_game::server::refine::{
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 use l2_protocol_game::server::residence::{AgitDecoInfo, ExShowAgitInfo};
+use l2_protocol_game::server::screen::{Earthquake, ExRedSky, SpecialCamera, SunRise, SunSet};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::siege::{
     ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
@@ -740,6 +741,11 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::Earthquake => decoded::<Earthquake>(&mut r, earthquake_fields),
+        ServerOpcode::Sunrise => decoded::<SunRise>(&mut r, no_fields),
+        ServerOpcode::Sunset => decoded::<SunSet>(&mut r, no_fields),
+        ServerOpcode::ExRedSky => decoded::<ExRedSky>(&mut r, ex_red_sky_fields),
+        ServerOpcode::SpecialCamera => decoded::<SpecialCamera>(&mut r, special_camera_fields),
         ServerOpcode::ExServerPrimitive => decoded::<ExServerPrimitive>(&mut r, server_primitive_fields),
         ServerOpcode::ShowBoard => decoded::<ShowBoard>(&mut r, show_board_fields),
         ServerOpcode::AgitDecoInfo => decoded::<AgitDecoInfo>(&mut r, agit_deco_info_fields),
@@ -2084,6 +2090,18 @@ fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
 
+fn earthquake_fields(p: &Earthquake) -> Value {
+    object!(p => x, y, z, intensity, duration)
+}
+
+fn ex_red_sky_fields(p: &ExRedSky) -> Value {
+    object!(p => duration)
+}
+
+fn special_camera_fields(p: &SpecialCamera) -> Value {
+    object!(p => id, force, angle1, angle2, time, duration, rel_yaw, rel_pitch, is_wide, rel_angle, unk)
+}
+
 fn server_primitive_fields(p: &ExServerPrimitive) -> Value {
     let entry = |e: &l2_protocol_game::server::Primitive| {
         json!({
@@ -2573,6 +2591,11 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::Earthquake,
+        ServerOpcode::Sunrise,
+        ServerOpcode::Sunset,
+        ServerOpcode::ExRedSky,
+        ServerOpcode::SpecialCamera,
         ServerOpcode::ExServerPrimitive,
         ServerOpcode::ShowBoard,
         ServerOpcode::Snoop,

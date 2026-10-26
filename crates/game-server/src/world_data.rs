@@ -169,6 +169,9 @@ impl AccessLevels {
                         .unwrap_or(100);
                     let confirm = attribute(&e, "confirmDlg").is_some_and(|v| v.eq_ignore_ascii_case("true"));
                     self.rights.add_command(&command, level, confirm);
+                    if let Some(description) = attribute(&e, "description") {
+                        self.rights.set_description(&command, &description);
+                    }
                 }
                 Ok(Event::Eof) | Err(_) => break,
                 Ok(_) => {}
@@ -1211,6 +1214,9 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         gm_audit: config.general.gmaudit,
         gm_startup_builder_hide: config.general.gm_startup_builder_hide,
         gm_startup_invulnerable: config.general.gm_startup_invulnerable,
+        use_super_haste_as_gm_speed: config.general.use_super_haste_as_gm_speed,
+        gm_give_special_skills: config.general.gm_give_special_skills,
+        gm_give_special_aura_skills: config.general.gm_give_special_aura_skills,
         zones: ZoneSettings {
             peace_zone_mode: config.general.peace_zone_mode,
             jail_is_pvp: config.general.jail_is_pvp,
