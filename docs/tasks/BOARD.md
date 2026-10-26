@@ -316,6 +316,10 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | merged |
 | [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
 | [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
+| [M6-FU-11](M6/M6-FU-11.md) | Stale M6 markers: duel, summon and store checks, GM pet views, SkillCoolTime, talisman mana, PC cafe points | sonnet | full | none | in-progress |
+| [M6-FU-12](M6/M6-FU-12.md) | Skill channelizer, weapon and option trigger skills | sonnet | full | none | in-progress |
+| [M6-FU-13](M6/M6-FU-13.md) | Command channels | sonnet | full | none | in-progress |
+| [M6-FU-14](M6/M6-FU-14.md) | Pet evolve and offline trade | sonnet | full | none | in-progress |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
 
@@ -345,6 +349,7 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M7-ADMIN-06](M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | merged |
 | [M7-FU-01](M7/M7-FU-01.md) | Hall siege guard AI, doorman hall branch | sonnet | spot | SIEGE-02, CHSIEGE-01, NPC-01 | merged |
 | [M7-FU-02](M7/M7-FU-02.md) | Fixes from the M7 end-to-end tests (Flag Display, function rows) | sonnet | full | E2E-01 | merged |
+| [M7-FU-03](M7/M7-FU-03.md) | Crest ids side by side, auction list re-read, residence door dialogs, siege trap zones | sonnet | full | none | in-progress |
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |
 | [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
