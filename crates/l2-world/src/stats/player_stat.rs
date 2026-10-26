@@ -452,19 +452,25 @@ impl World {
     // add skills (phase 2 of M4-STAT-01), `BowCrossRodListener` and `BraceletListener` move items
     // (M4-INV-01). The armor set *stat* bonus is `FuncArmorSet`, which reads the paperdoll.
     pub fn on_equip(&mut self, id: ObjectId, item: &ItemData) -> Vec<Stat> {
+        self.on_equip_with_time_stamp(id, item).0
+    }
+
+    /// [`World::on_equip`] and Java's `updateTimeStamp` of the skill listeners: an active skill
+    /// came with the item, so the caller sends `SkillCoolTime` after the skill list.
+    pub(crate) fn on_equip_with_time_stamp(&mut self, id: ObjectId, item: &ItemData) -> (Vec<Stat>, bool) {
         // `ArmorSetListener`, then `ItemSkillsListener` (they come before `StatsListener`).
         // The augmentation and element bonuses are applied by `ItemSkillsListener`, so their
         // stats come first.
-        let mut stats = self.equip_item_skills(id, item);
+        let (mut stats, time_stamp) = self.equip_item_skills(id, item);
         let funcs = match self.stats(id) {
             Some(view) => item_funcs(&view, item),
-            None => return stats,
+            None => return (stats, time_stamp),
         };
         let Some(player) = self.players.get_mut(&id) else {
-            return stats;
+            return (stats, time_stamp);
         };
         stats.extend(player.core.calculators.add_all(funcs));
-        stats
+        (stats, time_stamp)
     }
 
     /// Java's paperdoll listeners on unequip: the armor set and item skills go
@@ -472,9 +478,20 @@ impl World {
     /// `removeStatsOwner(item)`. `item` has already left `slot` (INV-01 clears the slot first,
     /// like `setPaperdollItem`). Returns the stats `removeStatsOwner` changed.
     pub fn on_unequip(&mut self, id: ObjectId, item: &ItemData, slot: usize) -> Vec<Stat> {
-        let mut stats = self.unequip_item_skills(id, item, slot);
+        self.on_unequip_with_time_stamp(id, item, slot).0
+    }
+
+    /// [`World::on_unequip`] and Java's `updateTimeStamp` of `ItemSkillsListener.notifyUnequiped`
+    /// (a skill of another worn item came back).
+    pub(crate) fn on_unequip_with_time_stamp(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        slot: usize,
+    ) -> (Vec<Stat>, bool) {
+        let (mut stats, time_stamp) = self.unequip_item_skills(id, item, slot);
         let Some(player) = self.players.get_mut(&id) else {
-            return stats;
+            return (stats, time_stamp);
         };
         stats.extend(
             player
@@ -482,7 +499,7 @@ impl World {
                 .calculators
                 .remove_owner(FuncOwner::Item(item.object_id)),
         );
-        stats
+        (stats, time_stamp)
     }
 
     /// The max HP/MP/CP of a player or NPC into its `CreatureCore`, and the current values

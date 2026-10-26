@@ -504,12 +504,15 @@ impl World {
         }
 
         // Are the target and the player in the same duel?
-        if self.is_in_duel(id) && self.is_player(target) && self.duel_id_of(target) != self.duel_id_of(id) {
+        // `target.isPlayable()` / `asPlayer()`: a summon target counts as its owner.
+        if self.is_in_duel(id)
+            && let Some(other) = self.acting_player(target)
+            && self.duel_id_of(other) != self.duel_id_of(id)
+        {
             self.send_message(id, "You cannot do this while duelling.");
             self.send(id, &ActionFailed);
             return false;
         }
-        // M6-SUMMON: the same for a summon target (`target.isPlayable()`, `asPlayer()`).
 
         // ---- Check skill availability
         // Check if this skill is enabled (ex : reuse time).

@@ -10,7 +10,7 @@
 // - The food and load lines of `//summon_info` for a pet: M6-PET-01 (shown as N/A).
 
 use l2_util::ObjectId;
-use tracing::debug;
+use tracing::warn;
 
 use super::commands::java_split_space;
 use super::{AdminHandler, AdminHandlers, JavaException, parse_int};
@@ -116,6 +116,19 @@ fn gather_summon_info(world: &mut World, summon: ObjectId, gm: ObjectId) {
     } else {
         "none".to_owned()
     };
+    // Only a pet has food and a load.
+    let (food, load) = if is_pet {
+        (
+            format!("{}/{}", world.pet_current_fed(summon), world.pet_max_fed(summon)),
+            format!(
+                "{}/{}",
+                world.pet_total_weight(owner),
+                world.stats(summon).map_or(0, |v| v.max_load())
+            ),
+        )
+    } else {
+        ("N/A".to_owned(), "N/A".to_owned())
+    };
     let owner_link = format!(" <a action=\"bypass -h admin_character_info {owner_name}\">{owner_name}</a>");
     let values = [
         ("%name%", if name.is_empty() { "N/A".to_owned() } else { name }),
@@ -129,9 +142,8 @@ fn gather_summon_info(world: &mut World, summon: ObjectId, gm: ObjectId) {
         ("%karma%", karma.to_string()),
         ("%race%", race),
         ("%inv%", inventory),
-        // M6: PET-01, the food and load of a pet; N/A for a servitor.
-        ("%food%", "N/A".to_owned()),
-        ("%load%", "N/A".to_owned()),
+        ("%food%", food),
+        ("%load%", load),
     ];
     let mut html = world.admin_html_file(gm, "data/html/admin/petinfo.htm");
     for (pattern, value) in &values {
@@ -177,12 +189,23 @@ fn admin_unsummon(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 
 /// Java `AdminEditChar.onCommand`, `admin_summon_setlvl <level>`: the pet's exp goes to the exp of
 /// that level. Only pets have that; the pet level table is M6-PET-01.
-fn admin_summon_setlvl(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+fn admin_summon_setlvl(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let pet =
         target_summon(world, gm).filter(|s| world.summon(*s).is_some_and(|d| d.kind == SummonKind::Pet));
     if let Some(pet) = pet {
-        // M6: PET-01, `getStat().getExpForLevel(level)` and `addExp`/`removeExp` of the pet.
-        debug!("{gm}: //summon_setlvl on pet {pet} is not ported yet (M6-PET-01)");
+        // `Integer.parseInt(command.substring(20))`: a failure is only logged.
+        match command.get(20..).map(parse_int) {
+            Some(Ok(level)) => {
+                let old_exp = world.summon(pet).map_or(0, |s| s.exp);
+                let new_exp = world.pet_exp_for_level(pet, level);
+                if old_exp > new_exp {
+                    world.pet_remove_exp(pet, old_exp - new_exp);
+                } else if old_exp < new_exp {
+                    world.pet_add_exp(pet, new_exp - old_exp);
+                }
+            }
+            _ => warn!("Problem with AdminEditChar: bad level in `{command}`"),
+        }
     } else {
         world.send_sys_message(gm, "Usable only with Pets");
     }
@@ -200,9 +223,31 @@ fn admin_show_pet_inv(world: &mut World, gm: ObjectId, command: &str) -> Outcome
         _ => world.target_of(gm),
     };
     match target.filter(|t| world.is_pet(*t)) {
-        // M6: PET-01, `GMViewItemList` of the pet's inventory.
-        Some(pet) => debug!("{gm}: //show_pet_inv on pet {pet} is not ported yet (M6-PET-01)"),
+        Some(pet) => send_pet_view_item_list(world, gm, pet),
         None => world.send_sys_message(gm, "Usable only with Pets"),
     }
     Ok(())
+}
+
+/// Java `new GMViewItemList(pet)`: the pet's name, `Pet.getInventoryLimit()` and the items of its
+/// inventory.
+fn send_pet_view_item_list(world: &World, gm: ObjectId, pet: ObjectId) {
+    let Some(owner) = world.summon_owner(pet) else {
+        return;
+    };
+    let player_name = world
+        .summon(pet)
+        .map(|s| s.name.clone())
+        .filter(|n| !n.is_empty())
+        .or_else(|| world.object_name(pet))
+        .unwrap_or_default();
+    let list = l2_protocol_game::server::GmViewItemList {
+        player_name,
+        limit: world.pet_inventory_limit(),
+        items: world
+            .pet_items(owner)
+            .map(|item| world.update_entry(item, 0).item)
+            .collect(),
+    };
+    world.send(gm, &list);
 }

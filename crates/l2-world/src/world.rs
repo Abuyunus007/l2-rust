@@ -122,6 +122,8 @@ pub struct World {
     pub(crate) mail: crate::mail::MailWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
+    /// The PC cafe settings and each player's retail timer (M6-FU-11, `pccafe.rs`).
+    pub(crate) pccafe: crate::pccafe::PcCafeWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
     /// The recipes and the makers waiting on the timer wheel (M6-CRAFT-01, `craft/`).
@@ -207,6 +209,7 @@ impl World {
             friends: crate::friends::FriendWorld::default(),
             mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
+            pccafe: crate::pccafe::PcCafeWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
@@ -807,6 +810,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: PcCafePointsManager.giveRetailPcCafePont
+            TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
             // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask

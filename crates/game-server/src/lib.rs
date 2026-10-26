@@ -583,6 +583,7 @@ impl Server {
         let world_settings = world_data::world_settings(&config, &paths.config_dir);
         let regen_settings = world_data::regen_settings(&config);
         let summon_settings = world_data::summon_settings(&config);
+        let pc_cafe_settings = world_data::pc_cafe_settings(&config);
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
         // Java: PetNameTable (the names of the pets that exist), read only.
         let pet_names = persist::load_pet_names(&pool).await;
@@ -738,6 +739,7 @@ impl Server {
                     world.set_settings(settings);
                     world.set_regen_settings(regen_settings);
                     world.set_summon_settings(summon_settings);
+                    world.set_pc_cafe_settings(pc_cafe_settings);
                     world.set_geo(geo_engine);
                     // Zones (flags, compass icon) and the restart points of the map regions.
                     world.set_zone_data(zones, map_regions);

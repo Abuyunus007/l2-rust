@@ -27,7 +27,7 @@
 //   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record): M6-STORE-01 leaves
 //   it, there are no detached clients in the Rust server yet.
 // - The cursed weapon check, `isSellingBuffs`
-//   (`SellBuffsManager`), the olympiad (M8), a mount and a duel (`isInDuel`: M6-DUEL-01).
+//   (`SellBuffsManager`), the olympiad (M8) and a mount.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{BuyListEntry, SellListEntry, StoreBuyRequestEntry, StoreSellRequestEntry};
@@ -664,8 +664,7 @@ impl World {
             return;
         }
 
-        // `isInDuel()`: M6-DUEL-01.
-        if self.has_attack_stance_task(id) {
+        if self.has_attack_stance_task(id) || self.is_in_duel(id) {
             self.send(
                 id,
                 &SystemMessage::new(
@@ -784,8 +783,7 @@ impl World {
             return;
         }
 
-        // `isInDuel()`: M6-DUEL-01.
-        if self.has_attack_stance_task(id) {
+        if self.has_attack_stance_task(id) || self.is_in_duel(id) {
             self.send(
                 id,
                 &SystemMessage::new(

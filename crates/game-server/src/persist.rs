@@ -3072,7 +3072,9 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         },
         language: row.language.clone(),
         faction: i32::from(row.faction),
-        pccafe_points: row.pccafe_points,
+        // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it
+        // (M6-FU-11).
+        pccafe_points: player.profile.pccafe_points,
     }
 }
 

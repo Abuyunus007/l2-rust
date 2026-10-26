@@ -109,7 +109,7 @@ impl World {
             return;
         }
         if let Some(attacker) = attacker {
-            self.duel_interrupt_on_npc_hit(attacker);
+            self.duel_interrupt_on_hit(id, attacker);
             self.add_attacker_to_attack_by_list(id, attacker);
         }
         // CreatureStatus.reduceHp: invul handling.
