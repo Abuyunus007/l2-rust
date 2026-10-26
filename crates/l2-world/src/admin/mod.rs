@@ -34,6 +34,7 @@ pub mod destroy_items;
 pub mod door;
 pub mod edit_char;
 pub mod enchant;
+pub mod fence;
 pub mod gm_shop;
 pub mod scan;
 pub mod search;
@@ -147,6 +148,7 @@ impl Default for AdminWorld {
         delete::register(&mut handlers);
         scan::register(&mut handlers);
         search::register(&mut handlers);
+        fence::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
