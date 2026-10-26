@@ -169,6 +169,9 @@ impl AccessLevels {
                         .unwrap_or(100);
                     let confirm = attribute(&e, "confirmDlg").is_some_and(|v| v.eq_ignore_ascii_case("true"));
                     self.rights.add_command(&command, level, confirm);
+                    if let Some(description) = attribute(&e, "description") {
+                        self.rights.set_description(&command, &description);
+                    }
                 }
                 Ok(Event::Eof) | Err(_) => break,
                 Ok(_) => {}
@@ -1155,6 +1158,35 @@ pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
     }
 }
 
+/// The configuration the server control commands, the announcements, the petition system and
+/// `//debug` read (M7-ADMIN-10): `ServerGMOnly`, `ServerListType`, `ServerListAge`,
+/// `ServerListBrackets`, `MaximumOnlineUsers`, `GMShowAnnouncerName`, `GMStartupAutoList`,
+/// `PetitioningAllowed`, `MaxPetitionsPending`, `MaxPetitionsPerPlayer`, `DebugClientPackets`.
+pub fn admin_settings(config: &GameConfig, config_dir: &Path) -> l2_world::AdminSettings {
+    use l2_config::IniFile;
+
+    use crate::ls_link::server_type_id;
+    // `ServerListType` is one of the settings the config crate leaves to hand-written code.
+    let server_list_type = IniFile::load(config_dir.join(crate::SERVER_CONFIG_FILE))
+        .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
+        .unwrap_or_else(|_| server_type_id("Free"));
+    l2_world::AdminSettings {
+        gm_startup_auto_list: config.general.gm_startup_auto_list,
+        gm_announcer_name: config.general.gm_announcer_name,
+        server_gmonly: config.general.server_gmonly,
+        server_list_type,
+        server_list_age: config.server.server_list_age,
+        server_list_brackets: config.server.server_list_bracket,
+        maximum_online_users: config.server.maximum_online_users,
+        petitioning_allowed: config.player.petitioning_allowed,
+        max_petitions_pending: config.player.max_petitions_pending,
+        max_petitions_per_player: config.player.max_petitions_per_player,
+        debug_client_packets: config.development.debug_client_packets,
+        // `GameServer.getStartTime()`.
+        server_start_ms: l2_util::time::now_millis(),
+    }
+}
+
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
     use l2_config::game::GeneralConfig;
@@ -1186,9 +1218,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         gm_startup_builder_hide: config.general.gm_startup_builder_hide,
         gm_startup_invulnerable: config.general.gm_startup_invulnerable,
         gm_startup_silence: config.general.gm_startup_silence,
-        gm_startup_auto_list: config.general.gm_startup_auto_list,
         gm_startup_diet_mode: config.general.gm_startup_diet_mode,
         silence_mode_exclude: config.player.silence_mode_exclude,
+        use_super_haste_as_gm_speed: config.general.use_super_haste_as_gm_speed,
+        gm_give_special_skills: config.general.gm_give_special_skills,
+        gm_give_special_aura_skills: config.general.gm_give_special_aura_skills,
         zones: ZoneSettings {
             peace_zone_mode: config.general.peace_zone_mode,
             jail_is_pvp: config.general.jail_is_pvp,

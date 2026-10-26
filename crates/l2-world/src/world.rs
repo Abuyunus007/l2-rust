@@ -322,7 +322,13 @@ impl World {
     pub fn send_bytes(&self, to: ObjectId, bytes: Vec<u8>) -> bool {
         match self.sinks.get(&to) {
             Some(sink) => {
+                // Java `CreatureSay.runImpl` -> `broadcastSnoop`: GMs who snoop this player get
+                // what it is sent.
+                let snooped = self.has_snoopers().then(|| bytes.clone());
                 sink.send(bytes);
+                if let Some(bytes) = snooped {
+                    self.snoop_sent_bytes(to, &bytes);
+                }
                 true
             }
             // Java `Summon.sendPacket`: what a summon is told goes to its owner (`summon/`).
@@ -401,6 +407,15 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::AnnouncementStored { ticket, result } => {
+                self.on_announcement_stored(ticket, result)
+            }
+            WorldCommand::HtmlReloaded {
+                requester,
+                path,
+                result,
+            } => self.on_html_reloaded(requester, path, result),
+            WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
@@ -740,6 +755,8 @@ impl World {
             ClientInput::Siege(input) => self.on_siege_input(id, input),
             // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
+            ClientInput::Petition(input) => self.on_petition_input(id, input),
+            ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
             }
@@ -856,6 +873,8 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
+            TimerKind::Admin(timer) => self.on_admin_timer(timer),
         }
     }
 

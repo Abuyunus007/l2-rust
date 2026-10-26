@@ -833,8 +833,14 @@ impl CharacterRepository {
         let Some(char_id) = char_id.filter(|id| *id != 0) else {
             return Ok(());
         };
-        sqlx::query(REPAIR_SHORTCUTS).bind(char_id).execute(&self.pool).await?;
-        sqlx::query(REPAIR_ITEMS).bind(char_id).execute(&self.pool).await?;
+        sqlx::query(REPAIR_SHORTCUTS)
+            .bind(char_id)
+            .execute(&self.pool)
+            .await?;
+        sqlx::query(REPAIR_ITEMS)
+            .bind(char_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 

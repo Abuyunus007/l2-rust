@@ -332,15 +332,19 @@ pub struct WorldSettings {
     /// `GeneralConfig.GM_STARTUP_SILENCE` (`GMStartupSilence`): a GM with `admin_silence` access
     /// enters in silence mode.
     pub gm_startup_silence: bool,
-    /// `GeneralConfig.GM_STARTUP_AUTO_LIST` (`GMStartupAutoList`): a GM with `admin_gmliston`
-    /// access is in the public GM list from the start.
-    pub gm_startup_auto_list: bool,
     /// `GeneralConfig.GM_STARTUP_DIET_MODE` (`GMStartupDietMode`): a GM with `admin_diet` access
     /// enters in diet mode.
     pub gm_startup_diet_mode: bool,
     /// `PlayerConfig.SILENCE_MODE_EXCLUDE` (`SilenceModeExclude`): a player in silence mode can be
     /// answered by the players he whispered to.
     pub silence_mode_exclude: bool,
+    /// `GeneralConfig.USE_SUPER_HASTE_AS_GM_SPEED` (`UseSuperHasteAsGMSpeed`): `//gmspeed` gives the
+    /// super haste instead of the speed multiplier.
+    pub use_super_haste_as_gm_speed: bool,
+    /// `GeneralConfig.GM_GIVE_SPECIAL_SKILLS` (`GMGiveSpecialSkills`): the GM skills of a GM login.
+    pub gm_give_special_skills: bool,
+    /// `GeneralConfig.GM_GIVE_SPECIAL_AURA_SKILLS` (`GMGiveSpecialAuraSkills`): the GM aura skills.
+    pub gm_give_special_aura_skills: bool,
     /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
@@ -437,9 +441,11 @@ impl Default for WorldSettings {
             gm_startup_builder_hide: false,
             gm_startup_invulnerable: false,
             gm_startup_silence: false,
-            gm_startup_auto_list: false,
             gm_startup_diet_mode: false,
             silence_mode_exclude: false,
+            use_super_haste_as_gm_speed: false,
+            gm_give_special_skills: false,
+            gm_give_special_aura_skills: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),

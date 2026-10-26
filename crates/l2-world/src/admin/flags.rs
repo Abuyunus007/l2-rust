@@ -39,8 +39,6 @@ pub struct GmFlags {
     silence_excluded: Vec<ObjectId>,
     /// Java `_dietMode`.
     pub diet: bool,
-    /// Java `AdminData._gmList` value: `None` is not in the list, `Some(hidden)`.
-    pub gm_list: Option<bool>,
     /// Java `PlayerAppearance._nameColor` after `//setcolor`: `None` is the colour of the access
     /// level. NOTE(java-quirk): Java keeps the name colour in no table (the `characters` table has
     /// no such column), so a changed colour lasts until the character leaves the world.
@@ -86,15 +84,9 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
     }
 }
 
-fn set_gm_list(world: &mut World, gm: ObjectId, hidden: bool) {
-    if let Some(player) = world.players.get_mut(&gm) {
-        player.gm.gm_list = Some(hidden);
-    }
-}
-
 /// `addGm(activeChar, false)`.
 fn admin_gmliston(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
-    set_gm_list(world, gm, false);
+    world.gm_list_set(gm, false);
     world.send_sys_message(gm, "Registered into GM list.");
     world.show_admin_html(gm, "gm_menu.htm");
     Ok(())
@@ -102,7 +94,7 @@ fn admin_gmliston(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 
 /// `addGm(activeChar, true)`.
 fn admin_gmlistoff(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
-    set_gm_list(world, gm, true);
+    world.gm_list_set(gm, true);
     world.send_sys_message(gm, "Removed from GM list.");
     world.show_admin_html(gm, "gm_menu.htm");
     Ok(())
@@ -192,13 +184,6 @@ impl World {
         self.send_etc_status_update(id);
     }
 
-    /// Java `AdminData.isGmOnline(includeHidden)`.
-    pub(crate) fn is_gm_online(&self, include_hidden: bool) -> bool {
-        self.players
-            .values()
-            .any(|p| p.gm.gm_list.is_some_and(|hidden| include_hidden || !hidden))
-    }
-
     /// Java `AdminData.sendListToPlayer(player)` (`RequestGmList`): the GMs the player may see;
     /// a GM sees the hidden ones too.
     pub(crate) fn send_gm_list(&self, id: ObjectId) {
@@ -214,23 +199,22 @@ impl World {
         }
         self.send(id, &SystemMessage::new(SystemMessageId::GmList));
         // Java walks a `ConcurrentHashMap`; the order here is the object id.
-        let mut gms: Vec<(ObjectId, &str)> = self
-            .players
-            .values()
-            .filter(|p| p.gm.gm_list.is_some_and(|hidden| include_hidden || !hidden))
-            .map(|p| (p.core.object_id, p.data.name.as_str()))
+        let mut gms: Vec<(ObjectId, String)> = self
+            .gm_list_ids(include_hidden)
+            .into_iter()
+            .filter_map(|gm| self.players.get(&gm).map(|p| (gm, p.data.name.clone())))
             .collect();
         gms.sort_by_key(|(object_id, _)| object_id.0);
         for (_, name) in gms {
             self.send(
                 id,
-                &SystemMessage::new(SystemMessageId::GmC1).with(SystemMessageParam::Text(name.to_owned())),
+                &SystemMessage::new(SystemMessageId::GmC1).with(SystemMessageParam::Text(name)),
             );
         }
     }
 
-    /// Java `EnterWorld`, the GM part: `GMStartupSilence`, `GMStartupDietMode` and the entry in the
-    /// GM list (`GMStartupAutoList`, hidden otherwise). Called for every player who enters.
+    /// Java `EnterWorld`, the GM part: `GMStartupSilence` and `GMStartupDietMode` (the GM list
+    /// entry is `admin_on_player_enter`, `gm_tools.rs`). Called for every player who enters.
     pub(crate) fn gm_flags_on_enter(&mut self, id: ObjectId) {
         if !self.is_gm(id) {
             return;
@@ -241,13 +225,11 @@ impl World {
                 .admin_rights()
                 .is_some_and(|rights| rights.has_access(word, access))
         };
-        // `break gmStartupProcess` of GMStartupBuilderHide skips silence and diet, not the list.
+        // `break gmStartupProcess` of GMStartupBuilderHide skips silence and diet.
         let builder_hide = self.settings.gm_startup_builder_hide && has("admin_hide");
         let silence = !builder_hide && self.settings.gm_startup_silence && has("admin_silence");
         let diet = !builder_hide && self.settings.gm_startup_diet_mode && has("admin_diet");
-        let listed = self.settings.gm_startup_auto_list && has("admin_gmliston");
         if let Some(player) = self.players.get_mut(&id) {
-            player.gm.gm_list = Some(!listed);
             player.gm.diet = diet;
             if silence {
                 player.gm.set_silence(true);

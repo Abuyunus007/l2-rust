@@ -97,6 +97,7 @@ use l2_protocol_game::server::refine::{
     ExShowVariationMakeWindow, ExVariationCancelResult, ExVariationResult,
 };
 use l2_protocol_game::server::residence::{AgitDecoInfo, ExShowAgitInfo};
+use l2_protocol_game::server::screen::{Earthquake, ExRedSky, SpecialCamera, SunRise, SunSet};
 use l2_protocol_game::server::shop::{BuyList, ExBuySellList};
 use l2_protocol_game::server::siege::{
     ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefenderList, SiegeInfo, SiegeTime,
@@ -263,6 +264,10 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         }
         ClientPacket::RequestDispel(p) => object!(p => object_id, skill_id, skill_level),
         ClientPacket::RequestVoteNew(p) => object!(p => target_id),
+        ClientPacket::RequestPetition(p) => object!(p => content, kind),
+        ClientPacket::RequestPetitionCancel(_) => json!({}),
+        ClientPacket::RequestPetitionFeedback(p) => object!(p => unknown, rate, message),
+        ClientPacket::SnoopQuit(p) => object!(p => snoop_id),
         ClientPacket::AnswerCoupleAction(p) => object!(p => action_id, answer, object_id),
         ClientPacket::DlgAnswer(p) => object!(p => message_id, answer, requester_id),
         ClientPacket::RequestJoinParty(p) => object!(p => name, party_distribution_type_id),
@@ -736,6 +741,11 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::Earthquake => decoded::<Earthquake>(&mut r, earthquake_fields),
+        ServerOpcode::Sunrise => decoded::<SunRise>(&mut r, no_fields),
+        ServerOpcode::Sunset => decoded::<SunSet>(&mut r, no_fields),
+        ServerOpcode::ExRedSky => decoded::<ExRedSky>(&mut r, ex_red_sky_fields),
+        ServerOpcode::SpecialCamera => decoded::<SpecialCamera>(&mut r, special_camera_fields),
         ServerOpcode::ExServerPrimitive => decoded::<ExServerPrimitive>(&mut r, server_primitive_fields),
         ServerOpcode::ShowBoard => decoded::<ShowBoard>(&mut r, show_board_fields),
         ServerOpcode::AgitDecoInfo => decoded::<AgitDecoInfo>(&mut r, agit_deco_info_fields),
@@ -967,6 +977,18 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
             &mut r,
             |p| json!({ "items": p.items.iter().map(item_fields).collect::<Vec<_>>() }),
         ),
+        ServerOpcode::Snoop => decoded::<l2_protocol_game::server::Snoop>(&mut r, |p| {
+            json!({
+                "convo_id": p.convo_id,
+                "name": p.name,
+                "chat_type": p.chat_type.client_id(),
+                "speaker": p.speaker,
+                "message": p.message,
+            })
+        }),
+        ServerOpcode::PetitionVote => {
+            decoded::<l2_protocol_game::server::PetitionVotePacket>(&mut r, no_fields)
+        }
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -2068,6 +2090,18 @@ fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
 
+fn earthquake_fields(p: &Earthquake) -> Value {
+    object!(p => x, y, z, intensity, duration)
+}
+
+fn ex_red_sky_fields(p: &ExRedSky) -> Value {
+    object!(p => duration)
+}
+
+fn special_camera_fields(p: &SpecialCamera) -> Value {
+    object!(p => id, force, angle1, angle2, time, duration, rel_yaw, rel_pitch, is_wide, rel_angle, unk)
+}
+
 fn server_primitive_fields(p: &ExServerPrimitive) -> Value {
     let entry = |e: &l2_protocol_game::server::Primitive| {
         json!({
@@ -2557,8 +2591,15 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::Earthquake,
+        ServerOpcode::Sunrise,
+        ServerOpcode::Sunset,
+        ServerOpcode::ExRedSky,
+        ServerOpcode::SpecialCamera,
         ServerOpcode::ExServerPrimitive,
         ServerOpcode::ShowBoard,
+        ServerOpcode::Snoop,
+        ServerOpcode::PetitionVote,
         ServerOpcode::AgitDecoInfo,
         ServerOpcode::ExShowAgitInfo,
         ServerOpcode::ChooseInventoryItem,
@@ -3377,6 +3418,62 @@ mod tests {
                 op.name()
             );
         }
+    }
+
+    /// M7-ADMIN-10: the petition and snoop packets.
+    #[test]
+    fn petition_and_snoop_packets_show_their_fields() {
+        use ConnectionState::InGame;
+        use l2_protocol_game::client::{
+            RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit,
+        };
+        use l2_protocol_game::server::{ChatType, PetitionVotePacket, Snoop};
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestPetition {
+                    content: "stuck".into(),
+                    kind: 3
+                }
+                .to_bytes()
+            ),
+            json!({ "content": "stuck", "kind": 3 })
+        );
+        assert_eq!(c2s_fields(InGame, &RequestPetitionCancel.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestPetitionFeedback {
+                    unknown: 0,
+                    rate: 4,
+                    message: "thanks".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "unknown": 0, "rate": 4, "message": "thanks" })
+        );
+        assert_eq!(
+            c2s_fields(InGame, &SnoopQuit { snoop_id: 77 }.to_bytes()),
+            json!({ "snoop_id": 77 })
+        );
+        let snoop = Snoop {
+            convo_id: 5,
+            name: "Target".into(),
+            chat_type: ChatType::Whisper,
+            speaker: "Friend".into(),
+            message: "hi".into(),
+        };
+        assert_eq!(
+            s2c(&snoop.to_bytes()).unwrap(),
+            json!({
+                "convo_id": 5,
+                "name": "Target",
+                "chat_type": 2,
+                "speaker": "Friend",
+                "message": "hi",
+            })
+        );
+        assert_eq!(s2c(&PetitionVotePacket.to_bytes()).unwrap(), json!({}));
     }
 
     #[test]

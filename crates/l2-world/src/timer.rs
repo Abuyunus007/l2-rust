@@ -161,6 +161,9 @@ pub enum TimerKind {
     Untransform(ObjectId),
     /// Java `setPlayerClass`'s `finally`: `sendSkillList()` 100 ms later (`admin/edit_char.rs`).
     ClassChangeSkillList(ObjectId),
+    /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
+    /// `admin/control.rs`.
+    Admin(crate::admin::control::AdminTimer),
 }
 
 #[derive(Debug, Default)]

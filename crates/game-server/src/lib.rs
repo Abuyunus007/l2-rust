@@ -657,6 +657,10 @@ impl Server {
         let punishments = persist::load_punishments(&pool).await;
         let char_names = persist::load_char_names(&pool).await;
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
+        // Java: AnnouncementsTable (the `announcements` rows, read only here) and the values the
+        // server control commands, the petitions and `//debug` read (M7-ADMIN-10).
+        let announcements = persist::load_announcements(&pool).await;
+        let admin_settings = world_data::admin_settings(&config, &paths.config_dir);
         // Java: FishingChampionshipManager (GameServer, with AltFishChampionshipEnabled): the rows of
         // `fishing_championship` and `fishChampionshipEnd`, read only.
         let fishing_championship = if config.general.alt_fish_championship_enabled {
@@ -869,6 +873,10 @@ impl Server {
                     world.set_punishment_settings(punishment_settings);
                     world.load_char_names(char_names);
                     world.load_punishments(punishments);
+                    // Java: AnnouncementsTable (automatic announcements start here), the
+                    // values of `//server_*` and the petition limits (M7-ADMIN-10).
+                    world.set_admin_settings(admin_settings);
+                    world.load_announcements(announcements);
                     // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
@@ -942,6 +950,33 @@ impl Server {
         // with a command on the world's channel.
         left_acks.set_world(world.handle());
 
+        // The requests of the world that are not its to do (M7-ADMIN-10): the end of a GM
+        // shutdown countdown (Java `System.exit`) and `//reload html`, whose files are read here,
+        // never inside a tick.
+        let (shutdown, shutdown_requests) = ShutdownHandle::channel();
+        {
+            let (stop, acks) = (shutdown.clone(), left_acks.clone());
+            let root = datapack_root.clone();
+            let (lazy, check_encoding) = (!config.general.htm_cache, config.general.check_html_encoding);
+            left_acks.set_control(Arc::new(move |request| match request {
+                l2_world::ControlRequest::Shutdown { restart } => stop.request(restart),
+                l2_world::ControlRequest::ReloadHtml { requester, path } => {
+                    let (acks, root) = (acks.clone(), root.clone());
+                    tokio::task::spawn_blocking(move || {
+                        let result = reload_html(&root, path.as_deref(), lazy, check_encoding);
+                        let answer = WorldCommand::HtmlReloaded {
+                            requester,
+                            path,
+                            result,
+                        };
+                        if !acks.send_to_world(answer) {
+                            warn!("The html reload could not be handed to the world.");
+                        }
+                    });
+                }
+            }));
+        }
+
         // D-14: the path workers answer with `WorldCommand::PathFound` on the world's channel.
         let geo = geo::Geo::start(
             geo_engine,
@@ -961,7 +996,6 @@ impl Server {
             }
         }
 
-        let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let max_players = config.server.maximum_online_users;
         let state = Arc::new(GameState {
             config: Arc::new(config),
@@ -993,6 +1027,24 @@ impl Server {
         // `LoginServerThread` after the listener; nothing can log in before the link is up
         // either way.)
         let link = ls_link::start(&mut server);
+        // Java `LoginServerThread._serverName`: the name the login server gave this server, which
+        // `//server_login` shows (M7-ADMIN-10).
+        {
+            let (mut status, world) = (link.subscribe(), server.state().world.clone());
+            server.spawn(async move {
+                let mut last = String::new();
+                loop {
+                    let name = status.borrow_and_update().server_name.clone();
+                    if !name.is_empty() && name != last {
+                        world.send(WorldCommand::LoginServerRegistered { name: name.clone() });
+                        last = name;
+                    }
+                    if status.changed().await.is_err() {
+                        break;
+                    }
+                }
+            });
+        }
         if let Some(mut notices) = server.take_ls_notices() {
             // PlayerInGame / PlayerLogout in the order the world and the persistence task
             // produced them; a logout only after the character is stored (D-15).
@@ -1004,6 +1056,12 @@ impl Server {
                         LsNotice::AccessLevel { account, level } => {
                             link.send_access_level(&account, level).await
                         }
+                        // The world only sends the six valid statuses.
+                        LsNotice::SetServerStatus(status) => {
+                            let _ = link.set_server_status(status).await;
+                        }
+                        LsNotice::SetMaxPlayer(max_players) => link.set_max_player(max_players).await,
+                        LsNotice::ServerStatus { id, value } => link.send_server_status(id, value).await,
                     }
                 }
             });
@@ -1120,6 +1178,23 @@ impl Server {
         info!("Game server stopped, exit code {}.", reason.code());
         reason
     }
+}
+
+/// `//reload html [path]` (Java `HtmCache.reload`): the html cache read again. With a `path`
+/// (relative to `data/html/`) the file or folder must exist, like Java's check. The whole cache
+/// is read either way, see `l2_world::admin::reload`.
+fn reload_html(
+    root: &Path,
+    path: Option<&str>,
+    lazy: bool,
+    check_encoding: bool,
+) -> l2_world::HtmlReloadResult {
+    if let Some(path) = path
+        && !root.join("data/html").join(path).exists()
+    {
+        return l2_world::HtmlReloadResult::MissingFile;
+    }
+    l2_world::HtmlReloadResult::Reloaded(Arc::new(l2_data::HtmCache::load_with(root, lazy, check_encoding)))
 }
 
 /// Java: `new File(config.getString("DatapackRoot", ".").replace('\\', '/')).getCanonicalFile()`.
@@ -1306,6 +1381,28 @@ mod tests {
             settings.remove_castle_circlets,
             config.player.remove_castle_circlets
         );
+    }
+
+    /// `//reload html`: a path must exist below `data/html`, the cache is read again either way.
+    #[test]
+    fn reload_html_checks_the_path_and_reads_the_files_again() {
+        use l2_world::HtmlReloadResult;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("data/html/admin")).unwrap();
+        std::fs::write(dir.path().join("data/html/admin/a.htm"), "<html>a</html>").unwrap();
+
+        assert!(matches!(
+            reload_html(dir.path(), Some("admin/nope.htm"), false, true),
+            HtmlReloadResult::MissingFile
+        ));
+        for path in [Some("admin/a.htm"), Some("admin"), None] {
+            match reload_html(dir.path(), path, false, true) {
+                HtmlReloadResult::Reloaded(cache) => {
+                    assert!(cache.contains("data/html/admin/a.htm"), "{path:?}");
+                }
+                other => panic!("{path:?}: {other:?}"),
+            }
+        }
     }
 
     #[test]

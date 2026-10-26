@@ -187,6 +187,18 @@ pub enum PersistCommand {
     /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
     /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflineTrade(crate::trade::OfflineTradeWrite),
+    /// A write of the `announcements` table with Java's statement (`//announces`), see
+    /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
+    Announcement(crate::admin::announce::AnnouncementWrite),
+    /// Java `RequestPetitionFeedback`: `INSERT INTO petition_feedback VALUES (?,?,?,?,?)`.
+    PetitionFeedback {
+        character: String,
+        gm: String,
+        rate: i32,
+        message: String,
+        /// `System.currentTimeMillis()`.
+        time: i64,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,
@@ -217,10 +229,36 @@ pub enum LsEvent {
     /// Java `LoginServerThread.sendLogout` → `PlayerLogout` without the character leaving: a
     /// player who stays in the world as an offline trader frees its account (M6-FU-14).
     PlayerLogout { account: String },
+    /// Java `LoginServerThread.setServerStatus` (`AdminLogin`, `Shutdown`): the list status
+    /// (one of the `STATUS_*` values) is sent as the `SERVER_LIST_STATUS` attribute and kept.
+    SetServerStatus(i32),
+    /// Java `LoginServerThread.setMaxPlayer`: the `MAX_PLAYERS` attribute, kept for the pages.
+    SetMaxPlayer(i32),
+    /// Java `LoginServerThread.sendServerStatus(id, value)`: one attribute of `ServerStatus`
+    /// (`sendServerType`, the age).
+    ServerStatus { id: i32, value: i32 },
+}
+
+/// A request of the world to the process around it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ControlRequest {
+    /// The GM shutdown countdown is over (Java `Shutdown` calling `System.exit(0)` or
+    /// `System.exit(2)`): stop the server, with exit code 2 for a restart.
+    Shutdown { restart: bool },
+    /// `//reload html [path]`: read the html files again. The answer comes back as
+    /// `WorldCommand::HtmlReloaded` carrying the same `requester` and `path`.
+    ReloadHtml {
+        requester: l2_util::ObjectId,
+        path: Option<String>,
+    },
 }
 
 /// Everything the world produces that is not a packet for a player.
 pub trait Outbox: Send {
     fn persist(&mut self, command: PersistCommand);
     fn ls_event(&mut self, event: LsEvent);
+
+    /// Asks the process to do something that is not the world's to do (stop the server). The
+    /// default ignores it, which is what an outbox without a process (a test) does.
+    fn control(&mut self, _request: ControlRequest) {}
 }

@@ -350,9 +350,9 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 | [M7-FU-01](M7/M7-FU-01.md) | Hall siege guard AI, doorman hall branch | sonnet | spot | SIEGE-02, CHSIEGE-01, NPC-01 | merged |
 | [M7-FU-02](M7/M7-FU-02.md) | Fixes from the M7 end-to-end tests (Flag Display, function rows) | sonnet | full | E2E-01 | merged |
 | [M7-FU-03](M7/M7-FU-03.md) | Crest ids side by side, auction list re-read, residence door dialogs, siege trap zones | sonnet | full | none | merged |
-| [M7-ADMIN-08](M7/M7-ADMIN-08.md) | Admin: effects, menu, teleport, skills, char tools | haiku | spot | none | in-progress |
+| [M7-ADMIN-08](M7/M7-ADMIN-08.md) | Admin: effects, menu, teleport, skills, char tools | haiku | spot | none | merged |
 | [M7-ADMIN-09](M7/M7-ADMIN-09.md) | Admin: edit char, spawn, admin page, items, doors, shops | haiku | spot | none | merged |
-| [M7-ADMIN-10](M7/M7-ADMIN-10.md) | Admin: punishments, kick, server control, announcements, petitions | sonnet | full | none | in-progress |
+| [M7-ADMIN-10](M7/M7-ADMIN-10.md) | Admin: punishments, kick, server control, announcements, petitions | sonnet | full | none | merged |
 | [M7-ADMIN-11](M7/M7-ADMIN-11.md) | Admin: geodata, regions, zones, zone build, path nodes | sonnet | spot | none | merged |
 | [M7-ADMIN-12](M7/M7-ADMIN-12.md) | Admin: the rest of edit char, spawn and the admin page | sonnet | full | ADMIN-09 | in-progress |
 | [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |

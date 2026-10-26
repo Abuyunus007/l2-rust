@@ -129,6 +129,9 @@ impl World {
         let Some(_player) = self.players.remove(&id) else {
             return;
         };
+        // `deleteMe`: `AdminData.deleteGm(this)`, the snoop sets (M7-ADMIN-10) and the `//debug`
+        // tasks that would end with the next run.
+        self.admin_on_player_leave(id);
         if let Some(session) = self.player_sessions.remove(&id) {
             self.sessions.remove(&session);
         }

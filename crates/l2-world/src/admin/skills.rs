@@ -22,8 +22,6 @@
 // effect list.
 //
 // # Left out, with the system that brings it
-// - `//add_clan_skill`, `//give_clan_skills` and `//give_all_clan_skills`: the pledge skill tree
-//   comes with M6-CLAN-03, so these words are not registered yet.
 // - `//switch_gm_buffs`: the GM skill trees (`SkillTreeData.getGMSkillTree`) are not loaded, so
 //   the word is not registered yet.
 // - The `//get_skills` / `//reset_skills` stash is Java's static `adminSkills`: one per server,
@@ -329,7 +327,7 @@ pub(crate) fn player_class_name(world: &World, player: ObjectId) -> Result<Strin
 
 /// Java `AdminSkill.showMainPage(activeChar)`: the target check, then `charskills.htm` for the
 /// target.
-fn show_main_page(world: &mut World, gm: ObjectId) -> Outcome {
+pub(crate) fn show_main_page(world: &mut World, gm: ObjectId) -> Outcome {
     let Some(player) = target_player(world, gm) else {
         return Ok(());
     };

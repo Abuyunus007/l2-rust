@@ -25,38 +25,59 @@
 
 pub mod access_level;
 pub mod admin_page;
+pub mod announce;
+pub mod augment;
+pub mod camera;
 pub mod chsiege;
 pub mod clan;
+pub mod clan_skills;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
+pub mod config_page;
+pub mod control;
 pub mod create_item;
+pub mod debug;
 pub mod delete;
 pub mod destroy_items;
 pub mod door;
 pub mod edit_char;
+pub mod effects;
+pub mod element;
 pub mod enchant;
 pub mod exp_sp;
 pub mod fence;
 pub mod flags;
+pub mod forge;
 pub mod geodata;
+pub mod gm;
 pub mod gm_shop;
+pub mod gm_tools;
 pub mod html;
 pub mod invul;
 pub mod karma;
 pub mod level;
 pub mod manor;
+pub mod menu;
+pub mod messages;
+pub mod page;
 pub mod party;
+pub mod pccafe;
+pub mod petition;
 pub mod punishments;
+pub mod reload;
 pub mod repair;
 pub mod rights;
 pub mod scan;
 pub mod search;
 pub mod skill_test;
 pub mod skills;
+pub mod sound;
 pub mod spawn_admin;
 pub mod summon;
+pub mod teleport;
 pub mod transform;
+pub mod vitality;
 pub mod zone_tools;
 
 use std::collections::HashMap;
@@ -137,8 +158,13 @@ pub(crate) struct AdminWorld {
     /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
     /// Java keeps one such list for the whole server, so this is one list too.
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
+    /// The state of the server control, GM tool, announcement, petition and debug handlers
+    /// (M7-ADMIN-10, see `control.rs`).
+    pub(crate) ctl: control::ControlWorld,
     /// `AdminDoorControl.PLAYER_SHOWN_DOORS`: the door ids each GM's `//showdoors` has drawn.
     pub(crate) shown_doors: HashMap<ObjectId, std::collections::BTreeSet<i32>>,
+    /// Java `CreatureStat._gmSpeedMultiplier` of each creature `//gmspeed` changed (`gm.rs`).
+    pub(crate) gm_speed: HashMap<ObjectId, f64>,
     /// The zone builder and the zone markers (`zone_tools.rs`).
     pub(crate) zones: zone_tools::ZoneAdmin,
     /// The path search of `//path_find` (`geodata.rs`).
@@ -149,6 +175,18 @@ impl Default for AdminWorld {
     fn default() -> Self {
         let mut handlers = AdminHandlers::default();
         commands::register_core(&mut handlers);
+        effects::register(&mut handlers);
+        menu::register(&mut handlers);
+        teleport::register(&mut handlers);
+        gm::register(&mut handlers);
+        camera::register(&mut handlers);
+        page::register(&mut handlers);
+        messages::register(&mut handlers);
+        vitality::register(&mut handlers);
+        augment::register(&mut handlers);
+        element::register(&mut handlers);
+        clan_skills::register(&mut handlers);
+        pccafe::register(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
@@ -162,6 +200,7 @@ impl Default for AdminWorld {
         search::register(&mut handlers);
         fence::register(&mut handlers);
         flags::register(&mut handlers);
+        config_page::register(&mut handlers);
         access_level::register(&mut handlers);
         repair::register(&mut handlers);
         skill_test::register(&mut handlers);
@@ -184,12 +223,22 @@ impl Default for AdminWorld {
         manor::register(&mut handlers);
         geodata::register(&mut handlers);
         zone_tools::register(&mut handlers);
+        // M7-ADMIN-10: server control, GM tools, announcements, petitions, reload, forge, debug.
+        control::register(&mut handlers);
+        gm_tools::register(&mut handlers);
+        announce::register(&mut handlers);
+        petition::register(&mut handlers);
+        reload::register(&mut handlers);
+        forge::register(&mut handlers);
+        debug::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
+            ctl: control::ControlWorld::default(),
             shown_doors: HashMap::new(),
+            gm_speed: HashMap::new(),
             zones: zone_tools::ZoneAdmin::default(),
             path: geodata::PathAdmin::default(),
         }

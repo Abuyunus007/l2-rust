@@ -100,7 +100,8 @@ impl World {
         self.players.get(&id).map_or(0, |p| p.movement.tele_mode)
     }
 
-    fn set_tele_mode(&mut self, id: ObjectId, mode: i32) {
+    /// Java `Player.setTeleMode(mode)`: the click-to-teleport mode of `//teleto` and `//instant_move`.
+    pub(crate) fn set_tele_mode(&mut self, id: ObjectId, mode: i32) {
         if let Some(p) = self.players.get_mut(&id) {
             p.movement.tele_mode = mode;
         }

@@ -17,8 +17,8 @@ use l2_util::ObjectId;
 
 use super::commands::java_split_space;
 use super::{AdminHandler, AdminHandlers, JavaException, parse_int};
-use crate::outbox::PersistCommand;
 use crate::command::LeaveReason;
+use crate::outbox::PersistCommand;
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;

@@ -25,7 +25,8 @@ use std::str::FromStr;
 use l2_data::ClassId;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    MagicSkillUse, NicknameChanged, PartySmallWindowDeleteAll, PartySmallWindowUpdate, SkillPosition, SystemMessage,
+    MagicSkillUse, NicknameChanged, PartySmallWindowDeleteAll, PartySmallWindowUpdate, SkillPosition,
+    SystemMessage,
 };
 use l2_util::ObjectId;
 
@@ -401,7 +402,10 @@ fn find_characters_per_account(world: &mut World, gm: ObjectId, player: ObjectId
 // NOTE(java-quirk): a bucket that Java turns into a tree (eight keys in one bucket of a table of
 // at least 64) iterates differently; a dualbox list never gets that big.
 fn java_hashmap_order(keys: &[String]) -> Vec<String> {
-    let hashed: Vec<(u32, String)> = keys.iter().map(|key| (java_string_hash(key), key.clone())).collect();
+    let hashed: Vec<(u32, String)> = keys
+        .iter()
+        .map(|key| (java_string_hash(key), key.clone()))
+        .collect();
     java_hashmap_order_hashed(&hashed)
 }
 
@@ -602,7 +606,10 @@ fn admin_tracert(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         .and_then(|p| p.gm.trace)
         .unwrap_or_default();
     for (i, hop) in hops.iter().enumerate() {
-        world.send_sys_message(gm, &format!("Hop{i}: {}.{}.{}.{}", hop[0], hop[1], hop[2], hop[3]));
+        world.send_sys_message(
+            gm,
+            &format!("Hop{i}: {}.{}.{}.{}", hop[0], hop[1], hop[2], hop[3]),
+        );
     }
     Ok(())
 }
@@ -1095,7 +1102,7 @@ fn set_noble(world: &mut World, id: ObjectId, value: bool) {
 /// Java `Double.parseDouble(text)` for the forms an admin types: optional surrounding white space,
 /// a sign, digits with an optional point and exponent, an optional `d`/`f` suffix, `NaN` and
 /// `Infinity`.
-fn java_parse_double(text: &str) -> Option<f64> {
+pub(super) fn java_parse_double(text: &str) -> Option<f64> {
     let text = text.trim_matches(|c: char| c <= ' ');
     let body = text.strip_suffix(['d', 'D', 'f', 'F']).unwrap_or(text);
     let unsigned = body.strip_prefix(['+', '-']).unwrap_or(body);
@@ -1214,7 +1221,10 @@ fn admin_setclass(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         .get(&target)
         .is_some_and(|p| p.data.class_id != p.data.base_class);
     let (race, old_mage) = world.players.get(&target).map_or((0, false), |p| {
-        (p.data.race, ClassId(u16::try_from(p.data.class_id).unwrap_or(0)).is_mage())
+        (
+            p.data.race,
+            ClassId(u16::try_from(p.data.class_id).unwrap_or(0)).is_mage(),
+        )
     });
     set_player_class(world, target, new_class);
     if let Some(player) = world.players.get_mut(&target)
@@ -1258,7 +1268,9 @@ fn admin_setclass(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 fn refresh_textures(world: &mut World, id: ObjectId) {
     world.transform_player(105, id);
     let due = world.tick + crate::timer::TimerWheel::ms_to_ticks(200);
-    world.timers.schedule_at(due, crate::timer::TimerKind::Untransform(id));
+    world
+        .timers
+        .schedule_at(due, crate::timer::TimerKind::Untransform(id));
 }
 
 /// Java `Player.setPlayerClass(id)` for a character who is not changing sub class: the academy
@@ -1314,7 +1326,9 @@ fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
     world.reward_skills(id);
     // The `finally` block: `applyItemSkills(); sendSkillList()` after 100 ms.
     let due = world.tick + crate::timer::TimerWheel::ms_to_ticks(100);
-    world.timers.schedule_at(due, crate::timer::TimerKind::ClassChangeSkillList(id));
+    world
+        .timers
+        .schedule_at(due, crate::timer::TimerKind::ClassChangeSkillList(id));
 }
 
 #[cfg(test)]

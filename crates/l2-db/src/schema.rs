@@ -4,6 +4,7 @@
 
 /// Every file of `crates/l2-db/sql/game`, in file name order.
 pub const GAME_SCHEMA: &[&str] = &[
+    include_str!("../sql/game/announcements.sql"),
     include_str!("../sql/game/auction.sql"),
     include_str!("../sql/game/auction_bid.sql"),
     include_str!("../sql/game/bot_reported_char_data.sql"),
@@ -65,6 +66,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/messages.sql"),
     include_str!("../sql/game/mods_wedding.sql"),
     include_str!("../sql/game/olympiad_nobles.sql"),
+    include_str!("../sql/game/petition_feedback.sql"),
     include_str!("../sql/game/pets.sql"),
     include_str!("../sql/game/punishments.sql"),
     include_str!("../sql/game/rainbowsprings_attacker_list.sql"),
