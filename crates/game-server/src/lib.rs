@@ -1378,6 +1378,28 @@ mod tests {
         );
     }
 
+    /// `//reload html`: a path must exist below `data/html`, the cache is read again either way.
+    #[test]
+    fn reload_html_checks_the_path_and_reads_the_files_again() {
+        use l2_world::HtmlReloadResult;
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("data/html/admin")).unwrap();
+        std::fs::write(dir.path().join("data/html/admin/a.htm"), "<html>a</html>").unwrap();
+
+        assert!(matches!(
+            reload_html(dir.path(), Some("admin/nope.htm"), false, true),
+            HtmlReloadResult::MissingFile
+        ));
+        for path in [Some("admin/a.htm"), Some("admin"), None] {
+            match reload_html(dir.path(), path, false, true) {
+                HtmlReloadResult::Reloaded(cache) => {
+                    assert!(cache.contains("data/html/admin/a.htm"), "{path:?}");
+                }
+                other => panic!("{path:?}: {other:?}"),
+            }
+        }
+    }
+
     #[test]
     fn paths_follow_the_java_dist_layout() {
         let paths = Paths::resolve(Path::new("dist/game"), Path::new("./config"));

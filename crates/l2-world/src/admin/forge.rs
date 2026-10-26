@@ -395,13 +395,12 @@ fn forge_send(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         part(kind, op_code, &mut packet);
     }
     if let Some(format) = &format {
-        for (i, ch) in format.chars().enumerate() {
+        for ch in format.chars() {
             let Some(value) = st.next_token() else {
                 world.send_sys_message(gm, "Not enough values!");
                 show_send_usage(world, gm);
                 return Ok(());
             };
-            let _ = i;
             let value = substitute(world, gm, value);
             if method != "cs" {
                 part(ch, &value, &mut packet);

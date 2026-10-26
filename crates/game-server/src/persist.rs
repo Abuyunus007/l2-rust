@@ -4454,6 +4454,10 @@ mod tests {
         Recipe(RecipeWrite),
         /// The fishing championship: the end of the period and the number of rows.
         Championship(i64, usize),
+        /// An `announcements` write (M7-ADMIN-10).
+        Announcement(AnnouncementWrite),
+        /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
+        PetitionFeedback(String, String, i32, String, i64),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -4635,6 +4639,36 @@ mod tests {
 
         async fn store_offline_trade(&mut self, write: &OfflineTradeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::OfflineTrade(write.clone()));
+            Ok(())
+        }
+
+        /// An insert gets the id 42; an announcement with the content "fail" cannot be stored.
+        async fn store_announcement(&mut self, write: &AnnouncementWrite) -> Result<i32, PersistError> {
+            self.calls.lock().unwrap().push(Call::Announcement(write.clone()));
+            match write {
+                AnnouncementWrite::Insert { content, .. } if content == "fail" => {
+                    Err(PersistError::NoSuchCharacter(0))
+                }
+                AnnouncementWrite::Insert { .. } => Ok(42),
+                _ => Ok(0),
+            }
+        }
+
+        async fn store_petition_feedback(
+            &mut self,
+            character: &str,
+            gm: &str,
+            rate: i32,
+            message: &str,
+            time: i64,
+        ) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::PetitionFeedback(
+                character.to_owned(),
+                gm.to_owned(),
+                rate,
+                message.to_owned(),
+                time,
+            ));
             Ok(())
         }
 
@@ -5867,5 +5901,150 @@ mod tests {
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(300));
         std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(1));
+    }
+
+    /// M7-ADMIN-10: the login server switches of the admin commands reach the link in order.
+    #[tokio::test]
+    async fn the_login_server_switches_become_notices() {
+        let (calls, notices) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Ls(LsEvent::SetServerStatus(5)),
+                OutboxMessage::Ls(LsEvent::SetMaxPlayer(150)),
+                OutboxMessage::Ls(LsEvent::ServerStatus { id: 2, value: 6 }),
+                OutboxMessage::Ls(LsEvent::SetServerStatus(0)),
+            ],
+        )
+        .await;
+        assert!(calls.is_empty());
+        assert_eq!(
+            notices,
+            vec![
+                LsNotice::SetServerStatus(5),
+                LsNotice::SetMaxPlayer(150),
+                LsNotice::ServerStatus { id: 2, value: 6 },
+                LsNotice::SetServerStatus(0),
+            ]
+        );
+    }
+
+    /// M7-ADMIN-10: the id of a new announcement comes back to the world; a failure too.
+    #[tokio::test]
+    async fn an_announcement_insert_is_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let insert = |ticket: u32, content: &str| AnnouncementWrite::Insert {
+            ticket,
+            kind: 0,
+            content: content.to_owned(),
+            author: "GM".to_owned(),
+            auto: None,
+        };
+        for write in [
+            insert(1, "hello"),
+            insert(2, "fail"),
+            AnnouncementWrite::Update {
+                id: 42,
+                kind: 0,
+                content: "x".to_owned(),
+                author: "GM".to_owned(),
+                auto: None,
+            },
+            AnnouncementWrite::Delete { id: 42 },
+        ] {
+            tx.send(OutboxMessage::Persist(PersistCommand::Announcement(write)))
+                .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert!(matches!(
+            answers.as_slice(),
+            [
+                l2_world::WorldCommand::AnnouncementStored {
+                    ticket: 1,
+                    result: Ok(42)
+                },
+                l2_world::WorldCommand::AnnouncementStored {
+                    ticket: 2,
+                    result: Err(())
+                },
+            ]
+        ));
+        // The update and the delete are writes without an answer.
+        assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    /// M7-ADMIN-10: a petition feedback is a write of its own.
+    #[tokio::test]
+    async fn petition_feedback_is_stored() {
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![OutboxMessage::Persist(PersistCommand::PetitionFeedback {
+                character: "Ann".to_owned(),
+                gm: "Bob".to_owned(),
+                rate: 4,
+                message: "thanks".to_owned(),
+                time: 99,
+            })],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![Call::PetitionFeedback(
+                "Ann".to_owned(),
+                "Bob".to_owned(),
+                4,
+                "thanks".to_owned(),
+                99
+            )]
+        );
+    }
+
+    /// M7-ADMIN-10: the requests of the world that are not its to do go to the control handler.
+    #[tokio::test]
+    async fn control_requests_reach_the_handler() {
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let acks = LeftAcks::default();
+        // Without a handler a request is dropped.
+        acks.control(l2_world::ControlRequest::Shutdown { restart: false });
+        let sink = Arc::clone(&seen);
+        acks.set_control(Arc::new(move |request| sink.lock().unwrap().push(request)));
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(Recording::default(), rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Control(l2_world::ControlRequest::Shutdown {
+            restart: true,
+        }))
+        .unwrap();
+        tx.send(OutboxMessage::Control(l2_world::ControlRequest::ReloadHtml {
+            requester: ObjectId(7),
+            path: Some("admin/x.htm".to_owned()),
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            seen.lock().unwrap().as_slice(),
+            [
+                l2_world::ControlRequest::Shutdown { restart: true },
+                l2_world::ControlRequest::ReloadHtml {
+                    requester: ObjectId(7),
+                    path: Some("admin/x.htm".to_owned())
+                },
+            ]
+        );
     }
 }

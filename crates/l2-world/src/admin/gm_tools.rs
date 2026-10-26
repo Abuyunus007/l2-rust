@@ -21,8 +21,8 @@
 // the same line forever (a `StackOverflowError`). The forwarding stops after a few levels.
 //
 // Left out, with the reason:
-// - `%os_ver%`, the memory and the JVM thread and garbage collector numbers of `//serverinfo`
-//   have no Rust counterpart; see [`server_info`].
+// - the memory and the JVM thread and garbage collector numbers of `//serverinfo` have no Rust
+//   counterpart (and `%os_ver%` shows the CPU architecture); see [`server_info`].
 
 use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
@@ -450,8 +450,9 @@ fn format_up_time(millis: i64) -> String {
 /// Java `AdminServerInfo.onCommand`.
 ///
 /// The page is Java's. The JVM numbers have no counterpart in a Rust process: the heap numbers
-/// are the resident memory of the process on Linux (0 elsewhere), `%os_ver%` is not known to the
-/// standard library, and the thread and garbage collector counters read 0 / `none`.
+/// are the resident memory of the process on Linux (0 elsewhere), `%os_ver%` shows the CPU
+/// architecture (the standard library does not know the OS version), and the thread and garbage
+/// collector counters read 0 / `none`.
 fn server_info(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     if command != "admin_serverinfo" {
         return Ok(());

@@ -350,7 +350,7 @@ fn admin_login(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             let mut st = Tokens::new(command);
             st.next_token();
             let modes: Vec<&str> = std::iter::from_fn(|| st.next_token()).map(str::trim).collect();
-            let new_type = match parse_int(modes[0]) {
+            let new_type = match parse_int(modes.first().copied().unwrap_or_default()) {
                 Ok(value) => value,
                 Err(_) => server_type_id(&modes),
             };
