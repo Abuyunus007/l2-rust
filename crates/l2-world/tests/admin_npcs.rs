@@ -10,7 +10,7 @@ use l2_data::{HtmCache, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOption
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam};
 use l2_world::*;
 
 type Sent = Vec<(i32, Vec<u8>)>;
@@ -45,14 +45,29 @@ impl Outbox for NullOutbox {
 /// Levels 0, 70 and 100 (a GM), and the rights of the words of this file (level 100).
 fn rights() -> AdminRights {
     let mut rights = AdminRights::default();
-    for (level, child) in [(0, 0), (70, 0), (100, 70)] {
+    // The shipped `AccessLevels.xml` chain: 100 inherits 70, 70 inherits 60 ... down to 30.
+    for (level, child) in [
+        (-1, 0),
+        (0, 0),
+        (10, 0),
+        (20, 10),
+        (30, 20),
+        (40, 30),
+        (50, 40),
+        (60, 50),
+        (70, 60),
+        (100, 70),
+    ] {
         rights.add_level(level, child);
     }
-    for command in ["spawn", "delete", "delete_group"] {
+    for command in ["spawn", "delete"] {
         rights.add_command(command, 100, false);
     }
-    // `delete_group` is a confirmed command in the shipped `AdminCommands.xml`.
+    // `delete_group` and `deleteNpcByObjectId` have `confirmDlg="true"` in the shipped
+    // `AdminCommands.xml`; `scan` is level 30.
     rights.add_command("delete_group", 100, true);
+    rights.add_command("deleteNpcByObjectId", 100, true);
+    rights.add_command("scan", 30, false);
     rights
 }
 
@@ -135,6 +150,10 @@ impl Root {
         let file = dir.path().join("data/spawns/none.xml");
         std::fs::create_dir_all(file.parent().unwrap()).unwrap();
         std::fs::write(file, r#"<?xml version="1.0"?><list enabled="true"></list>"#).unwrap();
+        // The scan page: its placeholders are what the handler fills.
+        let page = dir.path().join("data/html/admin/scan.htm");
+        std::fs::create_dir_all(page.parent().unwrap()).unwrap();
+        std::fs::write(page, "<html><body>SCAN %pages% %data%</body></html>").unwrap();
         Self(dir)
     }
 
@@ -305,4 +324,93 @@ fn delete_group_of_an_npc_without_a_territory_is_the_incorrect_target() {
     s.world.admin_command(ObjectId(GM), "admin_delete_group", false);
     assert_eq!(texts(&s.log.take()), vec!["Incorrect target.".to_owned()]);
     assert_eq!(rats(&s).len(), 1, "the rat stays");
+}
+
+// ----------------------------------------------------------------------------- //scan
+
+fn pages(out: &Sent) -> Vec<String> {
+    out.iter()
+        .filter(|(_, b)| name_of(b) == ServerOpcode::NpcHtmlMessage.name())
+        .map(|(_, b)| {
+            let skip = if b[0] == 0xFE { 3 } else { 1 };
+            NpcHtmlMessage::decode(&mut PacketReader::new(&b[skip..])).unwrap().html
+        })
+        .collect()
+}
+
+#[test]
+fn scan_lists_the_npcs_around_with_their_delete_links() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    let rat = spawn_rat(&mut s);
+    s.log.take();
+    cmd(&mut s, "scan");
+    let raw = s.log.take();
+    let html = pages(&raw);
+    assert_eq!(html.len(), 1);
+    assert!(html[0].starts_with("<html><body>SCAN "), "{}", html[0]);
+    assert!(html[0].contains("<td width=\"45\">2000</td>"), "the template id: {}", html[0]);
+    assert!(html[0].contains("Rat"), "{}", html[0]);
+    assert!(
+        html[0].contains(&format!("admin_deleteNpcByObjectId objectId={}", rat.0)),
+        "the delete link: {}",
+        html[0]
+    );
+    assert!(!html[0].contains("%data%"), "every placeholder is replaced");
+}
+
+#[test]
+fn scan_filters_by_template_id_and_by_name() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    spawn_rat(&mut s);
+    s.log.take();
+    cmd(&mut s, "scan id=1001");
+    let html = pages(&s.log.take());
+    assert!(!html[0].contains("admin_move_to"), "no NPC has id 1001: {}", html[0]);
+    cmd(&mut s, "scan name=ra");
+    let html = pages(&s.log.take());
+    assert!(html[0].contains("admin_move_to"), "the rat starts with ra: {}", html[0]);
+    cmd(&mut s, "scan name=wolf");
+    let html = pages(&s.log.take());
+    assert!(!html[0].contains("admin_move_to"), "{}", html[0]);
+}
+
+#[test]
+fn delete_npc_by_object_id_removes_the_npc() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    let rat = spawn_rat(&mut s);
+    s.log.take();
+    // The typed word asks first; the answer (here `admin_command` without the question) runs it.
+    cmd(&mut s, &format!("deleteNpcByObjectId objectId={}", rat.0));
+    assert_eq!(rats(&s).len(), 1, "the dialog comes first");
+    s.world.admin_command(
+        ObjectId(GM),
+        &format!("admin_deleteNpcByObjectId objectId={}", rat.0),
+        false,
+    );
+    assert!(rats(&s).is_empty());
+    assert_eq!(texts(&s.log.take()), vec!["Rat has been deleted.".to_owned()]);
+}
+
+#[test]
+fn delete_npc_by_object_id_refuses_a_bad_id() {
+    let mut s = setup();
+    enter_gm(&mut s);
+    s.log.take();
+    // The confirmed word: the answer runs it (here `admin_command` with the confirmation off).
+    s.world.admin_command(ObjectId(GM), "admin_deleteNpcByObjectId", false);
+    s.world
+        .admin_command(ObjectId(GM), "admin_deleteNpcByObjectId objectId=0", false);
+    s.world
+        .admin_command(ObjectId(GM), "admin_deleteNpcByObjectId objectId=999999", false);
+    assert_eq!(
+        texts(&s.log.take()),
+        vec![
+            "Usage: //deletenpcbyobjectid objectId=<object_id>".to_owned(),
+            "objectId is not set or invalid!".to_owned(),
+            "NPC does not exist or object_id does not belong to an NPC".to_owned(),
+        ]
+    );
 }

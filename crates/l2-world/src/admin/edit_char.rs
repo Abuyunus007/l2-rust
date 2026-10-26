@@ -123,7 +123,7 @@ fn is_detached(world: &World, id: ObjectId) -> bool {
 
 /// Java `PageBuilder` with `NextPrevPageHandler` and `BypassParserFormatter` (`bypass page=N`)
 /// and `ButtonsStyle`: the `<<  <  Page: n/m  >  >>` row of the character list.
-fn next_prev_pager(bypass: &str, current: i32, pages: i32) -> String {
+pub(crate) fn next_prev_pager(bypass: &str, current: i32, pages: i32) -> String {
     let link = |page: i32, name: &str, enabled: bool| -> String {
         if enabled {
             format!("<td>{name}</td>")
