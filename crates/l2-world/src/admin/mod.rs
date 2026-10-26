@@ -38,6 +38,7 @@ pub mod fence;
 pub mod gm_shop;
 pub mod scan;
 pub mod search;
+pub mod skill_test;
 pub mod exp_sp;
 pub mod html;
 pub mod invul;
@@ -149,6 +150,7 @@ impl Default for AdminWorld {
         scan::register(&mut handlers);
         search::register(&mut handlers);
         fence::register(&mut handlers);
+        skill_test::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);
