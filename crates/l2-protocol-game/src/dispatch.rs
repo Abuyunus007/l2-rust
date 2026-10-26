@@ -61,10 +61,6 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
-use crate::client::{
-    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
-    RequestHennaRemove, RequestHennaRemoveList,
-};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
@@ -77,6 +73,10 @@ use crate::client::{
 use crate::client::{
     RequestExEnchantSkill, RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail,
     RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
+};
+use crate::client::{
+    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
+    RequestHennaRemove, RequestHennaRemoveList,
 };
 use crate::client::{RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit};
 use crate::client::{
@@ -1117,15 +1117,21 @@ mod tests {
         );
         assert_eq!(
             decode(InGame, 0x6F, &[7, 0, 0, 0]).unwrap(),
-            Some(ClientPacket::RequestHennaEquip(RequestHennaEquip { symbol_id: 7 }))
+            Some(ClientPacket::RequestHennaEquip(RequestHennaEquip {
+                symbol_id: 7
+            }))
         );
         assert_eq!(
             decode(InGame, 0xC3, &[0, 0, 0, 0]).unwrap(),
-            Some(ClientPacket::RequestHennaItemList(RequestHennaItemList { unknown: 0 }))
+            Some(ClientPacket::RequestHennaItemList(RequestHennaItemList {
+                unknown: 0
+            }))
         );
         assert_eq!(
             decode(InGame, 0x72, &[9, 0, 0, 0]).unwrap(),
-            Some(ClientPacket::RequestHennaRemove(RequestHennaRemove { symbol_id: 9 }))
+            Some(ClientPacket::RequestHennaRemove(RequestHennaRemove {
+                symbol_id: 9
+            }))
         );
         assert_eq!(decode(Authenticated, 0x6F, &[7, 0, 0, 0]).unwrap(), None);
         // The shortcut bar only exists in game.

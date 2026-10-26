@@ -257,8 +257,10 @@ impl Scene {
             Arc::new(Zones::load(root.path())),
             Arc::new(MapRegions::load(root.path())),
         );
-        let mut profile = PlayerProfile::default();
-        profile.hennas = hennas;
+        let profile = PlayerProfile {
+            hennas,
+            ..PlayerProfile::default()
+        };
         let data = PlayerData {
             object_id: ME,
             account: "acc".into(),
@@ -392,12 +394,18 @@ fn equip_pays_the_fee_fills_the_slot_and_writes_the_row() {
     assert_eq!((info.str, info.con, info.dye_ids.clone()), (2, -1, vec![1]));
     assert_eq!(
         message_ids(&out),
-        [SystemMessageId::S2S1HasDisappeared, SystemMessageId::TheSymbolHasBeenAdded]
+        [
+            SystemMessageId::S2S1HasDisappeared,
+            SystemMessageId::TheSymbolHasBeenAdded
+        ]
     );
     let gone = &decoded::<SystemMessage>(&out, "SYSTEM_MESSAGE")[0];
     assert_eq!(
         gone.params,
-        [SystemMessageParam::ItemName(DYE_A), SystemMessageParam::LongNumber(10)]
+        [
+            SystemMessageParam::ItemName(DYE_A),
+            SystemMessageParam::LongNumber(10)
+        ]
     );
     assert!(!names(&out).contains(&"ACTION_FAIL".to_owned()));
 }
@@ -448,7 +456,10 @@ fn equip_refusals_change_nothing() {
     let mut s = Scene::new(2, [0; 3]);
     // Dye B is plentiful, dye C only for class 0.
     let out = s.henna(HennaInput::Equip { symbol_id: 99 });
-    assert!(message_ids(&out).is_empty(), "an unknown dye id only fails the action");
+    assert!(
+        message_ids(&out).is_empty(),
+        "an unknown dye id only fails the action"
+    );
     assert_eq!(names(&out), ["ACTION_FAIL"]);
 
     s.wait();
@@ -502,12 +513,18 @@ fn remove_refunds_the_dyes_takes_the_fee_and_deletes_the_row() {
     );
     assert_eq!(
         message_ids(&out),
-        [SystemMessageId::YouHaveEarnedS2S1S, SystemMessageId::TheSymbolHasBeenDeleted]
+        [
+            SystemMessageId::YouHaveEarnedS2S1S,
+            SystemMessageId::TheSymbolHasBeenDeleted
+        ]
     );
     let earned = &decoded::<SystemMessage>(&out, "SYSTEM_MESSAGE")[0];
     assert_eq!(
         earned.params,
-        [SystemMessageParam::ItemName(DYE_A), SystemMessageParam::LongNumber(5)]
+        [
+            SystemMessageParam::ItemName(DYE_A),
+            SystemMessageParam::LongNumber(5)
+        ]
     );
     let info = &decoded::<HennaInfo>(&out, "HENNA_INFO")[0];
     assert!(info.dye_ids.is_empty());
@@ -634,7 +651,11 @@ fn the_symbol_maker_pages_and_lists() {
     let out = talk(&mut s);
     let pages = html_of(&out);
     assert_eq!(pages.len(), 1, "{:?}", names(&out));
-    assert!(pages[0].html.starts_with(&format!("<html><body>Symbols {} Hero ", npc.0)));
+    assert!(
+        pages[0]
+            .html
+            .starts_with(&format!("<html><body>Symbols {} Hero ", npc.0))
+    );
 
     s.wait();
     let out = s.input(ClientInput::Bypass {

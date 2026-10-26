@@ -95,6 +95,9 @@ mod tests {
         round_trip(&RequestHennaRemoveList { unknown: 1 }, 0x70);
         round_trip(&RequestHennaItemRemoveInfo { symbol_id: -2 }, 0x71);
         round_trip(&RequestHennaRemove { symbol_id: 12 }, 0x72);
-        assert_eq!(RequestHennaEquip { symbol_id: 300 }.to_bytes(), [0x6F, 0x2C, 1, 0, 0]);
+        assert_eq!(
+            RequestHennaEquip { symbol_id: 300 }.to_bytes(),
+            [0x6F, 0x2C, 1, 0, 0]
+        );
     }
 }

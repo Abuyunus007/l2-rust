@@ -114,7 +114,13 @@ impl World {
     /// Java `Player.getHenna(slot)` (1 to 3): a slot whose dye the datapack does not know is empty,
     /// like Java's `_henna[slot - 1] = HennaData.getHenna(symbolId)` gives null for it.
     fn henna_in_slot(&self, id: ObjectId, slot: usize) -> Option<Henna> {
-        let dye_id = *self.players.get(&id)?.data.profile.hennas.get(slot.checked_sub(1)?)?;
+        let dye_id = *self
+            .players
+            .get(&id)?
+            .data
+            .profile
+            .hennas
+            .get(slot.checked_sub(1)?)?;
         self.henna_data(dye_id)
     }
 
@@ -148,12 +154,13 @@ impl World {
         };
         player.data.profile.hennas[slot - 1] = henna.dye_id;
         let class_index = player.data.profile.class_index;
-        self.outbox.persist(crate::outbox::PersistCommand::Henna(HennaWrite::Add {
-            char_id: id.0,
-            symbol_id: henna.dye_id,
-            slot: slot as i32,
-            class_index,
-        }));
+        self.outbox
+            .persist(crate::outbox::PersistCommand::Henna(HennaWrite::Add {
+                char_id: id.0,
+                symbol_id: henna.dye_id,
+                slot: slot as i32,
+                class_index,
+            }));
         let info = self.henna_info(id);
         self.send(id, &info);
         self.send_user_info(id);
@@ -266,7 +273,11 @@ impl World {
         HennaPreview {
             dye_id: henna.dye_id,
             dye_item_id: henna.dye_item_id,
-            count: i64::from(if wear { henna.wear_count } else { henna.cancel_count }),
+            count: i64::from(if wear {
+                henna.wear_count
+            } else {
+                henna.cancel_count
+            }),
             fee: i64::from(if wear { henna.wear_fee } else { henna.cancel_fee }),
             allowed: henna.is_allowed_class(self.class_of(id)),
             adena: self.adena_of(id),
@@ -309,7 +320,10 @@ impl World {
     fn on_request_henna_item_info(&mut self, id: ObjectId, symbol_id: i32) {
         let Some(henna) = self.henna_data(symbol_id) else {
             if symbol_id != 0 {
-                warn!("RequestHennaItemInfo: Invalid Henna Id: {symbol_id} from {}", self.player_text(id));
+                warn!(
+                    "RequestHennaItemInfo: Invalid Henna Id: {symbol_id} from {}",
+                    self.player_text(id)
+                );
             }
             self.send(id, &ActionFailed);
             return;
@@ -341,12 +355,18 @@ impl World {
             return;
         }
         if self.henna_empty_slots(id) == 0 {
-            self.send(id, &SystemMessage::new(SystemMessageId::NoSlotExistsToDrawTheSymbol));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::NoSlotExistsToDrawTheSymbol),
+            );
             self.send(id, &ActionFailed);
             return;
         }
         let Some(henna) = self.henna_data(symbol_id) else {
-            warn!("RequestHennaEquip: Invalid Henna Id: {symbol_id} from {}", self.player_text(id));
+            warn!(
+                "RequestHennaEquip: Invalid Henna Id: {symbol_id} from {}",
+                self.player_text(id)
+            );
             self.send(id, &ActionFailed);
             return;
         };
@@ -416,7 +436,12 @@ impl World {
     /// `SymbolMaker.onFirstTalk` (`addFirstTalkId`, `addStartNpc`), then `Quest.showResult`.
     /// `false` when the NPC is not a symbol maker. `start_npc` is set for the click, which makes
     /// the NPC the quest NPC of the player (`ON_NPC_QUEST_START`).
-    pub(crate) fn symbol_maker_first_talk(&mut self, npc: ObjectId, player: ObjectId, start_npc: bool) -> bool {
+    pub(crate) fn symbol_maker_first_talk(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        start_npc: bool,
+    ) -> bool {
         if !self.is_symbol_maker(npc) {
             return false;
         }
@@ -449,7 +474,12 @@ impl World {
     }
 
     /// Java `Player.processScriptEvent("SymbolMaker", event)`. `false` when the script is another one.
-    pub(crate) fn symbol_maker_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) -> bool {
+    pub(crate) fn symbol_maker_script_event(
+        &mut self,
+        player: ObjectId,
+        script_name: &str,
+        event: &str,
+    ) -> bool {
         if script_name != "SymbolMaker" {
             return false;
         }

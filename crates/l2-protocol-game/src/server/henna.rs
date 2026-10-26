@@ -76,7 +76,11 @@ impl Decode for HennaEquipList {
                 allowed: r.i32()? != 0,
             });
         }
-        Ok(Self { adena, total, entries })
+        Ok(Self {
+            adena,
+            total,
+            entries,
+        })
     }
 }
 
@@ -146,7 +150,11 @@ impl Decode for HennaRemoveList {
                 cancel_fee,
             });
         }
-        Ok(Self { adena, count, entries })
+        Ok(Self {
+            adena,
+            count,
+            entries,
+        })
     }
 }
 
@@ -202,7 +210,9 @@ impl HennaPreview {
             adena: r.i64()?,
             ..Self::default()
         };
-        for s in [&mut p.int, &mut p.str, &mut p.con, &mut p.men, &mut p.dex, &mut p.wit] {
+        for s in [
+            &mut p.int, &mut p.str, &mut p.con, &mut p.men, &mut p.dex, &mut p.wit,
+        ] {
             s.now = r.i32()?;
             s.after = r.i8()?;
         }

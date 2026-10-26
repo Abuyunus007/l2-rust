@@ -13,7 +13,8 @@ use crate::pool::Pool;
 const SELECT_HENNAS: &str = "SELECT slot,symbol_id FROM character_hennas WHERE charId=? AND class_index=?";
 
 // Java: Player.ADD_CHAR_HENNA
-const INSERT_HENNA: &str = "INSERT INTO character_hennas (charId,symbol_id,slot,class_index) VALUES (?,?,?,?)";
+const INSERT_HENNA: &str =
+    "INSERT INTO character_hennas (charId,symbol_id,slot,class_index) VALUES (?,?,?,?)";
 // Java: Player.DELETE_CHAR_HENNA
 const DELETE_HENNA: &str = "DELETE FROM character_hennas WHERE charId=? AND slot=? AND class_index=?";
 

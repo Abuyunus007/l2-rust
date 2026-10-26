@@ -92,11 +92,11 @@ use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
-    HennaWrite,
-    ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite, ManorLoad,
-    ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand, PetRowData,
-    PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite, SavedEffect,
-    SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment, SummonWrite,
+    HennaWrite, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite,
+    ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand,
+    PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite,
+    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
+    SummonWrite,
 };
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
@@ -3939,7 +3939,11 @@ impl PlayerStore for DbStore {
                 symbol_id,
                 slot,
                 class_index,
-            } => self.hennas.add_henna(char_id, symbol_id, slot, class_index).await?,
+            } => {
+                self.hennas
+                    .add_henna(char_id, symbol_id, slot, class_index)
+                    .await?
+            }
             HennaWrite::Delete {
                 char_id,
                 slot,

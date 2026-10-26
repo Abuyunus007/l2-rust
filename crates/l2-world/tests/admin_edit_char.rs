@@ -701,16 +701,14 @@ fn setclass_removes_the_hennas_the_new_class_may_not_wear() {
     assert_eq!(s.p(P1).data.profile.hennas, [0, 0, 0]);
     let out = s.take();
     assert!(system_ids_to(&out, P1).contains(&SystemMessageId::TheSymbolHasBeenDeleted));
-    assert!(
-        s.persisted.0.lock().unwrap().iter().any(|c| matches!(
-            c,
-            PersistCommand::Henna(HennaWrite::Delete {
-                char_id: 1,
-                slot: 1,
-                class_index: 0
-            })
-        ))
-    );
+    assert!(s.persisted.0.lock().unwrap().iter().any(|c| matches!(
+        c,
+        PersistCommand::Henna(HennaWrite::Delete {
+            char_id: 1,
+            slot: 1,
+            class_index: 0
+        })
+    )));
 }
 
 #[test]

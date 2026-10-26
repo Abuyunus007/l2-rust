@@ -173,9 +173,9 @@ pub mod enchant_skill;
 pub mod enterworld;
 pub mod fishing;
 pub mod fort;
-pub mod henna;
 pub mod friend;
 pub mod handshake;
+pub mod henna;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
@@ -221,15 +221,15 @@ pub use enchant_skill::{
 pub use enterworld::{EnterWorld, RequestKeyMapping};
 pub use fishing::RequestExFishRanking;
 pub use fort::{RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo};
-pub use henna::{
-    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
-    RequestHennaRemove, RequestHennaRemoveList,
-};
 pub use friend::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
 };
 pub use handshake::{AuthLogin, ProtocolVersion};
+pub use henna::{
+    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
+    RequestHennaRemove, RequestHennaRemoveList,
+};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
 pub use interaction::{
     Action, BypassUserCmd, DlgAnswer, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld,
