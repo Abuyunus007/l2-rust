@@ -28,6 +28,7 @@ pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
+pub mod admin_page;
 pub mod create_item;
 pub mod delete;
 pub mod destroy_items;
@@ -151,6 +152,7 @@ impl Default for AdminWorld {
         search::register(&mut handlers);
         fence::register(&mut handlers);
         skill_test::register(&mut handlers);
+        admin_page::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);

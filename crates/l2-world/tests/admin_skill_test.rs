@@ -279,3 +279,20 @@ fn skill_test_of_an_unknown_skill_shows_nothing() {
     s.cmd("skill_test 99999");
     assert!(casts(&s.log.take()).is_empty());
 }
+
+/// The panel words that do nothing in Java (`AdminAdmin`'s `// nothing` branches): `//gmon` and
+/// `//set_mod` (`//set` as well). They are registered, so they never answer "does not exist", and
+/// they change nothing. Kept with this file's harness for the GM.
+#[test]
+fn the_nothing_words_are_registered_and_do_nothing() {
+    let mut s = setup();
+    for word in ["gmon", "set_mod"] {
+        s.cmd(word);
+        let out = s.log.take();
+        assert!(texts(&out).is_empty(), "{word} sends no message: {:?}", texts(&out));
+        assert!(
+            casts(&out).is_empty() && out.iter().all(|(to, _)| *to != P1),
+            "{word} sends nothing to the others"
+        );
+    }
+}
