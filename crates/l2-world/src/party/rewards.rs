@@ -169,7 +169,7 @@ impl World {
                 let add_exp = self.party_exp_sp_cutoff(member, top_level, add_exp, add_sp, use_vitality_rate);
                 if add_exp > 0.0 {
                     self.update_vitality_points(member, vitality_points, true, false);
-                    // `PcCafePointsManager.givePcCafePoint`: no PC cafe.
+                    self.give_pc_cafe_point(member, add_exp);
                 }
             } else {
                 self.add_exp_and_sp(member, 0.0, 0.0, false);

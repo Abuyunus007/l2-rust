@@ -13,7 +13,7 @@ use l2_data::{
     PlayerTemplates, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
-use l2_protocol_game::server::{MultiSellList, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ExPcCafePointInfo, MultiSellList, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
@@ -160,6 +160,22 @@ fn lists() -> Vec<(i32, String)> {
             9,
             r#"<list applyTaxes="true"><npcs><npc>5000</npc></npcs>
   <item><ingredient count="10" id="57"/><ingredient count="1000" id="57" isTaxIngredient="true"/><production count="1" id="400"/></item>
+</list>"#
+                .to_owned(),
+        ),
+        // PC cafe points as a cost (M6-FU-11).
+        (
+            10,
+            r#"<list><npcs><npc>5000</npc></npcs>
+  <item><ingredient count="500" id="-100"/><production count="1" id="400"/></item>
+</list>"#
+                .to_owned(),
+        ),
+        // PC cafe points as a reward (M6-FU-11).
+        (
+            11,
+            r#"<list><npcs><npc>5000</npc></npcs>
+  <item><ingredient count="10" id="57"/><production count="300" id="-100"/></item>
 </list>"#
                 .to_owned(),
         ),
@@ -1093,6 +1109,77 @@ fn fame_stops_at_the_maximum() {
     s.bypass("multisell 1");
     s.choose(1, 400_000, 1);
     assert_eq!(s.world.player(A).unwrap().data.profile.fame, 100_000);
+}
+
+/// `MultisellData.takeSpecialIngredient` for `PC_CAFE_POINTS`: "player.setPcCafePoints(points -
+/// (int) amount); sendPacket(new ExPCCafePointInfo(points, (int) -amount, 0))"; too few points are
+/// "YOU_ARE_SHORT_OF_ACCUMULATED_POINTS".
+#[test]
+fn pc_cafe_points_are_paid() {
+    let mut data = player(A, "Alice", vec![]);
+    data.profile.pccafe_points = 700;
+    let mut s = Scene::with_player_data(data);
+    s.world.open_multisell(10, A, Some(s.npc), false);
+    s.log.take();
+    s.choose(10, 100_000, 1);
+    let out = s.log.take();
+    assert_eq!(s.world.player(A).unwrap().data.profile.pccafe_points, 200);
+    assert_eq!(s.count_of(BOX), 1);
+    let infos: Vec<ExPcCafePointInfo> = packets(&out)
+        .into_iter()
+        .filter(|p| name_of(p) == "EX_PC_CAFE_POINT_INFO")
+        .map(decode)
+        .collect();
+    assert_eq!(infos, [ExPcCafePointInfo::new(200, -500, 0)]);
+    assert_eq!(infos[0].point_type, 3, "using points is type 3");
+
+    // 200 left: short of points, nothing is taken or given.
+    s.world.open_multisell(10, A, Some(s.npc), false);
+    s.log.take();
+    s.choose(10, 100_000, 1);
+    let out = s.log.take();
+    assert_eq!(
+        message_ids(&out),
+        [SystemMessageId::YouAreShortOfAccumulatedPoints]
+    );
+    assert_eq!(s.world.player(A).unwrap().data.profile.pccafe_points, 200);
+    assert_eq!(s.count_of(BOX), 1);
+}
+
+/// `MultisellData.giveSpecialProduct` for `PC_CAFE_POINTS`: "setPcCafePoints((int) (points +
+/// amount))" (never above `MaxPcCafePoints`) and `ExPCCafePointInfo(points, (int) amount, 0)`.
+#[test]
+fn pc_cafe_points_are_earned_up_to_the_maximum() {
+    let mut data = player(A, "Alice", vec![inv(10, ADENA, 100)]);
+    data.profile.pccafe_points = 1000;
+    let mut s = Scene::with_player_data(data);
+    s.world.open_multisell(11, A, Some(s.npc), false);
+    s.log.take();
+    s.choose(11, 100_000, 1);
+    let out = s.log.take();
+    assert_eq!(s.world.player(A).unwrap().data.profile.pccafe_points, 1300);
+    let infos: Vec<ExPcCafePointInfo> = packets(&out)
+        .into_iter()
+        .filter(|p| name_of(p) == "EX_PC_CAFE_POINT_INFO")
+        .map(decode)
+        .collect();
+    assert_eq!(infos, [ExPcCafePointInfo::new(1300, 300, 0)]);
+    // Points are not an item: no row is written for them.
+    assert_eq!(s.count_of(-100), 0);
+
+    // The top is `MaxPcCafePoints` (200000): the shown gain stays the 300 of the entry.
+    s.world.set_pc_cafe_points(A, 199_900);
+    s.world.open_multisell(11, A, Some(s.npc), false);
+    s.log.take();
+    s.choose(11, 100_000, 1);
+    let out = s.log.take();
+    assert_eq!(s.world.player(A).unwrap().data.profile.pccafe_points, 200_000);
+    let infos: Vec<ExPcCafePointInfo> = packets(&out)
+        .into_iter()
+        .filter(|p| name_of(p) == "EX_PC_CAFE_POINT_INFO")
+        .map(decode)
+        .collect();
+    assert_eq!(infos, [ExPcCafePointInfo::new(200_000, 300, 0)]);
 }
 
 const CLAN: i32 = 500;

@@ -552,6 +552,9 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             title_color: i32::try_from(row.title_color).unwrap_or(l2_world::DEFAULT_TITLE_COLOR),
             // Java `setVitalityPoints`: `clamp(value, MIN_VITALITY_POINTS, MAX_VITALITY_POINTS)`
             vitality_points: i32::from(row.vitality_points).clamp(1, 20_000),
+            // Java `setPcCafePoints(rset.getInt("pccafe_points"))`; the world applies the cap at
+            // enter world (`pc_cafe_on_enter`).
+            pccafe_points: row.pccafe_points,
             bookmark_slot: i32::from(row.bookmarkslot),
             death_penalty_level: i32::from(row.death_penalty_level),
             // Java `setLastAccess(rset.getLong("lastAccess"))`

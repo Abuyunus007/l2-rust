@@ -203,6 +203,8 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     data.profile.title_color = 0x009C_9C9C;
     // Java writes `getFame()`, which multisell fame ingredients and products change.
     data.profile.fame = 321;
+    // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it.
+    data.profile.pccafe_points = 77;
     store.store_player(&data).await.unwrap();
 
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
@@ -224,7 +226,7 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     assert_eq!(row.nobless, 1);
     assert_eq!(row.clan_privs, Some(9));
     assert_eq!(row.vitality_points, 555);
-    assert_eq!(row.pccafe_points, 42);
+    assert_eq!(row.pccafe_points, 77);
     assert_eq!(row.language.as_deref(), Some("en"));
     assert_eq!(row.bookmarkslot, 3);
     assert_eq!(row.title, None);

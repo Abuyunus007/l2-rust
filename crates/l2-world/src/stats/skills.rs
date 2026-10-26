@@ -50,6 +50,17 @@ fn lookup(data: &StatData, skill_id: i32, level: i32) -> Option<&SkillTemplate> 
     })
 }
 
+/// Where an item skill comes from, which decides what the reuse handling does.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SkillSource {
+    /// Only `player.addSkill` (the +4 skill, the shield and +6 skills of a set).
+    Plain,
+    /// The skills of the armor set and of the item: an active one gets the equip reuse delay.
+    Listener,
+    /// The skills of augmentation and enchant options (`Options.addSkill`).
+    Option,
+}
+
 /// The skill as the calculation sees it.
 pub(crate) fn calc_skill(skill: &SkillTemplate) -> CalcSkill {
     CalcSkill {
@@ -345,36 +356,53 @@ impl World {
     /// The skill parts of `ArmorSetListener.notifyEquiped` and `ItemSkillsListener.notifyEquiped`
     /// for `item` in paperdoll `slot`, with the augmentation and element bonuses the latter
     /// applies first. Returns the stats whose functions were added.
-    pub(crate) fn equip_item_skills(&mut self, id: ObjectId, item: &ItemData) -> Vec<Stat> {
+    ///
+    /// The `bool` is Java's `updateTimeStamp`: an active skill of the armor set or of the item
+    /// came with it, so the caller sends `SkillCoolTime` after the skill list.
+    pub(crate) fn equip_item_skills(&mut self, id: ObjectId, item: &ItemData) -> (Vec<Stat>, bool) {
         let slot = usize::try_from(item.loc_data).unwrap_or(usize::MAX);
-        let mut add: Vec<(i32, i32)> = Vec::new();
+        let mut add: Vec<(i32, i32, SkillSource)> = Vec::new();
+        let equip_delay;
         let bonuses: InstanceBonuses;
         {
             let Some(view) = self.stats(id) else {
-                return Vec::new();
+                return (Vec::new(), false);
             };
             let Some(data) = view.stat_data() else {
-                return Vec::new();
+                return (Vec::new(), false);
             };
+            equip_delay = data.items.get(item.item_id).map_or(0, |t| t.equip_reuse_delay);
             // ArmorSetListener: the set of the worn chest.
             if let Some(chest) = view.paperdoll(paperdoll::CHEST)
                 && let Some(set) = data.armor_sets.get(chest.item_id)
             {
                 if contain_item(set, slot, item.item_id) {
                     if view.armor_set_complete(set) {
-                        add.extend(set.skills.iter().map(|h| (h.id, h.level)));
+                        add.extend(set.skills.iter().map(|h| (h.id, h.level, SkillSource::Listener)));
                         if view
                             .paperdoll(paperdoll::LHAND)
                             .is_some_and(|s| set.shield.contains(&s.item_id))
                         {
-                            add.extend(set.shield_skills.iter().map(|h| (h.id, h.level)));
+                            add.extend(
+                                set.shield_skills
+                                    .iter()
+                                    .map(|h| (h.id, h.level, SkillSource::Plain)),
+                            );
                         }
                         if view.armor_set_enchanted6(set) {
-                            add.extend(set.enchant6_skills.iter().map(|h| (h.id, h.level)));
+                            add.extend(
+                                set.enchant6_skills
+                                    .iter()
+                                    .map(|h| (h.id, h.level, SkillSource::Plain)),
+                            );
                         }
                     }
                 } else if set.shield.contains(&item.item_id) {
-                    add.extend(set.shield_skills.iter().map(|h| (h.id, h.level)));
+                    add.extend(
+                        set.shield_skills
+                            .iter()
+                            .map(|h| (h.id, h.level, SkillSource::Plain)),
+                    );
                 }
             }
             // ItemSkillsListener: the +4 skill, then the item's own skills.
@@ -382,16 +410,16 @@ impl World {
             bonuses = view
                 .world()
                 .item_instance_bonuses(item, data.items.get(item.item_id));
-            add.extend(bonuses.skills.iter().copied());
+            add.extend(bonuses.skills.iter().map(|(i, l)| (*i, *l, SkillSource::Option)));
             if let Some(template) = data.items.get(item.item_id) {
                 // The enchant options (`applyEnchantStats`) are in `bonuses` above.
                 if item.enchant_level >= 4
                     && let Some(s) = template.skills.enchant4_skill
                 {
-                    add.push((s.id, s.level));
+                    add.push((s.id, s.level, SkillSource::Plain));
                 }
                 for s in template.skills.item_skills.iter().flatten() {
-                    add.push((s.id, s.level));
+                    add.push((s.id, s.level, SkillSource::Listener));
                 }
             }
         }
@@ -399,27 +427,82 @@ impl World {
             Some(player) => player.core.calculators.add_all(bonuses.funcs),
             None => Vec::new(),
         };
-        for (skill_id, level) in add {
+        let mut update_time_stamp = false;
+        for (skill_id, level, source) in add {
             if !self.add_skill(id, skill_id, level) {
                 warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
+                continue;
+            }
+            match source {
+                SkillSource::Plain => {}
+                SkillSource::Listener => {
+                    update_time_stamp |= self.listener_time_stamp(id, skill_id, level, equip_delay);
+                }
+                // `Options.addSkill` sends `SkillCoolTime` itself.
+                SkillSource::Option => self.option_time_stamp(id, skill_id, level),
             }
         }
-        stats
+        (stats, update_time_stamp)
+    }
+
+    /// The reuse part of an active skill the item listeners add (`ArmorSetListener` and
+    /// `ItemSkillsListener`): without a reuse running, the item's `equip_reuse_delay` starts one.
+    /// `true` for an active skill (Java's `updateTimeStamp`).
+    fn listener_time_stamp(&mut self, id: ObjectId, skill_id: i32, level: i32, equip_delay: i32) -> bool {
+        let Some(skill) = self.skill_template_clone(skill_id, level) else {
+            return false;
+        };
+        if !skill.is_active() {
+            return false;
+        }
+        if !self.has_skill_reuse(id, skill.hash_code()) && equip_delay > 0 {
+            self.add_time_stamp(id, &skill, i64::from(equip_delay));
+            self.disable_skill(id, &skill, i64::from(equip_delay));
+        }
+        true
+    }
+
+    /// Java `Options.addSkill(player, skill)` after `player.addSkill`: an active skill keeps the
+    /// reuse it still has (the stamp restarts with the time left) and the client gets
+    /// `SkillCoolTime`.
+    pub(crate) fn option_time_stamp(&mut self, id: ObjectId, skill_id: i32, level: i32) {
+        let Some(skill) = self.skill_template_clone(skill_id, level) else {
+            return;
+        };
+        if !skill.is_active() {
+            return;
+        }
+        let remaining = self.skill_remaining_reuse_time(id, skill.hash_code());
+        if remaining > 0 {
+            self.add_time_stamp(id, &skill, remaining);
+            self.disable_skill(id, &skill, remaining);
+        }
+        self.send(id, &self.skill_cool_time(id));
+    }
+
+    /// `SkillData.getSkill(id, level)` as an owned copy, so the world can change meanwhile.
+    fn skill_template_clone(&self, skill_id: i32, level: i32) -> Option<SkillTemplate> {
+        lookup(self.skill_templates()?, skill_id, level).cloned()
     }
 
     /// The skill parts of `ArmorSetListener.notifyUnequiped` and `ItemSkillsListener
     /// .notifyUnequiped`. `item` has already left its slot (Java clears the slot first).
-    pub(crate) fn unequip_item_skills(&mut self, id: ObjectId, item: &ItemData, slot: usize) -> Vec<Stat> {
+    pub(crate) fn unequip_item_skills(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        slot: usize,
+    ) -> (Vec<Stat>, bool) {
         let mut remove: Vec<(i32, i32)> = Vec::new();
         let mut readd: Vec<(i32, i32)> = Vec::new();
         let option_ids: Vec<i32>;
         let element_bonus: bool;
         {
             let Some(view) = self.stats(id) else {
-                return Vec::new();
+                return (Vec::new(), false);
             };
             let Some(data) = view.stat_data() else {
-                return Vec::new();
+                return (Vec::new(), false);
             };
             // ArmorSetListener.
             let set = if slot == paperdoll::CHEST {
@@ -511,13 +594,23 @@ impl World {
         for (skill_id, level) in remove {
             self.remove_skill_of(id, skill_id, level);
         }
+        // NOTE(java-quirk): the reuse delay of a skill that comes back is the one of the item
+        // that was taken off, not of the item the skill belongs to.
+        let equip_delay = self
+            .data
+            .stat_data()
+            .and_then(|d| d.items.get(item.item_id))
+            .map_or(0, |t| t.equip_reuse_delay);
+        let mut update_time_stamp = false;
         for (skill_id, level) in readd {
-            if self.stats(id).is_some_and(|v| v.skill_level(skill_id) == 0) {
-                self.add_skill(id, skill_id, level);
+            if self.stats(id).is_some_and(|v| v.skill_level(skill_id) == 0)
+                && self.add_skill(id, skill_id, level)
+            {
+                update_time_stamp |= self.listener_time_stamp(id, skill_id, level, equip_delay);
             }
         }
         // The unequip skill (`activateSkill`) is an active skill: M5.
-        stats
+        (stats, update_time_stamp)
     }
 
     /// Java `Item.getEnchantOptions()` and `OptionData.getOptions(id)` for each id: the options an
@@ -586,8 +679,6 @@ impl World {
     /// Java `Item.applyEnchantStats()` for a worn item whose enchant level just changed: the
     /// options of the new level join (`Options.apply`: the functions, the active, then the passive
     /// skill, and the skill list). Returns the stats whose functions were added.
-    // NOTE: `Options.addSkill` also restores the reuse timestamp of an active skill and sends
-    // `SkillCoolTime`; the augmentation options do not, so neither do these.
     pub(crate) fn apply_enchant_stats(&mut self, id: ObjectId, object_id: ObjectId) -> Vec<Stat> {
         let Some(options) = self.worn_item_enchant_options(id, object_id) else {
             return Vec::new();
@@ -606,7 +697,9 @@ impl World {
                 stats.extend(player.core.calculators.add_all(funcs));
             }
             for (skill_id, level) in option.active.into_iter().chain(option.passive) {
-                if !self.add_skill(id, skill_id, level) {
+                if self.add_skill(id, skill_id, level) {
+                    self.option_time_stamp(id, skill_id, level);
+                } else {
                     warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
                 }
             }

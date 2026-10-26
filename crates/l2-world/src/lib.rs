@@ -50,6 +50,7 @@ pub mod npc;
 pub mod objects;
 pub mod outbox;
 pub mod party;
+pub mod pccafe;
 pub mod player;
 mod player_view;
 pub mod punishments;
@@ -138,6 +139,7 @@ pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
+pub use pccafe::PcCafeSettings;
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,

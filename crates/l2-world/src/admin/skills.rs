@@ -26,9 +26,6 @@
 //   comes with M6-CLAN-03, so these words are not registered yet.
 // - `//switch_gm_buffs`: the GM skill trees (`SkillTreeData.getGMSkillTree`) are not loaded, so
 //   the word is not registered yet.
-// - `//removereuse` sends `SkillCoolTime` in Java. That server packet is not in the protocol crate
-//   yet (M6 packet card): the reuse timers are cleared, the client keeps its cool-down icons until
-//   the next login.
 // - The `//get_skills` / `//reset_skills` stash is Java's static `adminSkills`: one per server,
 //   kept in `AdminWorld::skill_stash`.
 // - The `gmaudit` line of each command is written by the framework (`admin/mod.rs`); the extra
@@ -1275,7 +1272,6 @@ fn admin_setskill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminBuffs.onCommand`, `admin_removereuse [name]`: the reuse timers and the disabled
 /// skills of the named player (online) or the target are cleared.
-// M6: Java sends `SkillCoolTime(player)` here; the packet is not in the protocol crate yet.
 fn admin_removereuse(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let mut st = Tokens::spaces(command);
     st.next_token(); // the command word
@@ -1297,6 +1293,7 @@ fn admin_removereuse(world: &mut World, gm: ObjectId, command: &str) -> Outcome 
     };
     world.reset_time_stamps(player);
     world.reset_disabled_skills(player);
+    world.send(player, &world.skill_cool_time(player));
     let name = world.object_name(player).unwrap_or_default();
     world.send_sys_message(gm, &format!("Skill reuse was removed from {name}."));
     Ok(())

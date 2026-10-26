@@ -15,8 +15,7 @@
 // (`ItemChanges` of the one owner, written at once like `Item.updateDatabase()`).
 //
 // # Left out
-// - The enchant cancel of the two
-//   item moves (enchanting is not ported), `MercTicketManager` and `FortSiegeManager.isCombat`.
+// - `MercTicketManager` and `FortSiegeManager.isCombat` of the two item moves.
 // - `PunishmentManager.handleIllegalPlayerAction` for a wrong amount: logged, nothing else.
 // - The pet using a non-food item through its own cast (`ItemSkillsTemplate` with a pet): the
 //   shared handler is called with the pet, see `inventory/handlers/item_skills.rs`.
@@ -127,6 +126,26 @@ impl World {
             .sum();
         // `_totalWeight = (int) Math.min(weight, Integer.MAX_VALUE)`.
         i32::try_from(total).unwrap_or(i32::MAX)
+    }
+
+    /// The enchant cancel at the top of `RequestGiveItemToPet` / `RequestGetItemFromPet`: a
+    /// running enchant ends and the request stops. `true` when it did.
+    fn cancel_active_enchant(&mut self, player: ObjectId) -> bool {
+        if self.active_enchant_item(player).is_none() {
+            return false;
+        }
+        self.set_active_enchant_item(player, None);
+        self.send(
+            player,
+            &SystemMessage::new(SystemMessageId::YouHaveCancelledTheEnchantingProcess),
+        );
+        self.send_enchant_result(player, 2, 0, 0);
+        true
+    }
+
+    /// Java `Pet.getInventoryLimit()`: `INVENTORY_MAXIMUM_PET`.
+    pub(crate) fn pet_inventory_limit(&self) -> i32 {
+        self.summons.pet_world.settings.inventory_maximum_pet
     }
 
     /// Java `PetInventory.validateCapacity(item)`: one slot, none for a stack the pet has or a herb.
@@ -637,7 +656,9 @@ impl World {
             self.send_message(player, "You are giving items to pet too fast.");
             return;
         }
-        // FOLLOW-UP: the enchant cancel (`getActiveEnchantItemId`): not ported.
+        if self.cancel_active_enchant(player) {
+            return;
+        }
         // Alt game - Karma punishment.
         if !self.settings.inventory.alt_game_karma_player_can_trade
             && self.players.get(&player).is_some_and(|p| p.data.karma > 0)
@@ -751,6 +772,9 @@ impl World {
         }
         if !self.flood_allows(player, FloodKind::Transaction) {
             self.send_message(player, "You get items from pet too fast.");
+            return;
+        }
+        if self.cancel_active_enchant(player) {
             return;
         }
         let Some(item) = self.pet_item(player, object_id).cloned() else {

@@ -1090,6 +1090,21 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // ------------------------------------------------------------------ clan
 
+    /// The duel test of `Clan`, `CorpseClan` and `PartyClan`: a duelist skips whoever is in
+    /// another duel, or in a party with another leader when both are in a party.
+    fn duel_excludes(&self, player: ObjectId, obj: ObjectId) -> bool {
+        if !self.w.is_in_duel(player) {
+            return false;
+        }
+        if self.w.duel_id_of(player) != self.w.duel_id_of(obj) {
+            return true;
+        }
+        match (self.w.party_of(player), self.w.party_of(obj)) {
+            (Some(a), Some(b)) => self.w.party_leader(a) != self.w.party_leader(b),
+            _ => false,
+        }
+    }
+
     // Java: Clan.java
     fn clan(&mut self) {
         if self.playable(self.caster) {
@@ -1111,7 +1126,9 @@ impl<R: Rnd> Targeting<'_, R> {
                 if obj == player {
                     continue;
                 }
-                // M6: duel (`isInDuel()`, same duel and same party leader).
+                if self.duel_excludes(player, obj) {
+                    continue;
+                }
                 // Do not add this target if this is a Pc->Pc pvp casting and pvp condition not met
                 if !self.w.check_pvp_skill(player, obj, self.skill, self.ctx) {
                     continue;
@@ -1225,7 +1242,9 @@ impl<R: Rnd> Targeting<'_, R> {
                 if obj == self.caster {
                     continue;
                 }
-                // M6: duel (`isInDuel()`, same duel and same party leader).
+                if self.duel_excludes(self.caster, obj) {
+                    continue;
+                }
                 // Do not add this target if this is a Pc->Pc pvp casting and pvp condition not met
                 if !self.w.check_pvp_skill(self.caster, obj, self.skill, self.ctx) {
                     continue;
@@ -1471,9 +1490,8 @@ impl<R: Rnd> Targeting<'_, R> {
                 continue;
             }
             // M8: olympiad side checks.
-            // A duelist only gets the members of its own duel (the party-leader comparison that
-            // follows in Java is the party test below).
-            if self.w.is_in_duel(self.caster) && self.w.duel_id_of(self.caster) != self.w.duel_id_of(obj) {
+            // A duelist only gets the members of its own duel and party.
+            if self.duel_excludes(self.caster, obj) {
                 continue;
             }
             // Same clan, or same party.

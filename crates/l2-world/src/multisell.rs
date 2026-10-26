@@ -524,16 +524,7 @@ impl World {
 
     // ------------------------------------------------------------------ special ingredients
 
-    /// Java `Player.getPcCafePoints()`.
-    // FOLLOW-UP(pccafe): PC cafe points (`characters.pccafe_points`, `ExPCCafePointInfo`) are not
-    // modelled; every player has 0, so a list that asks for them can never be paid.
-    fn pc_cafe_points(&self, _player: ObjectId) -> i64 {
-        0
-    }
-
     /// Java `Player.setFame(fame)`: within 0 and `MaxPersonalFamePoints`.
-    // FOLLOW-UP(fame): the persistence task still writes the fame it loaded (`build_character_update`
-    // in `game-server/src/persist.rs` reads the row), so a change here is lost at the next login.
     pub(crate) fn set_fame(&mut self, player: ObjectId, fame: i32) {
         let max = self.multisell.settings.max_personal_fame_points;
         if let Some(p) = self.players.get_mut(&player) {
@@ -549,7 +540,7 @@ impl World {
     fn has_special_ingredient(&mut self, item_id: i32, amount: i64, player: ObjectId) -> bool {
         match item_id {
             PC_CAFE_POINTS => {
-                if self.pc_cafe_points(player) < amount {
+                if i64::from(self.pc_cafe_points(player)) < amount {
                     self.send(
                         player,
                         &SystemMessage::new(SystemMessageId::YouAreShortOfAccumulatedPoints),
@@ -600,7 +591,12 @@ impl World {
     fn take_special_ingredient(&mut self, item_id: i32, amount: i64, player: ObjectId) -> bool {
         match item_id {
             PC_CAFE_POINTS => {
-                // FOLLOW-UP(pccafe): `setPcCafePoints(points - amount)` and `ExPCCafePointInfo`.
+                // `setPcCafePoints(getPcCafePoints() - (int) amount)`, then the packet with the
+                // points spent as a negative number.
+                let points = self.pc_cafe_points(player).wrapping_sub(amount as i32);
+                self.set_pc_cafe_points(player, points);
+                let now = self.pc_cafe_points(player);
+                self.send_pc_cafe_point_info(player, now, (amount as i32).wrapping_neg(), 0);
                 true
             }
             CLAN_REPUTATION => {
@@ -631,7 +627,11 @@ impl World {
     fn give_special_product(&mut self, item_id: i32, amount: i64, player: ObjectId) {
         match item_id {
             PC_CAFE_POINTS => {
-                // FOLLOW-UP(pccafe): `setPcCafePoints(points + amount)` and `ExPCCafePointInfo`.
+                // `setPcCafePoints((int) (getPcCafePoints() + amount))`.
+                let points = (i64::from(self.pc_cafe_points(player)) + amount) as i32;
+                self.set_pc_cafe_points(player, points);
+                let now = self.pc_cafe_points(player);
+                self.send_pc_cafe_point_info(player, now, amount as i32, 0);
             }
             CLAN_REPUTATION => match self.clan_of(player).map(|c| c.id) {
                 Some(clan_id) => self.add_reputation_score(clan_id, amount as i32),

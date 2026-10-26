@@ -73,6 +73,7 @@ use l2_protocol_game::server::party::{
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
     PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
 };
+use l2_protocol_game::server::pccafe::ExPcCafePointInfo;
 use l2_protocol_game::server::pledge::{
     AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem, ExSubPledgeSkillAdd,
     GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo, PledgeMember,
@@ -565,6 +566,7 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExReceiveShowPostFriend => decoded::<ExShowContactList>(&mut r, contact_list_fields),
         ServerOpcode::ExBrExtraUserInfo => decoded::<ExBrExtraUserInfo>(&mut r, br_extra_user_info_fields),
         ServerOpcode::ExNavitAdventPointInfo => decoded::<ExNevitAdventPointInfo>(&mut r, nevit_point_fields),
+        ServerOpcode::ExPcCafePointInfo => decoded::<ExPcCafePointInfo>(&mut r, pc_cafe_point_info_fields),
         ServerOpcode::ExNavitAdventTimeChange => {
             decoded::<ExNevitAdventTimeChange>(&mut r, nevit_time_fields)
         }
@@ -1388,6 +1390,10 @@ fn contact_list_fields(p: &ExShowContactList) -> Value {
 
 fn br_extra_user_info_fields(p: &ExBrExtraUserInfo) -> Value {
     object!(p => object_id, abnormal_visual_effects_event, lecture_mark)
+}
+
+fn pc_cafe_point_info_fields(p: &ExPcCafePointInfo) -> Value {
+    object!(p => points, add_point, period_type, remain_time, point_type, time)
 }
 
 fn nevit_point_fields(p: &ExNevitAdventPointInfo) -> Value {
@@ -2388,6 +2394,7 @@ mod tests {
         ServerOpcode::ExReceiveShowPostFriend,
         ServerOpcode::ExBrExtraUserInfo,
         ServerOpcode::ExNavitAdventPointInfo,
+        ServerOpcode::ExPcCafePointInfo,
         ServerOpcode::ExNavitAdventTimeChange,
         ServerOpcode::Attack,
         ServerOpcode::AutoAttackStart,
@@ -3580,6 +3587,13 @@ mod tests {
         assert_eq!(
             s2c_fields(&ExNevitAdventPointInfo { points: 7 }.to_bytes()),
             json!({ "points": 7 })
+        );
+        assert_eq!(
+            s2c_fields(&ExPcCafePointInfo::new(100, -5, 0).to_bytes()),
+            json!({
+                "points": 100, "add_point": -5, "period_type": 1, "remain_time": 42,
+                "point_type": 3, "time": 0
+            })
         );
         assert_eq!(
             s2c_fields(

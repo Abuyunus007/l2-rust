@@ -1107,6 +1107,37 @@ pub fn pet_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PetSett
     settings
 }
 
+/// The `PcCafe*` keys of `Custom/PremiumSystem.ini`, with the corrections `PremiumSystemConfig.load`
+/// makes after reading them.
+pub fn pc_cafe_settings(config: &GameConfig) -> l2_world::PcCafeSettings {
+    let c = &config.premium_system;
+    l2_world::PcCafeSettings {
+        enabled: c.pc_cafe_enabled,
+        only_premium: c.pc_cafe_only_premium,
+        retail_like: c.pc_cafe_retail_like,
+        reward_time_ms: c.pc_cafe_reward_time,
+        // `if (PC_CAFE_MAX_POINTS < 0) PC_CAFE_MAX_POINTS = 0`.
+        max_points: c.pc_cafe_max_points.max(0),
+        enable_double_points: c.pc_cafe_enable_double_points,
+        // `if (chance < 0 || chance > 100) chance = 1`.
+        double_points_chance: if (0..=100).contains(&c.pc_cafe_double_points_chance) {
+            c.pc_cafe_double_points_chance
+        } else {
+            1
+        },
+        retail_like_points: c.acquisition_pc_cafe_retail_like_points,
+        // `if (PC_CAFE_POINT_RATE < 0) PC_CAFE_POINT_RATE = 1`.
+        point_rate: if c.pc_cafe_point_rate < 0.0 {
+            1.0
+        } else {
+            c.pc_cafe_point_rate
+        },
+        random_point: c.pc_cafe_random_point,
+        reward_low_exp_kills: c.pc_cafe_reward_low_exp_kills,
+        low_exp_kills_chance: c.pc_cafe_low_exp_kills_chance.clamp(0, 100),
+    }
+}
+
 /// The multisell values of `General.ini` and `Player.ini` (`MultisellAmountLimit`,
 /// `AltBlacksmithUseRecipes`, `MaxPersonalFamePoints`).
 pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
@@ -2468,6 +2499,49 @@ BotReportPointsResetHour = noon
         let death = death_settings(&config, dir.path());
         assert_eq!(death.spoiled_corpse_extend_time, 33);
         assert_eq!(death.corpse_consume_skill_allowed_time_before_decay, 1234);
+    }
+
+    /// The `PcCafe*` keys reach the world with the corrections `PremiumSystemConfig.load` makes: the
+    /// defaults without a file, and out of range values fixed.
+    #[test]
+    fn the_pc_cafe_settings_follow_the_premium_system_file() {
+        assert_eq!(
+            pc_cafe_settings(&GameConfig::default()),
+            l2_world::PcCafeSettings::default()
+        );
+
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+        std::fs::write(
+            dir.path().join("Custom/PremiumSystem.ini"),
+            "PcCafeEnabled = True
+PcCafeRetailLike = False
+PcCafeOnlyPremium = True
+PcCafeRewardTime = 60000
+MaxPcCafePoints = -5
+DoublingAcquisitionPoints = True
+DoublingAcquisitionPointsChance = 101
+AcquisitionPointsRetailLikePoints = 7
+AcquisitionPointsRate = -2.0
+AcquisitionPointsRandom = True
+RewardLowExpKills = False
+RewardLowExpKillsChance = 250
+",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = pc_cafe_settings(&config);
+        assert!(settings.enabled && !settings.retail_like && settings.only_premium);
+        assert_eq!(settings.reward_time_ms, 60_000);
+        // `MaxPcCafePoints < 0` is 0, a chance outside 0 to 100 is 1, a negative rate is 1, the low
+        // exp chance is held to 0 to 100.
+        assert_eq!(settings.max_points, 0);
+        assert!(settings.enable_double_points);
+        assert_eq!(settings.double_points_chance, 1);
+        assert_eq!(settings.retail_like_points, 7);
+        assert_eq!(settings.point_rate, 1.0);
+        assert!(settings.random_point && !settings.reward_low_exp_kills);
+        assert_eq!(settings.low_exp_kills_chance, 100);
     }
 
     /// The vitality and Nevit settings carry the Java defaults of the generated config.

@@ -94,6 +94,7 @@ pub mod map_windows;
 pub mod movement;
 pub mod multisell;
 pub mod party;
+pub mod pccafe;
 pub mod pledge;
 pub mod recipe;
 pub mod refine;
@@ -180,6 +181,7 @@ pub use party::{
     PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowDeleteAll,
     PartySmallWindowUpdate, PartySummon, PartyWindowMember,
 };
+pub use pccafe::ExPcCafePointInfo;
 pub use pledge::{
     AllianceClanInfo, AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem,
     ExSubPledgeSkillAdd, GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo,
