@@ -47,6 +47,8 @@ pub struct TeleportSettings {
     pub random_respawn_in_town_enabled: bool,
     /// `TeleportWatchdogTimeout` in seconds; 0 = no watchdog.
     pub teleport_watchdog_timeout: i32,
+    /// `PlayerTeleportProtection` in seconds; 0 = none.
+    pub player_teleport_protection: i32,
 }
 
 impl Default for TeleportSettings {
@@ -56,6 +58,7 @@ impl Default for TeleportSettings {
             max_offset_on_teleport: 50,
             random_respawn_in_town_enabled: true,
             teleport_watchdog_timeout: 0,
+            player_teleport_protection: 0,
         }
     }
 }
@@ -65,6 +68,8 @@ impl Default for TeleportSettings {
 pub struct TeleportState {
     pub teleporting: bool,
     watchdog: Option<TimerId>,
+    /// Java `_teleportProtectEndTime` in world milliseconds (0 = none).
+    pub protect_end_ms: i64,
 }
 
 /// Where a teleport goes: the arguments of Java's `teleToLocation` overloads.
@@ -404,8 +409,15 @@ impl World {
         }
         // "Force a revalidation"
         self.revalidate_zone(id, true);
-        // FOLLOW-UP(M4): `checkItemRestriction()`, teleport protection, tamed beasts, movie, auto
-        // play.
+        // `checkItemRestriction()`
+        let mut changed = Vec::new();
+        self.check_item_restriction(id, &mut changed);
+        // `PLAYER_TELEPORT_PROTECTION > 0 && !_inOlympiadMode` (the olympiad is not modelled)
+        if self.settings.teleport.player_teleport_protection > 0 {
+            self.set_teleport_protection(id, true);
+        }
+        // Not modelled: the tamed beasts (`TamedBeast`), the movie holder and the auto play
+        // tasks (`AutoPlayConfig`, Custom).
         // "Modify the position of the pet if necessary."
         self.summon_follow_owner_teleport(id);
         // "Send info to nearby players."
@@ -435,6 +447,23 @@ impl World {
             return Some(location);
         }
         self.nearest_town_respawn(id)
+    }
+
+    /// Java `Player.setTeleportProtection(protect)`.
+    pub fn set_teleport_protection(&mut self, id: ObjectId, protect: bool) {
+        let seconds = i64::from(self.settings.teleport.player_teleport_protection);
+        let end = self.world_ms() + seconds * 1000;
+        if let Some(p) = self.players.get_mut(&id) {
+            p.tele.protect_end_ms = if protect { end } else { 0 };
+        }
+    }
+
+    /// Java `Player.isTeleportProtected()`.
+    pub fn is_teleport_protected(&self, id: ObjectId) -> bool {
+        let now = self.world_ms();
+        self.players
+            .get(&id)
+            .is_some_and(|p| p.tele.protect_end_ms != 0 && p.tele.protect_end_ms > now)
     }
 
     /// Java `teleToLocation(TeleportWhereType)`: `teleToLocation(getTeleToLocation(this, where),

@@ -258,8 +258,7 @@ impl World {
         if command.starts_with("admin_") {
             self.admin_command(id, command, true);
         } else if command == "come_here" && self.is_gm(id) {
-            // FOLLOW-UP(M4): the target NPC walks to the GM (`setIntentionMoveTo`).
-            debug!("{id}: come_here needs NPC movement (M4)");
+            self.come_here(id);
         } else if command.starts_with("npc_") {
             self.npc_bypass(id, command);
         } else if command.starts_with("item_") {
@@ -375,12 +374,56 @@ impl World {
         }
     }
 
+    /// Java `RequestBypassToServer.comeHere(player)`: the GM's NPC target turns to the GM and
+    /// walks to his place.
+    fn come_here(&mut self, gm: ObjectId) {
+        let Some(target) = self.target_of(gm) else {
+            return;
+        };
+        if !self.npcs.contains_key(&target) {
+            return;
+        }
+        let Some((x, y, z)) = self.position_of(gm) else {
+            return;
+        };
+        self.set_npc_target(target, Some(gm));
+        self.npc_set_intention_move_to(target, x, y, z);
+    }
+
+    /// Java `Npc.setBusy(isBusy)`.
+    pub fn set_npc_busy(&mut self, npc: ObjectId, busy: bool) {
+        self.talk.busy.entry(npc).or_default().0 = busy;
+    }
+
+    /// Java `Npc.setBusyMessage(message)`.
+    pub fn set_npc_busy_message(&mut self, npc: ObjectId, message: &str) {
+        self.talk.busy.entry(npc).or_default().1 = message.to_owned();
+    }
+
+    /// The message of a busy NPC (`_isBusy && !_busyMessage.isEmpty()`).
+    pub(crate) fn npc_busy_message(&self, npc: ObjectId) -> Option<String> {
+        self.talk
+            .busy
+            .get(&npc)
+            .filter(|(busy, message)| *busy && !message.is_empty())
+            .map(|(_, message)| message.clone())
+    }
+
     /// `Npc.onBypassFeedback`: the registry.
     pub(crate) fn generic_npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
         if !self.can_interact(npc, player) {
             return;
         }
-        // FOLLOW-UP: a busy NPC (`_isBusy`) answers with `npcbusy.htm`; nothing sets it yet.
+        // `Npc.onBypassFeedback`: a busy NPC with a message answers with `npcbusy.htm`.
+        if let Some(busy_message) = self.npc_busy_message(npc) {
+            self.send(player, &l2_protocol_game::server::ActionFailed);
+            let mut html = self.admin_html_file(player, "data/html/npcbusy.htm");
+            html.replace("%busymessage%", &busy_message);
+            html.replace("%npcname%", &self.creature_name(npc));
+            html.replace("%playername%", &self.creature_name(player));
+            self.send_admin_html(player, &html);
+            return;
+        }
         match self.talk.bypass_handlers.get(command) {
             Some(handler) => {
                 handler(self, player, command, Some(npc));

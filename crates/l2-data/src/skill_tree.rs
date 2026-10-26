@@ -131,6 +131,9 @@ pub struct SkillTrees {
     fishing: Vec<SkillLearn>,
     /// Java `_nobleSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     noble: Vec<SkillLearn>,
+    /// Java `_collectSkillTree` (Gracia, the collect skills Tolonis teaches), in the order Java's
+    /// `ConcurrentHashMap` lists it.
+    collect: Vec<SkillLearn>,
     /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree` (`//switch_gm_buffs`), in the
     /// order of Java's `ConcurrentHashMap`.
     game_master: Vec<SkillLearn>,
@@ -206,6 +209,8 @@ impl SkillTrees {
             fishing_order,
             noble,
             noble_order,
+            collect,
+            collect_order,
             game_master,
             game_master_order,
             game_master_aura,
@@ -250,6 +255,7 @@ impl SkillTrees {
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
             fishing: in_java_order(fishing, fishing_order),
             noble: in_java_order(noble, noble_order),
+            collect: in_java_order(collect, collect_order),
             game_master: in_java_order(game_master, game_master_order),
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
         }
@@ -311,6 +317,18 @@ impl SkillTrees {
     /// Java `getSubPledgeSkillTree().values()`: the squad skills, in Java's map order.
     pub fn sub_pledge_skills(&self) -> &[SkillLearn] {
         &self.sub_pledge
+    }
+
+    /// Java `getCollectSkillTree().values()`.
+    pub fn collect_skills(&self) -> &[SkillLearn] {
+        &self.collect
+    }
+
+    /// Java `getCollectSkill(id, level)`.
+    pub fn collect_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.collect
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
     }
 
     /// Java `getNobleSkillTree().values()`: the skills `Player.setNoble` gives and takes.
@@ -512,6 +530,9 @@ struct Gathered {
     /// Java `_nobleSkillTree` and the keys in the order they were first put.
     noble: BTreeMap<(i32, i32), SkillLearn>,
     noble_order: Vec<(i32, i32)>,
+    /// Java `_collectSkillTree` and the keys in the order they were first put.
+    collect: BTreeMap<(i32, i32), SkillLearn>,
+    collect_order: Vec<(i32, i32)>,
     /// Java `_gameMasterSkillTree` and `_gameMasterAuraSkillTree`, with their keys in put order.
     game_master: BTreeMap<(i32, i32), SkillLearn>,
     game_master_order: Vec<(i32, i32)>,
@@ -541,6 +562,7 @@ impl Gathered {
                     | "subPledgeSkillTree"
                     | "fishingSkillTree"
                     | "nobleSkillTree"
+                    | "collectSkillTree"
                     | "gameMasterSkillTree"
                     | "gameMasterAuraSkillTree"
             ) {
@@ -548,6 +570,7 @@ impl Gathered {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
                     "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
                     "nobleSkillTree" => (&mut self.noble, &mut self.noble_order),
+                    "collectSkillTree" => (&mut self.collect, &mut self.collect_order),
                     "gameMasterSkillTree" => (&mut self.game_master, &mut self.game_master_order),
                     "gameMasterAuraSkillTree" => {
                         (&mut self.game_master_aura, &mut self.game_master_aura_order)
@@ -563,7 +586,7 @@ impl Gathered {
                 }
                 continue;
             }
-            // Only class, clan and fishing trees are kept. Other trees (transfer, collect, ...) are not loaded.
+            // Only the trees above and the class trees are kept. Other trees (transfer, transform, ...) are not loaded.
             if tree.kind != "classSkillTree" {
                 continue;
             }
@@ -1138,6 +1161,20 @@ mod tests {
         assert_eq!(trees.game_master_aura_skills().len(), 2);
         // Not a class, clan or fishing tree: nothing else is kept.
         assert!(trees.pledge_skills().is_empty() && trees.fishing_skills().is_empty());
+    }
+
+    #[test]
+    fn the_collect_tree_is_kept() {
+        let xml = r#"<list><skillTree type="collectSkillTree">
+			<skill skillName="Star Stone Gathering" skillId="932" skillLevel="1" getLevel="1" learnedByNpc="true"><item id="13728" count="1"/></skill>
+			<skill skillName="Star Stone Gathering" skillId="932" skillLevel="2" getLevel="1" learnedByNpc="true"><item id="57" count="400000"/></skill>
+		</skillTree></list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        assert_eq!(trees.collect_skills().len(), 2);
+        let second = trees.collect_skill(932, 2).unwrap();
+        assert_eq!(second.required_items[0].count, 400_000);
+        assert!(trees.collect_skill(932, 3).is_none());
+        assert!(trees.fishing_skills().is_empty());
     }
 
     #[test]

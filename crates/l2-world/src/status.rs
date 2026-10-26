@@ -413,10 +413,10 @@ impl World {
     }
 
     /// Java `Creature.isInvul()`: `_isInvul || _isTeleporting || isAffected(EffectFlag.INVUL)`.
-    /// `Player.isInvul()` also adds `isTeleportProtected()` (spawn protection), which is not
-    /// modelled.
+    /// `Player.isInvul()` also adds `isTeleportProtected()`; the spawn protection is not modelled.
     pub fn is_invul(&self, id: ObjectId) -> bool {
         self.invul_flag(id)
+            || self.is_teleport_protected(id)
             || self.is_teleporting(id)
             || self.is_affected(id, crate::effects::effect_flag::INVUL)
     }

@@ -387,6 +387,18 @@ impl Scene {
             "data/html/trainer/1101.htm",
             "<html><body><a action=\"bypass -h npc_%objectId%_SkillList\">Learn skills.</a></body></html>",
         );
+        write(
+            "data/html/npcbusy.htm",
+            "<html><body>%npcname%:<br>
+Sorry %playername% I cannot help you right now.<br>
+%busymessage%
+</body></html>",
+        );
+        // The page of Tolonis, with its SkillList link.
+        write(
+            "data/html/default/32611.htm",
+            "<html><body><a action=\"bypass -h npc_%objectId%_SkillList\">Learn collect skills.</a></body></html>",
+        );
         // The page of a fisherman, with its FishSkillList link.
         write(
             "data/html/fisherman/1200.htm",
@@ -1425,6 +1437,143 @@ fn the_fishing_level_and_the_previous_level_are_checked() {
     );
     assert_eq!(skills_of(s.me()), vec![(1315, 1)]);
     assert_eq!(s.me().data.items[0].count, 10_000);
+}
+
+// ------------------------------------------------------------------ the collect tree (Tolonis)
+
+const COLLECT_TREES: &str = r#"<list>
+<skillTree type="classSkillTree" classId="0" />
+<skillTree type="collectSkillTree">
+<skill skillName="Star Stone Gathering" skillId="932" skillLevel="1" getLevel="1" learnedByNpc="true"><item id="57" count="1000" /></skill>
+<skill skillName="Star Stone Gathering" skillId="932" skillLevel="2" getLevel="1" learnedByNpc="true"><item id="57" count="4000" /></skill>
+</skillTree>
+</list>"#;
+
+fn collect_scene() -> Scene {
+    let npcs = r#"<?xml version="1.0"?><list>
+        <npc id="32611" type="Folk" level="10" name="Tolonis" usingServerSideName="true"/></list>"#;
+    let skills = format!("<list>{}{}</list>", passive(932, 2), passive(3, 3));
+    Scene::build(
+        WorldSettings::default(),
+        Arc::new(SkillTrees::from_xml(COLLECT_TREES).unwrap()),
+        Arc::new(SkillLearnData::from_xml(SKILL_LEARN).unwrap()),
+        npcs,
+        &skills,
+    )
+}
+
+/// `Folk.showSkillList` for Tolonis (32611): `AcquireSkillList(COLLECT)` with the first level of
+/// each collect skill (SP 0, last value 1); a known level offers the next one
+/// (`getAvailableCollectSkills`); with nothing left "There are no other skills to learn.".
+#[test]
+fn tolonis_lists_the_collect_skills() {
+    let mut s = collect_scene();
+    s.enter(player_data(ME, 10, 0));
+    let npc = s.talk_to(ME, 32611);
+    s.log.take();
+    s.skill_list(ME, npc);
+    let shown = lists(&s.log.take());
+    assert_eq!(shown.len(), 1);
+    assert_eq!(shown[0].skill_type, AcquireSkillType::Collect);
+    assert_eq!(entries(&shown[0]), vec![(932, 1, 1, 0, 1)]);
+
+    let mut data = player_data(MAGE, 10, 0);
+    data.skills = vec![SkillData {
+        skill_id: 932,
+        skill_level: 1,
+    }];
+    s.enter(data);
+    s.talk_again(MAGE, npc);
+    s.log.take();
+    s.skill_list(MAGE, npc);
+    let list: Vec<AcquireSkillList> = decoded(&s.log.take(), MAGE, "ACQUIRE_SKILL_LIST");
+    assert_eq!(entries(&list[0]), vec![(932, 2, 2, 0, 1)]);
+
+    let mut data = player_data(ObjectId(0x2000_0003).0, 10, 0);
+    data.skills = vec![SkillData {
+        skill_id: 932,
+        skill_level: 2,
+    }];
+    s.enter(data);
+    s.talk_again(0x2000_0003, npc);
+    s.log.take();
+    s.skill_list(0x2000_0003, npc);
+    let sent = s.log.take();
+    assert!(lists(&sent).is_empty());
+    assert_eq!(
+        message_ids(&sent, 0x2000_0003),
+        vec![SystemMessageId::ThereAreNoOtherSkillsToLearn]
+    );
+}
+
+/// `RequestAcquireSkill` of type COLLECT: the adena is paid, the row stored.
+#[test]
+fn a_collect_skill_is_learned_for_its_items() {
+    let mut s = collect_scene();
+    let mut data = player_data(ME, 10, 0);
+    data.items = vec![adena(1500)];
+    s.enter(data);
+    let npc = s.talk_to(ME, 32611);
+    s.skill_list(ME, npc);
+    s.log.take();
+    s.input(
+        ME,
+        ClientInput::AcquireSkillInfo {
+            id: 932,
+            level: 1,
+            skill_type: AcquireSkillType::Collect,
+        },
+    );
+    let info: Vec<AcquireSkillInfo> = decoded(&s.log.take(), ME, "ACQUIRE_SKILL_INFO");
+    assert_eq!(info.len(), 1);
+    assert_eq!(info[0].skill_type, AcquireSkillType::Collect);
+
+    s.input(
+        ME,
+        ClientInput::AcquireSkill {
+            id: 932,
+            level: 1,
+            skill_type: AcquireSkillType::Collect,
+            sub_type: 0,
+        },
+    );
+    s.ticks(10);
+    assert_eq!(skills_of(s.me()), vec![(932, 1)]);
+    assert_eq!(s.me().data.items[0].count, 500);
+}
+
+/// `Npc.onBypassFeedback`: a busy NPC with a message shows `npcbusy.htm` (with the NPC's and the
+/// player's name and the message) after `ActionFailed`, and the handler does not run; without the
+/// message (or once it is free again) the handler answers.
+#[test]
+fn a_busy_npc_answers_with_the_busy_page() {
+    let mut s = collect_scene();
+    s.enter(player_data(ME, 10, 0));
+    let npc = s.talk_to(ME, 32611);
+    s.world.set_npc_busy(npc, true);
+    // Busy but no message: the handler runs.
+    s.log.take();
+    s.skill_list(ME, npc);
+    assert_eq!(lists(&s.log.take()).len(), 1);
+
+    s.world.set_npc_busy_message(npc, "Come back later.");
+    s.skill_list(ME, npc);
+    let sent = s.log.take();
+    assert!(lists(&sent).is_empty());
+    let page: Vec<l2_protocol_game::server::NpcHtmlMessage> = decoded(&sent, ME, "NPC_HTML_MESSAGE");
+    assert_eq!(page.len(), 1);
+    assert!(page[0].html.contains("Tolonis:"), "{}", page[0].html);
+    assert!(page[0].html.contains("Sorry "), "{}", page[0].html);
+    assert!(page[0].html.contains("Come back later."), "{}", page[0].html);
+    let names = names(&sent, ME);
+    assert!(names.contains(&"ACTION_FAIL".to_owned()));
+
+    // The busy page has no links: the player talks to the NPC again.
+    s.world.set_npc_busy(npc, false);
+    s.talk_again(ME, npc);
+    s.log.take();
+    s.skill_list(ME, npc);
+    assert_eq!(lists(&s.log.take()).len(), 1);
 }
 
 // ------------------------------------------------------------------ the real datapack

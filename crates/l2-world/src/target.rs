@@ -690,10 +690,14 @@ impl World {
             );
             return;
         }
-        // FOLLOW-UP(M4): for Escape (`unselect == 0`), aborting the cast the player is in before
-        // the target goes.
-        let _ = unselect;
-        if self.target_of(id).is_some() {
+        if unselect == 0 {
+            // Escape: the running cast aborts first, otherwise the target goes.
+            if self.is_casting_now(id) && self.can_abort_cast(id) {
+                self.abort_cast(id);
+            } else if self.target_of(id).is_some() {
+                self.set_target(id, None);
+            }
+        } else if self.target_of(id).is_some() {
             self.set_target(id, None);
         }
         // Airships are not modelled (`TargetUnselected` for a player on a helm).
