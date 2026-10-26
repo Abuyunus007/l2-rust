@@ -181,6 +181,9 @@ pub enum PersistCommand {
         owner: ObjectId,
         control_object_id: ObjectId,
     },
+    /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
+    /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
+    OfflineTrade(crate::trade::OfflineTradeWrite),
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,
@@ -208,6 +211,9 @@ pub enum LsEvent {
     PlayerInGame { account: String },
     /// Java `LoginServerThread.sendAccessLevel` → `ChangeAccessLevel` (a ban is -1, its end 0).
     AccessLevel { account: String, level: i32 },
+    /// Java `LoginServerThread.sendLogout` → `PlayerLogout` without the character leaving: a
+    /// player who stays in the world as an offline trader frees its account (M6-FU-14).
+    PlayerLogout { account: String },
 }
 
 /// Everything the world produces that is not a packet for a player.

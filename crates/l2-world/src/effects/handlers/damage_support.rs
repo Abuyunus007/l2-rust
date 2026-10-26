@@ -141,6 +141,11 @@ impl World {
         is_dot: bool,
         is_hp_consumption: bool,
     ) {
+        // "If OFFLINE_MODE_NO_DAMAGE is enabled and player is offline and he is in store/craft
+        // mode, no damage is taken."
+        if self.offline_takes_no_damage(id) {
+            return;
+        }
         if self.is_invul(id) && !(is_dot || is_hp_consumption) {
             return;
         }

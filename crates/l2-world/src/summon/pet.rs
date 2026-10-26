@@ -510,10 +510,11 @@ impl World {
         }
     }
 
-    /// Java `Pet.spawnPet(template, owner, control)` followed by the rest of `SummonPet.onStart`:
-    /// the pet of the collar `control` is made, stored when it is new, spawned next to the owner
-    /// and starts to eat. `None` (with a warning, like Java) when it cannot be made.
-    pub fn summon_pet(&mut self, owner: ObjectId, control: ObjectId) -> Option<ObjectId> {
+    /// Java `Pet.spawnPet(template, owner, control)`: the pet of the collar `control`, made from its
+    /// row when there is one, at the level the owner's synchronises it to. It is not stored,
+    /// not the owner's summon yet and not in view: `summon_pet` (`SummonPet.onStart`) and the pet
+    /// manager's evolve and restore go on from here.
+    pub(crate) fn pet_spawn_pet(&mut self, owner: ObjectId, control: ObjectId) -> Option<ObjectId> {
         let item = self.inventory_item(owner, control)?.clone();
         let (npc_id, sync_level, max_level) = {
             let data = self.pet_table()?.pet_data_by_item_id(item.item_id)?;
@@ -535,6 +536,14 @@ impl World {
                 state.exp = exp;
             }
         }
+        Some(pet)
+    }
+
+    /// Java `Pet.spawnPet(template, owner, control)` followed by the rest of `SummonPet.onStart`:
+    /// the pet of the collar `control` is made, stored when it is new, spawned next to the owner
+    /// and starts to eat. `None` (with a warning, like Java) when it cannot be made.
+    pub fn summon_pet(&mut self, owner: ObjectId, control: ObjectId) -> Option<ObjectId> {
+        let pet = self.pet_spawn_pet(owner, control)?;
 
         // `SummonPet.onStart`.
         if let Some(state) = self.summon_mut(pet) {
@@ -739,7 +748,7 @@ impl World {
     }
 
     /// `Item.setEnchantLevel(level)` of the collar (the pet's level is shown as its enchant).
-    fn pet_set_control_enchant(&mut self, owner: ObjectId, control: ObjectId, level: i32) {
+    pub(crate) fn pet_set_control_enchant(&mut self, owner: ObjectId, control: ObjectId, level: i32) {
         if let Some(item) = self
             .players
             .get_mut(&owner)
@@ -752,7 +761,7 @@ impl World {
     /// `Pet.setName(name)`: the collar's second custom type tells whether the pet is named
     /// (`controlItem.getCustomType2() == (name == null ? 1 : 0)` flips it), written at once with an
     /// inventory update.
-    fn pet_sync_control_name_flag(&mut self, owner: ObjectId, control: ObjectId, named: bool) {
+    pub(crate) fn pet_sync_control_name_flag(&mut self, owner: ObjectId, control: ObjectId, named: bool) {
         let flag = i32::from(named);
         let current = self.inventory_item(owner, control).map(|i| i.custom_type2);
         match current {

@@ -21,6 +21,8 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/character_instance_time.sql"),
     include_str!("../sql/game/character_item_reuse_save.sql"),
     include_str!("../sql/game/character_macroses.sql"),
+    include_str!("../sql/game/character_offline_trade.sql"),
+    include_str!("../sql/game/character_offline_trade_items.sql"),
     include_str!("../sql/game/character_pet_skills_save.sql"),
     include_str!("../sql/game/character_quests.sql"),
     include_str!("../sql/game/character_raid_points.sql"),

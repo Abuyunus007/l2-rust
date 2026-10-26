@@ -24,8 +24,8 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - Offline trade (`OfflineTradeEnable`, `OfflineTraderTable`, `setPrivateStoreType`'s
-//   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record): M6-STORE-01 leaves
-//   it, there are no detached clients in the Rust server yet.
+//   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record) is
+//   `offline.rs` (M6-FU-14).
 // - The cursed weapon check, `isSellingBuffs`
 //   (`SellBuffsManager`), the olympiad (M8) and a mount.
 
@@ -240,12 +240,13 @@ impl World {
     }
 
     /// Java `Player.setPrivateStoreType(type)`.
-    // Not modelled: with `OfflineDisconnectFinished` a detached client whose store closes is
-    // stored and removed (`OfflineTraderTable`); there are no offline traders (offline trade is a
-    // later card).
     pub(crate) fn set_private_store_type(&mut self, id: ObjectId, kind: PrivateStoreType) {
         if let Some(p) = self.players.get_mut(&id) {
             p.trade.store_type = kind;
+        }
+        // `OFFLINE_DISCONNECT_FINISHED` and a detached client: the trader is removed and stored.
+        if kind == PrivateStoreType::None {
+            self.offline_store_closed(id);
         }
     }
 
@@ -614,7 +615,7 @@ impl World {
 
     /// Java `TradeList.addItem(objectId, count, price)` on the sell list of `owner`: a refused
     /// item is `None` (Java returns null and `SetPrivateStoreListSell` ignores it).
-    fn sell_list_add_item(
+    pub(crate) fn sell_list_add_item(
         &mut self,
         owner: ObjectId,
         object_id: i32,

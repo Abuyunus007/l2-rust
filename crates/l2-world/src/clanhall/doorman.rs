@@ -3,8 +3,7 @@
 // Java: entity/actor/instance/Doorman.java (onBypassFeedback, cannotManageDoors, tele)
 //
 // A doorman answers only the clan that owns the hall it stands at. The halls of `CH_WITH_EVOLVE`
-// also offer the pet evolution; `PetManager.doEvolve` is not ported (nothing evolves, the player
-// gets the "no" page).
+// also offer the pet evolution (`PetManager.doEvolve`, `summon/evolve.rs`).
 
 use l2_protocol_game::server::ActionFailed;
 use l2_util::ObjectId;
@@ -145,10 +144,8 @@ impl World {
         }
     }
 
-    /// `evolve <n>`: Java calls `PetManager.doEvolve`, which is not ported yet, so the answer is
-    /// always the "no" page.
-    // FOLLOW-UP(PetManager.doEvolve): the five evolutions (9882/10307, 4422/10308, 4423/10309,
-    // 4424/10310 at level 55 and 10426/10611 at level 70).
+    /// `evolve <n>`: Java's `StringTokenizer` over the command, then `PetManager.doEvolve` of the
+    /// chosen evolution and the "ok" or "no" page.
     fn doorman_evolve(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
         let mut tokens = command.split(' ').filter(|t| !t.is_empty());
         if tokens.clone().count() < 2 {
@@ -156,11 +153,24 @@ impl World {
         }
         tokens.next();
         // `Integer.parseInt` throws for anything else.
-        if tokens.next().and_then(|t| t.parse::<i32>().ok()).is_none() {
+        let Some(value) = tokens.next().and_then(|t| t.parse::<i32>().ok()) else {
             warn!("ClanHallDoorman: bad evolve command {command:?} from {player}");
             return;
-        }
-        if let Some(html) = self.html_from_file(player, npc.0, "data/html/clanHallDoorman/evolve-no.htm") {
+        };
+        let ok = match value {
+            1 => self.pet_do_evolve(player, npc, 9882, 10307, 55),
+            2 => self.pet_do_evolve(player, npc, 4422, 10308, 55),
+            3 => self.pet_do_evolve(player, npc, 4423, 10309, 55),
+            4 => self.pet_do_evolve(player, npc, 4424, 10310, 55),
+            5 => self.pet_do_evolve(player, npc, 10426, 10611, 70),
+            _ => false,
+        };
+        let path = if ok {
+            "data/html/clanHallDoorman/evolve-ok.htm"
+        } else {
+            "data/html/clanHallDoorman/evolve-no.htm"
+        };
+        if let Some(html) = self.html_from_file(player, npc.0, path) {
             self.send_html(player, &html);
         }
     }

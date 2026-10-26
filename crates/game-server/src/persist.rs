@@ -59,6 +59,7 @@ use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
 use l2_db::HallSiegeRepository;
+use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
@@ -98,6 +99,7 @@ use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
+use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
 use tokio::task;
@@ -364,6 +366,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(Vec::new()) }
     }
 
+    /// A write of the offline trade tables (Java `OfflineTraderTable`, M6-FU-14).
+    fn store_offline_trade(
+        &mut self,
+        _write: &OfflineTradeWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// The ids of every `crests` row (M7-FU-03): a new crest takes the lowest free one.
     fn load_crest_ids(&mut self) -> impl Future<Output = Result<Vec<i32>, PersistError>> + Send {
         async { Ok(Vec::new()) }
@@ -439,6 +449,14 @@ impl LeftAcks {
             .or_default()
             .push(tx);
         rx
+    }
+
+    /// Forgets the waiters of `id` (the wait was not needed after all).
+    pub fn cancel_wait(&self, id: ObjectId) {
+        self.waiters
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .remove(&id);
     }
 
     /// Wakes everyone waiting for `id`. The persistence task calls it after `PlayerLeft`.
@@ -866,6 +884,12 @@ async fn run<S: PlayerStore>(
                     error!("A bot report could NOT be stored ({row:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::OfflineTrade(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_offline_trade(&write).await {
+                    error!("Offline trade data could NOT be stored: {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
                 // Java logs a failed friend statement and goes on (no retry).
                 if let Err(e) = store.store_friend_write(&write).await {
@@ -936,6 +960,9 @@ async fn run<S: PlayerStore>(
             }
             OutboxMessage::Ls(LsEvent::AccessLevel { account, level }) => {
                 let _ = notices.send(LsNotice::AccessLevel { account, level });
+            }
+            OutboxMessage::Ls(LsEvent::PlayerLogout { account }) => {
+                let _ = notices.send(LsNotice::PlayerLogout { account });
             }
         }
     }
@@ -1107,6 +1134,98 @@ pub async fn load_mail_attachments(
     let mut list = load_container_items(items, sender_id, ItemLocation::Mail).await?;
     list.retain(|i| i.loc_data == message_id);
     Ok(list)
+}
+
+/// One shop of `storeOffliners`: its lines, then its row.
+async fn write_offline_shop(
+    repo: &OfflineTradeRepository,
+    row: &OfflineTradeRow,
+) -> Result<(), PersistError> {
+    for line in &row.items {
+        repo.insert_item(row.char_id.0, line.item, line.count, line.price)
+            .await?;
+    }
+    repo.insert_status(
+        row.char_id.0,
+        row.status.time,
+        row.status.store_type,
+        row.status.title.as_deref(),
+    )
+    .await?;
+    Ok(())
+}
+
+/// Java `OfflineTraderTable.restoreOfflineTraders`, the database half: the shops of the tables
+/// that are young enough and of a known type, each with its character loaded like at
+/// `CharacterSelect`. Only reads (D-39). A shop whose character cannot be read is skipped with
+/// Java's warning; the world sits them down (`World::restore_offline_traders`).
+pub async fn load_offline_traders(
+    pool: &Pool,
+    settings: &OfflineSettings,
+    now_ms: i64,
+) -> Vec<(PlayerData, OfflineTradeRow)> {
+    use crate::client::enter::{DbPlayerLoader, PlayerLoader};
+    let repo = OfflineTradeRepository::new(pool.clone());
+    let characters = CharacterRepository::new(pool.clone());
+    let loader = DbPlayerLoader::new(pool.clone());
+    let statuses = match repo.load_status().await {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("OfflineTraderTable: Error while loading offline traders: {e}");
+            return Vec::new();
+        }
+    };
+    let mut traders = Vec::new();
+    for status in statuses {
+        let Ok(char_id) = i32::try_from(status.char_id) else {
+            continue;
+        };
+        let time = i64::try_from(status.time).unwrap_or(i64::MAX);
+        if l2_world::restorable_store_type(settings, time, i32::from(status.store_type), now_ms).is_none() {
+            continue;
+        }
+        let account = match characters.restore_character(char_id).await {
+            Ok(Some(row)) => row.account_name.unwrap_or_default(),
+            _ => {
+                warn!("OfflineTraderTable: Error loading trader: the character {char_id} is not there.");
+                continue;
+            }
+        };
+        let player = match loader.load_player(&account, char_id).await {
+            Ok(player) => player,
+            Err(e) => {
+                warn!("OfflineTraderTable: Error loading trader: {char_id} {e}");
+                continue;
+            }
+        };
+        let items = match repo.load_items(char_id).await {
+            Ok(rows) => rows
+                .into_iter()
+                .map(|r| OfflineTradeLine {
+                    item: i32::try_from(r.item).unwrap_or(0),
+                    count: i64::try_from(r.count).unwrap_or(i64::MAX),
+                    price: i64::try_from(r.price).unwrap_or(i64::MAX),
+                })
+                .collect(),
+            Err(e) => {
+                warn!("OfflineTraderTable: Error loading trader: {char_id} {e}");
+                continue;
+            }
+        };
+        traders.push((
+            player,
+            OfflineTradeRow {
+                char_id: ObjectId(char_id),
+                status: OfflineTradeStatus {
+                    time,
+                    store_type: i32::from(status.store_type),
+                    title: status.title,
+                },
+                items,
+            },
+        ));
+    }
+    traders
 }
 
 /// Java `BotReportTable.loadReportedCharData`, the database half: the rows of
@@ -2448,6 +2567,7 @@ pub struct DbStore {
     manor: ManorRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
+    offline_trades: OfflineTradeRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -2484,7 +2604,8 @@ impl DbStore {
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
-            bot_reports: BotReportRepository::new(pool),
+            bot_reports: BotReportRepository::new(pool.clone()),
+            offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
             rows_written: HashSet::new(),
@@ -3036,7 +3157,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         title_color: player.profile.title_color,
         access_level: player.access_level,
         // The snapshot is of a player in the world; `PlayerLeft` marks it offline afterwards.
-        online: 1,
+        // 2 for a player without a client (an offline trader, Java `isOnlineInt()`).
+        online: player.profile.online_status,
         is_in_7s_dungeon: row.isin7sdungeon != 0,
         clan_privs: clan.map_or_else(
             || row.clan_privs.map_or(0, |v| clamp_i32(u64::from(v))),
@@ -3525,6 +3647,58 @@ impl PlayerStore for DbStore {
         let mut inventory = load_container_items(items, owner.0, ItemLocation::Inventory).await?;
         inventory.extend(load_container_items(items, owner.0, ItemLocation::Paperdoll).await?);
         Ok(OfflinePetRows { pet_items, inventory })
+    }
+
+    async fn store_offline_trade(&mut self, write: &OfflineTradeWrite) -> Result<(), PersistError> {
+        let repo = &self.offline_trades;
+        match write {
+            // Java `storeOffliners`: both tables are emptied, then each shop is written; a shop that
+            // fails is logged and the others go on.
+            OfflineTradeWrite::StoreAll(rows) => {
+                repo.clear_all().await?;
+                for row in rows {
+                    if let Err(e) = write_offline_shop(repo, row).await {
+                        warn!(
+                            "OfflineTraderTable: Error while saving offline trader: {} {e}",
+                            row.char_id.0
+                        );
+                    }
+                }
+            }
+            // Java `onTransaction`: the lines of the trader go; then its row (finished) or the new
+            // lines and, on the first call, its row.
+            OfflineTradeWrite::Transaction {
+                char_id,
+                finished,
+                items,
+                status,
+            } => {
+                repo.clear_player_items(char_id.0).await?;
+                if *finished {
+                    repo.clear_player_status(char_id.0).await?;
+                } else {
+                    for line in items {
+                        repo.insert_item(char_id.0, line.item, line.count, line.price)
+                            .await?;
+                    }
+                    if let Some(status) = status {
+                        repo.insert_status(
+                            char_id.0,
+                            status.time,
+                            status.store_type,
+                            status.title.as_deref(),
+                        )
+                        .await?;
+                    }
+                }
+            }
+            // Java `removeTrader`.
+            OfflineTradeWrite::Remove { char_id } => {
+                repo.clear_player_items(char_id.0).await?;
+                repo.clear_player_status(char_id.0).await?;
+            }
+        }
+        Ok(())
     }
 
     async fn store_bot_report(&mut self, row: &BotReportRow) -> Result<(), PersistError> {
@@ -4091,6 +4265,7 @@ mod tests {
         CrestInsert(i32),
         /// One bot report row: bot, reporter, date (M6-FU-09).
         BotReport(i32, i32, i64),
+        OfflineTrade(OfflineTradeWrite),
         /// The read of an offline owner's pet and inventory rows (M6-FU-09).
         OfflinePetRows(i32),
         /// A recipe book row.
@@ -4274,6 +4449,11 @@ mod tests {
             } else {
                 Vec::new()
             })
+        }
+
+        async fn store_offline_trade(&mut self, write: &OfflineTradeWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::OfflineTrade(write.clone()));
+            Ok(())
         }
 
         async fn store_bot_report(&mut self, row: &BotReportRow) -> Result<(), PersistError> {
@@ -4618,6 +4798,44 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    /// M6-FU-14: the offline trade writes go to the store in order with the other commands, and a
+    /// player who goes offline frees its account (`PlayerLogout`) without a `PlayerLeft`.
+    #[tokio::test]
+    async fn offline_trade_writes_are_applied_in_order_and_the_account_is_freed() {
+        let write = OfflineTradeWrite::Transaction {
+            char_id: ObjectId(7),
+            finished: true,
+            items: Vec::new(),
+            status: None,
+        };
+        let (calls, notices) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::OfflineTrade(write.clone())),
+                OutboxMessage::Ls(LsEvent::PlayerLogout {
+                    account: "acc".into(),
+                }),
+                OutboxMessage::Persist(PersistCommand::OfflineTrade(OfflineTradeWrite::Remove {
+                    char_id: ObjectId(7),
+                })),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::OfflineTrade(write),
+                Call::OfflineTrade(OfflineTradeWrite::Remove { char_id: ObjectId(7) }),
+            ]
+        );
+        assert_eq!(
+            notices,
+            vec![LsNotice::PlayerLogout {
+                account: "acc".into()
+            }]
+        );
     }
 
     /// M6-FU-09: a bot report is one row, written in order with the other commands.

@@ -290,6 +290,20 @@ pub enum WorldCommand {
     Kick {
         account: String,
     },
+    /// `CharacterSelect`: "Disconnect offline trader." The character is stored and removed when it
+    /// is an offline trader; `done` hears whether it was (and the final store is queued). Called
+    /// before the character is loaded, so the load sees the trader's last state.
+    ReleaseOfflineTrader {
+        object_id: l2_util::ObjectId,
+        done: Box<dyn FnOnce(bool) + Send>,
+    },
+    /// The login server kicked an account that has no connection: its offline traders are stored
+    /// and deleted; `done` hears whether there was one (then the final store frees the account at
+    /// the login server, D-52).
+    ReleaseOfflineAccount {
+        account: String,
+        done: Box<dyn FnOnce(bool) + Send>,
+    },
     Admin(AdminQuery),
     /// A path worker finished a search (M3-GEO-03). `requester` and `request_id` are the ones
     /// of the `l2_geo::PathRequest`; the movement code (M3-MOVE-01) matches them against the
@@ -369,6 +383,8 @@ impl fmt::Debug for WorldCommand {
             Self::Input { session, input } => write!(f, "Input({session:?}, {input:?})"),
             Self::Disconnected { session } => write!(f, "Disconnected({session:?})"),
             Self::Kick { account } => write!(f, "Kick({account})"),
+            Self::ReleaseOfflineAccount { account, .. } => write!(f, "ReleaseOfflineAccount({account})"),
+            Self::ReleaseOfflineTrader { object_id, .. } => write!(f, "ReleaseOfflineTrader({object_id})"),
             Self::Admin(query) => write!(f, "Admin({query:?})"),
             Self::PathFound {
                 requester,

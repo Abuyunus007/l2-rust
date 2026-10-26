@@ -2721,7 +2721,7 @@ fn the_doorman_serves_only_the_owner() {
         &last_page(&s.take(), P3),
         "clanHallDoorman/doorman-closed.htm"
     ));
-    // `PetManager.doEvolve` is not ported: the "no" page.
+    // `PetManager.doEvolve` without a pet: the "no" page.
     s.bypass(P3, doorman, "evolve 1");
     assert!(is_page(
         &last_page(&s.take(), P3),

@@ -50,8 +50,11 @@ impl World {
             );
             return;
         };
-        // `target.getClient() == null || isDetached()` ("Player is in offline mode."): there are no
-        // offline traders or detached clients in the world.
+        // `target.getClient() == null || isDetached()`: an offline trader.
+        if !self.sinks.contains_key(&target) {
+            self.send_message(requestor, "Player is in offline mode.");
+            return;
+        }
         let target_name = self.party_player_name(target);
         if self.is_party_banned(requestor) {
             self.party_plain_message(

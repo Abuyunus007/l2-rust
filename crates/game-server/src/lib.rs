@@ -442,6 +442,68 @@ pub fn siege_database_writes(config_dir: &Path) -> bool {
     on
 }
 
+/// `OfflineTradeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
+/// default). Off, the offline traders live in memory until this server stops: it writes no row of
+/// `character_offline_trade` and `character_offline_trade_items`, removes none and restores none,
+/// so the Java game server that shares the database never brings this server's traders back (and
+/// this server never restores the ones Java wrote) (D-39, D-52). Logs the active mode.
+pub fn offline_trade_database_writes(config_dir: &Path) -> bool {
+    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
+    let on = if path.exists() {
+        match IniFile::load(&path) {
+            Ok(ini) => ini.get_bool("OfflineTradeDatabaseWrites", false),
+            Err(e) => {
+                warn!(
+                    "Cannot read {}: {e}; using OfflineTradeDatabaseWrites = False.",
+                    path.display()
+                );
+                false
+            }
+        }
+    } else {
+        false
+    };
+    if on {
+        info!(
+            "SideBySide: OfflineTradeDatabaseWrites = True, the offline traders are written to and restored from the database."
+        );
+    } else {
+        info!(
+            "SideBySide: OfflineTradeDatabaseWrites = False, the offline traders live in memory only (the Java game server owns the tables)."
+        );
+    }
+    on
+}
+
+/// `OfflineTrade.ini` (Java `OfflineTradeConfig`) and `OfflineTradeDatabaseWrites` of
+/// `SideBySide.ini`. `OfflineNameColor` is `Integer.decode("0x" + value)`; a value that does not
+/// read as hex falls back to the default with a warning (Java would not start).
+pub fn offline_settings(config: &GameConfig, config_dir: &Path) -> l2_world::OfflineSettings {
+    let t = &config.offline_trade;
+    let defaults = l2_world::OfflineSettings::default();
+    let name_color = IniFile::load(config_dir.join(l2_config::game::OfflineTradeConfig::FILE))
+        .map(|ini| ini.get_string("OfflineNameColor", "808080"))
+        .unwrap_or_else(|_| "808080".to_owned());
+    let name_color =
+        i32::from_str_radix(name_color.trim().trim_start_matches("0x"), 16).unwrap_or_else(|_| {
+            warn!("OfflineNameColor {name_color:?} is not a hexadecimal colour; using 808080.");
+            defaults.offline_name_color
+        });
+    l2_world::OfflineSettings {
+        offline_trade_enable: t.offline_trade_enable,
+        offline_craft_enable: t.offline_craft_enable,
+        offline_mode_in_peace_zone: t.offline_mode_in_peace_zone,
+        offline_mode_no_damage: t.offline_mode_no_damage,
+        offline_set_name_color: t.offline_set_name_color,
+        offline_name_color: name_color,
+        restore_offliners: t.restore_offliners,
+        offline_max_days: t.offline_max_days,
+        offline_disconnect_finished: t.offline_disconnect_finished,
+        store_offline_trade_in_realtime: t.store_offline_trade_in_realtime,
+        database_writes: offline_trade_database_writes(config_dir),
+    }
+}
+
 /// File names inside the config directory.
 pub const DATABASE_CONFIG_FILE: &str = "Database.ini";
 pub const INTERFACE_CONFIG_FILE: &str = "Interface.ini";
@@ -612,6 +674,15 @@ impl Server {
         let bot_report_settings = world_data::bot_report_settings(&config, &paths.config_dir);
         let bot_reports = if bot_report_settings.enable {
             persist::load_bot_reports(&pool).await
+        } else {
+            Vec::new()
+        };
+        // Java: OfflineTradeConfig, and OfflineTraderTable.restoreOfflineTraders (GameServer, with
+        // RESTORE_OFFLINERS; here also with OfflineTradeDatabaseWrites, D-52): the shops of the
+        // tables, with their characters, read only.
+        let offline_settings = offline_settings(&config, &paths.config_dir);
+        let offline_traders = if offline_settings.restore_wanted() {
+            persist::load_offline_traders(&pool, &offline_settings, l2_util::time::now_millis()).await
         } else {
             Vec::new()
         };
@@ -848,6 +919,13 @@ impl Server {
                     // Java: FishingChampionshipManager.getInstance (GameServer, after the managers).
                     if let Some(data) = fishing_championship {
                         world.load_fishing_championship(data);
+                    }
+                    // Java: GameServer, last: OfflineTraderTable.restoreOfflineTraders (after the
+                    // spawns and the clans, so the traders find their surroundings).
+                    let restore_traders = offline_settings.restore_wanted();
+                    world.set_offline_settings(offline_settings);
+                    if restore_traders {
+                        world.restore_offline_traders(offline_traders);
                     }
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
@@ -1145,6 +1223,61 @@ mod tests {
 
     use super::*;
     use crate::test_support::idle_server;
+
+    /// D-52: the offline trade rows are off unless `SideBySide.ini` says so; the other keys come
+    /// from `OfflineTrade.ini` with Java's defaults (`OfflineNameColor` is hex).
+    #[test]
+    fn offline_trade_database_writes_default_to_off_and_the_settings_follow_the_ini() {
+        let dir = tempfile::tempdir().unwrap();
+        assert!(!offline_trade_database_writes(dir.path()));
+        let file = dir.path().join(world_data::SIDE_BY_SIDE_FILE);
+        let example = include_str!("../config-examples/SideBySide.ini");
+        assert!(example.contains("OfflineTradeDatabaseWrites = False"));
+        std::fs::write(&file, example).unwrap();
+        assert!(!offline_trade_database_writes(dir.path()));
+        std::fs::write(&file, "OfflineTradeDatabaseWrites = True\n").unwrap();
+        assert!(offline_trade_database_writes(dir.path()));
+
+        // Without OfflineTrade.ini: the Java defaults, with the switch from SideBySide.ini.
+        let config = GameConfig::default();
+        let settings = offline_settings(&config, dir.path());
+        assert!(settings.database_writes);
+        assert_eq!(
+            l2_world::OfflineSettings {
+                database_writes: false,
+                ..settings.clone()
+            },
+            l2_world::OfflineSettings::default()
+        );
+        // Restoring needs the switch, a trade key and RestoreOffliners.
+        assert!(!settings.restore_wanted());
+        let wanted = l2_world::OfflineSettings {
+            offline_trade_enable: true,
+            restore_offliners: true,
+            ..settings
+        };
+        assert!(wanted.restore_wanted());
+        assert!(
+            !l2_world::OfflineSettings {
+                database_writes: false,
+                ..wanted
+            }
+            .restore_wanted()
+        );
+
+        // The name colour is hexadecimal.
+        std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+        std::fs::write(
+            dir.path().join("Custom/OfflineTrade.ini"),
+            "OfflineNameColor = FF8000\nOfflineMaxDays = 3\nStoreOfflineTradeInRealtime = False\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = offline_settings(&config, dir.path());
+        assert_eq!(settings.offline_name_color, 0x00FF_8000);
+        assert_eq!(settings.offline_max_days, 3);
+        assert!(!settings.store_offline_trade_in_realtime);
+    }
 
     #[test]
     fn siege_database_writes_defaults_to_off_and_reads_the_file() {

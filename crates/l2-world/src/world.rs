@@ -142,6 +142,8 @@ pub struct World {
     pub(crate) clanhall: crate::clanhall::ClanHallWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
+    /// The players in offline mode and the offline trade settings (M6-FU-14, `trade/offline.rs`).
+    pub(crate) offline: crate::trade::OfflineWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
     pub(crate) flood: crate::flood::FloodWorld,
     /// The fortress sieges, their spawns and `FortUpdater` (M7-FORT-01, `fort/`).
@@ -219,6 +221,7 @@ impl World {
             manor: crate::manor::ManorWorld::default(),
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
+            offline: crate::trade::OfflineWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
@@ -356,6 +359,14 @@ impl World {
                 }
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
+            WorldCommand::ReleaseOfflineTrader { object_id, done } => {
+                let was_trader = self.release_offline_trader_quietly(object_id);
+                done(was_trader);
+            }
+            WorldCommand::ReleaseOfflineAccount { account, done } => {
+                let released = self.release_offline_account(&account);
+                done(released);
+            }
             WorldCommand::Admin(query) => self.on_admin(query),
             WorldCommand::PathFound {
                 requester,
@@ -392,6 +403,8 @@ impl World {
             } => self.on_block_list_loaded(sender, owner, result),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
+                // Java `Shutdown`: the offline shops are stored before the players are disconnected.
+                self.offline_store_offliners();
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
                 info!("World shutting down, storing {} player(s).", online.len());
                 for id in online {
@@ -521,7 +534,7 @@ impl World {
     }
 
     /// Arms the next autosave of `id`, replacing a pending one so there is only ever one.
-    fn schedule_autosave(&mut self, id: ObjectId) {
+    pub(crate) fn schedule_autosave(&mut self, id: ObjectId) {
         let due = self.tick + self.autosave_ticks;
         let timer = self.timers.schedule_at(due, TimerKind::Autosave(id));
         if let Some(old) = self.autosave_timers.insert(id, timer) {

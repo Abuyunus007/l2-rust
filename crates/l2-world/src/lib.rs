@@ -183,7 +183,9 @@ pub use teleport::{TeleportSettings, TeleportState, TeleportTarget, TeleportWher
 pub use territory::{TerritoryInput, TerritoryLoad, TerritorySettings, TerritoryWrite};
 pub use timer::{TimerId, TimerKind, TimerWheel};
 pub use trade::{
-    AddItemRules, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
+    AddItemRules, OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite,
+    OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
+    restorable_store_type,
 };
 pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

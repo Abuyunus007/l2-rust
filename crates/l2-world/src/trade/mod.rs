@@ -39,6 +39,7 @@
 //   the flag is [`TradeState::refusal`].
 
 mod exchange;
+mod offline;
 mod packets;
 mod request;
 mod store;
@@ -46,6 +47,11 @@ mod store_deal;
 mod store_lists;
 mod window;
 
+pub(crate) use offline::OfflineWorld;
+pub use offline::{
+    OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite, OfflineTrader,
+    restorable_store_type,
+};
 pub use store::{PrivateStoreType, StoreInput, StoreSettings};
 pub use window::AddItemRules;
 
