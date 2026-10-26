@@ -78,6 +78,19 @@ const GM: i32 = 100;
 
 /// Words this card registers (their handlers are in `crates/l2-world/src/admin/`).
 const PORTED: &[&str] = &[
+    "tracert",
+    "strict_find_dualbox",
+    "setcolor",
+    "changelvl",
+    "repair",
+    "restore",
+    "gmliston",
+    "gmlistoff",
+    "silence",
+    "diet",
+    "tradeoff",
+    "setconfig",
+    "config_server",
     // edit_char
     "current_player",
     "character_info",
@@ -148,24 +161,11 @@ const PORTED: &[&str] = &[
 /// answer like a command without a handler. Olympiad, heroes and instances are M8.
 const LEFT_OUT: &[&str] = &[
     // edit_char
-    "tracert",
-    "strict_find_dualbox",
-    "setcolor",
     // change access level, repair and the fight calculator
-    "changelvl",
-    "repair",
-    "restore",
     "fight_calculator",
     "fight_calculator_show",
     "fcs",
     // admin page flags and configuration
-    "gmliston",
-    "gmlistoff",
-    "silence",
-    "diet",
-    "tradeoff",
-    "setconfig",
-    "config_server",
     // spawn words that need the datapack reload or the GM misc room, and the spawn pools
     "respawnall",
     "spawn_reload",
