@@ -1107,6 +1107,14 @@ impl ClientSession {
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
+            // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,
+            // RequestExMPCCShowPartyMembersInfo
+            ClientPacket::RequestExAskJoinMpcc(p) => ClientInput::AskJoinMpcc { name: p.name },
+            ClientPacket::RequestExAcceptJoinMpcc(p) => ClientInput::AcceptJoinMpcc { response: p.response },
+            ClientPacket::RequestExOustFromMpcc(p) => ClientInput::OustFromMpcc { name: p.name },
+            ClientPacket::RequestExMpccShowPartyMembersInfo(p) => ClientInput::MpccShowPartyMembersInfo {
+                party_leader_id: p.party_leader_id,
+            },
             // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientPacket::RequestBuyItem(p) => ClientInput::Shop(l2_world::ShopInput::Buy(p)),
             ClientPacket::RequestSellItem(p) => ClientInput::Shop(l2_world::ShopInput::Sell(p)),

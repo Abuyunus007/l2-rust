@@ -800,6 +800,13 @@ impl World {
         if self.is_in_party_with(subject, attacker) {
             return false;
         }
+        // Both in a party and in the same command channel.
+        if self.is_in_party(subject)
+            && self.is_in_party(attacker)
+            && self.is_in_same_command_channel(subject, attacker)
+        {
+            return false;
+        }
         // M8: the attacker is in the olympiad (`isInOlympiadMode`) and the game started.
         // Events (`isOnEvent`): not modelled.
         // Check if the attacker is a Playable.

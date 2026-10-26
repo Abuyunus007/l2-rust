@@ -22,8 +22,8 @@
 //
 // # What is left out, with the system that brings it
 // - Parties: `reward_party_share` is the party branch of `calculateRewards`;
-//   `Party.distributeXpAndSp` itself is `party/rewards.rs` (M6-PARTY-01). The command channel's
-//   members and level are missing, and the servitor penalty.
+//   `Party.distributeXpAndSp` itself is `party/rewards.rs` (M6-PARTY-01). The servitor penalty
+//   is missing.
 // - PC cafe points (`PcCafePointsManager`). Vitality and Nevit are in `vitality.rs` and `nevit.rs`
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
@@ -363,9 +363,13 @@ impl World {
         let mut party_level = 0;
         // Get all Creature that can be rewarded in the party.
         let mut rewarded_members: Vec<ObjectId> = Vec::new();
-        // Go through all Player in the party. (The command channel's members would be these when
-        // the party is in one: no command channels yet.)
-        for member in self.party_members(party) {
+        // Go through all Player in the party, or in its command channel.
+        let channel = self.command_channel_of_party(party);
+        let group = match channel {
+            Some(channel) => self.command_channel_members(channel),
+            None => self.party_members(party),
+        };
+        for member in group {
             if self.is_dead(member) {
                 continue;
             }
@@ -373,19 +377,26 @@ impl World {
                 .position_of(member)
                 .is_some_and(|p| distance_3d(at, p) < range);
             let level = self.core_of(member).map_or(0, |c| c.level);
+            // NOTE(java-quirk): a member's own level decides whether the level is raised, but the
+            // value taken is the command channel's level.
+            let raised = match channel {
+                Some(channel) if level > party_level => self.command_channel_level(channel),
+                _ if level > party_level => level,
+                _ => party_level,
+            };
             // Get the RewardInfo of this Player from the Attackable rewards.
             if let Some(index) = rewards.iter().position(|(who, _)| *who == member) {
                 // If the Player is in the Attackable rewards add its damages to party damages.
                 if near {
                     party_damage = party_damage.wrapping_add(rewards[index].1);
                     rewarded_members.push(member);
-                    party_level = party_level.max(level);
+                    party_level = raised;
                 }
                 // Remove the Player from the Attackable rewards.
                 rewards.remove(index);
             } else if near {
                 rewarded_members.push(member);
-                party_level = party_level.max(level);
+                party_level = raised;
             }
         }
 

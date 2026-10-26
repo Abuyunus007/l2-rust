@@ -26,7 +26,8 @@
 //
 // # Left out, with the card that brings it
 // - The summon parts (the pet window packets, a summon's `PartySpelled`) are `summon/party.rs`.
-// - Command channels (`ExOpenMPCC` ...): there is no command channel yet.
+// - `command_channel.rs`: command channels (`CommandChannel`, the invitation, the member windows,
+//   the channel user commands and chat, the loot right of a raid boss).
 // - Dimensional rift, festival, Underground Coliseum, olympiad, events, party matching
 //   rooms: later milestones; each is marked where Java asks. Duels are `duel.rs` (it hooks
 //   `Party.removePartyMember` and `setLeader`).
@@ -35,6 +36,7 @@
 // - `BlockList.isBlocked` in `RequestJoinParty` and the party chat: `friends.rs` (M6-FRIEND-01).
 
 mod buffs;
+mod command_channel;
 mod invite;
 mod loot;
 mod membership;
@@ -50,6 +52,8 @@ use l2_util::ObjectId;
 use crate::timer::TimerId;
 use crate::world::World;
 
+pub(crate) use command_channel::{CHANNEL_DELETE_COMMAND, CHANNEL_INFO_COMMAND, CHANNEL_LEAVE_COMMAND};
+pub use command_channel::{CommandChannelId, CommandChannelWorld};
 pub(crate) use invite::PARTY_INFO_COMMAND;
 pub use rewards::PartyExpType;
 
@@ -101,6 +105,12 @@ pub struct PartySettings {
     pub xp_cutoff_gaps: Vec<[i32; 2]>,
     /// `PlayerConfig.PARTY_XP_CUTOFF_GAP_PERCENTS` (`PartyXpCutoffGapPercent`).
     pub xp_cutoff_gap_percents: Vec<i32>,
+    /// `PlayerConfig.LOOT_RAIDS_PRIVILEGE_INTERVAL` (`RaidLootRightsInterval` * 1000), milliseconds:
+    /// how long a command channel keeps the loot right of a raid boss it stopped attacking.
+    pub loot_raids_privilege_interval_ms: i64,
+    /// `PlayerConfig.LOOT_RAIDS_PRIVILEGE_CC_SIZE` (`RaidLootRightsCCSize`): members a channel needs
+    /// for the loot right.
+    pub loot_raids_privilege_cc_size: i32,
     /// `ClassBalanceConfig.EXP_AMOUNT_MULTIPLIERS` (`ExpAmountMultipliers`), by class id.
     pub exp_amount_multipliers: Vec<f32>,
     /// `ClassBalanceConfig.SP_AMOUNT_MULTIPLIERS` (`SpAmountMultipliers`), by class id.
@@ -119,6 +129,8 @@ impl Default for PartySettings {
             xp_cutoff_level: 20,
             xp_cutoff_gaps: vec![[0, 9], [10, 14], [15, 99]],
             xp_cutoff_gap_percents: vec![100, 30, 0],
+            loot_raids_privilege_interval_ms: 900_000,
+            loot_raids_privilege_cc_size: 45,
             exp_amount_multipliers: vec![1.0; crate::stats::ClassBalance::CLASSES],
             sp_amount_multipliers: vec![1.0; crate::stats::ClassBalance::CLASSES],
         }
@@ -143,6 +155,8 @@ pub(crate) struct Party {
     pub(crate) position_timer: Option<TimerId>,
     /// Java `_disbanding`.
     pub(crate) disbanding: bool,
+    /// Java `_commandChannel`.
+    pub(crate) command_channel: Option<CommandChannelId>,
 }
 
 impl Party {
@@ -157,6 +171,7 @@ impl Party {
             pending_invite_timeout: 0,
             position_timer: None,
             disbanding: false,
+            command_channel: None,
         }
     }
 
@@ -176,6 +191,8 @@ pub struct PartyWorld {
     /// Java `Player._partyDistributionType`: the loot rule an inviter chose for the party it is
     /// about to create.
     pub(crate) chosen_distribution: HashMap<ObjectId, PartyDistributionType>,
+    /// The command channels the parties are in.
+    pub(crate) channels: CommandChannelWorld,
 }
 
 impl PartyWorld {
@@ -255,9 +272,15 @@ impl World {
     }
 
     /// Java `Player.isInLooterParty(looterId)`: `looter` is online and in the same party.
-    // `_party.isInCommandChannel()` branch: no command channels yet.
     pub fn is_in_looter_party(&self, id: ObjectId, looter: ObjectId) -> bool {
-        self.players.contains_key(&looter) && self.is_in_party_with(id, looter)
+        if !self.players.contains_key(&looter) {
+            return false;
+        }
+        // If the player is in a CommandChannel, its members are the looters.
+        if let Some(channel) = self.command_channel_of(id).filter(|_| self.is_in_party(id)) {
+            return self.command_channel_contains(channel, looter);
+        }
+        self.is_in_party_with(id, looter)
     }
 
     /// Java `Party.isLeader(player)`.

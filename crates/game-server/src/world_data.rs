@@ -444,10 +444,14 @@ pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Party
         rate_party_sp: r.rate_party_sp,
         xp_cutoff_percent: p.party_xp_cutoff_percent,
         xp_cutoff_level: p.party_xp_cutoff_level,
+        loot_raids_privilege_cc_size: p.loot_raids_privilege_cc_size,
         ..PartySettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
         // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
+        // `LOOT_RAIDS_PRIVILEGE_INTERVAL = getInt("RaidLootRightsInterval", 900) * 1000`.
+        settings.loot_raids_privilege_interval_ms =
+            i64::from(ini.get_int("RaidLootRightsInterval", 900)).wrapping_mul(1000);
         let method = ini.get_string("PartyXpCutoffMethod", "LEVEL");
         match PartyExpType::from_name(&method) {
             Some(method) => settings.xp_cutoff_method = method,
@@ -2055,7 +2059,7 @@ BotReportPointsResetHour = noon
             dir.path().join(l2_config::game::PlayerConfig::FILE),
             "AltPartyRange = 900\nAltLeavePartyLeader = True\nPartyXpCutoffMethod = highfive\n\
              PartyXpCutoffPercent = 4.5\nPartyXpCutoffLevel = 7\nPartyXpCutoffGaps = 0,4;5,9\n\
-             PartyXpCutoffGapPercent = 100;50\n",
+             PartyXpCutoffGapPercent = 100;50\nRaidLootRightsInterval = 60\nRaidLootRightsCCSize = 12\n",
         )
         .unwrap();
         std::fs::write(
@@ -2081,6 +2085,8 @@ BotReportPointsResetHour = noon
         assert_eq!(settings.xp_cutoff_level, 7);
         assert_eq!(settings.xp_cutoff_gaps, vec![[0, 4], [5, 9]]);
         assert_eq!(settings.xp_cutoff_gap_percents, vec![100, 50]);
+        assert_eq!(settings.loot_raids_privilege_interval_ms, 60_000);
+        assert_eq!(settings.loot_raids_privilege_cc_size, 12);
         assert_eq!(settings.exp_amount_multipliers[0], 0.5);
         assert_eq!(settings.exp_amount_multipliers[18], 2.0);
         assert_eq!(settings.exp_amount_multipliers[1], 1.0);

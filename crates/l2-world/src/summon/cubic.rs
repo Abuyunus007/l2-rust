@@ -24,7 +24,6 @@
 // # Left out, with the system that brings it
 // - M8: Olympiad (`isInOlympiadMode()` targeting, `stopCubicsByOthers` when a match starts,
 //   `enterOlympiadObserverMode`). [`World::stop_cubics_by_others`] is ready for the Olympiad.
-// - M7: the command channel of the party tests (the siege state is M7-SIEGE-01's).
 // - Custom events (`isOnEvent()`), mounts and the observer mode (`SummonCubic` ignores a mounted
 //   or observing player) are not modelled.
 // - `Player.setActiveClass` / `VillageMaster`'s `stopCubics()`: subclasses are not ported.
@@ -824,7 +823,10 @@ impl World {
             && self.party_members(party).contains(&enemy)
         {
             target_it = false;
-            // The command channel: M7.
+        } else if let Some(channel) = self.command_channel_of(owner)
+            && self.command_channel_contains(channel, enemy)
+        {
+            target_it = false;
         }
         if !in_pvp_zone && let Some(clan) = self.clan_of(owner) {
             if clan.is_member(enemy.0) {

@@ -678,6 +678,14 @@ impl World {
             ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
             ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
             ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
+            // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,
+            // RequestExMPCCShowPartyMembersInfo
+            ClientInput::AskJoinMpcc { name } => self.on_request_ex_ask_join_mpcc(id, &name),
+            ClientInput::AcceptJoinMpcc { response } => self.on_request_ex_accept_join_mpcc(id, response),
+            ClientInput::OustFromMpcc { name } => self.on_request_ex_oust_from_mpcc(id, &name),
+            ClientInput::MpccShowPartyMembersInfo { party_leader_id } => {
+                self.on_request_ex_mpcc_show_party_members_info(id, party_leader_id)
+            }
             // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
             ClientInput::DuelStart { name, party_duel } => self.on_request_duel_start(id, &name, party_duel),
             ClientInput::DuelAnswerStart { party_duel, response } => {
@@ -787,6 +795,8 @@ impl World {
             TimerKind::Control(timer) => self.on_control_timer(timer),
             // Java: Party's position broadcast task
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
+            // Java: CommandChannelTimer.run
+            TimerKind::CommandChannelTimer(raid) => self.on_command_channel_timer(raid),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
             // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task

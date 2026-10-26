@@ -68,6 +68,9 @@ use crate::client::{
     RequestPackageSend, RequestPackageSendableItemList, SendWareHouseDepositList, SendWareHouseWithDrawList,
 };
 use crate::client::{
+    RequestExAcceptJoinMpcc, RequestExAskJoinMpcc, RequestExMpccShowPartyMembersInfo, RequestExOustFromMpcc,
+};
+use crate::client::{
     RequestExEnchantSkill, RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail,
     RequestExEnchantSkillRouteChange, RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain,
 };
@@ -151,6 +154,14 @@ pub enum ClientPacket {
     RequestBlock(RequestBlock),
     /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
     RequestChangePartyLeader(RequestChangePartyLeader),
+    /// `REQUEST_EX_ASK_JOIN_MPCC` (`0xD0` 0x0006), an ex packet.
+    RequestExAskJoinMpcc(RequestExAskJoinMpcc),
+    /// `REQUEST_EX_ACCEPT_JOIN_MPCC` (`0xD0` 0x0007), an ex packet.
+    RequestExAcceptJoinMpcc(RequestExAcceptJoinMpcc),
+    /// `REQUEST_EX_OUST_FROM_MPCC` (`0xD0` 0x0008), an ex packet.
+    RequestExOustFromMpcc(RequestExOustFromMpcc),
+    /// `REQUEST_EX_MPCC_SHOW_PARTY_MEMBERS_INFO` (`0xD0` 0x002D), an ex packet.
+    RequestExMpccShowPartyMembersInfo(RequestExMpccShowPartyMembersInfo),
     RequestBuyItem(RequestBuyItem),
     RequestSellItem(RequestSellItem),
     /// `REQUEST_REFUND_ITEM` (`0xD0` 0x0075), an ex packet.
@@ -603,6 +614,18 @@ fn decode_ex_client(
         RequestChangePartyLeader::EX_OPCODE => {
             ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
         }
+        RequestExAskJoinMpcc::EX_OPCODE => {
+            ClientPacket::RequestExAskJoinMpcc(RequestExAskJoinMpcc::decode(reader)?)
+        }
+        RequestExAcceptJoinMpcc::EX_OPCODE => {
+            ClientPacket::RequestExAcceptJoinMpcc(RequestExAcceptJoinMpcc::decode(reader)?)
+        }
+        RequestExOustFromMpcc::EX_OPCODE => {
+            ClientPacket::RequestExOustFromMpcc(RequestExOustFromMpcc::decode(reader)?)
+        }
+        RequestExMpccShowPartyMembersInfo::EX_OPCODE => ClientPacket::RequestExMpccShowPartyMembersInfo(
+            RequestExMpccShowPartyMembersInfo::decode(reader)?,
+        ),
         RequestRefundItem::EX_OPCODE => ClientPacket::RequestRefundItem(RequestRefundItem::decode(reader)?),
         RequestBuySellUIClose::EX_OPCODE => {
             ClientPacket::RequestBuySellUIClose(RequestBuySellUIClose::decode(reader)?)
