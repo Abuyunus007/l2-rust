@@ -7,8 +7,8 @@
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    PartyDistributionType, PartySmallWindowDelete, PartySmallWindowDeleteAll, SystemMessage,
-    SystemMessageParam,
+    ExCloseMpcc, ExOpenMpcc, PartyDistributionType, PartySmallWindowDelete, PartySmallWindowDeleteAll,
+    SystemMessage, SystemMessageParam,
 };
 use l2_util::ObjectId;
 
@@ -120,8 +120,11 @@ impl World {
             }
         }
 
-        // Dimensional rift (`partyMemberInvited`) and the command channel window (`ExOpenMPCC`):
-        // neither exists.
+        // Dimensional rift (`partyMemberInvited`): there is none.
+        // Open the CCInformationwindow.
+        if self.command_channel_of_party(party).is_some() {
+            self.send(player, &ExOpenMpcc);
+        }
 
         if self
             .party
@@ -210,10 +213,15 @@ impl World {
         }
         self.recalculate_party_level(party);
 
-        // Festival participants (`SevenSignsFestival.updateParticipants`) and channeling
-        // (`abortCast`/`abortChannelization`): neither exists yet.
+        // Festival participants (`SevenSignsFestival.updateParticipants`): no Seven Signs yet.
         if self.is_in_duel(player) {
             self.duel_on_remove_from_party(player);
+        }
+        // Channeling a player!
+        if self.is_channeling(player) && self.has_channelized(player) {
+            self.abort_cast(player);
+        } else if self.is_channelized(player) {
+            self.abort_channelization(player);
         }
 
         let name = self.name_of_player(player);
@@ -257,8 +265,11 @@ impl World {
         {
             self.broadcast_party(party, &packet);
         }
-        // Dimensional rift (`partyMemberExited`) and the command channel window (`ExCloseMPCC`):
-        // neither exists.
+        // Dimensional rift (`partyMemberExited`): there is none.
+        // Close the CCInfoWindow.
+        if self.command_channel_of_party(party).is_some() {
+            self.send(player, &ExCloseMpcc);
+        }
 
         let remaining = self.party_members(party);
         if is_leader && remaining.len() > 1 && (alt_leave || kind == PartyMessageType::Disconnected) {
@@ -272,7 +283,15 @@ impl World {
             );
             self.broadcast_to_party_members_new_leader(party);
         } else if remaining.len() == 1 {
-            // A command channel opened by this party is disbanded here: no command channels yet.
+            if let Some(channel) = self.command_channel_of_party(party) {
+                // Delete the whole command channel when the party who opened the channel is
+                // disbanded.
+                if self.command_channel_leader(channel) == remaining.first().copied() {
+                    self.command_channel_disband(channel);
+                } else {
+                    self.command_channel_remove_party(channel, party);
+                }
+            }
             if let Some(leader) = remaining.first() {
                 // `leader.setParty(null)`; a leader in a duel leaves it (`onRemoveFromParty`).
                 self.party.of_player.remove(leader);
@@ -359,6 +378,7 @@ impl World {
             return;
         }
         // Swap party members.
+        let old_leader = p.members[0];
         p.members.swap(0, index);
         let leader_name = self.name_of_player(player);
         self.broadcast_party(
@@ -366,7 +386,17 @@ impl World {
             &SystemMessage::new(SystemMessageId::C1HasBecomeThePartyLeader).with(text(&leader_name)),
         );
         self.broadcast_to_party_members_new_leader(party);
-        // The command channel's leader and the party matching room follow the new leader: neither
-        // exists yet.
+        if let Some(channel) = self.command_channel_of_party(party)
+            && self.is_command_channel_leader(channel, old_leader)
+        {
+            self.command_channel_set_leader(channel, player);
+            let name = self.name_of_player(player);
+            self.broadcast_command_channel(
+                channel,
+                &SystemMessage::new(SystemMessageId::CommandChannelAuthorityHasBeenTransferredToC1)
+                    .with(text(&name)),
+            );
+        }
+        // The party matching room follows the new leader: it does not exist yet.
     }
 }

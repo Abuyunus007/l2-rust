@@ -108,6 +108,9 @@ pub enum TimerKind {
     Control(crate::effects::control::ControlTimer),
     /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
     PartyPosition(crate::party::PartyId),
+    /// Java `CommandChannelTimer`: the loot right of a raid boss (by raid), see
+    /// `party/command_channel.rs`.
+    CommandChannelTimer(ObjectId),
     /// The end of a punishment, the delay of an illegal action's penalty and the jail teleports,
     /// see `punishments.rs`.
     Punishment(crate::punishments::PunishmentTimer),

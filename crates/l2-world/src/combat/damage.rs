@@ -11,8 +11,7 @@
 // - Effects (M5): the invulnerability *effect* (`EffectFlag.INVUL`) and reflect/absorb come from
 //   effects and passives, so they are read from the stat engine (passive funcs do apply). The
 //   invulnerability flag itself (`//invul`, `Creature.setInvul`) is honoured by `status.rs`; stun
-//   breaking, `stopEffectsOnDamage`, fake death, trigger skills, the weapon's on-critical skill,
-//   the raid curse (skill 4515).
+//   breaking, `stopEffectsOnDamage`, fake death, the raid curse (skill 4515).
 // - Summons (damage transfer), mana shield messages, duels, olympiad, offline traders, the
 //   tutorial quest: not ported yet.
 // - Minions calling for help (`MinionList.onAssist`), `addAttackerToAttackByList`, the aggro-range
@@ -209,7 +208,8 @@ impl World {
                 self.break_attack(target);
                 self.break_cast(target);
             }
-            // M5: trigger skills (`_triggerSkills`) and the weapon's on-critical skill.
+            // The option trigger skills (`_triggerSkills`), then the weapon's on-critical skill.
+            self.trigger_skills_on_hit(id, target, crit);
         }
         // Recharge any active auto-soulshot tasks for current creature.
         if task.recharge_shots {
@@ -362,7 +362,10 @@ impl World {
             return;
         }
         if self.is_attackable_npc(target) {
-            // Raid command channel looting rights: parties are M5.
+            // Raid command channel looting rights.
+            if let Some(attacker) = attacker {
+                self.raid_command_channel_attacked(target, attacker);
+            }
             // Add damage and hate to the attacker AggroInfo of the Attackable _aggroList.
             if let Some(attacker) = attacker {
                 self.attackable_add_damage(target, attacker, amount as i32);

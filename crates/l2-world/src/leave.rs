@@ -121,6 +121,10 @@ impl World {
         self.summon_on_owner_leave(id);
         // A trader without a client left the login server's books when it went offline.
         let was_trader = self.offline.traders.remove(&id).is_some();
+        // `deleteMe`: whoever channels a skill at the player stops.
+        if self.is_channelized(id) {
+            self.abort_channelization(id);
+        }
         let Some(_player) = self.players.remove(&id) else {
             return;
         };

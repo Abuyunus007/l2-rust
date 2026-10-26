@@ -25,7 +25,6 @@
 //
 // # What is left out, with the system that brings it
 // - Merc tickets (`MercTicketManager`), cursed weapons and combat flags (sieges, M5).
-// - The command channel loot privilege of raid bosses (`getFirstCommandChannelAttacked`): M5.
 // - `ON_PLAYER_ITEM_DROP` / `ON_PLAYER_ITEM_PICKUP` script events (D-05).
 
 mod pickup;
@@ -411,8 +410,14 @@ impl World {
 
     /// `item.setOwnerId(owner)` with the 15 second `ResetOwner` of `ItemManager.createItem`.
     pub(crate) fn set_loot_owner(&mut self, item: &mut GroundItem, owner: ObjectId) {
+        self.set_loot_owner_for(item, owner, LOOT_OWNER_MS);
+    }
+
+    /// `item.setOwnerId(owner)` with a `ResetOwner` after `ms` (a raid's loot right lasts
+    /// `RaidLootRightsInterval`).
+    pub(crate) fn set_loot_owner_for(&mut self, item: &mut GroundItem, owner: ObjectId, ms: u64) {
         item.owner = Some(owner);
-        let due = self.tick + TimerWheel::ms_to_ticks(LOOT_OWNER_MS);
+        let due = self.tick + TimerWheel::ms_to_ticks(ms);
         let timer = self
             .timers
             .schedule_at(due, TimerKind::ItemOwnerReset(item.object_id()));
@@ -602,8 +607,16 @@ impl World {
         }
         let raid = self.npcs.get(&reference).is_some_and(|n| n.class.is_raid());
         if raid {
-            // M5: "Loot privilege for raids" goes to the first command channel that attacked
-            // (`getFirstCommandChannelAttacked`); without one nobody owns the item.
+            // Loot privilege for raids: the leader of the first command channel that attacked
+            // owns the item for `RaidLootRightsInterval`; without one (or with `AutoLootRaids`)
+            // nobody does.
+            if !settings.auto_loot_raids
+                && let Some(owner) = self.raid_loot_owner(reference)
+            {
+                let interval =
+                    u64::try_from(self.settings.party.loot_raids_privilege_interval_ms).unwrap_or(0);
+                self.set_loot_owner_for(item, owner, interval);
+            }
             return;
         }
         // NOTE: `(reference instanceof EventMonster) && eventDropOnGround()` is a script switch

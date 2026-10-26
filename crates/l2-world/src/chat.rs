@@ -127,6 +127,9 @@ impl World {
             ChatType::Whisper => self.chat_whisper(id, target.as_deref(), &text),
             ChatType::HeroVoice => self.chat_hero_voice(id),
             ChatType::Party => self.chat_party(id, &text),
+            ChatType::PartyRoomAll | ChatType::PartyRoomCommander => {
+                self.chat_command_channel(id, chat_type, &text)
+            }
             ChatType::Battlefield => self.chat_battlefield(id, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }

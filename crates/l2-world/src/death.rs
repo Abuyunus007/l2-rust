@@ -174,8 +174,11 @@ impl World {
 
         // `ZoneManager.getRegion(this).onDeath(this)`: no zone type reacts to a death.
         self.attack_by_clear(id);
-        // `isChannelized()` (M5) and the boss defeat announcements (Custom/BossAnnouncements.ini,
-        // off by default) are not ported.
+        if self.is_channelized(id) {
+            self.abort_channelization(id);
+        }
+        // The boss defeat announcements (Custom/BossAnnouncements.ini, off by default) are not
+        // ported.
         true
     }
 
@@ -229,6 +232,10 @@ impl World {
 
         // Notify Creature AI (`Die` is its packet).
         self.notify_action_death(id);
+        // `Creature.doDie`: whoever channels a skill at the dead stops.
+        if self.is_channelized(id) {
+            self.abort_channelization(id);
+        }
         // `updateEffectIcons()`: there is no effect list yet.
         true
     }

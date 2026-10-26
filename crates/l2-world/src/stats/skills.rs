@@ -16,6 +16,7 @@
 // What other M5 cards bring: skill reuse timestamps of active item skills, `SkillList` updates,
 // skills of summons.
 
+use l2_data::augmentation::OptionSkillHolder;
 use l2_data::item::ItemTemplate;
 use l2_data::item::{CrystalType, EtcItemType};
 use l2_data::{FuncKind, FuncTemplate, SkillTemplate, Stat};
@@ -276,8 +277,7 @@ impl World {
                     .extend(option.active_skill.iter().map(|s| (s.id, s.level)));
                 out.skills
                     .extend(option.passive_skill.iter().map(|s| (s.id, s.level)));
-                // The chance skills (`addTriggerSkill`) need the option triggers of the effect
-                // engine: not modelled yet.
+                out.triggers.extend(option.activation_skills.iter().copied());
             }
         }
         // `Item.applyEnchantStats()` runs after the +4 skill in Java; only the order of the
@@ -288,6 +288,7 @@ impl World {
                 .extend(option.funcs.iter().map(|t| Func::from_template(t, owner)));
             out.skills.extend(option.active);
             out.skills.extend(option.passive);
+            out.triggers.extend(option.triggers);
         }
         let armor = template.is_some_and(ItemTemplate::is_armor);
         for elemental in &item.elementals {
@@ -399,6 +400,10 @@ impl World {
             Some(player) => player.core.calculators.add_all(bonuses.funcs),
             None => Vec::new(),
         };
+        // `Options.apply`: `player.addTriggerSkill(holder)`.
+        for holder in bonuses.triggers {
+            self.add_trigger_skill(id, holder);
+        }
         for (skill_id, level) in add {
             if !self.add_skill(id, skill_id, level) {
                 warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
@@ -413,6 +418,7 @@ impl World {
         let mut remove: Vec<(i32, i32)> = Vec::new();
         let mut readd: Vec<(i32, i32)> = Vec::new();
         let option_ids: Vec<i32>;
+        let triggers: Vec<OptionSkillHolder>;
         let element_bonus: bool;
         {
             let Some(view) = self.stats(id) else {
@@ -445,6 +451,7 @@ impl World {
                 .world()
                 .item_instance_bonuses(item, data.items.get(item.item_id));
             remove.extend(bonuses.skills.iter().copied());
+            triggers = bonuses.triggers.clone();
             option_ids = bonuses
                 .funcs
                 .iter()
@@ -508,6 +515,10 @@ impl World {
                 );
             }
         }
+        // `Options.remove`: `player.removeTriggerSkill(holder)`, by skill id.
+        for holder in triggers {
+            self.remove_trigger_skill(id, holder.skill.id);
+        }
         for (skill_id, level) in remove {
             self.remove_skill_of(id, skill_id, level);
         }
@@ -535,6 +546,7 @@ impl World {
                     funcs: option.funcs.clone(),
                     active: option.active_skill.map(|s| (s.id, s.level)),
                     passive: option.passive_skill.map(|s| (s.id, s.level)),
+                    triggers: option.activation_skills.clone(),
                 }),
                 None if id != 0 => {
                     info!(
@@ -552,8 +564,6 @@ impl World {
     /// Java `Item.clearEnchantStats()` for a worn item whose enchant level is about to change: the
     /// options of the current level go (`Options.remove`: the functions by owner, the active, then
     /// the passive skill, and the skill list). Returns the stats whose functions went.
-    // The trigger skills of the options (`removeTriggerSkill`) are not modelled, like the
-    // augmentation ones.
     pub(crate) fn clear_enchant_stats(&mut self, id: ObjectId, object_id: ObjectId) -> Vec<Stat> {
         let Some(options) = self.worn_item_enchant_options(id, object_id) else {
             return Vec::new();
@@ -575,6 +585,9 @@ impl World {
             }
             if let Some((skill_id, level)) = option.passive {
                 self.remove_skill_of(id, skill_id, level);
+            }
+            for holder in &option.triggers {
+                self.remove_trigger_skill(id, holder.skill.id);
             }
         }
         if !options.is_empty() {
@@ -609,6 +622,9 @@ impl World {
                 if !self.add_skill(id, skill_id, level) {
                     warn!("Inventory: Incorrect skill: {skill_id}-{level}.");
                 }
+            }
+            for holder in &option.triggers {
+                self.add_trigger_skill(id, *holder);
             }
         }
         if !options.is_empty() {
@@ -762,6 +778,9 @@ struct InstanceBonuses {
     funcs: Vec<Func>,
     /// `(id, level)`: an option's active skill, then its passive skill, option by option.
     skills: Vec<(i32, i32)>,
+    /// The activation skills (`Options.getActivationSkills()`) of the options, which
+    /// `Options.apply` hands to `addTriggerSkill`.
+    triggers: Vec<OptionSkillHolder>,
 }
 
 /// One option an enchant level gives, copied out of the table so a function can change the player
@@ -772,6 +791,7 @@ struct OptionEffects {
     funcs: Vec<FuncTemplate>,
     active: Option<(i32, i32)>,
     passive: Option<(i32, i32)>,
+    triggers: Vec<OptionSkillHolder>,
 }
 
 /// `Elementals.ElementalStatBonus.applyBonus`: the stat an element of an item raises, the

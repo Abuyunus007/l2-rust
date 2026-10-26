@@ -137,7 +137,9 @@ pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
-pub use party::{PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld};
+pub use party::{
+    CommandChannelId, CommandChannelWorld, PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld,
+};
 pub use player::{
     CreatureCore, ItemData, MacroCmdData, MacroData, OnlinePlayer, Player, PlayerData, PlayerProfile,
     ShortcutData, SkillData,

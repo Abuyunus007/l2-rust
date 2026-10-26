@@ -73,6 +73,7 @@ pub mod auction;
 pub mod charscreen;
 pub mod chat;
 pub mod combat;
+pub mod command_channel;
 pub mod duel;
 pub mod effect_packets;
 pub mod enchant;
@@ -122,6 +123,10 @@ pub use chat::{ChatType, CreatureSay, LeaveWorld, NetPing, NpcSay, RestartRespon
 pub use combat::{
     Attack, AttackHit, AutoAttackStart, AutoAttackStop, ChangeMoveType, ChangeWaitType, Die,
     ExUseSharedGroupItem, HITFLAG_CRIT, HITFLAG_MISS, HITFLAG_SHLD, HITFLAG_USESS, Revive, SetupGauge,
+};
+pub use command_channel::{
+    ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
+    ExMultiPartyCommandChannelInfo, ExOpenMpcc, MpccMember, MpccPartyEntry,
 };
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
