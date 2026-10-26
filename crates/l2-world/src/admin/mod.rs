@@ -37,6 +37,7 @@ pub mod edit_char;
 pub mod enchant;
 pub mod exp_sp;
 pub mod fence;
+pub mod geodata;
 pub mod gm_shop;
 pub mod html;
 pub mod invul;
@@ -53,6 +54,7 @@ pub mod skills;
 pub mod spawn_admin;
 pub mod summon;
 pub mod transform;
+pub mod zone_tools;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -134,6 +136,10 @@ pub(crate) struct AdminWorld {
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
     /// `AdminDoorControl.PLAYER_SHOWN_DOORS`: the door ids each GM's `//showdoors` has drawn.
     pub(crate) shown_doors: HashMap<ObjectId, std::collections::BTreeSet<i32>>,
+    /// The zone builder and the zone markers (`zone_tools.rs`).
+    pub(crate) zones: zone_tools::ZoneAdmin,
+    /// The path search of `//path_find` (`geodata.rs`).
+    pub(crate) path: geodata::PathAdmin,
 }
 
 impl Default for AdminWorld {
@@ -170,12 +176,16 @@ impl Default for AdminWorld {
         chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
+        geodata::register(&mut handlers);
+        zone_tools::register(&mut handlers);
         Self {
             handlers,
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
             shown_doors: HashMap::new(),
+            zones: zone_tools::ZoneAdmin::default(),
+            path: geodata::PathAdmin::default(),
         }
     }
 }
@@ -367,6 +377,10 @@ impl World {
     /// answer to the confirmation of an admin command. A yes runs the command again with the
     /// confirmation off; a no forgets it. Without a waiting command nothing happens.
     pub(crate) fn admin_confirm_answer(&mut self, player: ObjectId, answer: i32) {
+        // `PlayerAction.ADMIN_SAVE_ZONE` is checked before `ADMIN_COMMAND`.
+        if self.zone_save_answer(player, answer) {
+            return;
+        }
         let Some(command) = self.admin.pending_confirm.remove(&player) else {
             return;
         };

@@ -569,6 +569,64 @@ impl ZoneForm {
         }
     }
 
+    /// Java `visualizeZone(z)` without the item drops: the X/Y of every debug item along the
+    /// border, in the order Java drops them (`STEP` = 10 units apart). The caller drops an item
+    /// at each point.
+    pub fn visualize_points(&self) -> Vec<(i32, i32)> {
+        const STEP: i32 = 10;
+        let mut points = Vec::new();
+        match self {
+            Self::Cuboid(c) => {
+                let (x1, x2) = (c.r.x, c.r.x.wrapping_add(c.r.width));
+                let (y1, y2) = (c.r.y, c.r.y.wrapping_add(c.r.height));
+                // x1->x2
+                let mut x = x1;
+                while x < x2 {
+                    points.push((x, y1));
+                    points.push((x, y2));
+                    x = x.wrapping_add(STEP);
+                }
+                // y1->y2
+                let mut y = y1;
+                while y < y2 {
+                    points.push((x1, y));
+                    points.push((x2, y));
+                    y = y.wrapping_add(STEP);
+                }
+            }
+            Self::Cylinder(c) => {
+                let count = ((2.0 * std::f64::consts::PI * f64::from(c.rad)) / f64::from(STEP)) as i32;
+                let angle = (2.0 * std::f64::consts::PI) / f64::from(count);
+                for i in 0..count {
+                    let a = angle * f64::from(i);
+                    points.push((
+                        c.x.wrapping_add((a.cos() * f64::from(c.rad)) as i32),
+                        c.y.wrapping_add((a.sin() * f64::from(c.rad)) as i32),
+                    ));
+                }
+            }
+            Self::NPoly(n) => {
+                let count = n.p.xs.len();
+                for i in 0..count {
+                    let next = if i + 1 == count { 0 } else { i + 1 };
+                    let vx = n.p.xs[next].wrapping_sub(n.p.xs[i]);
+                    let vy = n.p.ys[next].wrapping_sub(n.p.ys[i]);
+                    let squared = vx.wrapping_mul(vx).wrapping_add(vy.wrapping_mul(vy));
+                    // `(float) Math.sqrt(..) / STEP`: single precision, like Java.
+                    let length = (f64::from(squared).sqrt() as f32) / STEP as f32;
+                    let mut o = 1;
+                    while o as f32 <= length {
+                        let x = n.p.xs[i] as f32 + ((o as f32 / length) * vx as f32);
+                        let y = n.p.ys[i] as f32 + ((o as f32 / length) * vy as f32);
+                        points.push((x as i32, y as i32));
+                        o += 1;
+                    }
+                }
+            }
+        }
+        points
+    }
+
     /// Java `getRandomPoint()` without the Z lookup: the X/Y of a random point in the shape.
     /// `rnd(min, max)` must behave like `Rnd.get(min, max)` (both ends inclusive). The caller
     /// asks the geoengine for the Z, with [`mid_z`](Self::mid_z) as the guess.
@@ -818,5 +876,28 @@ mod tests {
             let (x, y) = ZoneForm::cuboid(0, 50, 0, 70, 0, 1).random_xy(&mut rnd);
             assert!((0..=50).contains(&x) && (0..=70).contains(&y));
         }
+    }
+
+    #[test]
+    fn visualize_points_follow_the_java_loops() {
+        // 25 x 15: x1->x2 gives 3 pairs (0, 10, 20), y1->y2 gives 2 pairs (0, 10).
+        let c = ZoneForm::cuboid(0, 25, 0, 15, 0, 1);
+        let points = c.visualize_points();
+        assert_eq!(points.len(), 10);
+        assert_eq!(&points[..4], &[(0, 0), (0, 15), (10, 0), (10, 15)]);
+        assert_eq!(&points[6..], &[(0, 0), (25, 0), (0, 10), (25, 10)]);
+
+        // Circle of radius 100: (int)(2 pi 100 / 10) = 62 points, the first on the +x axis.
+        let circle = ZoneForm::cylinder(1000, 2000, 0, 1, 100);
+        let points = circle.visualize_points();
+        assert_eq!(points.len(), 62);
+        assert_eq!(points[0], (1100, 2000));
+
+        // The square polygon: each side is 100 long, 10 points each, the last on the corner.
+        let points = square().visualize_points();
+        assert_eq!(points.len(), 40);
+        assert_eq!(points[0], (10, 0));
+        assert_eq!(points[9], (100, 0));
+        assert_eq!(points[39], (0, 0));
     }
 }

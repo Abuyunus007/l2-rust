@@ -10,6 +10,7 @@ use l2_data::DoorTemplates;
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::debug_draw::PrimitiveColor;
 use l2_protocol_game::server::{ExServerPrimitive, SystemMessage, SystemMessageParam};
 use l2_world::*;
 
@@ -278,7 +279,7 @@ fn showdoors_draws_the_doors_in_view_and_off_erases_them() {
     assert_eq!(drawn.len(), 2, "one primitive per door");
     assert!(drawn.iter().any(|p| p.name == "Door10"));
     // Each door is 12 lines (the box, its two boxes' edges and the diagonals).
-    assert!(drawn.iter().all(|p| p.lines.len() == 12));
+    assert!(drawn.iter().all(|p| p.lines().len() == 12));
 
     // A second `showdoors` draws nothing new: the doors are already shown.
     cmd(&mut s, GM, "showdoors");
@@ -291,7 +292,7 @@ fn showdoors_draws_the_doors_in_view_and_off_erases_them() {
     assert!(
         erased
             .iter()
-            .all(|p| p.lines.len() == 1 && p.lines[0].point.color == 0)
+            .all(|p| p.lines().len() == 1 && p.lines()[0].color == PrimitiveColor::BLACK)
     );
 }
 

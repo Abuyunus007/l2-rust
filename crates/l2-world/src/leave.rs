@@ -114,6 +114,7 @@ impl World {
         self.craft_on_player_leave(id);
         // `deleteMe`: `_taskForFish.cancel(false)`.
         self.fishing_on_player_leave(id);
+        self.zone_tools_on_leave(id);
         // `deleteMe`: `clearRefund()` destroys what the player sold to merchants.
         self.clear_refund(id);
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right

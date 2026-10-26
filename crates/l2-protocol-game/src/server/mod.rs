@@ -74,6 +74,7 @@ pub mod charscreen;
 pub mod chat;
 pub mod combat;
 pub mod command_channel;
+pub mod debug_draw;
 pub mod duel;
 pub mod effect_packets;
 pub mod enchant;
@@ -97,7 +98,6 @@ pub mod multisell;
 pub mod party;
 pub mod pccafe;
 pub mod pledge;
-pub mod primitive;
 pub mod recipe;
 pub mod refine;
 pub mod regen;
@@ -130,6 +130,7 @@ pub use command_channel::{
     ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
     ExMultiPartyCommandChannelInfo, ExOpenMpcc, MpccMember, MpccPartyEntry,
 };
+pub use debug_draw::{ExServerPrimitive, Primitive, PrimitiveColor, ShowBoard};
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use enchant::{
@@ -197,7 +198,6 @@ pub use pledge::{
     PledgeShowMemberListUpdate, PledgeSkillEntry, PledgeSkillList, PledgeSkillListAdd, PledgeStatusChanged,
     RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
 };
-pub use primitive::{ExServerPrimitive, PrimitiveLine, PrimitivePoint};
 pub use recipe::{
     ManufactureEntry, RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList,
     RecipeShopMsg, RecipeShopSellList,
