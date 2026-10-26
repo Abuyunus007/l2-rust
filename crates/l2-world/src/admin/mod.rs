@@ -23,25 +23,37 @@
 //   world runs it inside its own turn.
 // - `SendMessageLocalisationData` (translated GM messages): only with multi-language.
 
+pub mod augment;
+pub mod camera;
 pub mod chsiege;
 pub mod clan;
+pub mod clan_skills;
 pub mod clanhall;
 pub mod combat;
 pub mod commands;
 pub mod create_item;
+pub mod effects;
+pub mod element;
 pub mod enchant;
 pub mod exp_sp;
+pub mod gm;
 pub mod html;
 pub mod invul;
 pub mod karma;
 pub mod level;
 pub mod manor;
+pub mod menu;
+pub mod messages;
+pub mod page;
 pub mod party;
 pub mod punishments;
 pub mod rights;
 pub mod skills;
+pub mod sound;
 pub mod summon;
+pub mod teleport;
 pub mod transform;
+pub mod vitality;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -127,6 +139,17 @@ impl Default for AdminWorld {
     fn default() -> Self {
         let mut handlers = AdminHandlers::default();
         commands::register_core(&mut handlers);
+        effects::register(&mut handlers);
+        menu::register(&mut handlers);
+        teleport::register(&mut handlers);
+        gm::register(&mut handlers);
+        camera::register(&mut handlers);
+        page::register(&mut handlers);
+        messages::register(&mut handlers);
+        vitality::register(&mut handlers);
+        augment::register(&mut handlers);
+        element::register(&mut handlers);
+        clan_skills::register(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
