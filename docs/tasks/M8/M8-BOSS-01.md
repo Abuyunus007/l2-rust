@@ -37,6 +37,7 @@
 - [ ] report delivered in the agent's report format (what you left and why, every guess)
 
 ## Notes from the orchestrator
+- `game_server::cycle_database_writes(config_dir)` reads the D-53 switch (already on main); pass it into your settings, do not add a second loader.
 - Read CLAUDE.md (safety rules), DECISIONS (D-15, D-39, D-49..D-53), the `docs/design/*.md` of the area you touch first.
 - Up to seven workers run at the same time: in shared files (`lib.rs`, `world.rs`, `command.rs`, `outbox.rs`, `timer.rs`, `dispatch.rs`, `persist.rs`, `world_data.rs`) only add your lines; after `git merge main` watch for doubled `mod`/`use` lines.
 - DB tests use `l2_db::GAME_SCHEMA`; add a schema copy to `crates/l2-db/sql/game/` for every new table.
