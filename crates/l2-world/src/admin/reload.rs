@@ -5,7 +5,7 @@
 //
 // # What reloads
 // - The panel (`//reload`, `//reload_menu`, `//reload_menu_page <n>`): all of it, with Java's
-//   56 buttons and its pager.
+//   57 buttons and its pager.
 // - `//reload htm [path]` and `//reload html [path]`: the html cache. The files are read by the
 //   game server task (never inside a tick, D-15): the world asks with
 //   `ControlRequest::ReloadHtml` and gets `WorldCommand::HtmlReloaded` back. NOTE: Java reloads
@@ -386,9 +386,9 @@ mod tests {
 
     #[test]
     fn the_last_page_has_the_rest() {
-        // 56 commands: three full pages and eight on the fourth.
+        // 57 commands: three full pages and nine on the fourth.
         let html = generate_reload_buttons(3).unwrap();
-        assert_eq!(html.matches("action=\"bypass admin_reload ").count(), 8);
+        assert_eq!(html.matches("action=\"bypass admin_reload ").count(), 9);
         assert!(html.contains("Page 4 / 4"));
         assert!(html.contains("admin_reload_menu_page 2"));
         // A page past the end draws no buttons and no error.
@@ -400,7 +400,7 @@ mod tests {
         let error = generate_reload_buttons(-1).unwrap_err();
         assert_eq!(
             error.0,
-            "java.lang.ArrayIndexOutOfBoundsException: Index -16 out of bounds for length 56"
+            "java.lang.ArrayIndexOutOfBoundsException: Index -16 out of bounds for length 57"
         );
     }
 

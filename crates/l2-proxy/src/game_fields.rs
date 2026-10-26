@@ -2575,6 +2575,8 @@ mod tests {
         ServerOpcode::PlaySound,
         ServerOpcode::ExServerPrimitive,
         ServerOpcode::ShowBoard,
+        ServerOpcode::Snoop,
+        ServerOpcode::PetitionVote,
         ServerOpcode::AgitDecoInfo,
         ServerOpcode::ExShowAgitInfo,
         ServerOpcode::ChooseInventoryItem,
@@ -3393,6 +3395,62 @@ mod tests {
                 op.name()
             );
         }
+    }
+
+    /// M7-ADMIN-10: the petition and snoop packets.
+    #[test]
+    fn petition_and_snoop_packets_show_their_fields() {
+        use ConnectionState::InGame;
+        use l2_protocol_game::client::{
+            RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit,
+        };
+        use l2_protocol_game::server::{ChatType, PetitionVotePacket, Snoop};
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestPetition {
+                    content: "stuck".into(),
+                    kind: 3
+                }
+                .to_bytes()
+            ),
+            json!({ "content": "stuck", "kind": 3 })
+        );
+        assert_eq!(c2s_fields(InGame, &RequestPetitionCancel.to_bytes()), json!({}));
+        assert_eq!(
+            c2s_fields(
+                InGame,
+                &RequestPetitionFeedback {
+                    unknown: 0,
+                    rate: 4,
+                    message: "thanks".into()
+                }
+                .to_bytes()
+            ),
+            json!({ "unknown": 0, "rate": 4, "message": "thanks" })
+        );
+        assert_eq!(
+            c2s_fields(InGame, &SnoopQuit { snoop_id: 77 }.to_bytes()),
+            json!({ "snoop_id": 77 })
+        );
+        let snoop = Snoop {
+            convo_id: 5,
+            name: "Target".into(),
+            chat_type: ChatType::Whisper,
+            speaker: "Friend".into(),
+            message: "hi".into(),
+        };
+        assert_eq!(
+            s2c(&snoop.to_bytes()).unwrap(),
+            json!({
+                "convo_id": 5,
+                "name": "Target",
+                "chat_type": 2,
+                "speaker": "Friend",
+                "message": "hi",
+            })
+        );
+        assert_eq!(s2c(&PetitionVotePacket.to_bytes()).unwrap(), json!({}));
     }
 
     #[test]
