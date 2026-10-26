@@ -175,6 +175,7 @@ pub mod fishing;
 pub mod fort;
 pub mod friend;
 pub mod handshake;
+pub mod henna;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
@@ -225,6 +226,10 @@ pub use friend::{
     RequestSendFriendMsg,
 };
 pub use handshake::{AuthLogin, ProtocolVersion};
+pub use henna::{
+    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
+    RequestHennaRemove, RequestHennaRemoveList,
+};
 pub use ingame::{Logout, RequestNetPing, RequestRestart, RequestSkillCoolTime, Say2};
 pub use interaction::{
     Action, BypassUserCmd, DlgAnswer, RequestBypassToServer, RequestLinkHtml, RequestTargetCanceld,

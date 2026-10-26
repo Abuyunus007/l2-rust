@@ -89,6 +89,7 @@ pub mod friend;
 pub mod gm_view;
 pub mod ground_item;
 pub mod handshake;
+pub mod henna;
 pub mod interaction;
 pub mod items;
 pub mod mail;
@@ -160,6 +161,10 @@ pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay
 pub use gm_view::GmViewItemList;
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
+pub use henna::{
+    HennaEquipEntry, HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveEntry,
+    HennaRemoveList, HennaStatPreview,
+};
 pub use interaction::{
     ActionFailed, ChairSit, DoorInfo, DoorStatusUpdate, ExAskCoupleAction, MyTargetSelected, NpcHtmlMessage,
     ShowTownMap, SocialAction, StaticObjectInfo, TargetSelected, TargetUnselected,

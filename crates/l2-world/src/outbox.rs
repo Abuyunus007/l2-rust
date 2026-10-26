@@ -130,6 +130,9 @@ pub enum PersistCommand {
         owner: ObjectId,
         control_object_id: ObjectId,
     },
+    /// A `character_hennas` row change with Java's statement (L-01, see `henna.rs`). Applied in
+    /// order with the other commands.
+    Henna(crate::henna::HennaWrite),
     /// A `character_friends` row change of the friend list or the block list (M6-FRIEND-01, see
     /// `friends.rs`). Applied in order with the other commands.
     Friend(crate::friends::FriendWrite),
