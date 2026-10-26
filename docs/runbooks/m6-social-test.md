@@ -82,7 +82,12 @@ party exp, items, clan, pets, mails and warehouse as Kain left them.
   moves them to an arena instance).
 - **Quests and scripts (later):** class change and subclasses come with the village master scripts;
   academy graduation waits for the class change.
-- Not modelled yet: mounts (strider, wyvern), fishing, offline trade/craft shops, flood protectors,
-  the bot report button, PC cafe points.
-- Crest ids: if both servers register a crest in the same moment, one of them fails and is logged
-  (rare; fixed before the switch from Java).
+- Since the M6 follow-ups: mounts, fishing, flood protectors, the bot report button, PC cafe points
+  (with `PcCafeOnlyPremium = True` nobody earns them: there is no premium system yet), command
+  channels (Strategy Guide / Clan Imperium, `/channelinfo`, `/channelleave`, `/channeldelete`, raid
+  loot right), channeling skills and trigger skills of weapons and augments, pet evolve and restore
+  at the pet manager, offline trade and craft shops.
+- **Offline trade side by side (D-52):** with `OfflineTradeDatabaseWrites = False` (default) a trader
+  lives only until Kain stops and keeps the account on Kain: logging the same account into
+  Sieghardt ends the trader first. Not ported: `.offline`, buff shops.
+- Crest ids: Kain takes a free id below Java's highest one, so the two servers do not collide.

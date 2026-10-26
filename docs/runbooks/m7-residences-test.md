@@ -20,11 +20,14 @@ residence owners and registrations before acting on them (D-50).
 3. Castle warehouse (vault), mass gatekeeper, blacksmith, court magician (squad skills),
    mercenary manager (buy a ticket, drop it inside the castle: a mercenary stands there), the
    castle doorman (opens the gates for your clan only).
+4. Clan hall or fortress owner: click a door of your hall/fortress: "Do you want to open/close the
+   gate?" (yes works only while the door is still targeted).
 
 ### CP-M7b: a castle siege (GM test siege)
 1. Register an attacker clan at the siege manager, start the siege with `//startsiege <castle>`.
 2. Build a headquarters (flag); die and restart at it.
-3. Guards and mercenaries attack the attackers, not the defenders. Break the gate ("The castle
+3. Upgrade the castle traps at the chamberlain first: during the siege an attacker in the swamp is
+   slowed and the flame zone hurts. Guards and mercenaries attack the attackers, not the defenders. Break the gate ("The castle
    gate has been destroyed."); walls only take siege weapon damage.
 4. Seal of Ruler on the artifact: your clan owns the castle on Kain. `//endsiege`: the gates are
    repaired, reputation changes (+1500 / -3000).
