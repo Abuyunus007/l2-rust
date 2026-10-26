@@ -886,7 +886,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         pk_kills: data.pk_kills,
         pvp_kills: data.pvp_kills,
         cubics: world.cubic_ids_of(core.object_id),
-        in_party_match_room: false,
+        in_party_match_room: world.is_in_party_match_room(core.object_id),
         abnormal_visual_effects: if invisible {
             visual_effects | crate::player_view::STEALTH_MASK
         } else {

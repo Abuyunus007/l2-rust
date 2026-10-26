@@ -202,6 +202,25 @@ pub enum ClientInput {
     /// Java `RequestBlock`: 0 block and 1 unblock (with `name`), 2 the list, 3 refuse all messages,
     /// 4 accept messages again.
     Block { kind: i32, name: Option<String> },
+    /// Java `RequestPartyMatchConfig` and the other party matching room packets (L-03).
+    PartyRoom(crate::party::PartyRoomInput),
+    /// Java `RequestPartyLootModification`: the leader asks for another loot rule (raw id).
+    PartyLootModification { distribution_type_id: i32 },
+    /// Java `AnswerPartyLootModification`: a member votes (1 = agree).
+    AnswerPartyLootModification { answer: i32 },
+    /// Java `RequestGiveNickName`: a title for a clan member (or the noblesse itself).
+    GiveNickName { target: String, title: String },
+    /// Java `RequestChangeNicknameColor`: a title colour item is used.
+    ChangeNicknameColor {
+        color_num: i32,
+        title: String,
+        item_object_id: i32,
+    },
+    /// Java `RequestResetNickname`.
+    ResetNickname,
+    /// Java `RequestGMCommand`: the Alt+G window of a GM (1 status, 2 clan, 3 skills, 4 quests,
+    /// 5 inventory, 6 warehouse).
+    GmCommand { target_name: String, command: i32 },
     /// Java `RequestWithDrawalParty`: leave the party.
     WithdrawParty,
     /// Java `RequestOustPartyMember`: the leader expels `name`.

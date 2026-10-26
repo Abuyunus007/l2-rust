@@ -56,6 +56,9 @@ use l2_protocol_game::server::fishing::{
 use l2_protocol_game::server::fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo};
 use l2_protocol_game::server::friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 use l2_protocol_game::server::gm_view::GmViewItemList;
+use l2_protocol_game::server::gm_windows::{
+    GmHennaInfo, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo, GmViewWarehouseWithdrawList,
+};
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
 use l2_protocol_game::server::interaction::{
@@ -77,6 +80,11 @@ use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
     PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
+};
+use l2_protocol_game::server::party_room::{
+    ExAskJoinPartyRoom, ExAskModifyPartyLooting, ExClosePartyRoom, ExListPartyMatchingWaitingRoom,
+    ExManagePartyRoomMember, ExPartyRoomMember, ExRequestChangeNicknameColor, ExSetPartyLooting,
+    ListPartyWaiting, PartyRoomInfo,
 };
 use l2_protocol_game::server::pccafe::ExPcCafePointInfo;
 use l2_protocol_game::server::pledge::{
@@ -281,6 +289,27 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestSendFriendMsg(p) => object!(p => message, receiver),
         ClientPacket::RequestBlock(p) => object!(p => kind, name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::RequestPartyMatchConfig(p) => object!(p => auto, location, level),
+        ClientPacket::RequestPartyMatchList(p) => {
+            object!(p => room_id, members_max, min_level, max_level, loot, room_title)
+        }
+        ClientPacket::RequestPartyMatchDetail(p) => object!(p => room_id, unk1, unk2, unk3),
+        ClientPacket::RequestOustFromPartyRoom(p) => object!(p => char_id),
+        ClientPacket::RequestDismissPartyRoom(p) => object!(p => room_id, data2),
+        ClientPacket::RequestWithdrawPartyRoom(p) => object!(p => room_id, unk1),
+        ClientPacket::RequestAskJoinPartyRoom(p) => object!(p => name),
+        ClientPacket::AnswerJoinPartyRoom(p) => object!(p => answer),
+        ClientPacket::RequestListPartyMatchingWaitingRoom(p) => {
+            object!(p => page, min_level, max_level, mode)
+        }
+        ClientPacket::RequestExitPartyMatchingWaitingRoom(_) => json!({}),
+        ClientPacket::RequestPartyLootModification(p) => object!(p => distribution_type_id),
+        ClientPacket::AnswerPartyLootModification(p) => object!(p => answer),
+        ClientPacket::RequestGiveNickName(p) => object!(p => target, title),
+        ClientPacket::RequestChangeNicknameColor(p) => object!(p => color_num, title, item_object_id),
+        ClientPacket::RequestResetNickname(_) => json!({}),
+        ClientPacket::RequestGmList(_) => json!({}),
+        ClientPacket::RequestGmCommand(p) => object!(p => target_name, command),
         ClientPacket::RequestExAskJoinMpcc(p) => object!(p => name),
         ClientPacket::RequestExAcceptJoinMpcc(p) => object!(p => response),
         ClientPacket::RequestExOustFromMpcc(p) => object!(p => name),
@@ -637,6 +666,33 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        ServerOpcode::GmViewCharacterInfo => {
+            decoded::<GmViewCharacterInfo>(&mut r, gm_view_character_info_fields)
+        }
+        ServerOpcode::GmHennaInfo => decoded::<GmHennaInfo>(&mut r, gm_henna_info_fields),
+        ServerOpcode::GmViewSkillInfo => decoded::<GmViewSkillInfo>(&mut r, gm_view_skill_info_fields),
+        ServerOpcode::GmViewQuestInfo => decoded::<GmViewQuestInfo>(&mut r, gm_view_quest_info_fields),
+        ServerOpcode::GmViewWarehouseWithdrawList => {
+            decoded::<GmViewWarehouseWithdrawList>(&mut r, gm_view_warehouse_fields)
+        }
+        ServerOpcode::PartyRoomInfo => decoded::<PartyRoomInfo>(&mut r, party_room_info_fields),
+        ServerOpcode::ListPartyWaiting => decoded::<ListPartyWaiting>(&mut r, list_party_waiting_fields),
+        ServerOpcode::ExPartyRoomMember => decoded::<ExPartyRoomMember>(&mut r, party_room_member_fields),
+        ServerOpcode::ExManagePartyRoomMember => {
+            decoded::<ExManagePartyRoomMember>(&mut r, manage_party_room_member_fields)
+        }
+        ServerOpcode::ExClosePartyRoom => decoded::<ExClosePartyRoom>(&mut r, no_fields),
+        ServerOpcode::ExAskJoinPartyRoom => decoded::<ExAskJoinPartyRoom>(&mut r, ask_join_party_room_fields),
+        ServerOpcode::ExListPartyMatchingWaitingRoom => {
+            decoded::<ExListPartyMatchingWaitingRoom>(&mut r, list_matching_waiting_room_fields)
+        }
+        ServerOpcode::ExAskModifyPartyLooting => {
+            decoded::<ExAskModifyPartyLooting>(&mut r, ask_modify_party_looting_fields)
+        }
+        ServerOpcode::ExSetPartyLooting => decoded::<ExSetPartyLooting>(&mut r, set_party_looting_fields),
+        ServerOpcode::ExRequestChangeNicknameColor => {
+            decoded::<ExRequestChangeNicknameColor>(&mut r, request_change_nickname_color_fields)
         }
         ServerOpcode::ExOpenMpcc => decoded::<ExOpenMpcc>(&mut r, no_fields),
         ServerOpcode::ExCloseMpcc => decoded::<ExCloseMpcc>(&mut r, no_fields),
@@ -1658,6 +1714,109 @@ fn ask_join_mpcc_fields(p: &ExAskJoinMpcc) -> Value {
     object!(p => requestor_name)
 }
 
+fn gm_view_character_info_fields(p: &GmViewCharacterInfo) -> Value {
+    object!(
+        p => x, y, z, heading, object_id, name, race, is_female, class_id, level, exp, exp_percent, str, dex, con,
+        int, wit, men, max_hp, current_hp, max_mp, current_mp, sp, current_load, max_load, pk_kills,
+        paperdoll_object_ids, paperdoll_item_ids, paperdoll_augmentation_ids, talisman_slots, can_equip_cloak,
+        p_atk, p_atk_spd, p_def, evasion, accuracy, critical, m_atk, m_atk_spd, m_def, pvp_flag, karma, run_speed,
+        walk_speed, swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier,
+        attack_speed_multiplier, collision_radius, collision_height, hair_style, hair_color, face, is_gm, title,
+        clan_id, clan_crest_id, ally_id, mount_type, private_store_type, has_dwarven_craft, pvp_kills,
+        recom_left, recom_have, max_cp, current_cp, running, pledge_class, noble, hero, name_color, title_color,
+        attack_element, attack_element_value, defense, fame, vitality_points
+    )
+}
+
+fn gm_henna_info_fields(p: &GmHennaInfo) -> Value {
+    object!(p => int, str, con, men, dex, wit, dye_ids)
+}
+
+fn gm_view_skill_info_fields(p: &GmViewSkillInfo) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|s| object!(s => passive, display_level, display_id, disabled, enchantable))
+        .collect();
+    json!({ "player_name": p.player_name, "skills": skills })
+}
+
+fn gm_view_quest_info_fields(p: &GmViewQuestInfo) -> Value {
+    let quests: Vec<Value> = p
+        .quests
+        .iter()
+        .map(|(quest_id, cond)| json!({ "quest_id": quest_id, "cond": cond }))
+        .collect();
+    json!({ "player_name": p.player_name, "quests": quests })
+}
+
+fn gm_view_warehouse_fields(p: &GmViewWarehouseWithdrawList) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    json!({ "owner_name": p.owner_name, "adena": p.adena, "items": items })
+}
+
+fn party_room_info_fields(p: &PartyRoomInfo) -> Value {
+    object!(p => room_id, max_members, min_level, max_level, loot_type, location, title)
+}
+
+fn list_party_waiting_fields(p: &ListPartyWaiting) -> Value {
+    let rooms: Vec<Value> = p
+        .rooms
+        .iter()
+        .map(|room| {
+            let members: Vec<Value> = room
+                .members
+                .iter()
+                .map(|(class_id, name)| json!({ "class_id": class_id, "name": name }))
+                .collect();
+            json!({
+                "room_id": room.room_id, "title": room.title, "location": room.location,
+                "min_level": room.min_level, "max_level": room.max_level,
+                "max_members": room.max_members, "owner_name": room.owner_name, "members": members,
+            })
+        })
+        .collect();
+    json!({ "rooms": rooms })
+}
+
+fn party_room_member_fields(p: &ExPartyRoomMember) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|m| object!(m => object_id, name, class_id, level, location, role))
+        .collect();
+    json!({ "mode": p.mode, "members": members })
+}
+
+fn manage_party_room_member_fields(p: &ExManagePartyRoomMember) -> Value {
+    json!({ "mode": p.mode, "member": object!(p.member => object_id, name, class_id, level, location, role) })
+}
+
+fn ask_join_party_room_fields(p: &ExAskJoinPartyRoom) -> Value {
+    object!(p => requestor_name)
+}
+
+fn list_matching_waiting_room_fields(p: &ExListPartyMatchingWaitingRoom) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|(name, class_id, level)| json!({ "name": name, "class_id": class_id, "level": level }))
+        .collect();
+    json!({ "page": p.page, "members": members })
+}
+
+fn ask_modify_party_looting_fields(p: &ExAskModifyPartyLooting) -> Value {
+    json!({ "requestor": p.requestor, "distribution_type": p.distribution_type.id() })
+}
+
+fn request_change_nickname_color_fields(p: &ExRequestChangeNicknameColor) -> Value {
+    object!(p => item_object_id)
+}
+
+fn set_party_looting_fields(p: &ExSetPartyLooting) -> Value {
+    json!({ "result": p.result, "distribution_type": p.distribution_type.id() })
+}
+
 fn mpcc_party_info_update_fields(p: &ExMpccPartyInfoUpdate) -> Value {
     object!(p => leader_name, leader_object_id, member_count, mode)
 }
@@ -2451,6 +2610,21 @@ mod tests {
         ServerOpcode::ServerClose,
         ServerOpcode::ItemList,
         ServerOpcode::GmViewItemList,
+        ServerOpcode::GmViewCharacterInfo,
+        ServerOpcode::GmHennaInfo,
+        ServerOpcode::GmViewSkillInfo,
+        ServerOpcode::GmViewQuestInfo,
+        ServerOpcode::GmViewWarehouseWithdrawList,
+        ServerOpcode::PartyRoomInfo,
+        ServerOpcode::ListPartyWaiting,
+        ServerOpcode::ExPartyRoomMember,
+        ServerOpcode::ExManagePartyRoomMember,
+        ServerOpcode::ExClosePartyRoom,
+        ServerOpcode::ExAskJoinPartyRoom,
+        ServerOpcode::ExListPartyMatchingWaitingRoom,
+        ServerOpcode::ExAskModifyPartyLooting,
+        ServerOpcode::ExSetPartyLooting,
+        ServerOpcode::ExRequestChangeNicknameColor,
         ServerOpcode::UserInfo,
         ServerOpcode::ShortCutInit,
         ServerOpcode::ShortCutRegister,
@@ -3106,6 +3280,101 @@ mod tests {
         assert_eq!(fields["limit"], 80);
         assert_eq!(fields["items"][0]["item_id"], 57);
         assert_eq!(fields["items"][0]["count"], 100);
+    }
+
+    #[test]
+    fn party_room_and_gm_window_packets_show_their_fields() {
+        use l2_protocol_game::client::{RequestGmCommand, RequestPartyMatchList, RequestResetNickname};
+        use l2_protocol_game::server::party_room::{ListPartyWaiting, RoomMember, WaitingRoom};
+        use l2_protocol_game::server::{
+            ExPartyRoomMember, ExSetPartyLooting, GmViewQuestInfo, PartyDistributionType,
+        };
+
+        let fields = s2c_fields(
+            &ExPartyRoomMember {
+                mode: 1,
+                members: vec![RoomMember {
+                    object_id: 7,
+                    name: "Alpha".into(),
+                    class_id: 10,
+                    level: 40,
+                    location: 6,
+                    role: 1,
+                }],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["mode"], 1);
+        assert_eq!(fields["members"][0]["name"], "Alpha");
+        assert_eq!(fields["members"][0]["role"], 1);
+
+        let fields = s2c_fields(
+            &ListPartyWaiting {
+                rooms: vec![WaitingRoom {
+                    room_id: 3,
+                    title: "Cruma".into(),
+                    location: 0,
+                    min_level: 1,
+                    max_level: 80,
+                    max_members: 9,
+                    owner_name: "Alpha".into(),
+                    members: vec![(10, "Alpha".into())],
+                }],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["rooms"][0]["title"], "Cruma");
+        assert_eq!(fields["rooms"][0]["members"][0]["class_id"], 10);
+
+        let fields = s2c_fields(
+            &ExSetPartyLooting {
+                result: 1,
+                distribution_type: PartyDistributionType::ByTurn,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(
+            (fields["result"].clone(), fields["distribution_type"].clone()),
+            (json!(1), json!(3))
+        );
+
+        let fields = s2c_fields(
+            &GmViewQuestInfo {
+                player_name: "Target".into(),
+                quests: vec![],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["player_name"], "Target");
+        assert_eq!(fields["quests"], json!([]));
+
+        let in_game = ConnectionState::InGame;
+        let fields = c2s_fields(
+            in_game,
+            &RequestPartyMatchList {
+                room_id: 0,
+                members_max: 9,
+                min_level: 1,
+                max_level: 80,
+                loot: 1,
+                room_title: "Cruma".into(),
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["room_title"], "Cruma");
+        let fields = c2s_fields(
+            in_game,
+            &RequestGmCommand {
+                target_name: "Target".into(),
+                command: 5,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(
+            (fields["target_name"].clone(), fields["command"].clone()),
+            (json!("Target"), json!(5))
+        );
+        assert_eq!(c2s_fields(in_game, &RequestResetNickname.to_bytes()), json!({}));
     }
 
     #[test]

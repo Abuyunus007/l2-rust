@@ -108,6 +108,8 @@ pub enum TimerKind {
     Control(crate::effects::control::ControlTimer),
     /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
     PartyPosition(crate::party::PartyId),
+    /// Java `Party._changeDistributionTypeRequestTask`: the loot rule vote ran out of time.
+    PartyLootRequest(crate::party::PartyId),
     /// Java `CommandChannelTimer`: the loot right of a raid boss (by raid), see
     /// `party/command_channel.rs`.
     CommandChannelTimer(ObjectId),

@@ -27,9 +27,9 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, ItemData,
-    LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData, PlayerProfile,
-    RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
-    StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData,
+    PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
+    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1110,6 +1110,71 @@ impl ClientSession {
             },
             ClientPacket::RequestAnswerJoinParty(p) => ClientInput::AnswerJoinParty { response: p.response },
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
+            // Java: the party matching room packets, the loot rule vote, the nickname packets,
+            // RequestGmList, RequestGMCommand (L-03)
+            ClientPacket::RequestPartyMatchConfig(p) => ClientInput::PartyRoom(PartyRoomInput::Config {
+                auto: p.auto,
+                location: p.location,
+                level: p.level,
+            }),
+            ClientPacket::RequestPartyMatchList(p) => ClientInput::PartyRoom(PartyRoomInput::List {
+                room_id: p.room_id,
+                members_max: p.members_max,
+                min_level: p.min_level,
+                max_level: p.max_level,
+                loot: p.loot,
+                title: p.room_title,
+            }),
+            ClientPacket::RequestPartyMatchDetail(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::Detail { room_id: p.room_id })
+            }
+            ClientPacket::RequestOustFromPartyRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::Oust { char_id: p.char_id })
+            }
+            ClientPacket::RequestDismissPartyRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::Dismiss { room_id: p.room_id })
+            }
+            ClientPacket::RequestWithdrawPartyRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::Withdraw { room_id: p.room_id })
+            }
+            ClientPacket::RequestAskJoinPartyRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::AskJoin { name: p.name })
+            }
+            ClientPacket::AnswerJoinPartyRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::AnswerJoin { answer: p.answer })
+            }
+            ClientPacket::RequestListPartyMatchingWaitingRoom(p) => {
+                ClientInput::PartyRoom(PartyRoomInput::ListWaiting {
+                    page: p.page,
+                    min_level: p.min_level,
+                    max_level: p.max_level,
+                    mode: p.mode,
+                })
+            }
+            ClientPacket::RequestExitPartyMatchingWaitingRoom(_) => {
+                ClientInput::PartyRoom(PartyRoomInput::ExitWaiting)
+            }
+            ClientPacket::RequestPartyLootModification(p) => ClientInput::PartyLootModification {
+                distribution_type_id: p.distribution_type_id,
+            },
+            ClientPacket::AnswerPartyLootModification(p) => {
+                ClientInput::AnswerPartyLootModification { answer: p.answer }
+            }
+            ClientPacket::RequestGiveNickName(p) => ClientInput::GiveNickName {
+                target: p.target,
+                title: p.title,
+            },
+            ClientPacket::RequestChangeNicknameColor(p) => ClientInput::ChangeNicknameColor {
+                color_num: p.color_num,
+                title: p.title,
+                item_object_id: p.item_object_id,
+            },
+            ClientPacket::RequestResetNickname(_) => ClientInput::ResetNickname,
+            ClientPacket::RequestGmList(_) => ClientInput::GmList,
+            ClientPacket::RequestGmCommand(p) => ClientInput::GmCommand {
+                target_name: p.target_name,
+                command: p.command,
+            },
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
             // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,

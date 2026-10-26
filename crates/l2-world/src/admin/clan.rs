@@ -396,7 +396,7 @@ fn pledge_rep(world: &mut World, gm: ObjectId, player: ObjectId, parameter: Opti
 }
 
 /// Java `GMViewPledgeInfo.writeImpl`: the clan with every member, as the GM's window shows it.
-fn gm_view_pledge_info(world: &World, clan: &Clan, player_name: &str) -> GmViewPledgeInfo {
+pub(crate) fn gm_view_pledge_info(world: &World, clan: &Clan, player_name: &str) -> GmViewPledgeInfo {
     let members = world
         .clan_members_info(clan.id)
         .into_iter()
