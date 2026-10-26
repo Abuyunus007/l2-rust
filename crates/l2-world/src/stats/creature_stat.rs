@@ -907,9 +907,14 @@ impl<'w> StatView<'w> {
         let value = if base <= 0.0 {
             0.0
         } else {
-            self.calc(Stat::MoveSpeed, base)
+            self.calc(Stat::MoveSpeed, base * self.gm_speed_multiplier())
         };
         self.player_speed_cap(value) * self.pet_speed_factor() * self.swamp_factor()
+    }
+
+    /// Java `CreatureStat._gmSpeedMultiplier`: 1 until `//gmspeed` sets it (M7-ADMIN-08).
+    fn gm_speed_multiplier(&self) -> f64 {
+        self.world.gm_speed_multiplier(self.object_id())
     }
 
     /// `PlayableStat.getRunSpeed` / `getWalkSpeed`: the move bonus of the swamp zone the player
@@ -931,7 +936,7 @@ impl<'w> StatView<'w> {
         let value = if base <= 0.0 {
             0.0
         } else {
-            self.calc(Stat::MoveSpeed, base)
+            self.calc(Stat::MoveSpeed, base * self.gm_speed_multiplier())
         };
         self.player_speed_cap(value) * self.pet_speed_factor() * self.swamp_factor()
     }
@@ -942,7 +947,7 @@ impl<'w> StatView<'w> {
         if base <= 0.0 {
             return 0.0;
         }
-        self.calc(Stat::MoveSpeed, base)
+        self.calc(Stat::MoveSpeed, base * self.gm_speed_multiplier())
     }
 
     /// Java `getSwimWalkSpeed()`.
@@ -951,7 +956,7 @@ impl<'w> StatView<'w> {
         if base <= 0.0 {
             return 0.0;
         }
-        self.calc(Stat::MoveSpeed, base)
+        self.calc(Stat::MoveSpeed, base * self.gm_speed_multiplier())
     }
 
     /// Java `getMoveSpeed()`.

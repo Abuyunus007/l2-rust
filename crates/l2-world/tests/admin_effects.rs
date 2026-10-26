@@ -132,10 +132,6 @@ const REGISTERED: &[&str] = &[
     "admin_empty_vitality",
     "admin_get_vitality",
     "admin_augment",
-];
-
-/// The words of the card that are left out, each answered like an unknown command.
-const LEFT_OUT: &[&str] = &[
     "admin_clearteams",
     "admin_setteam",
     "admin_setteam_close",
@@ -144,9 +140,11 @@ const LEFT_OUT: &[&str] = &[
     "admin_instant_move",
     "admin_pccafepoints",
     "admin_commands",
-    "admin_instancezones",
     "admin_switch_gm_buffs",
 ];
+
+/// The words of the card that stay out (M8), each answered like an unknown command.
+const LEFT_OUT: &[&str] = &["admin_instancezones"];
 
 fn rights() -> AdminRights {
     let mut rights = AdminRights::default();
@@ -351,6 +349,10 @@ impl Root {
         write(
             "data/html/admin/charskills.htm",
             "<html><body>%name%</body></html>",
+        );
+        write(
+            "data/html/admin/help/commands.htm",
+            "<html><body>%pages%%list%</body></html>",
         );
         Self(dir)
     }
@@ -1244,4 +1246,141 @@ fn clan_skill_commands_check_the_target_and_the_clan() {
         system_ids_to(&s.log.take(), GM),
         [SystemMessageId::TheTargetMustBeAClanMember]
     );
+}
+
+// ------------------------------------------------- the words wired in after the first report
+
+#[test]
+fn gmspeed_sets_the_multiplier_of_the_target_and_checks_its_range() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+    s.target(GM, Some(USER));
+
+    run(&mut s, GM, "admin_gmspeed 2");
+    assert_eq!(s.world.gm_speed_multiplier(ObjectId(USER)), 2.0);
+    assert_eq!(texts_to(&s.log.take(), GM), ["[P1] speed is [200.00]% fast."]);
+
+    run(&mut s, GM, "admin_gmspeed 0");
+    assert_eq!(s.world.gm_speed_multiplier(ObjectId(USER)), 1.0);
+    s.log.take();
+
+    run(&mut s, GM, "admin_gmspeed 11");
+    assert_eq!(texts_to(&s.log.take(), GM), ["//gmspeed [0...10]"]);
+    assert_eq!(s.world.gm_speed_multiplier(ObjectId(USER)), 1.0);
+}
+
+#[test]
+fn teleto_and_instant_move_set_the_click_mode() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+
+    run(&mut s, GM, "admin_teleto");
+    s.log.take();
+    assert_eq!(s.world.tele_mode(ObjectId(GM)), 1);
+
+    run(&mut s, GM, "admin_teleto r");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Instant move ready. Click where you want to go."]
+    );
+    assert_eq!(s.world.tele_mode(ObjectId(GM)), 2);
+
+    run(&mut s, GM, "admin_teleto end");
+    s.log.take();
+    assert_eq!(s.world.tele_mode(ObjectId(GM)), 0);
+
+    run(&mut s, GM, "admin_instant_move");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Instant move ready. Click where you want to go."]
+    );
+    assert_eq!(s.world.tele_mode(ObjectId(GM)), 1);
+}
+
+#[test]
+fn setteam_close_and_clearteams_change_the_team_of_the_players_in_range() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+
+    // USER stands 100 units away: outside a radius of 50.
+    run(&mut s, GM, "admin_setteam_close blue 50");
+    s.log.take();
+    assert_eq!(s.world.team_of(ObjectId(USER)), 0);
+
+    run(&mut s, GM, "admin_setteam_close red");
+    s.log.take();
+    assert_eq!(s.world.team_of(ObjectId(USER)), 2);
+
+    run(&mut s, GM, "admin_clearteams");
+    s.log.take();
+    assert_eq!(s.world.team_of(ObjectId(USER)), 0);
+
+    run(&mut s, GM, "admin_setteam_close green");
+    assert_eq!(
+        texts_to(&s.log.take(), GM),
+        ["Usage: //setteam_close <none|blue|red> [radius]"]
+    );
+}
+
+#[test]
+fn setteam_sets_the_target_player_and_says_the_usage_without_one() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+    s.target(GM, Some(USER));
+
+    run(&mut s, GM, "admin_setteam blue");
+    s.log.take();
+    assert_eq!(s.world.team_of(ObjectId(USER)), 1);
+
+    s.target(GM, None);
+    run(&mut s, GM, "admin_setteam blue");
+    assert_eq!(texts_to(&s.log.take(), GM), ["Usage: //setteam <none|blue|red>"]);
+}
+
+#[test]
+fn pccafepoints_sets_and_increases_the_points_and_shows_the_menu() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+    s.target(GM, Some(USER));
+
+    run(&mut s, GM, "admin_pccafepoints set 500");
+    let out = s.log.take();
+    assert_eq!(s.world.pc_cafe_points(ObjectId(USER)), 500);
+    assert!(html_to(&out, GM)[0].html.contains("500 P1"));
+
+    run(&mut s, GM, "admin_pccafepoints increase 10");
+    s.log.take();
+    assert_eq!(s.world.pc_cafe_points(ObjectId(USER)), 510);
+
+    run(&mut s, GM, "admin_pccafepoints set abc");
+    let out = s.log.take();
+    assert_eq!(texts_to(&out, GM), ["Invalid Value!"]);
+    assert_eq!(s.world.pc_cafe_points(ObjectId(USER)), 510);
+}
+
+#[test]
+fn commands_lists_the_rights_rows_five_per_page() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+
+    // Java's default page is 1, counted from 0 by PageBuilder: the second page of five.
+    run(&mut s, GM, "admin_commands");
+    let page = html_to(&s.log.take(), GM)[0].html.clone();
+    assert!(page.contains("//invis_menu</font>"), "{page}");
+    assert!(!page.contains("//invis</font>"), "{page}");
+    assert_eq!(page.matches("<font color=\"LEVEL\">").count(), 5, "{page}");
+    assert!(page.contains("null</td>"), "the test rights have no descriptions");
+
+    run(&mut s, GM, "admin_commands page=0");
+    let page = html_to(&s.log.take(), GM)[0].html.clone();
+    assert!(page.contains("//invis</font>"), "{page}");
+}
+
+#[test]
+fn switch_gm_buffs_says_there_is_nothing_to_switch_without_the_gm_settings() {
+    let mut s = setup();
+    gm_and_user(&mut s);
+
+    run(&mut s, GM, "admin_switch_gm_buffs");
+    assert_eq!(texts_to(&s.log.take(), GM), ["There is nothing to switch."]);
 }

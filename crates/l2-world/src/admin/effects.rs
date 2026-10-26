@@ -8,9 +8,9 @@
 //! order of that chain decides which branch a menu word takes (`admin_para_all_menu` is a `para`
 //! word, not a menu). The chain is ported in the same order in [`admin_effects`].
 //!
-//! Left out, with the system that brings it: `//clearteams`, `//setteam` and `//setteam_close`
-//! (the team of a creature: `Duel`'s team field is private to `duel.rs`, so they are not
-//! registered yet).
+//! `//clearteams`, `//setteam` and `//setteam_close` set the team of players through
+//! `World::set_team` (`duel.rs`). A creature that is not a player keeps its team (no team field
+//! for NPCs yet).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEffects.java
 
 use l2_data::skill::AbnormalVisualEffect;
@@ -30,8 +30,7 @@ type Outcome = Result<(), JavaException>;
 /// Java `SocialAction.LEVEL_UP`: the one social id a player takes above 18.
 const SOCIAL_LEVEL_UP: i32 = 2122;
 
-/// Java `AdminEffects.ADMIN_COMMANDS`, the words that reach [`admin_effects`]. The team words are
-/// left out (see the module comment).
+/// Java `AdminEffects.ADMIN_COMMANDS`, the words that reach [`admin_effects`].
 pub(crate) fn register(handlers: &mut AdminHandlers) {
     const WORDS: &[&str] = &[
         "admin_invis",
@@ -66,6 +65,9 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         "admin_set_displayeffect",
         "admin_set_displayeffect_menu",
         "admin_event_trigger",
+        "admin_clearteams",
+        "admin_setteam",
+        "admin_setteam_close",
     ];
     let handler: AdminHandler = admin_effects;
     for word in WORDS {
@@ -137,6 +139,15 @@ fn admin_effects(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         if let Some(target) = creature_target(world, gm) {
             world.stop_abnormal_visual_effect(target, &[AbnormalVisualEffect::BigHead]);
         }
+    } else if command == "admin_clearteams" {
+        for player in world.visible_players(gm) {
+            // Java `Team.NONE`.
+            world.set_team(player, 0);
+        }
+    } else if command.starts_with("admin_setteam_close") {
+        setteam_close(world, gm, &words);
+    } else if command.starts_with("admin_setteam") {
+        setteam(world, gm, &words);
     } else if command.starts_with("admin_social") {
         social(world, gm, command, &words);
     } else if command.starts_with("admin_ave_abnormal")
@@ -550,5 +561,62 @@ fn event_trigger(world: &mut World, gm: ObjectId, words: &[&str]) {
             world.send(gm, &packet);
         }
         _ => world.send_sys_message(gm, "Usage: //event_trigger id [true | false]"),
+    }
+}
+
+/// Java `Team.valueOf(name.toUpperCase())` as the team id of `Creature.getTeam()`: 0 none, 1 blue,
+/// 2 red. Any other name is Java's `IllegalArgumentException` (the usage text).
+fn team_id(name: &str) -> Option<u8> {
+    match name.to_uppercase().as_str() {
+        "NONE" => Some(0),
+        "BLUE" => Some(1),
+        "RED" => Some(2),
+        _ => None,
+    }
+}
+
+/// Java `admin_setteam_close <none|blue|red> [radius]`: the players within `radius` (400 by
+/// default) of the GM get the team.
+fn setteam_close(world: &mut World, gm: ObjectId, words: &[&str]) {
+    const USAGE: &str = "Usage: //setteam_close <none|blue|red> [radius]";
+    let Some(name) = words.get(1) else {
+        world.send_sys_message(gm, USAGE);
+        return;
+    };
+    let radius = match words.get(2) {
+        Some(text) => match parse_int(text) {
+            Ok(radius) => radius,
+            Err(_) => {
+                world.send_sys_message(gm, USAGE);
+                return;
+            }
+        },
+        None => 400,
+    };
+    let Some(team) = team_id(name) else {
+        world.send_sys_message(gm, USAGE);
+        return;
+    };
+    for player in world.visible_objects_in_range(gm, radius) {
+        if world.is_player(player) {
+            world.set_team(player, team);
+        }
+    }
+}
+
+/// Java `admin_setteam <none|blue|red>`: the targeted creature gets the team. No target is the
+/// usage text; a target that is not a creature does nothing. Only players have a team here.
+fn setteam(world: &mut World, gm: ObjectId, words: &[&str]) {
+    const USAGE: &str = "Usage: //setteam <none|blue|red>";
+    let Some(team) = words.get(1).and_then(|name| team_id(name)) else {
+        world.send_sys_message(gm, USAGE);
+        return;
+    };
+    let Some(target) = world.target_of(gm) else {
+        world.send_sys_message(gm, USAGE);
+        return;
+    };
+    if is_creature(world, target) && world.is_player(target) {
+        world.set_team(target, team);
     }
 }

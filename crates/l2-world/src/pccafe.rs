@@ -94,6 +94,11 @@ impl World {
         self.pccafe.settings = settings;
     }
 
+    /// Java `PremiumSystemConfig.PC_CAFE_MAX_POINTS` (`MaxPcCafePoints`), for the admin commands.
+    pub(crate) fn pc_cafe_max_points(&self) -> i32 {
+        self.pccafe.settings.max_points
+    }
+
     /// Java `Player.getPcCafePoints()`.
     pub fn pc_cafe_points(&self, id: ObjectId) -> i32 {
         self.players.get(&id).map_or(0, |p| p.data.profile.pccafe_points)

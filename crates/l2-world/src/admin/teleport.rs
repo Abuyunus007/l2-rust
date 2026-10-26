@@ -1,9 +1,8 @@
 //! The rest of the teleport admin commands: `//walk <x> <y> <z>` (the GM walks there) and
 //! `//recall_npc` (the targeted monster is moved to the GM's place).
 //!
-//! Left out, with the system that brings it: `//teleto`, `//teleto r|end` and `//instant_move`
-//! (they set the GM's click-to-teleport mode, which the client `MoveToLocation` handler reads;
-//! that handler is not ported with a mode yet).
+//! `//teleto`, `//teleto r|end` and `//instant_move` set the GM's click-to-teleport mode, which
+//! the `MoveToLocation` handler reads (`tele_mode` of `zone_tools.rs`).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTeleport.java (walk, recallNPC)
 
 use l2_protocol_game::SystemMessageId;
@@ -25,6 +24,8 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_walk", admin_walk),
         ("admin_recall_npc", admin_recall_npc),
         ("admin_sendhome", admin_sendhome),
+        ("admin_teleto", admin_teleto),
+        ("admin_instant_move", admin_instant_move),
     ];
     for (command, handler) in table {
         handlers.register(command, *handler);
@@ -108,6 +109,30 @@ fn admin_recall_npc(world: &mut World, gm: ObjectId, _command: &str) -> Outcome 
         return Ok(());
     }
     world.send_sys_message(gm, &format!("Created {name} on {}.", npc.0));
+    Ok(())
+}
+
+/// Java `AdminTeleport.onCommand`, `admin_teleto` (mode 1), `admin_teleto r` (mode 2, the
+/// "ready" line) and `admin_teleto end` (mode 0).
+fn admin_teleto(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    match command {
+        "admin_teleto" => world.set_tele_mode(gm, 1),
+        "admin_teleto r" => {
+            world.send_sys_message(gm, "Instant move ready. Click where you want to go.");
+            world.set_tele_mode(gm, 2);
+        }
+        "admin_teleto end" => world.set_tele_mode(gm, 0),
+        _ => {}
+    }
+    Ok(())
+}
+
+/// Java `AdminTeleport.onCommand`, `admin_instant_move`: the next click teleports (mode 1).
+fn admin_instant_move(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    if command == "admin_instant_move" {
+        world.send_sys_message(gm, "Instant move ready. Click where you want to go.");
+        world.set_tele_mode(gm, 1);
+    }
     Ok(())
 }
 

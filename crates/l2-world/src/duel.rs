@@ -211,7 +211,7 @@ impl World {
     }
 
     /// Java `Player.setTeam(team)`: the team, then `broadcastUserInfo()`.
-    fn set_team(&mut self, id: ObjectId, team: u8) {
+    pub(crate) fn set_team(&mut self, id: ObjectId, team: u8) {
         if !self.players.contains_key(&id) {
             return;
         }

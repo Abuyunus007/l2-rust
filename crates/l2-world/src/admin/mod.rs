@@ -47,6 +47,7 @@ pub mod menu;
 pub mod messages;
 pub mod page;
 pub mod party;
+pub mod pccafe;
 pub mod punishments;
 pub mod rights;
 pub mod skills;
@@ -135,6 +136,8 @@ pub(crate) struct AdminWorld {
     /// `AdminSkill.adminSkills`: the skills a GM had before `//get_skills`, for `//reset_skills`.
     /// Java keeps one such list for the whole server, so this is one list too.
     pub(crate) skill_stash: Option<Vec<(i32, i32)>>,
+    /// Java `CreatureStat._gmSpeedMultiplier` of each creature `//gmspeed` changed (`gm.rs`).
+    pub(crate) gm_speed: HashMap<ObjectId, f64>,
     /// The zone builder and the zone markers (`zone_tools.rs`).
     pub(crate) zones: zone_tools::ZoneAdmin,
     /// The path search of `//path_find` (`geodata.rs`).
@@ -156,6 +159,7 @@ impl Default for AdminWorld {
         augment::register(&mut handlers);
         element::register(&mut handlers);
         clan_skills::register(&mut handlers);
+        pccafe::register(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);
@@ -182,6 +186,7 @@ impl Default for AdminWorld {
             class_list: Arc::new(ClassList::default()),
             pending_confirm: HashMap::new(),
             skill_stash: None,
+            gm_speed: HashMap::new(),
             zones: zone_tools::ZoneAdmin::default(),
             path: geodata::PathAdmin::default(),
         }

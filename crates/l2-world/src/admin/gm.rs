@@ -1,10 +1,9 @@
 //! The GM's own commands and the small target ones: `//superhaste <0-4> [seconds]` (and `//speed`),
-//! `//hide on|off`, `//target <name>` and `//targetsay <text>`, with their menu words.
+//! `//hide on|off`, `//target <name>`, `//targetsay <text>`, `//gmspeed <0-10>` and
+//! `//switch_gm_buffs`, with their menu words.
 //!
-//! Left out, with the system that brings it: `//gmspeed` (the GM speed multiplier is not a stat
-//! of the creature here yet, and `UseSuperHasteAsGMSpeed` defaults to off, so the usual path needs
-//! it), and the silence mode of `//hide` (`Player.setSilenceMode`, the refusal of private messages,
-//! is not modelled, so `//hide` leaves it out).
+//! Not modelled: the silence mode of `//hide` (`Player.setSilenceMode`, the refusal of private
+//! messages), so `//hide` does not set it.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminSuperHaste,AdminHide,
 // Java: AdminTarget,AdminTargetSay}.java, entity/actor/Player.java (setHiding)
 
@@ -33,6 +32,8 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_hide", admin_hide),
         ("admin_target", admin_target),
         ("admin_targetsay", admin_targetsay),
+        ("admin_gmspeed", admin_gmspeed),
+        ("admin_switch_gm_buffs", admin_switch_gm_buffs),
     ];
     for (command, handler) in table {
         handlers.register(command, *handler);
@@ -188,5 +189,89 @@ fn admin_targetsay(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             body: SayBody::Text(message),
         },
     );
+    Ok(())
+}
+
+/// Java `AdminBuffs.onCommand`, `admin_switch_gm_buffs`: the GM gets the other set of GM skills
+/// (the aura set when it has the aura skill 7041, else the normal set), and the skill list is sent.
+/// Java does not save these skills to the database, and neither does this.
+fn admin_switch_gm_buffs(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    if world.settings.gm_give_special_skills == world.settings.gm_give_special_aura_skills {
+        world.send_sys_message(gm, "There is nothing to switch.");
+        return Ok(());
+    }
+    let to_aura = world.known_skill(gm, 7041).is_some();
+    switch_skills(world, gm, to_aura);
+    world.send_skill_list(gm);
+    let kind = if to_aura { "aura" } else { "one" };
+    world.send_sys_message(
+        gm,
+        &format!("You have succefully changed to target {kind} special skills."),
+    );
+    Ok(())
+}
+
+/// Java `SkillTreeData.switchSkills(gmchar, toAuraSkills)`: the skills of the set being left go,
+/// then the set of `toAuraSkills` is added.
+fn switch_skills(world: &mut World, gm: ObjectId, to_aura: bool) {
+    let trees = std::sync::Arc::clone(&world.rewards.skill_trees);
+    let (leave, enter) = if to_aura {
+        (trees.game_master_skills(), trees.game_master_aura_skills())
+    } else {
+        (trees.game_master_aura_skills(), trees.game_master_skills())
+    };
+    for learn in leave {
+        world.remove_skill(gm, learn.skill_id, false);
+    }
+    for learn in enter {
+        world.add_skill(gm, learn.skill_id, learn.skill_level);
+    }
+}
+
+impl World {
+    /// Java `CreatureStat.getGmSpeedMultiplier` source: the multiplier `//gmspeed` set, 1 otherwise.
+    pub fn gm_speed_multiplier(&self, id: ObjectId) -> f64 {
+        self.admin.gm_speed.get(&id).copied().unwrap_or(1.0)
+    }
+}
+
+/// Java `AdminGmSpeed.onCommand`, `admin_gmspeed <0-10>`: the GM (or the targeted creature) moves
+/// faster by that factor; 0 is the normal speed. With `UseSuperHasteAsGMSpeed` the command is
+/// `admin_superhaste <token>` instead.
+// NOTE(java-quirk): Java prints the percentage as `(value * 100) + "0"`, so the text is
+// `[200.00]%` for 2; the number is printed the way Java prints a double.
+fn admin_gmspeed(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    let words = java_split_space(command);
+    let usage = "//gmspeed [0...10]";
+    let Some(token) = words.get(1).copied() else {
+        world.send_sys_message(gm, usage);
+        return Ok(());
+    };
+    if world.settings.use_super_haste_as_gm_speed {
+        world.admin_command(gm, &format!("admin_superhaste {token}"), false);
+        return Ok(());
+    }
+    // GUESS: Java's `StringUtil.isDouble` is read as Rust's f64 parse.
+    let Ok(boost) = token.parse::<f64>() else {
+        world.send_sys_message(gm, usage);
+        return Ok(());
+    };
+    if !(0.0..=10.0).contains(&boost) {
+        world.send_sys_message(gm, usage);
+        return Ok(());
+    }
+    let target = world
+        .target_of(gm)
+        .filter(|t| world.objects.get(t).is_some_and(|e| e.kind.is_creature()))
+        .unwrap_or(gm);
+    let multiplier = if boost > 0.0 { boost } else { 1.0 };
+    world.admin.gm_speed.insert(target, multiplier);
+    if world.is_player(target) {
+        world.broadcast_user_info(target);
+    } else {
+        world.broadcast_info(target);
+    }
+    let name = world.object_name(target).unwrap_or_default();
+    world.send_sys_message(gm, &format!("[{name}] speed is [{:?}0]% fast.", boost * 100.0));
     Ok(())
 }

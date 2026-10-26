@@ -329,6 +329,13 @@ pub struct WorldSettings {
     /// `GeneralConfig.GM_STARTUP_INVULNERABLE` (`GMStartupInvulnerable`): a GM with `admin_invul`
     /// access is invulnerable from the moment they enter the world.
     pub gm_startup_invulnerable: bool,
+    /// `GeneralConfig.USE_SUPER_HASTE_AS_GM_SPEED` (`UseSuperHasteAsGMSpeed`): `//gmspeed` gives the
+    /// super haste instead of the speed multiplier.
+    pub use_super_haste_as_gm_speed: bool,
+    /// `GeneralConfig.GM_GIVE_SPECIAL_SKILLS` (`GMGiveSpecialSkills`): the GM skills of a GM login.
+    pub gm_give_special_skills: bool,
+    /// `GeneralConfig.GM_GIVE_SPECIAL_AURA_SKILLS` (`GMGiveSpecialAuraSkills`): the GM aura skills.
+    pub gm_give_special_aura_skills: bool,
     /// `GeneralConfig.GRIDS_ALWAYS_ON` (`GridsAlwaysOn`): every region starts active.
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
@@ -424,6 +431,9 @@ impl Default for WorldSettings {
             gm_audit: false,
             gm_startup_builder_hide: false,
             gm_startup_invulnerable: false,
+            use_super_haste_as_gm_speed: false,
+            gm_give_special_skills: false,
+            gm_give_special_aura_skills: false,
             zones: crate::zones::ZoneSettings::default(),
             teleport: crate::teleport::TeleportSettings::default(),
             talk: crate::dialog::TalkSettings::default(),
