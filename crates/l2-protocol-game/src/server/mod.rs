@@ -87,6 +87,7 @@ pub mod fishing;
 pub mod fort;
 pub mod friend;
 pub mod gm_view;
+pub mod henna;
 pub mod ground_item;
 pub mod handshake;
 pub mod interaction;
@@ -158,6 +159,10 @@ pub use fishing::{ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStart
 pub use fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, FortressInfo};
 pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 pub use gm_view::GmViewItemList;
+pub use henna::{
+    HennaEquipEntry, HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveEntry,
+    HennaRemoveList, HennaStatPreview,
+};
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use interaction::{

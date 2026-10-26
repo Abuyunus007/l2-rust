@@ -61,6 +61,10 @@ use crate::client::{
     RequestRefine, RequestRefineCancel,
 };
 use crate::client::{RequestDominionInfo, RequestJoinDominionWar};
+use crate::client::{
+    RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
+    RequestHennaRemove, RequestHennaRemoveList,
+};
 use crate::client::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
 use crate::client::{
     RequestEnchantItem, RequestExCancelEnchantItem, RequestExEnchantItemAttribute,
@@ -130,6 +134,12 @@ pub enum ClientPacket {
     RequestAcquireSkillInfo(RequestAcquireSkillInfo),
     RequestShortCutReg(RequestShortCutReg),
     RequestShortCutDel(RequestShortCutDel),
+    RequestHennaItemList(RequestHennaItemList),
+    RequestHennaItemInfo(RequestHennaItemInfo),
+    RequestHennaEquip(RequestHennaEquip),
+    RequestHennaRemoveList(RequestHennaRemoveList),
+    RequestHennaItemRemoveInfo(RequestHennaItemRemoveInfo),
+    RequestHennaRemove(RequestHennaRemove),
     DlgAnswer(DlgAnswer),
     /// `EX_REQUEST_AUTO_SOULSHOT` (`0xD0` 0x000D), an ex packet.
     RequestAutoSoulShot(RequestAutoSoulShot),
@@ -412,6 +422,20 @@ pub fn decode_client(
         }
         RequestShortCutReg::OPCODE => ClientPacket::RequestShortCutReg(RequestShortCutReg::decode(reader)?),
         RequestShortCutDel::OPCODE => ClientPacket::RequestShortCutDel(RequestShortCutDel::decode(reader)?),
+        RequestHennaItemList::OPCODE => {
+            ClientPacket::RequestHennaItemList(RequestHennaItemList::decode(reader)?)
+        }
+        RequestHennaItemInfo::OPCODE => {
+            ClientPacket::RequestHennaItemInfo(RequestHennaItemInfo::decode(reader)?)
+        }
+        RequestHennaEquip::OPCODE => ClientPacket::RequestHennaEquip(RequestHennaEquip::decode(reader)?),
+        RequestHennaRemoveList::OPCODE => {
+            ClientPacket::RequestHennaRemoveList(RequestHennaRemoveList::decode(reader)?)
+        }
+        RequestHennaItemRemoveInfo::OPCODE => {
+            ClientPacket::RequestHennaItemRemoveInfo(RequestHennaItemRemoveInfo::decode(reader)?)
+        }
+        RequestHennaRemove::OPCODE => ClientPacket::RequestHennaRemove(RequestHennaRemove::decode(reader)?),
         DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
         RequestJoinParty::OPCODE => ClientPacket::RequestJoinParty(RequestJoinParty::decode(reader)?),
         RequestAnswerJoinParty::OPCODE => {
@@ -1091,6 +1115,19 @@ mod tests {
             decode(InGame, 0x3F, &[13, 0, 0, 0]).unwrap(),
             Some(ClientPacket::RequestShortCutDel(RequestShortCutDel { slot: 13 }))
         );
+        assert_eq!(
+            decode(InGame, 0x6F, &[7, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestHennaEquip(RequestHennaEquip { symbol_id: 7 }))
+        );
+        assert_eq!(
+            decode(InGame, 0xC3, &[0, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestHennaItemList(RequestHennaItemList { unknown: 0 }))
+        );
+        assert_eq!(
+            decode(InGame, 0x72, &[9, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestHennaRemove(RequestHennaRemove { symbol_id: 9 }))
+        );
+        assert_eq!(decode(Authenticated, 0x6F, &[7, 0, 0, 0]).unwrap(), None);
         // The shortcut bar only exists in game.
         assert_eq!(decode(Authenticated, 0x3F, &[13, 0, 0, 0]).unwrap(), None);
         // Ex packets: the dispatcher consumes the ex id (0x000D soulshot, 0x004B dispel).

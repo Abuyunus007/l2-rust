@@ -642,6 +642,8 @@ impl World {
             } => self.on_multisell_choose(id, list_id, entry_id, amount),
             // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
             ClientInput::Store(input) => self.on_store_input(id, input),
+            // Java: RequestHenna*
+            ClientInput::Henna(input) => self.on_henna_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,

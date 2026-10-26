@@ -1,6 +1,6 @@
 //! The `character_hennas` table: the dyes (hennas) a character wears, per class index.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (RESTORE_CHAR_HENNAS, used by
-// Java: restoreHenna; ADD_CHAR_HENNA and DELETE_CHAR_HENNA come with the symbol maker)
+// Java: org/l2jmobius/gameserver/entity/actor/Player.java (RESTORE_CHAR_HENNAS in restoreHenna,
+// Java: ADD_CHAR_HENNA in addHenna, DELETE_CHAR_HENNA in removeHenna)
 //
 // Same layout as skills.rs: verbatim SQL, one method per statement.
 
@@ -11,6 +11,11 @@ use crate::pool::Pool;
 
 // Java: Player.RESTORE_CHAR_HENNAS
 const SELECT_HENNAS: &str = "SELECT slot,symbol_id FROM character_hennas WHERE charId=? AND class_index=?";
+
+// Java: Player.ADD_CHAR_HENNA
+const INSERT_HENNA: &str = "INSERT INTO character_hennas (charId,symbol_id,slot,class_index) VALUES (?,?,?,?)";
+// Java: Player.DELETE_CHAR_HENNA
+const DELETE_HENNA: &str = "DELETE FROM character_hennas WHERE charId=? AND slot=? AND class_index=?";
 
 /// One row of `character_hennas`: a dye slot and the dye (symbol) id in it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, FromRow)]
@@ -43,6 +48,31 @@ impl HennaRepository {
             .await?;
         Ok(rows)
     }
+
+    /// One dye drawn into a slot (1 to 3) of a class index.
+    // Java: Player.addHenna
+    pub async fn add_henna(&self, char_id: i32, symbol_id: i32, slot: i32, class_index: i32) -> Result<()> {
+        sqlx::query(INSERT_HENNA)
+            .bind(char_id)
+            .bind(symbol_id)
+            .bind(slot)
+            .bind(class_index)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// The dye of one slot removed.
+    // Java: Player.removeHenna
+    pub async fn delete_henna(&self, char_id: i32, slot: i32, class_index: i32) -> Result<()> {
+        sqlx::query(DELETE_HENNA)
+            .bind(char_id)
+            .bind(slot)
+            .bind(class_index)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -56,5 +86,7 @@ mod tests {
     #[test]
     fn statement_has_one_placeholder_per_bind() {
         assert_eq!(placeholders(SELECT_HENNAS), 2);
+        assert_eq!(placeholders(INSERT_HENNA), 4);
+        assert_eq!(placeholders(DELETE_HENNA), 3);
     }
 }

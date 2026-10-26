@@ -130,3 +130,32 @@ async fn hennas_are_read_per_character_and_class_index() {
 
     db.drop_database().await;
 }
+
+#[tokio::test]
+async fn a_dye_is_added_and_removed_per_slot_and_class_index() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = HennaRepository::new(db.pool.clone());
+    let row = |slot, symbol_id| HennaRow { slot, symbol_id };
+
+    repo.add_henna(ALICE, 11, 1, 0).await.unwrap();
+    repo.add_henna(ALICE, 12, 2, 0).await.unwrap();
+    repo.add_henna(ALICE, 13, 1, 1).await.unwrap();
+    // The primary key is (charId, slot, class_index): the same slot twice is refused, as in Java
+    // (which logs it).
+    assert!(repo.add_henna(ALICE, 14, 1, 0).await.is_err());
+
+    let mut base = repo.hennas_of(ALICE, 0).await.unwrap();
+    base.sort_by_key(|r| r.slot);
+    assert_eq!(base, [row(1, Some(11)), row(2, Some(12))]);
+
+    repo.delete_henna(ALICE, 1, 0).await.unwrap();
+    assert_eq!(repo.hennas_of(ALICE, 0).await.unwrap(), [row(2, Some(12))]);
+    // The sub class row of the same slot stays.
+    assert_eq!(repo.hennas_of(ALICE, 1).await.unwrap(), [row(1, Some(13))]);
+    // Deleting an empty slot is not an error.
+    repo.delete_henna(ALICE, 3, 0).await.unwrap();
+
+    db.drop_database().await;
+}
