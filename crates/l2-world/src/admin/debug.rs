@@ -13,7 +13,7 @@
 use std::collections::HashMap;
 
 use l2_geo::GeoLocation;
-use l2_protocol_game::server::{ExServerPrimitive, NpcHtmlMessage};
+use l2_protocol_game::server::{ExServerPrimitive, NpcHtmlMessage, PrimitiveColor};
 use l2_util::ObjectId;
 
 use super::control::AdminTimer;
@@ -31,6 +31,8 @@ const GEO_DELAY_MS: u64 = 1500;
 const MOVE_DELAY_MS: u64 = 100;
 /// The distance the GM must move before the drawing is renewed.
 const RENEW_DISTANCE: f64 = 15.0;
+/// Java `Color.BLUE`, the nodes of a geodata path (the packet type has no such constant).
+const BLUE: PrimitiveColor = PrimitiveColor(0xFF00_00FF_u32 as i32);
 
 /// The timers of `//debug`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -300,11 +302,11 @@ impl World {
                 let previous = self.admin.ctl.debug.move_paths.get(&id);
                 if previous.is_none_or(|old| *old != path) {
                     let mut primitive = ExServerPrimitive::new("DebugMove", here.0, here.1, -16000);
-                    primitive.add_line(ExServerPrimitive::GREEN, here, destination);
+                    primitive.add_line(PrimitiveColor::GREEN, here, destination);
                     for pair in path.windows(2) {
                         let (current, next) = (pair[0], pair[1]);
                         primitive.add_line(
-                            ExServerPrimitive::BLUE,
+                            BLUE,
                             (current.x(), current.y(), current.z()),
                             (next.x(), next.y(), next.z()),
                         );
@@ -323,7 +325,7 @@ impl World {
                     .is_none_or(|old| distance(destination, *old) > RENEW_DISTANCE);
                 if far {
                     let mut primitive = ExServerPrimitive::new("DebugMove", here.0, here.1, -16000);
-                    primitive.add_line(ExServerPrimitive::GREEN, here, destination);
+                    primitive.add_line(PrimitiveColor::GREEN, here, destination);
                     self.send(id, &primitive);
                     self.admin.ctl.debug.move_paths.remove(&id);
                     self.admin.ctl.debug.move_to.insert(id, destination);
@@ -343,7 +345,7 @@ impl World {
         };
         let mut primitive = ExServerPrimitive::new("DebugMove", here.0, here.1, -16000);
         primitive.add_line(
-            ExServerPrimitive::BLACK,
+            PrimitiveColor::BLACK,
             (here.0, here.1, -16000),
             (here.0, here.1, -16000),
         );

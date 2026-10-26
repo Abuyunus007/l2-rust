@@ -260,6 +260,9 @@ pub struct MovementState {
     pub teleporting: bool,
     /// Java `Player.getLastServerPosition()`.
     pub last_server_position: (i32, i32, i32),
+    /// Java `Player.getTeleMode()`: the admin click modes (1 teleport once, 2 teleport, 3 draw a
+    /// zone, `//zone_build_toggle`).
+    pub tele_mode: i32,
     /// Java `getClientX/Y/Z/Heading`: what the last `ValidatePosition` reported.
     pub client_x: i32,
     pub client_y: i32,
@@ -285,6 +288,7 @@ impl MovementState {
             running: true,
             teleporting: false,
             last_server_position: (x, y, z),
+            tele_mode: 0,
             client_x: 0,
             client_y: 0,
             client_z: 0,
@@ -571,8 +575,11 @@ impl World {
             }
         }
 
-        // NOTE: Java's `getTeleMode()` (the admin "//tele" click-to-teleport mode) is not ported;
-        // it belongs to the admin commands.
+        // Java `getTeleMode()`: the admin click modes (`admin/zone_tools.rs`).
+        if self.tele_mode_click(id, target_x, target_y, target_z) {
+            self.send(id, &ActionFailed);
+            return;
+        }
 
         // Can't move if character is confused (`isOutOfControl`).
         if self.is_out_of_control(id) {

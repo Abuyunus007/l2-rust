@@ -1143,8 +1143,8 @@ fn debug_movement_clears_its_line() {
     let primitives = decoded::<l2_protocol_game::server::ExServerPrimitive>(&out, GM, "EX_SERVER_PRIMITIVE");
     assert_eq!(primitives.len(), 1);
     assert_eq!(primitives[0].name, "DebugMove");
-    assert_eq!(primitives[0].lines.len(), 1);
-    assert_eq!(primitives[0].lines[0].color & 0xFF_FFFF, 0);
+    assert_eq!(primitives[0].lines().len(), 1);
+    assert_eq!(primitives[0].lines()[0].color.0 & 0xFF_FFFF, 0);
 }
 
 #[test]

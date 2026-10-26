@@ -75,6 +75,7 @@ pub mod charscreen;
 pub mod chat;
 pub mod combat;
 pub mod command_channel;
+pub mod debug_draw;
 pub mod duel;
 pub mod effect_packets;
 pub mod enchant;
@@ -115,10 +116,7 @@ pub mod userinfo;
 pub mod visibility;
 pub mod warehouse;
 
-pub use admin_support::{
-    AdminForgePacket, ExServerPrimitive, ForgePart, PetitionVotePacket, PrimitiveLine, PrimitivePoint,
-    ShowBoard, Snoop,
-};
+pub use admin_support::{AdminForgePacket, ForgePart, PetitionVotePacket, Snoop};
 pub use auction::{ExItemAuctionInfo, ItemAuctionNext};
 pub use charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelectEntry, CharSelected,
@@ -134,6 +132,7 @@ pub use command_channel::{
     ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
     ExMultiPartyCommandChannelInfo, ExOpenMpcc, MpccMember, MpccPartyEntry,
 };
+pub use debug_draw::{ExServerPrimitive, Primitive, PrimitiveColor, ShowBoard};
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
 pub use enchant::{

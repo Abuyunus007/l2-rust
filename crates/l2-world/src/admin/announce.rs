@@ -23,13 +23,12 @@
 
 use std::collections::BTreeMap;
 
-use l2_protocol_game::server::{ChatType, CreatureSay, ExShowScreenMessage, SayBody, SenderField, ShowBoard};
+use l2_protocol_game::server::{ChatType, CreatureSay, ExShowScreenMessage, SayBody, SenderField};
 use l2_util::ObjectId;
 use tracing::warn;
 
 use super::control::AdminTimer;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, is_numeric, parse_int};
-use crate::dialog::{HtmlActionScope, build_html_action_cache};
 use crate::outbox::PersistCommand;
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
@@ -367,51 +366,6 @@ impl World {
         if self.players.contains_key(&gm) {
             self.send_sys_message(gm, "Announcement has been successfully added!");
             let _ = announces_list(self, gm, None);
-        }
-    }
-
-    /// Java `HtmlUtil.sendCBHtml(player, html)` (npc origin 0): the page goes to the community
-    /// board window in up to three parts.
-    pub(crate) fn send_cb_html(&mut self, to: ObjectId, html: &str) {
-        const PART: usize = 16250;
-        if let Some(player) = self.players.get_mut(&to) {
-            player.talk.clear(HtmlActionScope::CommBoardHtml);
-            build_html_action_cache(&mut player.talk, HtmlActionScope::CommBoardHtml, 0, html);
-        }
-        let units: Vec<u16> = html.encode_utf16().collect();
-        let part = |from: usize, to: usize| -> String {
-            String::from_utf16_lossy(units.get(from..to.min(units.len())).unwrap_or_default())
-        };
-        let boards: [ShowBoard; 3] = if units.len() < PART {
-            [
-                ShowBoard::page(Some(html), "101"),
-                ShowBoard::page(None, "102"),
-                ShowBoard::page(None, "103"),
-            ]
-        } else if units.len() < PART * 2 {
-            [
-                ShowBoard::page(Some(&part(0, PART)), "101"),
-                ShowBoard::page(Some(&part(PART, units.len())), "102"),
-                ShowBoard::page(None, "103"),
-            ]
-        } else if units.len() < PART * 3 {
-            [
-                ShowBoard::page(Some(&part(0, PART)), "101"),
-                ShowBoard::page(Some(&part(PART, PART * 2)), "102"),
-                ShowBoard::page(Some(&part(PART * 2, units.len())), "103"),
-            ]
-        } else {
-            [
-                ShowBoard::page(
-                    Some("<html><body><br><center>Error: HTML was too long!</center></body></html>"),
-                    "101",
-                ),
-                ShowBoard::page(None, "102"),
-                ShowBoard::page(None, "103"),
-            ]
-        };
-        for board in &boards {
-            self.send(to, board);
         }
     }
 }

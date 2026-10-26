@@ -35,6 +35,7 @@ pub mod debug;
 pub mod enchant;
 pub mod exp_sp;
 pub mod forge;
+pub mod geodata;
 pub mod gm_tools;
 pub mod html;
 pub mod invul;
@@ -49,6 +50,7 @@ pub mod rights;
 pub mod skills;
 pub mod summon;
 pub mod transform;
+pub mod zone_tools;
 
 use std::collections::HashMap;
 use std::fmt;
@@ -131,6 +133,10 @@ pub(crate) struct AdminWorld {
     /// The state of the server control, GM tool, announcement, petition and debug handlers
     /// (M7-ADMIN-10, see `control.rs`).
     pub(crate) ctl: control::ControlWorld,
+    /// The zone builder and the zone markers (`zone_tools.rs`).
+    pub(crate) zones: zone_tools::ZoneAdmin,
+    /// The path search of `//path_find` (`geodata.rs`).
+    pub(crate) path: geodata::PathAdmin,
 }
 
 impl Default for AdminWorld {
@@ -156,6 +162,8 @@ impl Default for AdminWorld {
         chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);
+        geodata::register(&mut handlers);
+        zone_tools::register(&mut handlers);
         // M7-ADMIN-10: server control, GM tools, announcements, petitions, reload, forge, debug.
         control::register(&mut handlers);
         gm_tools::register(&mut handlers);
@@ -170,6 +178,8 @@ impl Default for AdminWorld {
             pending_confirm: HashMap::new(),
             skill_stash: None,
             ctl: control::ControlWorld::default(),
+            zones: zone_tools::ZoneAdmin::default(),
+            path: geodata::PathAdmin::default(),
         }
     }
 }
@@ -361,6 +371,10 @@ impl World {
     /// answer to the confirmation of an admin command. A yes runs the command again with the
     /// confirmation off; a no forgets it. Without a waiting command nothing happens.
     pub(crate) fn admin_confirm_answer(&mut self, player: ObjectId, answer: i32) {
+        // `PlayerAction.ADMIN_SAVE_ZONE` is checked before `ADMIN_COMMAND`.
+        if self.zone_save_answer(player, answer) {
+            return;
+        }
         let Some(command) = self.admin.pending_confirm.remove(&player) else {
             return;
         };
