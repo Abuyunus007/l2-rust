@@ -175,6 +175,9 @@ pub enum TimerKind {
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),
+    /// The duration and empty-destroy countdown of an instance and the eject of a dead player,
+    /// see `instance/`.
+    Instance(crate::instance::InstanceTimer),
     /// The start, repeat and arrival tasks of the walking manager, see `walking.rs`.
     Walking(crate::walking::WalkingTimer),
     /// The `.gotolove` wait of a married player, see `wedding.rs`.

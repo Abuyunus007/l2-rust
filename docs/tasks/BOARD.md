@@ -367,12 +367,12 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 | [L-01](L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | merged |
 | [L-02](L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | merged |
 | [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | merged |
-| [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | ready |
+| [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | merged |
 | [L-05](L/L-05.md) | Item auctions | sonnet | full | none | ready |
 | [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | merged |
 | [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
 | [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | merged |
-| [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | ready |
+| [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | merged |
 | [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | merged |
 
 ## M8: Olympiad, heroes, Seven Signs, instances and the big systems (approved 2026-10-27)
@@ -382,7 +382,7 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
 | [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | merged |
-| [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | ready |
+| [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | merged |
 | [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | ready |
 | [M8-HERO-01](M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | ready |
 | [M8-SS-01](M8/M8-SS-01.md) | Seven Signs | opus | full | GPROTO-11 | ready |

@@ -540,3 +540,107 @@ impl Scene {
             .sum()
     }
 }
+
+// ------------------------------------------------------------------ the party duel arena
+
+/// The door of the test arena (the id of Grassy Arena's first door).
+pub const ARENA_DOOR: i32 = 17_100_001;
+/// The Olympiad buffer of the arenas (`type="OlympiadManager"`).
+pub const OLYMPIAD_HOST: i32 = 36402;
+/// The stadium spawns: three on the west side, three on the east side, like Grassy Arena.
+pub const ARENA_SPAWNS: [(i32, i32, i32); 6] = [
+    (X - 1_400, Y, Z),
+    (X - 1_415, Y, Z),
+    (X - 1_430, Y, Z),
+    (X + 1_400, Y, Z),
+    (X + 1_415, Y, Z),
+    (X + 1_430, Y, Z),
+];
+
+/// What a party duel needs (M8-INST-01): the Olympiad arena templates 147 to 150 (all the same
+/// here: PvP, one door, two Olympiad hosts in the "general" group), an `OlympiadStadiumZone`
+/// around them with the spawns of the two sides, the world door the arena copies, and the
+/// monster and host templates.
+pub fn install_arena(s: &mut Scene) {
+    let monster = monster_xml(10, 1000, 100);
+    let host = format!(
+        r#"<npc id="{OLYMPIAD_HOST}" level="70" type="OlympiadManager" name="Olympiad Host">
+    <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+      <vitals hp="2444" hpRegen="7.5" mp="1345" mpRegen="2.7" />
+      <attack physical="688" magical="470" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+      <defence physical="295" magical="216" />
+      <speed><walk ground="50" /><run ground="120" /></speed>
+    </stats>
+    <collision><radius normal="8"/><height normal="23"/></collision>
+  </npc>"#
+    );
+    let npcs = Arc::new(
+        NpcTemplates::from_xml(
+            &format!("<list>{monster}{host}</list>"),
+            &NpcLoadOptions::default(),
+        )
+        .unwrap(),
+    );
+    s.world.set_npc_data(npcs, Arc::new(SpawnData::default()));
+
+    let door = format!(
+        r#"<list><door id="{ARENA_DOOR}" name="arena_door" height="150" baseHpMax="1000" pos="{},{Y},{Z}"
+            node1="{},{}" node2="{},{}" node3="{},{}" node4="{},{}" nodeZ="{}" default_status="close"/></list>"#,
+        X + 200,
+        X + 190,
+        Y - 50,
+        X + 210,
+        Y - 50,
+        X + 210,
+        Y + 50,
+        X + 190,
+        Y + 50,
+        Z - 10
+    );
+    let ids = Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap());
+    s.world.set_id_factory(Arc::clone(&ids));
+    s.world
+        .spawn_doors(&l2_data::DoorTemplates::from_xml(&door).unwrap(), &ids)
+        .unwrap();
+
+    let mut templates = l2_data::InstanceTemplates::default();
+    for id in 147..=150 {
+        templates.add_template(
+            &format!(
+                r#"<instance id="{id}"><PvPInstance val="true" /><doorlist><door id="{ARENA_DOOR}" /></doorlist>
+                <spawnlist><group name="general">
+                <npc id="{OLYMPIAD_HOST}" x="{}" y="{Y}" z="{Z}" heading="0" respawn="60" />
+                <npc id="{OLYMPIAD_HOST}" x="{}" y="{Y}" z="{Z}" heading="0" respawn="60" />
+                </group></spawnlist></instance>"#,
+                X - 1_300,
+                X + 1_300
+            ),
+            &format!("Olympiad/arena{id}.xml"),
+        );
+    }
+    s.world.set_instance_data(Arc::new(templates));
+
+    let spawns: String = ARENA_SPAWNS
+        .iter()
+        .map(|(x, y, z)| format!(r#"<spawn X="{x}" Y="{y}" Z="{z}" />"#))
+        .collect();
+    let zone = format!(
+        r#"<zone name="Test Arena" type="OlympiadStadiumZone" shape="Cylinder" minZ="{}" maxZ="{}" rad="2000">
+        <node X="{X}" Y="{Y}" />{spawns}<spawn X="{X}" Y="{Y}" Z="{Z}" type="spectatorSpawn" /></zone>"#,
+        Z - 300,
+        Z + 4_000
+    );
+    let dir = tempfile::tempdir().unwrap();
+    for sub in ["zones", "mapregion"] {
+        std::fs::create_dir_all(dir.path().join("data").join(sub)).unwrap();
+    }
+    std::fs::write(
+        dir.path().join("data/zones/arena.xml"),
+        format!("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<list enabled=\"true\">{zone}</list>\n"),
+    )
+    .unwrap();
+    s.world.set_zone_data(
+        Arc::new(l2_data::Zones::load(dir.path())),
+        Arc::new(l2_data::MapRegions::load(dir.path())),
+    );
+}

@@ -4,13 +4,16 @@
 //! the Java SQL as constants with a `// Java:` comment, runtime queries, row structs that
 //! mirror the column types.
 
+mod account_data;
 mod announcements;
 mod auctions;
+mod bookmarks;
 mod bosses;
 mod bot_reports;
 mod buylists;
 mod characters;
 mod clans;
+mod contacts;
 mod crests;
 mod cursed_weapons;
 mod fishing;
@@ -20,6 +23,7 @@ mod ground_items;
 mod hall_sieges;
 mod hennas;
 mod ids;
+mod instance_times;
 mod item_reuse;
 mod items;
 mod macros;
@@ -42,8 +46,12 @@ mod territories;
 mod variables;
 mod wedding;
 
+pub use account_data::{
+    AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
+};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
+pub use bookmarks::{BookmarkRepository, BookmarkRow};
 pub use bosses::{
     BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
     RaidPointsRow,
@@ -58,15 +66,17 @@ pub use clans::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, NewClan,
 };
+pub use contacts::{ContactLink, ContactRepository};
 pub use crests::{CrestRepository, CrestRow};
 pub use cursed_weapons::{CursedWeaponRepository, CursedWeaponRow};
 pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use fort_sieges::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
-pub use friends::{FriendLink, FriendRepository};
+pub use friends::{CharacterSummary, FriendLink, FriendRepository};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
+pub use instance_times::{InstanceTimeRepository, InstanceTimeRow};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use items::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,

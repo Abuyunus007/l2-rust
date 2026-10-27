@@ -26,24 +26,24 @@ pub struct NpcConfig {
     pub enable_random_enchant_effect: bool,
     /// Key: `MinNPCLevelForDmgPenalty`, default 78.
     pub min_npc_level_dmg_penalty: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `float[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.npc_dmg_penalty` (Java type `float[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 107): `String[] split = config.getString("DmgPenaltyForLvLDifferences", "0.7, 0.6, 0.6, 0.55").split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `DmgPenaltyForLvLDifferences`, Java default `"0.7, 0.6, 0.6, 0.55"` (before the Java post-processing).
     pub npc_dmg_penalty: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `float[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.npc_crit_dmg_penalty` (Java type `float[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 115): `split = config.getString("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58").split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `CritDmgPenaltyForLvLDifferences`, Java default `"0.75, 0.65, 0.6, 0.58"` (before the Java post-processing).
     pub npc_crit_dmg_penalty: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `float[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.npc_skill_dmg_penalty` (Java type `float[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 123): `split = config.getString("SkillDmgPenaltyForLvLDifferences", "0.8, 0.7, 0.65, 0.62").split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `SkillDmgPenaltyForLvLDifferences`, Java default `"0.8, 0.7, 0.65, 0.62"` (before the Java post-processing).
     pub npc_skill_dmg_penalty: (),
     /// Key: `MinNPCLevelForMagicPenalty`, default 78.
     pub min_npc_level_magic_penalty: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `float[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.npc_skill_chance_penalty` (Java type `float[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 133): `split = config.getString("SkillChancePenaltyForLvLDifferences", "2.5, 3.0, 3.25, 3.5").split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `SkillChancePenaltyForLvLDifferences`, Java default `"2.5, 3.0, 3.25, 3.5"` (before the Java post-processing).
@@ -76,32 +76,32 @@ pub struct NpcConfig {
     pub guard_attack_aggro_mob: bool,
     /// Key: `AllowWyvernUpgrader`, default false.
     pub allow_wyvern_upgrader: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.list_pet_rent_npc` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 156): `split = config.getString("ListPetRentNpc", "30827").split(",");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ListPetRentNpc`, Java default `"30827"` (before the Java post-processing).
     pub list_pet_rent_npc: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.npc.raid_hp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 163): `RAID_HP_REGEN_MULTIPLIER = config.getDouble("RaidHpRegenMultiplier", 100) / 100;`
     /// Key: `RaidHpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_hp_regen_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.npc.raid_mp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 164): `RAID_MP_REGEN_MULTIPLIER = config.getDouble("RaidMpRegenMultiplier", 100) / 100;`
     /// Key: `RaidMpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_mp_regen_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.raid_pdefence_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 165): `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;`
     /// Key: `RaidPDefenceMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_pdefence_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.raid_mdefence_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 166): `RAID_MDEFENCE_MULTIPLIER = config.getDouble("RaidMDefenceMultiplier", 100) / 100;`
     /// Key: `RaidMDefenceMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_mdefence_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.raid_pattack_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 167): `RAID_PATTACK_MULTIPLIER = config.getDouble("RaidPAttackMultiplier", 100) / 100;`
     /// Key: `RaidPAttackMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_pattack_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.raid_mattack_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 168): `RAID_MATTACK_MULTIPLIER = config.getDouble("RaidMAttackMultiplier", 100) / 100;`
     /// Key: `RaidMAttackMultiplier`, Java default `100` (before the Java post-processing).
     pub raid_mattack_multiplier: (),
@@ -111,7 +111,7 @@ pub struct NpcConfig {
     pub raid_max_respawn_multiplier: f32,
     /// Key: `RaidMinionRespawnTime`, default 300000.
     pub raid_minion_respawn_timer: f64,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.npc.minions_respawn_time` (Java type `Map<Integer, Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 173): `split = config.getString("CustomMinionsRespawnTime", "").split(";");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `CustomMinionsRespawnTime`, Java default `""` (before the Java post-processing).
@@ -128,11 +128,11 @@ pub struct NpcConfig {
     pub minion_chaos_time: i32,
     /// Key: `MaximumSlotsForPet`, default 12.
     pub inventory_maximum_pet: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.pet_hp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 201): `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
     /// Key: `PetHpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub pet_hp_regen_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.npc.pet_mp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 202): `PET_MP_REGEN_MULTIPLIER = config.getDouble("PetMpRegenMultiplier", 100) / 100;`
     /// Key: `PetMpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub pet_mp_regen_multiplier: (),

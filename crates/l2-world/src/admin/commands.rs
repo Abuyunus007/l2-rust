@@ -607,7 +607,7 @@ fn teleport_to_character(world: &mut World, gm: ObjectId, target: Option<ObjectI
         .map(|p| p.data.name.clone())
         .unwrap_or_default();
     world.set_intention_idle(gm);
-    // `teleToLocation(new Location(x, y, z), true)`: instance 0 (instances are not modelled).
+    // `teleToLocation(new Location(x, y, z), true)`: instance 0.
     let offset = world.max_teleport_offset();
     world.tele_to_location(
         gm,

@@ -424,22 +424,18 @@ impl StaticData for DatapackData {
 }
 
 /// The values exp, SP and levels read (Java `RatesConfig`, `PlayerConfig`). `MaxSp` is a `long`
-/// the generated config keeps as a placeholder, so it comes from `Player.ini` here.
-pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
-    use l2_config::IniFile;
-
+/// the generated config keeps as a placeholder; `config.manual.player.max_sp` holds it.
+pub fn exp_settings(config: &GameConfig, _config_dir: &Path) -> ExpSettings {
     let r = &config.rates;
     let p = &config.player;
-    let mut settings = ExpSettings {
+    ExpSettings {
         rate_xp: r.rate_xp,
         rate_sp: r.rate_sp,
         monster_exp_max_level_difference: r.monster_exp_max_level_difference,
         // Java: `if (RATE_KARMA_LOST == -1) RATE_KARMA_LOST = RATE_XP;`
-        rate_karma_lost: if r.rate_karma_lost == -1.0 {
-            r.rate_xp
-        } else {
-            r.rate_karma_lost
-        },
+        rate_karma_lost: config.effective_rate_karma_lost(),
+        // Java: `MAX_SP = getLong("MaxSp", 50000000000L) >= 0 ? that : Long.MAX_VALUE`.
+        max_sp: config.manual.player.max_sp,
         rate_karma_exp_lost: r.rate_karma_exp_lost,
         player_delevel: p.player_delevel,
         decrease_skill_level: p.decrease_skill_level,
@@ -449,14 +445,7 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         alt_party_range: p.alt_party_range,
         enable_free_strider: config.free_mounts.enable_free_strider,
         enable_free_wyvern: config.free_mounts.enable_free_wyvern,
-        ..ExpSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        // Java: `MAX_SP = getLong("MaxSp", 50000000000L) >= 0 ? that : Long.MAX_VALUE`.
-        let max_sp = ini.get_long("MaxSp", 50_000_000_000);
-        settings.max_sp = if max_sp >= 0 { max_sp } else { i64::MAX };
     }
-    settings
 }
 
 /// The values parties read (Java `PlayerConfig`, `RatesConfig`, `ClassBalanceConfig`). The cut-off
@@ -468,6 +457,7 @@ pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Party
 
     let r = &config.rates;
     let p = &config.player;
+    let core = &config.manual.core.player;
     let mut settings = PartySettings {
         alt_party_range: p.alt_party_range,
         alt_leave_party_leader: p.alt_leave_party_leader,
@@ -476,30 +466,17 @@ pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Party
         xp_cutoff_percent: p.party_xp_cutoff_percent,
         xp_cutoff_level: p.party_xp_cutoff_level,
         loot_raids_privilege_cc_size: p.loot_raids_privilege_cc_size,
+        // `LOOT_RAIDS_PRIVILEGE_INTERVAL = getInt("RaidLootRightsInterval", 900) * 1000`.
+        loot_raids_privilege_interval_ms: i64::from(core.loot_raids_privilege_interval),
+        xp_cutoff_gaps: core.party_xp_cutoff_gaps.clone(),
+        xp_cutoff_gap_percents: core.party_xp_cutoff_gap_percents.clone(),
         ..PartySettings::default()
     };
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
-        // `LOOT_RAIDS_PRIVILEGE_INTERVAL = getInt("RaidLootRightsInterval", 900) * 1000`.
-        settings.loot_raids_privilege_interval_ms =
-            i64::from(ini.get_int("RaidLootRightsInterval", 900)).wrapping_mul(1000);
-        let method = ini.get_string("PartyXpCutoffMethod", "LEVEL");
-        match PartyExpType::from_name(&method) {
-            Some(method) => settings.xp_cutoff_method = method,
-            None => warn!("PartyXpCutoffMethod = {method} is not a party exp type; using LEVEL."),
-        }
-        let gaps = ini.get_string("PartyXpCutoffGaps", "0,9;10,14;15,99");
-        match parse_party_gaps(&gaps) {
-            Some(gaps) => settings.xp_cutoff_gaps = gaps,
-            None => warn!("PartyXpCutoffGaps = {gaps} is not a list of level pairs; using the default."),
-        }
-        let percents = ini.get_string("PartyXpCutoffGapPercent", "100;30;0");
-        match parse_party_percents(&percents) {
-            Some(percents) => settings.xp_cutoff_gap_percents = percents,
-            None => {
-                warn!("PartyXpCutoffGapPercent = {percents} is not a list of numbers; using the default.")
-            }
-        }
+    // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
+    let method = &core.party_xp_cutoff_method;
+    match PartyExpType::from_name(method) {
+        Some(method) => settings.xp_cutoff_method = method,
+        None => warn!("PartyXpCutoffMethod = {method} is not a party exp type; using LEVEL."),
     }
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
         for (key, table) in [
@@ -510,24 +487,6 @@ pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Party
         }
     }
     settings
-}
-
-/// Java `PARTY_XP_CUTOFF_GAPS`: `"0,9;10,14;15,99"` is three level ranges. `None` where Java's
-/// `Integer.parseInt` would throw.
-fn parse_party_gaps(text: &str) -> Option<Vec<[i32; 2]>> {
-    text.split(';')
-        .map(|gap| {
-            let mut parts = gap.split(',');
-            let low = parts.next()?.parse().ok()?;
-            let high = parts.next()?.parse().ok()?;
-            Some([low, high])
-        })
-        .collect()
-}
-
-/// Java `PARTY_XP_CUTOFF_GAP_PERCENTS`: `"100;30;0"`.
-fn parse_party_percents(text: &str) -> Option<Vec<i32>> {
-    text.split(';').map(|percent| percent.parse().ok()).collect()
 }
 
 /// The values vitality reads (Java `PlayerConfig`, `RatesConfig`).
@@ -563,90 +522,45 @@ pub fn nevit_settings(config: &GameConfig) -> l2_world::NevitSettings {
     }
 }
 
-/// The values dying and reviving read. `RespawnRestoreCP/HP/MP` are `()` placeholders in the
-/// generated config (Java divides them by 100 after reading), so they come from `Player.ini`.
-pub fn death_settings(config: &GameConfig, config_dir: &Path) -> DeathSettings {
-    use l2_config::IniFile;
-
-    let mut s = DeathSettings {
+/// The values dying and reviving read. `RespawnRestoreCP/HP/MP` (Java divides them by 100 after
+/// reading) are `config.manual.core.player.respawn_restore_*`.
+pub fn death_settings(config: &GameConfig, _config_dir: &Path) -> DeathSettings {
+    let core = &config.manual.core.player;
+    DeathSettings {
         disconnect_after_death: config.player.disconnect_after_death,
         default_corpse_time: config.npc.default_corpse_time,
         spoiled_corpse_extend_time: config.npc.spoiled_corpse_extend_time,
         corpse_consume_skill_allowed_time_before_decay: config
             .npc
             .corpse_consume_skill_allowed_time_before_decay,
-        ..DeathSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        s.respawn_restore_cp = ini.get_double("RespawnRestoreCP", 0.0) / 100.0;
-        s.respawn_restore_hp = ini.get_double("RespawnRestoreHP", 65.0) / 100.0;
-        s.respawn_restore_mp = ini.get_double("RespawnRestoreMP", 0.0) / 100.0;
+        respawn_restore_cp: core.respawn_restore_cp,
+        respawn_restore_hp: core.respawn_restore_hp,
+        respawn_restore_mp: core.respawn_restore_mp,
     }
-    s
 }
-
-/// The names of Java's `ChatType`, in the order of its ids.
-const CHAT_TYPE_NAMES: [&str; 24] = [
-    "GENERAL",
-    "SHOUT",
-    "WHISPER",
-    "PARTY",
-    "CLAN",
-    "GM",
-    "PETITION_PLAYER",
-    "PETITION_GM",
-    "TRADE",
-    "ALLIANCE",
-    "ANNOUNCEMENT",
-    "BOAT",
-    "FRIEND",
-    "MSNCHAT",
-    "PARTYMATCH_ROOM",
-    "PARTYROOM_COMMANDER",
-    "PARTYROOM_ALL",
-    "HERO_VOICE",
-    "CRITICAL_ANNOUNCE",
-    "SCREEN_ANNOUNCE",
-    "BATTLEFIELD",
-    "MPCC_ROOM",
-    "NPC_GENERAL",
-    "NPC_SHOUT",
-];
 
 /// The values punishments read (Java `GeneralConfig`): `DefaultPunish`, `DefaultPunishParam`,
 /// `JailDisableChat` and `BanChatChannels`. The first and the last are post-processed in Java
-/// (placeholders in the generated config), so they are read from `General.ini` here.
-pub fn punishment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PunishmentSettings {
-    use l2_config::IniFile;
-    use l2_config::game::GeneralConfig;
+/// (placeholders in the generated config); `config.manual.core.general` holds them.
+pub fn punishment_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::PunishmentSettings {
+    use l2_config::game_manual_core::chat_type_client_id;
     use l2_world::{IllegalActionPunishment, PunishmentSettings};
 
-    let mut settings = PunishmentSettings {
+    let core = &config.manual.core.general;
+    // Java: `Enum.valueOf(ChatType.class, name)` throws for a bad name; the config crate already
+    // dropped those, in file order and without doubles.
+    let ban_chat_channels = core
+        .ban_chat_channels
+        .iter()
+        .filter_map(|name| chat_type_client_id(name))
+        .filter_map(l2_protocol_game::server::ChatType::from_client_id)
+        .collect();
+    PunishmentSettings {
         default_punish_param: config.effective_default_punish_param(),
         jail_disable_chat: config.general.jail_disable_chat,
-        ..PunishmentSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
-        settings.default_punish =
-            IllegalActionPunishment::find_by_name(&ini.get_string("DefaultPunish", "KICK"));
-        // Java: `Enum.valueOf(ChatType.class, name)` throws for a bad name; the channel is skipped.
-        let text = ini.get_string("BanChatChannels", "GENERAL;SHOUT;TRADE;HERO_VOICE;WHISPER");
-        let mut channels = Vec::new();
-        for name in text.trim().split(';') {
-            match CHAT_TYPE_NAMES.iter().position(|n| *n == name) {
-                Some(index) => {
-                    if let Some(chat_type) = l2_protocol_game::server::ChatType::from_client_id(index as i32)
-                        && !channels.contains(&chat_type)
-                    {
-                        channels.push(chat_type);
-                    }
-                }
-                None => warn!("BanChatChannels: \"{name}\" is not a chat type; skipped."),
-            }
-        }
-        settings.ban_chat_channels = channels;
+        default_punish: IllegalActionPunishment::find_by_name(&core.default_punish),
+        ban_chat_channels,
     }
-    settings
 }
 
 /// `BotReportPunishments.xml` (Java `BotReportTable.PunishmentsLoader`): `<punishment
@@ -681,33 +595,30 @@ pub fn bot_report_punishments_from_xml(xml: &str) -> BTreeMap<i32, l2_world::Bot
 }
 
 /// The bot report values (Java `GeneralConfig.BOTREPORT_*`). The reset hour and the delay are
-/// post-processed in Java (placeholders in the generated config), so they are read from
-/// `General.ini` here; the punishments come from `BotReportPunishments.xml` when the button is on.
+/// post-processed in Java (placeholders in the generated config); `config.manual.core.general`
+/// holds them. The punishments come from `BotReportPunishments.xml` when the button is on.
 pub fn bot_report_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BotReportSettings {
-    use l2_config::IniFile;
-    use l2_config::game::GeneralConfig;
-
+    let core = &config.manual.core.general;
     let mut settings = l2_world::BotReportSettings {
         enable: config.general.botreport_enable,
         allow_reports_from_same_clan_members: config.general.botreport_allow_reports_from_same_clan_members,
-        ..l2_world::BotReportSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
         // Java: `config.getInt("BotReportDelay", 30) * 60000`.
-        settings.report_delay_ms = i64::from(ini.get_int("BotReportDelay", 30)) * 60_000;
+        report_delay_ms: core.botreport_report_delay,
         // Java: `getString("BotReportPointsResetHour", "00:00").split(":")`, parsed with
         // `Integer.parseInt`; anything else fails the scheduling (every 24 hours).
-        let text = ini.get_string("BotReportPointsResetHour", "00:00");
-        let mut parts = text.split(':');
-        settings.reset_hour_minute = match (parts.next(), parts.next()) {
+        reset_hour_minute: match (
+            core.botreport_resetpoint_hour.first(),
+            core.botreport_resetpoint_hour.get(1),
+        ) {
             (Some(hour), Some(minute)) => hour
                 .trim()
                 .parse::<i64>()
                 .ok()
                 .zip(minute.trim().parse::<i64>().ok()),
             _ => None,
-        };
-    }
+        },
+        ..l2_world::BotReportSettings::default()
+    };
     if settings.enable {
         let path = config_dir.join("BotReportPunishments.xml");
         match std::fs::read(&path) {
@@ -742,21 +653,33 @@ pub fn flood_settings(config_dir: &Path) -> l2_world::FloodSettings {
 
 /// `FloodProtectorConfig.loadFloodProtectorConfig` for every protector.
 pub fn flood_settings_from_ini(ini: &l2_config::IniFile) -> l2_world::FloodSettings {
+    flood_settings_from_manual(&l2_config::game_manual_core::FloodProtectorManual::from_ini(ini))
+}
+
+/// The flood protectors of the loaded configuration (`config.manual.core.flood_protector`).
+pub fn flood_settings_from_config(config: &GameConfig) -> l2_world::FloodSettings {
+    flood_settings_from_manual(&config.manual.core.flood_protector)
+}
+
+/// The world's flood protector table from the typed `FloodProtector.ini` values.
+fn flood_settings_from_manual(
+    manual: &l2_config::game_manual_core::FloodProtectorManual,
+) -> l2_world::FloodSettings {
     use l2_world::{FloodConfig, FloodKind, FloodPunishment, FloodSettings};
 
     let mut settings = FloodSettings::java_defaults();
     for kind in FloodKind::ALL {
-        let key = |suffix: &str| format!("FloodProtector{}{suffix}", kind.config_name());
+        let Some(protector) = manual.by_config_name(kind.config_name()) else {
+            continue;
+        };
         settings.set(
             kind,
             FloodConfig {
-                protection_interval: ini.get_int(&key("Interval"), kind.java_default_interval()),
-                log_flooding: ini.get_bool(&key("LogFlooding"), false),
-                punishment_limit: ini.get_int(&key("PunishmentLimit"), 0),
-                punishment_type: FloodPunishment::parse(&ini.get_string(&key("PunishmentType"), "none")),
-                // NOTE(java-quirk): `getInt(...) * 60000` is an int multiplication; a huge number
-                // of minutes overflows before it becomes the long.
-                punishment_time: i64::from(ini.get_int(&key("PunishmentTime"), 0).wrapping_mul(60_000)),
+                protection_interval: protector.protection_interval,
+                log_flooding: protector.log_flooding,
+                punishment_limit: protector.punishment_limit,
+                punishment_type: FloodPunishment::parse(&protector.punishment_type),
+                punishment_time: i64::from(protector.punishment_time),
             },
         );
     }
@@ -764,15 +687,17 @@ pub fn flood_settings_from_ini(ini: &l2_config::IniFile) -> l2_world::FloodSetti
 }
 
 /// The enchant values (`Player.ini`, `General.ini`). `EnchantBlackList` and `OverEnchantPunishment`
-/// are post-processed in Java (placeholders in the generated config), so they are read from
-/// `Player.ini` here.
-pub fn enchant_settings(config: &GameConfig, config_dir: &Path) -> l2_world::EnchantSettings {
-    use l2_config::IniFile;
-    use l2_config::game::PlayerConfig;
+/// are post-processed in Java (placeholders in the generated config); `config.manual.core.player`
+/// holds them.
+pub fn enchant_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::EnchantSettings {
     use l2_world::{EnchantSettings, IllegalActionPunishment};
 
     let p = &config.player;
-    let mut settings = EnchantSettings {
+    let core = &config.manual.core.player;
+    EnchantSettings {
+        // Java: `Integer.parseInt` of each comma separated id, sorted.
+        enchant_blacklist: core.enchant_blacklist.clone(),
+        over_enchant_punishment: IllegalActionPunishment::find_by_name(&core.over_enchant_punishment),
         over_enchant_protection: p.over_enchant_protection,
         disable_over_enchanting: p.disable_over_enchanting,
         enchant_chance_element_stone: p.enchant_chance_element_stone,
@@ -784,38 +709,25 @@ pub fn enchant_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Enc
         es_sp_book_needed: p.es_sp_book_needed,
         normal_enchant_cost_multiplier: config.general.normal_enchant_cost_multiplier,
         safe_enchant_cost_multiplier: config.general.safe_enchant_cost_multiplier,
-        ..EnchantSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(PlayerConfig::FILE)) {
-        settings.over_enchant_punishment =
-            IllegalActionPunishment::find_by_name(&ini.get_string("OverEnchantPunishment", "JAIL"));
-        // Java: `Integer.parseInt` of each comma separated id (it throws for a bad one), sorted.
-        let text = ini.get_string(
-            "EnchantBlackList",
-            "7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296",
-        );
-        let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
-        match ids {
-            Ok(mut ids) => {
-                ids.sort_unstable();
-                settings.enchant_blacklist = ids;
-            }
-            Err(_) => warn!("EnchantBlackList = {text} is not a list of ids; using the default."),
-        }
     }
-    settings
 }
 
 /// The augmentation values (`Player.ini`). The four `RetailLikeAugmentation*GradeChance` lists and
-/// `AugmentationBlackList` are post-processed in Java (placeholders in the generated config), so
-/// they are read from `Player.ini` here.
-pub fn augment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::AugmentSettings {
-    use l2_config::IniFile;
-    use l2_config::game::PlayerConfig;
+/// `AugmentationBlackList` are post-processed in Java (placeholders in the generated config);
+/// `config.manual.core.player` holds them.
+pub fn augment_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::AugmentSettings {
     use l2_world::AugmentSettings;
 
     let p = &config.player;
-    let mut settings = AugmentSettings {
+    let core = &config.manual.core.player;
+    AugmentSettings {
+        retail_like_chances: [
+            core.retail_like_augmentation_ng_chance,
+            core.retail_like_augmentation_mid_chance,
+            core.retail_like_augmentation_high_chance,
+            core.retail_like_augmentation_top_chance,
+        ],
+        blacklist: core.augmentation_blacklist.clone(),
         ng_skill_chance: p.augmentation_ng_skill_chance,
         ng_glow_chance: p.augmentation_ng_glow_chance,
         mid_skill_chance: p.augmentation_mid_skill_chance,
@@ -829,40 +741,7 @@ pub fn augment_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Aug
         retail_like: p.retail_like_augmentation,
         retail_like_accessory: p.retail_like_augmentation_accessory,
         alt_allow_augment_pvp_items: p.alt_allow_augment_pvp_items,
-        ..AugmentSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(PlayerConfig::FILE)) {
-        // Java: `Integer.parseInt` of the first four numbers of each list (it throws for a bad one
-        // or a short list).
-        let grades = [
-            "RetailLikeAugmentationNoGradeChance",
-            "RetailLikeAugmentationMidGradeChance",
-            "RetailLikeAugmentationHighGradeChance",
-            "RetailLikeAugmentationTopGradeChance",
-        ];
-        for (grade, key) in grades.iter().enumerate() {
-            let text = ini.get_string(key, "55,35,7,3");
-            let numbers: Vec<i32> = text.split(',').filter_map(|n| n.parse().ok()).collect();
-            if text.split(',').count() >= 4 && numbers.len() == text.split(',').count() {
-                settings.retail_like_chances[grade] = [numbers[0], numbers[1], numbers[2], numbers[3]];
-            } else {
-                warn!("{key} = {text} is not a list of four numbers; using the default.");
-            }
-        }
-        // Java: `Integer.parseInt` of each comma separated id (it throws for a bad one), sorted.
-        let text = ini.get_string("AugmentationBlackList", "");
-        if !text.is_empty() {
-            let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
-            match ids {
-                Ok(mut ids) => {
-                    ids.sort_unstable();
-                    settings.blacklist = ids;
-                }
-                Err(_) => warn!("AugmentationBlackList = {text} is not a list of ids; using the default."),
-            }
-        }
     }
-    settings
 }
 
 /// The PvP flag times, the anti feed rules (`PVP.ini`) and the PvP title colours
@@ -906,9 +785,8 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
         },
         ..PvpSettings::default()
     };
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpConfig::FILE)) {
-        s.antifeed_interval_ms = i64::from(ini.get_int("AntiFeedInterval", 120)).saturating_mul(1000);
-    }
+    // `ANTIFEED_INTERVAL = getInt("AntiFeedInterval", 120) * 1000`.
+    s.antifeed_interval_ms = i64::from(config.manual.core.pvp.antifeed_interval);
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PvpTitleColorConfig::FILE)) {
         for (i, color) in s.title_color.colors.iter_mut().enumerate() {
             let key = format!("ColorForAmount{}", i + 1);
@@ -922,30 +800,21 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
     s
 }
 
-/// Java `Integer.parseInt` of every piece of a comma separated list; a piece that is not a number
-/// is skipped with a warning (Java throws while it loads the configuration).
-fn parse_int_list(key: &str, text: &str) -> Vec<i32> {
-    text.split(',')
-        .filter_map(|piece| match piece.trim().parse::<i32>() {
-            Ok(id) => Some(id),
-            Err(_) => {
-                warn!("{key}: \"{piece}\" is not an item id; skipped.");
-                None
-            }
-        })
-        .collect()
-}
-
 /// The values ground items read (Java `GeneralConfig` and `PlayerConfig`). The herb destroy time,
 /// the protected item list, the save interval and the auto loot item list are post-processed in
-/// Java (placeholders in the generated config), so they are read from the files here.
-pub fn ground_item_settings(config: &GameConfig, config_dir: &Path) -> GroundItemSettings {
-    use l2_config::IniFile;
-    use l2_config::game::GeneralConfig;
-
+/// Java (placeholders in the generated config); `config.manual.core` holds them.
+pub fn ground_item_settings(config: &GameConfig, _config_dir: &Path) -> GroundItemSettings {
     let g = &config.general;
     let p = &config.player;
-    let mut s = GroundItemSettings {
+    let core = &config.manual.core;
+    GroundItemSettings {
+        // `HERB_AUTO_DESTROY_TIME = getInt("AutoDestroyHerbTime", 60) * 1000`.
+        herb_auto_destroy_time: core.general.herb_auto_destroy_time,
+        list_protected_items: core.general.list_protected_items.iter().copied().collect(),
+        // `SAVE_DROPPED_ITEM_INTERVAL = getInt("SaveDroppedItemInterval", 60) * 60000`.
+        save_dropped_item_interval_ms: i64::from(core.general.save_dropped_item_interval),
+        // 0 and unparsable entries are left out of `AUTO_LOOT_ITEM_IDS`.
+        auto_loot_item_ids: core.player.auto_loot_item_ids.iter().copied().collect(),
         autodestroy_item_after: g.autodestroy_item_after,
         destroy_dropped_player_item: g.destroy_dropped_player_item,
         destroy_equipable_player_item: g.destroy_equipable_player_item,
@@ -955,92 +824,15 @@ pub fn ground_item_settings(config: &GameConfig, config_dir: &Path) -> GroundIte
         auto_loot_raids: p.auto_loot_raids,
         auto_loot_herbs: p.auto_loot_herbs,
         max_adena: config.effective_max_adena(),
-        ..GroundItemSettings::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
-        // `HERB_AUTO_DESTROY_TIME = getInt("AutoDestroyHerbTime", 60) * 1000`.
-        s.herb_auto_destroy_time = ini.get_int("AutoDestroyHerbTime", 60).wrapping_mul(1000);
-        s.list_protected_items = parse_int_list(
-            "ListOfProtectedItems",
-            &ini.get_string("ListOfProtectedItems", "0"),
-        );
-        // `SAVE_DROPPED_ITEM_INTERVAL = getInt("SaveDroppedItemInterval", 60) * 60000`.
-        s.save_dropped_item_interval_ms = i64::from(ini.get_int("SaveDroppedItemInterval", 60)) * 60_000;
     }
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        // 0 and unparsable entries are left out of `AUTO_LOOT_ITEM_IDS`.
-        s.auto_loot_item_ids = parse_int_list("AutoLootItemIds", &ini.get_string("AutoLootItemIds", "0"))
-            .into_iter()
-            .filter(|id| *id != 0)
-            .collect();
-    }
-    s
-}
-
-/// `Map<Integer, Float>` of `Rates.ini`: `id,value;id,value` (Java's `DropAmountMultiplierByItemId`
-/// and `DropChanceMultiplierByItemId`). A malformed pair is skipped with a warning.
-fn parse_item_multipliers(key: &str, text: &str) -> std::collections::BTreeMap<i32, f32> {
-    let mut map = std::collections::BTreeMap::new();
-    if text.is_empty() {
-        return map;
-    }
-    for item in text.split(';') {
-        let parts: Vec<&str> = item.split(',').collect();
-        let parsed = match parts.as_slice() {
-            [id, value] => id.parse::<i32>().ok().zip(value.parse::<f32>().ok()),
-            _ => None,
-        };
-        match parsed {
-            Some((id, value)) => {
-                map.insert(id, value);
-            }
-            None => {
-                if !item.is_empty() {
-                    warn!("Config.load(): invalid config property -> {key} \"{item}\"");
-                }
-            }
-        }
-    }
-    map
-}
-
-/// `BossDropList` of `Rates.ini`: `itemId,min,max,chance;...` (Java `Integer.parseInt` for the
-/// first three, `Double.parseDouble` for the chance). A malformed entry is skipped with a warning.
-fn parse_boss_drop_list(text: &str) -> Vec<l2_data::npc::DropEntry> {
-    let mut list = Vec::new();
-    for s in text.trim().split(';') {
-        if s.is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = s.split(',').collect();
-        let entry = match parts.as_slice() {
-            [id, min, max, chance, ..] => (|| {
-                Some(l2_data::npc::DropEntry {
-                    drop_type: l2_data::npc::DropType::Drop,
-                    item_id: id.parse().ok()?,
-                    min: i64::from(min.parse::<i32>().ok()?),
-                    max: i64::from(max.parse::<i32>().ok()?),
-                    chance: chance.parse().ok()?,
-                })
-            })(),
-            _ => None,
-        };
-        match entry {
-            Some(entry) => list.push(entry),
-            None => warn!("BossDropList: \"{s}\" is not itemId,min,max,chance; skipped."),
-        }
-    }
-    list
 }
 
 /// The drop rates and level gap rules (Java `RatesConfig`), `AltPartyRange` and the karma drop
 /// lists (`PvpConfig`). The per-item multiplier maps and the boss list are post-processed in Java
-/// (placeholders in the generated config), so they are read from `Rates.ini` here.
-pub fn drop_settings(config: &GameConfig, config_dir: &Path) -> DropSettings {
-    use l2_config::IniFile;
-
+/// (placeholders in the generated config); `config.manual.core.rates` holds them.
+pub fn drop_settings(config: &GameConfig, _config_dir: &Path) -> DropSettings {
     let r = &config.rates;
-    let mut s = DropSettings {
+    DropSettings {
         rate_death_drop_amount_multiplier: r.rate_death_drop_amount_multiplier,
         rate_spoil_drop_amount_multiplier: r.rate_spoil_drop_amount_multiplier,
         rate_herb_drop_amount_multiplier: r.rate_herb_drop_amount_multiplier,
@@ -1074,24 +866,25 @@ pub fn drop_settings(config: &GameConfig, config_dir: &Path) -> DropSettings {
         karma_rate_drop_equip_weapon: r.karma_rate_drop_equip_weapon,
         karma_drop_gm: config.pvp.karma_drop_gm,
         karma_pk_limit: config.pvp.karma_pk_limit,
-        ..DropSettings::default()
-    };
-    // `Arrays.sort(KARMA_LIST_NONDROPPABLE_ITEMS)`.
-    let mut nondroppable = parse_int_list("ListOfNonDroppableItems", &config.pvp.karma_nondroppable_items);
-    nondroppable.sort_unstable();
-    s.karma_list_nondroppable_items = nondroppable;
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::RatesConfig::FILE)) {
-        s.rate_drop_amount_by_id = parse_item_multipliers(
-            "DropAmountMultiplierByItemId",
-            &ini.get_string("DropAmountMultiplierByItemId", ""),
-        );
-        s.rate_drop_chance_by_id = parse_item_multipliers(
-            "DropChanceMultiplierByItemId",
-            &ini.get_string("DropChanceMultiplierByItemId", ""),
-        );
-        s.boss_drop_list = parse_boss_drop_list(&ini.get_string("BossDropList", ""));
+        // `Arrays.sort(KARMA_LIST_NONDROPPABLE_ITEMS)`.
+        karma_list_nondroppable_items: config.manual.core.pvp.karma_list_nondroppable_items.clone(),
+        rate_drop_amount_by_id: config.manual.core.rates.rate_drop_amount_by_id.clone(),
+        rate_drop_chance_by_id: config.manual.core.rates.rate_drop_chance_by_id.clone(),
+        boss_drop_list: config
+            .manual
+            .core
+            .rates
+            .boss_drop_list
+            .iter()
+            .map(|drop| l2_data::npc::DropEntry {
+                drop_type: l2_data::npc::DropType::Drop,
+                item_id: drop.item_id,
+                min: i64::from(drop.min),
+                max: i64::from(drop.max),
+                chance: drop.chance,
+            })
+            .collect(),
     }
-    s
 }
 
 /// The values of `Custom/Wedding.ini` (Java `WeddingConfig`).
@@ -1137,9 +930,7 @@ pub fn summon_settings(config: &GameConfig) -> l2_world::SummonSettings {
 /// The pet values (`Player.ini`: `RestorePetOnReconnect`, `PlayerSpawnProtection`; `Rates.ini`:
 /// `PetXpRate`, `PetFoodRate`, `SinEaterXpRate`; `NPC.ini`: `MaximumSlotsForPet` and the two regen
 /// multipliers, which Java divides by 100; `Server.ini`: `PetNameTemplate`).
-pub fn pet_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PetSettings {
-    use l2_config::IniFile;
-
+pub fn pet_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::PetSettings {
     let mut settings = l2_world::PetSettings {
         restore_pet_on_reconnect: config.player.restore_pet_on_reconnect,
         pet_xp_rate: config.rates.pet_xp_rate,
@@ -1147,13 +938,11 @@ pub fn pet_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PetSett
         sineater_xp_rate: config.rates.sineater_xp_rate,
         inventory_maximum_pet: config.npc.inventory_maximum_pet,
         player_spawn_protection: config.player.player_spawn_protection,
+        // Java: `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
+        pet_hp_regen_multiplier: config.manual.core.npc.pet_hp_regen_multiplier,
+        pet_mp_regen_multiplier: config.manual.core.npc.pet_mp_regen_multiplier,
         ..l2_world::PetSettings::default()
     };
-    // Java: `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
-        settings.pet_hp_regen_multiplier = ini.get_double("PetHpRegenMultiplier", 100.0) / 100.0;
-        settings.pet_mp_regen_multiplier = ini.get_double("PetMpRegenMultiplier", 100.0) / 100.0;
-    }
     let template = config.manual.server.pet_name_template.clone();
     settings.pet_name_template = std::sync::Arc::new(move |name: &str| template.is_match(name));
     settings
@@ -1204,14 +993,9 @@ pub fn multisell_settings(config: &GameConfig) -> l2_world::MultisellSettings {
 /// `//debug` read (M7-ADMIN-10): `ServerGMOnly`, `ServerListType`, `ServerListAge`,
 /// `ServerListBrackets`, `MaximumOnlineUsers`, `GMShowAnnouncerName`, `GMStartupAutoList`,
 /// `PetitioningAllowed`, `MaxPetitionsPending`, `MaxPetitionsPerPlayer`, `DebugClientPackets`.
-pub fn admin_settings(config: &GameConfig, config_dir: &Path) -> l2_world::AdminSettings {
-    use l2_config::IniFile;
-
-    use crate::ls_link::server_type_id;
-    // `ServerListType` is one of the settings the config crate leaves to hand-written code.
-    let server_list_type = IniFile::load(config_dir.join(crate::SERVER_CONFIG_FILE))
-        .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
-        .unwrap_or_else(|_| server_type_id("Free"));
+pub fn admin_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::AdminSettings {
+    // `ServerListType` is a hand-ported field of the config crate (`manual.core.server`).
+    let server_list_type = config.manual.core.server.server_list_type;
     l2_world::AdminSettings {
         gm_startup_auto_list: config.general.gm_startup_auto_list,
         gm_announcer_name: config.general.gm_announcer_name,
@@ -1231,7 +1015,6 @@ pub fn admin_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Admin
 
 pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     use l2_config::IniFile;
-    use l2_config::game::GeneralConfig;
 
     let p = &config.player;
     let mut settings = WorldSettings {
@@ -1253,6 +1036,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         minimum_chat_level: config.general.minimum_chat_level,
         grids_always_on: config.general.grids_always_on,
         grid_neighbor_turnon_secs: config.general.grid_neighbor_turnon_time,
+        bookmark_consume_item_id: config.general.bookmark_consume_item_id,
         grid_neighbor_turnoff_secs: config.general.grid_neighbor_turnoff_time,
         gm_hero_aura: config.general.gm_hero_aura,
         log_chat: config.general.log_chat,
@@ -1396,38 +1180,31 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             &mut settings.cast.skill_reuse_multipliers,
         );
     }
-    // `ListPetRentNpc` is a post-processed list in the generated config, so it is read from
-    // `NPC.ini` directly (Java: `Integer.parseInt` of each comma separated id).
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
-        let text = ini.get_string("ListPetRentNpc", "30827");
-        let ids: Result<Vec<i32>, _> = text.split(',').map(|id| id.trim().parse::<i32>()).collect();
-        match ids {
-            Ok(ids) => settings.talk.list_pet_rent_npc = ids.into_iter().collect(),
-            Err(_) => warn!("ListPetRentNpc = {text} is not a list of ids; using 30827."),
-        }
-    }
+    // `ListPetRentNpc` is a post-processed list in the generated config (`manual.core.npc`;
+    // Java: `Integer.parseInt` of each comma separated id).
+    settings.talk.list_pet_rent_npc = config.manual.core.npc.list_pet_rent_npc.iter().copied().collect();
     // `TimeToReturn` (seconds, Java keeps ms) is a hand-port placeholder in the generated config.
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::CancelReturnConfig::FILE)) {
         settings.effects.cancel_return_time_ms = ini.get_int("TimeToReturn", 10).saturating_mul(1000);
     }
-    // `NpcTalkBlockingTime` is post-processed (seconds -> ms) in the generated config, so it is
-    // read from `Player.ini` directly.
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        settings.player_movement_block_time_ms = ini.get_int("NpcTalkBlockingTime", 0).saturating_mul(1000);
-    }
+    // `NpcTalkBlockingTime` is post-processed (seconds -> ms) in the generated config
+    // (`manual.core.player`).
+    settings.player_movement_block_time_ms = config.manual.core.player.player_movement_block_time;
     settings.keyboard_movement = p.enable_keyboard_movement;
     // Java: `Enum.valueOf(ChatBroadcastType.class, config.getString("GlobalChat", "ON"))` throws
     // for a bad name; the default is kept here.
-    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
-        for (key, target) in [
-            ("GlobalChat", &mut settings.global_chat),
-            ("TradeChat", &mut settings.trade_chat),
-        ] {
-            let text = ini.get_string(key, "ON");
-            match ChatBroadcast::from_name(text.trim()) {
-                Some(mode) => *target = mode,
-                None => warn!("{key} = {text} is not ON, OFF, GM or GLOBAL; using ON."),
-            }
+    let general = &config.manual.core.general;
+    for (key, text, target) in [
+        (
+            "GlobalChat",
+            &general.default_global_chat,
+            &mut settings.global_chat,
+        ),
+        ("TradeChat", &general.default_trade_chat, &mut settings.trade_chat),
+    ] {
+        match ChatBroadcast::from_name(text.trim()) {
+            Some(mode) => *target = mode,
+            None => warn!("{key} = {text} is not ON, OFF, GM or GLOBAL; using ON."),
         }
     }
     settings.daily_reset_database_writes = daily_reset_database_writes(config_dir);
@@ -1555,66 +1332,26 @@ pub fn daily_reset_database_writes(config_dir: &Path) -> bool {
 
 /// The skill loader's options (Java `GeneralConfig.CUSTOM_SKILLS_LOAD`, `PlayerConfig`'s abnormal
 /// success rates and the duration / reuse override lists). The two lists are post-processed in
-/// Java (the generated config has placeholders), so they are read from `Player.ini` here.
-pub fn skill_load_options(config: &GameConfig, config_dir: &Path) -> l2_data::SkillLoadOptions {
-    use l2_config::IniFile;
-
+/// Java (the generated config has placeholders); `config.manual.core.player` holds them, each
+/// read only when its switch is on.
+pub fn skill_load_options(config: &GameConfig, _config_dir: &Path) -> l2_data::SkillLoadOptions {
     let p = &config.player;
-    let mut options = l2_data::SkillLoadOptions {
+    let core = &config.manual.core.player;
+    l2_data::SkillLoadOptions {
+        skill_duration_list: core.skill_duration_list.clone(),
+        skill_reuse_list: core.skill_reuse_list.clone(),
         custom_skills_load: config.general.custom_skills_load,
         min_abnormal_state_success_rate: p.min_abnormal_state_success_rate,
         max_abnormal_state_success_rate: p.max_abnormal_state_success_rate,
         enable_modify_skill_duration: p.enable_modify_skill_duration,
         enable_modify_skill_reuse: p.enable_modify_skill_reuse,
-        ..l2_data::SkillLoadOptions::default()
-    };
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        // Java reads each list only when its switch is on.
-        if options.enable_modify_skill_duration {
-            options.skill_duration_list =
-                skill_id_list("SkillDurationList", &ini.get_string("SkillDurationList", ""));
-        }
-        if options.enable_modify_skill_reuse {
-            options.skill_reuse_list = skill_id_list("SkillReuseList", &ini.get_string("SkillReuseList", ""));
-        }
     }
-    options
-}
-
-/// Java's `id,value;id,value` lists: `split(";")` (trailing empty parts dropped), then
-/// `split(",")` into exactly two numbers; a bad entry is logged and skipped.
-fn skill_id_list(key: &str, text: &str) -> std::collections::HashMap<i32, i32> {
-    let mut parts: Vec<&str> = text.split(';').collect();
-    while parts.last().is_some_and(|p| p.is_empty()) {
-        parts.pop();
-    }
-    let mut map = std::collections::HashMap::new();
-    for skill in parts {
-        let split: Vec<&str> = skill.split(',').collect();
-        if split.len() != 2 {
-            warn!("[{key}]: invalid config property -> {key} {skill}");
-            continue;
-        }
-        match (split[0].parse::<i32>(), split[1].parse::<i32>()) {
-            (Ok(id), Ok(value)) => {
-                map.insert(id, value);
-            }
-            _ => {
-                if !skill.is_empty() {
-                    warn!(
-                        "[{key}]: invalid config property -> SkillList \"{}\"{}",
-                        split[0], split[1]
-                    );
-                }
-            }
-        }
-    }
-    map
 }
 
 /// The caps and multipliers the stat getters read. The raid multipliers and the class balance
-/// arrays are post-processed in Java (the generated config has placeholders for them), so they
-/// are read from `NPC.ini` and `Custom/ClassBalance.ini` here.
+/// arrays are post-processed in Java (the generated config has placeholders for them): the raid
+/// multipliers are `config.manual.core.npc`, the class balance comes from `Custom/ClassBalance.ini`
+/// (customs, M9).
 pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
     use l2_config::IniFile;
 
@@ -1641,15 +1378,13 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
         dusk_gates_mdef_mult: config.feature.alt_siege_dusk_gates_mdef_mult,
         gm_skill_restriction: config.general.gm_skill_restriction,
         expertise_penalty: p.expertise_penalty,
+        // Java: `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;` ...
+        raid_pdefence_multiplier: config.manual.core.npc.raid_pdefence_multiplier,
+        raid_mdefence_multiplier: config.manual.core.npc.raid_mdefence_multiplier,
+        raid_pattack_multiplier: config.manual.core.npc.raid_pattack_multiplier,
+        raid_mattack_multiplier: config.manual.core.npc.raid_mattack_multiplier,
         ..StatSettings::default()
     };
-    // Java: `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;` ...
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
-        s.raid_pdefence_multiplier = ini.get_double("RaidPDefenceMultiplier", 100.0) / 100.0;
-        s.raid_mdefence_multiplier = ini.get_double("RaidMDefenceMultiplier", 100.0) / 100.0;
-        s.raid_pattack_multiplier = ini.get_double("RaidPAttackMultiplier", 100.0) / 100.0;
-        s.raid_mattack_multiplier = ini.get_double("RaidMAttackMultiplier", 100.0) / 100.0;
-    }
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::ClassBalanceConfig::FILE)) {
         load_class_balance(&ini, &mut s.class_balance);
     }
@@ -1779,13 +1514,21 @@ fn load_class_balance(ini: &l2_config::IniFile, cb: &mut l2_world::stats::ClassB
 }
 
 /// The values the attack code reads (M4-COMBAT-01). `AltGameCancelByHit` and the NPC damage
-/// penalty lists are post-processed in Java (placeholders in the generated config), so they are
-/// read from `Player.ini` and `NPC.ini` here.
-pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings {
-    use l2_config::IniFile;
-
+/// penalty lists are post-processed in Java (placeholders in the generated config);
+/// `config.manual.core` holds them.
+pub fn combat_settings(config: &GameConfig, _config_dir: &Path) -> CombatSettings {
     let p = &config.player;
-    let mut s = CombatSettings {
+    let player = &config.manual.core.player;
+    let npc = &config.manual.core.npc;
+    CombatSettings {
+        // Java: `ALT_GAME_CANCEL_BOW = AltGameCancelByHit is "bow" or "all"`,
+        // `ALT_GAME_CANCEL_CAST` the same with "cast" (both ignoring case, default "Cast").
+        alt_game_cancel_bow: player.alt_game_cancel_bow,
+        alt_game_cancel_cast: player.alt_game_cancel_cast,
+        npc_dmg_penalty: npc.npc_dmg_penalty.clone(),
+        npc_crit_dmg_penalty: npc.npc_crit_dmg_penalty.clone(),
+        npc_skill_dmg_penalty: npc.npc_skill_dmg_penalty.clone(),
+        npc_skill_chance_penalty: npc.npc_skill_chance_penalty.clone(),
         alt_game_shield_blocks: p.alt_game_shield_blocks,
         alt_perfect_shld_block: p.alt_perfect_shld_block,
         randomize_auto_attack_damage: p.randomize_auto_attack_damage,
@@ -1798,50 +1541,6 @@ pub fn combat_settings(config: &GameConfig, config_dir: &Path) -> CombatSettings
         randomize_physical_skill_damage: p.randomize_physical_skill_damage,
         randomize_magical_skill_damage: p.randomize_magical_skill_damage,
         min_npc_level_magic_penalty: config.npc.min_npc_level_magic_penalty,
-        ..CombatSettings::default()
-    };
-    // Java: `ALT_GAME_CANCEL_BOW = AltGameCancelByHit is "bow" or "all"`, `ALT_GAME_CANCEL_CAST`
-    // the same with "cast" (both ignoring case, default "Cast").
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::PlayerConfig::FILE)) {
-        let cancel = ini.get_string("AltGameCancelByHit", "Cast");
-        s.alt_game_cancel_bow = cancel.eq_ignore_ascii_case("bow") || cancel.eq_ignore_ascii_case("all");
-        s.alt_game_cancel_cast = cancel.eq_ignore_ascii_case("cast") || cancel.eq_ignore_ascii_case("all");
-    }
-    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::NpcConfig::FILE)) {
-        s.npc_dmg_penalty = float_list(
-            "DmgPenaltyForLvLDifferences",
-            &ini.get_string("DmgPenaltyForLvLDifferences", "0.7, 0.6, 0.6, 0.55"),
-            &s.npc_dmg_penalty,
-        );
-        s.npc_crit_dmg_penalty = float_list(
-            "CritDmgPenaltyForLvLDifferences",
-            &ini.get_string("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58"),
-            &s.npc_crit_dmg_penalty,
-        );
-        s.npc_skill_dmg_penalty = float_list(
-            "SkillDmgPenaltyForLvLDifferences",
-            &ini.get_string("SkillDmgPenaltyForLvLDifferences", "0.8, 0.7, 0.65, 0.62"),
-            &s.npc_skill_dmg_penalty,
-        );
-        s.npc_skill_chance_penalty = float_list(
-            "SkillChancePenaltyForLvLDifferences",
-            &ini.get_string("SkillChancePenaltyForLvLDifferences", "2.5, 3.0, 3.25, 3.5"),
-            &s.npc_skill_chance_penalty,
-        );
-    }
-    s
-}
-
-/// Java's `split(",")` + `Float.parseFloat` of the NPC damage penalty lists. Java fails to load the
-/// config on a broken number; the default list is kept then, with a warning.
-fn float_list(key: &str, text: &str, default: &[f32]) -> Vec<f32> {
-    let parsed: Result<Vec<f32>, _> = text.split(',').map(|v| v.trim().parse::<f32>()).collect();
-    match parsed {
-        Ok(values) => values,
-        Err(e) => {
-            warn!("{key}: cannot read '{text}' ({e}); the default is used.");
-            default.to_vec()
-        }
     }
 }
 
@@ -1891,14 +1590,7 @@ pub fn siege_settings(
     };
     let mut s = siege_settings_from_ini(&ini, castles);
     // `FeatureConfig.SIEGE_HOUR_LIST`: the numeric parts of `SiegeHourList` (`StringUtil.isNumeric`).
-    if let Ok(feature) = IniFile::load(config_dir.join(l2_config::game::FeatureConfig::FILE)) {
-        s.siege_hour_list = feature
-            .get_string("SiegeHourList", "")
-            .split(',')
-            .filter(|h| !h.is_empty() && h.chars().all(|c| c.is_ascii_digit()))
-            .filter_map(|h| h.parse().ok())
-            .collect();
-    }
+    s.siege_hour_list = config.manual.core.feature.siege_hour_list.clone();
     s.allow_mounts_during_siege = config.feature.allow_mounts_during_siege;
     s.fame_system_enabled = config.player.fame_system_enabled;
     s.castle_zone_fame_task_frequency = config.player.castle_zone_fame_task_frequency;
@@ -1972,6 +1664,25 @@ pub fn siege_settings_from_ini(
         s.castles.insert(*id, config);
     }
     s
+}
+
+/// The `General.ini` values of the instances (M8-INST-01): `RestorePlayerInstance` and
+/// `AllowSummonInInstance` from the config, `DefaultFinishTime` and `EjectDeadPlayerTime` (seconds,
+/// times 1000 in Java, placeholders in the generated config) read here.
+pub fn instance_settings(config: &GameConfig, config_dir: &Path) -> l2_world::InstanceSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let mut settings = l2_world::InstanceSettings {
+        restore_player_instance: config.general.restore_player_instance,
+        allow_summon_in_instance: config.general.allow_summon_in_instance,
+        ..l2_world::InstanceSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        settings.instance_finish_time_ms = ini.get_int("DefaultFinishTime", 300).wrapping_mul(1000);
+        settings.eject_dead_player_time_ms = ini.get_int("EjectDeadPlayerTime", 60).wrapping_mul(1000);
+    }
+    settings
 }
 
 #[cfg(test)]
@@ -2182,15 +1893,144 @@ BotReportPointsResetHour = noon
     /// numbers split by `;`; a bad number is a Java exception (here the default stays).
     #[test]
     fn the_party_cutoff_lists_parse_like_java() {
+        // The parsers moved to `l2_config::game_manual_core::PlayerRest` (L-09).
+        let player = |text: &str| {
+            l2_config::game_manual_core::PlayerRest::from_ini(
+                &l2_config::IniFile::parse("Player.ini", text).unwrap(),
+            )
+        };
+        let default = player("");
+        assert_eq!(default.party_xp_cutoff_gaps, vec![[0, 9], [10, 14], [15, 99]]);
+        assert_eq!(default.party_xp_cutoff_gap_percents, vec![100, 30, 0]);
+        let custom = player("PartyXpCutoffGaps = 1,2\nPartyXpCutoffGapPercent = 50;25\n");
+        assert_eq!(custom.party_xp_cutoff_gaps, vec![[1, 2]]);
+        assert_eq!(custom.party_xp_cutoff_gap_percents, vec![50, 25]);
+        // A bad number is a Java exception; the default stays.
+        let bad = player("PartyXpCutoffGaps = 1;2,3\nPartyXpCutoffGapPercent = 100;x\n");
+        assert_eq!(bad.party_xp_cutoff_gaps, default.party_xp_cutoff_gaps);
         assert_eq!(
-            parse_party_gaps("0,9;10,14;15,99"),
-            Some(vec![[0, 9], [10, 14], [15, 99]])
+            bad.party_xp_cutoff_gap_percents,
+            default.party_xp_cutoff_gap_percents
         );
-        assert_eq!(parse_party_gaps("1,2"), Some(vec![[1, 2]]));
-        assert_eq!(parse_party_gaps("1;2,3"), None);
-        assert_eq!(parse_party_gaps("a,2"), None);
-        assert_eq!(parse_party_percents("100;30;0"), Some(vec![100, 30, 0]));
-        assert_eq!(parse_party_percents("100;x"), None);
+    }
+
+    /// L-09: the hand-ported keys of the core classes (`manual.core`) reach the settings the
+    /// world and the loaders read, each group from its own file.
+    #[test]
+    fn the_core_manual_keys_reach_the_world_settings() {
+        use l2_world::{ChatBroadcast, FloodKind, IllegalActionPunishment};
+
+        let dir = tempfile::tempdir().unwrap();
+        let write = |name: &str, text: &str| std::fs::write(dir.path().join(name), text).unwrap();
+        write(
+            "General.ini",
+            "DefaultPunish = JAIL\nBanChatChannels = WHISPER;PARTY\nBotReportDelay = 2\n\
+             BotReportPointsResetHour = 06:30\nAutoDestroyHerbTime = 5\nListOfProtectedItems = 57,6\n\
+             SaveDroppedItemInterval = 2\nGlobalChat = GM\nTradeChat = GLOBAL\n\
+             CharacterDataStoreInterval = 3\n",
+        );
+        write(
+            "Player.ini",
+            "RespawnRestoreCP = 10\nRespawnRestoreHP = 20\nRespawnRestoreMP = 30\n\
+             EnchantBlackList = 9,3\nOverEnchantPunishment = KICK\n\
+             RetailLikeAugmentationNoGradeChance = 1,2,3,4\nAugmentationBlackList = 8,2\n\
+             AutoLootItemIds = 57,0,9\nEnableModifySkillDuration = True\nSkillDurationList = 5,60\n\
+             AltGameCancelByHit = bow\nNpcTalkBlockingTime = 3\nMaxSp = 123\n",
+        );
+        write(
+            "NPC.ini",
+            "DmgPenaltyForLvLDifferences = 0.5, 0.4\nListPetRentNpc = 11,12\n\
+             RaidPDefenceMultiplier = 150\nPetHpRegenMultiplier = 200\nPetMpRegenMultiplier = 50\n",
+        );
+        write(
+            "Rates.ini",
+            "DropAmountMultiplierByItemId = 57,2.5\nBossDropList = 57,1,10,25.5\nRateXp = 3\n",
+        );
+        write(
+            "PVP.ini",
+            "ListOfNonDroppableItems = 30,20\nAntiFeedInterval = 7\n",
+        );
+        write("Feature.ini", "SiegeHourList = 16,20\n");
+        write("Server.ini", "ServerListType = Normal\n");
+        write(
+            "FloodProtector.ini",
+            "FloodProtectorMultiSellInterval = 9\nFloodProtectorMultiSellPunishmentType = kick\n",
+        );
+        let config = GameConfig::load(dir.path()).unwrap();
+        let d = dir.path();
+
+        assert_eq!(config.manual.core.server.server_list_type, 0x01);
+        assert_eq!(admin_settings(&config, d).server_list_type, 0x01);
+
+        let death = death_settings(&config, d);
+        assert_eq!(
+            (
+                death.respawn_restore_cp,
+                death.respawn_restore_hp,
+                death.respawn_restore_mp
+            ),
+            (0.1, 0.2, 0.3)
+        );
+        let punish = punishment_settings(&config, d);
+        assert_eq!(punish.default_punish, IllegalActionPunishment::Jail);
+        assert_eq!(
+            punish.ban_chat_channels,
+            [
+                l2_protocol_game::server::ChatType::Whisper,
+                l2_protocol_game::server::ChatType::Party
+            ]
+        );
+        let bot = bot_report_settings(&config, d);
+        assert_eq!(
+            (bot.report_delay_ms, bot.reset_hour_minute),
+            (120_000, Some((6, 30)))
+        );
+        let enchant = enchant_settings(&config, d);
+        assert_eq!(enchant.enchant_blacklist, [3, 9]);
+        assert_eq!(enchant.over_enchant_punishment, IllegalActionPunishment::Kick);
+        let augment = augment_settings(&config, d);
+        assert_eq!(augment.retail_like_chances[0], [1, 2, 3, 4]);
+        assert_eq!(augment.blacklist, [2, 8]);
+        let ground = ground_item_settings(&config, d);
+        assert_eq!(ground.herb_auto_destroy_time, 5000);
+        assert_eq!(ground.list_protected_items, [6, 57]);
+        assert_eq!(ground.save_dropped_item_interval_ms, 120_000);
+        assert_eq!(ground.auto_loot_item_ids, [9, 57]);
+        let drops = drop_settings(&config, d);
+        assert_eq!(drops.rate_drop_amount_by_id.get(&57), Some(&2.5));
+        assert_eq!(drops.boss_drop_list.len(), 1);
+        assert_eq!(drops.boss_drop_list[0].chance, 25.5);
+        assert_eq!(drops.karma_list_nondroppable_items, [20, 30]);
+        let skills = skill_load_options(&config, d);
+        assert_eq!(skills.skill_duration_list.get(&5), Some(&60));
+        assert!(skills.skill_reuse_list.is_empty());
+        let combat = combat_settings(&config, d);
+        assert!(combat.alt_game_cancel_bow && !combat.alt_game_cancel_cast);
+        assert_eq!(combat.npc_dmg_penalty, [0.5, 0.4]);
+        assert_eq!(stat_settings(&config, d).raid_pdefence_multiplier, 1.5);
+        let pet = pet_settings(&config, d);
+        assert_eq!(
+            (pet.pet_hp_regen_multiplier, pet.pet_mp_regen_multiplier),
+            (2.0, 0.5)
+        );
+        assert_eq!(exp_settings(&config, d).max_sp, 123);
+        assert_eq!(exp_settings(&config, d).rate_karma_lost, 3.0); // -1 means the exp rate
+
+        let world = world_settings(&config, d);
+        assert_eq!(world.player_movement_block_time_ms, 3000);
+        assert_eq!(
+            (world.global_chat, world.trade_chat),
+            (ChatBroadcast::Gm, ChatBroadcast::Global)
+        );
+        assert!(world.talk.list_pet_rent_npc.contains(&11) && world.talk.list_pet_rent_npc.contains(&12));
+        assert_eq!(pvp_settings(&config, d).antifeed_interval_ms, 7000);
+        assert_eq!(siege_settings(&config, d, &[]).siege_hour_list, [16, 20]);
+        let flood = flood_settings_from_config(&config);
+        assert_eq!(flood.get(FloodKind::MultiSell).protection_interval, 9);
+        assert_eq!(
+            flood.get(FloodKind::MultiSell).punishment_type,
+            l2_world::FloodPunishment::Kick
+        );
     }
 
     /// The party settings come from `Player.ini`, `Rates.ini` and `Custom/ClassBalance.ini`; the
@@ -2342,6 +2182,39 @@ BotReportPointsResetHour = noon
         assert!(!settings.jail_disable_chat);
         // A name Java would throw on is skipped; a channel listed twice counts once.
         assert_eq!(settings.ban_chat_channels, [ChatType::Shout, ChatType::Party]);
+    }
+
+    /// M8-INST-01: `RestorePlayerInstance`, `AllowSummonInInstance`, `DefaultFinishTime` and
+    /// `EjectDeadPlayerTime` (seconds, times 1000 like Java).
+    #[test]
+    fn instance_settings_are_read_from_general_ini() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = instance_settings(&config, dir.path());
+        assert_eq!(settings, l2_world::InstanceSettings::default());
+        assert_eq!(
+            (
+                settings.instance_finish_time_ms,
+                settings.eject_dead_player_time_ms
+            ),
+            (300_000, 60_000)
+        );
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "RestorePlayerInstance = True\nAllowSummonInInstance = True\nDefaultFinishTime = 120\nEjectDeadPlayerTime = 5\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = instance_settings(&config, dir.path());
+        assert!(settings.restore_player_instance && settings.allow_summon_in_instance);
+        assert_eq!(
+            (
+                settings.instance_finish_time_ms,
+                settings.eject_dead_player_time_ms
+            ),
+            (120_000, 5_000)
+        );
     }
 
     #[test]

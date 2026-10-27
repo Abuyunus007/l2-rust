@@ -31,6 +31,8 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
+        // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).
+        self.instance_on_logout(id);
         // `OfflineTraderTable.enteredOfflineMode(player)`: the shop stays, the connection goes.
         if self.entered_offline_mode(id) {
             return;
@@ -51,6 +53,8 @@ impl World {
             self.send(id, &RestartResponse { result: false });
             return;
         }
+        // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).
+        self.instance_on_logout(id);
         // `OfflineTraderTable.enteredOfflineMode(player)` (only a crafting player gets here with
         // `OfflineCraftEnable`): the client is closed, not sent back to the character screen.
         if self.entered_offline_mode(id) {
@@ -129,6 +133,8 @@ impl World {
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
         // after the player's `decayMe()`; here before, while the player is still in the tables).
         self.summon_on_owner_leave(id);
+        // `deleteMe`: "Remove player from instance and set spawn location if any." (M8-INST-01).
+        self.instance_on_delete(id);
         // A trader without a client left the login server's books when it went offline.
         let was_trader = self.offline.traders.remove(&id).is_some();
         // `deleteMe`: whoever channels a skill at the player stops.

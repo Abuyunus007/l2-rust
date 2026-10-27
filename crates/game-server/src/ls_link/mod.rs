@@ -33,7 +33,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
-use l2_config::{GameConfig, IniFile};
+use l2_config::GameConfig;
 use l2_crypto::LinkCipher;
 use l2_crypto::rsa::encrypt_raw;
 use l2_db::{CharacterRepository, Pool, hex_to_string};
@@ -43,8 +43,8 @@ use l2_net::{
 };
 use l2_protocol_login::link::{
     AuthResponse, BlowFishKey, ChangeAccessLevel, GameServerAuth, InitLS, LsPacket, PROTOCOL_REV,
-    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, ServerStatus,
-    decode_from_ls,
+    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, RequestTempBan,
+    ServerStatus, decode_from_ls,
 };
 use rand::Rng;
 use tokio::net::TcpStream;
@@ -54,8 +54,8 @@ use tracing::{debug, info, warn};
 
 pub use ipconfig::IpConfig;
 
+use crate::Server;
 use crate::hexid::{self, HexId};
-use crate::{SERVER_CONFIG_FILE, Server};
 
 /// Java `RECONNECT_DELAY`.
 pub const RECONNECT_DELAY: Duration = Duration::from_secs(5);
@@ -274,19 +274,8 @@ fn port_of(key: &str, value: i32) -> u16 {
 /// Java `ServerConfig.getServerTypeId` on the comma separated `ServerListType` value. Unknown
 /// words count for nothing.
 pub fn server_type_id(value: &str) -> i32 {
-    value
-        .split(',')
-        .map(|word| match word.trim().to_lowercase().as_str() {
-            "normal" => ServerStatus::SERVER_NORMAL,
-            "relax" => ServerStatus::SERVER_RELAX,
-            "test" => ServerStatus::SERVER_TEST,
-            "nolabel" => ServerStatus::SERVER_NOLABEL,
-            "restricted" => ServerStatus::SERVER_CREATION_RESTRICTED,
-            "event" => ServerStatus::SERVER_EVENT,
-            "free" => ServerStatus::SERVER_FREE,
-            _ => 0,
-        })
-        .fold(0, |all, flag| all | flag)
+    // The same table as `ServerStatus::SERVER_*`; the config crate parses `ServerListType`.
+    l2_config::game_manual_core::server_list_type_id(value)
 }
 
 /// `Java generateHexBytes`: random bytes, none of them zero.
@@ -340,6 +329,11 @@ enum Command {
     AccessLevel {
         account: String,
         level: i32,
+    },
+    TempBan {
+        account: String,
+        ip: String,
+        minutes: i64,
     },
     ReplyCharacters {
         account: String,
@@ -471,6 +465,17 @@ impl LsLink {
         self.send_command(Command::AccessLevel {
             account: account.to_owned(),
             level,
+        });
+    }
+
+    /// Asks the login server to ban an account (and the address) for `minutes` (a negative value
+    /// counts as 0). The ban ends at `now + minutes * 60000`.
+    // Java: LoginServerThread.sendTempBan, network/loginserverpackets/send/TempBan.java
+    pub async fn send_temp_ban(&self, account: &str, ip: &str, minutes: i64) {
+        self.send_command(Command::TempBan {
+            account: account.to_owned(),
+            ip: ip.to_owned(),
+            minutes,
         });
     }
 
@@ -861,6 +866,17 @@ impl Actor {
             Command::AccessLevel { account, level } => {
                 self.send(&ChangeAccessLevel { account, level });
             }
+            Command::TempBan { account, ip, minutes } => {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX));
+                self.send(&RequestTempBan {
+                    account,
+                    ip,
+                    ban_time: now.saturating_add(minutes.max(0).saturating_mul(60_000)),
+                    reason: None,
+                });
+            }
             Command::ReplyCharacters {
                 account,
                 chars,
@@ -1078,10 +1094,8 @@ fn fail_reason(reason: u8) -> String {
 pub fn start(server: &mut Server) -> LsLink {
     let state = Arc::clone(server.state());
     let config_dir = state.paths.config_dir.clone();
-    // `ServerListType` is one of the settings the config crate leaves to hand-written code.
-    let server_list_type = IniFile::load(config_dir.join(SERVER_CONFIG_FILE))
-        .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
-        .unwrap_or_else(|_| server_type_id("Free"));
+    // `ServerListType` is a hand-ported field of the config crate (`manual.core.server`).
+    let server_list_type = state.config.manual.core.server.server_list_type;
     let params = LsLinkParams::from_config(
         &state.config,
         server_list_type,

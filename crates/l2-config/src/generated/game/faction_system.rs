@@ -8,22 +8,22 @@ use crate::IniFile;
 pub struct FactionSystemConfig {
     /// Key: `EnableFactionSystem`, default false.
     pub faction_system_enabled: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Location`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.faction_system.faction_starting_location` (Java type `Location`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `String[] tempString;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `StartingLocation`, Java default `"85332,16199,-1252"` (before the Java post-processing).
     pub faction_starting_location: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Location`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.faction_system.faction_manager_location` (Java type `Location`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `String[] tempString;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ManagerSpawnLocation`, Java default `"85712,15974,-1260,26808"` (before the Java post-processing).
     pub faction_manager_location: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Location`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.faction_system.faction_good_base_location` (Java type `Location`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `String[] tempString;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `GoodBaseLocation`, Java default `"45306,48878,-3058"` (before the Java post-processing).
     pub faction_good_base_location: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Location`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.faction_system.faction_evil_base_location` (Java type `Location`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `String[] tempString;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `EvilBaseLocation`, Java default `"-44037,-113283,-237"` (before the Java post-processing).

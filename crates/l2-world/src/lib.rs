@@ -14,6 +14,7 @@ pub mod actions;
 pub mod admin;
 pub mod ai;
 pub mod augment;
+pub mod bookmarks;
 pub mod boss;
 pub mod bot_report;
 pub mod bypass;
@@ -22,6 +23,7 @@ pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod command;
+pub mod contacts;
 pub mod craft;
 pub mod crystallize;
 pub mod cursed;
@@ -41,6 +43,7 @@ pub mod friends;
 pub mod ground_item;
 pub mod henna;
 pub mod ids;
+pub mod instance;
 pub mod interact;
 pub mod inventory;
 pub mod item_ops;
@@ -100,6 +103,7 @@ pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};
 pub use ai::AiState;
 pub use ai::attackable::AiSettings;
 pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
+pub use bookmarks::{BookmarkData, BookmarkInput, BookmarkWrite};
 pub use boss::{
     BossLoad, BossReadKind, BossReadThen, BossRereadRows, BossSettings, BossTimer, BossWrite, GrandBossData,
     GrandBossInfo, GrandBossStoreRow, RaidBossData, RaidBossStatus, RaidBossUpdateRow, RaidPointsRecord,
@@ -114,6 +118,7 @@ pub use clanhall::{
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
     RecipeWrite,
@@ -145,6 +150,10 @@ pub use friends::{FriendEntry, FriendWorld, FriendWrite};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
 pub use henna::{HennaInput, HennaWrite};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
+pub use instance::{
+    EnterOutcome, FIRST_DYNAMIC_INSTANCE_ID, Instance, InstanceManager, InstanceSettings, InstanceTask,
+    InstanceTimeWrite, InstanceTimer, InstanceWorld,
+};
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};

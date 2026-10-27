@@ -62,12 +62,13 @@ fn teleport_character(
     show_main_page(world, gm);
 }
 
-/// Java `player.getLocation()`: a character's place with its heading.
+/// Java `player.getLocation()`: a character's place with its heading and instance.
 fn gm_place_of(world: &World, id: ObjectId) -> Option<TeleportTarget> {
-    world
-        .players
-        .get(&id)
-        .map(|p| TeleportTarget::at(p.core.x, p.core.y, p.core.z).with_heading(p.core.heading))
+    world.players.get(&id).map(|p| {
+        TeleportTarget::at(p.core.x, p.core.y, p.core.z)
+            .with_heading(p.core.heading)
+            .with_instance(world.instance_id_of(id))
+    })
 }
 
 /// Java `AdminMenu.onCommand`, `admin_teleport_character_to_menu <name> <x> <y> <z>`: the
@@ -117,9 +118,11 @@ fn admin_goto_char_menu(world: &mut World, gm: ObjectId, command: &str) -> Outco
             &SystemMessage::new(SystemMessageId::YouCannotUseThisOnYourself),
         );
     } else if let Some(place) = gm_place_of(world, player) {
-        // `activeChar.setInstanceId(player.getInstanceId())`: instances are not modelled.
+        // `activeChar.setInstanceId(player.getInstanceId())` (in `onCommand` and again in
+        // `teleportToCharacter`), then `teleToLocation(player.getLocation(), true)`.
+        world.set_instance_id(gm, place.instance_id);
         let offset = world.settings.teleport.max_offset_on_teleport;
-        world.tele_to_location(gm, place.with_instance(0).with_random_offset(offset));
+        world.tele_to_location(gm, place.with_random_offset(offset));
         let name = world.object_name(player).unwrap_or_default();
         world.send_sys_message(gm, &format!("You're teleporting yourself to character {name}"));
     }

@@ -14,8 +14,12 @@ mod schema;
 
 pub use error::{DbError, Result};
 pub use game::PetitionFeedbackRepository;
+pub use game::{
+    AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
+};
 pub use game::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
+pub use game::{BookmarkRepository, BookmarkRow, ContactLink, ContactRepository};
 pub use game::{
     BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
     RaidPointsRow,
@@ -30,6 +34,7 @@ pub use game::{
     CastleRow, ClanHallRow, FortRow, FunctionRow, FunctionSave, FunctionTable, ResidenceRepository,
     SiegableHallRow,
 };
+pub use game::{CharacterSummary, FriendLink, FriendRepository};
 pub use game::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
@@ -42,9 +47,9 @@ pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, Siege
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use game::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
-pub use game::{FriendLink, FriendRepository};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
+pub use game::{InstanceTimeRepository, InstanceTimeRow};
 pub use game::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
     OwnerElementalRow, PaperdollItemRow,

@@ -277,6 +277,16 @@ impl World {
         {
             return false;
         }
+        // An instance spawn sets the flag itself (`spawnDat.setRandomWalking(...)` of
+        // `Instance.spawnGroup`, M8-INST-01).
+        if let Some(walk) = self
+            .npcs
+            .get(&id)
+            .and_then(|n| n.spawn)
+            .and_then(|spawn| self.instance_spawn_random_walk(spawn))
+        {
+            return walk;
+        }
         if let Some(spawn) = self.npc_spawn(id)
             && let Some(value) = spawn.ai_data.as_ref().and_then(|d| d.get("disableRandomWalk"))
         {
@@ -310,10 +320,7 @@ impl World {
             .is_some_and(|a| a.attack_target.is_some() || a.client_auto_attacking)
     }
 
-    /// Java `WorldObject.isInInstance()`.
-    pub(crate) fn is_in_instance(&self, id: ObjectId) -> bool {
-        self.objects.get(&id).is_some_and(|e| e.instance_id != 0)
-    }
+    // Java `WorldObject.isInInstance()` is `World::is_in_instance` (`instance/`).
 
     /// `AbstractAI._target`.
     fn ai_target_of(&self, id: ObjectId) -> Option<ObjectId> {

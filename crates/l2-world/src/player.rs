@@ -161,6 +161,10 @@ pub struct PlayerProfile {
     pub macros: Vec<MacroData>,
     /// `character_variables` (Java `PlayerVariables`).
     pub variables: BTreeMap<String, String>,
+    /// `character_tpbookmark`: the teleport bookmarks, sorted by id (L-04, `bookmarks.rs`).
+    pub bookmarks: Vec<crate::bookmarks::BookmarkData>,
+    /// `character_contacts`: the names of the mail contacts (L-04, `contacts.rs`).
+    pub contacts: Vec<String>,
     /// `character_hennas`: the dye id (`symbol_id`) of slots 1 to 3 of the active class, 0 for an
     /// empty slot (Java `restoreHenna`).
     pub hennas: [i32; 3],
@@ -241,6 +245,9 @@ pub struct PlayerProfile {
     /// `characters.online` of the next store: 1, or 2 for a player without a client (offline
     /// trade, Java `isOnlineInt()`).
     pub online_status: i32,
+    /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
+    /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
+    pub instance_times: Vec<(i32, i64)>,
 }
 
 impl Default for PlayerProfile {
@@ -259,6 +266,8 @@ impl Default for PlayerProfile {
             recom_time_left_ms: 0,
             macros: Vec::new(),
             variables: BTreeMap::new(),
+            bookmarks: Vec::new(),
+            contacts: Vec::new(),
             hennas: [0; 3],
             last_access: 0,
             variables_changed: std::collections::BTreeSet::new(),
@@ -282,6 +291,7 @@ impl Default for PlayerProfile {
             recipes: crate::craft::RecipeLoad::default(),
             recipe_shop_to_store: None,
             online_status: 1,
+            instance_times: Vec::new(),
         }
     }
 }

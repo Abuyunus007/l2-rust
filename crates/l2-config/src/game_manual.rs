@@ -19,7 +19,7 @@ use crate::{ConfigError, GameConfig, IniFile};
 /// No separator in the text gives the whole text (so `""` is `[""]`). Otherwise trailing empty
 /// pieces are dropped, so `"1,2,"` is `["1", "2"]` and `","` is `[]`. An empty piece in the middle
 /// is kept.
-fn java_split(text: &str, separator: char) -> Vec<&str> {
+pub(crate) fn java_split(text: &str, separator: char) -> Vec<&str> {
     if !text.contains(separator) {
         return vec![text];
     }
@@ -31,7 +31,7 @@ fn java_split(text: &str, separator: char) -> Vec<&str> {
 }
 
 /// Java `String.trim()`: removes every leading and trailing char `<= ' '` (not Unicode spaces).
-fn java_trim(text: &str) -> &str {
+pub(crate) fn java_trim(text: &str) -> &str {
     text.trim_matches(|c: char| c <= ' ')
 }
 
@@ -395,6 +395,9 @@ pub struct GameManual {
     pub player: PlayerManual,
     pub npc: NpcManual,
     pub faction_system: FactionSystemManual,
+    /// The rest of the core (non-custom) classes (L-09). `from_inis` leaves it at the defaults;
+    /// `GameConfig::load` fills it.
+    pub core: crate::game_manual_core::CoreManual,
 }
 
 impl GameManual {
@@ -410,6 +413,7 @@ impl GameManual {
             player: PlayerManual::from_ini(player),
             npc: NpcManual::from_ini(npc),
             faction_system: FactionSystemManual::from_ini(faction_system)?,
+            core: crate::game_manual_core::CoreManual::default(),
         })
     }
 }

@@ -24,6 +24,10 @@ const INSERT_BLOCK: &str = "INSERT INTO character_friends (charId, friendId, rel
 // Java: BlockList.updateInDB (remove)
 const DELETE_BLOCK: &str = "DELETE FROM character_friends WHERE charId=? AND friendId=? AND relation=1";
 
+// Java: FriendListExtended (the row of a friend who is not in the world). The CASTs only make the
+// column types one type for the driver.
+const SELECT_SUMMARY: &str = "SELECT char_name, CAST(online AS SIGNED), CAST(classid AS SIGNED), CAST(level AS SIGNED) FROM characters WHERE charId = ?";
+
 /// The relation of a friend list row (Java `Player.restoreFriendList`).
 pub const RELATION_FRIEND: i32 = 0;
 /// The relation of a block list row (Java `BlockList.loadList`).
@@ -44,6 +48,16 @@ struct FriendDbRow {
     #[sqlx(rename = "friendId")]
     friend_id: u32,
     char_name: Option<String>,
+}
+
+/// What `FriendListExtended` shows of a friend who is not in the world.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CharacterSummary {
+    pub name: String,
+    /// `characters.online`; Java shows the friend as online only for exactly 1.
+    pub online: i32,
+    pub class_id: i32,
+    pub level: i32,
 }
 
 /// Every query on `character_friends` that the friend list and the block list need.
@@ -86,6 +100,21 @@ impl FriendRepository {
                 })
             })
             .collect())
+    }
+
+    /// The name, online flag, class and level of a character (`None` when no row has the id).
+    // Java: FriendListExtended
+    pub async fn character_summary(&self, char_id: i32) -> Result<Option<CharacterSummary>> {
+        let row: Option<(Option<String>, i64, i64, i64)> = sqlx::query_as(SELECT_SUMMARY)
+            .bind(char_id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(row.map(|(name, online, class_id, level)| CharacterSummary {
+            name: name.unwrap_or_default(),
+            online: i32::try_from(online).unwrap_or(0),
+            class_id: i32::try_from(class_id).unwrap_or(0),
+            level: i32::try_from(level).unwrap_or(0),
+        }))
     }
 
     /// Makes two characters friends: one row each way, relation 0.
@@ -152,6 +181,7 @@ mod tests {
         assert_eq!(placeholders(DELETE_FRIENDS), 4);
         assert_eq!(placeholders(INSERT_BLOCK), 2);
         assert_eq!(placeholders(DELETE_BLOCK), 2);
+        assert_eq!(placeholders(SELECT_SUMMARY), 1);
     }
 
     #[test]

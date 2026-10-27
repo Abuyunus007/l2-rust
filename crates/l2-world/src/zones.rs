@@ -29,8 +29,7 @@
 //   `enteredNoLanding` half)
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
 //   `characters.lastAccess`; the login hook is not called
-// - `isAffected`: the `affectedClassType` check (needs the class list), the instance template
-//   check (no instance worlds yet)
+// - `isAffected`: the `affectedClassType` check (needs the class list)
 // - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone
 //
 // `ClanHallZone` and `SiegableHallZone` set the `CLAN_HALL` flag and show the hall's decorations
@@ -193,6 +192,9 @@ struct ZoneRules {
     /// `targetClass` admits a player (`Creature`, `Playable`, `Player`, `WorldObject`).
     target_admits_player: bool,
     allow_store: bool,
+    /// `instanceId` (`_instanceTemplateId`, default -1): the zone only takes creatures whose
+    /// instance world is of this template (M8-INST-01).
+    instance_template_id: i32,
 }
 
 impl ZoneRules {
@@ -205,6 +207,7 @@ impl ZoneRules {
             classes: Vec::new(),
             target_admits_player: true,
             allow_store: true,
+            instance_template_id: -1,
         };
         for (name, value) in &zone.params {
             let int = || value.trim().parse::<i32>().ok();
@@ -219,17 +222,24 @@ impl ZoneRules {
                 }
                 "allowStore" => rules.allow_store = parse_bool(value),
                 "default_enabled" => rules.enabled = parse_bool(value),
+                "instanceId" => rules.instance_template_id = int().unwrap_or(rules.instance_template_id),
                 _ => {}
             }
         }
         rules
     }
 
-    /// Java `ZoneType.isAffected(creature)` for a player.
-    // NOTE(unported): `affectedClassType` (needs the class list) and the instance template check
-    // (`InstanceManager.getWorld`, no instance worlds yet) are not checked; no shipped zone
-    // uses either.
-    fn affects(&self, player: &Player) -> bool {
+    /// Java `ZoneType.isAffected(creature)` for a player. `world_template` is the template of the
+    /// player's instance world (`InstanceManager.getWorld(creature)`), `None` without one.
+    // NOTE(unported): `affectedClassType` (needs the class list) is not checked; no shipped zone
+    // uses it.
+    fn affects(&self, player: &Player, world_template: Option<i32>) -> bool {
+        // Check instance.
+        if self.instance_template_id > 0
+            && world_template.is_some_and(|template| template != self.instance_template_id)
+        {
+            return false;
+        }
         if !self.enabled {
             return false;
         }
@@ -341,6 +351,13 @@ impl World {
 
     /// Java `isInsideZone(ZoneId)` of a player; `false` for anything else.
     pub fn is_inside_zone(&self, id: ObjectId, zone: ZoneId) -> bool {
+        // `Creature.isInsideZone`: a PvP instance is a PvP zone and no peace zone, everywhere in
+        // it (M8-INST-01).
+        match zone {
+            ZoneId::Pvp if self.is_in_pvp_instance(id) => return true,
+            ZoneId::Peace if self.is_in_pvp_instance(id) => return false,
+            _ => {}
+        }
         self.players.get(&id).is_some_and(|p| p.zones.is_inside(zone))
     }
 
@@ -434,6 +451,7 @@ impl World {
     /// Java `ZoneType.revalidateInZone(creature)`.
     fn revalidate_in_zone(&mut self, id: ObjectId, zone: &Zone) {
         let trap_override = self.trap_zone_override(zone);
+        let world_template = self.instance_world_of(id).map(|w| w.template_id);
         let Some(player) = self.players.get_mut(&id) else {
             return;
         };
@@ -453,7 +471,7 @@ impl World {
             rules.enabled = enabled;
         }
         // "If the character can't be affected by this zone return."
-        if !rules.affects(player) {
+        if !rules.affects(player, world_template) {
             return;
         }
         player.zones.members.push((zone.id, zone.zone_type.clone()));
