@@ -392,7 +392,10 @@ impl World {
         }
         // `FortCommander.addDamage` speaks first (M7-FORT-01) and hands on the attacker.
         let attacker = self.fort_commander_add_damage(npc, attacker);
-        // Walkers stop walking: the walking manager is not ported.
+        // If monster is on walk - stop it (`Attackable.addDamage`).
+        if self.is_walker(npc) && self.walking_is_on_walk(npc) {
+            self.walking_stop_moving(npc, false, true);
+        }
         self.notify_action_attacked(npc, attacker);
         // Calculate the amount of hate this attackable receives from this attack.
         let level = self.stats(npc).map_or(0, |s| s.level());

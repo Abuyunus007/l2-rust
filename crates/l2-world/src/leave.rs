@@ -103,6 +103,9 @@ impl World {
         self.cursed_player_left(id);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
         let clan_leave = self.clan_before_leave(id);
+        // `deleteMe`: off the party matching waiting list, out of the party matching room (Java
+        // does it before the party).
+        self.party_room_on_player_leave(id);
         // `deleteMe`: "If a Party is in progress, leave it".
         self.leave_party(id);
         // `deleteMe`: the wyvern's skill goes; `stopAllTimers` stops the feed, stores the food of
@@ -140,6 +143,7 @@ impl World {
             self.sessions.remove(&session);
         }
         self.pc_cafe_on_player_leave(id);
+        self.wedding_on_player_leave(id);
         // Java: PlayerAutoSaveTaskManager.remove
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);

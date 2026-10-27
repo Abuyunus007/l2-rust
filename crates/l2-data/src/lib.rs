@@ -38,6 +38,7 @@ pub mod player_class;
 pub mod player_template;
 pub mod recipe;
 pub mod residence;
+pub mod route;
 pub mod seed;
 pub mod skill;
 pub mod skill_learn;
@@ -95,6 +96,7 @@ pub use player_template::{
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
+pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
 pub use seed::{Seed, Seeds};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
@@ -196,6 +198,8 @@ pub struct Datapack {
     pub siege_schedule: Arc<SiegeSchedule>,
     /// `data/Seeds.xml`: the manor seeds and their crops (M7-MANOR-01).
     pub seeds: Arc<Seeds>,
+    /// `data/Routes.xml`: the walking routes of NPCs (M8-MISC-01).
+    pub routes: Arc<Routes>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -318,6 +322,8 @@ impl Datapack {
         // Java loads `CastleManorManager` (`Seeds.xml`) after `ItemData`: the seeds take their
         // reference prices from the item templates.
         let seeds = Arc::new(Seeds::load(root, &items));
+        // Java `WalkingManager` checks the target NPCs against `NpcData`.
+        let routes = Arc::new(Routes::load(root, &npcs));
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
@@ -367,6 +373,7 @@ impl Datapack {
             fishing_monsters: Arc::new(FishingMonstersData::load(root)),
             siege_schedule: Arc::new(SiegeSchedule::load(root)),
             seeds,
+            routes,
         })
     }
 }

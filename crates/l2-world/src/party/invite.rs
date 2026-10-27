@@ -260,7 +260,8 @@ impl World {
                     let party = self.create_party(requestor, distribution_type);
                     self.join_party(player, party);
                 }
-                // Party matching rooms (`ExManagePartyRoomMember`): not ported.
+                // The party matching room of the requestor learns of the new member.
+                self.party_room_on_party_join(requestor, player);
             }
             _ => {}
         }
@@ -280,7 +281,8 @@ impl World {
         };
         // Underground Coliseum and dimensional rift messages: neither exists.
         self.remove_party_member(party, player, PartyMessageType::Left);
-        // Party matching room (`PartyMatchDetail`, `ExClosePartyRoom`): not ported.
+        // Party matching room (`PartyMatchDetail`, `ExClosePartyRoom`).
+        self.party_room_on_party_withdraw(player);
     }
 
     /// Java `RequestOustPartyMember.runImpl`.

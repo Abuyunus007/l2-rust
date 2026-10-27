@@ -108,6 +108,8 @@ pub enum TimerKind {
     Control(crate::effects::control::ControlTimer),
     /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
     PartyPosition(crate::party::PartyId),
+    /// Java `Party._changeDistributionTypeRequestTask`: the loot rule vote ran out of time.
+    PartyLootRequest(crate::party::PartyId),
     /// Java `CommandChannelTimer`: the loot right of a raid boss (by raid), see
     /// `party/command_channel.rs`.
     CommandChannelTimer(ObjectId),
@@ -157,6 +159,8 @@ pub enum TimerKind {
     /// The life task of a cursed weapon and its delayed social action and transformation, see
     /// `cursed/`.
     Cursed(crate::cursed::CursedTimer),
+    /// The end of a wear shop try-on (L-02), see `leftover.rs`.
+    Leftover(crate::leftover::LeftoverTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
     /// The drowning task and the falling damage task of a player, see `water.rs`.
@@ -169,6 +173,10 @@ pub enum TimerKind {
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),
+    /// The start, repeat and arrival tasks of the walking manager, see `walking.rs`.
+    Walking(crate::walking::WalkingTimer),
+    /// The `.gotolove` wait of a married player, see `wedding.rs`.
+    Wedding(crate::wedding::WeddingTimer),
 }
 
 #[derive(Debug, Default)]

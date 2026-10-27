@@ -6,6 +6,7 @@
 //       (calculateDrops)
 
 pub mod drop;
+pub mod event_drop;
 pub mod exp;
 pub mod nevit;
 pub mod recommendations;

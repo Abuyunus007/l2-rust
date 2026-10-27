@@ -49,6 +49,8 @@ pub(crate) enum ItemHandlerKind {
     Harvester,
     /// `Disguise`: the Territory War disguise scroll of the player's territory (M7-TW-01).
     Disguise,
+    /// `NicknameColor`: opens the title colour window (L-03).
+    NicknameColor,
 }
 
 impl ItemHandlerKind {
@@ -72,6 +74,7 @@ impl ItemHandlerKind {
             "Seed" => Self::Seed,
             "Harvester" => Self::Harvester,
             "Disguise" => Self::Disguise,
+            "NicknameColor" => Self::NicknameColor,
             _ => return None,
         })
     }
@@ -114,6 +117,7 @@ impl World {
             ItemHandlerKind::Seed => self.seed_on_use(id, item, template),
             ItemHandlerKind::Harvester => self.harvester_on_use(id, template),
             ItemHandlerKind::Disguise => self.disguise_on_use(id, item),
+            ItemHandlerKind::NicknameColor => self.nickname_color_on_use(id, item),
         }
     }
 

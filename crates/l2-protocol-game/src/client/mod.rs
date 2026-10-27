@@ -180,6 +180,7 @@ pub mod henna;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
+pub mod leftover;
 pub mod mail;
 pub mod manor;
 pub mod minigame;
@@ -187,6 +188,7 @@ pub mod movement;
 pub mod multisell;
 pub mod olympiad;
 pub mod party;
+pub mod party_room;
 pub mod petition;
 pub mod pledge;
 pub mod recipe;
@@ -242,6 +244,12 @@ pub use interaction::{
     SendBypassBuildCmd,
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
+pub use leftover::{
+    FinishRotating, MacroCommand, MoveWithDelta, RequestCrystallizeItem, RequestDeleteMacro,
+    RequestExMagicSkillUseGround, RequestExRqItemLink, RequestMakeMacro, RequestPreviewItem,
+    RequestRecordInfo, RequestSaveInventoryOrder, RequestSaveKeyMapping, RequestShowMiniMap,
+    RequestSkillList, StartRotating,
+};
 pub use mail::{
     PostAttachment, RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost,
     RequestPostAttachment, RequestPostItemList, RequestReceivedPost, RequestReceivedPostList,
@@ -261,6 +269,13 @@ pub use olympiad::{
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
+};
+pub use party_room::{
+    AnswerJoinPartyRoom, AnswerPartyLootModification, RequestAskJoinPartyRoom, RequestChangeNicknameColor,
+    RequestDismissPartyRoom, RequestExitPartyMatchingWaitingRoom, RequestGiveNickName, RequestGmCommand,
+    RequestGmList, RequestListPartyMatchingWaitingRoom, RequestOustFromPartyRoom,
+    RequestPartyLootModification, RequestPartyMatchConfig, RequestPartyMatchDetail, RequestPartyMatchList,
+    RequestResetNickname, RequestWithdrawPartyRoom,
 };
 pub use petition::{RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit};
 pub use pledge::{

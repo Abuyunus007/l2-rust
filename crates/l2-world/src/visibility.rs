@@ -132,6 +132,8 @@ impl World {
         self.world_add_visible(id, region);
         // Java `onSpawn()`.
         self.on_spawn(id);
+        // Java `Npc.onSpawn()`: `WalkingManager.onSpawn` (M8-MISC-01).
+        self.walking_on_spawn(id);
         // Java `Attackable.onSpawn()`.
         self.npc_on_spawn(id);
         // `ON_NPC_SPAWN` of the clan hall scripts (M7-CHSIEGE-01).

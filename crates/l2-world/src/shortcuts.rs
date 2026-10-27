@@ -40,6 +40,7 @@ pub const SHORTCUTS_PER_PAGE: i32 = 12;
 pub const TYPE_NONE: i32 = 0;
 pub const TYPE_ITEM: i32 = 1;
 pub const TYPE_SKILL: i32 = 2;
+pub const TYPE_MACRO: i32 = 4;
 
 /// The `ShortcutRegister` packet of a shortcut. `group` is the shared reuse group an item
 /// shortcut shows (`Shortcut.getSharedReuseGroup`, -1 until set).
