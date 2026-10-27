@@ -53,7 +53,6 @@ enum NotModelled {
     GameChance,
     Behind,
     Front,
-    InstanceWorld,
     NpcZones,
     MinDistance,
     TargetMissing,
@@ -237,11 +236,15 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         }
         // `player == null ? true : isSubClassActive() == value`.
         Condition::PlayerSubclass { value } => a.player().is_none_or(|_| a.is_subclass_active() == *value),
-        // `getInstanceId() <= 0` is false; instance worlds are not modelled.
-        Condition::PlayerInstanceId { .. } => match a.player() {
+        // "player not in instance" is false; else the world the player is allowed in must be his
+        // instance and of one of the templates (M8-INST-01).
+        Condition::PlayerInstanceId { instance_ids } => match a.player() {
             None => false,
             Some(_) if a.instance_id() <= 0 => false,
-            Some(_) => not_modelled(NotModelled::InstanceWorld, "player instanceId (instance worlds)"),
+            Some(p) => a
+                .world()
+                .player_instance_world(p.core.object_id)
+                .is_some_and(|w| w.instance_id == a.instance_id() && instance_ids.contains(&w.template_id)),
         },
         Condition::PlayerAgathionId { agathion_id } => a.is_player() && *agathion_id == 0,
         Condition::PlayerCloakStatus { value } => a.is_player() && a.can_equip_cloak() == *value,

@@ -1864,10 +1864,6 @@ impl World {
         })
     }
 
-    fn instance_id_of(&self, id: ObjectId) -> i32 {
-        self.objects.get(&id).map_or(0, |e| e.instance_id)
-    }
-
     pub(crate) fn pathfinding_enabled(&self) -> bool {
         self.geo.as_ref().is_some_and(|g| g.options().pathfinding > 0)
     }

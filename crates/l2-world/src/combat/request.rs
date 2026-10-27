@@ -147,7 +147,11 @@ impl World {
         if !(self.is_playable(target) && self.is_playable(attacker)) {
             return false;
         }
-        // Instances (`isPvP`): M8.
+        // `InstanceManager.getInstance(getInstanceId()).isPvP()`: no peace in a PvP instance
+        // (M8-INST-01).
+        if self.is_in_pvp_instance(this) {
+            return false;
+        }
         // A ward carrier may be killed in a peace zone during the war with
         // `PlayerWithWardCanBeKilledInPeaceZone` (M7-TW-01).
         if self

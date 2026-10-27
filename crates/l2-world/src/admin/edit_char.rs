@@ -15,7 +15,7 @@
 // - `%protocol%` shows `N/A` for a connected client (the protocol version
 //   is not in the world), `%hwid%` shows `Unknown` (no hardware info exists), `%autoplay%` is empty
 //   (AutoPlay is not ported).
-// - `%inst%` links to `admin_instance_spawns`, which belongs to the instances (M8).
+// - `%inst%` links to `admin_instance_spawns` (`admin/instance.rs`, M8-INST-01).
 
 use std::collections::HashMap;
 use std::net::Ipv4Addr;
@@ -771,7 +771,7 @@ fn gather_character_info(world: &mut World, gm: ObjectId, player: ObjectId, file
     html.replace("%ai%", ai);
     // AutoPlay is not ported: the line is empty as with `ENABLE_AUTO_PLAY = false`.
     html.replace("%autoplay%", "");
-    // NOTE(java-quirk): the Java link goes to `admin_instance_spawns` (instances, M8).
+    // The link goes to `admin_instance_spawns` (`admin/instance.rs`).
     html.replace(
         "%inst%",
         &if instance_id != 0 {

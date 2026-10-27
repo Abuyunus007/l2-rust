@@ -20,12 +20,12 @@
 // nothing. The duel's end time and "remaining time" count in world milliseconds
 // (`World::world_ms`), not `System.currentTimeMillis()`.
 //
-// # The party duel arena (not ported)
-// Java moves a party duel to a copy of an Olympiad arena (`InstanceManager.createDynamicInstance`,
-// `OlympiadStadiumZone` spawns), opens its doors, and puts every duelist back at the saved
-// position when it ends. The world has no instances yet, so a party duel is fought where the
-// parties stand: `teleportPlayers` and the door opening do nothing and `teleportBack` is not
-// needed. Each place is marked `// M8:`.
+// # The party duel arena (M8-INST-01)
+// Java moves a party duel to a copy of an Olympiad arena (`InstanceManager.createDynamicInstance`
+// of one of the templates 147 to 150, the `OlympiadStadiumZone` spawns), opens its doors when the
+// fight starts, destroys the instance when the fight is over (which sends everybody to the exit
+// point or the nearest town) and puts every duelist back at the saved position when the duel
+// ends (`teleportBack`, which keeps the instance id: the destroy already took them out).
 
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -140,6 +140,8 @@ struct PlayerCondition {
     cp: f64,
     /// `_debuffs`: skill ids to remove when the duel ends.
     debuffs: BTreeSet<i32>,
+    /// `_x`, `_y`, `_z` of a party duelist (`_paDuel`): where `teleportBack` puts him.
+    position: Option<(i32, i32, i32)>,
 }
 
 /// Java `Duel`.
@@ -160,6 +162,8 @@ struct Duel {
     finished: bool,
     /// `_playerConditions` (Java: a `ConcurrentHashMap`; the order is by object id here).
     conditions: BTreeMap<ObjectId, PlayerCondition>,
+    /// `_duelInstanceId`: the arena instance of a party duel, 0 before `teleportPlayers`.
+    instance_id: i32,
 }
 
 /// `DuelManager`'s tables and the duel state of the players.
@@ -724,6 +728,7 @@ impl World {
             countdown: 5,
             finished: false,
             conditions: BTreeMap::new(),
+            instance_id: 0,
         };
         self.duel.duels.insert(duel_id, duel);
 
@@ -816,20 +821,22 @@ impl World {
         // This player is leaving his party during party duel. If he's either playerA or playerB
         // cancel the duel and port the players back.
         if duel.player_a == Some(player) || duel.player_b == Some(player) {
-            let players: Vec<ObjectId> = duel.conditions.keys().copied().collect();
+            let players: Vec<(ObjectId, PlayerCondition)> =
+                duel.conditions.iter().map(|(id, c)| (*id, c.clone())).collect();
             duel.player_a = None;
             duel.player_b = None;
-            // M8: `cond.teleportBack()` (the party duel arena).
-            // NOTE(java-quirk): only `setInDuel(0)`: the team colour (BLUE/RED) and the opponents'
-            // `DUELSTATE` stay, as nothing calls `restorePlayerConditions` for a duel without
-            // duelists.
-            for id in players {
+            // NOTE(java-quirk): only `teleportBack()` and `setInDuel(0)`: the team colour
+            // (BLUE/RED) and the opponents' `DUELSTATE` stay, as nothing calls
+            // `restorePlayerConditions` for a duel without duelists.
+            for (id, condition) in players {
+                self.duel_teleport_back(id, &condition);
                 self.set_in_duel(id, 0);
             }
         } else {
             // Teleport the player back & delete his PlayerCondition record.
-            // M8: `cond.teleportBack()`.
-            duel.conditions.remove(&player);
+            if let Some(condition) = duel.conditions.remove(&player) {
+                self.duel_teleport_back(player, &condition);
+            }
             self.set_in_duel(player, 0);
         }
     }
@@ -855,7 +862,11 @@ impl World {
         if count == 4 {
             // Save player conditions before teleporting players.
             self.save_player_conditions(duel_id);
-            // M8: `teleportPlayers()`: a party duel is moved to an Olympiad arena instance.
+            // `teleportPlayers()`: a party duel is moved to an Olympiad arena instance. Java's
+            // exceptions there end the task: the duel never starts.
+            if !self.duel_teleport_players(duel_id) {
+                return;
+            }
             let party = self.duel.duels.get(&duel_id).is_some_and(|d| d.party_duel);
             // give players 20 seconds to complete teleport and get ready (its ought to be 30 on
             // official..)
@@ -895,12 +906,13 @@ impl World {
         count
     }
 
-    /// Java `Duel.savePlayerConditions()`: hp, mp and cp (and the position for a party duel, which
-    /// only `teleportBack` reads: M8).
+    /// Java `Duel.savePlayerConditions()`: hp, mp and cp, and the position for a party duel
+    /// (`teleportBack`).
     fn save_player_conditions(&mut self, duel_id: i32) {
         let Some(duel) = self.duel.duels.get(&duel_id) else {
             return;
         };
+        let party_duel = duel.party_duel;
         let mut members = self.duel_side(duel.player_a, duel.party_duel);
         members.extend(self.duel_side(duel.player_b, duel.party_duel));
         let conditions: Vec<(ObjectId, PlayerCondition)> = members
@@ -914,6 +926,7 @@ impl World {
                         mp: core.cur_mp,
                         cp: core.cur_cp,
                         debuffs: BTreeSet::new(),
+                        position: party_duel.then_some((core.x, core.y, core.z)),
                     },
                 ))
             })
@@ -971,7 +984,17 @@ impl World {
             self.duel_broadcast_to_team(duel_id, true, &start);
             self.duel_broadcast_to_team(duel_id, false, &start);
 
-            // M8: open the arena doors (`InstanceManager.getInstance(getDueldInstanceId())`).
+            // Open arena doors (`InstanceManager.getInstance(getDueldInstanceId()).getDoors()`).
+            let instance_id = self.duel.duels.get(&duel_id).map_or(0, |d| d.instance_id);
+            let doors: Vec<ObjectId> = self
+                .instance(instance_id)
+                .map(|i| i.doors.values().copied().collect())
+                .unwrap_or_default();
+            for door in doors {
+                if self.door(door).is_some_and(|d| !d.open) {
+                    self.open_door(door);
+                }
+            }
         } else {
             // set isInDuel() state
             self.set_in_duel(a, duel_id);
@@ -1024,7 +1047,10 @@ impl World {
                 // are read once more.
                 let result = self.check_end_duel_condition(duel_id);
                 self.schedule_duel_task(duel_id, DuelTask::End(result), END_DELAY_MS);
-                // `InstanceManager.destroyInstance(getDueldInstanceId())`: M8.
+                // `InstanceManager.destroyInstance(getDueldInstanceId())`: the arena goes (0, the
+                // instance of a 1 vs 1 duel, is never destroyed).
+                let instance_id = self.duel.duels.get(&duel_id).map_or(0, |d| d.instance_id);
+                self.destroy_instance(instance_id);
             }
         }
     }
@@ -1284,12 +1310,121 @@ impl World {
         self.set_current_mp(id, condition.mp, true);
         self.set_current_cp(id, condition.cp, true);
 
-        // M8: `teleportBack()` for a party duel (the arena).
+        // `if (_paDuel) teleportBack()`.
+        self.duel_teleport_back(id, condition);
 
         // Debuff removal
         for skill_id in &condition.debuffs {
             self.stop_skill_effects(id, SkillFinishType::Removed, *skill_id);
         }
+    }
+
+    /// Java `PlayerCondition.teleportBack()`: a party duelist goes back to where he stood
+    /// (`teleToLocation(x, y, z)`).
+    // NOTE(java-quirk): this overload keeps the instance id; a player who leaves the party during
+    // the fight is put at his old position inside the arena instance.
+    fn duel_teleport_back(&mut self, id: ObjectId, condition: &PlayerCondition) {
+        if let Some((x, y, z)) = condition.position
+            && self.players.contains_key(&id)
+        {
+            self.tele_to_location(id, crate::teleport::TeleportTarget::at(x, y, z));
+        }
+    }
+
+    /// Java `Duel.teleportPlayers()`: a party duel gets a new instance of a random Olympiad arena
+    /// (templates 147 to 150), the Olympiad buffers of the arena go, and each party is put on a
+    /// spawn of its half of the stadium's spawn list. `false` where Java throws (the task that
+    /// called it ends).
+    fn duel_teleport_players(&mut self, duel_id: i32) -> bool {
+        let Some((party_duel, player_a, player_b)) = self
+            .duel
+            .duels
+            .get(&duel_id)
+            .map(|d| (d.party_duel, d.player_a, d.player_b))
+        else {
+            return true;
+        };
+        if !party_duel {
+            return true;
+        }
+        let template = self.rng().get(147, 150);
+        let instance_id = self.create_dynamic_instance(template);
+        if let Some(duel) = self.duel.duels.get_mut(&duel_id) {
+            duel.instance_id = instance_id;
+        }
+        // `getZone(getNpcs().stream().findFirst().get(), OlympiadStadiumZone.class)`.
+        let npcs: Vec<ObjectId> = self
+            .instance(instance_id)
+            .map(|i| i.npcs.keys().copied().collect())
+            .unwrap_or_default();
+        let Some(first) = npcs.first().copied() else {
+            warn!(
+                "Duel {duel_id}: arena instance {instance_id} has no NPC (java.util.NoSuchElementException)."
+            );
+            return false;
+        };
+        let spawns = self.position_of(first).and_then(|(x, y, z)| {
+            let zones = self.zoning.zones.as_ref()?;
+            zones
+                .zone_at(x, y, z, "OlympiadStadiumZone")
+                .map(|zone| zone.spawns.spawns.clone())
+        });
+        let Some(spawns) = spawns else {
+            warn!("Duel {duel_id}: Unable to find a party duel arena!");
+            return false;
+        };
+
+        // Remove Olympiad buffers.
+        for buffer in npcs {
+            let is_manager = self
+                .npcs
+                .get(&buffer)
+                .and_then(|n| self.npc_world.template(n.npc_id))
+                .is_some_and(|t| t.npc_type == "OlympiadManager");
+            if is_manager && self.objects.get(&buffer).is_some_and(|e| e.spawned) {
+                // `buffer.decayMe()`: out of view; the NPC stays in the instance (and in the
+                // NPC table) until the instance goes.
+                self.decay_keep_entry(buffer);
+            }
+        }
+
+        let len = i32::try_from(spawns.len()).unwrap_or(i32::MAX);
+        let first_index = self.rng().below(len / 2);
+        let Some(spawn1) = usize::try_from(first_index)
+            .ok()
+            .and_then(|i| spawns.get(i))
+            .copied()
+        else {
+            warn!("Duel {duel_id}: the arena has no spawn (java.lang.IndexOutOfBoundsException).");
+            return false;
+        };
+        for temp in self.duel_side(player_a, true) {
+            self.tele_to_location(
+                temp,
+                crate::teleport::TeleportTarget::at(spawn1.x, spawn1.y, spawn1.z).with_instance(instance_id),
+            );
+        }
+        // NOTE(java-quirk): `Rnd.get(size / 2, size)` includes `size`: one roll in `size / 2 + 1`
+        // is past the end of the list, Java throws there and the challenged party is never moved
+        // (nor does the duel start).
+        let second_index = self.rng().get(len / 2, len);
+        let Some(spawn2) = usize::try_from(second_index)
+            .ok()
+            .and_then(|i| spawns.get(i))
+            .copied()
+        else {
+            warn!(
+                "Duel {duel_id}: java.lang.IndexOutOfBoundsException: Index {second_index} out of bounds for length {len}"
+            );
+            return false;
+        };
+        for temp in self.duel_side(player_b, true) {
+            self.tele_to_location(
+                temp,
+                crate::teleport::TeleportTarget::at(spawn2.x, spawn2.y, spawn2.z).with_instance(instance_id),
+            );
+        }
+        true
     }
 
     /// Java `Duel.doSurrender(player)`: "Register a surrender request".

@@ -245,6 +245,9 @@ pub struct PlayerProfile {
     /// `characters.online` of the next store: 1, or 2 for a player without a client (offline
     /// trade, Java `isOnlineInt()`).
     pub online_status: i32,
+    /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
+    /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
+    pub instance_times: Vec<(i32, i64)>,
 }
 
 impl Default for PlayerProfile {
@@ -288,6 +291,7 @@ impl Default for PlayerProfile {
             recipes: crate::craft::RecipeLoad::default(),
             recipe_shop_to_store: None,
             online_status: 1,
+            instance_times: Vec::new(),
         }
     }
 }

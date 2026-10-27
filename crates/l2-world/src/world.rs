@@ -153,6 +153,8 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The instances, their script worlds and the re-entry times (M8-INST-01, `instance/`).
+    pub(crate) instances: crate::instance::InstanceManager,
     /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
     pub(crate) cursed: crate::cursed::CursedWorld,
     /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
@@ -234,6 +236,7 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
@@ -941,6 +944,8 @@ impl World {
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
+            // Java: Instance.CheckTimeUp, TimeUp and notifyDeath's eject task
+            TimerKind::Instance(timer) => self.on_instance_timer(timer),
             // Java: WalkingManager's start, repeat and arrival tasks
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer

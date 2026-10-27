@@ -1640,6 +1640,25 @@ pub fn siege_settings_from_ini(
     s
 }
 
+/// The `General.ini` values of the instances (M8-INST-01): `RestorePlayerInstance` and
+/// `AllowSummonInInstance` from the config, `DefaultFinishTime` and `EjectDeadPlayerTime` (seconds,
+/// times 1000 in Java, placeholders in the generated config) read here.
+pub fn instance_settings(config: &GameConfig, config_dir: &Path) -> l2_world::InstanceSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let mut settings = l2_world::InstanceSettings {
+        restore_player_instance: config.general.restore_player_instance,
+        allow_summon_in_instance: config.general.allow_summon_in_instance,
+        ..l2_world::InstanceSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        settings.instance_finish_time_ms = ini.get_int("DefaultFinishTime", 300).wrapping_mul(1000);
+        settings.eject_dead_player_time_ms = ini.get_int("EjectDeadPlayerTime", 60).wrapping_mul(1000);
+    }
+    settings
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;
@@ -2137,6 +2156,39 @@ BotReportPointsResetHour = noon
         assert!(!settings.jail_disable_chat);
         // A name Java would throw on is skipped; a channel listed twice counts once.
         assert_eq!(settings.ban_chat_channels, [ChatType::Shout, ChatType::Party]);
+    }
+
+    /// M8-INST-01: `RestorePlayerInstance`, `AllowSummonInInstance`, `DefaultFinishTime` and
+    /// `EjectDeadPlayerTime` (seconds, times 1000 like Java).
+    #[test]
+    fn instance_settings_are_read_from_general_ini() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = instance_settings(&config, dir.path());
+        assert_eq!(settings, l2_world::InstanceSettings::default());
+        assert_eq!(
+            (
+                settings.instance_finish_time_ms,
+                settings.eject_dead_player_time_ms
+            ),
+            (300_000, 60_000)
+        );
+
+        std::fs::write(
+            dir.path().join("General.ini"),
+            "RestorePlayerInstance = True\nAllowSummonInInstance = True\nDefaultFinishTime = 120\nEjectDeadPlayerTime = 5\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let settings = instance_settings(&config, dir.path());
+        assert!(settings.restore_player_instance && settings.allow_summon_in_instance);
+        assert_eq!(
+            (
+                settings.instance_finish_time_ms,
+                settings.eject_dead_player_time_ms
+            ),
+            (120_000, 5_000)
+        );
     }
 
     #[test]
