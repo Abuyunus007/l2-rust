@@ -92,6 +92,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/territories.sql"),
     include_str!("../sql/game/territory_registrations.sql"),
     include_str!("../sql/game/territory_spawnlist.sql"),
+    include_str!("../sql/game/underground_coliseum.sql"),
 ];
 
 #[cfg(test)]

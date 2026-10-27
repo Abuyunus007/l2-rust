@@ -31,8 +31,9 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
-        // Java `canLogout()`: a festival participant stays while the festival runs (M8-FEST-01).
-        if self.festival_blocks_logout(id) {
+        // `canLogout()`: "A superior power doesn't allow you to leave." (M8-GAMES-01), then a
+        // festival participant stays while the festival runs (M8-FEST-01).
+        if self.minigame_blocks_logout(id) || self.festival_blocks_logout(id) {
             self.send(id, &ActionFailed);
             return;
         }
@@ -60,8 +61,12 @@ impl World {
         }
         // Java `RequestRestart`: a festival participant cannot restart while the festival runs
         // (M8-FEST-01); `canLogout()` after it asks the same again (NOTE(java-quirk): so the party
-        // is told twice that the player is out of the upcoming festival).
-        if self.festival_blocks_restart(id) || self.festival_blocks_logout(id) {
+        // is told twice that the player is out of the upcoming festival), with "A superior power
+        // doesn't allow you to leave." (M8-GAMES-01) before its festival part.
+        if self.festival_blocks_restart(id)
+            || self.minigame_blocks_logout(id)
+            || self.festival_blocks_logout(id)
+        {
             self.send(id, &RestartResponse { result: false });
             self.send(id, &ActionFailed);
             return;
@@ -120,6 +125,8 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: the cursed weapon forgets its player (it keeps the owner's id).
         self.cursed_player_left(id);
+        // `deleteMe`: the Block Checker disconnect, and the arenas forget the player (M8-GAMES-01).
+        self.minigame_on_player_left(id);
         // `deleteMe`: `_vehicle.oustPlayer(this)` (M8-VEHICLE-01).
         self.vehicle_player_left(id);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).

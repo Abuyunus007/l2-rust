@@ -167,6 +167,9 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// Handy's Block Checker, Kratei's Cube and the Underground Coliseum (M8-GAMES-01,
+    /// `minigame/`).
+    pub(crate) minigames: crate::minigame::MinigameWorld,
     /// The boats, the air ships and who rides them (M8-VEHICLE-01, `vehicle/`).
     pub(crate) vehicle: crate::vehicle::VehicleWorld,
     /// The Seven Signs: the cycle, the members, the seals, the auto spawns (M8-SS-01,
@@ -252,6 +255,7 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            minigames: crate::minigame::MinigameWorld::default(),
             vehicle: crate::vehicle::VehicleWorld::default(),
             seven_signs: crate::sevensigns::SevenSignsWorld::default(),
         }
@@ -703,6 +707,7 @@ impl World {
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
+            ClientInput::Minigame(input) => self.on_minigame_input(id, input),
             // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
             // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
             ClientInput::Vehicle(input) => self.on_vehicle_input(id, input),
@@ -990,6 +995,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
+            TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
             // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
             TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
         }

@@ -32,6 +32,7 @@ pub mod item;
 pub mod level_tables;
 pub mod loader;
 pub mod map_region;
+pub mod minigame;
 pub mod multisell;
 pub mod npc;
 pub mod pet;
@@ -95,6 +96,9 @@ pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
+pub use minigame::{
+    ArenaReward, ColiseumArenaDef, ColiseumPoint, ColiseumTower, KrateisArenaDef, MinigameData,
+};
 pub use multisell::{MultisellData, MultisellLoadOptions};
 pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
 pub use pet::{PetData, PetDataTable, PetLevelData, PetSkillLearn};
@@ -171,6 +175,9 @@ pub struct Datapack {
     pub hennas: Arc<Hennas>,
     /// `data/CursedWeapons.xml`: the cursed weapons (M8-CURSED-01).
     pub cursed_weapons: Arc<CursedWeaponDefs>,
+    /// `data/UndergroundColiseum.xml` and `data/KrateisCube.xml`: the minigame arenas
+    /// (M8-GAMES-01).
+    pub minigames: Arc<MinigameData>,
     /// `data/stats/transformations/*.xml`: the transformations by id (M6-TRANS-01).
     pub transforms: Arc<Transforms>,
     /// `data/stats/skills/*.xml`: every skill and enchant level as a template (M4-DATA-11).
@@ -366,6 +373,7 @@ impl Datapack {
             multisell,
             hennas: Arc::new(Hennas::load(root)),
             cursed_weapons: Arc::new(CursedWeaponDefs::load(root)),
+            minigames: Arc::new(MinigameData::load(root)),
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,

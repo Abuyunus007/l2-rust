@@ -125,6 +125,7 @@ impl NpcClass {
             | "Teleporter"
             | "TerrainObject"
             | "TerritoryWard"
+            | "UCTower"
             | "Trainer"
             | "UCHelper"
             | "UCManager"
@@ -1154,10 +1155,10 @@ impl World {
             } else {
                 0
             },
-            team: 0,
+            team: self.minigame_npc_team(subject),
             enchant_effect: npc.enchant_effect,
             flying: template.flying,
-            color_effect: 0,
+            color_effect: self.minigame_npc_color_effect(subject),
             targetable: template.targetable,
             show_name: template.show_name,
             abnormal_visual_effect_special: self.abnormal_visual_effects(subject).1,
