@@ -18,6 +18,7 @@ pub mod bookmarks;
 pub mod boss;
 pub mod bot_report;
 pub mod bypass;
+pub mod bypass_simple;
 pub mod chat;
 pub mod clan;
 pub mod clanhall;
@@ -93,6 +94,7 @@ pub mod timer;
 pub mod trade;
 pub mod transform;
 pub mod user_command;
+pub mod user_command_info;
 pub mod vehicle;
 mod visibility;
 pub mod walking;
@@ -125,6 +127,7 @@ pub use clanhall::{
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use user_command_info::UserCommandInfoSettings;
 pub use community_board::{
     CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };

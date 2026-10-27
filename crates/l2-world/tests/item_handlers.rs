@@ -195,6 +195,10 @@ const ITEMS: &str = r#"<list>
 </item>
 <item id="5000" type="EtcItem" name="Help Book"><set name="handler" val="Book" /></item>
 <item id="5001" type="EtcItem" name="Odd Thing"><set name="handler" val="NoSuchHandler" /></item>
+<item id="5002" type="EtcItem" name="Page Item"><set name="handler" val="Bypass" /></item>
+<item id="5003" type="EtcItem" name="Record"><set name="handler" val="SevenSignsRecord" /></item>
+<item id="5004" type="EtcItem" name="Seal"><set name="handler" val="SpecialXMas" /></item>
+<item id="5005" type="EtcItem" name="My Teleport Book"><set name="handler" val="TeleportBookmark" /></item>
 </list>"#;
 
 /// 2031 and 2032 are the datapack's potions (HP recover, 15 s, three ticks), 2013 the Scroll of
@@ -927,6 +931,103 @@ fn an_item_with_an_unknown_handler_does_nothing() {
     s.use_item(0x100);
     assert!(s.me.take().is_empty());
     assert_eq!(s.count_of(5001), 1);
+}
+
+// ---- the window handlers of S-HAND-01 ----------------------------------------------------------
+
+/// `Bypass`: `data/html/item/<itemId>.htm` with `%itemId%` the object id, as a page of the item;
+/// without the file Java shows a "My Text is missing" page. The item stays.
+#[test]
+fn a_bypass_item_shows_its_page() {
+    let dir = tempfile::tempdir().unwrap();
+    let pages = dir.path().join("data/html/item");
+    std::fs::create_dir_all(&pages).unwrap();
+    std::fs::write(pages.join("5002.htm"), "<html><body>Item %itemId%</body></html>").unwrap();
+    let mut s = Scene::with_items(vec![item(0x100, 5002, 1)], WorldSettings::default(), Some(dir));
+    s.me.take();
+    s.use_item(0x100);
+    let sent = s.me.take();
+    let page: NpcHtmlMessage = decode(of(&sent, ServerOpcode::NpcHtmlMessage)[0]);
+    assert_eq!((page.npc_obj_id, page.item_id), (0, 5002));
+    assert!(page.html.contains("Item 256"), "{}", page.html);
+    assert_eq!(s.count_of(5002), 1);
+
+    let dir = tempfile::tempdir().unwrap();
+    let mut s = Scene::with_items(vec![item(0x100, 5002, 1)], WorldSettings::default(), Some(dir));
+    s.me.take();
+    s.use_item(0x100);
+    let sent = s.me.take();
+    let page: NpcHtmlMessage = decode(of(&sent, ServerOpcode::NpcHtmlMessage)[0]);
+    assert!(page.html.contains("My Text is missing:<br>data/html/item/5002.htm"));
+}
+
+/// `SpecialXMas`: `ShowXMasSeal(item id)`; `SevenSignsRecord`: the Seven Signs status, page 1.
+#[test]
+fn the_seal_and_record_items_open_their_windows() {
+    let mut s = Scene::new(vec![item(0x100, 5004, 1), item(0x101, 5003, 1)]);
+    s.me.take();
+    s.use_item(0x100);
+    let sent = s.me.take();
+    assert_eq!(
+        decode::<l2_protocol_game::server::ShowXMasSeal>(of(&sent, ServerOpcode::ShowXmasSeal)[0]),
+        l2_protocol_game::server::ShowXMasSeal { item_id: 5004 }
+    );
+    // Neither is used up.
+    assert_eq!(s.inventory(), [(5003, 1), (5004, 1)]);
+
+    // The status is read again first (D-50) when this server does not write the cycle rows: the
+    // request for page 1 goes to the persistence task.
+    let persisted = Persisted::default();
+    let mut s = Scene::build_with(
+        player_data(vec![item(0x101, 5003, 1)]),
+        WorldSettings::default(),
+        None,
+        Box::new(persisted.clone()),
+    );
+    persisted.0.lock().unwrap().clear();
+    s.use_item(0x101);
+    let sent = persisted.0.lock().unwrap().clone();
+    assert!(
+        sent.iter().any(|c| matches!(
+            c,
+            PersistCommand::SevenSignsReadRequest {
+                then: l2_world::sevensigns::SevenSignsThen::Status { page: 1, .. }
+            }
+        )),
+        "{sent:?}"
+    );
+}
+
+/// `TeleportBookmark`: the book is used up, three slots are added, two messages; at 9 slots the
+/// limit message and the book stays.
+#[test]
+fn a_teleport_book_adds_three_slots_up_to_nine() {
+    let mut data = player_data(vec![item(0x100, 5005, 1), item(0x101, 5005, 1)]);
+    data.profile.bookmark_slot = 6;
+    let mut s = Scene::build(data, WorldSettings::default(), None);
+    s.me.take();
+    s.use_item(0x100);
+    let sent = s.me.take();
+    assert_eq!(s.world.player(ME).unwrap().data.profile.bookmark_slot, 9);
+    let ids: Vec<_> = messages(&sent).into_iter().map(|m| m.id).collect();
+    assert_eq!(
+        ids,
+        [
+            SystemMessageId::TheNumberOfMyTeleportsSlotsHasBeenIncreased,
+            SystemMessageId::S1HasDisappeared
+        ]
+    );
+    assert_eq!(s.count_of(5005), 1);
+
+    s.use_item(0x101);
+    let sent = s.me.take();
+    let ids: Vec<_> = messages(&sent).into_iter().map(|m| m.id).collect();
+    assert_eq!(
+        ids,
+        [SystemMessageId::YourNumberOfMyTeleportsSlotsHasReachedItsMaximumLimit]
+    );
+    assert_eq!(s.world.player(ME).unwrap().data.profile.bookmark_slot, 9);
+    assert_eq!(s.count_of(5005), 1);
 }
 
 // ---- item reuse over a logout (M5-FIX-03) -----------------------------------------------------

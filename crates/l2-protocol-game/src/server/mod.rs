@@ -89,6 +89,7 @@ pub mod fishing;
 pub mod fort;
 pub mod friend;
 pub mod gm_view;
+pub mod handler_windows;
 pub mod gm_windows;
 pub mod ground_item;
 pub mod handshake;
@@ -172,6 +173,7 @@ pub use fence::{ExColosseumFenceInfo, OnEventTrigger};
 pub use fishing::{ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStartCombat};
 pub use fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, FortressInfo};
 pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
+pub use handler_windows::{ExShowQuestInfo, ShowXMasSeal, TutorialCloseHtml};
 pub use gm_view::GmViewItemList;
 pub use gm_windows::{
     GmHennaInfo, GmSkillEntry, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo,

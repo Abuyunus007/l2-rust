@@ -424,6 +424,11 @@ impl World {
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
+        // `Artefact` has a click handler of its own (`ArtefactClick`, S-HAND-01).
+        if self.npc_template(npc).is_some_and(|t| t.npc_type == "Artefact") {
+            self.artefact_click(player, npc, interact);
+            return;
+        }
         // `npc.canTarget(player)`: `isOutOfControl` is not modelled. A locked target (`TargetMe`)
         // cannot be changed; the `ActionFailed` Java sends here is the one `on_action_object`
         // sends after every click.

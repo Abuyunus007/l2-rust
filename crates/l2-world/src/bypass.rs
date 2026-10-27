@@ -97,6 +97,8 @@ impl Default for BypassHandlers {
         handlers.register("ExitRift", crate::sevensigns::rift_bypass_handler);
         // dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java (L-05)
         handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/{PlayerHelp,TutorialClose,QuestList}.java (S-HAND-01)
+        crate::bypass_simple::register(&mut handlers);
         handlers
     }
 }

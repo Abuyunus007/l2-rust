@@ -144,6 +144,8 @@ pub struct World {
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The community board settings and the last page of each player (S-HAND-01, `community_board/`).
     pub(crate) community_board: crate::community_board::CommunityBoardWorld,
+    /// `/time` and the other information user commands (S-HAND-01, `user_command_info.rs`).
+    pub(crate) user_command_info: crate::user_command_info::UserCommandInfoWorld,
     /// The players in offline mode and the offline trade settings (M6-FU-14, `trade/offline.rs`).
     pub(crate) offline: crate::trade::OfflineWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -248,6 +250,7 @@ impl World {
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             community_board: crate::community_board::CommunityBoardWorld::default(),
+            user_command_info: crate::user_command_info::UserCommandInfoWorld::default(),
             offline: crate::trade::OfflineWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),

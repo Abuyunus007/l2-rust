@@ -27,6 +27,27 @@ use crate::objects::ObjectKind;
 use crate::world::World;
 
 impl World {
+    /// Java `ArtefactClick.onAction`: unlike `NpcClick` an artefact never opens a dialog; a second
+    /// click from far away walks to it.
+    pub(crate) fn artefact_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
+        // `npc.canTarget(player)`: a locked target cannot be changed.
+        if self.is_locked_target(player) && self.locked_target(player) != Some(npc) {
+            self.send(
+                player,
+                &l2_protocol_game::server::SystemMessage::new(
+                    l2_protocol_game::SystemMessageId::FailedToChangeAttackTarget,
+                ),
+            );
+            return;
+        }
+        if self.target_of(player) != Some(npc) {
+            self.set_target(player, Some(npc));
+        } else if interact && !self.can_interact(npc, player) {
+            // Notify the player AI with INTERACT.
+            self.set_intention_interact(player, npc);
+        }
+    }
+
     /// Java `WorldObject.onActionShift(player)`: the handler of the object's instance type, then
     /// `ActionFailed`. The caller checked that the player may shift click (a GM).
     pub(crate) fn on_action_shift(&mut self, player: ObjectId, obj: ObjectId) {
