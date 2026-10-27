@@ -17,7 +17,7 @@
 // Not done here, with the reason:
 // - respawn after death, `Spawn.decreaseCount`, group replacement rolls, `RespawnTaskManager`:
 //   `respawn.rs` (M4-DEATH-01). This module creates the NPCs; `respawn.rs` counts them per spawn.
-// - AI, walking routes (`WalkingManager`), `NpcPersonalAIData` (spawn `AIData`), champions
+// - AI (`ai/`), walking routes (`walking.rs`, M8-MISC-01), `NpcPersonalAIData` (spawn `AIData`), champions
 //   (`ChampionMonstersConfig`, off by default): M4.
 // - Raid and grand bosses: Java's `RaidBossSpawnManager` / `GrandBossManager` spawn them from
 //   their own tables, the spawn files skip them (`SpawnData.checkTemplate`).

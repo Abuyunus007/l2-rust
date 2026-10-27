@@ -345,7 +345,7 @@ impl World {
         }
         // `new StringTokenizer(text)`: split at whitespace.
         let tokens: Vec<&str> = text
-            .split(|c: char| matches!(c, ' ' | '\t' | '\n' | '\r' | '\u{c}'))
+            .split([' ', '\t', '\n', '\r', '\u{c}'])
             .filter(|t| !t.is_empty())
             .collect();
         let command = if tokens.len() > 1 {

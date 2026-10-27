@@ -29,7 +29,7 @@
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
 // - Fake players, the faction system, dimensional rifts, festival monsters,
-//   `WalkingManager` (nothing is a walker), champions.
+//   champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
 // - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): `siege_guard.rs` and
 //   `fort_siege_guard.rs` (M7-SIEGE-02); the entry points here hand a defender over to them.
 //

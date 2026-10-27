@@ -386,7 +386,7 @@ fn a_stopped_walker_resumes_after_the_check_task() {
 /// attached, and a monster of a targeted id never random-walks.
 #[test]
 fn only_the_targeted_spawn_walks() {
-    let mut s = Scene::new(&format!(
+    let s = Scene::new(&format!(
         "{}{}",
         spawn_line(9020, X, Y, Z),
         spawn_line(9022, X + 500, Y, Z)
