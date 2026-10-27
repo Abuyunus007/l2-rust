@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use l2_net::{Control, Encode, FrameHandler, PacketReader};
-use l2_protocol_game::client::{AuthLogin, ProtocolVersion};
+use l2_protocol_game::client::{AuthLogin, GameGuardReply, ProtocolVersion, RequestHardWareInfo};
 use l2_protocol_game::server::charscreen::active_slot;
 use l2_protocol_game::server::{CharSelectionInfo, KeyPacket, LoginFail};
 use l2_protocol_game::{ClientPacket, ConnectionState, decode_client};
@@ -28,6 +28,12 @@ use super::charlist::CharacterInfo;
 use super::cipher::GameFrameCipher;
 use super::registry::SessionEntry;
 use crate::ls_link::SessionKey;
+
+/// Java `GameGuardReply.VALID`.
+const GAME_GUARD_VALID: [u8; 20] = [
+    0x88, 0x40, 0x1c, 0xa7, 0x83, 0x42, 0xe9, 0x15, 0xde, 0xc3, 0x68, 0xf6, 0x2d, 0x23, 0xf1, 0x3f, 0xee,
+    0x68, 0x5b, 0xc5,
+];
 
 /// One client connection. Java: `GameClient`.
 pub struct ClientSession {
@@ -60,6 +66,15 @@ pub struct ClientSession {
     pub(super) sink_events: Option<UnboundedReceiver<l2_world::LeaveReason>>,
     /// The character this connection has in the world (set at `EnterWorld`).
     pub(super) in_world_object: Option<l2_world::ObjectId>,
+    /// Java `GameClient._secondaryAuth`: the secondary password of the account, with the feature
+    /// on (L-04).
+    pub(super) secondary: Option<super::secondary::SecondaryAuth>,
+    /// Java `GameClient._isAuthedGG` (`setGameGuardOk`): the last `GameGuardReply` was the valid
+    /// one. Nothing reads it, like in Java.
+    pub(super) game_guard_ok: bool,
+    /// Java `GameClient._hardwareInfo`: the last hardware report of the client. The checks that use
+    /// it (HWID punishments, `MaxPlayersPerHWID`) are not ported.
+    pub(super) hardware: Option<Box<RequestHardWareInfo>>,
 }
 
 impl ClientSession {
@@ -81,6 +96,9 @@ impl ClientSession {
             pending: None,
             sink_events: None,
             in_world_object: None,
+            secondary: None,
+            game_guard_ok: false,
+            hardware: None,
         }
     }
 
@@ -194,6 +212,8 @@ impl ClientSession {
             },
         );
         info!("Account '{account}' authenticated from {}.", self.ip);
+        // Java `setAccountName`: the secondary password is read.
+        self.load_secondary_auth().await;
         self.send_character_list(ctl, None).await;
     }
 
@@ -229,6 +249,13 @@ impl ClientSession {
             characters: characters.iter().map(|c| c.entry.clone()).collect(),
         };
         Some((characters, packet))
+    }
+
+    /// Java `GameGuardReply.runImpl`: SHA-1 of the eight answer bytes against the one valid value.
+    fn on_game_guard_reply(&mut self, packet: &GameGuardReply) {
+        if l2_db::sha1_digest(&packet.reply) == GAME_GUARD_VALID {
+            self.game_guard_ok = true;
+        }
     }
 
     // Java: Logout.runImpl with no player: client.disconnect()
@@ -281,6 +308,11 @@ impl FrameHandler for ClientSession {
             ClientPacket::CharacterRestore(p) => self.on_character_restore(p, ctl).await,
             ClientPacket::CharacterSelect(p) => self.on_character_select(p, ctl).await,
             ClientPacket::RequestGotoLobby(_) => self.on_request_goto_lobby(ctl).await,
+            ClientPacket::RequestEx2ndPasswordCheck(_) => self.on_2nd_password_check(ctl),
+            ClientPacket::RequestEx2ndPasswordReq(p) => self.on_2nd_password_req(p, ctl).await,
+            ClientPacket::RequestEx2ndPasswordVerify(p) => self.on_2nd_password_verify(p, ctl).await,
+            ClientPacket::RequestHardWareInfo(p) => self.hardware = Some(p),
+            ClientPacket::GameGuardReply(p) => self.on_game_guard_reply(&p),
             other => {
                 if self.state != ConnectionState::InGame || !self.on_in_game_packet(other.clone()) {
                     // Java ignores what it has no handler for: so does this.

@@ -4,12 +4,15 @@
 //! the Java SQL as constants with a `// Java:` comment, runtime queries, row structs that
 //! mirror the column types.
 
+mod account_data;
 mod announcements;
 mod auctions;
+mod bookmarks;
 mod bot_reports;
 mod buylists;
 mod characters;
 mod clans;
+mod contacts;
 mod crests;
 mod cursed_weapons;
 mod fishing;
@@ -41,8 +44,12 @@ mod territories;
 mod variables;
 mod wedding;
 
+pub use account_data::{
+    AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
+};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
+pub use bookmarks::{BookmarkRepository, BookmarkRow};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
@@ -53,11 +60,12 @@ pub use clans::{
     ClanDataRow, ClanMemberRow, ClanNoticeRow, ClanPrivsRow, ClanRepository, ClanSkillRow, ClanSubPledgeRow,
     ClanUpdate, ClanWarRow, NewClan,
 };
+pub use contacts::{ContactLink, ContactRepository};
 pub use crests::{CrestRepository, CrestRow};
 pub use cursed_weapons::{CursedWeaponRepository, CursedWeaponRow};
 pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use fort_sieges::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
-pub use friends::{FriendLink, FriendRepository};
+pub use friends::{CharacterSummary, FriendLink, FriendRepository};
 pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use hennas::{HennaRepository, HennaRow};
