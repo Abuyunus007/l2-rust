@@ -185,7 +185,8 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
             Arc::clone(&state.ids),
             CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
         )
-        .with_select_flood(character_select_flood(&state.paths.config_dir)),
+        .with_select_flood(character_select_flood(&state.paths.config_dir))
+        .with_master_access_level(state.static_data.master_access_level()),
         loader: Arc::new(DbPlayerLoader::new(state.pool.clone())),
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),

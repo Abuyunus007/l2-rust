@@ -277,6 +277,12 @@ impl AccessLevels {
             .copied()
             .unwrap_or(AccessLevelStatic::UNREGISTERED)
     }
+
+    /// Java `AdminData.getMasterAccessLevel()` as a level number: `_highestLevel`, which starts at
+    /// 0 and only rises for a listed level above it (the banned level -1 never counts).
+    pub fn master_level(&self) -> i32 {
+        self.levels.keys().copied().filter(|&l| l > 0).max().unwrap_or(0)
+    }
 }
 
 /// [`StaticData`] over the loaded datapack.
@@ -364,6 +370,10 @@ impl StaticData for DatapackData {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         self.access.get(level)
+    }
+
+    fn master_access_level(&self) -> i32 {
+        self.access.master_level()
     }
 
     fn admin_rights(&self) -> Option<&AdminRights> {
@@ -2327,6 +2337,25 @@ BotReportPointsResetHour = noon
         assert_eq!(levels.get(-5), levels.get(-1));
         assert_eq!(levels.get(55), AccessLevelStatic::UNREGISTERED);
         assert!(!levels.get(55).is_gm);
+    }
+
+    #[test]
+    fn master_level_is_the_highest_listed_level_above_zero() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="-1" name="Banned" nameColor="FFFFFF" titleColor="ECF9A2" isGM="false" />
+	<access level="0" name="User" nameColor="FFFFFF" titleColor="ECF9A2" isGM="false" />
+	<access level="100" name="Master" nameColor="00CCFF" titleColor="0FF000" isGM="true" />
+	<access level="75" name="Gm" nameColor="00CCFF" titleColor="0FF000" isGM="true" />
+</list>"#,
+        );
+        assert_eq!(levels.master_level(), 100);
+        // Java starts `_highestLevel` at 0: without a level above it, the master is 0.
+        let plain = AccessLevels::from_xml(
+            r#"<list><access level="-1" name="Banned" nameColor="FFFFFF" titleColor="ECF9A2" isGM="false" /></list>"#,
+        );
+        assert_eq!(plain.master_level(), 0);
+        assert_eq!(AccessLevels::default().master_level(), 0);
     }
 
     #[test]
