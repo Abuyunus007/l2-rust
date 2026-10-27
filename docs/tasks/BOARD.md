@@ -373,7 +373,7 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 | [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
 | [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | ready |
 | [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | ready |
-| [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | ready |
+| [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | merged |
 
 ## M8: Olympiad, heroes, Seven Signs, instances and the big systems (approved 2026-10-27)
 
