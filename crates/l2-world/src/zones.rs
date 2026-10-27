@@ -291,6 +291,8 @@ enum ZoneKind {
     Swamp,
     /// `DamageZone` (M7-FU-03, `zone_trap.rs`).
     Damage,
+    /// `BossZone` (M8-BOSS-01, `boss/zone.rs`).
+    Boss,
     /// `WaterZone` (`water.rs`).
     Water,
     /// Loaded and found by lookups; entering does nothing in M3.
@@ -325,6 +327,7 @@ impl ZoneKind {
             "SiegeZone" => Self::Siege,
             "SwampZone" => Self::Swamp,
             "DamageZone" => Self::Damage,
+            "BossZone" => Self::Boss,
             "WaterZone" => Self::Water,
             _ => Self::Inert,
         }
@@ -601,6 +604,7 @@ impl World {
             }
             ZoneKind::Swamp => self.swamp_zone_enter(id, zone),
             ZoneKind::Damage => self.damage_zone_enter(id, zone),
+            ZoneKind::Boss => self.boss_zone_enter(id, zone.id),
             ZoneKind::Water => self.water_zone_enter(id),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
@@ -700,6 +704,7 @@ impl World {
             }
             ZoneKind::Swamp => self.swamp_zone_exit(id, zone),
             ZoneKind::Damage => self.damage_zone_exit(zone),
+            ZoneKind::Boss => self.boss_zone_exit(id, zone.id, true),
             ZoneKind::Water => self.water_zone_exit(id),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }

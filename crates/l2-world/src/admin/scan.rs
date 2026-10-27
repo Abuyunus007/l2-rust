@@ -5,7 +5,8 @@
 // # Left out, with the system that brings it
 // - The order of the list: Java takes the NPCs of the surrounding regions in their region order;
 //   here they are listed by object id.
-// - `SpawnData.deleteSpawn` (and the raid boss table) do not write the datapack, as in `//delete`.
+// - `SpawnData.deleteSpawn` does not write the datapack, as in `//delete`; the raid boss table is
+//   `RaidBossSpawnManager.deleteSpawn` (M8-BOSS-01).
 
 use l2_util::ObjectId;
 
@@ -165,9 +166,14 @@ fn admin_delete_npc_by_object_id(world: &mut World, gm: ObjectId, command: &str)
         return Ok(());
     };
     let name = world.object_name(npc).unwrap_or_default();
+    let template_id = world.npcs.get(&npc).map(|n| n.npc_id);
     world.delete_npc(npc);
     if let Some(index) = index {
         world.stop_respawn(index);
+        // `RaidBossSpawnManager.isDefined(spawn.getId())`: the raid spawn and its row go (M8-BOSS-01).
+        if let Some(id) = template_id.filter(|id| world.raid_boss_defined(*id)) {
+            world.raid_delete_spawn(id, true);
+        }
     }
     world.send_message(gm, &format!("{name} has been deleted."));
     Ok(())

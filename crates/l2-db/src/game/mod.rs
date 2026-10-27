@@ -9,6 +9,7 @@ mod airships;
 mod announcements;
 mod auctions;
 mod bookmarks;
+mod bosses;
 mod bot_reports;
 mod buylists;
 mod characters;
@@ -56,6 +57,10 @@ pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bookmarks::{BookmarkRepository, BookmarkRow};
+pub use bosses::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{

@@ -747,6 +747,12 @@ impl Server {
         } else {
             Vec::new()
         };
+        // Java: RaidBossPointsManager, GrandBossManager (+ initZones) and RaidBossSpawnManager
+        // (M8-BOSS-01): the boss tables, read only. With `CycleDatabaseWrites` off the rows stay
+        // the Java game server's (D-53).
+        let boss_settings = world_data::boss_settings(&config, &paths.config_dir);
+        let boss_load = persist::load_bosses(&pool).await;
+        let raid_boss_rows = persist::load_raid_boss_rows(&pool).await;
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
@@ -973,6 +979,13 @@ impl Server {
                     world.set_walking_routes(Arc::clone(&datapack.routes));
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
+                    // Java: RaidBossPointsManager (GameServer, early), GrandBossManager.initZones (after
+                    // the zones) and RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
+                    world.set_boss_settings(boss_settings);
+                    world.load_bosses(boss_load);
+                    if !config.development.no_spawns {
+                        world.spawn_raid_bosses(raid_boss_rows);
+                    }
                     // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
                     world.load_ground_items(ground_items);
                     // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).

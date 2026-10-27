@@ -217,6 +217,16 @@ pub enum PersistCommand {
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
+    /// A boss row write with Java's statement (`grandboss_data`, `raidboss_spawnlist`,
+    /// `character_raid_points`), see `boss/` (M8-BOSS-01). Applied in order with the other commands.
+    Boss(crate::boss::BossWrite),
+    /// Asks the persistence task to read boss rows again (D-50, D-53): a grand boss row for the
+    /// admin page, the raid point rows of a character entering the world. The answer comes back as
+    /// `WorldCommand::BossReread` carrying `then`.
+    BossRereadRequest {
+        kind: crate::boss::BossReadKind,
+        then: crate::boss::BossReadThen,
+    },
     /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
     /// `instance/times.rs`). Applied in order with the other commands.
     InstanceTime(crate::instance::InstanceTimeWrite),

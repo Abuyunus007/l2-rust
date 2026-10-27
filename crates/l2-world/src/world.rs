@@ -155,6 +155,8 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
     pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The grand and raid boss managers and the raid points (M8-BOSS-01, `boss/`).
+    pub(crate) boss: crate::boss::BossWorld,
     /// The instances, their script worlds and the re-entry times (M8-INST-01, `instance/`).
     pub(crate) instances: crate::instance::InstanceManager,
     /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
@@ -244,6 +246,7 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            boss: crate::boss::BossWorld::default(),
             instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
@@ -427,6 +430,7 @@ impl World {
                 then,
             } => self.on_item_auction_reread(instance_id, result, then),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
+            WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -475,6 +479,8 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: `RaidBossSpawnManager.cleanUp()`, `GrandBossManager.cleanUp()`.
+                self.boss_shutdown();
                 // Java Shutdown: "Save Seven Signs data before closing." (M8-SS-01).
                 self.seven_signs_shutdown();
                 // Java Shutdown: "Save Cursed Weapons data before closing."
@@ -836,6 +842,8 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestGetBossRecord
+            ClientInput::GetBossRecord { boss_id } => self.on_request_get_boss_record(id, boss_id),
             // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             ClientInput::Siege(input) => self.on_siege_input(id, input),
@@ -965,6 +973,8 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
+            TimerKind::Boss(timer) => self.on_boss_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
             // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
             TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),

@@ -21,6 +21,10 @@ pub use game::{AirshipRepository, AirshipRow, CursedWeaponRepository, CursedWeap
 pub use game::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use game::{BookmarkRepository, BookmarkRow, ContactLink, ContactRepository};
+pub use game::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use game::{BotReportDbRow, BotReportRepository};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{

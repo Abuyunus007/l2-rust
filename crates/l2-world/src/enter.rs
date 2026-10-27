@@ -458,6 +458,9 @@ impl World {
         self.fort_player_entered(id);
         // A player registered for the Territory War gets his side (M7-TW-01).
         self.territory_player_entered(id);
+        // The raid points the Java GS may have given the character since this server read them
+        // (M8-BOSS-01, D-50).
+        self.request_raid_points_reread(id.0);
         // "Updating Seal of Strife Buff/Debuff" (M8-SS-01).
         self.ss_enter_world_strife(id);
         // The mails the session read at `CharacterSelect` replace this server's copies of them

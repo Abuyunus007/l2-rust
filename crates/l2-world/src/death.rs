@@ -406,6 +406,8 @@ impl World {
             self.fort_commander_died(id);
             // `TerritoryWard.doDie` (M7-TW-01).
             self.territory_ward_do_die(id, killer);
+            // `RaidBoss.doDie` / `GrandBoss.doDie`: the raid points and the respawn (M8-BOSS-01).
+            self.boss_npc_died(id, killer);
         }
         true
     }
