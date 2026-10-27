@@ -16,7 +16,7 @@
 // # What is left out, with the system that brings it
 // - Seven Signs state (`SevenSigns`, `SevenSignsFestival`): the npc ids that depend on the seal
 //   owners show the file Java picks when `StrictSevenSigns` is off, and `%festivalMins%` stays in
-//   the page. Olympiad state: `isHero`, `getOlympiadBuffCount` read as false / 0.
+//   the page. Olympiad state: `isHero` reads as false (M8-HERO-01).
 // - Cursed weapons (`isCursedWeaponEquipped`), `_isBusy` NPCs (nothing sets it), quest dialogs and
 //   `ON_NPC_FIRST_TALK` listeners (scripts, D-05).
 // - `GeneralConfig.HTM_CACHE = false` (lazy): the cache is always preloaded, see `l2_data::HtmCache`.

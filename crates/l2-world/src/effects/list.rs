@@ -1192,7 +1192,7 @@ impl World {
         } else {
             true
         };
-        // The olympiad packet (`ExOlympiadSpelledInfo`) is M8; the party's `PartySpelled` follows
+        // The olympiad packet (`ExOlympiadSpelledInfo`) goes last (M8-OLY-01); the party's `PartySpelled` follows
         // the `AbnormalStatusUpdate` below.
         let potions: Vec<BuffInfoId> = list
             .buffs

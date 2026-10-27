@@ -22,8 +22,6 @@
 // its cubic was removed (or replaced by a new one of the same id) finds nothing to do.
 //
 // # Left out, with the system that brings it
-// - M8: Olympiad (`isInOlympiadMode()` targeting, `stopCubicsByOthers` when a match starts,
-//   `enterOlympiadObserverMode`). [`World::stop_cubics_by_others`] is ready for the Olympiad.
 // - Custom events (`isOnEvent()`), mounts and the observer mode (`SummonCubic` ignores a mounted
 //   or observing player) are not modelled.
 // - `Player.setActiveClass` / `VillageMaster`'s `stopCubics()`: subclasses are not ported.

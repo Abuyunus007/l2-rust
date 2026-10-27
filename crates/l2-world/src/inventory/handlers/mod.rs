@@ -22,7 +22,7 @@
 // # Left out on purpose
 // - Pets: `SummonItems` and `PetFood` are in `summon/pet.rs` and `summon/pet_items.rs`; a pet's
 //   item skills go through `item_skills.rs` with the pet as the user (its two `isPet()` branches).
-// - Events (`isOnEvent`) and the olympiad (`isInOlympiadMode`) are not modelled.
+// - Events (`isOnEvent`) are not modelled.
 
 mod book;
 mod consume;

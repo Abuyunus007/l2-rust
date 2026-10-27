@@ -202,7 +202,10 @@ impl World {
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && !is_hp_consumption {
             self.abort_attack(id);
             self.abort_cast(id);
-            // Olympiad matches end without death (M6).
+            // A fighter in the olympiad does not die (M8-OLY-01).
+            if self.olympiad_fighter_falls(id) {
+                return;
+            }
             self.do_die(id, attacker);
         }
     }

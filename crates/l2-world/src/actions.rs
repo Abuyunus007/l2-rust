@@ -26,7 +26,6 @@
 // - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
 //   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
 // - Action 65 (the bot report button) is `bot_report.rs`.
-// - M8: `isInOlympiadMode()` is always false.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{

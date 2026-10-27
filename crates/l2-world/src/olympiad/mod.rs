@@ -572,6 +572,21 @@ impl World {
             && self.olympiad_game_id(a) == self.olympiad_game_id(b)
     }
 
+    /// `PlayerStatus.reduceHp` of a fighter at 0 HP: dead without dying (no `doDie`), revived
+    /// when the game ends. `false` for anybody not in olympiad mode.
+    pub(crate) fn olympiad_fighter_falls(&mut self, id: ObjectId) -> bool {
+        if !self.is_in_olympiad_mode(id) {
+            return false;
+        }
+        self.stop_hp_mp_regeneration(id);
+        self.set_dead(id, true);
+        self.death.pending_revive.insert(id);
+        if let Some(summon) = self.summon_of(id) {
+            self.set_intention_idle(summon);
+        }
+        true
+    }
+
     /// Java `ItemTemplate.isOlyRestrictedItem()`.
     pub fn is_oly_restricted_item(&self, item_id: i32) -> bool {
         self.olympiad.settings.restricted_items.contains(&item_id)

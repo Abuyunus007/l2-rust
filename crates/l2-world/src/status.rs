@@ -578,15 +578,8 @@ impl World {
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
             self.abort_cast(id);
-            // A fighter in the olympiad does not die: dead without dying, revived when the game
-            // ends (M8-OLY-01).
-            if self.is_in_olympiad_mode(id) {
-                self.stop_hp_mp_regeneration(id);
-                self.set_dead(id, true);
-                self.death.pending_revive.insert(id);
-                if let Some(summon) = self.summon_of(id) {
-                    self.set_intention_idle(summon);
-                }
+            // A fighter in the olympiad does not die (M8-OLY-01).
+            if self.olympiad_fighter_falls(id) {
                 return;
             }
             self.do_die(id, attacker);

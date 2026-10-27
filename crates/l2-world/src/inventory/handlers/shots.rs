@@ -31,8 +31,6 @@
 // # Left out
 // - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) are `summon/shots.rs`; fishing shots
 //   (`FishShots`, M6-FU-08) are `fishing/shots.rs`.
-// - The olympiad (`OlympiadConfig.OLYMPIAD_DISABLE_BLESSED_SPIRITSHOTS`, `disableAutoShotsAll`
-//   at the start of a match): no olympiad yet.
 // - Fake players (`FAKE_PLAYER_USE_SHOTS`).
 
 use std::collections::{BTreeSet, HashMap};
@@ -667,7 +665,7 @@ impl World {
     }
 
     /// Java `SpiritShot.onItemUse` and `BlessedSpiritShot.onItemUse` (they differ in the charge
-    /// they set and in the olympiad rule, which is not modelled).
+    /// they set and in the olympiad rule).
     fn use_spirit_shots(
         &mut self,
         id: ObjectId,

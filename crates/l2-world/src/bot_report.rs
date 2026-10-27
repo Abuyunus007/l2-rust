@@ -22,7 +22,6 @@
 //   anything else, and the report is dropped without a word (here too).
 //
 // # Left out, with the card that brings it
-// - M8: the olympiad refusal (`isInOlympiadMode`) is never true.
 // - Fake players (`isFakePlayer`, `getFakePlayerInfo().isTalkable()`) do not exist in the port.
 
 use std::collections::BTreeMap;

@@ -98,7 +98,7 @@ impl World {
         force_use: bool,
     ) -> bool {
         match kind {
-            // `ItemSkills` only adds the olympiad rule (not modelled), `Elixir` the player-only
+            // `ItemSkills` only adds the olympiad rule (the arm above), `Elixir` the player-only
             // rule (a pet's item skills go through `ItemSkillsTemplate`'s own pet branches).
             // `ItemSkills` (and so `Elixir`): not in a Grand Olympiad match (M8-OLY-01).
             ItemHandlerKind::ItemSkills | ItemHandlerKind::Elixir
