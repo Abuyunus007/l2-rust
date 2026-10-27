@@ -164,6 +164,12 @@ const PORTED: &[&str] = &[
     "spawn_misc",
     "spawnmisc",
     "list_pools",
+    // M8-ADMIN-07: the Olympiad words and Mammon
+    "checkolympiad",
+    "saveolymp",
+    "endolympiad",
+    "mammon_find",
+    "mammon_respawn",
 ];
 
 /// Words of the card's Java files that this card does not port (see the module notes): they
@@ -172,15 +178,9 @@ const LEFT_OUT: &[&str] = &[
     // edit_char
     // change access level and repair
     // admin page flags and configuration
-    // M8: Olympiad, heroes (`instance_spawns` came with M8-INST-01, `tests/admin_instance.rs`)
-    "checkolympiad",
-    "saveolymp",
-    "sethero",
-    "givehero",
-    "endolympiad",
-    // the coliseum doors are not in the list of AdminDoorControl
-    "open1",
-    "close1",
+    // M8: heroes (M8-HERO-01; the Olympiad words came with M8-ADMIN-07, `tests/admin_m8.rs`)
+    "sethero", "givehero", // the coliseum doors are not in the list of AdminDoorControl
+    "open1", "close1",
 ];
 
 fn setup() -> (World, Log) {

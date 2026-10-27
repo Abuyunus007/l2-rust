@@ -32,7 +32,7 @@
 // `World::cancel_active_trade`.
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - the olympiad check (M8),
+// - (the olympiad checks are in: `request.rs`, `store.rs`, M8-OLY-01)
 //   a summoned pet's control item and a mounted strider's saddle (no summons or mounts yet), cursed weapons.
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.
 // - `Player.setTradeRefusal` is only called by the script `AdminAdmin` (`//tradeoff`), a later card;

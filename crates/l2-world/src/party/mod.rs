@@ -30,8 +30,8 @@
 //   the channel user commands and chat, the loot right of a raid boss).
 // - `matching.rs`: the party matching rooms and the waiting list (L-03).
 // - `loot_vote.rs`: changing the loot rule of a running party by vote (L-03).
-// - Dimensional rift, festival, Underground Coliseum, olympiad, events: later milestones; each
-//   is marked where Java asks. Duels are `duel.rs` (it hooks `Party.removePartyMember` and
+// - Dimensional rift, festival, Underground Coliseum, events: M8-FEST-01 and the script
+//   milestone; each is marked where Java asks. The Olympiad is `olympiad/` (M8-OLY-01). Duels are `duel.rs` (it hooks `Party.removePartyMember` and
 //   `setLeader`).
 // - `BlockList.isBlocked` in `RequestJoinParty` and the party chat: `friends.rs` (M6-FRIEND-01).
 

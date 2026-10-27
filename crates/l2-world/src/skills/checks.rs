@@ -8,7 +8,7 @@
 // Java: mechanics/skill/Skill.java (isContinuous, getTargetList: the messages the handlers send)
 //
 // # Not modelled (each refuses a cast in Java; none of these states exists yet)
-// Observer mode, duels, olympiad, siege friends and territory wars, event
+// Observer mode, duels, siege friends and territory wars, event
 // monsters, castle and fort sieges of doors (a door in a siege zone has no castle or fort yet),
 // the access level's `allowPeaceAttack` (not loaded: no level has it).
 

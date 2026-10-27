@@ -83,7 +83,7 @@ fn find_char_id(world: &World, key: &str) -> String {
 
 /// `DATE_FORMATTER.format(Instant.ofEpochMilli(expiration).atZone(ZoneId.systemDefault()))` with
 /// the pattern `dd/MM/yyyy HH:mm:ss`.
-fn format_date(epoch_ms: i64) -> String {
+pub(super) fn format_date(epoch_ms: i64) -> String {
     let local = epoch_ms.saturating_add(l2_util::time::local_offset_millis(epoch_ms));
     let seconds = local.div_euclid(1000);
     let days = seconds.div_euclid(86_400);

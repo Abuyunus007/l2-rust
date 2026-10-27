@@ -34,8 +34,8 @@
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `setInventoryBlockingStatus(true)` (nothing
-//   reads the 1.5 s inventory lock yet), cursed weapons, the olympiad, a summoned pet's
-//   control item.
+//   reads the 1.5 s inventory lock yet), a summoned pet's
+//   control item. (Cursed weapons and the Olympiad exist since M8; the warehouse does not read them.)
 // - Castles and fortresses (`FortManager`, the vault): M7. The clan hall manager works (M7-CH-01).
 // - `ItemProcessType` logging (`LogItems`), the GM audit, the clan warehouse script events.
 // - The duplicate stackable rows `ItemContainer.restore()` merges and deletes.

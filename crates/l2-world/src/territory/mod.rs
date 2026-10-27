@@ -52,7 +52,7 @@
 //   quests and their `onEnterWorld` are marked `// D-05:` where Java calls them.
 // - `MakeMeNoble` of the Territory Managers completes the noblesse quests (D-05) and needs the
 //   `nobless` column to be stored (the character store keeps the row's value): marked.
-// - The olympiad (`isInOlympiadMode`, M8) of the ward skills.
+// - The olympiad check of the ward skills is in (`ward.rs`, M8-OLY-01).
 
 mod admin;
 mod flags;
