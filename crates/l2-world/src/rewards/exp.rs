@@ -1121,8 +1121,8 @@ impl World {
             // Capping loss to 10% of current level experience.
             lost_exp = lost_exp.min(current_level_exp / 10);
             // Reduced for festival and war kills (`isAtWarWith(pk)`), none for the advent
-            // blessing: the festival is not modelled.
-            if self.is_at_war_with(id, killer) {
+            // blessing.
+            if self.is_festival_participant(id) || self.is_at_war_with(id, killer) {
                 lost_exp /= 4;
             }
         }

@@ -148,8 +148,14 @@ impl World {
         if !self.is_in_party(requestor) {
             self.create_new_party_invitation(target, requestor, distribution_type_id);
         } else {
-            // "You cannot invite a player when you are in the Dimensional Rift": no rift.
-            self.add_target_to_party(target, requestor);
+            if self.is_in_dimensional_rift(requestor) {
+                self.send_message(
+                    requestor,
+                    "You cannot invite a player when you are in the Dimensional Rift.",
+                );
+            } else {
+                self.add_target_to_party(target, requestor);
+            }
         }
     }
 
@@ -297,8 +303,13 @@ impl World {
         let Some(party) = self.party_of(player) else {
             return;
         };
-        // Underground Coliseum message (M8-GAMES-01); the dimensional rift does not exist.
+        // Underground Coliseum message (M8-GAMES-01).
         if self.minigame_refuses_party_leave(player) {
+            return;
+        }
+        // Dimensional rift (M8-FEST-01).
+        if self.is_in_dimensional_rift(player) && !self.rift_revived_at_waiting_room(player) {
+            self.send_message(player, "You can't exit party when you are in Dimensional Rift.");
             return;
         }
         self.remove_party_member(party, player, PartyMessageType::Left);
@@ -314,8 +325,16 @@ impl World {
         if !self.is_party_leader(player) {
             return;
         }
-        // Underground Coliseum message (M8-GAMES-01); the dimensional rift does not exist.
+        // Underground Coliseum message (M8-GAMES-01).
         if self.minigame_refuses_party_leave(player) {
+            return;
+        }
+        // Dimensional rift (M8-FEST-01).
+        if self.is_in_dimensional_rift(player) && !self.rift_revived_at_waiting_room(player) {
+            self.send_message(
+                player,
+                "You can't dismiss party member when you are in Dimensional Rift.",
+            );
             return;
         }
         if let Some(member) = self.party_member_by_name(party, name) {

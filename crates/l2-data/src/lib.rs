@@ -13,6 +13,7 @@ pub mod buylist;
 pub mod class_list;
 pub mod cubic;
 pub mod cursed_weapon;
+pub mod dimensional_rift;
 pub mod door;
 pub mod enchant;
 pub mod enchant_hp_bonus;
@@ -68,6 +69,7 @@ pub use cubic::{
     HpConditionType,
 };
 pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
+pub use dimensional_rift::{RiftSpawnDef, RiftSpawns};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,

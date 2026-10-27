@@ -1888,7 +1888,72 @@ pub async fn read_seven_signs(
 ) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
     let players = repo.load_all().await?.into_iter().map(signs_player_of).collect();
     let status = repo.load_status().await?.map(seven_signs_status_of);
-    Ok(l2_world::sevensigns::SevenSignsLoad { players, status })
+    let festival = repo
+        .load_festival()
+        .await?
+        .into_iter()
+        .map(festival_data_of)
+        .collect();
+    Ok(l2_world::sevensigns::SevenSignsLoad {
+        players,
+        status,
+        festival,
+    })
+}
+
+/// A `seven_signs_festival` row as the world keeps it (`restoreFestivalData`).
+pub fn festival_data_of(r: l2_db::FestivalRow) -> l2_world::sevensigns::FestivalData {
+    l2_world::sevensigns::FestivalData {
+        festival_id: r.festival_id,
+        cabal: r.cabal,
+        cycle: r.cycle,
+        date: i64::try_from(r.date).unwrap_or(i64::MAX),
+        score: r.score,
+        members: r.members,
+    }
+}
+
+/// A world festival set as the row `saveFestivalData` writes (`Long.parseLong(date)`).
+pub fn festival_row(d: &l2_world::sevensigns::FestivalData) -> l2_db::FestivalRow {
+    l2_db::FestivalRow {
+        festival_id: d.festival_id,
+        cabal: d.cabal.clone(),
+        cycle: d.cycle,
+        date: u64::try_from(d.date).unwrap_or(0),
+        score: d.score,
+        members: d.members.clone(),
+    }
+}
+
+/// Java `DimensionalRiftManager.loadRooms()` (read only). A database that cannot be read gives no
+/// rooms, like Java ("Can't load Dimension Rift zones").
+pub async fn load_dimensional_rift_rooms(pool: &Pool) -> Vec<l2_world::sevensigns::RiftRoomDef> {
+    match l2_db::DimensionalRiftRepository::new(pool.clone())
+        .load_all()
+        .await
+    {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|r| l2_world::sevensigns::RiftRoomDef {
+                kind: i8::try_from(r.kind).unwrap_or(i8::MAX),
+                room: i8::try_from(r.room_id).unwrap_or(i8::MAX),
+                x_min: r.x_min,
+                x_max: r.x_max,
+                y_min: r.y_min,
+                y_max: r.y_max,
+                z_min: r.z_min,
+                z_max: r.z_max,
+                x_t: r.x_t,
+                y_t: r.y_t,
+                z_t: r.z_t,
+                boss: r.boss > 0,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Can't load Dimension Rift zones. {e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `SevenSigns.restoreSevenSignsData()` (read only at start, D-53). A database that cannot be
@@ -4970,6 +5035,10 @@ impl PlayerStore for DbStore {
                 self.seven_signs
                     .update_status(&seven_signs_status_row(status))
                     .await?
+            }
+            SevenSignsWrite::ReplaceFestival(rows) => {
+                let rows: Vec<l2_db::FestivalRow> = rows.iter().map(festival_row).collect();
+                self.seven_signs.replace_festival(&rows).await?
             }
         }
         Ok(())

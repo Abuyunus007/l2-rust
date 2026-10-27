@@ -89,6 +89,13 @@ impl Default for BypassHandlers {
         // dist/game/data/scripts/handlers/bypass/npc/{OlympiadManagerLink,OlympiadObservation}.java
         // (M8-OLY-01)
         crate::olympiad::register_bypass_handlers(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/Festival.java (M8-FEST-01)
+        handlers.register("Festival", crate::sevensigns::festival_bypass_handler);
+        handlers.register("FestivalDesc", crate::sevensigns::festival_bypass_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Rift.java (M8-FEST-01)
+        handlers.register("EnterRift", crate::sevensigns::rift_bypass_handler);
+        handlers.register("ChangeRiftRoom", crate::sevensigns::rift_bypass_handler);
+        handlers.register("ExitRift", crate::sevensigns::rift_bypass_handler);
         // dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java (L-05)
         handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
         handlers

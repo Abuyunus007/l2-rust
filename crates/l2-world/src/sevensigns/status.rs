@@ -5,7 +5,6 @@
 // With `CycleDatabaseWrites = False` the rows are read again before the page is shown (D-50,
 // D-53: the Java game server runs the cycle); a failed read shows nothing.
 
-use l2_protocol_game::server::ssq::FestivalHighScore;
 use l2_protocol_game::server::{SevenSignsView, SsqStatus};
 use l2_util::ObjectId;
 
@@ -44,14 +43,6 @@ impl World {
     /// The values `SSQStatus.writeImpl` reads from `SevenSigns` for one character.
     pub fn ss_view(&self, char_id: i32) -> SevenSignsView {
         let s = &self.seven_signs.status;
-        // FOLLOW-UP(festival): `SevenSignsFestival.getHighestScoreData` without festival data is
-        // Java's blank set (score 0, members "", which splits into one empty name).
-        let blank = FestivalHighScore {
-            dusk_score: 0,
-            dusk_members: vec![String::new()],
-            dawn_score: 0,
-            dawn_members: vec![String::new()],
-        };
         SevenSignsView {
             winning_cabal: s.cabal_highest_score(),
             current_period: s.active_period,
@@ -71,7 +62,9 @@ impl World {
             seal_owner: s.seal_owners,
             dawn_proportion: s.dawn_seal_totals,
             dusk_proportion: s.dusk_seal_totals,
-            festivals: vec![blank; 5],
+            // `SevenSignsFestival.getHighestScoreData`: Java's blank set (score 0, members "",
+            // which splits into one empty name) where the cycle has no data.
+            festivals: self.festival_high_scores(),
         }
     }
 }

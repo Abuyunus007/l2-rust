@@ -14,8 +14,7 @@
 // command is in the cache ([`PlayerTalk::validate`]).
 //
 // # What is left out, with the system that brings it
-// - `SevenSignsFestival`: `%festivalMins%` stays in the page (the festival's card). Olympiad
-//   state: `isHero` reads as false (M8-HERO-01).
+// - Olympiad state: `isHero` reads as false (M8-HERO-01).
 // - Cursed weapons (`isCursedWeaponEquipped`), `_isBusy` NPCs (nothing sets it), quest dialogs and
 //   `ON_NPC_FIRST_TALK` listeners (scripts, D-05).
 // - `GeneralConfig.HTM_CACHE = false` (lazy): the cache is always preloaded, see `l2_data::HtmCache`.
@@ -548,7 +547,9 @@ impl World {
         }
         html.html = html.html.replace("%npcname%", &name);
         html.html = html.html.replace("%objectId%", &npc.0.to_string());
-        // FOLLOW-UP(Seven Signs): `%festivalMins%` is `SevenSignsFestival.getTimeToNextFestivalStr()`.
+        html.html = html
+            .html
+            .replace("%festivalMins%", &self.festival_time_to_next_festival_str());
         self.send_html(player, &html);
 
         // ActionFailed, "to avoid that the client wait another packet".

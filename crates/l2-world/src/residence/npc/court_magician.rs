@@ -240,7 +240,7 @@ impl World {
         }
         // `isFestivalParticipant()` (Seven Signs) and `isOnEvent()` are not modelled.
         let flying = self.stats(target).is_some_and(|v| v.is_flying_mounted());
-        if flying || self.is_combat_flag_equipped(target) {
+        if self.is_festival_participant(target) || flying || self.is_combat_flag_equipped(target) {
             return refuse(
                 self,
                 SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning,

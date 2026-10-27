@@ -746,12 +746,18 @@ impl World {
         };
         let rate = |base: f64| view.calc_stat(Stat::RegenerateHpRate, base, None, None);
         // Java's order: festival or siege, clan hall, castle, fort.
-        // `calcSiegeRegenModifier(player)` when positive (the festival comes first: M8).
-        let siege = self.siege_regen_modifier(id);
+        // The festival modifier of a participant, else `calcSiegeRegenModifier(player)` when
+        // positive.
+        let festival = self.festival_regen_modifier(id);
+        let siege = if festival.is_some() {
+            0.0
+        } else {
+            self.siege_regen_modifier(id)
+        };
         let clan_hall = self.clan_hall_regen_factor(id, crate::residence::HALL_FUNC_RESTORE_HP);
-        let multipliers: Vec<f64> = (siege > 0.0)
-            .then_some(siege)
+        let multipliers: Vec<f64> = festival
             .into_iter()
+            .chain((siege > 0.0).then_some(siege))
             .chain(clan_hall)
             .chain(self.residence_regen_factors(id, crate::residence::CASTLE_FUNC_RESTORE_HP))
             .collect();
@@ -780,9 +786,11 @@ impl World {
         };
         let rate = |base: f64| view.calc_stat(Stat::RegenerateMpRate, base, None, None);
         let clan_hall = self.clan_hall_regen_factor(id, crate::residence::HALL_FUNC_RESTORE_MP);
-        // Then the castle's and the fortress's (M7-SIEGE-01).
-        let multipliers: Vec<f64> = clan_hall
+        // The festival modifier comes first, then the castle's and the fortress's (M7-SIEGE-01).
+        let multipliers: Vec<f64> = self
+            .festival_regen_modifier(id)
             .into_iter()
+            .chain(clan_hall)
             .chain(self.residence_regen_factors(id, crate::residence::CASTLE_FUNC_RESTORE_MP))
             .collect();
         calc_mp_regen(&MpRegenInput {

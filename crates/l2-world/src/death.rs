@@ -342,7 +342,8 @@ impl World {
 
         // Unsummon Cubics (no `UserInfo`: the player's death sends its own updates).
         self.clear_cubics(id);
-        // Channeling, dimensional rift, agathion: not modelled.
+        // Channeling, agathion: not modelled. A dead member of a dimensional rift party is counted.
+        self.rift_member_dead(id);
         // M5: `calculateDeathPenaltyBuffLevel(killer)` (the death penalty buff is a skill).
         if let Some(summon) = self.summon_of(id) {
             if self.is_betrayed(summon) {
@@ -593,8 +594,7 @@ impl World {
     /// Java `RequestRestartPoint.runImpl` + `portPlayer`.
     ///
     /// The clan hall, castle, fortress and siege headquarters restart points and the attackers'
-    /// wait are the siege's (`siege/restart.rs`, M7-SIEGE-01). Not modelled: events, festival
-    /// participants.
+    /// wait are the siege's (`siege/restart.rs`, M7-SIEGE-01). Not modelled: events.
     pub(crate) fn on_request_restart_point(&mut self, id: ObjectId, point_type: i32) {
         if !self.players.contains_key(&id) {
             return;
@@ -624,8 +624,14 @@ impl World {
             .get(&id)
             .map(|p| p.data.name.clone())
             .unwrap_or_default();
-        // `player.isJailed()` forces 27; `isFestivalParticipant()` would force 5 (not modelled).
-        let point_type = if self.is_jailed(id) { 27 } else { point_type };
+        // `player.isJailed()` forces 27; `isFestivalParticipant()` forces 5.
+        let point_type = if self.is_jailed(id) {
+            27
+        } else if self.is_festival_participant(id) {
+            5
+        } else {
+            point_type
+        };
         let mut instance = 0;
         let location: Option<(i32, i32, i32)> = match point_type {
             // To clanhall.
@@ -666,7 +672,7 @@ impl World {
             // Fixed or Player is a festival participant.
             5 => {
                 let is_gm = self.is_gm(id);
-                if !is_gm && !self.have_item_for_self_resurrection(id) {
+                if !is_gm && !self.is_festival_participant(id) && !self.have_item_for_self_resurrection(id) {
                     warn!(
                         "Player [{name}] called RestartPointPacket - Fixed and he isn't festival participant!"
                     );

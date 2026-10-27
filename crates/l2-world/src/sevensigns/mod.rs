@@ -39,16 +39,20 @@
 // - Kain's own contributions add to the cabal scores in its memory only while the switch is off;
 //   Sieghardt never sees them. That is D-53's price.
 //
+// - `festival.rs` (M8-FEST-01): the Festival of Darkness (`SevenSignsFestival`, the festival guides
+//   and monsters, `seven_signs_festival`). `rift.rs` (M8-FEST-01): `DimensionalRiftManager`,
+//   `DimensionalRift`, `DimensionalRiftRoom`. Their global rows follow the same switch.
+//
 // # Left out, with the card that brings it
-// - The Festival of Darkness (`SevenSignsFestival`, `seven_signs_festival`): its own card. The
-//   status row's festival cycle and accumulated bonuses are kept as read and written back; the
-//   festival page of `SSQStatus` shows Java's blank data; `%festivalMins%` stays in the pages.
 // - `//mammon_find`, `//mammon_respawn` (`AdminMammon`): the admin card of M8.
 
 mod auto_spawn;
 mod cycle;
+mod festival;
+mod festival_data;
 mod gatekeeper;
 mod priest;
+mod rift;
 mod status;
 
 use std::collections::BTreeMap;
@@ -62,6 +66,19 @@ pub use auto_spawn::{AutoSpawnGroup, AutoSpawnTimer};
 pub use cycle::{
     calc_ancient_adena_reward, calc_contribution_score, is_next_period_change_in_past, next_period_change_ms,
     ssq_info_state,
+};
+pub use festival::{
+    FESTIVAL_COUNT, FESTIVAL_LEVEL_MAX_31, FESTIVAL_LEVEL_MAX_42, FESTIVAL_LEVEL_MAX_53,
+    FESTIVAL_LEVEL_MAX_64, FESTIVAL_LEVEL_MAX_NONE, FESTIVAL_LEVEL_SCORES, FESTIVAL_OFFERING_ID,
+    FESTIVAL_OFFERING_VALUE, FestivalData, FestivalSettings, FestivalStage, FestivalTimer, GuideInfo,
+    festival_bypass_handler, festival_name, max_level_for_festival,
+};
+pub use festival_data::{
+    FESTIVAL_DAWN_PLAYER_SPAWNS, FESTIVAL_DAWN_WITCH_SPAWNS, FESTIVAL_DUSK_PLAYER_SPAWNS,
+    FESTIVAL_DUSK_WITCH_SPAWNS,
+};
+pub use rift::{
+    DIMENSIONAL_FRAGMENT_ITEM_ID, RiftId, RiftRoomDef, RiftSettings, RiftTimer, rift_bypass_handler,
 };
 
 /// `SevenSigns.SEVEN_SIGNS_HTML_PATH`.
@@ -210,6 +227,8 @@ pub struct SevenSignsSettings {
     pub manors_agreement_id: i32,
     /// `NpcConfig.ANNOUNCE_MAMMON_SPAWN` (`AnnounceMammonSpawn`).
     pub announce_mammon_spawn: bool,
+    /// The keys of the Festival of Darkness (M8-FEST-01).
+    pub festival: FestivalSettings,
 }
 
 impl Default for SevenSignsSettings {
@@ -226,6 +245,7 @@ impl Default for SevenSignsSettings {
             join_dawn_fee: 50_000,
             manors_agreement_id: 6388,
             announce_mammon_spawn: false,
+            festival: FestivalSettings::default(),
         }
     }
 }
@@ -358,6 +378,8 @@ impl SevenSignsStatus {
 pub struct SevenSignsLoad {
     pub players: Vec<SignsPlayer>,
     pub status: Option<SevenSignsStatus>,
+    /// Every `seven_signs_festival` row (M8-FEST-01).
+    pub festival: Vec<FestivalData>,
 }
 
 /// What the session read at `CharacterSelect` (`PlayerProfile::seven_signs_refresh`): the member's
@@ -379,6 +401,9 @@ pub enum SevenSignsWrite {
     UpdateAllPlayers(Vec<SignsPlayer>),
     /// `saveSevenSignsStatus()` (global, only with `CycleDatabaseWrites`).
     UpdateStatus(SevenSignsStatus),
+    /// `SevenSignsFestival.saveFestivalData()`: `REPLACE INTO seven_signs_festival` of every row
+    /// (global, only with `CycleDatabaseWrites`, M8-FEST-01).
+    ReplaceFestival(Vec<FestivalData>),
 }
 
 /// What the world does once the Seven Signs rows were read again (D-50).
@@ -388,6 +413,12 @@ pub enum SevenSignsThen {
     Nothing,
     /// `RequestSSQStatus`: show the page.
     Status { player: ObjectId, page: i8 },
+    /// A festival guide's score page (4, 5 or 6): show it (M8-FEST-01).
+    FestivalPage {
+        player: ObjectId,
+        npc: ObjectId,
+        page: i32,
+    },
 }
 
 /// The Seven Signs timers (one `TimerKind::SevenSigns`).
@@ -399,6 +430,10 @@ pub enum SevenSignsTimer {
     GlobalSave,
     /// The spawn and despawn tasks of `AutoSpawnHandler`.
     AutoSpawn(AutoSpawnTimer),
+    /// The festival manager's round and its stages (M8-FEST-01).
+    Festival(FestivalTimer),
+    /// The tasks of the Dimensional Rift (M8-FEST-01).
+    Rift(RiftTimer),
 }
 
 /// The Seven Signs state of the world.
@@ -414,6 +449,10 @@ pub(crate) struct SevenSignsWorld {
     pub(crate) save_timer: Option<TimerId>,
     /// `AutoSpawnHandler`.
     pub(crate) auto_spawn: auto_spawn::AutoSpawnWorld,
+    /// `SevenSignsFestival` (M8-FEST-01).
+    pub(crate) festival: festival::FestivalWorld,
+    /// `DimensionalRiftManager` and the running rifts (M8-FEST-01).
+    pub(crate) rift: rift::RiftWorld,
     /// `load_seven_signs` ran (the game server always loads; bare test worlds may not).
     pub(crate) loaded: bool,
 }
@@ -434,6 +473,8 @@ impl Default for SevenSignsWorld {
             period_timer: None,
             save_timer: None,
             auto_spawn: auto_spawn::AutoSpawnWorld::default(),
+            festival: festival::FestivalWorld::default(),
+            rift: rift::RiftWorld::default(),
             loaded: false,
         }
     }

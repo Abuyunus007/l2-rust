@@ -605,7 +605,16 @@ impl World {
             self.send_message(player, "You are in a siege, you cannot go to your partner.");
             return false;
         }
-        // (Festival and dimensional rift: not ported yet.)
+        if self.is_festival_participant(player) {
+            self.send_message(player, "You are in a festival.");
+            return false;
+        }
+        if self.is_in_dimensional_rift(player) {
+            self.send_message(player, "You are in the dimensional rift.");
+            // NOTE(java-quirk): the second line is the duel message of the partner.
+            self.send_message(player, "Your partner is in a duel.");
+            return false;
+        }
         if self.is_inside_zone(player, ZoneId::NoSummonFriend) {
             self.send_message(player, "You are in area which blocks summoning.");
             return false;
@@ -640,7 +649,15 @@ impl World {
             self.send_message(player, "Your partner is in a duel.");
             return false;
         }
-        // (Partner: festival, dimensional rift: not ported yet.) Observer mode: M8-OLY-01.
+        if self.is_festival_participant(partner) {
+            self.send_message(player, "Your partner is in a festival.");
+            return false;
+        }
+        if self.is_in_dimensional_rift(partner) {
+            self.send_message(player, "Your partner is in dimensional rift.");
+            return false;
+        }
+        // Observer mode (M8-OLY-01).
         if self.in_observer_mode(partner) {
             self.send_message(player, "Your partner is in the observation.");
             return false;

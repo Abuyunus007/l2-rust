@@ -555,6 +555,39 @@ pub fn seven_signs_settings(
         join_dawn_fee: f.ssq_join_dawn_adena_fee,
         manors_agreement_id: f.ssq_manors_agreement_id,
         announce_mammon_spawn: config.npc.announce_mammon_spawn,
+        festival: l2_world::sevensigns::FestivalSettings {
+            min_player: f.alt_festival_min_player,
+            manager_start: f.alt_festival_manager_start,
+            length: f.alt_festival_length,
+            cycle_length: f.alt_festival_cycle_length,
+            first_spawn: f.alt_festival_first_spawn,
+            first_swarm: f.alt_festival_first_swarm,
+            second_spawn: f.alt_festival_second_spawn,
+            second_swarm: f.alt_festival_second_swarm,
+            chest_spawn: f.alt_festival_chest_spawn,
+            win_points: f.festival_win_points,
+        },
+    }
+}
+
+/// The Dimensional Rift values of `General.ini` (M8-FEST-01).
+pub fn rift_settings(config: &GameConfig) -> l2_world::sevensigns::RiftSettings {
+    let g = &config.general;
+    l2_world::sevensigns::RiftSettings {
+        min_party_size: g.rift_min_party_size,
+        max_jumps: g.rift_max_jumps,
+        spawn_delay: g.rift_spawn_delay,
+        auto_jumps_time_min: g.rift_auto_jumps_time_min,
+        auto_jumps_time_max: g.rift_auto_jumps_time_max,
+        boss_room_time_multiply: g.rift_boss_room_time_mutiply,
+        enter_cost: [
+            g.rift_enter_cost_recruit,
+            g.rift_enter_cost_soldier,
+            g.rift_enter_cost_officer,
+            g.rift_enter_cost_captain,
+            g.rift_enter_cost_commander,
+            g.rift_enter_cost_hero,
+        ],
     }
 }
 
@@ -901,6 +934,11 @@ impl Server {
         let seven_signs_settings = seven_signs_settings(&config, &paths.config_dir);
         let seven_signs_load = persist::load_seven_signs(&pool).await;
         let auto_spawns = persist::load_auto_spawns(&pool).await;
+        // Java: DimensionalRiftManager (the `dimensional_rift` rooms, read only, and
+        // data/DimensionalRift.xml; M8-FEST-01).
+        let rift_settings = rift_settings(&config);
+        let rift_rooms = persist::load_dimensional_rift_rooms(&pool).await;
+        let rift_spawns = l2_data::RiftSpawns::load(&datapack_root);
         // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
         // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
         let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
@@ -1121,6 +1159,9 @@ impl Server {
                     world.load_seven_signs(seven_signs_load);
                     world.load_auto_spawns(auto_spawns);
                     world.spawn_seven_signs_npc();
+                    // Java: DimensionalRiftManager (M8-FEST-01).
+                    world.set_rift_settings(rift_settings);
+                    world.load_dimensional_rift(rift_rooms, &rift_spawns);
                     // Java: CursedWeaponsManager (GameServer, after the items and the skills;
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
