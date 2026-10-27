@@ -731,6 +731,8 @@ impl World {
             // know them.
             .filter(|id| !self.admin.zones.debug_items.contains(id))
             .filter_map(|id| self.ground.items.get(&id))
+            // "Cursed Items not saved to ground, prevent double save."
+            .filter(|item| !self.is_cursed_item(item.data.item_id))
             .map(|item| GroundItemRow {
                 object_id: item.object_id(),
                 item_id: item.data.item_id,

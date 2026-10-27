@@ -28,7 +28,7 @@
 //
 // Not here: the flying movement rules (geodata, falling) wait for the mounts card; the collect
 // skill tree a flying form adds to the skill list is not loaded; the cursed weapon forms (301, 302)
-// work as forms, equipping the weapon is the cursed weapons' (M8); the admin `//transform`
+// work as forms (`cursed/` puts a player in one when the weapon is picked up); the admin `//transform`
 // commands are the admin cards'.
 
 mod apply;

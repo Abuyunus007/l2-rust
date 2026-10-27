@@ -1631,6 +1631,7 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
         run_spd_boost: p.run_spd_boost,
         alt_weight_limit: p.alt_weight_limit,
         champion_enable: config.champion_monsters.champion_enable,
+        champion_hp: config.champion_monsters.champion_hp,
         champion_atk: config.champion_monsters.champion_atk,
         champion_spd_atk: config.champion_monsters.champion_spd_atk,
         olympiad_enchant_limit: config.olympiad.olympiad_enchant_limit,

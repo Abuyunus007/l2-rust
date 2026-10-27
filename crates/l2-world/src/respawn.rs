@@ -65,21 +65,32 @@ pub(crate) struct PendingRespawn {
     pub(crate) enchant: i32,
 }
 
+/// The first index of the runtime spawns (the ones the game makes while it runs: admin spawns,
+/// siege guards, fortress NPCs). The datapack's spawns take the indices below it. The base is
+/// fixed so the indices that siege code keeps stay valid when `//spawn_reload` replaces the
+/// datapack's spawn list with one of another length.
+pub(crate) const RUNTIME_SPAWN_BASE: usize = 1 << 24;
+
 impl World {
-    /// The number of spawns of the datapack. Runtime spawns come after them in the index space.
+    /// The number of spawns of the datapack; its spawns have the indices below this.
     pub(crate) fn static_spawn_count(&self) -> usize {
         self.npc_world.spawn_data().map_or(0, |s| s.spawns().len())
+    }
+
+    /// The indices of every spawn: the datapack's, then the runtime ones.
+    pub(crate) fn all_spawn_indices(&self) -> impl Iterator<Item = usize> + use<> {
+        let runtime = self.death.runtime_spawns.len();
+        (0..self.static_spawn_count()).chain(RUNTIME_SPAWN_BASE..RUNTIME_SPAWN_BASE + runtime)
     }
 
     /// The definition of spawn `index`: an entry of the datapack's spawn list, or else a spawn an
     /// admin command made ([`World::admin_spawn`]). One index space for both, so `Npc::spawn`
     /// and the spawn runtime work the same for each.
     pub(crate) fn spawn_def(&self, index: usize) -> Option<&l2_data::spawn::NpcSpawn> {
-        let static_count = self.static_spawn_count();
-        if index < static_count {
+        if index < RUNTIME_SPAWN_BASE {
             self.npc_world.spawn_data().and_then(|s| s.spawns().get(index))
         } else {
-            self.death.runtime_spawns.get(index - static_count)
+            self.death.runtime_spawns.get(index - RUNTIME_SPAWN_BASE)
         }
     }
 
@@ -106,7 +117,7 @@ impl World {
         } else {
             respawn_delay.max(1).saturating_mul(1000)
         };
-        let index = self.static_spawn_count() + self.death.runtime_spawns.len();
+        let index = RUNTIME_SPAWN_BASE + self.death.runtime_spawns.len();
         self.death.runtime_spawns.push(l2_data::spawn::NpcSpawn {
             npc_id,
             amount,
@@ -145,7 +156,7 @@ impl World {
     /// A spawn the game makes at runtime (Java `new Spawn(npcId)` with its setters, e.g. the
     /// castle siege guards): its index in the one spawn index space. Nothing is spawned yet.
     pub(crate) fn add_runtime_spawn(&mut self, spawn: l2_data::spawn::NpcSpawn) -> usize {
-        let index = self.static_spawn_count() + self.death.runtime_spawns.len();
+        let index = RUNTIME_SPAWN_BASE + self.death.runtime_spawns.len();
         self.death.runtime_spawns.push(spawn);
         index
     }
@@ -511,5 +522,91 @@ impl World {
         let mut report = SpawnReport::default();
         self.spawn_units(&mut state, &slots, entry, 1, &mut report);
         self.death.groups.insert(group_index, state);
+    }
+}
+
+// ---------------------------------------------------------------------------- admin: reload, store
+
+impl World {
+    /// The first half of Java's `//respawnall` and `//spawn_reload` (and what `//unspawnall` does
+    /// to the NPCs): the pending respawns and group replacements are dropped, every spawn stops
+    /// respawning, every NPC is deleted and the census of the spawns and groups starts empty.
+    ///
+    /// The runtime spawns (admin spawns, siege guards) keep their definitions: their indices are
+    /// held by the siege code, and the NPCs they made are gone with the rest, like in Java.
+    pub(crate) fn unspawn_all_spawns(&mut self) {
+        self.timers
+            .cancel_where(|kind| matches!(kind, TimerKind::Respawn(_) | TimerKind::GroupSpawn { .. }));
+        // `SpawnGroupTable.deactivateAll()`, `SpawnGroupTaskManager.clear()`: no group replaces a
+        // unit while the delete loop below fires the death hooks (the spawns stop respawning).
+        self.death.groups.clear();
+        for id in self.npc_ids() {
+            // `spawn.stopRespawn()` for the spawn the NPC belongs to.
+            if let Some(index) = self.npcs.get(&id).and_then(|n| n.spawn) {
+                self.stop_respawn(index);
+            }
+            self.delete_npc(id);
+        }
+        // `DayNightSpawnManager.cleanUp()` and `SpawnTable.removeSpawn`: nothing is registered.
+        self.npc_world.day.clear();
+        self.npc_world.night.clear();
+        self.death.spawns.clear();
+        self.death.groups.clear();
+        self.death.respawns.clear();
+    }
+
+    /// The answer to `ControlRequest::ReloadSpawns`: the new spawn list is installed and
+    /// everything starts like at the server start (`SpawnData.load()`, then the day and night
+    /// creatures of the time of day). Java ends with "NPC respawn completed!" to the GMs.
+    pub(crate) fn on_spawns_reloaded(&mut self, spawns: std::sync::Arc<l2_data::SpawnData>) {
+        // Whatever came back between the command and the answer goes too.
+        self.unspawn_all_spawns();
+        let Some(templates) = self.npc_world.templates_arc() else {
+            return;
+        };
+        self.set_npc_data(templates, spawns);
+        let report = self.spawn_all_npcs(World::is_night_now());
+        debug!("spawn reload: {} NPCs now", report.npcs);
+        self.broadcast_message_to_gms("NPC respawn completed!");
+    }
+
+    /// Java `SpawnData.addNewSpawn(spawn)`'s file part: the spawn goes into the spawn file of its
+    /// map tile, written by the game server task (D-15, no file IO inside a tick). `respawn_delay`
+    /// is the seconds the command gave (`setRespawnDelay`).
+    pub(crate) fn store_new_spawn(
+        &mut self,
+        npc_id: i32,
+        position: (i32, i32, i32),
+        heading: i32,
+        amount: i32,
+        respawn_delay: i32,
+    ) {
+        let Some(template) = self.npc_world.template(npc_id) else {
+            return;
+        };
+        // `title.isEmpty() ? name : name + " - " + title`.
+        let label = if template.title.is_empty() {
+            template.name.clone()
+        } else {
+            format!("{} - {}", template.name, template.title)
+        };
+        // `getRespawnDelay() / 1000` of a spawn whose delay is `max(1, delay) * 1000` (0: none).
+        let respawn_delay_secs = if respawn_delay == 0 {
+            0
+        } else {
+            respawn_delay.max(1)
+        };
+        self.outbox.control(crate::outbox::ControlRequest::StoreSpawn {
+            spawn: l2_data::spawn_store::NewSpawn {
+                npc_id,
+                amount,
+                x: position.0,
+                y: position.1,
+                z: position.2,
+                heading,
+                respawn_delay_secs,
+                label,
+            },
+        });
     }
 }
