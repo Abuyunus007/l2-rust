@@ -5,6 +5,7 @@
 //! mirror the column types.
 
 mod account_data;
+mod airships;
 mod announcements;
 mod auctions;
 mod bookmarks;
@@ -33,9 +34,11 @@ mod offline_trades;
 mod petition_feedback;
 mod pets;
 mod punishments;
+mod random_spawn;
 mod recipes;
 mod recommendations;
 mod residences;
+mod seven_signs;
 mod shortcuts;
 mod sieges;
 mod skills;
@@ -49,6 +52,7 @@ mod wedding;
 pub use account_data::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };
+pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bookmarks::{BookmarkRepository, BookmarkRow};
@@ -89,12 +93,14 @@ pub use offline_trades::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTra
 pub use petition_feedback::PetitionFeedbackRepository;
 pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValues};
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
+pub use random_spawn::{RandomSpawnRepository, RandomSpawnRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use residences::{
     CastleRow, ClanHallRow, FortRow, FunctionRow, FunctionSave, FunctionTable, ResidenceRepository,
     SiegableHallRow,
 };
+pub use seven_signs::{SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use sieges::{
     DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow,

@@ -48,9 +48,9 @@
 // - The fortress sieges (M7-FORT-01), the conquerable halls (M7-CHSIEGE-01) and Territory War
 //   (M7-TW-01) set the player siege state and the siege zones through the API in `player.rs` and
 //   `zone.rs`; their parts of the shared code are marked with their card.
-// - Seven Signs (M8): `SevenSigns.getSealOwner(SEAL_STRIFE)` and the period are read through
-//   [`World::seven_signs_strife_owner`] and [`World::seven_signs_is_seal_validation`], which
-//   answer "no owner" and "seal validation" until M8 ports the real state.
+// - Seven Signs: `SevenSigns.getSealOwner(SEAL_STRIFE)` and the period are read through
+//   [`World::seven_signs_strife_owner`] and [`World::seven_signs_is_seal_validation`], which ask
+//   `sevensigns/` (M8-SS-01).
 // - Hero (M8): `Hero.setCastleTaken`. Scripts (D-05): the `OnCastleSiege*` events.
 
 mod admin;
@@ -624,17 +624,14 @@ impl World {
         }
     }
 
-    /// Java `SevenSigns.getInstance().getSealOwner(SEAL_STRIFE)`: `CABAL_NULL` (0) until M8.
-    // M8: the Seven Signs state.
+    /// Java `SevenSigns.getInstance().getSealOwner(SEAL_STRIFE)`.
     pub fn seven_signs_strife_owner(&self) -> i32 {
-        0
+        self.ss_seal_owner(crate::sevensigns::SEAL_STRIFE)
     }
 
-    /// Java `SevenSigns.getInstance().getCurrentPeriod() == PERIOD_SEAL_VALIDATION`: true until
-    /// M8.
-    // M8: the Seven Signs state.
+    /// Java `SevenSigns.getInstance().getCurrentPeriod() == PERIOD_SEAL_VALIDATION`.
     pub fn seven_signs_is_seal_validation(&self) -> bool {
-        true
+        self.ss_is_seal_validation_period()
     }
 
     /// A siege NPC is gone from the world (its decay or delete): the siege forgets it.

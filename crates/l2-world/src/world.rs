@@ -165,6 +165,11 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// The boats, the air ships and who rides them (M8-VEHICLE-01, `vehicle/`).
+    pub(crate) vehicle: crate::vehicle::VehicleWorld,
+    /// The Seven Signs: the cycle, the members, the seals, the auto spawns (M8-SS-01,
+    /// `sevensigns/`).
+    pub(crate) seven_signs: crate::sevensigns::SevenSignsWorld,
 }
 
 impl World {
@@ -244,6 +249,8 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            vehicle: crate::vehicle::VehicleWorld::default(),
+            seven_signs: crate::sevensigns::SevenSignsWorld::default(),
         }
     }
 
@@ -444,6 +451,7 @@ impl World {
             } => self.on_html_file_loaded(requester, &path, content),
             WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
+            WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
@@ -465,6 +473,8 @@ impl World {
                 self.manor_shutdown();
                 // Java Shutdown: `RaidBossSpawnManager.cleanUp()`, `GrandBossManager.cleanUp()`.
                 self.boss_shutdown();
+                // Java Shutdown: "Save Seven Signs data before closing." (M8-SS-01).
+                self.seven_signs_shutdown();
                 // Java Shutdown: "Save Cursed Weapons data before closing."
                 self.save_cursed_weapons();
                 self.stopped = true;
@@ -486,6 +496,7 @@ impl World {
         }
         // Java: MovementTaskManager.
         self.update_movement();
+        self.update_vehicles();
         // Java: AttackableThinkTaskManager.
         self.think_attackables();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
@@ -682,6 +693,9 @@ impl World {
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
+            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
+            // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
+            ClientInput::Vehicle(input) => self.on_vehicle_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -826,6 +840,8 @@ impl World {
             // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Petition(input) => self.on_petition_input(id, input),
+            // Java: RequestSSQStatus (M8-SS-01)
+            ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
@@ -950,6 +966,8 @@ impl World {
             // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
             TimerKind::Boss(timer) => self.on_boss_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
+            // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
+            TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
@@ -960,6 +978,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
+            TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
         }
     }
 

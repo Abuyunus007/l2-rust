@@ -7,7 +7,7 @@
 // (`enter::build_user_info`), so both views agree.
 // Compared field by field with Java's CharInfo constructor and writeImpl (M3-PLAYERS-01): the
 // speeds, flags and colours come from the same getters as UserInfo; only the GM-invisibility
-// handling differs. Not here yet: boats/airships, summons' relations. The store title of
+// handling differs. Not here yet: summons' relations. The store title of
 // `sendInfo` is `send_store_message` (`trade/store_lists.rs`).
 
 use l2_protocol_game::server::{CharInfo, ExBrExtraUserInfo, RelationChanged, RelationEntry};
@@ -20,7 +20,7 @@ pub(crate) const STEALTH_MASK: i32 = 0x0010_0000;
 use crate::world::World;
 
 impl World {
-    /// Java `Player.sendInfo(player)` for an ordinary player (not in a boat or airship).
+    /// Java `Player.sendInfo(player)`.
     pub(crate) fn send_player_info(&mut self, subject: ObjectId, viewer: ObjectId) {
         self.send_player_info_as(subject, viewer, true);
     }
@@ -41,6 +41,10 @@ impl World {
                 lecture_mark: 1,
             },
         );
+        // `sendInfo` of a player on a boat: `GetOnVehicle`; on an air ship: `ExGetOnAirShip`.
+        if appearing {
+            self.send_rider_get_on(subject, viewer);
+        }
         // Java: RelationChanged only when it differs from what this viewer was told before.
         let relation = self.relation(subject, viewer);
         let auto_attackable = self.is_auto_attackable(subject, viewer);
@@ -81,6 +85,8 @@ impl World {
     pub fn char_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<CharInfo> {
         let player = self.players.get(&subject)?;
         let ui = build_user_info(self, player);
+        // `CharInfo`: a player on a boat or an air ship is described by the place inside it.
+        let (vehicle_id, (x, y, z)) = self.rider_char_view(subject).unwrap_or((0, (ui.x, ui.y, ui.z)));
         let cursed = self.is_cursed_weapon_equipped(subject);
         let invisible = self.objects.get(&subject).is_some_and(|e| e.invisible);
         let gm_sees_invisible = invisible && self.is_visible_for(subject, viewer);
@@ -88,10 +94,10 @@ impl World {
         // `UserInfo` adds for an invisible player.
         let (visual_effects, visual_effects_special, _) = self.abnormal_visual_effects(subject);
         Some(CharInfo {
-            x: ui.x,
-            y: ui.y,
-            z: ui.z,
-            vehicle_id: ui.vehicle_id,
+            x,
+            y,
+            z,
+            vehicle_id,
             object_id: ui.object_id,
             name: ui.name,
             race: ui.race,

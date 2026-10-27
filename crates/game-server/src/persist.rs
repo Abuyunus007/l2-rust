@@ -63,6 +63,7 @@ use l2_db::InstanceTimeRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
+use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{BookmarkRepository, BookmarkRow, ContactRepository};
@@ -76,7 +77,6 @@ use l2_db::{
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
     VariableRepository,
 };
-use l2_db::{CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::InstanceTimeWrite;
@@ -94,6 +94,7 @@ use l2_world::territory::{
     TerritoryLoad, TerritoryRecord, TerritoryRegistrationRecord, TerritoryRows, TerritorySpawnRecord,
     TerritoryWrite,
 };
+use l2_world::{AirshipRow, CursedLoad, CursedRow, CursedWrite, VehicleLoad, VehicleWrite};
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
@@ -109,7 +110,6 @@ use l2_world::{
     RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
     StoredPunishment, SummonWrite,
 };
-use l2_world::{CursedLoad, CursedRow, CursedWrite};
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
@@ -329,6 +329,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// An `airships` write with Java's statement (M8-VEHICLE-01).
+    fn store_vehicle_write(
+        &mut self,
+        _write: &VehicleWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// A cursed weapon write with Java's statement (`cursed_weapons`, and the `items` and
     /// `characters` rows of an owner who is offline, M8-CURSED-01).
     fn store_cursed_write(
@@ -498,6 +506,14 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A write of `seven_signs` / `seven_signs_status` (Java's `SevenSigns` statements, M8-SS-01).
+    fn store_seven_signs(
+        &mut self,
+        _write: &l2_world::sevensigns::SevenSignsWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// A `character_instance_time` row change (M8-INST-01): Java `InstanceManager.setInstanceTime`
     /// / `deleteInstanceTime`.
     fn store_instance_time(
@@ -505,6 +521,14 @@ pub trait PlayerStore: Send + 'static {
         _write: &InstanceTimeWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// Every `seven_signs` row and the status row read again (D-50, M8-SS-01). A store without a
+    /// database has none.
+    fn load_seven_signs(
+        &mut self,
+    ) -> impl Future<Output = Result<l2_world::sevensigns::SevenSignsLoad, PersistError>> + Send {
+        async { Ok(l2_world::sevensigns::SevenSignsLoad::default()) }
     }
 
     /// A write of `mods_wedding` (Java's `Couple` statements, M8-MISC-01).
@@ -1044,6 +1068,27 @@ async fn run<S: PlayerStore>(
                     }
                 }
             }
+            OutboxMessage::Persist(PersistCommand::SevenSigns(write)) => {
+                // Java logs a failed statement and goes on ("SevenSigns: Unable to save data").
+                if let Err(e) = store.store_seven_signs(&write).await {
+                    error!("SevenSigns: Unable to save data to database ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::SevenSignsReadRequest { then }) => {
+                // Not a write: the answer goes back to the world (D-15, D-50). A failed read is
+                // reported as a failure; the world then changes nothing.
+                let result = match store.load_seven_signs().await {
+                    Ok(load) => Ok(load),
+                    Err(e) => {
+                        warn!("SevenSigns: Unable to load Seven Signs data from database: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::SevenSignsLoaded { result, then };
+                if !acks.send_to_world(answer) {
+                    warn!("The Seven Signs rows could not be handed to the world.");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Wedding(write)) => {
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_wedding(&write).await {
@@ -1136,6 +1181,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on ("Unable to store manor data!").
                 if let Err(e) = store.store_manor_write(&write).await {
                     error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Vehicle(write)) => {
+                // Java logs a failed statement and goes on.
+                if let Err(e) = store.store_vehicle_write(&write).await {
+                    error!("AirShipManager: Could not write the airships table ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Cursed(write)) => {
@@ -1646,6 +1697,124 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
     }
 }
 
+/// A world member row as the `seven_signs` row Java writes (`ps.setInt` narrows the stones,
+/// `ps.setDouble` the two `DECIMAL` columns).
+pub fn seven_signs_row(p: &l2_world::sevensigns::SignsPlayer) -> l2_db::SevenSignsRow {
+    l2_db::SevenSignsRow {
+        char_id: p.char_id,
+        cabal: p.cabal.clone(),
+        seal: p.seal,
+        red_stones: p.red_stones as i32,
+        green_stones: p.green_stones as i32,
+        blue_stones: p.blue_stones as i32,
+        ancient_adena_amount: p.ancient_adena_amount as f64,
+        contribution_score: p.contribution_score as f64,
+    }
+}
+
+/// A `seven_signs` row as the world keeps it (`rs.getInt` / `rs.getDouble`).
+pub fn signs_player_of(r: l2_db::SevenSignsRow) -> l2_world::sevensigns::SignsPlayer {
+    l2_world::sevensigns::SignsPlayer {
+        char_id: r.char_id,
+        cabal: r.cabal,
+        seal: r.seal,
+        red_stones: i64::from(r.red_stones),
+        green_stones: i64::from(r.green_stones),
+        blue_stones: i64::from(r.blue_stones),
+        ancient_adena_amount: r.ancient_adena_amount as i64,
+        contribution_score: r.contribution_score as i64,
+    }
+}
+
+/// The world's cycle state as the `seven_signs_status` row (`UPDATE_STATUS`).
+pub fn seven_signs_status_row(s: &l2_world::sevensigns::SevenSignsStatus) -> l2_db::SevenSignsStatusRow {
+    l2_db::SevenSignsStatusRow {
+        current_cycle: s.current_cycle,
+        festival_cycle: s.festival_cycle,
+        active_period: s.active_period,
+        date: s.last_save,
+        previous_winner: s.previous_winner,
+        dawn_stone_score: s.dawn_stone_score,
+        dawn_festival_score: s.dawn_festival_score,
+        dusk_stone_score: s.dusk_stone_score,
+        dusk_festival_score: s.dusk_festival_score,
+        avarice_owner: s.seal_owners[1],
+        gnosis_owner: s.seal_owners[2],
+        strife_owner: s.seal_owners[3],
+        avarice_dawn_score: s.dawn_seal_totals[1],
+        gnosis_dawn_score: s.dawn_seal_totals[2],
+        strife_dawn_score: s.dawn_seal_totals[3],
+        avarice_dusk_score: s.dusk_seal_totals[1],
+        gnosis_dusk_score: s.dusk_seal_totals[2],
+        strife_dusk_score: s.dusk_seal_totals[3],
+        accumulated_bonus: s.accumulated_bonus,
+    }
+}
+
+/// The `seven_signs_status` row as the world keeps it (`restoreSevenSignsData`).
+pub fn seven_signs_status_of(r: l2_db::SevenSignsStatusRow) -> l2_world::sevensigns::SevenSignsStatus {
+    l2_world::sevensigns::SevenSignsStatus {
+        current_cycle: r.current_cycle,
+        active_period: r.active_period,
+        previous_winner: r.previous_winner,
+        dawn_stone_score: r.dawn_stone_score,
+        dawn_festival_score: r.dawn_festival_score,
+        dusk_stone_score: r.dusk_stone_score,
+        dusk_festival_score: r.dusk_festival_score,
+        seal_owners: [0, r.avarice_owner, r.gnosis_owner, r.strife_owner],
+        dawn_seal_totals: [0, r.avarice_dawn_score, r.gnosis_dawn_score, r.strife_dawn_score],
+        dusk_seal_totals: [0, r.avarice_dusk_score, r.gnosis_dusk_score, r.strife_dusk_score],
+        festival_cycle: r.festival_cycle,
+        accumulated_bonus: r.accumulated_bonus,
+        last_save: r.date,
+    }
+}
+
+/// Every `seven_signs` row and the status row.
+pub async fn read_seven_signs(
+    repo: &l2_db::SevenSignsRepository,
+) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
+    let players = repo.load_all().await?.into_iter().map(signs_player_of).collect();
+    let status = repo.load_status().await?.map(seven_signs_status_of);
+    Ok(l2_world::sevensigns::SevenSignsLoad { players, status })
+}
+
+/// Java `SevenSigns.restoreSevenSignsData()` (read only at start, D-53). A database that cannot be
+/// read gives the defaults, like Java ("Unable to load Seven Signs data from database").
+pub async fn load_seven_signs(pool: &Pool) -> l2_world::sevensigns::SevenSignsLoad {
+    match read_seven_signs(&l2_db::SevenSignsRepository::new(pool.clone())).await {
+        Ok(load) => load,
+        Err(e) => {
+            error!("SevenSigns: Unable to load Seven Signs data from database: {e}");
+            l2_world::sevensigns::SevenSignsLoad::default()
+        }
+    }
+}
+
+/// Java `AutoSpawnHandler.restoreSpawnData()`: the groups of `random_spawn` (read only). A failed
+/// read gives none, like Java ("Could not restore spawn data").
+pub async fn load_auto_spawns(pool: &Pool) -> Vec<l2_world::sevensigns::AutoSpawnGroup> {
+    match l2_db::RandomSpawnRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|r| l2_world::sevensigns::AutoSpawnGroup {
+                npc_id: r.npc_id,
+                count: r.count,
+                initial_delay: r.initial_delay,
+                respawn_delay: r.respawn_delay,
+                despawn_delay: r.despawn_delay,
+                broadcast: r.broadcast_spawn,
+                random_spawn: r.random_spawn,
+                locations: r.locations,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("AutoSpawnHandler: Could not restore spawn data: {e}");
+            Vec::new()
+        }
+    }
+}
+
 /// Java `CoupleManager.load()`, the database half (only with `AllowWedding`): the couples of
 /// `mods_wedding`. A database that cannot be read gives none, like Java.
 pub async fn load_couples(pool: &Pool) -> Vec<l2_world::wedding::Couple> {
@@ -2147,6 +2316,25 @@ fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
         player_pk_kills: row.player_pk_kills,
         nb_kills: row.nb_kills,
         end_time: row.end_time,
+    }
+}
+
+/// Java `AirShipManager.load()`: the rows of `airships` (M8-VEHICLE-01).
+pub async fn load_airships(pool: &Pool) -> VehicleLoad {
+    match AirshipRepository::new(pool.clone()).all().await {
+        Ok(rows) => VehicleLoad {
+            airships: rows
+                .into_iter()
+                .map(|r| AirshipRow {
+                    owner_id: r.owner_id,
+                    fuel: r.fuel,
+                })
+                .collect(),
+        },
+        Err(e) => {
+            warn!("AirShipManager: Could not load airships table: {e}");
+            VehicleLoad::default()
+        }
     }
 }
 
@@ -3072,11 +3260,13 @@ pub struct DbStore {
     manor: ManorRepository,
     bosses: BossRepository,
     cursed: CursedWeaponRepository,
+    airships: AirshipRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
     announcements: AnnouncementRepository,
     wedding: l2_db::WeddingRepository,
+    seven_signs: l2_db::SevenSignsRepository,
     petition_feedback: PetitionFeedbackRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -3118,12 +3308,14 @@ impl DbStore {
             manor: ManorRepository::new(pool.clone()),
             bosses: BossRepository::new(pool.clone()),
             cursed: CursedWeaponRepository::new(pool.clone()),
+            airships: AirshipRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool.clone()),
             announcements: AnnouncementRepository::new(pool.clone()),
             wedding: l2_db::WeddingRepository::new(pool.clone()),
+            seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -3750,7 +3942,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         // The snapshot is of a player in the world; `PlayerLeft` marks it offline afterwards.
         // 2 for a player without a client (an offline trader, Java `isOnlineInt()`).
         online: player.profile.online_status,
-        is_in_7s_dungeon: row.isin7sdungeon != 0,
+        // Java `_isIn7sDungeon` (M8-SS-01).
+        is_in_7s_dungeon: player.profile.in_7s_dungeon,
         clan_privs: clan.map_or_else(
             || row.clan_privs.map_or(0, |v| clamp_i32(u64::from(v))),
             |c| c.stored_privileges(),
@@ -3829,6 +4022,14 @@ impl PlayerStore for DbStore {
             if let Err(e) = self.recipes.store_shop(char_id, &rows).await {
                 error!("Could not store recipe shop for playerId {char_id}: {e}");
             }
+        }
+
+        // Java: Player.store -> SevenSigns.saveSevenSignsData(getObjectId()) (M8-SS-01; Java logs a
+        // failure and goes on).
+        if let Some(row) = &player.profile.seven_signs_to_store
+            && let Err(e) = self.seven_signs.update_player(&seven_signs_row(row)).await
+        {
+            error!("SevenSigns: Unable to save data to database: {e}");
         }
 
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
@@ -4527,6 +4728,31 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_seven_signs(
+        &mut self,
+        write: &l2_world::sevensigns::SevenSignsWrite,
+    ) -> Result<(), PersistError> {
+        use l2_world::sevensigns::SevenSignsWrite;
+        match write {
+            SevenSignsWrite::InsertPlayer { char_id, cabal, seal } => {
+                self.seven_signs.insert_player(*char_id, cabal, *seal).await?
+            }
+            SevenSignsWrite::UpdatePlayer(row) => {
+                self.seven_signs.update_player(&seven_signs_row(row)).await?
+            }
+            SevenSignsWrite::UpdateAllPlayers(rows) => {
+                let rows: Vec<l2_db::SevenSignsRow> = rows.iter().map(seven_signs_row).collect();
+                self.seven_signs.update_all_players(&rows).await?
+            }
+            SevenSignsWrite::UpdateStatus(status) => {
+                self.seven_signs
+                    .update_status(&seven_signs_status_row(status))
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
     async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
         match *write {
             InstanceTimeWrite::Set {
@@ -4545,6 +4771,10 @@ impl PlayerStore for DbStore {
             }
         }
         Ok(())
+    }
+
+    async fn load_seven_signs(&mut self) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
+        read_seven_signs(&self.seven_signs).await
     }
 
     async fn store_wedding(&mut self, write: &l2_world::wedding::WeddingWrite) -> Result<(), PersistError> {
@@ -4589,6 +4819,15 @@ impl PlayerStore for DbStore {
             FriendWrite::RemoveFriends { first, second } => friends.remove_friends(first.0, second.0).await?,
             FriendWrite::AddBlock { owner, target } => friends.add_block(owner.0, target.0).await?,
             FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
+        }
+        Ok(())
+    }
+
+    async fn store_vehicle_write(&mut self, write: &VehicleWrite) -> Result<(), PersistError> {
+        let repo = &self.airships;
+        match write {
+            VehicleWrite::AddLicense { owner_id, fuel } => repo.insert(*owner_id, *fuel).await?,
+            VehicleWrite::StoreFuel { owner_id, fuel } => repo.update_fuel(*owner_id, *fuel).await?,
         }
         Ok(())
     }
@@ -5207,6 +5446,8 @@ mod tests {
         FriendSummary(i32),
         /// A cursed weapon write (M8-CURSED-01).
         Cursed(CursedWrite),
+        /// An `airships` write (M8-VEHICLE-01).
+        Vehicle(VehicleWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -5463,6 +5704,11 @@ mod tests {
 
         async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Cursed(write.clone()));
+            Ok(())
+        }
+
+        async fn store_vehicle_write(&mut self, write: &VehicleWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Vehicle(write.clone()));
             Ok(())
         }
 

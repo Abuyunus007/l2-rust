@@ -1041,7 +1041,17 @@ fn the_key_mapping_needs_the_config() {
     );
     s.enter(player(A, vec![]));
     s.leftover(LeftoverInput::SaveKeyMapping(Some(vec![1])));
-    assert!(s.world.player(A).unwrap().data.profile.variables.is_empty());
+    // Only the key mapping matters: the Nevit daily reset may add `hunting_time` depending on the
+    // wall clock at enter.
+    assert!(
+        !s.world
+            .player(A)
+            .unwrap()
+            .data
+            .profile
+            .variables
+            .contains_key(l2_world::leftover::UI_KEY_MAPPING)
+    );
 }
 
 // ---- RequestSaveInventoryOrder ------------------------------------------------------------------

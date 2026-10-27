@@ -30,7 +30,7 @@
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
 //   `characters.lastAccess`; the login hook is not called
 // - `isAffected`: the `affectedClassType` check (needs the class list)
-// - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone
+// - `updatePvPStatus` after a siege zone
 //
 // `ClanHallZone` and `SiegableHallZone` set the `CLAN_HALL` flag and show the hall's decorations
 // (`AgitDecoInfo`, M7-RES-01, `residence/clan_hall.rs`).
@@ -730,14 +730,15 @@ impl World {
             return;
         };
         let zones = &player.zones;
-        // NOTE(unported): the Seven Signs dungeon icon (`_isIn7sDungeon`) comes between PvP and
-        // peace; the flag is not loaded.
         let code = if zones.is_inside(ZoneId::Altered) {
             compass_zone::ALTEREDZONE
         } else if zones.is_inside(ZoneId::Siege) {
             compass_zone::SIEGEWARZONE2
         } else if zones.is_inside(ZoneId::Pvp) {
             compass_zone::PVPZONE
+        } else if player.data.profile.in_7s_dungeon {
+            // `_isIn7sDungeon` (M8-SS-01).
+            compass_zone::SEVENSIGNSZONE
         } else if zones.is_inside(ZoneId::Peace) || zones.is_inside(ZoneId::NoPvp) {
             compass_zone::PEACEZONE
         } else {
@@ -779,6 +780,15 @@ impl World {
         let race = race_name(player.data.race);
         let mut pick = self.restart_point_picker();
         let loc = regions.nearest_town_respawn(&zones, pos, race, &mut pick)?;
+        Some((loc.x, loc.y, loc.z))
+    }
+
+    /// Java `MapRegionData.getNearestTownRespawn(creature)` for a creature that is no player (a
+    /// boat): the restart point of the `RespawnZone` or the map region at the place.
+    pub(crate) fn nearest_town_respawn_at(&mut self, x: i32, y: i32, z: i32) -> Option<(i32, i32, i32)> {
+        let (zones, regions) = (self.zoning.zones.clone()?, self.zoning.map_regions.clone()?);
+        let mut pick = self.restart_point_picker();
+        let loc = regions.nearest_town_respawn(&zones, l2_data::Location { x, y, z }, None, &mut pick)?;
         Some((loc.x, loc.y, loc.z))
     }
 

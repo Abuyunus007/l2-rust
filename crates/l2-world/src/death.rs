@@ -707,7 +707,7 @@ impl World {
             // `player.setInstanceId(instanceId)` before the teleport (M8-INST-01): the player
             // leaves the instance's list while still standing in it.
             self.set_instance_id(id, instance);
-            // `setIn7sDungeon(false)`: the Seven Signs dungeon is not modelled.
+            self.set_in_7s_dungeon(id, false);
             self.set_pending_revive(id, true);
             let offset = self.settings.teleport.max_offset_on_teleport;
             self.tele_to_location(

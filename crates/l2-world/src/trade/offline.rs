@@ -32,7 +32,7 @@
 //
 // # Left out
 // - `.offline` voiced command (`DlgAnswer`, `EnableOfflineCommand`), the olympiad and events, a
-//   boat (`getVehicle()`), the dual-box counter (`DualboxCountOfflineTraders`), the buff shop
+//   dual-box counter (`DualboxCountOfflineTraders`), the buff shop
 //   (`isSellingBuffs`), `OfflineAbnormalEffect` and `OfflineDisconnectSameAccount` (Java reads
 //   neither outside the config).
 // - `OfflineMaxDays` is checked only when the shops are restored, like Java: a running trader
@@ -260,9 +260,8 @@ impl World {
 
     /// Java `OfflineTraderTable.offlineMode(player)`: may the player stay as an offline shop?
     fn offline_mode_allowed(&self, id: ObjectId) -> bool {
-        // `isInOlympiadMode()` / `isRegisteredOnEvent()` (M8) and `getVehicle() != null` (boats)
-        // are not modelled.
-        if !self.players.contains_key(&id) || self.is_jailed(id) {
+        // `isInOlympiadMode()` / `isRegisteredOnEvent()` (M8) are not modelled.
+        if !self.players.contains_key(&id) || self.is_jailed(id) || self.is_in_vehicle(id) {
             return false;
         }
         let s = &self.offline.settings;

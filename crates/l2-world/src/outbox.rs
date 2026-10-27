@@ -175,6 +175,8 @@ pub enum PersistCommand {
     /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
     /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
     Cursed(crate::cursed::CursedWrite),
+    /// A write of the `airships` table with Java's statements, see `vehicle/` (M8-VEHICLE-01).
+    Vehicle(crate::vehicle::VehicleWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {
@@ -228,6 +230,12 @@ pub enum PersistCommand {
     },
     /// A write of `mods_wedding` with Java's statement (`Couple`, M8-MISC-01, see `wedding.rs`).
     Wedding(crate::wedding::WeddingWrite),
+    /// A `seven_signs` / `seven_signs_status` write with Java's statement (M8-SS-01, see
+    /// `sevensigns/`). The world sends the global ones only with `CycleDatabaseWrites` (D-53).
+    SevenSigns(crate::sevensigns::SevenSignsWrite),
+    /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
+    /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
+    SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

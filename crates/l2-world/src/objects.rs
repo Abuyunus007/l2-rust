@@ -29,6 +29,8 @@ pub enum ObjectKind {
     /// Java `Summon` (servitors and pets, `summon/`). The creature is in `World::npcs` (with
     /// `NpcClass::Summon`), but Java's `isNpc()` is false and `isPlayable()` true for it.
     Summon,
+    /// Java `Vehicle`: a boat or an air ship (`vehicle/`).
+    Vehicle,
 }
 
 impl ObjectKind {
@@ -42,7 +44,7 @@ impl ObjectKind {
     pub fn is_creature(self) -> bool {
         matches!(
             self,
-            Self::Player | Self::Npc | Self::Summon | Self::Door | Self::StaticObject
+            Self::Player | Self::Npc | Self::Summon | Self::Door | Self::StaticObject | Self::Vehicle
         )
     }
 }

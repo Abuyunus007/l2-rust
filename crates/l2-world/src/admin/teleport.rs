@@ -193,4 +193,6 @@ fn teleport_home(world: &mut World, player: ObjectId) {
             .with_instance(0)
             .with_random_offset(offset),
     );
+    // `player.setIn7sDungeon(false)` (M8-SS-01).
+    world.set_in_7s_dungeon(player, false);
 }
