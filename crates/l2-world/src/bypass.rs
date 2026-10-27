@@ -14,8 +14,7 @@
 // ignored, as Java does.
 //
 // # What is left out, with the system that brings it
-// - The community board, `come_here`, `item_` item scripts, `_match`, `_diary`,
-//   `report` (captcha): later cards. They are accepted by the validation and then only logged.
+// - `item_` item scripts, `report` (captcha): later cards. They are accepted by the validation and then only logged.
 //   `manor_menu_select` is the manor's (`manor/npc.rs`, M7-MANOR-01).
 // - `admin_` commands do not use this registry: they go to the `admin` module
 //   ([`World::admin_command`]), as Java hands them to `AdminCommandHandler`.
@@ -269,6 +268,9 @@ impl World {
 
         if command.starts_with("admin_") {
             self.admin_command(id, command, true);
+        } else if self.is_community_board_command(command) {
+            // Java: CommunityBoardHandler.handleParseCommand (S-HAND-01, `community_board/`).
+            self.board_handle_parse_command(id, command);
         } else if command == "come_here" && self.is_gm(id) {
             self.come_here(id);
         } else if command.starts_with("npc_") {

@@ -142,6 +142,8 @@ pub struct World {
     pub(crate) clanhall: crate::clanhall::ClanHallWorld,
     /// The bot reports, the reporters' points and the punishments (M6-FU-09, `bot_report.rs`).
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
+    /// The community board settings and the last page of each player (S-HAND-01, `community_board/`).
+    pub(crate) community_board: crate::community_board::CommunityBoardWorld,
     /// The players in offline mode and the offline trade settings (M6-FU-14, `trade/offline.rs`).
     pub(crate) offline: crate::trade::OfflineWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -245,6 +247,7 @@ impl World {
             manor: crate::manor::ManorWorld::default(),
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
+            community_board: crate::community_board::CommunityBoardWorld::default(),
             offline: crate::trade::OfflineWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
@@ -449,6 +452,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::BbsFavoritesLoaded { player, kind, result } => {
+                self.on_bbs_favorites_loaded(player, kind, result)
+            }
             WorldCommand::FriendSummariesLoaded { requester, rows } => {
                 self.on_friend_summaries_loaded(requester, rows)
             }
@@ -849,6 +855,9 @@ impl World {
                 self.on_request_send_friend_msg(id, &message, &receiver)
             }
             ClientInput::Block { kind, name } => self.on_request_block(id, kind, name.as_deref()),
+            // Java: RequestShowBoard, RequestBBSwrite (S-HAND-01, `community_board/`)
+            ClientInput::ShowBoard => self.on_request_show_board(id),
+            ClientInput::BbsWrite { url, args } => self.on_request_bbs_write(id, &url, &args),
             ClientInput::Mail(input) => self.on_mail_input(id, input),
             // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),

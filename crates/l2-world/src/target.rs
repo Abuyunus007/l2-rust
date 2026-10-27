@@ -13,8 +13,8 @@
 // - Following (`setIntentionFollow`): M5. A second click on another player that cannot be
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
-// - The GM shift click (`NpcShiftClick`, `npcinfo.htm`) and `AltGameViewNpc`: the GM gets the
-//   target and `ActionFailed`.
+// - `AltGameViewNpc` (a player's shift click on an NPC opens `NpcViewMod`): the GM shift click
+//   is `shiftclick/` (S-HAND-01), the player's one is left with `NpcViewMod`.
 // - `isOutOfControl`, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
 //   `on_target_canceled`.)
 
@@ -25,7 +25,7 @@ use l2_protocol_game::server::{
     TargetUnselected, ValidateLocation,
 };
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
 use crate::dialog::INTERACTION_DISTANCE;
 use crate::effects::control::ACTION_BLOCK_ID;
@@ -420,14 +420,7 @@ impl World {
         self.send(player, &ActionFailed);
     }
 
-    /// Java `WorldObject.onActionShift(player)`.
-    fn on_action_shift(&mut self, player: ObjectId, obj: ObjectId) {
-        // FOLLOW-UP(admin): the GM windows (`npcinfo.htm`, door and player info) need the stat
-        // system; the GM keeps the target they asked for.
-        debug!("shift click of a GM on {obj}: only the target is set");
-        self.set_target(player, Some(obj));
-        self.send(player, &ActionFailed);
-    }
+    // Java `WorldObject.onActionShift(player)` is `shiftclick/` (S-HAND-01).
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {

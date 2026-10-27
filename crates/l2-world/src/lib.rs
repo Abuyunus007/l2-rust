@@ -23,6 +23,7 @@ pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod command;
+pub mod community_board;
 pub mod contacts;
 pub mod craft;
 pub mod crystallize;
@@ -75,6 +76,7 @@ pub mod respawn;
 pub mod rewards;
 pub mod runner;
 pub mod sevensigns;
+pub mod shiftclick;
 pub mod shop;
 pub mod shortcuts;
 pub mod siege;
@@ -123,6 +125,9 @@ pub use clanhall::{
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use community_board::{
+    CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
+};
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
