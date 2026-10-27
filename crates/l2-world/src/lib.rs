@@ -149,7 +149,8 @@ pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ControlRequest, ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{
-    CommandChannelId, CommandChannelWorld, PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld,
+    CommandChannelId, CommandChannelWorld, MatchingWorld, PartyExpType, PartyId, PartyMessageType,
+    PartyRoomInput, PartySettings, PartyWorld,
 };
 pub use pccafe::PcCafeSettings;
 pub use petition::{PetitionInput, PetitionState};

@@ -187,6 +187,7 @@ pub mod movement;
 pub mod multisell;
 pub mod olympiad;
 pub mod party;
+pub mod party_room;
 pub mod petition;
 pub mod pledge;
 pub mod recipe;
@@ -261,6 +262,13 @@ pub use olympiad::{
 pub use party::{
     RequestAnswerJoinParty, RequestChangePartyLeader, RequestJoinParty, RequestOustPartyMember,
     RequestWithDrawalParty,
+};
+pub use party_room::{
+    AnswerJoinPartyRoom, AnswerPartyLootModification, RequestAskJoinPartyRoom, RequestChangeNicknameColor,
+    RequestDismissPartyRoom, RequestExitPartyMatchingWaitingRoom, RequestGiveNickName, RequestGmCommand,
+    RequestGmList, RequestListPartyMatchingWaitingRoom, RequestOustFromPartyRoom,
+    RequestPartyLootModification, RequestPartyMatchConfig, RequestPartyMatchDetail, RequestPartyMatchList,
+    RequestResetNickname, RequestWithdrawPartyRoom,
 };
 pub use petition::{RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit};
 pub use pledge::{

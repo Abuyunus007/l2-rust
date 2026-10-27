@@ -51,6 +51,7 @@ mod level;
 mod master_script;
 mod members;
 pub mod model;
+mod nickname;
 mod request;
 mod skills;
 mod table;

@@ -130,6 +130,7 @@ impl World {
             ChatType::PartyRoomAll | ChatType::PartyRoomCommander => {
                 self.chat_command_channel(id, chat_type, &text)
             }
+            ChatType::PartyMatchRoom => self.chat_party_match_room(id, &text),
             ChatType::Battlefield => self.chat_battlefield(id, &text),
             ChatType::PetitionPlayer | ChatType::PetitionGm => self.chat_petition(id, chat_type, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
