@@ -33,6 +33,36 @@ const GENERAL_CHAT_RANGE: i32 = 1250;
 /// Level needed for trade chat (hard-coded in Java's `ChatTrade`).
 const TRADE_CHAT_LEVEL: i32 = 20;
 
+/// Java `ChatType.name()` (the constant name, which the chat log writes).
+fn java_chat_name(chat_type: ChatType) -> &'static str {
+    match chat_type {
+        ChatType::General => "GENERAL",
+        ChatType::Shout => "SHOUT",
+        ChatType::Whisper => "WHISPER",
+        ChatType::Party => "PARTY",
+        ChatType::Clan => "CLAN",
+        ChatType::Gm => "GM",
+        ChatType::PetitionPlayer => "PETITION_PLAYER",
+        ChatType::PetitionGm => "PETITION_GM",
+        ChatType::Trade => "TRADE",
+        ChatType::Alliance => "ALLIANCE",
+        ChatType::Announcement => "ANNOUNCEMENT",
+        ChatType::Boat => "BOAT",
+        ChatType::Friend => "FRIEND",
+        ChatType::MsnChat => "MSNCHAT",
+        ChatType::PartyMatchRoom => "PARTYMATCH_ROOM",
+        ChatType::PartyRoomCommander => "PARTYROOM_COMMANDER",
+        ChatType::PartyRoomAll => "PARTYROOM_ALL",
+        ChatType::HeroVoice => "HERO_VOICE",
+        ChatType::CriticalAnnounce => "CRITICAL_ANNOUNCE",
+        ChatType::ScreenAnnounce => "SCREEN_ANNOUNCE",
+        ChatType::Battlefield => "BATTLEFIELD",
+        ChatType::MpccRoom => "MPCC_ROOM",
+        ChatType::NpcGeneral => "NPC_GENERAL",
+        ChatType::NpcShout => "NPC_SHOUT",
+    }
+}
+
 impl World {
     /// Java `Say2.runImpl` followed by the chat handler of the channel.
     pub(crate) fn on_say(&mut self, id: ObjectId, chat_type: i32, text: String, target: Option<String>) {
@@ -114,15 +144,18 @@ impl World {
             let Some(player) = self.players.get(&id) else {
                 return;
             };
+            // Java: `sb.append(chatType.name()).append(" [").append(player)`, where `player` is
+            // `WorldObject.toString()` = `Player:<name>[<objectId>]`.
+            let name = java_chat_name(chat_type);
+            let who = format!("Player:{}[{}]", player.data.name, id.0);
             if chat_type == ChatType::Whisper {
                 info!(
                     target: "chat",
-                    "{chat_type:?} [{} to {}] {text}",
-                    player.data.name,
+                    "{name} [{who} to {}] {text}",
                     target.as_deref().unwrap_or("")
                 );
             } else {
-                info!(target: "chat", "{chat_type:?} [{}] {text}", player.data.name);
+                info!(target: "chat", "{name} [{who}] {text}");
             }
         }
 
