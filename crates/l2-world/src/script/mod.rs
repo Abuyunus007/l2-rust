@@ -51,6 +51,7 @@ use tracing::{info, warn};
 pub use api::{Script, ScriptItem, ScriptNpc};
 pub use ctx::ScriptCtx;
 pub use globals::{GlobalVariables, GlobalVariablesWrite};
+pub use packets::QuestInput;
 pub use qs::Qs;
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
@@ -263,6 +264,17 @@ impl World {
     /// The script settings (`Rates.ini`, `General.ini`, `SideBySide.ini`).
     pub fn set_script_settings(&mut self, settings: ScriptSettings) {
         self.scripts.settings = settings;
+    }
+
+    /// Runs `f` with the context of the script `name` (`false` when there is none): what an
+    /// admin command or a test does when it acts for a script. Queued events run after it.
+    pub fn run_as_script(&mut self, name: &str, f: impl FnOnce(&mut ScriptCtx<'_>)) -> bool {
+        let Some(id) = self.scripts.by_name(name) else {
+            return false;
+        };
+        f(&mut ScriptCtx::new(self, id));
+        self.script_drain();
+        true
     }
 
     /// Java `ScriptManager.getScript(name) != null`.
