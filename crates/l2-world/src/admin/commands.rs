@@ -9,9 +9,9 @@
 // does what the Java `onCommand` branch does, including its odd corners.
 //
 // Left out, with the system that brings it:
-// - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml and
-//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here the spawn lives until the server stops
-//   (its respawn is ported, `respawn.rs`), but it is not written anywhere (FOLLOW-UP).
+// - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the spawn file of its map
+//   tile (done: `World::store_new_spawn`, `data/spawns/Others/` below the server's own folder).
+//   `RaidBossSpawnManager` writes `raidboss_spawnlist` (FOLLOW-UP(M4), not done).
 // - Instances, effects (`stopAllEffects`), the DB update of `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
@@ -218,8 +218,11 @@ fn spawn_monster(
         .or_else(|| world.creature_position(gm))
         .ok_or(())?;
     let heading = world.players.get(&gm).map_or(0, |p| p.core.heading);
-    // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `init()`, and
-    // `stopRespawn()` when the spawn is not permanent or has no delay.
+    // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `addNewSpawn` when
+    // permanent, `init()`, and `stopRespawn()` when the spawn is not permanent or has no delay.
+    if permanent && !is_raid {
+        world.store_new_spawn(template_id, (x, y, z), heading, mob_count, respawn_time);
+    }
     let created = world.admin_spawn(
         template_id,
         (x, y, z),
@@ -261,8 +264,9 @@ fn spawn_at(world: &mut World, gm: ObjectId, command: &str) -> Result<(), ()> {
         return Ok(());
     }
     // Java `spawnMonster(activeChar, id, x, y, z, h)`: `setAmount(1)`, `setRespawnDelay(60)`,
-    // `SpawnData.addNewSpawn` (permanent: FOLLOW-UP(M4), the datapack is not written), `init()`.
+    // `SpawnData.addNewSpawn` (permanent: the spawn file is written), `init()`.
     // The NPC comes back 60 seconds after it dies.
+    world.store_new_spawn(id, (x, y, z), heading, 1, 60);
     match world
         .admin_spawn(id, (x, y, z), heading, 1, 60, true)
         .last()

@@ -12,6 +12,7 @@ pub mod augmentation;
 pub mod buylist;
 pub mod class_list;
 pub mod cubic;
+pub mod cursed_weapon;
 pub mod door;
 pub mod enchant;
 pub mod enchant_hp_bonus;
@@ -44,6 +45,7 @@ pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
 pub mod spawn;
+pub mod spawn_store;
 pub mod static_object;
 pub mod stats;
 pub mod teleporter;
@@ -64,6 +66,7 @@ pub use cubic::{
     CubicCondition, CubicData, CubicSelectionMode, CubicSkill, CubicTargetType, CubicTemplate,
     HpConditionType,
 };
+pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
@@ -164,6 +167,8 @@ pub struct Datapack {
     pub multisell: Arc<MultisellData>,
     /// `data/stats/hennaList.xml`: hennas (dyes) by dye id.
     pub hennas: Arc<Hennas>,
+    /// `data/CursedWeapons.xml`: the cursed weapons (M8-CURSED-01).
+    pub cursed_weapons: Arc<CursedWeaponDefs>,
     /// `data/stats/transformations/*.xml`: the transformations by id (M6-TRANS-01).
     pub transforms: Arc<Transforms>,
     /// `data/stats/skills/*.xml`: every skill and enchant level as a template (M4-DATA-11).
@@ -358,6 +363,7 @@ impl Datapack {
             hit_condition_bonus: Arc::new(HitConditionBonus::load(root)),
             multisell,
             hennas: Arc::new(Hennas::load(root)),
+            cursed_weapons: Arc::new(CursedWeaponDefs::load(root)),
             transforms: Arc::new(Transforms::load(root)),
             skills,
             augmentation_options,

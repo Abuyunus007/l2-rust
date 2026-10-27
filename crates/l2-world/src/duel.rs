@@ -276,7 +276,8 @@ impl World {
             C1CannotDuelBecauseC1IsAlreadyEngagedInADuel,
             C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture,
             C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle, C1CannotDuelBecauseC1IsCurrentlyFishing,
-            C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
+            C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider,
+            C1CannotDuelBecauseC1IsInAChaoticState, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
             C1CannotMakeAChallengeToADuelBecauseC1IsCurrentlyInADuelProhibitedAreaPeacefulZoneSevenSignsZoneNearWaterRestartProhibitedArea as InProhibitedArea,
             ThereIsNoOpponentToReceiveYourChallengeForADuel,
         };
@@ -302,7 +303,9 @@ impl World {
             return Err(C1CannotDuelBecauseC1IsAlreadyEngagedInADuel);
         }
         // M8: `_inOlympiadMode` (C1_CANNOT_DUEL_BECAUSE_C1_IS_PARTICIPATING_IN_THE_OLYMPIAD).
-        // M8: `isCursedWeaponEquipped()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_IN_A_CHAOTIC_STATE).
+        if self.is_cursed_weapon_equipped(id) {
+            return Err(C1CannotDuelBecauseC1IsInAChaoticState);
+        }
         if self.is_in_store_mode(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture);
         }

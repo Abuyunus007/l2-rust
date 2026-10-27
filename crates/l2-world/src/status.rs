@@ -809,6 +809,16 @@ impl World {
         })
     }
 
+    /// Java `Formulas.calcHpRegen(creature)`: HP regained per period, a player's or an NPC's
+    /// (the `//fight_calculator` page prints it for either).
+    pub(crate) fn hp_regen_per_period(&self, id: ObjectId) -> f64 {
+        if self.players.contains_key(&id) {
+            self.player_hp_regen(id)
+        } else {
+            self.npc_hp_regen(id)
+        }
+    }
+
     /// Java `Formulas.calcHpRegen(npc)`: the template value, and the player multiplier unless raid.
     fn npc_hp_regen(&self, id: ObjectId) -> f64 {
         let Some(view) = self.stats(id) else {

@@ -155,23 +155,23 @@ const PORTED: &[&str] = &[
     "spawn_debug_menu",
     "spawn_debug_print",
     "spawn_debug_print_menu",
+    // L-08: the fight calculator and the rest of the spawn words
+    "fight_calculator",
+    "fight_calculator_show",
+    "fcs",
+    "respawnall",
+    "spawn_reload",
+    "spawn_misc",
+    "spawnmisc",
+    "list_pools",
 ];
 
 /// Words of the card's Java files that this card does not port (see the module notes): they
 /// answer like a command without a handler. Olympiad, heroes and instances are M8.
 const LEFT_OUT: &[&str] = &[
     // edit_char
-    // change access level, repair and the fight calculator
-    "fight_calculator",
-    "fight_calculator_show",
-    "fcs",
+    // change access level and repair
     // admin page flags and configuration
-    // spawn words that need the datapack reload or the GM misc room, and the spawn pools
-    "respawnall",
-    "spawn_reload",
-    "spawn_misc",
-    "spawnmisc",
-    "list_pools",
     // M8: Olympiad, heroes (`instance_spawns` came with M8-INST-01, `tests/admin_instance.rs`)
     "checkolympiad",
     "saveolymp",

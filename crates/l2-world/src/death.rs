@@ -296,11 +296,14 @@ impl World {
             // Clear resurrect xp calculation.
             self.set_exp_before_death(id, 0);
 
-            // Cursed weapons (M8) are not modelled. A ward or the combat flag of a fortress siege
-            // is dropped and nothing else happens (the `else if (_combatFlagEquippedId)` of Java):
+            // Issues drop of Cursed Weapon. A ward or the combat flag of a fortress siege is
+            // dropped and nothing else happens (the `else if (_combatFlagEquippedId)` of Java):
             // during Territory War the war's `dropCombatFlag(this, true, false)` (M7-TW-01), else
             // the fortress's (M7-FORT-01).
-            if self.is_combat_flag_equipped(id) {
+            if self.is_cursed_weapon_equipped(id) {
+                let cursed_item_id = self.cursed_weapon_equipped_id(id);
+                self.cursed_drop(cursed_item_id);
+            } else if self.is_combat_flag_equipped(id) {
                 // NOTE(java-quirk): "TODO: Fort siege during TW??" - a fortress flag stays on its
                 // carrier while the war runs.
                 if self.is_tw_in_progress() {
@@ -311,18 +314,24 @@ impl World {
             } else {
                 let inside_pvp_zone = self.is_inside_zone(id, ZoneId::Pvp);
                 let inside_siege_zone = self.is_inside_zone(id, ZoneId::Siege);
-                // `pk == null || !pk.isCursedWeaponEquipped()`: nobody has a cursed weapon.
-                // Check if any item should be dropped.
-                self.on_die_drop_item(id, killer);
-                // Clan reputation for a kill in a clan war (`clan/war.rs`).
-                if !inside_pvp_zone && !inside_siege_zone {
-                    self.clan_war_kill_reputation(id, killer);
-                }
+                // `pk == null || !pk.isCursedWeaponEquipped()`: a killer who wields a cursed
+                // weapon takes no items, no reputation and no experience from its victim.
+                let killer_cursed = self
+                    .acting_player(killer)
+                    .is_some_and(|pk| self.is_cursed_weapon_equipped(pk));
+                if !killer_cursed {
+                    // Check if any item should be dropped.
+                    self.on_die_drop_item(id, killer);
+                    // Clan reputation for a kill in a clan war (`clan/war.rs`).
+                    if !inside_pvp_zone && !inside_siege_zone {
+                        self.clan_war_kill_reputation(id, killer);
+                    }
 
-                // Should not penalize player when lucky, in a non siege PvP zone, has advent
-                // blessing or is in an event.
-                if inside_siege_zone || !inside_pvp_zone {
-                    self.calculate_death_exp_penalty(id, killer);
+                    // Should not penalize player when lucky, in a non siege PvP zone, has advent
+                    // blessing or is in an event.
+                    if inside_siege_zone || !inside_pvp_zone {
+                        self.calculate_death_exp_penalty(id, killer);
+                    }
                 }
             }
         }

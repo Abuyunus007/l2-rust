@@ -200,7 +200,10 @@ fn class_data() -> StatData {
     );
     StatData {
         player_templates: Arc::new(l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()),
-        items: Arc::new(ItemTemplates::from_xml("<list></list>").unwrap()),
+        // Adena: `//msgx item:57` looks the template up (`addItemName`).
+        items: Arc::new(
+            ItemTemplates::from_xml(r#"<list><item id="57" type="EtcItem" name="Adena" /></list>"#).unwrap(),
+        ),
         skills: Arc::new(SkillTemplates::from_xml(
             SKILLS,
             &l2_data::skill::EnchantSkillGroups::default(),
@@ -1085,7 +1088,14 @@ fn html_and_loadhtml_show_pages_and_help_shows_the_help_page() {
     run(&mut s, GM, "admin_html gm_menu.htm");
     assert!(html_to(&s.log.take(), GM)[0].html.contains("GMMENU"));
 
+    // `//loadhtml` reads the file on the server task: the page comes with its answer.
     run(&mut s, GM, "admin_loadhtml data/html/admin/gm_menu.htm");
+    assert!(html_to(&s.log.take(), GM).is_empty());
+    s.world.handle(WorldCommand::HtmlFileLoaded {
+        requester: ObjectId(GM),
+        path: "data/html/admin/gm_menu.htm".to_owned(),
+        content: Some("<html><body>GMMENU</body></html>".to_owned()),
+    });
     assert!(html_to(&s.log.take(), GM)[0].html.contains("GMMENU"));
 
     run(&mut s, GM, "admin_html");

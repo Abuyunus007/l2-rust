@@ -26,7 +26,6 @@
 //   `storePetFood`, the only statement the mount adds).
 //
 // # Left out, with the system that brings it
-// - M8: `isCursedWeaponEquipped()` (cursed weapons): disarming is never refused for it.
 // - The siege parts (M7-SIEGE-01): the castle lord's strider in a siege zone, the siege branch of
 //   `checkLandingState`; the siege zone's own wyvern and mount rules are `siege/zone.rs`.
 // - The fall damage a wyvern avoids and the flying movement checks of `Creature` are not
@@ -488,10 +487,9 @@ impl World {
             } else if self.is_fishing(id) {
                 // You can't mount, dismount, break and drop items while fishing.
                 Some(Some(SystemMessageId::YouCannotDoThatWhileFishing2))
-            } else if self.is_transformed(id) {
+            } else if self.is_transformed(id) || self.is_cursed_weapon_equipped(id) {
                 // No message needed, player while transformed doesn't have mount action.
                 Some(None)
-            // M8: `isCursedWeaponEquipped()` joins the transformed check.
             } else if self.inventory_item_by_item_id(id, COMBAT_FLAG_ID).is_some() {
                 self.send(id, &ActionFailed);
                 // FIXME in Java: "Wrong Message".
@@ -614,7 +612,10 @@ impl World {
         else {
             return true;
         };
-        // M8: "Don't allow disarming a cursed weapon."
+        // Don't allow disarming a cursed weapon.
+        if self.is_cursed_weapon_equipped(id) {
+            return false;
+        }
         // Don't allow disarming a Combat Flag or Territory Ward (M7-TW-01).
         if self.is_combat_flag_equipped(id) {
             return false;

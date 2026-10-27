@@ -85,6 +85,24 @@ impl HtmCache {
         }
     }
 
+    /// Java `loadFile(new File(DATAPACK_ROOT, path))` as `//loadhtml` uses it: the text of one html
+    /// file read from the disk now (comments, tabs and newlines removed), `None` when `path` is not
+    /// a file or its name does not end in `.htm` or `.html`.
+    // NOTE(java-quirk): Java also puts the text into its cache; this returns it only.
+    pub fn read_file(root: &Path, path: &str) -> Option<String> {
+        let file = root.join(path);
+        if !file.is_file() || !is_html_name(&file) {
+            return None;
+        }
+        match std::fs::read(&file) {
+            Ok(raw) => Some(process_html(&raw)),
+            Err(error) => {
+                warn!("Problem with htm file {path}: {error}");
+                None
+            }
+        }
+    }
+
     /// Java `contains(path)`.
     pub fn contains(&self, path: &str) -> bool {
         self.files.contains_key(path)
@@ -252,6 +270,26 @@ mod tests {
     fn comments_tabs_and_newlines_are_removed_but_cr_stays() {
         assert_eq!(process_html(b"a<!-- x\n-->b\r\n\tc\n"), "ab\rc");
         assert_eq!(process_html(b"<!-- one --><!-- two -->z"), "z");
+    }
+
+    #[test]
+    fn read_file_reads_one_html_file_now_and_refuses_the_rest() {
+        let dir = tempfile::tempdir().unwrap();
+        write(
+            dir.path(),
+            "data/html/a.htm",
+            b"<html>
+	A<!-- c --></html>",
+        );
+        write(dir.path(), "data/html/notes.txt", b"not html");
+        assert_eq!(
+            HtmCache::read_file(dir.path(), "data/html/a.htm").as_deref(),
+            Some("<html>A</html>")
+        );
+        // Not an html name, a folder, a missing file.
+        assert_eq!(HtmCache::read_file(dir.path(), "data/html/notes.txt"), None);
+        assert_eq!(HtmCache::read_file(dir.path(), "data/html"), None);
+        assert_eq!(HtmCache::read_file(dir.path(), "data/html/none.htm"), None);
     }
 
     #[test]

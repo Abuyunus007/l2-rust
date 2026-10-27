@@ -103,6 +103,8 @@ impl World {
         };
         // `Player.deleteMe` stops the toggles while the player is still in view.
         self.stop_all_toggles(id, true);
+        // `deleteMe`: the cursed weapon forgets its player (it keeps the owner's id).
+        self.cursed_player_left(id);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
         let clan_leave = self.clan_before_leave(id);
         // `deleteMe`: off the party matching waiting list, out of the party matching room (Java

@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 
 use super::html::build_page;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
+use crate::outbox::ControlRequest;
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
@@ -46,21 +47,34 @@ fn admin_html(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminHtml.onCommand`, `admin_loadhtml <path>`: the page at the datapack path, shown as
 /// the text of the file (`showHtml(reload = true)`).
-// NOTE(java-quirk): Java reads the file again from the disk here. The cache loaded at start has
-// the same text unless the file changed while the server runs; the missing page text is Java's
-// own for this path (lower case "text").
+// NOTE(java-quirk): Java reads the file again from the disk here and shows that text (and keeps
+// it in its cache; the Rust cache is not changed). The file is read by the game server task (D-15,
+// no file IO inside a tick): the page is sent when `WorldCommand::HtmlFileLoaded` comes back. The
+// missing page text is Java's own for this path (lower case "text").
 fn admin_loadhtml(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let Some(path) = argument(command) else {
         world.send_sys_message(gm, "Usage: //loadhtml path");
         return Ok(());
     };
-    let html = world
-        .get_htm(gm, path)
-        .unwrap_or_else(|| format!("<html><body>My text is missing:<br>{path}</body></html>"));
-    if let Some(message) = NpcHtmlMessage::new(0, &html) {
-        world.send_html(gm, &message);
-    }
+    world.outbox.control(ControlRequest::LoadHtmlFile {
+        requester: gm,
+        path: path.to_owned(),
+    });
     Ok(())
+}
+
+impl World {
+    /// The answer to `ControlRequest::LoadHtmlFile`: Java `showHtml(player, path, true)` ends here.
+    pub(crate) fn on_html_file_loaded(&mut self, requester: ObjectId, path: &str, content: Option<String>) {
+        if !self.players.contains_key(&requester) {
+            return;
+        }
+        let html =
+            content.unwrap_or_else(|| format!("<html><body>My text is missing:<br>{path}</body></html>"));
+        if let Some(message) = NpcHtmlMessage::new(0, &html) {
+            self.send_html(requester, &message);
+        }
+    }
 }
 
 /// Java `AdminHelp.onCommand`, `admin_help`: `data/html/admin/help.htm`.

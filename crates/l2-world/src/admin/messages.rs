@@ -2,6 +2,7 @@
 //! [item:id] [skill:id] [npc:id] [zone:x,y,z] [castle:id] [str:'text']` adds the parameters.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminMessages.java
 
+use l2_data::ItemTemplates;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
@@ -61,8 +62,9 @@ fn admin_msgx(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     };
     let mut message = SystemMessage::new(id);
     let mut last_pos: i32 = 0;
+    let items = world.item_templates();
     for token in &tokens[2..] {
-        let result = param(command, token, &mut last_pos);
+        let result = param(items.as_deref(), command, token, &mut last_pos);
         match result {
             Ok(Some(param)) => message = message.with(param),
             Ok(None) => {}
@@ -75,9 +77,14 @@ fn admin_msgx(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// One `msgx` parameter. `Err` is the message of the Java exception the parameter raised; `Ok(None)`
 /// is a word that is not a parameter.
-fn param(command: &str, token: &str, last_pos: &mut i32) -> Result<Option<SystemMessageParam>, String> {
+fn param(
+    items: Option<&ItemTemplates>,
+    command: &str,
+    token: &str,
+    last_pos: &mut i32,
+) -> Result<Option<SystemMessageParam>, String> {
     if let Some(value) = token.strip_prefix("item:") {
-        return int_of(value).map(|v| Some(SystemMessageParam::ItemName(v)));
+        return int_of(value).and_then(|v| item_param(items, v)).map(Some);
     }
     if let Some(value) = token.strip_prefix("skill:") {
         return int_of(value).map(|v| Some(SystemMessageParam::SkillName { id: v, level: 1 }));
@@ -99,6 +106,25 @@ fn param(command: &str, token: &str, last_pos: &mut i32) -> Result<Option<System
         return Ok(Some(SystemMessageParam::Text(text)));
     }
     Ok(None)
+}
+
+/// Java `SystemMessage.addItemName(int id)`: an item whose display id is another id is added as
+/// its name (text); an id the item table does not have is the NullPointerException of
+/// `item.getDisplayId()`. Without an item table at all (no datapack) the id goes in as it is.
+// GUESS: the NullPointerException text is the JDK's helpful message with the class name of
+// `ItemTemplate`; the local variable name in it depends on how the jar was compiled.
+fn item_param(items: Option<&ItemTemplates>, id: i32) -> Result<SystemMessageParam, String> {
+    let Some(items) = items else {
+        return Ok(SystemMessageParam::ItemName(id));
+    };
+    match items.get(id) {
+        Some(item) if item.display_id != id => Ok(SystemMessageParam::Text(item.name.clone())),
+        Some(_) => Ok(SystemMessageParam::ItemName(id)),
+        None => Err(
+            "Cannot invoke \"org.l2jmobius.gameserver.entity.item.ItemTemplate.getDisplayId()\" because \"item\" is null"
+                .to_owned(),
+        ),
+    }
 }
 
 /// `Integer.parseInt(text)` for a parameter: the bare message of the NumberFormatException.

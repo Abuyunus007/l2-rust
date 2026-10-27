@@ -28,8 +28,8 @@
 //   cast slot like `forceIsCasting` does, so a hit or a movement order aborts it.
 //
 // # Left out, with the system that brings it (every one is a check or a state of another M8 card)
-// - Checks `.gotolove` makes on states that do not exist yet: a boss zone, a combat flag or a
-//   cursed weapon, the Olympiad, a registered event, the observer mode, the Seven Signs festival,
+// - Checks `.gotolove` makes on states that do not exist yet: a boss zone, a combat flag,
+//   the Olympiad, a registered event, the observer mode, the Seven Signs festival,
 //   a dimensional rift, the Seven Signs dungeon (`setIn7sDungeon` on arrival).
 // - The combat/zone checks for `.engage` need nothing else.
 
@@ -573,7 +573,14 @@ impl World {
             );
             return false;
         }
-        // (Boss zone, combat flag and cursed weapon: not ported yet.)
+        // (Boss zone and combat flag: not ported yet.)
+        if self.is_cursed_weapon_equipped(player) {
+            self.send_message(
+                player,
+                "While you are holding a Cursed Weapon you can't go to your love!",
+            );
+            return false;
+        }
         if self.is_jailed(player) {
             self.send_message(player, "You are in Jail!");
             return false;
@@ -607,7 +614,14 @@ impl World {
             self.send_message(player, "Your partner is in Jail.");
             return false;
         }
-        // (Partner: cursed weapon, boss zone, Olympiad, event: not ported yet.)
+        if self.is_cursed_weapon_equipped(partner) {
+            self.send_message(
+                player,
+                "Your partner is holding a Cursed Weapon and you can't go to your love!",
+            );
+            return false;
+        }
+        // (Partner: boss zone, Olympiad, event: not ported yet.)
         if self.is_in_duel(partner) {
             self.send_message(player, "Your partner is in a duel.");
             return false;

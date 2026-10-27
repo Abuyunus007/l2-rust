@@ -270,6 +270,16 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// The cursed weapon values: `AllowCursedWeapons` of `General.ini` and the D-53 switch
+/// (`CycleDatabaseWrites`, [`cycle_database_writes`]).
+pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::CursedSettings {
+    l2_world::CursedSettings {
+        allow_cursed_weapons: config.general.allow_cursed_weapons,
+        cycle_database_writes,
+        clock_override_unix_ms: None,
+    }
+}
+
 /// `config/TerritoryWar.ini` (Java `TerritoryWarManager.load`'s `ConfigReader`: a missing file
 /// or key means Java's default). The badge prices of the mercenary captain are read here too
 /// (M7-TW-01).
@@ -770,6 +780,14 @@ impl Server {
         } else {
             l2_world::ManorLoad::default()
         };
+        // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
+        // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
+        let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
+        let cursed_load = if cursed_settings.allow_cursed_weapons && cursed_settings.cycle_database_writes {
+            persist::load_cursed(&pool, &datapack.cursed_weapons).await
+        } else {
+            l2_world::CursedLoad::default()
+        };
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -954,6 +972,10 @@ impl Server {
                     world.set_manor_settings(manor_settings);
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
+                    // Java: CursedWeaponsManager (GameServer, after the items and the skills;
+                    // M8-CURSED-01).
+                    world.set_cursed_settings(cursed_settings);
+                    world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
                     world.set_clan_hall_settings(clan_hall_settings);
                     // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).
@@ -1011,8 +1033,57 @@ impl Server {
             let (stop, acks) = (shutdown.clone(), left_acks.clone());
             let root = datapack_root.clone();
             let (lazy, check_encoding) = (!config.general.htm_cache, config.general.check_html_encoding);
+            // `//respawnall` reads the spawn files again with the same options as the start.
+            let (npcs, spawn_options, spawn_root) = {
+                let options = options_from_config(&config, &paths.config_dir);
+                (
+                    Arc::clone(&datapack.npcs),
+                    l2_data::SpawnLoadOptions {
+                        fake_players_enabled: options.fake_players_enabled,
+                        no_spawns: options.no_spawns,
+                    },
+                    // `SpawnData.addNewSpawn` writes below the server's own folder.
+                    paths.root.join("data/spawns/Others"),
+                )
+            };
             left_acks.set_control(Arc::new(move |request| match request {
                 l2_world::ControlRequest::Shutdown { restart } => stop.request(restart),
+                l2_world::ControlRequest::ReloadSpawns => {
+                    let (acks, root, npcs) = (acks.clone(), root.clone(), Arc::clone(&npcs));
+                    let options = spawn_options.clone();
+                    tokio::task::spawn_blocking(move || {
+                        let spawns = Arc::new(l2_data::SpawnData::load(&root, &npcs, &options));
+                        if !acks.send_to_world(WorldCommand::SpawnsReloaded { spawns }) {
+                            warn!("The reloaded spawns could not be handed to the world.");
+                        }
+                    });
+                }
+                l2_world::ControlRequest::StoreSpawn { spawn } => {
+                    let dir = spawn_root.clone();
+                    tokio::task::spawn_blocking(move || {
+                        match l2_data::spawn_store::add_new_spawn(&dir, &spawn) {
+                            Ok(file) => info!("SpawnData: Stored spawn in {}", file.display()),
+                            Err(error) => warn!(
+                                "SpawnData: Spawn of NPC {} could not be added to the spawn XML files: {error}",
+                                spawn.npc_id
+                            ),
+                        }
+                    });
+                }
+                l2_world::ControlRequest::LoadHtmlFile { requester, path } => {
+                    let (acks, root) = (acks.clone(), root.clone());
+                    tokio::task::spawn_blocking(move || {
+                        let content = l2_data::HtmCache::read_file(&root, &path);
+                        let answer = WorldCommand::HtmlFileLoaded {
+                            requester,
+                            path,
+                            content,
+                        };
+                        if !acks.send_to_world(answer) {
+                            warn!("The html file could not be handed to the world.");
+                        }
+                    });
+                }
                 l2_world::ControlRequest::ReloadHtml { requester, path } => {
                     let (acks, root) = (acks.clone(), root.clone());
                     tokio::task::spawn_blocking(move || {
