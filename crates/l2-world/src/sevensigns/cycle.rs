@@ -828,8 +828,15 @@ impl World {
         );
         if before.0 != after.0 {
             let now = unix_ms_now();
-            self.seven_signs.next_period_change = now;
-            self.ss_set_calendar_for_next_period_change(l2_util::time::local_offset_millis);
+            let status = &self.seven_signs.status;
+            // A 15 minute period ends 15 minutes after the Java GS saved its change; a week long
+            // one at the next Monday 18:00.
+            self.seven_signs.next_period_change = match status.active_period {
+                PERIOD_COMP_RECRUITING | PERIOD_COMP_RESULTS if status.last_save > 7 => {
+                    status.last_save.wrapping_add(PERIOD_MINOR_LENGTH)
+                }
+                period => next_period_change_ms(period, now, l2_util::time::local_offset_millis),
+            };
             self.ss_schedule_period_change(self.seven_signs.next_period_change - now);
         }
         if before != after {

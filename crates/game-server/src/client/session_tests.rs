@@ -955,7 +955,7 @@ fn enter_world_packet() -> EnterWorld {
 
 /// The sequence Java sends after `EnterWorld` for a plain character (see `enter.rs` of
 /// `l2-world` for what is left out and why).
-const ENTER_SEQUENCE: [&str; 26] = [
+const ENTER_SEQUENCE: [&str; 27] = [
     "USER_INFO",
     "EX_VOTE_SYSTEM_INFO",
     "MACRO_LIST",
@@ -970,6 +970,8 @@ const ENTER_SEQUENCE: [&str; 26] = [
     "ETC_STATUS_UPDATE",
     "EX_STORAGE_MAX_COUNT",
     "L2_FRIEND_LIST",
+    "SYSTEM_MESSAGE",
+    // `SevenSigns.sendCurrentPeriodMsg` (M8-SS-01).
     "SYSTEM_MESSAGE",
     "SKILL_COOL_TIME",
     "EX_VOTE_SYSTEM_INFO",
