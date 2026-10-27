@@ -1098,6 +1098,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
                 Out::Persist(PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }) => "boss",
                 Out::Persist(PersistCommand::Cursed(_)) => "cursed",
+                Out::Persist(PersistCommand::Minigame(_)) => "minigame",
                 Out::Persist(PersistCommand::Vehicle(_)) => "vehicle",
                 Out::Persist(
                     PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },

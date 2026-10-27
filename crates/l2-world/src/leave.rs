@@ -31,6 +31,11 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
+        // `canLogout()`: "A superior power doesn't allow you to leave." (M8-GAMES-01).
+        if self.minigame_blocks_logout(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
         // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).
         self.instance_on_logout(id);
         // `OfflineTraderTable.enteredOfflineMode(player)`: the shop stays, the connection goes.
@@ -51,6 +56,12 @@ impl World {
         if self.is_in_store_mode(id) {
             self.send_message(id, "Cannot restart while trading.");
             self.send(id, &RestartResponse { result: false });
+            return;
+        }
+        // `canLogout()`: "A superior power doesn't allow you to leave." (M8-GAMES-01).
+        if self.minigame_blocks_logout(id) {
+            self.send(id, &RestartResponse { result: false });
+            self.send(id, &ActionFailed);
             return;
         }
         // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).
@@ -107,6 +118,8 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: the cursed weapon forgets its player (it keeps the owner's id).
         self.cursed_player_left(id);
+        // `deleteMe`: the Block Checker disconnect, and the arenas forget the player (M8-GAMES-01).
+        self.minigame_on_player_left(id);
         // `deleteMe`: `_vehicle.oustPlayer(this)` (M8-VEHICLE-01).
         self.vehicle_player_left(id);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).

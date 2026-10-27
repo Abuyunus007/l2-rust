@@ -29,9 +29,9 @@ use l2_util::ObjectId;
 use l2_world::{
     AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, CursedInput,
     EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
-    MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
-    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    VehicleInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    MacroData, MailInput, MinigameInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile,
+    RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
+    StoreInput, VehicleInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1196,6 +1196,19 @@ impl ClientSession {
             }),
             ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
             ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
+            // Java: RequestExCubeGameChangeTeam, RequestExCubeGameReadyAnswer (M8-GAMES-01)
+            ClientPacket::RequestExCubeGameChangeTeam(p) => {
+                ClientInput::Minigame(MinigameInput::CubeChangeTeam {
+                    arena: p.arena,
+                    team: p.team,
+                })
+            }
+            ClientPacket::RequestExCubeGameReadyAnswer(p) => {
+                ClientInput::Minigame(MinigameInput::CubeReadyAnswer {
+                    arena: p.arena,
+                    answer: p.answer,
+                })
+            }
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

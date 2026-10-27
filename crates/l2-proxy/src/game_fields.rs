@@ -82,8 +82,8 @@ use l2_protocol_game::server::manor::{
 use l2_protocol_game::server::minigame::{
     ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam, ExCubeGameChangeTimeToStart,
     ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints, ExCubeGameRemovePlayer,
-    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent,
-    ExStartScenePlayer,
+    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchCcMyRecord, ExPvpMatchCcRecord, ExPvpMatchCcRetire,
+    ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent, ExStartScenePlayer,
 };
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
@@ -1282,6 +1282,16 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExPvpMatchUserDie => {
             decoded::<ExPvpMatchUserDie>(&mut r, |p| object!(p => red_kills, blue_kills))
         }
+        ServerOpcode::ExPvpMatchCcRecord => decoded::<ExPvpMatchCcRecord>(&mut r, |p| {
+            json!({
+                "state": p.state,
+                "players": p.players.iter().map(|e| object!(e => name, points)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExPvpMatchCcMyRecord => {
+            decoded::<ExPvpMatchCcMyRecord>(&mut r, |p| object!(p => points))
+        }
+        ServerOpcode::ExPvpMatchCcRetire => decoded::<ExPvpMatchCcRetire>(&mut r, |_| json!({})),
         ServerOpcode::ExStartScenePlayer => decoded::<ExStartScenePlayer>(&mut r, |p| object!(p => movie_id)),
         ServerOpcode::ExSendUiEvent => decoded::<ExSendUiEvent>(
             &mut r,
@@ -3313,6 +3323,9 @@ mod tests {
         ServerOpcode::ExBlockUpSetState,
         ServerOpcode::ExPvpMatchRecord,
         ServerOpcode::ExPvpMatchUserDie,
+        ServerOpcode::ExPvpMatchCcRecord,
+        ServerOpcode::ExPvpMatchCcMyRecord,
+        ServerOpcode::ExPvpMatchCcRetire,
         ServerOpcode::ExStartScenePlayer,
         ServerOpcode::ExSendUiEvent,
         ServerOpcode::ExGetBossRecord,

@@ -64,6 +64,7 @@ use l2_db::ItemAuctionRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
+use l2_db::UndergroundColiseumRepository;
 use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
@@ -116,6 +117,7 @@ use l2_world::{
     HallSiegeWrite,
 };
 use l2_world::{ItemAuctionRecord, ItemAuctionWrite};
+use l2_world::{MinigameLoad, MinigameWrite};
 use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -512,6 +514,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_seven_signs(
         &mut self,
         _write: &l2_world::sevensigns::SevenSignsWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A row of the Underground Coliseum (`underground_coliseum`, the `UC_*_TIME` rows of
+    /// `global_variables`, M8-GAMES-01).
+    fn store_minigame_write(
+        &mut self,
+        _write: &MinigameWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1164,6 +1175,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed henna statement and goes on (no retry).
                 if let Err(e) = store.store_henna_write(&write).await {
                     error!("Henna data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Minigame(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_minigame_write(&write).await {
+                    error!("UndergroundColiseumManager: could not save ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::InstanceTime(write)) => {
@@ -2386,6 +2403,33 @@ pub async fn load_airships(pool: &Pool) -> VehicleLoad {
     }
 }
 
+/// Java `UndergroundColiseumManager.load()` and `restoreBestTeams()`, the database half
+/// (M8-GAMES-01): `UC_START_TIME` and `UC_STOP_TIME` of `global_variables`, and the rows of
+/// `underground_coliseum`. A failed read is logged like Java's and reads as nothing.
+pub async fn load_minigames(pool: &Pool) -> MinigameLoad {
+    let repo = UndergroundColiseumRepository::new(pool.clone());
+    let uc_start_ms = repo.variable_long("UC_START_TIME").await.unwrap_or_else(|e| {
+        warn!("Could not read UC_START_TIME: {e}");
+        0
+    });
+    let uc_stop_ms = repo.variable_long("UC_STOP_TIME").await.unwrap_or_else(|e| {
+        warn!("Could not read UC_STOP_TIME: {e}");
+        0
+    });
+    let best_teams = match repo.best_teams().await {
+        Ok(rows) => rows.into_iter().map(|r| (r.arena_id, r.leader, r.wins)).collect(),
+        Err(e) => {
+            warn!("UndergroundColiseumManager: Could not load underground_coliseum table ({e})");
+            Vec::new()
+        }
+    };
+    MinigameLoad {
+        uc_start_ms,
+        uc_stop_ms,
+        best_teams,
+    }
+}
+
 /// Java `CursedWeaponsManager.restore()` and `controlPlayers()`, the database half (M8-CURSED-01):
 /// the rows of `cursed_weapons`, and the cleanup of a cursed weapon item a character holds
 /// without a row. Called only with `CycleDatabaseWrites` (D-53): without it the table is the
@@ -3287,6 +3331,7 @@ pub struct DbStore {
     hennas: HennaRepository,
     item_auctions: ItemAuctionRepository,
     instance_times: InstanceTimeRepository,
+    coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
     reco: RecommendationRepository,
@@ -3338,6 +3383,7 @@ impl DbStore {
             hennas: HennaRepository::new(pool.clone()),
             item_auctions: ItemAuctionRepository::new(pool.clone()),
             instance_times: InstanceTimeRepository::new(pool.clone()),
+            coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -4803,6 +4849,23 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_minigame_write(&mut self, write: &MinigameWrite) -> Result<(), PersistError> {
+        match write {
+            MinigameWrite::BestTeamInsert {
+                arena_id,
+                leader,
+                wins,
+            } => self.coliseum.insert_best_team(*arena_id, leader, *wins).await?,
+            MinigameWrite::BestTeamUpdate { arena_id, wins } => {
+                self.coliseum.update_best_team(*arena_id, *wins).await?
+            }
+            MinigameWrite::GlobalVariable { name, value } => {
+                self.coliseum.set_variable_long(name, *value).await?
+            }
+        }
+        Ok(())
+    }
+
     async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
         match *write {
             InstanceTimeWrite::Set {
@@ -5540,6 +5603,8 @@ mod tests {
         BossRead(BossReadKind),
         /// A `character_instance_time` write (M8-INST-01).
         InstanceTime(InstanceTimeWrite),
+        /// An Underground Coliseum write (M8-GAMES-01).
+        Minigame(MinigameWrite),
         /// A `character_tpbookmark` write (L-04).
         Bookmark(BookmarkWrite),
         /// A `character_contacts` write (L-04).
@@ -5776,6 +5841,11 @@ mod tests {
 
         async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::InstanceTime(*write));
+            Ok(())
+        }
+
+        async fn store_minigame_write(&mut self, write: &MinigameWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Minigame(write.clone()));
             Ok(())
         }
 
@@ -7289,6 +7359,38 @@ mod tests {
         assert_eq!(
             calls.as_slice(),
             [Call::Cursed(save), Call::Cursed(offline), Call::Cursed(remove)]
+        );
+    }
+
+    /// M8-GAMES-01: the Underground Coliseum writes reach the store in order.
+    #[tokio::test]
+    async fn minigame_writes_are_stored_in_order() {
+        let insert = MinigameWrite::BestTeamInsert {
+            arena_id: 5,
+            leader: "Winner".to_owned(),
+            wins: 2,
+        };
+        let update = MinigameWrite::BestTeamUpdate { arena_id: 5, wins: 3 };
+        let variable = MinigameWrite::GlobalVariable {
+            name: "UC_START_TIME".to_owned(),
+            value: 1_800_000_000_000,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Minigame(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Minigame(update.clone())),
+                OutboxMessage::Persist(PersistCommand::Minigame(variable.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls.as_slice(),
+            [
+                Call::Minigame(insert),
+                Call::Minigame(update),
+                Call::Minigame(variable)
+            ]
         );
     }
 
