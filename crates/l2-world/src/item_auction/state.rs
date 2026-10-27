@@ -166,6 +166,11 @@ impl World {
     /// Java `createAuction(after)`: a random item of the instance at the next start time. Its row
     /// goes out with `storeMe` (global). The auction is added to the instance.
     fn create_item_auction(&mut self, instance_id: i32, after: i64) -> Option<i32> {
+        // D-53: with `CycleDatabaseWrites` off the Java game server makes the auctions; this
+        // server never invents one (its ids could collide with Java's).
+        if !self.item_auctions.settings.cycle_database_writes {
+            return None;
+        }
         let count = {
             let instance = self.item_auctions.instances.get(&instance_id)?;
             i32::try_from(instance.items.len()).unwrap_or(i32::MAX)
@@ -186,7 +191,7 @@ impl World {
         let id = self.item_auctions.next_auction_id;
         self.item_auctions.next_auction_id = id.wrapping_add(1);
         let object_id = self.allocate_item_id().map_or(0, |id| id.0);
-        let mut auction = ItemAuction::new(
+        let auction = ItemAuction::new(
             id,
             instance_id,
             starting_time,
@@ -196,7 +201,6 @@ impl World {
             ItemAuctionState::Created,
             object_id,
         );
-        auction.local_only = !self.item_auctions.settings.cycle_database_writes;
         self.store_item_auction(&auction);
         self.item_auctions
             .instances
@@ -285,23 +289,20 @@ impl World {
                 (current, next)
             }
         };
-        let Some(next) = next else {
-            warn!("ItemAuctionInstance: instance {instance_id} has no auction to schedule.");
-            return;
-        };
 
         let (current_state, current_times, next_start) = {
             let Some(instance) = self.item_auctions.instances.get_mut(&instance_id) else {
                 return;
             };
             instance.current = current;
-            instance.next = Some(next);
+            instance.next = next;
             (
                 current.and_then(|c| instance.auctions.get(&c)).map(|a| a.state),
                 current
                     .and_then(|c| instance.auctions.get(&c))
                     .map(|a| (a.starting_time, a.ending_time)),
-                instance.auctions.get(&next).map_or(0, |a| a.starting_time),
+                next.and_then(|n| instance.auctions.get(&n))
+                    .map(|a| a.starting_time),
             )
         };
 
@@ -326,6 +327,11 @@ impl World {
                 }
             }
             _ => {
+                let (Some(next), Some(next_start)) = (next, next_start) else {
+                    // Off: the Java game server has not made the next auction yet.
+                    debug!("ItemAuctionInstance: instance {instance_id} has no auction to schedule.");
+                    return;
+                };
                 self.set_item_auction_state_task(instance_id, next, (next_start - now).max(0));
                 if announce {
                     info!(

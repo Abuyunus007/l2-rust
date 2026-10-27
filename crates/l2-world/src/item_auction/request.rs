@@ -89,14 +89,16 @@ impl World {
             self.send_message(player, "You are bidding too fast.");
             return;
         }
+        // D-53: Java's memory never sees a bid made here while the switch is off, and it would
+        // end the auction without returning it.
+        if self.item_auction_needs_reread() {
+            self.send_message(player, "This feature is disabled.");
+            return;
+        }
         if bid < 0 || bid > self.settings.ground.max_adena {
             return;
         }
         if !self.item_auctions.instances.contains_key(&instance_id) {
-            return;
-        }
-        if self.item_auction_needs_reread() {
-            self.request_item_auction_reread(instance_id, ItemAuctionThen::Bid { player, bid });
             return;
         }
         self.item_auction_bid_now(player, instance_id, bid);
@@ -225,7 +227,7 @@ impl World {
             self.item_auction_show_now(player, instance_id);
         } else if cmd.eq_ignore_ascii_case("cancel") {
             if self.item_auction_needs_reread() {
-                self.request_item_auction_reread(instance_id, ItemAuctionThen::Cancel { player });
+                self.send_message(player, "This feature is disabled.");
                 return true;
             }
             self.item_auction_cancel_now(player, instance_id);
@@ -299,10 +301,7 @@ impl World {
         then: ItemAuctionThen,
     ) {
         let player = match then {
-            ItemAuctionThen::Info { player }
-            | ItemAuctionThen::Show { player }
-            | ItemAuctionThen::Bid { player, .. }
-            | ItemAuctionThen::Cancel { player } => player,
+            ItemAuctionThen::Info { player } | ItemAuctionThen::Show { player } => player,
         };
         let Ok(rows) = result else {
             warn!(
@@ -317,8 +316,6 @@ impl World {
         match then {
             ItemAuctionThen::Info { .. } => self.item_auction_info_now(player, instance_id),
             ItemAuctionThen::Show { .. } => self.item_auction_show_now(player, instance_id),
-            ItemAuctionThen::Bid { bid, .. } => self.item_auction_bid_now(player, instance_id, bid),
-            ItemAuctionThen::Cancel { .. } => self.item_auction_cancel_now(player, instance_id),
         }
     }
 
@@ -327,7 +324,7 @@ impl World {
     /// - the state never goes back, the end never gets earlier (this server's own timers may be
     ///   ahead, and an extension is not stored),
     /// - the bids are the rows' (this server's own bids were written before the read),
-    /// - an auction the rows do not have any more is dropped, unless this server made it up,
+    /// - an auction the rows do not have any more is dropped,
     /// - an auction this server does not know is added.
     ///
     /// Then the current and the next auction are chosen again.
@@ -362,7 +359,6 @@ impl World {
                         .map(|&(player, last_bid)| super::Bid { player, last_bid })
                         .collect();
                     auction.find_highest();
-                    auction.local_only = false;
                 }
                 seen.insert(record.auction_id);
                 continue;
@@ -423,9 +419,7 @@ impl World {
         }
         if let Some(instance) = self.item_auctions.instances.get_mut(&instance_id) {
             let before = instance.auctions.len();
-            instance
-                .auctions
-                .retain(|id, a| seen.contains(id) || a.local_only);
+            instance.auctions.retain(|id, _| seen.contains(id));
             if instance.auctions.len() != before {
                 debug!(
                     "ItemAuctionInstance: instance {instance_id} lost auctions the database no longer has."

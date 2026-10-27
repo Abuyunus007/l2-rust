@@ -6405,9 +6405,8 @@ mod tests {
             player_obj_id: 1001,
             bid: 500,
         };
-        let then = l2_world::ItemAuctionThen::Bid {
+        let then = l2_world::ItemAuctionThen::Info {
             player: ObjectId(1001),
-            bid: 600,
         };
         let calls = Arc::new(Mutex::new(Vec::new()));
         let store = Recording {

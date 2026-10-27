@@ -34,11 +34,14 @@
 // - hands out no winner's item and clears no canceled bid at the end (the Java GS does, from the
 //   shared `item_auction_bid` rows),
 // - reads the auctions of an instance again before it shows them, takes a bid or returns a
-//   canceled one (`PersistCommand::ItemAuctionRequest` / `WorldCommand::ItemAuctionReread`, D-50:
-//   a failed read refuses the action),
-// - still keeps the states in memory and moves them with its own timers, so a player sees the
-//   countdown; what the Java GS wrote (a state further on) wins at every re-read.
-// The bids and canceled bids of a player are per-player rows and are written in both modes.
+//   canceled one is refused ("This feature is disabled."): a bid or a return Java's memory
+//   never saw would lose the adena when Java ends the auction,
+// - reads the auctions of an instance again before it shows them
+//   (`PersistCommand::ItemAuctionRequest` / `WorldCommand::ItemAuctionReread`, D-50: a failed
+//   read refuses the action),
+// - makes no auction of its own, keeps the states in memory and moves them with its own timers,
+//   so a player sees the countdown; what the Java GS wrote (a state further on) wins at every
+//   re-read.
 //
 // # Left out on purpose
 // - Java sends the "bidder exists" extension message from a thread pool task; it is sent at once
@@ -46,8 +49,6 @@
 // - `ItemProcessType` logging (`LogItems`).
 // - NOTE(java-quirk): `ItemAuction.endingTime` is never stored: an extended auction ends at its
 //   original time again after a restart.
-// - A bid the Java GS never saw (a Kain bid while the switch is off) is unknown to Java's memory,
-//   so Java may end the auction with another winner. Nothing on this side can prevent that.
 
 mod bid;
 mod date;
@@ -231,10 +232,6 @@ pub enum ItemAuctionThen {
     Info { player: ObjectId },
     /// The `ItemAuction show` bypass.
     Show { player: ObjectId },
-    /// `RequestBidItemAuction`.
-    Bid { player: ObjectId, bid: i64 },
-    /// The `ItemAuction cancel` bypass.
-    Cancel { player: ObjectId },
 }
 
 /// The item auction timers (one `TimerKind::ItemAuction`).
@@ -277,9 +274,6 @@ pub(crate) struct ItemAuction {
     pub last_bid_player: i32,
     /// The object id the item of the packet shows (Java creates a real item for `ItemInfo`).
     pub item_object_id: i32,
-    /// Created while `CycleDatabaseWrites` is off: no `item_auction` row, so a re-read must not
-    /// drop it.
-    pub local_only: bool,
 }
 
 impl ItemAuction {
@@ -307,7 +301,6 @@ impl ItemAuction {
             highest: None,
             last_bid_player: 0,
             item_object_id,
-            local_only: false,
         };
         auction.find_highest();
         auction

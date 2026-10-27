@@ -1132,68 +1132,57 @@ fn off_the_info_is_shown_from_the_rows_read_again() {
     assert!(info.refresh);
 }
 
-/// With the switch off a bid is checked against the rows read again, pays the adena and writes its
-/// own bid row (a per-player row), and the Java game server's higher bid refuses it.
+/// With the switch off a bid and the return of a bid are refused (Java's memory would never see
+/// them and the adena would be lost): no adena moves, no row is written, no re-read is asked.
+/// Nor does this server invent an auction of its own.
 #[test]
-fn off_a_bid_is_checked_against_the_rows_read_again_and_its_row_is_written() {
-    let mut s = Scene::new(settings(false), |now| started_falchion(now, &[(A.0, 150)]));
-    s.clear();
-    let (out, rows) = s.bid(B, 200);
-    assert!(out.is_empty());
-    let asked = requests(&rows);
-    let (instance_id, then) = asked[0];
-    assert_eq!(then, ItemAuctionThen::Bid { player: B, bid: 200 });
-
-    // The rows now have a 400 bid (Java's): 200 is too low.
-    let now = now_ms();
-    let java_rows = |bids: &[(i32, i64)]| {
-        vec![
-            record(5, 1, now - 10_000, now + 60_000, 1, bids),
-            record(6, 1, now + 86_400_000, now + 86_460_000, 0, &[]),
-        ]
-    };
-    s.world.handle(WorldCommand::ItemAuctionReread {
-        instance_id,
-        result: Ok(java_rows(&[(A.0, 150), (999, 400)])),
-        then,
+fn off_a_bid_and_a_return_are_refused() {
+    let mut s = Scene::new(settings(false), |now| {
+        // Only a running auction: Java has not made the next one yet.
+        vec![record(5, 1, now - 10_000, now + 60_000, 1, &[(B.0, 150)])]
     });
+    assert!(writes(&s.outbox.take()).is_empty());
+    let (out, rows) = s.bid(A, 200);
     assert_eq!(
-        message_ids(&s.b.take()),
-        [SystemMessageId::YourBidMustBeHigherThanTheCurrentHighestBid]
+        messages(&out)
+            .iter()
+            .map(|m| m.params.clone())
+            .collect::<Vec<_>>(),
+        [vec![SystemMessageParam::Text("This feature is disabled.".into())]]
     );
+    assert!(rows.is_empty());
+    assert_eq!(s.adena(A), 1000);
+    let (out, rows) = s.bypass(B, "ItemAuction cancel");
+    assert_eq!(
+        messages(&out)[0].params,
+        [SystemMessageParam::Text("This feature is disabled.".into())]
+    );
+    assert!(rows.is_empty());
     assert_eq!(s.adena(B), 1000);
-
-    // With the old rows the bid goes through, and the row is written although the switch is off.
+    // The info still works, from the rows read again; there is no next auction.
+    let (_, rows) = s.input(
+        A,
+        ClientInput::ItemAuction(ItemAuctionInput::Info {
+            instance_id: AUCTIONEER,
+        }),
+    );
+    let (instance_id, then) = requests(&rows)[0];
+    let now = now_ms();
     s.world.handle(WorldCommand::ItemAuctionReread {
         instance_id,
-        result: Ok(java_rows(&[(A.0, 150)])),
+        result: Ok(vec![record(
+            5,
+            1,
+            now - 10_000,
+            now + 60_000,
+            1,
+            &[(B.0, 150), (999, 400)],
+        )]),
         then,
     });
-    assert_eq!(s.adena(B), 800);
-    assert_eq!(
-        writes(&s.outbox.take()),
-        [ItemAuctionWrite::Bid {
-            auction_id: 5,
-            player_obj_id: B.0,
-            bid: 200
-        }]
-    );
-    assert_eq!(
-        message_ids(&s.b.take())[..2],
-        [
-            SystemMessageId::S1AdenaDisappeared,
-            SystemMessageId::YouHaveSubmittedABidForTheAuctionOfS1
-        ]
-    );
-    // A, outbid, hears it, and the bidders hear that the end of the auction was extended (it
-    // ends in a minute, inside the last 10).
-    assert_eq!(
-        message_ids(&s.a.take()),
-        [
-            SystemMessageId::YouHaveBeenOutbid,
-            SystemMessageId::BidderExistsTheAuctionTimeHasBeenExtendedBy5Minutes
-        ]
-    );
+    let info = &decoded::<ExItemAuctionInfo>(&s.a.take(), "EX_ITEM_AUCTION_INFO")[0];
+    assert_eq!(info.bid, 400);
+    assert!(info.next.is_none());
 }
 
 /// With the switch off the end of an auction stays with the Java game server: this server writes no
