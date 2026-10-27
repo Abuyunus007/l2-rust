@@ -349,6 +349,9 @@ pub struct WorldSettings {
     pub grids_always_on: bool,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNON_TIME` (`GridNeighborTurnOnTime`), seconds.
     pub grid_neighbor_turnon_secs: i32,
+    /// `GeneralConfig.BOOKMARK_CONSUME_ITEM_ID` (`BookmarkConsumeItemId`): the item a saved
+    /// teleport bookmark uses up (0 or less: none).
+    pub bookmark_consume_item_id: i32,
     /// `GeneralConfig.GRID_NEIGHBOR_TURNOFF_TIME` (`GridNeighborTurnOffTime`), seconds.
     pub grid_neighbor_turnoff_secs: i32,
     /// `PlayerConfig.ENABLE_KEYBOARD_MOVEMENT` (`KeyboardMovement`).
@@ -430,6 +433,7 @@ impl Default for WorldSettings {
             minimum_chat_level: 20,
             grids_always_on: false,
             grid_neighbor_turnon_secs: 1,
+            bookmark_consume_item_id: -1,
             grid_neighbor_turnoff_secs: 90,
             keyboard_movement: true,
             player_movement_block_time_ms: 0,

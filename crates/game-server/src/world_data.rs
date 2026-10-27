@@ -1211,6 +1211,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         minimum_chat_level: config.general.minimum_chat_level,
         grids_always_on: config.general.grids_always_on,
         grid_neighbor_turnon_secs: config.general.grid_neighbor_turnon_time,
+        bookmark_consume_item_id: config.general.bookmark_consume_item_id,
         grid_neighbor_turnoff_secs: config.general.grid_neighbor_turnoff_time,
         gm_hero_aura: config.general.gm_hero_aura,
         log_chat: config.general.log_chat,

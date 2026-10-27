@@ -163,9 +163,11 @@ macro_rules! client_unit_packet {
 }
 
 pub mod auction;
+pub mod bookmark;
 pub mod charscreen;
 pub mod combat;
 pub mod command_channel;
+pub mod contacts;
 pub mod couple;
 pub mod duel;
 pub mod enchant;
@@ -175,6 +177,7 @@ pub mod fishing;
 pub mod fort;
 pub mod friend;
 pub mod handshake;
+pub mod hardware;
 pub mod henna;
 pub mod ingame;
 pub mod interaction;
@@ -189,6 +192,7 @@ pub mod pledge;
 pub mod recipe;
 pub mod refine;
 pub mod residence;
+pub mod secondary_auth;
 pub mod shop;
 pub mod shortcut;
 pub mod siege;
@@ -201,12 +205,20 @@ pub mod vote;
 pub mod warehouse;
 
 pub use auction::{RequestBidItemAuction, RequestInfoItemAuction};
+pub use bookmark::{
+    RequestBookMarkSlotInfo, RequestChangeBookMarkSlot, RequestDeleteBookMarkSlot, RequestModifyBookMarkSlot,
+    RequestSaveBookMarkSlot, RequestTeleportBookMark,
+};
 pub use charscreen::{
     CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect, NewCharacter, RequestGotoLobby,
 };
 pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use command_channel::{
     RequestExAcceptJoinMpcc, RequestExAskJoinMpcc, RequestExMpccShowPartyMembersInfo, RequestExOustFromMpcc,
+};
+pub use contacts::{
+    RequestExAddContactToContactList, RequestExDeleteContactFromContactList, RequestExFriendListExtended,
+    RequestExShowContactList,
 };
 pub use couple::AnswerCoupleAction;
 pub use duel::{RequestDuelAnswerStart, RequestDuelStart, RequestDuelSurrender};
@@ -226,6 +238,7 @@ pub use friend::{
     RequestSendFriendMsg,
 };
 pub use handshake::{AuthLogin, ProtocolVersion};
+pub use hardware::{GameGuardReply, RequestHardWareInfo, RequestPCCafeCouponUse};
 pub use henna::{
     RequestHennaEquip, RequestHennaItemInfo, RequestHennaItemList, RequestHennaItemRemoveInfo,
     RequestHennaRemove, RequestHennaRemoveList,
@@ -274,6 +287,7 @@ pub use refine::{
     RequestRefine, RequestRefineCancel,
 };
 pub use residence::RequestAllAgitInfo;
+pub use secondary_auth::{RequestEx2ndPasswordCheck, RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify};
 pub use shop::{
     BuyItemEntry, RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem, SellItemEntry,
 };

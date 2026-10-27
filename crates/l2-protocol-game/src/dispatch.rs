@@ -9,6 +9,9 @@ use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::MultiSellChoose;
 use crate::client::RequestExFishRanking;
+use crate::client::bookmark::{
+    SUB_CHANGE_SLOT, SUB_DELETE, SUB_MODIFY, SUB_SAVE, SUB_SLOT_INFO, SUB_TELEPORT,
+};
 use crate::client::{
     Action, Appearing, AttackRequest, AuthLogin, BypassUserCmd, CannotMoveAnymore, CharacterCreate,
     CharacterDelete, CharacterRestore, CharacterSelect, DlgAnswer, EnterWorld, Logout, MoveToLocation,
@@ -31,6 +34,13 @@ use crate::client::{
     RequestPledgeWarList, RequestReplyStartPledgeWar, RequestReplyStopPledgeWar,
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
+};
+use crate::client::{
+    GameGuardReply, RequestBookMarkSlotInfo, RequestChangeBookMarkSlot, RequestDeleteBookMarkSlot,
+    RequestEx2ndPasswordCheck, RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify,
+    RequestExAddContactToContactList, RequestExDeleteContactFromContactList, RequestExFriendListExtended,
+    RequestExShowContactList, RequestHardWareInfo, RequestModifyBookMarkSlot, RequestPCCafeCouponUse,
+    RequestSaveBookMarkSlot, RequestTeleportBookMark,
 };
 use crate::client::{
     RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
@@ -317,6 +327,38 @@ pub enum ClientPacket {
     RequestSetCastleSiegeTime(RequestSetCastleSiegeTime),
     /// `REQUEST_BUY_SEED` (0xC5).
     RequestBuySeed(RequestBuySeed),
+    /// `GAME_GUARD_REPLY` (0xCB).
+    GameGuardReply(GameGuardReply),
+    /// `0xD0` 0x0051 with sub id 0 (L-04).
+    RequestBookMarkSlotInfo(RequestBookMarkSlotInfo),
+    /// `0xD0` 0x0051 with sub id 1.
+    RequestSaveBookMarkSlot(RequestSaveBookMarkSlot),
+    /// `0xD0` 0x0051 with sub id 2.
+    RequestModifyBookMarkSlot(RequestModifyBookMarkSlot),
+    /// `0xD0` 0x0051 with sub id 3.
+    RequestDeleteBookMarkSlot(RequestDeleteBookMarkSlot),
+    /// `0xD0` 0x0051 with sub id 4.
+    RequestTeleportBookMark(RequestTeleportBookMark),
+    /// `0xD0` 0x0051 with sub id 5.
+    RequestChangeBookMarkSlot(RequestChangeBookMarkSlot),
+    /// `REQUEST_EX_2ND_PASSWORD_CHECK` (`0xD0` 0x0093).
+    RequestEx2ndPasswordCheck(RequestEx2ndPasswordCheck),
+    /// `REQUEST_EX_2ND_PASSWORD_VERIFY` (`0xD0` 0x0094).
+    RequestEx2ndPasswordVerify(RequestEx2ndPasswordVerify),
+    /// `REQUEST_EX_2ND_PASSWORD_REQ` (`0xD0` 0x0095).
+    RequestEx2ndPasswordReq(RequestEx2ndPasswordReq),
+    /// `REQUEST_EX_SHOW_POST_FRIEND_FOR_POST_BOX` (`0xD0` 0x0086).
+    RequestExShowContactList(RequestExShowContactList),
+    /// `REQUEST_EX_ADD_POST_FRIEND_FOR_POST_BOX` (`0xD0` 0x0084).
+    RequestExAddContactToContactList(RequestExAddContactToContactList),
+    /// `REQUEST_EX_DELETE_POST_FRIEND_FOR_POST_BOX` (`0xD0` 0x0085).
+    RequestExDeleteContactFromContactList(RequestExDeleteContactFromContactList),
+    /// `REQUEST_EX_FRIEND_LIST_FOR_POST_BOX` (`0xD0` 0x0087).
+    RequestExFriendListExtended(RequestExFriendListExtended),
+    /// `REQUEST_HARDWARE_INFO` (`0xD0` 0x0096).
+    RequestHardWareInfo(Box<RequestHardWareInfo>),
+    /// `REQUEST_PCCAFE_COUPON_USE` (`0xD0` 0x0019).
+    RequestPCCafeCouponUse(RequestPCCafeCouponUse),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -623,6 +665,7 @@ pub fn decode_client(
             ClientPacket::RequestSetCastleSiegeTime(RequestSetCastleSiegeTime::decode(reader)?)
         }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
+        GameGuardReply::OPCODE => ClientPacket::GameGuardReply(GameGuardReply::decode(reader)?),
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -639,8 +682,22 @@ fn decode_ex_client(
     if !ex.connection_states().contains(&state) {
         return Ok(None);
     }
-    // TODO(M2-GPROTO-*): Java reads a `u32` sub id right after the ex id of 0x51 (bookmarks) to
-    // pick the packet. Whoever ports the bookmark packets handles it here.
+    // Java reads an `int` sub id right after the ex id of 0x51 (bookmarks) to pick the packet; an
+    // unknown sub id gives no packet (L-04).
+    if ex == ExClientOpcode::ExBookmarkPacket {
+        let packet = match reader.i32()? {
+            SUB_SLOT_INFO => ClientPacket::RequestBookMarkSlotInfo(RequestBookMarkSlotInfo::decode(reader)?),
+            SUB_SAVE => ClientPacket::RequestSaveBookMarkSlot(RequestSaveBookMarkSlot::decode(reader)?),
+            SUB_MODIFY => ClientPacket::RequestModifyBookMarkSlot(RequestModifyBookMarkSlot::decode(reader)?),
+            SUB_DELETE => ClientPacket::RequestDeleteBookMarkSlot(RequestDeleteBookMarkSlot::decode(reader)?),
+            SUB_TELEPORT => ClientPacket::RequestTeleportBookMark(RequestTeleportBookMark::decode(reader)?),
+            SUB_CHANGE_SLOT => {
+                ClientPacket::RequestChangeBookMarkSlot(RequestChangeBookMarkSlot::decode(reader)?)
+            }
+            _ => return Ok(None),
+        };
+        return Ok(Some(packet));
+    }
     let packet = match ex {
         RequestGotoLobby::EX_OPCODE => ClientPacket::RequestGotoLobby(RequestGotoLobby::decode(reader)?),
         RequestKeyMapping::EX_OPCODE => ClientPacket::RequestKeyMapping(RequestKeyMapping::decode(reader)?),
@@ -821,6 +878,35 @@ fn decode_ex_client(
         }
         RequestInfoItemAuction::EX_OPCODE => {
             ClientPacket::RequestInfoItemAuction(RequestInfoItemAuction::decode(reader)?)
+        }
+        RequestEx2ndPasswordCheck::EX_OPCODE => {
+            ClientPacket::RequestEx2ndPasswordCheck(RequestEx2ndPasswordCheck::decode(reader)?)
+        }
+        RequestEx2ndPasswordVerify::EX_OPCODE => {
+            ClientPacket::RequestEx2ndPasswordVerify(RequestEx2ndPasswordVerify::decode(reader)?)
+        }
+        RequestEx2ndPasswordReq::EX_OPCODE => {
+            ClientPacket::RequestEx2ndPasswordReq(RequestEx2ndPasswordReq::decode(reader)?)
+        }
+        RequestExShowContactList::EX_OPCODE => {
+            ClientPacket::RequestExShowContactList(RequestExShowContactList::decode(reader)?)
+        }
+        RequestExAddContactToContactList::EX_OPCODE => {
+            ClientPacket::RequestExAddContactToContactList(RequestExAddContactToContactList::decode(reader)?)
+        }
+        RequestExDeleteContactFromContactList::EX_OPCODE => {
+            ClientPacket::RequestExDeleteContactFromContactList(
+                RequestExDeleteContactFromContactList::decode(reader)?,
+            )
+        }
+        RequestExFriendListExtended::EX_OPCODE => {
+            ClientPacket::RequestExFriendListExtended(RequestExFriendListExtended::decode(reader)?)
+        }
+        RequestHardWareInfo::EX_OPCODE => {
+            ClientPacket::RequestHardWareInfo(Box::new(RequestHardWareInfo::decode(reader)?))
+        }
+        RequestPCCafeCouponUse::EX_OPCODE => {
+            ClientPacket::RequestPCCafeCouponUse(RequestPCCafeCouponUse::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };
@@ -1160,6 +1246,65 @@ mod tests {
         // The state check comes first: these are IN_GAME only.
         assert_eq!(decode(Authenticated, 0x39, &ZEROS).unwrap(), None);
         assert_eq!(decode(Entering, 0xD0, &[0x4B, 0x00]).unwrap(), None);
+    }
+
+    /// L-04: Java reads an int sub id after the ex id of 0x51 and picks the bookmark packet.
+    #[test]
+    fn the_bookmark_ex_packet_is_picked_by_its_sub_id() {
+        // sub id 4: teleport to bookmark 3
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x51, 0x00, 4, 0, 0, 0, 3, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestTeleportBookMark(RequestTeleportBookMark {
+                id: 3
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x51, 0x00, 0, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestBookMarkSlotInfo(RequestBookMarkSlotInfo))
+        );
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x51, 0x00, 5, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestChangeBookMarkSlot(RequestChangeBookMarkSlot))
+        );
+        // An unknown sub id gives no packet (Java returns null); a short body is an error.
+        assert_eq!(decode(InGame, 0xD0, &[0x51, 0x00, 6, 0, 0, 0]).unwrap(), None);
+        assert!(decode(InGame, 0xD0, &[0x51, 0x00]).is_err());
+        assert!(decode(InGame, 0xD0, &[0x51, 0x00, 4, 0, 0, 0]).is_err());
+        // In game only.
+        assert_eq!(
+            decode(Authenticated, 0xD0, &[0x51, 0x00, 0, 0, 0, 0]).unwrap(),
+            None
+        );
+    }
+
+    /// L-04: the secondary password packets are for the character screen, the hardware report for
+    /// every state, the contact list packets for the game.
+    #[test]
+    fn secondary_auth_contact_and_hardware_packets_follow_their_states() {
+        assert_eq!(
+            decode(Authenticated, 0xD0, &[0x93, 0x00]).unwrap(),
+            Some(ClientPacket::RequestEx2ndPasswordCheck(RequestEx2ndPasswordCheck))
+        );
+        assert_eq!(decode(InGame, 0xD0, &[0x93, 0x00]).unwrap(), None);
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x86, 0x00]).unwrap(),
+            Some(ClientPacket::RequestExShowContactList(RequestExShowContactList))
+        );
+        assert_eq!(decode(Authenticated, 0xD0, &[0x86, 0x00]).unwrap(), None);
+        let coupon = RequestPCCafeCouponUse { coupon: "X".into() };
+        assert_eq!(
+            decode(InGame, 0xD0, &[0x19, 0x00, b'X', 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestPCCafeCouponUse(coupon))
+        );
+        // The hardware report: accepted before the character screen too.
+        assert!(decode(Authenticated, 0xD0, &[0x96, 0x00]).is_err());
+        assert_eq!(
+            decode(InGame, 0xCB, &[1, 2, 3, 4, 0, 0, 0, 0, 5, 6, 7, 8]).unwrap(),
+            Some(ClientPacket::GameGuardReply(GameGuardReply {
+                reply: [1, 2, 3, 4, 5, 6, 7, 8],
+                skipped: 0
+            }))
+        );
     }
 
     #[test]

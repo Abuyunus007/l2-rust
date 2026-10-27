@@ -43,8 +43,8 @@ use l2_net::{
 };
 use l2_protocol_login::link::{
     AuthResponse, BlowFishKey, ChangeAccessLevel, GameServerAuth, InitLS, LsPacket, PROTOCOL_REV,
-    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, ServerStatus,
-    decode_from_ls,
+    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, RequestTempBan,
+    ServerStatus, decode_from_ls,
 };
 use rand::Rng;
 use tokio::net::TcpStream;
@@ -341,6 +341,11 @@ enum Command {
         account: String,
         level: i32,
     },
+    TempBan {
+        account: String,
+        ip: String,
+        minutes: i64,
+    },
     ReplyCharacters {
         account: String,
         chars: u8,
@@ -471,6 +476,17 @@ impl LsLink {
         self.send_command(Command::AccessLevel {
             account: account.to_owned(),
             level,
+        });
+    }
+
+    /// Asks the login server to ban an account (and the address) for `minutes` (a negative value
+    /// counts as 0). The ban ends at `now + minutes * 60000`.
+    // Java: LoginServerThread.sendTempBan, network/loginserverpackets/send/TempBan.java
+    pub async fn send_temp_ban(&self, account: &str, ip: &str, minutes: i64) {
+        self.send_command(Command::TempBan {
+            account: account.to_owned(),
+            ip: ip.to_owned(),
+            minutes,
         });
     }
 
@@ -860,6 +876,17 @@ impl Actor {
             Command::PlayerLogout { account } => self.logout(&account),
             Command::AccessLevel { account, level } => {
                 self.send(&ChangeAccessLevel { account, level });
+            }
+            Command::TempBan { account, ip, minutes } => {
+                let now = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX));
+                self.send(&RequestTempBan {
+                    account,
+                    ip,
+                    ban_time: now.saturating_add(minutes.max(0).saturating_mul(60_000)),
+                    reason: None,
+                });
             }
             Command::ReplyCharacters {
                 account,

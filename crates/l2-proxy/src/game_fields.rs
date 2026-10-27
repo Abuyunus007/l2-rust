@@ -255,6 +255,33 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestAutoSoulShot(p) => object!(p => item_id, shot_type),
         ClientPacket::RequestShortCutReg(p) => object!(p => type_id, slot, id, level, character_type),
         ClientPacket::RequestShortCutDel(p) => object!(p => slot),
+        // L-04: bookmarks, secondary password (never shown), contacts, hardware (the MAC address
+        // is never shown), PC cafe coupon, GameGuard.
+        ClientPacket::RequestBookMarkSlotInfo(_) | ClientPacket::RequestChangeBookMarkSlot(_) => json!({}),
+        ClientPacket::RequestSaveBookMarkSlot(p) => object!(p => name, icon, tag),
+        ClientPacket::RequestModifyBookMarkSlot(p) => object!(p => id, name, icon, tag),
+        ClientPacket::RequestDeleteBookMarkSlot(p) => object!(p => id),
+        ClientPacket::RequestTeleportBookMark(p) => object!(p => id),
+        ClientPacket::RequestEx2ndPasswordCheck(_) => json!({}),
+        ClientPacket::RequestEx2ndPasswordVerify(_) => json!({ "password": REDACTED }),
+        ClientPacket::RequestEx2ndPasswordReq(p) => {
+            json!({ "change_pass": p.change_pass, "password": REDACTED, "new_password": p.new_password.as_ref().map(|_| REDACTED) })
+        }
+        ClientPacket::RequestExShowContactList(_) | ClientPacket::RequestExFriendListExtended(_) => json!({}),
+        ClientPacket::RequestExAddContactToContactList(p) => object!(p => name),
+        ClientPacket::RequestExDeleteContactFromContactList(p) => object!(p => name),
+        ClientPacket::RequestHardWareInfo(p) => json!({
+            "mac_address": REDACTED, "windows_platform_id": p.windows_platform_id,
+            "windows_major_version": p.windows_major_version, "windows_minor_version": p.windows_minor_version,
+            "windows_build_number": p.windows_build_number, "directx_version": p.directx_version,
+            "directx_revision": p.directx_revision, "cpu_name": p.cpu_name, "cpu_speed": p.cpu_speed,
+            "cpu_core_count": p.cpu_core_count, "vga_count": p.vga_count, "vga_pcx_speed": p.vga_pcx_speed,
+            "phys_memory": [p.phys_memory_slot1, p.phys_memory_slot2, p.phys_memory_slot3],
+            "video_memory": p.video_memory, "vga_version": p.vga_version, "vga_name": p.vga_name,
+            "vga_driver_version": p.vga_driver_version,
+        }),
+        ClientPacket::RequestPCCafeCouponUse(p) => object!(p => coupon),
+        ClientPacket::GameGuardReply(p) => json!({ "reply": hex::encode(p.reply) }),
         ClientPacket::RequestHennaItemList(p) => object!(p => unknown),
         ClientPacket::RequestHennaItemInfo(p) => object!(p => symbol_id),
         ClientPacket::RequestHennaEquip(p) => object!(p => symbol_id),
@@ -593,6 +620,27 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExQuestItemList => decoded::<ExQuestItemList>(&mut r, quest_item_list_fields),
         ServerOpcode::ExRotation => decoded::<ExRotation>(&mut r, rotation_fields),
         ServerOpcode::ExReceiveShowPostFriend => decoded::<ExShowContactList>(&mut r, contact_list_fields),
+        ServerOpcode::ExConfirmAddingPostFriend => {
+            decoded::<l2_protocol_game::server::ExConfirmAddingContact>(&mut r, |p| object!(p => name, added))
+        }
+        ServerOpcode::FriendList => decoded::<l2_protocol_game::server::FriendListExtended>(&mut r, |p| {
+            let friends: Vec<Value> = p
+                .friends
+                .iter()
+                .map(|f| object!(f => object_id, name, online, class_id, level))
+                .collect();
+            json!({ "friends": friends })
+        }),
+        ServerOpcode::Ex2ndPasswordCheck => {
+            decoded::<l2_protocol_game::server::Ex2ndPasswordCheck>(&mut r, |p| object!(p => window_type))
+        }
+        ServerOpcode::Ex2ndPasswordVerify => decoded::<l2_protocol_game::server::Ex2ndPasswordVerify>(
+            &mut r,
+            |p| object!(p => mode, wrong_attempts),
+        ),
+        ServerOpcode::Ex2ndPasswordAck => {
+            decoded::<l2_protocol_game::server::Ex2ndPasswordAck>(&mut r, |p| object!(p => response))
+        }
         ServerOpcode::ExBrExtraUserInfo => decoded::<ExBrExtraUserInfo>(&mut r, br_extra_user_info_fields),
         ServerOpcode::ExNavitAdventPointInfo => decoded::<ExNevitAdventPointInfo>(&mut r, nevit_point_fields),
         ServerOpcode::ExPcCafePointInfo => decoded::<ExPcCafePointInfo>(&mut r, pc_cafe_point_info_fields),
@@ -2521,6 +2569,11 @@ mod tests {
         ServerOpcode::ExBasicActionList,
         ServerOpcode::ExVoteSystemInfo,
         ServerOpcode::ExGetBookmarkInfo,
+        ServerOpcode::ExConfirmAddingPostFriend,
+        ServerOpcode::FriendList,
+        ServerOpcode::Ex2ndPasswordCheck,
+        ServerOpcode::Ex2ndPasswordVerify,
+        ServerOpcode::Ex2ndPasswordAck,
         ServerOpcode::ExUiSetting,
         ServerOpcode::ExShowScreenMessage,
         ServerOpcode::LoginFail,
@@ -5409,5 +5462,58 @@ mod tests {
         ] {
             assert!(seen.contains(&op), "the captures hold no {}", op.name());
         }
+    }
+
+    /// L-04: the bookmark packets show their fields, the secondary password and the MAC address
+    /// of the hardware report are never shown.
+    #[test]
+    fn l04_packets_show_their_fields_and_hide_secrets() {
+        use l2_protocol_game::client::{
+            RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify, RequestSaveBookMarkSlot,
+            RequestTeleportBookMark,
+        };
+        use l2_protocol_game::generated::opcodes::ConnectionState::{Authenticated, InGame};
+        use l2_protocol_game::server::{Ex2ndPasswordVerify, ExConfirmAddingContact};
+        let save = RequestSaveBookMarkSlot {
+            name: "Home".into(),
+            icon: 2,
+            tag: "t".into(),
+        };
+        assert_eq!(
+            c2s_fields(InGame, &save.to_bytes()),
+            json!({ "name": "Home", "icon": 2, "tag": "t" })
+        );
+        assert_eq!(
+            c2s_fields(InGame, &RequestTeleportBookMark { id: 3 }.to_bytes()),
+            json!({ "id": 3 })
+        );
+        let verify = RequestEx2ndPasswordVerify {
+            password: "123457".into(),
+        };
+        let shown = c2s_fields(Authenticated, &verify.to_bytes());
+        assert_eq!(shown, json!({ "password": REDACTED }));
+        let req = RequestEx2ndPasswordReq {
+            change_pass: 2,
+            password: "123457".into(),
+            new_password: Some("654321".into()),
+        };
+        let shown = c2s_fields(Authenticated, &req.to_bytes()).to_string();
+        assert!(!shown.contains("123457") && !shown.contains("654321"), "{shown}");
+        let fields = s2c_fields(
+            &Ex2ndPasswordVerify {
+                mode: 1,
+                wrong_attempts: 2,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields, json!({ "mode": 1, "wrong_attempts": 2 }));
+        let fields = s2c_fields(
+            &ExConfirmAddingContact {
+                name: "Buddy".into(),
+                added: true,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields, json!({ "name": "Buddy", "added": true }));
     }
 }

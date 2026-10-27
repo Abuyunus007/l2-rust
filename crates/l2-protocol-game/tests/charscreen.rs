@@ -336,6 +336,23 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestFriendDel(p) => p.to_bytes(),
             ClientPacket::RequestSendFriendMsg(p) => p.to_bytes(),
             ClientPacket::RequestBlock(p) => p.to_bytes(),
+            // L-04: bookmarks, secondary password, contacts, hardware.
+            ClientPacket::GameGuardReply(p) => p.to_bytes(),
+            ClientPacket::RequestBookMarkSlotInfo(p) => p.to_bytes(),
+            ClientPacket::RequestSaveBookMarkSlot(p) => p.to_bytes(),
+            ClientPacket::RequestModifyBookMarkSlot(p) => p.to_bytes(),
+            ClientPacket::RequestDeleteBookMarkSlot(p) => p.to_bytes(),
+            ClientPacket::RequestTeleportBookMark(p) => p.to_bytes(),
+            ClientPacket::RequestChangeBookMarkSlot(p) => p.to_bytes(),
+            ClientPacket::RequestEx2ndPasswordCheck(p) => p.to_bytes(),
+            ClientPacket::RequestEx2ndPasswordVerify(p) => p.to_bytes(),
+            ClientPacket::RequestEx2ndPasswordReq(p) => p.to_bytes(),
+            ClientPacket::RequestExShowContactList(p) => p.to_bytes(),
+            ClientPacket::RequestExAddContactToContactList(p) => p.to_bytes(),
+            ClientPacket::RequestExDeleteContactFromContactList(p) => p.to_bytes(),
+            ClientPacket::RequestExFriendListExtended(p) => p.to_bytes(),
+            ClientPacket::RequestHardWareInfo(p) => p.to_bytes(),
+            ClientPacket::RequestPCCafeCouponUse(p) => p.to_bytes(),
             // Chat packets are checked in tests/chat.rs.
             // Chat packets are checked in tests/chat.rs, interaction packets in tests/interaction.rs.
             ClientPacket::Say2(_)
