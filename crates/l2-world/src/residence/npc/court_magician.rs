@@ -234,7 +234,7 @@ impl World {
         // (YOU_CANNOT_SUMMON_PLAYERS_WHO_ARE_CURRENTLY_PARTICIPATING_IN_THE_GRAND_OLYMPIAD),
         // `isFestivalParticipant()`; `isOnEvent()` and `inObserverMode()` are not modelled.
         let flying = self.stats(target).is_some_and(|v| v.is_flying_mounted());
-        if flying || self.is_combat_flag_equipped(target) {
+        if self.is_festival_participant(target) || flying || self.is_combat_flag_equipped(target) {
             return refuse(
                 self,
                 SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning,

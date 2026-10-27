@@ -1628,8 +1628,13 @@ impl<R: Rnd> Targeting<'_, R> {
                             SystemMessageId::ItIsNotPossibleToResurrectInBattlefieldsWhereASiegeWarIsTakingPlace,
                         ));
                     }
-                    // M6: `isFestivalParticipant()` -> sendMessage("You may not resurrect
-                    // participants in a festival.") and no target.
+                    // Check to see if the current player target is in a festival.
+                    if self.w.is_festival_participant(target) {
+                        cond_good = false;
+                        self.out.messages.push(TargetMessage::Text(
+                            "You may not resurrect participants in a festival.",
+                        ));
+                    }
                 }
                 if cond_good {
                     self.push(target);

@@ -267,7 +267,10 @@ impl World {
             lost_exp = crate::stats::java_round((current_level_exp as f64 * percent_lost) / 100.0);
             // Capping loss to 10% of current level experience.
             lost_exp = lost_exp.min(current_level_exp / 10);
-            // Festival participants: not modelled. No exp loss for Advent Blessing.
+            // Reduced for festival participants; no exp loss for Advent Blessing.
+            if self.is_festival_participant(player) {
+                lost_exp /= 4;
+            }
             if self.is_advent_blessing_active(player) {
                 lost_exp = 0;
             }

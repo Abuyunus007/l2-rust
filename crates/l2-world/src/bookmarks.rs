@@ -210,8 +210,9 @@ impl World {
         if self.is_dead(id) {
             return refuse(M::YouCannotUseMyTeleportsWhileYouAreDead);
         }
-        // M8: `type == 1 && (_isIn7sDungeon || (isInParty() && _party.isInDimensionalRift()))`
-        // (YOU_CANNOT_USE_MY_TELEPORTS_TO_REACH_THIS_AREA).
+        if kind == ConditionType::Save && (self.is_in_7s_dungeon(id) || self.is_in_dimensional_rift(id)) {
+            return refuse(M::YouCannotUseMyTeleportsToReachThisArea);
+        }
         if self.is_water_task_running(id) {
             return refuse(M::YouCannotUseMyTeleportsUnderwater);
         }

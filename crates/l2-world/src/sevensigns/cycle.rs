@@ -197,10 +197,11 @@ impl World {
     /// at a UTC millisecond, D-48).
     pub fn load_seven_signs_at(
         &mut self,
-        load: SevenSignsLoad,
+        mut load: SevenSignsLoad,
         now_ms: i64,
         offset_at: impl Fn(i64) -> i64 + Copy,
     ) {
+        let festival_rows = std::mem::take(&mut load.festival);
         self.ss_restore(load);
         info!(
             "SevenSigns: Currently in the {} period!",
@@ -245,6 +246,8 @@ impl World {
         info!("SevenSigns: Next period begins in {} ms", milli_to_change.max(0));
         // DailyResetManager: the global save every 30 minutes.
         self.ss_schedule_global_save();
+        // Java GameServer: `SevenSignsFestival.getInstance()` (after `SevenSigns`).
+        self.festival_load(festival_rows);
     }
 
     /// Java `restoreSevenSignsData()` (the rows the game server read).
@@ -308,13 +311,16 @@ impl World {
             }
             SevenSignsTimer::GlobalSave => {
                 self.seven_signs.save_timer = None;
-                // `DailyResetManager.onSave`: `saveSevenSignsStatus()`; the festival save is the
-                // festival's (not ported).
+                // `DailyResetManager.onSave`: `saveSevenSignsStatus()` and
+                // `SevenSignsFestival.saveFestivalData(false)`.
                 self.ss_save_status();
+                self.festival_save(false);
                 info!("SevenSigns: Data updated.");
                 self.ss_schedule_global_save();
             }
             SevenSignsTimer::AutoSpawn(timer) => self.on_auto_spawn_timer(timer),
+            SevenSignsTimer::Festival(timer) => self.on_festival_timer(timer),
+            SevenSignsTimer::Rift(timer) => self.on_rift_timer(timer),
         }
     }
 
@@ -329,7 +335,8 @@ impl World {
         self.seven_signs.status.active_period = period_ended.wrapping_add(1);
         match period_ended {
             PERIOD_COMP_RECRUITING => {
-                // FOLLOW-UP(festival): `SevenSignsFestival.startFestivalManager()`.
+                // Start the Festival of Darkness cycle.
+                self.festival_start_manager();
                 self.ss_send_message_to_all(
                     SystemMessageId::SevenSignsTheCompetitionPeriodHasBegunVisitAPriestOfDawnOrPriestessOfDuskToParticipateInTheEvent,
                 );
@@ -339,7 +346,9 @@ impl World {
                     SystemMessageId::SevenSignsTheCompetitionPeriodHasEndedTheNextQuestEventWillStartInOneWeek,
                 );
                 let comp_winner = self.ss_cabal_highest_score();
-                // FOLLOW-UP(festival): stop the festival manager, `rewardHighestRanked()`.
+                // Stop the Festival of Darkness cycle and reward the best parties' clans.
+                self.festival_cancel_manager();
+                self.festival_reward_highest_ranked();
                 self.ss_calc_new_seal_owners();
                 match comp_winner {
                     CABAL_DAWN => {
@@ -386,7 +395,10 @@ impl World {
                 self.ss_reset_seals();
                 let status = &mut self.seven_signs.status;
                 status.current_cycle = status.current_cycle.wrapping_add(1);
-                // FOLLOW-UP(festival): `resetFestivalData(false)`.
+                // Reset all Festival-related data and remove any unused blood offerings.
+                // NOTE: A full update of Festival data in the database is also performed.
+                self.festival_reset_data(false);
+                let status = &mut self.seven_signs.status;
                 status.dawn_stone_score = 0.0;
                 status.dusk_stone_score = 0.0;
                 status.dawn_festival_score = 0;
@@ -672,6 +684,9 @@ impl World {
         info!("SevenSigns: Seven Signs data saved.");
         self.ss_save_status();
         info!("SevenSigns: Seven Signs status saved.");
+        // Java Shutdown: "Seven Signs data is now saved along with Festival data."
+        self.festival_save(false);
+        info!("SevenSignsFestival: Festival data saved.");
     }
 
     // ------------------------------------------------------------------ the questions of others
@@ -810,10 +825,13 @@ impl World {
             if let Some(status) = load.status {
                 self.ss_apply_status_read(status);
             }
+            // The festival scores follow the Java game server's too (M8-FEST-01).
+            self.festival_apply_read(load.festival);
         }
         match then {
             SevenSignsThen::Nothing => {}
             SevenSignsThen::Status { player, page } => self.ss_send_status(player, page),
+            SevenSignsThen::FestivalPage { player, npc, page } => self.festival_show_page(npc, player, page),
         }
     }
 

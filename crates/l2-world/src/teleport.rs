@@ -407,6 +407,9 @@ impl World {
         // tasks (`AutoPlayConfig`, Custom).
         // "Modify the position of the pet if necessary."
         self.summon_follow_owner_teleport(id);
+        // A dimensional rift member who arrives outside the waiting room is alive again
+        // (`memberRessurected`, M8-FEST-01).
+        self.rift_member_resurrected(id);
         // "Send info to nearby players."
         self.broadcast_info(id);
     }

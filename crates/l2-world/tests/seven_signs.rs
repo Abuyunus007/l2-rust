@@ -229,6 +229,7 @@ impl Scene {
             SevenSignsLoad {
                 players,
                 status: Some(status),
+                ..SevenSignsLoad::default()
             },
             WEDNESDAY,
             utc,
@@ -720,7 +721,9 @@ fn the_cycle_runs_and_writes_with_the_switch_on() {
         message_ids(&out, ALICE),
         vec![SystemMessageId::SevenSignsTheSealValidationPeriodHasEnded]
     );
-    assert_eq!(writes(&out).len(), 2);
+    // The members, the status and (M8-FEST-01: `resetFestivalData` saves the new festival rows) the
+    // festival rows.
+    assert_eq!(writes(&out).len(), 3);
 }
 
 /// The same change with the switch off (D-53): the world changes, but neither the table nor the
@@ -780,6 +783,7 @@ fn the_record_is_read_again_with_the_switch_off() {
         result: Ok(SevenSignsLoad {
             players: vec![member(BOB, "dusk", SEAL_STRIFE)],
             status: Some(sieghardt),
+            ..SevenSignsLoad::default()
         }),
         then,
     });

@@ -26,6 +26,28 @@ const UPDATE_PLAYER: &str = "UPDATE seven_signs SET cabal=?, seal=?, red_stones=
 // Java: SevenSigns.UPDATE_STATUS
 const UPDATE_STATUS: &str = "UPDATE seven_signs_status SET current_cycle=?, active_period=?, previous_winner=?, dawn_stone_score=?, dawn_festival_score=?, dusk_stone_score=?, dusk_festival_score=?, avarice_owner=?, gnosis_owner=?, strife_owner=?, avarice_dawn_score=?, gnosis_dawn_score=?, strife_dawn_score=?, avarice_dusk_score=?, gnosis_dusk_score=?, strife_dusk_score=?, festival_cycle=?, accumulated_bonus0=?, accumulated_bonus1=?, accumulated_bonus2=?,accumulated_bonus3=?, accumulated_bonus4=?, date=? WHERE id=0";
 
+// Java: SevenSignsFestival.restoreFestivalData
+const LOAD_FESTIVAL: &str = "SELECT festivalId, cabal, cycle, date, score, members FROM seven_signs_festival";
+// Java: SevenSignsFestival.saveFestivalData
+const REPLACE_FESTIVAL: &str =
+    "REPLACE INTO seven_signs_festival (festivalId, cabal, cycle, date, score, members) VALUES (?,?,?,?,?,?)";
+
+/// A `seven_signs_festival` row (M8-FEST-01): the best score of one festival and cabal in one
+/// Seven Signs cycle.
+#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
+pub struct FestivalRow {
+    #[sqlx(rename = "festivalId")]
+    pub festival_id: i32,
+    /// `"dawn"` or `"dusk"`.
+    pub cabal: String,
+    pub cycle: i32,
+    /// The milliseconds the score was set (`0`: never).
+    pub date: u64,
+    pub score: i32,
+    /// The names of the party, separated by commas.
+    pub members: String,
+}
+
 /// A `seven_signs` row. Java keeps the two `DECIMAL` columns as doubles (`getDouble`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct SevenSignsRow {
@@ -190,6 +212,33 @@ impl SevenSignsRepository {
             .fetch_all(&self.pool)
             .await?;
         Ok(rows.into_iter().last().map(SevenSignsStatusRow::from))
+    }
+
+    /// Every `seven_signs_festival` row.
+    // Java: SevenSignsFestival.restoreFestivalData
+    pub async fn load_festival(&self) -> Result<Vec<FestivalRow>> {
+        Ok(sqlx::query_as::<_, FestivalRow>(LOAD_FESTIVAL)
+            .fetch_all(&self.pool)
+            .await?)
+    }
+
+    /// Every festival row of the world (`REPLACE INTO`, one batch in Java, one transaction here).
+    // Java: SevenSignsFestival.saveFestivalData (REPLACE_FESTIVAL, addBatch)
+    pub async fn replace_festival(&self, rows: &[FestivalRow]) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+        for row in rows {
+            sqlx::query(REPLACE_FESTIVAL)
+                .bind(row.festival_id)
+                .bind(row.cabal.as_str())
+                .bind(row.cycle)
+                .bind(row.date)
+                .bind(row.score)
+                .bind(row.members.as_str())
+                .execute(&mut *tx)
+                .await?;
+        }
+        tx.commit().await?;
+        Ok(())
     }
 
     /// A new member (only the three columns, the others keep their defaults).
