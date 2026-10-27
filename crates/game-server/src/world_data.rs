@@ -113,6 +113,8 @@ pub struct AccessLevels {
     /// The levels with `allowTransaction="false"` (Java `AccessLevel.allowTransaction()`, default
     /// true).
     no_transaction: std::collections::BTreeSet<i32>,
+    /// The levels with `allowAltg="true"` (Java `AccessLevel.allowAltG()`, default false).
+    alt_g: std::collections::BTreeSet<i32>,
     /// Who may run which admin command.
     rights: AdminRights,
 }
@@ -217,6 +219,9 @@ impl AccessLevels {
                     if attribute(&e, "allowTransaction").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
                         table.no_transaction.insert(level);
                     }
+                    if attribute(&e, "allowAltg").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
+                        table.alt_g.insert(level);
+                    }
                     table.levels.insert(
                         level,
                         AccessLevelStatic {
@@ -249,6 +254,12 @@ impl AccessLevels {
     pub fn can_gain_exp(&self, level: i32) -> bool {
         let key = if level < 0 { -1 } else { level };
         !self.no_gain_exp.contains(&key)
+    }
+
+    /// Java `AdminData.getAccessLevel(level).allowAltG()`.
+    pub fn allows_alt_g(&self, level: i32) -> bool {
+        let key = if level < 0 { -1 } else { level };
+        self.alt_g.contains(&key)
     }
 
     /// Java `AdminData.getAccessLevel(level).allowTransaction()`.
@@ -387,6 +398,10 @@ impl StaticData for DatapackData {
 
     fn access_level_allows_transaction(&self, level: i32) -> bool {
         self.access.allows_transaction(level)
+    }
+
+    fn access_level_allows_alt_g(&self, level: i32) -> bool {
+        self.access.allows_alt_g(level)
     }
 
     fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
@@ -1058,6 +1073,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         },
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
+        leftover: l2_world::LeftoverSettings {
+            dance_cancel_buff: config.player.dance_cancel_buff,
+            wear_price: config.general.wear_price,
+            wear_delay: config.general.wear_delay,
+        },
         effects: l2_world::EffectSettings {
             buffs_max_amount: i32::from(p.buffs_max_amount),
             triggered_buffs_max_amount: i32::from(p.triggered_buffs_max_amount),
@@ -2140,6 +2160,22 @@ BotReportPointsResetHour = noon
         assert!(!levels.can_take_aggro(100));
         // A level the file does not list is Java's default AccessLevel, which takes aggro.
         assert!(levels.can_take_aggro(55));
+    }
+
+    #[test]
+    fn allow_altg_is_true_only_where_the_file_says_so() {
+        let levels = AccessLevels::from_xml(
+            r#"<list>
+	<access level="0" name="User" allowAltg="false" />
+	<access level="20" name="Test GM" allowAltg="true" />
+	<access level="70" name="Admin" />
+</list>"#,
+        );
+        assert!(!levels.allows_alt_g(0));
+        assert!(levels.allows_alt_g(20));
+        // `set.getBoolean("allowAltg", false)`: absent is false.
+        assert!(!levels.allows_alt_g(70));
+        assert!(!levels.allows_alt_g(-1));
     }
 
     #[test]
