@@ -578,8 +578,8 @@ impl World {
                     self.npc_html_path(npc, value)?
                 }
             }
-            // FOLLOW-UP(Olympiad): `getOlympiadBuffCount()` is always 0 here.
-            36402 => format!("{OLYMPIAD}olympiad_nobuffs.htm"),
+            // The buffer: by the buffs the fighter has left (M8-OLY-01).
+            crate::olympiad::OLYMPIAD_HOST => self.olympiad_host_page(player),
             30298 => {
                 // Blacksmith Pinter: `isAcademyMember()` needs clans (M5).
                 self.npc_html_path(npc, value)?

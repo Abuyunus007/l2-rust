@@ -284,7 +284,8 @@ impl World {
         if mcrit {
             self.send(id, &SystemMessage::new(SystemMessageId::MagicCriticalHit));
         }
-        // Olympiad damage counting: not ported.
+        // Olympiad damage counting (M8-OLY-01): damage to a fighter of the same game.
+        self.olympiad_on_damage_dealt(id, target, damage);
         let target_kind = self.objects.get(&target).map(|e| e.kind);
         // Java: an invulnerable target that is not an NPC makes the attack "blocked" (the target
         // itself takes no damage, `status.rs`).

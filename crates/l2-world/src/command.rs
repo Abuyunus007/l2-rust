@@ -155,6 +155,8 @@ pub enum ClientInput {
     Contacts(crate::contacts::ContactsInput),
     /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
     Cursed(crate::cursed::CursedInput),
+    /// The observer packets of the Olympiad (M8-OLY-01), see `olympiad/`.
+    Olympiad(crate::olympiad::OlympiadInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
@@ -391,6 +393,12 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::OlympiadRereadRequest`: the rows, or `Err` when the read
+    /// failed (M8-OLY-01).
+    OlympiadReread {
+        result: Result<crate::olympiad::OlympiadRereadRows, ()>,
+        then: crate::olympiad::OlympiadRereadThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -507,6 +515,11 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::OlympiadReread { result, then } => write!(
+                f,
+                "OlympiadReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

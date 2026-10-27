@@ -175,6 +175,17 @@ pub enum PersistCommand {
     /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
     /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
     Cursed(crate::cursed::CursedWrite),
+    /// A write of the Olympiad tables with Java's statements (`olympiad_data`, `olympiad_nobles`,
+    /// `olympiad_nobles_eom`, `olympiad_fights`, the unclaimed points), see `olympiad/`
+    /// (M8-OLY-01).
+    Olympiad(crate::olympiad::OlympiadWrite),
+    /// Asks the persistence task for an Olympiad read (the rankings, the last points, the
+    /// unclaimed passes, D-50); the answer comes back as `WorldCommand::OlympiadReread` carrying
+    /// `then` (M8-OLY-01).
+    OlympiadRereadRequest {
+        request: crate::olympiad::OlympiadRereadRequest,
+        then: crate::olympiad::OlympiadRereadThen,
+    },
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {

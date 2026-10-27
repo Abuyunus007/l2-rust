@@ -58,6 +58,10 @@ impl World {
         if self.is_offline_trader(id) {
             snapshot.profile.online_status = 2;
         }
+        // `_observerMode ? _lastLoc.getX() : getX()` (M8-OLY-01).
+        if player.olympiad.observer_mode {
+            (snapshot.x, snapshot.y, snapshot.z) = player.olympiad.last_loc;
+        }
         Some(snapshot)
     }
 

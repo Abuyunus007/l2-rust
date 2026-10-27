@@ -405,6 +405,8 @@ pub struct Player {
     /// Java `_cursedWeaponEquippedId`: the item id of the cursed weapon the player holds, 0 for
     /// none (see `cursed/`). Not stored: `checkPlayer` sets it when the character is loaded.
     pub cursed_weapon_equipped_id: i32,
+    /// The Olympiad and observer state (M8-OLY-01, see `olympiad/`).
+    pub olympiad: crate::olympiad::PlayerOlympiad,
     /// The macro revision, the published items (L-02, see `leftover.rs`).
     pub leftover: crate::leftover::LeftoverState,
 }
@@ -467,6 +469,7 @@ impl Player {
             mount: crate::mount::MountState::default(),
             gm: crate::admin::flags::GmFlags::default(),
             cursed_weapon_equipped_id: 0,
+            olympiad: crate::olympiad::PlayerOlympiad::default(),
             leftover: crate::leftover::LeftoverState::default(),
         }
     }

@@ -87,6 +87,10 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
+        // `Logout` and `RequestRestart`: "Unregister from olympiad." (M8-OLY-01).
+        if matches!(reason, LeaveReason::Logout | LeaveReason::Restart) {
+            self.olympiad_unregister_on_leave(id);
+        }
         // Java `deleteMe`: `zone.onPlayerLogoutInside(this)` of the fortress siege zones, then
         // "Remove combat flag." (M7-FORT-01).
         self.fort_player_leaving(id);
@@ -131,6 +135,9 @@ impl World {
         // `Player.deleteMe`: the summon is stored for a restore and unsummoned (Java does it right
         // after the player's `decayMe()`; here before, while the player is still in the tables).
         self.summon_on_owner_leave(id);
+        // `deleteMe`: `OlympiadManager.removeDisconnectedCompetitor(this)` of a registered or
+        // fighting noble (M8-OLY-01).
+        self.olympiad_on_logout(id);
         // `deleteMe`: "Remove player from instance and set spawn location if any." (M8-INST-01).
         self.instance_on_delete(id);
         // A trader without a client left the login server's books when it went offline.

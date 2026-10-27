@@ -43,6 +43,9 @@ impl World {
             self.user_command_mount(id);
         } else if command == DISMOUNT_COMMAND {
             self.user_command_dismount(id);
+        } else if command == crate::olympiad::OLYMPIAD_STAT_COMMAND {
+            // `/olympiadstat` (M8-OLY-01, `olympiad/npc.rs`).
+            self.user_command_olympiad_stat(id);
         } else if command == crate::instance::INSTANCE_ZONE_COMMAND {
             // `/instancezone` (M8-INST-01, `instance/times.rs`).
             self.user_command_instance_zone(id);

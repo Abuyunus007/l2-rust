@@ -431,7 +431,8 @@ impl World {
             };
             self.send(owner, &SystemMessage::new(message));
         }
-        // Olympiad damage counting: no olympiad yet.
+        // Olympiad damage counting (M8-OLY-01): the owner's damage to a fighter of its game.
+        self.olympiad_on_damage_dealt(owner, target, damage);
         let message = if self.is_invul(target) && !self.is_npc(target) {
             SystemMessage::new(SystemMessageId::TheAttackHasBeenBlocked)
         } else {

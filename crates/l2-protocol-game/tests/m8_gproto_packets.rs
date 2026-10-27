@@ -26,8 +26,8 @@ use l2_protocol_game::server::minigame::{
 };
 use l2_protocol_game::server::olympiad::{
     ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
-    ExOlympiadSpelledInfo, ExOlympiadUserInfo, HeroEntry, OlympiadMatchEntry, OlympiadResultEntry,
-    OlympiadSpelledEffect,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo, HeroEntry, ObservationMode, ObservationReturn,
+    OlympiadMatchEntry, OlympiadResultEntry, OlympiadSpelledEffect,
 };
 use l2_protocol_game::server::ssq::{
     ExShowSeedMapInfo, FestivalHighScore, SevenSignsView, SsqCycle, SsqFestival, SsqPredicted, SsqScore,
@@ -267,6 +267,22 @@ fn client_dispatch_reaches_the_new_packets() {
 fn olympiad_match_end_and_mode() {
     check(&ExOlympiadMatchEnd, &ex_server(0x2D), 3);
     check(&ExOlympiadMode { mode: 3 }, &cat(&[ex_server(0x7C), vec![3]]), 3);
+}
+
+/// M8-OLY-01: `ObservationMode` (`OBSERVER_START` 0xEB: x, y, z, then the bytes 0, 0xC0, 0) and
+/// `ObservationReturn` (`OBSERVER_END` 0xEC: x, y, z).
+#[test]
+fn observation_mode_and_return() {
+    check(
+        &ObservationMode { x: -1, y: 2, z: -300 },
+        &cat(&[vec![0xEB], ints(&[-1, 2, -300]), vec![0, 0xC0, 0]]),
+        1,
+    );
+    check(
+        &ObservationReturn { x: 10, y: -20, z: 30 },
+        &cat(&[vec![0xEC], ints(&[10, -20, 30])]),
+        1,
+    );
 }
 
 #[test]

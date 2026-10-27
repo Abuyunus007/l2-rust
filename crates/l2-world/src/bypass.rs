@@ -86,6 +86,9 @@ impl Default for BypassHandlers {
         handlers.register("Augment", crate::augment::augment_handler);
         // dist/game/data/scripts/handlers/bypass/npc/TerritoryStatus.java (M7-TW-01)
         handlers.register("TerritoryStatus", crate::territory::territory_status_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/{OlympiadManagerLink,OlympiadObservation}.java
+        // (M8-OLY-01)
+        crate::olympiad::register_bypass_handlers(&mut handlers);
         handlers
     }
 }
@@ -263,11 +266,11 @@ impl World {
             self.npc_bypass(id, command);
         } else if command.starts_with("item_") {
             self.item_bypass(id, command);
-        } else if command.starts_with("_match")
-            || command.starts_with("_diary")
-            || command.starts_with("_olympiad?command")
-        {
-            debug!("{id}: bypass {command}: heroes and the olympiad are not ported yet");
+        } else if command.starts_with("_olympiad?command") {
+            // M8-OLY-01: the arena list of the observer window.
+            crate::olympiad::olympiad_command_bypass(self, id, command);
+        } else if command.starts_with("_match") || command.starts_with("_diary") {
+            debug!("{id}: bypass {command}: heroes are not ported yet");
         } else if command.starts_with("manor_menu_select") {
             self.manor_menu_select(id, command);
         } else if command.starts_with("report") {
