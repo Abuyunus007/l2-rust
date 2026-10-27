@@ -27,9 +27,9 @@ use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
     AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, HennaInput,
-    ItemData, LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput, PetInput,
-    PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect,
-    ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    ItemData, LeaveReason, LeftoverInput, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput,
+    PetInput, PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse,
+    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1434,6 +1434,41 @@ impl ClientSession {
                     time: p.time,
                 })
             }
+            // Java: RequestMakeMacro, RequestDeleteMacro, RequestCrystallizeItem, RequestPreviewItem,
+            // RequestExRqItemLink, RequestSaveKeyMapping, RequestSaveInventoryOrder,
+            // RequestShowMiniMap, RequestRecordInfo, StartRotating, FinishRotating,
+            // RequestSkillList, RequestDispel, RequestExMagicSkillUseGround (L-02)
+            ClientPacket::RequestMakeMacro(p) => ClientInput::Leftover(LeftoverInput::MakeMacro(p)),
+            ClientPacket::RequestDeleteMacro(p) => {
+                ClientInput::Leftover(LeftoverInput::DeleteMacro { id: p.id })
+            }
+            ClientPacket::RequestCrystallizeItem(p) => ClientInput::Leftover(LeftoverInput::Crystallize(p)),
+            ClientPacket::RequestPreviewItem(p) => ClientInput::Leftover(LeftoverInput::PreviewItem(p)),
+            ClientPacket::RequestExRqItemLink(p) => ClientInput::Leftover(LeftoverInput::ExRqItemLink {
+                object_id: p.object_id,
+            }),
+            ClientPacket::RequestSaveKeyMapping(p) => {
+                ClientInput::Leftover(LeftoverInput::SaveKeyMapping(p.ui_key_mapping))
+            }
+            ClientPacket::RequestSaveInventoryOrder(p) => {
+                ClientInput::Leftover(LeftoverInput::SaveInventoryOrder(p.order))
+            }
+            ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
+            ClientPacket::RequestRecordInfo(_) => ClientInput::Leftover(LeftoverInput::RecordInfo),
+            ClientPacket::StartRotating(p) => ClientInput::Leftover(LeftoverInput::StartRotating {
+                degree: p.degree,
+                side: p.side,
+            }),
+            ClientPacket::FinishRotating(p) => {
+                ClientInput::Leftover(LeftoverInput::FinishRotating { degree: p.degree })
+            }
+            ClientPacket::RequestSkillList(_) => ClientInput::Leftover(LeftoverInput::SkillList),
+            ClientPacket::RequestDispel(p) => ClientInput::Leftover(LeftoverInput::Dispel(p)),
+            ClientPacket::RequestExMagicSkillUseGround(p) => {
+                ClientInput::Leftover(LeftoverInput::MagicSkillUseGround(p))
+            }
+            // Java reads `MoveWithDelta` and does nothing ("TODO this").
+            ClientPacket::MoveWithDelta(_) => return true,
             // Java accepts the packet in this state, but there is no handler for it yet.
             ClientPacket::Unported(opcode) => ClientInput::Other {
                 opcode: opcode.id(),

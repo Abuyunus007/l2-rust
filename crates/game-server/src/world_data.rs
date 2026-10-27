@@ -1283,6 +1283,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         },
         vitality: vitality_settings(config),
         nevit: nevit_settings(config),
+        leftover: l2_world::LeftoverSettings {
+            dance_cancel_buff: config.player.dance_cancel_buff,
+            wear_price: config.general.wear_price,
+            wear_delay: config.general.wear_delay,
+        },
         effects: l2_world::EffectSettings {
             buffs_max_amount: i32::from(p.buffs_max_amount),
             triggered_buffs_max_amount: i32::from(p.triggered_buffs_max_amount),

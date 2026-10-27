@@ -270,6 +270,9 @@ pub enum ClientInput {
     Petition(crate::petition::PetitionInput),
     /// Java `SnoopQuit`: the GM stops snooping the player with this object id.
     SnoopQuit { snoop_id: i32 },
+    /// The L-02 packets (macros, crystallize, wear shop, item links, key mapping, ...), see
+    /// `leftover.rs`.
+    Leftover(crate::leftover::LeftoverInput),
     /// A packet the world doesn't handle yet.
     Other { opcode: u8, ex_opcode: Option<u16> },
 }

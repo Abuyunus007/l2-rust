@@ -156,6 +156,8 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The end of a wear shop try-on (L-02), see `leftover.rs`.
+    Leftover(crate::leftover::LeftoverTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
     /// The drowning task and the falling damage task of a player, see `water.rs`.

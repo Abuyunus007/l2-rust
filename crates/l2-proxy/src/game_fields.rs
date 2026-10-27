@@ -70,6 +70,7 @@ use l2_protocol_game::server::interaction::{
     TargetSelected, TargetUnselected,
 };
 use l2_protocol_game::server::items::{InventoryBlock, ItemInfo, ItemList};
+use l2_protocol_game::server::leftover::{ExRpItemLink, ShopPreviewInfo};
 use l2_protocol_game::server::mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,
@@ -556,6 +557,38 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
                 .collect::<Vec<_>>(),
         }),
         ClientPacket::RequestJoinDominionWar(p) => object!(p => territory_id, is_clan, is_joining),
+        // L-02
+        ClientPacket::RequestMakeMacro(p) => {
+            let commands: Vec<Value> = p
+                .commands
+                .iter()
+                .map(|c| object!(c => entry, kind, d1, d2, command))
+                .collect();
+            json!({
+                "id": p.id, "name": p.name, "descr": p.descr, "acronym": p.acronym, "icon": p.icon,
+                "commands": commands,
+            })
+        }
+        ClientPacket::RequestDeleteMacro(p) => object!(p => id),
+        ClientPacket::RequestCrystallizeItem(p) => object!(p => object_id, count),
+        ClientPacket::RequestPreviewItem(p) => object!(p => unknown, list_id, items),
+        ClientPacket::RequestExRqItemLink(p) => object!(p => object_id),
+        ClientPacket::RequestSaveKeyMapping(p) => {
+            json!({ "ui_key_mapping": p.ui_key_mapping.as_ref().map(hex::encode) })
+        }
+        ClientPacket::RequestSaveInventoryOrder(p) => json!({
+            "order": p.order.iter().map(|(object_id, order)| json!({ "object_id": object_id, "order": order }))
+                .collect::<Vec<_>>(),
+        }),
+        ClientPacket::RequestExMagicSkillUseGround(p) => {
+            object!(p => x, y, z, skill_id, ctrl_pressed, shift_pressed)
+        }
+        ClientPacket::RequestShowMiniMap(_)
+        | ClientPacket::RequestRecordInfo(_)
+        | ClientPacket::RequestSkillList(_) => json!({}),
+        ClientPacket::MoveWithDelta(p) => object!(p => dx, dy, dz),
+        ClientPacket::StartRotating(p) => object!(p => degree, side),
+        ClientPacket::FinishRotating(p) => object!(p => degree, unknown),
         ClientPacket::RequestBidItemAuction(p) => object!(p => instance_id, bid),
         ClientPacket::RequestInfoItemAuction(p) => object!(p => instance_id),
         ClientPacket::ObserverReturn(_)
@@ -636,6 +669,8 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::ExVoteSystemInfo => decoded::<ExVoteSystemInfo>(&mut r, vote_system_info_fields),
         ServerOpcode::ExGetBookmarkInfo => decoded::<ExGetBookMarkInfoPacket>(&mut r, bookmark_info_fields),
         ServerOpcode::ExUiSetting => decoded::<ExUiSetting>(&mut r, ui_setting_fields),
+        ServerOpcode::ShopPreviewInfo => decoded::<ShopPreviewInfo>(&mut r, shop_preview_info_fields),
+        ServerOpcode::ExRpItemLink => decoded::<ExRpItemLink>(&mut r, rp_item_link_fields),
         ServerOpcode::ExShowScreenMessage => decoded::<ExShowScreenMessage>(&mut r, screen_message_fields),
         ServerOpcode::LoginFail => decoded::<LoginFail>(&mut r, login_fail_fields),
         ServerOpcode::SsqInfo => decoded::<SsqInfo>(&mut r, ssq_info_fields),
@@ -1533,6 +1568,14 @@ fn bookmark_info_fields(p: &ExGetBookMarkInfoPacket) -> Value {
         .map(|b| object!(b => id, x, y, z, name, icon, tag))
         .collect();
     json!({ "slot": p.slot, "bookmarks": bookmarks })
+}
+
+fn shop_preview_info_fields(p: &ShopPreviewInfo) -> Value {
+    json!({ "item_ids": p.item_ids })
+}
+
+fn rp_item_link_fields(p: &ExRpItemLink) -> Value {
+    json!({ "item": item_fields(&p.item) })
 }
 
 fn ui_setting_fields(p: &ExUiSetting) -> Value {
@@ -2982,6 +3025,8 @@ mod tests {
         ServerOpcode::ExVoteSystemInfo,
         ServerOpcode::ExGetBookmarkInfo,
         ServerOpcode::ExUiSetting,
+        ServerOpcode::ShopPreviewInfo,
+        ServerOpcode::ExRpItemLink,
         ServerOpcode::ExShowScreenMessage,
         ServerOpcode::LoginFail,
         ServerOpcode::SsqInfo,
@@ -3241,6 +3286,83 @@ mod tests {
 
     fn c2s_fields(state: ConnectionState, bytes: &[u8]) -> Value {
         c2s(state, bytes).expect("the packet has fields")
+    }
+
+    /// L-02: the macro, crystallize, wear shop and key mapping packets show their fields.
+    #[test]
+    fn leftover_packets_show_their_fields() {
+        use l2_protocol_game::client::{
+            MacroCommand, RequestCrystallizeItem, RequestMakeMacro, RequestPreviewItem,
+            RequestSaveKeyMapping, StartRotating,
+        };
+        use l2_protocol_game::server::{ExRpItemLink, ShopPreviewInfo, items::ItemInfo};
+        let make = RequestMakeMacro {
+            id: 0,
+            name: "Heal".into(),
+            descr: "d".into(),
+            acronym: "HL".into(),
+            icon: 3,
+            commands: vec![MacroCommand {
+                entry: 1,
+                kind: 3,
+                d1: 0,
+                d2: 0,
+                command: "/sit".into(),
+            }],
+        };
+        assert_eq!(
+            c2s_fields(ConnectionState::InGame, &make.to_bytes()),
+            json!({
+                "id": 0, "name": "Heal", "descr": "d", "acronym": "HL", "icon": 3,
+                "commands": [{ "entry": 1, "kind": 3, "d1": 0, "d2": 0, "command": "/sit" }],
+            })
+        );
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &RequestCrystallizeItem {
+                    object_id: 5,
+                    count: 1
+                }
+                .to_bytes()
+            ),
+            json!({ "object_id": 5, "count": 1 })
+        );
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &RequestPreviewItem {
+                    unknown: 0,
+                    list_id: 100,
+                    items: Some(vec![2, 5]),
+                }
+                .to_bytes()
+            ),
+            json!({ "unknown": 0, "list_id": 100, "items": [2, 5] })
+        );
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &RequestSaveKeyMapping {
+                    ui_key_mapping: Some(vec![1, 255]),
+                }
+                .to_bytes()
+            ),
+            json!({ "ui_key_mapping": "01ff" })
+        );
+        assert_eq!(
+            c2s_fields(
+                ConnectionState::InGame,
+                &StartRotating { degree: 9, side: 1 }.to_bytes()
+            ),
+            json!({ "degree": 9, "side": 1 })
+        );
+        let preview = ShopPreviewInfo::from_slots(&[(6, 2376)]);
+        assert_eq!(s2c_fields(&preview.to_bytes())["item_ids"][10], json!(2376));
+        let link = ExRpItemLink {
+            item: ItemInfo::plain(7, 57, 3),
+        };
+        assert_eq!(s2c_fields(&link.to_bytes())["item"]["count"], json!(3));
     }
 
     #[test]
