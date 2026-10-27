@@ -10,7 +10,7 @@
 // - `//spawn_misc`, `//spawnmisc`: the GM misc room spawns every NPC template (100000 ids) with
 //   the NPC immobilised and its AI off; those two controls are not in the world yet.
 // - `//list_pools`: the spawn groups' alive and reserved counts are not exposed by the world.
-// - `//instance_spawns`: instances (M8).
+// - `//instance_spawns`: in `admin/instance.rs` (M8-INST-01).
 // - Spawn persistence: `SpawnData.addNewSpawn` and `deleteSpawn` write the datapack's xml; the
 //   world does not write it (the same follow-up as `//spawn`).
 // - The NPC index and the monster index list the templates in id order; Java lists them in the

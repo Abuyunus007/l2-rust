@@ -166,6 +166,9 @@ pub enum TimerKind {
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),
+    /// The duration and empty-destroy countdown of an instance and the eject of a dead player,
+    /// see `instance/`.
+    Instance(crate::instance::InstanceTimer),
 }
 
 #[derive(Debug, Default)]

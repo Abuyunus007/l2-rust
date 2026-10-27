@@ -54,6 +54,7 @@ pub mod gm;
 pub mod gm_shop;
 pub mod gm_tools;
 pub mod html;
+pub mod instance;
 pub mod invul;
 pub mod karma;
 pub mod level;
@@ -206,6 +207,7 @@ impl Default for AdminWorld {
         skill_test::register(&mut handlers);
         admin_page::register(&mut handlers);
         spawn_admin::register(&mut handlers);
+        instance::register(&mut handlers);
         enchant::register(&mut handlers);
         level::register(&mut handlers);
         skills::register(&mut handlers);

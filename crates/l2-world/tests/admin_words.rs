@@ -172,8 +172,7 @@ const LEFT_OUT: &[&str] = &[
     "spawn_misc",
     "spawnmisc",
     "list_pools",
-    // M8: Olympiad, heroes, instances
-    "instance_spawns",
+    // M8: Olympiad, heroes (`instance_spawns` came with M8-INST-01, `tests/admin_instance.rs`)
     "checkolympiad",
     "saveolymp",
     "sethero",

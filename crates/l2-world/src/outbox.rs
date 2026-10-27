@@ -193,6 +193,9 @@ pub enum PersistCommand {
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
+    /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
+    /// `instance/times.rs`). Applied in order with the other commands.
+    InstanceTime(crate::instance::InstanceTimeWrite),
     /// Java `RequestPetitionFeedback`: `INSERT INTO petition_feedback VALUES (?,?,?,?,?)`.
     PetitionFeedback {
         character: String,

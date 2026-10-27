@@ -1900,6 +1900,25 @@ pub fn siege_settings_from_ini(
     s
 }
 
+/// The `General.ini` values of the instances (M8-INST-01): `RestorePlayerInstance` and
+/// `AllowSummonInInstance` from the config, `DefaultFinishTime` and `EjectDeadPlayerTime` (seconds,
+/// times 1000 in Java, placeholders in the generated config) read here.
+pub fn instance_settings(config: &GameConfig, config_dir: &Path) -> l2_world::InstanceSettings {
+    use l2_config::IniFile;
+    use l2_config::game::GeneralConfig;
+
+    let mut settings = l2_world::InstanceSettings {
+        restore_player_instance: config.general.restore_player_instance,
+        allow_summon_in_instance: config.general.allow_summon_in_instance,
+        ..l2_world::InstanceSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(GeneralConfig::FILE)) {
+        settings.instance_finish_time_ms = ini.get_int("DefaultFinishTime", 300).wrapping_mul(1000);
+        settings.eject_dead_player_time_ms = ini.get_int("EjectDeadPlayerTime", 60).wrapping_mul(1000);
+    }
+    settings
+}
+
 #[cfg(test)]
 mod tests {
     use std::path::PathBuf;

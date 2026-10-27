@@ -43,6 +43,9 @@ impl World {
             self.user_command_mount(id);
         } else if command == DISMOUNT_COMMAND {
             self.user_command_dismount(id);
+        } else if command == crate::instance::INSTANCE_ZONE_COMMAND {
+            // `/instancezone` (M8-INST-01, `instance/times.rs`).
+            self.user_command_instance_zone(id);
         } else {
             // Java tells a GM "User commandID N not implemented yet." for an id without handler.
             // Handlers that exist in Java but are not ported yet would make that message a lie,

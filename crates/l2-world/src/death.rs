@@ -219,10 +219,12 @@ impl World {
 
         // `ZoneManager.getRegion(this).onDeath(this)`: the siege zone's Battleground Death
         // Syndrome (M7-SIEGE-01); `FlagPvPZone.onDieInside` is not ported. Quests that asked to
-        // hear about the death (scripts: D-05), the instance (no instances yet).
+        // hear about the death (scripts: D-05).
         if self.is_player(id) {
             self.on_siege_zone_die_inside(id);
         }
+        // "Notify instance." (`instance.notifyDeath(player)`, M8-INST-01).
+        self.instance_on_player_death(id);
 
         // `killerPlayer.onKillUpdatePvPKarma(this)`: PvP kills, PK kills and the karma the killer
         // gains (`pvp.rs`). `killer.asPlayer()`: a summon's owner is the killer player.
@@ -553,10 +555,12 @@ impl World {
                 control.revive_requested = false;
                 control.revive_power = 0.0;
             }
-            // The pet revive request, a summon next to its owner in a peace zone, the dimensional
-            // rift and the instance's eject timer: not modelled.
+            // The pet revive request, a summon next to its owner in a peace zone and the
+            // dimensional rift: not modelled.
             // `if (isMounted()) startFeed(_mountNpcId)`
             self.mount_on_revive(id);
+            // `instance.cancelEjectDeadPlayer(this)` (M8-INST-01).
+            self.instance_on_player_revive(id);
         }
     }
 
@@ -689,6 +693,9 @@ impl World {
 
         // Teleport and revive.
         if let Some((x, y, z)) = location {
+            // `player.setInstanceId(instanceId)` before the teleport (M8-INST-01): the player
+            // leaves the instance's list while still standing in it.
+            self.set_instance_id(id, instance);
             // `setIn7sDungeon(false)`: the Seven Signs dungeon is not modelled.
             self.set_pending_revive(id, true);
             let offset = self.settings.teleport.max_offset_on_teleport;

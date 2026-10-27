@@ -25,6 +25,7 @@ pub mod hit_condition_bonus;
 pub mod html;
 pub mod initial_equipment;
 pub mod initial_shortcuts;
+pub mod instance;
 pub mod item;
 pub mod level_tables;
 pub mod loader;
@@ -79,6 +80,10 @@ pub use html::HtmCache;
 pub use initial_equipment::{InitialEquipment, InitialEquipments};
 pub use initial_shortcuts::{
     InitialShortcut, InitialShortcuts, MacroCommand, MacroPreset, MacroType, ShortcutType,
+};
+pub use instance::{
+    InstanceReenterTime, InstanceReenterType, InstanceRemoveBuffType, InstanceSpawn, InstanceTemplate,
+    InstanceTemplates,
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
@@ -192,6 +197,8 @@ pub struct Datapack {
     pub siege_schedule: Arc<SiegeSchedule>,
     /// `data/Seeds.xml`: the manor seeds and their crops (M7-MANOR-01).
     pub seeds: Arc<Seeds>,
+    /// `data/InstanceNames.xml` and `data/instances/**`: the instance zones (M8-INST-01).
+    pub instances: Arc<InstanceTemplates>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -362,6 +369,7 @@ impl Datapack {
             fishing_monsters: Arc::new(FishingMonstersData::load(root)),
             siege_schedule: Arc::new(SiegeSchedule::load(root)),
             seeds,
+            instances: Arc::new(InstanceTemplates::load(root)),
         })
     }
 }
