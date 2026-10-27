@@ -153,7 +153,7 @@ impl World {
     /// the session read at `CharacterSelect` (`times.rs`).
     pub(crate) fn instance_on_enter_world(&mut self, id: ObjectId) {
         self.instance_times_on_enter(id);
-        let instance_id = self.instance_of_player(id);
+        let instance_id = self.instance_with_player(id);
         if self.instances.settings.restore_player_instance {
             self.set_instance_id(id, instance_id);
         } else if instance_id > 0 {

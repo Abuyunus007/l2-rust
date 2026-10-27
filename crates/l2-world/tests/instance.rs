@@ -206,7 +206,7 @@ fn two_instances_of_one_template_do_not_see_each_other() {
     // The instance lists.
     assert!(s.world.instance(a).unwrap().contains_player(id(P1)));
     assert!(s.world.instance(b).unwrap().contains_player(id(P2)));
-    assert_eq!(s.world.instance_of_player(id(P2)), b);
+    assert_eq!(s.world.instance_with_player(id(P2)), b);
 
     // A third player who comes into the same instance sees Alpha and the monster of `a` only.
     move_into(&mut s, P3, a, (X, Y, Z));

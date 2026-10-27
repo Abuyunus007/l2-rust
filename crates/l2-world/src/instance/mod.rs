@@ -361,7 +361,7 @@ impl World {
 
     /// Java `InstanceManager.getPlayer(objectId)`: the instance whose player list holds the id,
     /// 0 for none.
-    pub fn instance_of_player(&self, player: ObjectId) -> i32 {
+    pub fn instance_with_player(&self, player: ObjectId) -> i32 {
         self.instances
             .instances
             .values()
