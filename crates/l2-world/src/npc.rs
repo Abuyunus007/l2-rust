@@ -20,7 +20,8 @@
 // - AI (`ai/`), walking routes (`walking.rs`, M8-MISC-01), `NpcPersonalAIData` (spawn `AIData`), champions
 //   (`ChampionMonstersConfig`, off by default): M4.
 // - Raid and grand bosses: Java's `RaidBossSpawnManager` / `GrandBossManager` spawn them from
-//   their own tables, the spawn files skip them (`SpawnData.checkTemplate`).
+//   their own tables, the spawn files skip them (`SpawnData.checkTemplate`). The raid boss list
+//   is `boss/raid.rs` (M8-BOSS-01); the grand bosses are spawned by their scripts (D-05).
 // - the day/night switch while the server runs: `World::start_game_clock` (world.rs) calls
 //   `set_night` when the game hour crosses 6 or 0.
 // - castle owner crests in `NpcInfo`: castles are not loaded, so nobody owns one.
@@ -124,6 +125,7 @@ impl NpcClass {
             | "Teleporter"
             | "TerrainObject"
             | "TerritoryWard"
+            | "UCTower"
             | "Trainer"
             | "UCHelper"
             | "UCManager"
@@ -1153,10 +1155,10 @@ impl World {
             } else {
                 0
             },
-            team: 0,
+            team: self.minigame_npc_team(subject),
             enchant_effect: npc.enchant_effect,
             flying: template.flying,
-            color_effect: 0,
+            color_effect: self.minigame_npc_color_effect(subject),
             targetable: template.targetable,
             show_name: template.show_name,
             abnormal_visual_effect_special: self.abnormal_visual_effects(subject).1,

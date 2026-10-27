@@ -89,6 +89,8 @@ impl Default for BypassHandlers {
         // dist/game/data/scripts/handlers/bypass/npc/{OlympiadManagerLink,OlympiadObservation}.java
         // (M8-OLY-01)
         crate::olympiad::register_bypass_handlers(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java (L-05)
+        handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
         handlers
     }
 }
@@ -338,6 +340,13 @@ impl World {
 
     /// Java `Npc.onBypassFeedback(player, command)` with the override of the NPC's class.
     pub(crate) fn npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
+        // Java: DawnPriest, DuskPriest, SignsPriest and DungeonGatekeeper.onBypassFeedback
+        // (M8-SS-01, `sevensigns/priest.rs`, `sevensigns/gatekeeper.rs`).
+        if self.ss_priest_bypass_feedback(npc, player, command)
+            || self.ss_dungeon_gatekeeper_bypass(npc, player, command)
+        {
+            return;
+        }
         let npc_type = self
             .npcs
             .get(&npc)
@@ -361,6 +370,8 @@ impl World {
         } else if npc_type == Some("PetManager") {
             // Java: PetManager.onBypassFeedback (exchange, evolve, restore, `summon/evolve.rs`).
             self.pet_manager_bypass_feedback(npc, player, command);
+        } else if self.minigame_npc_bypass_feedback(npc, player, command) {
+            // Java: KrateisCubeManager, KrateisMatchManager, UCManager, UCHelper (`minigame/bypass.rs`).
         } else if self.castle_doorman_bypass_feedback(npc, player, command) {
             // Java: CastleDoorman.onBypassFeedback (`residence/npc/doorman.rs`).
         } else if is_teleporter {

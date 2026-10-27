@@ -40,6 +40,7 @@ impl World {
             ObjectKind::Fence => self.fences.get(&id).map(|f| (f.x, f.y, f.z)),
             ObjectKind::StaticObject => self.static_objects.get(&id).map(|o| (o.x, o.y, o.z)),
             ObjectKind::Item => self.ground.items.get(&id).map(|i| (i.x, i.y, i.z)),
+            ObjectKind::Vehicle => self.vehicle_position(id),
         }
     }
 
@@ -80,6 +81,7 @@ impl World {
                     (i.x, i.y, i.z) = (x, y, z);
                 }
             }
+            ObjectKind::Vehicle => self.set_vehicle_position_raw(id, x, y, z),
         }
     }
 
@@ -142,6 +144,8 @@ impl World {
         self.residence_npc_on_spawn(id);
         // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.
         self.summon_on_spawn(id);
+        // Java `ControllableAirShip.onSpawn()` (M8-VEHICLE-01).
+        self.vehicle_on_spawn(id);
     }
 
     /// Java `WorldObject.decayMe()`: out of view for everybody, out of the world table.
@@ -434,6 +438,7 @@ impl World {
             ObjectKind::Fence => self.send_fence_info(subject, viewer),
             ObjectKind::StaticObject => self.send_static_object_info(subject, viewer),
             ObjectKind::Item => self.send_ground_item_info(subject, viewer),
+            ObjectKind::Vehicle => self.send_vehicle_info(subject, viewer),
         }
     }
 

@@ -186,6 +186,11 @@ pub enum PersistCommand {
         request: crate::olympiad::OlympiadRereadRequest,
         then: crate::olympiad::OlympiadRereadThen,
     },
+    /// A write of the Underground Coliseum rows (`underground_coliseum`, the `UC_*_TIME` rows of
+    /// `global_variables`), see `minigame/` (M8-GAMES-01).
+    Minigame(crate::minigame::MinigameWrite),
+    /// A write of the `airships` table with Java's statements, see `vehicle/` (M8-VEHICLE-01).
+    Vehicle(crate::vehicle::VehicleWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {
@@ -212,9 +217,30 @@ pub enum PersistCommand {
     /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
     /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflineTrade(crate::trade::OfflineTradeWrite),
+    /// A row write of the item auctions with Java's statement (`item_auction`,
+    /// `item_auction_bid`), see `item_auction/` (L-05). The global ones are sent only with
+    /// `CycleDatabaseWrites` (D-53).
+    ItemAuction(crate::item_auction::ItemAuctionWrite),
+    /// Asks the persistence task to read the `item_auction` rows and bids of one instance again
+    /// (D-50, D-53) before an auction is shown, bid on or a canceled bid is returned. The answer
+    /// comes back as `WorldCommand::ItemAuctionReread` carrying `then`.
+    ItemAuctionRequest {
+        instance_id: i32,
+        then: crate::item_auction::ItemAuctionThen,
+    },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
+    /// A boss row write with Java's statement (`grandboss_data`, `raidboss_spawnlist`,
+    /// `character_raid_points`), see `boss/` (M8-BOSS-01). Applied in order with the other commands.
+    Boss(crate::boss::BossWrite),
+    /// Asks the persistence task to read boss rows again (D-50, D-53): a grand boss row for the
+    /// admin page, the raid point rows of a character entering the world. The answer comes back as
+    /// `WorldCommand::BossReread` carrying `then`.
+    BossRereadRequest {
+        kind: crate::boss::BossReadKind,
+        then: crate::boss::BossReadThen,
+    },
     /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
     /// `instance/times.rs`). Applied in order with the other commands.
     InstanceTime(crate::instance::InstanceTimeWrite),
@@ -229,6 +255,12 @@ pub enum PersistCommand {
     },
     /// A write of `mods_wedding` with Java's statement (`Couple`, M8-MISC-01, see `wedding.rs`).
     Wedding(crate::wedding::WeddingWrite),
+    /// A `seven_signs` / `seven_signs_status` write with Java's statement (M8-SS-01, see
+    /// `sevensigns/`). The world sends the global ones only with `CycleDatabaseWrites` (D-53).
+    SevenSigns(crate::sevensigns::SevenSignsWrite),
+    /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
+    /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
+    SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

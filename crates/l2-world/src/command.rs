@@ -149,6 +149,8 @@ pub enum ClientInput {
     Store(crate::trade::StoreInput),
     /// The symbol maker packets (L-01): `RequestHenna*`.
     Henna(crate::henna::HennaInput),
+    /// The item auction packets (L-05): `RequestInfoItemAuction`, `RequestBidItemAuction`.
+    ItemAuction(crate::item_auction::ItemAuctionInput),
     /// The teleport bookmark packets (L-04): `RequestBookMarkSlotInfo`, `RequestSaveBookMarkSlot`, ...
     Bookmark(crate::bookmarks::BookmarkInput),
     /// The mail contact list packets (L-04): `RequestExShowContactList`, ...
@@ -157,6 +159,11 @@ pub enum ClientInput {
     Cursed(crate::cursed::CursedInput),
     /// The observer packets of the Olympiad (M8-OLY-01), see `olympiad/`.
     Olympiad(crate::olympiad::OlympiadInput),
+    /// `RequestExCubeGameChangeTeam` and `RequestExCubeGameReadyAnswer` (M8-GAMES-01), see
+    /// `minigame/`.
+    Minigame(crate::minigame::MinigameInput),
+    /// The boat and air ship packets (M8-VEHICLE-01), see `vehicle/`.
+    Vehicle(crate::vehicle::VehicleInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
@@ -261,6 +268,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// Java `RequestGetBossRecord`: the raid points record (M8-BOSS-01, `boss/points.rs`).
+    GetBossRecord { boss_id: i32 },
     /// The siege window packets (M7-SIEGE-01).
     Siege(crate::siege::SiegeInput),
     /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
@@ -274,6 +283,8 @@ pub enum ClientInput {
     /// The petition packets (`RequestPetition`, `RequestPetitionCancel`,
     /// `RequestPetitionFeedback`), see `petition.rs`.
     Petition(crate::petition::PetitionInput),
+    /// Java `RequestSSQStatus` (M8-SS-01, `sevensigns/status.rs`).
+    SsqStatus { page: i8 },
     /// Java `SnoopQuit`: the GM stops snooping the player with this object id.
     SnoopQuit { snoop_id: i32 },
     /// The L-02 packets (macros, crystallize, wear shop, item links, key mapping, ...), see
@@ -399,6 +410,19 @@ pub enum WorldCommand {
         result: Result<crate::olympiad::OlympiadRereadRows, ()>,
         then: crate::olympiad::OlympiadRereadThen,
     },
+    /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
+    /// the read failed (the request is then refused, L-05, D-50).
+    ItemAuctionReread {
+        instance_id: i32,
+        result: Result<Vec<crate::item_auction::ItemAuctionRecord>, ()>,
+        then: crate::item_auction::ItemAuctionThen,
+    },
+    /// The answer to `PersistCommand::BossRereadRequest`: the rows, or `Err` when the read failed
+    /// (the follow-up `then` is then refused, M8-BOSS-01).
+    BossReread {
+        result: Result<crate::boss::BossRereadRows, ()>,
+        then: crate::boss::BossReadThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -448,6 +472,12 @@ pub enum WorldCommand {
     /// `LoginServerThread._serverName`, shown by `//server_login`).
     LoginServerRegistered {
         name: String,
+    },
+    /// The answer to `PersistCommand::SevenSignsReadRequest`: every Seven Signs row, or `Err` when
+    /// the read failed (the follow-up `then` is then refused, M8-SS-01).
+    SevenSignsLoaded {
+        result: Result<crate::sevensigns::SevenSignsLoad, ()>,
+        then: crate::sevensigns::SevenSignsThen,
     },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
@@ -522,6 +552,20 @@ impl fmt::Debug for WorldCommand {
                 "OlympiadReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::ItemAuctionReread {
+                instance_id,
+                result,
+                then,
+            } => write!(
+                f,
+                "ItemAuctionReread({instance_id}, {then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BossReread { result, then } => write!(
+                f,
+                "BossReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
             Self::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -566,6 +610,11 @@ impl fmt::Debug for WorldCommand {
             ),
             Self::SpawnsReloaded { spawns } => write!(f, "SpawnsReloaded({} spawns)", spawns.len()),
             Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
+            Self::SevenSignsLoaded { result, then } => write!(
+                f,
+                "SevenSignsLoaded({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
         }

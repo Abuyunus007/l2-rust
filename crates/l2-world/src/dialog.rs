@@ -14,9 +14,8 @@
 // command is in the cache ([`PlayerTalk::validate`]).
 //
 // # What is left out, with the system that brings it
-// - Seven Signs state (`SevenSigns`, `SevenSignsFestival`): the npc ids that depend on the seal
-//   owners show the file Java picks when `StrictSevenSigns` is off, and `%festivalMins%` stays in
-//   the page. Olympiad state: `isHero` reads as false (M8-HERO-01).
+// - `SevenSignsFestival`: `%festivalMins%` stays in the page (the festival's card). Olympiad
+//   state: `isHero` reads as false (M8-HERO-01).
 // - Cursed weapons (`isCursedWeaponEquipped`), `_isBusy` NPCs (nothing sets it), quest dialogs and
 //   `ON_NPC_FIRST_TALK` listeners (scripts, D-05).
 // - `GeneralConfig.HTM_CACHE = false` (lazy): the cache is always preloaded, see `l2_data::HtmCache`.
@@ -415,10 +414,18 @@ impl World {
     pub fn npc_html_path(&self, npc: ObjectId, value: i32) -> Option<String> {
         let n = self.npcs.get(&npc)?;
         let template = self.npc_world.template(n.npc_id)?;
+        // `KrateisCubeManager` and `KrateisMatchManager` name their pages `<id>-0<value>.htm`
+        // (M8-GAMES-01).
+        let value_prefix =
+            if template.is_type("KrateisCubeManager") || template.is_type("KrateisMatchManager") {
+                "-0"
+            } else {
+                "-"
+            };
         let pom = if value == 0 {
             n.npc_id.to_string()
         } else {
-            format!("{}-{value}", n.npc_id)
+            format!("{}{value_prefix}{value}", n.npc_id)
         };
         // `FortLogistics.getHtmlPath`: `logistics.htm` / `logistics-<value>.htm`.
         if template.npc_type == "FortLogistics" {
@@ -461,6 +468,10 @@ impl World {
         }
         // The clan hall NPCs override `showChatWindow(player)` (`clanhall/`).
         if self.clan_hall_npc_show_chat_window(npc, player) {
+            return;
+        }
+        // `DawnPriest` / `DuskPriest.showChatWindow(player)` (M8-SS-01, `sevensigns/priest.rs`).
+        if self.ss_priest_show_chat_window(npc, player) {
             return;
         }
         self.show_chat_window(npc, player, 0);
@@ -557,10 +568,16 @@ impl World {
             31137..=31141 => format!("{SEVEN_SIGNS}festival/dusk_guide.htm"),
             // Black Marketeer of Mammon
             31092 => format!("{SEVEN_SIGNS}blkmrkt_1.htm"),
-            // Merchant of Mammon / Blacksmith of Mammon: the `StrictSevenSigns` checks need the
-            // Seven Signs state (FOLLOW-UP(Seven Signs)); with the option off Java shows these.
-            31113 => format!("{SEVEN_SIGNS}mammmerch_1.htm"),
-            31126 => format!("{SEVEN_SIGNS}mammblack_1.htm"),
+            // Merchant of Mammon / Blacksmith of Mammon: with `StrictSevenSigns` only the members
+            // of the winner that owns the seal (Avarice / Gnosis) may trade (M8-SS-01).
+            31113 => {
+                self.mammon_strict_check(player, crate::sevensigns::SEAL_AVARICE)?;
+                format!("{SEVEN_SIGNS}mammmerch_1.htm")
+            }
+            31126 => {
+                self.mammon_strict_check(player, crate::sevensigns::SEAL_GNOSIS)?;
+                format!("{SEVEN_SIGNS}mammblack_1.htm")
+            }
             // Festival Witches
             31132..=31136 | 31142..=31146 => format!("{SEVEN_SIGNS}festival/festival_witch.htm"),
             31688 => {
@@ -594,6 +611,42 @@ impl World {
             31093..=31094 | 31172..=31201 | 31239..=31254 => return None,
             _ => self.npc_html_path(npc, value)?,
         })
+    }
+
+    /// The `ALT_STRICT_SEVENSIGNS` block of the Mammon NPCs in `Npc.showChatWindow`: `None` (with
+    /// Java's messages) when the player may not use them.
+    fn mammon_strict_check(&self, player: ObjectId, seal: i32) -> Option<()> {
+        use crate::sevensigns::{CABAL_DAWN, CABAL_DUSK};
+        use l2_protocol_game::SystemMessageId;
+        use l2_protocol_game::server::SystemMessage;
+        if !self.seven_signs_settings().strict {
+            return Some(());
+        }
+        let comp_winner = self.ss_cabal_highest_score();
+        let player_cabal = self.ss_player_cabal(player.0);
+        let seal_owner = self.ss_seal_owner(seal);
+        match comp_winner {
+            CABAL_DAWN | CABAL_DUSK => {
+                if player_cabal != comp_winner || player_cabal != seal_owner {
+                    let message = if comp_winner == CABAL_DAWN {
+                        SystemMessageId::OnlyALordOfDawnMayUseThis
+                    } else {
+                        SystemMessageId::OnlyARevolutionaryOfDuskMayUseThis
+                    };
+                    self.send(player, &SystemMessage::new(message));
+                    self.send(player, &ActionFailed);
+                    return None;
+                }
+                Some(())
+            }
+            _ => {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::TheSsqCompetitionPeriodIsUnderway),
+                );
+                None
+            }
+        }
     }
 
     /// Replaces `%objectId%` and `%npcname%` of a page, as the gatekeeper's `sendHtmlMessage` does.

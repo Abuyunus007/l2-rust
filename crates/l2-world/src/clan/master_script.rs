@@ -173,6 +173,10 @@ impl World {
         if self.wedding_script_event(player, script_name, event) {
             return;
         }
+        // The air ship controllers (M8-VEHICLE-01, `vehicle/controller.rs`).
+        if self.air_ship_script_event(player, script_name, event) {
+            return;
+        }
         // The `ManorManager` script is built in by the manor (`manor/npc.rs`, M7-MANOR-01).
         if script_name == "ManorManager" {
             self.manor_process_script_event(player, event);

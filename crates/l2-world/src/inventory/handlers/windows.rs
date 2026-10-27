@@ -12,11 +12,6 @@ use l2_util::ObjectId;
 use crate::player::ItemData;
 use crate::world::World;
 
-/// Java `SevenSigns.getInstance().getCurrentPeriod()`.
-// The Seven Signs are not modelled; 0 is `PERIOD_COMP_RECRUITING`, the period of a fresh
-// database (the client only colours the seals of the map by it).
-const SEVEN_SIGNS_PERIOD: u8 = 0;
-
 impl World {
     /// Java `Maps.onItemUse`: `playable.sendPacket(new ShowMiniMap(item.getId()))`.
     pub(crate) fn maps_on_use(&mut self, id: ObjectId, item: &ItemData) -> bool {
@@ -24,7 +19,8 @@ impl World {
             id,
             &ShowMiniMap {
                 map_id: item.item_id,
-                seven_signs_period: SEVEN_SIGNS_PERIOD,
+                // Java `SevenSigns.getInstance().getCurrentPeriod()` (M8-SS-01).
+                seven_signs_period: self.ss_current_period() as u8,
             },
         );
         true

@@ -78,7 +78,11 @@ impl World {
             self.party_plain_message(requestor, SystemMessageId::ThatIsAnIncorrectTarget);
             return;
         }
-        // Event participants (`isRegisteredOnEvent`): there are no events.
+        // Event participants (`isRegisteredOnEvent`): the minigames' (M8-GAMES-01).
+        if let Err(message) = self.minigame_party_invite_check(requestor, target) {
+            self.send_message(requestor, message);
+            return;
+        }
         if self.is_in_party(target) {
             self.send(
                 requestor,
@@ -293,7 +297,10 @@ impl World {
         let Some(party) = self.party_of(player) else {
             return;
         };
-        // Underground Coliseum and dimensional rift messages: neither exists.
+        // Underground Coliseum message (M8-GAMES-01); the dimensional rift does not exist.
+        if self.minigame_refuses_party_leave(player) {
+            return;
+        }
         self.remove_party_member(party, player, PartyMessageType::Left);
         // Party matching room (`PartyMatchDetail`, `ExClosePartyRoom`).
         self.party_room_on_party_withdraw(player);
@@ -307,7 +314,10 @@ impl World {
         if !self.is_party_leader(player) {
             return;
         }
-        // Underground Coliseum and dimensional rift messages: neither exists.
+        // Underground Coliseum message (M8-GAMES-01); the dimensional rift does not exist.
+        if self.minigame_refuses_party_leave(player) {
+            return;
+        }
         if let Some(member) = self.party_member_by_name(party, name) {
             self.remove_party_member(party, member, PartyMessageType::Expelled);
         }

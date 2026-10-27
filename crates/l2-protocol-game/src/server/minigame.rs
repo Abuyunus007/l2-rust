@@ -466,6 +466,78 @@ server_packet!(
     }
 );
 
+/// Java `ExPVPMatchCCRecord.INITIALIZE`, `UPDATE`, `FINISH`: the state of the Kratei's Cube
+/// record.
+pub const CC_RECORD_INITIALIZE: i32 = 0;
+pub const CC_RECORD_UPDATE: i32 = 1;
+pub const CC_RECORD_FINISH: i32 = 2;
+
+/// Java `ExPVPMatchCCRecord` writes at most this many players.
+pub const CC_RECORD_MAX_PLAYERS: usize = 25;
+
+/// One line of the Kratei's Cube record: a player and the points.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CcRecordEntry {
+    pub name: String,
+    pub points: i32,
+}
+
+// Java: gameserver/network/serverpackets/ExPVPMatchCCRecord.java
+/// The Kratei's Cube score list (`EX_PVP_MATCH_CC_RECORD`). Java writes `min(size, 25)` entries
+/// and stops after the 25th, so a longer list is cut on encoding.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExPvpMatchCcRecord {
+    /// `CC_RECORD_INITIALIZE`, `CC_RECORD_UPDATE` or `CC_RECORD_FINISH`.
+    pub state: i32,
+    pub players: Vec<CcRecordEntry>,
+}
+
+impl ExPvpMatchCcRecord {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExPvpMatchCcRecord;
+}
+
+impl Encode for ExPvpMatchCcRecord {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        let count = self.players.len().min(CC_RECORD_MAX_PLAYERS);
+        w.i32(self.state).i32(count as i32);
+        for entry in self.players.iter().take(count) {
+            w.string(&entry.name).i32(entry.points);
+        }
+    }
+}
+
+impl Decode for ExPvpMatchCcRecord {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let state = r.i32()?;
+        let count = read_count(r, "player count")?;
+        let mut players = Vec::new();
+        for _ in 0..count {
+            players.push(CcRecordEntry {
+                name: r.string(),
+                points: r.i32()?,
+            });
+        }
+        Ok(Self { state, players })
+    }
+}
+
+// Java: gameserver/network/serverpackets/ExPVPMatchCCMyRecord.java
+server_packet!(
+    /// The player's own points in the Kratei's Cube match (`EX_PVP_MATCH_CC_MY_RECORD`).
+    ExPvpMatchCcMyRecord,
+    ExPvpMatchCcMyRecord {
+        points: i32,
+    }
+);
+
+// Java: gameserver/network/serverpackets/ExPVPMatchCCRetire.java
+server_unit_packet!(
+    /// The player leaves the Kratei's Cube match (`EX_PVP_MATCH_CC_RETIRE`).
+    ExPvpMatchCcRetire,
+    ExPvpMatchCcRetire
+);
+
 // Java: gameserver/network/serverpackets/ExStartScenePlayer.java
 server_packet!(
     /// Starts a movie for the client (`EX_START_SCENE_PLAYER`).

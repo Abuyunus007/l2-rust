@@ -156,11 +156,15 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The grand boss store, the raid boss respawns and the weekly raid points reset, see `boss/`.
+    Boss(crate::boss::BossTimer),
     /// The life task of a cursed weapon and its delayed social action and transformation, see
     /// `cursed/`.
     Cursed(crate::cursed::CursedTimer),
     /// The Olympiad tasks (the periods, the game manager, the stadium tasks), see `olympiad/`.
     Olympiad(crate::olympiad::OlympiadTimer),
+    /// The tasks of the boats and air ships, see `vehicle/`.
+    Vehicle(crate::vehicle::VehicleTimer),
     /// The end of a wear shop try-on (L-02), see `leftover.rs`.
     Leftover(crate::leftover::LeftoverTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
@@ -172,6 +176,8 @@ pub enum TimerKind {
     Untransform(ObjectId),
     /// Java `setPlayerClass`'s `finally`: `sendSkillList()` 100 ms later (`admin/edit_char.rs`).
     ClassChangeSkillList(ObjectId),
+    /// The state timer of an item auction instance (start, extension, end), see `item_auction/`.
+    ItemAuction(crate::item_auction::ItemAuctionTimer),
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),
@@ -182,6 +188,12 @@ pub enum TimerKind {
     Walking(crate::walking::WalkingTimer),
     /// The `.gotolove` wait of a married player, see `wedding.rs`.
     Wedding(crate::wedding::WeddingTimer),
+    /// The tasks of Handy's Block Checker, Kratei's Cube and the Underground Coliseum, see
+    /// `minigame/`.
+    Minigame(crate::minigame::MinigameTimer),
+    /// The period change, the global save and the auto spawns of the Seven Signs, see
+    /// `sevensigns/`.
+    SevenSigns(crate::sevensigns::SevenSignsTimer),
 }
 
 #[derive(Debug, Default)]

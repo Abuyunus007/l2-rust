@@ -74,7 +74,7 @@ impl EffectHandler for Escape {
         } else {
             world.tele_to_location_where(cx.effected, where_type);
         }
-        // NOTE: Java also calls `setIn7sDungeon(false)` on a player; the Seven Signs dungeons are
-        // not in the world yet.
+        // `effected.asPlayer().setIn7sDungeon(false)` (M8-SS-01).
+        world.set_in_7s_dungeon(cx.effected, false);
     }
 }

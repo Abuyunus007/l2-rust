@@ -13,7 +13,7 @@
 // packets are therefore not sent either):
 // - visibility (M3): `spawnMe` and every `NpcInfo`/`CharInfo`, `broadcastUserInfo`'s `CharInfo`
 // - zones: `ExSetCompassZoneCode` and the zone messages
-// - clans, sieges, Seven Signs (the period message), the server news HTML
+// - clans, sieges, the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
 // - the mail check, premium items (the friend list is in `friends.rs`, the contacts in
 //   `contacts.rs`, the teleport bookmarks in `bookmarks.rs`)
@@ -450,11 +450,19 @@ impl World {
         // The residences of the clan as the session read them at `CharacterSelect` (M7-RES-01,
         // D-51: the Java GS runs the real sieges).
         self.residence_refresh_player(id);
+        // The Seven Signs rows the session read at `CharacterSelect` (M8-SS-01, D-50, D-53: the
+        // Java GS runs the cycle).
+        self.ss_refresh_player(id);
         // The siege state of a fortress siege that is going on, and "Remove combat flag before
         // teleporting" (M7-FORT-01).
         self.fort_player_entered(id);
         // A player registered for the Territory War gets his side (M7-TW-01).
         self.territory_player_entered(id);
+        // The raid points the Java GS may have given the character since this server read them
+        // (M8-BOSS-01, D-50).
+        self.request_raid_points_reread(id.0);
+        // "Updating Seal of Strife Buff/Debuff" (M8-SS-01).
+        self.ss_enter_world_strife(id);
         // The mails the session read at `CharacterSelect` replace this server's copies of them
         // (M6-SYNC-01, D-39: the Java GS shares the table).
         self.mail_refresh_player(id);
@@ -538,6 +546,9 @@ impl World {
         }
         // EnterWorld: "YOUR_FRIEND_S1_JUST_LOGGED_IN" to the friends who are online.
         self.friends_announce_login(id);
+        // Java `onPlayerEnter`: a player left in a Seven Signs dungeon he may not be in goes to
+        // town (M8-SS-01).
+        self.ss_on_player_enter(id);
         // Java `onPlayerEnter` -> `restoreEffects()`: the buffs of the last logout come back with
         // the time they had left (`effects/save.rs`).
         self.restore_saved_effects(id);
@@ -700,7 +711,9 @@ impl World {
         // FriendList: the friend list the session loaded (M6-FRIEND-01).
         packets.push(self.friend_list_packet(id).to_bytes());
         packets.push(SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi).to_bytes());
-        // Seven Signs period message: not ported. `AnnouncementsTable.showAnnouncements(player)`.
+        // `SevenSigns.getInstance().sendCurrentPeriodMsg(player)` (M8-SS-01), then
+        // `AnnouncementsTable.showAnnouncements(player)`.
+        packets.extend(self.ss_current_period_message().map(|m| m.to_bytes()));
         for say in self.announcement_packets(id) {
             packets.push(say.to_bytes());
         }
@@ -793,8 +806,9 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
     let speed = |value: f64| crate::stats::java_round(value / move_multiplier) as i32;
     let attack_element = view.attack_element();
     let defense = |element: i8| view.defense_element_value(element) as i16;
-    // `isMounted() || airShipHelm != 0 ? 0 : getEnchantEffect()`
-    let enchant_effect = if view.is_mounted() {
+    // `isMounted() || airShipHelm != 0 ? 0 : getEnchantEffect()`; the helm item is the one of
+    // the air ship the player steers (`vehicle/airship.rs`)
+    let enchant_effect = if view.is_mounted() || world.air_ship_helm_item(core.object_id) != 0 {
         0
     } else {
         slots[paperdoll::RHAND].map_or(0, |w| w.enchant_level.min(127))
@@ -803,7 +817,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         x: core.x,
         y: core.y,
         z: core.z,
-        vehicle_id: 0,
+        // `getVehicle() != null ? getVehicle().getObjectId() : 0`
+        vehicle_id: world.rider_vehicle_id(core.object_id),
         object_id: core.object_id.0,
         // `appearance.getVisibleName()`: a form (the cursed weapons) can rename the player.
         name: player

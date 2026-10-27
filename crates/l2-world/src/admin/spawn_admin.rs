@@ -331,6 +331,8 @@ fn admin_unspawnall(world: &mut World, _gm: ObjectId, _command: &str) -> Outcome
         l2_protocol_game::SystemMessageId::TheNpcServerIsNotOperatingAtThisTime,
     );
     world.broadcast_to_all_online_players(&notice);
+    // `RaidBossSpawnManager.getInstance().cleanUp()` (M8-BOSS-01).
+    world.raid_clean_up();
     // Every spawn stops respawning first (the delete loop of Java fires the death hooks).
     for index in world.all_spawn_indices() {
         world.stop_respawn(index);

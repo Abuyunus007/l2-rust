@@ -26,7 +26,6 @@
 // immutable and handed in at startup like the recipes.
 //
 // # Left out on purpose
-// - `isInBoat()` of the `Fishing` effect: there are no boats yet, so nobody is on one.
 // - `Player.setTarget(player)` around the `FishShots` animation: the target change sends nothing
 //   and is put back at once.
 // - The `_fishing` check of the mount action (`Player.mount`), which belongs to the mounts card.

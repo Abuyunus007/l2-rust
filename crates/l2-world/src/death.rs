@@ -268,6 +268,8 @@ impl World {
         }
         let _ = killer;
         self.add_decay_task(id);
+        // `UCTower.doDie`: the tower leaves its team (M8-GAMES-01).
+        self.minigame_on_npc_die(id);
     }
 
     /// Java `Attackable.doDie(killer)` after `Npc.doDie`.
@@ -280,7 +282,9 @@ impl World {
 
     /// Java `Player.doDie(killer)` after `Playable.doDie`.
     fn player_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
-        // Krateis arenas: not modelled.
+        // Krateis arenas: the respawn countdown and the killer's points; the coliseum team's
+        // `onKill` (M8-GAMES-01).
+        self.minigame_on_player_die(id, killer);
         // `if (isMounted()) stopFeed()`
         self.mount_on_die(id);
         // `stopWaterTask()`
@@ -406,6 +410,8 @@ impl World {
             self.fort_commander_died(id);
             // `TerritoryWard.doDie` (M7-TW-01).
             self.territory_ward_do_die(id, killer);
+            // `RaidBoss.doDie` / `GrandBoss.doDie`: the raid points and the respawn (M8-BOSS-01).
+            self.boss_npc_died(id, killer);
         }
         true
     }
@@ -451,8 +457,9 @@ impl World {
 
     /// Java `Creature.canRevive()`: always true for an NPC; a player's `_canRevive` is only
     /// cleared by scripts.
-    pub fn can_revive(&self, _id: ObjectId) -> bool {
-        true
+    pub fn can_revive(&self, id: ObjectId) -> bool {
+        // Kratei's Cube turns `_canRevive` off for the players in the match (M8-GAMES-01).
+        self.minigame_can_revive(id)
     }
 
     /// Java `Creature.isPendingRevive()`: `_isDead && _isPendingRevive`.
@@ -706,7 +713,7 @@ impl World {
             // `player.setInstanceId(instanceId)` before the teleport (M8-INST-01): the player
             // leaves the instance's list while still standing in it.
             self.set_instance_id(id, instance);
-            // `setIn7sDungeon(false)`: the Seven Signs dungeon is not modelled.
+            self.set_in_7s_dungeon(id, false);
             self.set_pending_revive(id, true);
             let offset = self.settings.teleport.max_offset_on_teleport;
             self.tele_to_location(

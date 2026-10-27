@@ -17,9 +17,14 @@ pub use game::PetitionFeedbackRepository;
 pub use game::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };
+pub use game::{AirshipRepository, AirshipRow, CursedWeaponRepository, CursedWeaponRow};
 pub use game::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use game::{BookmarkRepository, BookmarkRow, ContactLink, ContactRepository};
+pub use game::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use game::{BotReportDbRow, BotReportRepository};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
@@ -36,9 +41,9 @@ pub use game::{
     ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
     RecommendationRepository, VariableRepository,
 };
+pub use game::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
-pub use game::{CursedWeaponRepository, CursedWeaponRow};
 pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
@@ -47,6 +52,7 @@ pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{InstanceTimeRepository, InstanceTimeRow};
+pub use game::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use game::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
     OwnerElementalRow, PaperdollItemRow,
@@ -63,7 +69,9 @@ pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
+pub use game::{RandomSpawnRepository, RandomSpawnRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
+pub use game::{SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,

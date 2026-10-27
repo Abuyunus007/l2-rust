@@ -350,6 +350,10 @@ impl World {
         if !self.is_npc(target) {
             return;
         }
+        // `UCTower.reduceCurrentHp`: a hit of its own team does nothing (M8-GAMES-01).
+        if self.minigame_tower_refuses_damage(target, attacker) {
+            return;
+        }
         // `Artefact.reduceCurrentHp` does nothing; `SiegeFlag` takes its damage through
         // `SiegeFlagStatus` and warns its clan (M7-SIEGE-01).
         if self.npc_template(target).is_some_and(|t| t.is_type("Artefact")) {

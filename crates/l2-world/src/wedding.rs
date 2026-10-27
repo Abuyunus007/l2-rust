@@ -30,7 +30,7 @@
 // # Left out, with the system that brings it (every one is a check or a state of another M8 card)
 // - Checks `.gotolove` makes on states that do not exist yet: a boss zone, a combat flag,
 //   the Olympiad, a registered event, the observer mode, the Seven Signs festival,
-//   a dimensional rift, the Seven Signs dungeon (`setIn7sDungeon` on arrival).
+//   a dimensional rift.
 // - The combat/zone checks for `.engage` need nothing else.
 
 use l2_data::ClassId;
@@ -172,6 +172,8 @@ pub enum WeddingTimer {
         x: i32,
         y: i32,
         z: i32,
+        /// `partner.isIn7sDungeon()` when the wait began (M8-SS-01).
+        to_7s_dungeon: bool,
     },
 }
 
@@ -650,7 +652,25 @@ impl World {
             );
             return false;
         }
-        // (Partner in the Seven Signs dungeon: not ported yet.)
+        // The partner is in a Seven Signs dungeon (M8-SS-01).
+        if self.is_in_7s_dungeon(partner) && !self.is_in_7s_dungeon(player) {
+            let player_cabal = self.ss_player_cabal(player.0);
+            if self.ss_is_seal_validation_period() {
+                if player_cabal != self.ss_cabal_highest_score() {
+                    self.send_message(
+                        player,
+                        "Your Partner is in a Seven Signs Dungeon and you are not in the winner Cabal!",
+                    );
+                    return false;
+                }
+            } else if player_cabal == crate::sevensigns::CABAL_NULL {
+                self.send_message(
+                    player,
+                    "Your Partner is in a Seven Signs Dungeon and you are not registered!",
+                );
+                return false;
+            }
+        }
         if self.is_inside_zone(partner, ZoneId::NoSummonFriend) {
             self.send_message(player, "Your partner is in area which blocks summoning.");
             return false;
@@ -684,12 +704,20 @@ impl World {
         // End SoE Animation section.
 
         let (x, y, z) = self.position_of(partner).unwrap_or((0, 0, 0));
+        let to_7s_dungeon = self.is_in_7s_dungeon(partner);
         // Continue execution later.
         let delay = u64::try_from(teleport_timer).unwrap_or(0);
         let due = self.tick + TimerWheel::ms_to_ticks(delay);
-        let timer = self
-            .timers
-            .schedule_at(due, TimerKind::Wedding(WeddingTimer::Escape { player, x, y, z }));
+        let timer = self.timers.schedule_at(
+            due,
+            TimerKind::Wedding(WeddingTimer::Escape {
+                player,
+                x,
+                y,
+                z,
+                to_7s_dungeon,
+            }),
+        );
         // `setSkillCast(task)` and `forceIsCasting(ticks + teleportTimer / MILLIS_IN_TICK)`.
         let interrupt = self.game_ticks().wrapping_add(teleport_timer / 100);
         self.set_casting_now(player, true);
@@ -725,12 +753,18 @@ impl World {
     /// The timers of the wedding system.
     pub(crate) fn on_wedding_timer(&mut self, timer: WeddingTimer) {
         match timer {
-            WeddingTimer::Escape { player, x, y, z } => self.escape_finalizer(player, x, y, z),
+            WeddingTimer::Escape {
+                player,
+                x,
+                y,
+                z,
+                to_7s_dungeon,
+            } => self.escape_finalizer(player, x, y, z, to_7s_dungeon),
         }
     }
 
     /// Java `Wedding.EscapeFinalizer.run()`.
-    fn escape_finalizer(&mut self, player: ObjectId, x: i32, y: i32, z: i32) {
+    fn escape_finalizer(&mut self, player: ObjectId, x: i32, y: i32, z: i32, to_7s_dungeon: bool) {
         if !self.players.contains_key(&player) {
             return;
         }
@@ -745,7 +779,7 @@ impl World {
             self.send_message(player, "Your partner is in siege, you can't go to your partner.");
             return;
         }
-        // (`setIn7sDungeon`: not ported yet.)
+        self.set_in_7s_dungeon(player, to_7s_dungeon);
         self.enable_all_skills(player);
         self.set_casting_now(player, false);
         self.tele_to_location(player, TeleportTarget::at(x, y, z));

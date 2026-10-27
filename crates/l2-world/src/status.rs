@@ -265,12 +265,12 @@ impl World {
     }
 
     /// `(cur, max)` of HP: the stored value and `getMaxHp()`.
-    fn hp_and_max(&self, id: ObjectId) -> Option<(f64, f64)> {
+    pub(crate) fn hp_and_max(&self, id: ObjectId) -> Option<(f64, f64)> {
         let cur = self.core_of(id)?.cur_hp;
         Some((cur, f64::from(self.stats(id)?.max_hp())))
     }
 
-    fn mp_and_max(&self, id: ObjectId) -> Option<(f64, f64)> {
+    pub(crate) fn mp_and_max(&self, id: ObjectId) -> Option<(f64, f64)> {
         let cur = self.core_of(id)?.cur_mp;
         Some((cur, f64::from(self.stats(id)?.max_mp())))
     }

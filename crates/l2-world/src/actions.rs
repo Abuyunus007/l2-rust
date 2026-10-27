@@ -23,8 +23,7 @@
 // `RequestMagicSkillUse`, ...) are not ported (see `ai/mod.rs`).
 //
 // # Left out (markers)
-// - Boats and airships: `isInBoat()` and `isInAirShip()` are always false and the airship actions
-//   (67 to 70) are not ported. Action 38 (mount/dismount) is `mount.rs`.
+// - Action 38 (mount/dismount) is `mount.rs`; the airship actions 67 to 70 are `vehicle/input.rs`.
 // - Action 65 (the bot report button) is `bot_report.rs`.
 
 use l2_protocol_game::SystemMessageId;
@@ -348,10 +347,12 @@ impl World {
                 player,
             );
         }
-        // `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()` (no boats here).
-        if self
-            .stats(player)
-            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        // `isMounted() || isFlyingMounted() || isInBoat() || isInAirShip()`.
+        if self.is_in_boat(player)
+            || self.is_in_air_ship(player)
+            || self
+                .stats(player)
+                .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
         {
             self.couple_refusal(
                 player,
@@ -443,10 +444,13 @@ impl World {
             );
             return;
         }
-        // `partner.isMounted() || partner.isFlyingMounted() || isInBoat() || isInAirShip()`.
-        if self
-            .stats(partner)
-            .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
+        // `partner.isMounted() || partner.isFlyingMounted() || partner.isInBoat() ||
+        // partner.isInAirShip()`.
+        if self.is_in_boat(partner)
+            || self.is_in_air_ship(partner)
+            || self
+                .stats(partner)
+                .is_some_and(|v| v.is_flying_mounted() || v.is_mounted())
         {
             self.couple_refusal(
                 player,

@@ -2,70 +2,41 @@
 // Java: mechanics/sevensigns/SevenSigns.java (getSealOwner, getCurrentPeriod, getPlayerCabal,
 //       isCompResultsPeriod, isCompetitionPeriod, isSealValidationPeriod)
 //
-// M8: Seven Signs is not ported. The answers are the ones of a server where nobody joined a cabal
-// and the seals are not owned, in the seal validation period: the same state `siege/mod.rs`
-// (`seven_signs_strife_owner`, `seven_signs_is_seal_validation`) and the mercenary tickets assume.
+// M8-SS-01: the answers come from the Seven Signs state (`sevensigns/`).
 
 use l2_util::ObjectId;
 
 use crate::world::World;
 
-/// `SevenSigns.CABAL_NULL`.
-pub const CABAL_NULL: i32 = 0;
-/// `SevenSigns.CABAL_DUSK`.
-pub const CABAL_DUSK: i32 = 1;
-/// `SevenSigns.CABAL_DAWN`.
-pub const CABAL_DAWN: i32 = 2;
-
-/// `SevenSigns.SEAL_AVARICE`.
-pub(super) const SEAL_AVARICE: i32 = 1;
-/// `SevenSigns.SEAL_GNOSIS`.
-pub(super) const SEAL_GNOSIS: i32 = 2;
-/// `SevenSigns.SEAL_STRIFE`.
-pub(super) const SEAL_STRIFE: i32 = 3;
-
-/// `SevenSigns.PERIOD_COMP_RECRUITING`.
-pub(super) const PERIOD_COMP_RECRUITING: i32 = 0;
-/// `SevenSigns.PERIOD_COMPETITION`.
-pub(super) const PERIOD_COMPETITION: i32 = 1;
-/// `SevenSigns.PERIOD_COMP_RESULTS`.
-pub(super) const PERIOD_COMP_RESULTS: i32 = 2;
-/// `SevenSigns.PERIOD_SEAL_VALIDATION`.
-pub(super) const PERIOD_SEAL_VALIDATION: i32 = 3;
+pub use crate::sevensigns::{CABAL_DAWN, CABAL_DUSK, CABAL_NULL};
+pub(super) use crate::sevensigns::{
+    PERIOD_COMP_RECRUITING, PERIOD_COMP_RESULTS, PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION, SEAL_AVARICE,
+    SEAL_GNOSIS, SEAL_STRIFE,
+};
 
 impl World {
     /// Java `SevenSigns.getSealOwner(seal)`.
-    // M8: the seals' owners.
     pub(super) fn seven_signs_seal_owner(&self, seal: i32) -> i32 {
-        if seal == SEAL_STRIFE {
-            return self.seven_signs_strife_owner();
-        }
-        CABAL_NULL
+        self.ss_seal_owner(seal)
     }
 
     /// Java `SevenSigns.getCurrentPeriod()`.
-    // M8: the period of the cycle.
     pub(super) fn seven_signs_current_period(&self) -> i32 {
-        if self.seven_signs_is_seal_validation() {
-            PERIOD_SEAL_VALIDATION
-        } else {
-            PERIOD_COMPETITION
-        }
+        self.ss_current_period()
     }
 
     /// Java `SevenSigns.getPlayerCabal(objectId)`.
-    // M8: the cabal a character joined.
-    pub(super) fn seven_signs_player_cabal(&self, _player: ObjectId) -> i32 {
-        CABAL_NULL
+    pub(super) fn seven_signs_player_cabal(&self, player: ObjectId) -> i32 {
+        self.ss_player_cabal(player.0)
     }
 
     /// Java `SevenSigns.isCompResultsPeriod()`.
     pub(super) fn seven_signs_is_comp_results_period(&self) -> bool {
-        self.seven_signs_current_period() == PERIOD_COMP_RESULTS
+        self.ss_is_comp_results_period()
     }
 
     /// Java `SevenSigns.isCompetitionPeriod()`.
     pub(super) fn seven_signs_is_competition_period(&self) -> bool {
-        self.seven_signs_current_period() == PERIOD_COMPETITION
+        self.ss_is_competition_period()
     }
 }

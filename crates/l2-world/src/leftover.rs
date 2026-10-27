@@ -14,7 +14,7 @@
 //   at logout and loads new objects at the next login, so for the items the player keeps it is
 //   the same.
 // - `Player.isInCrystallize()` has no state: the world handles one packet at a time.
-// - `AirShip` (`isInAirShip`) is not modelled, so the rotation is always the player's.
+// - The rotation of a captain turns the air ship (`vehicle/airship.rs`), as in Java.
 
 use std::collections::HashSet;
 
@@ -36,8 +36,6 @@ use l2_data::stats::AbnormalType;
 pub const UI_KEY_MAPPING: &str = "UI_KEY_MAPPING";
 /// Java `ShowMiniMap(1665)`: the id of the map `RequestShowMiniMap` shows.
 pub const MINI_MAP_ID: i32 = 1665;
-/// `SevenSigns.getInstance().getCurrentPeriod()` is not modelled (see `inventory/handlers/windows.rs`).
-const SEVEN_SIGNS_PERIOD: u8 = 0;
 const LOC_INVENTORY: &str = "INVENTORY";
 
 /// The configuration values these packets read. `Default` is Java's default of each key.
@@ -212,7 +210,8 @@ impl World {
             id,
             &ShowMiniMap {
                 map_id: MINI_MAP_ID,
-                seven_signs_period: SEVEN_SIGNS_PERIOD,
+                // Java `SevenSigns.getInstance().getCurrentPeriod()` (M8-SS-01).
+                seven_signs_period: self.ss_current_period() as u8,
             },
         );
     }
@@ -239,6 +238,19 @@ impl World {
         if !self.settings.keyboard_movement {
             return;
         }
+        // `isInAirShip() && getAirShip().isCaptain(this)`: the ship turns, not the player.
+        if let Some(ship) = self.steered_air_ship(id) {
+            self.broadcast_packet(
+                ship,
+                &StartRotation {
+                    object_id: ship.0,
+                    degree,
+                    side,
+                    speed: 0,
+                },
+            );
+            return;
+        }
         self.broadcast_packet(
             id,
             &StartRotation {
@@ -253,6 +265,18 @@ impl World {
     /// Java `FinishRotating.runImpl`.
     fn on_finish_rotating(&mut self, id: ObjectId, degree: i32) {
         if !self.settings.keyboard_movement {
+            return;
+        }
+        if let Some(ship) = self.steered_air_ship(id) {
+            self.set_air_ship_heading(ship, degree);
+            self.broadcast_packet(
+                ship,
+                &StopRotation {
+                    object_id: ship.0,
+                    degree,
+                    speed: 0,
+                },
+            );
             return;
         }
         self.set_heading(id, degree);

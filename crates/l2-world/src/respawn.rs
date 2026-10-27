@@ -339,7 +339,7 @@ impl World {
             return;
         }
         npc.decayed = true;
-        let (spawn, enchant) = (npc.spawn, npc.enchant_effect);
+        let (spawn, enchant, template_id) = (npc.spawn, npc.enchant_effect, npc.npc_id);
         // `Creature.decayMe`: an attackable forgets its attackers and its AI stops; then
         // `WorldObject.decayMe`: out of view for everybody, out of the object table.
         self.cancel_decay_task(id);
@@ -353,9 +353,11 @@ impl World {
         self.forget_combat(id);
         self.forget_status(id);
         // `ZoneRegion.removeFromZones`: NPCs have no zone state.
-        // Decrease its spawn counter. `!RaidBossSpawnManager.isDefined(getId())`: raid bosses
-        // are not spawned from the spawn files.
-        if let Some(index) = spawn {
+        // Decrease its spawn counter. `!RaidBossSpawnManager.isDefined(getId())`: the raid bosses
+        // of the manager come back through its own timer (`boss/raid.rs`).
+        if let Some(index) = spawn
+            && !self.raid_boss_defined(template_id)
+        {
             self.decrease_count(index, id, enchant);
         }
         // `WalkingManager.onDeath` (M8-MISC-01).

@@ -1045,6 +1045,59 @@ fn pvp_user_die_writes_red_then_blue() {
 }
 
 #[test]
+fn cube_record_packets_layout() {
+    use l2_protocol_game::server::minigame::{
+        CC_RECORD_UPDATE, CcRecordEntry, ExPvpMatchCcMyRecord, ExPvpMatchCcRecord, ExPvpMatchCcRetire,
+    };
+    let record = ExPvpMatchCcRecord {
+        state: CC_RECORD_UPDATE,
+        players: vec![
+            CcRecordEntry {
+                name: "A".to_owned(),
+                points: 9,
+            },
+            CcRecordEntry {
+                name: "B".to_owned(),
+                points: 3,
+            },
+        ],
+    };
+    check(
+        &record,
+        &cat(&[
+            ex_server(0x89),
+            ints(&[1, 2]),
+            text("A"),
+            ints(&[9]),
+            text("B"),
+            ints(&[3]),
+        ]),
+        3,
+    );
+    check(
+        &ExPvpMatchCcMyRecord { points: 12 },
+        &cat(&[ex_server(0x8A), ints(&[12])]),
+        3,
+    );
+    check(&ExPvpMatchCcRetire, &ex_server(0x8B), 3);
+}
+
+#[test]
+fn cube_record_is_cut_at_25_players() {
+    use l2_protocol_game::server::minigame::{CcRecordEntry, ExPvpMatchCcRecord};
+    let players: Vec<CcRecordEntry> = (0..30)
+        .map(|i| CcRecordEntry {
+            name: format!("P{i}"),
+            points: i,
+        })
+        .collect();
+    let bytes = ExPvpMatchCcRecord { state: 0, players }.to_bytes();
+    let decoded = ExPvpMatchCcRecord::decode(&mut PacketReader::new(&bytes[3..])).unwrap();
+    assert_eq!(decoded.players.len(), 25);
+    assert_eq!(decoded.players[24].name, "P24");
+}
+
+#[test]
 fn movie_start_writes_the_client_id() {
     check(
         &ExStartScenePlayer { movie_id: 9 },

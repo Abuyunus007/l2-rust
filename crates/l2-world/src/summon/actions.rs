@@ -7,8 +7,9 @@
 // Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java
 //
 // The player's own actions (sit, walk, socials, couple actions) are `actions.rs`; the stores are
-// `trade/store.rs`. The manufacture and mount actions are `craft/shop.rs` and `mount.rs`; the airship and
-// bot report actions belong to their own systems and are logged as not ported here.
+// `trade/store.rs`. The manufacture and mount actions are `craft/shop.rs` and `mount.rs`; the airship
+// actions are `vehicle/input.rs`; the bot report action belongs to its own system and is logged as
+// not ported here.
 
 use l2_data::NpcTemplate;
 use l2_data::npc::{NpcParam, NpcRace};
@@ -315,6 +316,8 @@ impl World {
                     self.broadcast_packet(summon, &packet);
                 }
             }
+            // Steer, Cancel Control, Destination Map, Exit Airship (`vehicle/input.rs`).
+            67..=70 => self.air_ship_action_use(player, action_id),
             // Switch State (baby pets only).
             1084 => {
                 if summon.is_some_and(|s| self.is_baby_pet(s)) {
