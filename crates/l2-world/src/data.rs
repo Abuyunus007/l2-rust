@@ -413,6 +413,8 @@ pub struct WorldSettings {
     /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
     /// shares the database and runs them itself (D-39).
     pub daily_reset_database_writes: bool,
+    /// The values of the L-02 packets (the wear shop, the dispel of dances), see `leftover.rs`.
+    pub leftover: crate::leftover::LeftoverSettings,
 }
 
 impl Default for WorldSettings {
@@ -477,6 +479,7 @@ impl Default for WorldSettings {
             augment: crate::augment::AugmentSettings::default(),
             fishing: crate::fishing::FishingSettings::default(),
             daily_reset_database_writes: false,
+            leftover: crate::leftover::LeftoverSettings::default(),
         }
     }
 }

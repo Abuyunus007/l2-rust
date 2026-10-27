@@ -2025,3 +2025,103 @@ async fn sieges_are_read_written_and_read_again_like_java() {
     }
     db.drop_db().await;
 }
+
+// ------------------------------------------------------------------ L-02: macros
+
+/// L-02: the rows of `RequestMakeMacro` and `RequestDeleteMacro`, as `MacroList.registerMacroInDb`
+/// / `deleteMacroFromDb` leave the table: one row per macro with the commands as
+/// `type,d1,d2[,cmd];`; a macro that is saved again replaces its row; a deleted one has none, even
+/// when the row came from the database (the first store compares with the table); the commands are
+/// cut to 255 characters.
+#[tokio::test]
+async fn macros_write_and_delete_their_rows() {
+    use l2_world::{MacroCmdData, MacroData};
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let macros = l2_db::MacroRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+    // A macro the Java server left.
+    macros
+        .insert_macro(
+            CHAR_ID,
+            &l2_db::NewMacro {
+                id: 1005,
+                icon: 1,
+                name: "Old".into(),
+                descr: Some("d".into()),
+                acronym: "OL".into(),
+                commands: "3,0,0,/sit;".into(),
+            },
+        )
+        .await
+        .unwrap();
+    let cmd = |kind, d1, d2, text: &str| MacroCmdData {
+        kind,
+        d1,
+        d2,
+        cmd: text.into(),
+    };
+    let heal = |commands| MacroData {
+        id: 1000,
+        icon: 3,
+        name: "Heal".into(),
+        descr: "desc".into(),
+        acronym: "HL".into(),
+        commands,
+    };
+    let old = MacroData {
+        id: 1005,
+        icon: 1,
+        name: "Old".into(),
+        descr: "d".into(),
+        acronym: "OL".into(),
+        commands: vec![cmd(3, 0, 0, "/sit")],
+    };
+    let shape = |rows: Vec<l2_db::MacroRow>| {
+        let mut shape: Vec<(i32, String, String)> = rows
+            .into_iter()
+            .map(|r| (r.id, r.name.unwrap(), r.commands.unwrap()))
+            .collect();
+        shape.sort_unstable();
+        shape
+    };
+
+    let mut data = player_data();
+    data.items = vec![];
+    data.skills = vec![];
+    data.shortcuts = vec![];
+    data.profile.macros = vec![heal(vec![cmd(1, 1011, 0, ""), cmd(3, 0, 0, "/sit")]), old.clone()];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(macros.macros_of(CHAR_ID).await.unwrap()),
+        vec![
+            (1000, "Heal".to_owned(), "1,1011,0;3,0,0,/sit;".to_owned()),
+            (1005, "Old".to_owned(), "3,0,0,/sit;".to_owned()),
+        ]
+    );
+
+    // A macro saved again replaces its row; the other one is deleted.
+    data.profile.macros = vec![heal(vec![cmd(1, 1015, 0, "")])];
+    store.store_player(&data).await.unwrap();
+    assert_eq!(
+        shape(macros.macros_of(CHAR_ID).await.unwrap()),
+        vec![(1000, "Heal".to_owned(), "1,1015,0;".to_owned())]
+    );
+
+    // The commands are cut to 255 characters.
+    data.profile.macros = vec![heal(vec![cmd(3, 0, 0, &"x".repeat(300))])];
+    store.store_player(&data).await.unwrap();
+    let rows = shape(macros.macros_of(CHAR_ID).await.unwrap());
+    assert_eq!(rows[0].2.encode_utf16().count(), 255);
+    assert!(rows[0].2.starts_with("3,0,0,xxx"));
+
+    // The last macro deleted: no row.
+    data.profile.macros = vec![];
+    store.store_player(&data).await.unwrap();
+    assert!(macros.macros_of(CHAR_ID).await.unwrap().is_empty());
+    pool.close().await;
+    db.drop_db().await;
+}
