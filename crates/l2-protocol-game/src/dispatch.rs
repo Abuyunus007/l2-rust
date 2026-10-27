@@ -33,6 +33,13 @@ use crate::client::{
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
 use crate::client::{
+    CannotMoveAnymoreInVehicle, EndScenePlayer, MoveToLocationAirShip, MoveToLocationInAirShip,
+    ObserverReturn, RequestCursedWeaponList, RequestCursedWeaponLocation, RequestExCubeGameChangeTeam,
+    RequestExCubeGameReadyAnswer, RequestExOlympiadMatchListRefresh, RequestGetBossRecord,
+    RequestGetOffVehicle, RequestGetOnVehicle, RequestMoveToLocationInVehicle, RequestOlympiadMatchList,
+    RequestOlympiadObserverEnd, RequestSeedPhase, RequestSsqStatus, RequestWriteHeroWords,
+};
+use crate::client::{
     RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
 };
 use crate::client::{
@@ -317,6 +324,18 @@ pub enum ClientPacket {
     RequestSetCastleSiegeTime(RequestSetCastleSiegeTime),
     /// `REQUEST_BUY_SEED` (0xC5).
     RequestBuySeed(RequestBuySeed),
+    /// `OBSERVER_RETURN` (0xC1).
+    ObserverReturn(ObserverReturn),
+    /// `REQUEST_SSQ_STATUS` (0xC8).
+    RequestSsqStatus(RequestSsqStatus),
+    /// `REQUEST_GET_ON_VEHICLE` (0x53).
+    RequestGetOnVehicle(RequestGetOnVehicle),
+    /// `REQUEST_GET_OFF_VEHICLE` (0x54).
+    RequestGetOffVehicle(RequestGetOffVehicle),
+    /// `REQUEST_MOVE_TO_LOCATION_IN_VEHICLE` (0x75).
+    RequestMoveToLocationInVehicle(RequestMoveToLocationInVehicle),
+    /// `CANNOT_MOVE_ANYMORE_IN_VEHICLE` (0x76).
+    CannotMoveAnymoreInVehicle(CannotMoveAnymoreInVehicle),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -347,6 +366,32 @@ pub enum ClientPacket {
     RequestBidItemAuction(RequestBidItemAuction),
     /// `REQUEST_INFO_ITEM_AUCTION` (`0xD0` 0x003A), an ex packet.
     RequestInfoItemAuction(RequestInfoItemAuction),
+    /// `REQUEST_OLYMPIAD_MATCH_LIST` (`0xD0` 0x002E), an ex packet.
+    RequestOlympiadMatchList(RequestOlympiadMatchList),
+    /// `REQUEST_OLYMPIAD_OBSERVER_END` (`0xD0` 0x0029), an ex packet.
+    RequestOlympiadObserverEnd(RequestOlympiadObserverEnd),
+    /// `REQUEST_EX_OLYMPIAD_MATCH_LIST_REFRESH` (`0xD0` 0x0088), an ex packet.
+    RequestExOlympiadMatchListRefresh(RequestExOlympiadMatchListRefresh),
+    /// `REQUEST_WRITE_HERO_WORDS` (`0xD0` 0x0005), an ex packet.
+    RequestWriteHeroWords(RequestWriteHeroWords),
+    /// `REQUEST_SEED_PHASE` (`0xD0` 0x0063), an ex packet.
+    RequestSeedPhase(RequestSeedPhase),
+    /// `REQUEST_CURSED_WEAPON_LIST` (`0xD0` 0x002A), an ex packet.
+    RequestCursedWeaponList(RequestCursedWeaponList),
+    /// `REQUEST_CURSED_WEAPON_LOCATION` (`0xD0` 0x002B), an ex packet.
+    RequestCursedWeaponLocation(RequestCursedWeaponLocation),
+    /// `REQUEST_GET_BOSS_RECORD` (`0xD0` 0x0040), an ex packet.
+    RequestGetBossRecord(RequestGetBossRecord),
+    /// `REQUEST_EX_CUBE_GAME_CHANGE_TEAM` (`0xD0` 0x005A), an ex packet.
+    RequestExCubeGameChangeTeam(RequestExCubeGameChangeTeam),
+    /// `REQUEST_EX_CUBE_GAME_READY_ANSWER` (`0xD0` 0x005C), an ex packet.
+    RequestExCubeGameReadyAnswer(RequestExCubeGameReadyAnswer),
+    /// `END_SCENE_PLAYER` (`0xD0` 0x005B), an ex packet.
+    EndScenePlayer(EndScenePlayer),
+    /// `MOVE_TO_LOCATION_AIR_SHIP` (`0xD0` 0x0038), an ex packet.
+    MoveToLocationAirShip(MoveToLocationAirShip),
+    /// `MOVE_TO_LOCATION_IN_AIR_SHIP` (`0xD0` 0x0020), an ex packet.
+    MoveToLocationInAirShip(MoveToLocationInAirShip),
 }
 
 /// Decodes the body of a client packet whose `opcode` byte was already read from `reader`.
@@ -623,6 +668,20 @@ pub fn decode_client(
             ClientPacket::RequestSetCastleSiegeTime(RequestSetCastleSiegeTime::decode(reader)?)
         }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
+        ObserverReturn::OPCODE => ClientPacket::ObserverReturn(ObserverReturn::decode(reader)?),
+        RequestSsqStatus::OPCODE => ClientPacket::RequestSsqStatus(RequestSsqStatus::decode(reader)?),
+        RequestGetOnVehicle::OPCODE => {
+            ClientPacket::RequestGetOnVehicle(RequestGetOnVehicle::decode(reader)?)
+        }
+        RequestGetOffVehicle::OPCODE => {
+            ClientPacket::RequestGetOffVehicle(RequestGetOffVehicle::decode(reader)?)
+        }
+        RequestMoveToLocationInVehicle::OPCODE => {
+            ClientPacket::RequestMoveToLocationInVehicle(RequestMoveToLocationInVehicle::decode(reader)?)
+        }
+        CannotMoveAnymoreInVehicle::OPCODE => {
+            ClientPacket::CannotMoveAnymoreInVehicle(CannotMoveAnymoreInVehicle::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -821,6 +880,41 @@ fn decode_ex_client(
         }
         RequestInfoItemAuction::EX_OPCODE => {
             ClientPacket::RequestInfoItemAuction(RequestInfoItemAuction::decode(reader)?)
+        }
+        RequestOlympiadMatchList::EX_OPCODE => {
+            ClientPacket::RequestOlympiadMatchList(RequestOlympiadMatchList::decode(reader)?)
+        }
+        RequestOlympiadObserverEnd::EX_OPCODE => {
+            ClientPacket::RequestOlympiadObserverEnd(RequestOlympiadObserverEnd::decode(reader)?)
+        }
+        RequestExOlympiadMatchListRefresh::EX_OPCODE => ClientPacket::RequestExOlympiadMatchListRefresh(
+            RequestExOlympiadMatchListRefresh::decode(reader)?,
+        ),
+        RequestWriteHeroWords::EX_OPCODE => {
+            ClientPacket::RequestWriteHeroWords(RequestWriteHeroWords::decode(reader)?)
+        }
+        RequestSeedPhase::EX_OPCODE => ClientPacket::RequestSeedPhase(RequestSeedPhase::decode(reader)?),
+        RequestCursedWeaponList::EX_OPCODE => {
+            ClientPacket::RequestCursedWeaponList(RequestCursedWeaponList::decode(reader)?)
+        }
+        RequestCursedWeaponLocation::EX_OPCODE => {
+            ClientPacket::RequestCursedWeaponLocation(RequestCursedWeaponLocation::decode(reader)?)
+        }
+        RequestGetBossRecord::EX_OPCODE => {
+            ClientPacket::RequestGetBossRecord(RequestGetBossRecord::decode(reader)?)
+        }
+        RequestExCubeGameChangeTeam::EX_OPCODE => {
+            ClientPacket::RequestExCubeGameChangeTeam(RequestExCubeGameChangeTeam::decode(reader)?)
+        }
+        RequestExCubeGameReadyAnswer::EX_OPCODE => {
+            ClientPacket::RequestExCubeGameReadyAnswer(RequestExCubeGameReadyAnswer::decode(reader)?)
+        }
+        EndScenePlayer::EX_OPCODE => ClientPacket::EndScenePlayer(EndScenePlayer::decode(reader)?),
+        MoveToLocationAirShip::EX_OPCODE => {
+            ClientPacket::MoveToLocationAirShip(MoveToLocationAirShip::decode(reader)?)
+        }
+        MoveToLocationInAirShip::EX_OPCODE => {
+            ClientPacket::MoveToLocationInAirShip(MoveToLocationInAirShip::decode(reader)?)
         }
         other => ClientPacket::UnportedEx(other),
     };
