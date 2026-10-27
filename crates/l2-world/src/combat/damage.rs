@@ -12,8 +12,8 @@
 //   effects and passives, so they are read from the stat engine (passive funcs do apply). The
 //   invulnerability flag itself (`//invul`, `Creature.setInvul`) is honoured by `status.rs`; stun
 //   breaking, `stopEffectsOnDamage`, fake death, the raid curse (skill 4515).
-// - Summons (damage transfer), mana shield messages, duels, olympiad, offline traders, the
-//   tutorial quest: not ported yet.
+// - Summons (damage transfer), mana shield messages, duels, offline traders, the
+//   tutorial quest: not ported yet. (The Olympiad damage counting is in: M8-OLY-01.)
 // - Minions calling for help (`MinionList.onAssist`), `addAttackerToAttackByList`, the aggro-range
 //   script events: M4-AI-01.
 

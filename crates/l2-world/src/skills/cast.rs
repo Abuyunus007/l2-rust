@@ -25,7 +25,7 @@
 //
 // # Left for other cards (markers)
 // - `// M5-EFX-03:` `Attackable.reduceHate`.
-// - `// M6:` summons, olympiad, transformations, talisman mana.
+// - `// M6:` summons, transformations, talisman mana. (The Olympiad exists: M8-OLY-01.)
 // The channelizer is `channelizer.rs`, the option trigger skills and the weapon's chance skills
 // are `triggers.rs` (M6-FU-12).
 
