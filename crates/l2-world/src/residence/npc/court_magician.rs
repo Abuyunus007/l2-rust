@@ -230,9 +230,15 @@ impl World {
                 true,
             );
         }
-        // M8: `isInOlympiadMode()` and `isRegisteredInComp()`
-        // (YOU_CANNOT_SUMMON_PLAYERS_WHO_ARE_CURRENTLY_PARTICIPATING_IN_THE_GRAND_OLYMPIAD),
-        // `isFestivalParticipant()`; `isOnEvent()` and `inObserverMode()` are not modelled.
+        // The olympiad (M8-OLY-01).
+        if self.is_in_olympiad_mode(target) || self.is_registered_in_comp(target) {
+            return refuse(
+                self,
+                SystemMessageId::YouCannotSummonPlayersWhoAreCurrentlyParticipatingInTheGrandOlympiad,
+                false,
+            );
+        }
+        // `isFestivalParticipant()` (Seven Signs) and `isOnEvent()` are not modelled.
         let flying = self.stats(target).is_some_and(|v| v.is_flying_mounted());
         if self.is_festival_participant(target) || flying || self.is_combat_flag_equipped(target) {
             return refuse(
@@ -240,6 +246,15 @@ impl World {
                 SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning,
                 false,
             );
+        }
+        // Observer mode (M8-OLY-01): `addString(target.getName())`.
+        if self.in_observer_mode(target) {
+            self.send(
+                active,
+                &SystemMessage::new(SystemMessageId::C1IsInAStateWhichPreventsSummoning)
+                    .with(SystemMessageParam::Text(name.clone())),
+            );
+            return false;
         }
         if self.is_inside_zone(target, ZoneId::NoSummonFriend) || self.is_inside_zone(target, ZoneId::Jail) {
             return refuse(self, SystemMessageId::C1IsInAnAreaWhichBlocksSummoning, true);

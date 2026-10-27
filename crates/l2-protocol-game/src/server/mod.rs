@@ -219,8 +219,8 @@ pub use multisell::{
 };
 pub use olympiad::{
     ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
-    ExOlympiadSpelledInfo, ExOlympiadUserInfo, HeroEntry, OlympiadMatchEntry, OlympiadResultEntry,
-    OlympiadSpelledEffect,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo, HeroEntry, ObservationMode, ObservationReturn,
+    OlympiadMatchEntry, OlympiadResultEntry, OlympiadSpelledEffect,
 };
 pub use party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,

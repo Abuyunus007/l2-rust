@@ -608,8 +608,8 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
-        // Java also returns for observer mode and casting; neither exists yet.
-        if player.movement.teleporting || self.is_in_vehicle(id) {
+        // Java also returns for casting; it does not exist yet. Observer mode: M8-OLY-01.
+        if player.movement.teleporting || player.olympiad.observer_mode || self.is_in_vehicle(id) {
             return;
         }
         let real_x = player.core.x;
@@ -1938,6 +1938,14 @@ impl World {
     pub(crate) fn broadcast_with_self(&self, id: ObjectId, packet: &impl Encode) {
         self.send(id, packet);
         self.broadcast_packet(id, packet);
+    }
+
+    /// Java `Player.setFalling()`: the client's z reports are not trusted until `until_ms`
+    /// (M8-OLY-01, `leaveObserverMode`).
+    pub(crate) fn set_falling_until(&mut self, id: ObjectId, until_ms: i64) {
+        if let Some(player) = self.players.get_mut(&id) {
+            player.movement.falling_timestamp_ms = until_ms;
+        }
     }
 
     /// Java `Player.isFalling(z)`: `true` while the client is falling (its z reports are not

@@ -31,8 +31,6 @@
 // # Left out
 // - Beast shots (`BeastSoulShot`, `BeastSpiritShot`) are `summon/shots.rs`; fishing shots
 //   (`FishShots`, M6-FU-08) are `fishing/shots.rs`.
-// - The olympiad (`OlympiadConfig.OLYMPIAD_DISABLE_BLESSED_SPIRITSHOTS`, `disableAutoShotsAll`
-//   at the start of a match): no olympiad yet.
 // - Fake players (`FAKE_PLAYER_USE_SHOTS`).
 
 use std::collections::{BTreeSet, HashMap};
@@ -467,7 +465,18 @@ impl World {
         let Some(template) = templates.get(item.item_id) else {
             return;
         };
-        // Disabling blessed spiritshots in the olympiad: no olympiad yet.
+        // "Disable Blessed SpiritShots in Olympiad." (M8-OLY-01)
+        if self.is_in_olympiad_mode(id)
+            && self.olympiad_disables_blessed_spiritshots()
+            && template.default_action == ActionType::SpiritShot
+            && template.etc().is_some_and(|e| e.blessed)
+        {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotUseThatItemInAGrandOlympiadMatch),
+            );
+            return;
+        }
         if shot_type == ExAutoSoulShot::ON {
             if !self.can_manipulate_with_item_id(id, item.item_id) {
                 self.send_message(id, "Cannot use this item.");
@@ -656,7 +665,7 @@ impl World {
     }
 
     /// Java `SpiritShot.onItemUse` and `BlessedSpiritShot.onItemUse` (they differ in the charge
-    /// they set and in the olympiad rule, which is not modelled).
+    /// they set and in the olympiad rule).
     fn use_spirit_shots(
         &mut self,
         id: ObjectId,
@@ -666,6 +675,18 @@ impl World {
         shot: ShotType,
     ) -> bool {
         let item_id = item.item_id;
+        // `BlessedSpiritShot`: not in the olympiad with `OlympiadDisableBlessedSpiritShots`
+        // (M8-OLY-01).
+        if shot == ShotType::BlessedSpiritshots
+            && self.is_in_olympiad_mode(id)
+            && self.olympiad_disables_blessed_spiritshots()
+        {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouCannotUseThatItemInAGrandOlympiadMatch),
+            );
+            return false;
+        }
         // Check if Spirit shot can be used.
         let weapon = self.weapon_for_shots(id).filter(|(w, _)| w.spiritshot_count != 0);
         let Some((weapon, weapon_grade)) = weapon else {

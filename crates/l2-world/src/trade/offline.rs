@@ -260,8 +260,12 @@ impl World {
 
     /// Java `OfflineTraderTable.offlineMode(player)`: may the player stay as an offline shop?
     fn offline_mode_allowed(&self, id: ObjectId) -> bool {
-        // `isInOlympiadMode()` / `isRegisteredOnEvent()` (M8) are not modelled.
-        if !self.players.contains_key(&id) || self.is_jailed(id) || self.is_in_vehicle(id) {
+        // `isRegisteredOnEvent()` (scripts) is not modelled; `isInOlympiadMode()`: M8-OLY-01.
+        if !self.players.contains_key(&id)
+            || self.is_in_olympiad_mode(id)
+            || self.is_jailed(id)
+            || self.is_in_vehicle(id)
+        {
             return false;
         }
         let s = &self.offline.settings;

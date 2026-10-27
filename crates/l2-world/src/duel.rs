@@ -307,7 +307,10 @@ impl World {
         if state.is_some_and(|s| s.in_duel || s.starting) {
             return Err(C1CannotDuelBecauseC1IsAlreadyEngagedInADuel);
         }
-        // M8: `_inOlympiadMode` (C1_CANNOT_DUEL_BECAUSE_C1_IS_PARTICIPATING_IN_THE_OLYMPIAD).
+        // `_inOlympiadMode` (M8-OLY-01).
+        if self.is_in_olympiad_mode(id) {
+            return Err(SystemMessageId::C1CannotDuelBecauseC1IsParticipatingInTheOlympiad);
+        }
         if self.is_cursed_weapon_equipped(id) {
             return Err(C1CannotDuelBecauseC1IsInAChaoticState);
         }

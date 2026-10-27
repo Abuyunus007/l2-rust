@@ -610,7 +610,20 @@ impl World {
         if self.is_gm(id) && !self.settings.inventory.gm_item_restriction {
             return true;
         }
-        // The olympiad restriction (`isOlyRestrictedItem() || _heroItem`) needs the olympiad.
+        // "Don't allow hero equipment and restricted items during Olympiad." (M8-OLY-01; Java
+        // sends the message whatever `sendMessage` says.)
+        if (self.is_oly_restricted_item(template.id) || template.is_hero_item())
+            && self.is_player(id)
+            && self.is_in_olympiad_mode(id)
+        {
+            let message = if template.is_equipable() {
+                SystemMessageId::YouCannotEquipThatItemInAGrandOlympiadMatch
+            } else {
+                SystemMessageId::YouCannotUseThatItemInAGrandOlympiadMatch
+            };
+            self.send(id, &l2_protocol_game::server::SystemMessage::new(message));
+            return false;
+        }
         if !template.is_condition_attached() {
             return true;
         }

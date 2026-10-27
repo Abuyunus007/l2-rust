@@ -165,8 +165,14 @@ impl World {
         }
         let partner = target;
 
-        // The olympiad check ("A user currently participating in the Olympiad cannot accept or
-        // request a trade.") belongs to the olympiad (M8): nobody is in it.
+        // The olympiad (M8-OLY-01).
+        if self.is_in_olympiad_mode(partner) || self.is_in_olympiad_mode(id) {
+            self.send_message(
+                id,
+                "A user currently participating in the Olympiad cannot accept or request a trade.",
+            );
+            return;
+        }
 
         if self.partner_bot_penalty_blocks(partner) {
             let name = self.player_name(partner);

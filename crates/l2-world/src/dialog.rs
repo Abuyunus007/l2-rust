@@ -14,7 +14,7 @@
 // command is in the cache ([`PlayerTalk::validate`]).
 //
 // # What is left out, with the system that brings it
-// - Olympiad state: `isHero`, `getOlympiadBuffCount` read as false / 0.
+// - Olympiad state: `isHero` reads as false (M8-HERO-01).
 // - Cursed weapons (`isCursedWeaponEquipped`), `_isBusy` NPCs (nothing sets it), quest dialogs and
 //   `ON_NPC_FIRST_TALK` listeners (scripts, D-05).
 // - `GeneralConfig.HTM_CACHE = false` (lazy): the cache is always preloaded, see `l2_data::HtmCache`.
@@ -596,8 +596,8 @@ impl World {
                     self.npc_html_path(npc, value)?
                 }
             }
-            // FOLLOW-UP(Olympiad): `getOlympiadBuffCount()` is always 0 here.
-            36402 => format!("{OLYMPIAD}olympiad_nobuffs.htm"),
+            // The buffer: by the buffs the fighter has left (M8-OLY-01).
+            crate::olympiad::OLYMPIAD_HOST => self.olympiad_host_page(player),
             30298 => {
                 // Blacksmith Pinter: `isAcademyMember()` needs clans (M5).
                 self.npc_html_path(npc, value)?

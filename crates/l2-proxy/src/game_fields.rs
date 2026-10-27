@@ -89,7 +89,7 @@ use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, T
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
 use l2_protocol_game::server::olympiad::{
     ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
-    ExOlympiadSpelledInfo, ExOlympiadUserInfo,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo, ObservationMode, ObservationReturn,
 };
 use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
@@ -1187,6 +1187,9 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         // M8: Olympiad, hero, Seven Signs, boats and air ships, Cube game, boss records.
         ServerOpcode::ExOlympiadMatchEnd => decoded::<ExOlympiadMatchEnd>(&mut r, no_fields),
         ServerOpcode::ExOlympiadMode => decoded::<ExOlympiadMode>(&mut r, |p| object!(p => mode)),
+        // M8-OLY-01: the observer mode.
+        ServerOpcode::ObserverStart => decoded::<ObservationMode>(&mut r, |p| object!(p => x, y, z)),
+        ServerOpcode::ObserverEnd => decoded::<ObservationReturn>(&mut r, |p| object!(p => x, y, z)),
         ServerOpcode::ExReceiveOlympiad => receive_olympiad_fields(raw.get(start..).unwrap_or_default()),
         ServerOpcode::ExOlympiadUserInfo => decoded::<ExOlympiadUserInfo>(
             &mut r,
@@ -3295,6 +3298,8 @@ mod tests {
         ServerOpcode::RecipeShopSellList,
         ServerOpcode::ExOlympiadMatchEnd,
         ServerOpcode::ExOlympiadMode,
+        ServerOpcode::ObserverStart,
+        ServerOpcode::ObserverEnd,
         ServerOpcode::ExReceiveOlympiad,
         ServerOpcode::ExOlympiadUserInfo,
         ServerOpcode::ExOlympiadSpelledInfo,

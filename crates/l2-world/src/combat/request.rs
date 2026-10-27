@@ -107,7 +107,22 @@ impl World {
             self.send(player, &ActionFailed);
             return;
         }
-        // Olympiad: M5.
+        // The olympiad (M8-OLY-01): a fighter attacks only a fighter of his started game.
+        if self.is_in_olympiad_mode(player)
+            && let Some(selected) = self.target_of(player)
+            && self.is_playable(selected)
+        {
+            let target = self.acting_player(selected);
+            if target.is_none_or(|t| {
+                self.is_in_olympiad_mode(t)
+                    && (!self.is_olympiad_start(player)
+                        || self.olympiad_game_id(player) != self.olympiad_game_id(t))
+            }) {
+                // "If Player is in Olympia and the match isn't already start"
+                self.send(player, &ActionFailed);
+                return;
+            }
+        }
         // `allowPeaceAttack` of the access level is not loaded (no access level has it).
         if let Some(selected) = self.target_of(player)
             && !self.can_be_attacked(selected)

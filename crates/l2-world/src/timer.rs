@@ -161,6 +161,8 @@ pub enum TimerKind {
     /// The life task of a cursed weapon and its delayed social action and transformation, see
     /// `cursed/`.
     Cursed(crate::cursed::CursedTimer),
+    /// The Olympiad tasks (the periods, the game manager, the stadium tasks), see `olympiad/`.
+    Olympiad(crate::olympiad::OlympiadTimer),
     /// The tasks of the boats and air ships, see `vehicle/`.
     Vehicle(crate::vehicle::VehicleTimer),
     /// The end of a wear shop try-on (L-02), see `leftover.rs`.

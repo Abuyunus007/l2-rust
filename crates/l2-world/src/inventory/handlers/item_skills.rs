@@ -38,9 +38,8 @@ impl World {
         template: &ItemTemplate,
         force_use: bool,
     ) -> bool {
-        // `ItemSkills` (and so `Elixir`) refuse in a Grand Olympiad match with YOU_CANNOT_USE_THAT_
-        // ITEM_IN_A_GRAND_OLYMPIAD_MATCH; the olympiad is not modelled, nor are events
-        // (`isOnEvent()`).
+        // `ItemSkills` (and so `Elixir`) refuse in a Grand Olympiad match: the handler registry
+        // (`registry.rs`, M8-OLY-01). Events (`isOnEvent()`) are not modelled.
         if !self.is_player(id) && !self.is_pet(id) {
             return false;
         }

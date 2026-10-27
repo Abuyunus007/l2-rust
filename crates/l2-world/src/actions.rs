@@ -25,7 +25,6 @@
 // # Left out (markers)
 // - Action 38 (mount/dismount) is `mount.rs`; the airship actions 67 to 70 are `vehicle/input.rs`.
 // - Action 65 (the bot report button) is `bot_report.rs`.
-// - M8: `isInOlympiadMode()` is always false.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -322,7 +321,15 @@ impl World {
             );
             return;
         }
-        // M8: `player.isInOlympiadMode()`.
+        // `player.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(player) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInTheOlympiadAndCannotBeRequestedForACoupleAction,
+                player,
+            );
+            return;
+        }
         if self.is_in_siege(player) {
             self.couple_refusal(
                 player,
@@ -412,7 +419,15 @@ impl World {
             );
             return;
         }
-        // M8: `partner.isInOlympiadMode()`.
+        // `partner.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(partner) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInTheOlympiadAndCannotBeRequestedForACoupleAction,
+                partner,
+            );
+            return;
+        }
         if self.is_in_hideout_siege(partner) {
             self.couple_refusal(
                 player,

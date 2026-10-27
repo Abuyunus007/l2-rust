@@ -590,8 +590,8 @@ fn player_state(check: PlayerState, required: bool, env: &CondEnv<'_, '_>) -> bo
             Some(p) => (p.data.karma > 0) == required,
             None => !required,
         },
-        // Nobody is in the olympiad.
-        PlayerState::Olympiad => !required,
+        // `isInOlympiadMode() == _required` (M8-OLY-01).
+        PlayerState::Olympiad => a.world().is_in_olympiad_mode(a.object_id()) == required,
     }
 }
 

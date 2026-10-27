@@ -329,7 +329,17 @@ impl World {
         if !self.flood_allows(id, FloodKind::PlayerAction) {
             return;
         }
-        // FOLLOW-UP: observer mode.
+        // Observer mode (M8-OLY-01).
+        if self.in_observer_mode(id) {
+            self.send(
+                id,
+                &l2_protocol_game::server::SystemMessage::new(
+                    l2_protocol_game::SystemMessageId::ObserversCannotParticipate,
+                ),
+            );
+            self.send(id, &l2_protocol_game::server::ActionFailed);
+            return;
+        }
         // `BOT_PENALTY` effects (`BlockAction`) refuse the click (`checkCondition(-4)`).
         if !self.check_bot_penalty(id, ACTION_BLOCK_ID) {
             return;

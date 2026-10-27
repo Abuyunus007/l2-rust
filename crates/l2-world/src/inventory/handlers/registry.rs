@@ -98,8 +98,20 @@ impl World {
         force_use: bool,
     ) -> bool {
         match kind {
-            // `ItemSkills` only adds the olympiad rule (not modelled), `Elixir` the player-only
+            // `ItemSkills` only adds the olympiad rule (the arm above), `Elixir` the player-only
             // rule (a pet's item skills go through `ItemSkillsTemplate`'s own pet branches).
+            // `ItemSkills` (and so `Elixir`): not in a Grand Olympiad match (M8-OLY-01).
+            ItemHandlerKind::ItemSkills | ItemHandlerKind::Elixir
+                if self.is_player(id) && self.is_in_olympiad_mode(id) =>
+            {
+                self.send(
+                    id,
+                    &l2_protocol_game::server::SystemMessage::new(
+                        l2_protocol_game::SystemMessageId::YouCannotUseThatItemInAGrandOlympiadMatch,
+                    ),
+                );
+                false
+            }
             ItemHandlerKind::ItemSkills | ItemHandlerKind::ItemSkillsTemplate | ItemHandlerKind::Elixir => {
                 self.item_skills_on_use(id, item, template, force_use)
             }

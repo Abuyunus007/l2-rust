@@ -161,6 +161,8 @@ pub struct World {
     pub(crate) instances: crate::instance::InstanceManager,
     /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
     pub(crate) cursed: crate::cursed::CursedWorld,
+    /// The Grand Olympiad (M8-OLY-01, `olympiad/`).
+    pub(crate) olympiad: crate::olympiad::OlympiadWorld,
     /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
     pub(crate) walking: crate::walking::WalkingWorld,
     /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
@@ -252,6 +254,7 @@ impl World {
             boss: crate::boss::BossWorld::default(),
             instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
+            olympiad: crate::olympiad::OlympiadWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
@@ -434,6 +437,7 @@ impl World {
                 then,
             } => self.on_item_auction_reread(instance_id, result, then),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
+            WorldCommand::OlympiadReread { result, then } => self.on_olympiad_reread(result, then),
             WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
@@ -489,6 +493,8 @@ impl World {
                 self.seven_signs_shutdown();
                 // Java Shutdown: "Save Cursed Weapons data before closing."
                 self.save_cursed_weapons();
+                // Java Shutdown: "Olympiad System: Data saved" (D-53: only with the switch).
+                self.olympiad_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -707,6 +713,9 @@ impl World {
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
+            // Java: ObserverReturn, RequestOlympiadObserverEnd, RequestOlympiadMatchList,
+            // RequestExOlympiadMatchListRefresh (M8-OLY-01)
+            ClientInput::Olympiad(input) => self.on_olympiad_input(id, input),
             ClientInput::Minigame(input) => self.on_minigame_input(id, input),
             // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
             // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
@@ -981,6 +990,8 @@ impl World {
             // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
             TimerKind::Boss(timer) => self.on_boss_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
+            // Java: Olympiad's tasks, OlympiadGameManager, OlympiadGameTask (M8-OLY-01)
+            TimerKind::Olympiad(timer) => self.on_olympiad_timer(timer),
             // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
             TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)

@@ -578,7 +578,10 @@ impl World {
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
             self.abort_attack(id);
             self.abort_cast(id);
-            // Olympiad matches end without death (M6).
+            // A fighter in the olympiad does not die (M8-OLY-01).
+            if self.olympiad_fighter_falls(id) {
+                return;
+            }
             self.do_die(id, attacker);
         }
     }
@@ -993,6 +996,11 @@ impl World {
             self.send_party_small_window_update(id);
         }
         // In duel MP updated only with CP or HP.
+        // The olympiad part: the fighter's HP and CP to the observers and the other side
+        // (M8-OLY-01).
+        if need_cp || need_hp {
+            self.olympiad_broadcast_status_update(id);
+        }
         if self.is_in_duel(id) && (need_cp || need_hp) {
             if let Some(info) = self.duel_update_user_info(id) {
                 self.duel_broadcast_to_opposite_team(id, &info);

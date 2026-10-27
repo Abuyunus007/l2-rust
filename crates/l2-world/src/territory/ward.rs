@@ -222,8 +222,10 @@ impl World {
             {
                 for ward_id in owned {
                     for member in self.clan_online_members(owner, 0) {
-                        // M8: `!member.isInOlympiadMode()`.
-                        self.territory_add_ward_skills(member, ward_id);
+                        // `!member.isInOlympiadMode()` (M8-OLY-01).
+                        if !self.is_in_olympiad_mode(member) {
+                            self.territory_add_ward_skills(member, ward_id);
+                        }
                     }
                 }
             }

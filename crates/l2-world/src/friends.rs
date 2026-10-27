@@ -15,7 +15,6 @@
 // world makes it, with Java's statement (`character_friends`, see `FriendWrite`).
 //
 // # Left out, with the card that brings it
-// - The olympiad rule of `RequestFriendInvite` (`isInOlympiadMode`): M8.
 // - The chat log line of `GeneralConfig.LOG_CHAT` in `RequestSendFriendMsg`: the world has no
 //   chat log yet.
 // - `BlockList.isInBlockList(ownerId, targetId)` for an owner that is offline (Java loads its rows
@@ -307,7 +306,16 @@ impl World {
             );
             return;
         }
-        // Java: `player.isInOlympiadMode() || friend.isInOlympiadMode()`: the olympiad is M8.
+        // `player.isInOlympiadMode() || friend.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(id) || self.is_in_olympiad_mode(friend) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::AUserCurrentlyParticipatingInTheOlympiadCannotSendPartyAndFriendInvitations,
+                ),
+            );
+            return;
+        }
         // The friend blocks the player: Java tells the player only that it is in the target's
         // block list.
         if self.is_blocked(friend, id) {

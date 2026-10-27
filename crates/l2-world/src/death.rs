@@ -495,9 +495,10 @@ impl World {
     /// teleport, has no clan or is jailed. The blue sweep glow is `isSweepActive` (M5-SPOIL-01).
     pub fn die_packet(&self, id: ObjectId) -> Die {
         let can_teleport = self.can_revive(id) && !self.is_pending_revive(id);
-        // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()`: neither exists yet.
+        // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()` (M8-OLY-01; the events
+        // are scripts).
         let fixed_res = self.players.get(&id).is_some_and(|p| {
-            self.have_item_for_self_resurrection(id)
+            (!self.olympiad_is_registered(id) && self.have_item_for_self_resurrection(id))
                 || self.data.access_level_allows_fixed_res(p.data.access_level)
         });
         let (to_clan_hall, to_castle, to_siege_hq, to_fortress) = if can_teleport {

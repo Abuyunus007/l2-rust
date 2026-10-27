@@ -402,3 +402,67 @@ impl Decode for ExHeroList {
         Ok(Self { heroes })
     }
 }
+
+// Java: gameserver/network/serverpackets/ObservationMode.java
+/// The observer mode starts at a place (`OBSERVER_START`, M8-OLY-01).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ObservationMode {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+impl ObservationMode {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ObserverStart;
+}
+
+impl Encode for ObservationMode {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.x).i32(self.y).i32(self.z);
+        // Java writes three unknown bytes: 0, 0xC0, 0.
+        w.u8(0).u8(0xC0).u8(0);
+    }
+}
+
+impl Decode for ObservationMode {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let packet = Self {
+            x: r.i32()?,
+            y: r.i32()?,
+            z: r.i32()?,
+        };
+        let _ = (r.u8()?, r.u8()?, r.u8()?);
+        Ok(packet)
+    }
+}
+
+// Java: gameserver/network/serverpackets/ObservationReturn.java
+/// The observer mode ends; the player is back at a place (`OBSERVER_END`, M8-OLY-01).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ObservationReturn {
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+impl ObservationReturn {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ObserverEnd;
+}
+
+impl Encode for ObservationReturn {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.x).i32(self.y).i32(self.z);
+    }
+}
+
+impl Decode for ObservationReturn {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            x: r.i32()?,
+            y: r.i32()?,
+            z: r.i32()?,
+        })
+    }
+}

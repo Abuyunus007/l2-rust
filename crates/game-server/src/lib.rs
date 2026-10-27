@@ -289,6 +289,62 @@ pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_w
     }
 }
 
+/// The Olympiad values (`Olympiad.ini`, the hand-ported lists of `manual.core.olympiad`) and the
+/// D-53 switch (`CycleDatabaseWrites`, [`cycle_database_writes`]).
+pub fn olympiad_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::OlympiadSettings {
+    let o = &config.olympiad;
+    let m = &config.manual.core.olympiad;
+    l2_world::OlympiadSettings {
+        enabled: o.olympiad_enabled,
+        start_time: o.olympiad_start_time,
+        min: o.olympiad_min,
+        max_buffs: o.olympiad_max_buffs,
+        comp_period_ms: o.olympiad_cperiod,
+        battle_ms: o.olympiad_battle,
+        weekly_period_ms: o.olympiad_wperiod,
+        validation_period_ms: o.olympiad_vperiod,
+        start_points: o.olympiad_start_points,
+        weekly_points: o.olympiad_weekly_points,
+        classed: o.olympiad_classed,
+        non_classed: o.olympiad_nonclassed,
+        teams: o.olympiad_teams,
+        reg_display: o.olympiad_reg_display,
+        classed_reward: m.olympiad_classed_reward.clone(),
+        non_classed_reward: m.olympiad_nonclassed_reward.clone(),
+        team_reward: m.olympiad_team_reward.clone(),
+        comp_reward_item: o.olympiad_comp_ritem,
+        min_matches: o.olympiad_min_matches,
+        gp_per_point: o.olympiad_gp_per_point,
+        hero_points: o.olympiad_hero_points,
+        rank_points: [
+            o.olympiad_rank1_points,
+            o.olympiad_rank2_points,
+            o.olympiad_rank3_points,
+            o.olympiad_rank4_points,
+            o.olympiad_rank5_points,
+        ],
+        max_points: o.olympiad_max_points,
+        divider_classed: o.olympiad_divider_classed,
+        divider_non_classed: o.olympiad_divider_non_classed,
+        max_weekly_matches: o.olympiad_max_weekly_matches,
+        max_weekly_matches_non_classed: o.olympiad_max_weekly_matches_non_classed,
+        max_weekly_matches_classed: o.olympiad_max_weekly_matches_classed,
+        max_weekly_matches_team: o.olympiad_max_weekly_matches_team,
+        show_monthly_winners: o.olympiad_show_monthly_winners,
+        announce_games: o.olympiad_announce_games,
+        restricted_items: m.list_oly_restricted_items.clone(),
+        disable_blessed_spiritshots: o.olympiad_disable_blessed_spiritshots,
+        wait_time: o.olympiad_wait_time,
+        use_custom_period_settings: o.olympiad_use_custom_period_settings,
+        period: o.olympiad_period.clone(),
+        period_multiplier: o.olympiad_period_multiplier,
+        competition_days: m.olympiad_competition_days.clone(),
+        cycle_database_writes,
+        clock_override_unix_ms: None,
+        zone_offset_override_ms: None,
+    }
+}
+
 /// The minigame values (M8-GAMES-01): the Block Checker keys of `General.ini`,
 /// `UndergroundColiseum.ini` and the D-53 switch (`CycleDatabaseWrites`,
 /// [`cycle_database_writes`]).
@@ -891,6 +947,14 @@ impl Server {
         } else {
             l2_world::CursedLoad::default()
         };
+        // Java: Olympiad.getInstance (GameServer): `olympiad_data`, the nobles and the last ranking,
+        // read in both modes of `CycleDatabaseWrites` (D-53, M8-OLY-01).
+        let olympiad_settings = olympiad_settings(&config, cycle_database_writes(&paths.config_dir));
+        let olympiad_load = if olympiad_settings.enabled {
+            persist::load_olympiad(&pool, olympiad_settings.min_matches).await
+        } else {
+            l2_world::OlympiadLoad::default()
+        };
         // Java: UndergroundColiseumManager.load (`UC_START_TIME`, `UC_STOP_TIME`) and
         // restoreBestTeams. Read always: they are only read here (D-53).
         let minigame_settings = minigame_settings(&config, cycle_database_writes(&paths.config_dir));
@@ -1102,6 +1166,9 @@ impl Server {
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
                     world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
+                    // Java: Olympiad.getInstance (GameServer, "Olympiad" section; M8-OLY-01).
+                    world.set_olympiad_settings(olympiad_settings);
+                    world.load_olympiad(olympiad_load);
                     // Java: KrateisCubeManager, UndergroundColiseumManager (GameServer, after the
                     // spawns and the doors) and the Block Checker queue (M8-GAMES-01).
                     world.set_minigame_settings(minigame_settings);

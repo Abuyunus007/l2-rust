@@ -295,6 +295,8 @@ enum ZoneKind {
     Boss,
     /// `WaterZone` (`water.rs`).
     Water,
+    /// `OlympiadStadiumZone` (M8-OLY-01, `olympiad/stadium.rs`).
+    OlympiadStadium,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -329,6 +331,7 @@ impl ZoneKind {
             "DamageZone" => Self::Damage,
             "BossZone" => Self::Boss,
             "WaterZone" => Self::Water,
+            "OlympiadStadiumZone" => Self::OlympiadStadium,
             _ => Self::Inert,
         }
     }
@@ -474,6 +477,15 @@ impl World {
         if !rules.affects(player, world_template) {
             return;
         }
+        // `OlympiadStadiumZone.isAffected`: only the creatures of the stadium's instance.
+        if matches!(ZoneKind::of(&zone.zone_type), ZoneKind::OlympiadStadium)
+            && !self.stadium_takes(zone.id, id)
+        {
+            return;
+        }
+        let Some(player) = self.players.get_mut(&id) else {
+            return;
+        };
         player.zones.members.push((zone.id, zone.zone_type.clone()));
         self.on_zone_enter(id, zone, &rules);
     }
@@ -606,6 +618,7 @@ impl World {
             ZoneKind::Damage => self.damage_zone_enter(id, zone),
             ZoneKind::Boss => self.boss_zone_enter(id, zone.id),
             ZoneKind::Water => self.water_zone_enter(id),
+            ZoneKind::OlympiadStadium => self.stadium_on_enter(id, zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -706,6 +719,7 @@ impl World {
             ZoneKind::Damage => self.damage_zone_exit(zone),
             ZoneKind::Boss => self.boss_zone_exit(id, zone.id, true),
             ZoneKind::Water => self.water_zone_exit(id),
+            ZoneKind::OlympiadStadium => self.stadium_on_exit(id, zone),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }

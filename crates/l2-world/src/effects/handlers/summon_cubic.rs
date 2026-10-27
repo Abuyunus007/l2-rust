@@ -57,8 +57,8 @@ impl EffectHandler for SummonCubic {
             );
             return;
         }
-        // `player.inObserverMode() || player.isMounted()`: the observer mode is not modelled.
-        if world.is_mounted(effected) {
+        // `player.inObserverMode() || player.isMounted()` (the observer mode: M8-OLY-01).
+        if world.in_observer_mode(effected) || world.is_mounted(effected) {
             return;
         }
         let mut template_level = if self.cubic_level > 0 {

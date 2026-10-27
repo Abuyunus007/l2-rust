@@ -59,6 +59,7 @@ pub mod movement;
 pub mod multisell;
 pub mod npc;
 pub mod objects;
+pub mod olympiad;
 pub mod outbox;
 pub mod party;
 pub mod pccafe;
@@ -183,6 +184,12 @@ pub use movement::{
 pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
+pub use olympiad::{
+    CompetitionType, GameState, HeroToBe, NobleRow, NobleStats, OlympiadData, OlympiadFight, OlympiadGame,
+    OlympiadInput, OlympiadLoad, OlympiadRereadAction, OlympiadRereadRequest, OlympiadRereadRows,
+    OlympiadRereadThen, OlympiadSettings, OlympiadTimer, OlympiadWorld, OlympiadWrite, Participant,
+    PlayerOlympiad, Stadium,
+};
 pub use outbox::{ControlRequest, ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{
     CommandChannelId, CommandChannelWorld, MatchingWorld, PartyExpType, PartyId, PartyMessageType,

@@ -203,7 +203,10 @@ impl World {
         if self.is_flying(id) {
             return refuse(M::YouCannotUseMyTeleportsWhileFlying);
         }
-        // M8: `_inOlympiadMode` (YOU_CANNOT_USE_MY_TELEPORTS_WHILE_PARTICIPATING_IN_AN_OLYMPIAD_MATCH).
+        // `_inOlympiadMode` (M8-OLY-01).
+        if self.is_in_olympiad_mode(id) {
+            return refuse(M::YouCannotUseMyTeleportsWhileParticipatingInAnOlympiadMatch);
+        }
         if self.is_paralyzed(id) {
             return refuse(M::YouCannotUseMyTeleportsWhileYouAreInAPetrifiedOrParalyzedState);
         }

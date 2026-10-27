@@ -157,6 +157,8 @@ pub enum ClientInput {
     Contacts(crate::contacts::ContactsInput),
     /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
     Cursed(crate::cursed::CursedInput),
+    /// The observer packets of the Olympiad (M8-OLY-01), see `olympiad/`.
+    Olympiad(crate::olympiad::OlympiadInput),
     /// `RequestExCubeGameChangeTeam` and `RequestExCubeGameReadyAnswer` (M8-GAMES-01), see
     /// `minigame/`.
     Minigame(crate::minigame::MinigameInput),
@@ -402,6 +404,12 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::OlympiadRereadRequest`: the rows, or `Err` when the read
+    /// failed (M8-OLY-01).
+    OlympiadReread {
+        result: Result<crate::olympiad::OlympiadRereadRows, ()>,
+        then: crate::olympiad::OlympiadRereadThen,
+    },
     /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
     /// the read failed (the request is then refused, L-05, D-50).
     ItemAuctionReread {
@@ -537,6 +545,11 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::OlympiadReread { result, then } => write!(
+                f,
+                "OlympiadReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::ItemAuctionReread {
