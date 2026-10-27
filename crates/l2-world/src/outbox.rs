@@ -266,6 +266,15 @@ pub enum PersistCommand {
     /// The `global_variables` writes of the scripts, only with `CycleDatabaseWrites` (D-54,
     /// `script/globals.rs`).
     GlobalVariables(crate::script::GlobalVariablesWrite),
+    /// A write of `bbs_favorites` with Java's statement (S-HAND-01, see `community_board/`).
+    /// Applied in order with the other commands.
+    BbsFavorite(crate::community_board::FavoriteWrite),
+    /// Asks the persistence task to read `bbs_favorites` for a board page (S-HAND-01). The answer
+    /// comes back as `WorldCommand::BbsFavoritesLoaded`; it includes every write sent before it.
+    BbsFavoriteRequest {
+        player: ObjectId,
+        kind: crate::community_board::FavoriteRead,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

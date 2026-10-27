@@ -334,6 +334,8 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestAnswerFriendInvite(p) => p.to_bytes(),
             ClientPacket::RequestFriendList(p) => p.to_bytes(),
             ClientPacket::RequestFriendDel(p) => p.to_bytes(),
+            ClientPacket::RequestShowBoard(p) => p.to_bytes(),
+            ClientPacket::RequestBBSwrite(p) => p.to_bytes(),
             ClientPacket::ObserverReturn(p) => p.to_bytes(),
             ClientPacket::RequestSsqStatus(p) => p.to_bytes(),
             ClientPacket::RequestQuestList(p) => p.to_bytes(),

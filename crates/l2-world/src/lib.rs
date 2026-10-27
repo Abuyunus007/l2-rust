@@ -18,11 +18,13 @@ pub mod bookmarks;
 pub mod boss;
 pub mod bot_report;
 pub mod bypass;
+pub mod bypass_simple;
 pub mod chat;
 pub mod clan;
 pub mod clanhall;
 pub mod combat;
 pub mod command;
+pub mod community_board;
 pub mod contacts;
 pub mod craft;
 pub mod crystallize;
@@ -41,6 +43,7 @@ pub mod formulas;
 pub mod fort;
 pub mod friends;
 pub mod ground_item;
+mod handler_registry;
 pub mod henna;
 pub mod ids;
 pub mod instance;
@@ -76,6 +79,7 @@ pub mod rewards;
 pub mod runner;
 pub mod script;
 pub mod sevensigns;
+pub mod shiftclick;
 pub mod shop;
 pub mod shortcuts;
 pub mod siege;
@@ -92,6 +96,7 @@ pub mod timer;
 pub mod trade;
 pub mod transform;
 pub mod user_command;
+pub mod user_command_info;
 pub mod vehicle;
 mod visibility;
 pub mod walking;
@@ -124,6 +129,9 @@ pub use clanhall::{
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
+pub use community_board::{
+    CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
+};
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
@@ -250,6 +258,7 @@ pub use trade::{
     OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
     restorable_store_type,
 };
+pub use user_command_info::UserCommandInfoSettings;
 pub use vehicle::{
     AirshipRow, PathPoint, Rider, ShipState, Vehicle, VehicleInput, VehicleKind, VehicleLoad,
     VehicleSettings, VehicleTimer, VehicleWorld, VehicleWrite,

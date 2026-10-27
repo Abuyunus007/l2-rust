@@ -49,6 +49,9 @@ impl World {
         } else if command == crate::instance::INSTANCE_ZONE_COMMAND {
             // `/instancezone` (M8-INST-01, `instance/times.rs`).
             self.user_command_instance_zone(id);
+        } else if self.user_command_info(id, command) {
+            // `/time`, `/clanpenalty`, `/clanwarlist`, `/siegestatus` (S-HAND-01,
+            // `user_command_info.rs`).
         } else {
             // Java tells a GM "User commandID N not implemented yet." for an id without handler.
             // Handlers that exist in Java but are not ported yet would make that message a lie,

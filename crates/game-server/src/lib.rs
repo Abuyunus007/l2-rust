@@ -910,6 +910,11 @@ impl Server {
         };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
         let flood_settings = world_data::flood_settings_from_config(&config);
+        // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
+        let community_board_settings = world_data::community_board_settings(&config);
+        let user_command_info_settings = l2_world::UserCommandInfoSettings {
+            display_server_time: config.server_time.display_server_time,
+        };
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -1233,6 +1238,8 @@ impl Server {
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);
+                    world.set_community_board_settings(community_board_settings);
+                    world.set_user_command_info_settings(user_command_info_settings);
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
                     // Java: BotReportTable (after the skills: a punishment needs its skill).

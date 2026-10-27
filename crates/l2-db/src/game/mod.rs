@@ -8,6 +8,7 @@ mod account_data;
 mod airships;
 mod announcements;
 mod auctions;
+mod bbs_favorites;
 mod bookmarks;
 mod bosses;
 mod bot_reports;
@@ -62,6 +63,7 @@ pub use account_data::{
 pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
+pub use bbs_favorites::{BbsFavoriteRepository, FavoriteRow};
 pub use bookmarks::{BookmarkRepository, BookmarkRow};
 pub use bosses::{
     BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,

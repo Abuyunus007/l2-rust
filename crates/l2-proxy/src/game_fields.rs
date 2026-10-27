@@ -345,6 +345,8 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestAnswerFriendInvite(p) => object!(p => response),
         ClientPacket::RequestFriendList(_) => json!({}),
         ClientPacket::RequestFriendDel(p) => object!(p => name),
+        ClientPacket::RequestShowBoard(p) => object!(p => unused),
+        ClientPacket::RequestBBSwrite(p) => object!(p => url, arg1, arg2, arg3, arg4, arg5),
         ClientPacket::RequestSendFriendMsg(p) => object!(p => message, receiver),
         ClientPacket::RequestBlock(p) => object!(p => kind, name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),

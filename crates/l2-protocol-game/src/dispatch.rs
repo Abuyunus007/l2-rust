@@ -69,6 +69,7 @@ use crate::client::{
     RequestAnswerFriendInvite, RequestBlock, RequestFriendDel, RequestFriendInvite, RequestFriendList,
     RequestSendFriendMsg,
 };
+use crate::client::{RequestBBSwrite, RequestShowBoard};
 use crate::client::{RequestBidItemAuction, RequestInfoItemAuction};
 use crate::client::{RequestBuyItem, RequestBuySellUIClose, RequestRefundItem, RequestSellItem};
 use crate::client::{
@@ -204,6 +205,10 @@ pub enum ClientPacket {
     RequestFriendList(RequestFriendList),
     /// `REQUEST_FRIEND_DEL` (0x7A).
     RequestFriendDel(RequestFriendDel),
+    /// `REQUEST_SHOW_BOARD` (0x5E), the community board button (S-HAND-01).
+    RequestShowBoard(RequestShowBoard),
+    /// `REQUEST_BBS_WRITE` (0x24), a `Write` button of a board page (S-HAND-01).
+    RequestBBSwrite(RequestBBSwrite),
     /// `REQUEST_SEND_FRIEND_MSG` (0x6B).
     RequestSendFriendMsg(RequestSendFriendMsg),
     /// `REQUEST_BLOCK` (0xA9).
@@ -631,6 +636,8 @@ pub fn decode_client(
         }
         RequestFriendList::OPCODE => ClientPacket::RequestFriendList(RequestFriendList::decode(reader)?),
         RequestFriendDel::OPCODE => ClientPacket::RequestFriendDel(RequestFriendDel::decode(reader)?),
+        RequestShowBoard::OPCODE => ClientPacket::RequestShowBoard(RequestShowBoard::decode(reader)?),
+        RequestBBSwrite::OPCODE => ClientPacket::RequestBBSwrite(RequestBBSwrite::decode(reader)?),
         RequestSendFriendMsg::OPCODE => {
             ClientPacket::RequestSendFriendMsg(RequestSendFriendMsg::decode(reader)?)
         }
@@ -1746,6 +1753,34 @@ mod tests {
         );
         // Not accepted before the game.
         for opcode in [0x6B, 0x77, 0x78, 0x79, 0x7A, 0xA9] {
+            assert_eq!(
+                decode(Authenticated, opcode, &ZEROS).unwrap(),
+                None,
+                "{opcode:#04x}"
+            );
+        }
+    }
+
+    /// S-HAND-01: the community board packets are decoded in game only.
+    #[test]
+    fn community_board_packets_decode_in_game_only() {
+        assert_eq!(
+            decode(InGame, 0x5E, &[3, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestShowBoard(RequestShowBoard { unused: 3 }))
+        );
+        let write = RequestBBSwrite {
+            url: "Topic".into(),
+            arg1: "a".into(),
+            arg2: String::new(),
+            arg3: String::new(),
+            arg4: String::new(),
+            arg5: String::new(),
+        };
+        assert_eq!(
+            decode(InGame, 0x24, &write.to_bytes()[1..]).unwrap(),
+            Some(ClientPacket::RequestBBSwrite(write))
+        );
+        for opcode in [0x5E, 0x24] {
             assert_eq!(
                 decode(Authenticated, opcode, &ZEROS).unwrap(),
                 None,

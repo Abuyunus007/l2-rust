@@ -68,7 +68,7 @@ use l2_db::UndergroundColiseumRepository;
 use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
-use l2_db::{BookmarkRepository, BookmarkRow, ContactRepository};
+use l2_db::{BbsFavoriteRepository, BookmarkRepository, BookmarkRow, ContactRepository};
 use l2_db::{BossRepository, GrandBossListRow, GrandBossStore, GrandBossUpdate, RaidBossRow};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -112,6 +112,7 @@ use l2_world::{
     RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
     StoredPunishment, SummonWrite,
 };
+use l2_world::{FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite};
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
@@ -626,6 +627,29 @@ pub trait PlayerStore: Send + 'static {
         _time: i64,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// A `bbs_favorites` write of the community board (S-HAND-01).
+    fn store_bbs_favorite(
+        &mut self,
+        _write: &FavoriteWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `bbs_favorites` read of the community board (S-HAND-01). A store without a database has no
+    /// favorites.
+    fn load_bbs_favorites(
+        &mut self,
+        _player: ObjectId,
+        kind: FavoriteRead,
+    ) -> impl Future<Output = Result<FavoriteAnswer, PersistError>> + Send {
+        async move {
+            Ok(match kind {
+                FavoriteRead::List => FavoriteAnswer::List(Vec::new()),
+                FavoriteRead::Count => FavoriteAnswer::Count(0),
+            })
+        }
     }
 }
 
@@ -1188,6 +1212,30 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed bookmark statement and goes on (no retry).
                 if let Err(e) = store.store_bookmark_write(&write).await {
                     error!("Teleport bookmark data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BbsFavorite(write)) => {
+                // Java logs a failed favorites statement and goes on (no retry).
+                if let Err(e) = store.store_bbs_favorite(&write).await {
+                    error!("Community board favorite could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BbsFavoriteRequest { player, kind }) => {
+                // Not a write: a read the world asked for, answered in order with the writes
+                // before it.
+                let result = match store.load_bbs_favorites(player, kind).await {
+                    Ok(answer) => Ok(answer),
+                    Err(e) => {
+                        warn!("Could not read the favorites of character {}: {e}", player.0);
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::BbsFavoritesLoaded { player, kind, result };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The favorites of character {} could not be handed to the world.",
+                        player.0
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::Contact(write)) => {
@@ -3685,6 +3733,7 @@ pub struct DbStore {
     wedding: l2_db::WeddingRepository,
     seven_signs: l2_db::SevenSignsRepository,
     petition_feedback: PetitionFeedbackRepository,
+    bbs_favorites: BbsFavoriteRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -3778,6 +3827,7 @@ impl DbStore {
             wedding: l2_db::WeddingRepository::new(pool.clone()),
             seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
+            bbs_favorites: BbsFavoriteRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -5389,6 +5439,43 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
+        match write {
+            FavoriteWrite::Add {
+                player_id,
+                title,
+                bypass,
+            } => self.bbs_favorites.add_favorite(*player_id, title, bypass).await?,
+            FavoriteWrite::Delete { player_id, fav_id } => {
+                self.bbs_favorites.delete_favorite(*player_id, *fav_id).await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_bbs_favorites(
+        &mut self,
+        player: ObjectId,
+        kind: FavoriteRead,
+    ) -> Result<FavoriteAnswer, PersistError> {
+        Ok(match kind {
+            FavoriteRead::List => FavoriteAnswer::List(
+                self.bbs_favorites
+                    .favorites_of(player.0)
+                    .await?
+                    .into_iter()
+                    .map(|row| FavoriteEntry {
+                        fav_id: i64::from(row.fav_id),
+                        title: row.title,
+                        bypass: row.bypass,
+                        added_ms: row.added_epoch_seconds.saturating_mul(1000),
+                    })
+                    .collect(),
+            ),
+            FavoriteRead::Count => FavoriteAnswer::Count(self.bbs_favorites.count_favorites(player.0).await?),
+        })
+    }
+
     async fn store_friend_write(&mut self, write: &FriendWrite) -> Result<(), PersistError> {
         let friends = &self.friends;
         match write {
@@ -6109,6 +6196,10 @@ mod tests {
         Vehicle(VehicleWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
+        /// A `bbs_favorites` write (S-HAND-01).
+        BbsFavorite(FavoriteWrite),
+        /// A `bbs_favorites` read (S-HAND-01).
+        BbsFavoriteRead(i32, FavoriteRead),
     }
 
     /// Records the calls; stores can be made to fail, and are slow so ordering bugs show.
@@ -6424,6 +6515,39 @@ mod tests {
                 time,
             ));
             Ok(())
+        }
+
+        async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::BbsFavorite(write.clone()));
+            Ok(())
+        }
+
+        /// Player 5 has one favorite; a player below 0 cannot be read.
+        async fn load_bbs_favorites(
+            &mut self,
+            player: ObjectId,
+            kind: FavoriteRead,
+        ) -> Result<FavoriteAnswer, PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::BbsFavoriteRead(player.0, kind));
+            if player.0 < 0 {
+                return Err(PersistError::NoSuchCharacter(player.0));
+            }
+            Ok(match kind {
+                FavoriteRead::List => FavoriteAnswer::List(if player.0 == 5 {
+                    vec![FavoriteEntry {
+                        fav_id: 1,
+                        title: "Home".to_owned(),
+                        bypass: "_bbshome".to_owned(),
+                        added_ms: 1_000,
+                    }]
+                } else {
+                    Vec::new()
+                }),
+                FavoriteRead::Count => FavoriteAnswer::Count(i64::from(player.0 == 5)),
+            })
         }
 
         async fn store_bot_report(&mut self, row: &BotReportRow) -> Result<(), PersistError> {
@@ -8121,6 +8245,75 @@ mod tests {
                 99
             )]
         );
+    }
+
+    /// S-HAND-01: a favorite write and a read after it go in order, and the read is answered to the
+    /// world (`Err` when it failed).
+    #[tokio::test]
+    async fn favorite_writes_and_reads_are_in_order_and_the_read_is_answered() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let add = FavoriteWrite::Add {
+            player_id: 5,
+            title: "Home".to_owned(),
+            bypass: "_bbshome".to_owned(),
+        };
+        tx.send(OutboxMessage::Persist(PersistCommand::BbsFavorite(add.clone())))
+            .unwrap();
+        for (player, kind) in [
+            (5, FavoriteRead::List),
+            (5, FavoriteRead::Count),
+            (-1, FavoriteRead::List),
+        ] {
+            tx.send(OutboxMessage::Persist(PersistCommand::BbsFavoriteRequest {
+                player: ObjectId(player),
+                kind,
+            }))
+            .unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![
+                Call::BbsFavorite(add),
+                Call::BbsFavoriteRead(5, FavoriteRead::List),
+                Call::BbsFavoriteRead(5, FavoriteRead::Count),
+                Call::BbsFavoriteRead(-1, FavoriteRead::List),
+            ]
+        );
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert_eq!(answers.len(), 3);
+        match &answers[0] {
+            l2_world::WorldCommand::BbsFavoritesLoaded { player, kind, result } => {
+                assert_eq!((*player, *kind), (ObjectId(5), FavoriteRead::List));
+                match result.as_ref().unwrap() {
+                    FavoriteAnswer::List(rows) => assert_eq!(rows[0].bypass, "_bbshome"),
+                    other => panic!("{other:?}"),
+                }
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            &answers[1],
+            l2_world::WorldCommand::BbsFavoritesLoaded {
+                result: Ok(FavoriteAnswer::Count(1)),
+                ..
+            }
+        ));
+        assert!(matches!(
+            &answers[2],
+            l2_world::WorldCommand::BbsFavoritesLoaded { result: Err(()), .. }
+        ));
     }
 
     /// M7-ADMIN-10: the requests of the world that are not its to do go to the control handler.
