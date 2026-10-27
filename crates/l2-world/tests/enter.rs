@@ -1088,6 +1088,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::OfflineTrade(_)) => "offline trade",
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
                 Out::Persist(
+                    PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },
+                ) => "seven signs",
+                Out::Persist(
                     PersistCommand::Announcement(_)
                     | PersistCommand::PetitionFeedback { .. }
                     | PersistCommand::Wedding(_),

@@ -760,13 +760,15 @@ impl ClientSession {
                     t.base_str, t.base_dex, t.base_con, t.base_int, t.base_wit, t.base_men,
                 )
             });
-        ctl.send(
-            SsqInfo {
-                // NOTE: the Seven Signs state is not modelled; 0 is the sky outside the validation period.
-                state: 0,
-            }
-            .to_bytes(),
-        );
+        // `new SSQInfo()`: the sky of the status row the loader just read (M8-SS-01, D-50); 0 when
+        // the read failed or the table has no row.
+        let sky = player
+            .profile
+            .seven_signs_refresh
+            .as_ref()
+            .and_then(|r| r.status.as_ref())
+            .map_or(0, l2_world::sevensigns::ssq_info_state);
+        ctl.send(SsqInfo { state: sky }.to_bytes());
         self.state = ConnectionState::Entering;
         ctl.send(
             CharSelected {

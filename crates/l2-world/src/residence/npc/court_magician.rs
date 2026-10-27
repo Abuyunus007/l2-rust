@@ -244,8 +244,23 @@ impl World {
         if self.is_inside_zone(target, ZoneId::NoSummonFriend) || self.is_inside_zone(target, ZoneId::Jail) {
             return refuse(self, SystemMessageId::C1IsInAnAreaWhichBlocksSummoning, true);
         }
-        // M8: `activeChar.isInInstance()` (the instance's `isSummonAllowed()`) and
-        // `activeChar.isIn7sDungeon()`.
+        // M8: `activeChar.isInInstance()` (the instance's `isSummonAllowed()`).
+        // `activeChar.isIn7sDungeon()` (M8-SS-01): only the members the dungeon lets in.
+        if self.is_in_7s_dungeon(active) {
+            let target_cabal = self.ss_player_cabal(target.0);
+            let blocked = if self.ss_is_seal_validation_period() {
+                target_cabal != self.ss_cabal_highest_score()
+            } else {
+                target_cabal == crate::sevensigns::CABAL_NULL
+            };
+            if blocked {
+                return refuse(
+                    self,
+                    SystemMessageId::YourTargetIsInAnAreaWhichBlocksSummoning,
+                    false,
+                );
+            }
+        }
         true
     }
 }

@@ -40,8 +40,7 @@
 // (`Writes::Job`), the owner's choice at the envoy a player's action.
 //
 // # Left to other cards (each has its marker where it belongs)
-// - Seven Signs (`seven_signs.rs`): M8. The state is the neutral one (no seal owner, the seal
-//   validation period), which the other castle code assumes as well.
+// - Seven Signs (`seven_signs.rs`): the questions go to `sevensigns/` (M8-SS-01).
 // - Territory War (`territory/`, M7-TW-01) owns `ExShowDominionRegistry`, `isTWInProgress`, the
 //   captain's shouting timer and the badge prices of `TerritoryWar.ini`; the Territory Managers
 //   are a script of this module whose pages are in `territory/managers.rs`.

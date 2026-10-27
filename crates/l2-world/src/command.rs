@@ -266,6 +266,8 @@ pub enum ClientInput {
     /// The petition packets (`RequestPetition`, `RequestPetitionCancel`,
     /// `RequestPetitionFeedback`), see `petition.rs`.
     Petition(crate::petition::PetitionInput),
+    /// Java `RequestSSQStatus` (M8-SS-01, `sevensigns/status.rs`).
+    SsqStatus { page: i8 },
     /// Java `SnoopQuit`: the GM stops snooping the player with this object id.
     SnoopQuit { snoop_id: i32 },
     /// The L-02 packets (macros, crystallize, wear shop, item links, key mapping, ...), see
@@ -416,6 +418,12 @@ pub enum WorldCommand {
     LoginServerRegistered {
         name: String,
     },
+    /// The answer to `PersistCommand::SevenSignsReadRequest`: every Seven Signs row, or `Err` when
+    /// the read failed (the follow-up `then` is then refused, M8-SS-01).
+    SevenSignsLoaded {
+        result: Result<crate::sevensigns::SevenSignsLoad, ()>,
+        then: crate::sevensigns::SevenSignsThen,
+    },
     /// Installs the path search service (the pool starts after the world thread, so it cannot be
     /// given to the world before it runs).
     SetPathRequests(Box<dyn crate::movement::PathRequests>),
@@ -515,6 +523,11 @@ impl fmt::Debug for WorldCommand {
                 write!(f, "HtmlReloaded({requester}, {path:?}, {result:?})")
             }
             Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
+            Self::SevenSignsLoaded { result, then } => write!(
+                f,
+                "SevenSignsLoaded({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),
         }

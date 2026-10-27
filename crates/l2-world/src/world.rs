@@ -159,6 +159,9 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// The Seven Signs: the cycle, the members, the seals, the auto spawns (M8-SS-01,
+    /// `sevensigns/`).
+    pub(crate) seven_signs: crate::sevensigns::SevenSignsWorld,
 }
 
 impl World {
@@ -235,6 +238,7 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            seven_signs: crate::sevensigns::SevenSignsWorld::default(),
         }
     }
 
@@ -425,6 +429,7 @@ impl World {
                 result,
             } => self.on_html_reloaded(requester, path, result),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
+            WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
@@ -444,6 +449,8 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: "Save Seven Signs data before closing." (M8-SS-01).
+                self.seven_signs_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -795,6 +802,8 @@ impl World {
             // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Petition(input) => self.on_petition_input(id, input),
+            // Java: RequestSSQStatus (M8-SS-01)
+            ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
@@ -924,6 +933,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
+            TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
         }
     }
 

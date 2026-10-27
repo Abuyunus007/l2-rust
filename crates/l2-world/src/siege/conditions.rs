@@ -219,8 +219,11 @@ impl World {
             self.send(player, &SystemMessage::new(SystemMessageId::InvalidTarget));
             can = false;
         }
-        // M8: `SevenSigns.checkSummonConditions(player)` (a Dusk member while Dawn owns the Seal
-        // of Strife in the seal validation period).
+        // `SevenSigns.checkSummonConditions(player)`: a Dusk member while Dawn owns the Seal of
+        // Strife in the seal validation period (M8-SS-01).
+        else if self.ss_check_summon_conditions(player) {
+            can = false;
+        }
         can
     }
 

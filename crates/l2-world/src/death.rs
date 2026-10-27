@@ -689,7 +689,7 @@ impl World {
 
         // Teleport and revive.
         if let Some((x, y, z)) = location {
-            // `setIn7sDungeon(false)`: the Seven Signs dungeon is not modelled.
+            self.set_in_7s_dungeon(id, false);
             self.set_pending_revive(id, true);
             let offset = self.settings.teleport.max_offset_on_teleport;
             self.tele_to_location(

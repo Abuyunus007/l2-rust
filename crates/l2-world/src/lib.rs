@@ -66,6 +66,7 @@ pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod sevensigns;
 pub mod shop;
 pub mod shortcuts;
 pub mod siege;
