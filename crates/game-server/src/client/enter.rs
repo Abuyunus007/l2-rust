@@ -15,9 +15,10 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use l2_db::{
-    CharacterRepository, CharacterRow, FriendLink, FriendRepository, HennaRepository, HennaRow, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemReuseRow, MacroRepository, MessageRepository, PetRepository,
-    Pool, RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
+    BookmarkRepository, BookmarkRow, CharacterRepository, CharacterRow, ContactLink, ContactRepository,
+    FriendLink, FriendRepository, HennaRepository, HennaRow, ItemLocation, ItemRepository,
+    ItemReuseRepository, ItemReuseRow, MacroRepository, MessageRepository, PetRepository, Pool,
+    RecommendationRepository, ShortcutRepository, SkillRepository, SkillSaveRow, SubclassRepository,
     SummonRepository, VariableRepository,
 };
 use l2_net::{Control, Encode};
@@ -26,10 +27,11 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, HennaInput,
-    ItemData, LeaveReason, LeftoverInput, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput,
-    PetInput, PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse,
-    SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, CursedInput,
+    EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
+    MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
+    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
+    WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -84,6 +86,8 @@ pub struct DbPlayerLoader {
     shortcuts: ShortcutRepository,
     friends: FriendRepository,
     hennas: HennaRepository,
+    bookmarks: BookmarkRepository,
+    contacts: ContactRepository,
     subclasses: SubclassRepository,
     macros: MacroRepository,
     reco: RecommendationRepository,
@@ -107,6 +111,8 @@ impl DbPlayerLoader {
             shortcuts: ShortcutRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
+            bookmarks: BookmarkRepository::new(pool.clone()),
+            contacts: ContactRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -339,6 +345,23 @@ impl DbPlayerLoader {
         // Java: restoreHenna (the active class index, like the skills and shortcuts)
         data.profile.hennas = henna_slots(&self.hennas.hennas_of(char_id, class_index).await?);
 
+        // Java: restoreTeleportBookmark and ContactList.restore. Like Java, a read that fails is
+        // logged and the list starts empty.
+        data.profile.bookmarks = match self.bookmarks.bookmarks_of(char_id).await {
+            Ok(rows) => bookmarks_of_rows(rows),
+            Err(e) => {
+                error!("Failed restoring the teleport bookmarks of {}: {e}", data.name);
+                Vec::new()
+            }
+        };
+        data.profile.contacts = match self.contacts.contacts_of(char_id).await {
+            Ok(rows) => contact_names_of_rows(rows, char_id, &data.name),
+            Err(e) => {
+                warn!("Error found in {}'s ContactsList: {e}", data.name);
+                Vec::new()
+            }
+        };
+
         // Java: Player.loadRecommendations (called from `checkRecoBonusTask` at EnterWorld)
         match self.reco.reco_bonus_of(char_id).await? {
             Some(reco) => {
@@ -497,6 +520,44 @@ pub fn saved_item_reuse_of(row: &ItemReuseRow) -> SavedItemReuse {
         reuse_delay: i64::from(row.reuse_delay),
         systime: i64::try_from(row.systime).unwrap_or(i64::MAX),
     }
+}
+
+/// The teleport bookmarks of the `character_tpbookmark` rows (Java `restoreTeleportBookmark`), by
+/// id: Java puts them into a map keyed by id, so a repeated id keeps the last row. A NULL tag is
+/// an empty one.
+fn bookmarks_of_rows(rows: Vec<BookmarkRow>) -> Vec<l2_world::BookmarkData> {
+    let mut list: Vec<l2_world::BookmarkData> = Vec::new();
+    for row in rows {
+        let bookmark = l2_world::BookmarkData {
+            id: row.id,
+            x: row.x,
+            y: row.y,
+            z: row.z,
+            icon: row.icon,
+            tag: row.tag.unwrap_or_default(),
+            name: row.name,
+        };
+        list.retain(|b| b.id != bookmark.id);
+        list.push(bookmark);
+    }
+    list.sort_by_key(|b| b.id);
+    list
+}
+
+/// The names of the `character_contacts` rows (Java `ContactList.restore`): a contact without a
+/// name (`CharInfoTable` does not know it), the character itself and its own id are skipped.
+fn contact_names_of_rows(rows: Vec<ContactLink>, own_id: i32, own_name: &str) -> Vec<String> {
+    let mut names: Vec<String> = Vec::new();
+    for row in rows {
+        let Some(name) = row.name else {
+            continue;
+        };
+        if name == own_name || row.contact_id == own_id || names.contains(&name) {
+            continue;
+        }
+        names.push(name);
+    }
+    names
 }
 
 /// The dye ids of slots 1 to 3 from the `character_hennas` rows (Java `restoreHenna`): a row
@@ -1025,6 +1086,47 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
+            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, RequestModifyBookMarkSlot,
+            // RequestDeleteBookMarkSlot, RequestTeleportBookMark, RequestChangeBookMarkSlot
+            ClientPacket::RequestBookMarkSlotInfo(_) => ClientInput::Bookmark(BookmarkInput::SlotInfo),
+            ClientPacket::RequestSaveBookMarkSlot(p) => ClientInput::Bookmark(BookmarkInput::Save {
+                name: p.name,
+                icon: p.icon,
+                tag: p.tag,
+            }),
+            ClientPacket::RequestModifyBookMarkSlot(p) => ClientInput::Bookmark(BookmarkInput::Modify {
+                id: p.id,
+                name: p.name,
+                icon: p.icon,
+                tag: p.tag,
+            }),
+            ClientPacket::RequestDeleteBookMarkSlot(p) => {
+                ClientInput::Bookmark(BookmarkInput::Delete { id: p.id })
+            }
+            ClientPacket::RequestTeleportBookMark(p) => {
+                ClientInput::Bookmark(BookmarkInput::Teleport { id: p.id })
+            }
+            ClientPacket::RequestChangeBookMarkSlot(_) => ClientInput::Bookmark(BookmarkInput::ChangeSlot),
+            // Java: RequestExShowContactList, RequestExAddContactToContactList,
+            // RequestExDeleteContactFromContactList, RequestExFriendListExtended
+            ClientPacket::RequestExShowContactList(_) => ClientInput::Contacts(ContactsInput::Show),
+            ClientPacket::RequestExAddContactToContactList(p) => {
+                ClientInput::Contacts(ContactsInput::Add { name: p.name })
+            }
+            ClientPacket::RequestExDeleteContactFromContactList(p) => {
+                ClientInput::Contacts(ContactsInput::Delete { name: p.name })
+            }
+            ClientPacket::RequestExFriendListExtended(_) => {
+                ClientInput::Contacts(ContactsInput::FriendListExtended)
+            }
+            // Java: RequestPCCafeCouponUse only logs the code ("C5: RequestPCCafeCouponUse: S: ...").
+            ClientPacket::RequestPCCafeCouponUse(p) => {
+                debug!("C5: RequestPCCafeCouponUse: S: {}", p.coupon);
+                return true;
+            }
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
+            ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
+            ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,
@@ -2040,6 +2142,107 @@ mod tests {
         let record = loaded.profile.clan_record.unwrap();
         assert_eq!((record.clan_id, record.data.is_none()), (901, true));
         assert_eq!(loaded.profile.clan.unwrap().clan_id, 901);
+
+        pool.close().await;
+        db.drop_db().await;
+    }
+
+    #[test]
+    fn bookmarks_and_contacts_are_read_like_java() {
+        let row = |id, tag: Option<&str>| BookmarkRow {
+            id,
+            x: id,
+            y: 0,
+            z: 0,
+            icon: 1,
+            tag: tag.map(str::to_owned),
+            name: format!("b{id}"),
+        };
+        let list = bookmarks_of_rows(vec![row(3, None), row(1, Some("t")), row(3, Some("last"))]);
+        assert_eq!(list.iter().map(|b| b.id).collect::<Vec<_>>(), [1, 3]);
+        assert_eq!(list[1].tag, "last");
+        assert_eq!(bookmarks_of_rows(vec![row(2, None)])[0].tag, "");
+
+        let link = |contact_id, name: Option<&str>| ContactLink {
+            contact_id,
+            name: name.map(str::to_owned),
+        };
+        let names = contact_names_of_rows(
+            vec![
+                link(10, Some("Buddy")),
+                link(11, None),
+                link(5, Some("Hero")),
+                link(12, Some("Hero")),
+                link(13, Some("Pal")),
+            ],
+            5,
+            "Hero",
+        );
+        assert_eq!(names, ["Buddy", "Pal"]);
+    }
+
+    #[tokio::test]
+    async fn the_loader_reads_bookmarks_and_contacts() {
+        let Some((db, pool)) = loader_setup().await else {
+            return;
+        };
+        let (_dir, pack) = crate::client::testdata::datapack();
+        let screen = crate::client::charscreen::CharScreen::new(
+            Arc::new(crate::client::charscreen::DbCharScreen::new(pool.clone())),
+            pack,
+            Arc::new(l2_config::GameConfig::default()),
+            Arc::new(l2_world::IdFactory::new([]).unwrap()),
+            0,
+        );
+        let create = |name: &str| l2_protocol_game::client::CharacterCreate {
+            name: name.to_owned(),
+            race: 0,
+            is_female: true,
+            class_id: 10,
+            int: 0,
+            str: 0,
+            con: 0,
+            men: 0,
+            dex: 0,
+            wit: 0,
+            hair_style: 2,
+            hair_color: 1,
+            face: 1,
+        };
+        let mut rng = l2_util::WorldRng::from_seed(7);
+        let id = crate::client::charscreen::create_character(&screen, "acc", &create("Bookie"), &mut rng)
+            .await
+            .unwrap()
+            .char_id;
+        let friend = crate::client::charscreen::create_character(&screen, "acc2", &create("Pal"), &mut rng)
+            .await
+            .unwrap()
+            .char_id;
+        db.exec(&format!(
+            "INSERT INTO character_tpbookmark (charId, Id, x, y, z, icon, tag, name) VALUES              ({id}, 2, 10, 20, 30, 4, NULL, 'Second'), ({id}, 1, 1, 2, 3, 5, 'tag', 'First')"
+        ))
+        .await;
+        db.exec(&format!(
+            "INSERT INTO character_contacts (charId, contactId) VALUES ({id}, {friend}), ({id}, {id}), ({id}, 999999)"
+        ))
+        .await;
+
+        let loaded = DbPlayerLoader::new(pool.clone())
+            .load_player("acc", id)
+            .await
+            .unwrap();
+        let bookmarks = &loaded.profile.bookmarks;
+        assert_eq!(bookmarks.iter().map(|b| b.id).collect::<Vec<_>>(), [1, 2]);
+        assert_eq!(
+            (
+                bookmarks[0].x,
+                bookmarks[0].tag.as_str(),
+                bookmarks[0].name.as_str()
+            ),
+            (1, "tag", "First")
+        );
+        assert_eq!(bookmarks[1].tag, "");
+        assert_eq!(loaded.profile.contacts, ["Pal"]);
 
         pool.close().await;
         db.drop_db().await;

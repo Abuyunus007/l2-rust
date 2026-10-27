@@ -60,8 +60,8 @@ impl World {
     #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_create_base(&self, player: ObjectId, skill: Option<(i32, i32)>) -> bool {
         let clan = self.clan_of(player).map(|c| c.id);
-        // `isCursedWeaponEquipped()`: cursed weapons are M8.
-        let mut can = !(self.is_alike_dead(player) || clan.is_none());
+        let mut can =
+            !(self.is_alike_dead(player) || self.is_cursed_weapon_equipped(player) || clan.is_none());
         let (castle, fort) = self.castle_and_fort_of(player);
         let siege = castle.and_then(|c| self.castle_siege(c));
         let fort_attacker = |f: FortId| clan.and_then(|c| self.fort_attacker_clan(f, c));
@@ -113,8 +113,10 @@ impl World {
         if !self.is_player(player) {
             return false;
         }
-        // `isCursedWeaponEquipped()`: cursed weapons are M8.
-        if self.is_alike_dead(player) || !self.is_clan_leader(player) {
+        if self.is_alike_dead(player)
+            || self.is_cursed_weapon_equipped(player)
+            || !self.is_clan_leader(player)
+        {
             return false;
         }
         let clan = self.clan_of(player).map(|c| c.id);
@@ -166,8 +168,9 @@ impl World {
         if !self.is_player(player) {
             return false;
         }
-        // `isCursedWeaponEquipped()`: cursed weapons are M8.
-        let mut can = !(self.is_alike_dead(player) || !self.is_clan_leader(player));
+        let mut can = !(self.is_alike_dead(player)
+            || self.is_cursed_weapon_equipped(player)
+            || !self.is_clan_leader(player));
         let clan = self.clan_of(player).map(|c| c.id);
         let fort = self
             .fort_of_player(player)
@@ -197,8 +200,9 @@ impl World {
     #[allow(clippy::if_same_then_else)]
     pub(crate) fn cond_can_summon_siege_golem(&self, player: ObjectId) -> bool {
         let clan_id = self.clan_id_of(player);
-        // `isCursedWeaponEquipped()`: cursed weapons are M8.
-        let mut can = !(self.is_alike_dead(player) || self.clan(clan_id).is_none());
+        let mut can = !(self.is_alike_dead(player)
+            || self.is_cursed_weapon_equipped(player)
+            || self.clan(clan_id).is_none());
         let (castle, fort) = self.castle_and_fort_of(player);
         if castle.is_none() && fort.is_none() {
             can = false;

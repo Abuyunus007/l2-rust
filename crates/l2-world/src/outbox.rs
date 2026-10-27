@@ -133,6 +133,14 @@ pub enum PersistCommand {
     /// A `character_hennas` row change with Java's statement (L-01, see `henna.rs`). Applied in
     /// order with the other commands.
     Henna(crate::henna::HennaWrite),
+    /// A `character_tpbookmark` row change with Java's statement (L-04, see `bookmarks.rs`).
+    Bookmark(crate::bookmarks::BookmarkWrite),
+    /// A `character_contacts` row change with Java's statement (L-04, see `contacts.rs`).
+    Contact(crate::contacts::ContactWrite),
+    /// Asks the persistence task to read the `characters` rows (name, online, class, level) of
+    /// friends who are not in the world for `FriendListExtended` (L-04). The answer comes back
+    /// as `WorldCommand::FriendSummariesLoaded`.
+    FriendSummariesRequest { requester: ObjectId, friends: Vec<i32> },
     /// A `character_friends` row change of the friend list or the block list (M6-FRIEND-01, see
     /// `friends.rs`). Applied in order with the other commands.
     Friend(crate::friends::FriendWrite),
@@ -164,6 +172,9 @@ pub enum PersistCommand {
     /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`),
     /// see `manor/` (M7-MANOR-01). Applied in order with the other commands.
     Manor(crate::manor::ManorWrite),
+    /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
+    /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
+    Cursed(crate::cursed::CursedWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {
@@ -262,6 +273,18 @@ pub enum ControlRequest {
         requester: l2_util::ObjectId,
         path: Option<String>,
     },
+    /// `//loadhtml <path>`: read one html file of the datapack from the disk (Java
+    /// `HtmCache.loadFile`). The answer comes back as `WorldCommand::HtmlFileLoaded`.
+    LoadHtmlFile {
+        requester: l2_util::ObjectId,
+        path: String,
+    },
+    /// `//respawnall`, `//spawn_reload`: read the spawn files again (Java `SpawnData.load()`). The
+    /// answer comes back as `WorldCommand::SpawnsReloaded`.
+    ReloadSpawns,
+    /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
+    /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
+    StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },
 }
 
 /// Everything the world produces that is not a packet for a player.

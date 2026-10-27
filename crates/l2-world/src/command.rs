@@ -149,6 +149,12 @@ pub enum ClientInput {
     Store(crate::trade::StoreInput),
     /// The symbol maker packets (L-01): `RequestHenna*`.
     Henna(crate::henna::HennaInput),
+    /// The teleport bookmark packets (L-04): `RequestBookMarkSlotInfo`, `RequestSaveBookMarkSlot`, ...
+    Bookmark(crate::bookmarks::BookmarkInput),
+    /// The mail contact list packets (L-04): `RequestExShowContactList`, ...
+    Contacts(crate::contacts::ContactsInput),
+    /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
+    Cursed(crate::cursed::CursedInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
@@ -401,6 +407,13 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::FriendSummariesRequest`: the `characters` rows of the
+    /// friends who are not in the world (L-04, `contacts.rs`). A friend whose read failed is
+    /// missing.
+    FriendSummariesLoaded {
+        requester: l2_util::ObjectId,
+        rows: Vec<crate::contacts::FriendSummary>,
+    },
     /// The answer to `PersistCommand::Announcement(Insert)`: the id the database gave the row, or
     /// `Err` when the INSERT failed (`//announces add`, see `admin/announce.rs`).
     AnnouncementStored {
@@ -412,6 +425,18 @@ pub enum WorldCommand {
         requester: l2_util::ObjectId,
         path: Option<String>,
         result: crate::admin::reload::HtmlReloadResult,
+    },
+    /// The answer to `ControlRequest::LoadHtmlFile` (`//loadhtml`, see `admin/page.rs`): the text
+    /// of the file, `None` when there is no such html file.
+    HtmlFileLoaded {
+        requester: l2_util::ObjectId,
+        path: String,
+        content: Option<String>,
+    },
+    /// The answer to `ControlRequest::ReloadSpawns` (`//respawnall`, see `admin/spawn_admin.rs`):
+    /// the spawn files, read again.
+    SpawnsReloaded {
+        spawns: std::sync::Arc<l2_data::SpawnData>,
     },
     /// The login server registered the game server under this name (Java
     /// `LoginServerThread._serverName`, shown by `//server_login`).
@@ -501,6 +526,9 @@ impl fmt::Debug for WorldCommand {
                 "OfflinePetRowsLoaded({owner}, {control_object_id}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::FriendSummariesLoaded { requester, rows } => {
+                write!(f, "FriendSummariesLoaded({requester}, {} rows)", rows.len())
+            }
             Self::BlockListLoaded {
                 sender,
                 owner,
@@ -522,6 +550,16 @@ impl fmt::Debug for WorldCommand {
             } => {
                 write!(f, "HtmlReloaded({requester}, {path:?}, {result:?})")
             }
+            Self::HtmlFileLoaded {
+                requester,
+                path,
+                content,
+            } => write!(
+                f,
+                "HtmlFileLoaded({requester}, {path:?}, {})",
+                if content.is_some() { "found" } else { "missing" }
+            ),
+            Self::SpawnsReloaded { spawns } => write!(f, "SpawnsReloaded({} spawns)", spawns.len()),
             Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
             Self::SevenSignsLoaded { result, then } => write!(
                 f,

@@ -43,6 +43,8 @@ const KEY: SessionKey = SessionKey {
 #[derive(Default)]
 struct FakeGate {
     logouts: Mutex<Vec<String>>,
+    /// `sendTempBan`: account, ip, minutes.
+    bans: Mutex<Vec<(String, String, i64)>>,
 }
 
 impl LoginGate for FakeGate {
@@ -57,6 +59,14 @@ impl LoginGate for FakeGate {
 
     fn server_id(&self) -> i32 {
         7
+    }
+
+    fn temp_ban<'a>(&'a self, account: &'a str, ip: &'a str, minutes: i64) -> BoxFuture<'a, ()> {
+        self.bans
+            .lock()
+            .unwrap()
+            .push((account.to_string(), ip.to_string(), minutes));
+        Box::pin(async {})
     }
 }
 
@@ -308,6 +318,21 @@ async fn start_with(
     tweak: impl FnOnce(&mut GameConfig),
     select_interval_ticks: i32,
 ) -> Harness {
+    start_full(
+        packet_encryption,
+        tweak,
+        select_interval_ticks,
+        super::secondary::SecondaryAuthService::disabled(),
+    )
+    .await
+}
+
+async fn start_full(
+    packet_encryption: bool,
+    tweak: impl FnOnce(&mut GameConfig),
+    select_interval_ticks: i32,
+    secondary: super::secondary::SecondaryAuthService,
+) -> Harness {
     let gate = Arc::new(FakeGate::default());
     let store = Arc::new(FakeStore::default());
     let (datapack_dir, datapack) = super::testdata::datapack();
@@ -372,6 +397,7 @@ async fn start_with(
         data: static_data,
         settings,
         left_acks,
+        secondary: Arc::new(secondary),
     });
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let addr = listener.local_addr().unwrap();
@@ -1332,4 +1358,347 @@ async fn enter_world_is_not_accepted_before_a_character_was_selected() {
     client.send(RequestGotoLobby.to_bytes()).await;
     decode_char_list(&client.recv().await.unwrap());
     assert!(!outbox_has(&h, |_| true));
+}
+
+// ---- the secondary password (L-04) -------------------------------------------------------------
+
+use super::secondary::{SecondaryAuthData, SecondaryAuthService, SecondaryStore};
+use l2_protocol_game::client::{
+    GameGuardReply, RequestEx2ndPasswordCheck, RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify,
+};
+use l2_protocol_game::server::{Ex2ndPasswordAck, Ex2ndPasswordCheck, Ex2ndPasswordVerify};
+
+/// `account_gsdata` in memory: `(account, var, value)` rows and every wrong attempt written.
+#[derive(Default)]
+struct FakeSecondaryStore {
+    rows: Mutex<Vec<(String, String, String)>>,
+    attempts: Mutex<Vec<i32>>,
+}
+
+impl SecondaryStore for FakeSecondaryStore {
+    fn load<'a>(&'a self, account: &'a str) -> BoxFuture<'a, Result<Vec<(String, String)>, String>> {
+        Box::pin(async move {
+            Ok(self
+                .rows
+                .lock()
+                .unwrap()
+                .iter()
+                .filter(|(a, _, _)| a == account)
+                .map(|(_, var, value)| (var.clone(), value.clone()))
+                .collect())
+        })
+    }
+
+    fn insert_password<'a>(&'a self, account: &'a str, hashed: &'a str) -> BoxFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            self.rows
+                .lock()
+                .unwrap()
+                .push((account.to_string(), "secauth_pwd".into(), hashed.to_string()));
+            Ok(())
+        })
+    }
+
+    fn update_password<'a>(&'a self, account: &'a str, hashed: &'a str) -> BoxFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            for row in self.rows.lock().unwrap().iter_mut() {
+                if row.0 == account && row.1 == "secauth_pwd" {
+                    row.2 = hashed.to_string();
+                }
+            }
+            Ok(())
+        })
+    }
+
+    fn insert_wrong_attempt<'a>(
+        &'a self,
+        _account: &'a str,
+        attempts: i32,
+    ) -> BoxFuture<'a, Result<(), String>> {
+        Box::pin(async move {
+            self.attempts.lock().unwrap().push(attempts);
+            Ok(())
+        })
+    }
+}
+
+fn secondary_data(max_attempts: i32) -> SecondaryAuthData {
+    let mut data = SecondaryAuthData::parse(
+        "<list><enabled>true</enabled><forbiddenPasswords><password>123456</password></forbiddenPasswords></list>",
+    );
+    data.max_attempts = max_attempts;
+    data.ban_time = 15;
+    data
+}
+
+async fn start_secondary(store: &Arc<FakeSecondaryStore>, max_attempts: i32) -> Harness {
+    start_full(
+        true,
+        |_| {},
+        0,
+        SecondaryAuthService {
+            data: secondary_data(max_attempts),
+            store: store.clone(),
+        },
+    )
+    .await
+}
+
+fn password_window(body: &[u8]) -> i32 {
+    assert_eq!(body[0], 0xFE, "an ex packet");
+    Ex2ndPasswordCheck::decode(&mut l2_net::PacketReader::new(&body[3..]))
+        .unwrap()
+        .window_type
+}
+
+fn verdict(body: &[u8]) -> Ex2ndPasswordVerify {
+    Ex2ndPasswordVerify::decode(&mut l2_net::PacketReader::new(&body[3..])).unwrap()
+}
+
+fn req(change_pass: u8, password: &str, new_password: Option<&str>) -> Vec<u8> {
+    RequestEx2ndPasswordReq {
+        change_pass,
+        password: password.into(),
+        new_password: new_password.map(str::to_owned),
+    }
+    .to_bytes()
+}
+
+fn verify(password: &str) -> Vec<u8> {
+    RequestEx2ndPasswordVerify {
+        password: password.into(),
+    }
+    .to_bytes()
+}
+
+/// With the feature off the client is told no password is needed.
+#[tokio::test]
+async fn without_the_feature_no_password_is_asked() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_OK
+    );
+    // Create and verify do nothing.
+    client.send(req(0, "123457", None)).await;
+    client.send(verify("123457")).await;
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_OK
+    );
+}
+
+/// The whole flow with the config on: create a password (the forbidden and a short one are
+/// refused), the character screen stays locked, a wrong and a right password, then the selection
+/// goes through, and a change of the password locks it again.
+#[tokio::test]
+async fn the_secondary_password_locks_the_character_screen() {
+    let store = Arc::new(FakeSecondaryStore::default());
+    let h = start_secondary(&store, 5).await;
+    let mut client = logged_in(&h).await;
+
+    // No password yet: the "new password" window; the selection opens it too.
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_NEW
+    );
+    client.send(select_packet(1).to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_NEW
+    );
+
+    // The forbidden list and the length: WRONG_PATTERN, nothing stored.
+    for bad in ["123456", "12345", "abcdefg"] {
+        client.send(req(0, bad, None)).await;
+        let body = client.recv().await.unwrap();
+        let ack = Ex2ndPasswordAck::decode(&mut l2_net::PacketReader::new(&body[3..])).unwrap();
+        assert_eq!(ack.response, Ex2ndPasswordAck::WRONG_PATTERN, "{bad}");
+    }
+    assert!(store.rows.lock().unwrap().is_empty());
+
+    // A good one: SUCCESS, stored hashed like Java (`base64(sha1)`).
+    client.send(req(0, "123457", None)).await;
+    let body = client.recv().await.unwrap();
+    let ack = Ex2ndPasswordAck::decode(&mut l2_net::PacketReader::new(&body[3..])).unwrap();
+    assert_eq!(ack.response, Ex2ndPasswordAck::SUCCESS);
+    assert_eq!(
+        store.rows.lock().unwrap().as_slice(),
+        [(
+            ACCOUNT.to_string(),
+            "secauth_pwd".to_string(),
+            "kI9wTMqt/YanRAfSNMe94w8nRP4=".to_string()
+        )]
+    );
+    // Creating it again does nothing (Java checks `passwordExist`).
+    client.send(req(0, "654321", None)).await;
+
+    // Created is not unlocked: the prompt window, and the selection is still refused.
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_PROMPT
+    );
+    client.send(select_packet(1).to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_PROMPT
+    );
+
+    // A wrong password counts; the right one unlocks (the count sent is the one before).
+    client.send(verify("111112")).await;
+    let wrong = verdict(&client.recv().await.unwrap());
+    assert_eq!(
+        (wrong.mode, wrong.wrong_attempts),
+        (Ex2ndPasswordVerify::PASSWORD_WRONG, 1)
+    );
+    client.send(verify("123457")).await;
+    let ok = verdict(&client.recv().await.unwrap());
+    assert_eq!(
+        (ok.mode, ok.wrong_attempts),
+        (Ex2ndPasswordVerify::PASSWORD_OK, 1)
+    );
+    assert_eq!(store.attempts.lock().unwrap().as_slice(), [1, 0]);
+
+    // Unlocked: the check says OK and the selection goes through.
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_OK
+    );
+    client.send(select_packet(1).to_bytes()).await;
+    assert_eq!(client.recv().await.unwrap(), SsqInfo { state: 0 }.to_bytes());
+    assert_eq!(
+        client.recv().await.unwrap()[0],
+        ServerOpcode::CharacterSelected.id()
+    );
+    assert!(h.gate.bans.lock().unwrap().is_empty());
+}
+
+/// Changing the password needs the old one and locks the screen again.
+#[tokio::test]
+async fn changing_the_password_needs_the_old_one() {
+    let store = Arc::new(FakeSecondaryStore::default());
+    store.rows.lock().unwrap().push((
+        ACCOUNT.to_string(),
+        "secauth_pwd".to_string(),
+        "kI9wTMqt/YanRAfSNMe94w8nRP4=".to_string(),
+    ));
+    let h = start_secondary(&store, 5).await;
+    let mut client = logged_in(&h).await;
+    client.send(verify("123457")).await;
+    assert_eq!(
+        verdict(&client.recv().await.unwrap()).mode,
+        Ex2ndPasswordVerify::PASSWORD_OK
+    );
+
+    // A wrong old password: counted as a wrong attempt, nothing changes (and no OK for the check).
+    client.send(req(2, "000001", Some("765432"))).await;
+    let wrong = verdict(&client.recv().await.unwrap());
+    assert_eq!(wrong.mode, Ex2ndPasswordVerify::PASSWORD_WRONG);
+    // A new password that is not valid: WRONG_PATTERN.
+    client.send(req(2, "123457", Some("123456"))).await;
+    let body = client.recv().await.unwrap();
+    let ack = Ex2ndPasswordAck::decode(&mut l2_net::PacketReader::new(&body[3..])).unwrap();
+    assert_eq!(ack.response, Ex2ndPasswordAck::WRONG_PATTERN);
+    // A good one.
+    client.send(req(2, "123457", Some("765432"))).await;
+    let body = client.recv().await.unwrap();
+    let ack = Ex2ndPasswordAck::decode(&mut l2_net::PacketReader::new(&body[3..])).unwrap();
+    assert_eq!(ack.response, Ex2ndPasswordAck::SUCCESS);
+    let stored = store.rows.lock().unwrap()[0].2.clone();
+    assert_eq!(stored, l2_db::crypt_secondary_password("765432"));
+    // Locked again until the new password is typed.
+    client.send(RequestEx2ndPasswordCheck.to_bytes()).await;
+    assert_eq!(
+        password_window(&client.recv().await.unwrap()),
+        Ex2ndPasswordCheck::PASSWORD_PROMPT
+    );
+}
+
+/// The wrong attempts are read from `secauth_wte` at login, and the last one allowed bans the
+/// account at the login server and closes the connection.
+#[tokio::test]
+async fn too_many_wrong_attempts_ban_the_account() {
+    let store = Arc::new(FakeSecondaryStore::default());
+    {
+        let mut rows = store.rows.lock().unwrap();
+        rows.push((
+            ACCOUNT.into(),
+            "secauth_pwd".into(),
+            l2_db::crypt_secondary_password("123457"),
+        ));
+        rows.push((ACCOUNT.into(), "secauth_wte".into(), "1".into()));
+    }
+    let h = start_secondary(&store, 3).await;
+    let mut client = logged_in(&h).await;
+    client.send(verify("000001")).await;
+    let second = verdict(&client.recv().await.unwrap());
+    assert_eq!(
+        (second.mode, second.wrong_attempts),
+        (Ex2ndPasswordVerify::PASSWORD_WRONG, 2)
+    );
+    client.send(verify("000002")).await;
+    let banned = verdict(&client.recv().await.unwrap());
+    assert_eq!(
+        (banned.mode, banned.wrong_attempts),
+        (Ex2ndPasswordVerify::PASSWORD_BAN, 3)
+    );
+    client.expect_closed().await;
+    assert_eq!(
+        h.gate.bans.lock().unwrap().as_slice(),
+        [(ACCOUNT.to_string(), "127.0.0.1".to_string(), 15)]
+    );
+    // The counter is written back as 2, then reset to 0 with the ban.
+    assert_eq!(store.attempts.lock().unwrap().as_slice(), [2, 0]);
+}
+
+/// L-04: the hardware report and the GameGuard answer are taken in the states Java takes them.
+#[tokio::test]
+async fn the_hardware_report_is_kept_and_a_game_guard_answer_is_valid_only_when_it_hashes_right() {
+    let h = start(true).await;
+    let mut client = logged_in(&h).await;
+    let report = l2_protocol_game::client::RequestHardWareInfo {
+        mac_address: "00-00-00-00-00-01".into(),
+        windows_platform_id: 2,
+        windows_major_version: 10,
+        windows_minor_version: 0,
+        windows_build_number: 19045,
+        directx_version: 12,
+        directx_revision: 1,
+        unknown1: [0; 16],
+        cpu_name: "cpu".into(),
+        cpu_speed: 3000,
+        cpu_core_count: 4,
+        unknown2: 0,
+        vga_count: 1,
+        vga_pcx_speed: 16,
+        phys_memory_slot1: 4096,
+        phys_memory_slot2: 0,
+        phys_memory_slot3: 0,
+        unknown3: 0,
+        video_memory: 2048,
+        unknown4: 0,
+        vga_version: 12,
+        vga_name: "gpu".into(),
+        vga_driver_version: "1".into(),
+    };
+    // A report is not answered; a later packet that is answered proves it was taken.
+    client.send(report.to_bytes()).await;
+    // GameGuardReply is an IN_GAME packet: at the character screen it is dropped.
+    client
+        .send(
+            GameGuardReply {
+                reply: [0; 8],
+                skipped: 0,
+            }
+            .to_bytes(),
+        )
+        .await;
+    client.send(RequestGotoLobby.to_bytes()).await;
+    decode_char_list(&client.recv().await.unwrap());
 }

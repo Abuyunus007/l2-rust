@@ -161,6 +161,10 @@ pub struct PlayerProfile {
     pub macros: Vec<MacroData>,
     /// `character_variables` (Java `PlayerVariables`).
     pub variables: BTreeMap<String, String>,
+    /// `character_tpbookmark`: the teleport bookmarks, sorted by id (L-04, `bookmarks.rs`).
+    pub bookmarks: Vec<crate::bookmarks::BookmarkData>,
+    /// `character_contacts`: the names of the mail contacts (L-04, `contacts.rs`).
+    pub contacts: Vec<String>,
     /// `character_hennas`: the dye id (`symbol_id`) of slots 1 to 3 of the active class, 0 for an
     /// empty slot (Java `restoreHenna`).
     pub hennas: [i32; 3],
@@ -268,6 +272,8 @@ impl Default for PlayerProfile {
             recom_time_left_ms: 0,
             macros: Vec::new(),
             variables: BTreeMap::new(),
+            bookmarks: Vec::new(),
+            contacts: Vec::new(),
             hennas: [0; 3],
             last_access: 0,
             variables_changed: std::collections::BTreeSet::new(),
@@ -404,6 +410,9 @@ pub struct Player {
     pub mount: crate::mount::MountState,
     /// The GM list entry, silence and diet mode (see `admin/flags.rs`).
     pub gm: crate::admin::flags::GmFlags,
+    /// Java `_cursedWeaponEquippedId`: the item id of the cursed weapon the player holds, 0 for
+    /// none (see `cursed/`). Not stored: `checkPlayer` sets it when the character is loaded.
+    pub cursed_weapon_equipped_id: i32,
     /// The macro revision, the published items (L-02, see `leftover.rs`).
     pub leftover: crate::leftover::LeftoverState,
 }
@@ -465,6 +474,7 @@ impl Player {
             fishing: crate::fishing::PlayerFishing::default(),
             mount: crate::mount::MountState::default(),
             gm: crate::admin::flags::GmFlags::default(),
+            cursed_weapon_equipped_id: 0,
             leftover: crate::leftover::LeftoverState::default(),
         }
     }

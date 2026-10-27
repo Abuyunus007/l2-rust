@@ -76,6 +76,7 @@ pub mod charscreen;
 pub mod chat;
 pub mod combat;
 pub mod command_channel;
+pub mod contacts;
 pub mod debug_draw;
 pub mod duel;
 pub mod effect_packets;
@@ -111,6 +112,7 @@ pub mod refine;
 pub mod regen;
 pub mod residence;
 pub mod screen;
+pub mod secondary_auth;
 pub mod shop;
 pub mod siege;
 pub mod skills;
@@ -145,6 +147,7 @@ pub use command_channel::{
     ExAskJoinMpcc, ExCloseMpcc, ExMpccPartyInfoUpdate, ExMpccShowPartyMemberInfo,
     ExMultiPartyCommandChannelInfo, ExOpenMpcc, MpccMember, MpccPartyEntry,
 };
+pub use contacts::{ExConfirmAddingContact, FriendListExtended, FriendListExtendedEntry};
 pub use debug_draw::{ExServerPrimitive, Primitive, PrimitiveColor, ShowBoard};
 pub use duel::{ExDuelAskStart, ExDuelEnd, ExDuelReady, ExDuelStart, ExDuelUpdateUserInfo};
 pub use effect_packets::{ExSpawnEmitter, FlyToLocation, StartRotation, StopRotation};
@@ -250,6 +253,7 @@ pub use refine::{
 pub use regen::ExRegenMax;
 pub use residence::{AgitDecoInfo, AgitInfo, ExShowAgitInfo};
 pub use screen::{Earthquake, ExRedSky, SpecialCamera, SunRise, SunSet};
+pub use secondary_auth::{Ex2ndPasswordAck, Ex2ndPasswordCheck, Ex2ndPasswordVerify};
 pub use shop::{BuyList, BuyListProduct, ExBuySellList, RefundEntry, SellEntry};
 pub use siege::{
     CastleInfo, DefenderState, ExShowCastleInfo, SiegeAttackerList, SiegeClan, SiegeDefender,

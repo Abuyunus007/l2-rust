@@ -75,7 +75,7 @@ impl World {
         } else {
             respawn_delay.max(1).saturating_mul(1000)
         };
-        let index = self.static_spawn_count() + self.death.runtime_spawns.len();
+        let index = crate::respawn::RUNTIME_SPAWN_BASE + self.death.runtime_spawns.len();
         self.death.runtime_spawns.push(NpcSpawn {
             npc_id,
             amount: 1,

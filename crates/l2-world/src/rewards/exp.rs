@@ -527,9 +527,9 @@ impl World {
         if !self.playable_add_exp(id, value) {
             return false;
         }
-        // Set new karma: `!isCursedWeaponEquipped()` (no cursed weapons).
+        // Set new karma.
         let karma = self.players.get(&id).map_or(0, |p| p.data.karma);
-        if karma > 0 && !self.is_inside_zone(id, ZoneId::Pvp) {
+        if !self.is_cursed_weapon_equipped(id) && karma > 0 && !self.is_inside_zone(id, ZoneId::Pvp) {
             let karma_lost = self.calculate_karma_lost(id, value);
             if karma_lost > 0 {
                 self.set_karma(id, karma.wrapping_sub(karma_lost));

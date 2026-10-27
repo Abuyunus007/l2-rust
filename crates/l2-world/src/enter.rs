@@ -15,7 +15,8 @@
 // - zones: `ExSetCompassZoneCode` and the zone messages
 // - clans, sieges, the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
-// - contacts, teleport bookmarks, the mail check, premium items (the friend list is in `friends.rs`)
+// - the mail check, premium items (the friend list is in `friends.rs`, the contacts in
+//   `contacts.rs`, the teleport bookmarks in `bookmarks.rs`)
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
 
@@ -23,13 +24,12 @@ use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
-    EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExStorageMaxCount, ExUiSetting,
-    ExVoteSystemInfo, HennaInfo, OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList,
-    SkillListEntry, ValidateLocation,
+    EtcStatusUpdate, ExBasicActionList, ExStorageMaxCount, ExUiSetting, ExVoteSystemInfo, HennaInfo,
+    OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList, SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
-    ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ExShowContactList, ItemInfo, ItemList,
-    MacroCommandEntry, MacroEntry, MacroList, SystemMessage, UserInfo,
+    ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ItemInfo, ItemList, MacroCommandEntry,
+    MacroEntry, MacroList, SystemMessage, UserInfo,
 };
 use l2_util::ObjectId;
 use tracing::debug;
@@ -465,6 +465,9 @@ impl World {
         self.mail_refresh_player(id);
         // Java `CharacterSelect`: `CharInfoTable.addName(player)` (M6-MAIL-01).
         self.mail_remember_player(id);
+        // Java `Player.restore` -> `CursedWeaponsManager.checkPlayer(player)`: the owner of a
+        // cursed weapon is known again before anything shows the player (M8-CURSED-01).
+        self.cursed_check_player(id);
 
         // Java `EnterWorld`: `GMStartupInvulnerable` and `AdminData.hasAccess("admin_invul", ..)`
         // for a GM (`player.setInvul(true)`). The flag shows in no packet, so it is set first.
@@ -531,6 +534,10 @@ impl World {
         for bytes in self.after_spawn_packets(id) {
             self.send_bytes(id, bytes);
         }
+        // `if (player.isCursedWeaponEquipped()) ...cursedOnLogin()`.
+        if self.is_cursed_weapon_equipped(id) {
+            self.cursed_on_login(id);
+        }
         // EnterWorld: "YOUR_FRIEND_S1_JUST_LOGGED_IN" to the friends who are online.
         self.friends_announce_login(id);
         // Java `onPlayerEnter`: a player left in a Seven Signs dungeon he may not be in goes to
@@ -544,8 +551,8 @@ impl World {
             // `player.sendPacket(new ExVoteSystemInfo(player))`
             self.send_vote_system_info(id);
         }
-        // ExShowContactList: the contacts are not loaded.
-        self.send(id, &ExShowContactList::default());
+        // ExShowContactList (`contacts.rs`)
+        self.send(id, &self.contact_list_packet(id));
         if self.settings.nevit_enabled {
             // Nevit.onPlayerLogin: the hunting points and time are player variables.
             self.nevit_on_player_login(id);
@@ -561,6 +568,8 @@ impl World {
         self.siege_enter_world_zone_check(id);
         // Over-enchant protection.
         self.over_enchant_protection_on_enter(id);
+        // "Remove demonic weapon if character is not cursed weapon equipped."
+        self.cursed_enter_world_cleanup(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
@@ -662,14 +671,8 @@ impl World {
         // player.sendPacket(new ItemList(player, false)), then ItemList.runImpl: ExQuestItemList
         packets.push(item_list(data, st, now_ms).to_bytes());
         packets.push(quest_item_list(data, st, now_ms).to_bytes());
-        // ExGetBookMarkInfoPacket. NOTE: the bookmarks (`character_tpbookmark`) are not loaded.
-        packets.push(
-            ExGetBookMarkInfoPacket {
-                slot: data.profile.bookmark_slot,
-                bookmarks: Vec::new(),
-            }
-            .to_bytes(),
-        );
+        // ExGetBookMarkInfoPacket (the bookmarks of `character_tpbookmark`, `bookmarks.rs`)
+        packets.push(self.bookmark_info_packet(id).to_bytes());
         packets.push(shortcut_init(data, st).to_bytes());
         packets.push(ExBasicActionList::default_list().to_bytes());
         // HennaInfo, then QuestList: not loaded (no quest system yet).
@@ -950,7 +953,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         } else {
             data.profile.title_color
         },
-        cursed_weapon_level: 0,
+        cursed_weapon_level: world.cursed_weapon_level_of(core.object_id),
         transformation_display_id: view.transformation_display_id(),
         attack_element: i16::from(attack_element),
         attack_element_value: view.attack_element_value(attack_element) as i16,

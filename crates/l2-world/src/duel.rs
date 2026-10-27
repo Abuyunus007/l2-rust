@@ -188,6 +188,11 @@ impl World {
         self.duel.players.get(&id).is_some_and(|p| p.in_duel)
     }
 
+    /// Java `Player._startingDuel`.
+    pub(crate) fn is_starting_duel(&self, id: ObjectId) -> bool {
+        self.duel.players.get(&id).is_some_and(|p| p.starting)
+    }
+
     /// Java `Player.getDuelId()`: 0 when not in a duel.
     pub fn duel_id_of(&self, id: ObjectId) -> i32 {
         self.duel.players.get(&id).map_or(0, |p| p.duel_id)
@@ -272,7 +277,8 @@ impl World {
             C1CannotDuelBecauseC1IsAlreadyEngagedInADuel,
             C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture,
             C1CannotDuelBecauseC1IsCurrentlyEngagedInBattle, C1CannotDuelBecauseC1IsCurrentlyFishing,
-            C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
+            C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider,
+            C1CannotDuelBecauseC1IsInAChaoticState, C1CannotDuelBecauseC1SHpOrMpIsBelow50,
             C1CannotMakeAChallengeToADuelBecauseC1IsCurrentlyInADuelProhibitedAreaPeacefulZoneSevenSignsZoneNearWaterRestartProhibitedArea as InProhibitedArea,
             ThereIsNoOpponentToReceiveYourChallengeForADuel,
         };
@@ -298,7 +304,9 @@ impl World {
             return Err(C1CannotDuelBecauseC1IsAlreadyEngagedInADuel);
         }
         // M8: `_inOlympiadMode` (C1_CANNOT_DUEL_BECAUSE_C1_IS_PARTICIPATING_IN_THE_OLYMPIAD).
-        // M8: `isCursedWeaponEquipped()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_IN_A_CHAOTIC_STATE).
+        if self.is_cursed_weapon_equipped(id) {
+            return Err(C1CannotDuelBecauseC1IsInAChaoticState);
+        }
         if self.is_in_store_mode(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture);
         }

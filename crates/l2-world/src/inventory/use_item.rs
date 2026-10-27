@@ -135,8 +135,10 @@ impl crate::world::World {
             // `isCastingSimultaneouslyNow()` are false until then), which sends
             // YOU_CANNOT_CHANGE_WEAPONS_DURING_AN_ATTACK + ActionFailed here.
 
-            // Don't allow to put formal wear while a cursed weapon is equipped: no cursed weapons.
-            let _ = FORMAL_WEAR_ID;
+            // Don't allow to put formal wear while a cursed weapon is equipped.
+            if self.is_cursed_weapon_equipped(id) && item.item_id == FORMAL_WEAR_ID {
+                return;
+            }
             // Equip or unEquip: the combat flag is worn by `FortSiegeManager`, never by the
             // player (no message), and nothing is worn while a flag is (M7-FORT-01).
             if crate::world::World::is_combat_flag_item(item.item_id) || self.is_combat_flag_equipped(id) {
@@ -162,6 +164,10 @@ impl crate::world::World {
                     }
                     if self.is_disarmed(id) {
                         self.send(id, &cannot_equip);
+                        return;
+                    }
+                    // Don't allow weapon/shield equipment if a cursed weapon is equipped.
+                    if self.is_cursed_weapon_equipped(id) {
                         return;
                     }
 

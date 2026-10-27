@@ -115,7 +115,9 @@ impl World {
         if !self.players.contains_key(&store) {
             return;
         }
-        // `isCursedWeaponEquipped()`: cursed weapons are not ported.
+        if self.is_cursed_weapon_equipped(id) {
+            return;
+        }
         if !self.store_in_reach(id, store) {
             return;
         }
@@ -468,7 +470,9 @@ impl World {
         if self.private_store_type(store) != PrivateStoreType::Buy {
             return;
         }
-        // `isCursedWeaponEquipped()`: cursed weapons are not ported.
+        if self.is_cursed_weapon_equipped(id) {
+            return;
+        }
         if !self.allows_transaction(id) {
             self.send_message(id, "Transactions are disabled for your Access Level.");
             self.send(id, &ActionFailed);

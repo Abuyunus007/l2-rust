@@ -64,6 +64,7 @@ use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
+use l2_db::{BookmarkRepository, BookmarkRow, ContactRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
     ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
@@ -73,6 +74,7 @@ use l2_db::{
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
     VariableRepository,
 };
+use l2_db::{CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::clan::{
@@ -91,6 +93,7 @@ use l2_world::territory::{
 };
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
+use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
     HennaWrite, ItemData, ItemRowOp, LsEvent, MacroData, MailCharacter, MailLoad, MailMessage, MailRefresh,
@@ -99,6 +102,7 @@ use l2_world::{
     RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
     StoredPunishment, SummonWrite,
 };
+use l2_world::{CursedLoad, CursedRow, CursedWrite};
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
@@ -318,6 +322,15 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A cursed weapon write with Java's statement (`cursed_weapons`, and the `items` and
+    /// `characters` rows of an owner who is offline, M8-CURSED-01).
+    fn store_cursed_write(
+        &mut self,
+        _write: &CursedWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// One residence read again (D-50, D-51, M7-RES-01). A store without a database has no rows.
     fn load_residence(
         &mut self,
@@ -417,6 +430,32 @@ pub trait PlayerStore: Send + 'static {
         _write: &AnnouncementWrite,
     ) -> impl Future<Output = Result<i32, PersistError>> + Send {
         async { Ok(0) }
+    }
+
+    /// A `character_tpbookmark` row change (L-04): Java `Player.teleportBookmarkAdd` / `Modify` /
+    /// `Delete`.
+    fn store_bookmark_write(
+        &mut self,
+        _write: &BookmarkWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `character_contacts` row change (L-04): Java `ContactList.add` / `remove`.
+    fn store_contact_write(
+        &mut self,
+        _write: &ContactWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `characters` row of a friend who is not in the world (Java `FriendListExtended`):
+    /// `None` when no row has the id. An `Err` leaves the friend out, like Java's empty `catch`.
+    fn load_friend_summary(
+        &mut self,
+        _char_id: i32,
+    ) -> impl Future<Output = Result<Option<FriendSummary>, PersistError>> + Send {
+        async { Ok(None) }
     }
 
     /// A `character_hennas` row change (L-01): Java `Player.addHenna` / `removeHenna`.
@@ -1019,6 +1058,37 @@ async fn run<S: PlayerStore>(
                     error!("Offline trade data could NOT be stored: {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Bookmark(write)) => {
+                // Java logs a failed bookmark statement and goes on (no retry).
+                if let Err(e) = store.store_bookmark_write(&write).await {
+                    error!("Teleport bookmark data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Contact(write)) => {
+                // Java logs a failed contact statement and goes on (no retry).
+                if let Err(e) = store.store_contact_write(&write).await {
+                    error!("Contact list data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::FriendSummariesRequest { requester, friends }) => {
+                // Not a write: a read the world asked for, answered in order with the writes
+                // before it. A friend whose read fails (or has no row) is left out.
+                let mut rows = Vec::new();
+                for friend in friends {
+                    match store.load_friend_summary(friend).await {
+                        Ok(Some(row)) => rows.push(row),
+                        Ok(None) => {}
+                        Err(e) => warn!("Could not read the character row of friend {friend}: {e}"),
+                    }
+                }
+                let answer = l2_world::WorldCommand::FriendSummariesLoaded { requester, rows };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The friend rows for {} could not be handed to the world.",
+                        requester.0
+                    );
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Henna(write)) => {
                 // Java logs a failed henna statement and goes on (no retry).
                 if let Err(e) = store.store_henna_write(&write).await {
@@ -1056,6 +1126,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on ("Unable to store manor data!").
                 if let Err(e) = store.store_manor_write(&write).await {
                     error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Cursed(write)) => {
+                // Java logs a failed statement and goes on ("Failed to save data.").
+                if let Err(e) = store.store_cursed_write(&write).await {
+                    error!("CursedWeapon: Failed to save data ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
@@ -2065,6 +2141,78 @@ pub async fn load_hall_sieges(pool: &Pool) -> HallSiegeLoad {
     load
 }
 
+fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
+    CursedWeaponRow {
+        item_id: row.item_id,
+        char_id: row.char_id,
+        player_karma: row.player_karma,
+        player_pk_kills: row.player_pk_kills,
+        nb_kills: row.nb_kills,
+        end_time: row.end_time,
+    }
+}
+
+/// Java `CursedWeaponsManager.restore()` and `controlPlayers()`, the database half (M8-CURSED-01):
+/// the rows of `cursed_weapons`, and the cleanup of a cursed weapon item a character holds
+/// without a row. Called only with `CycleDatabaseWrites` (D-53): without it the table is the
+/// Java game server's and nothing is read or written.
+///
+/// A failed read is logged like Java's and the weapons start as not in the world.
+pub async fn load_cursed(pool: &Pool, defs: &l2_data::CursedWeaponDefs) -> CursedLoad {
+    let repo = CursedWeaponRepository::new(pool.clone());
+    let rows = match repo.all().await {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Could not restore CursedWeapons data: {e}");
+            return CursedLoad::default();
+        }
+    };
+    // `controlPlayers()`: a weapon no row holds must not be in anybody's inventory. (A weapon with
+    // a row is the world's: it re-activates it, or ends it when its time is up.)
+    for def in defs.iter() {
+        if rows.iter().any(|row| row.item_id == def.item_id) {
+            continue;
+        }
+        let item_id = def.item_id;
+        let result: Result<(), l2_db::DbError> = async {
+            let Some(owner) = repo.item_owner(item_id).await? else {
+                return Ok(());
+            };
+            // A player has the cursed weapon in his inventory ...
+            info!("PROBLEM : Player {owner} owns the cursed weapon {item_id} but he shouldn't.");
+            // Delete the item.
+            if repo.delete_owner_item(owner, item_id).await? != 1 {
+                warn!("Error while deleting cursed weapon {item_id} from userId {owner}");
+            }
+            // Restore the player's old karma and pk count.
+            // NOTE(java-quirk): the weapon has no row, so its old karma and pk count are 0.
+            if repo.restore_karma(owner, 0, 0).await? != 1 {
+                warn!("Error while updating karma & pkkills for userId 0");
+            }
+            // Clean up the cursed weapons table.
+            repo.remove(item_id).await
+        }
+        .await;
+        if let Err(e) = result {
+            warn!("Could not check CursedWeapons data: {e}");
+            break;
+        }
+    }
+    CursedLoad {
+        rows: rows
+            .into_iter()
+            .map(|row| CursedRow {
+                item_id: row.item_id,
+                char_id: row.char_id,
+                player_karma: row.player_karma,
+                player_pk_kills: row.player_pk_kills,
+                nb_kills: row.nb_kills,
+                end_time: row.end_time,
+            })
+            .collect(),
+    }
+}
+
 /// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
 /// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
 /// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
@@ -2759,6 +2907,13 @@ pub fn autosave_interval(config_dir: &std::path::Path) -> Duration {
     Duration::from_millis(u64::try_from(millis).unwrap_or(1000))
 }
 
+/// [`autosave_interval`] from the loaded configuration (`manual.core.general.char_data_store_interval`,
+/// Java's `CHAR_DATA_STORE_INTERVAL` in milliseconds).
+pub fn autosave_interval_from_config(config: &l2_config::GameConfig) -> Duration {
+    let millis = i64::from(config.manual.core.general.char_data_store_interval).max(1000);
+    Duration::from_millis(u64::try_from(millis).unwrap_or(1000))
+}
+
 /// Java `Item.restoreAttributes` for the items of one owner: the augmentation and the element
 /// attributes the `item_attributes` and `item_elementals` rows give them. Java reads the two
 /// tables one item at a time; this reads them once for the owner (same rows, same order).
@@ -2896,6 +3051,8 @@ pub struct DbStore {
     shortcuts: ShortcutRepository,
     macros: MacroRepository,
     hennas: HennaRepository,
+    bookmarks: BookmarkRepository,
+    contacts: ContactRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -2914,6 +3071,7 @@ pub struct DbStore {
     territories: TerritoryRepository,
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
+    cursed: CursedWeaponRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
@@ -2940,6 +3098,8 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
+            bookmarks: BookmarkRepository::new(pool.clone()),
+            contacts: ContactRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -2956,6 +3116,7 @@ impl DbStore {
             territories: TerritoryRepository::new(pool.clone()),
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
+            cursed: CursedWeaponRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
@@ -4213,6 +4374,63 @@ impl PlayerStore for DbStore {
         }
     }
 
+    async fn store_bookmark_write(&mut self, write: &BookmarkWrite) -> Result<(), PersistError> {
+        match write {
+            BookmarkWrite::Add { char_id, bookmark } => {
+                let row = BookmarkRow {
+                    id: bookmark.id,
+                    x: bookmark.x,
+                    y: bookmark.y,
+                    z: bookmark.z,
+                    icon: bookmark.icon,
+                    tag: Some(bookmark.tag.clone()),
+                    name: bookmark.name.clone(),
+                };
+                self.bookmarks.add_bookmark(*char_id, &row).await?;
+            }
+            BookmarkWrite::Update {
+                char_id,
+                id,
+                icon,
+                tag,
+                name,
+            } => {
+                self.bookmarks
+                    .update_bookmark(*char_id, *id, *icon, Some(tag), name)
+                    .await?;
+            }
+            BookmarkWrite::Delete { char_id, id } => self.bookmarks.delete_bookmark(*char_id, *id).await?,
+        }
+        Ok(())
+    }
+
+    async fn store_contact_write(&mut self, write: &ContactWrite) -> Result<(), PersistError> {
+        match *write {
+            ContactWrite::Add { char_id, contact_id } => {
+                self.contacts.add_contact(char_id, contact_id).await?
+            }
+            ContactWrite::Remove { char_id, contact_id } => {
+                self.contacts.remove_contact(char_id, contact_id).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_friend_summary(&mut self, char_id: i32) -> Result<Option<FriendSummary>, PersistError> {
+        Ok(self
+            .friends
+            .character_summary(char_id)
+            .await?
+            .map(|row| FriendSummary {
+                object_id: char_id,
+                name: row.name,
+                // Java: `rset.getInt(2) == 1`
+                online: row.online == 1,
+                class_id: row.class_id,
+                level: row.level,
+            }))
+    }
+
     async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
         match *write {
             HennaWrite::Add {
@@ -4305,6 +4523,33 @@ impl PlayerStore for DbStore {
             FriendWrite::RemoveFriends { first, second } => friends.remove_friends(first.0, second.0).await?,
             FriendWrite::AddBlock { owner, target } => friends.add_block(owner.0, target.0).await?,
             FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
+        }
+        Ok(())
+    }
+
+    async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
+        let repo = &self.cursed;
+        match write {
+            CursedWrite::Save { item_id, row } => {
+                let row = row.as_ref().map(cursed_db_row);
+                repo.save(*item_id, row.as_ref()).await?
+            }
+            CursedWrite::Remove { item_id } => repo.remove(*item_id).await?,
+            CursedWrite::OfflineEnd {
+                player_id,
+                item_id,
+                karma,
+                pk_kills,
+            } => {
+                // Delete the item, then restore the karma. Java warns when a statement does not
+                // change exactly one row, and goes on.
+                if repo.delete_owner_item(*player_id, *item_id).await? != 1 {
+                    warn!("Error while deleting itemId {item_id} from userId {player_id}");
+                }
+                if repo.restore_karma(*player_id, *karma, *pk_kills).await? != 1 {
+                    warn!("Error while updating karma & pkkills for userId {player_id}");
+                }
+            }
         }
         Ok(())
     }
@@ -4882,6 +5127,14 @@ mod tests {
         Announcement(AnnouncementWrite),
         /// A `character_hennas` write (L-01).
         Henna(HennaWrite),
+        /// A `character_tpbookmark` write (L-04).
+        Bookmark(BookmarkWrite),
+        /// A `character_contacts` write (L-04).
+        Contact(ContactWrite),
+        /// The `characters` row read of a friend (L-04).
+        FriendSummary(i32),
+        /// A cursed weapon write (M8-CURSED-01).
+        Cursed(CursedWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -5087,6 +5340,36 @@ mod tests {
 
         async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Henna(*write));
+            Ok(())
+        }
+
+        async fn store_bookmark_write(&mut self, write: &BookmarkWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Bookmark(write.clone()));
+            Ok(())
+        }
+
+        async fn store_contact_write(&mut self, write: &ContactWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Contact(*write));
+            Ok(())
+        }
+
+        /// Friend 7 has a row, friend 8 has none, a friend below 0 cannot be read.
+        async fn load_friend_summary(&mut self, char_id: i32) -> Result<Option<FriendSummary>, PersistError> {
+            self.calls.lock().unwrap().push(Call::FriendSummary(char_id));
+            if char_id < 0 {
+                return Err(PersistError::NoSuchCharacter(char_id));
+            }
+            Ok((char_id == 7).then(|| FriendSummary {
+                object_id: 7,
+                name: "Seven".into(),
+                online: false,
+                class_id: 18,
+                level: 61,
+            }))
+        }
+
+        async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Cursed(write.clone()));
             Ok(())
         }
 
@@ -6348,6 +6631,24 @@ mod tests {
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(1));
     }
 
+    /// L-09: the same interval from the loaded configuration (`manual.core.general`).
+    #[test]
+    fn autosave_interval_from_the_loaded_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(900));
+        std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 3\n").unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(180));
+        assert_eq!(
+            autosave_interval_from_config(&config),
+            autosave_interval(dir.path())
+        );
+        std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(1));
+    }
+
     /// M7-ADMIN-10: the login server switches of the admin commands reach the link in order.
     #[tokio::test]
     async fn the_login_server_switches_become_notices() {
@@ -6429,6 +6730,42 @@ mod tests {
         assert_eq!(calls.lock().unwrap().len(), 4);
     }
 
+    /// M8-CURSED-01: the cursed weapon writes reach the store in order.
+    #[tokio::test]
+    async fn cursed_weapon_writes_are_stored_in_order() {
+        let save = CursedWrite::Save {
+            item_id: 8190,
+            row: Some(CursedRow {
+                item_id: 8190,
+                char_id: 5,
+                player_karma: 1,
+                player_pk_kills: 2,
+                nb_kills: 3,
+                end_time: 4,
+            }),
+        };
+        let offline = CursedWrite::OfflineEnd {
+            player_id: 5,
+            item_id: 8190,
+            karma: 1,
+            pk_kills: 2,
+        };
+        let remove = CursedWrite::Remove { item_id: 8190 };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Cursed(save.clone())),
+                OutboxMessage::Persist(PersistCommand::Cursed(offline.clone())),
+                OutboxMessage::Persist(PersistCommand::Cursed(remove.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls.as_slice(),
+            [Call::Cursed(save), Call::Cursed(offline), Call::Cursed(remove)]
+        );
+    }
+
     /// L-01: a drawn and a removed dye are writes of their own, in order.
     #[tokio::test]
     async fn henna_writes_are_stored_in_order() {
@@ -6452,6 +6789,100 @@ mod tests {
         )
         .await;
         assert_eq!(calls, vec![Call::Henna(add), Call::Henna(delete)]);
+    }
+
+    /// L-04: bookmark and contact writes are writes of their own, in order.
+    #[tokio::test]
+    async fn bookmark_and_contact_writes_are_stored_in_order() {
+        let bookmark = l2_world::BookmarkData {
+            id: 1,
+            x: 10,
+            y: 20,
+            z: 30,
+            icon: 2,
+            tag: "t".into(),
+            name: "Home".into(),
+        };
+        let add = BookmarkWrite::Add { char_id: 5, bookmark };
+        let update = BookmarkWrite::Update {
+            char_id: 5,
+            id: 1,
+            icon: 3,
+            tag: "u".into(),
+            name: "Castle".into(),
+        };
+        let delete = BookmarkWrite::Delete { char_id: 5, id: 1 };
+        let contact_add = ContactWrite::Add {
+            char_id: 5,
+            contact_id: 9,
+        };
+        let contact_remove = ContactWrite::Remove {
+            char_id: 5,
+            contact_id: 9,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Bookmark(add.clone())),
+                OutboxMessage::Persist(PersistCommand::Bookmark(update.clone())),
+                OutboxMessage::Persist(PersistCommand::Contact(contact_add)),
+                OutboxMessage::Persist(PersistCommand::Bookmark(delete.clone())),
+                OutboxMessage::Persist(PersistCommand::Contact(contact_remove)),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::Bookmark(add),
+                Call::Bookmark(update),
+                Call::Contact(contact_add),
+                Call::Bookmark(delete),
+                Call::Contact(contact_remove),
+            ]
+        );
+    }
+
+    /// L-04: the friend rows are read one by one and handed to the world; a friend without a row
+    /// or whose read failed is left out.
+    #[tokio::test]
+    async fn the_friend_summaries_are_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        tx.send(OutboxMessage::Persist(PersistCommand::FriendSummariesRequest {
+            requester: ObjectId(4),
+            friends: vec![7, 8, -1],
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![
+                Call::FriendSummary(7),
+                Call::FriendSummary(8),
+                Call::FriendSummary(-1)
+            ]
+        );
+        let answers: Vec<_> = world_rx.try_iter().collect();
+        assert_eq!(answers.len(), 1);
+        match &answers[0] {
+            l2_world::WorldCommand::FriendSummariesLoaded { requester, rows } => {
+                assert_eq!(*requester, ObjectId(4));
+                assert_eq!(rows.len(), 1);
+                assert_eq!((rows[0].object_id, rows[0].name.as_str()), (7, "Seven"));
+            }
+            other => panic!("{other:?}"),
+        }
     }
 
     /// M7-ADMIN-10: a petition feedback is a write of its own.

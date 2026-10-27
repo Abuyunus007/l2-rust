@@ -707,6 +707,10 @@ impl ClientSession {
         if !self.can_select_character(ctl).await {
             return;
         }
+        // Java: `SecondaryAuthData.isEnabled() && !isAuthed()` opens the password dialog.
+        if self.secondary_blocks_select(ctl) {
+            return;
+        }
         let Some(key) = self.session_key else {
             return;
         };
@@ -717,7 +721,7 @@ impl ClientSession {
         else {
             return;
         };
-        // NOTE: not ported yet because their systems do not exist: SecondaryAuth, a character that
+        // NOTE: not ported yet because their systems do not exist: a character that
         // is already in the world (offline traders), dual-box limits and the faction balance. The
         // RESTORE_LOCATION variable is applied by the loader. The "Banned?" check of the
         // punishment manager (character, account, IP) is the world's, at enter world

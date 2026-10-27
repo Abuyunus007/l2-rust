@@ -101,7 +101,11 @@ impl World {
             self.party_plain_message(requestor, SystemMessageId::YouHaveInvitedTheWrongTarget);
             return;
         }
-        // Cursed weapons, jail (`PunishmentManager`) and the olympiad rule: not modelled.
+        if self.is_cursed_weapon_equipped(target) || self.is_cursed_weapon_equipped(requestor) {
+            self.send(requestor, &SystemMessage::new(SystemMessageId::InvalidTarget));
+            return;
+        }
+        // Jail (`PunishmentManager`) and the olympiad rule: not modelled.
         if self.is_processing_request(requestor) {
             self.party_plain_message(requestor, SystemMessageId::WaitingForAnotherReply);
             return;

@@ -153,6 +153,8 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
+    pub(crate) cursed: crate::cursed::CursedWorld,
     /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
     pub(crate) walking: crate::walking::WalkingWorld,
     /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
@@ -235,6 +237,7 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
@@ -420,6 +423,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::FriendSummariesLoaded { requester, rows } => {
+                self.on_friend_summaries_loaded(requester, rows)
+            }
             WorldCommand::AnnouncementStored { ticket, result } => {
                 self.on_announcement_stored(ticket, result)
             }
@@ -428,6 +434,12 @@ impl World {
                 path,
                 result,
             } => self.on_html_reloaded(requester, path, result),
+            WorldCommand::HtmlFileLoaded {
+                requester,
+                path,
+                content,
+            } => self.on_html_file_loaded(requester, &path, content),
+            WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
@@ -451,6 +463,8 @@ impl World {
                 self.manor_shutdown();
                 // Java Shutdown: "Save Seven Signs data before closing." (M8-SS-01).
                 self.seven_signs_shutdown();
+                // Java Shutdown: "Save Cursed Weapons data before closing."
+                self.save_cursed_weapons();
                 self.stopped = true;
                 done();
             }
@@ -660,6 +674,12 @@ impl World {
             ClientInput::Store(input) => self.on_store_input(id, input),
             // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
+            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, ... (L-04)
+            ClientInput::Bookmark(input) => self.on_bookmark_input(id, input),
+            // Java: RequestExShowContactList, RequestExAddContactToContactList, ... (L-04)
+            ClientInput::Contacts(input) => self.on_contacts_input(id, input),
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
+            ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -925,6 +945,7 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks

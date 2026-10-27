@@ -34,15 +34,15 @@ pub struct OlympiadConfig {
     pub olympiad_teams: i32,
     /// Key: `OlympiadRegistrationDisplayNumber`, default 100.
     pub olympiad_reg_display: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[][]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.olympiad.olympiad_classed_reward` (Java type `int[][]`); the unit type keeps this field from being used by mistake.
     /// Java (line 105): `OLYMPIAD_CLASSED_REWARD = parseItemsList(config.getString("OlympiadClassedReward", "13722,50"));`
     /// Key: `OlympiadClassedReward`, Java default `"13722,50"` (before the Java post-processing).
     pub olympiad_classed_reward: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[][]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.olympiad.olympiad_nonclassed_reward` (Java type `int[][]`); the unit type keeps this field from being used by mistake.
     /// Java (line 106): `OLYMPIAD_NONCLASSED_REWARD = parseItemsList(config.getString("OlympiadNonClassedReward", "13722,40"));`
     /// Key: `OlympiadNonClassedReward`, Java default `"13722,40"` (before the Java post-processing).
     pub olympiad_nonclassed_reward: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[][]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.olympiad.olympiad_team_reward` (Java type `int[][]`); the unit type keeps this field from being used by mistake.
     /// Java (line 107): `OLYMPIAD_TEAM_REWARD = parseItemsList(config.getString("OlympiadTeamReward", "13722,85"));`
     /// Key: `OlympiadTeamReward`, Java default `"13722,85"` (before the Java post-processing).
     pub olympiad_team_reward: (),
@@ -84,7 +84,7 @@ pub struct OlympiadConfig {
     pub olympiad_show_monthly_winners: bool,
     /// Key: `OlympiadAnnounceGames`, default true.
     pub olympiad_announce_games: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.olympiad.list_oly_restricted_items` (Java type `Set<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 127): `final String olyRestrictedItems = config.getString("OlympiadRestrictedItems", "").trim();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `OlympiadRestrictedItems`, Java default `""` (before the Java post-processing).
@@ -101,7 +101,7 @@ pub struct OlympiadConfig {
     pub olympiad_period: String,
     /// Key: `OlympiadPeriodMultiplier`, default 1.
     pub olympiad_period_multiplier: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.olympiad.olympiad_competition_days` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 147): `OLYMPIAD_COMPETITION_DAYS = new ArrayList<>();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `OlympiadCompetitionDays`, Java default `"1,2,3,4,5,6,7"` (before the Java post-processing).
