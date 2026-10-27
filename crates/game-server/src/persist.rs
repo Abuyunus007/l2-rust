@@ -372,9 +372,7 @@ pub trait PlayerStore: Send + 'static {
             OlympiadRereadRequest::ClassLeaderBoard { .. } => OlympiadRereadRows::Names(Vec::new()),
             OlympiadRereadRequest::LastPoints { .. } => OlympiadRereadRows::Points(0),
             OlympiadRereadRequest::UnclaimedPasses { .. } => OlympiadRereadRows::Passes(None),
-            OlympiadRereadRequest::Heroes { .. } => {
-                OlympiadRereadRows::Heroes(Box::new(l2_world::HeroLoad::default()))
-            }
+            OlympiadRereadRequest::Heroes { .. } => OlympiadRereadRows::Heroes(Box::default()),
         };
         async move { Ok(rows) }
     }
@@ -2636,9 +2634,9 @@ async fn read_heroes(
         for f in repo.fights(char_id, before).await? {
             // `CharInfoTable.getNameById` of both fighters.
             for id in [f.char_one_id, f.char_two_id] {
-                if !names.contains_key(&id) {
+                if let std::collections::hash_map::Entry::Vacant(e) = names.entry(id) {
                     let name = repo.char_name(id).await?;
-                    names.insert(id, name);
+                    e.insert(name);
                 }
             }
             fights.push(l2_world::HeroFightRow {

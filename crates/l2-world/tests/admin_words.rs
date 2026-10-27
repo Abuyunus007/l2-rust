@@ -178,8 +178,7 @@ const LEFT_OUT: &[&str] = &[
     // edit_char
     // change access level and repair
     // admin page flags and configuration
-    // M8: heroes (M8-HERO-01; the Olympiad words came with M8-ADMIN-07, `tests/admin_m8.rs`)
-    "sethero", "givehero", // the coliseum doors are not in the list of AdminDoorControl
+    // the coliseum doors are not in the list of AdminDoorControl
     "open1", "close1",
 ];
 

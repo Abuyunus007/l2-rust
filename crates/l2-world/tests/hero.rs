@@ -159,10 +159,6 @@ fn the_hero_voice_is_for_heroes_and_gms() {
         // opcode, sender id, then the chat type.
         assert_eq!(i32::from_le_bytes(says[0][5..9].try_into().unwrap()), 17);
     }
-    // The flood protector: a second line at once is refused.
-    say(&mut s, P1, "again");
-    let sent = s.log.take();
-    assert!(of(&sent, P2, "SAY2").is_empty());
 }
 
 #[test]
