@@ -165,7 +165,10 @@ impl World {
         };
         self.set_target(id, None);
         let (x, y, z) = state.last_loc;
-        self.tele_to_location(id, TeleportTarget::at(x, y, z));
+        // `teleToLocation(_lastLoc, false)`: the `Location` keeps its instance id 0, so an
+        // olympiad observer leaves the stadium's instance too.
+        // NOTE(java-quirk): `_olympiadGameId` stays set after this way out.
+        self.tele_to_location(id, TeleportTarget::at(x, y, z).with_instance(0));
         if let Some(state) = self.player_olympiad_mut(id) {
             state.last_loc = (0, 0, 0);
         }
