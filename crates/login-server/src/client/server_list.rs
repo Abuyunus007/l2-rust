@@ -216,13 +216,33 @@ fn entry_ip(address: Option<&str>) -> [u8; 4] {
             let o = v6.octets();
             [o[0], o[1], o[2], o[3]]
         }
-        Err(_) => {
-            // TODO(M1-LS-04): Java resolves host names here (DNS). Resolve them when the game
-            // server registers (async) and keep the IP in the host list.
-            warn!("ServerList: cannot use '{text}' as a game server address, sending {LOOPBACK:?}.");
-            LOOPBACK
+        Err(_) => match resolve_host(text) {
+            Some(ip) => ip,
+            None => {
+                warn!("ServerList: cannot use '{text}' as a game server address, sending {LOOPBACK:?}.");
+                LOOPBACK
+            }
+        },
+    }
+}
+
+/// Java `InetAddress.getByName(host)` for a game server host name: the first IPv4 address of the
+/// name, else the first address cut to 4 bytes (the same IPv6 quirk as [`entry_ip`]). `None` when
+/// the name does not resolve.
+// NOTE(java-quirk): Java resolves the name for every server list it writes, and so does this.
+// The lookup blocks like Java's call does; a name that never answers holds the list back.
+fn resolve_host(host: &str) -> Option<[u8; 4]> {
+    use std::net::ToSocketAddrs;
+    let addresses = (host, 0).to_socket_addrs().ok()?;
+    let mut first_v6 = None;
+    for ip in addresses.map(|a| a.ip().to_canonical()) {
+        match ip {
+            IpAddr::V4(v4) => return Some(v4.octets()),
+            IpAddr::V6(v6) if first_v6.is_none() => first_v6 = Some(v6.octets()),
+            IpAddr::V6(_) => {}
         }
     }
+    first_v6.map(|o| [o[0], o[1], o[2], o[3]])
 }
 
 /// Java: the `ServerList` constructor and `writeImpl`, as a packet struct.
@@ -450,10 +470,24 @@ mod tests {
         let mut none = snapshot(1, ServerStatus::Normal);
         none.addresses.clear();
         let mut bad = snapshot(2, ServerStatus::Normal);
-        bad.addresses = vec![GameServerAddress::new("0.0.0.0/0", "no.such.host").unwrap()];
+        // A name no resolver answers with an address: some networks hijack `.host` lookups, so
+        // the name is not a valid host name at all (a space), which never reaches DNS.
+        bad.addresses = vec![GameServerAddress::new("0.0.0.0/0", "no such host").unwrap()];
         let list = build(&[none, bad], &client(0), &CharacterState::default());
         assert_eq!(list.servers[0].ip, [127, 0, 0, 1]);
         assert_eq!(list.servers[1].ip, [127, 0, 0, 1]);
+    }
+
+    #[test]
+    fn a_host_name_is_resolved_like_java_get_by_name() {
+        // Java: `InetAddress.getByName("localhost")` is the loopback address (IPv4 first).
+        assert_eq!(entry_ip(Some("localhost")), [127, 0, 0, 1]);
+        assert_eq!(entry_ip(Some("203.0.113.9")), [203, 0, 113, 9]);
+        assert_eq!(resolve_host("localhost"), Some([127, 0, 0, 1]));
+        let mut named = snapshot(3, ServerStatus::Normal);
+        named.addresses = vec![GameServerAddress::new("0.0.0.0/0", "localhost").unwrap()];
+        let list = build(&[named], &client(0), &CharacterState::default());
+        assert_eq!(list.servers[0].ip, [127, 0, 0, 1]);
     }
 
     #[test]
