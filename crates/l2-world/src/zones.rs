@@ -30,7 +30,7 @@
 // - `NoRestartZone.onPlayerLoginInside`: the town teleport of a long absence: needs
 //   `characters.lastAccess`; the login hook is not called
 // - `isAffected`: the `affectedClassType` check (needs the class list)
-// - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone
+// - `updatePvPStatus` after a siege zone
 //
 // `ClanHallZone` and `SiegableHallZone` set the `CLAN_HALL` flag and show the hall's decorations
 // (`AgitDecoInfo`, M7-RES-01, `residence/clan_hall.rs`).
@@ -725,14 +725,15 @@ impl World {
             return;
         };
         let zones = &player.zones;
-        // NOTE(unported): the Seven Signs dungeon icon (`_isIn7sDungeon`) comes between PvP and
-        // peace; the flag is not loaded.
         let code = if zones.is_inside(ZoneId::Altered) {
             compass_zone::ALTEREDZONE
         } else if zones.is_inside(ZoneId::Siege) {
             compass_zone::SIEGEWARZONE2
         } else if zones.is_inside(ZoneId::Pvp) {
             compass_zone::PVPZONE
+        } else if player.data.profile.in_7s_dungeon {
+            // `_isIn7sDungeon` (M8-SS-01).
+            compass_zone::SEVENSIGNSZONE
         } else if zones.is_inside(ZoneId::Peace) || zones.is_inside(ZoneId::NoPvp) {
             compass_zone::PEACEZONE
         } else {

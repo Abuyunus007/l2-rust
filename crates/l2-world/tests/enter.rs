@@ -319,6 +319,8 @@ fn entering_sends_the_enter_world_packets_in_java_order() {
             "EX_STORAGE_MAX_COUNT",
             "L2_FRIEND_LIST",
             "SYSTEM_MESSAGE",
+            // `SevenSigns.sendCurrentPeriodMsg` (M8-SS-01).
+            "SYSTEM_MESSAGE",
             "SKILL_COOL_TIME",
             "EX_VOTE_SYSTEM_INFO",
             "EX_RECEIVE_SHOW_POST_FRIEND",
@@ -351,7 +353,7 @@ fn nevit_off_leaves_out_its_packets() {
         !list.iter().any(|n| n.contains("VOTE") || n.contains("NAVIT")),
         "{list:?}"
     );
-    assert_eq!(list.len(), 21);
+    assert_eq!(list.len(), 22);
 }
 
 #[test]
@@ -1093,6 +1095,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
                 Out::Persist(PersistCommand::Cursed(_)) => "cursed",
                 Out::Persist(PersistCommand::Vehicle(_)) => "vehicle",
+                Out::Persist(
+                    PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },
+                ) => "seven signs",
                 Out::Persist(
                     PersistCommand::Announcement(_)
                     | PersistCommand::PetitionFeedback { .. }

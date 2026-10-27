@@ -98,6 +98,7 @@ pub struct DbPlayerLoader {
     residences: l2_db::ResidenceRepository,
     messages: MessageRepository,
     recipes: l2_db::RecipeRepository,
+    seven_signs: l2_db::SevenSignsRepository,
     instance_times: l2_db::InstanceTimeRepository,
 }
 
@@ -123,6 +124,7 @@ impl DbPlayerLoader {
             residences: l2_db::ResidenceRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
             recipes: l2_db::RecipeRepository::new(pool.clone()),
+            seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
             instance_times: l2_db::InstanceTimeRepository::new(pool),
         }
     }
@@ -427,6 +429,20 @@ impl DbPlayerLoader {
             Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
             Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
         }
+        // The character's Seven Signs row and the status row (M8-SS-01, D-50, D-53: the Java game
+        // server runs the cycle and writes these rows). A failed read leaves the world's copies.
+        match (
+            self.seven_signs.load_player(char_id).await,
+            self.seven_signs.load_status().await,
+        ) {
+            (Ok(player), Ok(status)) => {
+                data.profile.seven_signs_refresh = Some(Box::new(l2_world::sevensigns::SevenSignsRefresh {
+                    player: player.map(crate::persist::signs_player_of),
+                    status: status.map(crate::persist::seven_signs_status_of),
+                }));
+            }
+            (Err(e), _) | (_, Err(e)) => warn!("Could not read the Seven Signs data of {}: {e}", data.name),
+        }
         apply_restore_location(&mut data);
         Ok(data)
     }
@@ -632,6 +648,8 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             // Java `setPcCafePoints(rset.getInt("pccafe_points"))`; the world applies the cap at
             // enter world (`pc_cafe_on_enter`).
             pccafe_points: row.pccafe_points,
+            // Java `setIn7sDungeon(rset.getInt("isin7sdungeon") == 1)` (M8-SS-01).
+            in_7s_dungeon: row.isin7sdungeon == 1,
             bookmark_slot: i32::from(row.bookmarkslot),
             death_penalty_level: i32::from(row.death_penalty_level),
             // Java `setLastAccess(rset.getLong("lastAccess"))`
@@ -1601,6 +1619,8 @@ impl ClientSession {
                 ClientInput::Leftover(LeftoverInput::SaveInventoryOrder(p.order))
             }
             ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
+            // Java: RequestSSQStatus (M8-SS-01)
+            ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
             ClientPacket::RequestRecordInfo(_) => ClientInput::Leftover(LeftoverInput::RecordInfo),
             ClientPacket::StartRotating(p) => ClientInput::Leftover(LeftoverInput::StartRotating {
                 degree: p.degree,

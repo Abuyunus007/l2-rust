@@ -140,9 +140,19 @@ impl StdFunc {
             },
             // "Should not apply armor set bonus to summons."
             StdFunc::ArmorSet(stat) => init + f64::from(view.armor_set_bonus(stat)),
-            // Seven Signs is not modelled, so no cabal owns the Seal of Strife and Java returns
-            // the value unchanged.
-            StdFunc::GatesPDefMod | StdFunc::GatesMDefMod => init,
+            // `FuncGatesPDefMod` / `FuncGatesMDefMod`: the cabal that owns the Seal of Strife
+            // (M8-SS-01).
+            StdFunc::GatesPDefMod | StdFunc::GatesMDefMod => {
+                let settings = view.settings();
+                let p_def = self == StdFunc::GatesPDefMod;
+                match view.world().ss_seal_owner(crate::sevensigns::SEAL_STRIFE) {
+                    crate::sevensigns::CABAL_DAWN if p_def => init * settings.dawn_gates_pdef_mult,
+                    crate::sevensigns::CABAL_DAWN => init * settings.dawn_gates_mdef_mult,
+                    crate::sevensigns::CABAL_DUSK if p_def => init * settings.dusk_gates_pdef_mult,
+                    crate::sevensigns::CABAL_DUSK => init * settings.dusk_gates_mdef_mult,
+                    _ => init,
+                }
+            }
         }
     }
 }

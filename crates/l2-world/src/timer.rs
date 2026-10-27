@@ -182,6 +182,9 @@ pub enum TimerKind {
     Walking(crate::walking::WalkingTimer),
     /// The `.gotolove` wait of a married player, see `wedding.rs`.
     Wedding(crate::wedding::WeddingTimer),
+    /// The period change, the global save and the auto spawns of the Seven Signs, see
+    /// `sevensigns/`.
+    SevenSigns(crate::sevensigns::SevenSignsTimer),
 }
 
 #[derive(Debug, Default)]

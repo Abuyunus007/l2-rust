@@ -277,8 +277,8 @@ fn show_siege_page(world: &mut World, gm: ObjectId, name: &str) {
 }
 
 /// `showSiegeTimePage`: the siege date and the links of the next Saturday and Sunday.
-// M8: `SevenSigns.isDateInSealValidPeriod(newDay)` moves the days a week on outside the seal
-// validation period; until the Seven Signs exist the period is valid.
+// `SevenSigns.isDateInSealValidPeriod(newDay)` moves the days a week on outside the seal
+// validation period (M8-SS-01).
 fn show_siege_time_page(world: &mut World, gm: ObjectId, castle: CastleId) {
     let Some((name, siege_date)) = world.castle(castle).map(|c| (c.name.clone(), c.siege_date)) else {
         return;
@@ -293,13 +293,21 @@ fn show_siege_time_page(world: &mut World, gm: ObjectId, castle: CastleId) {
     let local_day = (now + world.siege_offset_at(now)).div_euclid(DAY_MS);
     // 0 = Sunday ... 6 = Saturday.
     let weekday = (local_day + 4).rem_euclid(7);
+    // `newDay`: today (a Sunday) or the Saturday of the week, at the time of now.
+    let mut new_day = if weekday == 0 {
+        local_day
+    } else {
+        local_day + (6 - weekday)
+    };
+    if !world.ss_is_date_in_seal_valid_period(now + (new_day - local_day) * DAY_MS, now) {
+        new_day += 7;
+    }
     let (saturday, sunday) = if weekday == 0 {
-        // `isSunday`: the Sunday is today, the Saturday 13 days later.
-        (local_day + 13, local_day)
+        // `isSunday`: the Sunday is `newDay`, the Saturday 13 days later.
+        (new_day + 13, new_day)
     } else {
         // `set(DAY_OF_WEEK, SATURDAY)`, the Sunday after it.
-        let saturday = local_day + (6 - weekday);
-        (saturday, saturday + 1)
+        (new_day, new_day + 1)
     };
     let link = |day: i64| day_of_year(day).to_string();
     // `get(MONTH) + "/" + get(DAY_OF_MONTH)`: the month counts from 0.

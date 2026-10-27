@@ -220,6 +220,12 @@ pub enum PersistCommand {
     },
     /// A write of `mods_wedding` with Java's statement (`Couple`, M8-MISC-01, see `wedding.rs`).
     Wedding(crate::wedding::WeddingWrite),
+    /// A `seven_signs` / `seven_signs_status` write with Java's statement (M8-SS-01, see
+    /// `sevensigns/`). The world sends the global ones only with `CycleDatabaseWrites` (D-53).
+    SevenSigns(crate::sevensigns::SevenSignsWrite),
+    /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
+    /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
+    SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

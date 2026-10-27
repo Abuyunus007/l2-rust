@@ -335,6 +335,13 @@ impl World {
 
     /// Java `Npc.onBypassFeedback(player, command)` with the override of the NPC's class.
     pub(crate) fn npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
+        // Java: DawnPriest, DuskPriest, SignsPriest and DungeonGatekeeper.onBypassFeedback
+        // (M8-SS-01, `sevensigns/priest.rs`, `sevensigns/gatekeeper.rs`).
+        if self.ss_priest_bypass_feedback(npc, player, command)
+            || self.ss_dungeon_gatekeeper_bypass(npc, player, command)
+        {
+            return;
+        }
         let npc_type = self
             .npcs
             .get(&npc)

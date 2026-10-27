@@ -460,6 +460,28 @@ pub fn siege_database_writes(config_dir: &Path) -> bool {
     on
 }
 
+/// The Seven Signs values of `Feature.ini` and `Npc.ini`, and `CycleDatabaseWrites` of
+/// `SideBySide.ini` (D-53, [`cycle_database_writes`]).
+pub fn seven_signs_settings(
+    config: &GameConfig,
+    config_dir: &Path,
+) -> l2_world::sevensigns::SevenSignsSettings {
+    let f = &config.feature;
+    l2_world::sevensigns::SevenSignsSettings {
+        cycle_database_writes: cycle_database_writes(config_dir),
+        lazy_update: f.alt_sevensigns_lazy_update,
+        max_player_contrib: f.alt_maximum_player_contrib,
+        strict: f.alt_strict_sevensigns,
+        open_catacombs: f.alt_sevensigns_open_catacumbs,
+        open_necropolis: f.alt_sevensigns_open_necropolis,
+        castle_for_dawn: f.alt_game_castle_dawn,
+        castle_for_dusk: f.alt_game_castle_dusk,
+        join_dawn_fee: f.ssq_join_dawn_adena_fee,
+        manors_agreement_id: f.ssq_manors_agreement_id,
+        announce_mammon_spawn: config.npc.announce_mammon_spawn,
+    }
+}
+
 /// `CycleDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
 /// default). Off, the global cycles of M8 (Olympiad periods and nobles, heroes, Seven Signs, boss
 /// states, item auction ends, cursed weapons) stay in this server's memory and the Java game server
@@ -785,6 +807,11 @@ impl Server {
         } else {
             l2_world::ManorLoad::default()
         };
+        // Java: SevenSigns.getInstance (section "Seven Signs": the `seven_signs` rows and the status
+        // row, read only here) and AutoSpawnHandler (`random_spawn`, read only; M8-SS-01).
+        let seven_signs_settings = seven_signs_settings(&config, &paths.config_dir);
+        let seven_signs_load = persist::load_seven_signs(&pool).await;
+        let auto_spawns = persist::load_auto_spawns(&pool).await;
         // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
         // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
         let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
@@ -980,6 +1007,12 @@ impl Server {
                     world.set_manor_settings(manor_settings);
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
+                    // Java: SevenSigns.getInstance (after the castles), then, after the spawns and
+                    // the sieges, spawnSevenSignsNPC with AutoSpawnHandler (M8-SS-01).
+                    world.set_seven_signs_settings(seven_signs_settings);
+                    world.load_seven_signs(seven_signs_load);
+                    world.load_auto_spawns(auto_spawns);
+                    world.spawn_seven_signs_npc();
                     // Java: CursedWeaponsManager (GameServer, after the items and the skills;
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);

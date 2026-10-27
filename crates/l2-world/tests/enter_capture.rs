@@ -406,6 +406,16 @@ const NOT_SENT: [&str; 10] = [
     "EX_UI_SETTING",
 ];
 
+/// The system messages of `EnterWorld` this test compares: the welcome and the Seven Signs
+/// period (`sendCurrentPeriodMsg`; the recorded server was in the seal validation period).
+fn is_enter_message(id: SystemMessageId) -> bool {
+    matches!(
+        id,
+        SystemMessageId::WelcomeToTheWorldOfLineageIi
+            | SystemMessageId::SevenSignsThisIsTheSealValidationPeriodANewQuestEventPeriodBeginsNextMonday
+    )
+}
+
 /// The names Java sent after `ENTER_WORLD`, up to its `SKILL_LIST`, without what is not sent yet.
 fn expected_names(records: &[Record]) -> Vec<String> {
     let start = records
@@ -418,9 +428,9 @@ fn expected_names(records: &[Record]) -> Vec<String> {
             continue;
         }
         if r.name == "SYSTEM_MESSAGE" {
-            // Only the welcome message; the others are the zone and Seven Signs.
+            // The welcome message and the Seven Signs period (M8-SS-01); the others are the zone's.
             let message: SystemMessage = decode(&r.raw);
-            if message.id != SystemMessageId::WelcomeToTheWorldOfLineageIi {
+            if !is_enter_message(message.id) {
                 continue;
             }
         }
@@ -476,10 +486,8 @@ fn the_world_sends_what_java_sent_for_the_recorded_character() {
         let nth = seen.entry(name.clone()).or_insert(0);
         let mut java = s2c(&records, &name);
         if name == "SYSTEM_MESSAGE" {
-            // The recording has more of them (zone, Seven Signs); ours is the welcome message.
-            java.retain(|r| {
-                decode::<SystemMessage>(&r.raw).id == SystemMessageId::WelcomeToTheWorldOfLineageIi
-            });
+            // The recording has more of them (the zone's); ours are the welcome and the period.
+            java.retain(|r| is_enter_message(decode::<SystemMessage>(&r.raw).id));
         }
         let java = java[(*nth).min(java.len() - 1)];
         *nth += 1;

@@ -36,8 +36,6 @@ use l2_data::stats::AbnormalType;
 pub const UI_KEY_MAPPING: &str = "UI_KEY_MAPPING";
 /// Java `ShowMiniMap(1665)`: the id of the map `RequestShowMiniMap` shows.
 pub const MINI_MAP_ID: i32 = 1665;
-/// `SevenSigns.getInstance().getCurrentPeriod()` is not modelled (see `inventory/handlers/windows.rs`).
-const SEVEN_SIGNS_PERIOD: u8 = 0;
 const LOC_INVENTORY: &str = "INVENTORY";
 
 /// The configuration values these packets read. `Default` is Java's default of each key.
@@ -212,7 +210,8 @@ impl World {
             id,
             &ShowMiniMap {
                 map_id: MINI_MAP_ID,
-                seven_signs_period: SEVEN_SIGNS_PERIOD,
+                // Java `SevenSigns.getInstance().getCurrentPeriod()` (M8-SS-01).
+                seven_signs_period: self.ss_current_period() as u8,
             },
         );
     }
