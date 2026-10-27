@@ -629,7 +629,12 @@ impl World {
                 self.send_system(owner, SystemMessageId::YouMayNotAttackThisTargetInAPeacefulZone);
                 return false;
             }
-            // Olympiad and siege friends: not modelled.
+            // "If Player is in Olympiad and the match isn't already start" (M8-OLY-01).
+            if self.is_in_olympiad_mode(owner) && !self.is_olympiad_start(owner) {
+                self.send(owner, &ActionFailed);
+                return false;
+            }
+            // Siege friends: not modelled.
             let is_door = self
                 .objects
                 .get(&target)
@@ -701,7 +706,12 @@ impl World {
                 return false;
             }
         }
-        // Olympiad and siege friends: not modelled.
+        // "If owner is in Olympiad and the match isn't already start" (M8-OLY-01).
+        if self.is_in_olympiad_mode(owner) && !self.is_olympiad_start(owner) {
+            self.send(owner, &ActionFailed);
+            return false;
+        }
+        // Siege friends: not modelled.
         if self.is_inside_peace_zone(owner, summon, target) {
             self.send_system(owner, SystemMessageId::YouMayNotAttackThisTargetInAPeacefulZone);
             return false;
