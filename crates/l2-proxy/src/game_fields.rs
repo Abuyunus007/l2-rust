@@ -15,6 +15,7 @@
 
 use l2_net::{Decode, PacketError, PacketReader};
 use l2_protocol_game::server::auction::ExItemAuctionInfo;
+use l2_protocol_game::server::boss::{ExCursedWeaponList, ExCursedWeaponLocation, ExGetBossRecord};
 use l2_protocol_game::server::charscreen::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, CharSelectionInfo,
     NewCharacterSuccess, ServerClose, SsqInfo,
@@ -56,6 +57,9 @@ use l2_protocol_game::server::fishing::{
 use l2_protocol_game::server::fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo};
 use l2_protocol_game::server::friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 use l2_protocol_game::server::gm_view::GmViewItemList;
+use l2_protocol_game::server::gm_windows::{
+    GmHennaInfo, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo, GmViewWarehouseWithdrawList,
+};
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
 use l2_protocol_game::server::henna::{
@@ -74,12 +78,27 @@ use l2_protocol_game::server::manor::{
     BuyListSeed, ExSendManorList, ExShowCropInfo, ExShowCropSetting, ExShowManorDefaultInfo,
     ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
 };
+use l2_protocol_game::server::minigame::{
+    ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam, ExCubeGameChangeTimeToStart,
+    ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints, ExCubeGameRemovePlayer,
+    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent,
+    ExStartScenePlayer,
+};
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};
+use l2_protocol_game::server::olympiad::{
+    ExHeroList, ExOlympiadMatchEnd, ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode,
+    ExOlympiadSpelledInfo, ExOlympiadUserInfo,
+};
 use l2_protocol_game::server::party::{
     AskJoinParty, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, JoinParty,
     PartyMemberPosition, PartyMemberVitals, PartyPetWindow, PartySmallWindowAdd, PartySmallWindowAll,
     PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartySummon,
+};
+use l2_protocol_game::server::party_room::{
+    ExAskJoinPartyRoom, ExAskModifyPartyLooting, ExClosePartyRoom, ExListPartyMatchingWaitingRoom,
+    ExManagePartyRoomMember, ExPartyRoomMember, ExRequestChangeNicknameColor, ExSetPartyLooting,
+    ListPartyWaiting, PartyRoomInfo,
 };
 use l2_protocol_game::server::pccafe::ExPcCafePointInfo;
 use l2_protocol_game::server::pledge::{
@@ -111,6 +130,7 @@ use l2_protocol_game::server::skills::{
     SkillPosition,
 };
 use l2_protocol_game::server::sound::PlaySound;
+use l2_protocol_game::server::ssq::{ExShowSeedMapInfo, SsqScore, SsqStatus, SsqStatusBody};
 use l2_protocol_game::server::store::{
     BuyStoreEntry, ExPrivateStoreSetWholeMsg, PrivateStoreListBuy, PrivateStoreListSell,
     PrivateStoreManageListBuy, PrivateStoreManageListSell, PrivateStoreMsgBuy, PrivateStoreMsgSell,
@@ -129,6 +149,12 @@ use l2_protocol_game::server::trade::{
     TradeOwnAdd, TradeStart, TradeUpdate,
 };
 use l2_protocol_game::server::userinfo::UserInfo;
+use l2_protocol_game::server::vehicle::{
+    ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip, ExGetOnAirShip,
+    ExMoveToLocationAirShip, ExMoveToLocationInAirShip, ExStopMoveInAirShip, ExValidateLocationInAirShip,
+    GetOffVehicle, GetOnVehicle, MoveToLocationInVehicle, StopMoveInVehicle, ValidateLocationInVehicle,
+    VehicleCheckLocation, VehicleDeparture, VehicleInfo, VehicleStarted,
+};
 use l2_protocol_game::server::visibility::{
     CharInfo, DeleteObject, ExSetCompassZoneCode, NpcInfo, RelationChanged, StatusUpdate,
 };
@@ -290,6 +316,27 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestSendFriendMsg(p) => object!(p => message, receiver),
         ClientPacket::RequestBlock(p) => object!(p => kind, name),
         ClientPacket::RequestChangePartyLeader(p) => object!(p => name),
+        ClientPacket::RequestPartyMatchConfig(p) => object!(p => auto, location, level),
+        ClientPacket::RequestPartyMatchList(p) => {
+            object!(p => room_id, members_max, min_level, max_level, loot, room_title)
+        }
+        ClientPacket::RequestPartyMatchDetail(p) => object!(p => room_id, unk1, unk2, unk3),
+        ClientPacket::RequestOustFromPartyRoom(p) => object!(p => char_id),
+        ClientPacket::RequestDismissPartyRoom(p) => object!(p => room_id, data2),
+        ClientPacket::RequestWithdrawPartyRoom(p) => object!(p => room_id, unk1),
+        ClientPacket::RequestAskJoinPartyRoom(p) => object!(p => name),
+        ClientPacket::AnswerJoinPartyRoom(p) => object!(p => answer),
+        ClientPacket::RequestListPartyMatchingWaitingRoom(p) => {
+            object!(p => page, min_level, max_level, mode)
+        }
+        ClientPacket::RequestExitPartyMatchingWaitingRoom(_) => json!({}),
+        ClientPacket::RequestPartyLootModification(p) => object!(p => distribution_type_id),
+        ClientPacket::AnswerPartyLootModification(p) => object!(p => answer),
+        ClientPacket::RequestGiveNickName(p) => object!(p => target, title),
+        ClientPacket::RequestChangeNicknameColor(p) => object!(p => color_num, title, item_object_id),
+        ClientPacket::RequestResetNickname(_) => json!({}),
+        ClientPacket::RequestGmList(_) => json!({}),
+        ClientPacket::RequestGmCommand(p) => object!(p => target_name, command),
         ClientPacket::RequestExAskJoinMpcc(p) => object!(p => name),
         ClientPacket::RequestExAcceptJoinMpcc(p) => object!(p => response),
         ClientPacket::RequestExOustFromMpcc(p) => object!(p => name),
@@ -511,6 +558,29 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestJoinDominionWar(p) => object!(p => territory_id, is_clan, is_joining),
         ClientPacket::RequestBidItemAuction(p) => object!(p => instance_id, bid),
         ClientPacket::RequestInfoItemAuction(p) => object!(p => instance_id),
+        ClientPacket::ObserverReturn(_)
+        | ClientPacket::RequestOlympiadMatchList(_)
+        | ClientPacket::RequestOlympiadObserverEnd(_)
+        | ClientPacket::RequestExOlympiadMatchListRefresh(_)
+        | ClientPacket::RequestSeedPhase(_)
+        | ClientPacket::RequestCursedWeaponList(_)
+        | ClientPacket::RequestCursedWeaponLocation(_) => json!({}),
+        ClientPacket::RequestWriteHeroWords(p) => object!(p => hero_words),
+        ClientPacket::RequestSsqStatus(p) => object!(p => page),
+        ClientPacket::RequestGetBossRecord(p) => object!(p => boss_id),
+        ClientPacket::RequestGetOnVehicle(p) => object!(p => boat_id, x, y, z),
+        ClientPacket::RequestGetOffVehicle(p) => object!(p => boat_id, x, y, z),
+        ClientPacket::RequestMoveToLocationInVehicle(p) => object!(
+            p => boat_id, target_x, target_y, target_z, origin_x, origin_y, origin_z
+        ),
+        ClientPacket::CannotMoveAnymoreInVehicle(p) => object!(p => boat_id, x, y, z, heading),
+        ClientPacket::RequestExCubeGameChangeTeam(p) => object!(p => arena, team),
+        ClientPacket::RequestExCubeGameReadyAnswer(p) => object!(p => arena, answer),
+        ClientPacket::EndScenePlayer(p) => object!(p => movie_id),
+        ClientPacket::MoveToLocationAirShip(p) => object!(p => command, param1, param2),
+        ClientPacket::MoveToLocationInAirShip(p) => object!(
+            p => ship_id, target_x, target_y, target_z, origin_x, origin_y, origin_z
+        ),
         ClientPacket::Unported(_) | ClientPacket::UnportedEx(_) => return None,
     })
 }
@@ -652,6 +722,33 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         }
         ServerOpcode::ExPartyPetWindowDelete => {
             decoded::<ExPartyPetWindowDelete>(&mut r, pet_window_delete_fields)
+        }
+        ServerOpcode::GmViewCharacterInfo => {
+            decoded::<GmViewCharacterInfo>(&mut r, gm_view_character_info_fields)
+        }
+        ServerOpcode::GmHennaInfo => decoded::<GmHennaInfo>(&mut r, gm_henna_info_fields),
+        ServerOpcode::GmViewSkillInfo => decoded::<GmViewSkillInfo>(&mut r, gm_view_skill_info_fields),
+        ServerOpcode::GmViewQuestInfo => decoded::<GmViewQuestInfo>(&mut r, gm_view_quest_info_fields),
+        ServerOpcode::GmViewWarehouseWithdrawList => {
+            decoded::<GmViewWarehouseWithdrawList>(&mut r, gm_view_warehouse_fields)
+        }
+        ServerOpcode::PartyRoomInfo => decoded::<PartyRoomInfo>(&mut r, party_room_info_fields),
+        ServerOpcode::ListPartyWaiting => decoded::<ListPartyWaiting>(&mut r, list_party_waiting_fields),
+        ServerOpcode::ExPartyRoomMember => decoded::<ExPartyRoomMember>(&mut r, party_room_member_fields),
+        ServerOpcode::ExManagePartyRoomMember => {
+            decoded::<ExManagePartyRoomMember>(&mut r, manage_party_room_member_fields)
+        }
+        ServerOpcode::ExClosePartyRoom => decoded::<ExClosePartyRoom>(&mut r, no_fields),
+        ServerOpcode::ExAskJoinPartyRoom => decoded::<ExAskJoinPartyRoom>(&mut r, ask_join_party_room_fields),
+        ServerOpcode::ExListPartyMatchingWaitingRoom => {
+            decoded::<ExListPartyMatchingWaitingRoom>(&mut r, list_matching_waiting_room_fields)
+        }
+        ServerOpcode::ExAskModifyPartyLooting => {
+            decoded::<ExAskModifyPartyLooting>(&mut r, ask_modify_party_looting_fields)
+        }
+        ServerOpcode::ExSetPartyLooting => decoded::<ExSetPartyLooting>(&mut r, set_party_looting_fields),
+        ServerOpcode::ExRequestChangeNicknameColor => {
+            decoded::<ExRequestChangeNicknameColor>(&mut r, request_change_nickname_color_fields)
         }
         ServerOpcode::ExOpenMpcc => decoded::<ExOpenMpcc>(&mut r, no_fields),
         ServerOpcode::ExCloseMpcc => decoded::<ExCloseMpcc>(&mut r, no_fields),
@@ -1004,6 +1101,122 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetitionVote => {
             decoded::<l2_protocol_game::server::PetitionVotePacket>(&mut r, no_fields)
         }
+        // M8: Olympiad, hero, Seven Signs, boats and air ships, Cube game, boss records.
+        ServerOpcode::ExOlympiadMatchEnd => decoded::<ExOlympiadMatchEnd>(&mut r, no_fields),
+        ServerOpcode::ExOlympiadMode => decoded::<ExOlympiadMode>(&mut r, |p| object!(p => mode)),
+        ServerOpcode::ExReceiveOlympiad => receive_olympiad_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExOlympiadUserInfo => decoded::<ExOlympiadUserInfo>(
+            &mut r,
+            |p| object!(p => side, object_id, name, class_id, cur_hp, max_hp, cur_cp, max_cp),
+        ),
+        ServerOpcode::ExOlympiadSpelledInfo => decoded::<ExOlympiadSpelledInfo>(&mut r, |p| {
+            json!({
+                "player_id": p.player_id,
+                "effects": p.effects.iter().map(|e| object!(e => skill_id, level, time)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExHeroList => decoded::<ExHeroList>(&mut r, |p| {
+            json!({
+                "heroes": p.heroes.iter().map(|h| object!(
+                    h => name, class_id, clan_name, clan_crest, ally_name, ally_crest, count
+                )).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::SsqStatus => decoded::<SsqStatus>(&mut r, ssq_status_fields),
+        ServerOpcode::ExShowSeedMapInfo => decoded::<ExShowSeedMapInfo>(&mut r, |p| {
+            json!({
+                "entries": p.entries.iter().map(|e| object!(e => x, y, z, state)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::VehicleInfo => {
+            decoded::<VehicleInfo>(&mut r, |p| object!(p => object_id, x, y, z, heading))
+        }
+        ServerOpcode::VehicleDeparture => decoded::<VehicleDeparture>(
+            &mut r,
+            |p| object!(p => object_id, move_speed, rotation_speed, x, y, z),
+        ),
+        ServerOpcode::VehicleStart => decoded::<VehicleStarted>(&mut r, |p| object!(p => object_id, state)),
+        ServerOpcode::VehicleCheckLocation => {
+            decoded::<VehicleCheckLocation>(&mut r, |p| object!(p => object_id, x, y, z, heading))
+        }
+        ServerOpcode::GetOnVehicle => {
+            decoded::<GetOnVehicle>(&mut r, |p| object!(p => object_id, boat_object_id, x, y, z))
+        }
+        ServerOpcode::GetOffVehicle => {
+            decoded::<GetOffVehicle>(&mut r, |p| object!(p => object_id, boat_object_id, x, y, z))
+        }
+        ServerOpcode::MoveToLocationInVehicle => decoded::<MoveToLocationInVehicle>(
+            &mut r,
+            |p| object!(p => object_id, boat_id, destination_x, destination_y, destination_z, origin_x, origin_y, origin_z),
+        ),
+        ServerOpcode::StopMoveInVehicle => {
+            decoded::<StopMoveInVehicle>(&mut r, |p| object!(p => object_id, boat_id, x, y, z, heading))
+        }
+        ServerOpcode::ValidateLocationInVehicle => decoded::<ValidateLocationInVehicle>(
+            &mut r,
+            |p| object!(p => object_id, boat_object_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExAirshipInfo => decoded::<ExAirShipInfo>(&mut r, |p| {
+            object!(p => ship_object_id, x, y, z, heading, captain_id, move_speed, rotation_speed,
+                helm_object_id, helm_points, fuel, max_fuel)
+        }),
+        ServerOpcode::ExAirshipTeleportList => decoded::<ExAirShipTeleportList>(&mut r, |p| {
+            json!({
+                "dock_id": p.dock_id,
+                "teleports": p.teleports.iter().map(|t| object!(t => index, fuel, x, y, z)).collect::<Vec<_>>(),
+            })
+        }),
+        // Both air ship stop packets share `EX_STOP_MOVE_AIRSHIP` and five ints, so the wire cannot
+        // tell them apart; the proxy shows the player layout.
+        ServerOpcode::ExStopMoveAirship => {
+            decoded::<ExAirShipStopMove>(&mut r, |p| object!(p => air_ship_id, player_id, x, y, z))
+        }
+        ServerOpcode::ExStopMoveInAirship => decoded::<ExStopMoveInAirShip>(
+            &mut r,
+            |p| object!(p => player_id, ship_object_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExValidateLocationInAirship => decoded::<ExValidateLocationInAirShip>(
+            &mut r,
+            |p| object!(p => player_id, ship_id, x, y, z, heading),
+        ),
+        ServerOpcode::ExGetOnAirship => {
+            decoded::<ExGetOnAirShip>(&mut r, |p| object!(p => player_id, air_ship_id, x, y, z))
+        }
+        ServerOpcode::ExGetOffAirship => {
+            decoded::<ExGetOffAirShip>(&mut r, |p| object!(p => player_id, air_ship_id, x, y, z))
+        }
+        ServerOpcode::ExMoveToLocationAirship => decoded::<ExMoveToLocationAirShip>(
+            &mut r,
+            |p| object!(p => object_id, destination_x, destination_y, destination_z, x, y, z),
+        ),
+        ServerOpcode::ExMoveToLocationInAirship => decoded::<ExMoveToLocationInAirShip>(
+            &mut r,
+            |p| object!(p => object_id, air_ship_id, destination_x, destination_y, destination_z, heading),
+        ),
+        ServerOpcode::ExBlockUpSetList => block_list_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExBlockUpSetState => block_state_fields(raw.get(start..).unwrap_or_default()),
+        ServerOpcode::ExPvpMatchRecord => decoded::<ExPvpMatchRecord>(&mut r, pvp_record_fields),
+        ServerOpcode::ExPvpMatchUserDie => {
+            decoded::<ExPvpMatchUserDie>(&mut r, |p| object!(p => red_kills, blue_kills))
+        }
+        ServerOpcode::ExStartScenePlayer => decoded::<ExStartScenePlayer>(&mut r, |p| object!(p => movie_id)),
+        ServerOpcode::ExSendUiEvent => decoded::<ExSendUiEvent>(
+            &mut r,
+            |p| object!(p => object_id, hide, count_up, start_time, end_time, npc_string_id, params),
+        ),
+        ServerOpcode::ExGetBossRecord => decoded::<ExGetBossRecord>(&mut r, |p| {
+            json!({
+                "ranking": p.ranking,
+                "total_points": p.total_points,
+                "records": p.records.iter().map(|x| object!(x => boss_id, points)).collect::<Vec<_>>(),
+            })
+        }),
+        ServerOpcode::ExCursedWeaponList => decoded::<ExCursedWeaponList>(&mut r, |p| object!(p => ids)),
+        ServerOpcode::ExCursedWeaponLocation => decoded::<ExCursedWeaponLocation>(&mut r, |p| {
+            json!({
+                "locations": p.locations.iter().map(|l| object!(l => id, activated, x, y, z)).collect::<Vec<_>>(),
+            })
+        }),
         // SAY2 (`CreatureSay`) has an encoder only, and the rest have no struct yet.
         _ => return None,
     })
@@ -1335,6 +1548,135 @@ fn screen_message_fields(p: &ExShowScreenMessage) -> Value {
 
 fn login_fail_fields(p: &LoginFail) -> Value {
     object!(p => reason)
+}
+
+/// The first int of a body with several meanings (the Cube game lists and states, the Olympiad
+/// result or match list), which picks the packet. `None` when the body is shorter than that.
+fn peek_sub(body: &[u8]) -> Option<i32> {
+    PacketReader::new(body).i32().ok()
+}
+
+fn unknown_sub(sub: Option<i32>) -> Value {
+    json!({ "unknown_sub": sub })
+}
+
+fn receive_olympiad_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExOlympiadMatchList>(&mut r, |p| {
+            json!({
+                "games": p.games.iter().map(|g| object!(
+                    g => stadium_id, game_kind, state, player_1, player_2
+                )).collect::<Vec<_>>(),
+            })
+        }),
+        Some(1) => decoded::<ExOlympiadMatchResult>(&mut r, match_result_fields),
+        _ => unknown_sub(sub),
+    }
+}
+
+fn match_result_fields(p: &ExOlympiadMatchResult) -> Value {
+    json!({
+        "tie": p.tie,
+        "winner_name": p.winner_name,
+        "win_team": p.win_team,
+        "lose_team": p.lose_team,
+        "winners": p.winners.iter().map(|e| object!(
+            e => name, clan_name, clan_id, class_id, damage, current_points, diff_points
+        )).collect::<Vec<_>>(),
+        "losers": p.losers.iter().map(|e| object!(
+            e => name, clan_name, clan_id, class_id, damage, current_points, diff_points
+        )).collect::<Vec<_>>(),
+    })
+}
+
+fn block_list_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExCubeGameTeamList>(&mut r, cube_team_list_fields),
+        Some(1) => decoded::<ExCubeGameAddPlayer>(&mut r, |p| object!(p => red_team, object_id, name)),
+        Some(2) => decoded::<ExCubeGameRemovePlayer>(&mut r, |p| object!(p => red_team, object_id)),
+        Some(3) => decoded::<ExCubeGameChangeTimeToStart>(&mut r, |p| object!(p => seconds)),
+        Some(4) => decoded::<ExCubeGameRequestReady>(&mut r, no_fields),
+        Some(5) => decoded::<ExCubeGameChangeTeam>(&mut r, |p| object!(p => object_id, from_red_team)),
+        Some(-1) => decoded::<ExCubeGameCloseUi>(&mut r, no_fields),
+        _ => unknown_sub(sub),
+    }
+}
+
+fn block_state_fields(body: &[u8]) -> Value {
+    let sub = peek_sub(body);
+    let mut r = PacketReader::new(body);
+    match sub {
+        Some(0) => decoded::<ExCubeGameExtendedChangePoints>(
+            &mut r,
+            |p| object!(p => time_left, blue_points, red_points, red_team, object_id, player_points),
+        ),
+        Some(1) => decoded::<ExCubeGameEnd>(&mut r, |p| object!(p => red_team_win)),
+        Some(2) => {
+            decoded::<ExCubeGameChangePoints>(&mut r, |p| object!(p => time_left, blue_points, red_points))
+        }
+        _ => unknown_sub(sub),
+    }
+}
+
+fn cube_team_list_fields(p: &ExCubeGameTeamList) -> Value {
+    json!({
+        "room": p.room,
+        "blue": p.blue.iter().map(|c| object!(c => object_id, name)).collect::<Vec<_>>(),
+        "red": p.red.iter().map(|c| object!(c => object_id, name)).collect::<Vec<_>>(),
+    })
+}
+
+fn pvp_record_fields(p: &ExPvpMatchRecord) -> Value {
+    json!({
+        "record_type": p.record_type,
+        "winner_team": p.winner_team,
+        "blue_kills": p.blue_kills,
+        "red_kills": p.red_kills,
+        "blue": p.blue.iter().map(|m| object!(m => name, kills, deaths)).collect::<Vec<_>>(),
+        "red": p.red.iter().map(|m| object!(m => name, kills, deaths)).collect::<Vec<_>>(),
+    })
+}
+
+fn score_fields(score: &SsqScore) -> Value {
+    object!(score => stone_score, festival_score, total_score, percent)
+}
+
+fn ssq_status_fields(p: &SsqStatus) -> Value {
+    let body = match &p.body {
+        SsqStatusBody::None => json!({}),
+        SsqStatusBody::Cycle(c) => json!({
+            "cycle": c.cycle,
+            "period_message": c.period_message,
+            "deadline_message": c.deadline_message,
+            "player_cabal": c.player_cabal,
+            "player_seal": c.player_seal,
+            "stone_contrib": c.stone_contrib,
+            "adena_collect": c.adena_collect,
+            "dusk": score_fields(&c.dusk),
+            "dawn": score_fields(&c.dawn),
+        }),
+        SsqStatusBody::Festivals(list) => json!(
+            list.iter()
+                .map(|f| object!(
+                    f => level_score, dusk_score, dusk_members, dawn_score, dawn_members
+                ))
+                .collect::<Vec<_>>()
+        ),
+        SsqStatusBody::Seals(seals) => json!({
+            "retain_limit": seals.retain_limit,
+            "claim_limit": seals.claim_limit,
+            "rows": seals.rows.iter().map(|r| object!(r => seal, owner, dusk_percent, dawn_percent)).collect::<Vec<_>>(),
+        }),
+        SsqStatusBody::Predicted(predicted) => json!({
+            "winner": predicted.winner,
+            "seals": predicted.seals.iter().map(|s| object!(s => seal, owner, message)).collect::<Vec<_>>(),
+        }),
+    };
+    json!({ "page": p.page, "period": p.period, "body": body })
 }
 
 fn ssq_info_fields(p: &SsqInfo) -> Value {
@@ -1700,6 +2042,109 @@ fn pet_window_delete_fields(p: &ExPartyPetWindowDelete) -> Value {
 
 fn ask_join_mpcc_fields(p: &ExAskJoinMpcc) -> Value {
     object!(p => requestor_name)
+}
+
+fn gm_view_character_info_fields(p: &GmViewCharacterInfo) -> Value {
+    object!(
+        p => x, y, z, heading, object_id, name, race, is_female, class_id, level, exp, exp_percent, str, dex, con,
+        int, wit, men, max_hp, current_hp, max_mp, current_mp, sp, current_load, max_load, pk_kills,
+        paperdoll_object_ids, paperdoll_item_ids, paperdoll_augmentation_ids, talisman_slots, can_equip_cloak,
+        p_atk, p_atk_spd, p_def, evasion, accuracy, critical, m_atk, m_atk_spd, m_def, pvp_flag, karma, run_speed,
+        walk_speed, swim_run_speed, swim_walk_speed, fly_run_speed, fly_walk_speed, move_multiplier,
+        attack_speed_multiplier, collision_radius, collision_height, hair_style, hair_color, face, is_gm, title,
+        clan_id, clan_crest_id, ally_id, mount_type, private_store_type, has_dwarven_craft, pvp_kills,
+        recom_left, recom_have, max_cp, current_cp, running, pledge_class, noble, hero, name_color, title_color,
+        attack_element, attack_element_value, defense, fame, vitality_points
+    )
+}
+
+fn gm_henna_info_fields(p: &GmHennaInfo) -> Value {
+    object!(p => int, str, con, men, dex, wit, dye_ids)
+}
+
+fn gm_view_skill_info_fields(p: &GmViewSkillInfo) -> Value {
+    let skills: Vec<Value> = p
+        .skills
+        .iter()
+        .map(|s| object!(s => passive, display_level, display_id, disabled, enchantable))
+        .collect();
+    json!({ "player_name": p.player_name, "skills": skills })
+}
+
+fn gm_view_quest_info_fields(p: &GmViewQuestInfo) -> Value {
+    let quests: Vec<Value> = p
+        .quests
+        .iter()
+        .map(|(quest_id, cond)| json!({ "quest_id": quest_id, "cond": cond }))
+        .collect();
+    json!({ "player_name": p.player_name, "quests": quests })
+}
+
+fn gm_view_warehouse_fields(p: &GmViewWarehouseWithdrawList) -> Value {
+    let items: Vec<Value> = p.items.iter().map(item_fields).collect();
+    json!({ "owner_name": p.owner_name, "adena": p.adena, "items": items })
+}
+
+fn party_room_info_fields(p: &PartyRoomInfo) -> Value {
+    object!(p => room_id, max_members, min_level, max_level, loot_type, location, title)
+}
+
+fn list_party_waiting_fields(p: &ListPartyWaiting) -> Value {
+    let rooms: Vec<Value> = p
+        .rooms
+        .iter()
+        .map(|room| {
+            let members: Vec<Value> = room
+                .members
+                .iter()
+                .map(|(class_id, name)| json!({ "class_id": class_id, "name": name }))
+                .collect();
+            json!({
+                "room_id": room.room_id, "title": room.title, "location": room.location,
+                "min_level": room.min_level, "max_level": room.max_level,
+                "max_members": room.max_members, "owner_name": room.owner_name, "members": members,
+            })
+        })
+        .collect();
+    json!({ "rooms": rooms })
+}
+
+fn party_room_member_fields(p: &ExPartyRoomMember) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|m| object!(m => object_id, name, class_id, level, location, role))
+        .collect();
+    json!({ "mode": p.mode, "members": members })
+}
+
+fn manage_party_room_member_fields(p: &ExManagePartyRoomMember) -> Value {
+    json!({ "mode": p.mode, "member": object!(p.member => object_id, name, class_id, level, location, role) })
+}
+
+fn ask_join_party_room_fields(p: &ExAskJoinPartyRoom) -> Value {
+    object!(p => requestor_name)
+}
+
+fn list_matching_waiting_room_fields(p: &ExListPartyMatchingWaitingRoom) -> Value {
+    let members: Vec<Value> = p
+        .members
+        .iter()
+        .map(|(name, class_id, level)| json!({ "name": name, "class_id": class_id, "level": level }))
+        .collect();
+    json!({ "page": p.page, "members": members })
+}
+
+fn ask_modify_party_looting_fields(p: &ExAskModifyPartyLooting) -> Value {
+    json!({ "requestor": p.requestor, "distribution_type": p.distribution_type.id() })
+}
+
+fn request_change_nickname_color_fields(p: &ExRequestChangeNicknameColor) -> Value {
+    object!(p => item_object_id)
+}
+
+fn set_party_looting_fields(p: &ExSetPartyLooting) -> Value {
+    json!({ "result": p.result, "distribution_type": p.distribution_type.id() })
 }
 
 fn mpcc_party_info_update_fields(p: &ExMpccPartyInfoUpdate) -> Value {
@@ -2495,6 +2940,21 @@ mod tests {
         ServerOpcode::ServerClose,
         ServerOpcode::ItemList,
         ServerOpcode::GmViewItemList,
+        ServerOpcode::GmViewCharacterInfo,
+        ServerOpcode::GmHennaInfo,
+        ServerOpcode::GmViewSkillInfo,
+        ServerOpcode::GmViewQuestInfo,
+        ServerOpcode::GmViewWarehouseWithdrawList,
+        ServerOpcode::PartyRoomInfo,
+        ServerOpcode::ListPartyWaiting,
+        ServerOpcode::ExPartyRoomMember,
+        ServerOpcode::ExManagePartyRoomMember,
+        ServerOpcode::ExClosePartyRoom,
+        ServerOpcode::ExAskJoinPartyRoom,
+        ServerOpcode::ExListPartyMatchingWaitingRoom,
+        ServerOpcode::ExAskModifyPartyLooting,
+        ServerOpcode::ExSetPartyLooting,
+        ServerOpcode::ExRequestChangeNicknameColor,
         ServerOpcode::UserInfo,
         ServerOpcode::ShortCutInit,
         ServerOpcode::ShortCutRegister,
@@ -2725,6 +3185,41 @@ mod tests {
         ServerOpcode::RecipeShopManageList,
         ServerOpcode::RecipeShopMsg,
         ServerOpcode::RecipeShopSellList,
+        ServerOpcode::ExOlympiadMatchEnd,
+        ServerOpcode::ExOlympiadMode,
+        ServerOpcode::ExReceiveOlympiad,
+        ServerOpcode::ExOlympiadUserInfo,
+        ServerOpcode::ExOlympiadSpelledInfo,
+        ServerOpcode::ExHeroList,
+        ServerOpcode::SsqStatus,
+        ServerOpcode::ExShowSeedMapInfo,
+        ServerOpcode::VehicleInfo,
+        ServerOpcode::VehicleDeparture,
+        ServerOpcode::VehicleStart,
+        ServerOpcode::VehicleCheckLocation,
+        ServerOpcode::GetOnVehicle,
+        ServerOpcode::GetOffVehicle,
+        ServerOpcode::MoveToLocationInVehicle,
+        ServerOpcode::StopMoveInVehicle,
+        ServerOpcode::ValidateLocationInVehicle,
+        ServerOpcode::ExAirshipInfo,
+        ServerOpcode::ExAirshipTeleportList,
+        ServerOpcode::ExStopMoveAirship,
+        ServerOpcode::ExStopMoveInAirship,
+        ServerOpcode::ExValidateLocationInAirship,
+        ServerOpcode::ExGetOnAirship,
+        ServerOpcode::ExGetOffAirship,
+        ServerOpcode::ExMoveToLocationAirship,
+        ServerOpcode::ExMoveToLocationInAirship,
+        ServerOpcode::ExBlockUpSetList,
+        ServerOpcode::ExBlockUpSetState,
+        ServerOpcode::ExPvpMatchRecord,
+        ServerOpcode::ExPvpMatchUserDie,
+        ServerOpcode::ExStartScenePlayer,
+        ServerOpcode::ExSendUiEvent,
+        ServerOpcode::ExGetBossRecord,
+        ServerOpcode::ExCursedWeaponList,
+        ServerOpcode::ExCursedWeaponLocation,
     ];
 
     /// The ex id of a server packet the way the relay reads it.
@@ -3154,6 +3649,101 @@ mod tests {
         assert_eq!(fields["limit"], 80);
         assert_eq!(fields["items"][0]["item_id"], 57);
         assert_eq!(fields["items"][0]["count"], 100);
+    }
+
+    #[test]
+    fn party_room_and_gm_window_packets_show_their_fields() {
+        use l2_protocol_game::client::{RequestGmCommand, RequestPartyMatchList, RequestResetNickname};
+        use l2_protocol_game::server::party_room::{ListPartyWaiting, RoomMember, WaitingRoom};
+        use l2_protocol_game::server::{
+            ExPartyRoomMember, ExSetPartyLooting, GmViewQuestInfo, PartyDistributionType,
+        };
+
+        let fields = s2c_fields(
+            &ExPartyRoomMember {
+                mode: 1,
+                members: vec![RoomMember {
+                    object_id: 7,
+                    name: "Alpha".into(),
+                    class_id: 10,
+                    level: 40,
+                    location: 6,
+                    role: 1,
+                }],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["mode"], 1);
+        assert_eq!(fields["members"][0]["name"], "Alpha");
+        assert_eq!(fields["members"][0]["role"], 1);
+
+        let fields = s2c_fields(
+            &ListPartyWaiting {
+                rooms: vec![WaitingRoom {
+                    room_id: 3,
+                    title: "Cruma".into(),
+                    location: 0,
+                    min_level: 1,
+                    max_level: 80,
+                    max_members: 9,
+                    owner_name: "Alpha".into(),
+                    members: vec![(10, "Alpha".into())],
+                }],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["rooms"][0]["title"], "Cruma");
+        assert_eq!(fields["rooms"][0]["members"][0]["class_id"], 10);
+
+        let fields = s2c_fields(
+            &ExSetPartyLooting {
+                result: 1,
+                distribution_type: PartyDistributionType::ByTurn,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(
+            (fields["result"].clone(), fields["distribution_type"].clone()),
+            (json!(1), json!(3))
+        );
+
+        let fields = s2c_fields(
+            &GmViewQuestInfo {
+                player_name: "Target".into(),
+                quests: vec![],
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["player_name"], "Target");
+        assert_eq!(fields["quests"], json!([]));
+
+        let in_game = ConnectionState::InGame;
+        let fields = c2s_fields(
+            in_game,
+            &RequestPartyMatchList {
+                room_id: 0,
+                members_max: 9,
+                min_level: 1,
+                max_level: 80,
+                loot: 1,
+                room_title: "Cruma".into(),
+            }
+            .to_bytes(),
+        );
+        assert_eq!(fields["room_title"], "Cruma");
+        let fields = c2s_fields(
+            in_game,
+            &RequestGmCommand {
+                target_name: "Target".into(),
+                command: 5,
+            }
+            .to_bytes(),
+        );
+        assert_eq!(
+            (fields["target_name"].clone(), fields["command"].clone()),
+            (json!("Target"), json!(5))
+        );
+        assert_eq!(c2s_fields(in_game, &RequestResetNickname.to_bytes()), json!({}));
     }
 
     #[test]

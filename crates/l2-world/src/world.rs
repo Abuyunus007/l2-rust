@@ -155,6 +155,12 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
     pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
+    pub(crate) walking: crate::walking::WalkingWorld,
+    /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
+    pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
+    /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
+    pub(crate) wedding: crate::wedding::WeddingWorld,
 }
 
 impl World {
@@ -229,6 +235,9 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            walking: crate::walking::WalkingWorld::default(),
+            event_drops: crate::rewards::event_drop::EventDropWorld::default(),
+            wedding: crate::wedding::WeddingWorld::default(),
         }
     }
 
@@ -721,6 +730,32 @@ impl World {
             } => self.on_request_join_party(id, &name, distribution_type_id),
             ClientInput::AnswerJoinParty { response } => self.on_request_answer_join_party(id, response),
             ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
+            // Java: RequestPartyMatchConfig, RequestPartyMatchList, RequestPartyMatchDetail,
+            // RequestOustFromPartyRoom, RequestDismissPartyRoom, RequestWithdrawPartyRoom,
+            // RequestAskJoinPartyRoom, AnswerJoinPartyRoom, RequestListPartyMatchingWaitingRoom,
+            // RequestExitPartyMatchingWaitingRoom (L-03)
+            ClientInput::PartyRoom(input) => self.on_party_room_input(id, input),
+            // Java: RequestPartyLootModification, AnswerPartyLootModification
+            ClientInput::PartyLootModification { distribution_type_id } => {
+                self.on_request_party_loot_modification(id, distribution_type_id)
+            }
+            ClientInput::AnswerPartyLootModification { answer } => {
+                self.on_answer_party_loot_modification(id, answer)
+            }
+            // Java: RequestGiveNickName, RequestChangeNicknameColor, RequestResetNickname
+            ClientInput::GiveNickName { target, title } => {
+                self.on_request_give_nick_name(id, &target, &title)
+            }
+            ClientInput::ChangeNicknameColor {
+                color_num,
+                title,
+                item_object_id,
+            } => self.on_request_change_nickname_color(id, color_num, &title, item_object_id),
+            ClientInput::ResetNickname => self.on_request_reset_nickname(id),
+            // Java: RequestGmList, RequestGMCommand
+            ClientInput::GmCommand { target_name, command } => {
+                self.on_request_gm_command(id, &target_name, command)
+            }
             ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
             ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
             // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,
@@ -850,6 +885,8 @@ impl World {
             TimerKind::Control(timer) => self.on_control_timer(timer),
             // Java: Party's position broadcast task
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
+            // Java: Party.finishLootRequest(false) after 15 s
+            TimerKind::PartyLootRequest(party) => self.on_party_loot_request_timer(party),
             // Java: CommandChannelTimer.run
             TimerKind::CommandChannelTimer(raid) => self.on_command_channel_timer(raid),
             // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
@@ -891,6 +928,10 @@ impl World {
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
             // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
             TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
+            // Java: WalkingManager's start, repeat and arrival tasks
+            TimerKind::Walking(timer) => self.on_walking_timer(timer),
+            // Java: Wedding.EscapeFinalizer
+            TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
         }
     }
 

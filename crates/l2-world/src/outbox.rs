@@ -213,6 +213,8 @@ pub enum PersistCommand {
         /// `System.currentTimeMillis()`.
         time: i64,
     },
+    /// A write of `mods_wedding` with Java's statement (`Couple`, M8-MISC-01, see `wedding.rs`).
+    Wedding(crate::wedding::WeddingWrite),
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

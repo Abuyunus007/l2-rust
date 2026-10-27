@@ -80,8 +80,10 @@ pub mod trade;
 pub mod transform;
 pub mod user_command;
 mod visibility;
+pub mod walking;
 pub mod warehouse;
 pub mod water;
+pub mod wedding;
 pub mod world;
 pub mod zone_trap;
 pub mod zones;
@@ -153,7 +155,8 @@ pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use outbox::{ControlRequest, ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{
-    CommandChannelId, CommandChannelWorld, PartyExpType, PartyId, PartyMessageType, PartySettings, PartyWorld,
+    CommandChannelId, CommandChannelWorld, MatchingWorld, PartyExpType, PartyId, PartyMessageType,
+    PartyRoomInput, PartySettings, PartyWorld,
 };
 pub use pccafe::PcCafeSettings;
 pub use petition::{PetitionInput, PetitionState};

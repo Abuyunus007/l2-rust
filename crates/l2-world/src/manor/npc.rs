@@ -74,6 +74,10 @@ impl World {
         if self.symbol_maker_first_talk(npc, player, true) {
             return true;
         }
+        // The wedding priest (M8-MISC-01).
+        if self.wedding_first_talk(npc, player, true) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -97,6 +101,10 @@ impl World {
         }
         // `SymbolMaker` (L-01, `henna.rs`).
         if self.symbol_maker_first_talk(npc, player, false) {
+            return true;
+        }
+        // The wedding priest (M8-MISC-01).
+        if self.wedding_first_talk(npc, player, false) {
             return true;
         }
         if !self.is_manor_manager(npc) {
