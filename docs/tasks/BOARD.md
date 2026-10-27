@@ -383,7 +383,7 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 |---|---|---|---|---|---|
 | [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | merged |
 | [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | merged |
-| [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | ready |
+| [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | merged |
 | [M8-HERO-01](M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | ready |
 | [M8-SS-01](M8/M8-SS-01.md) | Seven Signs | opus | full | GPROTO-11 | merged |
 | [M8-FEST-01](M8/M8-FEST-01.md) | Festival of Darkness and Dimensional Rift | sonnet | full | SS-01, INST-01 | merged |
