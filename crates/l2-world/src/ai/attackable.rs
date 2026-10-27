@@ -206,6 +206,22 @@ impl World {
         self.npcs.get(&id).and_then(|n| self.npc_world.template(n.npc_id))
     }
 
+    /// Java `Creature.disableCoreAI(value)`.
+    pub(crate) fn disable_core_ai(&mut self, id: ObjectId, value: bool) {
+        if value {
+            self.npc_world.core_ai_disabled.insert(id);
+        } else {
+            self.npc_world.core_ai_disabled.remove(&id);
+        }
+    }
+
+    /// Java `Creature.isCoreAIDisabled()`: the AI does not pick targets or start fights. A
+    /// territory ward is disabled by its constructor.
+    pub(crate) fn is_core_ai_disabled(&self, id: ObjectId) -> bool {
+        self.npc_world.core_ai_disabled.contains(&id)
+            || self.npc_template(id).is_some_and(|t| t.is_type("TerritoryWard"))
+    }
+
     /// Java `Npc.getSpawn()`.
     fn npc_spawn(&self, id: ObjectId) -> Option<&NpcSpawn> {
         let index = self.npcs.get(&id)?.spawn?;
@@ -682,8 +698,8 @@ impl World {
                 self.aggro_most_hated(id)
             };
 
-            // Order to the Attackable to attack the target.
-            if let Some(hated) = hated {
+            // Order to the Attackable to attack the target (`!npc.isCoreAIDisabled()`).
+            if let Some(hated) = hated.filter(|_| !self.is_core_ai_disabled(id)) {
                 // Get the hate level of the Attackable against this Creature target contained in
                 // _aggroList.
                 let aggro = self.aggro_hating(id, hated);
@@ -937,7 +953,9 @@ impl World {
             return;
         }
 
-        // `npc.isCoreAIDisabled()` is script-only.
+        if self.is_core_ai_disabled(id) {
+            return;
+        }
 
         let Some(mut most_hate) = self.aggro_most_hated(id) else {
             self.set_intention_active(id);
@@ -1587,7 +1605,7 @@ impl World {
 
         // (`!me.isCoreAIDisabled()`: a territory ward never fights back, M7-TW-01)
         // Set the Intention to ATTACK.
-        let core_ai_disabled = self.npc_template(id).is_some_and(|t| t.is_type("TerritoryWard"));
+        let core_ai_disabled = self.is_core_ai_disabled(id);
         if !core_ai_disabled && self.intention_of(id) != Intention::Attack {
             self.set_intention_attack(id, attacker);
         } else if !core_ai_disabled && self.aggro_most_hated(id) != self.attack_target_of(id) {

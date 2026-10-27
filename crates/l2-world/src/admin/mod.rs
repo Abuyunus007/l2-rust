@@ -47,6 +47,7 @@ pub mod element;
 pub mod enchant;
 pub mod exp_sp;
 pub mod fence;
+pub mod fight_calculator;
 pub mod flags;
 pub mod forge;
 pub mod geodata;
@@ -199,6 +200,7 @@ impl Default for AdminWorld {
         scan::register(&mut handlers);
         search::register(&mut handlers);
         fence::register(&mut handlers);
+        fight_calculator::register(&mut handlers);
         flags::register(&mut handlers);
         config_page::register(&mut handlers);
         access_level::register(&mut handlers);

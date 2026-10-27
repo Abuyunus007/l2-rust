@@ -254,6 +254,18 @@ pub enum ControlRequest {
         requester: l2_util::ObjectId,
         path: Option<String>,
     },
+    /// `//loadhtml <path>`: read one html file of the datapack from the disk (Java
+    /// `HtmCache.loadFile`). The answer comes back as `WorldCommand::HtmlFileLoaded`.
+    LoadHtmlFile {
+        requester: l2_util::ObjectId,
+        path: String,
+    },
+    /// `//respawnall`, `//spawn_reload`: read the spawn files again (Java `SpawnData.load()`). The
+    /// answer comes back as `WorldCommand::SpawnsReloaded`.
+    ReloadSpawns,
+    /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
+    /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
+    StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },
 }
 
 /// Everything the world produces that is not a packet for a player.

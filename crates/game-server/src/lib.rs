@@ -990,8 +990,57 @@ impl Server {
             let (stop, acks) = (shutdown.clone(), left_acks.clone());
             let root = datapack_root.clone();
             let (lazy, check_encoding) = (!config.general.htm_cache, config.general.check_html_encoding);
+            // `//respawnall` reads the spawn files again with the same options as the start.
+            let (npcs, spawn_options, spawn_root) = {
+                let options = options_from_config(&config, &paths.config_dir);
+                (
+                    Arc::clone(&datapack.npcs),
+                    l2_data::SpawnLoadOptions {
+                        fake_players_enabled: options.fake_players_enabled,
+                        no_spawns: options.no_spawns,
+                    },
+                    // `SpawnData.addNewSpawn` writes below the server's own folder.
+                    paths.root.join("data/spawns/Others"),
+                )
+            };
             left_acks.set_control(Arc::new(move |request| match request {
                 l2_world::ControlRequest::Shutdown { restart } => stop.request(restart),
+                l2_world::ControlRequest::ReloadSpawns => {
+                    let (acks, root, npcs) = (acks.clone(), root.clone(), Arc::clone(&npcs));
+                    let options = spawn_options.clone();
+                    tokio::task::spawn_blocking(move || {
+                        let spawns = Arc::new(l2_data::SpawnData::load(&root, &npcs, &options));
+                        if !acks.send_to_world(WorldCommand::SpawnsReloaded { spawns }) {
+                            warn!("The reloaded spawns could not be handed to the world.");
+                        }
+                    });
+                }
+                l2_world::ControlRequest::StoreSpawn { spawn } => {
+                    let dir = spawn_root.clone();
+                    tokio::task::spawn_blocking(move || {
+                        match l2_data::spawn_store::add_new_spawn(&dir, &spawn) {
+                            Ok(file) => info!("SpawnData: Stored spawn in {}", file.display()),
+                            Err(error) => warn!(
+                                "SpawnData: Spawn of NPC {} could not be added to the spawn XML files: {error}",
+                                spawn.npc_id
+                            ),
+                        }
+                    });
+                }
+                l2_world::ControlRequest::LoadHtmlFile { requester, path } => {
+                    let (acks, root) = (acks.clone(), root.clone());
+                    tokio::task::spawn_blocking(move || {
+                        let content = l2_data::HtmCache::read_file(&root, &path);
+                        let answer = WorldCommand::HtmlFileLoaded {
+                            requester,
+                            path,
+                            content,
+                        };
+                        if !acks.send_to_world(answer) {
+                            warn!("The html file could not be handed to the world.");
+                        }
+                    });
+                }
                 l2_world::ControlRequest::ReloadHtml { requester, path } => {
                     let (acks, root) = (acks.clone(), root.clone());
                     tokio::task::spawn_blocking(move || {

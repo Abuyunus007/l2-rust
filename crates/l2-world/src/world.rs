@@ -415,6 +415,12 @@ impl World {
                 path,
                 result,
             } => self.on_html_reloaded(requester, path, result),
+            WorldCommand::HtmlFileLoaded {
+                requester,
+                path,
+                content,
+            } => self.on_html_file_loaded(requester, &path, content),
+            WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {

@@ -455,8 +455,7 @@ impl World {
     /// combat stance refreshed every time.
     pub fn client_start_auto_attack(&mut self, id: ObjectId) {
         // Non attackable NPCs should not get in combat.
-        // M4-AI-01: `isCoreAIDisabled()` (scripts) also keeps them out.
-        if self.is_npc(id) && !self.is_attackable_npc(id) {
+        if self.is_npc(id) && (!self.is_attackable_npc(id) || self.is_core_ai_disabled(id)) {
             return;
         }
         // Summons pass it to their owner.

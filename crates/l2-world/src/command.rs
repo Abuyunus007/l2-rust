@@ -389,6 +389,18 @@ pub enum WorldCommand {
         path: Option<String>,
         result: crate::admin::reload::HtmlReloadResult,
     },
+    /// The answer to `ControlRequest::LoadHtmlFile` (`//loadhtml`, see `admin/page.rs`): the text
+    /// of the file, `None` when there is no such html file.
+    HtmlFileLoaded {
+        requester: l2_util::ObjectId,
+        path: String,
+        content: Option<String>,
+    },
+    /// The answer to `ControlRequest::ReloadSpawns` (`//respawnall`, see `admin/spawn_admin.rs`):
+    /// the spawn files, read again.
+    SpawnsReloaded {
+        spawns: std::sync::Arc<l2_data::SpawnData>,
+    },
     /// The login server registered the game server under this name (Java
     /// `LoginServerThread._serverName`, shown by `//server_login`).
     LoginServerRegistered {
@@ -492,6 +504,16 @@ impl fmt::Debug for WorldCommand {
             } => {
                 write!(f, "HtmlReloaded({requester}, {path:?}, {result:?})")
             }
+            Self::HtmlFileLoaded {
+                requester,
+                path,
+                content,
+            } => write!(
+                f,
+                "HtmlFileLoaded({requester}, {path:?}, {})",
+                if content.is_some() { "found" } else { "missing" }
+            ),
+            Self::SpawnsReloaded { spawns } => write!(f, "SpawnsReloaded({} spawns)", spawns.len()),
             Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
             Self::SetPathRequests(_) => f.write_str("SetPathRequests"),
             Self::Shutdown { .. } => f.write_str("Shutdown"),

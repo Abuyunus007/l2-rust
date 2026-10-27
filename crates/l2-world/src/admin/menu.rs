@@ -179,7 +179,8 @@ fn admin_unban_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 /// target is shown. A target that is not a creature is the invalid target, with `main_menu.htm`.
 // NOTE(java-quirk): Java's `handleKill` calls `obj.asCreature()` on the target without a check, so
 // a command without any target is Java's NullPointerException. Champion monsters are not scaled
-// here, as the `//kill` command does not scale them either.
+// here (nobody is a champion yet), so the champion branch (`maxHp * ChampionHp + 1`) is wired but
+// not taken.
 fn admin_kill_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     if command != "admin_kill_menu" {
         return Ok(());
@@ -193,8 +194,11 @@ fn admin_kill_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         let is_player = world.is_player(target);
         if let Some(view) = world.stats(target) {
             let max_hp = f64::from(view.max_hp());
+            let settings = view.settings();
             let amount = if is_player {
                 max_hp + f64::from(view.max_cp()) + 1.0
+            } else if settings.champion_enable && view.is_champion() {
+                max_hp * f64::from(settings.champion_hp) + 1.0
             } else {
                 max_hp + 1.0
             };
