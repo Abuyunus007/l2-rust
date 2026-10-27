@@ -44,6 +44,7 @@ pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
 pub mod spawn;
+pub mod spawn_store;
 pub mod static_object;
 pub mod stats;
 pub mod teleporter;

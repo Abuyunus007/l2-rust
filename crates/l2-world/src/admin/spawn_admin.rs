@@ -4,15 +4,16 @@
 //! (`//spawn_debug_menu`, `//spawn_debug_print`, `//spawn_debug_print_menu`).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSpawn.java
 //
+// `//respawnall` and `//spawn_reload` delete every NPC and read the spawn files again: the game
+// server task reads them (`ControlRequest::ReloadSpawns`, D-15) and the world installs the new
+// spawn list when `WorldCommand::SpawnsReloaded` comes back, then spawns it like at the start.
+//
 // # Left out, with the system that brings it
-// - `//respawnall`, `//spawn_reload`: Java re-reads the spawn files (`SpawnData.load()`) and the
-//   raid boss table; the world keeps the spawns it loaded at the start and cannot read them again.
-// - `//spawn_misc`, `//spawnmisc`: the GM misc room spawns every NPC template (100000 ids) with
-//   the NPC immobilised and its AI off; those two controls are not in the world yet.
-// - `//list_pools`: the spawn groups' alive and reserved counts are not exposed by the world.
+// - `//respawnall`, `//spawn_reload` also unload and reload the scripts (D-16: a restart), and
+//   run `AutoSpawnHandler`, `RaidBossSpawnManager` and `SevenSigns.spawnSevenSignsNPC` (M8).
 // - `//instance_spawns`: instances (M8).
-// - Spawn persistence: `SpawnData.addNewSpawn` and `deleteSpawn` write the datapack's xml; the
-//   world does not write it (the same follow-up as `//spawn`).
+// - Spawn persistence: `SpawnData.deleteSpawn` (`//recall_npc` and the delete commands) does not
+//   take the spawn out of the xml; `addNewSpawn` is done (`World::store_new_spawn`).
 // - The NPC index and the monster index list the templates in id order; Java lists them in the
 //   order of its concurrent hash map.
 // - `//unspawnall` unloads and reloads the scripts (M8) and clears the spawn groups, which are
@@ -23,6 +24,8 @@ use tracing::info;
 
 use super::html::AdminHtml;
 use super::{AdminHandler, AdminHandlers, JavaException, Tokens, parse_int};
+use crate::outbox::ControlRequest;
+use crate::teleport::TeleportTarget;
 use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
@@ -39,6 +42,11 @@ pub(crate) fn register(handlers: &mut AdminHandlers) {
         ("admin_topspawncount", admin_topspawncount),
         ("admin_top_spawn_count", admin_topspawncount),
         ("admin_unspawnall", admin_unspawnall),
+        ("admin_respawnall", admin_respawnall),
+        ("admin_spawn_reload", admin_respawnall),
+        ("admin_spawn_misc", admin_spawn_misc),
+        ("admin_spawnmisc", admin_spawn_misc),
+        ("admin_list_pools", admin_list_pools),
         ("admin_spawn_debug_menu", admin_spawn_debug_menu),
         ("admin_spawn_debug_print", admin_spawn_debug_print),
         ("admin_spawn_debug_print_menu", admin_spawn_debug_print),
@@ -260,7 +268,11 @@ fn admin_circlespawn(world: &mut World, gm: ObjectId, command: &str) -> Outcome 
         let angle = (2.0 * std::f64::consts::PI * f64::from(i)) / f64::from(count);
         let x = cx + (f64::from(radius) * angle.cos()) as i32;
         let y = cy + (f64::from(radius) * angle.sin()) as i32;
-        // `stopRespawn()` when the spawn is not permanent or has no delay.
+        // `SpawnData.addNewSpawn` when permanent; `stopRespawn()` when the spawn is not permanent or
+        // has no delay.
+        if permanent {
+            world.store_new_spawn(template_id, (x, y, cz), heading, 1, respawn);
+        }
         world.admin_spawn(
             template_id,
             (x, y, cz),
@@ -320,14 +332,140 @@ fn admin_unspawnall(world: &mut World, _gm: ObjectId, _command: &str) -> Outcome
     );
     world.broadcast_to_all_online_players(&notice);
     // Every spawn stops respawning first (the delete loop of Java fires the death hooks).
-    let spawns = world.static_spawn_count() + world.death.runtime_spawns.len();
-    for index in 0..spawns {
+    for index in world.all_spawn_indices() {
         world.stop_respawn(index);
     }
     for id in world.npc_ids() {
         world.delete_npc(id);
     }
     world.broadcast_message_to_gms("NPC unspawn completed!");
+    Ok(())
+}
+
+/// Java `admin_respawnall` and `admin_spawn_reload`: the spawn groups stop, every NPC and spawn
+/// is deleted, the spawn files are read again and spawned; the GMs hear "NPC respawn completed!"
+/// when that is done (see `World::on_spawns_reloaded`).
+fn admin_respawnall(world: &mut World, _gm: ObjectId, _command: &str) -> Outcome {
+    world.unspawn_all_spawns();
+    world.outbox.control(ControlRequest::ReloadSpawns);
+    Ok(())
+}
+
+/// Java `admin_spawn_misc` and `admin_spawnmisc` (exactly these words): every NPC template gets one
+/// immobile NPC without core AI in the GM misc room, 200 units apart, and the GM goes there.
+// NOTE(java-quirk): the room is spawned at the same place for every call; a second call adds a
+// second set of NPCs. Templates whose display id is another id, grand bosses and fake players are
+// skipped. A minion a monster brought along is `decayMe`d in Java (hidden, still existing); here
+// it is deleted.
+fn admin_spawn_misc(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
+    if command != "admin_spawn_misc" && command != "admin_spawnmisc" {
+        return Ok(());
+    }
+    const NPC_COUNT: i32 = 100_000;
+    const START_X: i32 = -128_670;
+    const START_Y: i32 = -230_115;
+    const SPAWN_Z: i32 = -15_536;
+    const END_X: i32 = -100_432;
+    const DISTANCE: i32 = 200;
+
+    let name = world.object_name(gm).unwrap_or_default();
+    info!("{name} is spawning GM misc room...");
+    world.send_sys_message(
+        gm,
+        "WARNING: There are several known issues regarding this feature. Spawning all NPCs during runtime is STRONGLY NOT RECOMMENDED for live servers, just for developing environments.",
+    );
+
+    let (mut current_x, mut current_y) = (START_X, START_Y);
+    for id in 1..=NPC_COUNT {
+        let Some(template) = world.npc_world.template(id) else {
+            continue;
+        };
+        if template.id != template.display_id || template.is_type("GrandBoss") || template.fake_player {
+            continue;
+        }
+        // `spawn.setRespawnDelay(60)`, `init()` and `stopRespawn()`: not permanent here.
+        let created = world.admin_spawn(id, (current_x, current_y, SPAWN_Z), 0, 1, 60, false);
+        if let Some(&npc) = created.last() {
+            world.set_immobilized(npc, true);
+            world.disable_core_ai(npc, true);
+            world.broadcast_info(npc);
+            for minion in world.minions_of(npc).to_vec() {
+                world.delete_npc(minion);
+            }
+        }
+        current_x += DISTANCE;
+        if current_x > END_X {
+            current_x = START_X;
+            // Move to the next line.
+            current_y -= DISTANCE;
+        }
+    }
+
+    // Teleport player at GM Misc.
+    world.tele_to_location(gm, TeleportTarget::at(current_x, current_y, SPAWN_Z));
+    info!(
+        "{name} spawned all NPCs at GM misc room.\nWARNING: There are several known issues regarding this feature. Spawning all NPCs during runtime is STRONGLY NOT RECOMMENDED for live servers, just for developing environments."
+    );
+    Ok(())
+}
+
+/// Java `listPools`: every spawn group with the units alive or reserved, and each of its entries.
+fn admin_list_pools(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
+    let Some(spawns) = world.npc_world.spawn_data().cloned() else {
+        world.send_sys_message(gm, "There are no spawn groups.");
+        return Ok(());
+    };
+    if spawns.groups().is_empty() {
+        world.send_sys_message(gm, "There are no spawn groups.");
+        return Ok(());
+    }
+    let mut lines = Vec::new();
+    for (index, group) in spawns.groups().iter().enumerate() {
+        let state = world.death.groups.get(&index);
+        let selection = match group.selection {
+            l2_data::spawn::SpawnSelection::All => "ALL",
+            l2_data::spawn::SpawnSelection::Random => "RANDOM",
+            l2_data::spawn::SpawnSelection::RandomFill => "RANDOM_FILL",
+        };
+        let cap = if group.maximum_npc > 0 {
+            format!(" cap {}", group.maximum_npc)
+        } else {
+            String::new()
+        };
+        lines.push(format!(
+            "{} [{selection}{cap}] alive {}",
+            group.name,
+            state.map_or(0, |s| s.alive)
+        ));
+        for (i, entry) in group.entries.iter().enumerate() {
+            // `getSlots()`: the slots Java could build.
+            let slots = state.and_then(|s| s.slots.get(i)).unwrap_or(&entry.slots);
+            // `slots.get(0)` of an entry with no slot is Java's IndexOutOfBoundsException.
+            let Some(slot) = slots.first().and_then(|slot| spawns.spawns().get(*slot)) else {
+                for line in lines.drain(..) {
+                    world.send_sys_message(gm, &line);
+                }
+                return Err(JavaException(
+                    "java.lang.IndexOutOfBoundsException: Index 0 out of bounds for length 0".to_owned(),
+                ));
+            };
+            let template_name = world
+                .npc_world
+                .template(slot.npc_id)
+                .map(|t| t.name.clone())
+                .unwrap_or_default();
+            lines.push(format!(
+                "- {template_name} ({}) {}/{} in {} territories",
+                slot.npc_id,
+                state.and_then(|s| s.entry_alive.get(i)).copied().unwrap_or(0),
+                entry.total,
+                slots.len()
+            ));
+        }
+    }
+    for line in lines {
+        world.send_sys_message(gm, &line);
+    }
     Ok(())
 }
 

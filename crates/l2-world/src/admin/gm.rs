@@ -90,7 +90,7 @@ fn admin_superhaste_menu(world: &mut World, gm: ObjectId, _command: &str) -> Out
 }
 
 /// Java `Player.setHiding(hide)`: `false` (and nothing changes) when the GM is not a GM or already
-/// is in that state. Silence mode is not modelled (see the module comment).
+/// is in that state. Hiding also switches silence mode (private messages refused) like Java.
 fn set_hiding(world: &mut World, gm: ObjectId, hide: bool) -> bool {
     if !world.is_gm(gm) {
         return false;
@@ -102,6 +102,8 @@ fn set_hiding(world: &mut World, gm: ObjectId, hide: bool) -> bool {
     if !invisible && !hide {
         return false;
     }
+    // Java's order: `setSilenceMode`, `setInvul`, `setInvisible`.
+    world.set_silence_mode(gm, hide);
     world.set_invul(gm, hide);
     world.set_invisible(gm, hide);
     if hide {
