@@ -364,7 +364,7 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [L-01](L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | in-progress |
+| [L-01](L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | merged |
 | [L-02](L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | in-progress |
 | [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | in-progress |
 | [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | ready |
