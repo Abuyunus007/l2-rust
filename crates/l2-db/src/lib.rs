@@ -44,6 +44,7 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{CursedWeaponRepository, CursedWeaponRow};
 pub use game::{ManorRepository, ProcureRow, ProductionRow};
 pub use game::{MessageRepository, MessageRow};
 pub use game::{

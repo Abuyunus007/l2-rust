@@ -11,6 +11,7 @@ mod buylists;
 mod characters;
 mod clans;
 mod crests;
+mod cursed_weapons;
 mod fishing;
 mod fort_sieges;
 mod friends;
@@ -52,6 +53,7 @@ pub use clans::{
     ClanUpdate, ClanWarRow, NewClan,
 };
 pub use crests::{CrestRepository, CrestRow};
+pub use cursed_weapons::{CursedWeaponRepository, CursedWeaponRow};
 pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use fort_sieges::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use friends::{FriendLink, FriendRepository};
