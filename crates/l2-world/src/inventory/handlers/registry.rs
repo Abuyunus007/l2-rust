@@ -51,6 +51,14 @@ pub(crate) enum ItemHandlerKind {
     Disguise,
     /// `NicknameColor`: opens the title colour window (L-03).
     NicknameColor,
+    /// `Bypass`: shows `data/html/item/<itemId>.htm` (S-HAND-01).
+    Bypass,
+    /// `SevenSignsRecord`: the Seven Signs status window, page 1 (S-HAND-01).
+    SevenSignsRecord,
+    /// `SpecialXMas`: the Christmas seal window (S-HAND-01).
+    SpecialXMas,
+    /// `TeleportBookmark`: three more "My Teleports" slots (S-HAND-01).
+    TeleportBookmark,
 }
 
 impl ItemHandlerKind {
@@ -75,6 +83,10 @@ impl ItemHandlerKind {
             "Harvester" => Self::Harvester,
             "Disguise" => Self::Disguise,
             "NicknameColor" => Self::NicknameColor,
+            "Bypass" => Self::Bypass,
+            "SevenSignsRecord" => Self::SevenSignsRecord,
+            "SpecialXMas" => Self::SpecialXMas,
+            "TeleportBookmark" => Self::TeleportBookmark,
             _ => return None,
         })
     }
@@ -130,6 +142,10 @@ impl World {
             ItemHandlerKind::Harvester => self.harvester_on_use(id, template),
             ItemHandlerKind::Disguise => self.disguise_on_use(id, item),
             ItemHandlerKind::NicknameColor => self.nickname_color_on_use(id, item),
+            ItemHandlerKind::Bypass => self.bypass_item_on_use(id, item),
+            ItemHandlerKind::SevenSignsRecord => self.seven_signs_record_on_use(id),
+            ItemHandlerKind::SpecialXMas => self.special_xmas_on_use(id, item),
+            ItemHandlerKind::TeleportBookmark => self.teleport_bookmark_item_on_use(id, item),
         }
     }
 

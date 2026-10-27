@@ -1504,6 +1504,11 @@ impl ClientSession {
                 message: p.message,
                 receiver: p.receiver,
             },
+            ClientPacket::RequestShowBoard(_) => ClientInput::ShowBoard,
+            ClientPacket::RequestBBSwrite(p) => ClientInput::BbsWrite {
+                url: p.url,
+                args: [p.arg1, p.arg2, p.arg3, p.arg4, p.arg5],
+            },
             ClientPacket::RequestBlock(p) => ClientInput::Block {
                 kind: p.kind,
                 name: p.name,

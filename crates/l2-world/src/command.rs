@@ -219,6 +219,10 @@ pub enum ClientInput {
     /// Java `RequestBlock`: 0 block and 1 unblock (with `name`), 2 the list, 3 refuse all messages,
     /// 4 accept messages again.
     Block { kind: i32, name: Option<String> },
+    /// Java `RequestShowBoard`: the community board button (S-HAND-01).
+    ShowBoard,
+    /// Java `RequestBBSwrite`: a `Write` button of a board page (S-HAND-01). `args` are `arg1`..`arg5`.
+    BbsWrite { url: String, args: [String; 5] },
     /// Java `RequestPartyMatchConfig` and the other party matching room packets (L-03).
     PartyRoom(crate::party::PartyRoomInput),
     /// Java `RequestPartyLootModification`: the leader asks for another loot rule (raw id).
@@ -437,6 +441,13 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::BbsFavoriteRequest`: the favorites (or their number) of a
+    /// player, or `Err` when the read failed (S-HAND-01).
+    BbsFavoritesLoaded {
+        player: l2_util::ObjectId,
+        kind: crate::community_board::FavoriteRead,
+        result: Result<crate::community_board::FavoriteAnswer, ()>,
+    },
     /// The answer to `PersistCommand::FriendSummariesRequest`: the `characters` rows of the
     /// friends who are not in the world (L-04, `contacts.rs`). A friend whose read failed is
     /// missing.
@@ -585,6 +596,11 @@ impl fmt::Debug for WorldCommand {
             } => write!(
                 f,
                 "BlockListLoaded({sender}, {owner}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BbsFavoritesLoaded { player, kind, result } => write!(
+                f,
+                "BbsFavoritesLoaded({player}, {kind:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::AnnouncementStored { ticket, result } => write!(

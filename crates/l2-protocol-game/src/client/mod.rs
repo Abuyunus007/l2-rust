@@ -168,6 +168,7 @@ pub mod boss;
 pub mod charscreen;
 pub mod combat;
 pub mod command_channel;
+pub mod community_board;
 pub mod contacts;
 pub mod couple;
 pub mod duel;
@@ -224,6 +225,7 @@ pub use combat::{AttackRequest, RequestActionUse, RequestRestartPoint};
 pub use command_channel::{
     RequestExAcceptJoinMpcc, RequestExAskJoinMpcc, RequestExMpccShowPartyMembersInfo, RequestExOustFromMpcc,
 };
+pub use community_board::{RequestBBSwrite, RequestShowBoard};
 pub use contacts::{
     RequestExAddContactToContactList, RequestExDeleteContactFromContactList, RequestExFriendListExtended,
     RequestExShowContactList,

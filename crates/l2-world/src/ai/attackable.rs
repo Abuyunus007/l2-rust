@@ -222,7 +222,7 @@ impl World {
     }
 
     /// Java `Npc.getSpawn()`.
-    fn npc_spawn(&self, id: ObjectId) -> Option<&NpcSpawn> {
+    pub(crate) fn npc_spawn(&self, id: ObjectId) -> Option<&NpcSpawn> {
         let index = self.npcs.get(&id)?.spawn?;
         self.npc_world.spawn_data()?.spawns().get(index)
     }
@@ -259,7 +259,7 @@ impl World {
     }
 
     /// Java `Npc.getAggroRange()`: the template's, or the `aggroRange` of the spawn's `AIData`.
-    fn aggro_range_of(&self, id: ObjectId) -> i32 {
+    pub(crate) fn aggro_range_of(&self, id: ObjectId) -> i32 {
         if let Some(spawn) = self.npc_spawn(id)
             && spawn.name.is_some()
             && let Some(range) = spawn.ai_data.as_ref().and_then(|d| d.get("aggroRange"))

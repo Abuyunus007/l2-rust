@@ -91,6 +91,7 @@ pub mod friend;
 pub mod gm_view;
 pub mod gm_windows;
 pub mod ground_item;
+pub mod handler_windows;
 pub mod handshake;
 pub mod henna;
 pub mod interaction;
@@ -178,6 +179,7 @@ pub use gm_windows::{
     GmViewWarehouseWithdrawList,
 };
 pub use ground_item::{DropItem, GetItem, SpawnItem};
+pub use handler_windows::{ExShowQuestInfo, ShowXMasSeal, TutorialCloseHtml};
 pub use handshake::{KeyPacket, LoginFail};
 pub use henna::{
     HennaEquipEntry, HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveEntry,
