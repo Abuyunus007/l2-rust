@@ -7,7 +7,8 @@
 //   list, the message refusal, the diet mode, the trade refusal) that the world does not keep yet.
 // - `setconfig` and `config_server`: they change the rates and other config values at runtime,
 //   which the settings of the world do not allow.
-// - `checkolympiad`, `saveolymp`, `sethero`, `givehero`, `endolympiad`: M8 (Olympiad and heroes).
+// - `checkolympiad`, `saveolymp`, `endolympiad` are `olympiad.rs` (M8-ADMIN-07); `sethero` and
+//   `givehero` are M8-HERO-01.
 
 use l2_util::ObjectId;
 

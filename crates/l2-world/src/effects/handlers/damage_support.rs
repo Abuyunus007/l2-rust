@@ -9,7 +9,7 @@
 // files stay as they are: a damage over time (`isDOT`), the HP consumption of a toggle and the
 // line-of-sight rule of `Creature.reduceCurrentHp`.
 //
-// Left out, as in `status.rs`: olympiad, offline traders, the summon / party damage
+// Left out, as in `status.rs`: offline traders, the summon / party damage
 // transfer, the mana shield, GM `giveDamage` rights, champions, sitting / store mode standing up
 // (none of them exist in the world yet), and `notifyDamageReceived`'s fake death and script events.
 

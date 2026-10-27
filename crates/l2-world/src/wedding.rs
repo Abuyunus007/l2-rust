@@ -29,8 +29,8 @@
 //
 // # Left out, with the system that brings it (every one is a check or a state of another M8 card)
 // - Checks `.gotolove` makes on states that do not exist yet: a boss zone, a combat flag,
-//   the Olympiad, a registered event, the observer mode, the Seven Signs festival,
-//   a dimensional rift.
+//   a registered event, the observer mode, the Seven Signs festival, a dimensional rift.
+//   (The Olympiad and the Seven Signs dungeons are checked: M8-OLY-01, M8-SS-01.)
 // - The combat/zone checks for `.engage` need nothing else.
 
 use l2_data::ClassId;

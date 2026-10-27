@@ -6,8 +6,8 @@
 //
 // # What is decided
 // A kind is evaluated when the world models the state it reads. Some state cannot exist in the
-// world yet and is therefore known: nobody is mounted, in a vehicle, in the
-// olympiad, in an instance, or has an agathion or a summon. The effects, sitting, the PvP flag,
+// world yet and is therefore known: nobody is mounted, in a vehicle, or has an agathion or a
+// summon. (The Olympiad and instance kinds read the world since M8-OLY-01 and M8-INST-01.) The effects, sitting, the PvP flag,
 // the charges and the souls are the world's (`effects/`, M5-EFX-02).
 // The siege kinds are the siege's (`siege/conditions.rs`, M7-SIEGE-01).
 // Kinds that read state the Java server has but the world does not model (territory wars,

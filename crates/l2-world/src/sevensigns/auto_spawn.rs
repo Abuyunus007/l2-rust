@@ -126,6 +126,26 @@ impl World {
             .collect()
     }
 
+    /// Java `getAutoSpawnInstance(npcId, false)` for the admin pages: the first group of
+    /// `npc_id` as (its first NPC, `getTimeToNextSpawn` in milliseconds). `None` when no group
+    /// is registered.
+    pub fn auto_spawn_first_info(&self, npc_id: i32) -> Option<(Option<ObjectId>, i64)> {
+        let inst = self
+            .seven_signs
+            .auto_spawn
+            .instances
+            .values()
+            .find(|i| i.npc_id == npc_id)?;
+        // A group without a running task answers 0.
+        let millis = inst.task.map_or(0, |task| {
+            self.timers.due_of(task).map_or(0, |due| {
+                let ticks = i64::try_from(due).unwrap_or(i64::MAX) - i64::try_from(self.tick).unwrap_or(0);
+                ticks.saturating_mul(i64::try_from(crate::world::TICK.as_millis()).unwrap_or(50))
+            })
+        });
+        Some((inst.npcs.first().copied(), millis))
+    }
+
     /// Whether the groups of `npc_id` are active (tests): one entry per group.
     pub fn auto_spawn_active(&self, npc_id: i32) -> Vec<bool> {
         self.seven_signs

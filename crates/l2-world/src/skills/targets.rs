@@ -14,7 +14,7 @@
 // Java's handlers call `getAffectLimit()`, so a seeded world replays them.
 //
 // # What is not there yet (each marked `// M6:` or `// M5:` where it would act)
-// - Summons, pets, servitors, clans, alliances, duels, olympiad, sieges,
+// - Summons, pets, servitors, clans, alliances, duels, sieges (the Olympiad is `olympiad/`),
 //   events, auto play, observer mode: none exist. Java's code path for "none of these" is
 //   followed: clan = only the caster, summon targets find nothing. Parties are real since
 //   M6-PARTY-01 (`party/`).

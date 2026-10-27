@@ -7,8 +7,9 @@
 //       attacker side)
 //
 // Left out: flood protection, spawn protection
-// (`onActionRequest`), private stores and pending requests, olympiad, confusion, the block
-// checker arena. Each refuses an attack in Java; none of them exists yet.
+// (`onActionRequest`), private stores and pending requests, confusion, the block
+// checker arena. Each refuses an attack in Java; none of them exists yet. (The Olympiad
+// refusal is in: M8-OLY-01.)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, SystemMessage};
