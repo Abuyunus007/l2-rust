@@ -153,6 +153,21 @@ fn class_data() -> StatData {
     let xml = template(0);
     StatData {
         player_templates: Arc::new(l2_data::PlayerTemplates::from_xml(&xml, 85).unwrap()),
+        // One dye that only class 0 may wear (the henna loop of `setPlayerClass`, L-01).
+        hennas: Arc::new(
+            l2_data::Hennas::from_xml(
+                r#"<list><henna dyeId="1" dyeName="a" dyeItemId="4445" dyeLevel="1">
+<stats str="1" con="0" dex="0" int="0" men="0" wit="0" /><wear count="1" fee="1" />
+<cancel count="3" fee="50" /><classId>0</classId></henna></list>"#,
+            )
+            .unwrap(),
+        ),
+        items: Arc::new(
+            l2_data::ItemTemplates::from_xml(
+                r#"<list><item id="4445" type="EtcItem" name="Dye"><set name="is_stackable" val="true" /></item></list>"#,
+            )
+            .unwrap(),
+        ),
         ..StatData::default()
     }
 }
@@ -669,6 +684,31 @@ fn setclass_changes_the_class_and_the_base_class() {
     let out = s.take();
     assert!(texts_to(&out, P1).contains(&"A GM changed your class to Warrior.".to_owned()));
     assert_eq!(texts_to(&out, GM), vec!["P1 is a Warrior.".to_owned()]);
+}
+
+/// L-01: `setPlayerClass` removes the dyes the new class may not wear ("Remove class permitted
+/// hennas"): the slot, its `character_hennas` row, `HennaInfo` and "The symbol has been deleted".
+#[test]
+fn setclass_removes_the_hennas_the_new_class_may_not_wear() {
+    let mut s = setup();
+    s.enter_gm();
+    let mut data = player(P1, 0, "P1");
+    data.profile.hennas = [1, 0, 0];
+    s.enter_with(data, None);
+    s.target(GM, P1);
+    s.take();
+    s.cmd(GM, "setclass 1");
+    assert_eq!(s.p(P1).data.profile.hennas, [0, 0, 0]);
+    let out = s.take();
+    assert!(system_ids_to(&out, P1).contains(&SystemMessageId::TheSymbolHasBeenDeleted));
+    assert!(s.persisted.0.lock().unwrap().iter().any(|c| matches!(
+        c,
+        PersistCommand::Henna(HennaWrite::Delete {
+            char_id: 1,
+            slot: 1,
+            class_index: 0
+        })
+    )));
 }
 
 #[test]

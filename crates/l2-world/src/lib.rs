@@ -37,6 +37,7 @@ pub mod formulas;
 pub mod fort;
 pub mod friends;
 pub mod ground_item;
+pub mod henna;
 pub mod ids;
 pub mod interact;
 pub mod inventory;
@@ -130,6 +131,7 @@ pub use flood::{
 pub use fort::{FortInput, FortSettings};
 pub use friends::{FriendEntry, FriendWorld, FriendWrite};
 pub use ground_item::{GroundItem, GroundItemRow, GroundItemSettings, GroundWorld};
+pub use henna::{HennaInput, HennaWrite};
 pub use ids::{IdError, IdFactory, JAVA_FIRST_OBJECT_ID, RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID};
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;

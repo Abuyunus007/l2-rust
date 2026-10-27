@@ -62,7 +62,7 @@ use l2_db::HallSiegeRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
-use l2_db::{AnnouncementRepository, AutoColumns, PetitionFeedbackRepository};
+use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -93,11 +93,11 @@ use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
-    ItemData, ItemRowOp, LsEvent, MacroData, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite,
-    ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand,
-    PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite,
-    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
-    SummonWrite,
+    HennaWrite, ItemData, ItemRowOp, LsEvent, MacroData, MailCharacter, MailLoad, MailMessage, MailRefresh,
+    MailWrite, ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows,
+    PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType,
+    RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
+    StoredPunishment, SummonWrite,
 };
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
@@ -417,6 +417,14 @@ pub trait PlayerStore: Send + 'static {
         _write: &AnnouncementWrite,
     ) -> impl Future<Output = Result<i32, PersistError>> + Send {
         async { Ok(0) }
+    }
+
+    /// A `character_hennas` row change (L-01): Java `Player.addHenna` / `removeHenna`.
+    fn store_henna_write(
+        &mut self,
+        _write: &HennaWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
     }
 
     /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
@@ -958,6 +966,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_offline_trade(&write).await {
                     error!("Offline trade data could NOT be stored: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Henna(write)) => {
+                // Java logs a failed henna statement and goes on (no retry).
+                if let Err(e) = store.store_henna_write(&write).await {
+                    error!("Henna data could NOT be stored ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
@@ -2690,6 +2704,7 @@ pub struct DbStore {
     item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
     macros: MacroRepository,
+    hennas: HennaRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -2731,6 +2746,7 @@ impl DbStore {
             item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
+            hennas: HennaRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -3993,6 +4009,27 @@ impl PlayerStore for DbStore {
         }
     }
 
+    async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
+        match *write {
+            HennaWrite::Add {
+                char_id,
+                symbol_id,
+                slot,
+                class_index,
+            } => {
+                self.hennas
+                    .add_henna(char_id, symbol_id, slot, class_index)
+                    .await?
+            }
+            HennaWrite::Delete {
+                char_id,
+                slot,
+                class_index,
+            } => self.hennas.delete_henna(char_id, slot, class_index).await?,
+        }
+        Ok(())
+    }
+
     async fn store_petition_feedback(
         &mut self,
         character: &str,
@@ -4589,6 +4626,8 @@ mod tests {
         Championship(i64, usize),
         /// An `announcements` write (M7-ADMIN-10).
         Announcement(AnnouncementWrite),
+        /// A `character_hennas` write (L-01).
+        Henna(HennaWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -4790,6 +4829,11 @@ mod tests {
                 AnnouncementWrite::Insert { .. } => Ok(42),
                 _ => Ok(0),
             }
+        }
+
+        async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Henna(*write));
+            Ok(())
         }
 
         async fn store_petition_feedback(
@@ -6129,6 +6173,31 @@ mod tests {
         ));
         // The update and the delete are writes without an answer.
         assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    /// L-01: a drawn and a removed dye are writes of their own, in order.
+    #[tokio::test]
+    async fn henna_writes_are_stored_in_order() {
+        let add = HennaWrite::Add {
+            char_id: 5,
+            symbol_id: 9,
+            slot: 2,
+            class_index: 0,
+        };
+        let delete = HennaWrite::Delete {
+            char_id: 5,
+            slot: 2,
+            class_index: 0,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Henna(add)),
+                OutboxMessage::Persist(PersistCommand::Henna(delete)),
+            ],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::Henna(add), Call::Henna(delete)]);
     }
 
     /// M7-ADMIN-10: a petition feedback is a write of its own.
