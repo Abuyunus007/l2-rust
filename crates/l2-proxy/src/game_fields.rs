@@ -2768,7 +2768,7 @@ mod tests {
             }],
         };
         assert_eq!(
-            c2s_fields(InGame, &make.to_bytes()),
+            c2s_fields(ConnectionState::InGame, &make.to_bytes()),
             json!({
                 "id": 0, "name": "Heal", "descr": "d", "acronym": "HL", "icon": 3,
                 "commands": [{ "entry": 1, "kind": 3, "d1": 0, "d2": 0, "command": "/sit" }],
@@ -2776,7 +2776,7 @@ mod tests {
         );
         assert_eq!(
             c2s_fields(
-                InGame,
+                ConnectionState::InGame,
                 &RequestCrystallizeItem {
                     object_id: 5,
                     count: 1
@@ -2787,7 +2787,7 @@ mod tests {
         );
         assert_eq!(
             c2s_fields(
-                InGame,
+                ConnectionState::InGame,
                 &RequestPreviewItem {
                     unknown: 0,
                     list_id: 100,
@@ -2799,7 +2799,7 @@ mod tests {
         );
         assert_eq!(
             c2s_fields(
-                InGame,
+                ConnectionState::InGame,
                 &RequestSaveKeyMapping {
                     ui_key_mapping: Some(vec![1, 255]),
                 }
@@ -2808,7 +2808,10 @@ mod tests {
             json!({ "ui_key_mapping": "01ff" })
         );
         assert_eq!(
-            c2s_fields(InGame, &StartRotating { degree: 9, side: 1 }.to_bytes()),
+            c2s_fields(
+                ConnectionState::InGame,
+                &StartRotating { degree: 9, side: 1 }.to_bytes()
+            ),
             json!({ "degree": 9, "side": 1 })
         );
         let preview = ShopPreviewInfo::from_slots(&[(6, 2376)]);
