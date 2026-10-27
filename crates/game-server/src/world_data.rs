@@ -1036,6 +1036,7 @@ pub fn drop_settings(config: &GameConfig, config_dir: &Path) -> DropSettings {
         boss_drop_min_level: r.boss_drop_min_level,
         boss_drop_max_level: r.boss_drop_max_level,
         alt_party_range: config.player.alt_party_range,
+        event_item_max_level_difference: r.event_item_max_level_difference,
         player_drop_limit: r.player_drop_limit,
         player_rate_drop: r.player_rate_drop,
         player_rate_drop_item: r.player_rate_drop_item,
@@ -1066,6 +1067,22 @@ pub fn drop_settings(config: &GameConfig, config_dir: &Path) -> DropSettings {
         s.boss_drop_list = parse_boss_drop_list(&ini.get_string("BossDropList", ""));
     }
     s
+}
+
+/// The values of `Custom/Wedding.ini` (Java `WeddingConfig`).
+pub fn wedding_settings(config: &GameConfig) -> l2_world::wedding::WeddingSettings {
+    let w = &config.wedding;
+    l2_world::wedding::WeddingSettings {
+        allow_wedding: w.allow_wedding,
+        wedding_price: w.wedding_price,
+        punish_infidelity: w.wedding_punish_infidelity,
+        teleport: w.wedding_teleport,
+        teleport_price: w.wedding_teleport_price,
+        teleport_duration: w.wedding_teleport_duration,
+        same_sex: w.wedding_samesex,
+        formal_wear: w.wedding_formalwear,
+        divorce_costs: w.wedding_divorce_costs,
+    }
 }
 
 /// The regeneration multipliers the world reads (Java `PlayerConfig` and `NpcConfig`, after the

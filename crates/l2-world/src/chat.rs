@@ -252,7 +252,11 @@ impl World {
     }
 
     // Java: ChatGeneral.onChat (without voiced commands and block list)
-    fn chat_general(&self, id: ObjectId, text: &str) {
+    fn chat_general(&mut self, id: ObjectId, text: &str) {
+        // Voiced commands first: a text a handler took is not said (`vcdUsed`).
+        if self.wedding_voiced_command(id, text) {
+            return;
+        }
         let Some(player) = self.players.get(&id) else {
             return;
         };
