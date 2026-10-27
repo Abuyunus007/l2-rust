@@ -490,6 +490,30 @@ impl World {
         lookup(self.skill_templates()?, skill_id, level).cloned()
     }
 
+    /// Java `Inventory.reloadEquippedItems()` for the skill listeners: every worn item, in slot
+    /// order, has its armor set and item skills (and the augmentation and element bonuses) taken
+    /// off and put on again (`regiveTemporarySkills` of the subclass switch, S-SUB-01).
+    // The `StatsListener` part (the item's own functions) comes off and goes on again in Java;
+    // the result is the functions it had, so it is left alone.
+    pub(crate) fn reload_equipped_item_skills(&mut self, id: ObjectId) {
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
+        let mut worn: Vec<ItemData> = player
+            .data
+            .items
+            .iter()
+            .filter(|i| i.loc == "PAPERDOLL")
+            .cloned()
+            .collect();
+        worn.sort_by_key(|i| i.loc_data);
+        for item in worn {
+            let slot = usize::try_from(item.loc_data).unwrap_or(usize::MAX);
+            self.unequip_item_skills(id, &item, slot);
+            self.equip_item_skills(id, &item);
+        }
+    }
+
     /// The skill parts of `ArmorSetListener.notifyUnequiped` and `ItemSkillsListener
     /// .notifyUnequiped`. `item` has already left its slot (Java clears the slot first).
     pub(crate) fn unequip_item_skills(

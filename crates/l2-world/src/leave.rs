@@ -16,7 +16,7 @@
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, LeaveWorld, RestartResponse, ServerClose, SystemMessage};
 use l2_util::ObjectId;
-use tracing::info;
+use tracing::{info, warn};
 
 use crate::command::LeaveReason;
 use crate::outbox::PersistCommand;
@@ -25,6 +25,11 @@ use crate::world::World;
 impl World {
     /// `Logout.runImpl` / `RequestRestart.runImpl`, once the checks passed.
     pub(crate) fn on_logout(&mut self, id: ObjectId) {
+        // `canLogout()`: not during a class change (S-SUB-01).
+        if self.class_change_blocks_logout(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
         // Java `Logout`: `canLogout()` is false while an enchant scroll or attribute stone is in
         // use.
         if self.enchant_blocks_logout(id) {
@@ -49,6 +54,18 @@ impl World {
     pub(crate) fn on_restart(&mut self, id: ObjectId) {
         // Java `RequestRestart`: an enchant scroll or attribute stone in use.
         if self.enchant_blocks_logout(id) {
+            self.send(id, &RestartResponse { result: false });
+            self.send(id, &ActionFailed);
+            return;
+        }
+        // Java `RequestRestart`: not during a class change (S-SUB-01).
+        if self.is_changing_class(id) {
+            let name = self
+                .players
+                .get(&id)
+                .map(|p| p.data.name.clone())
+                .unwrap_or_default();
+            warn!("{name} tried to restart during class change.");
             self.send(id, &RestartResponse { result: false });
             self.send(id, &ActionFailed);
             return;
@@ -79,6 +96,20 @@ impl World {
             return;
         }
         self.leave(id, LeaveReason::Restart);
+    }
+
+    /// `canLogout()`'s first check: "Player ... tried to restart/logout during class change."
+    fn class_change_blocks_logout(&self, id: ObjectId) -> bool {
+        if !self.is_changing_class(id) {
+            return false;
+        }
+        let name = self
+            .players
+            .get(&id)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
+        warn!("Player {name} tried to restart/logout during class change.");
+        true
     }
 
     /// `LoginServerThread.doKickPlayer`: `Disconnection.of(client).storeAndDeleteWith(msg)`.

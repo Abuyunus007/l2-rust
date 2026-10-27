@@ -554,11 +554,23 @@ impl World {
         // ported (no spawn protection), so the entry of an earlier session is dropped here: the
         // player can summon again, and its next unsummon or death deletes the row like Java.
         self.summons.saved_servitors.remove(&owner);
+        let Some(class_index) = self.players.get(&owner).map(|p| p.data.profile.class_index) else {
+            return;
+        };
+        self.take_class_summon_effects(owner, class_index);
+    }
+
+    /// The `character_summon_skills_save` rows of `class_index` in the profile become the world's
+    /// view of them, replacing what it had for that index (the class switch reads them again,
+    /// S-SUB-01).
+    pub(crate) fn take_class_summon_effects(&mut self, owner: ObjectId, class_index: i32) {
         let Some(player) = self.players.get_mut(&owner) else {
             return;
         };
-        let class_index = player.data.profile.class_index;
         let rows = std::mem::take(&mut player.data.profile.summon_effects);
+        self.summons
+            .saved_rows
+            .retain(|(o, index, _), _| !(*o == owner && *index == class_index));
         for row in rows {
             self.summons
                 .saved_rows

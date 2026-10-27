@@ -76,8 +76,8 @@ use l2_db::{
     ItemRepository, ItemReuseRepository, ItemUpdate, MacroRepository, MessageRepository, NewItem,
     NewItemReuse, NewMacro, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
     PetRepository, PetValues, Pool, PunishmentRepository, RecipeRepository, RecipeShopRow,
-    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
-    VariableRepository,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SubclassRepository,
+    SubclassValues, SummonRepository, VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
@@ -527,6 +527,25 @@ pub trait PlayerStore: Send + 'static {
         _char_id: i32,
     ) -> impl Future<Output = Result<Option<FriendSummary>, PersistError>> + Send {
         async { Ok(None) }
+    }
+
+    /// A write of the subclass tables (S-SUB-01): Java `Player.addSubClass` / `modifySubClass`.
+    fn store_subclass_write(
+        &mut self,
+        _write: &l2_world::SubclassWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The rows of one class index for `setActiveClass` (S-SUB-01): every part Java reads, a part
+    /// whose read fails is logged and left empty (Java's catch blocks). The saved buffs are
+    /// deleted after the read (`restoreEffects`).
+    fn load_class_index(
+        &mut self,
+        _owner: ObjectId,
+        _class_index: i32,
+    ) -> impl Future<Output = l2_world::ClassIndexLoad> + Send {
+        async { l2_world::ClassIndexLoad::default() }
     }
 
     /// A `character_hennas` row change (L-01): Java `Player.addHenna` / `removeHenna`.
@@ -1346,6 +1365,28 @@ async fn run<S: PlayerStore>(
                 let answer = l2_world::WorldCommand::BossReread { result, then };
                 if !acks.send_to_world(answer) {
                     warn!("The boss rows {kind:?} could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Subclass(write)) => {
+                // Java logs a failed statement and goes on (no retry, S-SUB-01).
+                if let Err(e) = store.store_subclass_write(&write).await {
+                    error!("The subclass rows could NOT be written ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ClassIndexRequest { owner, class_index }) => {
+                // Not a write: the answer goes back to the world (D-15). Read in order, so the
+                // rows include the store `setActiveClass` sent before it.
+                let load = store.load_class_index(owner, class_index).await;
+                let answer = l2_world::WorldCommand::ClassIndexLoaded {
+                    owner,
+                    class_index,
+                    load: Box::new(load),
+                };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The rows of class index {class_index} of character {} could not be handed to the world.",
+                        owner.0
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::Recipe(write)) => {
@@ -3578,6 +3619,9 @@ struct Baseline {
     /// True while the maps come from the database instead of an earlier snapshot. Rows that are
     /// only in the database are not ours to delete: the snapshot may simply not carry them.
     from_database: bool,
+    /// The class index `skills` and `shortcuts` belong to (S-SUB-01); `None` when they were not
+    /// read (a subclass the old model did not know).
+    class_index: Option<i32>,
 }
 
 impl Baseline {
@@ -3593,6 +3637,7 @@ impl Baseline {
             shortcuts: player.shortcuts.iter().map(|s| ((s.page, s.slot), *s)).collect(),
             macros: player.profile.macros.iter().map(|m| (m.id, m.clone())).collect(),
             from_database: false,
+            class_index: class_index_of(player),
         }
     }
 }
@@ -3642,6 +3687,8 @@ pub struct DbStore {
     wedding: l2_db::WeddingRepository,
     seven_signs: l2_db::SevenSignsRepository,
     petition_feedback: PetitionFeedbackRepository,
+    /// `character_subclasses` (S-SUB-01).
+    subclasses: SubclassRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -3733,6 +3780,7 @@ impl DbStore {
             wedding: l2_db::WeddingRepository::new(pool.clone()),
             seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
+            subclasses: SubclassRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -3822,11 +3870,30 @@ impl DbStore {
         }
     }
 
+    /// The class index of a `characters` row (Java `Player.restore`): 0 when it plays its base
+    /// class, else the index of the `character_subclasses` row of its class; `None` when there is
+    /// no such row (Java reverts such a character to its base class at its next login).
+    async fn stored_class_index(&self, row: &CharacterRow) -> Result<Option<i32>, PersistError> {
+        let class_id = row.classid.map(i32::from);
+        if class_id == Some(i32::from(row.base_class)) {
+            return Ok(Some(0));
+        }
+        let Some(class_id) = class_id else {
+            return Ok(None);
+        };
+        let subs = self.subclasses.subclasses_of(row.object_id()).await?;
+        Ok(subs
+            .iter()
+            .find(|s| s.class_id == class_id)
+            .map(|s| s.class_index))
+    }
+
     /// The baseline of a character that was not stored since the server started: its rows as
     /// they are in the database now.
     async fn load_baseline(&self, char_id: i32, class_index: Option<i32>) -> Result<Baseline, PersistError> {
         let mut baseline = Baseline {
             from_database: true,
+            class_index,
             ..Baseline::default()
         };
         for location in ALL_LOCATIONS {
@@ -4281,10 +4348,12 @@ const ALL_LOCATIONS: [ItemLocation; 11] = [
     ItemLocation::Freight,
 ];
 
-/// The class index of the data being stored: 0 for the base class. A subclass (class id
-/// differs from the base class) is not modelled in M2, so its skills and shortcuts are skipped.
+/// The class index of the data being stored (S-SUB-01): the snapshot's. A snapshot that plays a
+/// class other than its base class under index 0 does not know its subclass (the old model), so
+/// its skills and shortcuts are skipped.
 fn class_index_of(player: &PlayerData) -> Option<i32> {
-    (player.class_id == player.base_class).then_some(0)
+    let index = player.profile.class_index;
+    (index > 0 || player.class_id == player.base_class).then_some(index)
 }
 
 fn clamp_i32(value: u64) -> i32 {
@@ -4299,9 +4368,10 @@ fn clamp_i64(value: u64) -> i64 {
 /// snapshot, everything else is the row's current value, written back unchanged.
 // Java: Player.storeCharBase (UPDATE_CHARACTER)
 pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> CharacterUpdate {
-    // Java stores the base class level, exp and sp in `characters`; the active subclass has its
-    // own row in `character_subclasses`. M2 does not model that, so the row keeps its values.
-    let base_active = player.class_id == player.base_class;
+    // Java stores the base class level, exp and sp in `characters` (`getBaseLevel` ...); the
+    // active subclass has its own row in `character_subclasses` (S-SUB-01). A snapshot without the
+    // base values keeps the row's.
+    let base = l2_world::base_class_stats(player).filter(|_| class_index_of(player).is_some());
     // M6-CLAN-01: the clan columns the world keeps (Java `storeCharBase`); a snapshot without
     // them keeps the row's values.
     let clan = player.profile.clan.filter(|c| !c.keep_stored);
@@ -4311,11 +4381,7 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         Some(player.title.clone())
     };
     CharacterUpdate {
-        level: if base_active {
-            player.level
-        } else {
-            i32::from(row.level.unwrap_or(1))
-        },
+        level: base.map_or_else(|| i32::from(row.level.unwrap_or(1)), |b| b.level),
         // Java getMaxHp() etc. are ints; HP/MP/CP current values are bound as doubles.
         max_hp: player.max_hp as i32,
         cur_hp: player.cur_hp,
@@ -4331,14 +4397,10 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
         x: player.x,
         y: player.y,
         z: player.z,
-        exp: if base_active {
-            player.exp
-        } else {
-            row.exp.map_or(0, clamp_i64)
-        },
+        exp: base.map_or_else(|| row.exp.map_or(0, clamp_i64), |b| b.exp),
         // Java writes `_expBeforeDeath`, which it never reads back (0 after a login).
         exp_before_death: player.profile.exp_before_death,
-        sp: if base_active { player.sp } else { clamp_i64(row.sp) },
+        sp: base.map_or_else(|| clamp_i64(row.sp), |b| b.sp),
         karma: player.karma,
         // Java writes `getFame()`: multisell fame ingredients and products change it (M6-MULTISELL-01).
         fame: player.profile.fame,
@@ -4415,6 +4477,22 @@ impl PlayerStore for DbStore {
         self.characters
             .update_character(char_id, &build_character_update(player, &row))
             .await?;
+        // Java: Player.store -> storeCharSub (S-SUB-01). Java logs a failure and goes on.
+        for sub in l2_world::stored_subclasses(player) {
+            let values = SubclassValues {
+                class_id: sub.class_id,
+                exp: sub.exp,
+                sp: sub.sp,
+                level: sub.level,
+            };
+            if let Err(e) = self
+                .subclasses
+                .update_subclass(char_id, sub.class_index, &values)
+                .await
+            {
+                warn!("Could not store sub class data for {}: {e}", player.name);
+            }
+        }
         // Java: Player.store -> getVariables().storeMe(); autoSave / deleteMe -> storeRecommendations.
         self.store_nevit_rows(player).await?;
         // Java: Player.store -> storeEffect (the buffs of the character, see `store_effects`).
@@ -4450,9 +4528,11 @@ impl PlayerStore for DbStore {
 
         // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);
+        // A baseline of another class index (the class changed since it was made, S-SUB-01) says
+        // nothing about this one's rows: they are read again, and nothing is deleted this time.
         let mut baseline = match self.baselines.remove(&player.object_id) {
-            Some(baseline) => baseline,
-            None => self.load_baseline(char_id, class_index).await?,
+            Some(baseline) if baseline.class_index == class_index => baseline,
+            _ => self.load_baseline(char_id, class_index).await?,
         };
         let result = self.sync_children(player, class_index, &mut baseline).await;
         if result.is_ok() {
@@ -4481,7 +4561,7 @@ impl PlayerStore for DbStore {
                     .restore_character(char_id)
                     .await?
                     .ok_or(PersistError::NoSuchCharacter(char_id))?;
-                let class_index = (row.classid == Some(row.base_class)).then_some(0);
+                let class_index = self.stored_class_index(&row).await?;
                 self.load_baseline(char_id, class_index).await?
             }
         };
@@ -4509,7 +4589,7 @@ impl PlayerStore for DbStore {
                         .restore_character(owner.0)
                         .await?
                         .ok_or(PersistError::NoSuchCharacter(owner.0))?;
-                    let class_index = (row.classid == Some(row.base_class)).then_some(0);
+                    let class_index = self.stored_class_index(&row).await?;
                     self.load_baseline(owner.0, class_index).await?
                 }
             }),
@@ -4547,21 +4627,25 @@ impl PlayerStore for DbStore {
         removed: &[i32],
     ) -> Result<(), PersistError> {
         let char_id = owner.0;
-        let row = self
-            .characters
-            .restore_character(char_id)
-            .await?
-            .ok_or(PersistError::NoSuchCharacter(char_id))?;
-        // Skills belong to the active class index; a subclass is not modelled (see `sync_children`).
-        let class_index = (row.classid == Some(row.base_class)).then_some(0);
-        let Some(class_index) = class_index else {
-            return Ok(());
-        };
-        // The skills this character is known to have: from its last store, else from the
-        // database (once; the baseline then follows every write).
+        // Skills belong to the active class index: the one of the baseline (the last store or the
+        // last class switch, S-SUB-01), else the one the database row names. The skills this
+        // character is known to have come from its last store, else from the database (once; the
+        // baseline then follows every write).
         let mut baseline = match self.baselines.remove(&owner) {
             Some(baseline) => baseline,
-            None => self.load_baseline(char_id, Some(class_index)).await?,
+            None => {
+                let row = self
+                    .characters
+                    .restore_character(char_id)
+                    .await?
+                    .ok_or(PersistError::NoSuchCharacter(char_id))?;
+                let class_index = self.stored_class_index(&row).await?;
+                self.load_baseline(char_id, class_index).await?
+            }
+        };
+        let Some(class_index) = baseline.class_index else {
+            self.baselines.insert(owner, baseline);
+            return Ok(());
         };
         let result = self
             .apply_skill_changes(char_id, class_index, upserts, removed, &mut baseline)
@@ -5121,6 +5205,145 @@ impl PlayerStore for DbStore {
                 class_id: row.class_id,
                 level: row.level,
             }))
+    }
+
+    async fn store_subclass_write(&mut self, write: &l2_world::SubclassWrite) -> Result<(), PersistError> {
+        use l2_world::SubclassWrite;
+        match write {
+            // Java: Player.addSubClass (ADD_CHAR_SUBCLASS, then storeSkill for each skill). A
+            // failed insert stores no skill.
+            SubclassWrite::Add {
+                char_id,
+                holder,
+                skills,
+            } => {
+                let values = SubclassValues {
+                    class_id: holder.class_id,
+                    exp: holder.exp,
+                    sp: holder.sp,
+                    level: holder.level,
+                };
+                self.subclasses
+                    .insert_subclass(*char_id, holder.class_index, &values)
+                    .await?;
+                let levels: Vec<SkillLevel> = skills
+                    .iter()
+                    .map(|s| SkillLevel {
+                        skill_id: s.skill_id,
+                        skill_level: s.skill_level,
+                    })
+                    .collect();
+                if !levels.is_empty() {
+                    self.skills
+                        .replace_skills(*char_id, holder.class_index, &levels)
+                        .await?;
+                }
+            }
+            // Java: Player.modifySubClass (DELETE_CHAR_HENNA per slot, DELETE_CHAR_SHORTCUTS,
+            // DELETE_SKILL_SAVE, DELETE_CHAR_SKILLS, DELETE_CHAR_SUBCLASS; one try block).
+            SubclassWrite::Delete {
+                char_id,
+                class_index,
+                henna_slots,
+            } => {
+                for slot in henna_slots {
+                    self.hennas.delete_henna(*char_id, *slot, *class_index).await?;
+                }
+                self.shortcuts
+                    .delete_class_shortcuts(*char_id, *class_index)
+                    .await?;
+                self.skills.delete_skill_effects(*char_id, *class_index).await?;
+                self.skills.delete_class_skills(*char_id, *class_index).await?;
+                self.subclasses.delete_subclass(*char_id, *class_index).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_class_index(&mut self, owner: ObjectId, class_index: i32) -> l2_world::ClassIndexLoad {
+        let char_id = owner.0;
+        let mut load = l2_world::ClassIndexLoad::default();
+        // Java: restoreRecipeBook(false)
+        match self.recipes.dwarven_recipes_of_class(char_id, class_index).await {
+            Ok(ids) => load.dwarven_recipes = ids,
+            Err(e) => error!("Could not restore recipe book data:{e}"),
+        }
+        // Java: restoreSkills (sorted like the login's, `enter.rs`)
+        match self.skills.skills_of(char_id, class_index).await {
+            Ok(mut rows) => {
+                rows.sort_by_key(|s| s.skill_id);
+                load.skills = rows
+                    .into_iter()
+                    .map(|s| SkillData {
+                        skill_id: s.skill_id,
+                        skill_level: s.skill_level,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore character {char_id} skills: {e}"),
+        }
+        // Java: restoreEffects, then "Remove previously restored skills." (the rows are deleted).
+        match self.skills.skill_effects_of(char_id, class_index).await {
+            Ok(rows) => {
+                load.effects = rows.iter().map(crate::client::enter::saved_effect_of).collect();
+                if let Err(e) = self.skills.delete_skill_effects(char_id, class_index).await {
+                    warn!("Could not restore {char_id} active effect data: {e}");
+                }
+            }
+            Err(e) => warn!("Could not restore {char_id} active effect data: {e}"),
+        }
+        // Java: restoreHenna
+        match self.hennas.hennas_of(char_id, class_index).await {
+            Ok(rows) => load.hennas = crate::client::enter::henna_slots(&rows),
+            Err(e) => error!("Failed restoing character {char_id} hennas. {e}"),
+        }
+        // Java: Shortcuts.restoreMe
+        match self.shortcuts.shortcuts_of(char_id, class_index).await {
+            Ok(rows) => {
+                load.shortcuts = rows
+                    .into_iter()
+                    .map(|s| ShortcutData {
+                        slot: s.slot,
+                        page: s.page,
+                        kind: s.kind.unwrap_or(0),
+                        shortcut_id: s.shortcut_id.and_then(|v| i32::try_from(v).ok()).unwrap_or(0),
+                        level: s.level.unwrap_or(0),
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore character shortcuts: {e}"),
+        }
+        // Java: Servitor.restoreEffects reads these when a servitor spawns; with the rest here.
+        match self.summons.servitor_effects_of(char_id, class_index).await {
+            Ok(rows) => {
+                load.summon_effects = rows
+                    .into_iter()
+                    .map(|r| l2_world::SavedSummonEffect {
+                        summon_skill_id: r.summon_skill_id,
+                        skill_id: r.skill_id,
+                        skill_level: r.skill_level,
+                        remaining_time: r.remaining_time,
+                    })
+                    .collect();
+            }
+            Err(e) => warn!("Could not restore summon effect data of {char_id}: {e}"),
+        }
+        // From now on the character's skills and shortcuts are those of the new index: the
+        // baseline follows (the store before the request wrote the old index's).
+        match self.baselines.get_mut(&owner) {
+            Some(baseline) => {
+                baseline.skills = load.skills.iter().map(|s| (s.skill_id, s.skill_level)).collect();
+                baseline.shortcuts = load.shortcuts.iter().map(|s| ((s.page, s.slot), *s)).collect();
+                baseline.class_index = Some(class_index);
+            }
+            None => match self.load_baseline(char_id, Some(class_index)).await {
+                Ok(baseline) => {
+                    self.baselines.insert(owner, baseline);
+                }
+                Err(e) => warn!("Could not read the rows of character {char_id}: {e}"),
+            },
+        }
+        load
     }
 
     async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
@@ -5911,6 +6134,18 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::*;
+
+    /// S-SUB-01: the skills and shortcuts of a snapshot go to its class index; one that plays a
+    /// class other than its base class under index 0 (the old model) writes none.
+    #[test]
+    fn the_class_index_of_a_snapshot() {
+        let mut data = player(1, "a");
+        assert_eq!(class_index_of(&data), Some(0));
+        data.class_id = 16;
+        assert_eq!(class_index_of(&data), None);
+        data.profile.class_index = 2;
+        assert_eq!(class_index_of(&data), Some(2));
+    }
 
     /// Java `MacroList.registerMacroInDb`: `type,d1,d2[,cmd];` per command, no command text when it
     /// is empty, cut to 255 characters.

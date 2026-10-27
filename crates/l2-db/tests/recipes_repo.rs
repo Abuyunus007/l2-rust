@@ -127,6 +127,26 @@ async fn recipe_book_rows_follow_java() {
     db.drop_database().await;
 }
 
+/// `restoreRecipeBook(false)` of the subclass switch: only the dwarven recipes (`type = 1`) of the
+/// class index (S-SUB-01).
+#[tokio::test]
+async fn the_dwarven_recipes_of_one_class_index() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = RecipeRepository::new(db.pool.clone());
+    repo.insert_recipe(OWNER, 20, 1, true).await.unwrap();
+    repo.insert_recipe(OWNER, 22, 1, true).await.unwrap();
+    repo.insert_recipe(OWNER, 21, 0, true).await.unwrap();
+    repo.insert_recipe(OWNER, 5, 1, false).await.unwrap();
+    let mut ids = repo.dwarven_recipes_of_class(OWNER, 1).await.unwrap();
+    ids.sort_unstable();
+    assert_eq!(ids, [20, 22]);
+    assert_eq!(repo.dwarven_recipes_of_class(OWNER, 0).await.unwrap(), [21]);
+    assert!(repo.dwarven_recipes_of_class(OWNER, 2).await.unwrap().is_empty());
+    db.drop_database().await;
+}
+
 /// `storeRecipeShopList` / `restoreRecipeShopList`: the old rows go, the new ones get a 1-based
 /// `index`, and they come back in that order.
 #[tokio::test]

@@ -19,7 +19,6 @@
 //
 // # What is left out
 // - `player.isSellingBuffs()` (the SellBuffs custom feature is not ported).
-// - `_subclassLock` of `isAllowedToEnchantSkills()` (sub-classes are not modelled yet) and
 // - The Java GS "enchant.skills" log file: the lines go to `tracing` with the target
 //   `enchant.skills` (`LogSkillEnchants`).
 
@@ -84,7 +83,9 @@ impl World {
 
     /// Java `Player.isAllowedToEnchantSkills()`.
     pub fn is_allowed_to_enchant_skills(&self, id: ObjectId) -> bool {
-        // `_subclassLock`: sub-classes are not modelled.
+        if self.is_changing_class(id) {
+            return false;
+        }
         if self.is_transformed(id) || self.is_in_stance(id) {
             return false;
         }

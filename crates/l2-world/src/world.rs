@@ -468,6 +468,11 @@ impl World {
             WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
+            WorldCommand::ClassIndexLoaded {
+                owner,
+                class_index,
+                load,
+            } => self.on_class_index_loaded(owner, class_index, *load),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
@@ -587,6 +592,8 @@ impl World {
         self.players.insert(id, player);
         // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
         self.clean_loaded_warehouses(id);
+        // Java `restoreSubClassData`: the holders get Java's level and exp limits (S-SUB-01).
+        self.subclass_on_enter(id);
         // Java `Player.load`: `restoreRecipeBook(true)` and `restoreRecipeShopList()`.
         self.restore_craft(id);
         // Java `Player` constructor + `restore`: the standard functions, the equipped items'

@@ -9,7 +9,7 @@
 //
 // # Where a dye lives
 // `PlayerProfile::hennas`: the dye id of slots 1 to 3 of the active class index, 0 for an empty
-// slot (loaded at enter world, Java `restoreHenna`). The bonuses are not stored: the stat engine
+// slot (loaded at enter world and again by the subclass switch, Java `restoreHenna`). The bonuses are not stored: the stat engine
 // adds them from the slots (`FuncHenna`, `StatView::henna_stats`, the cap of 5 per stat), so a
 // change of a slot is a change of the stats.
 //
@@ -25,8 +25,6 @@
 //
 // # Left out
 // - `OnPlayerHennaAdd` / `OnPlayerHennaRemove` for scripts (no script listens yet).
-// - Java reloads `_henna` when the sub class changes (`restoreHenna` in `Player.restore`, which the
-//   sub class switch runs again): the switch is not in the world yet.
 
 use l2_data::{ClassId, Henna};
 use l2_protocol_game::SystemMessageId;
