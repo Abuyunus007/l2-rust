@@ -149,14 +149,13 @@ impl World {
             ((current.ending_time - unix_ms_now()).max(0) / 1000) as i32
         };
         let item = self.item_auction_item_info(current);
-        let next = match next.and_then(|n| instance.auctions.get(&n)) {
-            Some(next) => Some(ItemAuctionNext {
+        let next = next
+            .and_then(|n| instance.auctions.get(&n))
+            .map(|next| ItemAuctionNext {
                 init_bid: next.item.auction_init_bid,
                 start_secs: (next.starting_time / 1000) as i32,
                 item: self.item_auction_item_info(next),
-            }),
-            None => None,
-        };
+            });
         Some(ExItemAuctionInfo {
             refresh,
             instance_id: current.instance_id,
@@ -330,6 +329,7 @@ impl World {
     /// - the bids are the rows' (this server's own bids were written before the read),
     /// - an auction the rows do not have any more is dropped, unless this server made it up,
     /// - an auction this server does not know is added.
+    ///
     /// Then the current and the next auction are chosen again.
     pub(crate) fn apply_item_auction_rows(&mut self, instance_id: i32, rows: Vec<ItemAuctionRecord>) {
         let now = unix_ms_now();
