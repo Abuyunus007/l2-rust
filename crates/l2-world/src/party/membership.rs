@@ -64,7 +64,14 @@ impl World {
         if p.members.contains(&player) {
             return;
         }
-        // `finishLootRequest(false)` "cancel on invite": a loot rule change cannot be pending yet.
+        // `finishLootRequest(false)` "cancel on invite".
+        let pending_vote = p.loot_change.is_some();
+        if pending_vote {
+            self.party_finish_loot_request(party, false);
+        }
+        let Some(p) = self.party.parties.get_mut(&party) else {
+            return;
+        };
         p.members.push(player);
 
         // Sends the new member the whole party window.
@@ -299,7 +306,15 @@ impl World {
                     self.duel_on_remove_from_party(*leader);
                 }
             }
-            // The loot rule change task would be cancelled here: there is none.
+            // The loot rule change task is cancelled (not finished: nobody is told).
+            if let Some(change) = self
+                .party
+                .parties
+                .get_mut(&party)
+                .and_then(|p| p.loot_change.take())
+            {
+                self.timers.cancel(change.timer);
+            }
             if let Some(timer) = self
                 .party
                 .parties
@@ -397,6 +412,7 @@ impl World {
                     .with(text(&name)),
             );
         }
-        // The party matching room follows the new leader: it does not exist yet.
+        // `if (player.isInPartyMatchRoom())`: the party matching room follows the new leader.
+        self.party_room_on_party_leader_change(player);
     }
 }

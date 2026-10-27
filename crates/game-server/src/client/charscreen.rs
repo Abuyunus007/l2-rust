@@ -291,6 +291,8 @@ pub struct CharScreen {
     pub started: Instant,
     /// Java `synchronized (CharInfoTable.getInstance())`: count, name check and insert are one step.
     pub create_lock: tokio::sync::Mutex<()>,
+    /// `AdminData.getMasterAccessLevel()` (set with [`with_master_access_level`](Self::with_master_access_level)).
+    pub master_access_level: i32,
 }
 
 impl CharScreen {
@@ -325,6 +327,7 @@ impl CharScreen {
             select_flood: FloodConfig::with_interval(select_interval_ticks),
             started: Instant::now(),
             create_lock: tokio::sync::Mutex::new(()),
+            master_access_level: 0,
         }
     }
 
@@ -332,6 +335,13 @@ impl CharScreen {
     /// `FloodProtector.ini` (the interval alone is what [`new`](Self::new) takes).
     pub fn with_select_flood(mut self, config: FloodConfig) -> Self {
         self.select_flood = config;
+        self
+    }
+
+    /// The master access level of `AccessLevels.xml`, which a new character gets with
+    /// `EverybodyHasAdminRights` on. Without it the server keeps 0 (the default of `new`).
+    pub fn with_master_access_level(mut self, level: i32) -> Self {
+        self.master_access_level = level;
         self
     }
 
@@ -353,6 +363,7 @@ impl CharScreen {
             config: &self.config,
             stat_bonus: &self.stat_bonus,
             item_max_mp: &self.item_max_mp,
+            master_access_level: self.master_access_level,
         }
     }
 }

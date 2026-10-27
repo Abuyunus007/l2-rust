@@ -280,6 +280,8 @@ pub struct PlanContext<'a> {
     pub config: &'a GameConfig,
     pub stat_bonus: &'a StatBonus,
     pub item_max_mp: &'a ItemMaxMp,
+    /// `AdminData.getMasterAccessLevel()`, given to a new character with `EverybodyHasAdminRights`.
+    pub master_access_level: i32,
 }
 
 /// Hands out object ids and remembers them, so a failed creation can give them back.
@@ -851,6 +853,14 @@ pub fn build_plan(
     let create_date = CalendarDate::from_unix_millis_utc(now_ms + l2_util::time::local_offset_millis(now_ms));
     let sex = i32::from(request.is_female);
     let title_color = 0x00EC_F9A2; // PlayerAppearance.DEFAULT_TITLE_COLOR
+    // Java: `Player.getAccessLevel()` is the master level under EverybodyHasAdminRights, else
+    // the default 0 a new Player gets (`CharacterCreate` never sets one). The INSERT and the
+    // update below both write it.
+    let access_level = if config.general.everybody_has_admin_rights {
+        ctx.master_access_level
+    } else {
+        0
+    };
     let insert = NewCharacter {
         account_name: request.account.to_owned(),
         char_id,
@@ -882,7 +892,7 @@ pub fn build_plan(
         // NOTE(java-quirk): a new Player has a null title until initNewChar sets one.
         title: None,
         title_color,
-        access_level: 0,
+        access_level,
         online: 0,
         is_in_7s_dungeon: false,
         clan_privs: 0,
@@ -1073,13 +1083,6 @@ pub fn build_plan(
     // Player.storeMe: the stats now include the equipped items.
     let extra_mp = inventory.equipped_max_mp(ctx.item_max_mp);
     let (max_hp, max_mp, max_cp) = hp_mp_cp(level, extra_mp)?;
-    let access_level = 0;
-    if config.general.everybody_has_admin_rights {
-        // TODO(M2-CHAR-01): Java gives the master access level of config/AccessLevels.xml.
-        warn!(
-            "EverybodyHasAdminRights is not supported by the character screen yet; access level 0 is stored."
-        );
-    }
     let update = CharacterUpdate {
         level,
         max_hp,

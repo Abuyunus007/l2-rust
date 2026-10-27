@@ -68,10 +68,11 @@ use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
     ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
-    ItemRepository, ItemReuseRepository, ItemUpdate, MessageRepository, NewItem, NewItemReuse,
-    NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave, PetRepository, PetValues,
-    Pool, PunishmentRepository, RecipeRepository, RecipeShopRow, RecommendationRepository,
-    ShortcutRepository, SkillLevel, SkillRepository, SummonRepository, VariableRepository,
+    ItemRepository, ItemReuseRepository, ItemUpdate, MacroRepository, MessageRepository, NewItem,
+    NewItemReuse, NewMacro, NewPetSkillSave, NewPunishment, NewShortcut, NewSkillSave, NewSummonSkillSave,
+    PetRepository, PetValues, Pool, PunishmentRepository, RecipeRepository, RecipeShopRow,
+    RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
+    VariableRepository,
 };
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
@@ -94,11 +95,11 @@ use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
-    HennaWrite, ItemData, ItemRowOp, LsEvent, MailCharacter, MailLoad, MailMessage, MailRefresh, MailWrite,
-    ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows, PersistCommand,
-    PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType, RecipeWrite,
-    SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData, StoredPunishment,
-    SummonWrite,
+    HennaWrite, ItemData, ItemRowOp, LsEvent, MacroData, MailCharacter, MailLoad, MailMessage, MailRefresh,
+    MailWrite, ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows,
+    PersistCommand, PetRowData, PlayerData, ProductRow, PunishmentAffect, PunishmentRecord, PunishmentType,
+    RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
+    StoredPunishment, SummonWrite,
 };
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
@@ -433,6 +434,14 @@ pub trait PlayerStore: Send + 'static {
     fn store_instance_time(
         &mut self,
         _write: &InstanceTimeWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A write of `mods_wedding` (Java's `Couple` statements, M8-MISC-01).
+    fn store_wedding(
+        &mut self,
+        _write: &l2_world::wedding::WeddingWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -966,6 +975,12 @@ async fn run<S: PlayerStore>(
                     }
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Wedding(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_wedding(&write).await {
+                    error!("A couple could NOT be stored ({write:?}): {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::BotReport(row)) => {
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_bot_report(&row).await {
@@ -1414,6 +1429,28 @@ pub async fn load_punishments(pool: &Pool) -> Vec<PunishmentRecord> {
             .collect(),
         Err(e) => {
             warn!("PunishmentManager: Error while loading punishments: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `CoupleManager.load()`, the database half (only with `AllowWedding`): the couples of
+/// `mods_wedding`. A database that cannot be read gives none, like Java.
+pub async fn load_couples(pool: &Pool) -> Vec<l2_world::wedding::Couple> {
+    match l2_db::WeddingRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| l2_world::wedding::Couple {
+                id: row.id,
+                player1_id: row.player1_id,
+                player2_id: row.player2_id,
+                married: row.married,
+                affiance_date: row.affiance_date,
+                wedding_date: row.wedding_date,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Exception: CoupleManager.load(): {e}");
             Vec::new()
         }
     }
@@ -2687,6 +2724,8 @@ struct Baseline {
     items: HashMap<i32, ItemData>,
     skills: HashMap<i32, i32>,
     shortcuts: HashMap<(i32, i32), ShortcutData>,
+    /// `character_macroses` by macro id (L-02).
+    macros: HashMap<i32, MacroData>,
     /// True while the maps come from the database instead of an earlier snapshot. Rows that are
     /// only in the database are not ours to delete: the snapshot may simply not carry them.
     from_database: bool,
@@ -2703,6 +2742,7 @@ impl Baseline {
                 .map(|s| (s.skill_id, s.skill_level))
                 .collect(),
             shortcuts: player.shortcuts.iter().map(|s| ((s.page, s.slot), *s)).collect(),
+            macros: player.profile.macros.iter().map(|m| (m.id, m.clone())).collect(),
             from_database: false,
         }
     }
@@ -2716,6 +2756,7 @@ pub struct DbStore {
     skills: SkillRepository,
     item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
+    macros: MacroRepository,
     hennas: HennaRepository,
     instance_times: InstanceTimeRepository,
     reco: RecommendationRepository,
@@ -2740,6 +2781,7 @@ pub struct DbStore {
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
     announcements: AnnouncementRepository,
+    wedding: l2_db::WeddingRepository,
     petition_feedback: PetitionFeedbackRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -2758,6 +2800,7 @@ impl DbStore {
             skills: SkillRepository::new(pool.clone()),
             item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
+            macros: MacroRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
             instance_times: InstanceTimeRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -2781,6 +2824,7 @@ impl DbStore {
             championship: FishingChampionshipRepository::new(pool.clone()),
             bot_reports: BotReportRepository::new(pool.clone()),
             announcements: AnnouncementRepository::new(pool.clone()),
+            wedding: l2_db::WeddingRepository::new(pool.clone()),
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -2898,6 +2942,18 @@ impl DbStore {
         }
         // Java `Item.restoreAttributes`: the augmentation and elements the rows hold now.
         restore_item_attributes(&self.items, char_id, baseline.items.values_mut()).await?;
+        // Java: MacroList.restoreMe (the same rows and the same reading as at the login).
+        for row in self.macros.macros_of(char_id).await? {
+            let macro_data = MacroData {
+                id: row.id,
+                icon: row.icon.unwrap_or(0),
+                name: row.name.unwrap_or_default(),
+                descr: row.descr.unwrap_or_default(),
+                acronym: row.acronym.unwrap_or_default(),
+                commands: crate::client::enter::parse_macro_commands(row.commands.as_deref().unwrap_or("")),
+            };
+            baseline.macros.insert(macro_data.id, macro_data);
+        }
         if let Some(class_index) = class_index {
             for skill in self.skills.skills_of(char_id, class_index).await? {
                 baseline.skills.insert(skill.skill_id, skill.skill_level);
@@ -3152,6 +3208,46 @@ impl DbStore {
             }
         }
 
+        // Java: MacroList.registerMacroInDb / deleteMacroFromDb (by difference, L-02). The macros
+        // belong to the character, not to a class index, and a snapshot always carries the whole
+        // list (the profile is loaded at the login), so a macro that is gone is deleted even while
+        // the baseline still comes from the database.
+        let now_macros: HashSet<i32> = player.profile.macros.iter().map(|m| m.id).collect();
+        for macro_data in &player.profile.macros {
+            let old = baseline.macros.get(&macro_data.id);
+            if old == Some(macro_data) {
+                continue;
+            }
+            // `registerMacro` deletes the row of the macro it replaces, then inserts.
+            if old.is_some() {
+                self.macros.delete_macro(char_id, macro_data.id).await?;
+            }
+            self.macros
+                .insert_macro(
+                    char_id,
+                    &NewMacro {
+                        id: macro_data.id,
+                        icon: macro_data.icon,
+                        name: macro_data.name.clone(),
+                        descr: Some(macro_data.descr.clone()),
+                        acronym: macro_data.acronym.clone(),
+                        commands: macro_commands_text(macro_data),
+                    },
+                )
+                .await?;
+            baseline.macros.insert(macro_data.id, macro_data.clone());
+        }
+        let gone: Vec<i32> = baseline
+            .macros
+            .keys()
+            .copied()
+            .filter(|id| !now_macros.contains(id))
+            .collect();
+        for macro_id in gone {
+            self.macros.delete_macro(char_id, macro_id).await?;
+            baseline.macros.remove(&macro_id);
+        }
+
         // Skills and shortcuts belong to the active class index; without one (a subclass is
         // active and M2 does not model subclasses) they are left alone.
         let Some(class_index) = class_index else {
@@ -3238,6 +3334,25 @@ impl DbStore {
         }
         Ok(())
     }
+}
+
+/// The `commands` column of a macro (Java `MacroList.registerMacroInDb`): `type,d1,d2[,cmd];` per
+/// command, cut to 255 characters (UTF-16 units, like `StringBuilder.setLength(255)`).
+pub(crate) fn macro_commands_text(macro_data: &MacroData) -> String {
+    let mut text = String::new();
+    for cmd in &macro_data.commands {
+        text.push_str(&format!("{},{},{}", cmd.kind, cmd.d1, cmd.d2));
+        if !cmd.cmd.is_empty() {
+            text.push(',');
+            text.push_str(&cmd.cmd);
+        }
+        text.push(';');
+    }
+    let units: Vec<u16> = text.encode_utf16().collect();
+    if units.len() > 255 {
+        return String::from_utf16_lossy(&units[..255]);
+    }
+    text
 }
 
 /// How many ids `DbStore::rows_written` remembers before it starts over.
@@ -3992,6 +4107,27 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_wedding(&mut self, write: &l2_world::wedding::WeddingWrite) -> Result<(), PersistError> {
+        use l2_world::wedding::WeddingWrite;
+        match write {
+            WeddingWrite::Insert(couple) => {
+                self.wedding
+                    .insert(&l2_db::CoupleRow {
+                        id: couple.id,
+                        player1_id: couple.player1_id,
+                        player2_id: couple.player2_id,
+                        married: couple.married,
+                        affiance_date: couple.affiance_date,
+                        wedding_date: couple.wedding_date,
+                    })
+                    .await?;
+            }
+            WeddingWrite::Marry { id, wedding_date } => self.wedding.marry(*id, *wedding_date).await?,
+            WeddingWrite::Divorce { id } => self.wedding.delete(*id).await?,
+        }
+        Ok(())
+    }
+
     async fn store_petition_feedback(
         &mut self,
         character: &str,
@@ -4508,6 +4644,34 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use super::*;
+
+    /// Java `MacroList.registerMacroInDb`: `type,d1,d2[,cmd];` per command, no command text when it
+    /// is empty, cut to 255 characters.
+    #[test]
+    fn macro_commands_are_written_like_java() {
+        use l2_world::MacroCmdData;
+        let cmd = |kind, d1, d2, text: &str| MacroCmdData {
+            kind,
+            d1,
+            d2,
+            cmd: text.into(),
+        };
+        let mut macro_data = MacroData {
+            id: 1000,
+            icon: 0,
+            name: "n".into(),
+            descr: String::new(),
+            acronym: String::new(),
+            commands: vec![cmd(1, 1011, 0, ""), cmd(3, 0, 0, "/sit")],
+        };
+        assert_eq!(macro_commands_text(&macro_data), "1,1011,0;3,0,0,/sit;");
+        macro_data.commands = vec![cmd(3, 0, 0, &"y".repeat(400))];
+        let text = macro_commands_text(&macro_data);
+        assert_eq!(text.encode_utf16().count(), 255);
+        assert!(text.starts_with("3,0,0,yy"));
+        macro_data.commands.clear();
+        assert_eq!(macro_commands_text(&macro_data), "");
+    }
 
     #[derive(Debug, Clone, PartialEq, Eq)]
     enum Call {

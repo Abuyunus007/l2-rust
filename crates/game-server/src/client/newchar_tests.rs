@@ -46,6 +46,7 @@ fn plan_with(
         config,
         stat_bonus: &env.bonus,
         item_max_mp: &env.max_mp,
+        master_access_level: 0,
     };
     let next = AtomicI32::new(CHAR_ID + 1);
     let allocate = || Some(next.fetch_add(1, Ordering::Relaxed));
@@ -315,6 +316,7 @@ fn running_out_of_ids_is_an_error() {
         config: &config,
         stat_bonus: &env.bonus,
         item_max_mp: &env.max_mp,
+        master_access_level: 0,
     };
     let left = AtomicI32::new(2);
     let allocate = || (left.fetch_sub(1, Ordering::Relaxed) > 0).then_some(7);
@@ -343,6 +345,53 @@ fn running_out_of_ids_is_an_error() {
         2,
         "the ids handed out are known, so they can be given back"
     );
+}
+
+/// The access level a new character is stored with (the INSERT and the update must agree).
+fn stored_access_level(env: &Env, config: &GameConfig, master: i32) -> i32 {
+    let ctx = PlanContext {
+        datapack: &env.pack,
+        config,
+        stat_bonus: &env.bonus,
+        item_max_mp: &env.max_mp,
+        master_access_level: master,
+    };
+    let next = AtomicI32::new(CHAR_ID + 1);
+    let allocate = || Some(next.fetch_add(1, Ordering::Relaxed));
+    let mut ids = IdSource::new(&allocate);
+    let request = CreateRequest {
+        account: "acc",
+        name: "Hero",
+        is_female: false,
+        hair_style: 2,
+        hair_color: 1,
+        face: 1,
+    };
+    let template = env.pack.player_templates.get_by_id(0).unwrap();
+    let plan = build_plan(
+        &ctx,
+        &request,
+        template,
+        CHAR_ID,
+        &mut ids,
+        &mut WorldRng::from_seed(1),
+        1_700_000_000_000,
+    )
+    .unwrap();
+    assert_eq!(plan.insert.access_level, plan.update.access_level);
+    plan.insert.access_level
+}
+
+#[test]
+fn a_new_character_gets_the_master_level_only_with_everybody_has_admin_rights() {
+    let env = env();
+    let mut config = GameConfig::default();
+    // Java: `Player.getAccessLevel()` is 0 for a new Player unless EverybodyHasAdminRights is on.
+    assert_eq!(stored_access_level(&env, &config, 100), 0);
+    config.general.everybody_has_admin_rights = true;
+    assert_eq!(stored_access_level(&env, &config, 100), 100);
+    // No AccessLevels.xml: the master level is 0 anyway.
+    assert_eq!(stored_access_level(&env, &config, 0), 0);
 }
 
 #[test]

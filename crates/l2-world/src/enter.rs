@@ -256,7 +256,7 @@ fn shortcut_entry(data: &PlayerData, st: &dyn StaticData, sc: &ShortcutData) -> 
     })
 }
 
-fn macro_entry(m: &MacroData) -> MacroEntry {
+pub(crate) fn macro_entry(m: &MacroData) -> MacroEntry {
     MacroEntry {
         id: m.id,
         name: m.name.clone(),
@@ -589,6 +589,8 @@ impl World {
         self.pc_cafe_on_enter(id);
         // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
         self.punishment_on_player_login(id);
+        // EnterWorld's "Wedding checks" (M8-MISC-01).
+        self.wedding_on_enter(id);
     }
 
     /// Java `player.sendPacket(new ExVoteSystemInfo(player))`: the recommendations and the state of
@@ -889,7 +891,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         pk_kills: data.pk_kills,
         pvp_kills: data.pvp_kills,
         cubics: world.cubic_ids_of(core.object_id),
-        in_party_match_room: false,
+        in_party_match_room: world.is_in_party_match_room(core.object_id),
         abnormal_visual_effects: if invisible {
             visual_effects | crate::player_view::STEALTH_MASK
         } else {

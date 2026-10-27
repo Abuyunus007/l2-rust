@@ -31,6 +31,7 @@ pub use game::{
     ClanUpdate, ClanWarRow, MacroRepository, MacroRow, NewClan, NewMacro, RecoBonus,
     RecommendationRepository, VariableRepository,
 };
+pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
 pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};

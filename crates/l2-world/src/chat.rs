@@ -33,6 +33,36 @@ const GENERAL_CHAT_RANGE: i32 = 1250;
 /// Level needed for trade chat (hard-coded in Java's `ChatTrade`).
 const TRADE_CHAT_LEVEL: i32 = 20;
 
+/// Java `ChatType.name()` (the constant name, which the chat log writes).
+fn java_chat_name(chat_type: ChatType) -> &'static str {
+    match chat_type {
+        ChatType::General => "GENERAL",
+        ChatType::Shout => "SHOUT",
+        ChatType::Whisper => "WHISPER",
+        ChatType::Party => "PARTY",
+        ChatType::Clan => "CLAN",
+        ChatType::Gm => "GM",
+        ChatType::PetitionPlayer => "PETITION_PLAYER",
+        ChatType::PetitionGm => "PETITION_GM",
+        ChatType::Trade => "TRADE",
+        ChatType::Alliance => "ALLIANCE",
+        ChatType::Announcement => "ANNOUNCEMENT",
+        ChatType::Boat => "BOAT",
+        ChatType::Friend => "FRIEND",
+        ChatType::MsnChat => "MSNCHAT",
+        ChatType::PartyMatchRoom => "PARTYMATCH_ROOM",
+        ChatType::PartyRoomCommander => "PARTYROOM_COMMANDER",
+        ChatType::PartyRoomAll => "PARTYROOM_ALL",
+        ChatType::HeroVoice => "HERO_VOICE",
+        ChatType::CriticalAnnounce => "CRITICAL_ANNOUNCE",
+        ChatType::ScreenAnnounce => "SCREEN_ANNOUNCE",
+        ChatType::Battlefield => "BATTLEFIELD",
+        ChatType::MpccRoom => "MPCC_ROOM",
+        ChatType::NpcGeneral => "NPC_GENERAL",
+        ChatType::NpcShout => "NPC_SHOUT",
+    }
+}
+
 impl World {
     /// Java `Say2.runImpl` followed by the chat handler of the channel.
     pub(crate) fn on_say(&mut self, id: ObjectId, chat_type: i32, text: String, target: Option<String>) {
@@ -104,15 +134,18 @@ impl World {
             let Some(player) = self.players.get(&id) else {
                 return;
             };
+            // Java: `sb.append(chatType.name()).append(" [").append(player)`, where `player` is
+            // `WorldObject.toString()` = `Player:<name>[<objectId>]`.
+            let name = java_chat_name(chat_type);
+            let who = format!("Player:{}[{}]", player.data.name, id.0);
             if chat_type == ChatType::Whisper {
                 info!(
                     target: "chat",
-                    "{chat_type:?} [{} to {}] {text}",
-                    player.data.name,
+                    "{name} [{who} to {}] {text}",
                     target.as_deref().unwrap_or("")
                 );
             } else {
-                info!(target: "chat", "{chat_type:?} [{}] {text}", player.data.name);
+                info!(target: "chat", "{name} [{who}] {text}");
             }
         }
 
@@ -130,17 +163,25 @@ impl World {
             ChatType::PartyRoomAll | ChatType::PartyRoomCommander => {
                 self.chat_command_channel(id, chat_type, &text)
             }
+            ChatType::PartyMatchRoom => self.chat_party_match_room(id, &text),
             ChatType::Battlefield => self.chat_battlefield(id, &text),
             ChatType::PetitionPlayer | ChatType::PetitionGm => self.chat_petition(id, chat_type, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }
     }
 
-    /// Java `Say2.parseAndPublishItem`: every `ID=` link must name an item of the speaker.
-    ///
-    /// `Item.publish()` (which lets others look the item up by its link) has no effect here: the
-    /// link lookup packets are not ported.
-    fn publish_items(&self, id: ObjectId, text: &str) -> bool {
+    /// Java `Say2.parseAndPublishItem`: every `ID=` link must name an item of the speaker, and
+    /// each item is published (`Item.publish()`, which lets others look it up with
+    /// `RequestExRqItemLink`, see `leftover.rs`) as soon as its link is read, so the links before
+    /// a bad one stay published.
+    fn publish_items(&mut self, id: ObjectId, text: &str) -> bool {
+        let mut published = Vec::new();
+        let accepted = self.scan_item_links(id, text, &mut published);
+        self.publish_items_of(id, published);
+        accepted
+    }
+
+    fn scan_item_links(&self, id: ObjectId, text: &str, published: &mut Vec<ObjectId>) -> bool {
         let Some(player) = self.players.get(&id) else {
             return false;
         };
@@ -192,6 +233,7 @@ impl World {
                 );
                 return false;
             }
+            published.push(ObjectId(object_id));
             // `pos1 = _text.indexOf(8, pos) + 1; if (pos1 == 0) // Missing ending tag.`
             let Some(end) = find_mark(pos) else {
                 return false;
@@ -252,7 +294,11 @@ impl World {
     }
 
     // Java: ChatGeneral.onChat (without voiced commands and block list)
-    fn chat_general(&self, id: ObjectId, text: &str) {
+    fn chat_general(&mut self, id: ObjectId, text: &str) {
+        // Voiced commands first: a text a handler took is not said (`vcdUsed`).
+        if self.wedding_voiced_command(id, text) {
+            return;
+        }
         let Some(player) = self.players.get(&id) else {
             return;
         };

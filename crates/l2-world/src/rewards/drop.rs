@@ -107,6 +107,9 @@ pub struct DropSettings {
     /// `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`): a damage dealer farther from the monster
     /// than this gets no share of the loot.
     pub alt_party_range: i32,
+    /// `RatesConfig.EVENT_ITEM_MAX_LEVEL_DIFFERENCE` (`EventItemMaxLevelDifference`): the event
+    /// drops (`event_drop.rs`) go to a killer at most this many levels above the monster.
+    pub event_item_max_level_difference: i32,
     /// `PLAYER_DROP_LIMIT`, `PLAYER_RATE_DROP`, `PLAYER_RATE_DROP_ITEM`, `PLAYER_RATE_DROP_EQUIP`,
     /// `PLAYER_RATE_DROP_EQUIP_WEAPON` (`PlayerDropLimit` ...): what a player killed by a monster
     /// drops.
@@ -156,6 +159,7 @@ impl Default for DropSettings {
             boss_drop_max_level: 999,
             boss_drop_list: Vec::new(),
             alt_party_range: 1500,
+            event_item_max_level_difference: 9,
             player_drop_limit: 3,
             player_rate_drop: 5,
             player_rate_drop_item: 70,
@@ -788,7 +792,7 @@ impl World {
             // The party's members together beat the single best dealer: its leader gets the loot.
             let leader = self.party_leader(party);
             self.do_item_drop(dying, leader);
-            // `EventDropManager.doEventDrop(leader, this)`: no event drops.
+            self.do_event_drop(leader, dying);
             return;
         }
         let dealer = match max_dealer {
@@ -797,7 +801,9 @@ impl World {
             _ => last_attacker,
         };
         self.do_item_drop(dying, dealer);
-        // `EventDropManager.doEventDrop`: no event drops.
+        // NOTE(java-quirk): the event drops go to the last attacker even when the damage dealer
+        // got the normal drops.
+        self.do_event_drop(last_attacker, dying);
     }
 
     /// Java `Player.onDieDropItem(killer)`: a player with karma, or one killed by a monster, may

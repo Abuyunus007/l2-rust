@@ -162,8 +162,11 @@ impl World {
         }
         // ON_PLAYER_DLG_ANSWER script listeners: D-05.
         if message_id == SystemMessageId::S13.id() {
-            // The offline, engagement and zone-builder questions share this id (not sent yet);
-            // the admin command confirmation is the one that is (`admin/mod.rs`).
+            // The offline and zone-builder questions share this id (not sent yet); the
+            // engagement (`wedding.rs`) and the admin command confirmation (`admin/mod.rs`) are.
+            if self.wedding_dlg_answer(player, answer) {
+                return;
+            }
             self.admin_confirm_answer(player, answer);
         } else if message_id
             == SystemMessageId::C1IsMakingAnAttemptToResurrectYouIfYouChooseThisPathS2ExperiencePointsWillBeReturnedToYouDoYouWantToBeResurrected
