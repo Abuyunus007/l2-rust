@@ -132,7 +132,69 @@ pub enum QuestSound {
 
 impl QuestSound {
     /// Every sound, in Java's declaration order.
-    pub const ALL: [Self; 61] = [Self::ItemsoundQuestAccept, Self::ItemsoundQuestMiddle, Self::ItemsoundQuestFinish, Self::ItemsoundQuestItemget, Self::ItemsoundQuestTutorial, Self::ItemsoundQuestGiveup, Self::ItemsoundQuestBeforeBattle, Self::ItemsoundQuestJackpot, Self::ItemsoundQuestFanfare1, Self::ItemsoundQuestFanfare2, Self::ItemsoundQuestFanfareMiddle, Self::ItemsoundArmorWood, Self::ItemsoundArmorCloth, Self::AmdsoundEdChimes, Self::Horror01, Self::AmbsoundHorror01, Self::AmbsoundHorror03, Self::AmbsoundHorror15, Self::ItemsoundArmorLeather, Self::ItemsoundWeaponSpear, Self::AmbsoundMtCreak, Self::AmbsoundEgDron, Self::SkillsoundHorror02, Self::ChrsoundMhfighterCry, Self::AmdsoundWindLoot, Self::InterfacesoundCharstatOpen, Self::AmdsoundHorror02, Self::ChrsoundFdelfCry, Self::AmbsoundWingflap, Self::AmbsoundThunder, Self::AmbsoundDrone, Self::AmbsoundCrystalLoop, Self::AmbsoundPercussion01, Self::AmbsoundPercussion02, Self::ItemsoundBrokenKey, Self::ItemsoundSiren, Self::ItemsoundEnchantSuccess, Self::ItemsoundEnchantFailed, Self::ItemsoundSowSuccess, Self::SkillsoundHorror1, Self::SkillsoundHorror2, Self::SkillsoundAntarasFear, Self::SkillsoundJewelCelebrate, Self::SkillsoundLiquidMix, Self::SkillsoundLiquidSuccess, Self::SkillsoundLiquidFail, Self::EtcsoundElrokiSongFull, Self::EtcsoundElrokiSong1st, Self::EtcsoundElrokiSong2nd, Self::EtcsoundElrokiSong3rd, Self::Bs01A, Self::Bs02A, Self::Bs03A, Self::Bs04A, Self::Bs06A, Self::Bs07A, Self::Bs08A, Self::Bs01D, Self::Bs02D, Self::Bs05D, Self::Bs07D];
+    pub const ALL: [Self; 61] = [
+        Self::ItemsoundQuestAccept,
+        Self::ItemsoundQuestMiddle,
+        Self::ItemsoundQuestFinish,
+        Self::ItemsoundQuestItemget,
+        Self::ItemsoundQuestTutorial,
+        Self::ItemsoundQuestGiveup,
+        Self::ItemsoundQuestBeforeBattle,
+        Self::ItemsoundQuestJackpot,
+        Self::ItemsoundQuestFanfare1,
+        Self::ItemsoundQuestFanfare2,
+        Self::ItemsoundQuestFanfareMiddle,
+        Self::ItemsoundArmorWood,
+        Self::ItemsoundArmorCloth,
+        Self::AmdsoundEdChimes,
+        Self::Horror01,
+        Self::AmbsoundHorror01,
+        Self::AmbsoundHorror03,
+        Self::AmbsoundHorror15,
+        Self::ItemsoundArmorLeather,
+        Self::ItemsoundWeaponSpear,
+        Self::AmbsoundMtCreak,
+        Self::AmbsoundEgDron,
+        Self::SkillsoundHorror02,
+        Self::ChrsoundMhfighterCry,
+        Self::AmdsoundWindLoot,
+        Self::InterfacesoundCharstatOpen,
+        Self::AmdsoundHorror02,
+        Self::ChrsoundFdelfCry,
+        Self::AmbsoundWingflap,
+        Self::AmbsoundThunder,
+        Self::AmbsoundDrone,
+        Self::AmbsoundCrystalLoop,
+        Self::AmbsoundPercussion01,
+        Self::AmbsoundPercussion02,
+        Self::ItemsoundBrokenKey,
+        Self::ItemsoundSiren,
+        Self::ItemsoundEnchantSuccess,
+        Self::ItemsoundEnchantFailed,
+        Self::ItemsoundSowSuccess,
+        Self::SkillsoundHorror1,
+        Self::SkillsoundHorror2,
+        Self::SkillsoundAntarasFear,
+        Self::SkillsoundJewelCelebrate,
+        Self::SkillsoundLiquidMix,
+        Self::SkillsoundLiquidSuccess,
+        Self::SkillsoundLiquidFail,
+        Self::EtcsoundElrokiSongFull,
+        Self::EtcsoundElrokiSong1st,
+        Self::EtcsoundElrokiSong2nd,
+        Self::EtcsoundElrokiSong3rd,
+        Self::Bs01A,
+        Self::Bs02A,
+        Self::Bs03A,
+        Self::Bs04A,
+        Self::Bs06A,
+        Self::Bs07A,
+        Self::Bs08A,
+        Self::Bs01D,
+        Self::Bs02D,
+        Self::Bs05D,
+        Self::Bs07D,
+    ];
 
     /// Java `getSoundName()`.
     pub fn sound_name(self) -> &'static str {
@@ -219,11 +281,26 @@ mod tests {
 
     #[test]
     fn the_quest_sounds_are_javas_files() {
-        assert_eq!(QuestSound::ItemsoundQuestAccept.sound_name(), "ItemSound.quest_accept");
-        assert_eq!(QuestSound::ItemsoundQuestMiddle.sound_name(), "ItemSound.quest_middle");
-        assert_eq!(QuestSound::ItemsoundQuestFinish.sound_name(), "ItemSound.quest_finish");
-        assert_eq!(QuestSound::ItemsoundQuestItemget.sound_name(), "ItemSound.quest_itemget");
+        assert_eq!(
+            QuestSound::ItemsoundQuestAccept.sound_name(),
+            "ItemSound.quest_accept"
+        );
+        assert_eq!(
+            QuestSound::ItemsoundQuestMiddle.sound_name(),
+            "ItemSound.quest_middle"
+        );
+        assert_eq!(
+            QuestSound::ItemsoundQuestFinish.sound_name(),
+            "ItemSound.quest_finish"
+        );
+        assert_eq!(
+            QuestSound::ItemsoundQuestItemget.sound_name(),
+            "ItemSound.quest_itemget"
+        );
         assert_eq!(QuestSound::ALL.len(), 61);
-        assert_eq!(QuestSound::ItemsoundQuestAccept.packet(), sound_packet("ItemSound.quest_accept"));
+        assert_eq!(
+            QuestSound::ItemsoundQuestAccept.packet(),
+            sound_packet("ItemSound.quest_accept")
+        );
     }
 }

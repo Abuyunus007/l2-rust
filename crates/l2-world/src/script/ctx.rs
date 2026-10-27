@@ -36,7 +36,8 @@ use crate::world::World;
 /// Java `Quest.DEFAULT_NO_QUEST_MSG`.
 pub const DEFAULT_NO_QUEST_MSG: &str = "<html><body>You are either not on a quest that involves this NPC, or you don't meet this NPC's minimum quest requirements.</body></html>";
 /// Java `Quest.DEFAULT_ALREADY_COMPLETED_MSG`.
-pub const DEFAULT_ALREADY_COMPLETED_MSG: &str = "<html><body>This quest has already been completed.</body></html>";
+pub const DEFAULT_ALREADY_COMPLETED_MSG: &str =
+    "<html><body>This quest has already been completed.</body></html>";
 
 /// The world while one script's hook runs. Every helper a Java script inherits from `Quest` is
 /// a method here; anything else of the world is reached through [`ScriptCtx::world_mut`].
@@ -326,7 +327,8 @@ impl<'w> ScriptCtx<'w> {
         // Apply quest item drop amount multiplier configuration (`long * float` is a float).
         let mut final_count = count;
         if template.quest_item {
-            final_count = (count as f32 * self.world.scripts.settings.quest_item_drop_amount_multiplier) as i64;
+            final_count =
+                (count as f32 * self.world.scripts.settings.quest_item_drop_amount_multiplier) as i64;
         }
         // Add items to player's inventory (`PlayerInventory.addItem`: no "obtained" message).
         let Some(added) = self.world.inventory_add_item_by_id(player, item_id, final_count) else {
@@ -384,7 +386,11 @@ impl<'w> ScriptCtx<'w> {
             Some(rate) => (count as f32 * rate) as i64,
             None => count,
         };
-        if self.world.inventory_add_item_by_id(player, item_id, count).is_none() {
+        if self
+            .world
+            .inventory_add_item_by_id(player, item_id, count)
+            .is_none()
+        {
             return;
         }
         self.send_item_get_message(player, item_id, count);
@@ -403,13 +409,15 @@ impl<'w> ScriptCtx<'w> {
     fn send_item_get_message(&mut self, player: ObjectId, item_id: i32, count: i64) {
         let templates = self.world.item_templates();
         let message = if item_id == ADENA_ID {
-            SystemMessage::new(SystemMessageId::YouHaveEarnedS1Adena).with(SystemMessageParam::LongNumber(count))
+            SystemMessage::new(SystemMessageId::YouHaveEarnedS1Adena)
+                .with(SystemMessageParam::LongNumber(count))
         } else if count > 1 {
             SystemMessage::new(SystemMessageId::YouHaveEarnedS2S1S)
                 .with(item_name_param(templates.as_deref(), item_id))
                 .with(SystemMessageParam::LongNumber(count))
         } else {
-            SystemMessage::new(SystemMessageId::YouHaveEarnedS1).with(item_name_param(templates.as_deref(), item_id))
+            SystemMessage::new(SystemMessageId::YouHaveEarnedS1)
+                .with(item_name_param(templates.as_deref(), item_id))
         };
         self.world.send(player, &message);
         let Some(p) = self.world.players.get(&player) else {
@@ -539,7 +547,8 @@ impl<'w> ScriptCtx<'w> {
         }
         // NOTE(java-quirk): `destroyItemByItemId` destroys from the first item of the id, not
         // necessarily the one this loop is at.
-        self.world.destroy_item_by_item_id(player, item_id, to_delete, true)
+        self.world
+            .destroy_item_by_item_id(player, item_id, to_delete, true)
     }
 
     // ------------------------------------------------------------------ exp
@@ -612,7 +621,13 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `npc.broadcastSay(chatType, npcStringId, params...)`: `NpcSay` to the players who
     /// see the NPC.
-    pub fn broadcast_npc_say(&mut self, npc: ScriptNpc, chat: ChatType, npc_string: NpcStringId, params: &[&str]) {
+    pub fn broadcast_npc_say(
+        &mut self,
+        npc: ScriptNpc,
+        chat: ChatType,
+        npc_string: NpcStringId,
+        params: &[&str],
+    ) {
         let packet = NpcSay {
             object_id: npc.object_id.0,
             text_type: chat.client_id(),
@@ -654,7 +669,12 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `showHtmlFile(player, fileName, npc)`: the page goes out (an `.htm` of a quest as
     /// the quest window); returns its text.
-    pub fn show_html_file(&mut self, player: ObjectId, file_name: &str, npc: Option<ScriptNpc>) -> Option<String> {
+    pub fn show_html_file(
+        &mut self,
+        player: ObjectId,
+        file_name: &str,
+        npc: Option<ScriptNpc>,
+    ) -> Option<String> {
         show_html_file(self.world, self.script, player, file_name, npc)
     }
 
@@ -814,7 +834,11 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `getRandomPartyMember(player, npc)`: the member with the highest roll of 1000 that
     /// passes [`super::Script::check_party_member`], in range of the NPC.
-    pub fn random_party_member_for_npc(&mut self, player: ObjectId, npc: Option<ScriptNpc>) -> Option<ObjectId> {
+    pub fn random_party_member_for_npc(
+        &mut self,
+        player: ObjectId,
+        npc: Option<ScriptNpc>,
+    ) -> Option<ObjectId> {
         if !self.world.players.contains_key(&player) || !self.check_distance_to_target(player, npc) {
             return None;
         }
@@ -969,8 +993,18 @@ impl<'w> ScriptCtx<'w> {
         instance_id: i32,
     ) -> Option<ScriptNpc> {
         self.world
-            .script_add_spawn(npc_id, (x, y, z), heading, random_offset, despawn_delay_ms, instance_id)
-            .map(|object_id| ScriptNpc { object_id, id: npc_id })
+            .script_add_spawn(
+                npc_id,
+                (x, y, z),
+                heading,
+                random_offset,
+                despawn_delay_ms,
+                instance_id,
+            )
+            .map(|object_id| ScriptNpc {
+                object_id,
+                id: npc_id,
+            })
     }
 
     /// Java `addSpawn(npcId, npc, randomOffset, despawnDelay)`: at an object's place, heading
@@ -985,11 +1019,28 @@ impl<'w> ScriptCtx<'w> {
         let (x, y, z) = self.world.position_of(at)?;
         let heading = self.world.heading_of(at);
         let instance = self.world.instance_id_of(at);
-        self.add_spawn(npc_id, x, y, z, heading, random_offset, despawn_delay_ms, instance)
+        self.add_spawn(
+            npc_id,
+            x,
+            y,
+            z,
+            heading,
+            random_offset,
+            despawn_delay_ms,
+            instance,
+        )
     }
 
     /// Java `teleportPlayer(player, loc, instanceId, allowRandomOffset)`.
-    pub fn teleport_player(&mut self, player: ObjectId, x: i32, y: i32, z: i32, instance_id: i32, allow_random_offset: bool) {
+    pub fn teleport_player(
+        &mut self,
+        player: ObjectId,
+        x: i32,
+        y: i32,
+        z: i32,
+        instance_id: i32,
+        allow_random_offset: bool,
+    ) {
         let offset = if allow_random_offset {
             self.world.settings.teleport.max_offset_on_teleport
         } else {
@@ -1107,7 +1158,13 @@ impl<'w> ScriptCtx<'w> {
     }
 
     /// Java `ScriptManager.getScript(name).notifyEvent(event, npc, player)`.
-    pub fn notify_event_of(&mut self, script_name: &str, event: &str, npc: Option<ScriptNpc>, player: Option<ObjectId>) {
+    pub fn notify_event_of(
+        &mut self,
+        script_name: &str,
+        event: &str,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
         if let Some(script) = self.world.scripts.by_name(script_name) {
             self.world.script_notify_event(script, event, npc, player);
         }
@@ -1150,7 +1207,12 @@ fn in_inventory(loc: &str) -> bool {
 
 /// Java `Quest.getQuestState(player, initIfNone)` for any script: `newQuestState(player)` makes
 /// a `CREATED` state and registers it with the player (no database row yet).
-pub(crate) fn quest_state(world: &mut World, script: ScriptId, player: ObjectId, init_if_none: bool) -> Option<Qs> {
+pub(crate) fn quest_state(
+    world: &mut World,
+    script: ScriptId,
+    player: ObjectId,
+    init_if_none: bool,
+) -> Option<Qs> {
     if !world.players.contains_key(&player) {
         return None;
     }
@@ -1227,7 +1289,13 @@ pub(crate) fn show_html_file(
 }
 
 /// Java `Quest.showResult(player, res, npc)`.
-pub(crate) fn show_result(world: &mut World, script: ScriptId, player: ObjectId, res: Option<&str>, npc: Option<ScriptNpc>) {
+pub(crate) fn show_result(
+    world: &mut World,
+    script: ScriptId,
+    player: ObjectId,
+    res: Option<&str>,
+    npc: Option<ScriptNpc>,
+) {
     let Some(res) = res.filter(|r| !r.is_empty()) else {
         return;
     };

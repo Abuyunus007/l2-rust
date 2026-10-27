@@ -121,7 +121,9 @@ async fn quest_rows_are_written_read_and_deleted_like_java() {
 
     // `startQuest`: `set("cond", "1")` (a new variable), then the state row.
     repo.insert_variable(ALICE, Q, "cond", "1").await.unwrap();
-    repo.insert_variable(ALICE, Q, "<state>", "Started").await.unwrap();
+    repo.insert_variable(ALICE, Q, "<state>", "Started")
+        .await
+        .unwrap();
     repo.insert_variable(BOB, Q, "<state>", "Started").await.unwrap();
     // `setCond(2)`: an update of the variable.
     repo.update_variable(ALICE, Q, "cond", "2").await.unwrap();
@@ -136,7 +138,10 @@ async fn quest_rows_are_written_read_and_deleted_like_java() {
 
     // `unset`.
     repo.delete_variable(ALICE, Q, "memoState").await.unwrap();
-    assert_eq!(repo.quest_variables_of(ALICE).await.unwrap(), [var(Q, "cond", "2")]);
+    assert_eq!(
+        repo.quest_variables_of(ALICE).await.unwrap(),
+        [var(Q, "cond", "2")]
+    );
 
     // `exitQuest(false)`: everything but the state row goes.
     repo.delete_quest(ALICE, Q, false).await.unwrap();
@@ -164,11 +169,17 @@ async fn global_variables_are_replaced_and_deleted_one_by_one() {
     loaded.sort();
     assert_eq!(
         loaded,
-        [("a".to_owned(), Some("1".to_owned())), ("b".to_owned(), Some("3".to_owned()))]
+        [
+            ("a".to_owned(), Some("1".to_owned())),
+            ("b".to_owned(), Some("3".to_owned()))
+        ]
     );
     repo.delete_variable("a").await.unwrap();
     repo.delete_variable("missing").await.unwrap();
-    assert_eq!(repo.load_all().await.unwrap(), [("b".to_owned(), Some("3".to_owned()))]);
+    assert_eq!(
+        repo.load_all().await.unwrap(),
+        [("b".to_owned(), Some("3".to_owned()))]
+    );
 
     db.drop_database().await;
 }

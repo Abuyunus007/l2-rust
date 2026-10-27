@@ -84,10 +84,7 @@ mod tests {
 
     #[test]
     fn quest_abort_carries_the_quest_id() {
-        assert_eq!(
-            round_trip(RequestQuestAbort { quest_id: 1 }),
-            [0x63, 1, 0, 0, 0]
-        );
+        assert_eq!(round_trip(RequestQuestAbort { quest_id: 1 }), [0x63, 1, 0, 0, 0]);
     }
 
     #[test]

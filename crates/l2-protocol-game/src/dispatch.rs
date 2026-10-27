@@ -9,10 +9,6 @@ use l2_net::{Decode, PacketError, PacketReader};
 
 use crate::client::MultiSellChoose;
 use crate::client::RequestExFishRanking;
-use crate::client::{
-    RequestQuestAbort, RequestQuestList, RequestTutorialClientEvent, RequestTutorialLinkHtml,
-    RequestTutorialPassCmdToServer, RequestTutorialQuestionMark,
-};
 use crate::client::bookmark::{
     SUB_CHANGE_SLOT, SUB_DELETE, SUB_MODIFY, SUB_SAVE, SUB_SLOT_INFO, SUB_TELEPORT,
 };
@@ -110,6 +106,10 @@ use crate::client::{
     RequestPrivateStoreBuy, RequestPrivateStoreManageBuy, RequestPrivateStoreManageSell,
     RequestPrivateStoreQuitBuy, RequestPrivateStoreQuitSell, RequestPrivateStoreSell, SetPrivateStoreListBuy,
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
+};
+use crate::client::{
+    RequestQuestAbort, RequestQuestList, RequestTutorialClientEvent, RequestTutorialLinkHtml,
+    RequestTutorialPassCmdToServer, RequestTutorialQuestionMark,
 };
 use crate::client::{
     RequestRecipeBookDestroy, RequestRecipeBookOpen, RequestRecipeItemMakeInfo, RequestRecipeItemMakeSelf,
@@ -1352,20 +1352,22 @@ mod tests {
         assert_eq!(
             decode(InGame, 0x86, &[0, 0]).unwrap(),
             Some(ClientPacket::RequestTutorialPassCmdToServer(
-                RequestTutorialPassCmdToServer { bypass: String::new() }
+                RequestTutorialPassCmdToServer {
+                    bypass: String::new()
+                }
             ))
         );
         assert_eq!(
             decode(InGame, 0x87, &[3, 0, 0, 0]).unwrap(),
-            Some(ClientPacket::RequestTutorialQuestionMark(RequestTutorialQuestionMark {
-                number: 3
-            }))
+            Some(ClientPacket::RequestTutorialQuestionMark(
+                RequestTutorialQuestionMark { number: 3 }
+            ))
         );
         assert_eq!(
             decode(InGame, 0x88, &[8, 0, 0, 0]).unwrap(),
-            Some(ClientPacket::RequestTutorialClientEvent(RequestTutorialClientEvent {
-                event_id: 8
-            }))
+            Some(ClientPacket::RequestTutorialClientEvent(
+                RequestTutorialClientEvent { event_id: 8 }
+            ))
         );
         assert_eq!(decode(Authenticated, 0x62, &[]).unwrap(), None);
     }

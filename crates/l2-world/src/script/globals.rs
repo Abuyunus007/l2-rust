@@ -47,10 +47,7 @@ impl GlobalVariables {
 
     /// Java `getString(name, default)`.
     pub fn get_string(&self, name: &str, default: &str) -> String {
-        self.vars
-            .get(name)
-            .cloned()
-            .unwrap_or_else(|| default.to_owned())
+        self.vars.get(name).cloned().unwrap_or_else(|| default.to_owned())
     }
 
     /// Java `getInt(name, default)`: a value that is no number is the default (Java throws).

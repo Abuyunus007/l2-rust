@@ -143,8 +143,15 @@ impl Script for Recorder {
         s.set_on_enter_world();
         s.register_quest_items(&[TOKEN]);
     }
-    fn on_event(&self, ctx: &mut ScriptCtx<'_>, event: &str, npc: Option<ScriptNpc>, player: Option<ObjectId>) -> Option<String> {
-        self.heard.push(format!("{}:event {event} {}", self.name, npc.is_some()));
+    fn on_event(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        event: &str,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) -> Option<String> {
+        self.heard
+            .push(format!("{}:event {event} {}", self.name, npc.is_some()));
         match event {
             "start" => {
                 let qs = ctx.get_quest_state(player?, true)?;
@@ -170,7 +177,11 @@ impl Script for Recorder {
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
         self.heard.push(format!("{}:talk", self.name));
         let qs = ctx.get_quest_state(player, true)?;
-        Some(format!("<html><body>{} state {}</body></html>", self.name, qs.state(ctx)))
+        Some(format!(
+            "<html><body>{} state {}</body></html>",
+            self.name,
+            qs.state(ctx)
+        ))
     }
     fn on_first_talk(&self, _ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, _player: ObjectId) -> Option<String> {
         self.heard.push(format!("{}:first_talk", self.name));
@@ -217,7 +228,11 @@ fn write(root: &Path, path: &str, text: &str) {
 /// A world with two recording quests (`QA` 1, `QB` 2) unless `scripts` says otherwise.
 fn setup_with(settings: ScriptSettings, scripts: impl FnOnce(&Heard) -> ScriptRegistry) -> Setup {
     let root = tempfile::tempdir().unwrap();
-    write(root.path(), "data/spawns/none.xml", r#"<?xml version="1.0"?><list enabled="true"></list>"#);
+    write(
+        root.path(),
+        "data/spawns/none.xml",
+        r#"<?xml version="1.0"?><list enabled="true"></list>"#,
+    );
     write(
         root.path(),
         "data/html/default/1001.htm",
@@ -546,7 +561,10 @@ fn start_quest_writes_cond_and_state_and_sends_the_journal() {
     });
     assert_eq!(
         s.quest_writes(),
-        [insert(1, "QA", "cond", "1"), insert(1, "QA", "<state>", "Started")]
+        [
+            insert(1, "QA", "cond", "1"),
+            insert(1, "QA", "<state>", "Started")
+        ]
     );
     let out = s.take();
     assert_eq!(
@@ -812,13 +830,22 @@ fn tutorial_packets_reach_the_tutorial_quest() {
     });
     s.enter(1);
     // Without a state of the tutorial quest nothing happens.
-    s.input(1, ClientInput::Quest(QuestInput::TutorialQuestionMark { number: 3 }));
+    s.input(
+        1,
+        ClientInput::Quest(QuestInput::TutorialQuestionMark { number: 3 }),
+    );
     s.heard.take();
     s.as_script("Q00255_Tutorial", |ctx| {
         ctx.get_quest_state(ObjectId(1), true);
     });
-    s.input(1, ClientInput::Quest(QuestInput::TutorialQuestionMark { number: 3 }));
-    s.input(1, ClientInput::Quest(QuestInput::TutorialClientEvent { event_id: 8 }));
+    s.input(
+        1,
+        ClientInput::Quest(QuestInput::TutorialQuestionMark { number: 3 }),
+    );
+    s.input(
+        1,
+        ClientInput::Quest(QuestInput::TutorialClientEvent { event_id: 8 }),
+    );
     s.input(
         1,
         ClientInput::Quest(QuestInput::TutorialLinkHtml {
@@ -852,15 +879,19 @@ fn global_variables_are_written_at_shutdown_only_with_the_switch() {
             ..ScriptSettings::default()
         };
         let mut s = setup_with(settings, two_quests);
-        s.world
-            .set_global_variables(vec![("old".to_owned(), Some("1".to_owned())), ("null".to_owned(), None)]);
+        s.world.set_global_variables(vec![
+            ("old".to_owned(), Some("1".to_owned())),
+            ("null".to_owned(), None),
+        ]);
         assert_eq!(s.world.global_variables().len(), 1);
         s.as_script("QA", |ctx| {
             assert_eq!(ctx.global_variables().get_int("old", 0), 1);
             ctx.set_global_variable("boss", "123");
             ctx.remove_global_variable("old");
         });
-        s.world.handle(WorldCommand::Shutdown { done: Box::new(|| {}) });
+        s.world.handle(WorldCommand::Shutdown {
+            done: Box::new(|| {}),
+        });
         let globals = s.writes.globals.lock().unwrap().clone();
         if switch {
             assert_eq!(

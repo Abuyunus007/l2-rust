@@ -165,12 +165,20 @@ impl World {
                 skill,
             } => {
                 for script in self.listeners_of(EventKind::AttackableAttack, npc.id) {
-                    self.with_script(script, |s, ctx| s.on_attack(ctx, npc, attacker, damage, is_summon, skill));
+                    self.with_script(script, |s, ctx| {
+                        s.on_attack(ctx, npc, attacker, damage, is_summon, skill)
+                    });
                 }
             }
-            PendingEvent::AggroRangeEnter { npc, player, is_summon } => {
+            PendingEvent::AggroRangeEnter {
+                npc,
+                player,
+                is_summon,
+            } => {
                 for script in self.listeners_of(EventKind::AttackableAggroRangeEnter, npc.id) {
-                    self.with_script(script, |s, ctx| s.on_aggro_range_enter(ctx, npc, player, is_summon));
+                    self.with_script(script, |s, ctx| {
+                        s.on_aggro_range_enter(ctx, npc, player, is_summon)
+                    });
                 }
             }
             PendingEvent::Spawn(npc) => {
@@ -218,7 +226,9 @@ impl World {
                 is_summon,
             } => {
                 for script in self.listeners_of(EventKind::NpcSkillSee, npc.id) {
-                    self.with_script(script, |s, ctx| s.on_skill_see(ctx, npc, caster, skill, &targets, is_summon));
+                    self.with_script(script, |s, ctx| {
+                        s.on_skill_see(ctx, npc, caster, skill, &targets, is_summon)
+                    });
                 }
             }
             PendingEvent::SpellFinished { npc, player, skill } => {
@@ -233,7 +243,9 @@ impl World {
                 is_summon,
             } => {
                 for script in self.listeners_of(EventKind::AttackableFactionCall, npc.id) {
-                    self.with_script(script, |s, ctx| s.on_faction_call(ctx, npc, caller, attacker, is_summon));
+                    self.with_script(script, |s, ctx| {
+                        s.on_faction_call(ctx, npc, caller, attacker, is_summon)
+                    });
                 }
             }
             PendingEvent::CreatureSee { npc, creature } => {
@@ -249,7 +261,9 @@ impl World {
             } => {
                 for script in self.listeners_of(EventKind::NpcEventReceived, receiver.id) {
                     // Java `notifyEventReceived` ignores the returned text.
-                    self.with_script(script, |s, ctx| s.on_event_received(ctx, &event, sender, receiver, reference));
+                    self.with_script(script, |s, ctx| {
+                        s.on_event_received(ctx, &event, sender, receiver, reference)
+                    });
                 }
             }
             PendingEvent::MoveFinished(npc) => {
@@ -582,10 +596,19 @@ impl World {
     }
 
     /// Java `Npc.notifyQuestEventSkillFinished` (`ON_NPC_SKILL_FINISHED`).
-    pub(crate) fn script_on_spell_finished(&mut self, npc: ObjectId, target: Option<ObjectId>, skill: SkillKey) {
+    pub(crate) fn script_on_spell_finished(
+        &mut self,
+        npc: ObjectId,
+        target: Option<ObjectId>,
+        skill: SkillKey,
+    ) {
         if let Some(n) = self.has_npc_listener(EventKind::NpcSkillFinished, npc) {
             let player = target.filter(|t| self.players.contains_key(t));
-            self.queue_script_event(PendingEvent::SpellFinished { npc: n, player, skill });
+            self.queue_script_event(PendingEvent::SpellFinished {
+                npc: n,
+                player,
+                skill,
+            });
         }
     }
 
@@ -600,7 +623,13 @@ impl World {
     }
 
     /// Java `Npc.broadcastEvent` / `sendScriptEvent` (`ON_NPC_EVENT_RECEIVED`).
-    pub fn script_send_event(&mut self, event: &str, sender: ObjectId, receiver: ObjectId, reference: Option<ObjectId>) {
+    pub fn script_send_event(
+        &mut self,
+        event: &str,
+        sender: ObjectId,
+        receiver: ObjectId,
+        reference: Option<ObjectId>,
+    ) {
         let (Some(s), Some(r)) = (
             self.script_npc_of(sender),
             self.has_npc_listener(EventKind::NpcEventReceived, receiver),

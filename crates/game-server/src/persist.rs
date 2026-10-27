@@ -1284,7 +1284,9 @@ async fn run<S: PlayerStore>(
             OutboxMessage::Persist(PersistCommand::GlobalVariables(write)) => {
                 // Java's `storeMe` logs a failed store and goes on.
                 if let Err(e) = store.store_global_variables(&write).await {
-                    warn!("GlobalVariablesManager: Couldn't save global variables to database ({write:?}): {e}");
+                    warn!(
+                        "GlobalVariablesManager: Couldn't save global variables to database ({write:?}): {e}"
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::InstanceTime(write)) => {
@@ -2073,7 +2075,10 @@ pub async fn load_auto_spawns(pool: &Pool) -> Vec<l2_world::sevensigns::AutoSpaw
 /// Java `GlobalVariablesManager.restoreMe()`: every row of `global_variables`. Java logs a failed
 /// read and starts without them.
 pub async fn load_global_variables(pool: &Pool) -> Vec<(String, Option<String>)> {
-    match l2_db::GlobalVariableRepository::new(pool.clone()).load_all().await {
+    match l2_db::GlobalVariableRepository::new(pool.clone())
+        .load_all()
+        .await
+    {
         Ok(rows) => rows,
         Err(e) => {
             warn!("GlobalVariablesManager: Couldn't restore global variables. {e}");

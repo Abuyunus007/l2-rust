@@ -1681,7 +1681,9 @@ impl ClientSession {
             ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
             // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
             ClientPacket::RequestQuestList(_) => ClientInput::Quest(QuestInput::List),
-            ClientPacket::RequestQuestAbort(p) => ClientInput::Quest(QuestInput::Abort { quest_id: p.quest_id }),
+            ClientPacket::RequestQuestAbort(p) => {
+                ClientInput::Quest(QuestInput::Abort { quest_id: p.quest_id })
+            }
             ClientPacket::RequestTutorialLinkHtml(p) => {
                 ClientInput::Quest(QuestInput::TutorialLinkHtml { bypass: p.bypass })
             }
@@ -2548,7 +2550,10 @@ mod tests {
 }
 
 /// The `character_quests` rows of a character in the two reads of Java's `Quest.playerEnter`.
-async fn load_quests(repo: &l2_db::QuestRepository, char_id: i32) -> Result<l2_world::QuestLoad, l2_db::DbError> {
+async fn load_quests(
+    repo: &l2_db::QuestRepository,
+    char_id: i32,
+) -> Result<l2_world::QuestLoad, l2_db::DbError> {
     let states = repo
         .quest_states_of(char_id)
         .await?

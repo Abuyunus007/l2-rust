@@ -92,7 +92,9 @@ impl Script for Q00001LettersOfLove {
                 1 => match npc.id {
                     DARIN => htmltext = page("30048-07.html"),
                     ROXXY => {
-                        if ctx.has_quest_items(player, DARINS_LETTER) && !ctx.has_quest_items(player, ROXXYS_KERCHIEF) {
+                        if ctx.has_quest_items(player, DARINS_LETTER)
+                            && !ctx.has_quest_items(player, ROXXYS_KERCHIEF)
+                        {
                             ctx.take_items(player, DARINS_LETTER, -1);
                             ctx.give_items(player, ROXXYS_KERCHIEF, 1);
                             qs.set_cond(ctx, 2, true);
@@ -119,12 +121,16 @@ impl Script for Q00001LettersOfLove {
                 },
                 3 => match npc.id {
                     DARIN => {
-                        if ctx.has_quest_items(player, DARINS_RECEIPT) || !ctx.has_quest_items(player, BAULROS_POTION) {
+                        if ctx.has_quest_items(player, DARINS_RECEIPT)
+                            || !ctx.has_quest_items(player, BAULROS_POTION)
+                        {
                             htmltext = page("30048-09.html");
                         }
                     }
                     ROXXY => {
-                        if ctx.has_quest_items(player, DARINS_RECEIPT) || ctx.has_quest_items(player, BAULROS_POTION) {
+                        if ctx.has_quest_items(player, DARINS_RECEIPT)
+                            || ctx.has_quest_items(player, BAULROS_POTION)
+                        {
                             htmltext = page("30006-03.html");
                         }
                     }
@@ -244,7 +250,10 @@ mod tests {
             ("30048-05.html", link("30048-06.htm")),
             ("30048-06.htm", String::new()),
         ] {
-            pages.push((format!("{DIR}/{page}"), format!("<html><body>{page}{links}</body></html>")));
+            pages.push((
+                format!("{DIR}/{page}"),
+                format!("<html><body>{page}{links}</body></html>"),
+            ));
         }
         for npc in [DARIN, ROXXY, BAULRO] {
             pages.push((
@@ -351,7 +360,10 @@ mod tests {
         assert!(first("QUEST_LIST") < first("EX_SHOW_QUEST_MARK"));
         assert!(first("EX_SHOW_QUEST_MARK") < first("PLAY_SOUND"));
         assert!(names.contains(&"EX_NPC_QUEST_HTML_MESSAGE".to_owned()));
-        assert_eq!(t.take_writes(), [insert("cond", "1"), insert("<state>", "Started")]);
+        assert_eq!(
+            t.take_writes(),
+            [insert("cond", "1"), insert("<state>", "Started")]
+        );
         assert_eq!(t.count(1, DARINS_LETTER), 1);
         let journal = t.world.quest_list(Oid(1));
         assert_eq!(journal.quests.len(), 1);

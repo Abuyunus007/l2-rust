@@ -55,9 +55,7 @@ pub use packets::QuestInput;
 pub use qs::Qs;
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
-pub use state::{
-    COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED,
-};
+pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};
 
 use crate::world::World;
 

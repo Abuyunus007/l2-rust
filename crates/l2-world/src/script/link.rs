@@ -40,7 +40,12 @@ impl World {
 
     /// Java `ScriptLink.showQuestWindow(player, npc, questId)` for a script the engine has:
     /// `true` when it had one of that name (else the caller goes on with its own).
-    pub(crate) fn script_show_quest_window_named(&mut self, player: ObjectId, npc: ObjectId, name: &str) -> bool {
+    pub(crate) fn script_show_quest_window_named(
+        &mut self,
+        player: ObjectId,
+        npc: ObjectId,
+        name: &str,
+    ) -> bool {
         let Some(script) = self.scripts.by_name(name) else {
             return false;
         };
@@ -125,11 +130,7 @@ impl World {
                 }
             }
         }
-        let start: Vec<ScriptId> = self
-            .scripts
-            .listeners
-            .of(EventKind::NpcQuestStart, n.id)
-            .to_vec();
+        let start: Vec<ScriptId> = self.scripts.listeners.of(EventKind::NpcQuestStart, n.id).to_vec();
         for script in start {
             if is_journal_quest(self.scripts.quest_id_of(script)) {
                 if !options.contains(&script) {
@@ -276,7 +277,8 @@ impl World {
             return true;
         };
         let (folk, quest_npc) = (talk.last_folk_npc, talk.last_quest_npc_object);
-        let in_range = |world: &Self, npc: ObjectId| match (world.position_of(player), world.position_of(npc)) {
+        let in_range = |world: &Self, npc: ObjectId| match (world.position_of(player), world.position_of(npc))
+        {
             // `isInsideRadius2D`: `<=`.
             (Some(me), Some(pos)) => distance_2d(me, pos) <= f64::from(INTERACTION_DISTANCE),
             _ => false,
@@ -297,10 +299,13 @@ impl World {
 
     /// The `item_<objectId>_<command>` bypass of an item page: Java `Item.onBypassFeedback`.
     pub(crate) fn script_item_bypass(&mut self, player: ObjectId, object_id: i32, command: &str) {
-        let Some(item) = self.inventory_item(player, ObjectId(object_id)).map(|i| super::ScriptItem {
-            object_id: i.object_id,
-            id: i.item_id,
-        }) else {
+        let Some(item) = self
+            .inventory_item(player, ObjectId(object_id))
+            .map(|i| super::ScriptItem {
+                object_id: i.object_id,
+                id: i.item_id,
+            })
+        else {
             return;
         };
         self.script_on_item_bypass(player, item, command);
@@ -309,7 +314,11 @@ impl World {
 
 /// Java `Quest.getNpcStringId()`: the client string of the quest's name.
 pub(crate) fn npc_string_id(quest_id: i32) -> i32 {
-    if quest_id > 10000 { quest_id - 5000 } else { quest_id }
+    if quest_id > 10000 {
+        quest_id - 5000
+    } else {
+        quest_id
+    }
 }
 
 #[cfg(test)]

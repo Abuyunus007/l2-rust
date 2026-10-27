@@ -105,7 +105,10 @@ impl ScriptTest {
             std::fs::create_dir_all(file.parent().unwrap()).unwrap();
             std::fs::write(file, text).unwrap();
         };
-        write("data/spawns/none.xml", r#"<?xml version="1.0"?><list enabled="true"></list>"#);
+        write(
+            "data/spawns/none.xml",
+            r#"<?xml version="1.0"?><list enabled="true"></list>"#,
+        );
         for (path, text) in pages {
             write(path, text);
         }

@@ -1,5 +1,6 @@
 //! Server packets of the script engine (S-API-01): the quest window, the quest mark, the kill
-//! log, the radar and the tutorial window. `QuestList` is in `enterworld.rs`.
+//! log, the radar and the tutorial window. `QuestList` is in `enterworld.rs`,
+//! `TutorialCloseHtml` and `ExShowQuestInfo` in `handler_windows.rs`.
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 
@@ -87,14 +88,6 @@ impl Decode for TutorialShowHtml {
     }
 }
 
-// Java: gameserver/network/serverpackets/TutorialCloseHtml.java
-server_unit_packet!(
-    /// Closes the tutorial window (`TUTORIAL_CLOSE_HTML`). Java's `runImpl` also clears the
-    /// player's tutorial html actions; the world does that when it sends it.
-    TutorialCloseHtml,
-    TutorialCloseHtml
-);
-
 // Java: gameserver/network/serverpackets/TutorialShowQuestionMark.java
 server_packet!(
     /// The blinking question mark of the tutorial (`SHOW_TUTORIAL_MARK`).
@@ -122,13 +115,6 @@ server_packet!(
     ExShowQuestMark {
         quest_id: i32,
     }
-);
-
-// Java: gameserver/network/serverpackets/ExShowQuestInfo.java
-server_unit_packet!(
-    /// Opens the client's quest information window (`EX_SHOW_QUEST_INFO`).
-    ExShowQuestInfo,
-    ExShowQuestInfo
 );
 
 // Java: gameserver/network/serverpackets/RadarControl.java
@@ -231,7 +217,11 @@ mod tests {
 
     /// The body after the opcode (one byte, or `0xFE` + two for an ex packet).
     fn body(bytes: &[u8]) -> &[u8] {
-        if bytes[0] == 0xFE { &bytes[3..] } else { &bytes[1..] }
+        if bytes[0] == 0xFE {
+            &bytes[3..]
+        } else {
+            &bytes[1..]
+        }
     }
 
     fn round_trip<P: Encode + Decode + PartialEq + std::fmt::Debug>(packet: &P) -> Vec<u8> {
@@ -265,7 +255,6 @@ mod tests {
     fn tutorial_packets_round_trip() {
         let bytes = round_trip(&TutorialShowHtml::new("<html>t</html>"));
         assert_eq!(opcode_of(&bytes), Some(ServerOpcode::TutorialShowHtml));
-        assert_eq!(TutorialCloseHtml.to_bytes(), [0xA9]);
         let mark = round_trip(&TutorialShowQuestionMark { mark_id: 3 });
         assert_eq!(opcode_of(&mark), Some(ServerOpcode::ShowTutorialMark));
         assert_eq!(body(&mark), [3, 0, 0, 0]);
@@ -274,11 +263,10 @@ mod tests {
     }
 
     #[test]
-    fn quest_mark_info_and_radar_round_trip() {
+    fn quest_mark_and_radar_round_trip() {
         let mark = round_trip(&ExShowQuestMark { quest_id: 1 });
         assert_eq!(opcode_of(&mark), Some(ServerOpcode::ExShowQuestMark));
         assert_eq!(body(&mark), [1, 0, 0, 0]);
-        assert_eq!(opcode_of(&ExShowQuestInfo.to_bytes()), Some(ServerOpcode::ExShowQuestInfo));
         let radar = round_trip(&RadarControl {
             show_radar: 2,
             radar_type: 2,
@@ -297,7 +285,10 @@ mod tests {
         let bytes = round_trip(&packet);
         let body = body(&bytes);
         assert_eq!(&body[..5], [5, 0, 0, 0, 2]);
-        assert_eq!(i32::from_le_bytes([body[5], body[6], body[7], body[8]]), 1_020_001);
+        assert_eq!(
+            i32::from_le_bytes([body[5], body[6], body[7], body[8]]),
+            1_020_001
+        );
         assert_eq!(body[9], 0);
         assert_eq!(body.len(), 5 + 2 * 9);
     }

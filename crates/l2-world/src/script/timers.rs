@@ -132,7 +132,10 @@ impl World {
             .timers
             .iter()
             .filter(|(_, t)| {
-                t.script == script && t.name == name && t.npc.map(|n| n.object_id) == npc && t.player == player
+                t.script == script
+                    && t.name == name
+                    && t.npc.map(|n| n.object_id) == npc
+                    && t.player == player
             })
             .map(|(id, _)| *id)
             .collect();
@@ -182,7 +185,11 @@ impl World {
     pub(crate) fn on_script_timer(&mut self, timer: ScriptTimer) {
         match timer {
             ScriptTimer::Quest(id) => self.on_quest_timer(id),
-            ScriptTimer::Kill { npc, killer, is_summon } => self.script_deliver_kill(npc, killer, is_summon),
+            ScriptTimer::Kill {
+                npc,
+                killer,
+                is_summon,
+            } => self.script_deliver_kill(npc, killer, is_summon),
             ScriptTimer::Despawn(npc) => {
                 self.delete_npc(npc);
             }

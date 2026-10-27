@@ -83,10 +83,25 @@ mod tests {
         registry.add(ElrokianHuntersProof);
         let link = |page: &str| format!(r#"<a action="bypass Script Asamah {page}">x</a>"#);
         let pages = [
-            (format!("{DIR}/32115-01.htm"), format!("<html><body>32115-01 %objectId%{}</body></html>", link("32115-03.htm"))),
-            (format!("{DIR}/32115-02.htm"), format!("<html><body>32115-02{}</body></html>", link("32115-03.htm"))),
-            (format!("{DIR}/32115-03.htm"), format!("<html><body>32115-03{}</body></html>", link("32115-04.htm"))),
-            (format!("{DIR}/32115-04.htm"), "<html><body>32115-04</body></html>".to_owned()),
+            (
+                format!("{DIR}/32115-01.htm"),
+                format!(
+                    "<html><body>32115-01 %objectId%{}</body></html>",
+                    link("32115-03.htm")
+                ),
+            ),
+            (
+                format!("{DIR}/32115-02.htm"),
+                format!("<html><body>32115-02{}</body></html>", link("32115-03.htm")),
+            ),
+            (
+                format!("{DIR}/32115-03.htm"),
+                format!("<html><body>32115-03{}</body></html>", link("32115-04.htm")),
+            ),
+            (
+                format!("{DIR}/32115-04.htm"),
+                "<html><body>32115-04</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);

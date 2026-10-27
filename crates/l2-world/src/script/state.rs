@@ -137,7 +137,11 @@ impl QuestState {
 
     /// Java `getMemoState()`.
     pub fn memo_state(&self) -> i32 {
-        if self.is_started() { self.get_int(MEMO_VAR) } else { 0 }
+        if self.is_started() {
+            self.get_int(MEMO_VAR)
+        } else {
+            0
+        }
     }
 
     /// Java `isMemoState(memoState)`: reads the variable whatever the state.

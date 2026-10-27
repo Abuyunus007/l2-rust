@@ -334,7 +334,12 @@ impl Listeners {
     pub(crate) fn registered_ids(&self, script: ScriptId, kind: EventKind) -> Vec<i32> {
         self.registered
             .get(&script)
-            .map(|ids| ids.iter().filter(|(k, _)| *k == kind).map(|(_, id)| *id).collect())
+            .map(|ids| {
+                ids.iter()
+                    .filter(|(k, _)| *k == kind)
+                    .map(|(_, id)| *id)
+                    .collect()
+            })
             .unwrap_or_default()
     }
 }

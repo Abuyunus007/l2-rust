@@ -160,7 +160,14 @@ pub trait Script: Send + Sync + 'static {
     }
 
     /// Java `onAggroRangeEnter(npc, player, isSummon)` (`addAggroRangeEnterId`).
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, is_summon: bool) {}
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        is_summon: bool,
+    ) {
+    }
 
     /// Java `onCreatureSee(npc, creature)` (`addCreatureSeeId`).
     fn on_creature_see(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, creature: ObjectId) {}
@@ -197,7 +204,13 @@ pub trait Script: Send + Sync + 'static {
 
     /// Java `onNpcHate(mob, player, isSummon)` (`addNpcHateId`): `false` keeps the monster
     /// from hating the player.
-    fn on_npc_hate(&self, ctx: &mut ScriptCtx<'_>, mob: ScriptNpc, player: ObjectId, is_summon: bool) -> bool {
+    fn on_npc_hate(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        mob: ScriptNpc,
+        player: ObjectId,
+        is_summon: bool,
+    ) -> bool {
         true
     }
 
@@ -227,5 +240,12 @@ pub trait Script: Send + Sync + 'static {
 
     /// Java `actionForEachPlayer(player, npc, isSummon)`, called by
     /// [`ScriptCtx::execute_for_each_player`].
-    fn action_for_each_player(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc, is_summon: bool) {}
+    fn action_for_each_player(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        npc: ScriptNpc,
+        is_summon: bool,
+    ) {
+    }
 }

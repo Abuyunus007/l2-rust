@@ -190,7 +190,9 @@ impl World {
             return;
         }
         let qs = super::Qs { player: id, script };
-        self.with_script(script, |_, ctx: &mut ScriptCtx<'_>| qs.exit_quest(ctx, true, false));
+        self.with_script(script, |_, ctx: &mut ScriptCtx<'_>| {
+            qs.exit_quest(ctx, true, false)
+        });
         self.send_quest_list(id);
     }
 

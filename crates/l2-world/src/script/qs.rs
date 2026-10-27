@@ -180,7 +180,12 @@ impl Qs {
 
     /// Java `setMemoStateEx(slot, value)`.
     pub fn set_memo_state_ex(self, ctx: &mut ScriptCtx<'_>, slot: i32, value: i32) {
-        set(ctx.world, self, &format!("{MEMO_EX_VAR}{slot}"), &value.to_string());
+        set(
+            ctx.world,
+            self,
+            &format!("{MEMO_EX_VAR}{slot}"),
+            &value.to_string(),
+        );
     }
 
     /// Java `addNotifyOfDeath(creature)`: the quest's `on_death` runs when that player dies.
@@ -282,9 +287,7 @@ pub(crate) fn restart_time(now_utc_ms: i64, offset_ms: i64) -> i64 {
 /// Java `Quest.createQuestVarInDb` / `updateQuestVarInDb` / ... : one statement for the
 /// persistence task.
 pub(crate) fn quest_write(world: &mut World, write: QuestWrite) {
-    world
-        .outbox
-        .persist(crate::outbox::PersistCommand::Quest(write));
+    world.outbox.persist(crate::outbox::PersistCommand::Quest(write));
 }
 
 fn char_id(qs: Qs) -> i32 {
@@ -463,9 +466,7 @@ fn exit_quest(ctx: &mut ScriptCtx<'_>, qs: Qs, repeatable: bool) {
     // Clean registered quest items (`removeRegisteredQuestItems`: `takeItems(player, -1, ids)`).
     let items = ctx.world.scripts.quest_items(qs.script).to_vec();
     ctx.take_items_many(qs.player, -1, &items);
-    let quest_name = qs
-        .read(ctx.world, |s| s.quest_name.clone())
-        .unwrap_or(name);
+    let quest_name = qs.read(ctx.world, |s| s.quest_name.clone()).unwrap_or(name);
     quest_write(
         ctx.world,
         QuestWrite::DeleteQuest {
@@ -499,7 +500,10 @@ mod tests {
         assert_eq!(restart_time(now, 0), day + 6 * HOUR + 30 * 60_000 + 7_250);
         // From 06:00 on it is tomorrow.
         let now = day + 6 * HOUR + 1;
-        assert_eq!(restart_time(now, 0), day + 86_400_000 + 6 * HOUR + 30 * 60_000 + 1);
+        assert_eq!(
+            restart_time(now, 0),
+            day + 86_400_000 + 6 * HOUR + 30 * 60_000 + 1
+        );
         // UTC+2: 05:00 UTC is 07:00 local, so tomorrow 06:30 local = 04:30 UTC.
         let now = day + 5 * HOUR;
         assert_eq!(
