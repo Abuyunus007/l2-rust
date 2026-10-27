@@ -33,7 +33,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
-use l2_config::{GameConfig, IniFile};
+use l2_config::GameConfig;
 use l2_crypto::LinkCipher;
 use l2_crypto::rsa::encrypt_raw;
 use l2_db::{CharacterRepository, Pool, hex_to_string};
@@ -55,7 +55,7 @@ use tracing::{debug, info, warn};
 pub use ipconfig::IpConfig;
 
 use crate::hexid::{self, HexId};
-use crate::{SERVER_CONFIG_FILE, Server};
+use crate::Server;
 
 /// Java `RECONNECT_DELAY`.
 pub const RECONNECT_DELAY: Duration = Duration::from_secs(5);
@@ -274,19 +274,8 @@ fn port_of(key: &str, value: i32) -> u16 {
 /// Java `ServerConfig.getServerTypeId` on the comma separated `ServerListType` value. Unknown
 /// words count for nothing.
 pub fn server_type_id(value: &str) -> i32 {
-    value
-        .split(',')
-        .map(|word| match word.trim().to_lowercase().as_str() {
-            "normal" => ServerStatus::SERVER_NORMAL,
-            "relax" => ServerStatus::SERVER_RELAX,
-            "test" => ServerStatus::SERVER_TEST,
-            "nolabel" => ServerStatus::SERVER_NOLABEL,
-            "restricted" => ServerStatus::SERVER_CREATION_RESTRICTED,
-            "event" => ServerStatus::SERVER_EVENT,
-            "free" => ServerStatus::SERVER_FREE,
-            _ => 0,
-        })
-        .fold(0, |all, flag| all | flag)
+    // The same table as `ServerStatus::SERVER_*`; the config crate parses `ServerListType`.
+    l2_config::game_manual_core::server_list_type_id(value)
 }
 
 /// `Java generateHexBytes`: random bytes, none of them zero.
@@ -1078,10 +1067,8 @@ fn fail_reason(reason: u8) -> String {
 pub fn start(server: &mut Server) -> LsLink {
     let state = Arc::clone(server.state());
     let config_dir = state.paths.config_dir.clone();
-    // `ServerListType` is one of the settings the config crate leaves to hand-written code.
-    let server_list_type = IniFile::load(config_dir.join(SERVER_CONFIG_FILE))
-        .map(|ini| server_type_id(&ini.get_string("ServerListType", "Free")))
-        .unwrap_or_else(|_| server_type_id("Free"));
+    // `ServerListType` is a hand-ported field of the config crate (`manual.core.server`).
+    let server_list_type = state.config.manual.core.server.server_list_type;
     let params = LsLinkParams::from_config(
         &state.config,
         server_list_type,

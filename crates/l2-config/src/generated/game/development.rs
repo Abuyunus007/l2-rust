@@ -26,7 +26,7 @@ pub struct DevelopmentConfig {
     pub debug_server_packets: bool,
     /// Key: `DebugUnknownPackets`, default true.
     pub debug_unknown_packets: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<String>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.development.excluded_debug_packets` (Java type `Set<String>`); the unit type keeps this field from being used by mistake.
     /// Java (line 63): `final String[] packets = config.getString("ExcludedPacketList", "").trim().split(",");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ExcludedPacketList`, Java default `""` (before the Java post-processing).

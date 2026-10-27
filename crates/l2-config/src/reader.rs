@@ -478,7 +478,7 @@ fn java_trim(s: &str) -> &str {
 /// grammar first: trim, optional sign, `NaN`/`Infinity` (exact case), or
 /// `digits[.digits][e[sign]digits]` with at least one mantissa digit, then an optional `f/F/d/D`.
 /// NOTE(java-quirk): hexadecimal floats (`0x1p3`) are valid in Java; not supported here.
-fn parse_java_float<T: FromStr>(s: &str) -> Option<T> {
+pub(crate) fn parse_java_float<T: FromStr>(s: &str) -> Option<T> {
     let trimmed = java_trim(s);
     let unsigned = trimmed.strip_prefix(['+', '-']).unwrap_or(trimmed);
     if unsigned == "NaN" || unsigned == "Infinity" {

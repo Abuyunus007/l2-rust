@@ -6,49 +6,49 @@ use crate::IniFile;
 /// Settings of `config/FloodProtector.ini` (Java: `FloodProtectorConfig`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct FloodProtectorConfig {
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.use_item` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `FLOOD_PROTECTOR_USE_ITEM = new FloodProtectorSettings("UseItemFloodProtector");`
     pub flood_protector_use_item: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.roll_dice` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 56): `FLOOD_PROTECTOR_ROLL_DICE = new FloodProtectorSettings("RollDiceFloodProtector");`
     pub flood_protector_roll_dice: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.item_pet_summon` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 57): `FLOOD_PROTECTOR_ITEM_PET_SUMMON = new FloodProtectorSettings("ItemPetSummonFloodProtector");`
     pub flood_protector_item_pet_summon: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.hero_voice` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 58): `FLOOD_PROTECTOR_HERO_VOICE = new FloodProtectorSettings("HeroVoiceFloodProtector");`
     pub flood_protector_hero_voice: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.global_chat` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 59): `FLOOD_PROTECTOR_GLOBAL_CHAT = new FloodProtectorSettings("GlobalChatFloodProtector");`
     pub flood_protector_global_chat: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.subclass` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 60): `FLOOD_PROTECTOR_SUBCLASS = new FloodProtectorSettings("SubclassFloodProtector");`
     pub flood_protector_subclass: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.drop_item` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 61): `FLOOD_PROTECTOR_DROP_ITEM = new FloodProtectorSettings("DropItemFloodProtector");`
     pub flood_protector_drop_item: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.server_bypass` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 62): `FLOOD_PROTECTOR_SERVER_BYPASS = new FloodProtectorSettings("ServerBypassFloodProtector");`
     pub flood_protector_server_bypass: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.multisell` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 63): `FLOOD_PROTECTOR_MULTISELL = new FloodProtectorSettings("MultiSellFloodProtector");`
     pub flood_protector_multisell: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.transaction` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 64): `FLOOD_PROTECTOR_TRANSACTION = new FloodProtectorSettings("TransactionFloodProtector");`
     pub flood_protector_transaction: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.manufacture` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 65): `FLOOD_PROTECTOR_MANUFACTURE = new FloodProtectorSettings("ManufactureFloodProtector");`
     pub flood_protector_manufacture: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.sendmail` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 66): `FLOOD_PROTECTOR_SENDMAIL = new FloodProtectorSettings("SendMailFloodProtector");`
     pub flood_protector_sendmail: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.character_select` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 67): `FLOOD_PROTECTOR_CHARACTER_SELECT = new FloodProtectorSettings("CharacterSelectFloodProtector");`
     pub flood_protector_character_select: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.item_auction` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 68): `FLOOD_PROTECTOR_ITEM_AUCTION = new FloodProtectorSettings("ItemAuctionFloodProtector");`
     pub flood_protector_item_auction: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `FloodProtectorSettings`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.flood_protector.player_action` (Java type `FloodProtectorSettings`); the unit type keeps this field from being used by mistake.
     /// Java (line 69): `FLOOD_PROTECTOR_PLAYER_ACTION = new FloodProtectorSettings("PlayerActionFloodProtector");`
     pub flood_protector_player_action: (),
 }
