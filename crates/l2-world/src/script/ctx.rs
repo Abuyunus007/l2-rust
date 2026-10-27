@@ -1238,9 +1238,7 @@ pub(crate) fn no_quest_msg(world: &World, player: ObjectId) -> String {
 
 /// Java `Quest.getHtm(player, fileName)`.
 pub(crate) fn get_htm(world: &World, script: ScriptId, player: ObjectId, file_name: &str) -> Option<String> {
-    let Some(s) = world.scripts.script(script) else {
-        return None;
-    };
+    let s = world.scripts.script(script)?;
     let in_folder = format!("data/scripts/{}/{file_name}", s.path());
     let first = if file_name.starts_with("data/") {
         file_name.to_owned()

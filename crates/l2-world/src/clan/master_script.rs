@@ -15,9 +15,10 @@
 // "no" page instead. The commands on those pages are `npc_<id>_create_clan ...` and so on; they
 // are `village_master.rs`.
 //
-// D-05: the script API (quests, event listeners) comes last. Until then `ScriptLink` knows these
-// two scripts by name; any other name gets the "no quest" page Java shows when the script does
-// not exist, and the quest list (`bypass Script` alone) is empty.
+// The script engine (S-API-01, `script/`) answers first: its scripts by name, and the quest list
+// of `bypass Script` alone. These two built-in scripts (and the others `process_script_event`
+// lists) stay until S-API-02 moves them onto the engine; any other name gets the "no quest" page
+// Java shows when the script does not exist.
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;

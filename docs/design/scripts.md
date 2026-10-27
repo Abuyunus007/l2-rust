@@ -59,6 +59,7 @@ Rules that follow from the architecture (D-10, D-11, D-13, D-15):
    writes something. Use another script's name with a stand-in `Script` when the port reads it.
 
 Java quirks are ported as they are, with `// NOTE(java-quirk):` (D-17 does not change behaviour).
+`l2-scripts` allows clippy's `collapsible_*` lints: keep Java's nesting rather than match guards.
 
 ## Hooks and when they run
 

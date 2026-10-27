@@ -1793,6 +1793,26 @@ pub fn log_load_failure(char_id: i32, error: &LoadError) {
     error!("Could not restore character {char_id}: {error}");
 }
 
+/// The `character_quests` rows of a character in the two reads of Java's `Quest.playerEnter`.
+async fn load_quests(
+    repo: &l2_db::QuestRepository,
+    char_id: i32,
+) -> Result<l2_world::QuestLoad, l2_db::DbError> {
+    let states = repo
+        .quest_states_of(char_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.name, r.value))
+        .collect();
+    let variables = repo
+        .quest_variables_of(char_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.name, r.var, r.value))
+        .collect();
+    Ok(l2_world::QuestLoad { states, variables })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2547,24 +2567,4 @@ mod tests {
         pool.close().await;
         db.drop_db().await;
     }
-}
-
-/// The `character_quests` rows of a character in the two reads of Java's `Quest.playerEnter`.
-async fn load_quests(
-    repo: &l2_db::QuestRepository,
-    char_id: i32,
-) -> Result<l2_world::QuestLoad, l2_db::DbError> {
-    let states = repo
-        .quest_states_of(char_id)
-        .await?
-        .into_iter()
-        .map(|r| (r.name, r.value))
-        .collect();
-    let variables = repo
-        .quest_variables_of(char_id)
-        .await?
-        .into_iter()
-        .map(|r| (r.name, r.var, r.value))
-        .collect();
-    Ok(l2_world::QuestLoad { states, variables })
 }

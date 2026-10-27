@@ -5,6 +5,14 @@
 //! calls [`register_all`] once at startup. The order is Java's load order (the folder listing:
 //! `ai` before `quests`), which is the order listeners of the same NPC hear an event.
 
+// The ports keep Java's `switch` / `if` shape line by line, so a reviewer can lay them next to the
+// Java file; folding an `if` into a match guard would hide that.
+#![allow(
+    clippy::collapsible_match,
+    clippy::collapsible_if,
+    clippy::collapsible_else_if
+)]
+
 pub mod ai;
 pub mod quests;
 
