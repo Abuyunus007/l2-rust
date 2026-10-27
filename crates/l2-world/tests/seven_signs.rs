@@ -229,6 +229,7 @@ impl Scene {
             SevenSignsLoad {
                 players,
                 status: Some(status),
+                ..SevenSignsLoad::default()
             },
             WEDNESDAY,
             utc,
@@ -780,6 +781,7 @@ fn the_record_is_read_again_with_the_switch_off() {
         result: Ok(SevenSignsLoad {
             players: vec![member(BOB, "dusk", SEAL_STRIFE)],
             status: Some(sieghardt),
+            ..SevenSignsLoad::default()
         }),
         then,
     });

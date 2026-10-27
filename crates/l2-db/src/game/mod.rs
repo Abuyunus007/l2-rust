@@ -16,6 +16,7 @@ mod clans;
 mod contacts;
 mod crests;
 mod cursed_weapons;
+mod dimensional_rift;
 mod fishing;
 mod fort_sieges;
 mod friends;
@@ -95,7 +96,8 @@ pub use residences::{
     CastleRow, ClanHallRow, FortRow, FunctionRow, FunctionSave, FunctionTable, ResidenceRepository,
     SiegableHallRow,
 };
-pub use seven_signs::{SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};
+pub use dimensional_rift::{DimensionalRiftRepository, DimensionalRiftRow};
+pub use seven_signs::{FestivalRow, SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};
 pub use shortcuts::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use sieges::{
     DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow,

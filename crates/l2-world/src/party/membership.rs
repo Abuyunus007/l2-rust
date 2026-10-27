@@ -127,7 +127,8 @@ impl World {
             }
         }
 
-        // Dimensional rift (`partyMemberInvited`): there is none.
+        // Dimensional rift (`partyMemberInvited`).
+        self.rift_party_member_invited(party);
         // Open the CCInformationwindow.
         if self.command_channel_of_party(party).is_some() {
             self.send(player, &ExOpenMpcc);
@@ -220,7 +221,10 @@ impl World {
         }
         self.recalculate_party_level(party);
 
-        // Festival participants (`SevenSignsFestival.updateParticipants`): no Seven Signs yet.
+        // Festival participants (`SevenSignsFestival.updateParticipants`).
+        if self.is_festival_participant(player) {
+            self.festival_update_participants(player, Some(party));
+        }
         if self.is_in_duel(player) {
             self.duel_on_remove_from_party(player);
         }
@@ -272,7 +276,8 @@ impl World {
         {
             self.broadcast_party(party, &packet);
         }
-        // Dimensional rift (`partyMemberExited`): there is none.
+        // Dimensional rift (`partyMemberExited`).
+        self.rift_party_member_exited(party, player);
         // Close the CCInfoWindow.
         if self.command_channel_of_party(party).is_some() {
             self.send(player, &ExCloseMpcc);

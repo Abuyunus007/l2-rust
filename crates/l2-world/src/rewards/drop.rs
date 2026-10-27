@@ -847,8 +847,7 @@ impl World {
             drop_equip_weapon = s.karma_rate_drop_equip_weapon;
             drop_item = s.karma_rate_drop_item;
             drop_limit = s.karma_drop_limit;
-        // `!isFestivalParticipant()`: the festival is not modelled.
-        } else if killer_is_npc && level > 4 {
+        } else if killer_is_npc && level > 4 && !self.is_festival_participant(dying) {
             drop_percent = s.player_rate_drop;
             drop_equip = s.player_rate_drop_equip;
             drop_equip_weapon = s.player_rate_drop_equip_weapon;
@@ -966,6 +965,10 @@ impl World {
 
     /// Java `Attackable.doItemDrop(mainDamageDealer)`.
     pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
+        // `FestivalMonster.doItemDrop`: a blood offering for the killer's party leader (M8-FEST-01).
+        if !self.festival_monster_drop(dying, main_damage_dealer) {
+            return;
+        }
         // `mainDamageDealer.asPlayer()`: a summon's owner.
         let Some(dealer) = main_damage_dealer.and_then(|d| self.acting_player(d)) else {
             // Don't drop anything if the last attacker or owner isn't Player (a fake player may,

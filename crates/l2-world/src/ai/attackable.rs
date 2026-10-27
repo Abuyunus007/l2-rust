@@ -28,8 +28,7 @@
 // # Left out (each with its card)
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
-// - Fake players, the faction system, dimensional rifts, festival monsters,
-//   champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
+// - Fake players, the faction system, champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
 // - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): `siege_guard.rs` and
 //   `fort_siege_guard.rs` (M7-SIEGE-02); the entry points here hand a defender over to them.
 //
@@ -250,6 +249,10 @@ impl World {
 
     /// Java `Monster.isAggressive()`.
     pub(crate) fn is_aggressive_npc(&self, id: ObjectId) -> bool {
+        // `FestivalMonster.isAggressive()`: all mobs in the festival are aggressive.
+        if self.is_festival_monster(id) {
+            return true;
+        }
         self.npcs.get(&id).is_some_and(|n| n.class.is_monster())
             && self.npc_template(id).is_some_and(|t| t.is_aggressive)
             && !self.is_affected(id, crate::effects::effect_flag::PASSIVE)
@@ -587,7 +590,11 @@ impl World {
             if self.is_recent_fake_death(player) {
                 return false;
             }
-            // The faction system's guards and the dimensional rift check are custom (not ported).
+            // The faction system's guards are custom (not ported).
+            // Dimensional Rift check.
+            if self.rift_invader_out_of_room(me, target) {
+                return false;
+            }
         }
         let class = self.npcs.get(&me).map(|n| n.class);
         if class == Some(crate::npc::NpcClass::FriendlyMob) {
@@ -696,6 +703,12 @@ impl World {
             let targets: Vec<ObjectId> = self
                 .aggro_candidates(id)
                 .into_iter()
+                // A festival monster only goes for the participants of the festival.
+                .filter(|target| {
+                    !(self.is_festival_monster(id)
+                        && self.is_player(*target)
+                        && !self.is_festival_participant(*target))
+                })
                 .filter(|target| self.is_aggressive_towards(id, *target))
                 .collect();
             for target in targets {
@@ -1754,6 +1767,10 @@ impl World {
                 continue;
             }
             if attacker_playable {
+                // Dimensional Rift check.
+                if self.rift_invader_out_of_room(id, attacker) {
+                    continue;
+                }
                 // By default, when a faction member calls for help, attack the caller's
                 // attacker.
                 if self.can_see_target(nearby, attacker) {

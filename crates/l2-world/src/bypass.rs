@@ -86,6 +86,13 @@ impl Default for BypassHandlers {
         handlers.register("Augment", crate::augment::augment_handler);
         // dist/game/data/scripts/handlers/bypass/npc/TerritoryStatus.java (M7-TW-01)
         handlers.register("TerritoryStatus", crate::territory::territory_status_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Festival.java (M8-FEST-01)
+        handlers.register("Festival", crate::sevensigns::festival_bypass_handler);
+        handlers.register("FestivalDesc", crate::sevensigns::festival_bypass_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Rift.java (M8-FEST-01)
+        handlers.register("EnterRift", crate::sevensigns::rift_bypass_handler);
+        handlers.register("ChangeRiftRoom", crate::sevensigns::rift_bypass_handler);
+        handlers.register("ExitRift", crate::sevensigns::rift_bypass_handler);
         handlers
     }
 }

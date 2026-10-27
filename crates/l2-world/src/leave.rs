@@ -31,6 +31,11 @@ impl World {
             self.send(id, &ActionFailed);
             return;
         }
+        // Java `canLogout()`: a festival participant stays while the festival runs (M8-FEST-01).
+        if self.festival_blocks_logout(id) {
+            self.send(id, &ActionFailed);
+            return;
+        }
         // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).
         self.instance_on_logout(id);
         // `OfflineTraderTable.enteredOfflineMode(player)`: the shop stays, the connection goes.
@@ -51,6 +56,14 @@ impl World {
         if self.is_in_store_mode(id) {
             self.send_message(id, "Cannot restart while trading.");
             self.send(id, &RestartResponse { result: false });
+            return;
+        }
+        // Java `RequestRestart`: a festival participant cannot restart while the festival runs
+        // (M8-FEST-01); `canLogout()` after it asks the same again (NOTE(java-quirk): so the party
+        // is told twice that the player is out of the upcoming festival).
+        if self.festival_blocks_restart(id) || self.festival_blocks_logout(id) {
+            self.send(id, &RestartResponse { result: false });
+            self.send(id, &ActionFailed);
             return;
         }
         // Without `RestorePlayerInstance` a player leaves his instance (M8-INST-01).

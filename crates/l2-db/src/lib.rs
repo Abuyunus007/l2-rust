@@ -64,7 +64,10 @@ pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
-pub use game::{SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};
+pub use game::{
+    DimensionalRiftRepository, DimensionalRiftRow, FestivalRow, SevenSignsRepository, SevenSignsRow,
+    SevenSignsStatusRow,
+};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
     AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,

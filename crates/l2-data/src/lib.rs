@@ -13,6 +13,7 @@ pub mod buylist;
 pub mod class_list;
 pub mod cubic;
 pub mod cursed_weapon;
+pub mod dimensional_rift;
 pub mod door;
 pub mod enchant;
 pub mod enchant_hp_bonus;
@@ -102,6 +103,7 @@ pub use player_template::{
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
+pub use dimensional_rift::{RiftSpawnDef, RiftSpawns};
 pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
 pub use seed::{Seed, Seeds};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};

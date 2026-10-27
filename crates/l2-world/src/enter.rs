@@ -546,6 +546,13 @@ impl World {
         // Java `onPlayerEnter`: a player left in a Seven Signs dungeon he may not be in goes to
         // town (M8-SS-01).
         self.ss_on_player_enter(id);
+        // Java `EnterWorld`: a player logging in inside the Dimensional Rift goes to its waiting
+        // room (M8-FEST-01).
+        if let Some((x, y, z)) = self.position_of(id)
+            && self.rift_check_in_rift_zone(x, y, z, false)
+        {
+            self.rift_teleport_to_waiting_room(id);
+        }
         // Java `onPlayerEnter` -> `restoreEffects()`: the buffs of the last logout come back with
         // the time they had left (`effects/save.rs`).
         self.restore_saved_effects(id);
