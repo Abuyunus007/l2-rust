@@ -5,7 +5,8 @@
 //! [`block`]). M3-GEO-01: [`GeoEngine`] (whole-world loading with the per-region override of D-26,
 //! world <-> geo coordinates, `getHeight`, line of sight, movement checks) and the
 //! [`DynamicObstacles`] hook for doors and fences. M3-GEO-02: [`pathfinding`] (A* on the cells,
-//! [`PathFinder`], and the [`PathPool`] worker threads). Runtime NSWE edits for doors are not here yet.
+//! [`PathFinder`], and the [`PathPool`] worker threads). L-07: runtime NSWE edits, region reload and
+//! save, copy-on-write so the path workers keep reading without locks ([`region`], [`engine`]).
 //!
 //! All coordinates in the region / block types are **global geo cell coordinates**
 //! (`regionX * 2048 + local`), exactly what `GeoEngine` passes to `Region`. Z values are world Z.

@@ -6,10 +6,9 @@
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java
 //
 // # Left out, with the system that brings it
-// - `//setclass`: the henna loop of `setPlayerClass` ("Remove class permitted hennas": the dye
-//   removal, its refund and its `character_hennas` delete are not in the world) and
-//   `getInventory().applyItemSkills()` are not ported. `setClassTemplate` is the class id: the
-//   stats read the class of the player.
+// - `//setclass`: `getInventory().applyItemSkills()` is not ported. `setClassTemplate` is the
+//   class id: the stats read the class of the player. The henna loop of `setPlayerClass` is
+//   `World::remove_henna_not_allowed` (L-01).
 // - `//changename` checks the name against the GM's Java `CharInfoTable` lookup only (online and
 //   the startup table). Java checks no name format there (`Player.setName` only updates the name
 //   table), so none is checked here either.
@@ -1275,8 +1274,7 @@ fn refresh_textures(world: &mut World, id: ObjectId) {
 
 /// Java `Player.setPlayerClass(id)` for a character who is not changing sub class: the academy
 /// graduation, the effect, the class, the messages, the party and clan icons, the skills.
-// NOTE: the henna loop ("Remove class permitted hennas") and `applyItemSkills()` are not ported,
-// see the module note.
+// NOTE: `applyItemSkills()` is not ported, see the module note.
 fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
     world.academy_graduation(id, new_class);
     world.set_target(id, Some(id));
@@ -1311,6 +1309,8 @@ fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
             SystemMessageId::CongratulationsYouVeCompletedAClassTransfer
         }),
     );
+    // "Remove class permitted hennas."
+    world.remove_henna_not_allowed(id);
     // "Update class icon in party and clan."
     if let Some(party) = world.party_of(id)
         && let Some(member) = world.party_member_vitals(id)

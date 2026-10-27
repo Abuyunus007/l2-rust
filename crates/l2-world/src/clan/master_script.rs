@@ -153,6 +153,10 @@ impl World {
 
     /// Java `Player.processScriptEvent(scriptName, event)`.
     fn process_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) {
+        // `SymbolMaker` (L-01, `henna.rs`).
+        if self.symbol_maker_script_event(player, script_name, event) {
+            return;
+        }
         // `FortressSiegeManager` (M7-FORT-01, `fort/script.rs`).
         if self.fort_script_event(player, script_name, event) {
             return;

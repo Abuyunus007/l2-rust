@@ -26,10 +26,10 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, ItemData,
-    LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData,
-    PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
-    SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
+    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, HennaInput,
+    ItemData, LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PartyRoomInput, PetInput,
+    PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect,
+    ShortcutData, SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -991,6 +991,22 @@ impl ClientSession {
                 character_type: p.character_type,
             },
             ClientPacket::RequestShortCutDel(p) => ClientInput::ShortcutDel { slot: p.slot },
+            // Java: RequestHennaItemList, RequestHennaItemInfo, RequestHennaEquip,
+            // RequestHennaRemoveList, RequestHennaItemRemoveInfo, RequestHennaRemove
+            ClientPacket::RequestHennaItemList(_) => ClientInput::Henna(HennaInput::ItemList),
+            ClientPacket::RequestHennaItemInfo(p) => ClientInput::Henna(HennaInput::ItemInfo {
+                symbol_id: p.symbol_id,
+            }),
+            ClientPacket::RequestHennaEquip(p) => ClientInput::Henna(HennaInput::Equip {
+                symbol_id: p.symbol_id,
+            }),
+            ClientPacket::RequestHennaRemoveList(_) => ClientInput::Henna(HennaInput::RemoveList),
+            ClientPacket::RequestHennaItemRemoveInfo(p) => ClientInput::Henna(HennaInput::ItemRemoveInfo {
+                symbol_id: p.symbol_id,
+            }),
+            ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
+                symbol_id: p.symbol_id,
+            }),
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

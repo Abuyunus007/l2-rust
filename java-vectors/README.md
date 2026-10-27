@@ -42,13 +42,14 @@ byte-identical JSON: there is no clock and no unseeded randomness anywhere.
 java-vectors/
   build.ps1, build.sh        build + run
   src/l2rust/vectors/
-    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path, stats, formulas, drops
+    Main.java                dispatches: crypto, login-packets, geo, geo-engine, geo-path, geo-edit, stats, formulas, drops
     Json.java                tiny JSON writer (no dependencies; `Json.compact` writes a map/list on one line)
     CryptoVectors.java       one generator = one class
     LoginPacketVectors.java  login / LS<->GS packet payloads
     GeoVectors.java          region-level geodata queries (geo_<set>_<region>.json)
     GeoEngineVectors.java    GeoEngine: coordinates, line iterators, height, LOS, movement (geo_engine_*.json)
     GeoPathVectors.java      PathFinding.findPath on the whole-world engine (geo_path_*.json)
+    GeoEditVectors.java      Region set/unsetNearestNswe + saveToFile on a synthetic region (geo_edit.json)
     Bootstrap.java           minimal in-process server start (configs, datapack loaders, no DB, no network) + player/NPC builders
     StatVectors.java         UserInfo/NpcInfo numbers from the real stat engine (stats_*.json)
     FormulaVectors.java      Formulas.* with scripted Rnd draws (formulas_*.json)
@@ -162,6 +163,15 @@ How it is driven: the first `GeoEngine.getInstance()` loads the first set; the s
 the protected constructor by reflection (the region table is static, so the singleton sees it). `PathFinding`
 reads the weights in its constructor and `NodeBuffer` when a thread-local buffer is allocated, so every config
 variant gets a fresh `PathFinding` by reflection after the `GeoEngineConfig` statics are set.
+
+## Files (geodata edits, L-07)
+
+`.\java-vectors\build.ps1 geo-edit` (also part of `all`). Needs no geodata: the region is built by the
+generator, so CI runs the test (`crates/l2-geo/tests/edit_vectors.rs`).
+
+| File | Java source | Contents |
+|---|---|---|
+| `geo_edit.json` | `Region(ByteBuffer)`, `Region.setNearestNswe` / `unsetNearestNswe` (`ComplexBlock`, `MultilayerBlock`, `convertFlatToComplex`), `Region.saveToFile` | A synthetic region (flat blocks with odd and out-of-range heights, a complex and two multilayer blocks) as runs of identical blocks; 23 edits in order with the block type, nearest Z and open NSWE bits after each; the file `saveToFile` writes afterwards (same run format). The untouched region saves to its input bytes (checked by the generator). |
 
 ## Files (stat engine and formulas, M4-JV-01)
 

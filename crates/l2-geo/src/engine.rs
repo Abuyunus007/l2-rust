@@ -6,12 +6,18 @@
 //! `config/GeoEngineConfig.java` and `util/GeoUtils.java` (`computeNswe`).
 //!
 //! # What is ported
-//! Everything `GeoEngine` does on top of the M1 region model, except what changes geodata at
-//! runtime: `setNearestNswe` / `unsetNearestNswe` / `reloadRegion` / `setRegion` (doors write NSWE
-//! into the geodata in Java; here the engine is **immutable** after loading, so it is `Send + Sync`
-//! and can be shared with worker threads, D-14). Methods that take a `WorldObject` in Java
-//! (door / artefact shortcuts of `canSeeTarget`) are left to the caller; the engine takes plain
-//! coordinates. Pathfinding is M3-GEO-02.
+//! Everything `GeoEngine` does on top of the M1 region model. Methods that take a `WorldObject` in
+//! Java (door / artefact shortcuts of `canSeeTarget`) are left to the caller; the engine takes
+//! plain coordinates. Pathfinding is M3-GEO-02.
+//!
+//! # Runtime edits (L-07)
+//! `setNearestNswe` / `unsetNearestNswe` / `reloadRegion` / `setRegion` take `&mut self`. The
+//! world owns its engine as an `Arc<GeoEngine>` and edits it with [`Arc::make_mut`]: if nobody
+//! else holds the engine it is changed in place, otherwise the engine is cloned first, which is
+//! cheap (the regions are shared `Arc`s, see [`crate::region`]) and only the edited region is
+//! copied. Readers that took the old `Arc` (a path request in a worker, D-14) keep seeing the old
+//! geodata until they finish; the next request carries the new engine
+//! ([`crate::PathRequest::with_geo`]). No lock is ever taken on the geodata.
 //!
 //! # Loading and the per-region override (D-26)
 //! [`GeoEngine::load`] walks the tiles `11..=26` x `10..=26` like Java and reads `X_Y.l2j` from the
@@ -194,6 +200,21 @@ impl GeoOverride {
     }
 }
 
+/// `GeoEngine.getRegion`'s table slot of a geo cell: `(geoX / 2048) * 32 + geoY / 2048`, `None`
+/// outside the table.
+fn region_slot(geo_x: i32, geo_y: i32) -> Option<(u32, u32)> {
+    let index = (geo_x / REGION_CELLS_SIDE)
+        .wrapping_mul(GEO_REGIONS_SIDE as i32)
+        .wrapping_add(geo_y / REGION_CELLS_SIDE);
+    if !(0..(GEO_REGIONS_SIDE * GEO_REGIONS_SIDE) as i32).contains(&index) {
+        return None;
+    }
+    Some((
+        (index / GEO_REGIONS_SIDE as i32) as u32,
+        (index % GEO_REGIONS_SIDE as i32) as u32,
+    ))
+}
+
 /// `X_Y` with plain decimal digits.
 fn parse_region_key(entry: &str) -> Option<(u32, u32)> {
     let (x, y) = entry.split_once('_')?;
@@ -204,27 +225,50 @@ fn parse_region_key(entry: &str) -> Option<(u32, u32)> {
     Some((x.parse().ok()?, y.parse().ok()?))
 }
 
-/// Everything [`GeoEngine::load`] needs.
+/// Everything [`GeoEngine::load`] needs. The engine keeps it for [`GeoEngine::reload_region`]
+/// and the `GeoEditPath` of the admin saves.
 #[derive(Clone, Debug)]
 pub struct GeoLoadSpec {
     /// `GeoDataPath`, already resolved.
     pub geodata_path: PathBuf,
     /// Optional second folder for some regions (D-26).
     pub override_: Option<GeoOverride>,
+    /// `GeoEditPath` (`GeoEngineConfig.GEOEDIT_PATH`), already resolved: where `//geosave` writes.
+    /// `None`: saving is not set up (tools, tests).
+    pub geoedit_path: Option<PathBuf>,
 }
 
 impl GeoLoadSpec {
-    /// Main folder only, no override.
+    /// Main folder only, no override, no save folder.
     pub fn new(geodata_path: impl Into<PathBuf>) -> Self {
         GeoLoadSpec {
             geodata_path: geodata_path.into(),
             override_: None,
+            geoedit_path: None,
         }
     }
 
     pub fn with_override(mut self, over: Option<GeoOverride>) -> Self {
         self.override_ = over;
         self
+    }
+
+    pub fn with_geoedit_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.geoedit_path = Some(path.into());
+        self
+    }
+
+    /// The file a region `(x, y)` is (re)loaded from: the override folder when the region is on
+    /// the override list and the file is there, else `GeoDataPath`.
+    pub fn region_file(&self, x: u32, y: u32) -> PathBuf {
+        let file_name = format!("{x}_{y}.l2j");
+        if let Some(over) = self.override_.as_ref().filter(|o| o.regions.contains(&(x, y))) {
+            let path = over.path.join(&file_name);
+            if path.is_file() {
+                return path;
+            }
+        }
+        self.geodata_path.join(file_name)
     }
 }
 
@@ -309,11 +353,15 @@ impl RegionJob {
     }
 }
 
-/// The loaded world and the queries on it. Immutable and `Send + Sync`.
+/// The loaded world and the queries on it. `Send + Sync`; shared as `Arc<GeoEngine>` and edited
+/// copy-on-write (see the module docs). Cloning is cheap: the regions are shared.
+#[derive(Clone)]
 pub struct GeoEngine {
     set: GeoSet,
     options: GeoEngineOptions,
     obstacles: Arc<dyn DynamicObstacles>,
+    /// Where the regions came from and where saves go (set by [`GeoEngine::load`]).
+    source: Option<GeoLoadSpec>,
 }
 
 impl std::fmt::Debug for GeoEngine {
@@ -337,6 +385,7 @@ impl GeoEngine {
             set,
             options,
             obstacles: Arc::new(NoObstacles),
+            source: None,
         }
     }
 
@@ -408,7 +457,7 @@ impl GeoEngine {
         }
         info!("GeoEngine: Loaded {} regions.", report.loaded);
         let pathfinding_before = options.pathfinding;
-        let engine = GeoEngine::new(set, options);
+        let engine = GeoEngine::new(set, options).with_source(spec.clone());
         report.pathfinding_disabled = pathfinding_before > 0 && engine.options.pathfinding == 0;
         (engine, report)
     }
@@ -417,6 +466,23 @@ impl GeoEngine {
     pub fn with_obstacles(mut self, obstacles: Arc<dyn DynamicObstacles>) -> Self {
         self.obstacles = obstacles;
         self
+    }
+
+    /// Remembers where the regions come from ([`reload_region`](Self::reload_region)) and the
+    /// save folder. [`GeoEngine::load`] sets it.
+    pub fn with_source(mut self, spec: GeoLoadSpec) -> Self {
+        self.source = Some(spec);
+        self
+    }
+
+    /// The folders of [`with_source`](Self::with_source), if any.
+    pub fn source(&self) -> Option<&GeoLoadSpec> {
+        self.source.as_ref()
+    }
+
+    /// `GeoEngineConfig.GEOEDIT_PATH`, if the engine has one.
+    pub fn geoedit_path(&self) -> Option<&Path> {
+        self.source.as_ref().and_then(|s| s.geoedit_path.as_deref())
     }
 
     /// Replaces the options (tests; the Java values are static and can change at runtime too).
@@ -456,16 +522,88 @@ impl GeoEngine {
     /// range check on Y), so a Y beyond the 32 columns reads the next row. Java throws for an index
     /// outside 0..1024; this returns `None` then.
     pub fn region_at(&self, geo_x: i32, geo_y: i32) -> Option<&Region> {
-        let index = (geo_x / REGION_CELLS_SIDE)
-            .wrapping_mul(GEO_REGIONS_SIDE as i32)
-            .wrapping_add(geo_y / REGION_CELLS_SIDE);
-        if !(0..(GEO_REGIONS_SIDE * GEO_REGIONS_SIDE) as i32).contains(&index) {
-            return None;
+        let (x, y) = region_slot(geo_x, geo_y)?;
+        self.set.region(x, y)
+    }
+
+    // ------------------------------------------------------------------ runtime edits (L-07)
+
+    /// `GeoEngine.setNearestNswe`: [`Region::set_nearest_nswe`] on the cell's region; nothing
+    /// where there is no region (`NullRegion.setNearestNswe` is empty).
+    pub fn set_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, nswe: u8) {
+        if let Some(region) = self.region_at_mut(geo_x, geo_y) {
+            region.set_nearest_nswe(geo_x, geo_y, world_z, nswe);
         }
-        self.set.region(
-            (index / GEO_REGIONS_SIDE as i32) as u32,
-            (index % GEO_REGIONS_SIDE as i32) as u32,
-        )
+    }
+
+    /// `GeoEngine.unsetNearestNswe`: [`Region::unset_nearest_nswe`] on the cell's region.
+    pub fn unset_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, nswe: u8) {
+        if let Some(region) = self.region_at_mut(geo_x, geo_y) {
+            region.unset_nearest_nswe(geo_x, geo_y, world_z, nswe);
+        }
+    }
+
+    /// The region of a geo cell (same index as [`region_at`](Self::region_at)), copied first if a
+    /// snapshot still shares it.
+    fn region_at_mut(&mut self, geo_x: i32, geo_y: i32) -> Option<&mut Region> {
+        let (x, y) = region_slot(geo_x, geo_y)?;
+        self.set.region_mut(x, y)
+    }
+
+    /// `GeoEngine.setRegion`: puts a region into the table (`false` outside the 32 x 32 grid).
+    pub fn set_region(&mut self, region_x: u32, region_y: u32, region: Region) -> bool {
+        self.set.insert(region_x, region_y, region)
+    }
+
+    /// `GeoEngine.reloadRegion`: reads the region file again and replaces the region (a null
+    /// region becomes a real one). `false`, with a log line, when there is no file, no
+    /// [`source`](Self::source) or the file does not parse.
+    ///
+    /// Rust: the file comes from [`GeoLoadSpec::region_file`], so a region of the D-26 override
+    /// list is reloaded from the override folder it was loaded from (Java only knows
+    /// `GeoDataPath`). A file that fails to parse leaves the old region untouched; Java's in-place
+    /// `Region.load` would keep the blocks it read before the error.
+    pub fn reload_region(&mut self, region_x: i32, region_y: i32) -> bool {
+        let file = match (&self.source, u32::try_from(region_x), u32::try_from(region_y)) {
+            (Some(source), Ok(x), Ok(y)) => source.region_file(x, y),
+            _ => {
+                warn!("GeoEngine: Cannot reload, file not found for region {region_x}_{region_y}");
+                return false;
+            }
+        };
+        if !file.is_file() {
+            warn!("GeoEngine: Cannot reload, file not found for region {region_x}_{region_y}");
+            return false;
+        }
+        // Java: `REGIONS.get((regionX * 32) + regionY)` without a range check; an index outside
+        // the table throws and the reload fails.
+        let offset = region_x
+            .wrapping_mul(GEO_REGIONS_SIDE as i32)
+            .wrapping_add(region_y);
+        if !(0..(GEO_REGIONS_SIDE * GEO_REGIONS_SIDE) as i32).contains(&offset) {
+            warn!("GeoEngine: Failed to reload region {region_x}_{region_y}!");
+            return false;
+        }
+        let (x, y) = (
+            (offset / GEO_REGIONS_SIDE as i32) as u32,
+            (offset % GEO_REGIONS_SIDE as i32) as u32,
+        );
+        match Region::load_file(&file) {
+            Ok(region) => {
+                let had_region = self.set.region(x, y).is_some();
+                self.set.insert(x, y, region);
+                if had_region {
+                    info!("GeoEngine: Reloaded region {region_x}_{region_y} from bytes.");
+                } else {
+                    info!("GeoEngine: Replaced NullRegion with new region {region_x}_{region_y}");
+                }
+                true
+            }
+            Err(e) => {
+                warn!("GeoEngine: Failed to reload region {region_x}_{region_y}! {e}");
+                false
+            }
+        }
     }
 
     /// `GeoEngine.hasGeoPos`.

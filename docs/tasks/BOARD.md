@@ -370,7 +370,7 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 | [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | ready |
 | [L-05](L/L-05.md) | Item auctions | sonnet | full | none | ready |
 | [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | in-progress |
-| [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | in-progress |
+| [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
 | [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | ready |
 | [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | ready |
 | [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | ready |

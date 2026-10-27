@@ -66,7 +66,7 @@ fn opcode_name(op: l2_protocol_game::ServerOpcode) -> String {
     op.name().to_owned()
 }
 
-fn packets<'a>(sent: &'a Sent, to: i32, op: l2_protocol_game::ServerOpcode) -> Vec<&'a [u8]> {
+fn packets(sent: &Sent, to: i32, op: l2_protocol_game::ServerOpcode) -> Vec<&[u8]> {
     of(sent, to, &opcode_name(op))
 }
 
@@ -1326,13 +1326,13 @@ fn the_gm_sees_the_status_of_a_player() {
         names(&sent, GM),
         vec!["GM_VIEW_CHARACTER_INFO".to_owned(), "GM_HENNA_INFO".to_owned()]
     );
-    let info: GmViewCharacterInfo = decode(&of(&sent, GM, "GM_VIEW_CHARACTER_INFO")[0]);
+    let info: GmViewCharacterInfo = decode(of(&sent, GM, "GM_VIEW_CHARACTER_INFO")[0]);
     assert_eq!(
         (info.object_id, info.name.as_str(), info.level),
         (P1, "Target", 40)
     );
     assert_eq!(info.max_hp, 4000);
-    let henna: GmHennaInfo = decode(&of(&sent, GM, "GM_HENNA_INFO")[0]);
+    let henna: GmHennaInfo = decode(of(&sent, GM, "GM_HENNA_INFO")[0]);
     assert!(henna.dye_ids.is_empty());
 }
 
@@ -1341,7 +1341,7 @@ fn the_gm_sees_the_skills_quests_inventory_and_warehouse() {
     let mut s = gm_scene();
     gm_command(&mut s, GM, "Target", 3);
     let sent = s.log.take();
-    let skills: GmViewSkillInfo = decode(&of(&sent, GM, "GM_VIEW_SKILL_INFO")[0]);
+    let skills: GmViewSkillInfo = decode(of(&sent, GM, "GM_VIEW_SKILL_INFO")[0]);
     assert_eq!(skills.player_name, "Target");
     assert_eq!(skills.skills.len(), 1);
     assert_eq!(
@@ -1351,7 +1351,7 @@ fn the_gm_sees_the_skills_quests_inventory_and_warehouse() {
 
     gm_command(&mut s, GM, "Target", 4);
     let sent = s.log.take();
-    let quests: GmViewQuestInfo = decode(&of(&sent, GM, "GM_VIEW_QUEST_INFO")[0]);
+    let quests: GmViewQuestInfo = decode(of(&sent, GM, "GM_VIEW_QUEST_INFO")[0]);
     assert_eq!((quests.player_name.as_str(), quests.quests.len()), ("Target", 0));
 
     gm_command(&mut s, GM, "Target", 5);
@@ -1360,13 +1360,13 @@ fn the_gm_sees_the_skills_quests_inventory_and_warehouse() {
         names(&sent, GM),
         vec!["GM_VIEW_ITEM_LIST".to_owned(), "GM_HENNA_INFO".to_owned()]
     );
-    let items: l2_protocol_game::server::GmViewItemList = decode(&of(&sent, GM, "GM_VIEW_ITEM_LIST")[0]);
+    let items: l2_protocol_game::server::GmViewItemList = decode(of(&sent, GM, "GM_VIEW_ITEM_LIST")[0]);
     assert_eq!(items.items.len(), 1);
     assert_eq!(items.items[0].item_id, 1060);
 
     gm_command(&mut s, GM, "Target", 6);
     let sent = s.log.take();
-    let wh: GmViewWarehouseWithdrawList = decode(&of(&sent, GM, "GM_VIEW_WAREHOUSE_WITHDRAW_LIST")[0]);
+    let wh: GmViewWarehouseWithdrawList = decode(of(&sent, GM, "GM_VIEW_WAREHOUSE_WITHDRAW_LIST")[0]);
     assert_eq!(wh.owner_name, "Target");
     assert_eq!(wh.adena, 1234);
     assert_eq!(wh.items.len(), 1);

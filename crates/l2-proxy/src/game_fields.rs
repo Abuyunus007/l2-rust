@@ -61,6 +61,9 @@ use l2_protocol_game::server::gm_windows::{
 };
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
+use l2_protocol_game::server::henna::{
+    HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveList,
+};
 use l2_protocol_game::server::interaction::{
     ActionFailed, DoorInfo, DoorStatusUpdate, MyTargetSelected, NpcHtmlMessage, StaticObjectInfo,
     TargetSelected, TargetUnselected,
@@ -260,6 +263,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         ClientPacket::RequestAutoSoulShot(p) => object!(p => item_id, shot_type),
         ClientPacket::RequestShortCutReg(p) => object!(p => type_id, slot, id, level, character_type),
         ClientPacket::RequestShortCutDel(p) => object!(p => slot),
+        ClientPacket::RequestHennaItemList(p) => object!(p => unknown),
+        ClientPacket::RequestHennaItemInfo(p) => object!(p => symbol_id),
+        ClientPacket::RequestHennaEquip(p) => object!(p => symbol_id),
+        ClientPacket::RequestHennaRemoveList(p) => object!(p => unknown),
+        ClientPacket::RequestHennaItemRemoveInfo(p) => object!(p => symbol_id),
+        ClientPacket::RequestHennaRemove(p) => object!(p => symbol_id),
         ClientPacket::RequestAcquireSkill(p) => {
             let mut fields = object!(p => id, level, sub_type);
             fields["skill_type"] = json!(p.skill_type.id());
@@ -574,6 +583,12 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::QuestList => decoded::<QuestList>(&mut r, quest_list_fields),
         ServerOpcode::SkillCoolTime => decoded::<SkillCoolTime>(&mut r, skill_cool_time_fields),
         ServerOpcode::HennaInfo => decoded::<HennaInfo>(&mut r, henna_info_fields),
+        ServerOpcode::HennaEquipList => decoded::<HennaEquipList>(&mut r, henna_equip_list_fields),
+        ServerOpcode::HennaUnequipList => decoded::<HennaRemoveList>(&mut r, henna_remove_list_fields),
+        ServerOpcode::HennaItemInfo => decoded::<HennaItemInfo>(&mut r, |p| henna_preview_fields(&p.0)),
+        ServerOpcode::HennaUnequipInfo => {
+            decoded::<HennaItemRemoveInfo>(&mut r, |p| henna_preview_fields(&p.0))
+        }
         ServerOpcode::EtcStatusUpdate => decoded::<EtcStatusUpdate>(&mut r, etc_status_fields),
         ServerOpcode::ExStorageMaxCount => decoded::<ExStorageMaxCount>(&mut r, storage_max_count_fields),
         ServerOpcode::ExBasicActionList => decoded::<ExBasicActionList>(&mut r, basic_action_list_fields),
@@ -1301,6 +1316,35 @@ fn skill_cool_time_fields(p: &SkillCoolTime) -> Value {
 
 fn henna_info_fields(p: &HennaInfo) -> Value {
     object!(p => int, str, con, men, dex, wit, dye_ids)
+}
+
+fn henna_equip_list_fields(p: &HennaEquipList) -> Value {
+    let entries: Vec<Value> = p
+        .entries
+        .iter()
+        .map(|e| object!(e => dye_id, dye_item_id, wear_count, wear_fee, allowed))
+        .collect();
+    json!({ "adena": p.adena, "total": p.total, "entries": entries })
+}
+
+fn henna_remove_list_fields(p: &HennaRemoveList) -> Value {
+    let entries: Vec<Value> = p
+        .entries
+        .iter()
+        .map(|e| object!(e => dye_id, dye_item_id, cancel_count, cancel_fee))
+        .collect();
+    json!({ "adena": p.adena, "count": p.count, "entries": entries })
+}
+
+/// `HennaItemInfo` and `HennaItemRemoveInfo`: the six stats as `[current, after]` pairs.
+fn henna_preview_fields(p: &HennaPreview) -> Value {
+    let stat = |s: &l2_protocol_game::server::henna::HennaStatPreview| json!([s.now, s.after]);
+    json!({
+        "dye_id": p.dye_id, "dye_item_id": p.dye_item_id, "count": p.count, "fee": p.fee,
+        "allowed": p.allowed, "adena": p.adena,
+        "int": stat(&p.int), "str": stat(&p.str), "con": stat(&p.con),
+        "men": stat(&p.men), "dex": stat(&p.dex), "wit": stat(&p.wit),
+    })
 }
 
 fn etc_status_fields(p: &EtcStatusUpdate) -> Value {
@@ -2642,6 +2686,10 @@ mod tests {
         ServerOpcode::QuestList,
         ServerOpcode::SkillCoolTime,
         ServerOpcode::HennaInfo,
+        ServerOpcode::HennaEquipList,
+        ServerOpcode::HennaUnequipList,
+        ServerOpcode::HennaItemInfo,
+        ServerOpcode::HennaUnequipInfo,
         ServerOpcode::EtcStatusUpdate,
         ServerOpcode::ExStorageMaxCount,
         ServerOpcode::ExBasicActionList,
@@ -3544,6 +3592,33 @@ mod tests {
         let fields = s2c_fields(&henna.to_bytes());
         assert_eq!(fields["str"], -2);
         assert_eq!(fields["dye_ids"], json!([7]));
+
+        let equip = HennaEquipList {
+            adena: 5,
+            total: 4,
+            entries: vec![l2_protocol_game::server::henna::HennaEquipEntry {
+                dye_id: 3,
+                dye_item_id: 4445,
+                wear_count: 10,
+                wear_fee: 37000,
+                allowed: true,
+            }],
+        };
+        let fields = s2c_fields(&equip.to_bytes());
+        assert_eq!(fields["total"], 4);
+        assert_eq!(fields["entries"][0]["wear_fee"], 37000);
+        let mut preview = HennaPreview::default();
+        preview.int.now = 40;
+        preview.int.after = 41;
+        let fields = s2c_fields(&HennaItemInfo(preview).to_bytes());
+        assert_eq!(fields["int"], json!([40, 41]));
+        assert_eq!(
+            c2s_fields(
+                l2_protocol_game::generated::opcodes::ConnectionState::InGame,
+                &l2_protocol_game::client::RequestHennaEquip { symbol_id: 6 }.to_bytes()
+            ),
+            json!({ "symbol_id": 6 })
+        );
 
         let etc = EtcStatusUpdate {
             charges: 3,

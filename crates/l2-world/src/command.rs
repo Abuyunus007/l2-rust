@@ -147,6 +147,8 @@ pub enum ClientInput {
     /// The private store packets (M6-STORE-01): `RequestActionUse` for the three store actions,
     /// `RequestPrivateStore*`, `SetPrivateStore*`.
     Store(crate::trade::StoreInput),
+    /// The symbol maker packets (L-01): `RequestHenna*`.
+    Henna(crate::henna::HennaInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },

@@ -13,10 +13,21 @@
 //! - complex blocks: 64 `u16` words each in one shared vector;
 //! - multilayer blocks: their raw bytes (count byte + words per cell, like Java's `_data`) in one
 //!   shared byte buffer, plus a `u16` offset per cell so a query does not rescan the block.
+//!
+//! # Runtime edits and copy-on-write (L-07)
+//! Java edits a region in place (`setNearestNswe`, `unsetNearestNswe`, `reloadRegion`) while other
+//! threads read it. Here the path workers read the geodata without locks (D-14), so a region is
+//! never changed while somebody else can see it: [`GeoSet`] keeps every region behind an
+//! [`Arc`], and [`GeoSet::region_mut`] goes through [`Arc::make_mut`]. A region nobody else holds
+//! is edited in place; a region a worker's snapshot still holds is copied first (only that one
+//! region, the others stay shared). Cloning a [`GeoSet`] (and so a `GeoEngine`) is cheap: one
+//! `Arc` per region.
 
 use std::path::Path;
+use std::sync::Arc;
 
-use crate::block::{BLOCK_CELLS, BlockRef, BlockType, MAX_LAYERS};
+use crate::block::{BLOCK_CELLS, BlockRef, BlockType, MAX_LAYERS, cell_index};
+use crate::cell::{NSWE_ALL, cell_nswe};
 use crate::error::GeoError;
 
 /// Blocks on one side of a region (`IRegion.REGION_BLOCKS_X` / `_Y`).
@@ -30,6 +41,14 @@ pub const GEO_REGIONS_SIDE: usize = 32;
 
 const SLOT_TYPE_SHIFT: u32 = 30;
 const SLOT_PAYLOAD_MASK: u32 = (1 << SLOT_TYPE_SHIFT) - 1;
+
+/// `Region.getBlock`'s index: `((geoX / 8) % 256) * 256 + (geoY / 8) % 256`.
+#[inline]
+fn block_index(geo_x: i32, geo_y: i32) -> usize {
+    let bx = ((geo_x >> 3) & 0xFF) as usize;
+    let by = ((geo_y >> 3) & 0xFF) as usize;
+    bx * REGION_BLOCKS_SIDE + by
+}
 
 /// Number of blocks of each type in a region.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -172,9 +191,12 @@ impl Region {
     ///
     /// Uses `((geoX / 8) % 256) * 256 + (geoY / 8) % 256`, i.e. only the position inside this region.
     pub fn block(&self, geo_x: i32, geo_y: i32) -> BlockRef<'_> {
-        let bx = ((geo_x >> 3) & 0xFF) as usize;
-        let by = ((geo_y >> 3) & 0xFF) as usize;
-        let slot = self.slots[bx * REGION_BLOCKS_SIDE + by];
+        self.block_at(block_index(geo_x, geo_y))
+    }
+
+    /// The block with the given index (`bx * 256 + by`, the file order).
+    fn block_at(&self, index: usize) -> BlockRef<'_> {
+        let slot = self.slots[index];
         let payload = (slot & SLOT_PAYLOAD_MASK) as usize;
         match slot >> SLOT_TYPE_SHIFT {
             0 => BlockRef::Flat {
@@ -228,9 +250,127 @@ impl Region {
         self.block(geo_x, geo_y).nearest_nswe(geo_x, geo_y, world_z)
     }
 
-    // TODO(M3): runtime NSWE edits for doors and fences: `setNearestNswe` / `unsetNearestNswe`
-    // (Region.java, ComplexBlock.java, MultilayerBlock.java), including `convertFlatToComplex`.
-    // The data is immutable for now; M3 decides how edits are stored (region-owned overrides).
+    /// `Region.setNearestNswe`: opens the directions `nswe` of the cell (nearest layer to
+    /// `world_z` in a multilayer block).
+    ///
+    /// NOTE(java-quirk): `ComplexBlock` / `MultilayerBlock.setNearestNswe` only write when *none*
+    /// of the bits of `nswe` is open yet (`(current & nswe) == 0`); asking for two directions of
+    /// which one is open already changes nothing.
+    pub fn set_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, nswe: u8) {
+        // Flat block cells are enabled by default on all directions.
+        // NOTE(java-quirk): Java has the `convertFlatToComplex` call commented out here, so a flat
+        // block stays flat.
+        if self.block(geo_x, geo_y).block_type() == BlockType::Flat {
+            return;
+        }
+        self.edit_nearest_nswe(geo_x, geo_y, world_z, |current| {
+            ((current & nswe) == 0).then_some(current | nswe)
+        });
+    }
+
+    /// `Region.unsetNearestNswe`: closes the directions `nswe` of the cell. A flat block is turned
+    /// into a complex block first (`convertFlatToComplex`).
+    ///
+    /// Writes when *any* bit of `nswe` is open (`(current & nswe) != 0`) and clears all of them.
+    pub fn unset_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, nswe: u8) {
+        let index = block_index(geo_x, geo_y);
+        if let BlockRef::Flat { height } = self.block_at(index) {
+            self.convert_flat_to_complex(index, height);
+        }
+        self.edit_nearest_nswe(geo_x, geo_y, world_z, |current| {
+            ((current & nswe) != 0).then_some(current & !nswe)
+        });
+    }
+
+    /// `Region.convertFlatToComplex`: 64 cells of the flat height, all directions open.
+    ///
+    /// NOTE(java-quirk): the height is shifted into the cell word without the `0xFFF0` mask and
+    /// without a range check (`(short) (height << 1) | NSWE_ALL`), so a height that is not a
+    /// multiple of 8 is rounded down to one (100 becomes 96, -7 becomes -8) and a height outside
+    /// -16384..16383 wraps (20000 becomes -12768).
+    fn convert_flat_to_complex(&mut self, index: usize, height: i16) {
+        let word = ((i32::from(height) << 1) as u16) | u16::from(NSWE_ALL);
+        let complex_index = (self.complex.len() / BLOCK_CELLS) as u32;
+        self.complex.reserve_exact(BLOCK_CELLS);
+        self.complex.extend(std::iter::repeat_n(word, BLOCK_CELLS));
+        self.slots[index] = ((BlockType::Complex as u32) << SLOT_TYPE_SHIFT) | complex_index;
+    }
+
+    /// The shared body of `ComplexBlock` / `MultilayerBlock.setNearestNswe` and
+    /// `unsetNearestNswe`: `change` gets the NSWE bits of the cell (or of the layer nearest to
+    /// `world_z`) and returns the new bits, or `None` to leave the cell alone. The height bits stay
+    /// as they are (Java re-encodes `(height << 1) | nswe`, which gives the same word).
+    fn edit_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, change: impl Fn(u8) -> Option<u8>) {
+        let index = block_index(geo_x, geo_y);
+        let slot = self.slots[index];
+        let payload = (slot & SLOT_PAYLOAD_MASK) as usize;
+        let cell = cell_index(geo_x, geo_y);
+        match BlockType::from_u8((slot >> SLOT_TYPE_SHIFT) as u8) {
+            Some(BlockType::Complex) => {
+                let word = &mut self.complex[payload * BLOCK_CELLS + cell];
+                if let Some(nswe) = change(cell_nswe(*word)) {
+                    *word = (*word & 0xFFF0) | u16::from(nswe & 0x0F);
+                }
+            }
+            Some(BlockType::Multilayer) => {
+                let Some(layer) = self.block_at(index).nearest_layer_index(geo_x, geo_y, world_z) else {
+                    return;
+                };
+                let at = self.multilayer_starts[payload] as usize
+                    + usize::from(self.multilayer_cells[payload * BLOCK_CELLS + cell])
+                    + 1
+                    + 2 * layer;
+                let word = u16::from_le_bytes([self.multilayer_data[at], self.multilayer_data[at + 1]]);
+                if let Some(nswe) = change(cell_nswe(word)) {
+                    let word = (word & 0xFFF0) | u16::from(nswe & 0x0F);
+                    self.multilayer_data[at..at + 2].copy_from_slice(&word.to_le_bytes());
+                }
+            }
+            // Flat blocks have no cell words (`FlatBlock.setNearestNswe` throws; the region never
+            // calls it).
+            _ => {}
+        }
+    }
+
+    /// The region in the `.l2j` layout `Region.saveToFile` writes: per block the type byte, then
+    /// the flat height, the 64 complex words (both little-endian) or the multilayer bytes as
+    /// loaded. An unedited region gives back the bytes it was parsed from.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let counts = self.block_counts();
+        let mut out = Vec::with_capacity(
+            counts.flat as usize * 3
+                + counts.complex as usize * (1 + 2 * BLOCK_CELLS)
+                + counts.multilayer as usize
+                + self.multilayer_data.len(),
+        );
+        for index in 0..REGION_BLOCKS {
+            let block = self.block_at(index);
+            out.push(block.block_type() as u8);
+            match block {
+                BlockRef::Flat { height } => out.extend_from_slice(&height.to_le_bytes()),
+                BlockRef::Complex { cells } => {
+                    for word in cells {
+                        out.extend_from_slice(&word.to_le_bytes());
+                    }
+                }
+                BlockRef::Multilayer { data, .. } => out.extend_from_slice(data),
+            }
+        }
+        out
+    }
+
+    /// `Region.saveToFile`: writes [`to_bytes`](Self::to_bytes) to `path`, deleting an existing
+    /// file first like Java. The caller picks the path (Java: `GeoEditPath` + file name).
+    pub fn save_to_file(&self, path: &Path) -> Result<(), GeoError> {
+        let io_err = |source| GeoError::Io {
+            path: path.to_path_buf(),
+            source,
+        };
+        if path.exists() {
+            std::fs::remove_file(path).map_err(io_err)?;
+        }
+        std::fs::write(path, self.to_bytes()).map_err(io_err)
+    }
 
     /// Always true for a real region (`Region.hasGeo`).
     pub fn has_geo(&self) -> bool {
@@ -297,9 +437,13 @@ impl NullRegion {
 /// The 32 x 32 table of regions (`GeoEngine.REGIONS`), `None` where no file exists.
 ///
 /// Region `(x, y)` covers geo cells `x * 2048 .. (x + 1) * 2048` on X and likewise on Y.
+///
+/// Every region sits behind an [`Arc`]: cloning the set shares the regions, and
+/// [`region_mut`](Self::region_mut) copies a region only when a clone still holds it
+/// (copy-on-write, see the module docs).
 #[derive(Debug, Clone)]
 pub struct GeoSet {
-    regions: Vec<Option<Region>>,
+    regions: Vec<Option<Arc<Region>>>,
 }
 
 impl Default for GeoSet {
@@ -341,7 +485,7 @@ impl GeoSet {
             }
             let region = Region::load_file(&path)?;
             tracing::debug!("loaded geodata region {x}_{y}");
-            set.regions[x as usize * GEO_REGIONS_SIDE + y as usize] = Some(region);
+            set.regions[x as usize * GEO_REGIONS_SIDE + y as usize] = Some(Arc::new(region));
         }
         Ok(set)
     }
@@ -351,16 +495,33 @@ impl GeoSet {
         if x as usize >= GEO_REGIONS_SIDE || y as usize >= GEO_REGIONS_SIDE {
             return false;
         }
-        self.regions[x as usize * GEO_REGIONS_SIDE + y as usize] = Some(region);
+        self.regions[x as usize * GEO_REGIONS_SIDE + y as usize] = Some(Arc::new(region));
         true
     }
 
     /// The region with the given region coordinates, if loaded.
     pub fn region(&self, x: u32, y: u32) -> Option<&Region> {
+        self.region_arc(x, y).map(|r| &**r)
+    }
+
+    /// The shared handle of a region: lets a caller keep a snapshot of one region (to save it
+    /// later) or check whether two sets still share it ([`Arc::ptr_eq`]).
+    pub fn region_arc(&self, x: u32, y: u32) -> Option<&Arc<Region>> {
         if x as usize >= GEO_REGIONS_SIDE || y as usize >= GEO_REGIONS_SIDE {
             return None;
         }
         self.regions[x as usize * GEO_REGIONS_SIDE + y as usize].as_ref()
+    }
+
+    /// The region to edit. Copies it first when another set (an engine snapshot a path worker
+    /// still uses) shares it, so readers of the old set never see the change.
+    pub fn region_mut(&mut self, x: u32, y: u32) -> Option<&mut Region> {
+        if x as usize >= GEO_REGIONS_SIDE || y as usize >= GEO_REGIONS_SIDE {
+            return None;
+        }
+        self.regions[x as usize * GEO_REGIONS_SIDE + y as usize]
+            .as_mut()
+            .map(Arc::make_mut)
     }
 
     /// The region containing a global geo cell (`GeoEngine.getRegion`), if loaded.
