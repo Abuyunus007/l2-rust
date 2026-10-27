@@ -656,6 +656,18 @@ pub fn flood_settings_from_ini(ini: &l2_config::IniFile) -> l2_world::FloodSetti
     flood_settings_from_manual(&l2_config::game_manual_core::FloodProtectorManual::from_ini(ini))
 }
 
+/// The community board keys: `EnableCommunityBoard`, `BBSDefault` and `Custom/CommunityBoard.ini`
+/// (S-HAND-01).
+pub fn community_board_settings(config: &GameConfig) -> l2_world::CommunityBoardSettings {
+    l2_world::CommunityBoardSettings {
+        enabled: config.general.enable_community_board,
+        bbs_default: config.general.bbs_default.clone(),
+        custom_cb_enabled: config.community_board.custom_cb_enabled,
+        peace_only: config.community_board.communityboard_peace_only,
+        karma_disabled: config.community_board.communityboard_karma_disabled,
+    }
+}
+
 /// The flood protectors of the loaded configuration (`config.manual.core.flood_protector`).
 pub fn flood_settings_from_config(config: &GameConfig) -> l2_world::FloodSettings {
     flood_settings_from_manual(&config.manual.core.flood_protector)

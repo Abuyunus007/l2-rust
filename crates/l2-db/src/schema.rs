@@ -9,6 +9,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/announcements.sql"),
     include_str!("../sql/game/auction.sql"),
     include_str!("../sql/game/auction_bid.sql"),
+    include_str!("../sql/game/bbs_favorite.sql"),
     include_str!("../sql/game/bot_reported_char_data.sql"),
     include_str!("../sql/game/buylists.sql"),
     include_str!("../sql/game/castle.sql"),
