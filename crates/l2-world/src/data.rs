@@ -94,6 +94,12 @@ pub trait StaticData: Send + Sync {
     /// `AccessLevel` ([`AccessLevelStatic::UNREGISTERED`]).
     fn access_level(&self, level: i32) -> AccessLevelStatic;
 
+    /// `AdminData.getMasterAccessLevel()`: the highest level the file lists (0 without one). A new
+    /// character gets it when `EverybodyHasAdminRights` is on (`Player.getAccessLevel`).
+    fn master_access_level(&self) -> i32 {
+        0
+    }
+
     /// `AccessLevel.canTakeAggro()` (`takeAggro` of `AccessLevels.xml`, default true): whether
     /// monsters aggress a player of this level. The default (no access file) takes aggro; the
     /// game server reads `takeAggro` over the datapack.
@@ -192,6 +198,10 @@ impl<T: StaticData + ?Sized> StaticData for std::sync::Arc<T> {
 
     fn access_level(&self, level: i32) -> AccessLevelStatic {
         (**self).access_level(level)
+    }
+
+    fn master_access_level(&self) -> i32 {
+        (**self).master_access_level()
     }
 
     fn can_take_aggro(&self, level: i32) -> bool {

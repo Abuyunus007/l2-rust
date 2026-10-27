@@ -1602,6 +1602,7 @@ fn a_new_fighter_is_created_with_the_skills_and_items_of_the_scenario() {
         config: &config,
         stat_bonus: &bonus,
         item_max_mp: &max_mp,
+        master_access_level: 0,
     };
     let next_id = std::sync::atomic::AtomicI32::new(0x6000_0001);
     let allocate = || Some(next_id.fetch_add(1, std::sync::atomic::Ordering::Relaxed));
