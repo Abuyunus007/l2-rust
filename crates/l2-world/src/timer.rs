@@ -156,6 +156,9 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The life task of a cursed weapon and its delayed social action and transformation, see
+    /// `cursed/`.
+    Cursed(crate::cursed::CursedTimer),
     /// The end of a wear shop try-on (L-02), see `leftover.rs`.
     Leftover(crate::leftover::LeftoverTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
@@ -209,6 +212,14 @@ impl TimerWheel {
         self.live.remove(&id).is_some()
     }
 
+    /// Cancels every timer whose kind `matches` (`//respawnall` drops the pending respawns of
+    /// the spawns it replaces). Returns how many were cancelled.
+    pub fn cancel_where(&mut self, matches: impl Fn(&TimerKind) -> bool) -> usize {
+        let before = self.live.len();
+        self.live.retain(|_, kind| !matches(kind));
+        before - self.live.len()
+    }
+
     /// Removes and returns every timer due at or before `now`, in firing order.
     pub fn take_due(&mut self, now: u64) -> Vec<(TimerId, TimerKind)> {
         let mut due = Vec::new();
@@ -245,6 +256,17 @@ mod tests {
         assert_eq!(TimerWheel::ms_to_ticks(50), 1);
         assert_eq!(TimerWheel::ms_to_ticks(51), 2);
         assert_eq!(TimerWheel::ms_to_ticks(60_000), 1200);
+    }
+
+    #[test]
+    fn cancel_where_drops_the_matching_timers_only() {
+        let mut wheel = TimerWheel::default();
+        let keep = wheel.schedule_at(2, TimerKind::Marker(1));
+        wheel.schedule_at(2, TimerKind::Marker(2));
+        wheel.schedule_at(3, TimerKind::Marker(2));
+        assert_eq!(wheel.cancel_where(|k| *k == TimerKind::Marker(2)), 2);
+        assert_eq!(wheel.len(), 1);
+        assert_eq!(wheel.take_due(5), vec![(keep, TimerKind::Marker(1))]);
     }
 
     #[test]

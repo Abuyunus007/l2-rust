@@ -14,6 +14,7 @@ mod characters;
 mod clans;
 mod contacts;
 mod crests;
+mod cursed_weapons;
 mod fishing;
 mod fort_sieges;
 mod friends;
@@ -61,6 +62,7 @@ pub use clans::{
 };
 pub use contacts::{ContactLink, ContactRepository};
 pub use crests::{CrestRepository, CrestRow};
+pub use cursed_weapons::{CursedWeaponRepository, CursedWeaponRow};
 pub use fishing::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use fort_sieges::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use friends::{CharacterSummary, FriendLink, FriendRepository};

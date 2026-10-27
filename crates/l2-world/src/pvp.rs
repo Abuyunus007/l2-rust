@@ -517,7 +517,12 @@ impl World {
         if killed == killer {
             return;
         }
-        // Cursed weapons progress: nobody has one (M8).
+        // Cursed weapons progress.
+        let cursed_id = self.cursed_weapon_equipped_id(killer);
+        if cursed_id != 0 && self.is_player(target) {
+            self.cursed_increase_kills(cursed_id);
+            return;
+        }
         // M8: olympiad (`isInOlympiadMode()` of either).
         // Duel support.
         // NOTE(java-quirk): both only have to be in *a* duel, not the same one.

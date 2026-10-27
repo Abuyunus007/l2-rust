@@ -346,6 +346,8 @@ pub struct StatSettings {
     pub alt_weight_limit: f64,
     /// `ChampionMonstersConfig.CHAMPION_ENABLE` (`ChampionEnable`).
     pub champion_enable: bool,
+    /// `ChampionHp` (a Java `int`).
+    pub champion_hp: i32,
     /// `ChampionAtk` (a Java `float`).
     pub champion_atk: f32,
     /// `ChampionSpdAtk` (a Java `float`).
@@ -388,6 +390,7 @@ impl Default for StatSettings {
             run_spd_boost: 0,
             alt_weight_limit: 1.0,
             champion_enable: false,
+            champion_hp: 7,
             champion_atk: 1.0,
             champion_spd_atk: 1.0,
             raid_pdefence_multiplier: 1.0,

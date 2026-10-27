@@ -487,7 +487,12 @@ impl World {
             return;
         }
 
-        // FOLLOW-UP(M5): `player.isCursedWeaponEquipped()` -> `setTarget(player)`; return.
+        // NOTE(java-quirk): Java's `!(target instanceof ClanHallManager) || !(target instanceof
+        // Doorman)` is always true (nothing is both), so a cursed weapon owner never gets a page.
+        if self.is_cursed_weapon_equipped(player) {
+            self.set_target(player, Some(player));
+            return;
+        }
 
         if karma > 0 {
             let settings = self.settings.talk.clone();

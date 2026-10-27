@@ -25,6 +25,7 @@ pub mod command;
 pub mod contacts;
 pub mod craft;
 pub mod crystallize;
+pub mod cursed;
 pub mod data;
 pub mod death;
 pub mod dialog;
@@ -115,6 +116,9 @@ pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,
     RecipeWrite,
+};
+pub use cursed::{
+    CursedInput, CursedLoad, CursedRow, CursedSettings, CursedTimer, CursedWeapon, CursedWrite,
 };
 pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,

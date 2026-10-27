@@ -27,11 +27,11 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, EnchantInput, FortInput,
-    FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData, MacroData, MailInput,
-    PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry, RecipeLoad,
-    SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput, WarehouseInput,
-    WarehouseLoad, WorldCommand,
+    AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, CursedInput,
+    EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
+    MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
+    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
+    WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1106,6 +1106,9 @@ impl ClientSession {
                 debug!("C5: RequestPCCafeCouponUse: S: {}", p.coupon);
                 return true;
             }
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
+            ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
+            ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,
