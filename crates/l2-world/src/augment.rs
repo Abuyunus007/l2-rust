@@ -18,8 +18,6 @@
 // equip listener's).
 //
 // # Left out on purpose
-// - `isFishing()` and `isCursedWeaponEquipped()` of `AbstractRefinePacket.isValid(player)`: neither
-//   cursed weapons do not exist yet, so they never refuse.
 // - The `OnPlayerAugment` script event (`Item.setAugmentation` / `removeAugmentation`): scripts come
 //   after the world is complete (D-05).
 // - `PunishmentManager.handleIllegalPlayerAction` for an item of another owner: the items come from
@@ -827,12 +825,14 @@ impl World {
             );
             return false;
         }
-        // `isCursedWeaponEquipped()`: there are no cursed weapons yet.
         if self.is_sitting(id) {
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::YouCannotAugmentItemsWhileSittingDown),
             );
+            return false;
+        }
+        if self.is_cursed_weapon_equipped(id) {
             return false;
         }
         !(self.is_enchanting(id) || self.is_processing_transaction(id))

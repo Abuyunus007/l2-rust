@@ -164,6 +164,9 @@ pub enum PersistCommand {
     /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`),
     /// see `manor/` (M7-MANOR-01). Applied in order with the other commands.
     Manor(crate::manor::ManorWrite),
+    /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
+    /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
+    Cursed(crate::cursed::CursedWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {
@@ -267,6 +270,18 @@ pub enum ControlRequest {
         requester: l2_util::ObjectId,
         path: Option<String>,
     },
+    /// `//loadhtml <path>`: read one html file of the datapack from the disk (Java
+    /// `HtmCache.loadFile`). The answer comes back as `WorldCommand::HtmlFileLoaded`.
+    LoadHtmlFile {
+        requester: l2_util::ObjectId,
+        path: String,
+    },
+    /// `//respawnall`, `//spawn_reload`: read the spawn files again (Java `SpawnData.load()`). The
+    /// answer comes back as `WorldCommand::SpawnsReloaded`.
+    ReloadSpawns,
+    /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
+    /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
+    StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },
 }
 
 /// Everything the world produces that is not a packet for a player.

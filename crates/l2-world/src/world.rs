@@ -155,6 +155,8 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
     pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
+    pub(crate) cursed: crate::cursed::CursedWorld,
     /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
     pub(crate) walking: crate::walking::WalkingWorld,
     /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
@@ -235,6 +237,7 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
@@ -432,6 +435,12 @@ impl World {
                 path,
                 result,
             } => self.on_html_reloaded(requester, path, result),
+            WorldCommand::HtmlFileLoaded {
+                requester,
+                path,
+                content,
+            } => self.on_html_file_loaded(requester, &path, content),
+            WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
@@ -452,6 +461,8 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: "Save Cursed Weapons data before closing."
+                self.save_cursed_weapons();
                 self.stopped = true;
                 done();
             }
@@ -663,6 +674,8 @@ impl World {
             ClientInput::Henna(input) => self.on_henna_input(id, input),
             // Java: RequestInfoItemAuction, RequestBidItemAuction
             ClientInput::ItemAuction(input) => self.on_item_auction_input(id, input),
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
+            ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -926,6 +939,7 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks

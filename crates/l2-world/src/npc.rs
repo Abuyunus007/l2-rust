@@ -240,10 +240,14 @@ pub(crate) struct NpcWorld {
     water: Option<WaterCheck>,
     pub(crate) ids: Option<Arc<IdFactory>>,
     /// Java `DayNightSpawnManager._dayCreatures` / `_nightCreatures`: indices into the spawns.
-    day: Vec<usize>,
-    night: Vec<usize>,
+    pub(crate) day: Vec<usize>,
+    pub(crate) night: Vec<usize>,
     /// Java `RandomAnimationTaskManager`'s entries and `Npc._lastSocialBroadcast`, see `ai/idle.rs`.
     pub(crate) animations: HashMap<ObjectId, AnimationState>,
+    /// Java `Creature._isCoreAiDisabled` of the NPCs that had `disableCoreAI(true)` called
+    /// (`//spawn_misc`). A territory ward is always one, by its type, see
+    /// [`World::is_core_ai_disabled`].
+    pub(crate) core_ai_disabled: HashSet<ObjectId>,
 }
 
 impl NpcWorld {
