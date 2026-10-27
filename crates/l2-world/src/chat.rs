@@ -130,17 +130,25 @@ impl World {
             ChatType::PartyRoomAll | ChatType::PartyRoomCommander => {
                 self.chat_command_channel(id, chat_type, &text)
             }
+            ChatType::PartyMatchRoom => self.chat_party_match_room(id, &text),
             ChatType::Battlefield => self.chat_battlefield(id, &text),
             ChatType::PetitionPlayer | ChatType::PetitionGm => self.chat_petition(id, chat_type, &text),
             other => debug!("No handler for chat type {other:?} (not ported yet)"),
         }
     }
 
-    /// Java `Say2.parseAndPublishItem`: every `ID=` link must name an item of the speaker.
-    ///
-    /// `Item.publish()` (which lets others look the item up by its link) has no effect here: the
-    /// link lookup packets are not ported.
-    fn publish_items(&self, id: ObjectId, text: &str) -> bool {
+    /// Java `Say2.parseAndPublishItem`: every `ID=` link must name an item of the speaker, and
+    /// each item is published (`Item.publish()`, which lets others look it up with
+    /// `RequestExRqItemLink`, see `leftover.rs`) as soon as its link is read, so the links before
+    /// a bad one stay published.
+    fn publish_items(&mut self, id: ObjectId, text: &str) -> bool {
+        let mut published = Vec::new();
+        let accepted = self.scan_item_links(id, text, &mut published);
+        self.publish_items_of(id, published);
+        accepted
+    }
+
+    fn scan_item_links(&self, id: ObjectId, text: &str, published: &mut Vec<ObjectId>) -> bool {
         let Some(player) = self.players.get(&id) else {
             return false;
         };
@@ -192,6 +200,7 @@ impl World {
                 );
                 return false;
             }
+            published.push(ObjectId(object_id));
             // `pos1 = _text.indexOf(8, pos) + 1; if (pos1 == 0) // Missing ending tag.`
             let Some(end) = find_mark(pos) else {
                 return false;
@@ -252,7 +261,11 @@ impl World {
     }
 
     // Java: ChatGeneral.onChat (without voiced commands and block list)
-    fn chat_general(&self, id: ObjectId, text: &str) {
+    fn chat_general(&mut self, id: ObjectId, text: &str) {
+        // Voiced commands first: a text a handler took is not said (`vcdUsed`).
+        if self.wedding_voiced_command(id, text) {
+            return;
+        }
         let Some(player) = self.players.get(&id) else {
             return;
         };

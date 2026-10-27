@@ -38,6 +38,7 @@ mod subclasses;
 mod summons;
 mod territories;
 mod variables;
+mod wedding;
 
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
@@ -88,3 +89,4 @@ pub use territories::{
     NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
 };
 pub use variables::VariableRepository;
+pub use wedding::{CoupleRow, WeddingRepository, married_text};

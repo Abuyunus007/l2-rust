@@ -29,7 +29,7 @@
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
 // - Fake players, the faction system, dimensional rifts, festival monsters,
-//   `WalkingManager` (nothing is a walker), champions.
+//   champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
 // - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): `siege_guard.rs` and
 //   `fort_siege_guard.rs` (M7-SIEGE-02); the entry points here hand a defender over to them.
 //
@@ -269,6 +269,14 @@ impl World {
     /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
     /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
     fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
+        // `Npc.onSpawn`: `!WalkingManager.isTargeted(this) && ...` (a route walker never wanders).
+        if self
+            .npcs
+            .get(&id)
+            .is_some_and(|n| self.walking_is_targeted(n.npc_id))
+        {
+            return false;
+        }
         if let Some(spawn) = self.npc_spawn(id)
             && let Some(value) = spawn.ai_data.as_ref().and_then(|d| d.get("disableRandomWalk"))
         {
@@ -753,8 +761,7 @@ impl World {
                             && self.is_alike_dead(t))
                 }
             };
-            // (`!npc.isWalker()`: nothing walks.)
-            if away && target_gone {
+            if !self.is_walker(id) && away && target_gone {
                 self.set_running(id, false);
                 self.return_home(id);
                 return;
@@ -937,8 +944,9 @@ impl World {
             return;
         };
 
-        // (`!npc.isWalker()`: nothing walks. `GrandBoss` is exempt.)
+        // (`GrandBoss` is exempt.)
         if class.is_monster()
+            && !self.is_walker(id)
             && class != crate::npc::NpcClass::GrandBoss
             && (if self.is_raid_or_minion(id) {
                 settings.aggro_distance_check_raids
@@ -1846,7 +1854,8 @@ impl World {
             return;
         }
         self.client_stopped_moving(id);
-        // `WalkingManager.onArrived`, `ON_NPC_MOVE_FINISHED`: no walkers, D-05.
+        // `WalkingManager.onArrived` (M8-MISC-01); `ON_NPC_MOVE_FINISHED` is a script event (D-05).
+        self.walking_on_arrived(id);
 
         // If the Intention was MOVE_TO, set the Intention to ACTIVE.
         if self.intention_of(id) == Intention::MoveTo {

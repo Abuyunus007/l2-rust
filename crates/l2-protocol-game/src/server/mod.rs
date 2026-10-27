@@ -88,11 +88,13 @@ pub mod fishing;
 pub mod fort;
 pub mod friend;
 pub mod gm_view;
+pub mod gm_windows;
 pub mod ground_item;
 pub mod handshake;
 pub mod henna;
 pub mod interaction;
 pub mod items;
+pub mod leftover;
 pub mod mail;
 pub mod manor;
 pub mod map_windows;
@@ -101,6 +103,7 @@ pub mod movement;
 pub mod multisell;
 pub mod olympiad;
 pub mod party;
+pub mod party_room;
 pub mod pccafe;
 pub mod pledge;
 pub mod recipe;
@@ -167,6 +170,10 @@ pub use fishing::{ExFishingEnd, ExFishingHpRegen, ExFishingStart, ExFishingStart
 pub use fort::{ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, FortressInfo};
 pub use friend::{FriendAddRequest, FriendPacket, FriendStatusPacket, L2FriendSay};
 pub use gm_view::GmViewItemList;
+pub use gm_windows::{
+    GmHennaInfo, GmSkillEntry, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo,
+    GmViewWarehouseWithdrawList,
+};
 pub use ground_item::{DropItem, GetItem, SpawnItem};
 pub use handshake::{KeyPacket, LoginFail};
 pub use henna::{
@@ -182,6 +189,7 @@ pub use items::{
     read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
     write_item_updates,
 };
+pub use leftover::{ExRpItemLink, ShopPreviewInfo};
 pub use mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,
@@ -214,6 +222,11 @@ pub use party::{
     PartyDistributionType, PartyMemberLocation, PartyMemberPosition, PartyMemberVitals, PartyPetWindow,
     PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowDeleteAll,
     PartySmallWindowUpdate, PartySummon, PartyWindowMember,
+};
+pub use party_room::{
+    ExAskJoinPartyRoom, ExAskModifyPartyLooting, ExClosePartyRoom, ExListPartyMatchingWaitingRoom,
+    ExManagePartyRoomMember, ExPartyRoomMember, ExRequestChangeNicknameColor, ExSetPartyLooting,
+    ListPartyWaiting, PartyRoomInfo, RoomMember, WaitingRoom,
 };
 pub use pccafe::ExPcCafePointInfo;
 pub use pledge::{

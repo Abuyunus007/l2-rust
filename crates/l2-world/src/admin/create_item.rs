@@ -310,7 +310,7 @@ fn find_item(world: &World, object_id: ObjectId) -> Result<Found, JavaException>
 }
 
 /// Java `activeChar.sendPacket(new GMViewItemList(player))`: the item window of `owner` for the GM.
-fn send_gm_view_item_list(world: &World, gm: ObjectId, owner: ObjectId) {
+pub(crate) fn send_gm_view_item_list(world: &World, gm: ObjectId, owner: ObjectId) {
     let Some(limit) = world.stats(owner).map(|v| v.inventory_limit()) else {
         return;
     };

@@ -15,8 +15,8 @@
 // - the GM list: `World::send_gm_list` (`RequestGmList`).
 //
 // # Left out, with the system that brings it
-// - `RequestGmList` is not decoded by `l2-protocol-game` yet, so the client cannot reach
-//   `ClientInput::GmList`; `RequestPetition` (the "no GM online" check) is not ported.
+// - `RequestGmList` is decoded since L-03 (`ClientInput::GmList`); `RequestPetition` (the "no GM
+//   online" check) is not ported.
 // - Java's `Pet` weight check reads the owner's diet mode too (`Pet.java:1278`); the pet code is
 //   not changed here.
 
