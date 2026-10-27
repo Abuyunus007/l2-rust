@@ -285,6 +285,9 @@ pub enum ClientInput {
     Petition(crate::petition::PetitionInput),
     /// Java `RequestSSQStatus` (M8-SS-01, `sevensigns/status.rs`).
     SsqStatus { page: i8 },
+    /// The quest journal and tutorial packets (`RequestQuestList`, `RequestQuestAbort`,
+    /// `RequestTutorial*`), see `script/packets.rs`.
+    Quest(crate::script::packets::QuestInput),
     /// Java `SnoopQuit`: the GM stops snooping the player with this object id.
     SnoopQuit { snoop_id: i32 },
     /// The L-02 packets (macros, crystallize, wear shop, item links, key mapping, ...), see

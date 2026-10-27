@@ -712,7 +712,10 @@ impl World {
                 .filter(|target| self.is_aggressive_towards(id, *target))
                 .collect();
             for target in targets {
-                // D-05: `ON_NPC_HATE` can terminate the aggression here.
+                // `ON_NPC_HATE` can terminate the aggression here (S-API-01).
+                if !self.script_npc_hate(id, target) {
+                    continue;
+                }
                 if self.aggro_hating(id, target) == 0 {
                     self.add_damage_hate(id, target, 0, 0);
                 }
@@ -1776,7 +1779,8 @@ impl World {
                 if self.can_see_target(nearby, attacker) {
                     self.notify_action_aggression(nearby, attacker, 1);
                 }
-                // D-05: `ON_ATTACKABLE_FACTION_CALL` is sent to the scripts here.
+                // `ON_ATTACKABLE_FACTION_CALL` (S-API-01).
+                self.script_on_faction_call(nearby, id, attacker);
             } else if self.intention_of(nearby) != Intention::Attack && self.can_see_target(nearby, attacker)
             {
                 let hate = self.aggro_hating(id, attacker);
@@ -1829,7 +1833,8 @@ impl World {
             }
             // By default, when a faction member calls for help, attack the caller's attacker.
             self.notify_action_aggression(called, killer, 1);
-            // D-05: `ON_ATTACKABLE_FACTION_CALL`.
+            // `ON_ATTACKABLE_FACTION_CALL` (S-API-01).
+            self.script_on_faction_call(called, id, killer);
         }
     }
 
@@ -1878,8 +1883,9 @@ impl World {
             return;
         }
         self.client_stopped_moving(id);
-        // `WalkingManager.onArrived` (M8-MISC-01); `ON_NPC_MOVE_FINISHED` is a script event (D-05).
+        // `WalkingManager.onArrived` (M8-MISC-01), then `ON_NPC_MOVE_FINISHED` (S-API-01).
         self.walking_on_arrived(id);
+        self.script_on_move_finished(id);
 
         // If the Intention was MOVE_TO, set the Intention to ACTIVE.
         if self.intention_of(id) == Intention::MoveTo {

@@ -177,6 +177,9 @@ pub struct World {
     /// The Seven Signs: the cycle, the members, the seals, the auto spawns (M8-SS-01,
     /// `sevensigns/`).
     pub(crate) seven_signs: crate::sevensigns::SevenSignsWorld,
+    /// The script engine: the compiled-in scripts, their listeners, the players' quest states,
+    /// the quest timers and the global variables (S-API-01, `script/`).
+    pub(crate) scripts: crate::script::ScriptWorld,
 }
 
 impl World {
@@ -261,6 +264,7 @@ impl World {
             minigames: crate::minigame::MinigameWorld::default(),
             vehicle: crate::vehicle::VehicleWorld::default(),
             seven_signs: crate::sevensigns::SevenSignsWorld::default(),
+            scripts: crate::script::ScriptWorld::default(),
         }
     }
 
@@ -495,10 +499,15 @@ impl World {
                 self.save_cursed_weapons();
                 // Java Shutdown: "Olympiad System: Data saved" (D-53: only with the switch).
                 self.olympiad_shutdown();
+                // Java Shutdown: `ScriptManager.save()` and `GlobalVariablesManager.storeMe()`
+                // (D-54: the global variables only with the switch, S-API-01).
+                self.scripts_shutdown();
                 self.stopped = true;
                 done();
             }
         }
+        // The script events this command fired (Java `notifyEventAsync`, S-API-01).
+        self.script_drain();
     }
 
     /// Advances one tick: fires due timers. Movement, AI and regeneration join in later
@@ -521,6 +530,8 @@ impl World {
         if self.tick % 2 == 0 {
             self.update_game_clock();
         }
+        // The script events this tick fired (Java `notifyEventAsync`, S-API-01).
+        self.script_drain();
     }
 
     /// Java `GameTimeTaskManager`: from now on the world follows the game clock and switches the
@@ -866,6 +877,8 @@ impl World {
             ClientInput::Petition(input) => self.on_petition_input(id, input),
             // Java: RequestSSQStatus (M8-SS-01)
             ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
+            // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
+            ClientInput::Quest(input) => self.on_quest_input(id, input),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
@@ -1010,6 +1023,8 @@ impl World {
             TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
             // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
             TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
+            // Java: QuestTimer, the delayed OnAttackableKill, Npc.scheduleDespawn (S-API-01)
+            TimerKind::Script(timer) => self.on_script_timer(timer),
         }
     }
 

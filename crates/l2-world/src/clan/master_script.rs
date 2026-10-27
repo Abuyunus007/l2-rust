@@ -96,10 +96,9 @@ pub(crate) fn script_link_handler(
     // `command.substring(6).trim()`; a shorter command throws and leaves the name empty.
     let script_name = command.get(6..).unwrap_or("").trim_matches(|c: char| c <= ' ');
     if script_name.is_empty() {
-        // `showQuestWindow(player, target.asNpc())`: no quests exist yet (D-05), so the player
-        // is told there is none for this NPC.
+        // `showQuestWindow(player, target.asNpc())`: the engine's quests of the NPC (S-API-01).
         if let Some(npc) = target.filter(|t| world.npcs.contains_key(t)) {
-            world.show_no_quest_window(player, npc);
+            world.engine_show_quest_window(player, npc);
         }
         return true;
     }
@@ -120,6 +119,10 @@ pub(crate) fn script_link_handler(
 impl World {
     /// Java `ScriptLink.showQuestWindow(player, npc, questId)`.
     fn script_show_quest_window(&mut self, player: ObjectId, npc: ObjectId, script_name: &str) {
+        // The scripts of the engine (S-API-01).
+        if self.script_show_quest_window_named(player, npc, script_name) {
+            return;
+        }
         match MasterScript::by_name(script_name) {
             Some(script) => {
                 self.notify_talk(script, player, npc);
@@ -153,6 +156,10 @@ impl World {
 
     /// Java `Player.processScriptEvent(scriptName, event)`.
     fn process_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) {
+        // The scripts of the engine (S-API-01).
+        if self.script_process_event(player, script_name, event) {
+            return;
+        }
         // `SymbolMaker` (L-01, `henna.rs`).
         if self.symbol_maker_script_event(player, script_name, event) {
             return;

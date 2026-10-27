@@ -563,6 +563,23 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A `character_quests` statement of Java's `Quest` (S-API-01).
+    fn store_quest_write(
+        &mut self,
+        _write: &l2_world::QuestWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `global_variables` write of the scripts (S-API-01, only sent with `CycleDatabaseWrites`,
+    /// D-54).
+    fn store_global_variables(
+        &mut self,
+        _write: &l2_world::script::GlobalVariablesWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// Every `seven_signs` row and the status row read again (D-50, M8-SS-01). A store without a
     /// database has none.
     fn load_seven_signs(
@@ -1208,6 +1225,18 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_minigame_write(&write).await {
                     error!("UndergroundColiseumManager: could not save ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Quest(write)) => {
+                // Java's `Quest.*InDb` log a failed statement and go on (no retry).
+                if let Err(e) = store.store_quest_write(&write).await {
+                    warn!("could not write char quest ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::GlobalVariables(write)) => {
+                // Java's `storeMe` logs a failed store and goes on.
+                if let Err(e) = store.store_global_variables(&write).await {
+                    warn!("GlobalVariablesManager: Couldn't save global variables to database ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::InstanceTime(write)) => {
@@ -3609,6 +3638,8 @@ pub struct DbStore {
     hennas: HennaRepository,
     item_auctions: ItemAuctionRepository,
     instance_times: InstanceTimeRepository,
+    quests: l2_db::QuestRepository,
+    global_variables: l2_db::GlobalVariableRepository,
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
@@ -3701,6 +3732,8 @@ impl DbStore {
             hennas: HennaRepository::new(pool.clone()),
             item_auctions: ItemAuctionRepository::new(pool.clone()),
             instance_times: InstanceTimeRepository::new(pool.clone()),
+            quests: l2_db::QuestRepository::new(pool.clone()),
+            global_variables: l2_db::GlobalVariableRepository::new(pool.clone()),
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
@@ -5185,6 +5218,53 @@ impl PlayerStore for DbStore {
             }
             MinigameWrite::GlobalVariable { name, value } => {
                 self.coliseum.set_variable_long(name, *value).await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn store_quest_write(&mut self, write: &l2_world::QuestWrite) -> Result<(), PersistError> {
+        use l2_world::QuestWrite;
+        match write {
+            QuestWrite::InsertVar {
+                char_id,
+                name,
+                var,
+                value,
+            } => self.quests.insert_variable(*char_id, name, var, value).await?,
+            QuestWrite::UpdateVar {
+                char_id,
+                name,
+                var,
+                value,
+            } => self.quests.update_variable(*char_id, name, var, value).await?,
+            QuestWrite::DeleteVar { char_id, name, var } => {
+                self.quests.delete_variable(*char_id, name, var).await?
+            }
+            QuestWrite::DeleteQuest {
+                char_id,
+                name,
+                repeatable,
+            } => self.quests.delete_quest(*char_id, name, *repeatable).await?,
+        }
+        Ok(())
+    }
+
+    async fn store_global_variables(
+        &mut self,
+        write: &l2_world::script::GlobalVariablesWrite,
+    ) -> Result<(), PersistError> {
+        use l2_world::script::GlobalVariablesWrite;
+        match write {
+            GlobalVariablesWrite::Replace(rows) => {
+                for (var, value) in rows {
+                    self.global_variables.replace_variable(var, value).await?;
+                }
+            }
+            GlobalVariablesWrite::Delete(names) => {
+                for var in names {
+                    self.global_variables.delete_variable(var).await?;
+                }
             }
         }
         Ok(())

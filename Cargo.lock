@@ -2537,6 +2537,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-scripts"
+version = "0.1.0"
+dependencies = [
+ "l2-data",
+ "l2-net",
+ "l2-protocol-game",
+ "l2-util",
+ "l2-world",
+ "tempfile",
+]
+
+[[package]]
 name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [

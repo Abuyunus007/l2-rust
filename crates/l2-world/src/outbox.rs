@@ -261,6 +261,11 @@ pub enum PersistCommand {
     /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
     /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
     SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
+    /// A `character_quests` statement of Java's `Quest` (S-API-01, `script/`).
+    Quest(crate::script::QuestWrite),
+    /// The `global_variables` writes of the scripts, only with `CycleDatabaseWrites` (D-54,
+    /// `script/globals.rs`).
+    GlobalVariables(crate::script::GlobalVariablesWrite),
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

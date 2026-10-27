@@ -408,8 +408,10 @@ impl World {
             * self.hate_ratio(npc, attacker)) as i64;
         // `addDamageHate(attacker, damage, (int) hateValue)`: the int cast keeps the low 32 bits.
         self.add_damage_hate(npc, attacker, i64::from(damage), i64::from(hate_value as i32));
-        // ON_ATTACKABLE_ATTACK: the clan hall scripts (M7-CHSIEGE-01); the others are D-05.
+        // ON_ATTACKABLE_ATTACK: the clan hall scripts (M7-CHSIEGE-01) and the script engine
+        // (S-API-01; the skill of the hit is not passed down here yet).
         self.hall_script_on_attack(npc, attacker, damage);
+        self.script_on_attackable_attack(npc, attacker, damage, None);
         // `Guard.addDamage` goes on from here: the guards near it come too.
         self.guard_add_damage(npc, attacker);
     }
@@ -443,7 +445,8 @@ impl World {
             if self.intention_of(npc) == crate::movement::Intention::Idle {
                 self.set_intention_active(npc);
             }
-            // ON_ATTACKABLE_AGGRO_RANGE_ENTER: script event (D-05).
+            // ON_ATTACKABLE_AGGRO_RANGE_ENTER (S-API-01).
+            self.script_on_aggro_range_enter(npc, attacker);
         } else if !attacker_is_player && aggro == 0 {
             aggro = 1;
             if let Some(info) = self.combat_state_mut(npc).aggro.get_mut(index) {

@@ -14,7 +14,7 @@
 // - visibility (M3): `spawnMe` and every `NpcInfo`/`CharInfo`, `broadcastUserInfo`'s `CharInfo`
 // - zones: `ExSetCompassZoneCode` and the zone messages
 // - clans, sieges, the server news HTML
-// - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
+// - the tutorial packets of the tutorial quest (its card)
 // - the mail check, premium items (the friend list is in `friends.rs`, the contacts in
 //   `contacts.rs`, the teleport bookmarks in `bookmarks.rs`)
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
@@ -25,7 +25,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
     EtcStatusUpdate, ExBasicActionList, ExStorageMaxCount, ExUiSetting, ExVoteSystemInfo, HennaInfo,
-    OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList, SkillListEntry, ValidateLocation,
+    OtherShortcut, ShortcutEntry, ShortcutInit, SkillList, SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
     ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ItemInfo, ItemList, MacroCommandEntry,
@@ -524,6 +524,10 @@ impl World {
         // Java `Player.load` -> `restoreItemReuse()`: the item reuse timers of the last logout.
         self.restore_item_reuse(id);
 
+        // `Quest.playerEnter(player)` (after `HennaInfo`, before `QuestList`): the quest states
+        // the session read at `CharacterSelect` (S-API-01). Nothing between here and `QuestList`
+        // reads them, so it runs before the packets are built.
+        self.script_player_enter(id);
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
         // storage limits, friends, the welcome message and the skill cool times.
         for bytes in self.enter_packets(id, now_ms) {
@@ -631,6 +635,8 @@ impl World {
         self.punishment_on_player_login(id);
         // EnterWorld's "Wedding checks" (M8-MISC-01).
         self.wedding_on_enter(id);
+        // `ON_PLAYER_LOGIN` of the scripts (`setOnEnterWorld`, S-API-01).
+        self.script_on_player_login(id);
     }
 
     /// Java `player.sendPacket(new ExVoteSystemInfo(player))`: the recommendations and the state of
@@ -701,9 +707,9 @@ impl World {
         packets.push(self.bookmark_info_packet(id).to_bytes());
         packets.push(shortcut_init(data, st).to_bytes());
         packets.push(ExBasicActionList::default_list().to_bytes());
-        // HennaInfo, then QuestList: not loaded (no quest system yet).
+        // HennaInfo, then QuestList (S-API-01).
         packets.push(self.henna_info(id).to_bytes());
-        packets.push(QuestList::default().to_bytes());
+        packets.push(self.quest_list(id).to_bytes());
         packets
     }
 

@@ -223,6 +223,8 @@ impl World {
         if self.is_player(id) {
             self.on_siege_zone_die_inside(id);
         }
+        // "Notify Quest of Playable's death." (S-API-01).
+        self.script_on_player_death(id, killer);
         // "Notify instance." (`instance.notifyDeath(player)`, M8-INST-01).
         self.instance_on_player_death(id);
 
@@ -274,8 +276,10 @@ impl World {
 
     /// Java `Attackable.doDie(killer)` after `Npc.doDie`.
     fn attackable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) {
-        // ON_ATTACKABLE_KILL: the clan hall scripts (M7-CHSIEGE-01); the others are D-05.
+        // ON_ATTACKABLE_KILL: the clan hall scripts (M7-CHSIEGE-01) and the script engine,
+        // delayed by `onKillDelay` (S-API-01).
         self.hall_script_killed(id, killer);
+        self.script_on_attackable_kill(id, killer);
         // Notify to minions if there are.
         self.minions_on_die(id);
     }

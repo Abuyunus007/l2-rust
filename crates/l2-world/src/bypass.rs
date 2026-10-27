@@ -338,8 +338,11 @@ impl World {
             None => &command[5..],
         };
         match id_text.parse::<i32>() {
-            Ok(_) => {
-                // FOLLOW-UP(items): `item.onBypassFeedback(player, command)` (item scripts).
+            Ok(object_id) => {
+                // `item.onBypassFeedback(player, command)`: the item scripts (S-API-01).
+                if let Some(end) = end_of_id {
+                    self.script_item_bypass(id, object_id, &command[end + 1..]);
+                }
                 self.send(id, &ActionFailed);
             }
             Err(_) => warn!("NFE for command [{command}] (bad item object id)"),
