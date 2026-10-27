@@ -306,7 +306,11 @@ impl World {
         }
         if self.is_player(caster) {
             if self.is_player(target) {
-                // M5/M6: auto play settings, observer mode, event teams. None exist.
+                // Auto play settings and event teams: none exist. An observer is no target
+                // (M8-OLY-01).
+                if self.in_observer_mode(target) {
+                    return false;
+                }
                 // The same side of the same siege (M7-SIEGE-01).
                 let state = self.siege_state_of(caster);
                 if has_negative_effect(skill)
@@ -373,7 +377,10 @@ impl World {
         if self.is_in_duel_with(player, target) {
             return true;
         }
-        // M8: the same olympiad game (returns true as well).
+        // Olympiad (M8-OLY-01).
+        if self.same_olympiad_game(player, target) {
+            return true;
+        }
         if self.is_inside_zone(target, ZoneId::Peace) {
             return false;
         }
@@ -805,7 +812,11 @@ impl<R: Rnd> Targeting<'_, R> {
             }
             return;
         }
-        // M6: `player.isInOlympiadMode()` returns just the player.
+        // `player.isInOlympiadMode()` returns just the player (M8-OLY-01).
+        if self.w.is_in_olympiad_mode(player) {
+            self.push(player);
+            return;
+        }
         if let Some(target) = self.target {
             self.push(target);
             let max_targets = self.affect_limit();
@@ -834,7 +845,10 @@ impl<R: Rnd> Targeting<'_, R> {
             if player == target {
                 return true;
             }
-            // M6: observer mode, olympiad.
+            // Observer mode and olympiad (M8-OLY-01).
+            if self.w.in_observer_mode(target) || self.w.is_in_olympiad_mode(target) {
+                return false;
+            }
             if self.w.is_in_duel_with(player, target) || self.w.is_at_war_with(player, target) {
                 return false;
             }
@@ -1125,8 +1139,11 @@ impl<R: Rnd> Targeting<'_, R> {
             let Some(player) = self.w.acting_player(self.caster) else {
                 return;
             };
-            // M6: `isInOlympiadMode()` returns just the player.
+            // `isInOlympiadMode()` returns just the player (M8-OLY-01).
             self.push(player);
+            if self.w.is_in_olympiad_mode(player) {
+                return;
+            }
             if self.only_first {
                 return;
             }
@@ -1247,7 +1264,11 @@ impl<R: Rnd> Targeting<'_, R> {
     // Java: CorpseClan.java
     fn corpse_clan(&mut self) {
         if self.caster_is_player() {
-            // M6: `isInOlympiadMode()` returns just the player.
+            // `isInOlympiadMode()` returns just the player (M8-OLY-01).
+            if self.w.is_in_olympiad_mode(self.caster) {
+                self.push(self.caster);
+                return;
+            }
             // Dead clan members in range, not the caster (M6-CLAN-01). Without a clan the list
             // stays empty (the caster is not added).
             if self.w.clan_of(self.caster).is_none() {
@@ -1506,7 +1527,14 @@ impl<R: Rnd> Targeting<'_, R> {
             if !self.w.is_player(obj) {
                 continue;
             }
-            // M8: olympiad side checks.
+            // "olympiad mode - adding only own side" (M8-OLY-01).
+            if self.w.is_in_olympiad_mode(self.caster)
+                && (!self.w.is_in_olympiad_mode(obj)
+                    || self.w.olympiad_game_id(self.caster) != self.w.olympiad_game_id(obj)
+                    || self.w.olympiad_side(self.caster) != self.w.olympiad_side(obj))
+            {
+                continue;
+            }
             // A duelist only gets the members of its own duel and party.
             if self.duel_excludes(self.caster, obj) {
                 continue;

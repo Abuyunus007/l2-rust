@@ -342,8 +342,8 @@ impl World {
             return;
         };
         let owner = state.owner;
-        // `getOwner().isInOlympiadMode()`: no olympiad yet.
-        if !self.players.contains_key(&owner) {
+        // `getOwner() == null || getOwner().isInOlympiadMode()` (M8-OLY-01).
+        if !self.players.contains_key(&owner) || self.is_in_olympiad_mode(owner) {
             return;
         }
         let Some(reference_skill) = state.servitor.as_ref().map(|s| s.reference_skill) else {
@@ -402,7 +402,10 @@ impl World {
             // A pet's are `pet_restore_effects`.
             return;
         };
-        // `getOwner().isInOlympiadMode()`: no olympiad yet.
+        // `getOwner().isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(owner) {
+            return;
+        }
         let class_index = self.class_index_of(owner);
         if !self.contains_servitor_skill(owner, class_index, reference_skill) {
             let rows = self

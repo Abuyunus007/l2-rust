@@ -394,8 +394,8 @@ impl World {
         // `checkItemRestriction()`
         let mut changed = Vec::new();
         self.check_item_restriction(id, &mut changed);
-        // `PLAYER_TELEPORT_PROTECTION > 0 && !_inOlympiadMode` (the olympiad is not modelled)
-        if self.settings.teleport.player_teleport_protection > 0 {
+        // `PLAYER_TELEPORT_PROTECTION > 0 && !_inOlympiadMode` (M8-OLY-01)
+        if self.settings.teleport.player_teleport_protection > 0 && !self.is_in_olympiad_mode(id) {
             self.set_teleport_protection(id, true);
         }
         // Not modelled: the tamed beasts (`TamedBeast`), the movie holder and the auto play

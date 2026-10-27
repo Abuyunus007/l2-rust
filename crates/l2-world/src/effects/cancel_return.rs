@@ -66,9 +66,11 @@ impl World {
         {
             return false;
         }
-        // `!CANCEL_RETURN_PLAYER_OLYS && effected.isPlayer() && effected.isInOlympiadMode()`: the
-        // olympiad is not modelled, so no player is in it.
-        let _ = effected;
+        // `!CANCEL_RETURN_PLAYER_OLYS && effected.isPlayer() && effected.isInOlympiadMode()`
+        // (M8-OLY-01).
+        if !settings.cancel_return_player_olys && self.is_player(effected) && self.is_in_olympiad_mode(effected) {
+            return false;
+        }
         true
     }
 

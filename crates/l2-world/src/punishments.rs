@@ -25,8 +25,7 @@
 //   and stored, nothing is affected).
 // - A client that has an account but no character in the world (the character screen) is not
 //   kicked by an account ban (Java: `Disconnection.of(client)`); it is refused when it enters.
-// - `OlympiadManager.removeDisconnectedCompetitor` of the jail handler (M7), the `PARTY_BAN`
-//   check of `RequestJoinParty` (parties: M6).
+// - The `PARTY_BAN` check of `RequestJoinParty` (parties: M6).
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -723,6 +722,11 @@ impl World {
     fn jail_apply(&mut self, task: Option<&PunishmentTask>, player: ObjectId) {
         // `player.setInstanceId(0)`: out of the instance's list too (M8-INST-01).
         self.set_instance_id(player, 0);
+        // `OlympiadManager.removeDisconnectedCompetitor` of a noble in the competition
+        // (M8-OLY-01).
+        if self.is_registered_in_comp(player) {
+            self.olympiad_remove_disconnected_competitor(player);
+        }
         self.schedule_teleport(player, JAIL_IN);
 
         // Show the jail reason html message.

@@ -105,7 +105,21 @@ impl World {
             self.send(requestor, &SystemMessage::new(SystemMessageId::InvalidTarget));
             return;
         }
-        // Jail (`PunishmentManager`) and the olympiad rule: not modelled.
+        // Jail (`PunishmentManager`): not modelled. The olympiad (M8-OLY-01): only the own side
+        // of the same game.
+        if (self.is_in_olympiad_mode(target) || self.is_in_olympiad_mode(requestor))
+            && (self.is_in_olympiad_mode(target) != self.is_in_olympiad_mode(requestor)
+                || self.olympiad_game_id(target) != self.olympiad_game_id(requestor)
+                || self.olympiad_side(target) != self.olympiad_side(requestor))
+        {
+            self.send(
+                requestor,
+                &SystemMessage::new(
+                    SystemMessageId::AUserCurrentlyParticipatingInTheOlympiadCannotSendPartyAndFriendInvitations,
+                ),
+            );
+            return;
+        }
         if self.is_processing_request(requestor) {
             self.party_plain_message(requestor, SystemMessageId::WaitingForAnotherReply);
             return;

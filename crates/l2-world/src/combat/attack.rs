@@ -128,7 +128,12 @@ impl World {
         }
 
         if self.is_player(id) {
-            // Observer mode: not modelled.
+            // Observer mode (M8-OLY-01).
+            if self.in_observer_mode(id) {
+                self.send(id, &SystemMessage::new(SystemMessageId::ObserversCannotParticipate));
+                self.send(id, &ActionFailed);
+                return;
+            }
             if self.is_siege_friend(id, target) {
                 // During Territory War: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY`
                 // (M7-TW-01).

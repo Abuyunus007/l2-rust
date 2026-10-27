@@ -503,8 +503,8 @@ impl World {
     // manage window itself comes from the `RequestActionUse` actions.
     fn on_request_private_store_manage_sell(&mut self, id: ObjectId) {
         // Player shouldn't be able to set stores if he/she is alike dead (dead or fake death), or
-        // in olympiad (M8).
-        if self.is_alike_dead(id) {
+        // in olympiad (M8-OLY-01).
+        if self.is_alike_dead(id) || self.is_in_olympiad_mode(id) {
             self.send(id, &ActionFailed);
         }
     }
@@ -512,8 +512,8 @@ impl World {
     /// Java `RequestPrivateStoreManageBuy.runImpl`.
     fn on_request_private_store_manage_buy(&mut self, id: ObjectId) {
         // Player shouldn't be able to set stores if he/she is alike dead (dead or fake death), or
-        // in olympiad (M8).
-        if self.is_alike_dead(id) {
+        // in olympiad (M8-OLY-01).
+        if self.is_alike_dead(id) || self.is_in_olympiad_mode(id) {
             return;
         }
         self.try_open_private_buy_store(id);

@@ -781,9 +781,21 @@ impl World {
     /// owner's own target.
     pub(crate) fn cubic_target_for_attack(&self, owner: ObjectId) -> Option<ObjectId> {
         let owner_target = self.target_of(owner)?;
-        // `isOnEvent()` (custom events) and `isInOlympiadMode()` (M8): not modelled.
+        // `isOnEvent()` (custom events): not modelled.
         if self.is_in_duel(owner) {
             return self.cubic_duel_target(owner, owner_target);
+        }
+        // "Olympiad targeting." (M8-OLY-01): an enemy fighter of the same game, else nothing.
+        if self.is_in_olympiad_mode(owner) {
+            if self.is_olympiad_start(owner) && self.is_playable(owner_target) {
+                let target_player = self.acting_player(owner_target)?;
+                if self.olympiad_game_id(target_player) == self.olympiad_game_id(owner)
+                    && self.olympiad_side(target_player) != self.olympiad_side(owner)
+                {
+                    return Some(owner_target);
+                }
+            }
+            return None;
         }
         // Test the owner's target and use it when valid.
         let is_creature = self
@@ -919,8 +931,8 @@ impl World {
         {
             party = None;
         }
-        // The Olympiad check (`!isInOlympiadMode()`): M8.
-        if let Some(party) = party {
+        // The Olympiad check (`!isInOlympiadMode()`, M8-OLY-01).
+        if let Some(party) = party.filter(|_| !self.is_in_olympiad_mode(owner)) {
             // Check party members and their summons inside cubic range.
             for member in self.party_members(party) {
                 // Select the party member with the lowest HP percentage inside cubic range.

@@ -89,7 +89,10 @@ impl EffectHandler for ResurrectionSpecial {
         if !world.is_player(cx.effected) {
             return;
         }
-        // `player.isInOlympiadMode()`: the olympiad is not modelled.
+        // `player.isInOlympiadMode()` (M8-OLY-01).
+        if world.is_in_olympiad_mode(cx.effected) {
+            return;
+        }
         // NOTE(java-quirk): `effector.asPlayer()` is null when the buff came from an NPC and
         // `reviveRequest` then fails with a NullPointerException; the request is dropped here.
         if !world.is_player(cx.effector) {

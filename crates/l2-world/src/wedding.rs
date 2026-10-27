@@ -585,12 +585,20 @@ impl World {
             self.send_message(player, "You are in Jail!");
             return false;
         }
-        // (Olympiad and registered events: not ported yet.)
+        // Olympiad (M8-OLY-01; the registered events are scripts).
+        if self.is_in_olympiad_mode(player) {
+            self.send_message(player, "You are in the Olympiad now.");
+            return false;
+        }
         if self.is_in_duel(player) {
             self.send_message(player, "You are in a duel!");
             return false;
         }
-        // (Observer mode: not ported yet.)
+        // Observer mode (M8-OLY-01).
+        if self.in_observer_mode(player) {
+            self.send_message(player, "You are in the observation.");
+            return false;
+        }
         if self.siege_of(player).is_some() {
             self.send_message(player, "You are in a siege, you cannot go to your partner.");
             return false;
@@ -621,12 +629,20 @@ impl World {
             );
             return false;
         }
-        // (Partner: boss zone, Olympiad, event: not ported yet.)
+        // (Partner: boss zone, event: not ported yet.) Olympiad: M8-OLY-01.
+        if self.is_in_olympiad_mode(partner) {
+            self.send_message(player, "Your partner is in the Olympiad now.");
+            return false;
+        }
         if self.is_in_duel(partner) {
             self.send_message(player, "Your partner is in a duel.");
             return false;
         }
-        // (Partner: festival, dimensional rift, observer mode: not ported yet.)
+        // (Partner: festival, dimensional rift: not ported yet.) Observer mode: M8-OLY-01.
+        if self.in_observer_mode(partner) {
+            self.send_message(player, "Your partner is in the observation.");
+            return false;
+        }
         if self.siege_of(partner).is_some() {
             self.send_message(
                 player,

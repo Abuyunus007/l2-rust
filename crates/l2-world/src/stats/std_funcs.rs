@@ -310,8 +310,20 @@ fn enchant(func: &Func, view: &StatView<'_>, init: f64) -> f64 {
         overenchant = enchant - 3;
         enchant = 3;
     }
-    // Java caps the enchant here for a player in olympiad mode (`OlympiadEnchantLimit`); the
-    // olympiad is not modelled, so nobody is.
+    // The cap of a player in olympiad mode (`OlympiadEnchantLimit`, M8-OLY-01).
+    let limit = view.settings().olympiad_enchant_limit;
+    if view.is_player()
+        && view.world().is_in_olympiad_mode(view.object_id())
+        && limit >= 0
+        && enchant + overenchant > limit
+    {
+        if limit > 3 {
+            overenchant = limit - 3;
+        } else {
+            overenchant = 0;
+            enchant = limit;
+        }
+    }
     let (e, o) = (f64::from(enchant), f64::from(overenchant));
     if func.stat == Stat::MagicDefence || func.stat == Stat::PowerDefence {
         return value + e + 3.0 * o;
@@ -393,10 +405,15 @@ fn enchant_hp(func: &Func, view: &StatView<'_>, init: f64) -> f64 {
     let Some(data) = view.stat_data() else {
         return init;
     };
-    // `getOlyEnchantLevel()`: the enchant level outside the olympiad.
+    // `getOlyEnchantLevel()`: capped in olympiad mode (`OlympiadEnchantLimit`, M8-OLY-01).
+    let limit = view.settings().olympiad_enchant_limit;
+    let mut enchant_level = item.enchant_level;
+    if view.is_player() && view.world().is_in_olympiad_mode(view.object_id()) && limit >= 0 && enchant_level > limit {
+        enchant_level = limit;
+    }
     let bonus = data.enchant_hp_bonus.hp_bonus(
         template.crystal_type,
-        item.enchant_level,
+        enchant_level,
         template.body_part == BodyPart::FullArmor,
     );
     init + f64::from(bonus)

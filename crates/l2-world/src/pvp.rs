@@ -523,7 +523,10 @@ impl World {
             self.cursed_increase_kills(cursed_id);
             return;
         }
-        // M8: olympiad (`isInOlympiadMode()` of either).
+        // Olympiad support (M8-OLY-01).
+        if self.is_in_olympiad_mode(killer) || self.is_in_olympiad_mode(killed) {
+            return;
+        }
         // Duel support.
         // NOTE(java-quirk): both only have to be in *a* duel, not the same one.
         if self.is_in_duel(killer) && self.is_in_duel(killed) {
@@ -805,6 +808,12 @@ impl World {
         if self.is_in_party_with(subject, attacker) {
             return false;
         }
+        // "Check if the attacker is in olympia and olympia start." (M8-OLY-01)
+        if self.players.contains_key(&attacker) && self.is_in_olympiad_mode(attacker) {
+            return self.is_in_olympiad_mode(subject)
+                && self.is_olympiad_start(subject)
+                && self.olympiad_game_id(attacker) == self.olympiad_game_id(subject);
+        }
         // Both in a party and in the same command channel.
         if self.is_in_party(subject)
             && self.is_in_party(attacker)
@@ -812,7 +821,6 @@ impl World {
         {
             return false;
         }
-        // M8: the attacker is in the olympiad (`isInOlympiadMode`) and the game started.
         // Events (`isOnEvent`): not modelled.
         // Check if the attacker is a Playable.
         if attacker_is_player {

@@ -353,6 +353,20 @@ impl World {
                 return false;
             }
         }
+        // `Player.checkDoCastConditions`: an observer casts nothing, a fighter no skill blocked in
+        // the olympiad (M8-OLY-01).
+        if self.is_player(id) {
+            if self.in_observer_mode(id) {
+                return false;
+            }
+            if self.is_in_olympiad_mode(id) && skill.blocked_in_olympiad {
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::YouCannotUseThatSkillInAGrandOlympiadMatch),
+                );
+                return false;
+            }
+        }
         true
     }
 
@@ -410,7 +424,13 @@ impl World {
             return false;
         }
 
-        // Observer mode: not modelled.
+        // Observer mode (M8-OLY-01).
+        if self.in_observer_mode(id) {
+            self.send(id, &SystemMessage::new(SystemMessageId::ObserversCannotParticipate));
+            self.abort_cast(id);
+            self.send(id, &ActionFailed);
+            return false;
+        }
 
         // Check if the caster is sitting.
         if self.is_sitting(id) {
@@ -566,7 +586,11 @@ impl World {
                 self.send(id, &ActionFailed);
                 return false;
             }
-            // Olympiad: M8.
+            // "If Player is in Olympia and the match isn't already start" (M8-OLY-01).
+            if self.is_in_olympiad_mode(id) && !self.is_olympiad_start(id) {
+                self.send(id, &ActionFailed);
+                return false;
+            }
             if self.is_siege_friend(id, target) {
                 // `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY` in Territory War
                 // (M7-TW-01).

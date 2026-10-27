@@ -417,12 +417,12 @@ impl World {
             SiegeTeleportWhoType::Owner => self.siege_owners_in_zone(id),
             SiegeTeleportWhoType::NotOwner => {
                 let owner = self.castle(id).map_or(0, |c| c.owner_id);
-                // `player.inObserverMode()`: observer mode is not modelled.
+                // `player.inObserverMode()` (M8-OLY-01).
                 self.siege_players_in_zone(id)
                     .into_iter()
                     .filter(|p| {
                         let clan = self.clan_id_of(*p);
-                        !(clan > 0 && clan == owner)
+                        !self.in_observer_mode(*p) && !(clan > 0 && clan == owner)
                     })
                     .collect()
             }

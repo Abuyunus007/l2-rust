@@ -302,8 +302,16 @@ impl World {
             );
             return false;
         }
-        // M8: `bot.isInOlympiadMode()` ->
-        // `THIS_CHARACTER_CANNOT_MAKE_A_REPORT_YOU_CANNOT_MAKE_A_REPORT_WHILE_LOCATED_INSIDE_A_PEACE_ZONE...`.
+        // `bot.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(bot) {
+            self.send(
+                reporter,
+                &SystemMessage::new(
+                    SystemMessageId::ThisCharacterCannotMakeAReportYouCannotMakeAReportWhileLocatedInsideAPeaceZoneOrABattlefieldWhileYouAreAnOpposingClanMemberDuringAClanWarOrWhileParticipatingInTheOlympiad,
+                ),
+            );
+            return false;
+        }
         if let (Some(bot_clan), Some(reporter_clan)) = (self.clan_of(bot), self.clan_of(reporter))
             && bot_clan.is_at_war_with(reporter_clan.id)
         {

@@ -323,7 +323,15 @@ impl World {
             );
             return;
         }
-        // M8: `player.isInOlympiadMode()`.
+        // `player.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(player) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInTheOlympiadAndCannotBeRequestedForACoupleAction,
+                player,
+            );
+            return;
+        }
         if self.is_in_siege(player) {
             self.couple_refusal(
                 player,
@@ -411,7 +419,15 @@ impl World {
             );
             return;
         }
-        // M8: `partner.isInOlympiadMode()`.
+        // `partner.isInOlympiadMode()` (M8-OLY-01).
+        if self.is_in_olympiad_mode(partner) {
+            self.couple_refusal(
+                player,
+                M::C1IsParticipatingInTheOlympiadAndCannotBeRequestedForACoupleAction,
+                partner,
+            );
+            return;
+        }
         if self.is_in_hideout_siege(partner) {
             self.couple_refusal(
                 player,
