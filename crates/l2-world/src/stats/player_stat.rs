@@ -434,6 +434,8 @@ impl World {
                 );
             }
         }
+        // `player.setHero(Hero.getInstance().isHero(objectId))` of the restore (M8-HERO-01).
+        self.hero_on_restore(id);
         // The free mount skills of `rewardSkills()` (its other parts are not ported here).
         self.give_free_mount_skills(id);
         // `refreshOverloaded()`, `refreshExpertisePenalty()` (Java sends nothing for them here: the

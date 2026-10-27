@@ -610,7 +610,20 @@ impl World {
         // `MailManager.hasUnreadPost(player)` -> `ExNoticePostArrived(false)` (M6-MAIL-01).
         self.mail_unread_notice(id);
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
-        self.send(id, &skill_list(&p.data, &*self.data));
+        let mut skills = skill_list(&p.data, &*self.data);
+        // `setHero(true)` of the restore: the hero skills are known but not stored (M8-HERO-01).
+        for (skill_id, level) in self.hero_skill_levels(id) {
+            if !skills.skills.iter().any(|s| s.id == skill_id) {
+                skills.skills.push(SkillListEntry {
+                    id: skill_id,
+                    level,
+                    passive: self.data.skill_is_passive(skill_id),
+                    disabled: false,
+                    enchanted: skill_is_enchantable(&*self.data, skill_id, level),
+                });
+            }
+        }
+        self.send(id, &skills);
         debug!("enter-world packets sent to {id}");
         // `PcCafePointsManager.run(player)` (M6-FU-11).
         self.pc_cafe_on_enter(id);
@@ -948,8 +961,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         team: world.team_of(core.object_id),
         clan_crest_large_id: world.clan_crest_large_id_of(core.object_id),
         noble: data.profile.noble,
-        // `isHero() || (isGM() && GM_HERO_AURA)`; the heroes table is not loaded.
-        hero: access.is_gm && settings.gm_hero_aura,
+        // `isHero() || (isGM() && GM_HERO_AURA)`
+        hero: player.olympiad.hero || (access.is_gm && settings.gm_hero_aura),
         fishing: player.fishing.fishing,
         fish_x: player.fishing.fish_x,
         fish_y: player.fishing.fish_y,

@@ -225,6 +225,7 @@ impl Default for AdminWorld {
         crate::fort::register_admin(&mut handlers);
         crate::territory::register_admin(&mut handlers);
         crate::cursed::register_admin(&mut handlers);
+        crate::olympiad::register_hero_admin(&mut handlers);
         chsiege::register(&mut handlers);
         clanhall::register(&mut handlers);
         manor::register(&mut handlers);

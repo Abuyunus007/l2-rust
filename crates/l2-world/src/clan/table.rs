@@ -454,9 +454,9 @@ impl World {
     pub(crate) fn set_pledge_class(&mut self, player: ObjectId) {
         let state = self.player_clan_state(player);
         let noble = self.players.get(&player).is_some_and(|p| p.data.profile.noble);
-        // `isHero()`: the heroes table is not loaded (Olympiad, M8).
+        let hero = self.is_hero(player);
         let pledge_class =
-            calculate_pledge_class(self.clan_of(player), player.0, state.pledge_type, noble, false);
+            calculate_pledge_class(self.clan_of(player), player.0, state.pledge_type, noble, hero);
         if let Some(s) = self.player_clan_state_mut(player) {
             s.pledge_class = pledge_class;
         }

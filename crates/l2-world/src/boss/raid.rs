@@ -590,8 +590,9 @@ impl World {
             for member in members {
                 let points = level / 2 + self.rng().get(-5, 5);
                 self.add_raid_points(member, boss_id, points);
-                // FOLLOW-UP(M8 hero): `if (member.isNoble()) Hero.getInstance().setRBkilled(member
-                // object id, getId())` once the hero card exists.
+                if self.is_noble(member) {
+                    self.hero_set_rb_killed(member.0, boss_id);
+                }
             }
         }
         if class == NpcClass::RaidBoss {

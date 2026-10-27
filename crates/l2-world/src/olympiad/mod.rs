@@ -25,7 +25,7 @@
 // - `stadium.rs`: `OlympiadStadiumZone` (who it takes, enter/exit, the broadcasts, the doors and
 //   buffers of the stadium's instance).
 // - `observer.rs`: the spectators (`enterOlympiadObserverMode`, `leaveOlympiadObserverMode`,
-//   `leaveObserverMode`) and the client packets of the observer.
+//   `leaveObserverMode`, `enterObserverMode`) and the client packets of the observer.
 // - `npc.rs`: the manager and buffer pages, the bypasses and `/olympiadstat`.
 //
 // # Timers
@@ -55,9 +55,10 @@
 // With the switch on it writes everything where Java does.
 //
 // # Left out, with the system that brings it
-// - `Hero` (the hero choice, `isHero`, `claimHero`, the hero list and the pages, D-53's `heroes`
-//   rows): M8-HERO-01. The period end hands the heroes to be to
-//   [`World::olympiad_compute_new_heroes`].
+// - `Hero` is `hero.rs` (M8-HERO-01): the hero choice at the period end, `isHero`, `claimHero`,
+//   the hero list and the diary and history pages, the hero skills, the hero items, the diary
+//   writes and the hero words. `monument.rs` is the Monument of Heroes script and `tower.rs` the
+//   castle observation towers (`Player.enterObserverMode`).
 // - The admin words (`//checkolympiad`, `//saveolymp`, `//endolympiad`): M8-ADMIN-07, on
 //   [`World::olympiad_millis_to_olympiad_end`], [`World::save_olympiad_status`] and
 //   [`World::olympiad_manual_select_heroes`].
@@ -67,12 +68,15 @@
 //   D-05).
 
 mod game;
+mod hero;
+mod monument;
 mod npc;
 mod observer;
 mod period;
 mod registration;
 mod stadium;
 mod task;
+mod tower;
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -82,9 +86,14 @@ use crate::timer::TimerId;
 use crate::world::World;
 
 pub use game::{CompetitionType, OlympiadGame, Participant};
+pub use hero::{
+    ACTION_CASTLE_TAKEN, ACTION_HERO_GAINED, ACTION_RAID_KILLED, HeroAction, HeroData, HeroDetails,
+    HeroDiaryRow, HeroFightRow, HeroLoad, HeroRow, HeroState, HeroWrite, register_hero_admin,
+};
 pub use npc::register_bypass_handlers;
 pub(crate) use npc::{OLYMPIAD_HOST, olympiad_command_bypass};
 pub use observer::OlympiadInput;
+pub use period::hero_fights_cutoff_ms;
 pub use task::GameState;
 
 /// Java `Olympiad.OLYMPIAD_HTML_PATH`.
@@ -135,6 +144,9 @@ pub struct OlympiadSettings {
     pub gp_per_point: i32,
     /// `OlympiadHeroPoints` (200) and `OlympiadRank1Points` .. `OlympiadRank5Points`.
     pub hero_points: i32,
+    /// `FeatureConfig.HERO_POINTS` (`HeroPoints` of `Feature.ini`, default 1000): the clan
+    /// reputation a new hero's clan gets (`Hero.claimHero`).
+    pub hero_reputation_points: i32,
     pub rank_points: [i32; 5],
     /// `OlympiadMaxPoints` (default 10).
     pub max_points: i32,
@@ -195,6 +207,7 @@ impl Default for OlympiadSettings {
             min_matches: 15,
             gp_per_point: 1000,
             hero_points: 200,
+            hero_reputation_points: 1000,
             rank_points: [100, 75, 55, 40, 30],
             max_points: 10,
             divider_classed: 5,
@@ -286,6 +299,10 @@ pub enum OlympiadWrite {
     /// Java `OlympiadGameNormal.saveResults`: the row of one decided match (written as Java does,
     /// whatever the switch says: it is the match of this server's players).
     Fight(OlympiadFight),
+    /// A write of the hero tables (`heroes`, `heroes_diary`, the hero items), see `hero.rs`
+    /// (M8-HERO-01). The diary rows are always written, the rest only with `CycleDatabaseWrites`
+    /// (D-53).
+    Hero(HeroWrite),
 }
 
 /// One `olympiad_fights` row.
@@ -315,6 +332,10 @@ pub enum OlympiadRereadRequest {
     LastPoints { char_id: i32 },
     /// The `UNCLAIMED_OLYMPIAD_POINTS` variable of a character.
     UnclaimedPasses { char_id: i32 },
+    /// The hero tables (M8-HERO-01): `only` `None` is `Hero.init` (every hero, the details of
+    /// the played ones), `Some(char_id)` is `loadFights` and `loadDiary` of one hero. `before` is
+    /// the cut of the fights ([`hero_fights_cutoff_ms`]).
+    Heroes { before: i64, only: Option<i32> },
 }
 
 /// The rows of an [`OlympiadRereadRequest`].
@@ -324,6 +345,8 @@ pub enum OlympiadRereadRows {
     Points(i32),
     /// The variable's text, `None` without the row.
     Passes(Option<String>),
+    /// The hero tables.
+    Heroes(Box<HeroLoad>),
 }
 
 /// What the world does with the answer of a read.
@@ -346,6 +369,8 @@ pub enum OlympiadRereadAction {
     SettlePage,
     /// `olympiadnoble 10`: the passes are handed out.
     GivePasses,
+    /// The hero tables were read (M8-HERO-01).
+    Hero(HeroAction),
 }
 
 /// The timers of the Olympiad (`TimerKind::Olympiad`).
@@ -389,6 +414,8 @@ pub struct PlayerOlympiad {
     pub observer_mode: bool,
     /// `_lastLoc`: (0, 0, 0) when unset.
     pub last_loc: (i32, i32, i32),
+    /// Java `Player._hero` (M8-HERO-01, `hero.rs`).
+    pub hero: bool,
 }
 
 impl Default for PlayerOlympiad {
@@ -401,6 +428,7 @@ impl Default for PlayerOlympiad {
             buff_count: 0,
             observer_mode: false,
             last_loc: (0, 0, 0),
+            hero: false,
         }
     }
 }
@@ -431,6 +459,8 @@ pub struct OlympiadWorld {
     pub(crate) nobles_rank: HashMap<i32, i32>,
     /// `HEROS_TO_BE`.
     pub(crate) heroes_to_be: Vec<HeroToBe>,
+    /// `Hero` (M8-HERO-01).
+    pub(crate) heroes: HeroState,
     /// `_compStart` and `_compEnd` (unix ms).
     pub(crate) comp_start: i64,
     pub(crate) comp_end: i64,

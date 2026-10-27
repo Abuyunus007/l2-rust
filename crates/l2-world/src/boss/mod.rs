@@ -35,7 +35,7 @@
 // # Left out, with the reason
 // - The boss AIs and the instance scripts (D-05) call [`World::set_grand_boss_status`],
 //   [`World::add_grand_boss`], [`World::allow_boss_zone_entry`] and friends; nobody calls them yet.
-// - `Hero.setRBkilled` (the hero card of M8 does not exist yet): marked `FOLLOW-UP(M8 hero)`.
+// - `Hero.setRBkilled` is `olympiad/hero.rs` (M8-HERO-01); a kill by a noble writes the diary.
 // - `ConditionPlayerCanEscape` (`GrandBossManager.getZone(player) != null`): the condition is not
 //   modelled by the stat engine; [`World::grand_boss_zone_of`] is the lookup it will use.
 // - `BossZone` for summons and NPCs (their zones are inert) and `returnHome` of a raid boss that

@@ -124,8 +124,9 @@ impl World {
                         castle_id: id.0,
                         count: 0,
                     });
-                    // M8: `Hero.getInstance().setCastleTaken(objectId, castleId)` of every online
-                    // noble member.
+                    // `Hero.getInstance().setCastleTaken(objectId, castleId)` of every online
+                    // noble member of the new owner.
+                    self.hero_castle_taken_by_clan(owner, id.0);
                 }
             }
         } else {

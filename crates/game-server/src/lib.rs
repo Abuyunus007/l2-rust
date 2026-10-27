@@ -316,6 +316,7 @@ pub fn olympiad_settings(config: &GameConfig, cycle_database_writes: bool) -> l2
         min_matches: o.olympiad_min_matches,
         gp_per_point: o.olympiad_gp_per_point,
         hero_points: o.olympiad_hero_points,
+        hero_reputation_points: config.feature.hero_points,
         rank_points: [
             o.olympiad_rank1_points,
             o.olympiad_rank2_points,
@@ -955,6 +956,17 @@ impl Server {
         } else {
             l2_world::OlympiadLoad::default()
         };
+        // Java: Hero.getInstance (GameServer, right after the Olympiad): the `heroes` rows, the
+        // diary and the match history of the heroes, read in both modes (D-53, M8-HERO-01).
+        let hero_load = if olympiad_settings.enabled {
+            let before = l2_world::hero_fights_cutoff_ms(
+                l2_util::time::now_millis(),
+                &l2_util::time::local_offset_millis,
+            );
+            persist::load_heroes(&pool, before).await
+        } else {
+            l2_world::HeroLoad::default()
+        };
         // Java: UndergroundColiseumManager.load (`UC_START_TIME`, `UC_STOP_TIME`) and
         // restoreBestTeams. Read always: they are only read here (D-53).
         let minigame_settings = minigame_settings(&config, cycle_database_writes(&paths.config_dir));
@@ -1169,6 +1181,7 @@ impl Server {
                     // Java: Olympiad.getInstance (GameServer, "Olympiad" section; M8-OLY-01).
                     world.set_olympiad_settings(olympiad_settings);
                     world.load_olympiad(olympiad_load);
+                    world.load_heroes(hero_load);
                     // Java: KrateisCubeManager, UndergroundColiseumManager (GameServer, after the
                     // spawns and the doors) and the Block Checker queue (M8-GAMES-01).
                     world.set_minigame_settings(minigame_settings);

@@ -277,10 +277,13 @@ impl World {
                 if !self.is_invul(target) {
                     self.set_current_cp(target, 0.0, true);
                 }
+            } else if acting.is_some_and(|p| self.is_hero(p))
+                && self.is_player(target)
+                && self.is_cursed_weapon_equipped(target)
+            {
+                // If a cursed weapon is hit by a Hero, CP is reduced to 0.
+                self.set_current_cp(target, 0.0, true);
             }
-            // FOLLOW-UP(M8 hero): "If a cursed weapon is hit by a Hero, CP is reduced to 0"
-            // (`player.isHero() && target.isPlayer() && target.isCursedWeaponEquipped()`): heroes
-            // are not modelled yet.
         }
 
         // If the Server->Client packet Attack contains at least 1 hit, send it to the Creature
