@@ -398,6 +398,8 @@ pub struct Player {
     pub mount: crate::mount::MountState,
     /// The GM list entry, silence and diet mode (see `admin/flags.rs`).
     pub gm: crate::admin::flags::GmFlags,
+    /// The macro revision, the published items (L-02, see `leftover.rs`).
+    pub leftover: crate::leftover::LeftoverState,
 }
 
 impl Player {
@@ -457,6 +459,7 @@ impl Player {
             fishing: crate::fishing::PlayerFishing::default(),
             mount: crate::mount::MountState::default(),
             gm: crate::admin::flags::GmFlags::default(),
+            leftover: crate::leftover::LeftoverState::default(),
         }
     }
 

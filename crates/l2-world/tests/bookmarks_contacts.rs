@@ -520,7 +520,7 @@ fn save_modify_teleport_and_delete_a_bookmark() {
         tag: "mine".into(),
         name: "Home".into(),
     };
-    assert_eq!(s.bookmarks(), [saved.clone()]);
+    assert_eq!(s.bookmarks(), std::slice::from_ref(&saved));
     assert_eq!(
         bookmark_writes(&out),
         [BookmarkWrite::Add {

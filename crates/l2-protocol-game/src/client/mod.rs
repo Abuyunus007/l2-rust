@@ -183,6 +183,7 @@ pub mod henna;
 pub mod ingame;
 pub mod interaction;
 pub mod item;
+pub mod leftover;
 pub mod mail;
 pub mod manor;
 pub mod minigame;
@@ -256,6 +257,12 @@ pub use interaction::{
     SendBypassBuildCmd,
 };
 pub use item::{RequestDestroyItem, RequestDropItem, RequestItemList, RequestUnEquipItem, UseItem};
+pub use leftover::{
+    FinishRotating, MacroCommand, MoveWithDelta, RequestCrystallizeItem, RequestDeleteMacro,
+    RequestExMagicSkillUseGround, RequestExRqItemLink, RequestMakeMacro, RequestPreviewItem,
+    RequestRecordInfo, RequestSaveInventoryOrder, RequestSaveKeyMapping, RequestShowMiniMap,
+    RequestSkillList, StartRotating,
+};
 pub use mail::{
     PostAttachment, RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost,
     RequestPostAttachment, RequestPostItemList, RequestReceivedPost, RequestReceivedPostList,

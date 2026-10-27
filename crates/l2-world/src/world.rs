@@ -717,6 +717,8 @@ impl World {
             ClientInput::Fort(input) => self.on_fort_input(id, input),
             // Java: RequestJoinDominionWar, RequestDominionInfo (M7-TW-01)
             ClientInput::Territory(input) => self.on_territory_input(id, input),
+            // L-02: macros, crystallize, wear shop, item links, key mapping, ...
+            ClientInput::Leftover(input) => self.on_leftover_input(id, input),
             ClientInput::Manor(input) => self.on_manor_input(id, input),
             ClientInput::Craft(input) => self.on_craft_input(id, input),
             // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
@@ -921,6 +923,8 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
+            TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
             // Java: WalkingManager's start, repeat and arrival tasks

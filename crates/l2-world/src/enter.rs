@@ -256,7 +256,7 @@ fn shortcut_entry(data: &PlayerData, st: &dyn StaticData, sc: &ShortcutData) -> 
     })
 }
 
-fn macro_entry(m: &MacroData) -> MacroEntry {
+pub(crate) fn macro_entry(m: &MacroData) -> MacroEntry {
     MacroEntry {
         id: m.id,
         name: m.name.clone(),
