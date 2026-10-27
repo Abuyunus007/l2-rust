@@ -120,7 +120,9 @@ async fn bookmarks_are_saved_changed_and_deleted() {
         return;
     };
     let repo = BookmarkRepository::new(db.pool.clone());
-    repo.add_bookmark(ALICE, &bookmark(1, Some("home"))).await.unwrap();
+    repo.add_bookmark(ALICE, &bookmark(1, Some("home")))
+        .await
+        .unwrap();
     repo.add_bookmark(ALICE, &bookmark(2, None)).await.unwrap();
     repo.add_bookmark(BOB, &bookmark(1, Some("bob"))).await.unwrap();
     // The primary key is (charId, Id): the same slot twice is refused, as in Java (which logs it).
@@ -130,10 +132,15 @@ async fn bookmarks_are_saved_changed_and_deleted() {
     rows.sort_by_key(|r| r.id);
     assert_eq!(rows, [bookmark(1, Some("home")), bookmark(2, None)]);
 
-    repo.update_bookmark(ALICE, 1, 9, Some("moved"), "Castle").await.unwrap();
+    repo.update_bookmark(ALICE, 1, 9, Some("moved"), "Castle")
+        .await
+        .unwrap();
     let mut rows = repo.bookmarks_of(ALICE).await.unwrap();
     rows.sort_by_key(|r| r.id);
-    assert_eq!((rows[0].icon, rows[0].tag.as_deref(), rows[0].name.as_str()), (9, Some("moved"), "Castle"));
+    assert_eq!(
+        (rows[0].icon, rows[0].tag.as_deref(), rows[0].name.as_str()),
+        (9, Some("moved"), "Castle")
+    );
     // The location is not part of the UPDATE.
     assert_eq!((rows[0].x, rows[0].y, rows[0].z), (-71_337, 258_271, -3_104));
     assert_eq!(repo.bookmarks_of(BOB).await.unwrap(), [bookmark(1, Some("bob"))]);
@@ -217,7 +224,9 @@ async fn the_secondary_password_rows_follow_javas_statements() {
     let mut rows = repo.secondary_auth_of("acc").await.unwrap();
     rows.sort_by(|a, b| a.var.cmp(&b.var));
     assert_eq!(
-        rows.iter().map(|r| (r.var.as_str(), r.value.as_str())).collect::<Vec<_>>(),
+        rows.iter()
+            .map(|r| (r.var.as_str(), r.value.as_str()))
+            .collect::<Vec<_>>(),
         [(VAR_PWD, first.as_str()), (VAR_WTE, "3")]
     );
 
@@ -247,7 +256,12 @@ async fn the_friend_summary_reads_name_online_class_and_level() {
     let repo = FriendRepository::new(db.pool.clone());
     let summary = repo.character_summary(BOB).await.unwrap().unwrap();
     assert_eq!(
-        (summary.name.as_str(), summary.online, summary.class_id, summary.level),
+        (
+            summary.name.as_str(),
+            summary.online,
+            summary.class_id,
+            summary.level
+        ),
         ("Bob", 1, 18, 61)
     );
     assert!(repo.character_summary(ALICE).await.unwrap().is_none());

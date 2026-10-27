@@ -334,6 +334,25 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             ClientPacket::RequestAnswerFriendInvite(p) => p.to_bytes(),
             ClientPacket::RequestFriendList(p) => p.to_bytes(),
             ClientPacket::RequestFriendDel(p) => p.to_bytes(),
+            ClientPacket::ObserverReturn(p) => p.to_bytes(),
+            ClientPacket::RequestSsqStatus(p) => p.to_bytes(),
+            ClientPacket::RequestGetOnVehicle(p) => p.to_bytes(),
+            ClientPacket::RequestGetOffVehicle(p) => p.to_bytes(),
+            ClientPacket::RequestMoveToLocationInVehicle(p) => p.to_bytes(),
+            ClientPacket::CannotMoveAnymoreInVehicle(p) => p.to_bytes(),
+            ClientPacket::RequestOlympiadMatchList(p) => p.to_bytes(),
+            ClientPacket::RequestOlympiadObserverEnd(p) => p.to_bytes(),
+            ClientPacket::RequestExOlympiadMatchListRefresh(p) => p.to_bytes(),
+            ClientPacket::RequestWriteHeroWords(p) => p.to_bytes(),
+            ClientPacket::RequestSeedPhase(p) => p.to_bytes(),
+            ClientPacket::RequestCursedWeaponList(p) => p.to_bytes(),
+            ClientPacket::RequestCursedWeaponLocation(p) => p.to_bytes(),
+            ClientPacket::RequestGetBossRecord(p) => p.to_bytes(),
+            ClientPacket::RequestExCubeGameChangeTeam(p) => p.to_bytes(),
+            ClientPacket::RequestExCubeGameReadyAnswer(p) => p.to_bytes(),
+            ClientPacket::EndScenePlayer(p) => p.to_bytes(),
+            ClientPacket::MoveToLocationAirShip(p) => p.to_bytes(),
+            ClientPacket::MoveToLocationInAirShip(p) => p.to_bytes(),
             ClientPacket::RequestSendFriendMsg(p) => p.to_bytes(),
             ClientPacket::RequestBlock(p) => p.to_bytes(),
             // L-04: bookmarks, secondary password, contacts, hardware.
@@ -394,6 +413,23 @@ fn check_client(state: Option<&str>, raw: &[u8]) -> Option<bool> {
             | ClientPacket::RequestWithDrawalParty(_)
             | ClientPacket::RequestOustPartyMember(_)
             | ClientPacket::RequestChangePartyLeader(_)
+            | ClientPacket::RequestPartyMatchConfig(_)
+            | ClientPacket::RequestPartyMatchList(_)
+            | ClientPacket::RequestPartyMatchDetail(_)
+            | ClientPacket::RequestGiveNickName(_)
+            | ClientPacket::RequestGmList(_)
+            | ClientPacket::RequestGmCommand(_)
+            | ClientPacket::RequestOustFromPartyRoom(_)
+            | ClientPacket::RequestDismissPartyRoom(_)
+            | ClientPacket::RequestWithdrawPartyRoom(_)
+            | ClientPacket::RequestAskJoinPartyRoom(_)
+            | ClientPacket::AnswerJoinPartyRoom(_)
+            | ClientPacket::RequestListPartyMatchingWaitingRoom(_)
+            | ClientPacket::RequestExitPartyMatchingWaitingRoom(_)
+            | ClientPacket::RequestPartyLootModification(_)
+            | ClientPacket::AnswerPartyLootModification(_)
+            | ClientPacket::RequestChangeNicknameColor(_)
+            | ClientPacket::RequestResetNickname(_)
             | ClientPacket::RequestExAskJoinMpcc(_)
             | ClientPacket::RequestExAcceptJoinMpcc(_)
             | ClientPacket::RequestExOustFromMpcc(_)

@@ -36,11 +36,21 @@ use crate::client::{
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
 };
 use crate::client::{
-    GameGuardReply, RequestBookMarkSlotInfo, RequestChangeBookMarkSlot, RequestDeleteBookMarkSlot,
+    AnswerJoinPartyRoom, AnswerPartyLootModification, CannotMoveAnymoreInVehicle, EndScenePlayer,
+    GameGuardReply, MoveToLocationAirShip, MoveToLocationInAirShip, ObserverReturn, RequestAskJoinPartyRoom,
+    RequestBookMarkSlotInfo, RequestChangeBookMarkSlot, RequestChangeNicknameColor, RequestCursedWeaponList,
+    RequestCursedWeaponLocation, RequestDeleteBookMarkSlot, RequestDismissPartyRoom,
     RequestEx2ndPasswordCheck, RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify,
-    RequestExAddContactToContactList, RequestExDeleteContactFromContactList, RequestExFriendListExtended,
-    RequestExShowContactList, RequestHardWareInfo, RequestModifyBookMarkSlot, RequestPCCafeCouponUse,
-    RequestSaveBookMarkSlot, RequestTeleportBookMark,
+    RequestExAddContactToContactList, RequestExCubeGameChangeTeam, RequestExCubeGameReadyAnswer,
+    RequestExDeleteContactFromContactList, RequestExFriendListExtended, RequestExOlympiadMatchListRefresh,
+    RequestExShowContactList, RequestExitPartyMatchingWaitingRoom, RequestGetBossRecord,
+    RequestGetOffVehicle, RequestGetOnVehicle, RequestGiveNickName, RequestGmCommand, RequestGmList,
+    RequestHardWareInfo, RequestListPartyMatchingWaitingRoom, RequestModifyBookMarkSlot,
+    RequestMoveToLocationInVehicle, RequestOlympiadMatchList, RequestOlympiadObserverEnd,
+    RequestOustFromPartyRoom, RequestPCCafeCouponUse, RequestPartyLootModification, RequestPartyMatchConfig,
+    RequestPartyMatchDetail, RequestPartyMatchList, RequestResetNickname, RequestSaveBookMarkSlot,
+    RequestSeedPhase, RequestSsqStatus, RequestTeleportBookMark, RequestWithdrawPartyRoom,
+    RequestWriteHeroWords,
 };
 use crate::client::{
     RequestAllAgitInfo, RequestAllFortressInfo, RequestFortressMapInfo, RequestFortressSiegeInfo,
@@ -175,6 +185,41 @@ pub enum ClientPacket {
     RequestBlock(RequestBlock),
     /// `REQUEST_CHANGE_PARTY_LEADER` (`0xD0` 0x000C), an ex packet.
     RequestChangePartyLeader(RequestChangePartyLeader),
+    // L-03: party matching rooms, loot vote, nicknames, GM windows.
+    /// `REQUEST_PARTY_MATCH_CONFIG` (0x7F).
+    RequestPartyMatchConfig(RequestPartyMatchConfig),
+    /// `REQUEST_PARTY_MATCH_LIST` (0x80).
+    RequestPartyMatchList(RequestPartyMatchList),
+    /// `REQUEST_PARTY_MATCH_DETAIL` (0x81).
+    RequestPartyMatchDetail(RequestPartyMatchDetail),
+    /// `REQUEST_GIVE_NICK_NAME` (0x0B).
+    RequestGiveNickName(RequestGiveNickName),
+    /// `REQUEST_GM_LIST` (0x8B).
+    RequestGmList(RequestGmList),
+    /// `REQUEST_GM_COMMAND` (0x7E).
+    RequestGmCommand(RequestGmCommand),
+    /// `REQUEST_OUST_FROM_PARTY_ROOM` (`0xD0` 0x0009), an ex packet.
+    RequestOustFromPartyRoom(RequestOustFromPartyRoom),
+    /// `REQUEST_DISMISS_PARTY_ROOM` (`0xD0` 0x000A), an ex packet.
+    RequestDismissPartyRoom(RequestDismissPartyRoom),
+    /// `REQUEST_WITHDRAW_PARTY_ROOM` (`0xD0` 0x000B), an ex packet.
+    RequestWithdrawPartyRoom(RequestWithdrawPartyRoom),
+    /// `REQUEST_ASK_JOIN_PARTY_ROOM` (`0xD0` 0x002F), an ex packet.
+    RequestAskJoinPartyRoom(RequestAskJoinPartyRoom),
+    /// `ANSWER_JOIN_PARTY_ROOM` (`0xD0` 0x0030), an ex packet.
+    AnswerJoinPartyRoom(AnswerJoinPartyRoom),
+    /// `REQUEST_LIST_PARTY_MATCHING_WAITING_ROOM` (`0xD0` 0x0031), an ex packet.
+    RequestListPartyMatchingWaitingRoom(RequestListPartyMatchingWaitingRoom),
+    /// `REQUEST_EXIT_PARTY_MATCHING_WAITING_ROOM` (`0xD0` 0x0025), an ex packet.
+    RequestExitPartyMatchingWaitingRoom(RequestExitPartyMatchingWaitingRoom),
+    /// `REQUEST_PARTY_LOOT_MODIFICATION` (`0xD0` 0x0078), an ex packet.
+    RequestPartyLootModification(RequestPartyLootModification),
+    /// `ANSWER_PARTY_LOOT_MODIFICATION` (`0xD0` 0x0079), an ex packet.
+    AnswerPartyLootModification(AnswerPartyLootModification),
+    /// `REQUEST_CHANGE_NICKNAME_COLOR` (`0xD0` 0x004F), an ex packet.
+    RequestChangeNicknameColor(RequestChangeNicknameColor),
+    /// `REQUEST_RESET_NICKNAME` (`0xD0` 0x0050), an ex packet.
+    RequestResetNickname(RequestResetNickname),
     /// `REQUEST_EX_ASK_JOIN_MPCC` (`0xD0` 0x0006), an ex packet.
     RequestExAskJoinMpcc(RequestExAskJoinMpcc),
     /// `REQUEST_EX_ACCEPT_JOIN_MPCC` (`0xD0` 0x0007), an ex packet.
@@ -359,6 +404,18 @@ pub enum ClientPacket {
     RequestHardWareInfo(Box<RequestHardWareInfo>),
     /// `REQUEST_PCCAFE_COUPON_USE` (`0xD0` 0x0019).
     RequestPCCafeCouponUse(RequestPCCafeCouponUse),
+    /// `OBSERVER_RETURN` (0xC1).
+    ObserverReturn(ObserverReturn),
+    /// `REQUEST_SSQ_STATUS` (0xC8).
+    RequestSsqStatus(RequestSsqStatus),
+    /// `REQUEST_GET_ON_VEHICLE` (0x53).
+    RequestGetOnVehicle(RequestGetOnVehicle),
+    /// `REQUEST_GET_OFF_VEHICLE` (0x54).
+    RequestGetOffVehicle(RequestGetOffVehicle),
+    /// `REQUEST_MOVE_TO_LOCATION_IN_VEHICLE` (0x75).
+    RequestMoveToLocationInVehicle(RequestMoveToLocationInVehicle),
+    /// `CANNOT_MOVE_ANYMORE_IN_VEHICLE` (0x76).
+    CannotMoveAnymoreInVehicle(CannotMoveAnymoreInVehicle),
     /// Java would accept this plain packet in this state, but it has no struct here yet.
     /// The body is left unread.
     Unported(ClientOpcode),
@@ -389,6 +446,32 @@ pub enum ClientPacket {
     RequestBidItemAuction(RequestBidItemAuction),
     /// `REQUEST_INFO_ITEM_AUCTION` (`0xD0` 0x003A), an ex packet.
     RequestInfoItemAuction(RequestInfoItemAuction),
+    /// `REQUEST_OLYMPIAD_MATCH_LIST` (`0xD0` 0x002E), an ex packet.
+    RequestOlympiadMatchList(RequestOlympiadMatchList),
+    /// `REQUEST_OLYMPIAD_OBSERVER_END` (`0xD0` 0x0029), an ex packet.
+    RequestOlympiadObserverEnd(RequestOlympiadObserverEnd),
+    /// `REQUEST_EX_OLYMPIAD_MATCH_LIST_REFRESH` (`0xD0` 0x0088), an ex packet.
+    RequestExOlympiadMatchListRefresh(RequestExOlympiadMatchListRefresh),
+    /// `REQUEST_WRITE_HERO_WORDS` (`0xD0` 0x0005), an ex packet.
+    RequestWriteHeroWords(RequestWriteHeroWords),
+    /// `REQUEST_SEED_PHASE` (`0xD0` 0x0063), an ex packet.
+    RequestSeedPhase(RequestSeedPhase),
+    /// `REQUEST_CURSED_WEAPON_LIST` (`0xD0` 0x002A), an ex packet.
+    RequestCursedWeaponList(RequestCursedWeaponList),
+    /// `REQUEST_CURSED_WEAPON_LOCATION` (`0xD0` 0x002B), an ex packet.
+    RequestCursedWeaponLocation(RequestCursedWeaponLocation),
+    /// `REQUEST_GET_BOSS_RECORD` (`0xD0` 0x0040), an ex packet.
+    RequestGetBossRecord(RequestGetBossRecord),
+    /// `REQUEST_EX_CUBE_GAME_CHANGE_TEAM` (`0xD0` 0x005A), an ex packet.
+    RequestExCubeGameChangeTeam(RequestExCubeGameChangeTeam),
+    /// `REQUEST_EX_CUBE_GAME_READY_ANSWER` (`0xD0` 0x005C), an ex packet.
+    RequestExCubeGameReadyAnswer(RequestExCubeGameReadyAnswer),
+    /// `END_SCENE_PLAYER` (`0xD0` 0x005B), an ex packet.
+    EndScenePlayer(EndScenePlayer),
+    /// `MOVE_TO_LOCATION_AIR_SHIP` (`0xD0` 0x0038), an ex packet.
+    MoveToLocationAirShip(MoveToLocationAirShip),
+    /// `MOVE_TO_LOCATION_IN_AIR_SHIP` (`0xD0` 0x0020), an ex packet.
+    MoveToLocationInAirShip(MoveToLocationInAirShip),
 }
 
 /// Decodes the body of a client packet whose `opcode` byte was already read from `reader`.
@@ -479,6 +562,20 @@ pub fn decode_client(
         }
         RequestHennaRemove::OPCODE => ClientPacket::RequestHennaRemove(RequestHennaRemove::decode(reader)?),
         DlgAnswer::OPCODE => ClientPacket::DlgAnswer(DlgAnswer::decode(reader)?),
+        RequestPartyMatchConfig::OPCODE => {
+            ClientPacket::RequestPartyMatchConfig(RequestPartyMatchConfig::decode(reader)?)
+        }
+        RequestPartyMatchList::OPCODE => {
+            ClientPacket::RequestPartyMatchList(RequestPartyMatchList::decode(reader)?)
+        }
+        RequestPartyMatchDetail::OPCODE => {
+            ClientPacket::RequestPartyMatchDetail(RequestPartyMatchDetail::decode(reader)?)
+        }
+        RequestGiveNickName::OPCODE => {
+            ClientPacket::RequestGiveNickName(RequestGiveNickName::decode(reader)?)
+        }
+        RequestGmList::OPCODE => ClientPacket::RequestGmList(RequestGmList::decode(reader)?),
+        RequestGmCommand::OPCODE => ClientPacket::RequestGmCommand(RequestGmCommand::decode(reader)?),
         RequestJoinParty::OPCODE => ClientPacket::RequestJoinParty(RequestJoinParty::decode(reader)?),
         RequestAnswerJoinParty::OPCODE => {
             ClientPacket::RequestAnswerJoinParty(RequestAnswerJoinParty::decode(reader)?)
@@ -666,6 +763,20 @@ pub fn decode_client(
         }
         RequestBuySeed::OPCODE => ClientPacket::RequestBuySeed(RequestBuySeed::decode(reader)?),
         GameGuardReply::OPCODE => ClientPacket::GameGuardReply(GameGuardReply::decode(reader)?),
+        ObserverReturn::OPCODE => ClientPacket::ObserverReturn(ObserverReturn::decode(reader)?),
+        RequestSsqStatus::OPCODE => ClientPacket::RequestSsqStatus(RequestSsqStatus::decode(reader)?),
+        RequestGetOnVehicle::OPCODE => {
+            ClientPacket::RequestGetOnVehicle(RequestGetOnVehicle::decode(reader)?)
+        }
+        RequestGetOffVehicle::OPCODE => {
+            ClientPacket::RequestGetOffVehicle(RequestGetOffVehicle::decode(reader)?)
+        }
+        RequestMoveToLocationInVehicle::OPCODE => {
+            ClientPacket::RequestMoveToLocationInVehicle(RequestMoveToLocationInVehicle::decode(reader)?)
+        }
+        CannotMoveAnymoreInVehicle::OPCODE => {
+            ClientPacket::CannotMoveAnymoreInVehicle(CannotMoveAnymoreInVehicle::decode(reader)?)
+        }
         other => ClientPacket::Unported(other),
     };
     Ok(Some(packet))
@@ -708,6 +819,39 @@ fn decode_ex_client(
         RequestVoteNew::EX_OPCODE => ClientPacket::RequestVoteNew(RequestVoteNew::decode(reader)?),
         AnswerCoupleAction::EX_OPCODE => {
             ClientPacket::AnswerCoupleAction(AnswerCoupleAction::decode(reader)?)
+        }
+        RequestOustFromPartyRoom::EX_OPCODE => {
+            ClientPacket::RequestOustFromPartyRoom(RequestOustFromPartyRoom::decode(reader)?)
+        }
+        RequestDismissPartyRoom::EX_OPCODE => {
+            ClientPacket::RequestDismissPartyRoom(RequestDismissPartyRoom::decode(reader)?)
+        }
+        RequestWithdrawPartyRoom::EX_OPCODE => {
+            ClientPacket::RequestWithdrawPartyRoom(RequestWithdrawPartyRoom::decode(reader)?)
+        }
+        RequestAskJoinPartyRoom::EX_OPCODE => {
+            ClientPacket::RequestAskJoinPartyRoom(RequestAskJoinPartyRoom::decode(reader)?)
+        }
+        AnswerJoinPartyRoom::EX_OPCODE => {
+            ClientPacket::AnswerJoinPartyRoom(AnswerJoinPartyRoom::decode(reader)?)
+        }
+        RequestListPartyMatchingWaitingRoom::EX_OPCODE => ClientPacket::RequestListPartyMatchingWaitingRoom(
+            RequestListPartyMatchingWaitingRoom::decode(reader)?,
+        ),
+        RequestExitPartyMatchingWaitingRoom::EX_OPCODE => ClientPacket::RequestExitPartyMatchingWaitingRoom(
+            RequestExitPartyMatchingWaitingRoom::decode(reader)?,
+        ),
+        RequestPartyLootModification::EX_OPCODE => {
+            ClientPacket::RequestPartyLootModification(RequestPartyLootModification::decode(reader)?)
+        }
+        AnswerPartyLootModification::EX_OPCODE => {
+            ClientPacket::AnswerPartyLootModification(AnswerPartyLootModification::decode(reader)?)
+        }
+        RequestChangeNicknameColor::EX_OPCODE => {
+            ClientPacket::RequestChangeNicknameColor(RequestChangeNicknameColor::decode(reader)?)
+        }
+        RequestResetNickname::EX_OPCODE => {
+            ClientPacket::RequestResetNickname(RequestResetNickname::decode(reader)?)
         }
         RequestChangePartyLeader::EX_OPCODE => {
             ClientPacket::RequestChangePartyLeader(RequestChangePartyLeader::decode(reader)?)
@@ -908,6 +1052,41 @@ fn decode_ex_client(
         RequestPCCafeCouponUse::EX_OPCODE => {
             ClientPacket::RequestPCCafeCouponUse(RequestPCCafeCouponUse::decode(reader)?)
         }
+        RequestOlympiadMatchList::EX_OPCODE => {
+            ClientPacket::RequestOlympiadMatchList(RequestOlympiadMatchList::decode(reader)?)
+        }
+        RequestOlympiadObserverEnd::EX_OPCODE => {
+            ClientPacket::RequestOlympiadObserverEnd(RequestOlympiadObserverEnd::decode(reader)?)
+        }
+        RequestExOlympiadMatchListRefresh::EX_OPCODE => ClientPacket::RequestExOlympiadMatchListRefresh(
+            RequestExOlympiadMatchListRefresh::decode(reader)?,
+        ),
+        RequestWriteHeroWords::EX_OPCODE => {
+            ClientPacket::RequestWriteHeroWords(RequestWriteHeroWords::decode(reader)?)
+        }
+        RequestSeedPhase::EX_OPCODE => ClientPacket::RequestSeedPhase(RequestSeedPhase::decode(reader)?),
+        RequestCursedWeaponList::EX_OPCODE => {
+            ClientPacket::RequestCursedWeaponList(RequestCursedWeaponList::decode(reader)?)
+        }
+        RequestCursedWeaponLocation::EX_OPCODE => {
+            ClientPacket::RequestCursedWeaponLocation(RequestCursedWeaponLocation::decode(reader)?)
+        }
+        RequestGetBossRecord::EX_OPCODE => {
+            ClientPacket::RequestGetBossRecord(RequestGetBossRecord::decode(reader)?)
+        }
+        RequestExCubeGameChangeTeam::EX_OPCODE => {
+            ClientPacket::RequestExCubeGameChangeTeam(RequestExCubeGameChangeTeam::decode(reader)?)
+        }
+        RequestExCubeGameReadyAnswer::EX_OPCODE => {
+            ClientPacket::RequestExCubeGameReadyAnswer(RequestExCubeGameReadyAnswer::decode(reader)?)
+        }
+        EndScenePlayer::EX_OPCODE => ClientPacket::EndScenePlayer(EndScenePlayer::decode(reader)?),
+        MoveToLocationAirShip::EX_OPCODE => {
+            ClientPacket::MoveToLocationAirShip(MoveToLocationAirShip::decode(reader)?)
+        }
+        MoveToLocationInAirShip::EX_OPCODE => {
+            ClientPacket::MoveToLocationInAirShip(MoveToLocationInAirShip::decode(reader)?)
+        }
         other => ClientPacket::UnportedEx(other),
     };
     Ok(Some(packet))
@@ -1074,11 +1253,10 @@ mod tests {
 
     #[test]
     fn known_but_unported_packets_are_reported() {
-        // RequestPartyMatchConfig (0x7F, party matching) is accepted in IN_GAME, but has no struct
-        // yet.
+        // RequestMagicList (0x4F) is accepted in IN_GAME, but has no struct yet.
         assert_eq!(
-            decode(InGame, 0x7F, &[]).unwrap(),
-            Some(ClientPacket::Unported(ClientOpcode::RequestPartyMatchConfig))
+            decode(InGame, 0x4F, &[]).unwrap(),
+            Some(ClientPacket::Unported(ClientOpcode::RequestMagicList))
         );
         // RequestProcedureCropList (ex id 0x0002, Java RequestProcureCropList) is ported; an ex
         // packet that has no struct still consumes its id and leaves the body alone.
@@ -1096,6 +1274,65 @@ mod tests {
             }))
         );
         assert_eq!(r.remaining(), 0);
+    }
+
+    #[test]
+    fn party_room_loot_nickname_and_gm_packets_are_dispatched() {
+        // Plain: RequestPartyMatchConfig (0x7F) is three ints, RequestGmList (0x8B) has no body.
+        let mut body = Vec::new();
+        for v in [1_i32, 2, 3] {
+            body.extend(v.to_le_bytes());
+        }
+        assert_eq!(
+            decode(InGame, 0x7F, &body).unwrap(),
+            Some(ClientPacket::RequestPartyMatchConfig(RequestPartyMatchConfig {
+                auto: 1,
+                location: 2,
+                level: 3
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x8B, &[]).unwrap(),
+            Some(ClientPacket::RequestGmList(RequestGmList))
+        );
+        // Ex packets: `0xD0`, the u16 ex id, the body.
+        let ex = |id: u16, body: &[u8]| {
+            let mut raw = id.to_le_bytes().to_vec();
+            raw.extend(body);
+            decode(InGame, 0xD0, &raw).unwrap()
+        };
+        assert_eq!(
+            ex(0x0009, &7_i32.to_le_bytes()),
+            Some(ClientPacket::RequestOustFromPartyRoom(RequestOustFromPartyRoom {
+                char_id: 7
+            }))
+        );
+        assert_eq!(
+            ex(0x0078, &2_i32.to_le_bytes()),
+            Some(ClientPacket::RequestPartyLootModification(
+                RequestPartyLootModification {
+                    distribution_type_id: 2
+                }
+            ))
+        );
+        assert_eq!(
+            ex(0x0079, &1_i32.to_le_bytes()),
+            Some(ClientPacket::AnswerPartyLootModification(
+                AnswerPartyLootModification { answer: 1 }
+            ))
+        );
+        assert_eq!(
+            ex(0x0050, &[]),
+            Some(ClientPacket::RequestResetNickname(RequestResetNickname))
+        );
+        assert_eq!(
+            ex(0x0025, &[]),
+            Some(ClientPacket::RequestExitPartyMatchingWaitingRoom(
+                RequestExitPartyMatchingWaitingRoom
+            ))
+        );
+        // Not before the character is in the game.
+        assert_eq!(decode(Authenticated, 0x8B, &[]).unwrap(), None);
     }
 
     #[test]

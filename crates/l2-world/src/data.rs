@@ -147,6 +147,12 @@ pub trait StaticData: Send + Sync {
         false
     }
 
+    /// Java `AccessLevel.allowAltG()` (`allowAltg` of `AccessLevels.xml`, default false): whether a
+    /// GM of this level may look at a player with Alt+G.
+    fn access_level_allows_alt_g(&self, _level: i32) -> bool {
+        false
+    }
+
     /// Java `AccessLevel.canGainExp()` (`gainExp` of `AccessLevels.xml`, default true).
     fn access_level_can_gain_exp(&self, _level: i32) -> bool {
         true

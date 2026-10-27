@@ -41,6 +41,7 @@ mod subclasses;
 mod summons;
 mod territories;
 mod variables;
+mod wedding;
 
 pub use account_data::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
@@ -96,3 +97,4 @@ pub use territories::{
     NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
 };
 pub use variables::VariableRepository;
+pub use wedding::{CoupleRow, WeddingRepository, married_text};

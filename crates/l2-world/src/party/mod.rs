@@ -28,17 +28,19 @@
 // - The summon parts (the pet window packets, a summon's `PartySpelled`) are `summon/party.rs`.
 // - `command_channel.rs`: command channels (`CommandChannel`, the invitation, the member windows,
 //   the channel user commands and chat, the loot right of a raid boss).
-// - Dimensional rift, festival, Underground Coliseum, olympiad, events, party matching
-//   rooms: later milestones; each is marked where Java asks. Duels are `duel.rs` (it hooks
-//   `Party.removePartyMember` and `setLeader`).
-// - Changing the loot rule inside a running party (`requestLootChange`, `answerLootChangeRequest`,
-//   `ExAskModifyPartyLooting`, `ExSetPartyLooting`): the client packets for it are not ported yet.
+// - `matching.rs`: the party matching rooms and the waiting list (L-03).
+// - `loot_vote.rs`: changing the loot rule of a running party by vote (L-03).
+// - Dimensional rift, festival, Underground Coliseum, olympiad, events: later milestones; each
+//   is marked where Java asks. Duels are `duel.rs` (it hooks `Party.removePartyMember` and
+//   `setLeader`).
 // - `BlockList.isBlocked` in `RequestJoinParty` and the party chat: `friends.rs` (M6-FRIEND-01).
 
 mod buffs;
 mod command_channel;
 mod invite;
 mod loot;
+mod loot_vote;
+mod matching;
 mod membership;
 mod request;
 mod rewards;
@@ -55,6 +57,7 @@ use crate::world::World;
 pub(crate) use command_channel::{CHANNEL_DELETE_COMMAND, CHANNEL_INFO_COMMAND, CHANNEL_LEAVE_COMMAND};
 pub use command_channel::{CommandChannelId, CommandChannelWorld};
 pub(crate) use invite::PARTY_INFO_COMMAND;
+pub use matching::{MatchingWorld, PartyRoomInput};
 pub use rewards::PartyExpType;
 
 /// The id of a party in the world's table. Not an object id: Java's `Party` is no `WorldObject`.
@@ -157,6 +160,8 @@ pub(crate) struct Party {
     pub(crate) disbanding: bool,
     /// Java `_commandChannel`.
     pub(crate) command_channel: Option<CommandChannelId>,
+    /// Java `_changeRequestDistributionType` and its answers and task: the open loot rule vote.
+    pub(crate) loot_change: Option<loot_vote::LootChange>,
 }
 
 impl Party {
@@ -172,6 +177,7 @@ impl Party {
             position_timer: None,
             disbanding: false,
             command_channel: None,
+            loot_change: None,
         }
     }
 
@@ -193,6 +199,8 @@ pub struct PartyWorld {
     pub(crate) chosen_distribution: HashMap<ObjectId, PartyDistributionType>,
     /// The command channels the parties are in.
     pub(crate) channels: CommandChannelWorld,
+    /// The party matching rooms and the waiting list.
+    pub(crate) matching: MatchingWorld,
 }
 
 impl PartyWorld {
