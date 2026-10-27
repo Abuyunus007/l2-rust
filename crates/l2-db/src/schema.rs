@@ -58,6 +58,8 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/fortsiege_clans.sql"),
     include_str!("../sql/game/heroes.sql"),
     include_str!("../sql/game/item_attributes.sql"),
+    include_str!("../sql/game/item_auction.sql"),
+    include_str!("../sql/game/item_auction_bid.sql"),
     include_str!("../sql/game/item_elementals.sql"),
     include_str!("../sql/game/item_variables.sql"),
     include_str!("../sql/game/items.sql"),

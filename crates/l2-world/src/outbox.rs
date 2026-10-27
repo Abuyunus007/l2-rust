@@ -190,6 +190,17 @@ pub enum PersistCommand {
     /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
     /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflineTrade(crate::trade::OfflineTradeWrite),
+    /// A row write of the item auctions with Java's statement (`item_auction`,
+    /// `item_auction_bid`), see `item_auction/` (L-05). The global ones are sent only with
+    /// `CycleDatabaseWrites` (D-53).
+    ItemAuction(crate::item_auction::ItemAuctionWrite),
+    /// Asks the persistence task to read the `item_auction` rows and bids of one instance again
+    /// (D-50, D-53) before an auction is shown, bid on or a canceled bid is returned. The answer
+    /// comes back as `WorldCommand::ItemAuctionReread` carrying `then`.
+    ItemAuctionRequest {
+        instance_id: i32,
+        then: crate::item_auction::ItemAuctionThen,
+    },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),

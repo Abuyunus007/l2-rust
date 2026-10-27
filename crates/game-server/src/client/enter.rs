@@ -1007,6 +1007,18 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
+            // Java: RequestInfoItemAuction, RequestBidItemAuction (L-05)
+            ClientPacket::RequestInfoItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Info {
+                    instance_id: p.instance_id,
+                })
+            }
+            ClientPacket::RequestBidItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Bid {
+                    instance_id: p.instance_id,
+                    bid: p.bid,
+                })
+            }
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

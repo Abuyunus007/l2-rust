@@ -153,6 +153,8 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
+    pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
 }
 
 impl World {
@@ -226,6 +228,7 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            item_auctions: crate::item_auction::ItemAuctionWorld::default(),
         }
     }
 
@@ -396,6 +399,11 @@ impl World {
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
             WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
             WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
+            WorldCommand::ItemAuctionReread {
+                instance_id,
+                result,
+                then,
+            } => self.on_item_auction_reread(instance_id, result, then),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
@@ -644,6 +652,8 @@ impl World {
             ClientInput::Store(input) => self.on_store_input(id, input),
             // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
+            // Java: RequestInfoItemAuction, RequestBidItemAuction
+            ClientInput::ItemAuction(input) => self.on_item_auction_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -879,6 +889,8 @@ impl World {
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
+            // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
+            TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
         }
     }
 

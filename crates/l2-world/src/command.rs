@@ -149,6 +149,8 @@ pub enum ClientInput {
     Store(crate::trade::StoreInput),
     /// The symbol maker packets (L-01): `RequestHenna*`.
     Henna(crate::henna::HennaInput),
+    /// The item auction packets (L-05): `RequestInfoItemAuction`, `RequestBidItemAuction`.
+    ItemAuction(crate::item_auction::ItemAuctionInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
@@ -363,6 +365,13 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
+    /// the read failed (the request is then refused, L-05, D-50).
+    ItemAuctionReread {
+        instance_id: i32,
+        result: Result<Vec<crate::item_auction::ItemAuctionRecord>, ()>,
+        then: crate::item_auction::ItemAuctionThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -460,6 +469,15 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::ItemAuctionReread {
+                instance_id,
+                result,
+                then,
+            } => write!(
+                f,
+                "ItemAuctionReread({instance_id}, {then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

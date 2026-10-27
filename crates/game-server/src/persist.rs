@@ -59,6 +59,7 @@ use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
 use l2_db::HallSiegeRepository;
+use l2_db::ItemAuctionRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
@@ -102,6 +103,7 @@ use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
+use l2_world::{ItemAuctionRecord, ItemAuctionWrite};
 use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -424,6 +426,26 @@ pub trait PlayerStore: Send + 'static {
         _write: &HennaWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// A row write of the item auctions (Java `ItemAuction.storeMe`, `updatePlayerBidInternal`,
+    /// `ItemAuctionManager.deleteAuction`, L-05).
+    fn store_item_auction_write(
+        &mut self,
+        _write: &ItemAuctionWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `item_auction` rows and bids of one instance (Java `ItemAuctionInstance.loadAuction`),
+    /// read again before an auction is shown or bid on while the Java game server writes the
+    /// states (L-05, D-53). Read in order with the other commands, so the rows include every bid
+    /// written before the request.
+    fn load_item_auction_records(
+        &mut self,
+        _instance_id: i32,
+    ) -> impl Future<Output = Result<Vec<ItemAuctionRecord>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
     }
 
     /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
@@ -971,6 +993,32 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed henna statement and goes on (no retry).
                 if let Err(e) = store.store_henna_write(&write).await {
                     error!("Henna data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ItemAuction(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_item_auction_write(&write).await {
+                    error!("Item auction data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id, then }) => {
+                // Not a write either: the answer goes back to the world (D-15).
+                let result = match store.load_item_auction_records(instance_id).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not read the auctions of item auction instance {instance_id}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::ItemAuctionReread {
+                    instance_id,
+                    result,
+                    then,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The auctions of item auction instance {instance_id} could not be handed to the world."
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
@@ -2700,6 +2748,7 @@ pub struct DbStore {
     item_reuse: ItemReuseRepository,
     shortcuts: ShortcutRepository,
     hennas: HennaRepository,
+    item_auctions: ItemAuctionRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -2741,6 +2790,7 @@ impl DbStore {
             item_reuse: ItemReuseRepository::new(pool.clone()),
             shortcuts: ShortcutRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
+            item_auctions: ItemAuctionRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -3932,6 +3982,54 @@ impl PlayerStore for DbStore {
         }
     }
 
+    async fn store_item_auction_write(&mut self, write: &ItemAuctionWrite) -> Result<(), PersistError> {
+        match write {
+            ItemAuctionWrite::Store {
+                auction_id,
+                instance_id,
+                auction_item_id,
+                starting_time,
+                ending_time,
+                state_id,
+            } => {
+                self.item_auctions
+                    .store_auction(&l2_db::ItemAuctionRow {
+                        auction_id: *auction_id,
+                        instance_id: *instance_id,
+                        auction_item_id: *auction_item_id,
+                        starting_time: *starting_time,
+                        ending_time: *ending_time,
+                        auction_state_id: *state_id,
+                    })
+                    .await?
+            }
+            ItemAuctionWrite::Bid {
+                auction_id,
+                player_obj_id,
+                bid,
+            } => {
+                self.item_auctions
+                    .store_bid(*auction_id, *player_obj_id, *bid)
+                    .await?
+            }
+            ItemAuctionWrite::DeleteBid {
+                auction_id,
+                player_obj_id,
+            } => self.item_auctions.delete_bid(*auction_id, *player_obj_id).await?,
+            ItemAuctionWrite::DeleteAuction { auction_id } => {
+                self.item_auctions.delete_auction(*auction_id).await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_item_auction_records(
+        &mut self,
+        instance_id: i32,
+    ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
+        Ok(crate::item_auctions::read_instance_records(&self.item_auctions, instance_id).await?)
+    }
+
     async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
         match *write {
             HennaWrite::Add {
@@ -4523,6 +4621,10 @@ mod tests {
         Announcement(AnnouncementWrite),
         /// A `character_hennas` write (L-01).
         Henna(HennaWrite),
+        /// An item auction row write (L-05).
+        ItemAuction(ItemAuctionWrite),
+        /// The re-read of an item auction instance (L-05).
+        ItemAuctionRecords(i32),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -4729,6 +4831,38 @@ mod tests {
         async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Henna(*write));
             Ok(())
+        }
+
+        async fn store_item_auction_write(&mut self, write: &ItemAuctionWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::ItemAuction(write.clone()));
+            Ok(())
+        }
+
+        /// Instance 7 has one auction with one bid; below 0 cannot be read.
+        async fn load_item_auction_records(
+            &mut self,
+            instance_id: i32,
+        ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::ItemAuctionRecords(instance_id));
+            if instance_id < 0 {
+                return Err(PersistError::NoSuchCharacter(instance_id));
+            }
+            Ok(if instance_id == 7 {
+                vec![ItemAuctionRecord {
+                    auction_id: 3,
+                    instance_id: 7,
+                    auction_item_id: 1,
+                    starting_time: 10,
+                    ending_time: 20,
+                    state_id: 1,
+                    bids: vec![(1001, 500)],
+                }]
+            } else {
+                Vec::new()
+            })
         }
 
         async fn store_petition_feedback(
@@ -6093,6 +6227,76 @@ mod tests {
         )
         .await;
         assert_eq!(calls, vec![Call::Henna(add), Call::Henna(delete)]);
+    }
+
+    /// L-05: the item auction rows are writes in order, and the re-read of an instance is an
+    /// answer to the world, in order with the writes before it (a failed read is `Err`).
+    #[tokio::test]
+    async fn item_auction_rows_and_the_reread_are_in_order() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let bid = ItemAuctionWrite::Bid {
+            auction_id: 3,
+            player_obj_id: 1001,
+            bid: 500,
+        };
+        let then = l2_world::ItemAuctionThen::Bid {
+            player: ObjectId(1001),
+            bid: 600,
+        };
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let store = Recording {
+            calls: Arc::clone(&calls),
+            ..Recording::default()
+        };
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        for message in [
+            OutboxMessage::Persist(PersistCommand::ItemAuction(bid.clone())),
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id: 7, then }),
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest {
+                instance_id: -1,
+                then,
+            }),
+        ] {
+            tx.send(message).unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![
+                Call::ItemAuction(bid),
+                Call::ItemAuctionRecords(7),
+                Call::ItemAuctionRecords(-1),
+            ]
+        );
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::ItemAuctionReread {
+                instance_id,
+                result,
+                then: answered,
+            } => {
+                assert_eq!((instance_id, answered), (7, then));
+                let rows = result.unwrap();
+                assert_eq!(rows.len(), 1);
+                assert_eq!(rows[0].bids, vec![(1001, 500)]);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            world_rx.try_recv().unwrap(),
+            l2_world::WorldCommand::ItemAuctionReread {
+                instance_id: -1,
+                result: Err(()),
+                ..
+            }
+        ));
     }
 
     /// M7-ADMIN-10: a petition feedback is a write of its own.

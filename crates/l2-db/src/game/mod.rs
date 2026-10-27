@@ -18,6 +18,7 @@ mod ground_items;
 mod hall_sieges;
 mod hennas;
 mod ids;
+mod item_auctions;
 mod item_reuse;
 mod items;
 mod macros;
@@ -59,6 +60,7 @@ pub use ground_items::{GroundItemRecord, GroundItemRepository};
 pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
+pub use item_auctions::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use items::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
