@@ -1213,12 +1213,8 @@ fn admin_setclass(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         return Ok(());
     }
 
-    // Java `isSubClassActive()` before the class changes (the world's rule: the class is not the
-    // base class).
-    let sub_active = world
-        .players
-        .get(&target)
-        .is_some_and(|p| p.data.class_id != p.data.base_class);
+    // Java `isSubClassActive()` (the class index does not change with the class).
+    let sub_active = world.is_subclass_active(target);
     let (race, old_mage) = world.players.get(&target).map_or((0, false), |p| {
         (
             p.data.race,
@@ -1276,7 +1272,20 @@ fn refresh_textures(world: &mut World, id: ObjectId) {
 /// graduation, the effect, the class, the messages, the party and clan icons, the skills.
 // NOTE: `applyItemSkills()` is not ported, see the module note.
 fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
+    // `if (_subclassLock) return;` (S-SUB-01).
+    if world.is_changing_class(id) {
+        return;
+    }
     world.academy_graduation(id, new_class);
+    // `if (isSubClassActive()) getSubClasses().get(_classIndex).setPlayerClass(id)` (S-SUB-01).
+    if let Some(player) = world.players.get_mut(&id) {
+        let index = player.data.profile.class_index;
+        if index > 0
+            && let Some(holder) = player.data.profile.subclasses.subs.get_mut(&index)
+        {
+            holder.class_id = new_class;
+        }
+    }
     world.set_target(id, Some(id));
     // `broadcastSkillPacket(new MagicSkillUse(this, 5103, 1, 0, 0), this)`
     if let Some((x, y, z)) = world.position_of(id) {

@@ -18,6 +18,9 @@ const INSERT_RECIPE: &str = "INSERT INTO character_recipebook (charId, id, class
 const DELETE_RECIPE: &str = "DELETE FROM character_recipebook WHERE charId=? AND id=? AND classIndex=?";
 // Java: Player.restoreRecipeBook (loadCommon = true)
 const SELECT_RECIPES: &str = "SELECT id, type, classIndex FROM character_recipebook WHERE charId=?";
+// Java: Player.restoreRecipeBook (loadCommon = false, the subclass switch)
+const SELECT_CLASS_DWARVEN_RECIPES: &str =
+    "SELECT id FROM character_recipebook WHERE charId=? AND classIndex=? AND type = 1";
 // Java: Player.DELETE_CHAR_RECIPE_SHOP
 const DELETE_RECIPE_SHOP: &str = "DELETE FROM character_recipeshoplist WHERE charId=?";
 // Java: Player.INSERT_CHAR_RECIPE_SHOP
@@ -44,6 +47,11 @@ struct RecipeBookDbRow {
     kind: i32,
     #[sqlx(rename = "classIndex")]
     class_index: i8,
+}
+
+#[derive(Debug, Clone, FromRow)]
+struct RecipeIdDbRow {
+    id: SqlNumber<i32>,
 }
 
 /// A row of `character_recipeshoplist`.
@@ -115,6 +123,17 @@ impl RecipeRepository {
                 class_index: i32::from(r.class_index),
             })
             .collect())
+    }
+
+    /// Java `Player.restoreRecipeBook(false)` (`setActiveClass`): the dwarven recipes of one class
+    /// index, in the database's order.
+    pub async fn dwarven_recipes_of_class(&self, char_id: i32, class_index: i32) -> Result<Vec<i32>> {
+        let rows = sqlx::query_as::<_, RecipeIdDbRow>(SELECT_CLASS_DWARVEN_RECIPES)
+            .bind(char_id)
+            .bind(class_index)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows.into_iter().map(|r| r.id.0).collect())
     }
 
     /// Java `Player.storeRecipeShopList`: the old rows go, then one `REPLACE` per recipe with the

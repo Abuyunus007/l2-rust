@@ -29,8 +29,9 @@
 //   `Attackable.calculateRewards` do.
 // - The over-hit bonus (a skill effect,
 //   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
-//   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), subclasses
-//   (`isSubClassActive`), clans and the tutorial quest event, scripts (D-05).
+//   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), clans and the
+//   tutorial quest event, scripts (D-05). The subclass limits of `setExp`/`setLevel` are
+//   `subclass/` (S-SUB-01).
 // - `AutoLearnSkills = True` is `skills/learn.rs` (`give_available_skills`), with the item
 //   requirements of the skill trees.
 
@@ -710,6 +711,13 @@ impl World {
     }
 
     fn set_exp(&mut self, id: ObjectId, value: i64) {
+        // Java `PlayerStat.setExp`: an active subclass keeps it in its holder, which caps it at
+        // the last exp of its maximum level (S-SUB-01).
+        let value = if self.is_subclass_active(id) {
+            self.subclass_cap_exp(value)
+        } else {
+            value
+        };
         if let Some(player) = self.players.get_mut(&id) {
             player.data.exp = value;
         }
@@ -791,7 +799,13 @@ impl World {
         let Some(max_level) = self.java_max_level() else {
             return;
         };
-        let level = value.min(max_level - 1);
+        // NOTE(java-quirk): an active subclass takes `value`, not the capped level, into its
+        // holder, which keeps it between `BaseSubclassLevel` and its maximum (S-SUB-01).
+        let level = if self.is_subclass_active(id) {
+            self.subclass_clamp_level(value)
+        } else {
+            value.min(max_level - 1)
+        };
         if let Some(player) = self.players.get_mut(&id) {
             player.core.level = level;
             player.data.level = level;

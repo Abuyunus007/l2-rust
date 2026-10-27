@@ -343,12 +343,9 @@ impl<'w> StatView<'w> {
             .is_some_and(|p| !p.entered_world || self.cloak_slot())
     }
 
-    /// Java `isSubClassActive()` (`_classIndex > 0`).
-    // The subclass tables are not loaded; a character whose class is not its base class plays a
-    // subclass (that is how Java's `restore` finds the index).
+    /// Java `isSubClassActive()` (`_classIndex > 0`, S-SUB-01).
     pub fn is_subclass_active(&self) -> bool {
-        self.player()
-            .is_some_and(|p| p.data.class_id != p.data.base_class)
+        self.player().is_some_and(|p| p.data.profile.class_index > 0)
     }
 }
 

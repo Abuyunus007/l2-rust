@@ -24,7 +24,6 @@
 // # Left out, with the system that brings it
 // - Custom events (`isOnEvent()`), mounts and the observer mode (`SummonCubic` ignores a mounted
 //   or observing player) are not modelled.
-// - `Player.setActiveClass` / `VillageMaster`'s `stopCubics()`: subclasses are not ported.
 // - The access level's `canGiveDamage` of a GM (not loaded, see `effects/apply.rs`).
 
 use std::collections::{BTreeMap, HashMap, VecDeque};
