@@ -368,7 +368,7 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 | [L-02](L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | merged |
 | [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | merged |
 | [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | merged |
-| [L-05](L/L-05.md) | Item auctions | sonnet | full | none | ready |
+| [L-05](L/L-05.md) | Item auctions | sonnet | full | none | merged |
 | [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | merged |
 | [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
 | [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | merged |
