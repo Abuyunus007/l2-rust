@@ -229,10 +229,11 @@ impl World {
                 // NOTE(java-quirk): `storeInDb` runs before `info.set("fuel", ship.getFuel())`, so
                 // the row is one flight behind.
                 if let Some(old) = self.vehicle.licenses.get(&ship.owner_id).copied() {
-                    self.outbox.persist(PersistCommand::Vehicle(VehicleWrite::StoreFuel {
-                        owner_id: ship.owner_id,
-                        fuel: old,
-                    }));
+                    self.outbox
+                        .persist(PersistCommand::Vehicle(VehicleWrite::StoreFuel {
+                            owner_id: ship.owner_id,
+                            fuel: old,
+                        }));
                     self.vehicle.licenses.insert(ship.owner_id, ship.fuel);
                 }
                 if self.vehicle.owner_ships.get(&ship.owner_id) == Some(&id) {
@@ -257,7 +258,9 @@ impl World {
         if let Some(ids) = self.npc_world.ids.clone() {
             ids.release(id);
         }
-        self.vehicle.riders.retain(|_, rider: &mut Rider| rider.vehicle != Some(id));
+        self.vehicle
+            .riders
+            .retain(|_, rider: &mut Rider| rider.vehicle != Some(id));
         true
     }
 

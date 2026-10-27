@@ -30,9 +30,7 @@ pub static TALKING_GLUDIN_TALKING_TO_GLUDIN: [PathPoint; 10] = [
     p(-95686, 149718, -3610, 150, 800),
 ];
 
-pub static TALKING_GLUDIN_GLUDIN_DOCK: [PathPoint; 1] = [
-    p(-95686, 150514, -3610, 150, 800),
-];
+pub static TALKING_GLUDIN_GLUDIN_DOCK: [PathPoint; 1] = [p(-95686, 150514, -3610, 150, 800)];
 
 pub static TALKING_GLUDIN_GLUDIN_TO_TALKING: [PathPoint; 9] = [
     p(-95686, 155514, -3610, 180, 800),
@@ -46,9 +44,7 @@ pub static TALKING_GLUDIN_GLUDIN_TO_TALKING: [PathPoint; 9] = [
     p(-94242, 261659, -3610, 150, 1800),
 ];
 
-pub static TALKING_GLUDIN_TALKING_DOCK: [PathPoint; 1] = [
-    p(-96622, 261660, -3610, 150, 1800),
-];
+pub static TALKING_GLUDIN_TALKING_DOCK: [PathPoint; 1] = [p(-96622, 261660, -3610, 150, 1800)];
 
 static TALKING_GLUDIN_STEPS: [BoatStep; 18] = [
     // case 0
@@ -257,9 +253,7 @@ pub static GIRAN_TALKING_GIRAN_TO_TALKING: [PathPoint; 19] = [
     p(-94242, 261659, -3610, 150, 800),
 ];
 
-pub static GIRAN_TALKING_TALKING_DOCK: [PathPoint; 1] = [
-    p(-96622, 261660, -3610, 150, 800),
-];
+pub static GIRAN_TALKING_TALKING_DOCK: [PathPoint; 1] = [p(-96622, 261660, -3610, 150, 800)];
 
 pub static GIRAN_TALKING_TALKING_TO_GIRAN: [PathPoint; 18] = [
     p(-113925, 261660, -3610, 150, 800),
@@ -507,9 +501,7 @@ pub static GLUDIN_RUNE_GLUDIN_TO_RUNE: [PathPoint; 27] = [
     p(36819, -35315, -3610, 220, 800),
 ];
 
-pub static GLUDIN_RUNE_RUNE_DOCK: [PathPoint; 1] = [
-    p(34381, -37680, -3610, 200, 800),
-];
+pub static GLUDIN_RUNE_RUNE_DOCK: [PathPoint; 1] = [p(34381, -37680, -3610, 200, 800)];
 
 pub static GLUDIN_RUNE_RUNE_TO_GLUDIN: [PathPoint; 22] = [
     p(32750, -39300, -3610, 150, 800),
@@ -536,16 +528,19 @@ pub static GLUDIN_RUNE_RUNE_TO_GLUDIN: [PathPoint; 22] = [
     p(-95686, 148218, -3610, 200, 800),
 ];
 
-pub static GLUDIN_RUNE_GLUDIN_DOCK: [PathPoint; 1] = [
-    p(-95686, 150514, -3610, 150, 800),
-];
+pub static GLUDIN_RUNE_GLUDIN_DOCK: [PathPoint; 1] = [p(-95686, 150514, -3610, 150, 800)];
 
 static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     // case 0
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::DepartureForRuneHarborWillTakePlaceInFiveMinutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::DepartureForRuneHarborWillTakePlaceInFiveMinutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -555,7 +550,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::DepartureForRuneHarborWillTakePlaceInOneMinute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::DepartureForRuneHarborWillTakePlaceInOneMinute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -565,7 +565,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::MakeHasteWeWillBeDepartingForGludinHarborShortly2)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::MakeHasteWeWillBeDepartingForGludinHarborShortly2,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -575,9 +580,18 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[(2, false)],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::WeAreNowDepartingForGludinHarborHoldOnAndEnjoyTheRide)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::WeAreNowDepartingForGludinHarborHoldOnAndEnjoyTheRide,
+            )],
+        }),
         boat_sound: Some(Pt(-95686, 150514, -3610)),
-        pay: Some(Pay { item_id: 7905, count: 1, oust: (-90015, 150422, -3610) }),
+        pay: Some(Pay {
+            item_id: 7905,
+            count: 1,
+            oust: (-90015, 150422, -3610),
+        }),
         exec: Some(&GLUDIN_RUNE_GLUDIN_TO_RUNE),
         next_ms: Some(250000),
     },
@@ -585,7 +599,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately15Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately15Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -595,7 +614,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately10Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately10Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -605,7 +629,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately5Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately5Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -615,7 +644,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately1Minute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromGludinHarborWillBeArrivingAtRuneHarborInApproximately1Minute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -623,7 +657,11 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     },
     // case 8
     BoatStep {
-        wait_dock: Some(WaitDock { dock: 3, near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), busy: SystemMessageId::TheFerryFromGludinHarborToRuneHarborHasBeenDelayed }),
+        wait_dock: Some(WaitDock {
+            dock: 3,
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            busy: SystemMessageId::TheFerryFromGludinHarborToRuneHarborHasBeenDelayed,
+        }),
         dock_ops: &[],
         broadcast: None,
         boat_sound: None,
@@ -635,7 +673,13 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[(3, true)],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::WelcomeToRuneHarbor), Cast::Msg(SystemMessageId::TheFerryWillLeaveForGludinHarborAfterAnchoringForTenMinutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::WelcomeToRuneHarbor),
+                Cast::Msg(SystemMessageId::TheFerryWillLeaveForGludinHarborAfterAnchoringForTenMinutes),
+            ],
+        }),
         boat_sound: Some(Pt(34381, -37680, -3610)),
         pay: None,
         exec: None,
@@ -645,7 +689,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::DepartureForGludinHarborWillTakePlaceInFiveMinutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::DepartureForGludinHarborWillTakePlaceInFiveMinutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -655,7 +704,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::DepartureForGludinHarborWillTakePlaceInOneMinute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::DepartureForGludinHarborWillTakePlaceInOneMinute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -665,7 +719,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::MakeHasteWeWillBeDepartingForGludinHarborShortly)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::MakeHasteWeWillBeDepartingForGludinHarborShortly,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -675,9 +734,18 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[(3, false)],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)), items: &[Cast::Msg(SystemMessageId::WeAreNowDepartingForGludinHarborHoldOnAndEnjoyTheRide)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(-95686, 150514, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::WeAreNowDepartingForGludinHarborHoldOnAndEnjoyTheRide,
+            )],
+        }),
         boat_sound: Some(Pt(34381, -37680, -3610)),
-        pay: Some(Pay { item_id: 7904, count: 1, oust: (34513, -38009, -3640) }),
+        pay: Some(Pay {
+            item_id: 7904,
+            count: 1,
+            oust: (34513, -38009, -3640),
+        }),
         exec: Some(&GLUDIN_RUNE_RUNE_TO_GLUDIN),
         next_ms: Some(60000),
     },
@@ -685,7 +753,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately15Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately15Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -695,7 +768,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately10Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately10Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -705,7 +783,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately5Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately5Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -715,7 +798,12 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately1Minute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheFerryFromRuneHarborWillBeArrivingAtGludinHarborInApproximately1Minute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -723,7 +811,11 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     },
     // case 18
     BoatStep {
-        wait_dock: Some(WaitDock { dock: 2, near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), busy: SystemMessageId::TheFerryFromRuneHarborToGludinHarborHasBeenDelayed }),
+        wait_dock: Some(WaitDock {
+            dock: 2,
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            busy: SystemMessageId::TheFerryFromRuneHarborToGludinHarborHasBeenDelayed,
+        }),
         dock_ops: &[],
         broadcast: None,
         boat_sound: None,
@@ -735,7 +827,13 @@ static GLUDIN_RUNE_STEPS: [BoatStep; 20] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[(2, true)],
-        broadcast: Some(Broadcast { near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryHasArrivedAtGludinHarbor), Cast::Msg(SystemMessageId::DepartureForRuneHarborWillTakePlaceAfterAnchoringForTenMinutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(-95686, 150514, -3610), Pt(34381, -37680, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheFerryHasArrivedAtGludinHarbor),
+                Cast::Msg(SystemMessageId::DepartureForRuneHarborWillTakePlaceAfterAnchoringForTenMinutes),
+            ],
+        }),
         boat_sound: Some(Pt(-95686, 150514, -3610)),
         pay: None,
         exec: None,
@@ -771,18 +869,26 @@ pub static RUNE_PRIMEVAL_PRIMEVAL_TO_RUNE: [PathPoint; 8] = [
     p(36819, -35315, -3610, 220, 800),
 ];
 
-pub static RUNE_PRIMEVAL_RUNE_DOCK: [PathPoint; 1] = [
-    p(34381, -37680, -3610, 220, 800),
-];
+pub static RUNE_PRIMEVAL_RUNE_DOCK: [PathPoint; 1] = [p(34381, -37680, -3610, 220, 800)];
 
 static RUNE_PRIMEVAL_STEPS: [BoatStep; 5] = [
     // case 0
     BoatStep {
         wait_dock: None,
         dock_ops: &[(3, false)],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryIsNowDepartingRuneHarborForPrimevalIsle), Cast::Sound(Pt(34381, -37680, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheFerryIsNowDepartingRuneHarborForPrimevalIsle),
+                Cast::Sound(Pt(34381, -37680, -3610)),
+            ],
+        }),
         boat_sound: None,
-        pay: Some(Pay { item_id: 8925, count: 1, oust: (34513, -38009, -3640) }),
+        pay: Some(Pay {
+            item_id: 8925,
+            count: 1,
+            oust: (34513, -38009, -3640),
+        }),
         exec: Some(&RUNE_PRIMEVAL_RUNE_TO_PRIMEVAL),
         next_ms: None,
     },
@@ -790,7 +896,14 @@ static RUNE_PRIMEVAL_STEPS: [BoatStep; 5] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(10342, -27279, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryHasArrivedAtPrimevalIsle), Cast::Msg(SystemMessageId::TheFerryWillLeaveForRuneHarborAfterAnchoringForThreeMinutes), Cast::Sound(Pt(10342, -27279, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(10342, -27279, -3610), Pt(34381, -37680, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheFerryHasArrivedAtPrimevalIsle),
+                Cast::Msg(SystemMessageId::TheFerryWillLeaveForRuneHarborAfterAnchoringForThreeMinutes),
+                Cast::Sound(Pt(10342, -27279, -3610)),
+            ],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -800,15 +913,29 @@ static RUNE_PRIMEVAL_STEPS: [BoatStep; 5] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(10342, -27279, -3610), Pt(34381, -37680, -3610)), items: &[Cast::Msg(SystemMessageId::TheFerryIsNowDepartingPrimevalIsleForRuneHarbor), Cast::Sound(Pt(10342, -27279, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(10342, -27279, -3610), Pt(34381, -37680, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheFerryIsNowDepartingPrimevalIsleForRuneHarbor),
+                Cast::Sound(Pt(10342, -27279, -3610)),
+            ],
+        }),
         boat_sound: None,
-        pay: Some(Pay { item_id: 8924, count: 1, oust: (10447, -24982, -3664) }),
+        pay: Some(Pay {
+            item_id: 8924,
+            count: 1,
+            oust: (10447, -24982, -3664),
+        }),
         exec: Some(&RUNE_PRIMEVAL_PRIMEVAL_TO_RUNE),
         next_ms: None,
     },
     // case 3
     BoatStep {
-        wait_dock: Some(WaitDock { dock: 3, near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)), busy: SystemMessageId::TheFerryFromPrimevalIsleToRuneHarborHasBeenDelayed }),
+        wait_dock: Some(WaitDock {
+            dock: 3,
+            near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)),
+            busy: SystemMessageId::TheFerryFromPrimevalIsleToRuneHarborHasBeenDelayed,
+        }),
         dock_ops: &[],
         broadcast: None,
         boat_sound: None,
@@ -820,7 +947,14 @@ static RUNE_PRIMEVAL_STEPS: [BoatStep; 5] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[(3, true)],
-        broadcast: Some(Broadcast { near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)), items: &[Cast::Msg(SystemMessageId::WelcomeToRuneHarbor), Cast::Msg(SystemMessageId::TheFerryWillLeaveForPrimevalIsleAfterAnchoringForThreeMinutes), Cast::Sound(Pt(34381, -37680, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(34381, -37680, -3610), Pt(10342, -27279, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::WelcomeToRuneHarbor),
+                Cast::Msg(SystemMessageId::TheFerryWillLeaveForPrimevalIsleAfterAnchoringForThreeMinutes),
+                Cast::Sound(Pt(34381, -37680, -3610)),
+            ],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -870,7 +1004,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillLeaveInFiveMinutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillLeaveInFiveMinutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -880,7 +1019,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillLeaveInOneMinute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillLeaveInOneMinute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -890,7 +1034,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillBeLeavingSoon)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillBeLeavingSoon,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -900,9 +1049,19 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatIsLeaving), Cast::Sound(Pt(111264, 226240, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatIsLeaving),
+                Cast::Sound(Pt(111264, 226240, -3610)),
+            ],
+        }),
         boat_sound: None,
-        pay: Some(Pay { item_id: 0, count: 1, oust: (107092, 219098, -3952) }),
+        pay: Some(Pay {
+            item_id: 0,
+            count: 1,
+            oust: (107092, 219098, -3952),
+        }),
         exec: Some(&INNADRIL_TOUR_TOUR),
         next_ms: Some(650000),
     },
@@ -910,7 +1069,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately20Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately20Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -920,7 +1084,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately15Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately15Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -930,7 +1099,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately10Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately10Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -940,7 +1114,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately5Minutes)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately5Minutes,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -950,7 +1129,12 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately1Minute)] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[Cast::Msg(
+                SystemMessageId::TheInnadrilPleasureBoatWillArriveInApproximately1Minute,
+            )],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,
@@ -960,7 +1144,13 @@ static INNADRIL_TOUR_STEPS: [BoatStep; 10] = [
     BoatStep {
         wait_dock: None,
         dock_ops: &[],
-        broadcast: Some(Broadcast { near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)), items: &[Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatHasArrivedItWillAnchorForTenMinutes), Cast::Sound(Pt(111264, 226240, -3610))] }),
+        broadcast: Some(Broadcast {
+            near: (Pt(111264, 226240, -3610), Pt(111264, 226240, -3610)),
+            items: &[
+                Cast::Msg(SystemMessageId::TheInnadrilPleasureBoatHasArrivedItWillAnchorForTenMinutes),
+                Cast::Sound(Pt(111264, 226240, -3610)),
+            ],
+        }),
         boat_sound: None,
         pay: None,
         exec: None,

@@ -13,6 +13,7 @@ pub mod cipher;
 pub mod enter;
 pub mod newchar;
 pub mod registry;
+pub mod secondary;
 pub mod session;
 
 use std::net::SocketAddr;
@@ -49,6 +50,11 @@ pub trait LoginGate: Send + Sync + 'static {
     fn player_logout<'a>(&'a self, account: &'a str) -> BoxFuture<'a, ()>;
     /// Java `ServerConfig.SERVER_ID` (shown in `KeyPacket`).
     fn server_id(&self) -> i32;
+    /// Java `LoginServerThread.sendTempBan`: ban an account and an address for `minutes`
+    /// (L-04, the secondary password). The default does nothing.
+    fn temp_ban<'a>(&'a self, _account: &'a str, _ip: &'a str, _minutes: i64) -> BoxFuture<'a, ()> {
+        Box::pin(async {})
+    }
 }
 
 /// The link and the id from `hexid.txt` for the time before the first registration.
@@ -71,6 +77,10 @@ impl LoginGate for LinkGate {
             .status()
             .server_id
             .map_or(self.hexid_server_id, i32::from)
+    }
+
+    fn temp_ban<'a>(&'a self, account: &'a str, ip: &'a str, minutes: i64) -> BoxFuture<'a, ()> {
+        Box::pin(self.link.send_temp_ban(account, ip, minutes))
     }
 }
 
@@ -96,6 +106,8 @@ pub struct ClientContext {
     pub settings: WorldSettings,
     /// Completes when the persistence task handled a character's `PlayerLeft`.
     pub left_acks: crate::persist::LeftAcks,
+    /// The secondary password: `SecondaryAuth.xml` and the `account_gsdata` store (L-04).
+    pub secondary: Arc<secondary::SecondaryAuthService>,
 }
 
 impl ClientContext {
@@ -179,6 +191,10 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),
         left_acks: state.left_acks.clone(),
+        secondary: Arc::new(secondary::SecondaryAuthService {
+            data: secondary::SecondaryAuthData::load(&state.paths.config_dir),
+            store: Arc::new(secondary::DbSecondaryStore::new(state.pool.clone())),
+        }),
     });
 
     // Java: ConnectionConfig (Network.ini). A missing file gives Java's defaults.

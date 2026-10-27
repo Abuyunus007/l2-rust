@@ -13,7 +13,7 @@ pub struct IdManagerConfig {
     /// Key: `LastObjectId`, default 2147483647.
     /// TODO(M2-CFG-01): Java also uses this field after reading it (line 48): `INITIAL_CAPACITY = Math.min(config.getInt("InitialCapacity", 100000), LAST_OBJECT_ID - 1);`
     pub last_object_id: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::effective_initial_capacity` (manual.core.id_manager) (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 48): `INITIAL_CAPACITY = Math.min(config.getInt("InitialCapacity", 100000), LAST_OBJECT_ID - 1);`
     /// Key: `InitialCapacity`, Java default `100000` (before the Java post-processing).
     pub initial_capacity: (),

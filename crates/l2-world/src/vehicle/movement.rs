@@ -85,7 +85,13 @@ impl World {
         match kind {
             VehicleKind::Boat => {
                 if !self.veh(id).is_some_and(|v| v.is_moving()) {
-                    self.broadcast_packet(id, &VehicleStarted { object_id: id.0, state: 1 });
+                    self.broadcast_packet(
+                        id,
+                        &VehicleStarted {
+                            object_id: id.0,
+                            state: 1,
+                        },
+                    );
                 }
                 self.vehicle_move_to_location(id, x, y, z);
                 if let Some(packet) = self.vehicle_departure_packet(id) {
@@ -153,7 +159,13 @@ impl World {
         };
         match kind {
             VehicleKind::Boat => {
-                self.broadcast_packet(id, &VehicleStarted { object_id: id.0, state: 0 });
+                self.broadcast_packet(
+                    id,
+                    &VehicleStarted {
+                        object_id: id.0,
+                        state: 0,
+                    },
+                );
                 self.broadcast_packet(
                     id,
                     &VehicleInfo {
@@ -336,8 +348,8 @@ impl World {
 
         let mut dist_fraction = f64::MAX;
         if delta > 1.0 {
-            let dist_passed = (speed * f64::from(game_ticks.wrapping_sub(mv.move_timestamp)))
-                / f64::from(TICKS_PER_SECOND);
+            let dist_passed =
+                (speed * f64::from(game_ticks.wrapping_sub(mv.move_timestamp))) / f64::from(TICKS_PER_SECOND);
             dist_fraction = dist_passed / delta;
         }
 
@@ -551,7 +563,11 @@ impl World {
 
     /// Java `Vehicle.teleToLocation(loc, false)`: the passengers go first, then the vehicle
     /// leaves and comes back at the place.
-    pub(crate) fn vehicle_tele_to_location(&mut self, id: ObjectId, (x, y, z, heading): (i32, i32, i32, i32)) {
+    pub(crate) fn vehicle_tele_to_location(
+        &mut self,
+        id: ObjectId,
+        (x, y, z, heading): (i32, i32, i32, i32),
+    ) {
         if self.veh(id).is_none() {
             return;
         }

@@ -103,7 +103,10 @@ impl World {
 
     /// Java `Vehicle.oustPlayers()`.
     pub(crate) fn vehicle_oust_players(&mut self, vehicle: ObjectId) {
-        let passengers = self.veh(vehicle).map(|v| v.passengers.clone()).unwrap_or_default();
+        let passengers = self
+            .veh(vehicle)
+            .map(|v| v.passengers.clone())
+            .unwrap_or_default();
         for passenger in passengers {
             self.vehicle_oust_player(vehicle, passenger);
         }
@@ -167,8 +170,11 @@ impl World {
             .collect();
         for player in riders {
             if pay.item_id > 0 {
-                let ticket = self.inventory_item_by_item_id(player, pay.item_id).map(|i| i.object_id);
-                let removed = ticket.and_then(|object_id| self.destroy_inventory_item(player, object_id, pay.count));
+                let ticket = self
+                    .inventory_item_by_item_id(player, pay.item_id)
+                    .map(|i| i.object_id);
+                let removed =
+                    ticket.and_then(|object_id| self.destroy_inventory_item(player, object_id, pay.count));
                 let Some(item) = removed else {
                     self.send(
                         player,

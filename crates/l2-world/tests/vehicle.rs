@@ -8,14 +8,12 @@
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates, PlayerTemplates,
-    SkillTemplates, SpawnData, SpawnLoadOptions,
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    PlayerTemplates, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
-use l2_protocol_game::server::{
-    ExGetOnAirShip, GetOffVehicle, GetOnVehicle, VehicleDeparture, VehicleInfo,
-};
+use l2_protocol_game::server::{ExGetOnAirShip, GetOffVehicle, GetOnVehicle, VehicleDeparture, VehicleInfo};
 use l2_util::ObjectId;
 use l2_world::vehicle::boat_routes::BOAT_ROUTES;
 use l2_world::*;
@@ -305,7 +303,10 @@ fn the_boats_are_made_and_the_rune_harbour_cannot_be_busy() {
     let v = s.world.vehicles().vehicle(first).unwrap();
     assert_eq!(
         ((v.x, v.y, v.z, v.heading), v.engine.is_some()),
-        ((BOAT_ROUTES[0].x, BOAT_ROUTES[0].y, BOAT_ROUTES[0].z, 32768), true)
+        (
+            (BOAT_ROUTES[0].x, BOAT_ROUTES[0].y, BOAT_ROUTES[0].z, 32768),
+            true
+        )
     );
 }
 
@@ -327,8 +328,18 @@ fn board_a_boat_and_get_off_at_the_dock() {
     let mut s = Scene::new(&[]);
     s.world.spawn_boats();
     let boat = s.boat(0);
-    s.enter(ALICE, "Alice", (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2), 1);
-    s.enter(BOB, "Bob", (TALKING_DOCK.0 + 60, TALKING_DOCK.1, TALKING_DOCK.2), 0);
+    s.enter(
+        ALICE,
+        "Alice",
+        (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2),
+        1,
+    );
+    s.enter(
+        BOB,
+        "Bob",
+        (TALKING_DOCK.0 + 60, TALKING_DOCK.1, TALKING_DOCK.2),
+        0,
+    );
     s.log.take();
     s.vehicle_input(
         ALICE,
@@ -370,8 +381,14 @@ fn board_a_boat_and_get_off_at_the_dock() {
     assert_eq!(s.world.in_vehicle_position(ObjectId(ALICE)), None);
     let out = s.log.take();
     let off: GetOffVehicle = decode(of(&out, BOB, "GET_OFF_VEHICLE")[0]);
-    assert_eq!((off.object_id, off.boat_object_id, off.x), (ALICE, boat.0, TALKING_DOCK.0 + 100));
-    assert_eq!(s.pos(ALICE), (TALKING_DOCK.0 + 100, TALKING_DOCK.1, TALKING_DOCK.2));
+    assert_eq!(
+        (off.object_id, off.boat_object_id, off.x),
+        (ALICE, boat.0, TALKING_DOCK.0 + 100)
+    );
+    assert_eq!(
+        s.pos(ALICE),
+        (TALKING_DOCK.0 + 100, TALKING_DOCK.1, TALKING_DOCK.2)
+    );
 }
 
 /// A player far from the boat cannot board it (`isInsideRadius3D(boat, 1000)`).
@@ -380,7 +397,12 @@ fn boarding_needs_the_boat_in_reach() {
     let mut s = Scene::new(&[]);
     s.world.spawn_boats();
     let boat = s.boat(0);
-    s.enter(ALICE, "Alice", (TALKING_DOCK.0 + 1500, TALKING_DOCK.1, TALKING_DOCK.2), 1);
+    s.enter(
+        ALICE,
+        "Alice",
+        (TALKING_DOCK.0 + 1500, TALKING_DOCK.1, TALKING_DOCK.2),
+        1,
+    );
     s.vehicle_input(
         ALICE,
         VehicleInput::GetOn {
@@ -400,9 +422,19 @@ fn sail_a_route_leg_and_get_off_at_the_other_dock() {
     let mut s = Scene::new(&[]);
     s.world.spawn_boats();
     let boat = s.boat(0);
-    s.enter(ALICE, "Alice", (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2), 1);
+    s.enter(
+        ALICE,
+        "Alice",
+        (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2),
+        1,
+    );
     // Bob rides without a ticket.
-    s.enter(BOB, "Bob", (TALKING_DOCK.0 + 60, TALKING_DOCK.1, TALKING_DOCK.2), 0);
+    s.enter(
+        BOB,
+        "Bob",
+        (TALKING_DOCK.0 + 60, TALKING_DOCK.1, TALKING_DOCK.2),
+        0,
+    );
     for id in [ALICE, BOB] {
         s.vehicle_input(
             id,
@@ -422,13 +454,22 @@ fn sail_a_route_leg_and_get_off_at_the_other_dock() {
     s.ticks(30);
     // `payForRide(1074, 1, ...)`: Alice paid and rides, Bob is put ashore.
     assert_eq!(s.tickets(ALICE), 0);
-    assert_eq!(s.world.vehicles().vehicle(boat).unwrap().passengers, vec![ObjectId(ALICE)]);
+    assert_eq!(
+        s.world.vehicles().vehicle(boat).unwrap().passengers,
+        vec![ObjectId(ALICE)]
+    );
     assert_eq!(s.world.vehicle_of(ObjectId(BOB)), None);
     let out = s.log.take();
     // `VehicleStarted(1)`, `VehicleDeparture` towards the first point of the route.
     let departure: VehicleDeparture = decode(of(&out, ALICE, "VEHICLE_DEPARTURE")[0]);
     assert_eq!(
-        (departure.x, departure.y, departure.z, departure.move_speed, departure.rotation_speed),
+        (
+            departure.x,
+            departure.y,
+            departure.z,
+            departure.move_speed,
+            departure.rotation_speed
+        ),
         (-121_385, 261_660, -3610, 180, 800)
     );
     assert!(!of(&out, ALICE, "VEHICLE_START").is_empty());
@@ -471,7 +512,12 @@ fn a_new_player_sees_the_boat_and_where_it_goes() {
     let mut s = Scene::new(&[]);
     s.world.spawn_boats();
     let boat = s.boat(0);
-    s.enter(ALICE, "Alice", (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2), 1);
+    s.enter(
+        ALICE,
+        "Alice",
+        (TALKING_DOCK.0 + 50, TALKING_DOCK.1, TALKING_DOCK.2),
+        1,
+    );
     s.vehicle_input(
         ALICE,
         VehicleInput::GetOn {
@@ -512,7 +558,10 @@ fn board_the_gludio_gracia_air_ship() {
     let ship = s.world.vehicles().gludio_gracia_ship().unwrap();
     let v = s.world.vehicles().vehicle(ship).unwrap();
     assert_eq!((v.x, v.y, v.z, v.dock_id), (-149_378, 252_552, 198, 10));
-    let npc = s.world.spawn_npc_at(32609, -149_360, 252_936, -136, 20_771).unwrap();
+    let npc = s
+        .world
+        .spawn_npc_at(32609, -149_360, 252_936, -136, 20_771)
+        .unwrap();
     s.enter(ALICE, "Alice", (-149_340, 252_900, -136), 0);
     // Click the controller twice: the first selects, the second talks.
     for _ in 0..2 {
@@ -597,14 +646,38 @@ fn the_boat_paths_are_the_ones_of_the_java_scripts() {
             .collect()
     };
     let cases: [(&str, &str, &[l2_world::PathPoint]); 10] = [
-        ("BoatTalkingGludin", "TALKING_TO_GLUDIN", &r::TALKING_GLUDIN_TALKING_TO_GLUDIN),
-        ("BoatTalkingGludin", "GLUDIN_TO_TALKING", &r::TALKING_GLUDIN_GLUDIN_TO_TALKING),
-        ("BoatGiranTalking", "GIRAN_TO_TALKING", &r::GIRAN_TALKING_GIRAN_TO_TALKING),
-        ("BoatGiranTalking", "TALKING_TO_GIRAN", &r::GIRAN_TALKING_TALKING_TO_GIRAN),
+        (
+            "BoatTalkingGludin",
+            "TALKING_TO_GLUDIN",
+            &r::TALKING_GLUDIN_TALKING_TO_GLUDIN,
+        ),
+        (
+            "BoatTalkingGludin",
+            "GLUDIN_TO_TALKING",
+            &r::TALKING_GLUDIN_GLUDIN_TO_TALKING,
+        ),
+        (
+            "BoatGiranTalking",
+            "GIRAN_TO_TALKING",
+            &r::GIRAN_TALKING_GIRAN_TO_TALKING,
+        ),
+        (
+            "BoatGiranTalking",
+            "TALKING_TO_GIRAN",
+            &r::GIRAN_TALKING_TALKING_TO_GIRAN,
+        ),
         ("BoatGludinRune", "GLUDIN_TO_RUNE", &r::GLUDIN_RUNE_GLUDIN_TO_RUNE),
         ("BoatGludinRune", "RUNE_TO_GLUDIN", &r::GLUDIN_RUNE_RUNE_TO_GLUDIN),
-        ("BoatRunePrimeval", "RUNE_TO_PRIMEVAL", &r::RUNE_PRIMEVAL_RUNE_TO_PRIMEVAL),
-        ("BoatRunePrimeval", "PRIMEVAL_TO_RUNE", &r::RUNE_PRIMEVAL_PRIMEVAL_TO_RUNE),
+        (
+            "BoatRunePrimeval",
+            "RUNE_TO_PRIMEVAL",
+            &r::RUNE_PRIMEVAL_RUNE_TO_PRIMEVAL,
+        ),
+        (
+            "BoatRunePrimeval",
+            "PRIMEVAL_TO_RUNE",
+            &r::RUNE_PRIMEVAL_PRIMEVAL_TO_RUNE,
+        ),
         ("BoatInnadrilTour", "TOUR", &r::INNADRIL_TOUR_TOUR),
         ("BoatGludinRune", "RUNE_DOCK", &r::GLUDIN_RUNE_RUNE_DOCK),
     ];
@@ -644,15 +717,24 @@ fn the_air_ship_paths_are_the_ones_of_the_java_scripts() {
             .collect()
     };
     for def in &c::CONTROLLERS {
-        let src =
-            std::fs::read_to_string(root.join(def.name).join(format!("{}.java", def.name))).unwrap();
+        let src = std::fs::read_to_string(root.join(def.name).join(format!("{}.java", def.name))).unwrap();
         let section = |name: &str| {
             let start = src.find(&format!("{name} =")).unwrap();
             let end = start + src[start..].find("};").unwrap();
             src[start..end].to_owned()
         };
-        assert_eq!(rust(def.arrival), numbers(&section("ARRIVAL")), "{} arrival", def.name);
-        assert_eq!(rust(def.depart), numbers(&section("DEPART")), "{} depart", def.name);
+        assert_eq!(
+            rust(def.arrival),
+            numbers(&section("ARRIVAL")),
+            "{} arrival",
+            def.name
+        );
+        assert_eq!(
+            rust(def.depart),
+            numbers(&section("DEPART")),
+            "{} depart",
+            def.name
+        );
         let teleports: Vec<_> = def.teleports.iter().map(|t| rust(t)).collect();
         let java_teleports = {
             let all = section("TELEPORTS");
@@ -667,10 +749,8 @@ fn the_air_ship_paths_are_the_ones_of_the_java_scripts() {
         assert!(src.contains(&format!("CONTROLLER_ID = {}", def.npc_id)));
         assert!(src.contains(&format!("LOCATION = {}", def.location_id)));
     }
-    let src = std::fs::read_to_string(
-        root.join("AirShipGludioGracia").join("AirShipGludioGracia.java"),
-    )
-    .unwrap();
+    let src =
+        std::fs::read_to_string(root.join("AirShipGludioGracia").join("AirShipGludioGracia.java")).unwrap();
     for (array, path) in [
         ("GLUDIO_TO_WARPGATE", &c::GLUDIO_TO_WARPGATE[..]),
         ("WARPGATE_TO_GRACIA", &c::WARPGATE_TO_GRACIA[..]),
@@ -698,7 +778,10 @@ fn a_dock_without_zones_is_disabled() {
 fn a_license_is_a_row() {
     let mut s = Scene::new(&[]);
     s.world.load_airships(VehicleLoad {
-        airships: vec![AirshipRow { owner_id: 7, fuel: 123 }],
+        airships: vec![AirshipRow {
+            owner_id: 7,
+            fuel: 123,
+        }],
     });
     assert!(s.world.has_air_ship_license(7));
     assert!(!s.world.has_air_ship_license(8));
@@ -714,5 +797,11 @@ fn a_license_is_a_row() {
             _ => None,
         })
         .collect();
-    assert_eq!(writes, vec![VehicleWrite::AddLicense { owner_id: 8, fuel: 600 }]);
+    assert_eq!(
+        writes,
+        vec![VehicleWrite::AddLicense {
+            owner_id: 8,
+            fuel: 600
+        }]
+    );
 }

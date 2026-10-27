@@ -194,8 +194,11 @@ impl World {
                 new_target = None;
             }
             // Vehicles cannot be targeted (but by a GM).
-            if new_target.is_some_and(|t| self.objects.get(&t).is_some_and(|e| e.kind == ObjectKind::Vehicle))
-                && !self.is_gm(id)
+            if new_target.is_some_and(|t| {
+                self.objects
+                    .get(&t)
+                    .is_some_and(|e| e.kind == ObjectKind::Vehicle)
+            }) && !self.is_gm(id)
             {
                 new_target = None;
             }

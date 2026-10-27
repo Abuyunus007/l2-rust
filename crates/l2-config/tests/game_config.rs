@@ -146,3 +146,40 @@ fn dist_config_loads_with_spot_checks() {
     assert_eq!(config.player.player_maximum_level, 85);
     assert!((config.rates.rate_xp - 1.0).abs() < f32::EPSILON);
 }
+
+/// L-09: the hand-ported fields of the core classes read the shipped files.
+#[test]
+fn dist_config_core_manual_fields() {
+    let Some(dir) = dist_config_dir() else { return };
+    let config = GameConfig::load(&dir).unwrap();
+    let core = &config.manual.core;
+
+    assert_eq!(core.server.datapack_root, ".");
+    assert_eq!(core.server.script_root, "./data/scripts");
+    assert_eq!(core.server.server_list_type, 0x40);
+    assert_eq!(core.server.server_restart_schedule, ["08:00"]);
+    assert_eq!(core.server.precautionary_restart_delay, 60_000);
+    // chatfilter.txt is in the same folder.
+    assert!(!core.server.filter_list.is_empty());
+    assert!(core.server.filter_list.iter().all(|word| !word.starts_with('#')));
+
+    assert_eq!(core.general.char_data_store_interval, 15 * 60 * 1000);
+    assert_eq!(core.general.default_punish, "KICK");
+    assert_eq!(
+        core.general.ban_chat_channels,
+        ["GENERAL", "SHOUT", "TRADE", "HERO_VOICE", "WHISPER"]
+    );
+    assert_eq!(core.general.botreport_resetpoint_hour, ["00", "00"]);
+
+    assert_eq!(core.player.enchant_blacklist.len(), 19);
+    assert!(core.player.party_xp_cutoff_method.eq_ignore_ascii_case("LEVEL"));
+    assert_eq!(core.player.party_xp_cutoff_gaps, [[0, 9], [10, 14], [15, 99]]);
+    assert!(core.player.alt_game_cancel_cast && !core.player.alt_game_cancel_bow);
+
+    assert_eq!(core.npc.list_pet_rent_npc, [30827]);
+    assert_eq!(core.olympiad.olympiad_classed_reward, [[13722, 50]]);
+    assert_eq!(core.olympiad.olympiad_competition_days.len(), 7);
+    assert_eq!(core.flood_protector.use_item.protection_interval, 0); // the shipped file; default 4
+    assert!(core.pvp.karma_list_nondroppable_items.contains(&57));
+    assert_eq!(config.effective_initial_capacity(), 100_000);
+}

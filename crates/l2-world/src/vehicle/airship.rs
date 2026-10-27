@@ -51,10 +51,11 @@ impl World {
             return;
         }
         self.vehicle.licenses.insert(owner_id, MAX_FUEL);
-        self.outbox.persist(PersistCommand::Vehicle(VehicleWrite::AddLicense {
-            owner_id,
-            fuel: MAX_FUEL,
-        }));
+        self.outbox
+            .persist(PersistCommand::Vehicle(VehicleWrite::AddLicense {
+                owner_id,
+                fuel: MAX_FUEL,
+            }));
     }
 
     /// Java `AirShipManager.hasAirShip(ownerId)`: the clan's ship is in the world (or on its way
@@ -121,7 +122,11 @@ impl World {
     }
 
     /// Java `AirShipManager.getTeleportDestination(dockId, index)`.
-    pub(crate) fn air_ship_teleport_destination(&self, dock_id: i32, index: i32) -> Option<&'static [PathPoint]> {
+    pub(crate) fn air_ship_teleport_destination(
+        &self,
+        dock_id: i32,
+        index: i32,
+    ) -> Option<&'static [PathPoint]> {
         let all = self.vehicle.teleports.get(&dock_id)?;
         let len = i32::try_from(all.routes.len()).ok()?;
         if index < -1 || index >= len {
@@ -233,7 +238,10 @@ impl World {
                 let (x, y, z) = self.in_vehicle_position(player).unwrap_or((0, 0, 0));
                 let (dx, dy, dz) = (x - HELM_X, y, z - HELM_Z);
                 if dx * dx + dy * dy + dz * dz > HELM_REACH_SQ {
-                    self.send(player, &SystemMessage::new(M::YouCannotControlBecauseYouAreTooFar));
+                    self.send(
+                        player,
+                        &SystemMessage::new(M::YouCannotControlBecauseYouAreTooFar),
+                    );
                     return false;
                 }
                 // "TODO: Missing message ID: 2739 Message: You cannot control the helm because you
@@ -309,7 +317,10 @@ impl World {
     /// Java `RefuelAirship.onStart`: `ship.setFuel(ship.getFuel() + value)`, then the ship is
     /// described again.
     pub fn refuel_air_ship(&mut self, player: ObjectId, value: i32) {
-        let Some(ship) = self.vehicle_of(player).filter(|s| self.veh(*s).is_some_and(|v| v.is_air_ship())) else {
+        let Some(ship) = self
+            .vehicle_of(player)
+            .filter(|s| self.veh(*s).is_some_and(|v| v.is_air_ship()))
+        else {
             return;
         };
         let fuel = self.veh(ship).map_or(0, |v| v.fuel());
@@ -318,7 +329,13 @@ impl World {
     }
 
     /// Java `MoveToLocationAirShip.runImpl`: the commands of the control panel.
-    pub(crate) fn on_move_to_location_air_ship(&mut self, player: ObjectId, command: i32, param1: i32, param2: i32) {
+    pub(crate) fn on_move_to_location_air_ship(
+        &mut self,
+        player: ObjectId,
+        command: i32,
+        param1: i32,
+        param2: i32,
+    ) {
         if !self.players.contains_key(&player) || !self.is_in_air_ship(player) {
             return;
         }

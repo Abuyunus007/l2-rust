@@ -18,11 +18,11 @@ pub struct PvpConfig {
     /// Key: `ListOfNonDroppableItems`, default `57,1147,425,1146,461,10,2368,7,6,2370,2369,6842,6611,6612,6613,6614,6615,6616,6617,6618,6619,6620,6621,7694,8181,5575,7694,9388,9389,9390`.
     /// TODO(M2-CFG-01): Java also uses this field after reading it (line 69): `karma = KARMA_NONDROPPABLE_ITEMS.split(",");`
     pub karma_nondroppable_items: String,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.pvp.karma_list_nondroppable_pet_items` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 62): `String[] karma = KARMA_NONDROPPABLE_PET_ITEMS.split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     pub karma_list_nondroppable_pet_items: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.pvp.karma_list_nondroppable_items` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 64): `for (int i = 0; i < karma.length; i++) { KARMA_LIST_NONDROPPABLE_PET_ITEMS[i] = Integer.parseInt(karma[i]); }`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     pub karma_list_nondroppable_items: (),
@@ -32,7 +32,7 @@ pub struct PvpConfig {
     pub antifeed_dualbox: bool,
     /// Key: `AntiFeedDisconnectedAsDualbox`, default true.
     pub antifeed_disconnected_as_dualbox: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.pvp.antifeed_interval` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 79): `ANTIFEED_INTERVAL = config.getInt("AntiFeedInterval", 120) * 1000;`
     /// Key: `AntiFeedInterval`, Java default `120` (before the Java post-processing).
     pub antifeed_interval: (),

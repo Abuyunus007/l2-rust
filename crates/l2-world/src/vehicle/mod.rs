@@ -219,10 +219,7 @@ impl Vehicle {
 
     /// Java `getCaptainId()`.
     pub fn captain_id(&self) -> i32 {
-        self.ship
-            .as_ref()
-            .and_then(|s| s.captain)
-            .map_or(0, |c| c.0)
+        self.ship.as_ref().and_then(|s| s.captain).map_or(0, |c| c.0)
     }
 
     /// Java `getHelmObjectId()`.
@@ -363,7 +360,10 @@ impl World {
         for row in &load.airships {
             self.vehicle.licenses.insert(row.owner_id, row.fuel);
         }
-        tracing::info!("AirShipManager: Loaded {} private airships", self.vehicle.licenses.len());
+        tracing::info!(
+            "AirShipManager: Loaded {} private airships",
+            self.vehicle.licenses.len()
+        );
     }
 
     /// The vehicles and the riders.

@@ -11,7 +11,9 @@
 // bypass (`process_script_event`) and the first click (`npc_first_talk_on_click`).
 
 use l2_data::Zones;
-use l2_protocol_game::server::{ActionFailed, ChatType, ExStartScenePlayer, NpcSay, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{
+    ActionFailed, ChatType, ExStartScenePlayer, NpcSay, SystemMessage, SystemMessageParam,
+};
 use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
 use tracing::warn;
@@ -89,8 +91,14 @@ static SOI_TELEPORTS: [&[PathPoint]; 2] = [&SOI_TELEPORT_0, &SOI_TELEPORT_1];
 // ---- SoDController
 static SOD_ARRIVAL: [PathPoint; 1] = [p(-246445, 252331, 4359, 280, 2000)];
 static SOD_DEPART: [PathPoint; 1] = [p(-245245, 251040, 4359, 280, 2000)];
-static SOD_TELEPORT_0: [PathPoint; 2] = [p(-245245, 251040, 4359, 280, 2000), p(-235693, 248843, 5100, 0, 0)];
-static SOD_TELEPORT_1: [PathPoint; 2] = [p(-245245, 251040, 4359, 280, 2000), p(-195357, 233430, 2500, 0, 0)];
+static SOD_TELEPORT_0: [PathPoint; 2] = [
+    p(-245245, 251040, 4359, 280, 2000),
+    p(-235693, 248843, 5100, 0, 0),
+];
+static SOD_TELEPORT_1: [PathPoint; 2] = [
+    p(-245245, 251040, 4359, 280, 2000),
+    p(-195357, 233430, 2500, 0, 0),
+];
 static SOD_TELEPORTS: [&[PathPoint]; 2] = [&SOD_TELEPORT_0, &SOD_TELEPORT_1];
 
 // ---- KeucereusNorthController
@@ -328,7 +336,10 @@ fn validate(def: &'static ControllerDef, zones: Option<&Zones>) -> (Controller, 
         depart_timer: None,
     };
     let Some(zone) = zones.and_then(|z| z.get_of_type(def.dock_zone, "ScriptZone")) else {
-        warn!("{}: Invalid zone {}, controller disabled", def.name, def.dock_zone);
+        warn!(
+            "{}: Invalid zone {}, controller disabled",
+            def.name, def.dock_zone
+        );
         c.busy = true;
         return (c, false);
     };
@@ -429,7 +440,8 @@ impl World {
             v.last_zone_validate = pos;
         }
         for index in 0..self.vehicle.controllers.len() {
-            let Some(zone) = zones.get_of_type(self.vehicle.controllers[index].def.dock_zone, "ScriptZone") else {
+            let Some(zone) = zones.get_of_type(self.vehicle.controllers[index].def.dock_zone, "ScriptZone")
+            else {
                 continue;
             };
             let inside = zone.is_inside_zone(pos.0, pos.1, pos.2);
@@ -627,7 +639,10 @@ impl World {
     fn air_ship_show_result(&mut self, player: ObjectId, npc: ObjectId, result: &str, index: usize) {
         if result.ends_with(".htm") || result.ends_with(".html") {
             // The page is looked up in the folder of the script.
-            let dir = CONTROLLERS[index].html.rsplit_once('/').map_or("", |(dir, _)| dir);
+            let dir = CONTROLLERS[index]
+                .html
+                .rsplit_once('/')
+                .map_or("", |(dir, _)| dir);
             self.air_ship_show_page(player, npc, &format!("{HTML_ROOT}/{dir}/{result}"));
         } else if result.starts_with("<html") {
             self.insert_object_id_and_show_chat_window(npc, player, result);
@@ -671,7 +686,13 @@ impl World {
     }
 
     /// `AirShipController.onEvent`. The result is what `Quest.showResult` gets.
-    fn controller_on_event(&mut self, index: usize, event: &str, npc: ObjectId, player: ObjectId) -> Option<String> {
+    fn controller_on_event(
+        &mut self,
+        index: usize,
+        event: &str,
+        npc: ObjectId,
+        player: ObjectId,
+    ) -> Option<String> {
         use SystemMessageId as M;
         if event.eq_ignore_ascii_case("summon") {
             self.controller_summon(index, npc, player);
@@ -703,7 +724,10 @@ impl World {
             }
             let owner_id = self.clan_id_of(player);
             if self.has_air_ship_license(owner_id) {
-                self.send(player, &SystemMessage::new(M::TheAirshipSummonLicenseHasAlreadyBeenAcquired));
+                self.send(
+                    player,
+                    &SystemMessage::new(M::TheAirshipSummonLicenseHasAlreadyBeenAcquired),
+                );
                 return None;
             }
             if !self.destroy_item_by_item_id(player, LICENSE, 1, true) {
@@ -714,9 +738,7 @@ impl World {
             self.register_air_ship_license(owner_id);
             self.send(
                 player,
-                &SystemMessage::new(
-                    M::TheAirshipSummonLicenseHasBeenEnteredYourClanCanNowSummonTheAirship,
-                ),
+                &SystemMessage::new(M::TheAirshipSummonLicenseHasBeenEnteredYourClanCanNowSummonTheAirship),
             );
             None
         } else {
@@ -789,7 +811,8 @@ impl World {
                         object_id: npc.0,
                         text_type: ChatType::NpcShout.client_id(),
                         npc_id,
-                        npc_string: NpcStringId::TheAirshipHasBeenSummonedItWillAutomaticallyDepartIn5Minutes.id(),
+                        npc_string: NpcStringId::TheAirshipHasBeenSummonedItWillAutomaticallyDepartIn5Minutes
+                            .id(),
                         text: String::new(),
                         parameters: Vec::new(),
                     },

@@ -6,8 +6,8 @@
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ActionFailed, ExMoveToLocationInAirShip, GetOffVehicle, GetOnVehicle,
-    MoveToLocationInVehicle, StopMoveInVehicle, SystemMessage,
+    ActionFailed, ExMoveToLocationInAirShip, GetOffVehicle, GetOnVehicle, MoveToLocationInVehicle,
+    StopMoveInVehicle, SystemMessage,
 };
 use l2_util::ObjectId;
 
@@ -56,8 +56,12 @@ impl World {
             return;
         }
         match input {
-            VehicleInput::GetOn { boat_id, x, y, z } => self.on_request_get_on_vehicle(player, boat_id, (x, y, z)),
-            VehicleInput::GetOff { boat_id, x, y, z } => self.on_request_get_off_vehicle(player, boat_id, (x, y, z)),
+            VehicleInput::GetOn { boat_id, x, y, z } => {
+                self.on_request_get_on_vehicle(player, boat_id, (x, y, z))
+            }
+            VehicleInput::GetOff { boat_id, x, y, z } => {
+                self.on_request_get_off_vehicle(player, boat_id, (x, y, z))
+            }
             VehicleInput::MoveInVehicle {
                 boat_id,
                 target,
@@ -98,7 +102,8 @@ impl World {
         } else {
             let player_pos = self.position_of(player);
             let usable = self.vehicle.boat(boat).is_some_and(|b| {
-                !b.is_moving() && player_pos.is_some_and(|p| distance_3d(p, (b.x, b.y, b.z)) < BOARDING_RADIUS)
+                !b.is_moving()
+                    && player_pos.is_some_and(|p| distance_3d(p, (b.x, b.y, b.z)) < BOARDING_RADIUS)
             });
             if !usable {
                 self.send(player, &ActionFailed);
@@ -188,7 +193,10 @@ impl World {
         origin: (i32, i32, i32),
     ) {
         let is_gm = self.is_gm(player);
-        let not_move_until = self.players.get(&player).map_or(0, |p| p.movement.not_move_until_ms);
+        let not_move_until = self
+            .players
+            .get(&player)
+            .map_or(0, |p| p.movement.not_move_until_ms);
         if self.settings.player_movement_block_time_ms > 0 && !is_gm && not_move_until > self.world_ms() {
             self.send(
                 player,

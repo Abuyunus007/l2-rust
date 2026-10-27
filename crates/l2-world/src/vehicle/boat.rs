@@ -8,8 +8,8 @@
 // the end of its path (`Vehicle.moveToNextRoutePoint` -> `runEngine(10)`), as in Java.
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{ChatType, CreatureSay, PlaySound};
 use l2_protocol_game::server::chat::{SayBody, SenderField};
+use l2_protocol_game::server::{ChatType, CreatureSay, PlaySound};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -34,9 +34,13 @@ impl World {
         }
         for (index, route) in BOAT_ROUTES.iter().enumerate() {
             // `BoatManager.getNewBoat(boatId, x, y, z, heading)`
-            let Some(boat) =
-                self.create_vehicle(VehicleKind::Boat, (route.x, route.y, route.z), route.heading, None, |_| {})
-            else {
+            let Some(boat) = self.create_vehicle(
+                VehicleKind::Boat,
+                (route.x, route.y, route.z),
+                route.heading,
+                None,
+                |_| {},
+            ) else {
                 warn!("{}: no boat could be created.", route.name);
                 continue;
             };
