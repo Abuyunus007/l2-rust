@@ -392,7 +392,7 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 | [M8-CURSED-01](M8/M8-CURSED-01.md) | Cursed weapons | sonnet | full | none | merged |
 | [M8-GAMES-01](M8/M8-GAMES-01.md) | Mini games | sonnet | full | INST-01, GPROTO-11 | merged |
 | [M8-MISC-01](M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | merged |
-| [M8-ADMIN-07](M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | ready |
+| [M8-ADMIN-07](M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | merged |
 | [M8-E2E-01](M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | ready |
 | [M8-RUN-01](M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready |
 

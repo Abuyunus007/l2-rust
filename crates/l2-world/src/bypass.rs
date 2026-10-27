@@ -14,7 +14,7 @@
 // ignored, as Java does.
 //
 // # What is left out, with the system that brings it
-// - The community board, `come_here`, `item_` item scripts, `_match`, `_diary`, `_olympiad`,
+// - The community board, `come_here`, `item_` item scripts, `_match`, `_diary`,
 //   `report` (captcha): later cards. They are accepted by the validation and then only logged.
 //   `manor_menu_select` is the manor's (`manor/npc.rs`, M7-MANOR-01).
 // - `admin_` commands do not use this registry: they go to the `admin` module

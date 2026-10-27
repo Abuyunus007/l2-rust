@@ -27,7 +27,7 @@
 //   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record) is
 //   `offline.rs` (M6-FU-14).
 // - The cursed weapon check, `isSellingBuffs`
-//   (`SellBuffsManager`), the olympiad (M8) and a mount.
+//   (`SellBuffsManager`) and a mount. (The olympiad checks are in: M8-OLY-01.)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{BuyListEntry, SellListEntry, StoreBuyRequestEntry, StoreSellRequestEntry};
@@ -362,7 +362,7 @@ impl World {
                 return false;
             }
         }
-        // `!_inOlympiadMode` (M8) holds for everybody.
+        // `!_inOlympiadMode` (M8-OLY-01) is checked by the callers.
         !self.is_alike_dead(id)
             && !self.is_mounted(id)
             && !self.is_inside_zone(id, ZoneId::NoStore)

@@ -37,7 +37,7 @@
 // with `StoreRecipeShopList` (`PlayerProfile::recipe_shop_to_store`).
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - `isSellingBuffs` (`SellBuffsManager`), the olympiad.
+// - `isSellingBuffs` (`SellBuffsManager`). (The Olympiad exists since M8-OLY-01.)
 // - Offline craft (`OfflineCraftEnable`).
 // - `ItemProcessType` logging (`LogItems`).
 // - The subclass change that re-reads the dwarven book (`restoreRecipeBook(false)`): there is no

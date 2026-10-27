@@ -19,8 +19,8 @@
 // # Left out, with the system that brings it
 // - Cubics are in `cubic.rs` (CUBIC-01). The duel part of `SummonStatus.reduceHp` is
 //   `duel_interrupt_on_summon_hit` in `duel.rs`.
-// - Olympiad, sieges and territory wars (`isSiegeFriend`, `isInOlympiadMode`): M7/M8; they read
-//   as "not in one".
+// - Sieges and territory wars (`isSiegeFriend`) are M7; the Olympiad (`isInOlympiadMode`) is
+//   read from `olympiad/` since M8-OLY-01.
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
 //   protection, `CharSummonTable.restoreServitor`): spawn protection is not modelled. The
 //   `character_summons` row is written and removed exactly like Java, so the Java GS restores it.

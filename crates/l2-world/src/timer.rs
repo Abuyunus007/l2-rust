@@ -224,6 +224,17 @@ impl TimerWheel {
         id
     }
 
+    /// The tick a live timer is due at (Java `ScheduledFuture.getDelay`).
+    pub fn due_of(&self, id: TimerId) -> Option<u64> {
+        if !self.live.contains_key(&id) {
+            return None;
+        }
+        self.queue
+            .iter()
+            .find(|Reverse((_, queued))| *queued == id)
+            .map(|Reverse((due, _))| *due)
+    }
+
     /// Cancels a timer. `false` if it already fired or was cancelled.
     pub fn cancel(&mut self, id: TimerId) -> bool {
         self.live.remove(&id).is_some()

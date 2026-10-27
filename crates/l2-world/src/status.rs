@@ -18,8 +18,7 @@
 // [`World::set_dead`]) is the only one in the world: `World::do_die` sets it, `World::do_revive`
 // clears it (both in `death.rs`, M4-DEATH-01).
 //
-// Left out, with the card that brings it: the olympiad
-// part of the player's status broadcast, the tutorial quest hooks, summons and pets (M5), the
+// Left out, with the card that brings it: the tutorial quest hooks, summons and pets (M5), the
 // festival, siege and clan hall regeneration modifiers (no such state yet), `isSitting()` (sitting
 // is not modelled), and the champion regeneration (champions are not rolled).
 
