@@ -9,7 +9,9 @@
 // a player here (summons are M6), so that branch is left out.
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{NpcHtmlMessage, ShowCalculator, ShowMiniMap, ShowXMasSeal, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{
+    NpcHtmlMessage, ShowCalculator, ShowMiniMap, ShowXMasSeal, SystemMessage, SystemMessageParam,
+};
 use l2_util::ObjectId;
 
 use crate::player::ItemData;
@@ -38,7 +40,12 @@ impl World {
 
     /// Java `SpecialXMas.onItemUse`: `ShowXMasSeal(item.getId())`.
     pub(crate) fn special_xmas_on_use(&mut self, id: ObjectId, item: &ItemData) -> bool {
-        self.send(id, &ShowXMasSeal { item_id: item.item_id });
+        self.send(
+            id,
+            &ShowXMasSeal {
+                item_id: item.item_id,
+            },
+        );
         true
     }
 
@@ -64,7 +71,8 @@ impl World {
         );
         self.send(
             id,
-            &SystemMessage::new(SystemMessageId::S1HasDisappeared).with(SystemMessageParam::ItemName(item.item_id)),
+            &SystemMessage::new(SystemMessageId::S1HasDisappeared)
+                .with(SystemMessageParam::ItemName(item.item_id)),
         );
         true
     }

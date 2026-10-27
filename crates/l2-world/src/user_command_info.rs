@@ -153,15 +153,27 @@ impl World {
         let (header, list): (_, Vec<i32>) = match command {
             CLAN_WARS_ATTACK_COMMAND => (
                 SystemMessageId::ClansYouVeDeclaredWarOn,
-                declared.iter().copied().filter(|c| !attackers.contains(c)).collect(),
+                declared
+                    .iter()
+                    .copied()
+                    .filter(|c| !attackers.contains(c))
+                    .collect(),
             ),
             CLAN_WARS_UNDER_ATTACK_COMMAND => (
                 SystemMessageId::ClansThatHaveDeclaredWarOnYou,
-                attackers.iter().copied().filter(|c| !declared.contains(c)).collect(),
+                attackers
+                    .iter()
+                    .copied()
+                    .filter(|c| !declared.contains(c))
+                    .collect(),
             ),
             _ => (
                 SystemMessageId::WarList,
-                declared.iter().copied().filter(|c| attackers.contains(c)).collect(),
+                declared
+                    .iter()
+                    .copied()
+                    .filter(|c| attackers.contains(c))
+                    .collect(),
             ),
         };
         self.send(id, &SystemMessage::new(header));
@@ -173,7 +185,9 @@ impl World {
             let message = if other.ally_id > 0 {
                 SystemMessage::new(SystemMessageId::S1S2Alliance)
                     .with(SystemMessageParam::Text(other.name.clone()))
-                    .with(SystemMessageParam::Text(other.ally_name.clone().unwrap_or_default()))
+                    .with(SystemMessageParam::Text(
+                        other.ally_name.clone().unwrap_or_default(),
+                    ))
             } else {
                 SystemMessage::new(SystemMessageId::S1NoAllianceExists)
                     .with(SystemMessageParam::Text(other.name.clone()))
@@ -241,7 +255,10 @@ mod tests {
     fn server_time_is_h_mm_dot() {
         assert_eq!(server_time_text(0), "0:00.");
         assert_eq!(server_time_text(9 * 3_600_000 + 7 * 60_000 + 59_000), "9:07.");
-        assert_eq!(server_time_text(86_400_000 + 23 * 3_600_000 + 59 * 60_000), "23:59.");
+        assert_eq!(
+            server_time_text(86_400_000 + 23 * 3_600_000 + 59 * 60_000),
+            "23:59."
+        );
     }
 
     #[test]
@@ -251,7 +268,9 @@ mod tests {
             "<html><body><center><table width=270 border=0 bgcolor=111111><tr><td width=170>Penalty</td><td width=100 align=center>Expiration Date</td></tr></table><table width=270 border=0><tr><td width=170>No penalty is imposed.</td><td width=100 align=center></td></tr></table><img src=\"L2UI.SquareWhite\" width=270 height=1></center></body></html>"
         );
         let html = clan_penalty_html(&[("Unable to join a clan.", 1_793_108_709_000)]);
-        assert!(html.contains("<td width=170>Unable to join a clan.</td><td width=100 align=center>2026-10-2"));
+        assert!(
+            html.contains("<td width=170>Unable to join a clan.</td><td width=100 align=center>2026-10-2")
+        );
         assert!(!html.contains("No penalty is imposed."));
     }
 }

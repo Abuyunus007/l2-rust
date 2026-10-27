@@ -264,7 +264,8 @@ fn time_shows_the_game_time() {
         first[0].id,
         SystemMessageId::TheCurrentTimeIsS1S2 | SystemMessageId::TheCurrentTimeIsS1S22
     ));
-    let [SystemMessageParam::Text(hour), SystemMessageParam::Text(minute)] = first[0].params.as_slice() else {
+    let [SystemMessageParam::Text(hour), SystemMessageParam::Text(minute)] = first[0].params.as_slice()
+    else {
         panic!("{:?}", first[0].params);
     };
     assert!(hour.parse::<u32>().unwrap() < 24);
@@ -370,7 +371,9 @@ fn siege_status_is_refused_without_a_siege() {
         let out = s.user_command(player, 99);
         assert_eq!(
             messages(&out).iter().map(|m| m.id).collect::<Vec<_>>(),
-            vec![SystemMessageId::OnlyAClanLeaderThatIsANoblesseCanViewTheSiegeWarStatusWindowDuringASiegeWar]
+            vec![
+                SystemMessageId::OnlyAClanLeaderThatIsANoblesseCanViewTheSiegeWarStatusWindowDuringASiegeWar
+            ]
         );
     }
 }
@@ -388,20 +391,38 @@ fn player_help_shows_a_help_page() {
     let mut s = Scene::new();
     let handlers = BypassHandlers::default();
     let handler = handlers.get("player_help rules.htm").unwrap();
-    assert!(handler(&mut s.world, ObjectId(ME), "player_help rules.htm#57", None));
+    assert!(handler(
+        &mut s.world,
+        ObjectId(ME),
+        "player_help rules.htm#57",
+        None
+    ));
     let page = html(&s.log.take()).pop().unwrap();
     assert_eq!((page.npc_obj_id, page.item_id), (0, 57));
     assert!(page.html.contains("Rules"));
 
     // A missing page is Java's "My Text is missing" page; `..` and a short command show nothing.
-    assert!(handler(&mut s.world, ObjectId(ME), "player_help nothing.htm", None));
+    assert!(handler(
+        &mut s.world,
+        ObjectId(ME),
+        "player_help nothing.htm",
+        None
+    ));
     let page = html(&s.log.take()).pop().unwrap();
-    assert!(page.html.contains("My Text is missing:<br>data/html/help/nothing.htm"));
+    assert!(
+        page.html
+            .contains("My Text is missing:<br>data/html/help/nothing.htm")
+    );
     assert!(!handler(&mut s.world, ObjectId(ME), "player_help ../x.htm", None));
     assert!(!handler(&mut s.world, ObjectId(ME), "player_help", None));
     assert!(s.log.take().is_empty());
     // A bad item id is an exception Java logs; the handler still reports success.
-    assert!(handler(&mut s.world, ObjectId(ME), "player_help rules.htm#x", None));
+    assert!(handler(
+        &mut s.world,
+        ObjectId(ME),
+        "player_help rules.htm#x",
+        None
+    ));
     assert!(s.log.take().is_empty());
 }
 
@@ -420,7 +441,12 @@ fn tutorial_close_and_quest_list() {
     s.log.take();
     let quest_list = handlers.get("questlist").unwrap();
     assert!(!quest_list(&mut s.world, ObjectId(ME), "questlist", None));
-    assert!(!quest_list(&mut s.world, ObjectId(ME), "questlist", Some(villager)));
+    assert!(!quest_list(
+        &mut s.world,
+        ObjectId(ME),
+        "questlist",
+        Some(villager)
+    ));
     assert!(s.log.take().is_empty());
     assert!(quest_list(&mut s.world, ObjectId(ME), "questlist", Some(guide)));
     assert_eq!(names(&s.log.take()), ["EX_SHOW_QUEST_INFO"]);
@@ -445,5 +471,9 @@ fn an_artefact_is_targeted_and_never_talks() {
     assert_eq!(s.world.target_of(ObjectId(ME)), Some(artefact));
     let out = s.log.take();
     assert!(html(&out).is_empty(), "{:?}", names(&out));
-    assert!(!names(&out).contains(&"MOVE_TO_PAWN".to_owned()), "{:?}", names(&out));
+    assert!(
+        !names(&out).contains(&"MOVE_TO_PAWN".to_owned()),
+        "{:?}",
+        names(&out)
+    );
 }

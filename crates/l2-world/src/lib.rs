@@ -43,6 +43,7 @@ pub mod formulas;
 pub mod fort;
 pub mod friends;
 pub mod ground_item;
+mod handler_registry;
 pub mod henna;
 pub mod ids;
 pub mod instance;
@@ -127,7 +128,6 @@ pub use clanhall::{
 };
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
-pub use user_command_info::UserCommandInfoSettings;
 pub use community_board::{
     CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };
@@ -253,6 +253,7 @@ pub use trade::{
     OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
     restorable_store_type,
 };
+pub use user_command_info::UserCommandInfoSettings;
 pub use vehicle::{
     AirshipRow, PathPoint, Rider, ShipState, Vehicle, VehicleInput, VehicleKind, VehicleLoad,
     VehicleSettings, VehicleTimer, VehicleWorld, VehicleWrite,

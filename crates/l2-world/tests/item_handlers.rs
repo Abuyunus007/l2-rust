@@ -958,7 +958,10 @@ fn a_bypass_item_shows_its_page() {
     s.use_item(0x100);
     let sent = s.me.take();
     let page: NpcHtmlMessage = decode(of(&sent, ServerOpcode::NpcHtmlMessage)[0]);
-    assert!(page.html.contains("My Text is missing:<br>data/html/item/5002.htm"));
+    assert!(
+        page.html
+            .contains("My Text is missing:<br>data/html/item/5002.htm")
+    );
 }
 
 /// `SpecialXMas`: `ShowXMasSeal(item id)`; `SevenSignsRecord`: the Seven Signs status, page 1.

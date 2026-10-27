@@ -21,7 +21,8 @@ pub(crate) fn register(handlers: &mut BypassHandlers) {
 /// `new StringTokenizer(path).nextToken()`: the first run of characters that are not
 /// `" \t\n\r\f"`.
 fn first_token(text: &str) -> Option<&str> {
-    text.split([' ', '\t', '\n', '\r', '\u{c}']).find(|t| !t.is_empty())
+    text.split([' ', '\t', '\n', '\r', '\u{c}'])
+        .find(|t| !t.is_empty())
 }
 
 /// What `PlayerHelp` shows for a command: the page under `data/html/help/` and the item id of the
@@ -47,16 +48,24 @@ fn player_help_target(command: &str) -> Result<Option<(&str, i32)>, String> {
     }
     let page = parts.first().copied().unwrap_or("");
     if parts.len() > 1 {
-        let item = parts[1]
-            .parse::<i32>()
-            .map_err(|_| format!("java.lang.NumberFormatException: For input string: \"{}\"", parts[1]))?;
+        let item = parts[1].parse::<i32>().map_err(|_| {
+            format!(
+                "java.lang.NumberFormatException: For input string: \"{}\"",
+                parts[1]
+            )
+        })?;
         return Ok(Some((page, item)));
     }
     Ok(Some((page, 0)))
 }
 
 /// Java `PlayerHelp.onCommand`.
-fn player_help_handler(world: &mut World, player: ObjectId, command: &str, _target: Option<ObjectId>) -> bool {
+fn player_help_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    _target: Option<ObjectId>,
+) -> bool {
     match player_help_target(command) {
         Ok(None) => false,
         Ok(Some((page, item_id))) => {
@@ -80,7 +89,12 @@ fn player_help_handler(world: &mut World, player: ObjectId, command: &str, _targ
 }
 
 /// Java `TutorialClose.onCommand`.
-fn tutorial_close_handler(world: &mut World, player: ObjectId, _command: &str, _target: Option<ObjectId>) -> bool {
+fn tutorial_close_handler(
+    world: &mut World,
+    player: ObjectId,
+    _command: &str,
+    _target: Option<ObjectId>,
+) -> bool {
     world.send(player, &TutorialCloseHtml);
     false
 }
@@ -105,8 +119,14 @@ mod tests {
     fn player_help_reads_the_page_and_the_item() {
         assert_eq!(player_help_target("player_help"), Ok(None));
         assert_eq!(player_help_target("player_help a.htm"), Ok(Some(("a.htm", 0))));
-        assert_eq!(player_help_target("player_help a.htm#57"), Ok(Some(("a.htm", 57))));
-        assert_eq!(player_help_target("player_help a.htm  more"), Ok(Some(("a.htm", 0))));
+        assert_eq!(
+            player_help_target("player_help a.htm#57"),
+            Ok(Some(("a.htm", 57)))
+        );
+        assert_eq!(
+            player_help_target("player_help a.htm  more"),
+            Ok(Some(("a.htm", 0)))
+        );
         // A trailing `#` is dropped by `String.split`.
         assert_eq!(player_help_target("player_help a.htm#"), Ok(Some(("a.htm", 0))));
         assert_eq!(player_help_target("player_help ../x.htm"), Ok(None));

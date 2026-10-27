@@ -90,7 +90,10 @@ mod tests {
         let packet = ShowXMasSeal { item_id: 5555 };
         let bytes = packet.to_bytes();
         assert_eq!(bytes, vec![0xF8, 0xB3, 0x15, 0, 0]);
-        assert_eq!(ShowXMasSeal::decode(&mut PacketReader::new(&bytes[1..])).unwrap(), packet);
+        assert_eq!(
+            ShowXMasSeal::decode(&mut PacketReader::new(&bytes[1..])).unwrap(),
+            packet
+        );
     }
 
     #[test]

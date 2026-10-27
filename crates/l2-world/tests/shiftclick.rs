@@ -10,8 +10,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    DoorTemplates, HtmCache, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions,
-    StaticObjectTemplates,
+    DoorTemplates, HtmCache, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions, StaticObjectTemplates,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
@@ -293,7 +292,8 @@ impl Scene {
         let ids = Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap());
         world.set_id_factory(Arc::clone(&ids));
         world.set_class_list(Arc::new(
-            l2_data::ClassList::from_xml(r#"<list><class classId="0" name="Human Fighter"/></list>"#).unwrap(),
+            l2_data::ClassList::from_xml(r#"<list><class classId="0" name="Human Fighter"/></list>"#)
+                .unwrap(),
         ));
         let npcs = Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap());
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
@@ -439,10 +439,18 @@ fn the_ai_rows_follow_has_ai() {
     let html = html_to(&out, GM).pop().unwrap();
     if s.world.has_ai(ghoul) {
         assert!(html.contains("<font color=FFAA00>Intention:</font></td><td align=right width=170>"));
-        assert!(html.contains("<font color=FFAA00>AI</font></td><td align=right width=170>AttackableAI</td>"));
+        assert!(
+            html.contains("<font color=FFAA00>AI</font></td><td align=right width=170>AttackableAI</td>")
+        );
         assert!(html.contains("<font color=FFAA00>AIType</font></td><td align=right width=170>FIGHTER</td>"));
-        assert!(html.contains("<font color=FFAA00>Clan & Range:</font></td><td align=right width=170> 400</td>"));
-        assert!(html.contains("<font color=FFAA00>Ignore & Range:</font></td><td align=right width=170> 300</td>"));
+        assert!(
+            html.contains("<font color=FFAA00>Clan & Range:</font></td><td align=right width=170> 400</td>")
+        );
+        assert!(
+            html.contains(
+                "<font color=FFAA00>Ignore & Range:</font></td><td align=right width=170> 300</td>"
+            )
+        );
     } else {
         assert!(html.contains("[][][][][][]"), "no AI: six empty rows in {html}");
     }
@@ -482,7 +490,10 @@ fn the_shipped_pages_are_filled_completely() {
     let mut s = Scene::new(&npcinfo, &doorinfo);
     let ghoul = s.npc(GHOUL);
     let html = html_to(&s.action(GM, ghoul, 1), GM).pop().unwrap();
-    assert!(left_over_placeholders(&html).is_empty(), "left over placeholders in {html}");
+    assert!(
+        left_over_placeholders(&html).is_empty(),
+        "left over placeholders in {html}"
+    );
     assert!(html.contains("Npc Info"));
 
     let door = s.world.doors().next().unwrap().object_id;
@@ -503,7 +514,9 @@ fn a_gm_shift_click_on_a_door() {
     let html_at = names.iter().position(|n| n == "NPC_HTML_MESSAGE").unwrap();
     assert!(info_at < html_at);
     assert_eq!(names.last().map(String::as_str), Some("ACTION_FAIL"));
-    let info = decoded::<StaticObjectInfo>(&out, GM, "STATIC_OBJECT").pop().unwrap();
+    let info = decoded::<StaticObjectInfo>(&out, GM, "STATIC_OBJECT")
+        .pop()
+        .unwrap();
     assert_eq!(info.object_id, door.0);
     assert!(info.targetable);
 
