@@ -525,9 +525,7 @@ impl World {
 
     /// Java `Player.isInOlympiadMode()`.
     pub fn is_in_olympiad_mode(&self, id: ObjectId) -> bool {
-        self.players
-            .get(&id)
-            .is_some_and(|p| p.olympiad.in_olympiad_mode)
+        self.players.get(&id).is_some_and(|p| p.olympiad.in_olympiad_mode)
     }
 
     /// Java `Player.isOlympiadStart()`.

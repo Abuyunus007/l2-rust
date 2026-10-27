@@ -234,7 +234,12 @@ impl OlympiadRepository {
 
     /// Java `getClassLeaderBoard(classId)`: up to ten names, of the last period's copy when
     /// `monthly` (`OlympiadShowMonthlyWinners`), else of the current table.
-    pub async fn class_leader_board(&self, class_id: i32, monthly: bool, min_matches: i32) -> Result<Vec<String>> {
+    pub async fn class_leader_board(
+        &self,
+        class_id: i32,
+        monthly: bool,
+        min_matches: i32,
+    ) -> Result<Vec<String>> {
         let soul_hound = class_id == MALE_SOUL_HOUND;
         let query = match (monthly, soul_hound) {
             (true, true) => CLASS_LEADER_SOULHOUND,

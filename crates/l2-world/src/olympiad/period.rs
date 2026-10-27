@@ -17,8 +17,8 @@ use crate::world::{World, unix_ms_now};
 
 /// Java `Olympiad.HERO_IDS`: the third classes that get a hero.
 pub(crate) const HERO_IDS: [i32; 35] = [
-    88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
-    110, 111, 112, 113, 114, 115, 116, 117, 118, 131, 132, 133, 134,
+    88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
+    111, 112, 113, 114, 115, 116, 117, 118, 131, 132, 133, 134,
 ];
 
 const SECOND_MS: i64 = 1_000;
@@ -450,7 +450,8 @@ impl World {
         let old = self.olympiad.olympiad_end_task.take();
         self.cancel_olympiad_timer(old);
         let delay = self.millis_to_olympiad_end();
-        self.olympiad.olympiad_end_task = Some(self.schedule_olympiad_timer(OlympiadTimer::OlympiadEnd, delay));
+        self.olympiad.olympiad_end_task =
+            Some(self.schedule_olympiad_timer(OlympiadTimer::OlympiadEnd, delay));
 
         self.update_comp_status();
     }
@@ -460,7 +461,10 @@ impl World {
         let milli_to_start = self.millis_to_comp_begin();
         let (days, hours, mins) = countdown(milli_to_start);
         info!("Olympiad System: Competition Period Starts in {days} days, {hours} hours and {mins} mins.");
-        info!("Olympiad System: Event starts/started: {}", self.olympiad.comp_start);
+        info!(
+            "Olympiad System: Event starts/started: {}",
+            self.olympiad.comp_start
+        );
         // NOTE(java-quirk): the task of an earlier `init()` is not cancelled; it checks
         // `isOlympiadEnd()` when it runs.
         self.schedule_olympiad_timer(OlympiadTimer::CompStart, milli_to_start);
@@ -720,7 +724,8 @@ impl World {
         self.save_olympiad_status();
         self.update_monthly_data();
 
-        self.olympiad.data.validation_end = self.olympiad_now_ms() + self.olympiad.settings.validation_period_ms;
+        self.olympiad.data.validation_end =
+            self.olympiad_now_ms() + self.olympiad.settings.validation_period_ms;
 
         // `loadNoblesRank()` reads the copy `updateMonthlyData` just made of the nobles.
         // D-53: with the switch off the Java game server hands the passes out (it writes the
@@ -730,7 +735,8 @@ impl World {
             self.load_nobles_rank(&classified);
         }
         let delay = self.millis_to_validation_end();
-        self.olympiad.validation_task = Some(self.schedule_olympiad_timer(OlympiadTimer::ValidationEnd, delay));
+        self.olympiad.validation_task =
+            Some(self.schedule_olympiad_timer(OlympiadTimer::ValidationEnd, delay));
     }
 
     /// `GET_ALL_CLASSIFIED_NOBLESS` on the copy of the nobles: enough matches, by points, matches
@@ -946,7 +952,11 @@ impl World {
 
     /// Java `getRemainingWeeklyMatchesClassed(objId)`.
     pub fn remaining_weekly_matches_classed(&self, char_id: i32) -> i32 {
-        let done = self.olympiad.nobles.get(&char_id).map_or(0, |n| n.comp_done_week_classed);
+        let done = self
+            .olympiad
+            .nobles
+            .get(&char_id)
+            .map_or(0, |n| n.comp_done_week_classed);
         (self.olympiad.settings.max_weekly_matches_classed - done).max(0)
     }
 
@@ -962,7 +972,11 @@ impl World {
 
     /// Java `getRemainingWeeklyMatchesTeam(objId)`.
     pub fn remaining_weekly_matches_team(&self, char_id: i32) -> i32 {
-        let done = self.olympiad.nobles.get(&char_id).map_or(0, |n| n.comp_done_week_team);
+        let done = self
+            .olympiad
+            .nobles
+            .get(&char_id)
+            .map_or(0, |n| n.comp_done_week_team);
         (self.olympiad.settings.max_weekly_matches_team - done).max(0)
     }
 }
@@ -979,10 +993,7 @@ mod tests {
     fn the_calendar_knows_the_weekday_and_the_month_end() {
         // 2026-10-27 is a Tuesday (DAY_OF_WEEK 3).
         let day = days_from_civil(2026, 10, 27);
-        let cal = Cal {
-            day,
-            time_of_day: 0,
-        };
+        let cal = Cal { day, time_of_day: 0 };
         assert_eq!(cal.day_of_week(), 3);
         let mut jan = Cal {
             day: days_from_civil(2027, 1, 31),
@@ -992,7 +1003,10 @@ mod tests {
         assert_eq!(civil_from_days(jan.day), (2027, 2, 28));
         jan.set_first_of_month();
         jan.set_hour_zero(12);
-        assert_eq!(jan.millis(&utc), days_from_civil(2027, 2, 1) * DAY_MS + 12 * HOUR_MS + 123);
+        assert_eq!(
+            jan.millis(&utc),
+            days_from_civil(2027, 2, 1) * DAY_MS + 12 * HOUR_MS + 123
+        );
     }
 
     #[test]

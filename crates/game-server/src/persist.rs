@@ -113,14 +113,15 @@ use l2_world::{
     StoredPunishment, SummonWrite,
 };
 use l2_world::{
-    NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows, OlympiadWrite,
-};
-use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
 use l2_world::{ItemAuctionRecord, ItemAuctionWrite};
 use l2_world::{MinigameLoad, MinigameWrite};
+use l2_world::{
+    NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows,
+    OlympiadWrite,
+};
 use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -5115,7 +5116,10 @@ impl PlayerStore for DbStore {
             OlympiadWrite::SaveNobles(nobles) => {
                 // Java writes one statement per noble and logs the failed ones.
                 for (char_id, noble) in nobles {
-                    if let Err(e) = repo.save_noble(&olympiad_noble_row(*char_id, noble), noble.to_save).await {
+                    if let Err(e) = repo
+                        .save_noble(&olympiad_noble_row(*char_id, noble), noble.to_save)
+                        .await
+                    {
                         error!("Olympiad System: Failed to save noble data for charId {char_id}: {e}");
                     }
                 }
@@ -5133,8 +5137,12 @@ impl PlayerStore for DbStore {
             OlympiadWrite::DeleteNobles => repo.delete_nobles().await?,
             OlympiadWrite::UpdateMonthlyData => repo.update_monthly_data().await?,
             OlympiadWrite::UnclaimedPoints { char_id, points } => {
-                repo.store_unclaimed_points(*char_id, l2_world::olympiad::UNCLAIMED_OLYMPIAD_PASSES_VAR, *points)
-                    .await?
+                repo.store_unclaimed_points(
+                    *char_id,
+                    l2_world::olympiad::UNCLAIMED_OLYMPIAD_PASSES_VAR,
+                    *points,
+                )
+                .await?
             }
             OlympiadWrite::Fight(fight) => {
                 repo.insert_fight(&l2_db::OlympiadFightRow {

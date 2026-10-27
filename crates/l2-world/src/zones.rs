@@ -478,7 +478,9 @@ impl World {
             return;
         }
         // `OlympiadStadiumZone.isAffected`: only the creatures of the stadium's instance.
-        if matches!(ZoneKind::of(&zone.zone_type), ZoneKind::OlympiadStadium) && !self.stadium_takes(zone.id, id) {
+        if matches!(ZoneKind::of(&zone.zone_type), ZoneKind::OlympiadStadium)
+            && !self.stadium_takes(zone.id, id)
+        {
             return;
         }
         let Some(player) = self.players.get_mut(&id) else {

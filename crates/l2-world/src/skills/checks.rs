@@ -426,7 +426,10 @@ impl World {
 
         // Observer mode (M8-OLY-01).
         if self.in_observer_mode(id) {
-            self.send(id, &SystemMessage::new(SystemMessageId::ObserversCannotParticipate));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::ObserversCannotParticipate),
+            );
             self.abort_cast(id);
             self.send(id, &ActionFailed);
             return false;

@@ -17,7 +17,9 @@ use std::sync::Arc;
 use l2_data::{NpcLoadOptions, NpcTemplates, SpawnData};
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode, ExOlympiadUserInfo};
+use l2_protocol_game::server::{
+    ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode, ExOlympiadUserInfo,
+};
 use l2_world::*;
 use party_scene::*;
 
@@ -197,7 +199,10 @@ fn the_olympiad_loads_its_stadiums_and_starts_the_competition() {
     let mut s = olympiad_scene(false);
     // `init()`: today's competition runs (18:00 + 6 h), the start task fires at once.
     assert_eq!(s.world.olympiad().comp_start(), BASE - 30 * MINUTE);
-    assert_eq!(s.world.olympiad().comp_end(), BASE - 30 * MINUTE + 6 * 60 * MINUTE);
+    assert_eq!(
+        s.world.olympiad().comp_end(),
+        BASE - 30 * MINUTE + 6 * 60 * MINUTE
+    );
     assert!(!s.world.olympiad().in_comp_period());
     noble(&mut s, P1, "Alpha", DUELIST);
     s.log.take();
@@ -213,12 +218,18 @@ fn the_olympiad_loads_its_stadiums_and_starts_the_competition() {
     assert_eq!(s.world.instance(stadium.instance_id).unwrap().template_id, 147);
     // A non-noble is refused, a noble gets the waiting list.
     s.enter(P3, "Gamma");
-    assert!(!s.world.olympiad_register_noble(id(P3), CompetitionType::NonClassed));
+    assert!(
+        !s.world
+            .olympiad_register_noble(id(P3), CompetitionType::NonClassed)
+    );
     assert_eq!(
         message_ids(&s.log.take(), P3),
         [SystemMessageId::C1DoesNotMeetTheParticipationRequirementsOnlyNoblesseCharactersCanParticipateInTheOlympiad]
     );
-    assert!(s.world.olympiad_register_noble(id(P1), CompetitionType::NonClassed));
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P1), CompetitionType::NonClassed)
+    );
     assert!(!s.world.olympiad_register_noble(id(P1), CompetitionType::Classed));
     assert_eq!(
         message_ids(&s.log.take(), P1),
@@ -229,7 +240,10 @@ fn the_olympiad_loads_its_stadiums_and_starts_the_competition() {
     );
     // The new noble starts with `OlympiadStartPoints`, written with INSERT later.
     let noble_stats = s.world.olympiad().noble(P1).unwrap();
-    assert_eq!((noble_stats.points, noble_stats.class_id, noble_stats.to_save), (10, DUELIST, true));
+    assert_eq!(
+        (noble_stats.points, noble_stats.class_id, noble_stats.to_save),
+        (10, DUELIST, true)
+    );
     // Unregister, then the user command.
     assert!(s.world.olympiad_unregister_noble(id(P1)));
     s.input(P1, ClientInput::UserCommand { id: 109 });
@@ -332,12 +346,24 @@ fn a_classed_match_runs_from_the_registration_to_the_points() {
     assert_eq!((result.win_team, result.lose_team), (1, 2));
     assert_eq!(result.winner_name, name_of(one));
     // `pointDiff = min(10, 10) / OlympiadDividerClassed (5)`.
-    assert_eq!((result.winners[0].current_points, result.winners[0].diff_points), (12, 2));
-    assert_eq!((result.losers[0].current_points, result.losers[0].diff_points), (8, -2));
+    assert_eq!(
+        (result.winners[0].current_points, result.winners[0].diff_points),
+        (12, 2)
+    );
+    assert_eq!(
+        (result.losers[0].current_points, result.losers[0].diff_points),
+        (8, -2)
+    );
     let alpha = s.world.olympiad().noble(one).unwrap().clone();
     let beta = s.world.olympiad().noble(two).unwrap().clone();
     assert_eq!(
-        (alpha.points, alpha.comp_done, alpha.comp_won, alpha.comp_done_week, alpha.comp_done_week_classed),
+        (
+            alpha.points,
+            alpha.comp_done,
+            alpha.comp_won,
+            alpha.comp_done_week,
+            alpha.comp_done_week_classed
+        ),
         (12, 1, 1, 1, 1)
     );
     assert_eq!((beta.points, beta.comp_done, beta.comp_lost), (8, 1, 1));
@@ -350,7 +376,10 @@ fn a_classed_match_runs_from_the_registration_to_the_points() {
     assert_eq!(writes.len(), 1);
     match &writes[0] {
         OlympiadWrite::Fight(f) => {
-            assert_eq!((f.char_one_id, f.char_two_id, f.winner, f.classed), (one, two, 1, true));
+            assert_eq!(
+                (f.char_one_id, f.char_two_id, f.winner, f.classed),
+                (one, two, 1, true)
+            );
             assert_eq!((f.char_one_class, f.char_two_class), (DUELIST, DUELIST));
         }
         other => panic!("{other:?}"),
@@ -394,8 +423,14 @@ fn a_non_classed_match_that_times_out_is_a_tie() {
     noble(&mut s, P1, "Alpha", DUELIST);
     noble(&mut s, P2, "Beta", 89);
     s.ticks(2);
-    assert!(s.world.olympiad_register_noble(id(P1), CompetitionType::NonClassed));
-    assert!(s.world.olympiad_register_noble(id(P2), CompetitionType::NonClassed));
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P1), CompetitionType::NonClassed)
+    );
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P2), CompetitionType::NonClassed)
+    );
     secs(&mut s, 31);
     assert_eq!(
         s.world.olympiad().stadiums()[0].task.game.as_ref().unwrap().kind,
@@ -419,7 +454,11 @@ fn a_non_classed_match_that_times_out_is_a_tie() {
     let writes = olympiad_writes(&s);
     assert!(matches!(
         writes.as_slice(),
-        [OlympiadWrite::Fight(OlympiadFight { winner: 0, classed: false, .. })]
+        [OlympiadWrite::Fight(OlympiadFight {
+            winner: 0,
+            classed: false,
+            ..
+        })]
     ));
     assert_eq!(s.inventory_count(P1, 57), 0);
 }
@@ -431,7 +470,10 @@ fn a_spectator_watches_a_match_and_leaves() {
     noble(&mut s, P2, "Beta", DUELIST);
     s.enter_at(P3, "Gamma", 20, (X - 3_000, Y - 400, Z));
     let home3 = s.world.position_of(id(P3)).unwrap();
-    let manager = s.world.spawn_npc_at(OLYMPIAD_MANAGER, X - 3_050, Y - 400, Z, 0).unwrap();
+    let manager = s
+        .world
+        .spawn_npc_at(OLYMPIAD_MANAGER, X - 3_050, Y - 400, Z, 0)
+        .unwrap();
     s.ticks(2);
     s.world.olympiad_register_noble(id(P1), CompetitionType::Classed);
     s.world.olympiad_register_noble(id(P2), CompetitionType::Classed);
@@ -458,7 +500,11 @@ fn a_spectator_watches_a_match_and_leaves() {
     let list: ExOlympiadMatchList = decode_ex(of(&sent, P3, "EX_RECEIVE_OLYMPIAD")[0]);
     assert_eq!(list.games.len(), 1);
     assert_eq!(
-        (list.games[0].stadium_id, list.games[0].game_kind, list.games[0].state),
+        (
+            list.games[0].stadium_id,
+            list.games[0].game_kind,
+            list.games[0].state
+        ),
         (0, 2, 2)
     );
     let mut names = [list.games[0].player_1.clone(), list.games[0].player_2.clone()];
@@ -579,7 +625,9 @@ fn the_period_end_with_cycle_database_writes_on() {
     s.log.take();
     secs(&mut s, 61);
     // `OlympiadEndTask`: the message, the period, the heroes to be.
-    assert!(message_ids(&s.log.take(), P1).contains(&SystemMessageId::RoundS1OfTheGrandOlympiadGamesHasNowEnded));
+    assert!(
+        message_ids(&s.log.take(), P1).contains(&SystemMessageId::RoundS1OfTheGrandOlympiadGamesHasNowEnded)
+    );
     let data = s.world.olympiad().data();
     assert_eq!((data.period, data.current_cycle), (1, 3));
     assert_eq!(data.validation_end, BASE + MINUTE + 2 * MINUTE);
@@ -598,7 +646,11 @@ fn the_period_end_with_cycle_database_writes_on() {
     assert!(matches!(writes[1], OlympiadWrite::SaveNobles(_)));
     assert!(matches!(
         writes[2],
-        OlympiadWrite::SaveData(OlympiadData { period: 1, current_cycle: 3, .. })
+        OlympiadWrite::SaveData(OlympiadData {
+            period: 1,
+            current_cycle: 3,
+            ..
+        })
     ));
     assert_eq!(writes[3], OlympiadWrite::UpdateMonthlyData);
     // The ranking of the three classified nobles (15 matches or more), best first: 0x10 (150),
@@ -720,7 +772,10 @@ fn the_class_ranking_and_the_passes_are_read_again() {
     .unwrap();
     s.world
         .set_html_cache(Arc::new(l2_data::HtmCache::load(root.path(), false)));
-    let manager = s.world.spawn_npc_at(OLYMPIAD_MANAGER, X - 3_050, Y, Z, 0).unwrap();
+    let manager = s
+        .world
+        .spawn_npc_at(OLYMPIAD_MANAGER, X - 3_050, Y, Z, 0)
+        .unwrap();
     s.ticks(2);
     // The ranking page of a class: Java reads the table, so the world asks for it.
     talk(&mut s, P1, manager);

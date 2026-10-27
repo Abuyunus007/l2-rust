@@ -96,7 +96,11 @@ impl World {
     }
 
     fn task_mut(&mut self, index: usize) -> Option<&mut GameTask> {
-        self.olympiad.stadiums.as_mut()?.get_mut(index).map(|s| &mut s.task)
+        self.olympiad
+            .stadiums
+            .as_mut()?
+            .get_mut(index)
+            .map(|s| &mut s.task)
     }
 
     /// Java `attachGame(game)`: the task starts (`ThreadPool.execute(this)`).
@@ -137,8 +141,11 @@ impl World {
             GameState::TeleportToArena => {
                 let count_down = self.task(index).map_or(0, |t| t.count_down);
                 if count_down > 0 {
-                    let message = SystemMessage::new(SystemMessageId::YouWillBeMovedToTheOlympiadStadiumInS1SecondS)
-                        .with(SystemMessageParam::IntNumber(i32::try_from(count_down).unwrap_or(0)));
+                    let message =
+                        SystemMessage::new(SystemMessageId::YouWillBeMovedToTheOlympiadStadiumInS1SecondS)
+                            .with(SystemMessageParam::IntNumber(
+                                i32::try_from(count_down).unwrap_or(0),
+                            ));
                     self.game_broadcast(index, &message);
                 }
                 if let Some(task) = self.task_mut(index) {
@@ -242,7 +249,9 @@ impl World {
                 let count_down = self.task(index).map_or(0, |t| t.count_down);
                 if count_down > 0 {
                     let message = SystemMessage::new(SystemMessageId::YouWillBeMovedBackToTownInS1SecondS)
-                        .with(SystemMessageParam::IntNumber(i32::try_from(count_down).unwrap_or(0)));
+                        .with(SystemMessageParam::IntNumber(
+                            i32::try_from(count_down).unwrap_or(0),
+                        ));
                     self.game_broadcast(index, &message);
                 }
                 if let Some(task) = self.task_mut(index) {
@@ -279,8 +288,9 @@ impl World {
     fn match_will_start_message(&mut self, index: usize) {
         let count_down = self.task(index).map_or(0, |t| t.count_down);
         if count_down > 0 {
-            let message = SystemMessage::new(SystemMessageId::TheMatchWillStartInS1SecondS)
-                .with(SystemMessageParam::IntNumber(i32::try_from(count_down).unwrap_or(0)));
+            let message = SystemMessage::new(SystemMessageId::TheMatchWillStartInS1SecondS).with(
+                SystemMessageParam::IntNumber(i32::try_from(count_down).unwrap_or(0)),
+            );
             self.stadium_broadcast(index, &message);
         }
     }
@@ -327,7 +337,10 @@ impl World {
         if self.game_check_battle_status(index) && self.game_make_competition_start(index) {
             // "game successfully started"
             self.game_broadcast_olympiad_info(index);
-            self.stadium_broadcast(index, &SystemMessage::new(SystemMessageId::TheMatchHasStartedFight));
+            self.stadium_broadcast(
+                index,
+                &SystemMessage::new(SystemMessageId::TheMatchHasStartedFight),
+            );
             self.stadium_update_zone_status(index);
             return true;
         }
@@ -458,8 +471,12 @@ impl World {
                     CompetitionType::NonClassed => {
                         NpcStringId::OlympiadClassFreeIndividualMatchIsGoingToBeginInArenaS1InAMoment
                     }
-                    CompetitionType::Classed => NpcStringId::OlympiadClassIndividualMatchIsGoingToBeginInArenaS1InAMoment,
-                    CompetitionType::Teams => NpcStringId::OlympiadClassFreeTeamMatchIsGoingToBeginInArenaS1InAMoment,
+                    CompetitionType::Classed => {
+                        NpcStringId::OlympiadClassIndividualMatchIsGoingToBeginInArenaS1InAMoment
+                    }
+                    CompetitionType::Teams => {
+                        NpcStringId::OlympiadClassFreeTeamMatchIsGoingToBeginInArenaS1InAMoment
+                    }
                 };
                 let arena = (stadium_id + 1).to_string();
                 let mut managers: Vec<ObjectId> = self

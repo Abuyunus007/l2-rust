@@ -115,7 +115,8 @@ impl World {
             let target = self.acting_player(selected);
             if target.is_none_or(|t| {
                 self.is_in_olympiad_mode(t)
-                    && (!self.is_olympiad_start(player) || self.olympiad_game_id(player) != self.olympiad_game_id(t))
+                    && (!self.is_olympiad_start(player)
+                        || self.olympiad_game_id(player) != self.olympiad_game_id(t))
             }) {
                 // "If Player is in Olympia and the match isn't already start"
                 self.send(player, &ActionFailed);

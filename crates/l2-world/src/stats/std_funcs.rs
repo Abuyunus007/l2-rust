@@ -418,7 +418,11 @@ fn enchant_hp(func: &Func, view: &StatView<'_>, init: f64) -> f64 {
     // `getOlyEnchantLevel()`: capped in olympiad mode (`OlympiadEnchantLimit`, M8-OLY-01).
     let limit = view.settings().olympiad_enchant_limit;
     let mut enchant_level = item.enchant_level;
-    if view.is_player() && view.world().is_in_olympiad_mode(view.object_id()) && limit >= 0 && enchant_level > limit {
+    if view.is_player()
+        && view.world().is_in_olympiad_mode(view.object_id())
+        && limit >= 0
+        && enchant_level > limit
+    {
         enchant_level = limit;
     }
     let bonus = data.enchant_hp_bonus.hp_bonus(

@@ -167,7 +167,10 @@ impl World {
 
         // The olympiad (M8-OLY-01).
         if self.is_in_olympiad_mode(partner) || self.is_in_olympiad_mode(id) {
-            self.send_message(id, "A user currently participating in the Olympiad cannot accept or request a trade.");
+            self.send_message(
+                id,
+                "A user currently participating in the Olympiad cannot accept or request a trade.",
+            );
             return;
         }
 

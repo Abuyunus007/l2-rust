@@ -207,7 +207,10 @@ impl World {
             .get(index)
             .is_some_and(|s| s.task.game.is_some() && s.task.is_battle_started())
         {
-            self.send(id, &SystemMessage::new(SystemMessageId::YouHaveEnteredACombatZone));
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::YouHaveEnteredACombatZone),
+            );
             self.game_send_olympiad_info(index, id);
         }
         // "only participants, observers and GMs allowed"
@@ -287,7 +290,12 @@ impl World {
         let Ok(index) = usize::try_from(state.game_id) else {
             return;
         };
-        if !self.olympiad.stadiums().get(index).is_some_and(|s| s.task.is_battle_started()) {
+        if !self
+            .olympiad
+            .stadiums()
+            .get(index)
+            .is_some_and(|s| s.task.is_battle_started())
+        {
             return;
         }
         let (Some(p), Some(view)) = (self.players.get(&id), self.stats(id)) else {
@@ -325,7 +333,12 @@ impl World {
         let Ok(index) = usize::try_from(state.game_id) else {
             return;
         };
-        if !self.olympiad.stadiums().get(index).is_some_and(|s| s.task.is_battle_started()) {
+        if !self
+            .olympiad
+            .stadiums()
+            .get(index)
+            .is_some_and(|s| s.task.is_battle_started())
+        {
             return;
         }
         let tick = self.tick;

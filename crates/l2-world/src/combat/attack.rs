@@ -130,7 +130,10 @@ impl World {
         if self.is_player(id) {
             // Observer mode (M8-OLY-01).
             if self.in_observer_mode(id) {
-                self.send(id, &SystemMessage::new(SystemMessageId::ObserversCannotParticipate));
+                self.send(
+                    id,
+                    &SystemMessage::new(SystemMessageId::ObserversCannotParticipate),
+                );
                 self.send(id, &ActionFailed);
                 return;
             }

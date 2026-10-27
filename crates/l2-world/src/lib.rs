@@ -131,12 +131,6 @@ pub use craft::{
 pub use cursed::{
     CursedInput, CursedLoad, CursedRow, CursedSettings, CursedTimer, CursedWeapon, CursedWrite,
 };
-pub use olympiad::{
-    CompetitionType, GameState, HeroToBe, NobleRow, NobleStats, OlympiadData, OlympiadFight, OlympiadGame,
-    OlympiadInput, OlympiadLoad, OlympiadRereadAction, OlympiadRereadRequest, OlympiadRereadRows,
-    OlympiadRereadThen, OlympiadSettings, OlympiadTimer, OlympiadWorld, OlympiadWrite, Participant,
-    PlayerOlympiad, Stadium,
-};
 pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,
     WorldSettings,
@@ -190,6 +184,12 @@ pub use movement::{
 pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
+pub use olympiad::{
+    CompetitionType, GameState, HeroToBe, NobleRow, NobleStats, OlympiadData, OlympiadFight, OlympiadGame,
+    OlympiadInput, OlympiadLoad, OlympiadRereadAction, OlympiadRereadRequest, OlympiadRereadRows,
+    OlympiadRereadThen, OlympiadSettings, OlympiadTimer, OlympiadWorld, OlympiadWrite, Participant,
+    PlayerOlympiad, Stadium,
+};
 pub use outbox::{ControlRequest, ItemRowOp, LsEvent, Outbox, PacketSink, PersistCommand};
 pub use party::{
     CommandChannelId, CommandChannelWorld, MatchingWorld, PartyExpType, PartyId, PartyMessageType,

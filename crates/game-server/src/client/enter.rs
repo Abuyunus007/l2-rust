@@ -1202,7 +1202,9 @@ impl ClientSession {
             ClientPacket::RequestOlympiadObserverEnd(_) => {
                 ClientInput::Olympiad(l2_world::OlympiadInput::ObserverEnd)
             }
-            ClientPacket::RequestOlympiadMatchList(_) => ClientInput::Olympiad(l2_world::OlympiadInput::MatchList),
+            ClientPacket::RequestOlympiadMatchList(_) => {
+                ClientInput::Olympiad(l2_world::OlympiadInput::MatchList)
+            }
             ClientPacket::RequestExOlympiadMatchListRefresh(_) => {
                 ClientInput::Olympiad(l2_world::OlympiadInput::MatchListRefresh)
             }

@@ -133,7 +133,9 @@ impl OlympiadGame {
 
     fn real_mut(&mut self) -> impl Iterator<Item = &mut Participant> {
         let (one, two) = (self.team_one_size, self.team_two_size);
-        self.team_one[..one].iter_mut().chain(self.team_two[..two].iter_mut())
+        self.team_one[..one]
+            .iter_mut()
+            .chain(self.team_two[..two].iter_mut())
     }
 }
 
@@ -144,7 +146,13 @@ impl World {
     }
 
     pub(crate) fn olympiad_game_mut(&mut self, index: usize) -> Option<&mut OlympiadGame> {
-        self.olympiad.stadiums.as_mut()?.get_mut(index)?.task.game.as_mut()
+        self.olympiad
+            .stadiums
+            .as_mut()?
+            .get_mut(index)?
+            .task
+            .game
+            .as_mut()
     }
 
     /// Java `new Participant(player, side)`.
@@ -154,7 +162,11 @@ impl World {
         Participant {
             object_id: player.0,
             player: Some(player),
-            name: self.players.get(&player).map(|p| p.data.name.clone()).unwrap_or_default(),
+            name: self
+                .players
+                .get(&player)
+                .map(|p| p.data.name.clone())
+                .unwrap_or_default(),
             side,
             base_class: self.olympiad_base_class(player),
             disconnected: false,
@@ -311,8 +323,14 @@ impl World {
                 team_one_players.clear();
                 continue;
             }
-            let t1: Vec<Participant> = team_one_players.iter().map(|p| self.new_participant(*p, 1)).collect();
-            let t2: Vec<Participant> = team_two_players.iter().map(|p| self.new_participant(*p, 2)).collect();
+            let t1: Vec<Participant> = team_one_players
+                .iter()
+                .map(|p| self.new_participant(*p, 1))
+                .collect();
+            let t2: Vec<Participant> = team_two_players
+                .iter()
+                .map(|p| self.new_participant(*p, 2))
+                .collect();
             return Some(self.teams_game(index, t1, t2));
         }
         None
@@ -394,7 +412,11 @@ impl World {
     fn update_player(&mut self, index: usize, team: usize, slot: usize) -> Option<ObjectId> {
         let id = {
             let game = self.olympiad_game(index)?;
-            let par = if team == 0 { game.team_one.get(slot)? } else { game.team_two.get(slot)? };
+            let par = if team == 0 {
+                game.team_one.get(slot)?
+            } else {
+                game.team_two.get(slot)?
+            };
             (par.object_id, par.player)
         };
         let online = self.olympiad_online(ObjectId(id.0));
@@ -461,7 +483,10 @@ impl World {
 
     /// `broadcastPacket(packet)`: to the participants (each `updatePlayer()` first).
     pub(crate) fn game_broadcast(&mut self, index: usize, packet: &impl l2_net::Encode) {
-        let Some((one, two)) = self.olympiad_game(index).map(|g| (g.team_one_size, g.team_two_size)) else {
+        let Some((one, two)) = self
+            .olympiad_game(index)
+            .map(|g| (g.team_one_size, g.team_two_size))
+        else {
             return;
         };
         let bytes = packet.to_bytes();
@@ -532,8 +557,10 @@ impl World {
 
     /// `checkDefaulted(player)`: the message for the opponents, `None` when the player may fight.
     fn check_defaulted_player(&mut self, player: Option<ObjectId>) -> Option<SystemMessage> {
-        let cancelled = SystemMessageId::YourOpponentMadeHasteWithTheirTailBetweenTheirLegsTheMatchHasBeenCancelled;
-        let requirements = SystemMessageId::YourOpponentDoesNotMeetTheRequirementsToDoBattleTheMatchHasBeenCancelled;
+        let cancelled =
+            SystemMessageId::YourOpponentMadeHasteWithTheirTailBetweenTheirLegsTheMatchHasBeenCancelled;
+        let requirements =
+            SystemMessageId::YourOpponentDoesNotMeetTheRequirementsToDoBattleTheMatchHasBeenCancelled;
         let Some(player) = player.filter(|p| self.players.contains_key(p)) else {
             return Some(SystemMessage::new(cancelled));
         };
@@ -545,7 +572,11 @@ impl World {
         if self.in_observer_mode(player) {
             return Some(SystemMessage::new(requirements));
         }
-        let name = self.players.get(&player).map(|p| p.data.name.clone()).unwrap_or_default();
+        let name = self
+            .players
+            .get(&player)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
         let own = if self.is_dead(player) {
             Some(
                 SystemMessage::new(SystemMessageId::C1IsCurrentlyDeadAndCannotParticipateInTheOlympiad)
@@ -559,7 +590,10 @@ impl World {
                 .with(SystemMessageParam::PlayerName(name)),
             )
         } else if self.is_cursed_weapon_equipped(player) {
-            let item = self.players.get(&player).map_or(0, |p| p.cursed_weapon_equipped_id);
+            let item = self
+                .players
+                .get(&player)
+                .map_or(0, |p| p.cursed_weapon_equipped_id);
             Some(
                 SystemMessage::new(
                     SystemMessageId::C1DoesNotMeetTheParticipationRequirementsTheOwnerOfS2CannotParticipateInTheOlympiad,
@@ -614,7 +648,9 @@ impl World {
                 .olympiad_game(index)
                 .is_none_or(|g| g.team_one[0].defaulted || g.team_two[0].defaulted);
         }
-        let Some((one_size, two_size)) = self.olympiad_game(index).map(|g| (g.team_one_size, g.team_two_size))
+        let Some((one_size, two_size)) = self
+            .olympiad_game(index)
+            .map(|g| (g.team_one_size, g.team_two_size))
         else {
             return true;
         };
@@ -696,7 +732,9 @@ impl World {
             return false;
         };
         if spawns.is_empty() {
-            warn!("portPlayersToArena: the stadium {index} has no spawn (java.lang.IndexOutOfBoundsException)");
+            warn!(
+                "portPlayersToArena: the stadium {index} has no spawn (java.lang.IndexOutOfBoundsException)"
+            );
             return false;
         }
         let offset = spawns.len() / 2;
@@ -711,7 +749,10 @@ impl World {
             }
             for (i, par) in game.team_two[..game.team_two_size].iter().enumerate() {
                 let Some(loc) = spawns.get(i + offset).copied() else {
-                    warn!("portPlayersToArena: java.lang.IndexOutOfBoundsException: Index {}", i + offset);
+                    warn!(
+                        "portPlayersToArena: java.lang.IndexOutOfBoundsException: Index {}",
+                        i + offset
+                    );
                     return false;
                 };
                 result &= self.port_player_to_arena(index, par, loc);
@@ -772,7 +813,9 @@ impl World {
         // Remove shot automation.
         self.disable_auto_shots_all(player);
         // Discharge any active shots.
-        if let Some(weapon) = self.paperdoll_object(player, l2_protocol_game::server::charscreen::paperdoll::RHAND) {
+        if let Some(weapon) =
+            self.paperdoll_object(player, l2_protocol_game::server::charscreen::paperdoll::RHAND)
+        {
             self.un_charge_all_shots(weapon);
         }
         // "enable skills with cool time <= 15 minutes"
@@ -799,7 +842,11 @@ impl World {
         let Some(view) = self.stats(player) else {
             return;
         };
-        let (cp, hp, mp) = (f64::from(view.max_cp()), f64::from(view.max_hp()), f64::from(view.max_mp()));
+        let (cp, hp, mp) = (
+            f64::from(view.max_cp()),
+            f64::from(view.max_hp()),
+            f64::from(view.max_mp()),
+        );
         self.set_current_cp(player, cp, true);
         self.set_current_hp(player, hp, true);
         self.set_current_mp(player, mp, true);
@@ -884,7 +931,10 @@ impl World {
                 .filter_map(ok)
                 .collect()
         } else {
-            [&game.team_one[0], &game.team_two[0]].into_iter().filter_map(ok).collect()
+            [&game.team_one[0], &game.team_two[0]]
+                .into_iter()
+                .filter_map(ok)
+                .collect()
         }
     }
 
@@ -1034,7 +1084,8 @@ impl World {
         }
         if game.is_teams() {
             let all_gone = |team: &[Participant]| team.iter().all(|p| p.disconnected);
-            return !all_gone(&game.team_one[..game.team_one_size]) && !all_gone(&game.team_two[..game.team_two_size]);
+            return !all_gone(&game.team_one[..game.team_one_size])
+                && !all_gone(&game.team_two[..game.team_two_size]);
         }
         let ok = |par: &Participant| par.player.is_some() && !par.disconnected;
         ok(&game.team_one[0]) && ok(&game.team_two[0])
@@ -1061,12 +1112,8 @@ impl World {
         }
         // Java's `catch (Exception)` around each: a missing player has lost.
         let lost = |par: &Participant| match par.player {
-            Some(p) if self.players.contains_key(&p) => {
-                if self.olympiad_game_id(p) == game_id {
-                    self.is_dead(p)
-                } else {
-                    true
-                }
+            Some(p) if self.players.contains_key(&p) && self.olympiad_game_id(p) == game_id => {
+                self.is_dead(p)
             }
             _ => true,
         };
@@ -1179,7 +1226,10 @@ impl World {
             return;
         };
         for [item_id, count] in reward {
-            if self.add_item(player, *item_id, i64::from(*count), false).is_none() {
+            if self
+                .add_item(player, *item_id, i64::from(*count), false)
+                .is_none()
+            {
                 continue;
             }
             self.send(
@@ -1561,7 +1611,9 @@ impl World {
                     self.remove_points_from_participant(index, par, points_two[i]);
                     // NOTE(java-quirk): the second team's entries show the first team's points.
                     let Some(&shown) = points_one.get(i) else {
-                        warn!("Exception on validateWinner(): java.lang.ArrayIndexOutOfBoundsException: Index {i}");
+                        warn!(
+                            "Exception on validateWinner(): java.lang.ArrayIndexOutOfBoundsException: Index {i}"
+                        );
                         return;
                     };
                     let current = self.noble_points(par.object_id);
@@ -1581,7 +1633,10 @@ impl World {
                     && let Some(p) = par.player.filter(|p| world.players.contains_key(p))
                     && !world.is_dead(p)
                 {
-                    let hp = world.players.get(&p).map_or(0.0, |pl| pl.core.cur_hp + pl.core.cur_cp);
+                    let hp = world
+                        .players
+                        .get(&p)
+                        .map_or(0.0, |pl| pl.core.cur_hp + pl.core.cur_cp);
                     if hp >= 0.5 {
                         total += hp;
                     }
@@ -1602,7 +1657,9 @@ impl World {
                 let player = self.olympiad_game(index).and_then(|g| g.team_one[slot].player);
                 self.reward_participant(player, &reward);
             }
-        } else if (one_hp == 0.0 && two_hp != 0.0) || (damage_two > damage_one && one_hp != 0.0 && two_hp != 0.0) {
+        } else if (one_hp == 0.0 && two_hp != 0.0)
+            || (damage_two > damage_one && one_hp != 0.0 && two_hp != 0.0)
+        {
             self.win_message(index, &two[0].name);
             self.team_loses(index, &one, &points_one, damage_one, &mut list1);
             self.team_wins(index, &two, win_points, damage_two, &mut list2);

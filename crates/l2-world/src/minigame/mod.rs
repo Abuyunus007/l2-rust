@@ -449,20 +449,19 @@ impl World {
     // ------------------------------------------------------------------ the olympiad (M8-OLY-01)
 
     /// Java `Player.isInOlympiadMode()`.
-    // M8-OLY-01: the olympiad is not ported yet; this answers false until it is.
-    pub(crate) fn minigame_in_olympiad_mode(&self, _id: ObjectId) -> bool {
-        false
+    pub(crate) fn minigame_in_olympiad_mode(&self, id: ObjectId) -> bool {
+        self.is_in_olympiad_mode(id)
     }
 
     /// Java `OlympiadManager.getInstance().isRegistered(player)`.
-    // M8-OLY-01: the olympiad is not ported yet; this answers false until it is.
-    pub(crate) fn minigame_olympiad_registered(&self, _id: ObjectId) -> bool {
-        false
+    pub(crate) fn minigame_olympiad_registered(&self, id: ObjectId) -> bool {
+        self.olympiad_is_registered(id)
     }
 
     /// Java `OlympiadManager.getInstance().unRegisterNoble(player)`.
-    // M8-OLY-01: nothing to unregister until the olympiad is ported.
-    pub(crate) fn minigame_olympiad_unregister(&mut self, _id: ObjectId) {}
+    pub(crate) fn minigame_olympiad_unregister(&mut self, id: ObjectId) {
+        self.olympiad_unregister_noble(id);
+    }
 
     // ------------------------------------------------------------------ small helpers
 

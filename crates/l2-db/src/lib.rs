@@ -44,7 +44,6 @@ pub use game::{
 pub use game::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
-pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use game::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
@@ -69,6 +68,7 @@ pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
+pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SevenSignsRepository, SevenSignsRow, SevenSignsStatusRow};

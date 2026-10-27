@@ -15,7 +15,10 @@ const REGISTRATION_CLOSE_MS: i64 = 600_000;
 
 impl World {
     fn olympiad_player_name(&self, id: ObjectId) -> String {
-        self.players.get(&id).map(|p| p.data.name.clone()).unwrap_or_default()
+        self.players
+            .get(&id)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default()
     }
 
     /// Java `getBaseClass()`.
@@ -25,7 +28,9 @@ impl World {
 
     /// Java `isSubClassActive()` (`_classIndex > 0`).
     pub(crate) fn olympiad_subclass_active(&self, id: ObjectId) -> bool {
-        self.players.get(&id).is_some_and(|p| p.data.profile.class_index > 0)
+        self.players
+            .get(&id)
+            .is_some_and(|p| p.data.profile.class_index > 0)
     }
 
     /// Java `isNoble()`.
@@ -62,7 +67,8 @@ impl World {
 
     /// `hasEnoughRegisteredNonClassed()`.
     pub(crate) fn has_enough_registered_non_classed(&self) -> bool {
-        self.olympiad.non_class_based.len() >= usize::try_from(self.olympiad.settings.non_classed).unwrap_or(0)
+        self.olympiad.non_class_based.len()
+            >= usize::try_from(self.olympiad.settings.non_classed).unwrap_or(0)
     }
 
     /// `hasEnoughRegisteredTeams()`.
@@ -160,7 +166,8 @@ impl World {
             };
             self.send(
                 to,
-                &SystemMessage::new(id).with(SystemMessageParam::PlayerName(self.olympiad_player_name(noble))),
+                &SystemMessage::new(id)
+                    .with(SystemMessageParam::PlayerName(self.olympiad_player_name(noble))),
             );
             return true;
         }
@@ -222,7 +229,9 @@ impl World {
                 self.olympiad.non_class_based.push(char_id);
                 self.send(
                     player,
-                    &SystemMessage::new(SystemMessageId::YouAreCurrentlyRegisteredForA1v1ClassIrrelevantMatch),
+                    &SystemMessage::new(
+                        SystemMessageId::YouAreCurrentlyRegisteredForA1v1ClassIrrelevantMatch,
+                    ),
                 );
             }
             CompetitionType::Teams => {
@@ -262,8 +271,9 @@ impl World {
                     self.send_message(player, "Your team must have at least 10 points in total.");
                     return false;
                 }
-                let message =
-                    SystemMessage::new(SystemMessageId::YouAreCurrentlyRegisteredForA3Vs3ClassIrrelevantTeamMatch);
+                let message = SystemMessage::new(
+                    SystemMessageId::YouAreCurrentlyRegisteredForA3Vs3ClassIrrelevantTeamMatch,
+                );
                 for member in &members {
                     self.send(*member, &message);
                 }
@@ -317,7 +327,12 @@ impl World {
             self.send(noble, &removed);
             return true;
         }
-        if let Some(index) = self.olympiad.teams_based.iter().position(|team| team.contains(&obj)) {
+        if let Some(index) = self
+            .olympiad
+            .teams_based
+            .iter()
+            .position(|team| team.contains(&obj))
+        {
             let team = self.olympiad.teams_based.remove(index);
             self.announce_unreg_to_team(&team);
             return true;
@@ -340,7 +355,11 @@ impl World {
     pub(crate) fn olympiad_remove_disconnected_competitor(&mut self, player: ObjectId) {
         let game_id = self.olympiad_game_id(player);
         if let Some(index) = usize::try_from(game_id).ok()
-            && self.olympiad.stadiums().get(index).is_some_and(|s| s.task.is_game_started())
+            && self
+                .olympiad
+                .stadiums()
+                .get(index)
+                .is_some_and(|s| s.task.is_game_started())
         {
             self.olympiad_handle_disconnect(index, player);
         }
@@ -356,7 +375,12 @@ impl World {
             list.remove(index);
             return;
         }
-        if let Some(index) = self.olympiad.teams_based.iter().position(|team| team.contains(&obj)) {
+        if let Some(index) = self
+            .olympiad
+            .teams_based
+            .iter()
+            .position(|team| team.contains(&obj))
+        {
             let team = self.olympiad.teams_based.remove(index);
             self.announce_unreg_to_team(&team);
         }
@@ -401,7 +425,10 @@ impl World {
             return false;
         }
         if self.is_cursed_weapon_equipped(noble) {
-            let item = self.players.get(&noble).map_or(0, |p| p.cursed_weapon_equipped_id);
+            let item = self
+                .players
+                .get(&noble)
+                .map_or(0, |p| p.cursed_weapon_equipped_id);
             self.send(
                 player,
                 &SystemMessage::new(
@@ -440,9 +467,11 @@ impl World {
         if self.noble_points(char_id) <= 0 {
             let origin = self.players.get(&player).map_or(0, |p| p.talk.last_origin());
             let noble_origin = self.players.get(&noble).map_or(0, |p| p.talk.last_origin());
-            if let Some(mut html) =
-                self.html_from_file(player, origin, &format!("{OLYMPIAD_HTML_PATH}noble_nopoints1.htm"))
-            {
+            if let Some(mut html) = self.html_from_file(
+                player,
+                origin,
+                &format!("{OLYMPIAD_HTML_PATH}noble_nopoints1.htm"),
+            ) {
                 html.html = html.html.replace("%objectId%", &noble_origin.to_string());
                 self.send_html(player, &html);
             }
@@ -454,7 +483,9 @@ impl World {
 
     /// Java `getCountOpponents()`.
     pub fn olympiad_count_opponents(&self) -> usize {
-        self.olympiad.non_class_based.len() + self.olympiad.class_based.len() + self.olympiad.teams_based.len()
+        self.olympiad.non_class_based.len()
+            + self.olympiad.class_based.len()
+            + self.olympiad.teams_based.len()
     }
 
     /// `party.removePartyMember(player, PartyMessageType.EXPELLED)`.

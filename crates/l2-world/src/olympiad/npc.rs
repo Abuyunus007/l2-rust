@@ -39,8 +39,8 @@ const ALLOWED_BUFFS: [(i32, i32); 10] = [
 
 /// The classes of the ranking page (`OlympiadManagerLink`'s `switch (playerClass)`).
 const RANKING_CLASSES: [i32; 36] = [
-    88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
-    110, 111, 112, 113, 114, 115, 116, 117, 118, 131, 132, 133, 134, 136,
+    88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110,
+    111, 112, 113, 114, 115, 116, 117, 118, 131, 132, 133, 134, 136,
 ];
 
 /// The multisells of the rewards (`olympiadnoble 7` and `8`).
@@ -81,7 +81,12 @@ fn is_olympiad_manager(world: &World, npc: ObjectId) -> bool {
 }
 
 /// Java `OlympiadManagerLink.onCommand`.
-fn manager_link_handler(world: &mut World, player: ObjectId, command: &str, target: Option<ObjectId>) -> bool {
+fn manager_link_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     let Some(npc) = target.filter(|t| is_olympiad_manager(world, *t)) else {
         return false;
     };
@@ -105,7 +110,12 @@ fn manager_link_handler(world: &mut World, player: ObjectId, command: &str, targ
 }
 
 /// Java `OlympiadObservation.onCommand`.
-fn observation_handler(world: &mut World, player: ObjectId, command: &str, _target: Option<ObjectId>) -> bool {
+fn observation_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    _target: Option<ObjectId>,
+) -> bool {
     let manager = world.players.get(&player).and_then(|p| p.talk.last_folk_npc);
     if command.starts_with("watchmatch") {
         if !world.olympiad.in_comp_period {
@@ -169,7 +179,8 @@ fn observation_handler(world: &mut World, player: ObjectId, command: &str, _targ
 impl World {
     /// A page of the olympiad folder with `%objectId%` of the NPC.
     fn olympiad_page(&mut self, player: ObjectId, npc: ObjectId, file: &str, replace: &[(&str, String)]) {
-        let Some(mut html) = self.html_from_file(player, npc.0, &format!("{OLYMPIAD_HTML_PATH}{file}")) else {
+        let Some(mut html) = self.html_from_file(player, npc.0, &format!("{OLYMPIAD_HTML_PATH}{file}"))
+        else {
             return;
         };
         for (key, value) in replace {
@@ -199,14 +210,17 @@ impl World {
             self.olympiad_page(player, npc, "noble_cursed_weapon.htm", &[]);
             return false;
         }
-        if self.players.get(&player).is_some_and(|p| p.data.profile.class_index != 0) {
+        if self
+            .players
+            .get(&player)
+            .is_some_and(|p| p.data.profile.class_index != 0)
+        {
             self.olympiad_page(player, npc, "noble_sub.htm", &[object_id]);
             return false;
         }
-        let class_level = self
-            .players
-            .get(&player)
-            .map_or(0, |p| l2_data::ClassId(u16::try_from(p.data.class_id).unwrap_or(0)).class_level());
+        let class_level = self.players.get(&player).map_or(0, |p| {
+            l2_data::ClassId(u16::try_from(p.data.class_id).unwrap_or(0)).class_level()
+        });
         if !self.is_noble(player) || class_level < 3 {
             self.olympiad_page(player, npc, "noble_thirdclass.htm", &[object_id]);
             return false;
@@ -369,12 +383,17 @@ impl World {
     /// Sends a read to the persistence task; the answer comes back as
     /// `WorldCommand::OlympiadReread`.
     fn olympiad_reread(&mut self, request: OlympiadRereadRequest, then: OlympiadRereadThen) {
-        self.outbox.persist(PersistCommand::OlympiadRereadRequest { request, then });
+        self.outbox
+            .persist(PersistCommand::OlympiadRereadRequest { request, then });
     }
 
     /// The answer of an Olympiad read (D-15, D-50): a failed read shows nothing and hands nothing
     /// out.
-    pub(crate) fn on_olympiad_reread(&mut self, result: Result<OlympiadRereadRows, ()>, then: OlympiadRereadThen) {
+    pub(crate) fn on_olympiad_reread(
+        &mut self,
+        result: Result<OlympiadRereadRows, ()>,
+        then: OlympiadRereadThen,
+    ) {
         let OlympiadRereadThen { player, npc, action } = then;
         if !self.players.contains_key(&player) {
             return;
@@ -394,7 +413,8 @@ impl World {
                     replace.push((format!("%rank{index}%"), rank));
                 }
                 replace.push(("%objectId%".to_owned(), npc.0.to_string()));
-                let replace: Vec<(&str, String)> = replace.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
+                let replace: Vec<(&str, String)> =
+                    replace.iter().map(|(k, v)| (k.as_str(), v.clone())).collect();
                 self.olympiad_page(player, npc, "olympiad_ranking.htm", &replace);
             }
             (OlympiadRereadAction::LastPoints, OlympiadRereadRows::Points(points)) => {
@@ -402,7 +422,10 @@ impl World {
                     player,
                     npc,
                     "noble_points2.htm",
-                    &[("%points%", points.to_string()), ("%objectId%", npc.0.to_string())],
+                    &[
+                        ("%points%", points.to_string()),
+                        ("%objectId%", npc.0.to_string()),
+                    ],
                 );
             }
             (action, OlympiadRereadRows::Passes(value)) => {
