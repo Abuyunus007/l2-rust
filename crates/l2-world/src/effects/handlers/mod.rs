@@ -66,6 +66,7 @@ mod params;
 mod physical_damage;
 mod player_slots;
 mod recovery;
+mod refuel_airship;
 mod relax;
 mod restoration;
 mod restoration_random;
@@ -217,6 +218,8 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Grow", grow::Grow::create);
     registry.register("NevitsHourglass", nevits_hourglass::NevitsHourglass::create);
     registry.register("OpenChest", open_chest::OpenChest::create);
+    // M8-VEHICLE-01: the fuel of the air ship the caster rides.
+    registry.register("RefuelAirship", refuel_airship::RefuelAirship::create);
     registry.register("RestorationRandom", restoration_random::RestorationRandom::create);
     registry.register("Resurrection", resurrection::Resurrection::create);
     registry.register("ResurrectionSpecial", resurrection::ResurrectionSpecial::create);

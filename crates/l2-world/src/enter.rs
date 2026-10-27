@@ -793,8 +793,9 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
     let speed = |value: f64| crate::stats::java_round(value / move_multiplier) as i32;
     let attack_element = view.attack_element();
     let defense = |element: i8| view.defense_element_value(element) as i16;
-    // `isMounted() || airShipHelm != 0 ? 0 : getEnchantEffect()`
-    let enchant_effect = if view.is_mounted() {
+    // `isMounted() || airShipHelm != 0 ? 0 : getEnchantEffect()`; the helm item is the one of
+    // the air ship the player steers (`vehicle/airship.rs`)
+    let enchant_effect = if view.is_mounted() || world.air_ship_helm_item(core.object_id) != 0 {
         0
     } else {
         slots[paperdoll::RHAND].map_or(0, |w| w.enchant_level.min(127))
@@ -803,7 +804,8 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         x: core.x,
         y: core.y,
         z: core.z,
-        vehicle_id: 0,
+        // `getVehicle() != null ? getVehicle().getObjectId() : 0`
+        vehicle_id: world.rider_vehicle_id(core.object_id),
         object_id: core.object_id.0,
         // `appearance.getVisibleName()`: a form (the cursed weapons) can rename the player.
         name: player

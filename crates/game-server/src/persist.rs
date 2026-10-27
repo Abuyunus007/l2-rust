@@ -63,6 +63,7 @@ use l2_db::InstanceTimeRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
+use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{BookmarkRepository, BookmarkRow, ContactRepository};
@@ -75,7 +76,6 @@ use l2_db::{
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
     VariableRepository,
 };
-use l2_db::{CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::InstanceTimeWrite;
@@ -93,6 +93,7 @@ use l2_world::territory::{
     TerritoryLoad, TerritoryRecord, TerritoryRegistrationRecord, TerritoryRows, TerritorySpawnRecord,
     TerritoryWrite,
 };
+use l2_world::{AirshipRow, CursedLoad, CursedRow, CursedWrite, VehicleLoad, VehicleWrite};
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
@@ -104,7 +105,6 @@ use l2_world::{
     RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
     StoredPunishment, SummonWrite,
 };
-use l2_world::{CursedLoad, CursedRow, CursedWrite};
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
@@ -320,6 +320,14 @@ pub trait PlayerStore: Send + 'static {
     fn store_manor_write(
         &mut self,
         _write: &ManorWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// An `airships` write with Java's statement (M8-VEHICLE-01).
+    fn store_vehicle_write(
+        &mut self,
+        _write: &VehicleWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1106,6 +1114,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on ("Unable to store manor data!").
                 if let Err(e) = store.store_manor_write(&write).await {
                     error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Vehicle(write)) => {
+                // Java logs a failed statement and goes on.
+                if let Err(e) = store.store_vehicle_write(&write).await {
+                    error!("AirShipManager: Could not write the airships table ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Cursed(write)) => {
@@ -2011,6 +2025,25 @@ fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
         player_pk_kills: row.player_pk_kills,
         nb_kills: row.nb_kills,
         end_time: row.end_time,
+    }
+}
+
+/// Java `AirShipManager.load()`: the rows of `airships` (M8-VEHICLE-01).
+pub async fn load_airships(pool: &Pool) -> VehicleLoad {
+    match AirshipRepository::new(pool.clone()).all().await {
+        Ok(rows) => VehicleLoad {
+            airships: rows
+                .into_iter()
+                .map(|r| AirshipRow {
+                    owner_id: r.owner_id,
+                    fuel: r.fuel,
+                })
+                .collect(),
+        },
+        Err(e) => {
+            warn!("AirShipManager: Could not load airships table: {e}");
+            VehicleLoad::default()
+        }
     }
 }
 
@@ -2935,6 +2968,7 @@ pub struct DbStore {
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
     cursed: CursedWeaponRepository,
+    airships: AirshipRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
@@ -2980,6 +3014,7 @@ impl DbStore {
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
             cursed: CursedWeaponRepository::new(pool.clone()),
+            airships: AirshipRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
@@ -4371,6 +4406,15 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_vehicle_write(&mut self, write: &VehicleWrite) -> Result<(), PersistError> {
+        let repo = &self.airships;
+        match write {
+            VehicleWrite::AddLicense { owner_id, fuel } => repo.insert(*owner_id, *fuel).await?,
+            VehicleWrite::StoreFuel { owner_id, fuel } => repo.update_fuel(*owner_id, *fuel).await?,
+        }
+        Ok(())
+    }
+
     async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
         let repo = &self.cursed;
         match write {
@@ -4981,6 +5025,8 @@ mod tests {
         FriendSummary(i32),
         /// A cursed weapon write (M8-CURSED-01).
         Cursed(CursedWrite),
+        /// An `airships` write (M8-VEHICLE-01).
+        Vehicle(VehicleWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -5221,6 +5267,11 @@ mod tests {
 
         async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Cursed(write.clone()));
+            Ok(())
+        }
+
+        async fn store_vehicle_write(&mut self, write: &VehicleWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Vehicle(write.clone()));
             Ok(())
         }
 

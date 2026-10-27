@@ -15,7 +15,7 @@
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
 // - The GM shift click (`NpcShiftClick`, `npcinfo.htm`) and `AltGameViewNpc`: the GM gets the
 //   target and `ActionFailed`.
-// - `isOutOfControl`, vehicles, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
+// - `isOutOfControl`, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
 //   `on_target_canceled`.)
 
 use l2_data::door::OPEN_BY_SKILL;
@@ -193,7 +193,15 @@ impl World {
             if new_target.is_some() && !in_party && !self.objects.get(&target).is_some_and(|e| e.spawned) {
                 new_target = None;
             }
-            // Vehicles cannot be targeted: none exist yet.
+            // Vehicles cannot be targeted (but by a GM).
+            if new_target.is_some_and(|t| {
+                self.objects
+                    .get(&t)
+                    .is_some_and(|e| e.kind == ObjectKind::Vehicle)
+            }) && !self.is_gm(id)
+            {
+                new_target = None;
+            }
         }
 
         if let Some(old) = old_target {
@@ -712,6 +720,19 @@ impl World {
         } else if self.target_of(id).is_some() {
             self.set_target(id, None);
         }
-        // Airships are not modelled (`TargetUnselected` for a player on a helm).
+        // `else if (player.isInAirShip())`: the helm is deselected for everybody.
+        else if self.is_in_air_ship(id) {
+            if let Some((x, y, z)) = self.position_of(id) {
+                self.broadcast_to_self_and_visible(
+                    id,
+                    &l2_protocol_game::server::TargetUnselected {
+                        target_id: id.0,
+                        x,
+                        y,
+                        z,
+                    },
+                );
+            }
+        }
     }
 }

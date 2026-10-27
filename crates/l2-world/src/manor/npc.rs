@@ -78,6 +78,10 @@ impl World {
         if self.wedding_first_talk(npc, player, true) {
             return true;
         }
+        // The air ship controllers (M8-VEHICLE-01, `vehicle/controller.rs`).
+        if self.air_ship_first_talk(npc, player, true) {
+            return true;
+        }
         if !self.is_manor_manager(npc) {
             return false;
         }
@@ -105,6 +109,10 @@ impl World {
         }
         // The wedding priest (M8-MISC-01).
         if self.wedding_first_talk(npc, player, false) {
+            return true;
+        }
+        // The air ship controllers (M8-VEHICLE-01).
+        if self.air_ship_first_talk(npc, player, false) {
             return true;
         }
         if !self.is_manor_manager(npc) {

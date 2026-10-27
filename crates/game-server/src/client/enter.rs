@@ -31,7 +31,7 @@ use l2_world::{
     EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
     MacroData, MailInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
     RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    WarehouseInput, WarehouseLoad, WorldCommand,
+    VehicleInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -1123,6 +1123,47 @@ impl ClientSession {
                 return true;
             }
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
+            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
+            // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
+            // (M8-VEHICLE-01)
+            ClientPacket::RequestGetOnVehicle(p) => ClientInput::Vehicle(VehicleInput::GetOn {
+                boat_id: p.boat_id,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            }),
+            ClientPacket::RequestGetOffVehicle(p) => ClientInput::Vehicle(VehicleInput::GetOff {
+                boat_id: p.boat_id,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            }),
+            ClientPacket::RequestMoveToLocationInVehicle(p) => {
+                ClientInput::Vehicle(VehicleInput::MoveInVehicle {
+                    boat_id: p.boat_id,
+                    target: (p.target_x, p.target_y, p.target_z),
+                    origin: (p.origin_x, p.origin_y, p.origin_z),
+                })
+            }
+            ClientPacket::CannotMoveAnymoreInVehicle(p) => {
+                ClientInput::Vehicle(VehicleInput::CannotMoveInVehicle {
+                    boat_id: p.boat_id,
+                    x: p.x,
+                    y: p.y,
+                    z: p.z,
+                    heading: p.heading,
+                })
+            }
+            ClientPacket::MoveToLocationAirShip(p) => ClientInput::Vehicle(VehicleInput::AirShipControl {
+                command: p.command,
+                param1: p.param1,
+                param2: p.param2,
+            }),
+            ClientPacket::MoveToLocationInAirShip(p) => ClientInput::Vehicle(VehicleInput::MoveInAirShip {
+                ship_id: p.ship_id,
+                target: (p.target_x, p.target_y, p.target_z),
+                origin: (p.origin_x, p.origin_y, p.origin_z),
+            }),
             ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
             ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {

@@ -5,6 +5,7 @@
 //! mirror the column types.
 
 mod account_data;
+mod airships;
 mod announcements;
 mod auctions;
 mod bookmarks;
@@ -48,6 +49,7 @@ mod wedding;
 pub use account_data::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };
+pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bookmarks::{BookmarkRepository, BookmarkRow};

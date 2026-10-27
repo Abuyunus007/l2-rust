@@ -86,6 +86,7 @@ pub mod timer;
 pub mod trade;
 pub mod transform;
 pub mod user_command;
+pub mod vehicle;
 mod visibility;
 pub mod walking;
 pub mod warehouse;
@@ -215,6 +216,10 @@ pub use trade::{
     AddItemRules, OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite,
     OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
     restorable_store_type,
+};
+pub use vehicle::{
+    AirshipRow, PathPoint, Rider, ShipState, Vehicle, VehicleInput, VehicleKind, VehicleLoad,
+    VehicleSettings, VehicleTimer, VehicleWorld, VehicleWrite,
 };
 pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

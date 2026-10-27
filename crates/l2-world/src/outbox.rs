@@ -175,6 +175,8 @@ pub enum PersistCommand {
     /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
     /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
     Cursed(crate::cursed::CursedWrite),
+    /// A write of the `airships` table with Java's statements, see `vehicle/` (M8-VEHICLE-01).
+    Vehicle(crate::vehicle::VehicleWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {

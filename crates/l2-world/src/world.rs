@@ -163,6 +163,8 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// The boats, the air ships and who rides them (M8-VEHICLE-01, `vehicle/`).
+    pub(crate) vehicle: crate::vehicle::VehicleWorld,
 }
 
 impl World {
@@ -241,6 +243,7 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            vehicle: crate::vehicle::VehicleWorld::default(),
         }
     }
 
@@ -480,6 +483,7 @@ impl World {
         }
         // Java: MovementTaskManager.
         self.update_movement();
+        self.update_vehicles();
         // Java: AttackableThinkTaskManager.
         self.think_attackables();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
@@ -676,6 +680,9 @@ impl World {
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
+            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
+            // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
+            ClientInput::Vehicle(input) => self.on_vehicle_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -940,6 +947,8 @@ impl World {
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
+            // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
+            TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks

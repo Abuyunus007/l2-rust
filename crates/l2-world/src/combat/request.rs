@@ -6,7 +6,7 @@
 // Java: entity/actor/Player.java, entity/actor/instance/Monster.java (isAutoAttackable: the NPC
 //       attacker side)
 //
-// Left out: flood protection, boats, spawn protection
+// Left out: flood protection, spawn protection
 // (`onActionRequest`), private stores and pending requests, olympiad, confusion, the block
 // checker arena. Each refuses an attack in Java; none of them exists yet.
 
@@ -27,6 +27,15 @@ impl World {
             return;
         }
         if !self.flood_allows(id, FloodKind::PlayerAction) {
+            return;
+        }
+        // Avoid Attacks in Boat.
+        if self.is_in_boat(id) {
+            self.send(
+                id,
+                &SystemMessage::new(SystemMessageId::ThisIsNotAllowedWhileRidingAFerryOrBoat),
+            );
+            self.send(id, &ActionFailed);
             return;
         }
         // `BOT_PENALTY` effects (`BlockAction`) refuse the attack (`checkCondition(-1)`).
