@@ -227,7 +227,12 @@ impl World {
             .map(|id| {
                 self.players
                     .values()
-                    .filter(|p| p.zones.members().iter().any(|(zid, ty)| *zid == id && ty == NO_RESTART_ZONE))
+                    .filter(|p| {
+                        p.zones
+                            .members()
+                            .iter()
+                            .any(|(zid, ty)| *zid == id && ty == NO_RESTART_ZONE)
+                    })
                     .count()
                     .to_string()
             })
@@ -237,7 +242,11 @@ impl World {
             .replace("%bossColor%", color)
             .replace(
                 "%respawnTime%",
-                if status == dead_status { &respawn } else { "Already respawned!" },
+                if status == dead_status {
+                    &respawn
+                } else {
+                    "Already respawned!"
+                },
             )
             .replace("%playersInside%", &inside);
         Ok(Some(html))

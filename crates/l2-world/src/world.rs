@@ -767,6 +767,8 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestGetBossRecord
+            ClientInput::GetBossRecord { boss_id } => self.on_request_get_boss_record(id, boss_id),
             // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             ClientInput::Siege(input) => self.on_siege_input(id, input),

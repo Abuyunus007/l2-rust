@@ -70,11 +70,17 @@ impl World {
     pub(crate) fn load_grand_bosses(&mut self, rows: Vec<GrandBossData>) {
         for row in &rows {
             self.boss.grand.status.insert(row.boss_id, row.status);
-            self.boss.grand.stored.insert(row.boss_id, GrandBossInfo::from(row));
+            self.boss
+                .grand
+                .stored
+                .insert(row.boss_id, GrandBossInfo::from(row));
             // NOTE(java-quirk): Java throws on a boss without a template and drops the rest of the
             // rows; here the name is the id and the loading goes on.
             let name = self.boss_name(row.boss_id);
-            info!("GrandBossManager: {name}({}) status is {}.", row.boss_id, row.status);
+            info!(
+                "GrandBossManager: {name}({}) status is {}.",
+                row.boss_id, row.status
+            );
             if row.status > 0 {
                 info!(
                     "GrandBossManager: Next spawn date of {name} is {}.",
@@ -82,7 +88,10 @@ impl World {
                 );
             }
         }
-        info!("GrandBossManager: Loaded {} Instances", self.boss.grand.stored.len());
+        info!(
+            "GrandBossManager: Loaded {} Instances",
+            self.boss.grand.stored.len()
+        );
     }
 
     pub(crate) fn boss_name(&self, npc_id: i32) -> String {
@@ -144,7 +153,9 @@ impl World {
         let status = self.boss.grand.status.get(&boss_id).copied()?;
         // NOTE: Java keeps the NPC object after it decayed and writes its last place; the world
         // forgets a decayed NPC, so the place and vitals of the info stand in for it.
-        let live = self.core_of(npc).map(|core| (core.x, core.y, core.z, core.heading));
+        let live = self
+            .core_of(npc)
+            .map(|core| (core.x, core.y, core.z, core.heading));
         let (x, y, z, heading) = live.unwrap_or((info.loc_x, info.loc_y, info.loc_z, info.heading));
         let (mut hp, mut mp) = match (self.core_of(npc), self.hp_and_max(npc), self.mp_and_max(npc)) {
             (Some(_), Some((hp, _)), Some((mp, _))) => (hp, mp),
@@ -179,7 +190,11 @@ impl World {
             warn!("GrandBossManager: Couldn't update grandbosses to database: no status for {boss_id}");
             return;
         };
-        let full = if status_only { None } else { self.grand_boss_full_row(boss_id) };
+        let full = if status_only {
+            None
+        } else {
+            self.grand_boss_full_row(boss_id)
+        };
         match full {
             Some(row) => self.boss_write(BossWrite::GrandBoss(row)),
             None => self.boss_write(BossWrite::GrandBossStatus { boss_id, status }),

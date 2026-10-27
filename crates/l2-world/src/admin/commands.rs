@@ -9,9 +9,10 @@
 // does what the Java `onCommand` branch does, including its odd corners.
 //
 // Left out, with the system that brings it:
-// - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml and
-//   `RaidBossSpawnManager` into `raidboss_spawnlist`; here the spawn lives until the server stops
-//   (its respawn is ported, `respawn.rs`), but it is not written anywhere (FOLLOW-UP).
+// - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the datapack's xml; here the
+//   spawn lives until the server stops (its respawn is ported, `respawn.rs`), but it is not
+//   written anywhere (FOLLOW-UP). A raid boss goes to `RaidBossSpawnManager` and its table
+//   `raidboss_spawnlist` (M8-BOSS-01, `boss/raid.rs`).
 // - Instances, effects (`stopAllEffects`), the DB update of `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
@@ -239,7 +240,14 @@ fn spawn_monster(
     }
     // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `init()`, and
     // `stopRespawn()` when the spawn is not permanent or has no delay.
-    let created = world.admin_spawn(template_id, (x, y, z), heading, mob_count, respawn_time, permanent);
+    let created = world.admin_spawn(
+        template_id,
+        (x, y, z),
+        heading,
+        mob_count,
+        respawn_time,
+        permanent,
+    );
     if i64::try_from(created.len()).unwrap_or(i64::MAX) < i64::from(mob_count) {
         world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);
         return Ok(());

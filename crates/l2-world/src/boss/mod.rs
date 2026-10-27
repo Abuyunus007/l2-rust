@@ -182,9 +182,15 @@ pub enum BossReadThen {
 #[derive(Debug, Clone, PartialEq)]
 pub enum BossRereadRows {
     /// The row of the boss, `None` when the table has none.
-    GrandBoss { boss_id: i32, row: Option<GrandBossData> },
+    GrandBoss {
+        boss_id: i32,
+        row: Option<GrandBossData>,
+    },
     /// The rows of the character.
-    RaidPoints { char_id: i32, rows: Vec<RaidPointsRecord> },
+    RaidPoints {
+        char_id: i32,
+        rows: Vec<RaidPointsRecord>,
+    },
 }
 
 /// Everything the three managers keep.

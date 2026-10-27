@@ -10,7 +10,9 @@ use std::str::FromStr;
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use l2_db::{BossRepository, GrandBossListRow, GrandBossStore, GrandBossUpdate, Pool, RaidBossRow, connect_with};
+use l2_db::{
+    BossRepository, GrandBossListRow, GrandBossStore, GrandBossUpdate, Pool, RaidBossRow, connect_with,
+};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
@@ -112,7 +114,10 @@ async fn grand_boss_rows_are_read_and_stored() {
     let rows = repo.grand_bosses().await.unwrap();
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[0].boss_id, 29001);
-    assert_eq!((rows[0].loc_x, rows[0].loc_y, rows[0].loc_z), (-21610, 181594, -5734));
+    assert_eq!(
+        (rows[0].loc_x, rows[0].loc_y, rows[0].loc_z),
+        (-21610, 181594, -5734)
+    );
     assert!((rows[0].current_hp - 229_898.48).abs() < 1e-6);
     assert_eq!((rows[0].status, rows[0].respawn_time), (0, 0));
     assert_eq!(rows[1].heading, -25348);
@@ -132,12 +137,21 @@ async fn grand_boss_rows_are_read_and_stored() {
     };
     repo.store_all(
         &[
-            GrandBossListRow { player_id: 268435456, zone: 70050 },
-            GrandBossListRow { player_id: 268435457, zone: 70050 },
+            GrandBossListRow {
+                player_id: 268435456,
+                zone: 70050,
+            },
+            GrandBossListRow {
+                player_id: 268435457,
+                zone: 70050,
+            },
         ],
         &[
             GrandBossStore::Full(full),
-            GrandBossStore::StatusOnly { boss_id: 29020, status: 3 },
+            GrandBossStore::StatusOnly {
+                boss_id: 29020,
+                status: 3,
+            },
         ],
     )
     .await
@@ -152,11 +166,23 @@ async fn grand_boss_rows_are_read_and_stored() {
     assert_eq!(repo.grand_boss_list().await.unwrap().len(), 2);
 
     // A second store replaces the list.
-    repo.store_all(&[GrandBossListRow { player_id: 268435458, zone: 70051 }], &[])
-        .await
-        .unwrap();
+    repo.store_all(
+        &[GrandBossListRow {
+            player_id: 268435458,
+            zone: 70051,
+        }],
+        &[],
+    )
+    .await
+    .unwrap();
     let list = repo.grand_boss_list().await.unwrap();
-    assert_eq!(list, [GrandBossListRow { player_id: 268435458, zone: 70051 }]);
+    assert_eq!(
+        list,
+        [GrandBossListRow {
+            player_id: 268435458,
+            zone: 70051
+        }]
+    );
 
     repo.update_grand_boss_status(29001, 2).await.unwrap();
     assert_eq!(repo.grand_boss(29001).await.unwrap().unwrap().status, 2);
@@ -199,7 +225,9 @@ async fn raid_boss_rows_are_read_inserted_updated_and_deleted() {
     })
     .await
     .unwrap();
-    repo.update_raid_boss(25002, 1_792_000_000_999, 999.0, 55.0).await.unwrap();
+    repo.update_raid_boss(25002, 1_792_000_000_999, 999.0, 55.0)
+        .await
+        .unwrap();
     let rows = repo.raid_bosses().await.unwrap();
     assert_eq!(rows.len(), 2);
     assert_eq!(rows[1].respawn_time, 1_792_000_000_999);

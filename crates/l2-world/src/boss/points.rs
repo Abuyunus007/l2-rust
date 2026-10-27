@@ -11,6 +11,8 @@
 
 use std::collections::HashMap;
 
+use l2_net::Encode;
+use l2_protocol_game::server::{BossRecordEntry, ExGetBossRecord};
 use l2_util::ObjectId;
 use tracing::info;
 
@@ -268,6 +270,39 @@ impl World {
         }
     }
 
+    /// Java `RequestGetBossRecord.runImpl`: `ExGetBossRecord` with the ranking, the points and the
+    /// points of each boss.
+    pub(crate) fn on_request_get_boss_record(&mut self, player: ObjectId, boss_id: i32) {
+        if !self.players.contains_key(&player) {
+            return;
+        }
+        if boss_id != 0 {
+            // `PacketLogger.info("C5: RequestGetBossRecord: d: ..")`, "should be always 0".
+            info!("C5: RequestGetBossRecord: d: {boss_id} ActiveChar: {}", player.0);
+        }
+        let record = self.boss_record(player);
+        let packet = ExGetBossRecord {
+            ranking: record.ranking,
+            total_points: record.total_points,
+            records: record
+                .list
+                .iter()
+                .flatten()
+                .map(|(boss_id, points)| BossRecordEntry {
+                    boss_id: *boss_id,
+                    points: *points,
+                })
+                .collect(),
+        };
+        let mut bytes = packet.to_bytes();
+        if record.list.is_none() {
+            // NOTE(java-quirk): `ExGetBossRecord` writes four zeros for a null list (the count
+            // and three more), where an empty list is the count and nothing else.
+            bytes.extend_from_slice(&[0; 12]);
+        }
+        self.send_bytes(player, bytes);
+    }
+
     /// D-50: the rows of a character are read again when it enters the world (the Java game
     /// server may have given it points since this server started).
     pub(crate) fn request_raid_points_reread(&mut self, char_id: i32) {
@@ -275,10 +310,11 @@ impl World {
         if self.boss.started_ms == 0 {
             return;
         }
-        self.outbox.persist(crate::outbox::PersistCommand::BossRereadRequest {
-            kind: super::BossReadKind::RaidPoints(char_id),
-            then: super::BossReadThen::Nothing,
-        });
+        self.outbox
+            .persist(crate::outbox::PersistCommand::BossRereadRequest {
+                kind: super::BossReadKind::RaidPoints(char_id),
+                then: super::BossReadThen::Nothing,
+            });
     }
 
     /// The answer of that read: the rows replace what this server holds of the character.

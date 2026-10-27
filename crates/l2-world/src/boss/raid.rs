@@ -128,10 +128,24 @@ impl World {
                 break;
             }
             let (min_ms, max_ms) = respawn_delays(row.respawn_delay, row.respawn_random);
-            self.raid_add_new_spawn(&row, min_ms, max_ms, row.respawn_time, row.current_hp, row.current_mp, false);
+            self.raid_add_new_spawn(
+                &row,
+                min_ms,
+                max_ms,
+                row.respawn_time,
+                row.current_hp,
+                row.current_mp,
+                false,
+            );
         }
-        info!("RaidBossSpawnManager: Loaded {} Instances", self.boss.raid.bosses.len());
-        info!("RaidBossSpawnManager: Scheduled {} Instances", self.boss.raid.schedules.len());
+        info!(
+            "RaidBossSpawnManager: Loaded {} Instances",
+            self.boss.raid.bosses.len()
+        );
+        info!(
+            "RaidBossSpawnManager: Scheduled {} Instances",
+            self.boss.raid.schedules.len()
+        );
     }
 
     /// Java `Spawn.doSpawn()`: `_doRespawn ? doSpawn(false) : null`.
@@ -184,7 +198,11 @@ impl World {
             group: None,
             source: "raidboss_spawnlist".to_owned(),
         });
-        let entry = RaidSpawn { index, min_ms, max_ms };
+        let entry = RaidSpawn {
+            index,
+            min_ms,
+            max_ms,
+        };
         if respawn_time == 0 || now > respawn_time {
             if let Some(npc) = self.raid_do_spawn(index) {
                 self.set_current_hp(npc, current_hp, true);
@@ -224,7 +242,9 @@ impl World {
 
     fn raid_schedule_spawn(&mut self, boss_id: i32, delay_ms: u64) {
         let due = self.tick + TimerWheel::ms_to_ticks(delay_ms);
-        let timer = self.timers.schedule_at(due, TimerKind::Boss(BossTimer::RaidSpawn(boss_id)));
+        let timer = self
+            .timers
+            .schedule_at(due, TimerKind::Boss(BossTimer::RaidSpawn(boss_id)));
         if let Some(old) = self.boss.raid.schedules.insert(boss_id, timer) {
             self.timers.cancel(old);
         }
@@ -238,7 +258,10 @@ impl World {
             return;
         };
         if let Some(npc) = self.raid_do_spawn(spawn.index) {
-            let (hp, mp) = self.hp_and_max(npc).zip(self.mp_and_max(npc)).map_or((0.0, 0.0), |(h, m)| (h.0, m.0));
+            let (hp, mp) = self
+                .hp_and_max(npc)
+                .zip(self.mp_and_max(npc))
+                .map_or((0.0, 0.0), |(h, m)| (h.0, m.0));
             self.boss.raid.stored.insert(
                 boss_id,
                 RaidInfo {
@@ -247,7 +270,10 @@ impl World {
                     respawn_time: 0,
                 },
             );
-            info!("RaidBossSpawnManager: Spawning Raid Boss {}", self.boss_name(boss_id));
+            info!(
+                "RaidBossSpawnManager: Spawning Raid Boss {}",
+                self.boss_name(boss_id)
+            );
             self.boss.raid.bosses.insert(
                 boss_id,
                 RaidEntry {
@@ -496,7 +522,10 @@ impl World {
                 respawn_time: 0,
             },
         );
-        info!("RaidBossSpawnManager: Spawning Night Raid Boss {}", self.boss_name(boss_id));
+        info!(
+            "RaidBossSpawnManager: Spawning Night Raid Boss {}",
+            self.boss_name(boss_id)
+        );
         self.boss.raid.bosses.insert(
             boss_id,
             RaidEntry {
@@ -531,7 +560,8 @@ impl World {
     /// Java `RaidBoss.doDie` / `GrandBoss.doDie` after `Monster.doDie`: the raid points of a kill
     /// and, for a raid boss, the new status.
     pub(crate) fn boss_npc_died(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
-        let Some((class, boss_id, level)) = self.npcs.get(&npc).map(|n| (n.class, n.npc_id, n.core.level)) else {
+        let Some((class, boss_id, level)) = self.npcs.get(&npc).map(|n| (n.class, n.npc_id, n.core.level))
+        else {
             return;
         };
         if !matches!(class, NpcClass::RaidBoss | NpcClass::GrandBoss) {

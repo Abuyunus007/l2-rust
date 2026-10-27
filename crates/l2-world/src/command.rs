@@ -234,6 +234,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// Java `RequestGetBossRecord`: the raid points record (M8-BOSS-01, `boss/points.rs`).
+    GetBossRecord { boss_id: i32 },
     /// The siege window packets (M7-SIEGE-01).
     Siege(crate::siege::SiegeInput),
     /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,

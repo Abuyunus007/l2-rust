@@ -74,7 +74,10 @@ impl World {
                 }
             }
         }
-        info!("GrandBossManager: Initialized {} Grand Boss Zones", self.boss.zones.len());
+        info!(
+            "GrandBossManager: Initialized {} Grand Boss Zones",
+            self.boss.zones.len()
+        );
         for (id, players) in lists {
             if let Some(state) = self.boss.zones.get_mut(&id) {
                 state.allowed = players;
@@ -98,7 +101,11 @@ impl World {
         self.boss
             .zones
             .keys()
-            .find(|id| zones.get_of_type(**id, BOSS_ZONE).is_some_and(|zone| zone.is_inside_zone(x, y, z)))
+            .find(|id| {
+                zones
+                    .get_of_type(**id, BOSS_ZONE)
+                    .is_some_and(|zone| zone.is_inside_zone(x, y, z))
+            })
             .copied()
     }
 
@@ -109,7 +116,13 @@ impl World {
         self.boss
             .zones
             .keys()
-            .find(|zone| player.zones.members().iter().any(|(zid, ty)| zid == *zone && ty == BOSS_ZONE))
+            .find(|zone| {
+                player
+                    .zones
+                    .members()
+                    .iter()
+                    .any(|(zid, ty)| zid == *zone && ty == BOSS_ZONE)
+            })
             .copied()
     }
 
@@ -186,7 +199,12 @@ impl World {
         let inside: Vec<ObjectId> = self
             .players
             .values()
-            .filter(|p| p.zones.members().iter().any(|(zid, ty)| *zid == zone && ty == BOSS_ZONE))
+            .filter(|p| {
+                p.zones
+                    .members()
+                    .iter()
+                    .any(|(zid, ty)| *zid == zone && ty == BOSS_ZONE)
+            })
             .map(|p| p.core.object_id)
             .filter(|id| self.sinks.contains_key(id))
             .collect();

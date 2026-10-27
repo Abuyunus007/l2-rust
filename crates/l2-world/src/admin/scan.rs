@@ -5,7 +5,8 @@
 // # Left out, with the system that brings it
 // - The order of the list: Java takes the NPCs of the surrounding regions in their region order;
 //   here they are listed by object id.
-// - `SpawnData.deleteSpawn` (and the raid boss table) do not write the datapack, as in `//delete`.
+// - `SpawnData.deleteSpawn` does not write the datapack, as in `//delete`; the raid boss table is
+//   `RaidBossSpawnManager.deleteSpawn` (M8-BOSS-01).
 
 use l2_util::ObjectId;
 

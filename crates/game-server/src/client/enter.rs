@@ -1179,6 +1179,8 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestGetBossRecord (M8-BOSS-01)
+            ClientPacket::RequestGetBossRecord(p) => ClientInput::GetBossRecord { boss_id: p.boss_id },
             // Java: RequestAllFortressInfo, RequestFortressSiegeInfo, RequestFortressMapInfo
             // (M7-FORT-01)
             ClientPacket::RequestAllFortressInfo(_) => ClientInput::Fort(FortInput::AllFortressInfo),
