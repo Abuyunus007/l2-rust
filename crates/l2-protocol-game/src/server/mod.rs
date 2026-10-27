@@ -107,6 +107,7 @@ pub mod party;
 pub mod party_room;
 pub mod pccafe;
 pub mod pledge;
+pub mod quest;
 pub mod recipe;
 pub mod refine;
 pub mod regen;
@@ -234,6 +235,10 @@ pub use party_room::{
     ListPartyWaiting, PartyRoomInfo, RoomMember, WaitingRoom,
 };
 pub use pccafe::ExPcCafePointInfo;
+pub use quest::{
+    ExQuestNpcLogList, ExShowQuestInfo, ExShowQuestMark, NpcQuestHtmlMessage, QuestNpcLogEntry, RadarControl,
+    TutorialCloseHtml, TutorialEnableClientEvent, TutorialShowHtml, TutorialShowQuestionMark,
+};
 pub use pledge::{
     AllianceClanInfo, AllianceInfo, AllyCrest, AskJoinAlly, AskJoinPledge, ExPledgeEmblem,
     ExSubPledgeSkillAdd, GmViewPledgeInfo, JoinPledge, ManagePledgePower, PledgeCrest, PledgeInfo,

@@ -194,6 +194,7 @@ pub mod party;
 pub mod party_room;
 pub mod petition;
 pub mod pledge;
+pub mod quest;
 pub mod recipe;
 pub mod refine;
 pub mod residence;
@@ -301,6 +302,10 @@ pub use pledge::{
     RequestPledgeWarList, RequestReplyStartPledgeWar, RequestReplyStopPledgeWar,
     RequestReplySurrenderPledgeWar, RequestSetAllyCrest, RequestSetPledgeCrest, RequestStartPledgeWar,
     RequestStopPledgeWar, RequestSurrenderPledgeWar, RequestWithdrawalPledge,
+};
+pub use quest::{
+    RequestQuestAbort, RequestQuestList, RequestTutorialClientEvent, RequestTutorialLinkHtml,
+    RequestTutorialPassCmdToServer, RequestTutorialQuestionMark,
 };
 pub use recipe::{
     RecipeShopListEntry, RequestRecipeBookDestroy, RequestRecipeBookOpen, RequestRecipeItemMakeInfo,

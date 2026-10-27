@@ -199,7 +199,7 @@ impl NpcHtmlMessage {
 /// NOTE(java-quirk): Java only warns about a page that is too long and cuts it without wrapping
 /// it. Cutting may split a surrogate pair; Java then sends the lone half, which we cannot hold in
 /// a `String`, so it becomes U+FFFD.
-fn prepare_html(html: &str) -> String {
+pub(crate) fn prepare_html(html: &str) -> String {
     if html.encode_utf16().count() > MAX_HTML_UNITS {
         let units: Vec<u16> = html.encode_utf16().take(MAX_HTML_UNITS).collect();
         return String::from_utf16_lossy(&units);
