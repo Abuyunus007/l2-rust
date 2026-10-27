@@ -96,8 +96,7 @@ pub(crate) fn can_transform(a: &StatView<'_>) -> bool {
     let tell = |message: SystemMessageId| {
         world.send(id, &SystemMessage::new(message));
     };
-    // `|| player.isCursedWeaponEquipped()`: cursed weapons are M8.
-    if world.is_alike_dead(id) {
+    if world.is_alike_dead(id) || world.is_cursed_weapon_equipped(id) {
         return false;
     }
     if world.is_sitting(id) {
@@ -125,8 +124,7 @@ pub(crate) fn can_untransform(a: &StatView<'_>) -> bool {
     };
     let world = a.world();
     let id = a.object_id();
-    // `|| player.isCursedWeaponEquipped()`: cursed weapons are M8.
-    if world.is_alike_dead(id) {
+    if world.is_alike_dead(id) || world.is_cursed_weapon_equipped(id) {
         return false;
     }
     if (a.is_transformed() || a.is_in_stance())

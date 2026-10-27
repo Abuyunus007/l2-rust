@@ -251,6 +251,7 @@ fn a_new_character_is_what_the_java_server_stored() {
         config: &config,
         stat_bonus: &bonus,
         item_max_mp: &max_mp,
+        master_access_level: 0,
     };
     let mut verified = 0;
     let mut problems = Vec::new();

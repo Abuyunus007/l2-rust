@@ -149,6 +149,8 @@ pub enum ClientInput {
     Store(crate::trade::StoreInput),
     /// The symbol maker packets (L-01): `RequestHenna*`.
     Henna(crate::henna::HennaInput),
+    /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
+    Cursed(crate::cursed::CursedInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },

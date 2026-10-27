@@ -701,8 +701,14 @@ impl World {
         val: &str,
         rest: &[String],
     ) -> bool {
-        // FOLLOW-UP(M8): `player.isCursedWeaponEquipped()` ("The wielder of a cursed weapon cannot
-        // receive outside heals or buffs"); cursed weapons are not ported.
+        if self.is_cursed_weapon_equipped(player) {
+            // Custom system message.
+            self.send_message(
+                player,
+                "The wielder of a cursed weapon cannot receive outside heals or buffs",
+            );
+            return true;
+        }
         self.set_npc_target(npc, Some(player));
         if val.is_empty() {
             return true;

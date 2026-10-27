@@ -460,6 +460,9 @@ impl World {
         self.mail_refresh_player(id);
         // Java `CharacterSelect`: `CharInfoTable.addName(player)` (M6-MAIL-01).
         self.mail_remember_player(id);
+        // Java `Player.restore` -> `CursedWeaponsManager.checkPlayer(player)`: the owner of a
+        // cursed weapon is known again before anything shows the player (M8-CURSED-01).
+        self.cursed_check_player(id);
 
         // Java `EnterWorld`: `GMStartupInvulnerable` and `AdminData.hasAccess("admin_invul", ..)`
         // for a GM (`player.setInvul(true)`). The flag shows in no packet, so it is set first.
@@ -526,6 +529,10 @@ impl World {
         for bytes in self.after_spawn_packets(id) {
             self.send_bytes(id, bytes);
         }
+        // `if (player.isCursedWeaponEquipped()) ...cursedOnLogin()`.
+        if self.is_cursed_weapon_equipped(id) {
+            self.cursed_on_login(id);
+        }
         // EnterWorld: "YOUR_FRIEND_S1_JUST_LOGGED_IN" to the friends who are online.
         self.friends_announce_login(id);
         // Java `onPlayerEnter` -> `restoreEffects()`: the buffs of the last logout come back with
@@ -553,6 +560,8 @@ impl World {
         self.siege_enter_world_zone_check(id);
         // Over-enchant protection.
         self.over_enchant_protection_on_enter(id);
+        // "Remove demonic weapon if character is not cursed weapon equipped."
+        self.cursed_enter_world_cleanup(id);
 
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
@@ -940,7 +949,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         } else {
             data.profile.title_color
         },
-        cursed_weapon_level: 0,
+        cursed_weapon_level: world.cursed_weapon_level_of(core.object_id),
         transformation_display_id: view.transformation_display_id(),
         attack_element: i16::from(attack_element),
         attack_element_value: view.attack_element_value(attack_element) as i16,

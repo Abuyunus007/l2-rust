@@ -13,7 +13,7 @@
 // which does the checks of the pickup and moves the item into the inventory.
 //
 // # Left out
-// - Fake death, combat flags, cursed weapons.
+// - Fake death.
 // - The auto equip of bolts for a crossbow: `World::check_and_equip_arrows` is the shared (and
 //   arrow-only) helper of the attack code.
 
@@ -278,8 +278,9 @@ impl World {
             self.broadcast_to_self_and_visible(id, &message);
         }
 
-        // The combat flag is not distributed: it goes to the player (`addItem(PICKUP, ...)`).
-        if World::is_combat_flag_item(item_id) {
+        // Cursed Weapons are not distributed: they go to the player (`addItem(PICKUP, ...)`).
+        // The combat flag is not distributed either.
+        if self.is_cursed_item(item_id) || World::is_combat_flag_item(item_id) {
             self.add_item_object(id, taken.data, true);
             return;
         }

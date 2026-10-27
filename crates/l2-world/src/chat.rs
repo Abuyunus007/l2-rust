@@ -6,7 +6,7 @@
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
-// out because the systems do not exist: cursed weapons, factions, the say filter
+// out because the systems do not exist: factions, the say filter
 // (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
 // clan, alliance, petition and room channels (their messages are dropped with a debug line, like
 // Java does for a channel without handler). The party channel is `chat_party` (M6-PARTY-01).
@@ -32,6 +32,36 @@ const GENERAL_CHAT_RANGE: i32 = 1250;
 
 /// Level needed for trade chat (hard-coded in Java's `ChatTrade`).
 const TRADE_CHAT_LEVEL: i32 = 20;
+
+/// Java `ChatType.name()` (the constant name, which the chat log writes).
+fn java_chat_name(chat_type: ChatType) -> &'static str {
+    match chat_type {
+        ChatType::General => "GENERAL",
+        ChatType::Shout => "SHOUT",
+        ChatType::Whisper => "WHISPER",
+        ChatType::Party => "PARTY",
+        ChatType::Clan => "CLAN",
+        ChatType::Gm => "GM",
+        ChatType::PetitionPlayer => "PETITION_PLAYER",
+        ChatType::PetitionGm => "PETITION_GM",
+        ChatType::Trade => "TRADE",
+        ChatType::Alliance => "ALLIANCE",
+        ChatType::Announcement => "ANNOUNCEMENT",
+        ChatType::Boat => "BOAT",
+        ChatType::Friend => "FRIEND",
+        ChatType::MsnChat => "MSNCHAT",
+        ChatType::PartyMatchRoom => "PARTYMATCH_ROOM",
+        ChatType::PartyRoomCommander => "PARTYROOM_COMMANDER",
+        ChatType::PartyRoomAll => "PARTYROOM_ALL",
+        ChatType::HeroVoice => "HERO_VOICE",
+        ChatType::CriticalAnnounce => "CRITICAL_ANNOUNCE",
+        ChatType::ScreenAnnounce => "SCREEN_ANNOUNCE",
+        ChatType::Battlefield => "BATTLEFIELD",
+        ChatType::MpccRoom => "MPCC_ROOM",
+        ChatType::NpcGeneral => "NPC_GENERAL",
+        ChatType::NpcShout => "NPC_SHOUT",
+    }
+}
 
 impl World {
     /// Java `Say2.runImpl` followed by the chat handler of the channel.
@@ -62,6 +92,16 @@ impl World {
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::WhenAUserSKeyboardInputExceedsACertainCumulativeScoreAChatBanWillBeAppliedThisIsDoneToDiscourageSpammingPleaseAvoidPostingTheSameMessageMultipleTimesDuringAShortPeriod),
+            );
+            return;
+        }
+
+        if self.is_cursed_weapon_equipped(id) && matches!(chat_type, ChatType::Trade | ChatType::Shout) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::ShoutAndTradeChattingCannotBeUsedWhilePossessingACursedWeapon,
+                ),
             );
             return;
         }
@@ -104,15 +144,18 @@ impl World {
             let Some(player) = self.players.get(&id) else {
                 return;
             };
+            // Java: `sb.append(chatType.name()).append(" [").append(player)`, where `player` is
+            // `WorldObject.toString()` = `Player:<name>[<objectId>]`.
+            let name = java_chat_name(chat_type);
+            let who = format!("Player:{}[{}]", player.data.name, id.0);
             if chat_type == ChatType::Whisper {
                 info!(
                     target: "chat",
-                    "{chat_type:?} [{} to {}] {text}",
-                    player.data.name,
+                    "{name} [{who} to {}] {text}",
                     target.as_deref().unwrap_or("")
                 );
             } else {
-                info!(target: "chat", "{chat_type:?} [{}] {text}", player.data.name);
+                info!(target: "chat", "{name} [{who}] {text}");
             }
         }
 

@@ -49,6 +49,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/clanhall_siege_attackers.sql"),
     include_str!("../sql/game/clanhall_siege_guards.sql"),
     include_str!("../sql/game/crests.sql"),
+    include_str!("../sql/game/cursed_weapons.sql"),
     include_str!("../sql/game/fishing_championship.sql"),
     include_str!("../sql/game/global_variables.sql"),
     include_str!("../sql/game/fort.sql"),
