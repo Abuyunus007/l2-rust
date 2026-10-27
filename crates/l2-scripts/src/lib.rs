@@ -8,6 +8,9 @@
 pub mod ai;
 pub mod quests;
 
+#[cfg(test)]
+pub(crate) mod testing;
+
 use l2_world::ScriptRegistry;
 
 /// Every script, in Java's load order.

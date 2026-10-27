@@ -2022,6 +2022,18 @@ pub async fn load_auto_spawns(pool: &Pool) -> Vec<l2_world::sevensigns::AutoSpaw
     }
 }
 
+/// Java `GlobalVariablesManager.restoreMe()`: every row of `global_variables`. Java logs a failed
+/// read and starts without them.
+pub async fn load_global_variables(pool: &Pool) -> Vec<(String, Option<String>)> {
+    match l2_db::GlobalVariableRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("GlobalVariablesManager: Couldn't restore global variables. {e}");
+            Vec::new()
+        }
+    }
+}
+
 /// Java `CoupleManager.load()`, the database half (only with `AllowWedding`): the couples of
 /// `mods_wedding`. A database that cannot be read gives none, like Java.
 pub async fn load_couples(pool: &Pool) -> Vec<l2_world::wedding::Couple> {
