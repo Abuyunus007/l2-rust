@@ -470,7 +470,9 @@ mod tests {
         let mut none = snapshot(1, ServerStatus::Normal);
         none.addresses.clear();
         let mut bad = snapshot(2, ServerStatus::Normal);
-        bad.addresses = vec![GameServerAddress::new("0.0.0.0/0", "no.such.host").unwrap()];
+        // A name no resolver answers with an address: some networks hijack `.host` lookups, so
+        // the name is not a valid host name at all (a space), which never reaches DNS.
+        bad.addresses = vec![GameServerAddress::new("0.0.0.0/0", "no such host").unwrap()];
         let list = build(&[none, bad], &client(0), &CharacterState::default());
         assert_eq!(list.servers[0].ip, [127, 0, 0, 1]);
         assert_eq!(list.servers[1].ip, [127, 0, 0, 1]);
