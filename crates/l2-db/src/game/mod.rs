@@ -6,6 +6,7 @@
 
 mod announcements;
 mod auctions;
+mod bosses;
 mod bot_reports;
 mod buylists;
 mod characters;
@@ -41,6 +42,10 @@ mod variables;
 
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
+pub use bosses::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{

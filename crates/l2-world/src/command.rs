@@ -363,6 +363,12 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::BossRereadRequest`: the rows, or `Err` when the read failed
+    /// (the follow-up `then` is then refused, M8-BOSS-01).
+    BossReread {
+        result: Result<crate::boss::BossRereadRows, ()>,
+        then: crate::boss::BossReadThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -460,6 +466,11 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BossReread { result, then } => write!(
+                f,
+                "BossReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

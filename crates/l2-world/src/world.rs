@@ -153,6 +153,8 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The grand and raid boss managers and the raid points (M8-BOSS-01, `boss/`).
+    pub(crate) boss: crate::boss::BossWorld,
 }
 
 impl World {
@@ -226,6 +228,7 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            boss: crate::boss::BossWorld::default(),
         }
     }
 
@@ -397,6 +400,7 @@ impl World {
             WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
             WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
+            WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -435,6 +439,8 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: `RaidBossSpawnManager.cleanUp()`, `GrandBossManager.cleanUp()`.
+                self.boss_shutdown();
                 self.stopped = true;
                 done();
             }
@@ -875,6 +881,8 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
+            TimerKind::Boss(timer) => self.on_boss_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
         }

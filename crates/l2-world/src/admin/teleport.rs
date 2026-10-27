@@ -70,15 +70,12 @@ fn admin_recall_npc(world: &mut World, gm: ObjectId, _command: &str) -> Outcome 
         return Ok(());
     }
     if raid {
-        // FOLLOW-UP(M4): a raid boss goes through `RaidBossSpawnManager` and its own table
-        // (`raidboss_spawnlist`), which is not ported. The spawn check still answers as Java does.
+        // A raid boss goes through `RaidBossSpawnManager` (M8-BOSS-01).
         if spawn_index.is_none() {
             world.send_sys_message(gm, "Incorrect raid spawn.");
+            warn!("ERROR: NPC Id{template_id} has a 'null' spawn.");
         } else {
-            warn!(
-                "//recall_npc on raid boss {}: the raid spawn table is not ported",
-                npc.0
-            );
+            world.admin_recall_raid_boss(npc, gm);
         }
         return Ok(());
     }

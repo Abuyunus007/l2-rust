@@ -88,8 +88,13 @@ fn delete_npc(world: &mut World, gm: ObjectId, npc: ObjectId) {
         return;
     }
     let name = world.object_name(npc).unwrap_or_default();
+    let template_id = world.npcs.get(&npc).map(|n| n.npc_id);
     world.stop_respawn(index);
     world.delete_npc(npc);
+    // `RaidBossSpawnManager.isDefined(spawn.getId())`: the raid spawn and its row go (M8-BOSS-01).
+    if let Some(id) = template_id.filter(|id| world.raid_boss_defined(*id)) {
+        world.raid_delete_spawn(id, true);
+    }
     world.send_sys_message(gm, &format!("Deleted {name} from {}.", npc.0));
 }
 
@@ -103,8 +108,12 @@ fn delete_group(world: &mut World, gm: ObjectId, npc: ObjectId) {
         return;
     };
     let name = world.object_name(npc).unwrap_or_default();
+    let template_id = world.npcs.get(&npc).map(|n| n.npc_id);
     world.delete_npc(npc);
     world.stop_respawn(index);
+    if let Some(id) = template_id.filter(|id| world.raid_boss_defined(*id)) {
+        world.raid_delete_spawn(id, true);
+    }
     // Every NPC of the same territory (the visible ones, as Java's `World.getVisibleObjects`).
     let others: Vec<(ObjectId, usize)> = world
         .npc_ids()

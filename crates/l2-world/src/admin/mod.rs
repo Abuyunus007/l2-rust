@@ -198,6 +198,7 @@ impl Default for AdminWorld {
         delete::register(&mut handlers);
         scan::register(&mut handlers);
         search::register(&mut handlers);
+        crate::boss::admin_register(&mut handlers);
         fence::register(&mut handlers);
         flags::register(&mut handlers);
         config_page::register(&mut handlers);

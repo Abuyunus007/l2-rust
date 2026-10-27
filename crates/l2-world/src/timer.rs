@@ -154,6 +154,8 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The grand boss store, the raid boss respawns and the weekly raid points reset, see `boss/`.
+    Boss(crate::boss::BossTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
     /// Java `new Untransform(player)` of `//setsex` and `//setclass`, 200 ms after the
