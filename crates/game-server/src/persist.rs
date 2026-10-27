@@ -6169,7 +6169,10 @@ mod tests {
         std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 3\n").unwrap();
         let config = l2_config::GameConfig::load(dir.path()).unwrap();
         assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(180));
-        assert_eq!(autosave_interval_from_config(&config), autosave_interval(dir.path()));
+        assert_eq!(
+            autosave_interval_from_config(&config),
+            autosave_interval(dir.path())
+        );
         std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
         let config = l2_config::GameConfig::load(dir.path()).unwrap();
         assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(1));

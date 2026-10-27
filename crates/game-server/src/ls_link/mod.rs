@@ -54,8 +54,8 @@ use tracing::{debug, info, warn};
 
 pub use ipconfig::IpConfig;
 
-use crate::hexid::{self, HexId};
 use crate::Server;
+use crate::hexid::{self, HexId};
 
 /// Java `RECONNECT_DELAY`.
 pub const RECONNECT_DELAY: Duration = Duration::from_secs(5);

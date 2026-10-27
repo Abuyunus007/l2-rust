@@ -435,7 +435,6 @@ pub fn exp_settings(config: &GameConfig, _config_dir: &Path) -> ExpSettings {
         alt_party_range: p.alt_party_range,
         enable_free_strider: config.free_mounts.enable_free_strider,
         enable_free_wyvern: config.free_mounts.enable_free_wyvern,
-        ..ExpSettings::default()
     }
 }
 
@@ -527,7 +526,6 @@ pub fn death_settings(config: &GameConfig, _config_dir: &Path) -> DeathSettings 
         respawn_restore_cp: core.respawn_restore_cp,
         respawn_restore_hp: core.respawn_restore_hp,
         respawn_restore_mp: core.respawn_restore_mp,
-        ..DeathSettings::default()
     }
 }
 
@@ -552,7 +550,6 @@ pub fn punishment_settings(config: &GameConfig, _config_dir: &Path) -> l2_world:
         jail_disable_chat: config.general.jail_disable_chat,
         default_punish: IllegalActionPunishment::find_by_name(&core.default_punish),
         ban_chat_channels,
-        ..PunishmentSettings::default()
     }
 }
 
@@ -702,7 +699,6 @@ pub fn enchant_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::En
         es_sp_book_needed: p.es_sp_book_needed,
         normal_enchant_cost_multiplier: config.general.normal_enchant_cost_multiplier,
         safe_enchant_cost_multiplier: config.general.safe_enchant_cost_multiplier,
-        ..EnchantSettings::default()
     }
 }
 
@@ -735,7 +731,6 @@ pub fn augment_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::Au
         retail_like: p.retail_like_augmentation,
         retail_like_accessory: p.retail_like_augmentation_accessory,
         alt_allow_augment_pvp_items: p.alt_allow_augment_pvp_items,
-        ..AugmentSettings::default()
     }
 }
 
@@ -819,7 +814,6 @@ pub fn ground_item_settings(config: &GameConfig, _config_dir: &Path) -> GroundIt
         auto_loot_raids: p.auto_loot_raids,
         auto_loot_herbs: p.auto_loot_herbs,
         max_adena: config.effective_max_adena(),
-        ..GroundItemSettings::default()
     }
 }
 
@@ -880,7 +874,6 @@ pub fn drop_settings(config: &GameConfig, _config_dir: &Path) -> DropSettings {
                 chance: drop.chance,
             })
             .collect(),
-        ..DropSettings::default()
     }
 }
 
@@ -1191,7 +1184,11 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     // for a bad name; the default is kept here.
     let general = &config.manual.core.general;
     for (key, text, target) in [
-        ("GlobalChat", &general.default_global_chat, &mut settings.global_chat),
+        (
+            "GlobalChat",
+            &general.default_global_chat,
+            &mut settings.global_chat,
+        ),
         ("TradeChat", &general.default_trade_chat, &mut settings.trade_chat),
     ] {
         match ChatBroadcast::from_name(text.trim()) {
@@ -1311,7 +1308,6 @@ pub fn skill_load_options(config: &GameConfig, _config_dir: &Path) -> l2_data::S
         max_abnormal_state_success_rate: p.max_abnormal_state_success_rate,
         enable_modify_skill_duration: p.enable_modify_skill_duration,
         enable_modify_skill_reuse: p.enable_modify_skill_reuse,
-        ..l2_data::SkillLoadOptions::default()
     }
 }
 
@@ -1507,7 +1503,6 @@ pub fn combat_settings(config: &GameConfig, _config_dir: &Path) -> CombatSetting
         randomize_physical_skill_damage: p.randomize_physical_skill_damage,
         randomize_magical_skill_damage: p.randomize_magical_skill_damage,
         min_npc_level_magic_penalty: config.npc.min_npc_level_magic_penalty,
-        ..CombatSettings::default()
     }
 }
 
@@ -1856,7 +1851,10 @@ BotReportPointsResetHour = noon
         // A bad number is a Java exception; the default stays.
         let bad = player("PartyXpCutoffGaps = 1;2,3\nPartyXpCutoffGapPercent = 100;x\n");
         assert_eq!(bad.party_xp_cutoff_gaps, default.party_xp_cutoff_gaps);
-        assert_eq!(bad.party_xp_cutoff_gap_percents, default.party_xp_cutoff_gap_percents);
+        assert_eq!(
+            bad.party_xp_cutoff_gap_percents,
+            default.party_xp_cutoff_gap_percents
+        );
     }
 
     /// L-09: the hand-ported keys of the core classes (`manual.core`) reach the settings the
@@ -1891,7 +1889,10 @@ BotReportPointsResetHour = noon
             "Rates.ini",
             "DropAmountMultiplierByItemId = 57,2.5\nBossDropList = 57,1,10,25.5\nRateXp = 3\n",
         );
-        write("PVP.ini", "ListOfNonDroppableItems = 30,20\nAntiFeedInterval = 7\n");
+        write(
+            "PVP.ini",
+            "ListOfNonDroppableItems = 30,20\nAntiFeedInterval = 7\n",
+        );
         write("Feature.ini", "SiegeHourList = 16,20\n");
         write("Server.ini", "ServerListType = Normal\n");
         write(
@@ -1906,7 +1907,11 @@ BotReportPointsResetHour = noon
 
         let death = death_settings(&config, d);
         assert_eq!(
-            (death.respawn_restore_cp, death.respawn_restore_hp, death.respawn_restore_mp),
+            (
+                death.respawn_restore_cp,
+                death.respawn_restore_hp,
+                death.respawn_restore_mp
+            ),
             (0.1, 0.2, 0.3)
         );
         let punish = punishment_settings(&config, d);
@@ -1919,7 +1924,10 @@ BotReportPointsResetHour = noon
             ]
         );
         let bot = bot_report_settings(&config, d);
-        assert_eq!((bot.report_delay_ms, bot.reset_hour_minute), (120_000, Some((6, 30))));
+        assert_eq!(
+            (bot.report_delay_ms, bot.reset_hour_minute),
+            (120_000, Some((6, 30)))
+        );
         let enchant = enchant_settings(&config, d);
         assert_eq!(enchant.enchant_blacklist, [3, 9]);
         assert_eq!(enchant.over_enchant_punishment, IllegalActionPunishment::Kick);
@@ -1944,19 +1952,22 @@ BotReportPointsResetHour = noon
         assert_eq!(combat.npc_dmg_penalty, [0.5, 0.4]);
         assert_eq!(stat_settings(&config, d).raid_pdefence_multiplier, 1.5);
         let pet = pet_settings(&config, d);
-        assert_eq!((pet.pet_hp_regen_multiplier, pet.pet_mp_regen_multiplier), (2.0, 0.5));
+        assert_eq!(
+            (pet.pet_hp_regen_multiplier, pet.pet_mp_regen_multiplier),
+            (2.0, 0.5)
+        );
         assert_eq!(exp_settings(&config, d).max_sp, 123);
         assert_eq!(exp_settings(&config, d).rate_karma_lost, 3.0); // -1 means the exp rate
 
         let world = world_settings(&config, d);
         assert_eq!(world.player_movement_block_time_ms, 3000);
-        assert_eq!((world.global_chat, world.trade_chat), (ChatBroadcast::Gm, ChatBroadcast::Global));
+        assert_eq!(
+            (world.global_chat, world.trade_chat),
+            (ChatBroadcast::Gm, ChatBroadcast::Global)
+        );
         assert!(world.talk.list_pet_rent_npc.contains(&11) && world.talk.list_pet_rent_npc.contains(&12));
         assert_eq!(pvp_settings(&config, d).antifeed_interval_ms, 7000);
-        assert_eq!(
-            siege_settings(&config, d, &[]).siege_hour_list,
-            [16, 20]
-        );
+        assert_eq!(siege_settings(&config, d, &[]).siege_hour_list, [16, 20]);
         let flood = flood_settings_from_config(&config);
         assert_eq!(flood.get(FloodKind::MultiSell).protection_interval, 9);
         assert_eq!(

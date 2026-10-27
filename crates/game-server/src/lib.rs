@@ -652,10 +652,7 @@ impl Server {
         );
 
         // Java: ServerConfig.DATAPACK_ROOT, then the data loaders ("Data", "Characters", ...)
-        let datapack_root = resolve_datapack_root(
-            &paths.root,
-            &config.manual.core.server.datapack_root,
-        );
+        let datapack_root = resolve_datapack_root(&paths.root, &config.manual.core.server.datapack_root);
         let datapack = {
             let root = datapack_root.clone();
             let options = options_from_config(&config, &paths.config_dir);

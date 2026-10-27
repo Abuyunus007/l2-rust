@@ -108,7 +108,10 @@ fn skill_id_list(key: &str, text: &str) -> HashMap<i32, i32> {
             }
             _ => {
                 if !skill.is_empty() {
-                    warn!("[{key}]: invalid config property -> SkillList \"{}\"{}", pieces[0], pieces[1]);
+                    warn!(
+                        "[{key}]: invalid config property -> SkillList \"{}\"{}",
+                        pieces[0], pieces[1]
+                    );
                 }
             }
         }
@@ -243,7 +246,10 @@ fn load_chat_filter(path: &Path) -> Vec<String> {
             words
         }
         Err(error) => {
-            warn!("Error while loading chat filter words! ({}: {error})", path.display());
+            warn!(
+                "Error while loading chat filter words! ({}: {error})",
+                path.display()
+            );
             Vec::new()
         }
     }
@@ -352,7 +358,8 @@ pub struct FloodProtectorManual {
 
 impl FloodProtectorManual {
     pub fn from_ini(ini: &IniFile) -> Self {
-        let read = |name: &str, default_interval: i32| FloodProtectorSettings::from_ini(ini, name, default_interval);
+        let read =
+            |name: &str, default_interval: i32| FloodProtectorSettings::from_ini(ini, name, default_interval);
         Self {
             use_item: read("UseItem", 4),
             roll_dice: read("RollDice", 42),
@@ -520,7 +527,8 @@ impl GeneralManual {
             eject_dead_player_time: ini.get_int("EjectDeadPlayerTime", 60).wrapping_mul(1000),
             ban_chat_channels,
             alt_item_auction_time_extends_on_bid: i64::from(
-                ini.get_int("AltItemAuctionTimeExtendsOnBid", 0).wrapping_mul(1000),
+                ini.get_int("AltItemAuctionTimeExtendsOnBid", 0)
+                    .wrapping_mul(1000),
             ),
             default_punish: ini.get_string("DefaultPunish", "KICK"),
             alt_birthday_mail_text: ini.get_string("AltBirthdayMailText", &birthday_mail_default()),
@@ -1150,9 +1158,11 @@ mod tests {
         )
         .unwrap();
         let server = ServerRest::from_ini(
-            &ini("DatapackRoot = ..\\\\data\nScriptRoot = scripts\nServerListType = Normal, Relax\n\
+            &ini(
+                "DatapackRoot = ..\\\\data\nScriptRoot = scripts\nServerListType = Normal, Relax\n\
                   ServerRestartSchedule = 04:00,16:30\nServerRestartDays = 1,x,3,,7\n\
-                  PrecautionaryRestartDelay = 5\n"),
+                  PrecautionaryRestartDelay = 5\n",
+            ),
             dir.path(),
         );
         assert_eq!(server.datapack_root, "../data");
@@ -1168,7 +1178,10 @@ mod tests {
     fn server_list_type_flags_follow_java() {
         assert_eq!(server_list_type_id("Free"), 0x40);
         assert_eq!(server_list_type_id("Normal,Relax"), 0x03);
-        assert_eq!(server_list_type_id(" test , NOLABEL ,restricted,event"), 0x04 | 0x08 | 0x10 | 0x20);
+        assert_eq!(
+            server_list_type_id(" test , NOLABEL ,restricted,event"),
+            0x04 | 0x08 | 0x10 | 0x20
+        );
         assert_eq!(server_list_type_id("bogus"), 0);
         assert_eq!(server_list_type_id(""), 0);
     }
@@ -1230,7 +1243,10 @@ mod tests {
         assert_eq!(d.list_protected_items, BTreeSet::from([0]));
         assert_eq!(d.char_data_store_interval, 900_000);
         assert_eq!(d.save_dropped_item_interval, 3_600_000);
-        assert_eq!((d.default_global_chat.as_str(), d.default_trade_chat.as_str()), ("ON", "ON"));
+        assert_eq!(
+            (d.default_global_chat.as_str(), d.default_trade_chat.as_str()),
+            ("ON", "ON")
+        );
         assert_eq!(d.instance_finish_time, 300_000);
         assert_eq!(d.eject_dead_player_time, 60_000);
         assert_eq!(d.alt_item_auction_time_extends_on_bid, 0);
@@ -1253,7 +1269,10 @@ mod tests {
         assert_eq!(g.herb_auto_destroy_time, 5000);
         assert_eq!(g.char_data_store_interval, 120_000);
         assert_eq!(g.save_dropped_item_interval, 60_000);
-        assert_eq!((g.default_global_chat.as_str(), g.default_trade_chat.as_str()), ("GM", "GLOBAL"));
+        assert_eq!(
+            (g.default_global_chat.as_str(), g.default_trade_chat.as_str()),
+            ("GM", "GLOBAL")
+        );
         assert_eq!(g.instance_finish_time, 10_000);
         assert_eq!(g.eject_dead_player_time, 3000);
         assert_eq!(g.ban_chat_channels, ["WHISPER", "PARTY"]);
@@ -1269,7 +1288,10 @@ mod tests {
         // Java multiplies in `int`: 2_200_000 * 1000 overflows.
         let g = GeneralManual::from_ini(&ini("AutoDestroyHerbTime = 2200000\nBotReportDelay = 100000\n"));
         assert_eq!(g.herb_auto_destroy_time, 2_200_000_i32.wrapping_mul(1000));
-        assert_eq!(g.botreport_report_delay, i64::from(100_000_i32.wrapping_mul(60_000)));
+        assert_eq!(
+            g.botreport_report_delay,
+            i64::from(100_000_i32.wrapping_mul(60_000))
+        );
     }
 
     #[test]
