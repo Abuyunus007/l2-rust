@@ -192,6 +192,11 @@ impl World {
         self.duel.players.get(&id).is_some_and(|p| p.in_duel)
     }
 
+    /// Java `Player._startingDuel`.
+    pub(crate) fn is_starting_duel(&self, id: ObjectId) -> bool {
+        self.duel.players.get(&id).is_some_and(|p| p.starting)
+    }
+
     /// Java `Player.getDuelId()`: 0 when not in a duel.
     pub fn duel_id_of(&self, id: ObjectId) -> i32 {
         self.duel.players.get(&id).map_or(0, |p| p.duel_id)

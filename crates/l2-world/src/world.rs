@@ -422,6 +422,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::FriendSummariesLoaded { requester, rows } => {
+                self.on_friend_summaries_loaded(requester, rows)
+            }
             WorldCommand::AnnouncementStored { ticket, result } => {
                 self.on_announcement_stored(ticket, result)
             }
@@ -667,6 +670,10 @@ impl World {
             ClientInput::Store(input) => self.on_store_input(id, input),
             // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
+            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, ... (L-04)
+            ClientInput::Bookmark(input) => self.on_bookmark_input(id, input),
+            // Java: RequestExShowContactList, RequestExAddContactToContactList, ... (L-04)
+            ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::AcquireSkillInfo {

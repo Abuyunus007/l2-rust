@@ -161,6 +161,10 @@ pub struct PlayerProfile {
     pub macros: Vec<MacroData>,
     /// `character_variables` (Java `PlayerVariables`).
     pub variables: BTreeMap<String, String>,
+    /// `character_tpbookmark`: the teleport bookmarks, sorted by id (L-04, `bookmarks.rs`).
+    pub bookmarks: Vec<crate::bookmarks::BookmarkData>,
+    /// `character_contacts`: the names of the mail contacts (L-04, `contacts.rs`).
+    pub contacts: Vec<String>,
     /// `character_hennas`: the dye id (`symbol_id`) of slots 1 to 3 of the active class, 0 for an
     /// empty slot (Java `restoreHenna`).
     pub hennas: [i32; 3],
@@ -262,6 +266,8 @@ impl Default for PlayerProfile {
             recom_time_left_ms: 0,
             macros: Vec::new(),
             variables: BTreeMap::new(),
+            bookmarks: Vec::new(),
+            contacts: Vec::new(),
             hennas: [0; 3],
             last_access: 0,
             variables_changed: std::collections::BTreeSet::new(),
