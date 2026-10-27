@@ -551,23 +551,13 @@ impl World {
             self.coliseum_team_set_status(arena_id, 0, WIN);
             winner = Some(0);
         } else if red_party.is_some() && blue_party.is_some() {
-            if blue_kills > red_kills {
-                self.coliseum_team_set_status(arena_id, 0, WIN);
-                self.coliseum_team_set_status(arena_id, 1, FAIL);
-                winner = Some(0);
-            } else if red_kills > blue_kills {
-                self.coliseum_team_set_status(arena_id, 0, FAIL);
-                self.coliseum_team_set_status(arena_id, 1, WIN);
-                winner = Some(1);
-            } else if blue_time > red_time {
-                self.coliseum_team_set_status(arena_id, 0, FAIL);
-                self.coliseum_team_set_status(arena_id, 1, WIN);
-                winner = Some(1);
-            } else {
-                self.coliseum_team_set_status(arena_id, 0, WIN);
-                self.coliseum_team_set_status(arena_id, 1, FAIL);
-                winner = Some(0);
-            }
+            // More kills win; on equal kills the party that registered first (the smaller
+            // registration time) wins, the blue one when both registered at the same time.
+            let blue_wins = blue_kills > red_kills || (blue_kills == red_kills && blue_time <= red_time);
+            let (blue_status, red_status, index) = if blue_wins { (WIN, FAIL, 0) } else { (FAIL, WIN, 1) };
+            self.coliseum_team_set_status(arena_id, 0, blue_status);
+            self.coliseum_team_set_status(arena_id, 1, red_status);
+            winner = Some(index);
         }
         self.coliseum_broadcast_record(arena_id, PVP_RECORD_FINISH, winner.map_or(0, |w| w as i32 + 1));
         // `blueTeam.setLastParty(redTeam.getParty())` with the parties as they are now.

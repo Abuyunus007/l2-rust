@@ -286,7 +286,7 @@ mod tests {
         let pattern = SchedulingPattern::parse("0 21 * * 5,6,7").unwrap();
         // The next Friday 21:00 after Tuesday 2026-10-27 is 2026-10-30.
         let next = pattern.next(TUESDAY_NOON, 0);
-        let (year, month, day) = civil_from_days((next + 0).div_euclid(MS_PER_DAY));
+        let (year, month, day) = civil_from_days(next.div_euclid(MS_PER_DAY));
         assert_eq!((year, month, day), (2026, 10, 30));
         assert_eq!(next.rem_euclid(MS_PER_DAY), 21 * 3_600_000);
         // Sunday (0) is not in the set.
@@ -299,7 +299,7 @@ mod tests {
 
     #[test]
     fn names_ranges_and_alternatives() {
-        let pattern = SchedulingPattern::parse("30 6 1 jan|0 0 L * sat-sun").unwrap();
+        let pattern = SchedulingPattern::parse("30 6 1 jan *|0 0 L * sat-sun").unwrap();
         assert_eq!(pattern.expressions.len(), 2);
         let wrap = SchedulingPattern::parse("0 0 * * sat-mon").unwrap();
         let days = wrap.expressions[0].day_of_week.clone().unwrap();

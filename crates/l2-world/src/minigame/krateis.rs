@@ -247,7 +247,7 @@ impl World {
         let target_local = if minute >= MINUTE_SECOND {
             // `calendar.add(HOUR, 1); calendar.set(MINUTE, 27)`: the seconds stay.
             floor_hour + hour_ms + MINUTE_FIRST * 60_000 + local.rem_euclid(60_000)
-        } else if minute <= MINUTE_FIRST - 1 {
+        } else if minute < MINUTE_FIRST {
             self.minigames.krateis.is_half_an_hour = true;
             floor_hour + MINUTE_FIRST * 60_000 + local.rem_euclid(1000)
         } else {
@@ -581,7 +581,7 @@ impl World {
         };
         let mut list: Vec<(ObjectId, i32)> = arena.players.iter().map(|(p, v)| (*p, v.points)).collect();
         // A stable sort by points, highest first.
-        list.sort_by(|a, b| b.1.cmp(&a.1));
+        list.sort_by_key(|entry| std::cmp::Reverse(entry.1));
         list.into_iter()
             .map(|(player, points)| CcRecordEntry {
                 name: self.minigame_player_name(player),
@@ -1114,7 +1114,7 @@ impl World {
         let size = arena.players.len() as i32;
         let mut list: Vec<(ObjectId, i32)> = arena.players.iter().map(|(p, v)| (*p, v.points)).collect();
         // `SortPointInfo`: the highest points first.
-        list.sort_by(|a, b| b.1.cmp(&a.1));
+        list.sort_by_key(|entry| std::cmp::Reverse(entry.1));
         let record = ExPvpMatchCcRecord {
             state: CC_RECORD_INITIALIZE,
             players: self.krateis_participants(arena_id),
