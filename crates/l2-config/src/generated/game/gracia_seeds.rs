@@ -8,7 +8,7 @@ use crate::IniFile;
 pub struct GraciaSeedsConfig {
     /// Key: `TiatKillCountForNextState`, default 10.
     pub sod_tiat_kill_count: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `long`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.gracia_seeds.sod_stage_2_length` (Java type `long`); the unit type keeps this field from being used by mistake.
     /// Java (line 54): `SOD_STAGE_2_LENGTH = config.getLong("Stage2Length", 720) * 60000;`
     /// Key: `Stage2Length`, Java default `720` (before the Java post-processing).
     pub sod_stage_2_length: (),

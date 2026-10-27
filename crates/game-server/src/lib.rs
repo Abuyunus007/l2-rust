@@ -662,10 +662,7 @@ impl Server {
         );
 
         // Java: ServerConfig.DATAPACK_ROOT, then the data loaders ("Data", "Characters", ...)
-        let datapack_root = resolve_datapack_root(
-            &paths.root,
-            &IniFile::load(paths.config_dir.join(SERVER_CONFIG_FILE))?.get_string("DatapackRoot", "."),
-        );
+        let datapack_root = resolve_datapack_root(&paths.root, &config.manual.core.server.datapack_root);
         let datapack = {
             let root = datapack_root.clone();
             let options = options_from_config(&config, &paths.config_dir);
@@ -742,7 +739,7 @@ impl Server {
             Vec::new()
         };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
-        let flood_settings = world_data::flood_settings(&paths.config_dir);
+        let flood_settings = world_data::flood_settings_from_config(&config);
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -822,7 +819,7 @@ impl Server {
 
         // Java: World.init, PlayerAutoSaveTaskManager. The outbox consumer is the persistence
         // task; it stores in order and reports logouts (after the store) on `ls_notices`.
-        let autosave = persist::autosave_interval(&paths.config_dir);
+        let autosave = persist::autosave_interval_from_config(&config);
         let (notices_tx, ls_notices) = mpsc::unbounded_channel();
         let left_acks = persist::LeftAcks::default();
         let world = {
