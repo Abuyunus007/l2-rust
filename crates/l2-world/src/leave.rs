@@ -138,6 +138,7 @@ impl World {
             self.sessions.remove(&session);
         }
         self.pc_cafe_on_player_leave(id);
+        self.wedding_on_player_leave(id);
         // Java: PlayerAutoSaveTaskManager.remove
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);
