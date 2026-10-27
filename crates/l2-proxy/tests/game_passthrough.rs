@@ -210,10 +210,10 @@ fn client_script() -> Vec<Vec<u8>> {
     auth.extend([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
     vec![
         auth,
-        vec![0xD0, 0x36, 0x00],             // ex: REQUEST_GOTO_LOBBY
-        vec![0x12, 0, 0, 0, 0],             // CHARACTER_SELECT
-        vec![0x11],                         // ENTER_WORLD
-        vec![0xD0, 0x51, 0x00, 1, 0, 0, 0], // ex: EX_BOOKMARK_PACKET with sub id 1
+        vec![0xD0, 0x36, 0x00], // ex: REQUEST_GOTO_LOBBY
+        vec![0x12, 0, 0, 0, 0], // CHARACTER_SELECT
+        vec![0x11],             // ENTER_WORLD
+        vec![0xD0, 0x90, 0x00], // ex: REQUEST_BR_LECTURE_MARK (no struct)
     ]
 }
 
@@ -362,7 +362,7 @@ fn expected_rows() -> Vec<Row<'static>> {
         (Dir::C2s, 0xD0, Some(0x36), "REQUEST_GOTO_LOBBY"),
         (Dir::C2s, 0x12, None, "CHARACTER_SELECT"),
         (Dir::C2s, 0x11, None, "ENTER_WORLD"),
-        (Dir::C2s, 0xD0, Some(0x51), "EX_BOOKMARK_PACKET"),
+        (Dir::C2s, 0xD0, Some(0x90), "REQUEST_BR_LECTURE_MARK"),
     ]
 }
 
@@ -389,7 +389,7 @@ fn check_capture(records: &[Record], text: &str, encryption: bool) {
     ] {
         assert!(find(name).fields.is_some(), "{name} is decoded");
     }
-    for name in ["EX_SAY2_FAIL", "EX_BOOKMARK_PACKET"] {
+    for name in ["EX_SAY2_FAIL", "REQUEST_BR_LECTURE_MARK"] {
         assert!(find(name).fields.is_none(), "{name} has no decoder");
     }
 
@@ -399,7 +399,7 @@ fn check_capture(records: &[Record], text: &str, encryption: bool) {
     assert_eq!(find("EX_SAY2_FAIL").raw, "fee800aabb");
     assert_eq!(find("CHARACTER_SELECT").raw, "1200000000");
     assert_eq!(find("ENTER_WORLD").raw, "11");
-    assert_eq!(find("EX_BOOKMARK_PACKET").raw, "d0510001000000");
+    assert_eq!(find("REQUEST_BR_LECTURE_MARK").raw, "d09000");
 
     // The game AuthLogin is redacted down to its opcode.
     let auth = find("AUTH_LOGIN");
