@@ -106,6 +106,9 @@ use l2_world::{
 };
 use l2_world::{CursedLoad, CursedRow, CursedWrite};
 use l2_world::{
+    NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows, OlympiadWrite,
+};
+use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
@@ -331,6 +334,28 @@ pub trait PlayerStore: Send + 'static {
         _write: &CursedWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// An Olympiad write with Java's statements (M8-OLY-01).
+    fn store_olympiad_write(
+        &mut self,
+        _write: &OlympiadWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// An Olympiad read (the rankings, the last points, the unclaimed passes; M8-OLY-01). A store
+    /// without a database has no rows.
+    fn load_olympiad_reread(
+        &mut self,
+        request: &OlympiadRereadRequest,
+    ) -> impl Future<Output = Result<OlympiadRereadRows, PersistError>> + Send {
+        let rows = match request {
+            OlympiadRereadRequest::ClassLeaderBoard { .. } => OlympiadRereadRows::Names(Vec::new()),
+            OlympiadRereadRequest::LastPoints { .. } => OlympiadRereadRows::Points(0),
+            OlympiadRereadRequest::UnclaimedPasses { .. } => OlympiadRereadRows::Passes(None),
+        };
+        async move { Ok(rows) }
     }
 
     /// One residence read again (D-50, D-51, M7-RES-01). A store without a database has no rows.
@@ -1112,6 +1137,27 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on ("Failed to save data.").
                 if let Err(e) = store.store_cursed_write(&write).await {
                     error!("CursedWeapon: Failed to save data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Olympiad(write)) => {
+                // Java logs a failed statement and goes on ("Olympiad System: Failed to save ...").
+                if let Err(e) = store.store_olympiad_write(&write).await {
+                    error!("Olympiad System: Failed to save data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::OlympiadRereadRequest { request, then }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is reported
+                // as a failure; the world then shows and hands out nothing (D-50).
+                let result = match store.load_olympiad_reread(&request).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Olympiad System: Couldn't read {request:?}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::OlympiadReread { result, then };
+                if !acks.send_to_world(answer) {
+                    warn!("The Olympiad read {request:?} could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
@@ -2001,6 +2047,83 @@ pub async fn load_hall_sieges(pool: &Pool) -> HallSiegeLoad {
         load.halls.push(hall);
     }
     load
+}
+
+fn olympiad_noble_row(char_id: i32, noble: &NobleStats) -> l2_db::OlympiadNobleRow {
+    l2_db::OlympiadNobleRow {
+        char_id,
+        class_id: noble.class_id,
+        char_name: noble.char_name.clone(),
+        olympiad_points: noble.points,
+        competitions_done: noble.comp_done,
+        competitions_won: noble.comp_won,
+        competitions_lost: noble.comp_lost,
+        competitions_drawn: noble.comp_drawn,
+        competitions_done_week: noble.comp_done_week,
+        competitions_done_week_classed: noble.comp_done_week_classed,
+        competitions_done_week_non_classed: noble.comp_done_week_non_classed,
+        competitions_done_week_team: noble.comp_done_week_team,
+    }
+}
+
+/// Java `Olympiad.load()`, the database half (M8-OLY-01): the `olympiad_data` row, the nobles
+/// and the last period's ranking (`GET_ALL_CLASSIFIED_NOBLESS`, which `loadNoblesRank` reads when
+/// the server starts in the validation period). Read in both modes of `CycleDatabaseWrites`
+/// (D-53: the state is read again at start). A failed read is logged like Java's and that part
+/// starts empty.
+pub async fn load_olympiad(pool: &Pool, min_matches: i32) -> OlympiadLoad {
+    let repo = l2_db::OlympiadRepository::new(pool.clone());
+    let data = match repo.load_data().await {
+        Ok(row) => row.map(|r| OlympiadData {
+            current_cycle: r.current_cycle,
+            period: r.period,
+            olympiad_end: r.olympiad_end,
+            validation_end: r.validation_end,
+            next_weekly_change: r.next_weekly_change,
+        }),
+        Err(e) => {
+            warn!("Olympiad System: Error loading olympiad data from database: {e}");
+            None
+        }
+    };
+    let nobles = match repo.load_nobles().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|r| NobleRow {
+                char_id: r.char_id,
+                stats: NobleStats {
+                    class_id: r.class_id,
+                    char_name: r.char_name,
+                    points: r.olympiad_points,
+                    comp_done: r.competitions_done,
+                    comp_won: r.competitions_won,
+                    comp_lost: r.competitions_lost,
+                    comp_drawn: r.competitions_drawn,
+                    comp_done_week: r.competitions_done_week,
+                    comp_done_week_classed: r.competitions_done_week_classed,
+                    comp_done_week_non_classed: r.competitions_done_week_non_classed,
+                    comp_done_week_team: r.competitions_done_week_team,
+                    to_save: false,
+                },
+            })
+            .collect(),
+        Err(e) => {
+            warn!("Olympiad System: Error loading noblesse data from database: {e}");
+            Vec::new()
+        }
+    };
+    let classified = match repo.classified_nobles(min_matches).await {
+        Ok(ids) => ids,
+        Err(e) => {
+            warn!("Olympiad System: Error loading noblesse data from database for Ranking: {e}");
+            Vec::new()
+        }
+    };
+    OlympiadLoad {
+        data,
+        nobles,
+        classified,
+    }
 }
 
 fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
@@ -2935,6 +3058,7 @@ pub struct DbStore {
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
     cursed: CursedWeaponRepository,
+    olympiad: l2_db::OlympiadRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
@@ -2980,6 +3104,7 @@ impl DbStore {
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
             cursed: CursedWeaponRepository::new(pool.clone()),
+            olympiad: l2_db::OlympiadRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
@@ -4369,6 +4494,71 @@ impl PlayerStore for DbStore {
             FriendWrite::RemoveBlock { owner, target } => friends.remove_block(owner.0, target.0).await?,
         }
         Ok(())
+    }
+
+    async fn store_olympiad_write(&mut self, write: &OlympiadWrite) -> Result<(), PersistError> {
+        let repo = &self.olympiad;
+        match write {
+            OlympiadWrite::SaveNobles(nobles) => {
+                // Java writes one statement per noble and logs the failed ones.
+                for (char_id, noble) in nobles {
+                    if let Err(e) = repo.save_noble(&olympiad_noble_row(*char_id, noble), noble.to_save).await {
+                        error!("Olympiad System: Failed to save noble data for charId {char_id}: {e}");
+                    }
+                }
+            }
+            OlympiadWrite::SaveData(data) => {
+                repo.save_data(&l2_db::OlympiadDataRow {
+                    current_cycle: data.current_cycle,
+                    period: data.period,
+                    olympiad_end: data.olympiad_end,
+                    validation_end: data.validation_end,
+                    next_weekly_change: data.next_weekly_change,
+                })
+                .await?
+            }
+            OlympiadWrite::DeleteNobles => repo.delete_nobles().await?,
+            OlympiadWrite::UpdateMonthlyData => repo.update_monthly_data().await?,
+            OlympiadWrite::UnclaimedPoints { char_id, points } => {
+                repo.store_unclaimed_points(*char_id, l2_world::olympiad::UNCLAIMED_OLYMPIAD_PASSES_VAR, *points)
+                    .await?
+            }
+            OlympiadWrite::Fight(fight) => {
+                repo.insert_fight(&l2_db::OlympiadFightRow {
+                    char_one_id: fight.char_one_id,
+                    char_two_id: fight.char_two_id,
+                    char_one_class: fight.char_one_class,
+                    char_two_class: fight.char_two_class,
+                    winner: fight.winner,
+                    start: fight.start,
+                    time: fight.time,
+                    classed: fight.classed,
+                })
+                .await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_olympiad_reread(
+        &mut self,
+        request: &OlympiadRereadRequest,
+    ) -> Result<OlympiadRereadRows, PersistError> {
+        let repo = &self.olympiad;
+        Ok(match request {
+            OlympiadRereadRequest::ClassLeaderBoard {
+                class_id,
+                monthly,
+                min_matches,
+            } => OlympiadRereadRows::Names(repo.class_leader_board(*class_id, *monthly, *min_matches).await?),
+            OlympiadRereadRequest::LastPoints { char_id } => {
+                OlympiadRereadRows::Points(repo.last_noble_points(*char_id).await?)
+            }
+            OlympiadRereadRequest::UnclaimedPasses { char_id } => OlympiadRereadRows::Passes(
+                repo.variable(*char_id, l2_world::olympiad::UNCLAIMED_OLYMPIAD_PASSES_VAR)
+                    .await?,
+            ),
+        })
     }
 
     async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {

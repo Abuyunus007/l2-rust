@@ -1125,6 +1125,16 @@ impl ClientSession {
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
             ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
             ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
+            // Java: ObserverReturn, RequestOlympiadObserverEnd, RequestOlympiadMatchList,
+            // RequestExOlympiadMatchListRefresh (M8-OLY-01)
+            ClientPacket::ObserverReturn(_) => ClientInput::Olympiad(l2_world::OlympiadInput::ObserverReturn),
+            ClientPacket::RequestOlympiadObserverEnd(_) => {
+                ClientInput::Olympiad(l2_world::OlympiadInput::ObserverEnd)
+            }
+            ClientPacket::RequestOlympiadMatchList(_) => ClientInput::Olympiad(l2_world::OlympiadInput::MatchList),
+            ClientPacket::RequestExOlympiadMatchListRefresh(_) => {
+                ClientInput::Olympiad(l2_world::OlympiadInput::MatchListRefresh)
+            }
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,
