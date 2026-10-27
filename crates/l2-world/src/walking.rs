@@ -17,8 +17,8 @@
 // - Java's three scheduled tasks (`_startMoveTasks`, `_repeatMoveTasks`, `_arriveTasks`) are
 //   [`WalkingTimer`]s on the wheel (D-12). The 10 s repeat task keeps trying to resume a walk
 //   that a fight interrupted.
-// - The `ON_NPC_MOVE_NODE_ARRIVED` and `ON_NPC_MOVE_ROUTE_FINISHED` script events are scripts
-//   (D-05) and not sent; `startMoving` for a quest NPC (Q00021) is the script's call and works
+// - The `ON_NPC_MOVE_NODE_ARRIVED` and `ON_NPC_MOVE_ROUTE_FINISHED` script events go to the
+//   script engine (S-API-01); `startMoving` for a quest NPC (Q00021) is the script's call and works
 //   through [`World::walking_start_moving`].
 
 use std::collections::{HashMap, HashSet};
@@ -275,7 +275,8 @@ impl World {
 
         walk.cursor += walk.step;
         if walk.cursor == count {
-            // `ON_NPC_MOVE_ROUTE_FINISHED`: scripts (D-05).
+            // `ON_NPC_MOVE_ROUTE_FINISHED` (S-API-01).
+            self.script_on_route_finished(npc);
             if !route.repeat_walk {
                 return true;
             }
@@ -443,7 +444,8 @@ impl World {
             self.walking.active.insert(npc, walk);
             return;
         };
-        // ON_NPC_MOVE_NODE_ARRIVED: scripts (D-05).
+        // "Notify quest." (`ON_NPC_MOVE_NODE_ARRIVED`, S-API-01).
+        self.script_on_node_arrived(npc);
         let count = i32::try_from(route.nodes.len()).unwrap_or(i32::MAX);
         // "Opposite should not happen... but happens sometime."
         if walk.cursor < 0 || walk.cursor >= count {

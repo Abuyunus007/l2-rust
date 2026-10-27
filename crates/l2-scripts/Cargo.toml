@@ -1,0 +1,22 @@
+[package]
+name = "l2-scripts"
+description = "The compiled-in scripts (quests, AIs, ...) on the l2-world script engine (D-05, D-16)"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# Scripts only talk to the world through `l2_world::script` (MODULE_MAP: l2-scripts -> l2-world).
+[dependencies]
+l2-world.workspace = true
+l2-util.workspace = true
+l2-protocol-game.workspace = true
+
+[dev-dependencies]
+l2-data.workspace = true
+l2-net.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

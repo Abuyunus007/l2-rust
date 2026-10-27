@@ -194,6 +194,8 @@ pub enum TimerKind {
     /// The period change, the global save and the auto spawns of the Seven Signs, see
     /// `sevensigns/`.
     SevenSigns(crate::sevensigns::SevenSignsTimer),
+    /// The quest timers, the delayed kill notifications and the script despawns, see `script/`.
+    Script(crate::script::timers::ScriptTimer),
 }
 
 #[derive(Debug, Default)]

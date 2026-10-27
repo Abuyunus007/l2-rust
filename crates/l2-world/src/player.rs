@@ -260,6 +260,10 @@ pub struct PlayerProfile {
     /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
     /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
     pub instance_times: Vec<(i32, i64)>,
+    /// The `character_quests` rows as the session read them at `CharacterSelect` (S-API-01,
+    /// Java `Quest.playerEnter`); the world takes them at enter world, so snapshots never carry
+    /// them.
+    pub quests: crate::script::QuestLoad,
 }
 
 impl Default for PlayerProfile {
@@ -308,6 +312,7 @@ impl Default for PlayerProfile {
             seven_signs_refresh: None,
             seven_signs_to_store: None,
             instance_times: Vec::new(),
+            quests: crate::script::QuestLoad::default(),
         }
     }
 }

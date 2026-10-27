@@ -487,6 +487,8 @@ impl World {
             return;
         };
         player.zones.members.push((zone.id, zone.zone_type.clone()));
+        // "Notify to scripts." (`ON_CREATURE_ZONE_ENTER`, S-API-01), then the zone itself.
+        self.script_on_zone_enter(id, zone.id);
         self.on_zone_enter(id, zone, &rules);
     }
 
@@ -501,6 +503,11 @@ impl World {
             .iter()
             .position(|(zid, ty)| *zid == zone.id && *ty == zone.zone_type)
         else {
+            return;
+        };
+        // "Notify to scripts." (`ON_CREATURE_ZONE_EXIT`, S-API-01), then the zone itself.
+        self.script_on_zone_exit(id, zone.id);
+        let Some(player) = self.players.get_mut(&id) else {
             return;
         };
         player.zones.members.remove(index);

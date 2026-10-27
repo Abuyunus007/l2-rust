@@ -77,6 +77,7 @@ pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod script;
 pub mod sevensigns;
 pub mod shiftclick;
 pub mod shop;
@@ -228,6 +229,10 @@ pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
+pub use script::{
+    PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite, Script, ScriptCtx,
+    ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup,
+};
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
 pub use siege::{
     CastleSiegeConfig, Siege, SiegeClan, SiegeClanRecord, SiegeClanType, SiegeGuardRecord, SiegeInput,

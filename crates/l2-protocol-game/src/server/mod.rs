@@ -108,6 +108,7 @@ pub mod party;
 pub mod party_room;
 pub mod pccafe;
 pub mod pledge;
+pub mod quest;
 pub mod recipe;
 pub mod refine;
 pub mod regen;
@@ -244,6 +245,10 @@ pub use pledge::{
     PledgeShowMemberListAll, PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll,
     PledgeShowMemberListUpdate, PledgeSkillEntry, PledgeSkillList, PledgeSkillListAdd, PledgeStatusChanged,
     RankPrivileges, StartPledgeWar, StopPledgeWar, SubPledgeSkill, SurrenderPledgeWar,
+};
+pub use quest::{
+    ExQuestNpcLogList, ExShowQuestMark, NpcQuestHtmlMessage, QuestNpcLogEntry, RadarControl,
+    TutorialEnableClientEvent, TutorialShowHtml, TutorialShowQuestionMark,
 };
 pub use recipe::{
     ManufactureEntry, RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList,

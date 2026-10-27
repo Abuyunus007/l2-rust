@@ -362,7 +362,9 @@ impl World {
         }
         // `WalkingManager.onDeath` (M8-MISC-01).
         self.walking_forget_npc(id);
-        // The summoner's list (summons: M5), quest timers and script value (scripts: D-05).
+        // `stopQuestTimers()` of the script engine (S-API-01); the summoner's list (summons: M5)
+        // and the script value are not modelled.
+        self.script_on_npc_decay(id);
         self.npcs.remove(&id);
         // The siege forgets its towers, headquarters and guards (M7-SIEGE-01).
         self.siege_forget_npc(id);

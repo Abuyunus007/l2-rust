@@ -212,6 +212,9 @@ impl World {
         }
         self.pc_cafe_on_player_leave(id);
         self.wedding_on_player_leave(id);
+        // `Player.stopAllTasks`: the quest timers stop; the quest states go with the player
+        // (S-API-01).
+        self.script_on_player_leave(id);
         // Java: PlayerAutoSaveTaskManager.remove
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);

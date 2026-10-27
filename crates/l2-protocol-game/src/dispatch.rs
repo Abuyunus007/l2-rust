@@ -108,6 +108,10 @@ use crate::client::{
     SetPrivateStoreListSell, SetPrivateStoreMsgBuy, SetPrivateStoreMsgSell, SetPrivateStoreWholeMsg,
 };
 use crate::client::{
+    RequestQuestAbort, RequestQuestList, RequestTutorialClientEvent, RequestTutorialLinkHtml,
+    RequestTutorialPassCmdToServer, RequestTutorialQuestionMark,
+};
+use crate::client::{
     RequestRecipeBookDestroy, RequestRecipeBookOpen, RequestRecipeItemMakeInfo, RequestRecipeItemMakeSelf,
     RequestRecipeShopListSet, RequestRecipeShopMakeInfo, RequestRecipeShopMakeItem,
     RequestRecipeShopManagePrev, RequestRecipeShopManageQuit, RequestRecipeShopMessageSet,
@@ -434,6 +438,18 @@ pub enum ClientPacket {
     ObserverReturn(ObserverReturn),
     /// `REQUEST_SSQ_STATUS` (0xC8).
     RequestSsqStatus(RequestSsqStatus),
+    /// `REQUEST_QUEST_LIST` (0x62).
+    RequestQuestList(RequestQuestList),
+    /// `REQUEST_QUEST_ABORT` (0x63).
+    RequestQuestAbort(RequestQuestAbort),
+    /// `REQUEST_TUTORIAL_LINK_HTML` (0x85).
+    RequestTutorialLinkHtml(RequestTutorialLinkHtml),
+    /// `REQUEST_TUTORIAL_PASS_CMD_TO_SERVER` (0x86).
+    RequestTutorialPassCmdToServer(RequestTutorialPassCmdToServer),
+    /// `REQUEST_TUTORIAL_QUESTION_MARK` (0x87).
+    RequestTutorialQuestionMark(RequestTutorialQuestionMark),
+    /// `REQUEST_TUTORIAL_CLIENT_EVENT` (0x88).
+    RequestTutorialClientEvent(RequestTutorialClientEvent),
     /// `REQUEST_GET_ON_VEHICLE` (0x53).
     RequestGetOnVehicle(RequestGetOnVehicle),
     /// `REQUEST_GET_OFF_VEHICLE` (0x54).
@@ -793,6 +809,20 @@ pub fn decode_client(
         GameGuardReply::OPCODE => ClientPacket::GameGuardReply(GameGuardReply::decode(reader)?),
         ObserverReturn::OPCODE => ClientPacket::ObserverReturn(ObserverReturn::decode(reader)?),
         RequestSsqStatus::OPCODE => ClientPacket::RequestSsqStatus(RequestSsqStatus::decode(reader)?),
+        RequestQuestList::OPCODE => ClientPacket::RequestQuestList(RequestQuestList::decode(reader)?),
+        RequestQuestAbort::OPCODE => ClientPacket::RequestQuestAbort(RequestQuestAbort::decode(reader)?),
+        RequestTutorialLinkHtml::OPCODE => {
+            ClientPacket::RequestTutorialLinkHtml(RequestTutorialLinkHtml::decode(reader)?)
+        }
+        RequestTutorialPassCmdToServer::OPCODE => {
+            ClientPacket::RequestTutorialPassCmdToServer(RequestTutorialPassCmdToServer::decode(reader)?)
+        }
+        RequestTutorialQuestionMark::OPCODE => {
+            ClientPacket::RequestTutorialQuestionMark(RequestTutorialQuestionMark::decode(reader)?)
+        }
+        RequestTutorialClientEvent::OPCODE => {
+            ClientPacket::RequestTutorialClientEvent(RequestTutorialClientEvent::decode(reader)?)
+        }
         RequestGetOnVehicle::OPCODE => {
             ClientPacket::RequestGetOnVehicle(RequestGetOnVehicle::decode(reader)?)
         }
@@ -1301,6 +1331,45 @@ mod tests {
             decode(Authenticated, bytes[0], &bytes[1..]).unwrap(),
             Some(ClientPacket::CharacterSelect(select))
         );
+    }
+
+    #[test]
+    fn quest_and_tutorial_packets_decode_in_game_only() {
+        assert_eq!(
+            decode(InGame, 0x62, &[]).unwrap(),
+            Some(ClientPacket::RequestQuestList(RequestQuestList))
+        );
+        assert_eq!(
+            decode(InGame, 0x63, &[1, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestQuestAbort(RequestQuestAbort { quest_id: 1 }))
+        );
+        assert_eq!(
+            decode(InGame, 0x85, &[b'x', 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestTutorialLinkHtml(RequestTutorialLinkHtml {
+                bypass: "x".to_owned()
+            }))
+        );
+        assert_eq!(
+            decode(InGame, 0x86, &[0, 0]).unwrap(),
+            Some(ClientPacket::RequestTutorialPassCmdToServer(
+                RequestTutorialPassCmdToServer {
+                    bypass: String::new()
+                }
+            ))
+        );
+        assert_eq!(
+            decode(InGame, 0x87, &[3, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestTutorialQuestionMark(
+                RequestTutorialQuestionMark { number: 3 }
+            ))
+        );
+        assert_eq!(
+            decode(InGame, 0x88, &[8, 0, 0, 0]).unwrap(),
+            Some(ClientPacket::RequestTutorialClientEvent(
+                RequestTutorialClientEvent { event_id: 8 }
+            ))
+        );
+        assert_eq!(decode(Authenticated, 0x62, &[]).unwrap(), None);
     }
 
     #[test]
