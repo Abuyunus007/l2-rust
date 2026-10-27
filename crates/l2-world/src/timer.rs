@@ -156,6 +156,8 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The grand boss store, the raid boss respawns and the weekly raid points reset, see `boss/`.
+    Boss(crate::boss::BossTimer),
     /// The life task of a cursed weapon and its delayed social action and transformation, see
     /// `cursed/`.
     Cursed(crate::cursed::CursedTimer),
@@ -172,6 +174,8 @@ pub enum TimerKind {
     Untransform(ObjectId),
     /// Java `setPlayerClass`'s `finally`: `sendSkillList()` 100 ms later (`admin/edit_char.rs`).
     ClassChangeSkillList(ObjectId),
+    /// The state timer of an item auction instance (start, extension, end), see `item_auction/`.
+    ItemAuction(crate::item_auction::ItemAuctionTimer),
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),

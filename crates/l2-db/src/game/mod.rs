@@ -9,6 +9,7 @@ mod airships;
 mod announcements;
 mod auctions;
 mod bookmarks;
+mod bosses;
 mod bot_reports;
 mod buylists;
 mod characters;
@@ -25,6 +26,7 @@ mod hall_sieges;
 mod hennas;
 mod ids;
 mod instance_times;
+mod item_auctions;
 mod item_reuse;
 mod items;
 mod macros;
@@ -56,6 +58,10 @@ pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use bookmarks::{BookmarkRepository, BookmarkRow};
+pub use bosses::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
@@ -77,6 +83,7 @@ pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, Ra
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
 pub use instance_times::{InstanceTimeRepository, InstanceTimeRow};
+pub use item_auctions::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use items::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,

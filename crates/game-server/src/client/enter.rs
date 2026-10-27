@@ -1102,6 +1102,18 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
+            // Java: RequestInfoItemAuction, RequestBidItemAuction (L-05)
+            ClientPacket::RequestInfoItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Info {
+                    instance_id: p.instance_id,
+                })
+            }
+            ClientPacket::RequestBidItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Bid {
+                    instance_id: p.instance_id,
+                    bid: p.bid,
+                })
+            }
             // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, RequestModifyBookMarkSlot,
             // RequestDeleteBookMarkSlot, RequestTeleportBookMark, RequestChangeBookMarkSlot
             ClientPacket::RequestBookMarkSlotInfo(_) => ClientInput::Bookmark(BookmarkInput::SlotInfo),
@@ -1421,6 +1433,8 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestGetBossRecord (M8-BOSS-01)
+            ClientPacket::RequestGetBossRecord(p) => ClientInput::GetBossRecord { boss_id: p.boss_id },
             // Java: RequestAllFortressInfo, RequestFortressSiegeInfo, RequestFortressMapInfo
             // (M7-FORT-01)
             ClientPacket::RequestAllFortressInfo(_) => ClientInput::Fort(FortInput::AllFortressInfo),

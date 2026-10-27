@@ -34,6 +34,7 @@ pub mod admin;
 pub mod client;
 pub mod geo;
 pub mod hexid;
+pub mod item_auctions;
 pub mod logging;
 pub mod ls_link;
 pub mod npcs;
@@ -779,6 +780,12 @@ impl Server {
         } else {
             Vec::new()
         };
+        // Java: RaidBossPointsManager, GrandBossManager (+ initZones) and RaidBossSpawnManager
+        // (M8-BOSS-01): the boss tables, read only. With `CycleDatabaseWrites` off the rows stay
+        // the Java game server's (D-53).
+        let boss_settings = world_data::boss_settings(&config, &paths.config_dir);
+        let boss_load = persist::load_bosses(&pool).await;
+        let raid_boss_rows = persist::load_raid_boss_rows(&pool).await;
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
@@ -808,6 +815,13 @@ impl Server {
         let clan_settings = clan_settings(&config, &paths.config_dir);
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
+        // Java: ItemAuctionManager (data/ItemAuctions.xml and the `item_auction` rows; L-05).
+        let item_auction_settings = item_auctions::item_auction_settings(&config, &paths.config_dir);
+        let item_auction_load =
+            item_auctions::load_item_auctions(&pool, &item_auction_settings, &datapack_root, |item_id| {
+                datapack.items.get(item_id).is_some()
+            })
+            .await;
         // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
@@ -1003,6 +1017,13 @@ impl Server {
                     world.set_walking_routes(Arc::clone(&datapack.routes));
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
+                    // Java: RaidBossPointsManager (GameServer, early), GrandBossManager.initZones (after
+                    // the zones) and RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
+                    world.set_boss_settings(boss_settings);
+                    world.load_bosses(boss_load);
+                    if !config.development.no_spawns {
+                        world.spawn_raid_bosses(raid_boss_rows);
+                    }
                     // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
                     world.load_ground_items(ground_items);
                     // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).
@@ -1068,6 +1089,10 @@ impl Server {
                     // dawn tickets; M7-NPC-01).
                     world.set_residence_npc_settings(residence_npc_settings);
                     world.load_clan_hall_auctions(clan_hall_auctions);
+                    // Java: ItemAuctionManager.getInstance (GameServer, after the managers; needs the
+                    // item templates and the id factory).
+                    world.set_item_auction_settings(item_auction_settings);
+                    world.load_item_auctions(item_auction_load);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

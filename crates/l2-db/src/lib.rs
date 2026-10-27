@@ -21,6 +21,10 @@ pub use game::{AirshipRepository, AirshipRow, CursedWeaponRepository, CursedWeap
 pub use game::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use game::{BookmarkRepository, BookmarkRow, ContactLink, ContactRepository};
+pub use game::{
+    BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
+    RaidPointsRow,
+};
 pub use game::{BotReportDbRow, BotReportRepository};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
@@ -46,6 +50,7 @@ pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{InstanceTimeRepository, InstanceTimeRow};
+pub use game::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use game::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
     OwnerElementalRow, PaperdollItemRow,

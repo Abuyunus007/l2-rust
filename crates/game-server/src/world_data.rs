@@ -1211,6 +1211,32 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     settings
 }
 
+/// The values of the boss managers: `RaidMinRespawnMultiplier` and `RaidMaxRespawnMultiplier`
+/// (`NpcConfig`), the raid ranking rewards (`FeatureConfig`) and `CycleDatabaseWrites` of
+/// `SideBySide.ini` (D-53, read by `cycle_database_writes`).
+pub fn boss_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BossSettings {
+    let (n, f) = (&config.npc, &config.feature);
+    l2_world::BossSettings {
+        cycle_database_writes: crate::cycle_database_writes(config_dir),
+        raid_min_respawn_multiplier: n.raid_min_respawn_multiplier,
+        raid_max_respawn_multiplier: n.raid_max_respawn_multiplier,
+        raid_ranking: [
+            f.raid_ranking_1st,
+            f.raid_ranking_2nd,
+            f.raid_ranking_3rd,
+            f.raid_ranking_4th,
+            f.raid_ranking_5th,
+            f.raid_ranking_6th,
+            f.raid_ranking_7th,
+            f.raid_ranking_8th,
+            f.raid_ranking_9th,
+            f.raid_ranking_10th,
+        ],
+        raid_ranking_up_to_50th: f.raid_ranking_up_to_50th,
+        raid_ranking_up_to_100th: f.raid_ranking_up_to_100th,
+    }
+}
+
 /// Name of the Rust-only side-by-side settings file in the config folder (D-36).
 pub const SIDE_BY_SIDE_FILE: &str = "SideBySide.ini";
 

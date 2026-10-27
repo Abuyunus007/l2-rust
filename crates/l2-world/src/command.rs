@@ -149,6 +149,8 @@ pub enum ClientInput {
     Store(crate::trade::StoreInput),
     /// The symbol maker packets (L-01): `RequestHenna*`.
     Henna(crate::henna::HennaInput),
+    /// The item auction packets (L-05): `RequestInfoItemAuction`, `RequestBidItemAuction`.
+    ItemAuction(crate::item_auction::ItemAuctionInput),
     /// The teleport bookmark packets (L-04): `RequestBookMarkSlotInfo`, `RequestSaveBookMarkSlot`, ...
     Bookmark(crate::bookmarks::BookmarkInput),
     /// The mail contact list packets (L-04): `RequestExShowContactList`, ...
@@ -261,6 +263,8 @@ pub enum ClientInput {
     Augment(crate::augment::AugmentInput),
     /// Java `RequestExFishRanking`: the fishing ranking of the week.
     FishRanking,
+    /// Java `RequestGetBossRecord`: the raid points record (M8-BOSS-01, `boss/points.rs`).
+    GetBossRecord { boss_id: i32 },
     /// The siege window packets (M7-SIEGE-01).
     Siege(crate::siege::SiegeInput),
     /// The fortress packets (`RequestAllFortressInfo`, `RequestFortressSiegeInfo`,
@@ -395,6 +399,19 @@ pub enum WorldCommand {
         result: Result<crate::residence::ResidenceRereadRows, ()>,
         then: crate::residence::ResidenceReadThen,
     },
+    /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
+    /// the read failed (the request is then refused, L-05, D-50).
+    ItemAuctionReread {
+        instance_id: i32,
+        result: Result<Vec<crate::item_auction::ItemAuctionRecord>, ()>,
+        then: crate::item_auction::ItemAuctionThen,
+    },
+    /// The answer to `PersistCommand::BossRereadRequest`: the rows, or `Err` when the read failed
+    /// (the follow-up `then` is then refused, M8-BOSS-01).
+    BossReread {
+        result: Result<crate::boss::BossRereadRows, ()>,
+        then: crate::boss::BossReadThen,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -517,6 +534,20 @@ impl fmt::Debug for WorldCommand {
             Self::ResidenceReread { result, then } => write!(
                 f,
                 "ResidenceReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::ItemAuctionReread {
+                instance_id,
+                result,
+                then,
+            } => write!(
+                f,
+                "ItemAuctionReread({instance_id}, {then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BossReread { result, then } => write!(
+                f,
+                "BossReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

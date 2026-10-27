@@ -15,6 +15,7 @@ pub mod admin;
 pub mod ai;
 pub mod augment;
 pub mod bookmarks;
+pub mod boss;
 pub mod bot_report;
 pub mod bypass;
 pub mod chat;
@@ -45,6 +46,7 @@ pub mod ids;
 pub mod instance;
 pub mod interact;
 pub mod inventory;
+pub mod item_auction;
 pub mod item_ops;
 pub mod leave;
 pub mod leftover;
@@ -105,6 +107,10 @@ pub use ai::AiState;
 pub use ai::attackable::AiSettings;
 pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bookmarks::{BookmarkData, BookmarkInput, BookmarkWrite};
+pub use boss::{
+    BossLoad, BossReadKind, BossReadThen, BossRereadRows, BossSettings, BossTimer, BossWrite, GrandBossData,
+    GrandBossInfo, GrandBossStoreRow, RaidBossData, RaidBossStatus, RaidBossUpdateRow, RaidPointsRecord,
+};
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
@@ -154,6 +160,11 @@ pub use instance::{
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
+pub use item_auction::{
+    AuctionItemDef, DateGenerator, InstanceDef, ItemAuctionInput, ItemAuctionLoad, ItemAuctionRecord,
+    ItemAuctionSettings, ItemAuctionState, ItemAuctionThen, ItemAuctionTimer, ItemAuctionWorld,
+    ItemAuctionWrite,
+};
 pub use l2_util::{ObjectId, WorldRng};
 pub use leftover::{LeftoverInput, LeftoverSettings, LeftoverState, LeftoverTimer};
 pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};

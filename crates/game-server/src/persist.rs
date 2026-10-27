@@ -60,6 +60,7 @@ use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
 use l2_db::HallSiegeRepository;
 use l2_db::InstanceTimeRepository;
+use l2_db::ItemAuctionRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
@@ -67,6 +68,7 @@ use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
 use l2_db::{BookmarkRepository, BookmarkRow, ContactRepository};
+use l2_db::{BossRepository, GrandBossListRow, GrandBossStore, GrandBossUpdate, RaidBossRow};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
     ClanRepository, ClanUpdate, FriendRepository, GroundItemRecord, GroundItemRepository, ItemLocation,
@@ -98,6 +100,10 @@ use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
 use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
 use l2_world::{
+    BossLoad, BossReadKind, BossRereadRows, BossWrite, GrandBossData, GrandBossStoreRow, RaidBossData,
+    RaidPointsRecord,
+};
+use l2_world::{
     BotReportRow, ChampionshipData, ChampionshipRow, ClanRecord, ClanWrite, FriendWrite, GroundItemRow,
     HennaWrite, ItemData, ItemRowOp, LsEvent, MacroData, MailCharacter, MailLoad, MailMessage, MailRefresh,
     MailWrite, ManorLoad, ManorProcureRow, ManorProductionRow, ManorWrite, ObjectId, OfflinePetRows,
@@ -109,6 +115,7 @@ use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
+use l2_world::{ItemAuctionRecord, ItemAuctionWrite};
 use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -442,6 +449,15 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(0) }
     }
 
+    /// A boss row write with Java's statement (`GrandBossManager`, `RaidBossSpawnManager`,
+    /// `RaidBossPointsManager`, M8-BOSS-01).
+    fn store_boss_write(
+        &mut self,
+        _write: &BossWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// A `character_tpbookmark` row change (L-04): Java `Player.teleportBookmarkAdd` / `Modify` /
     /// `Delete`.
     fn store_bookmark_write(
@@ -449,6 +465,22 @@ pub trait PlayerStore: Send + 'static {
         _write: &BookmarkWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// Boss rows read again (D-50, D-53, M8-BOSS-01). A store without a database has no rows.
+    fn load_boss_rows(
+        &mut self,
+        kind: BossReadKind,
+    ) -> impl Future<Output = Result<BossRereadRows, PersistError>> + Send {
+        async move {
+            Ok(match kind {
+                BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss { boss_id, row: None },
+                BossReadKind::RaidPoints(char_id) => BossRereadRows::RaidPoints {
+                    char_id,
+                    rows: Vec::new(),
+                },
+            })
+        }
     }
 
     /// A `character_contacts` row change (L-04): Java `ContactList.add` / `remove`.
@@ -507,6 +539,26 @@ pub trait PlayerStore: Send + 'static {
         _write: &l2_world::wedding::WeddingWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// A row write of the item auctions (Java `ItemAuction.storeMe`, `updatePlayerBidInternal`,
+    /// `ItemAuctionManager.deleteAuction`, L-05).
+    fn store_item_auction_write(
+        &mut self,
+        _write: &ItemAuctionWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `item_auction` rows and bids of one instance (Java `ItemAuctionInstance.loadAuction`),
+    /// read again before an auction is shown or bid on while the Java game server writes the
+    /// states (L-05, D-53). Read in order with the other commands, so the rows include every bid
+    /// written before the request.
+    fn load_item_auction_records(
+        &mut self,
+        _instance_id: i32,
+    ) -> impl Future<Output = Result<Vec<ItemAuctionRecord>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
     }
 
     /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
@@ -1120,6 +1172,32 @@ async fn run<S: PlayerStore>(
                     error!("Could not store character instance time data ({write:?}): {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::ItemAuction(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_item_auction_write(&write).await {
+                    error!("Item auction data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id, then }) => {
+                // Not a write either: the answer goes back to the world (D-15).
+                let result = match store.load_item_auction_records(instance_id).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not read the auctions of item auction instance {instance_id}: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::ItemAuctionReread {
+                    instance_id,
+                    result,
+                    then,
+                };
+                if !acks.send_to_world(answer) {
+                    warn!(
+                        "The auctions of item auction instance {instance_id} could not be handed to the world."
+                    );
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
                 // Java logs a failed friend statement and goes on (no retry).
                 if let Err(e) = store.store_friend_write(&write).await {
@@ -1182,6 +1260,27 @@ async fn run<S: PlayerStore>(
                 let answer = l2_world::WorldCommand::ResidenceReread { result, then };
                 if !acks.send_to_world(answer) {
                     warn!("Residence {residence_id} could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Boss(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_boss_write(&write).await {
+                    error!("Boss data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BossRereadRequest { kind, then }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is reported
+                // as a failure; the world then changes nothing and refuses the action (D-50).
+                let result = match store.load_boss_rows(kind).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not read the boss rows {kind:?} again: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::BossReread { result, then };
+                if !acks.send_to_world(answer) {
+                    warn!("The boss rows {kind:?} could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Recipe(write)) => {
@@ -1280,6 +1379,91 @@ pub async fn load_fishing_championship(pool: &Pool) -> ChampionshipData {
         Err(e) => warn!("FishingChampionshipManager: can't restore fishing championship info: {e}"),
     }
     data
+}
+
+fn grand_boss_update(row: &GrandBossData) -> GrandBossUpdate {
+    GrandBossUpdate {
+        boss_id: row.boss_id,
+        loc_x: row.loc_x,
+        loc_y: row.loc_y,
+        loc_z: row.loc_z,
+        heading: row.heading,
+        respawn_time: row.respawn_time,
+        current_hp: row.current_hp,
+        current_mp: row.current_mp,
+        status: row.status,
+    }
+}
+
+fn grand_boss_data(row: l2_db::GrandBossRow) -> GrandBossData {
+    GrandBossData {
+        boss_id: row.boss_id,
+        loc_x: row.loc_x,
+        loc_y: row.loc_y,
+        loc_z: row.loc_z,
+        heading: row.heading,
+        respawn_time: row.respawn_time,
+        current_hp: row.current_hp,
+        current_mp: row.current_mp,
+        status: row.status,
+    }
+}
+
+fn raid_points_record(row: l2_db::RaidPointsRow) -> RaidPointsRecord {
+    RaidPointsRecord {
+        char_id: row.char_id,
+        boss_id: row.boss_id,
+        points: row.points,
+    }
+}
+
+/// Java `GrandBossManager.init`, `initZones` and `RaidBossPointsManager.init`: the grand boss
+/// states, the players of the boss zones and the raid points, read only (M8-BOSS-01). A database
+/// error is logged and the table counts as empty, like Java.
+pub async fn load_bosses(pool: &Pool) -> BossLoad {
+    let repo = BossRepository::new(pool.clone());
+    let mut load = BossLoad::default();
+    match repo.grand_bosses().await {
+        Ok(rows) => load.grand_bosses = rows.into_iter().map(grand_boss_data).collect(),
+        Err(e) => warn!("GrandBossManager: Could not load grandboss_data table: {e}"),
+    }
+    match repo.grand_boss_list().await {
+        Ok(rows) => load.grand_boss_list = rows.into_iter().map(|r| (r.player_id, r.zone)).collect(),
+        Err(e) => warn!("GrandBossManager: Could not load grandboss_list table: {e}"),
+    }
+    match repo.raid_points().await {
+        Ok(rows) => load.raid_points = rows.into_iter().map(raid_points_record).collect(),
+        Err(e) => warn!("RaidBossPointsManager: Could not load raid points {e}"),
+    }
+    load
+}
+
+/// Java `RaidBossSpawnManager.load()`, the database half: the rows of `raidboss_spawnlist`, read
+/// only. A database error is logged and the list counts as empty, like Java.
+pub async fn load_raid_boss_rows(pool: &Pool) -> Vec<RaidBossData> {
+    match BossRepository::new(pool.clone()).raid_bosses().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|r| RaidBossData {
+                boss_id: r.boss_id,
+                amount: r.amount,
+                loc_x: r.loc_x,
+                loc_y: r.loc_y,
+                loc_z: r.loc_z,
+                heading: r.heading,
+                respawn_delay: r.respawn_delay,
+                respawn_random: r.respawn_random,
+                respawn_time: r.respawn_time,
+                current_hp: r.current_hp,
+                current_mp: r.current_mp,
+            })
+            .collect(),
+        Err(e) => {
+            warn!("RaidBossSpawnManager: Could not load raidboss_spawnlist table");
+            debug!("{e}");
+            Vec::new()
+        }
+    }
 }
 
 /// Java `BuyListData.load()`, the database half: the rows of `buylists`, which hold the stock and
@@ -3158,6 +3342,7 @@ pub struct DbStore {
     shortcuts: ShortcutRepository,
     macros: MacroRepository,
     hennas: HennaRepository,
+    item_auctions: ItemAuctionRepository,
     instance_times: InstanceTimeRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
@@ -3179,6 +3364,7 @@ pub struct DbStore {
     territories: TerritoryRepository,
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
+    bosses: BossRepository,
     cursed: CursedWeaponRepository,
     airships: AirshipRepository,
     auctions: AuctionRepository,
@@ -3207,6 +3393,7 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
+            item_auctions: ItemAuctionRepository::new(pool.clone()),
             instance_times: InstanceTimeRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
@@ -3226,6 +3413,7 @@ impl DbStore {
             territories: TerritoryRepository::new(pool.clone()),
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
+            bosses: BossRepository::new(pool.clone()),
             cursed: CursedWeaponRepository::new(pool.clone()),
             airships: AirshipRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
@@ -4485,6 +4673,71 @@ impl PlayerStore for DbStore {
         }
     }
 
+    async fn store_boss_write(&mut self, write: &BossWrite) -> Result<(), PersistError> {
+        let repo = &self.bosses;
+        match write {
+            BossWrite::GrandBossStatus { boss_id, status } => {
+                repo.update_grand_boss_status(*boss_id, *status).await?
+            }
+            BossWrite::GrandBoss(row) => repo.update_grand_boss(&grand_boss_update(row)).await?,
+            BossWrite::GrandBossStoreAll { list, rows } => {
+                let list: Vec<GrandBossListRow> = list
+                    .iter()
+                    .map(|(player_id, zone)| GrandBossListRow {
+                        player_id: *player_id,
+                        zone: *zone,
+                    })
+                    .collect();
+                let rows: Vec<GrandBossStore> = rows
+                    .iter()
+                    .map(|row| match row {
+                        GrandBossStoreRow::StatusOnly { boss_id, status } => GrandBossStore::StatusOnly {
+                            boss_id: *boss_id,
+                            status: *status,
+                        },
+                        GrandBossStoreRow::Full(row) => GrandBossStore::Full(grand_boss_update(row)),
+                    })
+                    .collect();
+                repo.store_all(&list, &rows).await?
+            }
+            BossWrite::RaidBossInsert(row) => {
+                repo.insert_raid_boss(&RaidBossRow {
+                    boss_id: row.boss_id,
+                    amount: row.amount,
+                    loc_x: row.loc_x,
+                    loc_y: row.loc_y,
+                    loc_z: row.loc_z,
+                    heading: row.heading,
+                    respawn_delay: row.respawn_delay,
+                    respawn_random: row.respawn_random,
+                    respawn_time: row.respawn_time,
+                    current_hp: row.current_hp,
+                    current_mp: row.current_mp,
+                })
+                .await?
+            }
+            BossWrite::RaidBossDelete { boss_id } => repo.delete_raid_boss(*boss_id).await?,
+            BossWrite::RaidBossUpdate(rows) => {
+                // Java logs a failed row and goes on with the next.
+                for row in rows {
+                    if let Err(e) = repo
+                        .update_raid_boss(row.boss_id, row.respawn_time, row.current_hp, row.current_mp)
+                        .await
+                    {
+                        warn!("RaidBossSpawnManager: Could not update raidboss_spawnlist table {e}");
+                    }
+                }
+            }
+            BossWrite::RaidPoints {
+                char_id,
+                boss_id,
+                points,
+            } => repo.replace_raid_points(*char_id, *boss_id, *points).await?,
+            BossWrite::RaidPointsDeleteAll => repo.delete_all_raid_points().await?,
+        }
+        Ok(())
+    }
+
     async fn store_bookmark_write(&mut self, write: &BookmarkWrite) -> Result<(), PersistError> {
         match write {
             BookmarkWrite::Add { char_id, bookmark } => {
@@ -4525,6 +4778,25 @@ impl PlayerStore for DbStore {
             }
         }
         Ok(())
+    }
+
+    async fn load_boss_rows(&mut self, kind: BossReadKind) -> Result<BossRereadRows, PersistError> {
+        Ok(match kind {
+            BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss {
+                boss_id,
+                row: self.bosses.grand_boss(boss_id).await?.map(grand_boss_data),
+            },
+            BossReadKind::RaidPoints(char_id) => BossRereadRows::RaidPoints {
+                char_id,
+                rows: self
+                    .bosses
+                    .raid_points_of(char_id)
+                    .await?
+                    .into_iter()
+                    .map(raid_points_record)
+                    .collect(),
+            },
+        })
     }
 
     async fn load_friend_summary(&mut self, char_id: i32) -> Result<Option<FriendSummary>, PersistError> {
@@ -4635,6 +4907,54 @@ impl PlayerStore for DbStore {
             WeddingWrite::Divorce { id } => self.wedding.delete(*id).await?,
         }
         Ok(())
+    }
+
+    async fn store_item_auction_write(&mut self, write: &ItemAuctionWrite) -> Result<(), PersistError> {
+        match write {
+            ItemAuctionWrite::Store {
+                auction_id,
+                instance_id,
+                auction_item_id,
+                starting_time,
+                ending_time,
+                state_id,
+            } => {
+                self.item_auctions
+                    .store_auction(&l2_db::ItemAuctionRow {
+                        auction_id: *auction_id,
+                        instance_id: *instance_id,
+                        auction_item_id: *auction_item_id,
+                        starting_time: *starting_time,
+                        ending_time: *ending_time,
+                        auction_state_id: *state_id,
+                    })
+                    .await?
+            }
+            ItemAuctionWrite::Bid {
+                auction_id,
+                player_obj_id,
+                bid,
+            } => {
+                self.item_auctions
+                    .store_bid(*auction_id, *player_obj_id, *bid)
+                    .await?
+            }
+            ItemAuctionWrite::DeleteBid {
+                auction_id,
+                player_obj_id,
+            } => self.item_auctions.delete_bid(*auction_id, *player_obj_id).await?,
+            ItemAuctionWrite::DeleteAuction { auction_id } => {
+                self.item_auctions.delete_auction(*auction_id).await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_item_auction_records(
+        &mut self,
+        instance_id: i32,
+    ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
+        Ok(crate::item_auctions::read_instance_records(&self.item_auctions, instance_id).await?)
     }
 
     async fn store_petition_feedback(
@@ -5218,7 +5538,7 @@ mod tests {
         assert_eq!(macro_commands_text(&macro_data), "");
     }
 
-    #[derive(Debug, Clone, PartialEq, Eq)]
+    #[derive(Debug, Clone, PartialEq)]
     enum Call {
         Store(String),
         Offline(i32),
@@ -5271,6 +5591,14 @@ mod tests {
         Announcement(AnnouncementWrite),
         /// A `character_hennas` write (L-01).
         Henna(HennaWrite),
+        /// An item auction row write (L-05).
+        ItemAuction(ItemAuctionWrite),
+        /// The re-read of an item auction instance (L-05).
+        ItemAuctionRecords(i32),
+        /// A boss row write (M8-BOSS-01).
+        Boss(BossWrite),
+        /// A read of boss rows (M8-BOSS-01).
+        BossRead(BossReadKind),
         /// A `character_instance_time` write (M8-INST-01).
         InstanceTime(InstanceTimeWrite),
         /// A `character_tpbookmark` write (L-04).
@@ -5491,6 +5819,22 @@ mod tests {
             Ok(())
         }
 
+        async fn store_boss_write(&mut self, write: &BossWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Boss(write.clone()));
+            Ok(())
+        }
+
+        async fn load_boss_rows(&mut self, kind: BossReadKind) -> Result<BossRereadRows, PersistError> {
+            self.calls.lock().unwrap().push(Call::BossRead(kind));
+            Ok(match kind {
+                BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss { boss_id, row: None },
+                BossReadKind::RaidPoints(char_id) => BossRereadRows::RaidPoints {
+                    char_id,
+                    rows: Vec::new(),
+                },
+            })
+        }
+
         async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::InstanceTime(*write));
             Ok(())
@@ -5529,6 +5873,38 @@ mod tests {
         async fn store_vehicle_write(&mut self, write: &VehicleWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Vehicle(write.clone()));
             Ok(())
+        }
+
+        async fn store_item_auction_write(&mut self, write: &ItemAuctionWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::ItemAuction(write.clone()));
+            Ok(())
+        }
+
+        /// Instance 7 has one auction with one bid; below 0 cannot be read.
+        async fn load_item_auction_records(
+            &mut self,
+            instance_id: i32,
+        ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::ItemAuctionRecords(instance_id));
+            if instance_id < 0 {
+                return Err(PersistError::NoSuchCharacter(instance_id));
+            }
+            Ok(if instance_id == 7 {
+                vec![ItemAuctionRecord {
+                    auction_id: 3,
+                    instance_id: 7,
+                    auction_item_id: 1,
+                    starting_time: 10,
+                    ending_time: 20,
+                    state_id: 1,
+                    bids: vec![(1001, 500)],
+                }]
+            } else {
+                Vec::new()
+            })
         }
 
         async fn store_petition_feedback(
@@ -5793,6 +6169,59 @@ mod tests {
             l2_world::WorldCommand::ResidenceReread { result, then } => {
                 assert_eq!(result, Ok(ResidenceRereadRows::Missing));
                 assert_eq!(then, l2_world::residence::ResidenceReadThen::Nothing);
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// The boss writes reach the store in order, and a boss read (M8-BOSS-01, D-50) comes after
+    /// the writes sent before it and goes back to the world as `WorldCommand::BossReread`.
+    #[tokio::test]
+    async fn the_boss_writes_and_reads_are_in_order_and_answered_to_the_world() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let send = |command: PersistCommand| tx.send(OutboxMessage::Persist(command)).unwrap();
+        send(PersistCommand::Boss(BossWrite::GrandBossStatus {
+            boss_id: 29028,
+            status: 3,
+        }));
+        send(PersistCommand::BossRereadRequest {
+            kind: BossReadKind::GrandBoss(29028),
+            then: l2_world::BossReadThen::Nothing,
+        });
+        send(PersistCommand::Boss(BossWrite::RaidPointsDeleteAll));
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec![
+                Call::Boss(BossWrite::GrandBossStatus {
+                    boss_id: 29028,
+                    status: 3
+                }),
+                Call::BossRead(BossReadKind::GrandBoss(29028)),
+                Call::Boss(BossWrite::RaidPointsDeleteAll),
+            ]
+        );
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::BossReread { result, then } => {
+                assert_eq!(
+                    result,
+                    Ok(BossRereadRows::GrandBoss {
+                        boss_id: 29028,
+                        row: None
+                    })
+                );
+                assert_eq!(then, l2_world::BossReadThen::Nothing);
             }
             other => panic!("{other:?}"),
         }
@@ -7064,6 +7493,75 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    /// L-05: the item auction rows are writes in order, and the re-read of an instance is an
+    /// answer to the world, in order with the writes before it (a failed read is `Err`).
+    #[tokio::test]
+    async fn item_auction_rows_and_the_reread_are_in_order() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let bid = ItemAuctionWrite::Bid {
+            auction_id: 3,
+            player_obj_id: 1001,
+            bid: 500,
+        };
+        let then = l2_world::ItemAuctionThen::Info {
+            player: ObjectId(1001),
+        };
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let store = Recording {
+            calls: Arc::clone(&calls),
+            ..Recording::default()
+        };
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        for message in [
+            OutboxMessage::Persist(PersistCommand::ItemAuction(bid.clone())),
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id: 7, then }),
+            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest {
+                instance_id: -1,
+                then,
+            }),
+        ] {
+            tx.send(message).unwrap();
+        }
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![
+                Call::ItemAuction(bid),
+                Call::ItemAuctionRecords(7),
+                Call::ItemAuctionRecords(-1),
+            ]
+        );
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::ItemAuctionReread {
+                instance_id,
+                result,
+                then: answered,
+            } => {
+                assert_eq!((instance_id, answered), (7, then));
+                let rows = result.unwrap();
+                assert_eq!(rows.len(), 1);
+                assert_eq!(rows[0].bids, vec![(1001, 500)]);
+            }
+            other => panic!("{other:?}"),
+        }
+        assert!(matches!(
+            world_rx.try_recv().unwrap(),
+            l2_world::WorldCommand::ItemAuctionReread {
+                instance_id: -1,
+                result: Err(()),
+                ..
+            }
+        ));
     }
 
     /// M7-ADMIN-10: a petition feedback is a write of its own.
