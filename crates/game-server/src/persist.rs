@@ -73,6 +73,7 @@ use l2_db::{
     RecommendationRepository, ShortcutRepository, SkillLevel, SkillRepository, SummonRepository,
     VariableRepository,
 };
+use l2_db::{CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::clan::{
@@ -99,6 +100,7 @@ use l2_world::{
     RecipeWrite, SavedEffect, SavedItemReuse, SavedPet, SavedPetEffect, ShortcutData, SkillData,
     StoredPunishment, SummonWrite,
 };
+use l2_world::{CursedLoad, CursedRow, CursedWrite};
 use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
@@ -314,6 +316,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_manor_write(
         &mut self,
         _write: &ManorWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A cursed weapon write with Java's statement (`cursed_weapons`, and the `items` and
+    /// `characters` rows of an owner who is offline, M8-CURSED-01).
+    fn store_cursed_write(
+        &mut self,
+        _write: &CursedWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1019,6 +1030,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on ("Unable to store manor data!").
                 if let Err(e) = store.store_manor_write(&write).await {
                     error!("CastleManorManager: Unable to store manor data ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Cursed(write)) => {
+                // Java logs a failed statement and goes on ("Failed to save data.").
+                if let Err(e) = store.store_cursed_write(&write).await {
+                    error!("CursedWeapon: Failed to save data ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::ResidenceRereadRequest {
@@ -1910,6 +1927,78 @@ pub async fn load_hall_sieges(pool: &Pool) -> HallSiegeLoad {
     load
 }
 
+fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
+    CursedWeaponRow {
+        item_id: row.item_id,
+        char_id: row.char_id,
+        player_karma: row.player_karma,
+        player_pk_kills: row.player_pk_kills,
+        nb_kills: row.nb_kills,
+        end_time: row.end_time,
+    }
+}
+
+/// Java `CursedWeaponsManager.restore()` and `controlPlayers()`, the database half (M8-CURSED-01):
+/// the rows of `cursed_weapons`, and the cleanup of a cursed weapon item a character holds
+/// without a row. Called only with `CycleDatabaseWrites` (D-53): without it the table is the
+/// Java game server's and nothing is read or written.
+///
+/// A failed read is logged like Java's and the weapons start as not in the world.
+pub async fn load_cursed(pool: &Pool, defs: &l2_data::CursedWeaponDefs) -> CursedLoad {
+    let repo = CursedWeaponRepository::new(pool.clone());
+    let rows = match repo.all().await {
+        Ok(rows) => rows,
+        Err(e) => {
+            warn!("Could not restore CursedWeapons data: {e}");
+            return CursedLoad::default();
+        }
+    };
+    // `controlPlayers()`: a weapon no row holds must not be in anybody's inventory. (A weapon with
+    // a row is the world's: it re-activates it, or ends it when its time is up.)
+    for def in defs.iter() {
+        if rows.iter().any(|row| row.item_id == def.item_id) {
+            continue;
+        }
+        let item_id = def.item_id;
+        let result: Result<(), l2_db::DbError> = async {
+            let Some(owner) = repo.item_owner(item_id).await? else {
+                return Ok(());
+            };
+            // A player has the cursed weapon in his inventory ...
+            info!("PROBLEM : Player {owner} owns the cursed weapon {item_id} but he shouldn't.");
+            // Delete the item.
+            if repo.delete_owner_item(owner, item_id).await? != 1 {
+                warn!("Error while deleting cursed weapon {item_id} from userId {owner}");
+            }
+            // Restore the player's old karma and pk count.
+            // NOTE(java-quirk): the weapon has no row, so its old karma and pk count are 0.
+            if repo.restore_karma(owner, 0, 0).await? != 1 {
+                warn!("Error while updating karma & pkkills for userId 0");
+            }
+            // Clean up the cursed weapons table.
+            repo.remove(item_id).await
+        }
+        .await;
+        if let Err(e) = result {
+            warn!("Could not check CursedWeapons data: {e}");
+            break;
+        }
+    }
+    CursedLoad {
+        rows: rows
+            .into_iter()
+            .map(|row| CursedRow {
+                item_id: row.item_id,
+                char_id: row.char_id,
+                player_karma: row.player_karma,
+                player_pk_kills: row.player_pk_kills,
+                nb_kills: row.nb_kills,
+                end_time: row.end_time,
+            })
+            .collect(),
+    }
+}
+
 /// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
 /// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
 /// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
@@ -2759,6 +2848,7 @@ pub struct DbStore {
     territories: TerritoryRepository,
     hall_sieges: HallSiegeRepository,
     manor: ManorRepository,
+    cursed: CursedWeaponRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
@@ -2800,6 +2890,7 @@ impl DbStore {
             territories: TerritoryRepository::new(pool.clone()),
             hall_sieges: HallSiegeRepository::new(pool.clone()),
             manor: ManorRepository::new(pool.clone()),
+            cursed: CursedWeaponRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
             championship: FishingChampionshipRepository::new(pool.clone()),
@@ -4114,6 +4205,33 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
+        let repo = &self.cursed;
+        match write {
+            CursedWrite::Save { item_id, row } => {
+                let row = row.as_ref().map(cursed_db_row);
+                repo.save(*item_id, row.as_ref()).await?
+            }
+            CursedWrite::Remove { item_id } => repo.remove(*item_id).await?,
+            CursedWrite::OfflineEnd {
+                player_id,
+                item_id,
+                karma,
+                pk_kills,
+            } => {
+                // Delete the item, then restore the karma. Java warns when a statement does not
+                // change exactly one row, and goes on.
+                if repo.delete_owner_item(*player_id, *item_id).await? != 1 {
+                    warn!("Error while deleting itemId {item_id} from userId {player_id}");
+                }
+                if repo.restore_karma(*player_id, *karma, *pk_kills).await? != 1 {
+                    warn!("Error while updating karma & pkkills for userId {player_id}");
+                }
+            }
+        }
+        Ok(())
+    }
+
     async fn store_manor_write(&mut self, write: &ManorWrite) -> Result<(), PersistError> {
         let repo = &self.manor;
         match write {
@@ -4687,6 +4805,8 @@ mod tests {
         Announcement(AnnouncementWrite),
         /// A `character_hennas` write (L-01).
         Henna(HennaWrite),
+        /// A cursed weapon write (M8-CURSED-01).
+        Cursed(CursedWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
     }
@@ -4892,6 +5012,11 @@ mod tests {
 
         async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Henna(*write));
+            Ok(())
+        }
+
+        async fn store_cursed_write(&mut self, write: &CursedWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Cursed(write.clone()));
             Ok(())
         }
 
@@ -6232,6 +6357,42 @@ mod tests {
         ));
         // The update and the delete are writes without an answer.
         assert_eq!(calls.lock().unwrap().len(), 4);
+    }
+
+    /// M8-CURSED-01: the cursed weapon writes reach the store in order.
+    #[tokio::test]
+    async fn cursed_weapon_writes_are_stored_in_order() {
+        let save = CursedWrite::Save {
+            item_id: 8190,
+            row: Some(CursedRow {
+                item_id: 8190,
+                char_id: 5,
+                player_karma: 1,
+                player_pk_kills: 2,
+                nb_kills: 3,
+                end_time: 4,
+            }),
+        };
+        let offline = CursedWrite::OfflineEnd {
+            player_id: 5,
+            item_id: 8190,
+            karma: 1,
+            pk_kills: 2,
+        };
+        let remove = CursedWrite::Remove { item_id: 8190 };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Cursed(save.clone())),
+                OutboxMessage::Persist(PersistCommand::Cursed(offline.clone())),
+                OutboxMessage::Persist(PersistCommand::Cursed(remove.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls.as_slice(),
+            [Call::Cursed(save), Call::Cursed(offline), Call::Cursed(remove)]
+        );
     }
 
     /// L-01: a drawn and a removed dye are writes of their own, in order.

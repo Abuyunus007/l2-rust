@@ -57,11 +57,11 @@ impl World {
     /// Java `Player.validateItemManipulation(objectId, process)`: the item is in the inventory, is
     /// not the control item of the summoned pet or of the mount and is not the enchant scroll in
     /// use.
-    // A cursed weapon refuses here as well; cursed weapons are not ported (M8).
+    // A cursed weapon refuses here as well ("can not trade a cursed weapon").
     pub(crate) fn validate_item_manipulation(&self, player: ObjectId, object_id: ObjectId) -> bool {
-        if self.inventory_item(player, object_id).is_none() {
+        let Some(item) = self.inventory_item(player, object_id) else {
             return false;
-        }
+        };
         // Pet is summoned and not the item that summoned the pet.
         if let Some(summon) = self.summon_of(player)
             && self.pet_control_object_id(summon) == Some(object_id)
@@ -72,7 +72,11 @@ impl World {
         if self.mount_object_id_of(player) == object_id {
             return false;
         }
-        self.active_enchant_item(player) != Some(object_id)
+        if self.active_enchant_item(player) == Some(object_id) {
+            return false;
+        }
+        // Can not trade a cursed weapon.
+        !self.is_cursed_item(item.item_id)
     }
 
     /// Java `Player.checkItemManipulation(objectId, count, action)`: the item if the player owns

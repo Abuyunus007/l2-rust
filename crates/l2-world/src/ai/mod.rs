@@ -269,8 +269,12 @@ impl World {
             self.client_action_failed(id);
             return;
         }
-        // PlayableAI: the newbie protection between players (cursed weapons are not modelled).
-        if self.is_player(id) && self.is_player(target) && self.protection_blessing_refuses(id, target) {
+        // PlayableAI: the newbie protection between players, and a cursed weapon owner against
+        // a character of level 20 or less (either way).
+        if self.is_player(id)
+            && self.is_player(target)
+            && (self.protection_blessing_refuses(id, target) || self.cursed_weapon_refuses(id, target))
+        {
             self.send(id, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
             self.client_action_failed(id);
             return;

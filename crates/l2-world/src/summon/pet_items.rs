@@ -484,9 +484,18 @@ impl World {
             self.send(owner, &ActionFailed);
             return;
         }
-        // Cursed weapons: not modelled (M8).
         // `FortSiegeManager.isCombat(itemId)`: a pet leaves the combat flag (M7-FORT-01).
         let item_id = self.ground_item(object).map_or(0, |g| g.data.item_id);
+        // Cursed weapons.
+        if self.is_cursed_item(item_id) {
+            let templates = self.item_templates();
+            self.send(
+                owner,
+                &SystemMessage::new(SystemMessageId::YouHaveFailedToPickUpS1)
+                    .with(crate::inventory::item_name_param(templates.as_deref(), item_id)),
+            );
+            return;
+        }
         if Self::is_combat_flag_item(item_id) {
             return;
         }

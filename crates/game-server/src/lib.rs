@@ -270,6 +270,16 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// The cursed weapon values: `AllowCursedWeapons` of `General.ini` and the D-53 switch
+/// (`CycleDatabaseWrites`, [`cycle_database_writes`]).
+pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::CursedSettings {
+    l2_world::CursedSettings {
+        allow_cursed_weapons: config.general.allow_cursed_weapons,
+        cycle_database_writes,
+        clock_override_unix_ms: None,
+    }
+}
+
 /// `config/TerritoryWar.ini` (Java `TerritoryWarManager.load`'s `ConfigReader`: a missing file
 /// or key means Java's default). The badge prices of the mercenary captain are read here too
 /// (M7-TW-01).
@@ -769,6 +779,14 @@ impl Server {
         } else {
             l2_world::ManorLoad::default()
         };
+        // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
+        // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
+        let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
+        let cursed_load = if cursed_settings.allow_cursed_weapons && cursed_settings.cycle_database_writes {
+            persist::load_cursed(&pool, &datapack.cursed_weapons).await
+        } else {
+            l2_world::CursedLoad::default()
+        };
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -950,6 +968,10 @@ impl Server {
                     world.set_manor_settings(manor_settings);
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
+                    // Java: CursedWeaponsManager (GameServer, after the items and the skills;
+                    // M8-CURSED-01).
+                    world.set_cursed_settings(cursed_settings);
+                    world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
                     world.set_clan_hall_settings(clan_hall_settings);
                     // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).

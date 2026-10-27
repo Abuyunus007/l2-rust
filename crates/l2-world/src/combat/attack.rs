@@ -12,7 +12,7 @@
 // (100 ms), exactly as Java computes it.
 //
 // # Left out (each has its card)
-// - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, cursed weapons, observer mode,
+// - Script listeners `ON_CREATURE_ATTACK(ED)` (D-05), fake players, observer mode,
 //   transformations, effects (`POLEARM_SINGLE_TARGET`). The siege friends are refused
 //   (M7-SIEGE-01).
 // - PvP flagging after the attack (`updatePvPStatus`) is `pvp.rs`.
@@ -264,7 +264,15 @@ impl World {
         } else {
             // If we didn't miss the hit, discharge the shoulshots, if any.
             self.set_charged_shot(id, ShotType::Soulshots, false);
-            // M5: cursed weapons and heroes zero the target's CP.
+            if acting.is_some_and(|p| self.is_cursed_weapon_equipped(p)) {
+                // If hit by a cursed weapon, CP is reduced to 0.
+                if !self.is_invul(target) {
+                    self.set_current_cp(target, 0.0, true);
+                }
+            }
+            // FOLLOW-UP(M8 hero): "If a cursed weapon is hit by a Hero, CP is reduced to 0"
+            // (`player.isHero() && target.isPlayer() && target.isCursedWeaponEquipped()`): heroes
+            // are not modelled yet.
         }
 
         // If the Server->Client packet Attack contains at least 1 hit, send it to the Creature
