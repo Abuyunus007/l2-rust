@@ -1075,6 +1075,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::PetRowRequest { .. }) => "pet row",
                 Out::Persist(PersistCommand::Friend(_)) => "friend",
                 Out::Persist(PersistCommand::Henna(_)) => "henna",
+                Out::Persist(PersistCommand::ItemAuction(_) | PersistCommand::ItemAuctionRequest { .. }) => {
+                    "item auction"
+                }
                 Out::Persist(PersistCommand::InstanceTime(_)) => "instance time",
                 Out::Persist(PersistCommand::Bookmark(_)) => "bookmark",
                 Out::Persist(PersistCommand::Contact(_)) => "contact",

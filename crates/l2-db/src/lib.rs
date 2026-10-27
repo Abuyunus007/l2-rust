@@ -46,6 +46,7 @@ pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{InstanceTimeRepository, InstanceTimeRow};
+pub use game::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use game::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
     OwnerElementalRow, PaperdollItemRow,

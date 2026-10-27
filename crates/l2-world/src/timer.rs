@@ -172,6 +172,8 @@ pub enum TimerKind {
     Untransform(ObjectId),
     /// Java `setPlayerClass`'s `finally`: `sendSkillList()` 100 ms later (`admin/edit_char.rs`).
     ClassChangeSkillList(ObjectId),
+    /// The state timer of an item auction instance (start, extension, end), see `item_auction/`.
+    ItemAuction(crate::item_auction::ItemAuctionTimer),
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),

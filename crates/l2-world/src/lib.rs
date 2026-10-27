@@ -45,6 +45,7 @@ pub mod ids;
 pub mod instance;
 pub mod interact;
 pub mod inventory;
+pub mod item_auction;
 pub mod item_ops;
 pub mod leave;
 pub mod leftover;
@@ -154,6 +155,11 @@ pub use instance::{
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
+pub use item_auction::{
+    AuctionItemDef, DateGenerator, InstanceDef, ItemAuctionInput, ItemAuctionLoad, ItemAuctionRecord,
+    ItemAuctionSettings, ItemAuctionState, ItemAuctionThen, ItemAuctionTimer, ItemAuctionWorld,
+    ItemAuctionWrite,
+};
 pub use l2_util::{ObjectId, WorldRng};
 pub use leftover::{LeftoverInput, LeftoverSettings, LeftoverState, LeftoverTimer};
 pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};

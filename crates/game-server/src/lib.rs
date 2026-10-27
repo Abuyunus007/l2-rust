@@ -34,6 +34,7 @@ pub mod admin;
 pub mod client;
 pub mod geo;
 pub mod hexid;
+pub mod item_auctions;
 pub mod logging;
 pub mod ls_link;
 pub mod npcs;
@@ -775,6 +776,13 @@ impl Server {
         let clan_settings = clan_settings(&config, &paths.config_dir);
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
+        // Java: ItemAuctionManager (data/ItemAuctions.xml and the `item_auction` rows; L-05).
+        let item_auction_settings = item_auctions::item_auction_settings(&config, &paths.config_dir);
+        let item_auction_load =
+            item_auctions::load_item_auctions(&pool, &item_auction_settings, &datapack_root, |item_id| {
+                datapack.items.get(item_id).is_some()
+            })
+            .await;
         // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
@@ -1027,6 +1035,10 @@ impl Server {
                     // dawn tickets; M7-NPC-01).
                     world.set_residence_npc_settings(residence_npc_settings);
                     world.load_clan_hall_auctions(clan_hall_auctions);
+                    // Java: ItemAuctionManager.getInstance (GameServer, after the managers; needs the
+                    // item templates and the id factory).
+                    world.set_item_auction_settings(item_auction_settings);
+                    world.load_item_auctions(item_auction_load);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

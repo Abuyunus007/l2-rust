@@ -24,6 +24,7 @@ mod hall_sieges;
 mod hennas;
 mod ids;
 mod instance_times;
+mod item_auctions;
 mod item_reuse;
 mod items;
 mod macros;
@@ -76,6 +77,7 @@ pub use hall_sieges::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, Ra
 pub use hennas::{HennaRepository, HennaRow};
 pub use ids::{IdRepository, UsedIds};
 pub use instance_times::{InstanceTimeRepository, InstanceTimeRow};
+pub use item_auctions::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use item_reuse::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
 pub use items::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
