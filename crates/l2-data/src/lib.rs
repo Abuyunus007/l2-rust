@@ -68,6 +68,7 @@ pub use cubic::{
     HpConditionType,
 };
 pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
+pub use dimensional_rift::{RiftSpawnDef, RiftSpawns};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
@@ -103,7 +104,6 @@ pub use player_template::{
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
-pub use dimensional_rift::{RiftSpawnDef, RiftSpawns};
 pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
 pub use seed::{Seed, Seeds};
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};

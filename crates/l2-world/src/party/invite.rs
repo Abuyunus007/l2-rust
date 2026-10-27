@@ -131,7 +131,10 @@ impl World {
             self.create_new_party_invitation(target, requestor, distribution_type_id);
         } else {
             if self.is_in_dimensional_rift(requestor) {
-                self.send_message(requestor, "You cannot invite a player when you are in the Dimensional Rift.");
+                self.send_message(
+                    requestor,
+                    "You cannot invite a player when you are in the Dimensional Rift.",
+                );
             } else {
                 self.add_target_to_party(target, requestor);
             }
@@ -302,7 +305,10 @@ impl World {
         }
         // Underground Coliseum messages: it does not exist.
         if self.is_in_dimensional_rift(player) && !self.rift_revived_at_waiting_room(player) {
-            self.send_message(player, "You can't dismiss party member when you are in Dimensional Rift.");
+            self.send_message(
+                player,
+                "You can't dismiss party member when you are in Dimensional Rift.",
+            );
             return;
         }
         if let Some(member) = self.party_member_by_name(party, name) {

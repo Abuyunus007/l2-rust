@@ -1824,7 +1824,12 @@ pub async fn read_seven_signs(
 ) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
     let players = repo.load_all().await?.into_iter().map(signs_player_of).collect();
     let status = repo.load_status().await?.map(seven_signs_status_of);
-    let festival = repo.load_festival().await?.into_iter().map(festival_data_of).collect();
+    let festival = repo
+        .load_festival()
+        .await?
+        .into_iter()
+        .map(festival_data_of)
+        .collect();
     Ok(l2_world::sevensigns::SevenSignsLoad {
         players,
         status,
@@ -1859,7 +1864,10 @@ pub fn festival_row(d: &l2_world::sevensigns::FestivalData) -> l2_db::FestivalRo
 /// Java `DimensionalRiftManager.loadRooms()` (read only). A database that cannot be read gives no
 /// rooms, like Java ("Can't load Dimension Rift zones").
 pub async fn load_dimensional_rift_rooms(pool: &Pool) -> Vec<l2_world::sevensigns::RiftRoomDef> {
-    match l2_db::DimensionalRiftRepository::new(pool.clone()).load_all().await {
+    match l2_db::DimensionalRiftRepository::new(pool.clone())
+        .load_all()
+        .await
+    {
         Ok(rows) => rows
             .into_iter()
             .map(|r| l2_world::sevensigns::RiftRoomDef {

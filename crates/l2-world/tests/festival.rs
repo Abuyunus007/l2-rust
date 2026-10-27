@@ -10,19 +10,19 @@
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates, PlayerTemplates,
-    SkillTemplates, SpawnData, SpawnLoadOptions,
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    PlayerTemplates, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::ssq::SsqStatusBody;
 use l2_protocol_game::server::{NpcHtmlMessage, SsqStatus, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::sevensigns::{
-    CABAL_DAWN, CABAL_DUSK, FestivalData, FestivalSettings, PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION, SevenSignsLoad,
-    SevenSignsSettings, SevenSignsStatus, SevenSignsThen, SevenSignsWrite, SignsPlayer,
+    CABAL_DAWN, CABAL_DUSK, FestivalData, FestivalSettings, PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION,
+    SevenSignsLoad, SevenSignsSettings, SevenSignsStatus, SevenSignsThen, SevenSignsWrite, SignsPlayer,
 };
-use l2_world::*;
 use l2_world::teleport::TeleportTarget;
+use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
 
@@ -95,7 +95,9 @@ const DUSK_GUIDE: i32 = 31137;
 const DAWN_WITCH: i32 = 31132;
 
 /// The monsters of the primary and secondary lists of the Dawn's lowest range.
-const MONSTERS: [i32; 10] = [18009, 18010, 18011, 18012, 18013, 18014, 18015, 18016, 18017, 18018];
+const MONSTERS: [i32; 10] = [
+    18009, 18010, 18011, 18012, 18013, 18014, 18015, 18016, 18017, 18018,
+];
 /// The chest of that range.
 const CHEST: i32 = 18109;
 
@@ -251,7 +253,9 @@ impl Scene {
             "festival_0b",
         ] {
             let table = match page {
-                "festival_1" => "%festivalType% %cycleMins% %blueStoneNeeded%/%greenStoneNeeded%/%redStoneNeeded%",
+                "festival_1" => {
+                    "%festivalType% %cycleMins% %blueStoneNeeded%/%greenStoneNeeded%/%redStoneNeeded%"
+                }
                 "festival_2b" => "min %minFestivalPartyMembers%",
                 "festival_5" => "%statsTable%",
                 "festival_6" => "%bonusTable%",
@@ -500,7 +504,10 @@ fn pages(out: &[Out], to: i32) -> Vec<String> {
 }
 
 fn messages(out: &[Out], to: i32) -> Vec<SystemMessage> {
-    of(out, to, "SYSTEM_MESSAGE").iter().map(|raw| decode(raw)).collect()
+    of(out, to, "SYSTEM_MESSAGE")
+        .iter()
+        .map(|raw| decode(raw))
+        .collect()
 }
 
 fn festival_writes(out: &[Out]) -> Vec<&Vec<FestivalData>> {
@@ -604,7 +611,10 @@ fn a_festival_round_runs_from_the_signup_to_the_end() {
     // at most 230 away, and the stray offering is gone.
     for id in P {
         let (x, y, z) = s.position(id);
-        assert!((x + 79_187).abs() <= 230 + 100 && (y - 113_186).abs() <= 230 + 100, "{x} {y}");
+        assert!(
+            (x + 79_187).abs() <= 230 + 100 && (y - 113_186).abs() <= 230 + 100,
+            "{x} {y}"
+        );
         assert_eq!(z, -4_895 + 5, "{id}");
     }
     assert_eq!(s.count(P[1], OFFERING), 0);
@@ -619,7 +629,8 @@ fn a_festival_round_runs_from_the_signup_to_the_end() {
     let (wx, wy, wz) = s.world.position_of(witch).unwrap();
     for id in [P[0], P[2]] {
         s.input(id, ClientInput::Appearing);
-        s.world.tele_to_location(ObjectId(id), TeleportTarget::at(wx, wy + 20, wz));
+        s.world
+            .tele_to_location(ObjectId(id), TeleportTarget::at(wx, wy + 20, wz));
         s.input(id, ClientInput::Appearing);
         s.click(id, witch);
     }
@@ -675,7 +686,11 @@ fn a_festival_round_runs_from_the_signup_to_the_end() {
         assert!((x - X).abs() <= 100 && (y - Y).abs() <= 100, "{id}: {x} {y}");
     }
     // The leader and his party are the previous participants who may register the score.
-    let previous = s.world.festival_previous_participants(CABAL_DAWN, 0).cloned().unwrap();
+    let previous = s
+        .world
+        .festival_previous_participants(CABAL_DAWN, 0)
+        .cloned()
+        .unwrap();
     assert_eq!(previous.len(), 5);
     assert_eq!(previous[0], ObjectId(P[0]));
 }
@@ -793,7 +808,10 @@ fn with_the_switch_off_nothing_global_is_written_and_the_tables_are_read_again()
     let page = pages(&s.take(), P[0]).pop().expect("the table once it is read");
     // `getStatsTable`: Dusk 77, Dawn 0 (Kain's own 5 was replaced), "Children of Dusk" win.
     assert!(page.contains("Level 31 or lower"), "{page}");
-    assert!(page.contains(">77<") && page.contains("Children of Dusk"), "{page}");
+    assert!(
+        page.contains(">77<") && page.contains("Children of Dusk"),
+        "{page}"
+    );
     assert_eq!(s.world.festival_highest_score(CABAL_DAWN, 0), 0);
     assert_eq!(s.world.festival_highest_score(CABAL_DUSK, 0), 77);
 }
@@ -804,7 +822,10 @@ fn with_the_switch_off_nothing_global_is_written_and_the_tables_are_read_again()
 fn the_winning_cabal_collects_its_share_of_the_bonus_in_the_validation_period() {
     let mut rows = rows_of(4);
     // Dawn's best party of the lowest range has two members, one of them Alpha.
-    let dawn0 = rows.iter_mut().find(|r| r.cabal == "dawn" && r.festival_id == 0).unwrap();
+    let dawn0 = rows
+        .iter_mut()
+        .find(|r| r.cabal == "dawn" && r.festival_id == 0)
+        .unwrap();
     dawn0.score = 50;
     dawn0.members = "Alpha,Bravo".into();
     let status = SevenSignsStatus {
@@ -856,7 +877,10 @@ fn the_winning_cabal_collects_its_share_of_the_bonus_in_the_validation_period() 
 #[test]
 fn the_record_shows_the_festival_scores() {
     let mut rows = rows_of(4);
-    let dusk1 = rows.iter_mut().find(|r| r.cabal == "dusk" && r.festival_id == 1).unwrap();
+    let dusk1 = rows
+        .iter_mut()
+        .find(|r| r.cabal == "dusk" && r.festival_id == 1)
+        .unwrap();
     dusk1.score = 321;
     dusk1.members = "Anna,Bert".into();
     let mut s = Scene::new(true, rows);
@@ -875,7 +899,10 @@ fn the_record_shows_the_festival_scores() {
         vec![60, 70, 100, 120, 150]
     );
     assert_eq!(festivals[1].dusk_score, 321);
-    assert_eq!(festivals[1].dusk_members, vec!["Anna".to_owned(), "Bert".to_owned()]);
+    assert_eq!(
+        festivals[1].dusk_members,
+        vec!["Anna".to_owned(), "Bert".to_owned()]
+    );
     // Java splits the empty names of a blank set into one empty name.
     assert_eq!(festivals[0].dawn_members, vec![String::new()]);
 }

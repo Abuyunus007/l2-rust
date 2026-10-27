@@ -313,7 +313,10 @@ impl World {
 
     /// `Room.spawn()`: every spawn of the room creates its monster and starts respawning.
     fn rift_room_spawn(&mut self, kind: i8, room: i8) {
-        let spawns = self.rift_room(kind, room).map(|r| r.spawns.clone()).unwrap_or_default();
+        let spawns = self
+            .rift_room(kind, room)
+            .map(|r| r.spawns.clone())
+            .unwrap_or_default();
         for index in spawns {
             let mut report = crate::npc::SpawnReport::default();
             self.initialize_npc(index, None, &mut report);
@@ -323,7 +326,10 @@ impl World {
 
     /// `Room.unspawn()`: no more respawns, the monsters leave.
     fn rift_room_unspawn(&mut self, kind: i8, room: i8) {
-        let spawns = self.rift_room(kind, room).map(|r| r.spawns.clone()).unwrap_or_default();
+        let spawns = self
+            .rift_room(kind, room)
+            .map(|r| r.spawns.clone())
+            .unwrap_or_default();
         for index in spawns {
             self.stop_respawn(index);
             if let Some(npc) = self.last_spawn(index) {
@@ -347,7 +353,13 @@ impl World {
             .rift
             .rooms
             .get(&kind)
-            .map(|rooms| rooms.values().filter(|r| !r.party_inside).map(|r| r.def.room).collect())
+            .map(|rooms| {
+                rooms
+                    .values()
+                    .filter(|r| !r.party_inside)
+                    .map(|r| r.def.room)
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
@@ -370,7 +382,10 @@ impl World {
     fn rift_show_html_count(&mut self, player: ObjectId, file: &str, npc: ObjectId, count: i32) {
         let name = self.creature_name(npc);
         if let Some(mut html) = self.html_from_file(player, npc.0, file) {
-            html.html = html.html.replace("%npc_name%", &name).replace("%count%", &count.to_string());
+            html.html = html
+                .html
+                .replace("%npc_name%", &name)
+                .replace("%count%", &count.to_string());
             self.send_html(player, &html);
         }
     }
@@ -495,7 +510,10 @@ impl World {
         self.seven_signs.rift.by_party.insert(party, id);
         // The quest 635 is started for every member here in Java (a script, D-05).
         for member in self.party_members(party) {
-            self.tele_to_location(member, TeleportTarget::at(coords.x_t, coords.y_t, coords.z_t).with_instance(0));
+            self.tele_to_location(
+                member,
+                TeleportTarget::at(coords.x_t, coords.y_t, coords.z_t).with_instance(0),
+            );
         }
         self.rift_create_spawn_timer(id, room);
         self.rift_create_teleporter_timer(id, true);
@@ -509,7 +527,8 @@ impl World {
 
     /// `Party.isInDimensionalRift()` of the party of a player.
     pub fn is_in_dimensional_rift(&self, player: ObjectId) -> bool {
-        self.party_of(player).is_some_and(|p| self.party_rift(p).is_some())
+        self.party_of(player)
+            .is_some_and(|p| self.party_rift(p).is_some())
     }
 
     /// The type and the room of the rift of a player's party (`getType()`, `getCurrentRoom()`).
@@ -551,7 +570,11 @@ impl World {
     fn rift_calc_time_to_next_jump(&mut self, id: RiftId) -> i64 {
         let (min, max, multiply) = {
             let s = &self.seven_signs.rift.settings;
-            (s.auto_jumps_time_min, s.auto_jumps_time_max, s.boss_room_time_multiply)
+            (
+                s.auto_jumps_time_min,
+                s.auto_jumps_time_max,
+                s.boss_room_time_multiply,
+            )
         };
         let time = i64::from(self.rng().get(min, max)) * 1000;
         if self.seven_signs.rift.rifts.get(&id).is_some_and(|r| r.boss_room) {
@@ -748,7 +771,10 @@ impl World {
             if let Some(r) = self.seven_signs.rift.rifts.get_mut(&id) {
                 r.boss_room = boss;
             }
-            self.tele_to_location(player, TeleportTarget::at(def.x_t, def.y_t, def.z_t).with_instance(0));
+            self.tele_to_location(
+                player,
+                TeleportTarget::at(def.x_t, def.y_t, def.z_t).with_instance(0),
+            );
         }
     }
 
@@ -761,9 +787,13 @@ impl World {
         if let Some(party) = r.party.take() {
             self.seven_signs.rift.by_party.remove(&party);
         }
-        for timer in [r.teleport_timer.take(), r.spawn_timer.take(), r.earthquake_timer.take()]
-            .into_iter()
-            .flatten()
+        for timer in [
+            r.teleport_timer.take(),
+            r.spawn_timer.take(),
+            r.earthquake_timer.take(),
+        ]
+        .into_iter()
+        .flatten()
         {
             self.timers.cancel(timer);
         }
@@ -990,6 +1020,11 @@ impl World {
 }
 
 /// The handler of `bypass EnterRift ...`, `ChangeRiftRoom` and `ExitRift`.
-pub fn rift_bypass_handler(world: &mut World, player: ObjectId, command: &str, target: Option<ObjectId>) -> bool {
+pub fn rift_bypass_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     world.rift_bypass(player, command, target)
 }

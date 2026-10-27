@@ -8,19 +8,22 @@
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates, PlayerTemplates,
-    RiftSpawns, SkillTemplates, SpawnData, SpawnLoadOptions,
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    PlayerTemplates, RiftSpawns, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
-use l2_protocol_game::server::NpcHtmlMessage;
 use l2_protocol_game::ServerOpcode;
+use l2_protocol_game::server::NpcHtmlMessage;
 use l2_world::sevensigns::{RiftRoomDef, RiftSettings, rift_bypass_handler};
 use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
 
 #[derive(Clone, Default)]
-struct Log(Arc<Mutex<Vec<(i32, Vec<u8>)>>>);
+struct Log(Arc<Mutex<Sent>>);
+
+/// The packets sent so far: the receiving player and the bytes.
+type Sent = Vec<(i32, Vec<u8>)>;
 
 impl Log {
     fn take(&self) -> Vec<(i32, Vec<u8>)> {
@@ -82,7 +85,14 @@ const ALICE: i32 = 0x1000_0001;
 const BOB: i32 = 0x1000_0002;
 const CARL: i32 = 0x1000_0003;
 
-fn room(kind: i8, room: i8, x: (i32, i32), y: (i32, i32), target: (i32, i32, i32), boss: bool) -> RiftRoomDef {
+fn room(
+    kind: i8,
+    room: i8,
+    x: (i32, i32),
+    y: (i32, i32),
+    target: (i32, i32, i32),
+    boss: bool,
+) -> RiftRoomDef {
     RiftRoomDef {
         kind,
         room,
@@ -105,10 +115,38 @@ fn rooms() -> Vec<RiftRoomDef> {
     vec![
         room(0, 0, (-115_440, -114_160), (-182_160, -178_048), WAIT, false),
         room(0, 1, (-120_576, -109_024), (-187_328, -172_880), (0, 0, 0), false),
-        room(1, 1, (-112_368, -111_584), (-182_832, -182_064), (-111_976, -182_448, -6_752), false),
-        room(1, 2, (-111_472, -110_704), (-182_832, -182_064), (-111_088, -182_448, -6_752), false),
-        room(1, 3, (-110_688, -109_904), (-180_944, -180_176), (-110_296, -180_560, -6_752), true),
-        room(1, 4, (-109_808, -109_024), (-180_944, -180_176), (-109_416, -180_560, -6_752), false),
+        room(
+            1,
+            1,
+            (-112_368, -111_584),
+            (-182_832, -182_064),
+            (-111_976, -182_448, -6_752),
+            false,
+        ),
+        room(
+            1,
+            2,
+            (-111_472, -110_704),
+            (-182_832, -182_064),
+            (-111_088, -182_448, -6_752),
+            false,
+        ),
+        room(
+            1,
+            3,
+            (-110_688, -109_904),
+            (-180_944, -180_176),
+            (-110_296, -180_560, -6_752),
+            true,
+        ),
+        room(
+            1,
+            4,
+            (-109_808, -109_024),
+            (-180_944, -180_176),
+            (-109_416, -180_560, -6_752),
+            false,
+        ),
     ]
 }
 
@@ -397,7 +435,9 @@ impl Scene {
 
     /// The rooms of the recruit area that have a party.
     fn rooms_inside(&self) -> Vec<i8> {
-        (1..=4).filter(|r| self.world.rift_room_party_inside(1, *r)).collect()
+        (1..=4)
+            .filter(|r| self.world.rift_room_party_inside(1, *r))
+            .collect()
     }
 
     /// The clients load the new place.
@@ -425,7 +465,6 @@ fn pages(out: &[(i32, Vec<u8>)], to: i32) -> Vec<String> {
 }
 
 // ---------------------------------------------------------------------------------- tests
-
 
 /// The rooms of the table and the spawns of the file: `count` monsters per `<spawn>`, in the
 /// room's inner area (128 less on every side), at the teleport height.
@@ -458,7 +497,10 @@ fn a_party_is_turned_away_until_it_can_pay() {
     // No party.
     s.bypass(ALICE, "EnterRift 1");
     let page = pages(&s.log.take(), ALICE).pop().unwrap();
-    assert!(page.contains("NoParty") && page.contains("Rift Gatekeeper"), "{page}");
+    assert!(
+        page.contains("NoParty") && page.contains("Rift Gatekeeper"),
+        "{page}"
+    );
 
     s.enter(BOB, "Bob", Vec::new());
     s.input(
@@ -478,7 +520,12 @@ fn a_party_is_turned_away_until_it_can_pay() {
     assert!(s.rooms_inside().is_empty());
     // Not the leader: Bob opens the page and asks.
     s.bypass(BOB, "EnterRift 1");
-    assert!(pages(&s.log.take(), BOB).pop().unwrap().contains("NotPartyLeader"));
+    assert!(
+        pages(&s.log.take(), BOB)
+            .pop()
+            .unwrap()
+            .contains("NotPartyLeader")
+    );
 }
 
 /// The whole run: in, the chance card, the clock, out.
@@ -497,16 +544,26 @@ fn a_party_runs_the_rift() {
     assert!(s.world.is_in_dimensional_rift(ObjectId(ALICE)));
     assert_eq!(s.world.rift_current_jump(s.party_id()), Some(1));
     s.appear(&[ALICE, BOB]);
-    let target = rooms().into_iter().find(|r| r.kind == 1 && r.room == first).unwrap();
+    let target = rooms()
+        .into_iter()
+        .find(|r| r.kind == 1 && r.room == first)
+        .unwrap();
     // `teleToLocation(coords)`: the target, 5 higher.
     assert_eq!(s.position(ALICE), (target.x_t, target.y_t, target.z_t + 5));
-    assert!(s.world.rift_check_in_rift_zone(target.x_t, target.y_t, target.z_t, false));
+    assert!(
+        s.world
+            .rift_check_in_rift_zone(target.x_t, target.y_t, target.z_t, false)
+    );
     // The monsters wait `RiftSpawnDelay` (2 s) before they appear.
     assert!(s.world.rift_room_monsters(1, first).is_empty());
     s.wait_ms(2_000);
     let monsters = s.world.rift_room_monsters(1, first);
     assert_eq!(monsters.len(), s.world.rift_room_spawn_count(1, first));
-    assert!(monsters.iter().all(|m| s.world.npc(*m).unwrap().npc_id == INVADER));
+    assert!(
+        monsters
+            .iter()
+            .all(|m| s.world.npc(*m).unwrap().npc_id == INVADER)
+    );
 
     // The party cannot leave by itself, nor expel.
     s.input(BOB, ClientInput::WithdrawParty);
@@ -524,18 +581,32 @@ fn a_party_runs_the_rift() {
     assert_ne!(second, first);
     assert_eq!(s.world.rift_current_jump(s.party_id()), Some(2));
     assert_eq!(s.rooms_inside(), vec![second]);
-    assert!(s.world.rift_room_monsters(1, first).iter().all(|m| s.world.npc(*m).is_none()));
+    assert!(
+        s.world
+            .rift_room_monsters(1, first)
+            .iter()
+            .all(|m| s.world.npc(*m).is_none())
+    );
     s.wait_ms(2_000);
     assert!(!s.world.rift_room_monsters(1, second).is_empty());
     // A member who is not the leader gets the page.
     s.log.take();
     rift_bypass_handler(&mut s.world, ObjectId(BOB), "ChangeRiftRoom", Some(s.gatekeeper));
-    assert!(pages(&s.log.take(), BOB).pop().unwrap().contains("NotPartyLeader"));
+    assert!(
+        pages(&s.log.take(), BOB)
+            .pop()
+            .unwrap()
+            .contains("NotPartyLeader")
+    );
     // The third room by the clock: 10 s after the arrival (20 s in the boss room) the rift
     // jumps by itself (a room that was not visited yet when there is one).
     let is_boss = |room: i8| rooms().iter().any(|d| d.kind == 1 && d.room == room && d.boss);
     s.wait_ms(if is_boss(second) { 20_000 } else { 10_000 } - 2_000 - 100);
-    assert_eq!(s.world.rift_current_jump(s.party_id()), Some(2), "not before the time");
+    assert_eq!(
+        s.world.rift_current_jump(s.party_id()),
+        Some(2),
+        "not before the time"
+    );
     s.wait_ms(200);
     assert_eq!(s.world.rift_current_jump(s.party_id()), Some(3));
     let third = s.current_room();
@@ -544,8 +615,18 @@ fn a_party_runs_the_rift() {
     assert_eq!(s.rooms_inside(), vec![third]);
     // The jumps are used up.
     s.log.take();
-    rift_bypass_handler(&mut s.world, ObjectId(ALICE), "ChangeRiftRoom", Some(s.gatekeeper));
-    assert!(pages(&s.log.take(), ALICE).pop().unwrap().contains("AlreadyTeleported"));
+    rift_bypass_handler(
+        &mut s.world,
+        ObjectId(ALICE),
+        "ChangeRiftRoom",
+        Some(s.gatekeeper),
+    );
+    assert!(
+        pages(&s.log.take(), ALICE)
+            .pop()
+            .unwrap()
+            .contains("AlreadyTeleported")
+    );
     assert_eq!(s.world.rift_current_jump(s.party_id()), Some(3));
 
     // The next jump is the way out: everybody in the waiting room, the rift is over.
@@ -553,7 +634,12 @@ fn a_party_runs_the_rift() {
     assert!(s.world.party_rift(s.party_id()).is_none());
     assert!(!s.world.is_in_dimensional_rift(ObjectId(ALICE)));
     assert!(s.rooms_inside().is_empty());
-    assert!(s.world.rift_room_monsters(1, third).iter().all(|m| s.world.npc(*m).is_none()));
+    assert!(
+        s.world
+            .rift_room_monsters(1, third)
+            .iter()
+            .all(|m| s.world.npc(*m).is_none())
+    );
     assert_eq!(s.position(ALICE), (WAIT.0, WAIT.1, WAIT.2 + 5));
     assert_eq!(s.position(BOB), (WAIT.0, WAIT.1, WAIT.2 + 5));
     // The party may withdraw now.
@@ -572,12 +658,22 @@ fn the_leader_can_leave_the_rift_at_once() {
     assert!(!s.world.rift_room_monsters(1, room).is_empty());
     // (Java has a border guard inside the rooms; here the command goes to the handler.)
     let party = s.party_id();
-    assert!(rift_bypass_handler(&mut s.world, ObjectId(ALICE), "ExitRift", Some(s.gatekeeper)));
+    assert!(rift_bypass_handler(
+        &mut s.world,
+        ObjectId(ALICE),
+        "ExitRift",
+        Some(s.gatekeeper)
+    ));
     assert!(s.world.party_rift(party).is_none());
     assert!(s.rooms_inside().is_empty());
     assert_eq!(s.position(ALICE), (WAIT.0, WAIT.1, WAIT.2 + 5));
     assert_eq!(s.position(BOB), (WAIT.0, WAIT.1, WAIT.2 + 5));
-    assert!(s.world.rift_room_monsters(1, room).iter().all(|m| s.world.npc(*m).is_none()));
+    assert!(
+        s.world
+            .rift_room_monsters(1, room)
+            .iter()
+            .all(|m| s.world.npc(*m).is_none())
+    );
 }
 
 /// A commands of the rift from a party that is not in it is an attempt to cheat.
@@ -631,5 +727,8 @@ fn losing_a_member_below_the_minimum_ends_the_rift() {
     assert!(s.rooms_inside().is_empty());
     // NOTE(java-quirk): `partyMemberExited` only brings the members that are left in the party
     // back, and the leader was the first to be removed: he stays in the room.
-    assert!(!s.world.rift_check_in_peace_zone(s.position(ALICE).0, s.position(ALICE).1, s.position(ALICE).2));
+    assert!(
+        !s.world
+            .rift_check_in_peace_zone(s.position(ALICE).0, s.position(ALICE).1, s.position(ALICE).2)
+    );
 }

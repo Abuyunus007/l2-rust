@@ -150,7 +150,10 @@ async fn rift_rooms_are_read() {
         .unwrap();
     assert_eq!(rooms.len(), 2);
     let waiting = rooms.iter().find(|r| r.kind == 0 && r.room_id == 0).unwrap();
-    assert_eq!((waiting.x_min, waiting.x_max, waiting.z_t), (-115_440, -114_160, -6_752));
+    assert_eq!(
+        (waiting.x_min, waiting.x_max, waiting.z_t),
+        (-115_440, -114_160, -6_752)
+    );
     assert_eq!(waiting.boss, 0);
     let boss = rooms.iter().find(|r| r.kind == 1 && r.room_id == 9).unwrap();
     assert_eq!((boss.x_t, boss.y_t), (-109_912, -181_520));

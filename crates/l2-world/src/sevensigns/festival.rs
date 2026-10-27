@@ -387,7 +387,8 @@ impl World {
             } else {
                 row.festival_id
             };
-            self.seven_signs.festival
+            self.seven_signs
+                .festival
                 .data
                 .entry(row.cycle)
                 .or_default()
@@ -531,7 +532,8 @@ impl World {
                 let keys: Vec<i32> = self.seven_signs.festival.instances.keys().copied().collect();
                 for key in keys {
                     if self
-                        .seven_signs.festival
+                        .seven_signs
+                        .festival
                         .instances
                         .get(&key)
                         .is_some_and(|i| !i.npc_insts.is_empty())
@@ -630,7 +632,9 @@ impl World {
     /// `while (_noPartyRegister)` and the initiation after it.
     fn festival_check_signed_up(&mut self) {
         let s = self.seven_signs.settings.festival.clone();
-        if self.seven_signs.festival.dusk_participants.is_empty() && self.seven_signs.festival.dawn_participants.is_empty() {
+        if self.seven_signs.festival.dusk_participants.is_empty()
+            && self.seven_signs.festival.dawn_participants.is_empty()
+        {
             let now = unix_ms_now();
             self.seven_signs.festival.next_festival_cycle_start = now + s.cycle_length;
             self.seven_signs.festival.next_festival_start = now + s.cycle_length - s.signup_time();
@@ -640,12 +644,24 @@ impl World {
         // INITIATION: create the instances for the festivals in both Oracles, but only if they
         // have participants signed up for them.
         for i in 0..FESTIVAL_COUNT as i32 {
-            if self.seven_signs.festival.dusk_participants.get(&i).is_some_and(Option::is_some) {
+            if self
+                .seven_signs
+                .festival
+                .dusk_participants
+                .get(&i)
+                .is_some_and(Option::is_some)
+            {
                 let festival = self.festival_new_instance(CABAL_DUSK, i);
                 self.seven_signs.festival.instances.insert(10 + i, festival);
                 self.festival_init_instance(10 + i);
             }
-            if self.seven_signs.festival.dawn_participants.get(&i).is_some_and(Option::is_some) {
+            if self
+                .seven_signs
+                .festival
+                .dawn_participants
+                .get(&i)
+                .is_some_and(Option::is_some)
+            {
                 let festival = self.festival_new_instance(CABAL_DAWN, i);
                 self.seven_signs.festival.instances.insert(20 + i, festival);
                 self.festival_init_instance(20 + i);
@@ -718,7 +734,8 @@ impl World {
             return false;
         }
         let has = |map: &BTreeMap<i32, Option<Vec<ObjectId>>>| {
-            map.values().any(|p| p.as_ref().is_some_and(|p| p.contains(&player)))
+            map.values()
+                .any(|p| p.as_ref().is_some_and(|p| p.contains(&player)))
         };
         has(&self.seven_signs.festival.dawn_participants) || has(&self.seven_signs.festival.dusk_participants)
     }
@@ -778,7 +795,10 @@ impl World {
             let members = self.party_members(party);
             for member in &members {
                 if let Some(p) = self.players.get(member) {
-                    self.seven_signs.festival.names.insert(*member, p.data.name.clone());
+                    self.seven_signs
+                        .festival
+                        .names
+                        .insert(*member, p.data.name.clone());
                 }
             }
             members
@@ -799,7 +819,8 @@ impl World {
         } else {
             festival_id
         };
-        self.seven_signs.festival
+        self.seven_signs
+            .festival
             .data
             .get(&self.seven_signs.festival.signs_cycle)
             .and_then(|m| m.get(&offset))
@@ -860,7 +881,8 @@ impl World {
 
     /// The rows of `seven_signs_festival` as they are in memory.
     pub fn festival_rows(&self) -> Vec<FestivalData> {
-        self.seven_signs.festival
+        self.seven_signs
+            .festival
             .data
             .values()
             .flat_map(|c| c.values().cloned())
@@ -1001,7 +1023,8 @@ impl World {
         if let Some(p) = self.players.get(&id) {
             return p.data.name.clone();
         }
-        self.seven_signs.festival
+        self.seven_signs
+            .festival
             .names
             .get(&id)
             .cloned()
@@ -1014,10 +1037,16 @@ impl World {
         let curr_dawn = self.festival_highest_score(CABAL_DAWN, festival_id);
         let curr_dusk = self.festival_highest_score(CABAL_DUSK, festival_id);
         let (this_cabal, other_cabal) = if oracle == CABAL_DAWN {
-            self.seven_signs.festival.dawn_scores.insert(festival_id, offering_score);
+            self.seven_signs
+                .festival
+                .dawn_scores
+                .insert(festival_id, offering_score);
             (curr_dawn, curr_dusk)
         } else {
-            self.seven_signs.festival.dusk_scores.insert(festival_id, offering_score);
+            self.seven_signs
+                .festival
+                .dusk_scores
+                .insert(festival_id, offering_score);
             (curr_dusk, curr_dawn)
         };
         // Check if this is the highest score for this level range so far for the player's cabal.
@@ -1048,7 +1077,8 @@ impl World {
             // NOTE(java-quirk): without a data set for the cycle Java changes a blank copy that
             // is thrown away.
             if let Some(data) = self
-                .seven_signs.festival
+                .seven_signs
+                .festival
                 .data
                 .get_mut(&cycle)
                 .and_then(|m| m.get_mut(&offset))
@@ -1203,7 +1233,10 @@ impl World {
     fn festival_witch_and_participants(&self, key: i32) -> Option<(ObjectId, bool)> {
         let instance = self.seven_signs.festival.instances.get(&key)?;
         let witch = instance.witch_inst?;
-        Some((witch, instance.participants.as_ref().is_some_and(|p| !p.is_empty())))
+        Some((
+            witch,
+            instance.participants.as_ref().is_some_and(|p| !p.is_empty()),
+        ))
     }
 
     // ------------------------------------------------------------------ the arenas
@@ -1211,9 +1244,15 @@ impl World {
     fn festival_new_instance(&mut self, cabal: i32, level_range: i32) -> DarknessFestival {
         let index = usize::try_from(level_range).unwrap_or(0).min(4);
         let (witch_row, player_row) = if cabal == CABAL_DAWN {
-            (FESTIVAL_DAWN_WITCH_SPAWNS[index], FESTIVAL_DAWN_PLAYER_SPAWNS[index])
+            (
+                FESTIVAL_DAWN_WITCH_SPAWNS[index],
+                FESTIVAL_DAWN_PLAYER_SPAWNS[index],
+            )
         } else {
-            (FESTIVAL_DUSK_WITCH_SPAWNS[index], FESTIVAL_DUSK_PLAYER_SPAWNS[index])
+            (
+                FESTIVAL_DUSK_WITCH_SPAWNS[index],
+                FESTIVAL_DUSK_PLAYER_SPAWNS[index],
+            )
         };
         let participants = if cabal == CABAL_DAWN {
             self.seven_signs.festival.dawn_participants.get(&level_range)
@@ -1404,7 +1443,10 @@ impl World {
         let Some(instance) = self.seven_signs.festival.instances.get(&key) else {
             return;
         };
-        let (cabal, range) = (instance.cabal, usize::try_from(instance.level_range).unwrap_or(0).min(4));
+        let (cabal, range) = (
+            instance.cabal,
+            usize::try_from(instance.level_range).unwrap_or(0).min(4),
+        );
         let dawn = cabal == CABAL_DAWN;
         let table: &[[i32; 5]] = match spawn_type {
             0 | 1 => {
@@ -1442,10 +1484,16 @@ impl World {
                 current.heading = self.rng().below(65_536);
             }
             let heading = self.rng().below(65_536);
-            let Some((index, npc)) =
-                self.festival_spawn(current.npc_id, (current.x, current.y, current.z), heading, respawn_delay)
-            else {
-                warn!("SevenSignsFestival: Error while spawning NPC ID {}", current.npc_id);
+            let Some((index, npc)) = self.festival_spawn(
+                current.npc_id,
+                (current.x, current.y, current.z),
+                heading,
+                respawn_delay,
+            ) else {
+                warn!(
+                    "SevenSignsFestival: Error while spawning NPC ID {}",
+                    current.npc_id
+                );
                 continue;
             };
             // Set the offering bonus to 2x or 5x the amount per kill, if this spawn is part of an
@@ -1532,7 +1580,11 @@ impl World {
             return None;
         }
         let key = festival_id + if oracle == CABAL_DUSK { 10 } else { 20 };
-        self.seven_signs.festival.instances.contains_key(&key).then_some(key)
+        self.seven_signs
+            .festival
+            .instances
+            .contains_key(&key)
+            .then_some(key)
     }
 
     /// `festivalEnd()`: the party is sent out, the arena emptied.
@@ -1554,9 +1606,15 @@ impl World {
                 );
             }
             if cabal == CABAL_DAWN {
-                self.seven_signs.festival.dawn_previous.insert(range, participants);
+                self.seven_signs
+                    .festival
+                    .dawn_previous
+                    .insert(range, participants);
             } else {
-                self.seven_signs.festival.dusk_previous.insert(range, participants);
+                self.seven_signs
+                    .festival
+                    .dusk_previous
+                    .insert(range, participants);
             }
         }
         if let Some(instance) = self.seven_signs.festival.instances.get_mut(&key) {
@@ -1591,22 +1649,21 @@ impl World {
 
     /// `relocatePlayer(participant, isRemoving)`: back to the place he came from, or to the town.
     fn festival_relocate_player(&mut self, key: i32, participant: ObjectId, is_removing: bool) {
-        let original = self
-            .seven_signs.festival
-            .instances
-            .get_mut(&key)
-            .and_then(|i| {
-                if is_removing {
-                    i.original_locations.remove(&participant)
-                } else {
-                    i.original_locations.get(&participant).copied()
-                }
-            });
+        let original = self.seven_signs.festival.instances.get_mut(&key).and_then(|i| {
+            if is_removing {
+                i.original_locations.remove(&participant)
+            } else {
+                i.original_locations.get(&participant).copied()
+            }
+        });
         self.set_intention_idle(participant);
         match original {
             Some((x, y, z, _)) => {
                 let offset = self.settings.teleport.max_offset_on_teleport;
-                self.tele_to_location(participant, TeleportTarget::at(x, y, z).with_random_offset(offset));
+                self.tele_to_location(
+                    participant,
+                    TeleportTarget::at(x, y, z).with_random_offset(offset),
+                );
             }
             // If an exception occurs, just move the player to the nearest town.
             None => self.tele_to_location_where(participant, TeleportWhereType::Town),
@@ -1666,7 +1723,11 @@ impl World {
     /// `false` when the monster gives no drop at all.
     // NOTE(java-quirk): a killer who is no player (a summon too) or has no party ends the method
     // before `super.doItemDrop`, so the monster drops nothing then.
-    pub(crate) fn festival_monster_drop(&mut self, monster: ObjectId, last_attacker: Option<ObjectId>) -> bool {
+    pub(crate) fn festival_monster_drop(
+        &mut self,
+        monster: ObjectId,
+        last_attacker: Option<ObjectId>,
+    ) -> bool {
         if !self.is_festival_monster(monster) {
             return true;
         }
@@ -1679,7 +1740,14 @@ impl World {
         let Some(leader) = self.party_leader(party) else {
             return false;
         };
-        let bonus = i64::from(self.seven_signs.festival.monsters.get(&monster).copied().unwrap_or(1));
+        let bonus = i64::from(
+            self.seven_signs
+                .festival
+                .monsters
+                .get(&monster)
+                .copied()
+                .unwrap_or(1),
+        );
         self.add_item(leader, FESTIVAL_OFFERING_ID, bonus, false);
         true
     }
@@ -1726,7 +1794,10 @@ impl World {
             return false;
         }
         if self.seven_signs.festival.initialized {
-            self.send_message(player, "You cannot log out while you are a participant in a Festival.");
+            self.send_message(
+                player,
+                "You cannot log out while you are a participant in a Festival.",
+            );
             return true;
         }
         self.festival_tell_party_removed(player);
@@ -1739,7 +1810,10 @@ impl World {
             return false;
         }
         if self.seven_signs.festival.initialized {
-            self.send_message(player, "You cannot restart while you are a participant in a festival.");
+            self.send_message(
+                player,
+                "You cannot restart while you are a participant in a festival.",
+            );
             return true;
         }
         self.festival_tell_party_removed(player);
@@ -1912,9 +1986,8 @@ impl World {
         let dawn = self.festival_highest_score_data(CABAL_DAWN, guide.festival_type);
         let dusk = self.festival_highest_score_data(CABAL_DUSK, guide.festival_type);
         let overall = self.festival_overall_highest_score_data(guide.festival_type);
-        let mut page = String::from(
-            "<html><body>Festival Guide:<br>These are the top scores of the week, for the ",
-        );
+        let mut page =
+            String::from("<html><body>Festival Guide:<br>These are the top scores of the week, for the ");
         page.push_str(&format!("{} festival.<br>", festival_name(guide.festival_type)));
         if dawn.score > 0 {
             page.push_str(&format!(
@@ -1975,7 +2048,12 @@ impl World {
     }
 
     /// The bypass `Festival` / `FestivalDesc` (`Festival.java`, registered as a bypass handler).
-    pub(crate) fn festival_bypass(&mut self, player: ObjectId, command: &str, target: Option<ObjectId>) -> bool {
+    pub(crate) fn festival_bypass(
+        &mut self,
+        player: ObjectId,
+        command: &str,
+        target: Option<ObjectId>,
+    ) -> bool {
         let Some(npc) = target else {
             return false;
         };
@@ -2025,7 +2103,8 @@ impl World {
                     return true;
                 }
                 // Check if all the party members are in the required level range.
-                let max_level = max_level_for_festival(guide.festival_type, self.java_max_level().unwrap_or(86));
+                let max_level =
+                    max_level_for_festival(guide.festival_type, self.java_max_level().unwrap_or(86));
                 if self.party_level(party).unwrap_or(0) > max_level {
                     self.festival_show_chat_window(npc, player, 2, Some("d"), false);
                     return true;
@@ -2132,7 +2211,10 @@ impl World {
         }
         // Check if a festival is in progress, if it is don't register the score.
         if self.seven_signs.festival.in_progress {
-            self.send_message(player, "You cannot register a score while a festival is in progress.");
+            self.send_message(
+                player,
+                "You cannot register a score while a festival is in progress.",
+            );
             return true;
         }
         // Check if the player is in a party.
@@ -2179,7 +2261,12 @@ impl World {
 }
 
 /// The handler of `bypass Festival ...` and `bypass FestivalDesc ...`.
-pub fn festival_bypass_handler(world: &mut World, player: ObjectId, command: &str, target: Option<ObjectId>) -> bool {
+pub fn festival_bypass_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     world.festival_bypass(player, command, target)
 }
 
@@ -2197,7 +2284,10 @@ mod tests {
     #[test]
     fn the_guides_know_their_range_and_fee() {
         let g = GuideInfo::of_npc(31133);
-        assert_eq!((g.festival_type, g.oracle, g.blue, g.green, g.red), (1, CABAL_DAWN, 1500, 900, 450));
+        assert_eq!(
+            (g.festival_type, g.oracle, g.blue, g.green, g.red),
+            (1, CABAL_DAWN, 1500, 900, 450)
+        );
         assert_eq!(g.stone_count(SEAL_STONE_GREEN_ID), 900);
         assert_eq!(g.stone_count(57), -1);
         let none = GuideInfo::of_npc(1);
@@ -2218,7 +2308,10 @@ mod tests {
         // 2026-01-07 12:00 UTC.
         let utc = 1_767_571_200_000 + 2 * 86_400_000 + 12 * 3_600_000;
         let text = calculate_date(utc);
-        assert!(text.starts_with("2026/0/") || text.starts_with("2026/1/"), "{text}");
+        assert!(
+            text.starts_with("2026/0/") || text.starts_with("2026/1/"),
+            "{text}"
+        );
     }
 
     #[test]

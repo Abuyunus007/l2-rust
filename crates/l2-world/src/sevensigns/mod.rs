@@ -68,13 +68,14 @@ pub use cycle::{
     ssq_info_state,
 };
 pub use festival::{
-    FESTIVAL_COUNT, FESTIVAL_LEVEL_MAX_31, FESTIVAL_LEVEL_MAX_42, FESTIVAL_LEVEL_MAX_53, FESTIVAL_LEVEL_MAX_64,
-    FESTIVAL_LEVEL_MAX_NONE, FESTIVAL_LEVEL_SCORES, FESTIVAL_OFFERING_ID, FESTIVAL_OFFERING_VALUE, FestivalData,
-    FestivalSettings, FestivalStage, FestivalTimer, GuideInfo, festival_bypass_handler, festival_name,
-    max_level_for_festival,
+    FESTIVAL_COUNT, FESTIVAL_LEVEL_MAX_31, FESTIVAL_LEVEL_MAX_42, FESTIVAL_LEVEL_MAX_53,
+    FESTIVAL_LEVEL_MAX_64, FESTIVAL_LEVEL_MAX_NONE, FESTIVAL_LEVEL_SCORES, FESTIVAL_OFFERING_ID,
+    FESTIVAL_OFFERING_VALUE, FestivalData, FestivalSettings, FestivalStage, FestivalTimer, GuideInfo,
+    festival_bypass_handler, festival_name, max_level_for_festival,
 };
 pub use festival_data::{
-    FESTIVAL_DAWN_PLAYER_SPAWNS, FESTIVAL_DUSK_PLAYER_SPAWNS, FESTIVAL_DAWN_WITCH_SPAWNS, FESTIVAL_DUSK_WITCH_SPAWNS,
+    FESTIVAL_DAWN_PLAYER_SPAWNS, FESTIVAL_DAWN_WITCH_SPAWNS, FESTIVAL_DUSK_PLAYER_SPAWNS,
+    FESTIVAL_DUSK_WITCH_SPAWNS,
 };
 pub use rift::{
     DIMENSIONAL_FRAGMENT_ITEM_ID, RiftId, RiftRoomDef, RiftSettings, RiftTimer, rift_bypass_handler,
@@ -413,7 +414,11 @@ pub enum SevenSignsThen {
     /// `RequestSSQStatus`: show the page.
     Status { player: ObjectId, page: i8 },
     /// A festival guide's score page (4, 5 or 6): show it (M8-FEST-01).
-    FestivalPage { player: ObjectId, npc: ObjectId, page: i32 },
+    FestivalPage {
+        player: ObjectId,
+        npc: ObjectId,
+        page: i32,
+    },
 }
 
 /// The Seven Signs timers (one `TimerKind::SevenSigns`).

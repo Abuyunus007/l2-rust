@@ -38,7 +38,11 @@ impl RiftSpawns {
             table.add(doc);
             Ok(())
         });
-        log_loaded(Self::LOADER, table.spawns.len(), "dimensional rift spawn definition(s)");
+        log_loaded(
+            Self::LOADER,
+            table.spawns.len(),
+            "dimensional rift spawn definition(s)",
+        );
         table
     }
 
@@ -145,10 +149,34 @@ mod tests {
         assert_eq!(
             all,
             vec![
-                RiftSpawnDef { area: 1, room: 1, mob_id: 21659, delay: 90, count: 2 },
-                RiftSpawnDef { area: 1, room: 1, mob_id: 21661, delay: 80, count: 4 },
-                RiftSpawnDef { area: 1, room: 2, mob_id: 21664, delay: 90, count: 3 },
-                RiftSpawnDef { area: 2, room: 9, mob_id: 25001, delay: 7, count: 1 },
+                RiftSpawnDef {
+                    area: 1,
+                    room: 1,
+                    mob_id: 21659,
+                    delay: 90,
+                    count: 2
+                },
+                RiftSpawnDef {
+                    area: 1,
+                    room: 1,
+                    mob_id: 21661,
+                    delay: 80,
+                    count: 4
+                },
+                RiftSpawnDef {
+                    area: 1,
+                    room: 2,
+                    mob_id: 21664,
+                    delay: 90,
+                    count: 3
+                },
+                RiftSpawnDef {
+                    area: 2,
+                    room: 9,
+                    mob_id: 25001,
+                    delay: 7,
+                    count: 1
+                },
             ]
         );
     }
@@ -162,6 +190,10 @@ mod tests {
         }
         let spawns = RiftSpawns::load(root);
         assert!(spawns.len() > 100);
-        assert!(spawns.iter().all(|s| (1..=6).contains(&s.area) && (1..=9).contains(&s.room)));
+        assert!(
+            spawns
+                .iter()
+                .all(|s| (1..=6).contains(&s.area) && (1..=9).contains(&s.room))
+        );
     }
 }

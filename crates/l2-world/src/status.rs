@@ -746,7 +746,11 @@ impl World {
         // The festival modifier of a participant, else `calcSiegeRegenModifier(player)` when
         // positive.
         let festival = self.festival_regen_modifier(id);
-        let siege = if festival.is_some() { 0.0 } else { self.siege_regen_modifier(id) };
+        let siege = if festival.is_some() {
+            0.0
+        } else {
+            self.siege_regen_modifier(id)
+        };
         let clan_hall = self.clan_hall_regen_factor(id, crate::residence::HALL_FUNC_RESTORE_HP);
         let multipliers: Vec<f64> = festival
             .into_iter()
