@@ -63,6 +63,7 @@ pub use cubic::{
     CubicCondition, CubicData, CubicSelectionMode, CubicSkill, CubicTargetType, CubicTemplate,
     HpConditionType,
 };
+pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
 pub use door::{DoorTemplate, DoorTemplates};
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
@@ -74,7 +75,6 @@ pub use enchant_skill::{EnchantSkillGroup, EnchantSkillGroupsData, EnchantSkillH
 pub use experience::ExperienceTable;
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
 pub use fishing::{Fish, FishData, FishingMonster, FishingMonstersData, FishingRod, FishingRodsData};
-pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
 pub use henna::{Henna, Hennas};
 pub use hit_condition_bonus::HitConditionBonus;
 pub use html::HtmCache;

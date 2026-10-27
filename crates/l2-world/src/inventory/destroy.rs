@@ -206,12 +206,13 @@ impl World {
 
         // Cannot discard item that the skill is consuming: needs the cast state (M5).
 
-        // Cursed weapons are not modelled.
         let gm = self.is_gm(id);
         // `Item.isDestroyable()`: the template, and for an augmented item `AltAllowAugmentDestroy`.
         let destroyable = template.destroyable
             && (!item.is_augmented() || self.settings.inventory.alt_allow_augment_destroy);
-        if !self.settings.inventory.destroy_all_items && (!gm && !destroyable) {
+        if !self.settings.inventory.destroy_all_items
+            && ((!gm && !destroyable) || self.is_cursed_item(item.item_id))
+        {
             if template.is_hero_item() {
                 self.send(
                     id,
@@ -355,8 +356,7 @@ impl World {
             .and_then(|i| templates.and_then(|t| t.get(i.item_id)));
 
         let discard_refused = SystemMessage::new(SystemMessageId::ThisItemCannotBeDiscarded);
-        // `validateItemManipulation` (owner, summon, mount, active enchant scroll, cursed weapon):
-        // the cursed weapon part is not modelled.
+        // `validateItemManipulation` (owner, summon, mount, active enchant scroll, cursed weapon).
         let refused = template.is_none()
             || !self.validate_item_manipulation(id, object_id)
             || count == 0

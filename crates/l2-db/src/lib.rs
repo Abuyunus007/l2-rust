@@ -32,6 +32,7 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{CrestRepository, CrestRow};
+pub use game::{CursedWeaponRepository, CursedWeaponRow};
 pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, SiegeRepository, TrapUpgradeRow};
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use game::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
@@ -44,7 +45,6 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
-pub use game::{CursedWeaponRepository, CursedWeaponRow};
 pub use game::{ManorRepository, ProcureRow, ProductionRow};
 pub use game::{MessageRepository, MessageRow};
 pub use game::{

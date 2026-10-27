@@ -81,6 +81,7 @@ impl World {
     pub fn char_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<CharInfo> {
         let player = self.players.get(&subject)?;
         let ui = build_user_info(self, player);
+        let cursed = self.is_cursed_weapon_equipped(subject);
         let invisible = self.objects.get(&subject).is_some_and(|e| e.invisible);
         let gm_sees_invisible = invisible && self.is_visible_for(subject, viewer);
         // `Creature.getAbnormalVisualEffects()` and the special mask, without the stealth bit
@@ -124,10 +125,11 @@ impl World {
             } else {
                 player.transform.visible_title.clone().unwrap_or(ui.title)
             },
-            clan_id: ui.clan_id,
-            clan_crest_id: ui.clan_crest_id,
-            ally_id: ui.ally_id,
-            ally_crest_id: ui.ally_crest_id,
+            // Java `CharInfo`: the four clan ints are 0 while a cursed weapon is equipped.
+            clan_id: if cursed { 0 } else { ui.clan_id },
+            clan_crest_id: if cursed { 0 } else { ui.clan_crest_id },
+            ally_id: if cursed { 0 } else { ui.ally_id },
+            ally_crest_id: if cursed { 0 } else { ui.ally_crest_id },
             sitting: self.is_sitting(subject),
             running: ui.running,
             in_combat: false,

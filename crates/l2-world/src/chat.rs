@@ -6,7 +6,7 @@
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
-// out because the systems do not exist: cursed weapons, factions, the say filter
+// out because the systems do not exist: factions, the say filter
 // (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
 // clan, alliance, petition and room channels (their messages are dropped with a debug line, like
 // Java does for a channel without handler). The party channel is `chat_party` (M6-PARTY-01).
@@ -62,6 +62,16 @@ impl World {
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::WhenAUserSKeyboardInputExceedsACertainCumulativeScoreAChatBanWillBeAppliedThisIsDoneToDiscourageSpammingPleaseAvoidPostingTheSameMessageMultipleTimesDuringAShortPeriod),
+            );
+            return;
+        }
+
+        if self.is_cursed_weapon_equipped(id) && matches!(chat_type, ChatType::Trade | ChatType::Shout) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::ShoutAndTradeChattingCannotBeUsedWhilePossessingACursedWeapon,
+                ),
             );
             return;
         }

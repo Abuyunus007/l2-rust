@@ -117,8 +117,8 @@ impl World {
     /// build an outpost or a flag here (with the messages that say why not).
     pub fn cond_can_create_outpost(&self, player: ObjectId) -> bool {
         let clan = self.clan_of(player).map(|c| c.id);
-        // `isCursedWeaponEquipped()`: cursed weapons are M8.
-        let mut can = !(self.is_alike_dead(player) || clan.is_none());
+        let mut can =
+            !(self.is_alike_dead(player) || self.is_cursed_weapon_equipped(player) || clan.is_none());
         let (castle, fort) = match self.position_of(player) {
             Some((x, y, z)) => (self.castle_at(x, y, z), self.fort_at(x, y, z)),
             None => (None, None),

@@ -107,7 +107,10 @@ impl CursedWeaponRepository {
 
     /// Java `CursedWeaponsManager.removeFromDb`.
     pub async fn remove(&self, item_id: i32) -> Result<()> {
-        sqlx::query(DELETE_WEAPON).bind(item_id).execute(&self.pool).await?;
+        sqlx::query(DELETE_WEAPON)
+            .bind(item_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 

@@ -26,8 +26,8 @@ use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
 use l2_world::{
-    AugmentInput, ClanInput, ClientInput, CraftInput, EnchantInput, FortInput, FriendEntry, HennaInput,
-    ItemData, LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData,
+    AugmentInput, ClanInput, ClientInput, CraftInput, CursedInput, EnchantInput, FortInput, FriendEntry,
+    HennaInput, ItemData, LeaveReason, MacroCmdData, MacroData, MailInput, PacketSink, PetInput, PlayerData,
     PlayerProfile, RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData,
     SkillData, StoreInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
@@ -1007,6 +1007,9 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
+            ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
+            ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
             ClientPacket::RequestAcquireSkillInfo(p) => ClientInput::AcquireSkillInfo {
                 id: p.id,
                 level: p.level,

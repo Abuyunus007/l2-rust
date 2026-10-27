@@ -153,6 +153,8 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
+    pub(crate) cursed: crate::cursed::CursedWorld,
 }
 
 impl World {
@@ -226,6 +228,7 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            cursed: crate::cursed::CursedWorld::default(),
         }
     }
 
@@ -435,6 +438,8 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: "Save Cursed Weapons data before closing."
+                self.save_cursed_weapons();
                 self.stopped = true;
                 done();
             }
@@ -644,6 +649,8 @@ impl World {
             ClientInput::Store(input) => self.on_store_input(id, input),
             // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
+            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
+            ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -877,6 +884,7 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
         }

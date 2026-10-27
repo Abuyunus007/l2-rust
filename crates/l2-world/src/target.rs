@@ -34,6 +34,9 @@ use crate::objects::ObjectKind;
 use crate::residence::ClanHallId;
 use crate::world::World;
 
+/// `PlayerClick.CURSED_WEAPON_VICTIM_MIN_LEVEL`.
+const CURSED_WEAPON_VICTIM_MIN_LEVEL: i32 = 21;
+
 /// Java `calculateDistance2D`: `sqrt(dx² + dy²)` with the differences taken in `int` first.
 pub(crate) fn distance_2d(a: (i32, i32, i32), b: (i32, i32, i32)) -> f64 {
     let dx = f64::from(a.0.wrapping_sub(b.0));
@@ -507,13 +510,22 @@ impl World {
         if self.target_of(player) != Some(target) {
             self.set_target(player, Some(target));
         } else if interact {
-            // FOLLOW-UP(M5): the cursed weapon level rule, `setIntentionFollow` for a player that
-            // cannot be attacked.
+            // FOLLOW-UP(M5): `setIntentionFollow` for a player that cannot be attacked.
             if self.is_in_store_mode(target) {
                 // Check if this Player has a Private Store.
                 self.set_intention_interact(player, target);
             } else if self.is_auto_attackable_by(target, player) {
-                self.set_intention_attack(player, target);
+                // Player with level < 21 can't attack a cursed weapon holder. And a cursed weapon
+                // holder can't attack players with level < 21.
+                let level = |id: ObjectId| self.players.get(&id).map_or(0, |p| p.core.level);
+                if (self.is_cursed_weapon_equipped(target) && level(player) < CURSED_WEAPON_VICTIM_MIN_LEVEL)
+                    || (self.is_cursed_weapon_equipped(player)
+                        && level(target) < CURSED_WEAPON_VICTIM_MIN_LEVEL)
+                {
+                    self.send(player, &ActionFailed);
+                } else {
+                    self.set_intention_attack(player, target);
+                }
             } else {
                 // This Action Failed packet avoids player getting stuck when clicking three or
                 // more times.

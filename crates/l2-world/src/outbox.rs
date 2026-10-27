@@ -164,6 +164,9 @@ pub enum PersistCommand {
     /// A manor row write with Java's statement (`castle_manor_production`, `castle_manor_procure`),
     /// see `manor/` (M7-MANOR-01). Applied in order with the other commands.
     Manor(crate::manor::ManorWrite),
+    /// A write of the cursed weapon tables with Java's statements (`cursed_weapons`, and the
+    /// `items`/`characters` rows of an owner who is offline), see `cursed/` (M8-CURSED-01).
+    Cursed(crate::cursed::CursedWrite),
     /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
     /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {

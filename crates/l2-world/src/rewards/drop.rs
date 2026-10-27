@@ -966,7 +966,8 @@ impl World {
             // when `FakePlayerCanDropItems` is on: fake players are not ported).
             return;
         };
-        // `CursedWeaponsManager.checkDrop(this, player)`: cursed weapons are M5.
+        // `CursedWeaponsManager.checkDrop(this, player)`.
+        self.cursed_check_drop(dying, dealer);
 
         let Some(templates) = self.item_templates() else {
             return;

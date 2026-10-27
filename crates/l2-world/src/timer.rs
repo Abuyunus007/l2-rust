@@ -154,6 +154,9 @@ pub enum TimerKind {
     /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
     /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
+    /// The life task of a cursed weapon and its delayed social action and transformation, see
+    /// `cursed/`.
+    Cursed(crate::cursed::CursedTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
     /// The drowning task and the falling damage task of a player, see `water.rs`.

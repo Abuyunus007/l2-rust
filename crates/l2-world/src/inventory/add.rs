@@ -15,7 +15,6 @@
 //
 // # Left out on purpose
 // - `ItemProcessType` logging (`LogItems`), the GM audit, `ON_PLAYER_ITEM_ADD` (D-05).
-// - Cursed weapons, territory wards and combat flags that activate when picked up (M5).
 // - Herbs: an `ExImmediateEffect` item casts its skills instead of entering the inventory.
 // - Parties: `distributeItem` for loot and pickups (M5).
 
@@ -295,9 +294,10 @@ impl World {
             && (!stackable || added.change != InventoryUpdate::MODIFIED)
         {
             self.drop_overflow_item(player, added.item.object_id, true);
+        } else if self.is_cursed_item(added.item.item_id) {
+            self.cursed_activate(player, added.item.object_id, added.item.item_id);
         }
-        // Cursed weapons (M8), the combat flag of a fortress siege (M7-FORT-01) and territory
-        // wards (M7-TW-01).
+        // The combat flag of a fortress siege (M7-FORT-01) and territory wards (M7-TW-01).
         else if World::is_combat_flag_item(added.item.item_id) {
             self.fort_on_combat_flag_added(player, added.item.object_id);
         } else if crate::territory::is_ward_item(added.item.item_id) {
@@ -363,8 +363,10 @@ impl World {
             && (!template.stackable || created.change != InventoryUpdate::MODIFIED)
         {
             self.drop_overflow_item(player, created.item.object_id, false);
+        } else if self.is_cursed_item(item_id) {
+            self.cursed_activate(player, created.item.object_id, item_id);
         }
-        // Cursed weapons (M8); a territory ward is worn (M7-TW-01).
+        // A territory ward is worn (M7-TW-01).
         else if crate::territory::is_ward_item(item_id) {
             self.territory_ward_item_added(player, created.item.object_id, item_id);
         }
