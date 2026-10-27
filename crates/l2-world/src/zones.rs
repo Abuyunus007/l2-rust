@@ -759,6 +759,15 @@ impl World {
         Some((loc.x, loc.y, loc.z))
     }
 
+    /// Java `MapRegionData.getNearestTownRespawn(creature)` for a creature that is no player (a
+    /// boat): the restart point of the `RespawnZone` or the map region at the place.
+    pub(crate) fn nearest_town_respawn_at(&mut self, x: i32, y: i32, z: i32) -> Option<(i32, i32, i32)> {
+        let (zones, regions) = (self.zoning.zones.clone()?, self.zoning.map_regions.clone()?);
+        let mut pick = self.restart_point_picker();
+        let loc = regions.nearest_town_respawn(&zones, l2_data::Location { x, y, z }, None, &mut pick)?;
+        Some((loc.x, loc.y, loc.z))
+    }
+
     /// Java `MapRegionData.getNearestKarmaRespawn(player)`: like [`Self::nearest_town_respawn`]
     /// with the chaotic restart points.
     pub fn nearest_karma_respawn(&mut self, id: ObjectId) -> Option<(i32, i32, i32)> {

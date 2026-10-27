@@ -608,8 +608,8 @@ impl World {
         let Some(player) = self.players.get(&id) else {
             return;
         };
-        // Java also returns for observer mode, casting and vehicles; none exists yet.
-        if player.movement.teleporting {
+        // Java also returns for observer mode and casting; neither exists yet.
+        if player.movement.teleporting || self.is_in_vehicle(id) {
             return;
         }
         let real_x = player.core.x;

@@ -270,6 +270,14 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// The boat values: `AllowBoat` and `BoatBroadcastRadius` of `General.ini` (M8-VEHICLE-01).
+pub fn vehicle_settings(config: &GameConfig) -> l2_world::VehicleSettings {
+    l2_world::VehicleSettings {
+        allow_boat: config.general.allow_boat,
+        boat_broadcast_radius: config.general.boat_broadcast_radius,
+    }
+}
+
 /// The cursed weapon values: `AllowCursedWeapons` of `General.ini` and the D-53 switch
 /// (`CycleDatabaseWrites`, [`cycle_database_writes`]).
 pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::CursedSettings {
@@ -787,6 +795,9 @@ impl Server {
         } else {
             l2_world::CursedLoad::default()
         };
+        // Java: AirShipManager (the `airships` rows; the airships belong to a clan, not to one of
+        // the global cycles of D-53).
+        let vehicle_load = persist::load_airships(&pool).await;
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -972,6 +983,11 @@ impl Server {
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
                     world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
+                    // Java: the scripts of the boats and the air ship docks (M8-VEHICLE-01).
+                    world.set_vehicle_settings(vehicle_settings(&config));
+                    world.load_airships(vehicle_load);
+                    world.spawn_boats();
+                    world.start_air_ships();
                     world.set_clan_hall_settings(clan_hall_settings);
                     // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).

@@ -488,7 +488,16 @@ impl World {
         let Some(skill) = table.get(key.id, key.level) else {
             return;
         };
-        // Airships: none. Do not cast non transform skills when transformed.
+        // Avoid Use of Skills in AirShip.
+        if self.is_in_air_ship(player) {
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::ThisActionIsProhibitedWhileMountedOrOnAnAirship),
+            );
+            self.send(player, &ActionFailed);
+            return;
+        }
+        // Do not cast non transform skills when transformed.
         if self.stats(player).is_some_and(|view| {
             view.transformation()
                 .is_some_and(|form| !form.can_use_weapon_stats())

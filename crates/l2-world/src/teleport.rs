@@ -23,7 +23,7 @@
 //   `doRevive` of a pending revive (a restart point, M4-DEATH-01) are in. `setTarget(null)` is
 //   in (M3-TALK-01).
 // - A pet follows its owner, trained beasts are lost, `checkItemRestriction`, the movie, auto play,
-//   the teleport protection (`PlayerTeleportProtection`, default 0), boats and airships, and the
+//   the teleport protection (`PlayerTeleportProtection`, default 0), and the
 //   `Player.teleToLocation(loc)` override that first sends a flying form below -1005 to -1005:
 //   M4+. A flying creature keeps the z of the target (`_isFlying`, wyverns and flying forms).
 // - A detached client (`GameClient.isDetached`, offline mode) is never teleported "in place".
@@ -205,6 +205,8 @@ impl World {
         {
             return;
         }
+        // `Player.teleToLocation`: "if the vehicle is not teleporting, the player gets off".
+        self.vehicle_before_player_teleport(id);
         let TeleportTarget {
             x: x_value,
             y: y_value,
@@ -403,8 +405,11 @@ impl World {
         }
 
         // Player.onTeleported
-        // `setLastServerPosition(x, y, z)`: the position `ValidatePosition` compares against.
-        if let Some(p) = self.players.get_mut(&id) {
+        // `isInAirShip()`: the ship describes itself; else `setLastServerPosition(x, y, z)`, the
+        // position `ValidatePosition` compares against.
+        if !self.vehicle_player_on_teleported(id)
+            && let Some(p) = self.players.get_mut(&id)
+        {
             p.movement.last_server_position = (x, y, z);
         }
         // "Force a revalidation"

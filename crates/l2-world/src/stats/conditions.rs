@@ -215,8 +215,10 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
         Condition::PlayerSex { sex } => a.player().is_some_and(|p| i32::from(p.data.sex != 0) == *sex),
         // `!isPlayer() || isFlyingMounted() == value`.
         Condition::PlayerFlyMounted { value } => !a.is_player() || a.is_flying_mounted() == *value,
-        // `player == null ? true : isInVehicle() == value`: there are no boats or airships.
-        Condition::PlayerVehicleMounted { value } => !a.is_player() || !*value,
+        // `player == null ? true : isInVehicle() == value`.
+        Condition::PlayerVehicleMounted { value } => {
+            !a.is_player() || a.world().is_in_vehicle(a.object_id()) == *value
+        }
         Condition::PlayerLandingZone { value } => match a.player() {
             Some(p) => p.zones.is_inside(ZoneId::Landing) == *value,
             None => not_modelled(NotModelled::NpcZones, "landingZone of an NPC (NPC zones)"),
@@ -329,9 +331,9 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             }
             *value == a.world().cond_can_create_outpost(a.object_id())
         }
-        Condition::PlayerCallPc { .. }
-        | Condition::PlayerCanEscape { .. }
-        | Condition::PlayerCanRefuelAirship { .. } => {
+        // `ConditionPlayerCanRefuelAirship`: a steered ship with room for `value` more fuel.
+        Condition::PlayerCanRefuelAirship { value } => a.world().can_refuel_air_ship(a.object_id(), *value),
+        Condition::PlayerCallPc { .. } | Condition::PlayerCanEscape { .. } => {
             not_modelled(NotModelled::CanAction, "player can... (the action checks of M5)")
         }
         // `_value == canTransform`; the checks tell the player why not.

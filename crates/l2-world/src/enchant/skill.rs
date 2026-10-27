@@ -20,7 +20,6 @@
 // # What is left out
 // - `player.isSellingBuffs()` (the SellBuffs custom feature is not ported).
 // - `_subclassLock` of `isAllowedToEnchantSkills()` (sub-classes are not modelled yet) and
-//   `isInBoat() || isInAirShip()` (boats and airships are not modelled; `M6-MOUNT`).
 // - The Java GS "enchant.skills" log file: the lines go to `tracing` with the target
 //   `enchant.skills` (`LogSkillEnchants`).
 
@@ -95,7 +94,9 @@ impl World {
         if self.is_casting_now(id) || self.is_casting_simultaneously_now(id) {
             return false;
         }
-        // `isInBoat() || isInAirShip()`: not modelled.
+        if self.is_in_boat(id) || self.is_in_air_ship(id) {
+            return false;
+        }
         true
     }
 

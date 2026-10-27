@@ -306,10 +306,9 @@ impl World {
             return Err(C1CannotDuelBecauseC1IsCurrentlyEngagedInAPrivateStoreOrManufacture);
         }
         // `isMounted() || isInBoat()` (C1_CANNOT_DUEL_BECAUSE_C1_IS_CURRENTLY_RIDING_A_BOAT_STEED_OR_STRIDER).
-        if self.is_mounted(id) {
+        if self.is_mounted(id) || self.is_in_boat(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyRidingABoatSteedOrStrider);
         }
-        // Boats: not modelled.
         if self.is_fishing(id) {
             return Err(C1CannotDuelBecauseC1IsCurrentlyFishing);
         }

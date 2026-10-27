@@ -1929,6 +1929,11 @@ impl World {
             }
             return;
         }
+        // `BoatAI` / `AirShipAI.describeStateToPlayer` (M8-VEHICLE-01).
+        if kind == ObjectKind::Vehicle {
+            self.vehicle_describe_state_to_player(subject, viewer);
+            return;
+        }
         if !matches!(kind, ObjectKind::Player | ObjectKind::Npc | ObjectKind::Summon) {
             return;
         }

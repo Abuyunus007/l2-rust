@@ -205,7 +205,15 @@ impl World {
             return;
         };
 
-        // `isInBoat()`: there are no boats yet.
+        if self.is_in_boat(id) {
+            self.send(
+                id,
+                &SystemMessage::new(
+                    SystemMessageId::YouCannotFishWhileRidingAsAPassengerOfABoatItSAgainstTheRules,
+                ),
+            );
+            return;
+        }
 
         if self.is_crafting(id) || self.is_in_store_mode(id) {
             self.send(
