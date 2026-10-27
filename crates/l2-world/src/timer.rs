@@ -108,6 +108,8 @@ pub enum TimerKind {
     Control(crate::effects::control::ControlTimer),
     /// Java `Party`'s position broadcast (`scheduleAtFixedRate`, every 12 s), see `party/`.
     PartyPosition(crate::party::PartyId),
+    /// Java `Party._changeDistributionTypeRequestTask`: the loot rule vote ran out of time.
+    PartyLootRequest(crate::party::PartyId),
     /// Java `CommandChannelTimer`: the loot right of a raid boss (by raid), see
     /// `party/command_channel.rs`.
     CommandChannelTimer(ObjectId),
@@ -156,6 +158,8 @@ pub enum TimerKind {
     Territory(crate::territory::TerritoryTimer),
     /// The grand boss store, the raid boss respawns and the weekly raid points reset, see `boss/`.
     Boss(crate::boss::BossTimer),
+    /// The end of a wear shop try-on (L-02), see `leftover.rs`.
+    Leftover(crate::leftover::LeftoverTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
     /// The drowning task and the falling damage task of a player, see `water.rs`.

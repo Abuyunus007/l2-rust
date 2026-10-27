@@ -53,6 +53,7 @@ pub mod geodata;
 pub mod gm;
 pub mod gm_shop;
 pub mod gm_tools;
+pub mod gm_view;
 pub mod html;
 pub mod invul;
 pub mod karma;

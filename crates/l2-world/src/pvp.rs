@@ -649,7 +649,7 @@ impl World {
 
     /// Java `Player.broadcastTitleInfo()`: `UserInfo`, then the new title to everybody who sees the
     /// player.
-    fn broadcast_title_info(&mut self, id: ObjectId) {
+    pub(crate) fn broadcast_title_info(&mut self, id: ObjectId) {
         self.send_user_info(id);
         let Some(title) = self.players.get(&id).map(|p| p.data.title.clone()) else {
             return;

@@ -1056,12 +1056,22 @@ fn calls() -> Vec<String> {
     std::mem::take(&mut DEBUG_CALLS.lock().unwrap())
 }
 
+/// The debug tests share `DEBUG_CALLS`; run them one at a time.
+static DEBUG_SERIAL: Mutex<()> = Mutex::new(());
+
+fn debug_serial() -> std::sync::MutexGuard<'static, ()> {
+    DEBUG_SERIAL
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
 #[test]
 fn debug_menu_and_switches() {
     let mut s = Scene::new();
     s.enter(GM);
     s.world.register_admin_handler("admin_showdoors", record_call);
     s.world.register_admin_handler("admin_geogrid", record_call);
+    let _serial = debug_serial();
     calls();
     s.log.take();
 
@@ -1095,6 +1105,7 @@ fn debug_doors_and_geodata_run_their_commands_when_the_gm_moved() {
     s.enter(GM);
     s.world.register_admin_handler("admin_showdoors", record_call);
     s.world.register_admin_handler("admin_geogrid", record_call);
+    let _serial = debug_serial();
     calls();
     s.log.take();
 
@@ -1152,6 +1163,7 @@ fn debug_stops_when_the_gm_leaves() {
     let mut s = Scene::new();
     s.enter(GM);
     s.world.register_admin_handler("admin_showdoors", record_call);
+    let _serial = debug_serial();
     calls();
     s.cmd(GM, "debug doors on");
     s.input(GM, ClientInput::Logout);

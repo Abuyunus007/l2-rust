@@ -64,6 +64,7 @@ use crate::player::ItemData;
 use crate::timer::TimerId;
 use crate::world::World;
 
+pub(crate) use paperdoll::paperdoll_slot_of;
 pub use paperdoll::{body_part_of_paperdoll_slot, paperdoll_index_of};
 
 /// `ItemLocation.INVENTORY` / `PAPERDOLL` as the `items.loc` column spells them.

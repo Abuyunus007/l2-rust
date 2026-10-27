@@ -103,6 +103,9 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
         let clan_leave = self.clan_before_leave(id);
+        // `deleteMe`: off the party matching waiting list, out of the party matching room (Java
+        // does it before the party).
+        self.party_room_on_player_leave(id);
         // `deleteMe`: "If a Party is in progress, leave it".
         self.leave_party(id);
         // `deleteMe`: the wyvern's skill goes; `stopAllTimers` stops the feed, stores the food of

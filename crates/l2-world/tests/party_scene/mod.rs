@@ -80,6 +80,9 @@ impl StaticData for Data {
             ..AccessLevelStatic::USER
         }
     }
+    fn access_level_allows_alt_g(&self, level: i32) -> bool {
+        level >= 100
+    }
     fn stat_data(&self) -> Option<&StatData> {
         Some(&self.0)
     }
@@ -258,6 +261,7 @@ pub const ITEMS: &str = r#"<list>
 <item id="1" type="Weapon" name="Sword"><set name="weapon_type" val="SWORD" /><set name="bodypart" val="rhand" /><set name="weight" val="5" /></item>
 <item id="1060" type="EtcItem" name="Potion"><set name="is_stackable" val="true" /><set name="weight" val="1" /></item>
 <item id="1000" type="EtcItem" name="Dagger Bit"><set name="weight" val="1" /></item>
+<item id="13016" type="EtcItem" name="Title Color Change Scroll"><set name="handler" val="NicknameColor" /><set name="is_stackable" val="true" /></item>
 </list>"#;
 
 /// The monster of the scenes: level 10 (`exp` and `sp` as asked), 300 HP, certain drops: an
