@@ -244,7 +244,20 @@ impl World {
         if self.is_inside_zone(target, ZoneId::NoSummonFriend) || self.is_inside_zone(target, ZoneId::Jail) {
             return refuse(self, SystemMessageId::C1IsInAnAreaWhichBlocksSummoning, true);
         }
-        // M8: `activeChar.isInInstance()` (the instance's `isSummonAllowed()`).
+        // A summoner inside an instance: `AllowSummonInInstance` and the instance's
+        // `isSummonAllowed()` (M8-INST-01).
+        if self.is_in_instance(active) {
+            let allowed = self
+                .instance(self.instance_id_of(active))
+                .is_some_and(|i| i.allow_summon);
+            if !self.instances.settings.allow_summon_in_instance || !allowed {
+                return refuse(
+                    self,
+                    SystemMessageId::YouMayNotSummonFromYourCurrentLocation,
+                    false,
+                );
+            }
+        }
         // `activeChar.isIn7sDungeon()` (M8-SS-01): only the members the dungeon lets in.
         if self.is_in_7s_dungeon(active) {
             let target_cabal = self.ss_player_cabal(target.0);

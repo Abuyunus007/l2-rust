@@ -11,7 +11,7 @@
 // # Left out, with the system that brings it
 // - `//respawnall`, `//spawn_reload` also unload and reload the scripts (D-16: a restart), and
 //   run `AutoSpawnHandler`, `RaidBossSpawnManager` and `SevenSigns.spawnSevenSignsNPC` (M8).
-// - `//instance_spawns`: instances (M8).
+// - `//instance_spawns`: in `admin/instance.rs` (M8-INST-01).
 // - Spawn persistence: `SpawnData.deleteSpawn` (`//recall_npc` and the delete commands) does not
 //   take the spawn out of the xml; `addNewSpawn` is done (`World::store_new_spawn`).
 // - The NPC index and the monster index list the templates in id order; Java lists them in the

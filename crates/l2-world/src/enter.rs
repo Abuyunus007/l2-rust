@@ -494,6 +494,9 @@ impl World {
         if let Some(info) = self.user_info(id) {
             self.send(id, &info);
         }
+        // "Restore to instanced area if enabled." (`RestorePlayerInstance`), before the spawn
+        // (M8-INST-01).
+        self.instance_on_enter_world(id);
         // "Clan related checks are here." (PledgeSkillList, the other members, the member list,
         // PledgeStatusChanged).
         self.clan_on_enter_world(id);

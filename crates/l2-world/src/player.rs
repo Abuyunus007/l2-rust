@@ -254,6 +254,9 @@ pub struct PlayerProfile {
     /// The `seven_signs` row `Player.store` writes (`saveSevenSignsData(objectId)`); `None` for a
     /// character that never joined. Filled by the snapshot of a store.
     pub seven_signs_to_store: Option<crate::sevensigns::SignsPlayer>,
+    /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
+    /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
+    pub instance_times: Vec<(i32, i64)>,
 }
 
 impl Default for PlayerProfile {
@@ -300,6 +303,7 @@ impl Default for PlayerProfile {
             in_7s_dungeon: false,
             seven_signs_refresh: None,
             seven_signs_to_store: None,
+            instance_times: Vec::new(),
         }
     }
 }

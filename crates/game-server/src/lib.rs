@@ -708,6 +708,7 @@ impl Server {
         let summon_settings = world_data::summon_settings(&config);
         let pc_cafe_settings = world_data::pc_cafe_settings(&config);
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
+        let instance_settings = world_data::instance_settings(&config, &paths.config_dir);
         // Java: PetNameTable (the names of the pets that exist), read only.
         let pet_names = persist::load_pet_names(&pool).await;
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
@@ -945,6 +946,9 @@ impl Server {
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {
                         tracing::error!("Doors, fences and static objects could not all be spawned: {e}");
                     }
+                    // Java: InstanceManager.getInstance (the names and templates; M8-INST-01).
+                    world.set_instance_settings(instance_settings);
+                    world.set_instance_data(Arc::clone(&datapack.instances));
                     // Java: WalkingManager.getInstance (GameServer, before the spawns: a spawn asks
                     // `isTargeted` and starts its route).
                     world.set_walking_routes(Arc::clone(&datapack.routes));

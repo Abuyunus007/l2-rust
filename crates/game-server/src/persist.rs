@@ -59,6 +59,7 @@ use l2_config::game::GeneralConfig;
 use l2_db::CrestRepository;
 use l2_db::FortSiegeRepository;
 use l2_db::HallSiegeRepository;
+use l2_db::InstanceTimeRepository;
 use l2_db::OfflineTradeRepository;
 use l2_db::SiegeRepository;
 use l2_db::TerritoryRepository;
@@ -77,6 +78,7 @@ use l2_db::{
 use l2_db::{CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
+use l2_world::InstanceTimeWrite;
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -470,6 +472,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_seven_signs(
         &mut self,
         _write: &l2_world::sevensigns::SevenSignsWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `character_instance_time` row change (M8-INST-01): Java `InstanceManager.setInstanceTime`
+    /// / `deleteInstanceTime`.
+    fn store_instance_time(
+        &mut self,
+        _write: &InstanceTimeWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1093,6 +1104,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed henna statement and goes on (no retry).
                 if let Err(e) = store.store_henna_write(&write).await {
                     error!("Henna data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::InstanceTime(write)) => {
+                // Java logs a failed instance time statement and goes on (no retry).
+                if let Err(e) = store.store_instance_time(&write).await {
+                    error!("Could not store character instance time data ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
@@ -3051,6 +3068,7 @@ pub struct DbStore {
     shortcuts: ShortcutRepository,
     macros: MacroRepository,
     hennas: HennaRepository,
+    instance_times: InstanceTimeRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
     reco: RecommendationRepository,
@@ -3098,6 +3116,7 @@ impl DbStore {
             shortcuts: ShortcutRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             hennas: HennaRepository::new(pool.clone()),
+            instance_times: InstanceTimeRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -4477,6 +4496,26 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
+        match *write {
+            InstanceTimeWrite::Set {
+                char_id,
+                instance_id,
+                time,
+            } => {
+                self.instance_times
+                    .set_instance_time(char_id, instance_id, time)
+                    .await?
+            }
+            InstanceTimeWrite::Delete { char_id, instance_id } => {
+                self.instance_times
+                    .delete_instance_time(char_id, instance_id)
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
     async fn load_seven_signs(&mut self) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
         read_seven_signs(&self.seven_signs).await
     }
@@ -5127,6 +5166,8 @@ mod tests {
         Announcement(AnnouncementWrite),
         /// A `character_hennas` write (L-01).
         Henna(HennaWrite),
+        /// A `character_instance_time` write (M8-INST-01).
+        InstanceTime(InstanceTimeWrite),
         /// A `character_tpbookmark` write (L-04).
         Bookmark(BookmarkWrite),
         /// A `character_contacts` write (L-04).
@@ -5340,6 +5381,11 @@ mod tests {
 
         async fn store_henna_write(&mut self, write: &HennaWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Henna(*write));
+            Ok(())
+        }
+
+        async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::InstanceTime(*write));
             Ok(())
         }
 
@@ -6789,6 +6835,29 @@ mod tests {
         )
         .await;
         assert_eq!(calls, vec![Call::Henna(add), Call::Henna(delete)]);
+    }
+
+    /// M8-INST-01: a re-entry time set and one deleted are writes of their own, in order.
+    #[tokio::test]
+    async fn instance_time_writes_are_stored_in_order() {
+        let set = InstanceTimeWrite::Set {
+            char_id: 5,
+            instance_id: 10,
+            time: 1_800_000_000_000,
+        };
+        let delete = InstanceTimeWrite::Delete {
+            char_id: 5,
+            instance_id: 11,
+        };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::InstanceTime(set)),
+                OutboxMessage::Persist(PersistCommand::InstanceTime(delete)),
+            ],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::InstanceTime(set), Call::InstanceTime(delete)]);
     }
 
     /// L-04: bookmark and contact writes are writes of their own, in order.

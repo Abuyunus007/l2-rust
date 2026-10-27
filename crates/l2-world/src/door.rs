@@ -30,8 +30,9 @@
 // - Castle, fort and clan hall doors: `isEnemy()` is the siege's (`Door::siege_enemy`, set by
 //   `siege/doors.rs` while the castle's or the fortress's siege zone is active; M7-CHSIEGE-01:
 //   the siegable halls).
-// - Instances (`Instance.getDoors()`): no instance exists yet, so a geodata check with an
-//   instance id of 1 or more finds no door, like Java's `doors == null` for an unknown instance.
+// - Instances (M8-INST-01): an instance has its own copies of its template's doors
+//   (`instance/lifecycle.rs`). A geodata check with an instance id of 1 or more looks at the
+//   doors of that instance (`Instance.getDoors()`, not the region's), none for an unknown one.
 
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
@@ -461,6 +462,7 @@ pub struct WorldObstacles<'a> {
     fences: &'a HashMap<ObjectId, Fence>,
     regions: &'a RegionGrid,
     objects: &'a HashMap<ObjectId, ObjectEntry>,
+    instances: &'a crate::instance::InstanceManager,
 }
 
 impl WorldObstacles<'_> {
@@ -472,21 +474,26 @@ impl WorldObstacles<'_> {
 impl DynamicObstacles for WorldObstacles<'_> {
     // Java: DoorData.checkIfDoorsBetween
     fn doors_between(&self, from: Location, to: Location, instance_id: i32, double_face_check: bool) -> bool {
-        // Java reads `Instance.getDoors()` here; there are no instances yet, so no doors.
-        if instance_id >= 1 {
-            return false;
-        }
-        let Some(region) = region_of(from.x, from.y, from.z) else {
-            return false;
-        };
-        self.regions.doors(region).any(|id| {
+        let blocking = |id: ObjectId| {
             let Some(door) = self.doors.get(&id) else {
                 return false;
             };
             instance_id == self.instance_of(id)
                 && door.blocks()
                 && door_blocks(&door.shape(), from, to, double_face_check)
-        })
+        };
+        // `instanceId >= 1`: the doors of the instance (`Instance.getDoors()`), wherever they are.
+        if instance_id >= 1 {
+            return self
+                .instances
+                .instances
+                .get(&instance_id)
+                .is_some_and(|i| i.doors.values().any(|id| blocking(*id)));
+        }
+        let Some(region) = region_of(from.x, from.y, from.z) else {
+            return false;
+        };
+        self.regions.doors(region).any(blocking)
     }
 
     // Java: FenceData.checkIfFenceBetween
@@ -517,6 +524,9 @@ pub struct DoorSnapshot {
     /// matched against the surrounding lists of these, like Java's per-region door lists.
     doors: HashMap<RegionId, Vec<SnapDoor>>,
     fences: HashMap<RegionId, Vec<SnapFence>>,
+    /// The closed doors of each instance (`Instance.getDoors()`, M8-INST-01). They are in
+    /// `doors` too, under their region, where only a query of their own instance could match.
+    instance_doors: HashMap<i32, Vec<SnapDoor>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -562,7 +572,11 @@ impl DoorSnapshot {
 impl DynamicObstacles for DoorSnapshot {
     fn doors_between(&self, from: Location, to: Location, instance_id: i32, double_face_check: bool) -> bool {
         if instance_id >= 1 {
-            return false;
+            return self.instance_doors.get(&instance_id).is_some_and(|doors| {
+                doors.iter().any(|d| {
+                    d.instance_id == instance_id && door_blocks(&d.shape, from, to, double_face_check)
+                })
+            });
         }
         let Some(region) = region_of(from.x, from.y, from.z) else {
             return false;
@@ -733,6 +747,7 @@ impl World {
             fences: &self.fences,
             regions: &self.regions,
             objects: &self.objects,
+            instances: &self.instances,
         }
     }
 
@@ -754,6 +769,23 @@ impl World {
                 shape: door.shape(),
                 instance_id: entry.instance_id,
             });
+        }
+        for instance in self.instances.instances.values() {
+            for id in instance.doors.values() {
+                let (Some(entry), Some(door)) = (self.objects.get(id), self.doors.get(id)) else {
+                    continue;
+                };
+                if door.blocks() {
+                    snapshot
+                        .instance_doors
+                        .entry(instance.id)
+                        .or_default()
+                        .push(SnapDoor {
+                            shape: door.shape(),
+                            instance_id: entry.instance_id,
+                        });
+                }
+            }
         }
         for (id, fence) in &self.fences {
             let Some(entry) = self.objects.get(id) else {
@@ -934,10 +966,11 @@ impl World {
     }
 
     /// Java `Door.getSiblingDoor`: a door of the same world. Doors in an instance look in the
-    /// instance, which does not exist yet.
+    /// instance (none when it is gone: "2 late").
     fn sibling_door(&self, id: ObjectId, door_id: i32) -> Option<ObjectId> {
-        if self.objects.get(&id).is_some_and(|e| e.instance_id > 0) {
-            return None;
+        let instance_id = self.objects.get(&id).map_or(0, |e| e.instance_id);
+        if instance_id > 0 {
+            return self.instance_door(instance_id, door_id);
         }
         self.door_index.by_door_id.get(&door_id).copied()
     }

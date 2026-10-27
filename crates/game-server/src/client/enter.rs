@@ -99,6 +99,7 @@ pub struct DbPlayerLoader {
     messages: MessageRepository,
     recipes: l2_db::RecipeRepository,
     seven_signs: l2_db::SevenSignsRepository,
+    instance_times: l2_db::InstanceTimeRepository,
 }
 
 impl DbPlayerLoader {
@@ -123,7 +124,8 @@ impl DbPlayerLoader {
             residences: l2_db::ResidenceRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
             recipes: l2_db::RecipeRepository::new(pool.clone()),
-            seven_signs: l2_db::SevenSignsRepository::new(pool),
+            seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
+            instance_times: l2_db::InstanceTimeRepository::new(pool),
         }
     }
 
@@ -374,6 +376,20 @@ impl DbPlayerLoader {
 
         // Java: PlayerVariables.restoreMe
         data.profile.variables = self.variables.variables_of(char_id).await?.into_iter().collect();
+
+        // Java: InstanceManager.restoreInstanceTimes (the first time the re-entry times are asked
+        // for; here before the character enters, D-15). The world deletes the rows that are over
+        // (M8-INST-01). Java logs a failed read and goes on without them.
+        data.profile.instance_times = match self.instance_times.instance_times_of(char_id).await {
+            Ok(rows) => rows
+                .into_iter()
+                .map(|r| (r.instance_id, i64::try_from(r.time).unwrap_or(i64::MAX)))
+                .collect(),
+            Err(e) => {
+                warn!("InstanceManager: Could not delete character instance time data: {e}");
+                Vec::new()
+            }
+        };
 
         // Java: ClanTable.getClan(clanid). Side by side (D-39) the Java game server may have made
         // the clan or the membership after this server loaded its clans: the clan is read here

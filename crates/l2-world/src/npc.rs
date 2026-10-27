@@ -658,11 +658,13 @@ impl World {
         let mut in_water = self.npc_world.water.as_ref().is_some_and(|f| f(x, y, z));
 
         // Random monster spawns (custom RandomSpawns.ini): a monster with a fixed heading
-        // spawns up to MaxSpawnMobRange away, if it can walk and see there.
-        // Instances: M4.
+        // spawns up to MaxSpawnMobRange away, if it can walk and see there; not in an instance
+        // (`getInstanceId() == 0`, M8-INST-01).
+        let spawn_instance = self.instances.spawns.get(&index).map_or(0, |s| s.instance_id);
         if settings.random_monster_spawns
             && heading != -1
             && !self.walking_is_targeted(template.id)
+            && spawn_instance == 0
             && class.is_monster()
             && !template.quest_monster
             && !template.undying
@@ -976,11 +978,19 @@ impl World {
         // NPC calculators, so times the CON / MEN bonus).
         self.init_npc_stats(id);
         self.register_object(id, ObjectKind::Npc);
+        // `npc.setInstanceId(spawn.getInstanceId())` / `minion.setInstanceId(master...)` before
+        // the spawn (M8-INST-01).
+        let instance = self.instance_on_npc_created(id, spawn, leader);
         self.spawn_at(id, x, y, z);
         if !self.npcs.contains_key(&id) {
             // Out of the world: `spawn` removed it again.
             ids.release(id);
             return None;
+        }
+        // "Make sure info is broadcasted in instances." (`Spawn.initializeNpc`,
+        // `MinionList.initializeNpc`).
+        if instance > 0 && (spawn.is_some() || leader.is_some()) {
+            self.broadcast_info(id);
         }
         Some(id)
     }
