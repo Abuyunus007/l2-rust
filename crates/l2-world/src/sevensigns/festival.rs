@@ -1511,6 +1511,20 @@ impl World {
         }
     }
 
+    /// The witch of a running arena (tests and tools).
+    pub fn festival_witch(&self, oracle: i32, festival_id: i32) -> Option<ObjectId> {
+        let key = self.festival_instance_key(oracle, festival_id)?;
+        self.seven_signs.festival.instances.get(&key)?.witch_inst
+    }
+
+    /// The monsters and chests of a running arena (tests and tools).
+    pub fn festival_monsters(&self, oracle: i32, festival_id: i32) -> Vec<ObjectId> {
+        self.festival_instance_key(oracle, festival_id)
+            .and_then(|key| self.seven_signs.festival.instances.get(&key))
+            .map(|i| i.npc_insts.iter().map(|(npc, _)| *npc).collect())
+            .unwrap_or_default()
+    }
+
     /// `getFestivalInstance(oracle, festivalIdValue)`: the key of the arena, `None` without a
     /// running festival or participants.
     fn festival_instance_key(&self, oracle: i32, festival_id: i32) -> Option<i32> {
