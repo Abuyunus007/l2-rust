@@ -396,6 +396,28 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 | [M8-E2E-01](M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | merged |
 | [M8-RUN-01](M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
+## Scripts: quests, AIs, instances, class change and subclasses (approved 2026-10-27)
+
+Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances and events (customs stay for M9); D-54 for `global_variables`; engine, pilot and subclasses first, then batches in parallel.
+
+| Card | Title | Model | Review | Depends on | Status |
+|---|---|---|---|---|---|
+| [S-API-01](S/S-API-01.md) | Script engine | opus | full | none | in-progress |
+| [S-SUB-01](S/S-SUB-01.md) | Subclasses and the class switch | opus | full | none | in-progress |
+| [S-HAND-01](S/S-HAND-01.md) | Shift-click GM windows and the community board | sonnet | full | none | in-progress |
+| S-API-02 | Move the built-ins onto the engine | sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-PILOT-01 | Ten reference quests and the porting guide | opus | review | API-01 | ready (card written when API-01 merges) |
+| S-VM-01 | Class change scripts, third class, noble quest | opus | review | API-01, SUB-01 | ready (card written when API-01 merges) |
+| S-Q-01..20 | Quests in batches of ~25 by id | haiku | review | PILOT-01 | ready (card written when API-01 merges) |
+| S-AI-01..08 | Area and other AIs | sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-BOSS-01..04 | Grand and raid boss AIs | opus/sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-INST-01..04 | Instance scripts | sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-TW-01 | Territory War quests | sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-EVENT-01 | Seasonal events | sonnet | review | API-01 | ready (card written when API-01 merges) |
+| S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
+| S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
+| S-RUN-01 | Runbook and milestone checks | opus | review | E2E-01 | ready (card written when API-01 merges) |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
