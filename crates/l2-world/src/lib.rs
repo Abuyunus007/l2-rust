@@ -86,6 +86,7 @@ pub mod skills;
 pub mod snapshot;
 pub mod stats;
 pub mod status;
+pub mod subclass;
 pub mod summon;
 pub mod target;
 pub mod teleport;
@@ -240,6 +241,10 @@ pub use stats::{
     StatView,
 };
 pub use status::RegenSettings;
+pub use subclass::{
+    ClassIndexLoad, ClassStats, PlayerSubclasses, SubClassHolder, SubclassSettings, SubclassWrite,
+    base_class_stats, stored_subclasses,
+};
 pub use summon::pet::{PetRowData, PetRowWrite, PetSettings, PetState, SavedPet, SavedPetEffect};
 pub use summon::pet_items::PetInput;
 pub use summon::pet_offline::OfflinePetRows;

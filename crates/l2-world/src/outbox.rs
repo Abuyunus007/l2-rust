@@ -261,6 +261,16 @@ pub enum PersistCommand {
     /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
     /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
     SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
+    /// A write of `character_subclasses` and the class index rows with Java's statements
+    /// (`addSubClass`, `modifySubClass`, S-SUB-01, see `subclass/`). Applied in order with the
+    /// character's other commands.
+    Subclass(crate::subclass::SubclassWrite),
+    /// Asks the persistence task for the rows of one class index (`setActiveClass`: the skills,
+    /// the saved buffs, which it then deletes like `restoreEffects`, the hennas, the shortcuts, the
+    /// dwarven recipes and the servitor buffs). Read in order with the other commands, so the rows
+    /// include the store sent before it. The answer comes back as `WorldCommand::ClassIndexLoaded`
+    /// (S-SUB-01).
+    ClassIndexRequest { owner: ObjectId, class_index: i32 },
     /// A write of `bbs_favorites` with Java's statement (S-HAND-01, see `community_board/`).
     /// Applied in order with the other commands.
     BbsFavorite(crate::community_board::FavoriteWrite),

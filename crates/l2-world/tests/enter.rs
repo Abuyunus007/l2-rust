@@ -1109,6 +1109,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(
                     PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },
                 ) => "seven signs",
+                Out::Persist(PersistCommand::Subclass(_) | PersistCommand::ClassIndexRequest { .. }) => {
+                    "subclass"
+                }
                 Out::Persist(
                     PersistCommand::Announcement(_)
                     | PersistCommand::PetitionFeedback { .. }

@@ -5,8 +5,8 @@
 // Java: entity/actor/Player.java (calculateDeathExpPenalty, for a dissolution)
 //
 // The pages that list these commands come from the `ClanMaster` script (scripts come last,
-// D-05). The subclass commands of the same NPCs are not ported; they reach the generic NPC
-// handler like every other unknown command.
+// D-05). The subclass commands of the same NPCs (`Subclass ...`) are `subclass/village_master.rs`
+// (S-SUB-01).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -140,6 +140,9 @@ impl World {
             }
         } else if is("learn_clan_skills") {
             self.show_pledge_skill_list(player);
+        } else if command.starts_with("Subclass") {
+            // The subclass commands (S-SUB-01, `subclass/village_master.rs`).
+            self.village_master_subclass_bypass(npc, player, command);
         } else {
             self.generic_npc_bypass_feedback(npc, player, command);
         }

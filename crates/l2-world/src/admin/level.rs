@@ -1,9 +1,5 @@
 //! The level admin commands: `//add_level <level>` and `//set_level <level>`.
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminLevel.java
-//
-// # Left out, with the system that brings it
-// - Subclasses (`isSubClassActive`, `MAX_SUBCLASS_LEVEL`): a player has no active subclass here,
-//   so the subclass limit of `//set_level` does not apply (subclasses are not ported).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -59,8 +55,12 @@ fn admin_set_level(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
         return Ok(());
     };
-    // `ExperienceData.getMaxLevel()`.
-    let max_level = world.exp_table_max_level().unwrap_or(0);
+    // `ExperienceData.getMaxLevel()`, or `MaxSubclassLevel` on an active subclass (S-SUB-01).
+    let mut max_level = world.exp_table_max_level().unwrap_or(0);
+    let max_subclass_level = world.settings.subclass.max_subclass_level;
+    if world.is_subclass_active(target) && max_subclass_level < max_level {
+        max_level = max_subclass_level;
+    }
     let level = match val.parse::<i8>() {
         Ok(level) if (1..=max_level).contains(&i32::from(level)) => i32::from(level),
         _ => {

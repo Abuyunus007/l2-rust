@@ -2125,3 +2125,157 @@ async fn macros_write_and_delete_their_rows() {
     pool.close().await;
     db.drop_db().await;
 }
+
+/// S-SUB-01: `addSubClass` writes the row and the skills of the new index, a store on the subclass
+/// writes the base values to `characters` and the live ones to `character_subclasses`
+/// (`storeCharBase`, `storeCharSub`), the class index read of `setActiveClass` hands back the rows
+/// of the index (and deletes the saved buffs, `restoreEffects`), and `modifySubClass` deletes
+/// every row of the index.
+#[tokio::test]
+async fn subclass_rows_follow_java() {
+    let Some((db, pool)) = setup().await else {
+        return;
+    };
+    let characters = CharacterRepository::new(pool.clone());
+    let skills = SkillRepository::new(pool.clone());
+    let shortcuts = ShortcutRepository::new(pool.clone());
+    let subclasses = l2_db::SubclassRepository::new(pool.clone());
+    let hennas = l2_db::HennaRepository::new(pool.clone());
+    characters.insert_character(&new_character()).await.unwrap();
+    let mut store = DbStore::new(pool.clone());
+
+    // addSubClass(55, 1): the row and the skills of the class tree up to level 40.
+    let holder = l2_world::SubClassHolder {
+        class_id: 55,
+        exp: 835_863,
+        sp: 0,
+        level: 40,
+        class_index: 1,
+    };
+    store
+        .store_subclass_write(&l2_world::SubclassWrite::Add {
+            char_id: CHAR_ID,
+            holder,
+            skills: vec![SkillData {
+                skill_id: 1001,
+                skill_level: 3,
+            }],
+        })
+        .await
+        .unwrap();
+    let rows = subclasses.subclasses_of(CHAR_ID).await.unwrap();
+    assert_eq!(rows.len(), 1);
+    assert_eq!(
+        (rows[0].class_id, rows[0].level, rows[0].class_index),
+        (55, 40, 1)
+    );
+    assert_eq!(skills.skills_of(CHAR_ID, 1).await.unwrap().len(), 1);
+    // The same class twice is refused by the key (charId, class_id); Java logs it.
+    assert!(
+        store
+            .store_subclass_write(&l2_world::SubclassWrite::Add {
+                char_id: CHAR_ID,
+                holder: l2_world::SubClassHolder {
+                    class_index: 2,
+                    ..holder
+                },
+                skills: Vec::new(),
+            })
+            .await
+            .is_err()
+    );
+
+    // Stored on the subclass: `characters` keeps the base class values, the subclass row gets
+    // the live ones.
+    let mut data = player_data();
+    data.class_id = 55;
+    data.level = 42;
+    data.exp = 1_000_000;
+    data.sp = 77;
+    data.skills = vec![SkillData {
+        skill_id: 1001,
+        skill_level: 3,
+    }];
+    data.profile.class_index = 1;
+    data.profile.subclasses.subs.insert(1, holder);
+    data.profile.subclasses.base = Some(l2_world::ClassStats {
+        level: 76,
+        exp: 300_000_000,
+        sp: 5,
+    });
+    store.store_player(&data).await.unwrap();
+    let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
+    assert_eq!(row.level, Some(76));
+    assert_eq!(row.sp, 5);
+    assert_eq!(row.classid, Some(55));
+    assert_eq!(row.base_class, 53);
+    let sub = subclasses.subclasses_of(CHAR_ID).await.unwrap()[0].clone();
+    assert_eq!((sub.level, sub.exp, sub.sp), (42, 1_000_000, 77));
+    // The skills and shortcuts went to class index 1, index 0 is untouched.
+    assert!(skills.skills_of(CHAR_ID, 0).await.unwrap().is_empty());
+    assert_eq!(shortcuts.shortcuts_of(CHAR_ID, 1).await.unwrap().len(), 1);
+
+    // setActiveClass(0) reads index 0: its skills, buffs (deleted after the read), hennas and
+    // shortcuts.
+    skills
+        .replace_skills(
+            CHAR_ID,
+            0,
+            &[l2_db::SkillLevel {
+                skill_id: 1216,
+                skill_level: 2,
+            }],
+        )
+        .await
+        .unwrap();
+    skills
+        .add_skill_effects(
+            CHAR_ID,
+            0,
+            &[l2_db::NewSkillSave {
+                skill_id: 1204,
+                skill_level: 2,
+                remaining_time: 600,
+                reuse_delay: 0,
+                systime: 0,
+                restore_type: 0,
+                buff_index: 1,
+            }],
+        )
+        .await
+        .unwrap();
+    hennas.add_henna(CHAR_ID, 7, 2, 0).await.unwrap();
+    let load = store.load_class_index(ObjectId(CHAR_ID), 0).await;
+    assert_eq!(
+        load.skills,
+        [SkillData {
+            skill_id: 1216,
+            skill_level: 2
+        }]
+    );
+    assert_eq!(load.effects.len(), 1);
+    assert_eq!(load.effects[0].skill_id, 1204);
+    assert_eq!(load.hennas, [0, 7, 0]);
+    assert!(skills.skill_effects_of(CHAR_ID, 0).await.unwrap().is_empty());
+
+    // modifySubClass(1, ...): the hennas of the slots the active class wears, the shortcuts, the
+    // saved buffs, the skills and the row of index 1 go.
+    hennas.add_henna(CHAR_ID, 9, 2, 1).await.unwrap();
+    store
+        .store_subclass_write(&l2_world::SubclassWrite::Delete {
+            char_id: CHAR_ID,
+            class_index: 1,
+            henna_slots: vec![2],
+        })
+        .await
+        .unwrap();
+    assert!(subclasses.subclasses_of(CHAR_ID).await.unwrap().is_empty());
+    assert!(skills.skills_of(CHAR_ID, 1).await.unwrap().is_empty());
+    assert!(shortcuts.shortcuts_of(CHAR_ID, 1).await.unwrap().is_empty());
+    assert!(hennas.hennas_of(CHAR_ID, 1).await.unwrap().is_empty());
+    // Index 0 keeps its rows.
+    assert_eq!(skills.skills_of(CHAR_ID, 0).await.unwrap().len(), 1);
+    assert_eq!(hennas.hennas_of(CHAR_ID, 0).await.unwrap().len(), 1);
+    pool.close().await;
+    db.drop_db().await;
+}

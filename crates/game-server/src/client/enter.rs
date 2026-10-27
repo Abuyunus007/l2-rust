@@ -143,12 +143,31 @@ impl DbPlayerLoader {
 
         // Java: restoreSubClassData. A subclass that is active shows its own level, exp and sp
         // (`PlayerStat.getLevel` etc.); one that does not exist is dropped for the base class.
+        // Every subclass becomes a holder of the profile (S-SUB-01); the base class values wait
+        // there while a subclass is active.
         let mut class_index = 0;
+        let subs = self.subclasses.subclasses_of(char_id).await?;
+        for sub in &subs {
+            data.profile.subclasses.subs.insert(
+                sub.class_index,
+                l2_world::SubClassHolder {
+                    class_id: sub.class_id,
+                    exp: sub.exp,
+                    sp: sub.sp,
+                    level: sub.level,
+                    class_index: sub.class_index,
+                },
+            );
+        }
         if data.class_id != data.base_class {
-            let subs = self.subclasses.subclasses_of(char_id).await?;
             match subs.iter().find(|s| s.class_id == data.class_id) {
                 Some(sub) => {
                     class_index = sub.class_index;
+                    data.profile.subclasses.base = Some(l2_world::ClassStats {
+                        level: data.level,
+                        exp: data.exp,
+                        sp: data.sp,
+                    });
                     data.level = sub.level;
                     data.exp = sub.exp;
                     data.sp = sub.sp;
@@ -581,7 +600,7 @@ fn contact_names_of_rows(rows: Vec<ContactLink>, own_id: i32, own_name: &str) ->
 /// The slot keeps its 0 then, which is an empty slot. A dye id the datapack does not know is
 /// kept here and dropped when the world uses it.
 // Java: Player.restoreHenna
-fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
+pub(crate) fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
     let mut slots = [0; 3];
     for row in rows {
         if !(1..=3).contains(&row.slot) {
