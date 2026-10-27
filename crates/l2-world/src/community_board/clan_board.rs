@@ -39,13 +39,11 @@ fn clan_list_html(rows: &[ListRow], index: i32, own_clan_id: i32) -> String {
     html.push_str(LIST_HEAD_1);
     html.push_str(&own_clan_id.to_string());
     html.push_str(LIST_HEAD_2);
-    let mut i: i64 = 0;
-    for row in rows {
+    for (i, row) in (0_i64..).zip(rows.iter()) {
         if i > (i64::from(index) + 1) * 7 {
             break;
         }
         let shown = i >= (i64::from(index) - 1) * 7;
-        i += 1;
         if shown {
             html.push_str(&format!(
                 "<img src=\"L2UI.SquareBlank\" width=\"610\" height=\"3\"><table border=0 cellspacing=0 cellpadding=0 width=610><tr> <td FIXWIDTH=5></td><td FIXWIDTH=200 align=center><a action=\"bypass _bbsclan_clanhome;{}\">{}</a></td><td FIXWIDTH=200 align=center>{}</td><td FIXWIDTH=100 align=center>{}</td><td FIXWIDTH=100 align=center>{}</td><td FIXWIDTH=5></td></tr><tr><td height=5></td></tr></table><img src=\"L2UI.SquareBlank\" width=\"610\" height=\"3\"><img src=\"L2UI.SquareGray\" width=\"610\" height=\"1\">",

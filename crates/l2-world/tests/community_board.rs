@@ -21,8 +21,10 @@ use l2_world::*;
 
 // ---------------------------------------------------------------------------------- harness
 
+type Sent = Vec<(i32, Vec<u8>)>;
+
 #[derive(Clone, Default)]
-struct Log(Arc<Mutex<Vec<(i32, Vec<u8>)>>>);
+struct Log(Arc<Mutex<Sent>>);
 
 impl Log {
     fn take(&self) -> Vec<(i32, Vec<u8>)> {
