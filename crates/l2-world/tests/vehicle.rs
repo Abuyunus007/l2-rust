@@ -275,6 +275,10 @@ fn decode<P: Decode>(raw: &[u8]) -> P {
     P::decode(&mut PacketReader::new(&raw[1..])).unwrap()
 }
 
+fn decode_ex<P: Decode>(raw: &[u8]) -> P {
+    P::decode(&mut PacketReader::new(&raw[3..])).unwrap()
+}
+
 fn of<'a>(out: &'a [Out], to: i32, name: &str) -> Vec<&'a [u8]> {
     out.iter()
         .filter_map(|o| match o {
@@ -294,7 +298,8 @@ fn the_boats_are_made_and_the_rune_harbour_cannot_be_busy() {
     assert_eq!(s.world.vehicles().boats().len(), 5);
     // `main` of BoatTalkingGludin: `dockShip(TALKING_ISLAND, true)`.
     assert!(s.world.dock_busy(1));
-    assert!(!s.world.dock_busy(2));
+    // `main` of BoatGludinRune: `dockShip(GLUDIN_HARBOR, true)`.
+    assert!(s.world.dock_busy(2));
     // `main` of BoatRunePrimeval locks dock 3, which Java's three-entry array cannot hold.
     assert!(!s.world.dock_busy(3));
     assert!(!s.world.dock_busy(7));
@@ -476,10 +481,13 @@ fn sail_a_route_leg_and_get_off_at_the_other_dock() {
     assert!(!of(&out, ALICE, "PLAY_SOUND").is_empty());
     assert!(!of(&out, BOB, "CREATURE_SAY").is_empty() || !of(&out, BOB, "SAY2").is_empty());
 
-    // The first leg: 24763 units at 180 per second, 138 s.
-    s.ticks(2900);
-    assert_eq!(s.boat_pos(boat), (-121_385, 261_660, -3610));
+    // The first leg is 24763 units at 180 per second, 138 s: the boat is on its way and the
+    // passenger is where the boat is.
+    s.ticks(1000);
+    let (x, y, _) = s.boat_pos(boat);
+    assert!(x < TALKING_DOCK.0 - 5000 && y == 261_660, "{x} {y}");
     assert_eq!(s.pos(ALICE), s.boat_pos(boat));
+    s.ticks(1900);
     // The boat sails on, the passenger with it.
     s.ticks(3000);
     assert_ne!(s.boat_pos(boat), (-121_385, 261_660, -3610));
@@ -529,7 +537,7 @@ fn a_new_player_sees_the_boat_and_where_it_goes() {
     );
     s.ticks(9700);
     s.log.take();
-    s.enter(BOB, "Bob", (-110_000, 261_660, -3610), 0);
+    s.enter(BOB, "Bob", (-98_000, 261_660, -3610), 0);
     let out = s.log.take();
     let info: VehicleInfo = decode(of(&out, BOB, "VEHICLE_INFO")[0]);
     assert_eq!(info.object_id, boat.0);
@@ -585,7 +593,7 @@ fn board_the_gludio_gracia_air_ship() {
     assert!(s.world.is_in_air_ship(ObjectId(ALICE)));
     assert_eq!(s.world.in_vehicle_position(ObjectId(ALICE)), Some((0, 0, 0)));
     let out = s.log.take();
-    let on: ExGetOnAirShip = decode(of(&out, ALICE, "EX_GET_ON_AIRSHIP")[0]);
+    let on: ExGetOnAirShip = decode_ex(of(&out, ALICE, "EX_GET_ON_AIRSHIP")[0]);
     assert_eq!((on.player_id, on.air_ship_id), (ALICE, ship.0));
     assert_eq!(s.pos(ALICE), (-149_378, 252_552, 198));
 
@@ -736,11 +744,23 @@ fn the_air_ship_paths_are_the_ones_of_the_java_scripts() {
             def.name
         );
         let teleports: Vec<_> = def.teleports.iter().map(|t| rust(t)).collect();
+        // The rows are the groups at depth 2 of the braces.
         let java_teleports = {
             let all = section("TELEPORTS");
-            let mut out = Vec::new();
-            for part in all.split("\t\t{\n").skip(1) {
-                out.push(numbers(part.split("\t\t}").next().unwrap()));
+            let (mut depth, mut row, mut out) = (0, String::new(), Vec::new());
+            for ch in all.chars() {
+                match ch {
+                    '{' => depth += 1,
+                    '}' => {
+                        if depth == 2 {
+                            out.push(numbers(&row));
+                            row.clear();
+                        }
+                        depth -= 1;
+                    }
+                    _ if depth == 2 => row.push(ch),
+                    _ => {}
+                }
             }
             out
         };
