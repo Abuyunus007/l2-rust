@@ -15,7 +15,7 @@ use std::fs;
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ArmorSets, EnchantHpBonus, HtmCache, Hennas, ItemTemplates, MinigameData, NpcLoadOptions, NpcTemplates,
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, MinigameData, NpcLoadOptions, NpcTemplates,
     PlayerTemplates, SkillTemplates, SpawnData,
 };
 use l2_net::{Decode, PacketReader};
@@ -435,7 +435,10 @@ impl Scene {
 
     /// `player` clicks a link of `npc`'s page: the page is shown first so the link is allowed.
     fn bypass(&mut self, player: i32, npc: ObjectId, command: &str) {
-        let page = format!(r#"<html><body><a action="bypass -h npc_{}_{command}">x</a></body></html>"#, npc.0);
+        let page = format!(
+            r#"<html><body><a action="bypass -h npc_{}_{command}">x</a></body></html>"#,
+            npc.0
+        );
         self.world
             .send_html(ObjectId(player), &NpcHtmlMessage::new(npc.0, &page).unwrap());
         // The page that allows the link is not the answer.
@@ -541,13 +544,22 @@ fn block_checker_an_empty_team_ends_the_event_and_the_leaver_waits_ten_seconds()
         ClientInput::Minigame(MinigameInput::CubeChangeTeam { arena: 0, team: -1 }),
     );
     let sent = s.log.take();
-    assert!(block_list_subs(&sent, P1).contains(&2), "the team mate sees him go");
+    assert!(
+        block_list_subs(&sent, P1).contains(&2),
+        "the team mate sees him go"
+    );
     // The blue team is empty, so `EndEvent` runs (one tick later): P1 is told the game ended.
     s.ticks(2);
     let sent = s.log.take();
     let end: ExCubeGameEnd = decode(of(&sent, P1, ServerOpcode::ExBlockUpSetState)[0]);
-    assert!(!end.red_team_win, "Java keeps the old winner flag (false at first)");
-    assert!(s.world.block_arena(0).unwrap().red.is_empty(), "the arena is emptied");
+    assert!(
+        !end.red_team_win,
+        "Java keeps the old winner flag (false at first)"
+    );
+    assert!(
+        s.world.block_arena(0).unwrap().red.is_empty(),
+        "the arena is emptied"
+    );
     assert!(!s.world.block_arena_is_being_used(0));
 
     // The penalty: 10 seconds.
@@ -594,7 +606,10 @@ fn block_checker_a_match_from_the_votes_to_the_rewards() {
     let sent = s.log.take();
     // ExCubeGameChangePoints: time 300, blue 0, red 0 (no block yet), sent to all four.
     assert!(!of(&sent, P1, ServerOpcode::ExBlockUpSetState).is_empty());
-    assert!(block_list_subs(&sent, P1).contains(&-1), "the lobby window closes");
+    assert!(
+        block_list_subs(&sent, P1).contains(&-1),
+        "the lobby window closes"
+    );
 
     // The first round: 16 blocks, 8 more points for each team; the girl comes too.
     s.ticks(1);
@@ -766,7 +781,8 @@ fn krateis_cube_registration_and_a_match() {
     for player in [P1, P2] {
         let (x, y, _) = s.at(player);
         assert!(
-            wait.iter().any(|(wx, wy)| (x - wx).abs() <= 100 && (y - wy).abs() <= 100),
+            wait.iter()
+                .any(|(wx, wy)| (x - wx).abs() <= 100 && (y - wy).abs() <= 100),
             "{player:x} is in the waiting room at {x},{y}"
         );
     }
@@ -779,8 +795,14 @@ fn krateis_cube_registration_and_a_match() {
     assert_eq!(s.world.krateis_arena_flags(1), (true, true));
     assert_eq!(s.world.krateis_state(), KrateisState::Started);
     let (x, y, _) = s.at(P1);
-    assert!((x + 69_000).abs() <= 200 && (y - 259_000).abs() <= 200, "P1 is in the arena");
-    assert!(!s.world.can_revive(id(P1)), "nobody can ask for a resurrection in the match");
+    assert!(
+        (x + 69_000).abs() <= 200 && (y - 259_000).abs() <= 200,
+        "P1 is in the arena"
+    );
+    assert!(
+        !s.world.can_revive(id(P1)),
+        "nobody can ask for a resurrection in the match"
+    );
     let sent = s.log.take();
     let record: ExPvpMatchCcRecord = decode(of(&sent, P1, ServerOpcode::ExPvpMatchCcRecord)[0]);
     assert_eq!(record.players.len(), 2);
@@ -817,7 +839,10 @@ fn krateis_cube_registration_and_a_match() {
     assert_eq!(s.world.krateis_arena_of(id(P2)), None);
     assert!(s.world.can_revive(id(P2)));
     let (x, y, _) = s.at(P2);
-    assert!((x + 70_381).abs() <= 200 && (y + 70_937).abs() <= 200, "back at Fantasy Isle");
+    assert!(
+        (x + 70_381).abs() <= 200 && (y + 70_937).abs() <= 200,
+        "back at Fantasy Isle"
+    );
     let sent = s.log.take();
     assert!(!of(&sent, P2, ServerOpcode::ExPvpMatchCcRetire).is_empty());
     // The watchers of the match are gone.
@@ -878,7 +903,10 @@ fn coliseum_registration_answers() {
     assert_eq!(pages(&s.log.take(), P1), vec!["UCALREADY"]);
     s.bypass(P1, curator, "listTeams 1");
     let page = pages(&s.log.take(), P1).remove(0);
-    assert!(page.contains("1. (Participating Team: <font color=00ffff>A1;A2;</font>)<br>"), "{page}");
+    assert!(
+        page.contains("1. (Participating Team: <font color=00ffff>A1;A2;</font>)<br>"),
+        "{page}"
+    );
     assert!(page.contains("2. (Participating Team: Team)<br>"), "{page}");
     // Cancel takes the party out of the list.
     s.bypass(P1, curator, "cancel");
@@ -910,8 +938,14 @@ fn coliseum_a_match_from_the_registration_to_the_reward() {
 
     // The teams are split over the start points; towers stand; the colours are set.
     assert_eq!(s.world.uc_state_of(id(P1)), UC_STATE_POINT);
-    assert!((s.at(P1).0 + 71_100).abs() <= 100, "the leader of team 1 is at the first point");
-    assert!((s.at(P2).0 + 71_200).abs() <= 100, "the next member at the second");
+    assert!(
+        (s.at(P1).0 + 71_100).abs() <= 100,
+        "the leader of team 1 is at the first point"
+    );
+    assert!(
+        (s.at(P2).0 + 71_200).abs() <= 100,
+        "the next member at the second"
+    );
     assert_eq!(s.world.team_of(id(P1)), 2, "team 0 is red");
     assert_eq!(s.world.team_of(id(P3)), 1, "team 1 is blue");
     let tower_a = s.world.coliseum_team(1, 0).unwrap().tower.unwrap();
@@ -919,7 +953,10 @@ fn coliseum_a_match_from_the_registration_to_the_reward() {
     assert!(s.world.is_auto_attackable_by(tower_b, id(P1)));
     assert!(s.world.is_registered_on_event(id(P1)));
     // `getTeleToLocation` has no answer in the coliseum.
-    assert_eq!(s.world.get_tele_to_location(id(P1), TeleportWhereType::Town), None);
+    assert_eq!(
+        s.world.get_tele_to_location(id(P1), TeleportWhereType::Town),
+        None
+    );
     // The record at the start: both lists.
     let record = of(&sent, P1, ServerOpcode::ExPvpMatchRecord)
         .into_iter()
@@ -950,9 +987,15 @@ fn coliseum_a_match_from_the_registration_to_the_reward() {
 
     // A hit of the tower's own colour does nothing; the other team destroys it.
     s.world.reduce_current_hp(tower_b, 1.0e9, Some(id(P4)));
-    assert!(s.world.coliseum_team(1, 1).unwrap().tower.is_some(), "own team: no damage");
+    assert!(
+        s.world.coliseum_team(1, 1).unwrap().tower.is_some(),
+        "own team: no damage"
+    );
     s.world.reduce_current_hp(tower_b, 1.0e9, Some(id(P1)));
-    assert!(s.world.coliseum_team(1, 1).unwrap().tower.is_none(), "the tower is down");
+    assert!(
+        s.world.coliseum_team(1, 1).unwrap().tower.is_none(),
+        "the tower is down"
+    );
     assert!(s.world.npc(tower_b).is_none() || s.world.npc(tower_b).unwrap().decayed);
 
     // Without a tower the dead do not come back; when all of team 1 is dead team 0 wins at once.

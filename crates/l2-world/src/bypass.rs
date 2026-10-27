@@ -86,6 +86,8 @@ impl Default for BypassHandlers {
         handlers.register("Augment", crate::augment::augment_handler);
         // dist/game/data/scripts/handlers/bypass/npc/TerritoryStatus.java (M7-TW-01)
         handlers.register("TerritoryStatus", crate::territory::territory_status_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java (L-05)
+        handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
         handlers
     }
 }
@@ -335,6 +337,13 @@ impl World {
 
     /// Java `Npc.onBypassFeedback(player, command)` with the override of the NPC's class.
     pub(crate) fn npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
+        // Java: DawnPriest, DuskPriest, SignsPriest and DungeonGatekeeper.onBypassFeedback
+        // (M8-SS-01, `sevensigns/priest.rs`, `sevensigns/gatekeeper.rs`).
+        if self.ss_priest_bypass_feedback(npc, player, command)
+            || self.ss_dungeon_gatekeeper_bypass(npc, player, command)
+        {
+            return;
+        }
         let npc_type = self
             .npcs
             .get(&npc)

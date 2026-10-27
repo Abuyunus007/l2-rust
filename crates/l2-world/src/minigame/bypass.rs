@@ -34,7 +34,12 @@ const COLISEUM_HTML: &str = "data/html/undergroundColiseum/";
 impl World {
     /// The `onBypassFeedback` of the four minigame NPC types; `false` for any other NPC or an
     /// unknown command.
-    pub(crate) fn minigame_npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) -> bool {
+    pub(crate) fn minigame_npc_bypass_feedback(
+        &mut self,
+        npc: ObjectId,
+        player: ObjectId,
+        command: &str,
+    ) -> bool {
         let Some(npc_type) = self
             .npcs
             .get(&npc)
@@ -81,7 +86,11 @@ impl World {
             self.krateis_register_command(npc, player, command);
         } else if command.starts_with("SeeList") {
             let level = self.players.get(&player).map_or(0, |p| p.core.level);
-            let page = if level < 70 { "32503-09.htm" } else { "32503-02.htm" };
+            let page = if level < 70 {
+                "32503-09.htm"
+            } else {
+                "32503-02.htm"
+            };
             self.minigame_show_chat_window(npc, player, &format!("{KRATEIS_HTML}{page}"));
         } else if command.starts_with("Cancel") {
             let ids: Vec<i32> = self.minigames.krateis.arenas.keys().copied().collect();
@@ -110,7 +119,9 @@ impl World {
             p.data
                 .items
                 .iter()
-                .filter(|i| i.loc == crate::inventory::LOC_INVENTORY || i.loc == crate::inventory::LOC_PAPERDOLL)
+                .filter(|i| {
+                    i.loc == crate::inventory::LOC_INVENTORY || i.loc == crate::inventory::LOC_PAPERDOLL
+                })
                 .count()
         });
         if f64::from(limit) * 0.8 <= size as f64 {
@@ -211,7 +222,11 @@ impl World {
                         self.krateis_add_effects(arena_id, player);
                     } else {
                         let npc_id = self.npcs.get(&npc).map_or(0, |n| n.npc_id);
-                        self.minigame_show_chat_window(npc, player, &format!("{KRATEIS_HTML}{npc_id}-01.htm"));
+                        self.minigame_show_chat_window(
+                            npc,
+                            player,
+                            &format!("{KRATEIS_HTML}{npc_id}-01.htm"),
+                        );
                     }
                 }
                 None => {
@@ -256,7 +271,12 @@ impl World {
                 return true;
             };
             if self.coliseum_cancel_waiting(party) {
-                self.minigame_send_page(npc, player, &format!("{COLISEUM_HTML}registrantionCanceled.htm"), &[]);
+                self.minigame_send_page(
+                    npc,
+                    player,
+                    &format!("{COLISEUM_HTML}registrantionCanceled.htm"),
+                    &[],
+                );
             }
         } else if action.eq_ignore_ascii_case("bestTeam") {
             let Some(arena) = arena_arg.and_then(|a| a.parse::<i32>().ok()) else {

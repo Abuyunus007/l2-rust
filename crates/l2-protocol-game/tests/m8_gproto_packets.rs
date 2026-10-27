@@ -1048,10 +1048,21 @@ fn cube_record_packets_layout() {
     };
     check(
         &record,
-        &cat(&[ex_server(0x89), ints(&[1, 2]), text("A"), ints(&[9]), text("B"), ints(&[3])]),
+        &cat(&[
+            ex_server(0x89),
+            ints(&[1, 2]),
+            text("A"),
+            ints(&[9]),
+            text("B"),
+            ints(&[3]),
+        ]),
         3,
     );
-    check(&ExPvpMatchCcMyRecord { points: 12 }, &cat(&[ex_server(0x8A), ints(&[12])]), 3);
+    check(
+        &ExPvpMatchCcMyRecord { points: 12 },
+        &cat(&[ex_server(0x8A), ints(&[12])]),
+        3,
+    );
     check(&ExPvpMatchCcRetire, &ex_server(0x8B), 3);
 }
 

@@ -138,7 +138,11 @@ pub struct MinigameLoad {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MinigameWrite {
     /// `INSERT INTO underground_coliseum (arenaId, leader, wins) VALUES (?,?,?)`.
-    BestTeamInsert { arena_id: i32, leader: String, wins: i32 },
+    BestTeamInsert {
+        arena_id: i32,
+        leader: String,
+        wins: i32,
+    },
     /// `UPDATE underground_coliseum SET leader = ?, wins = ?  WHERE arenaId = ?`.
     // NOTE(java-quirk): `saveBestTeam` binds `team.getArenaId()` as the *leader* (`setInt(1, ...)`),
     // so the leader column of an updated row holds the arena id, not a name. Ported as is.
@@ -260,7 +264,9 @@ impl World {
     /// The client requests of the Cube game.
     pub(crate) fn on_minigame_input(&mut self, player: ObjectId, input: MinigameInput) {
         match input {
-            MinigameInput::CubeChangeTeam { arena, team } => self.on_cube_game_change_team(player, arena, team),
+            MinigameInput::CubeChangeTeam { arena, team } => {
+                self.on_cube_game_change_team(player, arena, team)
+            }
             MinigameInput::CubeReadyAnswer { arena, answer } => {
                 self.on_cube_game_ready_answer(player, arena, answer)
             }
@@ -311,7 +317,10 @@ impl World {
 
     /// Java `Player.getUCState()`.
     pub fn uc_state_of(&self, id: ObjectId) -> u8 {
-        self.minigames.players.get(&id).map_or(UC_STATE_NONE, |p| p.uc_state)
+        self.minigames
+            .players
+            .get(&id)
+            .map_or(UC_STATE_NONE, |p| p.uc_state)
     }
 
     /// Java `Player.setUCState(state)`: also `setRegisteredOnEvent(state != UC_STATE_NONE)`.
@@ -430,7 +439,10 @@ impl World {
         if self.uc_state_of(id) == UC_STATE_NONE {
             return false;
         }
-        self.send_message(id, "You can't dismiss party member when you are in Underground Coliseum.");
+        self.send_message(
+            id,
+            "You can't dismiss party member when you are in Underground Coliseum.",
+        );
         true
     }
 

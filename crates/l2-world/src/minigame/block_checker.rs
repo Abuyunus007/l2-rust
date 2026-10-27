@@ -271,11 +271,17 @@ impl World {
         }
         // `eventIsFull(arena)`.
         if self.minigames.block.arenas[index].all().len() == 12 {
-            self.minigame_system_message(player, SystemMessageId::YouCannotRegisterBecauseCapacityHasBeenExceeded);
+            self.minigame_system_message(
+                player,
+                SystemMessageId::YouCannotRegisterBecauseCapacityHasBeenExceeded,
+            );
             return;
         }
         if self.block_arena_is_being_used(arena) {
-            self.minigame_system_message(player, SystemMessageId::TheMatchIsBeingPreparedPleaseTryAgainLater);
+            self.minigame_system_message(
+                player,
+                SystemMessageId::TheMatchIsBeingPreparedPleaseTryAgainLater,
+            );
             return;
         }
         if self.block_checker_add_player(player, arena) {
@@ -324,7 +330,10 @@ impl World {
             }
         }
         if self.is_cursed_weapon_equipped(player) {
-            self.minigame_system_message(player, SystemMessageId::YouCannotRegisterWhileInPossessionOfACursedWeapon);
+            self.minigame_system_message(
+                player,
+                SystemMessageId::YouCannotRegisterWhileInPossessionOfACursedWeapon,
+            );
             return false;
         }
         if self.is_registered_on_event(player) || self.minigame_in_olympiad_mode(player) {
@@ -339,7 +348,10 @@ impl World {
             );
         }
         if self.minigames.block.penalty.contains(&player) {
-            self.minigame_system_message(player, SystemMessageId::YouMustWait10SecondsBeforeAttemptingToRegisterAgain);
+            self.minigame_system_message(
+                player,
+                SystemMessageId::YouMustWait10SecondsBeforeAttemptingToRegisterAgain,
+            );
             return false;
         }
         let holder = &mut self.minigames.block.arenas[index];
@@ -376,7 +388,11 @@ impl World {
         );
         // End event if there is an empty team.
         let holder = &self.minigames.block.arenas[index];
-        let team_size = if is_red { holder.red.len() } else { holder.blue.len() };
+        let team_size = if is_red {
+            holder.red.len()
+        } else {
+            holder.blue.len()
+        };
         if team_size == 0 {
             self.block_end_event_abnormally(index);
         }
@@ -670,9 +686,23 @@ impl World {
         }
         let next = match round {
             // Schedule second spawn round.
-            1 => Some((ROUND_MS, MinigameTimer::Block(BlockTask::Spawn { arena, boxes: 20, round: 2 }))),
+            1 => Some((
+                ROUND_MS,
+                MinigameTimer::Block(BlockTask::Spawn {
+                    arena,
+                    boxes: 20,
+                    round: 2,
+                }),
+            )),
             // Schedule third spawn round.
-            2 => Some((ROUND_MS, MinigameTimer::Block(BlockTask::Spawn { arena, boxes: 14, round: 3 }))),
+            2 => Some((
+                ROUND_MS,
+                MinigameTimer::Block(BlockTask::Spawn {
+                    arena,
+                    boxes: 14,
+                    round: 3,
+                }),
+            )),
             // Schedule event end count down.
             3 => Some((END_DELAY_MS, MinigameTimer::Block(BlockTask::End(arena)))),
             _ => None,

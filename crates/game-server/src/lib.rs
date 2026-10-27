@@ -34,6 +34,7 @@ pub mod admin;
 pub mod client;
 pub mod geo;
 pub mod hexid;
+pub mod item_auctions;
 pub mod logging;
 pub mod ls_link;
 pub mod npcs;
@@ -270,6 +271,14 @@ pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     }
 }
 
+/// The boat values: `AllowBoat` and `BoatBroadcastRadius` of `General.ini` (M8-VEHICLE-01).
+pub fn vehicle_settings(config: &GameConfig) -> l2_world::VehicleSettings {
+    l2_world::VehicleSettings {
+        allow_boat: config.general.allow_boat,
+        boat_broadcast_radius: config.general.boat_broadcast_radius,
+    }
+}
+
 /// The cursed weapon values: `AllowCursedWeapons` of `General.ini` and the D-53 switch
 /// (`CycleDatabaseWrites`, [`cycle_database_writes`]).
 pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::CursedSettings {
@@ -469,6 +478,28 @@ pub fn siege_database_writes(config_dir: &Path) -> bool {
         );
     }
     on
+}
+
+/// The Seven Signs values of `Feature.ini` and `Npc.ini`, and `CycleDatabaseWrites` of
+/// `SideBySide.ini` (D-53, [`cycle_database_writes`]).
+pub fn seven_signs_settings(
+    config: &GameConfig,
+    config_dir: &Path,
+) -> l2_world::sevensigns::SevenSignsSettings {
+    let f = &config.feature;
+    l2_world::sevensigns::SevenSignsSettings {
+        cycle_database_writes: cycle_database_writes(config_dir),
+        lazy_update: f.alt_sevensigns_lazy_update,
+        max_player_contrib: f.alt_maximum_player_contrib,
+        strict: f.alt_strict_sevensigns,
+        open_catacombs: f.alt_sevensigns_open_catacumbs,
+        open_necropolis: f.alt_sevensigns_open_necropolis,
+        castle_for_dawn: f.alt_game_castle_dawn,
+        castle_for_dusk: f.alt_game_castle_dusk,
+        join_dawn_fee: f.ssq_join_dawn_adena_fee,
+        manors_agreement_id: f.ssq_manors_agreement_id,
+        announce_mammon_spawn: config.npc.announce_mammon_spawn,
+    }
 }
 
 /// `CycleDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
@@ -735,6 +766,12 @@ impl Server {
         } else {
             Vec::new()
         };
+        // Java: RaidBossPointsManager, GrandBossManager (+ initZones) and RaidBossSpawnManager
+        // (M8-BOSS-01): the boss tables, read only. With `CycleDatabaseWrites` off the rows stay
+        // the Java game server's (D-53).
+        let boss_settings = world_data::boss_settings(&config, &paths.config_dir);
+        let boss_load = persist::load_bosses(&pool).await;
+        let raid_boss_rows = persist::load_raid_boss_rows(&pool).await;
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
@@ -764,6 +801,13 @@ impl Server {
         let clan_settings = clan_settings(&config, &paths.config_dir);
         // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
+        // Java: ItemAuctionManager (data/ItemAuctions.xml and the `item_auction` rows; L-05).
+        let item_auction_settings = item_auctions::item_auction_settings(&config, &paths.config_dir);
+        let item_auction_load =
+            item_auctions::load_item_auctions(&pool, &item_auction_settings, &datapack_root, |item_id| {
+                datapack.items.get(item_id).is_some()
+            })
+            .await;
         // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
@@ -796,6 +840,11 @@ impl Server {
         } else {
             l2_world::ManorLoad::default()
         };
+        // Java: SevenSigns.getInstance (section "Seven Signs": the `seven_signs` rows and the status
+        // row, read only here) and AutoSpawnHandler (`random_spawn`, read only; M8-SS-01).
+        let seven_signs_settings = seven_signs_settings(&config, &paths.config_dir);
+        let seven_signs_load = persist::load_seven_signs(&pool).await;
+        let auto_spawns = persist::load_auto_spawns(&pool).await;
         // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
         // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
         let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
@@ -808,6 +857,9 @@ impl Server {
         // restoreBestTeams. Read always: they are only read here (D-53).
         let minigame_settings = minigame_settings(&config, cycle_database_writes(&paths.config_dir));
         let minigame_load = persist::load_minigames(&pool).await;
+        // Java: AirShipManager (the `airships` rows; the airships belong to a clan, not to one of
+        // the global cycles of D-53).
+        let vehicle_load = persist::load_airships(&pool).await;
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -950,6 +1002,13 @@ impl Server {
                     world.set_walking_routes(Arc::clone(&datapack.routes));
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
+                    // Java: RaidBossPointsManager (GameServer, early), GrandBossManager.initZones (after
+                    // the zones) and RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
+                    world.set_boss_settings(boss_settings);
+                    world.load_bosses(boss_load);
+                    if !config.development.no_spawns {
+                        world.spawn_raid_bosses(raid_boss_rows);
+                    }
                     // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
                     world.load_ground_items(ground_items);
                     // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).
@@ -992,6 +1051,12 @@ impl Server {
                     world.set_manor_settings(manor_settings);
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
+                    // Java: SevenSigns.getInstance (after the castles), then, after the spawns and
+                    // the sieges, spawnSevenSignsNPC with AutoSpawnHandler (M8-SS-01).
+                    world.set_seven_signs_settings(seven_signs_settings);
+                    world.load_seven_signs(seven_signs_load);
+                    world.load_auto_spawns(auto_spawns);
+                    world.spawn_seven_signs_npc();
                     // Java: CursedWeaponsManager (GameServer, after the items and the skills;
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
@@ -1001,11 +1066,20 @@ impl Server {
                     world.set_minigame_settings(minigame_settings);
                     world.set_minigame_data(Arc::clone(&datapack.minigames));
                     world.start_minigames(minigame_load);
+                    // Java: the scripts of the boats and the air ship docks (M8-VEHICLE-01).
+                    world.set_vehicle_settings(vehicle_settings(&config));
+                    world.load_airships(vehicle_load);
+                    world.spawn_boats();
+                    world.start_air_ships();
                     world.set_clan_hall_settings(clan_hall_settings);
                     // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).
                     world.set_residence_npc_settings(residence_npc_settings);
                     world.load_clan_hall_auctions(clan_hall_auctions);
+                    // Java: ItemAuctionManager.getInstance (GameServer, after the managers; needs the
+                    // item templates and the id factory).
+                    world.set_item_auction_settings(item_auction_settings);
+                    world.load_item_auctions(item_auction_load);
                     // Java: MailManager, MessageDeletionTaskManager.
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);

@@ -11,7 +11,8 @@
 // Left out, with the system that brings it:
 // - Spawn persistence: `SpawnData.addNewSpawn` writes the spawn into the spawn file of its map
 //   tile (done: `World::store_new_spawn`, `data/spawns/Others/` below the server's own folder).
-//   `RaidBossSpawnManager` writes `raidboss_spawnlist` (FOLLOW-UP(M4), not done).
+//   A raid boss goes to `RaidBossSpawnManager` and its table `raidboss_spawnlist` (M8-BOSS-01,
+//   `boss/raid.rs`).
 // - Instances, effects (`stopAllEffects`), the DB update of `//recall <offline player>`.
 
 use l2_protocol_game::SystemMessageId;
@@ -203,9 +204,9 @@ fn spawn_monster(
     // A template that does not exist makes `template.isFakePlayer()` throw: the panel again.
     let template = template.ok_or(())?;
     let (template_id, name, fake_player) = (template.id, template.name.clone(), template.fake_player);
-    // FOLLOW-UP(M4): a raid boss goes through `RaidBossSpawnManager` (its own table, and a respawn
-    // of 12 to 36 hours). Here it is a plain spawn that does not respawn.
+    // A raid boss goes through `RaidBossSpawnManager` (M8-BOSS-01).
     let is_raid = template.npc_type == "RaidBoss";
+    let (base_hp_max, base_mp_max) = (f64::from(template.base_hp_max), f64::from(template.base_mp_max));
 
     // `FakePlayersConfig.FAKE_PLAYERS_ENABLED` is off (fake players are not ported).
     if fake_player {
@@ -218,9 +219,28 @@ fn spawn_monster(
         .or_else(|| world.creature_position(gm))
         .ok_or(())?;
     let heading = world.players.get(&gm).map_or(0, |p| p.core.heading);
+    // `// TODO add checks for GrandBossSpawnManager`: a raid boss the manager holds is not spawned
+    // a second time.
+    if world.raid_boss_defined(template_id) {
+        world.send_sys_message(gm, &format!("You cannot spawn another instance of {name}."));
+        return Ok(());
+    }
+    if is_raid {
+        world.admin_spawn_raid_boss(
+            template_id,
+            (x, y, z),
+            heading,
+            mob_count,
+            (base_hp_max, base_mp_max),
+            permanent,
+            respawn_time,
+        );
+        world.send_sys_message(gm, &format!("Created {name} on {}", target.0));
+        return Ok(());
+    }
     // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `addNewSpawn` when
     // permanent, `init()`, and `stopRespawn()` when the spawn is not permanent or has no delay.
-    if permanent && !is_raid {
+    if permanent {
         world.store_new_spawn(template_id, (x, y, z), heading, mob_count, respawn_time);
     }
     let created = world.admin_spawn(
@@ -229,7 +249,7 @@ fn spawn_monster(
         heading,
         mob_count,
         respawn_time,
-        permanent && !is_raid,
+        permanent,
     );
     if i64::try_from(created.len()).unwrap_or(i64::MAX) < i64::from(mob_count) {
         world.send_system_message(gm, SystemMessageId::YourTargetCannotBeFound);

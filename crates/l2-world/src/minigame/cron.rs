@@ -236,8 +236,7 @@ impl Expression {
                 };
                 for minute_of_day in from_minute..1440 {
                     let (hour, minute) = (minute_of_day / 60, minute_of_day % 60);
-                    if matches_field(&self.hour, hour, false) && matches_field(&self.minute, minute, false)
-                    {
+                    if matches_field(&self.hour, hour, false) && matches_field(&self.minute, minute, false) {
                         let local_match = day_index * MS_PER_DAY + i64::from(minute_of_day) * MS_PER_MINUTE;
                         return local_match - offset_ms;
                     }
@@ -267,7 +266,10 @@ mod tests {
     fn a_daily_pattern_goes_to_the_next_day_when_today_has_passed() {
         let pattern = SchedulingPattern::parse("0 11 * * *").unwrap();
         // Today 11:00 is gone: tomorrow 11:00.
-        assert_eq!(pattern.next(TUESDAY_NOON, 0), TUESDAY_NOON - 30_000 - 3_600_000 + MS_PER_DAY);
+        assert_eq!(
+            pattern.next(TUESDAY_NOON, 0),
+            TUESDAY_NOON - 30_000 - 3_600_000 + MS_PER_DAY
+        );
     }
 
     #[test]

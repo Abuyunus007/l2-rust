@@ -245,6 +245,15 @@ pub struct PlayerProfile {
     /// `characters.online` of the next store: 1, or 2 for a player without a client (offline
     /// trade, Java `isOnlineInt()`).
     pub online_status: i32,
+    /// `characters.isin7sdungeon` (Java `_isIn7sDungeon`, M8-SS-01).
+    pub in_7s_dungeon: bool,
+    /// The character's `seven_signs` row and the status row as the session read them at
+    /// `CharacterSelect` (M8-SS-01, D-50): `None` when the read failed. The world applies them
+    /// when the player enters (`sevensigns/cycle.rs`) and takes it, so snapshots never carry it.
+    pub seven_signs_refresh: Option<Box<crate::sevensigns::SevenSignsRefresh>>,
+    /// The `seven_signs` row `Player.store` writes (`saveSevenSignsData(objectId)`); `None` for a
+    /// character that never joined. Filled by the snapshot of a store.
+    pub seven_signs_to_store: Option<crate::sevensigns::SignsPlayer>,
     /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
     /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
     pub instance_times: Vec<(i32, i64)>,
@@ -291,6 +300,9 @@ impl Default for PlayerProfile {
             recipes: crate::craft::RecipeLoad::default(),
             recipe_shop_to_store: None,
             online_status: 1,
+            in_7s_dungeon: false,
+            seven_signs_refresh: None,
+            seven_signs_to_store: None,
             instance_times: Vec::new(),
         }
     }

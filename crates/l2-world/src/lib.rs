@@ -15,6 +15,7 @@ pub mod admin;
 pub mod ai;
 pub mod augment;
 pub mod bookmarks;
+pub mod boss;
 pub mod bot_report;
 pub mod bypass;
 pub mod chat;
@@ -45,6 +46,7 @@ pub mod ids;
 pub mod instance;
 pub mod interact;
 pub mod inventory;
+pub mod item_auction;
 pub mod item_ops;
 pub mod leave;
 pub mod leftover;
@@ -71,6 +73,7 @@ pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod sevensigns;
 pub mod shop;
 pub mod shortcuts;
 pub mod siege;
@@ -87,6 +90,7 @@ pub mod timer;
 pub mod trade;
 pub mod transform;
 pub mod user_command;
+pub mod vehicle;
 mod visibility;
 pub mod walking;
 pub mod warehouse;
@@ -104,6 +108,10 @@ pub use ai::AiState;
 pub use ai::attackable::AiSettings;
 pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bookmarks::{BookmarkData, BookmarkInput, BookmarkWrite};
+pub use boss::{
+    BossLoad, BossReadKind, BossReadThen, BossRereadRows, BossSettings, BossTimer, BossWrite, GrandBossData,
+    GrandBossInfo, GrandBossStoreRow, RaidBossData, RaidBossStatus, RaidBossUpdateRow, RaidPointsRecord,
+};
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};
 pub use clan::{Clan, ClanInput, ClanRecord, ClanSettings, ClanWrite, PlayerClanState};
@@ -153,6 +161,11 @@ pub use instance::{
 pub use inventory::InventorySettings;
 pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
+pub use item_auction::{
+    AuctionItemDef, DateGenerator, InstanceDef, ItemAuctionInput, ItemAuctionLoad, ItemAuctionRecord,
+    ItemAuctionSettings, ItemAuctionState, ItemAuctionThen, ItemAuctionTimer, ItemAuctionWorld,
+    ItemAuctionWrite,
+};
 pub use l2_util::{ObjectId, WorldRng};
 pub use leftover::{LeftoverInput, LeftoverSettings, LeftoverState, LeftoverTimer};
 pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};
@@ -161,8 +174,8 @@ pub use manor::{
     ManorTimer, ManorWrite, SeedProduction,
 };
 pub use minigame::{
-    BlockArenaView, KrateisState, MinigameInput, MinigameLoad, MinigameSettings, MinigameTimer, MinigameWorld,
-    MinigameWrite, UC_STATE_ARENA, UC_STATE_NONE, UC_STATE_POINT, UcPartyState, UcTeamView,
+    BlockArenaView, KrateisState, MinigameInput, MinigameLoad, MinigameSettings, MinigameTimer,
+    MinigameWorld, MinigameWrite, UC_STATE_ARENA, UC_STATE_NONE, UC_STATE_POINT, UcPartyState, UcTeamView,
 };
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,
@@ -220,6 +233,10 @@ pub use trade::{
     AddItemRules, OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite,
     OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
     restorable_store_type,
+};
+pub use vehicle::{
+    AirshipRow, PathPoint, Rider, ShipState, Vehicle, VehicleInput, VehicleKind, VehicleLoad,
+    VehicleSettings, VehicleTimer, VehicleWorld, VehicleWrite,
 };
 pub use warehouse::{ContainerRef, PlayerWarehouse, WarehouseInput, WarehouseLoad, WarehouseSettings};
 pub use world::{DEFAULT_AUTOSAVE_INTERVAL, TICK, World, game_time_minutes};

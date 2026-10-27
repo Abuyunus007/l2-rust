@@ -207,10 +207,11 @@ pub use manor::{
 pub use map_windows::{ShowCalculator, ShowMiniMap};
 pub use minigame::{
     CC_RECORD_FINISH, CC_RECORD_INITIALIZE, CC_RECORD_MAX_PLAYERS, CC_RECORD_UPDATE, CcRecordEntry,
-    ExPvpMatchCcMyRecord, ExPvpMatchCcRecord, ExPvpMatchCcRetire, CubePlayer, ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam,
+    CubePlayer, ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam,
     ExCubeGameChangeTimeToStart, ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints,
-    ExCubeGameRemovePlayer, ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchRecord, ExPvpMatchUserDie,
-    ExSendUiEvent, ExStartScenePlayer, PvpMember,
+    ExCubeGameRemovePlayer, ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchCcMyRecord,
+    ExPvpMatchCcRecord, ExPvpMatchCcRetire, ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent,
+    ExStartScenePlayer, PvpMember,
 };
 pub use movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 pub use multisell::{

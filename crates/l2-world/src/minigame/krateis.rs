@@ -17,12 +17,12 @@
 use std::collections::BTreeMap;
 
 use l2_data::KrateisArenaDef;
+use l2_protocol_game::NpcStringId;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
     CC_RECORD_INITIALIZE, CC_RECORD_UPDATE, CcRecordEntry, ChatType, CreatureSay, ExPvpMatchCcMyRecord,
     ExPvpMatchCcRecord, ExPvpMatchCcRetire, SayBody, SenderField, SystemMessage, SystemMessageParam,
 };
-use l2_protocol_game::NpcStringId;
 use l2_util::ObjectId;
 use tracing::info;
 
@@ -296,7 +296,10 @@ impl World {
         self.minigames.krateis.register_active = false;
         self.krateis_manager_message(KrateiMsgType::Preparing);
         self.minigames.krateis.state = KrateisState::Preparing;
-        let id = self.minigame_schedule(PREPARE_DELAY_MS, MinigameTimer::Krateis(KrateisTask::PrepareEvent));
+        let id = self.minigame_schedule(
+            PREPARE_DELAY_MS,
+            MinigameTimer::Krateis(KrateisTask::PrepareEvent),
+        );
         self.minigames.krateis.period_task = Some(id);
     }
 
@@ -314,11 +317,7 @@ impl World {
         self.krateis_cancel(msg);
 
         let range = f64::from(self.settings.party.alt_party_range);
-        let manager_pos = self
-            .minigames
-            .krateis
-            .manager
-            .and_then(|m| self.position_of(m));
+        let manager_pos = self.minigames.krateis.manager.and_then(|m| self.position_of(m));
         let mut is_active = false;
         let ids: Vec<i32> = self.minigames.krateis.arenas.keys().copied().collect();
         for arena_id in ids {
@@ -402,7 +401,10 @@ impl World {
             self.krateis_arena_start_event(arena);
             self.minigames.krateis.state = KrateisState::Started;
         }
-        let id = self.minigame_schedule(RECALC_DELAY_MS, MinigameTimer::Krateis(KrateisTask::RecalcEventTime));
+        let id = self.minigame_schedule(
+            RECALC_DELAY_MS,
+            MinigameTimer::Krateis(KrateisTask::RecalcEventTime),
+        );
         self.minigames.krateis.period_task = Some(id);
     }
 
@@ -433,7 +435,14 @@ impl World {
         let (string, parameter) = match kind {
             KrateiMsgType::Initialized => (
                 NpcStringId::YouHaveS1MinuteSToRegisterForTheMatch,
-                Some(if self.minigames.krateis.is_half_an_hour { 27 } else { 57 }.to_string()),
+                Some(
+                    if self.minigames.krateis.is_half_an_hour {
+                        27
+                    } else {
+                        57
+                    }
+                    .to_string(),
+                ),
             ),
             KrateiMsgType::Registration5 => {
                 let id = self.minigame_schedule(
@@ -441,7 +450,10 @@ impl World {
                     MinigameTimer::Krateis(KrateisTask::Message(KrateiMsgType::Registration3)),
                 );
                 self.minigames.krateis.msg_task = Some(id);
-                (NpcStringId::ThereAre5MinutesRemainingToRegisterForKrateiSCubeMatch, None)
+                (
+                    NpcStringId::ThereAre5MinutesRemainingToRegisterForKrateiSCubeMatch,
+                    None,
+                )
             }
             KrateiMsgType::Registration3 => {
                 let id = self.minigame_schedule(
@@ -449,11 +461,15 @@ impl World {
                     MinigameTimer::Krateis(KrateisTask::Message(KrateiMsgType::Registration1)),
                 );
                 self.minigames.krateis.msg_task = Some(id);
-                (NpcStringId::ThereAre3MinutesRemainingToRegisterForKrateiSCubeMatch, None)
+                (
+                    NpcStringId::ThereAre3MinutesRemainingToRegisterForKrateiSCubeMatch,
+                    None,
+                )
             }
-            KrateiMsgType::Registration1 => {
-                (NpcStringId::ThereAre1MinutesRemainingToRegisterForKrateiSCubeMatch, None)
-            }
+            KrateiMsgType::Registration1 => (
+                NpcStringId::ThereAre1MinutesRemainingToRegisterForKrateiSCubeMatch,
+                None,
+            ),
             KrateiMsgType::Preparing => (NpcStringId::TheMatchWillBeginInS1MinuteS, Some("3".to_owned())),
             KrateiMsgType::Started => (NpcStringId::TheMatchWillBeginShortly, None),
         };
@@ -734,7 +750,10 @@ impl World {
             }
         }
         let delay = self.krateis_param_ms(arena_id, "watcherRotationTime");
-        let task = self.minigame_schedule(delay, MinigameTimer::Krateis(KrateisTask::ChangeWatchers(arena_id)));
+        let task = self.minigame_schedule(
+            delay,
+            MinigameTimer::Krateis(KrateisTask::ChangeWatchers(arena_id)),
+        );
         if let Some(arena) = self.minigames.krateis.arenas.get_mut(&arena_id) {
             arena.watchers = watchers;
             arena.watcher_rotation = !rotated;
@@ -824,10 +843,7 @@ impl World {
     }
 
     fn krateis_fill_vitals(&mut self, id: ObjectId) {
-        let Some((hp, mp, cp)) = self
-            .stats(id)
-            .map(|s| (s.max_hp(), s.max_mp(), s.max_cp()))
-        else {
+        let Some((hp, mp, cp)) = self.stats(id).map(|s| (s.max_hp(), s.max_mp(), s.max_cp())) else {
             return;
         };
         self.set_current_hp(id, f64::from(hp), true);
@@ -905,7 +921,12 @@ impl World {
     }
 
     /// `teleportToWaitingRoom(player, restoreEffects)`.
-    pub(crate) fn krateis_teleport_to_waiting_room(&mut self, arena_id: i32, player: ObjectId, restore: bool) {
+    pub(crate) fn krateis_teleport_to_waiting_room(
+        &mut self,
+        arena_id: i32,
+        player: ObjectId,
+        restore: bool,
+    ) {
         let registered = self
             .minigames
             .krateis
@@ -943,9 +964,11 @@ impl World {
         let Some(arena) = self.minigames.krateis.arenas.get_mut(&arena_id) else {
             return;
         };
-        let add = arena
-            .def
-            .param(if is_player { "pointPerPlayer" } else { "pointPerMob" });
+        let add = arena.def.param(if is_player {
+            "pointPerPlayer"
+        } else {
+            "pointPerMob"
+        });
         let Some(entry) = arena.players.get_mut(&player) else {
             return;
         };
@@ -1153,10 +1176,7 @@ impl World {
                 }
             }
             -300 => {
-                let fame = self
-                    .players
-                    .get(&player)
-                    .map_or(0, |p| p.data.profile.fame);
+                let fame = self.players.get(&player).map_or(0, |p| p.data.profile.fame);
                 self.set_fame(player, fame.wrapping_add(amount as i32));
                 // NOTE(java-quirk): the fame reward says "You have acquired $s1 reputation".
                 self.send(

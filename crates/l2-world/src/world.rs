@@ -153,6 +153,10 @@ pub struct World {
     /// The Territory War: territories, registrations, wards, the war period (M7-TW-01,
     /// `territory/`).
     pub(crate) territory: crate::territory::TerritoryWorld,
+    /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
+    pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The grand and raid boss managers and the raid points (M8-BOSS-01, `boss/`).
+    pub(crate) boss: crate::boss::BossWorld,
     /// The instances, their script worlds and the re-entry times (M8-INST-01, `instance/`).
     pub(crate) instances: crate::instance::InstanceManager,
     /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
@@ -166,6 +170,11 @@ pub struct World {
     /// Handy's Block Checker, Kratei's Cube and the Underground Coliseum (M8-GAMES-01,
     /// `minigame/`).
     pub(crate) minigames: crate::minigame::MinigameWorld,
+    /// The boats, the air ships and who rides them (M8-VEHICLE-01, `vehicle/`).
+    pub(crate) vehicle: crate::vehicle::VehicleWorld,
+    /// The Seven Signs: the cycle, the members, the seals, the auto spawns (M8-SS-01,
+    /// `sevensigns/`).
+    pub(crate) seven_signs: crate::sevensigns::SevenSignsWorld,
 }
 
 impl World {
@@ -239,12 +248,16 @@ impl World {
             fort: crate::fort::FortWorld::default(),
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
+            item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            boss: crate::boss::BossWorld::default(),
             instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
             minigames: crate::minigame::MinigameWorld::default(),
+            vehicle: crate::vehicle::VehicleWorld::default(),
+            seven_signs: crate::sevensigns::SevenSignsWorld::default(),
         }
     }
 
@@ -415,7 +428,13 @@ impl World {
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
             WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
             WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
+            WorldCommand::ItemAuctionReread {
+                instance_id,
+                result,
+                then,
+            } => self.on_item_auction_reread(instance_id, result, then),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
+            WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -444,6 +463,7 @@ impl World {
             } => self.on_html_file_loaded(requester, &path, content),
             WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
+            WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::SetPathRequests(requests) => self.set_path_requests(requests),
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
@@ -463,6 +483,10 @@ impl World {
                 self.championship_shutdown();
                 // Java Shutdown: "Save all manor data."
                 self.manor_shutdown();
+                // Java Shutdown: `RaidBossSpawnManager.cleanUp()`, `GrandBossManager.cleanUp()`.
+                self.boss_shutdown();
+                // Java Shutdown: "Save Seven Signs data before closing." (M8-SS-01).
+                self.seven_signs_shutdown();
                 // Java Shutdown: "Save Cursed Weapons data before closing."
                 self.save_cursed_weapons();
                 self.stopped = true;
@@ -484,6 +508,7 @@ impl World {
         }
         // Java: MovementTaskManager.
         self.update_movement();
+        self.update_vehicles();
         // Java: AttackableThinkTaskManager.
         self.think_attackables();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
@@ -674,6 +699,8 @@ impl World {
             ClientInput::Store(input) => self.on_store_input(id, input),
             // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
+            // Java: RequestInfoItemAuction, RequestBidItemAuction
+            ClientInput::ItemAuction(input) => self.on_item_auction_input(id, input),
             // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, ... (L-04)
             ClientInput::Bookmark(input) => self.on_bookmark_input(id, input),
             // Java: RequestExShowContactList, RequestExAddContactToContactList, ... (L-04)
@@ -681,6 +708,9 @@ impl World {
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::Minigame(input) => self.on_minigame_input(id, input),
+            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
+            // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
+            ClientInput::Vehicle(input) => self.on_vehicle_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -817,12 +847,16 @@ impl World {
             ClientInput::Augment(input) => self.on_augment_input(id, input),
             // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
+            // Java: RequestGetBossRecord
+            ClientInput::GetBossRecord { boss_id } => self.on_request_get_boss_record(id, boss_id),
             // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             ClientInput::Siege(input) => self.on_siege_input(id, input),
             // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Petition(input) => self.on_petition_input(id, input),
+            // Java: RequestSSQStatus (M8-SS-01)
+            ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
                 debug!("unhandled in-game packet 0x{opcode:02X} {ex_opcode:?} from {session:?}");
@@ -944,11 +978,17 @@ impl World {
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
             // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
+            // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
+            TimerKind::Boss(timer) => self.on_boss_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
+            // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
+            TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),
             // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
+            // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
+            TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
             // Java: Instance.CheckTimeUp, TimeUp and notifyDeath's eject task
             TimerKind::Instance(timer) => self.on_instance_timer(timer),
             // Java: WalkingManager's start, repeat and arrival tasks
@@ -957,6 +997,8 @@ impl World {
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
             // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
             TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
+            // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
+            TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
         }
     }
 

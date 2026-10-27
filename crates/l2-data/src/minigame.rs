@@ -100,10 +100,13 @@ impl MinigameData {
     /// Loads both files under `<root>/data`. A missing file is Java's warning and no arenas.
     pub fn load(root: &Path) -> Self {
         let mut data = Self::default();
-        load_file(&root.join("data/UndergroundColiseum.xml"), |doc: RawColiseumList| {
-            data.add_coliseum(doc);
-            Ok(())
-        });
+        load_file(
+            &root.join("data/UndergroundColiseum.xml"),
+            |doc: RawColiseumList| {
+                data.add_coliseum(doc);
+                Ok(())
+            },
+        );
         log_loaded(Self::UC_LOADER, data.coliseum.len(), "coliseum arenas");
         load_file(&root.join("data/KrateisCube.xml"), |doc: RawKrateisList| {
             data.add_krateis(doc);
@@ -158,7 +161,12 @@ impl MinigameData {
                         place: (s.x, s.y, s.z),
                     })
                     .collect(),
-                rewards: raw.rewards.into_iter().flat_map(|r| r.items).map(reward).collect(),
+                rewards: raw
+                    .rewards
+                    .into_iter()
+                    .flat_map(|r| r.items)
+                    .map(reward)
+                    .collect(),
             };
             // `_arenas.put(arena.getId(), arena)`.
             self.coliseum.insert(def.id, def);
@@ -199,7 +207,12 @@ impl MinigameData {
                     .iter()
                     .flat_map(|b| b.skills.iter().map(|s| (s.id, s.level)))
                     .collect(),
-                rewards: raw.rewards.into_iter().flat_map(|r| r.items).map(reward).collect(),
+                rewards: raw
+                    .rewards
+                    .into_iter()
+                    .flat_map(|r| r.items)
+                    .map(reward)
+                    .collect(),
                 params,
             };
             self.krateis.insert(def.id, def);
@@ -235,7 +248,10 @@ fn reward(raw: RawItem) -> ArenaReward {
     ArenaReward {
         id: raw.id,
         amount: raw.amount,
-        use_modifier: raw.use_modifiers.as_deref().is_some_and(|v| v.trim().eq_ignore_ascii_case("true")),
+        use_modifier: raw
+            .use_modifiers
+            .as_deref()
+            .is_some_and(|v| v.trim().eq_ignore_ascii_case("true")),
     }
 }
 

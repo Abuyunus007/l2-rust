@@ -869,7 +869,9 @@ fn a_map_and_a_calculator_open_their_windows() {
         decode::<ShowMiniMap>(maps[0]),
         ShowMiniMap {
             map_id: 1665,
-            seven_signs_period: 0
+            // `SevenSigns.getCurrentPeriod()`: a world that loaded no Seven Signs is in the seal
+            // validation period (M8-SS-01).
+            seven_signs_period: 3
         }
     );
 

@@ -410,6 +410,8 @@ impl World {
             self.fort_commander_died(id);
             // `TerritoryWard.doDie` (M7-TW-01).
             self.territory_ward_do_die(id, killer);
+            // `RaidBoss.doDie` / `GrandBoss.doDie`: the raid points and the respawn (M8-BOSS-01).
+            self.boss_npc_died(id, killer);
         }
         true
     }
@@ -710,7 +712,7 @@ impl World {
             // `player.setInstanceId(instanceId)` before the teleport (M8-INST-01): the player
             // leaves the instance's list while still standing in it.
             self.set_instance_id(id, instance);
-            // `setIn7sDungeon(false)`: the Seven Signs dungeon is not modelled.
+            self.set_in_7s_dungeon(id, false);
             self.set_pending_revive(id, true);
             let offset = self.settings.teleport.max_offset_on_teleport;
             self.tele_to_location(

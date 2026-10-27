@@ -22,11 +22,11 @@ use std::collections::{BTreeMap, HashMap};
 
 use l2_data::ColiseumArenaDef;
 use l2_protocol_game::NpcStringId;
+use l2_protocol_game::SystemMessageId;
+use l2_protocol_game::server::minigame::{PVP_RECORD_FINISH, PVP_RECORD_START, PVP_RECORD_UPDATE};
 use l2_protocol_game::server::{
     ExPvpMatchRecord, ExPvpMatchUserDie, ExShowScreenMessage, PvpMember, SystemMessage,
 };
-use l2_protocol_game::server::minigame::{PVP_RECORD_FINISH, PVP_RECORD_START, PVP_RECORD_UPDATE};
-use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;
 use tracing::{info, warn};
 
@@ -77,7 +77,11 @@ pub enum ColiseumTask {
     /// One step of `prepareStart()`'s sleeping countdown.
     PrepareStep { arena: i32, step: u8 },
     /// The delayed resurrection of `UCTeam.onKill`.
-    Resurrect { arena: i32, team: usize, player: ObjectId },
+    Resurrect {
+        arena: i32,
+        team: usize,
+        player: ObjectId,
+    },
 }
 
 /// `UCTeam`.
@@ -159,9 +163,7 @@ impl World {
         let mut arenas = BTreeMap::new();
         for def in defs {
             let manager = self.minigame_find_npc(def.curator);
-            let teams = (0..TEAM_COUNT)
-                .map(|_| UcTeam::default())
-                .collect();
+            let teams = (0..TEAM_COUNT).map(|_| UcTeam::default()).collect();
             arenas.insert(
                 def.id,
                 UcArena {
@@ -175,7 +177,10 @@ impl World {
                 },
             );
         }
-        info!("UndergroundColiseumManager: Loaded {} coliseum arenas.", arenas.len());
+        info!(
+            "UndergroundColiseumManager: Loaded {} coliseum arenas.",
+            arenas.len()
+        );
         self.minigames.coliseum.arenas = arenas;
 
         let (start, end) = (
@@ -207,7 +212,10 @@ impl World {
         let text = self.minigames.settings.uc_start_time.clone();
         let pattern = SchedulingPattern::parse(&text)
             .or_else(|e| {
-                warn!("UndergroundColiseum: bad BattleStartTime {text:?} ({}); using {DEFAULT_START_TIME}.", e.0);
+                warn!(
+                    "UndergroundColiseum: bad BattleStartTime {text:?} ({}); using {DEFAULT_START_TIME}.",
+                    e.0
+                );
                 SchedulingPattern::parse(DEFAULT_START_TIME)
             })
             .unwrap_or_else(|_| SchedulingPattern::never());
@@ -285,7 +293,10 @@ impl World {
 
     /// The battle period (start, end) on the wall clock.
     pub fn coliseum_period(&self) -> (i64, i64) {
-        (self.minigames.coliseum.period_start_ms, self.minigames.coliseum.period_end_ms)
+        (
+            self.minigames.coliseum.period_start_ms,
+            self.minigames.coliseum.period_end_ms,
+        )
     }
 
     /// Java `getBestTeam(arenaId)`: (leader, wins).
@@ -301,7 +312,10 @@ impl World {
             .best_teams
             .insert(arena, (name.to_owned(), wins));
         if known {
-            self.minigame_write(MinigameWrite::BestTeamUpdate { arena_id: arena, wins });
+            self.minigame_write(MinigameWrite::BestTeamUpdate {
+                arena_id: arena,
+                wins,
+            });
         } else {
             self.minigame_write(MinigameWrite::BestTeamInsert {
                 arena_id: arena,
@@ -483,10 +497,13 @@ impl World {
             self.minigames.coliseum.party_state.remove(&old);
         }
         if let Some(party) = party {
-            self.minigames
-                .coliseum
-                .party_state
-                .insert(party, UcPartyState::Team { arena: arena_id, index });
+            self.minigames.coliseum.party_state.insert(
+                party,
+                UcPartyState::Team {
+                    arena: arena_id,
+                    index,
+                },
+            );
         }
     }
 
@@ -620,10 +637,8 @@ impl World {
     /// Java `UCTeam.computeReward()`.
     fn coliseum_compute_reward(&mut self, arena_id: i32, index: usize) {
         let other = 1 - index;
-        let (Some(team), Some(other_team)) = (
-            self.uc_team(arena_id, index),
-            self.uc_team(arena_id, other),
-        ) else {
+        let (Some(team), Some(other_team)) = (self.uc_team(arena_id, index), self.uc_team(arena_id, other))
+        else {
             return;
         };
         if !(team.last_party.is_none() || team.last_party != other_team.party) {
@@ -892,10 +907,7 @@ impl World {
     fn coliseum_res_player(&mut self, player: ObjectId) {
         self.restore_exp(player, 100.0);
         self.do_revive(player);
-        let Some((hp, mp, cp)) = self
-            .stats(player)
-            .map(|s| (s.max_hp(), s.max_mp(), s.max_cp()))
-        else {
+        let Some((hp, mp, cp)) = self.stats(player).map(|s| (s.max_hp(), s.max_mp(), s.max_cp())) else {
             return;
         };
         self.set_current_hp_mp(player, f64::from(hp), f64::from(mp));
@@ -914,7 +926,12 @@ impl World {
     fn coliseum_prepare_step(&mut self, arena_id: i32, step: u8) {
         // (message, parameter, display ms, ms to the next step).
         const STEPS: [(NpcStringId, &str, i32, u64); 8] = [
-            (NpcStringId::MatchBeginsInS1MinuteSPleaseGatherAroundTheAdministrator, "1", 5000, 30_000),
+            (
+                NpcStringId::MatchBeginsInS1MinuteSPleaseGatherAroundTheAdministrator,
+                "1",
+                5000,
+                30_000,
+            ),
             (NpcStringId::S1SecondSRemaining, "30", 5000, 20_000),
             (NpcStringId::S1SecondSRemaining, "10", 3000, 5000),
             (NpcStringId::S1SecondSRemaining, "5", 1000, 1000),
@@ -924,7 +941,10 @@ impl World {
             (NpcStringId::S1SecondSRemaining, "1", 1000, 1000),
         ];
         if let Some((string, param, time, next)) = STEPS.get(usize::from(step)) {
-            self.coliseum_broadcast(arena_id, &ExShowScreenMessage::npc_string(*string, 2, *time, &[param]));
+            self.coliseum_broadcast(
+                arena_id,
+                &ExShowScreenMessage::npc_string(*string, 2, *time, &[param]),
+            );
             self.minigame_schedule(
                 *next,
                 MinigameTimer::Coliseum(ColiseumTask::PrepareStep {

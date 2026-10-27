@@ -82,8 +82,8 @@ use l2_protocol_game::server::manor::{
 use l2_protocol_game::server::minigame::{
     ExCubeGameAddPlayer, ExCubeGameChangePoints, ExCubeGameChangeTeam, ExCubeGameChangeTimeToStart,
     ExCubeGameCloseUi, ExCubeGameEnd, ExCubeGameExtendedChangePoints, ExCubeGameRemovePlayer,
-    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchCcMyRecord, ExPvpMatchCcRecord,
-    ExPvpMatchCcRetire, ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent, ExStartScenePlayer,
+    ExCubeGameRequestReady, ExCubeGameTeamList, ExPvpMatchCcMyRecord, ExPvpMatchCcRecord, ExPvpMatchCcRetire,
+    ExPvpMatchRecord, ExPvpMatchUserDie, ExSendUiEvent, ExStartScenePlayer,
 };
 use l2_protocol_game::server::movement::{MoveToLocation, MoveToPawn, StopMove, TeleportToLocation};
 use l2_protocol_game::server::multisell::{MultiSellItemDetail, MultiSellList};

@@ -29,9 +29,9 @@ use l2_util::ObjectId;
 use l2_world::{
     AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, CursedInput,
     EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
-    MacroData, MailInput, MinigameInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile, RecipeBookEntry,
-    RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData, StoreInput,
-    WarehouseInput, WarehouseLoad, WorldCommand,
+    MacroData, MailInput, MinigameInput, PacketSink, PartyRoomInput, PetInput, PlayerData, PlayerProfile,
+    RecipeBookEntry, RecipeLoad, SavedEffect, SavedItemReuse, SavedSummonEffect, ShortcutData, SkillData,
+    StoreInput, VehicleInput, WarehouseInput, WarehouseLoad, WorldCommand,
 };
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
 use tracing::{debug, error, info, warn};
@@ -98,6 +98,7 @@ pub struct DbPlayerLoader {
     residences: l2_db::ResidenceRepository,
     messages: MessageRepository,
     recipes: l2_db::RecipeRepository,
+    seven_signs: l2_db::SevenSignsRepository,
     instance_times: l2_db::InstanceTimeRepository,
 }
 
@@ -123,6 +124,7 @@ impl DbPlayerLoader {
             residences: l2_db::ResidenceRepository::new(pool.clone()),
             messages: MessageRepository::new(pool.clone()),
             recipes: l2_db::RecipeRepository::new(pool.clone()),
+            seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
             instance_times: l2_db::InstanceTimeRepository::new(pool),
         }
     }
@@ -427,6 +429,20 @@ impl DbPlayerLoader {
             Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
             Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
         }
+        // The character's Seven Signs row and the status row (M8-SS-01, D-50, D-53: the Java game
+        // server runs the cycle and writes these rows). A failed read leaves the world's copies.
+        match (
+            self.seven_signs.load_player(char_id).await,
+            self.seven_signs.load_status().await,
+        ) {
+            (Ok(player), Ok(status)) => {
+                data.profile.seven_signs_refresh = Some(Box::new(l2_world::sevensigns::SevenSignsRefresh {
+                    player: player.map(crate::persist::signs_player_of),
+                    status: status.map(crate::persist::seven_signs_status_of),
+                }));
+            }
+            (Err(e), _) | (_, Err(e)) => warn!("Could not read the Seven Signs data of {}: {e}", data.name),
+        }
         apply_restore_location(&mut data);
         Ok(data)
     }
@@ -632,6 +648,8 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             // Java `setPcCafePoints(rset.getInt("pccafe_points"))`; the world applies the cap at
             // enter world (`pc_cafe_on_enter`).
             pccafe_points: row.pccafe_points,
+            // Java `setIn7sDungeon(rset.getInt("isin7sdungeon") == 1)` (M8-SS-01).
+            in_7s_dungeon: row.isin7sdungeon == 1,
             bookmark_slot: i32::from(row.bookmarkslot),
             death_penalty_level: i32::from(row.death_penalty_level),
             // Java `setLastAccess(rset.getLong("lastAccess"))`
@@ -1084,6 +1102,18 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
+            // Java: RequestInfoItemAuction, RequestBidItemAuction (L-05)
+            ClientPacket::RequestInfoItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Info {
+                    instance_id: p.instance_id,
+                })
+            }
+            ClientPacket::RequestBidItemAuction(p) => {
+                ClientInput::ItemAuction(l2_world::ItemAuctionInput::Bid {
+                    instance_id: p.instance_id,
+                    bid: p.bid,
+                })
+            }
             // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, RequestModifyBookMarkSlot,
             // RequestDeleteBookMarkSlot, RequestTeleportBookMark, RequestChangeBookMarkSlot
             ClientPacket::RequestBookMarkSlotInfo(_) => ClientInput::Bookmark(BookmarkInput::SlotInfo),
@@ -1123,13 +1153,56 @@ impl ClientSession {
                 return true;
             }
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
+            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
+            // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
+            // (M8-VEHICLE-01)
+            ClientPacket::RequestGetOnVehicle(p) => ClientInput::Vehicle(VehicleInput::GetOn {
+                boat_id: p.boat_id,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            }),
+            ClientPacket::RequestGetOffVehicle(p) => ClientInput::Vehicle(VehicleInput::GetOff {
+                boat_id: p.boat_id,
+                x: p.x,
+                y: p.y,
+                z: p.z,
+            }),
+            ClientPacket::RequestMoveToLocationInVehicle(p) => {
+                ClientInput::Vehicle(VehicleInput::MoveInVehicle {
+                    boat_id: p.boat_id,
+                    target: (p.target_x, p.target_y, p.target_z),
+                    origin: (p.origin_x, p.origin_y, p.origin_z),
+                })
+            }
+            ClientPacket::CannotMoveAnymoreInVehicle(p) => {
+                ClientInput::Vehicle(VehicleInput::CannotMoveInVehicle {
+                    boat_id: p.boat_id,
+                    x: p.x,
+                    y: p.y,
+                    z: p.z,
+                    heading: p.heading,
+                })
+            }
+            ClientPacket::MoveToLocationAirShip(p) => ClientInput::Vehicle(VehicleInput::AirShipControl {
+                command: p.command,
+                param1: p.param1,
+                param2: p.param2,
+            }),
+            ClientPacket::MoveToLocationInAirShip(p) => ClientInput::Vehicle(VehicleInput::MoveInAirShip {
+                ship_id: p.ship_id,
+                target: (p.target_x, p.target_y, p.target_z),
+                origin: (p.origin_x, p.origin_y, p.origin_z),
+            }),
             ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
             ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
             // Java: RequestExCubeGameChangeTeam, RequestExCubeGameReadyAnswer (M8-GAMES-01)
-            ClientPacket::RequestExCubeGameChangeTeam(p) => ClientInput::Minigame(MinigameInput::CubeChangeTeam {
-                arena: p.arena,
-                team: p.team,
-            }),
+            ClientPacket::RequestExCubeGameChangeTeam(p) => {
+                ClientInput::Minigame(MinigameInput::CubeChangeTeam {
+                    arena: p.arena,
+                    team: p.team,
+                })
+            }
             ClientPacket::RequestExCubeGameReadyAnswer(p) => {
                 ClientInput::Minigame(MinigameInput::CubeReadyAnswer {
                     arena: p.arena,
@@ -1373,6 +1446,8 @@ impl ClientSession {
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
             // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
+            // Java: RequestGetBossRecord (M8-BOSS-01)
+            ClientPacket::RequestGetBossRecord(p) => ClientInput::GetBossRecord { boss_id: p.boss_id },
             // Java: RequestAllFortressInfo, RequestFortressSiegeInfo, RequestFortressMapInfo
             // (M7-FORT-01)
             ClientPacket::RequestAllFortressInfo(_) => ClientInput::Fort(FortInput::AllFortressInfo),
@@ -1571,6 +1646,8 @@ impl ClientSession {
                 ClientInput::Leftover(LeftoverInput::SaveInventoryOrder(p.order))
             }
             ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
+            // Java: RequestSSQStatus (M8-SS-01)
+            ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
             ClientPacket::RequestRecordInfo(_) => ClientInput::Leftover(LeftoverInput::RecordInfo),
             ClientPacket::StartRotating(p) => ClientInput::Leftover(LeftoverInput::StartRotating {
                 degree: p.degree,

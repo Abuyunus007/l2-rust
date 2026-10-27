@@ -103,6 +103,8 @@ impl World {
         self.fort_player_leaving(id);
         // `else if (_combatFlagEquippedId)`: a ward carrier drops the ward (M7-TW-01).
         self.territory_player_leaving(id);
+        // `BossZone.onExit` of the zones the player leaves the world in (M8-BOSS-01).
+        self.boss_zone_player_leaving(id, reason);
         // Java `deleteMe`: the Nevit logout listener and `storeRecommendations(false)` come before
         // the store (they change what is stored), `stopAllTimers` ends the vitality task.
         self.nevit_on_leave(id);
@@ -118,6 +120,8 @@ impl World {
         self.cursed_player_left(id);
         // `deleteMe`: the Block Checker disconnect, and the arenas forget the player (M8-GAMES-01).
         self.minigame_on_player_left(id);
+        // `deleteMe`: `_vehicle.oustPlayer(this)` (M8-VEHICLE-01).
+        self.vehicle_player_left(id);
         // `deleteMe`: `clanMember.setPlayer(null)` (the member keeps the player's values).
         let clan_leave = self.clan_before_leave(id);
         // `deleteMe`: off the party matching waiting list, out of the party matching room (Java

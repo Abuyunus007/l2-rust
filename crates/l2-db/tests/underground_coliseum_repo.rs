@@ -127,11 +127,19 @@ async fn best_teams_and_the_battle_period_with_javas_statements() {
 
     // GlobalVariablesManager: a missing variable is 0, REPLACE keeps one row.
     assert_eq!(repo.variable_long("UC_START_TIME").await.unwrap(), 0);
-    repo.set_variable_long("UC_START_TIME", 1_800_000_000_000).await.unwrap();
-    repo.set_variable_long("UC_START_TIME", 1_800_000_060_000).await.unwrap();
-    assert_eq!(repo.variable_long("UC_START_TIME").await.unwrap(), 1_800_000_060_000);
+    repo.set_variable_long("UC_START_TIME", 1_800_000_000_000)
+        .await
+        .unwrap();
+    repo.set_variable_long("UC_START_TIME", 1_800_000_060_000)
+        .await
+        .unwrap();
     assert_eq!(
-        db.scalar("SELECT COUNT(*) FROM global_variables WHERE `var` = 'UC_START_TIME'").await,
+        repo.variable_long("UC_START_TIME").await.unwrap(),
+        1_800_000_060_000
+    );
+    assert_eq!(
+        db.scalar("SELECT COUNT(*) FROM global_variables WHERE `var` = 'UC_START_TIME'")
+            .await,
         1
     );
 

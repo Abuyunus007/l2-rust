@@ -50,6 +50,8 @@ impl World {
         snapshot.profile.item_reuse_to_store = Some(self.saved_item_reuse(id));
         // `storeRecipeShopList()` (only with `StoreRecipeShopList` and a shop).
         snapshot.profile.recipe_shop_to_store = self.recipe_shop_to_store(id);
+        // `SevenSigns.getInstance().saveSevenSignsData(getObjectId())` (M8-SS-01).
+        snapshot.profile.seven_signs_to_store = self.ss_row_to_store(id.0);
         // `_clanPrivileges.getMask()`: the mask of the moment, also of a shared rank object.
         if let Some(clan) = snapshot.profile.clan.as_mut() {
             clan.privileges = crate::clan::ClanPrivilegesRef::Own(self.clan_privileges_of(id));
