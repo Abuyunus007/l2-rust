@@ -319,6 +319,8 @@ fn entering_sends_the_enter_world_packets_in_java_order() {
             "EX_STORAGE_MAX_COUNT",
             "L2_FRIEND_LIST",
             "SYSTEM_MESSAGE",
+            // `SevenSigns.sendCurrentPeriodMsg` (M8-SS-01).
+            "SYSTEM_MESSAGE",
             "SKILL_COOL_TIME",
             "EX_VOTE_SYSTEM_INFO",
             "EX_RECEIVE_SHOW_POST_FRIEND",
@@ -351,7 +353,7 @@ fn nevit_off_leaves_out_its_packets() {
         !list.iter().any(|n| n.contains("VOTE") || n.contains("NAVIT")),
         "{list:?}"
     );
-    assert_eq!(list.len(), 21);
+    assert_eq!(list.len(), 22);
 }
 
 #[test]

@@ -402,7 +402,7 @@ pub enum SevenSignsTimer {
 }
 
 /// The Seven Signs state of the world.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub(crate) struct SevenSignsWorld {
     pub(crate) settings: SevenSignsSettings,
     pub(crate) status: SevenSignsStatus,
@@ -414,6 +414,29 @@ pub(crate) struct SevenSignsWorld {
     pub(crate) save_timer: Option<TimerId>,
     /// `AutoSpawnHandler`.
     pub(crate) auto_spawn: auto_spawn::AutoSpawnWorld,
+    /// `load_seven_signs` ran (the game server always loads; bare test worlds may not).
+    pub(crate) loaded: bool,
+}
+
+impl Default for SevenSignsWorld {
+    /// A world that has not loaded the Seven Signs (the game server always does): the seal
+    /// validation period with no seal owned, the neutral state the residence and siege code of M7
+    /// was written against.
+    fn default() -> Self {
+        Self {
+            settings: SevenSignsSettings::default(),
+            status: SevenSignsStatus {
+                active_period: PERIOD_SEAL_VALIDATION,
+                ..SevenSignsStatus::default()
+            },
+            players: BTreeMap::new(),
+            next_period_change: 0,
+            period_timer: None,
+            save_timer: None,
+            auto_spawn: auto_spawn::AutoSpawnWorld::default(),
+            loaded: false,
+        }
+    }
 }
 
 impl World {

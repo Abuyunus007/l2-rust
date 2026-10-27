@@ -249,6 +249,7 @@ impl World {
 
     /// Java `restoreSevenSignsData()` (the rows the game server read).
     fn ss_restore(&mut self, load: SevenSignsLoad) {
+        self.seven_signs.loaded = true;
         self.seven_signs.players.clear();
         for row in load.players {
             self.seven_signs.players.insert(row.char_id, row);
@@ -678,6 +679,10 @@ impl World {
     /// Java `isDateInSealValidPeriod(date)`: whether `date_ms` falls into a seal validation or a
     /// results period.
     pub fn ss_is_date_in_seal_valid_period(&self, date_ms: i64, now_ms: i64) -> bool {
+        if !self.seven_signs.loaded {
+            // No cycle to measure against (a bare world): every date is valid.
+            return true;
+        }
         date_in_seal_valid_period(
             self.ss_current_period(),
             self.seven_signs.next_period_change - now_ms,
