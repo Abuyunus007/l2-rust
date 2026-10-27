@@ -16,41 +16,41 @@ pub struct PlayerConfig {
     pub run_spd_boost: i32,
     /// Key: `DeathPenaltyChance`, default 20.
     pub death_penalty_chance: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.respawn_restore_cp` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 258): `RESPAWN_RESTORE_CP = config.getDouble("RespawnRestoreCP", 0) / 100;`
     /// Key: `RespawnRestoreCP`, Java default `0` (before the Java post-processing).
     pub respawn_restore_cp: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.respawn_restore_hp` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 259): `RESPAWN_RESTORE_HP = config.getDouble("RespawnRestoreHP", 65) / 100;`
     /// Key: `RespawnRestoreHP`, Java default `65` (before the Java post-processing).
     pub respawn_restore_hp: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.respawn_restore_mp` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 260): `RESPAWN_RESTORE_MP = config.getDouble("RespawnRestoreMP", 0) / 100;`
     /// Key: `RespawnRestoreMP`, Java default `0` (before the Java post-processing).
     pub respawn_restore_mp: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.player.hp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 261): `HP_REGEN_MULTIPLIER = config.getDouble("HpRegenMultiplier", 100) / 100;`
     /// Key: `HpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub hp_regen_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.player.mp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 262): `MP_REGEN_MULTIPLIER = config.getDouble("MpRegenMultiplier", 100) / 100;`
     /// Key: `MpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub mp_regen_multiplier: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `double`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.player.cp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 263): `CP_REGEN_MULTIPLIER = config.getDouble("CpRegenMultiplier", 100) / 100;`
     /// Key: `CpRegenMultiplier`, Java default `100` (before the Java post-processing).
     pub cp_regen_multiplier: (),
     /// Key: `EnableModifySkillDuration`, default false.
     /// TODO(M2-CFG-01): Java also uses this field after reading it (line 265): `if (ENABLE_MODIFY_SKILL_DURATION) { final String[] propertySplit = config.getString("SkillDurationList", "").split(";"); SKILL_DURATION_LIST = new HashMap<>(pro ...`
     pub enable_modify_skill_duration: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.skill_duration_list` (Java type `Map<Integer, Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 265): `if (ENABLE_MODIFY_SKILL_DURATION) { final String[] propertySplit = config.getString("SkillDurationList", "").split(";"); SKILL_DURATION_LIST = new HashMap<>(propertySplit.length); for (String skill :  ...`
     /// Key: `SkillDurationList`, Java default `""` (before the Java post-processing).
     pub skill_duration_list: (),
     /// Key: `EnableModifySkillReuse`, default false.
     /// TODO(M2-CFG-01): Java also uses this field after reading it (line 293): `if (ENABLE_MODIFY_SKILL_REUSE) { final String[] propertySplit = config.getString("SkillReuseList", "").split(";"); SKILL_REUSE_LIST = new HashMap<>(propertySpli ...`
     pub enable_modify_skill_reuse: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.skill_reuse_list` (Java type `Map<Integer, Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 265): `if (ENABLE_MODIFY_SKILL_DURATION) { final String[] propertySplit = config.getString("SkillDurationList", "").split(";"); SKILL_DURATION_LIST = new HashMap<>(propertySplit.length); for (String skill :  ...`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `SkillDurationList`, Java default `""` (before the Java post-processing).
@@ -82,12 +82,12 @@ pub struct PlayerConfig {
     pub alt_store_toggles: bool,
     /// Key: `AutoLearnDivineInspiration`, default false.
     pub auto_learn_divine_inspiration: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `boolean`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.alt_game_cancel_bow` (Java type `boolean`); the unit type keeps this field from being used by mistake.
     /// Java (line 333): `ALT_GAME_CANCEL_BOW = config.getString("AltGameCancelByHit", "Cast").equalsIgnoreCase("bow") || config.getString("AltGameCancelByHit", "Cast").equalsIgnoreCase("all");`
     /// Key: `AltGameCancelByHit`, Java default `"Cast"` (before the Java post-processing).
     /// Key: `AltGameCancelByHit`, Java default `"Cast"` (before the Java post-processing).
     pub alt_game_cancel_bow: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `boolean`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.alt_game_cancel_cast` (Java type `boolean`); the unit type keeps this field from being used by mistake.
     /// Java (line 334): `ALT_GAME_CANCEL_CAST = config.getString("AltGameCancelByHit", "Cast").equalsIgnoreCase("cast") || config.getString("AltGameCancelByHit", "Cast").equalsIgnoreCase("all");`
     /// Key: `AltGameCancelByHit`, Java default `"Cast"` (before the Java post-processing).
     /// Key: `AltGameCancelByHit`, Java default `"Cast"` (before the Java post-processing).
@@ -170,7 +170,7 @@ pub struct PlayerConfig {
     pub min_abnormal_state_success_rate: i32,
     /// Key: `MaxAbnormalStateSuccessRate`, default 90.
     pub max_abnormal_state_success_rate: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `long`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.player.max_sp` (Java type `long`); the unit type keeps this field from being used by mistake.
     /// Java (line 374): `MAX_SP = config.getLong("MaxSp", 50000000000L) >= 0 ? config.getLong("MaxSp", 50000000000L) : Long.MAX_VALUE;`
     /// Key: `MaxSp`, Java default `50000000000L` (before the Java post-processing).
     /// Key: `MaxSp`, Java default `50000000000L` (before the Java post-processing).
@@ -203,7 +203,7 @@ pub struct PlayerConfig {
     pub inventory_maximum_gm: i32,
     /// Key: `MaximumSlotsForQuestItems`, default 100.
     pub inventory_maximum_quest_items: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::effective_max_item_in_packet` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 388): `MAX_ITEM_IN_PACKET = Math.max(INVENTORY_MAXIMUM_NO_DWARF, Math.max(INVENTORY_MAXIMUM_DWARF, INVENTORY_MAXIMUM_GM));`
     pub max_item_in_packet: (),
     /// Key: `MaximumWarehouseSlotsForDwarf`, default 120.
@@ -224,7 +224,7 @@ pub struct PlayerConfig {
     pub enchant_chance_element_jewel: f64,
     /// Key: `EnchantChanceElementEnergy`, default 10.0.
     pub enchant_chance_element_energy: f64,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.enchant_blacklist` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 398): `final String[] notenchantable = config.getString("EnchantBlackList", "7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296").split(",");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `EnchantBlackList`, Java default `"7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296"` (before the Java post-processing).
@@ -233,7 +233,7 @@ pub struct PlayerConfig {
     pub disable_over_enchanting: bool,
     /// Key: `OverEnchantProtection`, default true.
     pub over_enchant_protection: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `IllegalActionPunishmentType`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.over_enchant_punishment` (Java type `IllegalActionPunishmentType`); the unit type keeps this field from being used by mistake.
     /// Java (line 407): `OVER_ENCHANT_PUNISHMENT = IllegalActionPunishmentType.findByName(config.getString("OverEnchantPunishment", "JAIL"));`
     /// Key: `OverEnchantPunishment`, Java default `"JAIL"` (before the Java post-processing).
     pub over_enchant_punishment: (),
@@ -259,30 +259,30 @@ pub struct PlayerConfig {
     pub augmentation_acc_skill_chance: i32,
     /// Key: `RetailLikeAugmentation`, default true.
     pub retail_like_augmentation: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.retail_like_augmentation_ng_chance` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 398): `final String[] notenchantable = config.getString("EnchantBlackList", "7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296").split(",");`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `EnchantBlackList`, Java default `"7816,7817,7818,7819,7820,7821,7822,7823,7824,7825,7826,7827,7828,7829,7830,7831,13293,13294,13296"` (before the Java post-processing).
     /// Key: `RetailLikeAugmentationNoGradeChance`, Java default `"55,35,7,3"` (before the Java post-processing).
     pub retail_like_augmentation_ng_chance: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.retail_like_augmentation_mid_chance` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 421): `for (int i = 0; i < 4; i++) { RETAIL_LIKE_AUGMENTATION_NG_CHANCE[i] = Integer.parseInt(array[i]); }`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `RetailLikeAugmentationMidGradeChance`, Java default `"55,35,7,3"` (before the Java post-processing).
     pub retail_like_augmentation_mid_chance: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.retail_like_augmentation_high_chance` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 427): `for (int i = 0; i < 4; i++) { RETAIL_LIKE_AUGMENTATION_MID_CHANCE[i] = Integer.parseInt(array[i]); }`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `RetailLikeAugmentationHighGradeChance`, Java default `"55,35,7,3"` (before the Java post-processing).
     pub retail_like_augmentation_high_chance: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.retail_like_augmentation_top_chance` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 433): `for (int i = 0; i < 4; i++) { RETAIL_LIKE_AUGMENTATION_HIGH_CHANCE[i] = Integer.parseInt(array[i]); }`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `RetailLikeAugmentationTopGradeChance`, Java default `"55,35,7,3"` (before the Java post-processing).
     pub retail_like_augmentation_top_chance: (),
     /// Key: `RetailLikeAugmentationAccessory`, default true.
     pub retail_like_augmentation_accessory: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.augmentation_blacklist` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 439): `for (int i = 0; i < 4; i++) { RETAIL_LIKE_AUGMENTATION_TOP_CHANCE[i] = Integer.parseInt(array[i]); }`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `AugmentationBlackList`, Java default `"6656,6657,6658,6659,6660,6661,6662,8191,10170,10314,13740,13741,13742,13743,13744,13745,13746,13747,13748,14592,14593,14594,14595,14596,14597,14598,14599,14600,14664,14665,14666,14667,14668,14669,14670,14671,14672,14801,14802,14803,14804,14805,14806,14807,14808,14809,15282,15283,15284,15285,15286,15287,15288,15289,15290,15291,15292,15293,15294,15295,15296,15297,15298,15299,16025,16026,21712,22173,22174,22175"` (before the Java post-processing).
@@ -388,13 +388,13 @@ pub struct PlayerConfig {
     pub auto_loot_raids: bool,
     /// Key: `AutoLootSlotLimit`, default false.
     pub auto_loot_slot_limit: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.loot_raids_privilege_interval` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 505): `LOOT_RAIDS_PRIVILEGE_INTERVAL = config.getInt("RaidLootRightsInterval", 900) * 1000;`
     /// Key: `RaidLootRightsInterval`, Java default `900` (before the Java post-processing).
     pub loot_raids_privilege_interval: (),
     /// Key: `RaidLootRightsCCSize`, default 45.
     pub loot_raids_privilege_cc_size: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.auto_loot_item_ids` (Java type `Set<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 507): `final String[] autoLootItemIds = config.getString("AutoLootItemIds", "0").split(",");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `AutoLootItemIds`, Java default `"0"` (before the Java post-processing).
@@ -429,7 +429,7 @@ pub struct PlayerConfig {
     pub delete_days: i32,
     /// Key: `DisconnectAfterDeath`, default true.
     pub disconnect_after_death: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `PartyExpType`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.party_xp_cutoff_method` (Java type `PartyExpType`); the unit type keeps this field from being used by mistake.
     /// Java (line 541): `PARTY_XP_CUTOFF_METHOD = Enum.valueOf(PartyExpType.class, config.getString("PartyXpCutoffMethod", "LEVEL").toUpperCase());`
     /// Key: `PartyXpCutoffMethod`, Java default `"LEVEL"` (before the Java post-processing).
     pub party_xp_cutoff_method: (),
@@ -437,13 +437,13 @@ pub struct PlayerConfig {
     pub party_xp_cutoff_percent: f64,
     /// Key: `PartyXpCutoffLevel`, default 20.
     pub party_xp_cutoff_level: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[][]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.party_xp_cutoff_gaps` (Java type `int[][]`); the unit type keeps this field from being used by mistake.
     /// Java (line 444): `array = config.getString("AugmentationBlackList", "6656,6657,6658,6659,6660,6661,6662,8191,10170,10314,13740,13741,13742,13743,13744,13745,13746,13747,13748,14592,14593,14594,14595,14596,14597,14598,1 ...`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `AugmentationBlackList`, Java default `"6656,6657,6658,6659,6660,6661,6662,8191,10170,10314,13740,13741,13742,13743,13744,13745,13746,13747,13748,14592,14593,14594,14595,14596,14597,14598,14599,14600,14664,14665,14666,14667,14668,14669,14670,14671,14672,14801,14802,14803,14804,14805,14806,14807,14808,14809,15282,15283,15284,15285,15286,15287,15288,15289,15290,15291,15292,15293,15294,15295,15296,15297,15298,15299,16025,16026,21712,22173,22174,22175"` (before the Java post-processing).
     /// Key: `PartyXpCutoffGaps`, Java default `"0,9;10,14;15,99"` (before the Java post-processing).
     pub party_xp_cutoff_gaps: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.party_xp_cutoff_gap_percents` (Java type `int[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 544): `final String[] gaps = config.getString("PartyXpCutoffGaps", "0,9;10,14;15,99").split(";");`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `PartyXpCutoffGaps`, Java default `"0,9;10,14;15,99"` (before the Java post-processing).
@@ -457,7 +457,7 @@ pub struct PlayerConfig {
     pub store_recipe_shoplist: bool,
     /// Key: `StoreCharUiSettings`, default true.
     pub store_ui_settings: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `String[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.player.forbidden_names` (Java type `String[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 564): `FORBIDDEN_NAMES = config.getString("ForbiddenNames", "").split(",");`
     /// Key: `ForbiddenNames`, Java default `""` (before the Java post-processing).
     pub forbidden_names: (),
@@ -465,7 +465,7 @@ pub struct PlayerConfig {
     pub silence_mode_exclude: bool,
     /// Key: `AltValidateTriggerSkills`, default false.
     pub alt_validate_trigger_skills: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.player.player_movement_block_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 567): `PLAYER_MOVEMENT_BLOCK_TIME = config.getInt("NpcTalkBlockingTime", 0) * 1000;`
     /// Key: `NpcTalkBlockingTime`, Java default `0` (before the Java post-processing).
     pub player_movement_block_time: (),

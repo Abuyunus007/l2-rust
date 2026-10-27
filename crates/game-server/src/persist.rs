@@ -2693,6 +2693,13 @@ pub fn autosave_interval(config_dir: &std::path::Path) -> Duration {
     Duration::from_millis(u64::try_from(millis).unwrap_or(1000))
 }
 
+/// [`autosave_interval`] from the loaded configuration (`manual.core.general.char_data_store_interval`,
+/// Java's `CHAR_DATA_STORE_INTERVAL` in milliseconds).
+pub fn autosave_interval_from_config(config: &l2_config::GameConfig) -> Duration {
+    let millis = i64::from(config.manual.core.general.char_data_store_interval).max(1000);
+    Duration::from_millis(u64::try_from(millis).unwrap_or(1000))
+}
+
 /// Java `Item.restoreAttributes` for the items of one owner: the augmentation and the element
 /// attributes the `item_attributes` and `item_elementals` rows give them. Java reads the two
 /// tables one item at a time; this reads them once for the owner (same rows, same order).
@@ -6276,6 +6283,24 @@ mod tests {
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(300));
         std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
         assert_eq!(autosave_interval(dir.path()), Duration::from_secs(1));
+    }
+
+    /// L-09: the same interval from the loaded configuration (`manual.core.general`).
+    #[test]
+    fn autosave_interval_from_the_loaded_config() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(900));
+        std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 3\n").unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(180));
+        assert_eq!(
+            autosave_interval_from_config(&config),
+            autosave_interval(dir.path())
+        );
+        std::fs::write(dir.path().join("General.ini"), "CharacterDataStoreInterval = 0\n").unwrap();
+        let config = l2_config::GameConfig::load(dir.path()).unwrap();
+        assert_eq!(autosave_interval_from_config(&config), Duration::from_secs(1));
     }
 
     /// M7-ADMIN-10: the login server switches of the admin commands reach the link in order.

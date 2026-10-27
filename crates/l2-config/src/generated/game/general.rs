@@ -52,7 +52,7 @@ pub struct GeneralConfig {
     pub log_items_small_log: bool,
     /// Key: `LogItemsIdsOnly`, default false.
     pub log_items_ids_only: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.log_items_ids_list` (Java type `Set<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 225): `final String[] splitItemIds = config.getString("LogItemsIdsList", "0").split(",");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `LogItemsIdsList`, Java default `"0"` (before the Java post-processing).
@@ -73,16 +73,16 @@ pub struct GeneralConfig {
     pub allow_discarditem: bool,
     /// Key: `AutoDestroyDroppedItemAfter`, default 600.
     pub autodestroy_item_after: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.herb_auto_destroy_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 239): `HERB_AUTO_DESTROY_TIME = config.getInt("AutoDestroyHerbTime", 60) * 1000;`
     /// Key: `AutoDestroyHerbTime`, Java default `60` (before the Java post-processing).
     pub herb_auto_destroy_time: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.list_protected_items` (Java type `Set<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 240): `final String[] split = config.getString("ListOfProtectedItems", "0").split(",");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ListOfProtectedItems`, Java default `"0"` (before the Java post-processing).
     pub list_protected_items: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.char_data_store_interval` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 246): `CHAR_DATA_STORE_INTERVAL = config.getInt("CharacterDataStoreInterval", 15) * 60 * 1000;`
     /// Key: `CharacterDataStoreInterval`, Java default `15` (before the Java post-processing).
     pub char_data_store_interval: (),
@@ -100,7 +100,7 @@ pub struct GeneralConfig {
     pub save_dropped_item: bool,
     /// Key: `EmptyDroppedItemTableAfterLoad`, default false.
     pub empty_dropped_item_table_after_load: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.save_dropped_item_interval` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 254): `SAVE_DROPPED_ITEM_INTERVAL = config.getInt("SaveDroppedItemInterval", 60) * 60000;`
     /// Key: `SaveDroppedItemInterval`, Java default `60` (before the Java post-processing).
     pub save_dropped_item_interval: (),
@@ -130,11 +130,11 @@ pub struct GeneralConfig {
     pub grid_neighbor_turnoff_time: i32,
     /// Key: `PeaceZoneMode`, default 0.
     pub peace_zone_mode: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `ChatBroadcastType`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.default_global_chat` (Java type `ChatBroadcastType`); the unit type keeps this field from being used by mistake.
     /// Java (line 268): `DEFAULT_GLOBAL_CHAT = Enum.valueOf(ChatBroadcastType.class, config.getString("GlobalChat", "ON"));`
     /// Key: `GlobalChat`, Java default `"ON"` (before the Java post-processing).
     pub default_global_chat: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `ChatBroadcastType`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.default_trade_chat` (Java type `ChatBroadcastType`); the unit type keeps this field from being used by mistake.
     /// Java (line 269): `DEFAULT_TRADE_CHAT = Enum.valueOf(ChatBroadcastType.class, config.getString("TradeChat", "ON"));`
     /// Key: `TradeChat`, Java default `"ON"` (before the Java post-processing).
     pub default_trade_chat: (),
@@ -154,7 +154,7 @@ pub struct GeneralConfig {
     pub wear_delay: i32,
     /// Key: `WearPrice`, default 10.
     pub wear_price: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.instance_finish_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 278): `INSTANCE_FINISH_TIME = config.getInt("DefaultFinishTime", 300) * 1000;`
     /// Key: `DefaultFinishTime`, Java default `300` (before the Java post-processing).
     pub instance_finish_time: (),
@@ -162,7 +162,7 @@ pub struct GeneralConfig {
     pub restore_player_instance: bool,
     /// Key: `AllowSummonInInstance`, default false.
     pub allow_summon_in_instance: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.eject_dead_player_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 281): `EJECT_DEAD_PLAYER_TIME = config.getInt("EjectDeadPlayerTime", 60) * 1000;`
     /// Key: `EjectDeadPlayerTime`, Java default `60` (before the Java post-processing).
     pub eject_dead_player_time: (),
@@ -196,7 +196,7 @@ pub struct GeneralConfig {
     pub use_say_filter: bool,
     /// Key: `ChatFilterChars`, default `^_^`.
     pub chat_filter_chars: String,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<ChatType>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.ban_chat_channels` (Java type `Set<ChatType>`); the unit type keeps this field from being used by mistake.
     /// Java (line 297): `final String[] propertySplit4 = config.getString("BanChatChannels", "GENERAL;SHOUT;WORLD;TRADE;HERO_VOICE").trim().split(";");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `BanChatChannels`, Java default `"GENERAL;SHOUT;WORLD;TRADE;HERO_VOICE"` (before the Java post-processing).
@@ -245,7 +245,7 @@ pub struct GeneralConfig {
     pub alt_item_auction_enabled: bool,
     /// Key: `AltItemAuctionExpiredAfter`, default 14.
     pub alt_item_auction_expired_after: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `long`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.alt_item_auction_time_extends_on_bid` (Java type `long`); the unit type keeps this field from being used by mistake.
     /// Java (line 332): `ALT_ITEM_AUCTION_TIME_EXTENDS_ON_BID = config.getInt("AltItemAuctionTimeExtendsOnBid", 0) * 1000;`
     /// Key: `AltItemAuctionTimeExtendsOnBid`, Java default `0` (before the Java post-processing).
     pub alt_item_auction_time_extends_on_bid: (),
@@ -273,7 +273,7 @@ pub struct GeneralConfig {
     pub rift_enter_cost_commander: i32,
     /// Key: `HeroCost`, default 33.
     pub rift_enter_cost_hero: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `IllegalActionPunishmentType`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.default_punish` (Java type `IllegalActionPunishmentType`); the unit type keeps this field from being used by mistake.
     /// Java (line 345): `DEFAULT_PUNISH = IllegalActionPunishmentType.findByName(config.getString("DefaultPunish", "KICK"));`
     /// Key: `DefaultPunish`, Java default `"KICK"` (before the Java post-processing).
     pub default_punish: (),
@@ -306,7 +306,7 @@ pub struct GeneralConfig {
     pub alt_birthday_gift: i32,
     /// Key: `AltBirthdayMailSubject`, default `Happy Birthday!`.
     pub alt_birthday_mail_subject: String,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `String`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.alt_birthday_mail_text` (Java type `String`); the unit type keeps this field from being used by mistake.
     /// Java (line 364): `ALT_BIRTHDAY_MAIL_TEXT = config.getString("AltBirthdayMailText", "Hello Adventurer!! Seeing as you're one year older now, I thought I would send you some birthday cheer :) Please find your birthday pa ...`
     /// Key: `AltBirthdayMailText`, Java default `"Hello Adventurer!! Seeing as you're one year older now, I thought I would send you some birthday cheer :) Please find your birthday pack attached. May these gifts bring you joy and happiness on this very special day." + System.lineSeparator() + System.lineSeparator() + "Sincerely, Alegria"` (before the Java post-processing).
     pub alt_birthday_mail_text: (),
@@ -325,11 +325,11 @@ pub struct GeneralConfig {
     pub safe_enchant_cost_multiplier: i32,
     /// Key: `EnableBotReportButton`, default false.
     pub botreport_enable: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `String[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.botreport_resetpoint_hour` (Java type `String[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 380): `BOTREPORT_RESETPOINT_HOUR = config.getString("BotReportPointsResetHour", "00:00").split(":");`
     /// Key: `BotReportPointsResetHour`, Java default `"00:00"` (before the Java post-processing).
     pub botreport_resetpoint_hour: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `long`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.general.botreport_report_delay` (Java type `long`); the unit type keeps this field from being used by mistake.
     /// Java (line 381): `BOTREPORT_REPORT_DELAY = config.getInt("BotReportDelay", 30) * 60000;`
     /// Key: `BotReportDelay`, Java default `30` (before the Java post-processing).
     pub botreport_report_delay: (),

@@ -20,25 +20,25 @@ pub struct ServerConfig {
     pub request_id: i32,
     /// Key: `AcceptAlternateID`, default true.
     pub accept_alternate_id: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `File`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.datapack_root` (Java type `File`); the unit type keeps this field from being used by mistake.
     /// Java (line 130): `try { DATAPACK_ROOT = new File(config.getString("DatapackRoot", ".").replace('\\', '/')).getCanonicalFile(); } catch (IOException e) { LOGGER.log(Level.WARNING, "Error setting datapack root!", e); DAT ...`
     /// Key: `DatapackRoot`, Java default `"."` (before the Java post-processing).
     pub datapack_root: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `File`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.script_root` (Java type `File`); the unit type keeps this field from being used by mistake.
     /// Java (line 140): `try { SCRIPT_ROOT = new File(config.getString("ScriptRoot", "./data/scripts").replace('\\', '/')).getCanonicalFile(); } catch (Exception e) { LOGGER.log(Level.WARNING, "Error setting script root!", e) ...`
     /// Key: `ScriptRoot`, Java default `"./data/scripts"` (before the Java post-processing).
     pub script_root: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Pattern`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.server.charname_template` (Java type `Pattern`); the unit type keeps this field from being used by mistake.
     /// Java (line 150): `Pattern charNamePattern;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `CnameTemplate`, Java default `".*"` (before the Java post-processing).
     pub charname_template_pattern: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Pattern`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.server.pet_name_template` (Java type `Pattern`); the unit type keeps this field from being used by mistake.
     /// Java (line 162): `Pattern petNamePattern;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `PetNameTemplate`, Java default `".*"` (before the Java post-processing).
     pub pet_name_template_pattern: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Pattern`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.server.clan_name_template` (Java type `Pattern`); the unit type keeps this field from being used by mistake.
     /// Java (line 174): `Pattern clanNamePattern;`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ClanNameTemplate`, Java default `".*"` (before the Java post-processing).
@@ -59,12 +59,12 @@ pub struct ServerConfig {
     pub require_fresh_hwid: bool,
     /// Key: `HwidCheckDelay`, default 5000.
     pub hwid_check_delay: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.server.protocol_list` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 198): `final String[] protocols = config.getString("AllowedProtocolRevisions", "267;268;271;273").split(";");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `AllowedProtocolRevisions`, Java default `"267;268;271;273"` (before the Java post-processing).
     pub protocol_list: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.server_list_type` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 212): `SERVER_LIST_TYPE = getServerTypeId(config.getString("ServerListType", "Free").split(","));`
     /// Key: `ServerListType`, Java default `"Free"` (before the Java post-processing).
     pub server_list_type: (),
@@ -84,11 +84,11 @@ pub struct ServerConfig {
     pub server_restart_schedule_message: bool,
     /// Key: `ServerRestartScheduleCountdown`, default 600.
     pub server_restart_schedule_countdown: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `String[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.server_restart_schedule` (Java type `String[]`); the unit type keeps this field from being used by mistake.
     /// Java (line 221): `SERVER_RESTART_SCHEDULE = config.getString("ServerRestartSchedule", "08:00").split(",");`
     /// Key: `ServerRestartSchedule`, Java default `"08:00"` (before the Java post-processing).
     pub server_restart_schedule: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.server_restart_days` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 223): `SERVER_RESTART_DAYS = new ArrayList<>();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `ServerRestartDays`, Java default `""` (before the Java post-processing).
@@ -103,28 +103,28 @@ pub struct ServerConfig {
     pub precautionary_restart_checks: bool,
     /// Key: `PrecautionaryRestartPercentage`, default 95.
     pub precautionary_restart_percentage: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.precautionary_restart_delay` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 237): `PRECAUTIONARY_RESTART_DELAY = config.getInt("PrecautionaryRestartDelay", 60) * 1000;`
     /// Key: `PrecautionaryRestartDelay`, Java default `60` (before the Java post-processing).
     pub precautionary_restart_delay: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is game-server `ls_link::ipconfig::IpConfig` (ipconfig.xml) (Java type `List<String>`); the unit type keeps this field from being used by mistake.
     /// Java (line 239): `final IPConfigData ipConfigData = new IPConfigData();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     pub game_server_subnets: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is game-server `ls_link::ipconfig::IpConfig` (ipconfig.xml) (Java type `List<String>`); the unit type keeps this field from being used by mistake.
     /// Java (line 239): `final IPConfigData ipConfigData = new IPConfigData();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     pub game_server_hosts: (),
     /// TODO(M2-CFG-01): not generated, hand-port it. Java type `boolean`; the unit type makes any use fail to compile until then.
     /// Java: `load()` never assigns it.
     pub reserve_host_on_login: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.server.filter_list` (Java type `List<String>`); the unit type keeps this field from being used by mistake.
     /// Java: `load()` never assigns it (used on line(s) [259, 260] of the class).
     pub filter_list: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is game-server `hexid::HexId` (hexid.txt) (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java: `load()` never assigns it (used on line(s) [283] of the class).
     pub server_id: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `byte[]`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is game-server `hexid::HexId` (hexid.txt) (Java type `byte[]`); the unit type keeps this field from being used by mistake.
     /// Java: `load()` never assigns it (used on line(s) [286, 295] of the class).
     pub hex_id: (),
 }

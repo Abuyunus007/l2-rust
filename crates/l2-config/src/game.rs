@@ -9,6 +9,7 @@
 use std::path::Path;
 
 use crate::game_manual::GameManual;
+use crate::game_manual_core::{CoreInis, CoreManual};
 use crate::{ConfigError, IniFile};
 
 pub use crate::generated::game::{
@@ -109,32 +110,55 @@ impl GameConfig {
         let player_ini = IniFile::load(config_dir.join(PlayerConfig::FILE))?;
         let npc_ini = IniFile::load(config_dir.join(NpcConfig::FILE))?;
         let faction_system_ini = IniFile::load(config_dir.join(FactionSystemConfig::FILE))?;
-        let manual = GameManual::from_inis(&server_ini, &player_ini, &npc_ini, &faction_system_ini)?;
+        let mut manual = GameManual::from_inis(&server_ini, &player_ini, &npc_ini, &faction_system_ini)?;
+        // The files of the core classes with hand-ported fields (L-09), also shared.
+        let development_ini = IniFile::load(config_dir.join(DevelopmentConfig::FILE))?;
+        let feature_ini = IniFile::load(config_dir.join(FeatureConfig::FILE))?;
+        let flood_protector_ini = IniFile::load(config_dir.join(FloodProtectorConfig::FILE))?;
+        let general_ini = IniFile::load(config_dir.join(GeneralConfig::FILE))?;
+        let geo_engine_ini = IniFile::load(config_dir.join(GeoEngineConfig::FILE))?;
+        let gracia_seeds_ini = IniFile::load(config_dir.join(GraciaSeedsConfig::FILE))?;
+        let id_manager_ini = IniFile::load(config_dir.join(IdManagerConfig::FILE))?;
+        let olympiad_ini = IniFile::load(config_dir.join(OlympiadConfig::FILE))?;
+        let pvp_ini = IniFile::load(config_dir.join(PvpConfig::FILE))?;
+        let rates_ini = IniFile::load(config_dir.join(RatesConfig::FILE))?;
+        manual.core = CoreManual::from_inis(
+            &CoreInis {
+                server: &server_ini,
+                development: &development_ini,
+                feature: &feature_ini,
+                flood_protector: &flood_protector_ini,
+                general: &general_ini,
+                geo_engine: &geo_engine_ini,
+                gracia_seeds: &gracia_seeds_ini,
+                id_manager: &id_manager_ini,
+                npc: &npc_ini,
+                olympiad: &olympiad_ini,
+                player: &player_ini,
+                pvp: &pvp_ini,
+                rates: &rates_ini,
+            },
+            config_dir,
+        );
         Ok(Self {
             manual,
             server: ServerConfig::from_ini(&server_ini),
             conquerable_hall_siege: ConquerableHallSiegeConfig::from_ini(&IniFile::load(
                 config_dir.join(ConquerableHallSiegeConfig::FILE),
             )?),
-            development: DevelopmentConfig::from_ini(&IniFile::load(
-                config_dir.join(DevelopmentConfig::FILE),
-            )?),
-            feature: FeatureConfig::from_ini(&IniFile::load(config_dir.join(FeatureConfig::FILE))?),
-            flood_protector: FloodProtectorConfig::from_ini(&IniFile::load(
-                config_dir.join(FloodProtectorConfig::FILE),
-            )?),
-            general: GeneralConfig::from_ini(&IniFile::load(config_dir.join(GeneralConfig::FILE))?),
-            geo_engine: GeoEngineConfig::from_ini(&IniFile::load(config_dir.join(GeoEngineConfig::FILE))?),
-            gracia_seeds: GraciaSeedsConfig::from_ini(&IniFile::load(
-                config_dir.join(GraciaSeedsConfig::FILE),
-            )?),
+            development: DevelopmentConfig::from_ini(&development_ini),
+            feature: FeatureConfig::from_ini(&feature_ini),
+            flood_protector: FloodProtectorConfig::from_ini(&flood_protector_ini),
+            general: GeneralConfig::from_ini(&general_ini),
+            geo_engine: GeoEngineConfig::from_ini(&geo_engine_ini),
+            gracia_seeds: GraciaSeedsConfig::from_ini(&gracia_seeds_ini),
             grand_boss: GrandBossConfig::from_ini(&IniFile::load(config_dir.join(GrandBossConfig::FILE))?),
-            id_manager: IdManagerConfig::from_ini(&IniFile::load(config_dir.join(IdManagerConfig::FILE))?),
-            npc: NpcConfig::from_ini(&IniFile::load(config_dir.join(NpcConfig::FILE))?),
-            olympiad: OlympiadConfig::from_ini(&IniFile::load(config_dir.join(OlympiadConfig::FILE))?),
+            id_manager: IdManagerConfig::from_ini(&id_manager_ini),
+            npc: NpcConfig::from_ini(&npc_ini),
+            olympiad: OlympiadConfig::from_ini(&olympiad_ini),
             player: PlayerConfig::from_ini(&player_ini),
-            pvp: PvpConfig::from_ini(&IniFile::load(config_dir.join(PvpConfig::FILE))?),
-            rates: RatesConfig::from_ini(&IniFile::load(config_dir.join(RatesConfig::FILE))?),
+            pvp: PvpConfig::from_ini(&pvp_ini),
+            rates: RatesConfig::from_ini(&rates_ini),
             underground_coliseum: UndergroundColiseumConfig::from_ini(&IniFile::load(
                 config_dir.join(UndergroundColiseumConfig::FILE),
             )?),

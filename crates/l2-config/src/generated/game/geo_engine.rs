@@ -6,15 +6,15 @@ use crate::IniFile;
 /// Settings of `config/GeoEngine.ini` (Java: `GeoEngineConfig`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct GeoEngineConfig {
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Path`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.geo_engine.geodata_path` (Java type `Path`); the unit type keeps this field from being used by mistake.
     /// Java (line 54): `GEODATA_PATH = Paths.get(ServerConfig.DATAPACK_ROOT.getPath() + "/" + config.getString("GeoDataPath", "geodata"));`
     /// Key: `GeoDataPath`, Java default `"geodata"` (before the Java post-processing).
     pub geodata_path: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Path`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.geo_engine.pathnode_path` (Java type `Path`); the unit type keeps this field from being used by mistake.
     /// Java (line 55): `PATHNODE_PATH = Paths.get(ServerConfig.DATAPACK_ROOT.getPath() + "/" + config.getString("PathnodePath", "pathnode"));`
     /// Key: `PathnodePath`, Java default `"pathnode"` (before the Java post-processing).
     pub pathnode_path: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Path`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.geo_engine.geoedit_path` (Java type `Path`); the unit type keeps this field from being used by mistake.
     /// Java (line 56): `GEOEDIT_PATH = Paths.get(ServerConfig.DATAPACK_ROOT.getPath() + "/" + config.getString("GeoEditPath", "saves"));`
     /// Key: `GeoEditPath`, Java default `"saves"` (before the Java post-processing).
     pub geoedit_path: (),

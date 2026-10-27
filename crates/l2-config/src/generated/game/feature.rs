@@ -108,7 +108,7 @@ pub struct FeatureConfig {
     pub ch_front2_fee: i32,
     /// Key: `AltClanHallMpBuffFree`, default false.
     pub ch_buff_free: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.feature.siege_hour_list` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 264): `SIEGE_HOUR_LIST = new ArrayList<>();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `SiegeHourList`, Java default `""` (before the Java post-processing).
