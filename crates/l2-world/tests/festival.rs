@@ -14,7 +14,8 @@ use l2_data::{
     SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
-use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::ssq::SsqStatusBody;
+use l2_protocol_game::server::{NpcHtmlMessage, SsqStatus, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::sevensigns::{
     CABAL_DAWN, CABAL_DUSK, FestivalData, FestivalSettings, PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION, SevenSignsLoad,
@@ -562,7 +563,7 @@ fn a_party_signs_up_at_the_guide() {
 
 /// A party that is too small, or whose member is too high for the range, is turned away.
 #[test]
-fn a_small_party_and_a_high_level_are_refused() {
+fn a_small_party_is_refused() {
     let mut s = Scene::new(true, rows_of(4));
     s.enter(P[0], NAMES[0], Vec::new());
     for _ in 0..2 {
@@ -849,6 +850,34 @@ fn the_winning_cabal_collects_its_share_of_the_bonus_in_the_validation_period() 
     s.bypass(P[1], "Festival 0");
     assert!(pages(&s.take(), P[1]).pop().unwrap().contains("festival_0b"));
     assert_eq!(s.world.festival_accumulated_bonus(0), 675);
+}
+
+/// Page 2 of the record of the Seven Signs lists the best party of each festival (`SSQStatus`).
+#[test]
+fn the_record_shows_the_festival_scores() {
+    let mut rows = rows_of(4);
+    let dusk1 = rows.iter_mut().find(|r| r.cabal == "dusk" && r.festival_id == 1).unwrap();
+    dusk1.score = 321;
+    dusk1.members = "Anna,Bert".into();
+    let mut s = Scene::new(true, rows);
+    s.enter(P[0], NAMES[0], Vec::new());
+    s.take();
+    s.input(P[0], ClientInput::SsqStatus { page: 2 });
+    let out = s.take();
+    let page: SsqStatus = decode(of(&out, P[0], "SSQ_STATUS")[0]);
+    let SsqStatusBody::Festivals(festivals) = page.body else {
+        panic!("{:?}", page.body)
+    };
+    assert_eq!(festivals.len(), 5);
+    // The level scores of the five festivals and the best party of the second one.
+    assert_eq!(
+        festivals.iter().map(|f| f.level_score).collect::<Vec<_>>(),
+        vec![60, 70, 100, 120, 150]
+    );
+    assert_eq!(festivals[1].dusk_score, 321);
+    assert_eq!(festivals[1].dusk_members, vec!["Anna".to_owned(), "Bert".to_owned()]);
+    // Java splits the empty names of a blank set into one empty name.
+    assert_eq!(festivals[0].dawn_members, vec![String::new()]);
 }
 
 /// The shout and the countdown of the NPC pages (`%festivalMins%`).
