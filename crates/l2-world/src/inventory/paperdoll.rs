@@ -372,8 +372,7 @@ impl World {
         if self.is_in_store_mode(id) {
             return;
         }
-        // `isHero()` is not modelled: nobody is a hero.
-        if !self.is_gm(id) && template.is_hero_item() {
+        if !self.is_gm(id) && !self.is_hero(id) && template.is_hero_item() {
             return;
         }
         let part = template.body_part;

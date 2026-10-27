@@ -14,7 +14,6 @@
 // command is in the cache ([`PlayerTalk::validate`]).
 //
 // # What is left out, with the system that brings it
-// - Olympiad state: `isHero` reads as false (M8-HERO-01).
 // - Cursed weapons (`isCursedWeaponEquipped`), `_isBusy` NPCs (nothing sets it), quest dialogs and
 //   `ON_NPC_FIRST_TALK` listeners (scripts, D-05).
 // - `GeneralConfig.HTM_CACHE = false` (lazy): the cache is always preloaded, see `l2_data::HtmCache`.
@@ -478,6 +477,10 @@ impl World {
 
     /// Java `Npc.showChatWindow(player, value)`.
     pub fn show_chat_window(&mut self, npc: ObjectId, player: ObjectId, value: i32) {
+        // `BroadcastingTower.showChatWindow` (M8-HERO-01, `olympiad/tower.rs`).
+        if self.broadcasting_tower_show_chat_window(npc, player, value) {
+            return;
+        }
         let Some((npc_id, npc_type, talkable, name)) = self.npcs.get(&npc).and_then(|n| {
             let template = self.npc_world.template(n.npc_id)?;
             Some((
@@ -589,8 +592,7 @@ impl World {
                 }
             }
             31690 | 31769..=31772 => {
-                // FOLLOW-UP(M5): `player.isHero()`.
-                if noble {
+                if self.is_hero(player) || noble {
                     format!("{OLYMPIAD}hero_main.htm")
                 } else {
                     self.npc_html_path(npc, value)?

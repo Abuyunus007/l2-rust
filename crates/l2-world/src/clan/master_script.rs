@@ -169,6 +169,10 @@ impl World {
         if self.residence_script_event(player, script_name, event) {
             return;
         }
+        // The Monument of Heroes (M8-HERO-01, `olympiad/monument.rs`).
+        if self.monument_script_event(player, script_name, event) {
+            return;
+        }
         // The wedding priest (M8-MISC-01, `wedding.rs`).
         if self.wedding_script_event(player, script_name, event) {
             return;

@@ -372,6 +372,7 @@ pub trait PlayerStore: Send + 'static {
             OlympiadRereadRequest::ClassLeaderBoard { .. } => OlympiadRereadRows::Names(Vec::new()),
             OlympiadRereadRequest::LastPoints { .. } => OlympiadRereadRows::Points(0),
             OlympiadRereadRequest::UnclaimedPasses { .. } => OlympiadRereadRows::Passes(None),
+            OlympiadRereadRequest::Heroes { .. } => OlympiadRereadRows::Heroes(Box::default()),
         };
         async move { Ok(rows) }
     }
@@ -2573,6 +2574,94 @@ fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
     }
 }
 
+/// Java `Hero.init()`, the database half (M8-HERO-01): every `heroes` row with the clan of the
+/// character, and the message, the diary and the match history of the heroes of the last period
+/// (`before` is [`l2_world::hero_fights_cutoff_ms`]). Read in both modes of `CycleDatabaseWrites`
+/// (D-53: the state is read again at start). A failed read is logged like Java's and starts empty.
+pub async fn load_heroes(pool: &Pool, before: i64) -> l2_world::HeroLoad {
+    match read_heroes(&l2_db::HeroRepository::new(pool.clone()), before, None).await {
+        Ok(load) => load,
+        Err(e) => {
+            warn!("Hero System: Could not load Heroes: {e}");
+            l2_world::HeroLoad::default()
+        }
+    }
+}
+
+/// The reads of `Hero.init` (`only` `None`) or of `loadFights` and `loadDiary` of one hero.
+async fn read_heroes(
+    repo: &l2_db::HeroRepository,
+    before: i64,
+    only: Option<i32>,
+) -> Result<l2_world::HeroLoad, l2_db::DbError> {
+    let mut rows = Vec::new();
+    let mut ids = Vec::new();
+    match only {
+        Some(char_id) => ids.push(char_id),
+        None => {
+            for row in repo.all_heroes().await? {
+                if row.played == 1 {
+                    ids.push(row.char_id);
+                }
+                rows.push(l2_world::HeroRow {
+                    char_id: row.char_id,
+                    char_name: row.char_name,
+                    class_id: row.class_id,
+                    count: row.count,
+                    played: row.played,
+                    claimed: row.claimed,
+                    clan_id: row.clan_id,
+                    ally_id: row.ally_id,
+                });
+            }
+        }
+    }
+    let mut names: std::collections::HashMap<i32, Option<String>> = std::collections::HashMap::new();
+    let mut details = Vec::with_capacity(ids.len());
+    for char_id in ids {
+        let message = repo.message(char_id).await?;
+        let diary = repo
+            .diary(char_id)
+            .await?
+            .into_iter()
+            .map(|d| l2_world::HeroDiaryRow {
+                time: d.time,
+                action: d.action,
+                param: d.param,
+            })
+            .collect();
+        let mut fights = Vec::new();
+        for f in repo.fights(char_id, before).await? {
+            // `CharInfoTable.getNameById` of both fighters.
+            for id in [f.char_one_id, f.char_two_id] {
+                if let std::collections::hash_map::Entry::Vacant(e) = names.entry(id) {
+                    let name = repo.char_name(id).await?;
+                    e.insert(name);
+                }
+            }
+            fights.push(l2_world::HeroFightRow {
+                char_one_id: f.char_one_id,
+                char_one_class: f.char_one_class,
+                char_one_name: names.get(&f.char_one_id).cloned().flatten(),
+                char_two_id: f.char_two_id,
+                char_two_class: f.char_two_class,
+                char_two_name: names.get(&f.char_two_id).cloned().flatten(),
+                winner: f.winner,
+                start: f.start,
+                time: f.time,
+                classed: f.classed,
+            });
+        }
+        details.push(l2_world::HeroDetails {
+            char_id,
+            message,
+            diary,
+            fights,
+        });
+    }
+    Ok(l2_world::HeroLoad { rows, details })
+}
+
 /// Java `AirShipManager.load()`: the rows of `airships` (M8-VEHICLE-01).
 pub async fn load_airships(pool: &Pool) -> VehicleLoad {
     match AirshipRepository::new(pool.clone()).all().await {
@@ -3544,6 +3633,7 @@ pub struct DbStore {
     bosses: BossRepository,
     cursed: CursedWeaponRepository,
     olympiad: l2_db::OlympiadRepository,
+    heroes: l2_db::HeroRepository,
     airships: AirshipRepository,
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
@@ -3561,6 +3651,44 @@ pub struct DbStore {
 }
 
 impl DbStore {
+    /// A write of the hero tables with Java's statements (M8-HERO-01).
+    async fn store_hero_write(&self, write: &l2_world::HeroWrite) -> Result<(), PersistError> {
+        use l2_world::HeroWrite;
+        let repo = &self.heroes;
+        match write {
+            HeroWrite::ResetPlayed => repo.reset_played().await?,
+            HeroWrite::DeleteItems => repo.delete_hero_items().await?,
+            HeroWrite::Insert {
+                char_id,
+                class_id,
+                count,
+                played,
+                claimed,
+            } => {
+                repo.insert_hero(*char_id, *class_id, *count, *played, *claimed)
+                    .await?
+            }
+            HeroWrite::Update {
+                char_id,
+                class_id,
+                count,
+                played,
+                claimed,
+            } => {
+                repo.update_hero(*char_id, *class_id, *count, *played, *claimed)
+                    .await?
+            }
+            HeroWrite::Diary {
+                char_id,
+                time,
+                action,
+                param,
+            } => repo.insert_diary(*char_id, *time, *action, *param).await?,
+            HeroWrite::Message { char_id, message } => repo.save_message(*char_id, message).await?,
+        }
+        Ok(())
+    }
+
     pub fn new(pool: Pool) -> Self {
         Self {
             characters: CharacterRepository::new(pool.clone()),
@@ -3595,6 +3723,7 @@ impl DbStore {
             bosses: BossRepository::new(pool.clone()),
             cursed: CursedWeaponRepository::new(pool.clone()),
             olympiad: l2_db::OlympiadRepository::new(pool.clone()),
+            heroes: l2_db::HeroRepository::new(pool.clone()),
             airships: AirshipRepository::new(pool.clone()),
             auctions: AuctionRepository::new(pool.clone()),
             friends: FriendRepository::new(pool.clone()),
@@ -5213,6 +5342,7 @@ impl PlayerStore for DbStore {
                 )
                 .await?
             }
+            OlympiadWrite::Hero(write) => self.store_hero_write(write).await?,
             OlympiadWrite::Fight(fight) => {
                 repo.insert_fight(&l2_db::OlympiadFightRow {
                     char_one_id: fight.char_one_id,
@@ -5257,6 +5387,9 @@ impl PlayerStore for DbStore {
                 repo.variable(*char_id, l2_world::olympiad::UNCLAIMED_OLYMPIAD_PASSES_VAR)
                     .await?,
             ),
+            OlympiadRereadRequest::Heroes { before, only } => {
+                OlympiadRereadRows::Heroes(Box::new(read_heroes(&self.heroes, *before, *only).await?))
+            }
         })
     }
 

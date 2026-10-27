@@ -103,11 +103,14 @@ impl World {
         // Without a clan here (also a kept row, see above): the noble's class 5.
         if !found {
             let noble = self.players.get(&id).is_some_and(|p| p.data.profile.noble);
+            let hero = self.is_hero(id);
             if let Some(s) = self.player_clan_state_mut(id) {
                 if noble {
                     s.pledge_class = 5;
                 }
-                // `isHero()`: 8, the heroes are not loaded (M8).
+                if hero {
+                    s.pledge_class = 8;
+                }
                 s.privileges = ClanPrivilegesRef::Own(0);
             }
         }

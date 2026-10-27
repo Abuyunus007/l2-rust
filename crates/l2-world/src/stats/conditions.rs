@@ -46,7 +46,6 @@ pub(crate) struct CondEnv<'a, 'w> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(usize)]
 enum NotModelled {
-    Hero,
     Category,
     CanAction,
     TargetNpcType,
@@ -115,9 +114,8 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             level >= levels[0] && level <= levels[1]
         }
         Condition::PlayerState { check, required } => player_state(*check, *required, env),
-        Condition::PlayerIsHero { .. } => {
-            a.is_player() && not_modelled(NotModelled::Hero, "player isHero (the heroes table)")
-        }
+        // `player != null && player.isHero() == _value`.
+        Condition::PlayerIsHero { value } => a.player().is_some_and(|p| p.olympiad.hero == *value),
         // `player != null && (player.getPvpFlag() > 0) == value`.
         Condition::PlayerIsPvpFlagged { value } => {
             a.is_player() && (a.world().pvp_flag_of(a.object_id()) > 0) == *value

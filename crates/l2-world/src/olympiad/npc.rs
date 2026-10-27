@@ -8,7 +8,7 @@
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ActionFailed, ExHeroList, MagicSkillUse, SkillPosition, SystemMessage, SystemMessageParam,
+    ActionFailed, MagicSkillUse, SkillPosition, SystemMessage, SystemMessageParam,
 };
 use l2_util::ObjectId;
 use tracing::warn;
@@ -58,6 +58,8 @@ pub fn register_bypass_handlers(handlers: &mut BypassHandlers) {
     for command in ["watchmatch", "arenachange"] {
         handlers.register(command, observation_handler);
     }
+    // `Observation` (the castle towers, M8-HERO-01).
+    super::tower::register_bypass_handlers(handlers);
 }
 
 /// `RequestBypassToServer`'s `_olympiad?command` branch: the arena of the observer window
@@ -178,7 +180,13 @@ fn observation_handler(
 
 impl World {
     /// A page of the olympiad folder with `%objectId%` of the NPC.
-    fn olympiad_page(&mut self, player: ObjectId, npc: ObjectId, file: &str, replace: &[(&str, String)]) {
+    pub(super) fn olympiad_page(
+        &mut self,
+        player: ObjectId,
+        npc: ObjectId,
+        file: &str,
+        replace: &[(&str, String)],
+    ) {
         let Some(mut html) = self.html_from_file(player, npc.0, &format!("{OLYMPIAD_HTML_PATH}{file}"))
         else {
             return;
@@ -376,7 +384,9 @@ impl World {
                 let count = i64::from(passes) * i64::from(self.olympiad.settings.gp_per_point);
                 self.add_item(player, item, count, true);
             }
-            OlympiadRereadAction::Ranking | OlympiadRereadAction::LastPoints => {}
+            OlympiadRereadAction::Ranking
+            | OlympiadRereadAction::LastPoints
+            | OlympiadRereadAction::Hero(_) => {}
         }
     }
 
@@ -394,6 +404,11 @@ impl World {
         result: Result<OlympiadRereadRows, ()>,
         then: OlympiadRereadThen,
     ) {
+        // The hero tables (M8-HERO-01, `hero.rs`).
+        if let OlympiadRereadAction::Hero(hero_action) = then.action {
+            self.on_hero_reread(result, then.player, then.npc, hero_action);
+            return;
+        }
         let OlympiadRereadThen { player, npc, action } = then;
         if !self.players.contains_key(&player) {
             return;
@@ -533,15 +548,9 @@ impl World {
                 }
             }
             // hero list
-            4 => {
-                // FOLLOW-UP(M8-HERO-01): `new ExHeroList()` lists `Hero.getHeroes()`.
-                self.send(player, &ExHeroList { heroes: Vec::new() });
-            }
+            4 => self.hero_send_list(player, npc),
             // Hero Certification
-            5 => {
-                // FOLLOW-UP(M8-HERO-01): `Hero.isUnclaimedHero` / `claimHero` (`hero_receive.htm`).
-                self.olympiad_page(player, npc, "hero_notreceive.htm", &[]);
-            }
+            5 => self.hero_certification(player, npc),
             _ => warn!("Olympiad System: Could not send packet for request {value}"),
         }
         Some(())

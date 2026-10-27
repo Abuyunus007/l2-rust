@@ -6,11 +6,13 @@
 //       RequestExOlympiadMatchListRefresh}.java
 // Java: network/serverpackets/ExOlympiadMatchList.java
 //
-// `Player.enterObserverMode(loc)` (the castle observation of the broadcasting towers) is not
-// here: nothing starts it yet. `ObserverReturn` still ends any observer mode the way Java does.
+// `Player.enterObserverMode(loc)` (the castle observation of the broadcasting towers, started by
+// `tower.rs`) is here too; `ObserverReturn` ends it the way Java does.
 
 use l2_data::stats::AbnormalType;
-use l2_protocol_game::server::{ExOlympiadMatchList, ExOlympiadMode, ObservationReturn, OlympiadMatchEntry};
+use l2_protocol_game::server::{
+    ExOlympiadMatchList, ExOlympiadMode, ObservationMode, ObservationReturn, OlympiadMatchEntry,
+};
 use l2_util::ObjectId;
 
 use super::game::CompetitionType;
@@ -22,7 +24,7 @@ use crate::world::World;
 const FALLING_VALIDATION_DELAY_MS: i64 = 1000;
 
 /// The client packets of the Olympiad (`ClientInput::Olympiad`).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OlympiadInput {
     /// Java `ObserverReturn`.
     ObserverReturn,
@@ -32,6 +34,8 @@ pub enum OlympiadInput {
     MatchList,
     /// Java `RequestExOlympiadMatchListRefresh`.
     MatchListRefresh,
+    /// Java `RequestWriteHeroWords` (M8-HERO-01).
+    WriteHeroWords(String),
 }
 
 impl World {
@@ -56,6 +60,7 @@ impl World {
                 let list = self.olympiad_match_list();
                 self.send(id, &list);
             }
+            OlympiadInput::WriteHeroWords(words) => self.on_write_hero_words(id, &words),
         }
     }
 
@@ -84,6 +89,41 @@ impl World {
             })
             .collect();
         ExOlympiadMatchList { games }
+    }
+
+    /// Java `enterObserverMode(loc)`: the castle observation of a broadcasting tower. The
+    /// player is paralyzed, invulnerable and invisible while the client shows `loc`.
+    pub(crate) fn enter_observer_mode(&mut self, id: ObjectId, loc: (i32, i32, i32)) {
+        // `setLastLocation()`
+        let position = self.position_of(id);
+        if let Some(state) = self.player_olympiad_mut(id)
+            && let Some(position) = position
+        {
+            state.last_loc = position;
+        }
+        // Remove Hide.
+        self.stop_skill_effects_by_abnormal(id, SkillFinishType::Removed, AbnormalType::Hide);
+        if let Some(state) = self.player_olympiad_mut(id) {
+            state.observer_mode = true;
+        }
+        self.set_target(id, None);
+        if let Some(control) = self.control_mut(id) {
+            control.paralyzed = true;
+        }
+        self.start_paralyze(id);
+        self.set_invul(id, true);
+        self.set_invisible(id, true);
+        self.send(
+            id,
+            &ObservationMode {
+                x: loc.0,
+                y: loc.1,
+                z: loc.2,
+            },
+        );
+        // `teleToLocation(loc, false)`: no random offset; a `Location` has instance 0.
+        self.tele_to_location(id, TeleportTarget::at(loc.0, loc.1, loc.2).with_instance(0));
+        self.broadcast_user_info(id);
     }
 
     /// Java `enterOlympiadObserverMode(loc, id, instanceId)`.
@@ -174,7 +214,10 @@ impl World {
         }
         let (x, y, z) = self.position_of(id).unwrap_or((x, y, z));
         self.send(id, &ObservationReturn { x, y, z });
-        // `setParalyzed(false)`: only `enterObserverMode` paralyzes, and nothing calls it yet.
+        // `setParalyzed(false)`: only `enterObserverMode` paralyzes.
+        if let Some(control) = self.control_mut(id) {
+            control.paralyzed = false;
+        }
         if !self.is_gm(id) {
             self.set_invisible(id, false);
             self.set_invul(id, false);

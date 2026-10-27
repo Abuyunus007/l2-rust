@@ -54,6 +54,7 @@ pub use game::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAt
 pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
+pub use game::{HeroDbRow, HeroDiaryRow, HeroFightRow, HeroRepository};
 pub use game::{InstanceTimeRepository, InstanceTimeRow};
 pub use game::{ItemAuctionBidRow, ItemAuctionRepository, ItemAuctionRow};
 pub use game::{

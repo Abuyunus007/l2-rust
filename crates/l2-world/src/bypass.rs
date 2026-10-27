@@ -279,7 +279,8 @@ impl World {
             // M8-OLY-01: the arena list of the observer window.
             crate::olympiad::olympiad_command_bypass(self, id, command);
         } else if command.starts_with("_match") || command.starts_with("_diary") {
-            debug!("{id}: bypass {command}: heroes are not ported yet");
+            // M8-HERO-01: the history and the diary of a hero.
+            self.hero_history_bypass(id, command);
         } else if command.starts_with("manor_menu_select") {
             self.manor_menu_select(id, command);
         } else if command.starts_with("report") {

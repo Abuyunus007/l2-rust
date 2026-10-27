@@ -641,7 +641,28 @@ fn the_period_end_with_cycle_database_writes_on() {
     assert_eq!(heroes, [(DUELIST, 0x2000_0010)]);
     // The writes in Java's order: `saveNobleData`, `saveOlympiadStatus` (the nobles again, the
     // period row), `updateMonthlyData`, then the passes of the offline nobles.
-    let writes = olympiad_writes(&s);
+    let all_writes = olympiad_writes(&s);
+    // `computeNewHeroes` (M8-HERO-01) writes the choice between the two saves.
+    let hero: Vec<&OlympiadWrite> = all_writes
+        .iter()
+        .filter(|w| matches!(w, OlympiadWrite::Hero(_)))
+        .collect();
+    assert!(matches!(
+        hero.as_slice(),
+        [
+            OlympiadWrite::Hero(HeroWrite::ResetPlayed),
+            OlympiadWrite::Hero(HeroWrite::DeleteItems),
+            OlympiadWrite::Hero(HeroWrite::Insert {
+                char_id: 0x2000_0010,
+                count: 1,
+                ..
+            })
+        ]
+    ));
+    let writes: Vec<OlympiadWrite> = all_writes
+        .into_iter()
+        .filter(|w| !matches!(w, OlympiadWrite::Hero(_)))
+        .collect();
     assert!(matches!(writes[0], OlympiadWrite::SaveNobles(ref n) if n.len() == 4));
     assert!(matches!(writes[1], OlympiadWrite::SaveNobles(_)));
     assert!(matches!(
@@ -664,7 +685,8 @@ fn the_period_end_with_cycle_database_writes_on() {
             _ => None,
         })
         .collect();
-    assert_eq!(passes, [(0x2000_0010, 110), (0x2000_0011, 45)]);
+    // 0x10 is the new (unclaimed) hero: `OlympiadHeroPoints` (200) on top (M8-HERO-01).
+    assert_eq!(passes, [(0x2000_0010, 310), (0x2000_0011, 45)]);
     // The online noble gets the variable instead of a row.
     let online = s
         .world

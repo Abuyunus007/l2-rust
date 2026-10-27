@@ -133,6 +133,34 @@ impl Cal {
     }
 }
 
+/// Java `DateTimeFormatter.ofPattern("yyyy-MM-dd HH")` (`minutes` false) or
+/// `("yyyy-MM-dd HH:mm")` of a local time (ms since the local epoch), the formats of the hero
+/// pages.
+pub(super) fn format_local_date(local_ms: i64, minutes: bool) -> String {
+    let (year, month, day) = civil_from_days(local_ms.div_euclid(DAY_MS));
+    let time_of_day = local_ms.rem_euclid(DAY_MS);
+    let hour = time_of_day / HOUR_MS;
+    if minutes {
+        format!(
+            "{year:04}-{month:02}-{day:02} {hour:02}:{:02}",
+            (time_of_day % HOUR_MS) / MINUTE_MS
+        )
+    } else {
+        format!("{year:04}-{month:02}-{day:02} {hour:02}")
+    }
+}
+
+/// `Hero.loadFights`' `from`: `Calendar.getInstance()` with `DAY_OF_MONTH` 1, `HOUR_OF_DAY` 0,
+/// `MINUTE` 0 and `MILLISECOND` 0 (D-48). The seconds stay.
+// NOTE(java-quirk): `SECOND` is not set, so the cut is the first of the month at 00:00:ss, ss
+// being the second the server loaded the hero at.
+pub fn hero_fights_cutoff_ms(now_utc_ms: i64, offset_at: &dyn Fn(i64) -> i64) -> i64 {
+    let mut cal = Cal::at(now_utc_ms, offset_at);
+    cal.set_first_of_month();
+    cal.time_of_day = (cal.time_of_day.rem_euclid(MINUTE_MS) / SECOND_MS) * SECOND_MS;
+    cal.millis(offset_at)
+}
+
 /// The `dayCounter` loops of `init()` and `setNewCompBegin()`: the days from `current_day` to the
 /// next day of `OlympiadCompetitionDays`.
 fn competition_day_counter(current_day: i32, days: &[i32]) -> i64 {
@@ -192,6 +220,11 @@ impl World {
             .settings
             .zone_offset_override_ms
             .unwrap_or_else(|| l2_util::time::local_offset_millis(utc))
+    }
+
+    /// [`hero_fights_cutoff_ms`] for the world's clock and zone.
+    pub(crate) fn hero_fights_cutoff(&self) -> i64 {
+        hero_fights_cutoff_ms(self.olympiad_now_ms(), &|t| self.olympiad_offset_at(t))
     }
 
     fn olympiad_cal_now(&self) -> Cal {
@@ -411,20 +444,14 @@ impl World {
     }
 
     /// `Hero.getInstance().isHero(objectId) || isUnclaimedHero(objectId)`.
-    // FOLLOW-UP(M8-HERO-01): the heroes are not loaded yet, so nobody is one.
-    pub(crate) fn olympiad_is_hero_or_unclaimed(&self, _char_id: i32) -> bool {
-        false
+    pub(crate) fn olympiad_is_hero_or_unclaimed(&self, char_id: i32) -> bool {
+        self.is_hero_char(char_id) || self.is_unclaimed_hero(char_id)
     }
 
-    /// `Hero.getInstance().resetData()` and `computeNewHeroes(herosToBe)`.
-    // FOLLOW-UP(M8-HERO-01): `Hero` takes the list here (and writes `heroes` per D-53).
+    /// `Hero.getInstance().resetData()` and `computeNewHeroes(herosToBe)` (`hero.rs`).
     pub fn olympiad_compute_new_heroes(&mut self, heroes: &[HeroToBe]) {
-        for hero in heroes {
-            info!(
-                "Olympiad System: hero to be {} ({}), class {}",
-                hero.char_name, hero.char_id, hero.class_id
-            );
-        }
+        self.hero_reset_data();
+        self.hero_compute_new_heroes(heroes);
     }
 
     // ------------------------------------------------------------------------------- init
@@ -920,6 +947,8 @@ impl World {
     /// Java `Shutdown`: "Olympiad System: Data saved".
     pub(crate) fn olympiad_shutdown(&mut self) {
         self.save_olympiad_status();
+        // `Hero.getInstance().shutdown()`.
+        self.hero_shutdown();
     }
 
     // ------------------------------------------------------------------------------- the nobles

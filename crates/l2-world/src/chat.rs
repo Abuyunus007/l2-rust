@@ -168,7 +168,7 @@ impl World {
             ChatType::Shout => self.chat_shout(id, &text),
             ChatType::Trade => self.chat_trade(id, &text),
             ChatType::Whisper => self.chat_whisper(id, target.as_deref(), &text),
-            ChatType::HeroVoice => self.chat_hero_voice(id),
+            ChatType::HeroVoice => self.chat_hero_voice(id, &text),
             ChatType::Party => self.chat_party(id, &text),
             ChatType::PartyRoomAll | ChatType::PartyRoomCommander => {
                 self.chat_command_channel(id, chat_type, &text)
@@ -577,17 +577,17 @@ impl World {
         }
     }
 
-    // Java: ChatHeroVoice.onChat; the heroes table is not loaded, so only a GM passes.
-    fn chat_hero_voice(&mut self, id: ObjectId) {
+    // Java: ChatHeroVoice.onChat (without the faction chat, M9).
+    fn chat_hero_voice(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
-        if self.channel_refuses(id, ChatType::HeroVoice, true) {
+        let is_gm = self.data.access_level(player.data.access_level).is_gm;
+        if !self.is_hero(id) && !is_gm {
+            self.send_message(id, "Only Heroes can enter the Hero channel.");
             return;
         }
-        let is_gm = self.data.access_level(player.data.access_level).is_gm;
-        if !is_gm {
-            self.send_message(id, "Only Heroes can enter the Hero channel.");
+        if self.channel_refuses(id, ChatType::HeroVoice, true) {
             return;
         }
         if !self.flood_allows(id, FloodKind::HeroVoice) {
@@ -597,7 +597,10 @@ impl World {
             );
             return;
         }
-        // A GM would reach the hero channel after the flood check; heroes do not exist yet.
-        debug!("hero voice of a GM is not ported yet");
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
+        let packet = self.say_packet(id, ChatType::HeroVoice, &player.data.name, text);
+        self.broadcast_say(id, &packet);
     }
 }

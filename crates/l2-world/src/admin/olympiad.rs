@@ -2,7 +2,7 @@
 //! (M8-ADMIN-07).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java
 //
-// Left out: `//sethero` and `//givehero` (M8-HERO-01).
+// `//sethero` and `//givehero` are `olympiad/hero.rs` (M8-HERO-01).
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;

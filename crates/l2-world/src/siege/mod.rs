@@ -51,7 +51,7 @@
 // - Seven Signs: `SevenSigns.getSealOwner(SEAL_STRIFE)` and the period are read through
 //   [`World::seven_signs_strife_owner`] and [`World::seven_signs_is_seal_validation`], which ask
 //   `sevensigns/` (M8-SS-01).
-// - Hero (M8): `Hero.setCastleTaken`. Scripts (D-05): the `OnCastleSiege*` events.
+// - Scripts (D-05): the `OnCastleSiege*` events.
 
 mod admin;
 mod battle;

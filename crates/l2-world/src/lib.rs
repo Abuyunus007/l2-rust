@@ -185,6 +185,10 @@ pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
 pub use objects::{Npc, ObjectEntry, ObjectKind};
 pub use olympiad::{
+    ACTION_CASTLE_TAKEN, ACTION_HERO_GAINED, ACTION_RAID_KILLED, HeroAction, HeroData, HeroDetails,
+    HeroDiaryRow, HeroFightRow, HeroLoad, HeroRow, HeroState, HeroWrite, hero_fights_cutoff_ms,
+};
+pub use olympiad::{
     CompetitionType, GameState, HeroToBe, NobleRow, NobleStats, OlympiadData, OlympiadFight, OlympiadGame,
     OlympiadInput, OlympiadLoad, OlympiadRereadAction, OlympiadRereadRequest, OlympiadRereadRows,
     OlympiadRereadThen, OlympiadSettings, OlympiadTimer, OlympiadWorld, OlympiadWrite, Participant,

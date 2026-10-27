@@ -8,7 +8,7 @@
 // - `setconfig` and `config_server`: they change the rates and other config values at runtime,
 //   which the settings of the world do not allow.
 // - `checkolympiad`, `saveolymp`, `endolympiad` are `olympiad.rs` (M8-ADMIN-07); `sethero` and
-//   `givehero` are M8-HERO-01.
+//   `givehero` are `olympiad/hero.rs` (M8-HERO-01).
 
 use l2_util::ObjectId;
 

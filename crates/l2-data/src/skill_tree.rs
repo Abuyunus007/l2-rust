@@ -131,6 +131,8 @@ pub struct SkillTrees {
     fishing: Vec<SkillLearn>,
     /// Java `_nobleSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
     noble: Vec<SkillLearn>,
+    /// Java `_heroSkillTree`, in the order Java's `ConcurrentHashMap` lists it.
+    hero: Vec<SkillLearn>,
     /// Java `_collectSkillTree` (Gracia, the collect skills Tolonis teaches), in the order Java's
     /// `ConcurrentHashMap` lists it.
     collect: Vec<SkillLearn>,
@@ -209,6 +211,8 @@ impl SkillTrees {
             fishing_order,
             noble,
             noble_order,
+            hero,
+            hero_order,
             collect,
             collect_order,
             game_master,
@@ -255,6 +259,7 @@ impl SkillTrees {
             sub_pledge: in_java_order(sub_pledge, sub_pledge_order),
             fishing: in_java_order(fishing, fishing_order),
             noble: in_java_order(noble, noble_order),
+            hero: in_java_order(hero, hero_order),
             collect: in_java_order(collect, collect_order),
             game_master: in_java_order(game_master, game_master_order),
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
@@ -334,6 +339,19 @@ impl SkillTrees {
     /// Java `getNobleSkillTree().values()`: the skills `Player.setNoble` gives and takes.
     pub fn noble_skills(&self) -> &[SkillLearn] {
         &self.noble
+    }
+
+    /// Java `getHeroSkillTree().values()`: the skills `Player.setHero` gives and takes.
+    pub fn hero_skills(&self) -> &[SkillLearn] {
+        &self.hero
+    }
+
+    /// Java `isHeroSkill(skillId, skillLevel)`: the skill (a level of -1 matches any level) is in
+    /// the hero tree.
+    pub fn is_hero_skill(&self, skill_id: i32, skill_level: i32) -> bool {
+        self.hero
+            .iter()
+            .any(|l| l.skill_id == skill_id && (skill_level == -1 || l.skill_level == skill_level))
     }
 
     /// Java `getFishingSkillTree().values()`: the fishing skills, in the order of Java's
@@ -530,6 +548,9 @@ struct Gathered {
     /// Java `_nobleSkillTree` and the keys in the order they were first put.
     noble: BTreeMap<(i32, i32), SkillLearn>,
     noble_order: Vec<(i32, i32)>,
+    /// Java `_heroSkillTree` and the keys in the order they were first put.
+    hero: BTreeMap<(i32, i32), SkillLearn>,
+    hero_order: Vec<(i32, i32)>,
     /// Java `_collectSkillTree` and the keys in the order they were first put.
     collect: BTreeMap<(i32, i32), SkillLearn>,
     collect_order: Vec<(i32, i32)>,
@@ -562,6 +583,7 @@ impl Gathered {
                     | "subPledgeSkillTree"
                     | "fishingSkillTree"
                     | "nobleSkillTree"
+                    | "heroSkillTree"
                     | "collectSkillTree"
                     | "gameMasterSkillTree"
                     | "gameMasterAuraSkillTree"
@@ -570,6 +592,7 @@ impl Gathered {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
                     "subPledgeSkillTree" => (&mut self.sub_pledge, &mut self.sub_pledge_order),
                     "nobleSkillTree" => (&mut self.noble, &mut self.noble_order),
+                    "heroSkillTree" => (&mut self.hero, &mut self.hero_order),
                     "collectSkillTree" => (&mut self.collect, &mut self.collect_order),
                     "gameMasterSkillTree" => (&mut self.game_master, &mut self.game_master_order),
                     "gameMasterAuraSkillTree" => {
@@ -1188,5 +1211,22 @@ mod tests {
         ids.sort_unstable();
         assert_eq!(ids, vec![327, 1323]);
         assert!(trees.fishing_skills().is_empty());
+    }
+
+    #[test]
+    fn the_hero_tree_is_kept() {
+        let xml = r#"<list><skillTree type="heroSkillTree">
+            <skill skillName="Heroic Miracle" skillId="395" skillLevel="1" getLevel="1" />
+            <skill skillName="Heroic Berserker" skillId="396" skillLevel="1" getLevel="1" />
+        </skillTree></list>"#;
+        let trees = SkillTrees::from_xml(xml).unwrap();
+        let mut ids: Vec<i32> = trees.hero_skills().iter().map(|l| l.skill_id).collect();
+        ids.sort_unstable();
+        assert_eq!(ids, vec![395, 396]);
+        assert!(trees.is_hero_skill(395, 1));
+        assert!(trees.is_hero_skill(396, -1));
+        assert!(!trees.is_hero_skill(395, 2));
+        assert!(!trees.is_hero_skill(1323, -1));
+        assert!(trees.noble_skills().is_empty());
     }
 }
