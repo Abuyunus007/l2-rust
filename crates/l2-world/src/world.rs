@@ -163,6 +163,9 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// Handy's Block Checker, Kratei's Cube and the Underground Coliseum (M8-GAMES-01,
+    /// `minigame/`).
+    pub(crate) minigames: crate::minigame::MinigameWorld,
 }
 
 impl World {
@@ -241,6 +244,7 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            minigames: crate::minigame::MinigameWorld::default(),
         }
     }
 
@@ -676,6 +680,7 @@ impl World {
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
+            ClientInput::Minigame(input) => self.on_minigame_input(id, input),
             ClientInput::AcquireSkillInfo {
                 id: skill_id,
                 level,
@@ -950,6 +955,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
+            TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
         }
     }
 

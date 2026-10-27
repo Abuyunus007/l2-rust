@@ -100,6 +100,10 @@ impl World {
         {
             return true;
         }
+        // `Block.isAutoAttackable` and `UCTower.isAutoAttackable` (M8-GAMES-01).
+        if let Some(attackable) = self.minigame_npc_auto_attackable(target, attacker) {
+            return attackable;
+        }
         let karma = self.players.get(&attacker).map_or(0, |p| p.data.karma);
         match self.objects.get(&target).map(|e| e.kind) {
             // The siege NPCs (towers, headquarters, the artefact, siege guards) have their own

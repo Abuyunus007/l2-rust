@@ -51,6 +51,7 @@ pub mod leftover;
 pub mod macros;
 pub mod mail;
 pub mod manor;
+pub mod minigame;
 pub mod mount;
 pub mod movement;
 pub mod multisell;
@@ -158,6 +159,10 @@ pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, Mai
 pub use manor::{
     CropProcure, ManorInput, ManorLoad, ManorMode, ManorProcureRow, ManorProductionRow, ManorSettings,
     ManorTimer, ManorWrite, SeedProduction,
+};
+pub use minigame::{
+    BlockArenaView, KrateisState, MinigameInput, MinigameLoad, MinigameSettings, MinigameTimer, MinigameWorld,
+    MinigameWrite, UC_STATE_ARENA, UC_STATE_NONE, UC_STATE_POINT, UcPartyState, UcTeamView,
 };
 pub use movement::{
     Intention, MoveData, MovementState, NpcMovement, PathRequests, object_of_requester, requester_of,

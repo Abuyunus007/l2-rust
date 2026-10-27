@@ -417,7 +417,10 @@ impl World {
         teleport_where: TeleportWhereType,
     ) -> Option<(i32, i32, i32)> {
         let karma = self.players.get(&id)?.data.karma;
-        // `player.getUCState() != UC_STATE_NONE`: the Underground Coliseum is not modelled.
+        // `player.getUCState() != UC_STATE_NONE`: the coliseum has its own way back (M8-GAMES-01).
+        if self.uc_state_of(id) != crate::minigame::UC_STATE_NONE {
+            return None;
+        }
         if let Some(location) = self.residence_tele_to_location(id, teleport_where) {
             return Some(location);
         }

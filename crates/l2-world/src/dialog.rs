@@ -415,10 +415,17 @@ impl World {
     pub fn npc_html_path(&self, npc: ObjectId, value: i32) -> Option<String> {
         let n = self.npcs.get(&npc)?;
         let template = self.npc_world.template(n.npc_id)?;
+        // `KrateisCubeManager` and `KrateisMatchManager` name their pages `<id>-0<value>.htm`
+        // (M8-GAMES-01).
+        let value_prefix = if template.is_type("KrateisCubeManager") || template.is_type("KrateisMatchManager") {
+            "-0"
+        } else {
+            "-"
+        };
         let pom = if value == 0 {
             n.npc_id.to_string()
         } else {
-            format!("{}-{value}", n.npc_id)
+            format!("{}{value_prefix}{value}", n.npc_id)
         };
         // `FortLogistics.getHtmlPath`: `logistics.htm` / `logistics-<value>.htm`.
         if template.npc_type == "FortLogistics" {

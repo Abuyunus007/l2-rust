@@ -280,6 +280,25 @@ pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_w
     }
 }
 
+/// The minigame values (M8-GAMES-01): the Block Checker keys of `General.ini`,
+/// `UndergroundColiseum.ini` and the D-53 switch (`CycleDatabaseWrites`,
+/// [`cycle_database_writes`]).
+pub fn minigame_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::MinigameSettings {
+    l2_world::MinigameSettings {
+        enable_block_checker_event: config.general.enable_block_checker_event,
+        hbce_fair_play: config.general.hbce_fair_play,
+        min_block_checker_team_members: config.effective_min_block_checker_team_members(),
+        allow_party_in_same_event: config.general.allow_party_in_same_event,
+        uc_start_time: config.underground_coliseum.uc_start_time.clone(),
+        uc_time_period: config.underground_coliseum.uc_time_period,
+        uc_allow_announce: config.underground_coliseum.uc_allow_announce,
+        uc_party_size: config.underground_coliseum.uc_party_size,
+        uc_ress_time: config.underground_coliseum.uc_ress_time,
+        cycle_database_writes,
+        clock_override_unix_ms: None,
+    }
+}
+
 /// `config/TerritoryWar.ini` (Java `TerritoryWarManager.load`'s `ConfigReader`: a missing file
 /// or key means Java's default). The badge prices of the mercenary captain are read here too
 /// (M7-TW-01).
@@ -785,6 +804,10 @@ impl Server {
         } else {
             l2_world::CursedLoad::default()
         };
+        // Java: UndergroundColiseumManager.load (`UC_START_TIME`, `UC_STOP_TIME`) and
+        // restoreBestTeams. Read always: they are only read here (D-53).
+        let minigame_settings = minigame_settings(&config, cycle_database_writes(&paths.config_dir));
+        let minigame_load = persist::load_minigames(&pool).await;
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
@@ -973,6 +996,11 @@ impl Server {
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
                     world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
+                    // Java: KrateisCubeManager, UndergroundColiseumManager (GameServer, after the
+                    // spawns and the doors) and the Block Checker queue (M8-GAMES-01).
+                    world.set_minigame_settings(minigame_settings);
+                    world.set_minigame_data(Arc::clone(&datapack.minigames));
+                    world.start_minigames(minigame_load);
                     world.set_clan_hall_settings(clan_hall_settings);
                     // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).

@@ -155,6 +155,9 @@ pub enum ClientInput {
     Contacts(crate::contacts::ContactsInput),
     /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
     Cursed(crate::cursed::CursedInput),
+    /// `RequestExCubeGameChangeTeam` and `RequestExCubeGameReadyAnswer` (M8-GAMES-01), see
+    /// `minigame/`.
+    Minigame(crate::minigame::MinigameInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
     /// client thinks it selected).
     VoteNew { target_id: i32 },
