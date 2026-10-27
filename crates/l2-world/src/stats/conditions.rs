@@ -22,7 +22,9 @@ use l2_data::item::{ArmorType, BodyPart};
 use l2_data::npc::NpcRace;
 use l2_data::stats::PlayerState;
 use l2_data::{Condition, ItemTemplate};
+use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
+use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -71,6 +73,28 @@ fn not_modelled(kind: NotModelled, what: &str) -> bool {
         );
     }
     false
+}
+
+impl crate::world::World {
+    /// Java `Condition.test(effector, effected, skill)` for a creature of the world: the
+    /// condition tests of skills and items, for callers outside the stat engine and for tests.
+    pub fn test_condition(
+        &self,
+        effector: ObjectId,
+        effected: Option<ObjectId>,
+        skill: Option<&CalcSkill>,
+        condition: &Condition,
+    ) -> bool {
+        let Some(view) = self.stats(effector) else {
+            return false;
+        };
+        let env = CondEnv {
+            actor: &view,
+            target: effected,
+            skill,
+        };
+        test(condition, &env)
+    }
 }
 
 /// Java `Condition.test(effector, effected, skill)`.
@@ -364,15 +388,42 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             level >= levels[0] && level <= levels[1]
         }),
         Condition::TargetMyPartyExceptMe { value } => {
-            // The effector is a player, the target another player of its party.
-            // FOLLOW-UP: Java also sends the effector `YOU_CANNOT_USE_THIS_ON_YOURSELF` or
-            // `S1_CANNOT_BE_USED_DUE_TO_UNSUITABLE_TERMS` from here; a condition cannot send.
-            let is_party_member = a.is_player()
-                && target(env).is_some_and(|t| {
-                    t.is_player()
-                        && t.object_id() != a.object_id()
-                        && a.world().is_in_party_with(a.object_id(), t.object_id())
-                });
+            // The effector is a player, the target another player of its party; the effector is
+            // told why not (Java sends from the condition itself).
+            let world = a.world();
+            let mut is_party_member = true;
+            match target(env) {
+                Some(t) if a.is_player() && t.is_player() => {
+                    if t.object_id() == a.object_id() {
+                        world.send(
+                            a.object_id(),
+                            &SystemMessage::new(SystemMessageId::YouCannotUseThisOnYourself),
+                        );
+                        is_party_member = false;
+                    } else if !world.is_in_party_with(a.object_id(), t.object_id()) {
+                        if let Some(skill) = env.skill {
+                            let param = world
+                                .data
+                                .stat_data()
+                                .and_then(|d| d.skills.get(skill.id, skill.level))
+                                .map_or(
+                                    SystemMessageParam::SkillName {
+                                        id: skill.id,
+                                        level: skill.level,
+                                    },
+                                    crate::effects::buff_info::skill_name_param,
+                                );
+                            world.send(
+                                a.object_id(),
+                                &SystemMessage::new(SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms)
+                                    .with(param),
+                            );
+                        }
+                        is_party_member = false;
+                    }
+                }
+                _ => is_party_member = false,
+            }
             *value == is_party_member
         }
         Condition::TargetPlayable => target(env).is_some_and(|t| t.is_player()),

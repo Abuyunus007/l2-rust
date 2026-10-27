@@ -700,6 +700,14 @@ impl Server {
         } else {
             None
         };
+        // Java: CoupleManager.getInstance (GameServer, only with AllowWedding): the couples of
+        // `mods_wedding`, read only here.
+        let wedding_settings = world_data::wedding_settings(&config);
+        let couples = if wedding_settings.allow_wedding {
+            persist::load_couples(&pool).await
+        } else {
+            Vec::new()
+        };
         // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
         // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
@@ -895,6 +903,9 @@ impl Server {
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {
                         tracing::error!("Doors, fences and static objects could not all be spawned: {e}");
                     }
+                    // Java: WalkingManager.getInstance (GameServer, before the spawns: a spawn asks
+                    // `isTargeted` and starts its route).
+                    world.set_walking_routes(Arc::clone(&datapack.routes));
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
                     // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
@@ -961,6 +972,12 @@ impl Server {
                     world.load_buy_list_stock(buy_list_stock);
                     // Java: CrestTable (after ClanTable: it clears the crests clans lost).
                     world.load_crests(crests);
+                    // Java: CoupleManager (GameServer, only with AllowWedding).
+                    let wedding_on = wedding_settings.allow_wedding;
+                    world.set_wedding_settings(wedding_settings);
+                    if wedding_on {
+                        world.load_couples(couples);
+                    }
                     // Java: FishingChampionshipManager.getInstance (GameServer, after the managers).
                     if let Some(data) = fishing_championship {
                         world.load_fishing_championship(data);

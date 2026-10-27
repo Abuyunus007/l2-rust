@@ -48,6 +48,7 @@
 // - The AI revalidate task (`ThreadPool.schedule(notifyActionArrivedRevalidate, 2000)` of a
 //   walk longer than 3 s): an attackable thinks every second anyway.
 
+use crate::zones::ZoneId;
 use l2_geo::coords::{geo_x, geo_y};
 use l2_geo::{GeoLocation, Location, PathRequest, PathResult};
 use l2_net::Encode;
@@ -1830,15 +1831,21 @@ impl World {
         })
     }
 
-    /// Java `isInsideZone(ZoneId.WATER) && !isInsideZone(ZoneId.CASTLE)`. Player zones are not
-    /// modelled yet, so no player is in water; an NPC is when it spawned in a water zone.
+    /// Java `isInsideZone(ZoneId.WATER) && !isInsideZone(ZoneId.CASTLE)`. An NPC is in water when
+    /// it spawned in a water zone.
     fn is_in_water(&self, id: ObjectId) -> bool {
+        if let Some(player) = self.players.get(&id) {
+            return player.zones.is_inside(ZoneId::Water) && !player.zones.is_inside(ZoneId::Castle);
+        }
         self.npcs.get(&id).is_some_and(|n| n.in_water)
     }
 
     /// Is there a water zone at this point (`ZoneManager.getZone(x, y, z, WaterZone.class)`)?
-    fn is_water_at(&self, _x: i32, _y: i32, _z: i32) -> bool {
-        false
+    fn is_water_at(&self, x: i32, y: i32, z: i32) -> bool {
+        self.zoning
+            .zones
+            .as_ref()
+            .is_some_and(|zones| zones.zone_at(x, y, z, "WaterZone").is_some())
     }
 
     /// Java `DoorData.checkIfDoorsBetween(...)`. M3-DOOR-01 answers it from the door table.
@@ -1946,7 +1953,7 @@ impl World {
         };
         // `isDead() || isFlying() || isFlyingMounted() || isInsideZone(WATER)`
         if player.core.cur_hp < 0.5
-            || self.is_in_water(id)
+            || player.zones.is_inside(ZoneId::Water)
             || player.transform.flying
             || self.stats(id).is_some_and(|v| v.is_flying_mounted())
         {
@@ -1967,8 +1974,8 @@ impl World {
             }
             return false;
         }
-        // TODO(M5): Java schedules the falling damage here (`Formulas.calcFallDam`,
-        // `reduceCurrentHp` after 1.5 s, `YOU_RECEIVED_S1_FALLING_DAMAGE`) once HP is modelled.
+        // The damage lands 1.5 s later (`water.rs`).
+        self.schedule_falling_damage(id, delta_z);
 
         // Prevent falling under ground.
         self.send_validate_location(id);

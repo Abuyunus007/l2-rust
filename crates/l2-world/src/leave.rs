@@ -108,6 +108,8 @@ impl World {
         // `deleteMe`: the wyvern's skill goes; `stopAllTimers` stops the feed, stores the food of
         // the mounted pet and ends the rent.
         self.mount_on_leave(id);
+        // `stopAllTimers`: `stopWaterTask()`
+        self.water_on_leave(id);
         // `deleteMe`: `stopCubics()` (the cubic ids go; `UserInfo` is sent to the leaving client).
         self.stop_cubics(id);
         // `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
@@ -138,6 +140,7 @@ impl World {
             self.sessions.remove(&session);
         }
         self.pc_cafe_on_player_leave(id);
+        self.wedding_on_player_leave(id);
         // Java: PlayerAutoSaveTaskManager.remove
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);

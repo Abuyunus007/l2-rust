@@ -416,7 +416,15 @@ impl World {
             if known == 0 {
                 skill_counter += 1;
             }
-            // FOLLOW-UP(effects): "Fix when learning toggle skills": a toggle that is on is stopped.
+            // "Fix when learning toggle skills": a toggle that is on is stopped.
+            let is_toggle = self
+                .data
+                .stat_data()
+                .and_then(|d| d.skills.get(skill_id, level))
+                .is_some_and(|skill| skill.is_toggle());
+            if is_toggle && self.is_affected_by_skill(id, skill_id) {
+                self.stop_skill_effects(id, crate::effects::SkillFinishType::Removed, skill_id);
+            }
             if !self.learn_skill(id, skill_id, level, writes) {
                 warn!("Skipping null skill {skill_id}/{level} of the tree for {id}");
                 continue;
@@ -507,8 +515,7 @@ impl World {
             return;
         };
         if npc_id == TOLONIS_NPC_ID {
-            // FOLLOW-UP: the collect skill tree (Gracia) is not loaded.
-            debug!("{player}: the collect skills of Tolonis are not ported");
+            self.show_collect_skill_list(player);
             return;
         }
 
@@ -588,6 +595,59 @@ impl World {
         }
     }
 
+    /// The Tolonis part of `Folk.showSkillList`: the collect skills (Gracia) the player may learn.
+    fn show_collect_skill_list(&mut self, player: ObjectId) {
+        let trees = self.rewards.skill_trees.clone();
+        // `SkillTreeData.getAvailableCollectSkills(player)`.
+        let mut list = AcquireSkillList::new(AcquireSkillType::Collect);
+        let mut count = 0;
+        for learn in trees.collect_skills() {
+            let known = self.known_skill_level(player, learn.skill_id);
+            let available = if known != 0 {
+                known == learn.skill_level - 1
+            } else {
+                learn.skill_level == 1
+            };
+            if available && self.skill_template_exists(learn.skill_id, learn.skill_level) {
+                count += 1;
+                list.add_skill(learn.skill_id, learn.skill_level, learn.skill_level, 0, 1);
+            }
+        }
+        // GUESS: `check_player_skill` needs a learning class; Java keeps whatever the player had.
+        // The player's own class is used when there is none.
+        if let Some(class) = self.player_class_of(player)
+            && let Some(p) = self.players.get_mut(&player)
+            && p.talk.learning_class.is_none()
+        {
+            p.talk.learning_class = Some(class);
+        }
+        if count == 0 {
+            // No more skills to learn, come back when you level.
+            let level = self.core_of(player).map_or(1, |c| c.level);
+            let all: Vec<&SkillLearn> = trees.collect_skills().iter().collect();
+            if all.is_empty() {
+                warn!("SkillTreeData: SkillTree is not defined for getMinLevelForNewSkill!");
+            }
+            let min_level = min_level_for_new_skill(&all, level);
+            if min_level > 0 {
+                self.send(
+                    player,
+                    &SystemMessage::new(
+                        SystemMessageId::YouDoNotHaveAnyFurtherSkillsToLearnComeBackWhenYouHaveReachedLevelS1,
+                    )
+                    .with(SystemMessageParam::IntNumber(min_level)),
+                );
+            } else {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::ThereAreNoOtherSkillsToLearn),
+                );
+            }
+        } else {
+            self.send(player, &list);
+        }
+    }
+
     /// `RequestAcquireSkill.showSkillList(trainer, player)`: the list again, after a failed or a
     /// successful lesson.
     fn show_skill_list_again(&mut self, player: ObjectId, trainer: ObjectId, skill_type: AcquireSkillType) {
@@ -647,11 +707,18 @@ impl World {
             self.send_plain_acquire_skill_info(player, skill_type, &learn);
             return;
         }
+        if skill_type == AcquireSkillType::Collect {
+            let Some(learn) = self.rewards.skill_trees.collect_skill(skill_id, level).cloned() else {
+                return;
+            };
+            self.send_plain_acquire_skill_info(player, skill_type, &learn);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
-        // Only the class, clan and fishing trees are loaded: `getSkillLearn` finds nothing for
-        // the other types.
+        // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
+        // nothing for the other types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkillInfo of {skill_type:?} is not ported");
             return;
@@ -816,8 +883,17 @@ impl World {
             }
             return;
         }
-        // Only the class, clan and fishing trees are loaded: `getSkillLearn` finds nothing for the
-        // other types.
+        if skill_type == AcquireSkillType::Collect {
+            let Some(learn) = self.rewards.skill_trees.collect_skill(skill_id, level).cloned() else {
+                return;
+            };
+            if self.check_player_skill(player, trainer, &learn, skill_type) {
+                self.give_skill(player, trainer, skill_id, level, skill_type);
+            }
+            return;
+        }
+        // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
+        // nothing for the other types.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkill of {skill_type:?} is not ported");
             return;

@@ -369,7 +369,7 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 | [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | in-progress |
 | [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | ready |
 | [L-05](L/L-05.md) | Item auctions | sonnet | full | none | ready |
-| [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | in-progress |
+| [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | merged |
 | [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
 | [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | ready |
 | [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | ready |
@@ -381,7 +381,7 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | in-progress |
+| [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | merged |
 | [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | ready |
 | [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | ready |
 | [M8-HERO-01](M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | ready |
@@ -391,7 +391,7 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 | [M8-VEHICLE-01](M8/M8-VEHICLE-01.md) | Boats and airships | sonnet | full | GPROTO-11 | ready |
 | [M8-CURSED-01](M8/M8-CURSED-01.md) | Cursed weapons | sonnet | full | none | ready |
 | [M8-GAMES-01](M8/M8-GAMES-01.md) | Mini games | sonnet | full | INST-01, GPROTO-11 | ready |
-| [M8-MISC-01](M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | in-progress |
+| [M8-MISC-01](M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | merged |
 | [M8-ADMIN-07](M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | ready |
 | [M8-E2E-01](M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | ready |
 | [M8-RUN-01](M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready |

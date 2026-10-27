@@ -158,6 +158,8 @@ pub enum TimerKind {
     Boss(crate::boss::BossTimer),
     /// The damage task of a `DamageZone`, see `zone_trap.rs`.
     Zone(crate::zone_trap::ZoneTimer),
+    /// The drowning task and the falling damage task of a player, see `water.rs`.
+    Water(crate::water::WaterTimer),
     /// Java `new Untransform(player)` of `//setsex` and `//setclass`, 200 ms after the
     /// transformation 105 (`admin/edit_char.rs`).
     Untransform(ObjectId),
@@ -166,6 +168,10 @@ pub enum TimerKind {
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),
+    /// The start, repeat and arrival tasks of the walking manager, see `walking.rs`.
+    Walking(crate::walking::WalkingTimer),
+    /// The `.gotolove` wait of a married player, see `wedding.rs`.
+    Wedding(crate::wedding::WeddingTimer),
 }
 
 #[derive(Debug, Default)]

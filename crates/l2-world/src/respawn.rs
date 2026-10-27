@@ -349,8 +349,9 @@ impl World {
         {
             self.decrease_count(index, id, enchant);
         }
-        // `WalkingManager.onDeath` (routes: M4-AI-01), the summoner's list (summons: M5), quest
-        // timers and script value (scripts: D-05).
+        // `WalkingManager.onDeath` (M8-MISC-01).
+        self.walking_forget_npc(id);
+        // The summoner's list (summons: M5), quest timers and script value (scripts: D-05).
         self.npcs.remove(&id);
         // The siege forgets its towers, headquarters and guards (M7-SIEGE-01).
         self.siege_forget_npc(id);

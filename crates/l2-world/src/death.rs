@@ -281,6 +281,8 @@ impl World {
         // Krateis arenas: not modelled.
         // `if (isMounted()) stopFeed()`
         self.mount_on_die(id);
+        // `stopWaterTask()`
+        self.water_on_die(id);
         if self.is_fake_death(id) {
             self.stop_fake_death(id, true);
         }

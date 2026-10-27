@@ -155,6 +155,12 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The grand and raid boss managers and the raid points (M8-BOSS-01, `boss/`).
     pub(crate) boss: crate::boss::BossWorld,
+    /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
+    pub(crate) walking: crate::walking::WalkingWorld,
+    /// The extra drops the events registered (M8-MISC-01, `rewards/event_drop.rs`).
+    pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
+    /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
+    pub(crate) wedding: crate::wedding::WeddingWorld,
 }
 
 impl World {
@@ -229,6 +235,9 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             boss: crate::boss::BossWorld::default(),
+            walking: crate::walking::WalkingWorld::default(),
+            event_drops: crate::rewards::event_drop::EventDropWorld::default(),
+            wedding: crate::wedding::WeddingWorld::default(),
         }
     }
 
@@ -869,6 +878,8 @@ impl World {
             TimerKind::Siege(timer) => self.on_siege_timer(timer),
             // Java: DamageZone.ApplyDamage
             TimerKind::Zone(timer) => self.on_zone_timer(timer),
+            // Java: WaterTask, the falling damage task of Player.isFalling
+            TimerKind::Water(timer) => self.on_water_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
@@ -885,6 +896,10 @@ impl World {
             TimerKind::Boss(timer) => self.on_boss_timer(timer),
             // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
+            // Java: WalkingManager's start, repeat and arrival tasks
+            TimerKind::Walking(timer) => self.on_walking_timer(timer),
+            // Java: Wedding.EscapeFinalizer
+            TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
         }
     }
 

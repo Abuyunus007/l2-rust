@@ -19,8 +19,8 @@
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
 // flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
 // entering it does nothing (`SiegeZone` is the siege's, `siege/zone.rs`, M7-SIEGE-01),
-// `OlympiadStadiumZone`, `WaterZone`, `BossZone`, `FishingZone`, `RespawnZone` (restart points
-// only). `SwampZone` and `DamageZone`, the castle traps, are in `zone_trap.rs` (M7-FU-03). `FlagPvPZone` flags the player (M6-DUEL-01); its
+// `OlympiadStadiumZone`, `BossZone`, `FishingZone`, `RespawnZone` (restart points
+// only). `WaterZone` is `water.rs`. `SwampZone` and `DamageZone`, the castle traps, are in `zone_trap.rs` (M7-FU-03). `FlagPvPZone` flags the player (M6-DUEL-01); its
 // `onDieInside` / `onReviveInside` hooks need zone calls from the death code, which does not
 // exist.
 //
@@ -31,7 +31,7 @@
 //   `characters.lastAccess`; the login hook is not called
 // - `isAffected`: the `affectedClassType` check (needs the class list), the instance template
 //   check (no instance worlds yet)
-// - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone, `checkWaterState`
+// - Seven Signs dungeon compass icon, `updatePvPStatus` after a siege zone
 //
 // `ClanHallZone` and `SiegableHallZone` set the `CLAN_HALL` flag and show the hall's decorations
 // (`AgitDecoInfo`, M7-RES-01, `residence/clan_hall.rs`).
@@ -94,6 +94,10 @@ pub struct ZoneSettings {
     pub jail_is_pvp: bool,
     /// `JailDisableTransaction`.
     pub jail_disable_transaction: bool,
+    /// `AllowWater`: the water zones start the breath task (`Player.revalidateZone`).
+    pub allow_water: bool,
+    /// `EnableFallingDamage` (`Formulas.calcFallDam`).
+    pub enable_falling_damage: bool,
 }
 
 /// Datapack tables and the geoengine, as handed to the world at startup.
@@ -104,6 +108,10 @@ pub(crate) struct ZoneContext {
     pub geo: Option<Arc<GeoEngine>>,
     /// The running `DamageZone` tasks by zone id (`zone_trap.rs`).
     pub damage_tasks: std::collections::HashMap<i32, crate::timer::TimerId>,
+    /// The running `WaterTask` by player (`water.rs`).
+    pub water_tasks: std::collections::HashMap<ObjectId, crate::timer::TimerId>,
+    /// The pending falling damage by player (`water.rs`).
+    pub(crate) falling: std::collections::HashMap<ObjectId, crate::water::FallingDamage>,
 }
 
 /// The zones a zone holds a creature in, as Java's `_characterList` identifies them: a zone id
@@ -275,6 +283,8 @@ enum ZoneKind {
     Damage,
     /// `BossZone` (M8-BOSS-01, `boss/zone.rs`).
     Boss,
+    /// `WaterZone` (`water.rs`).
+    Water,
     /// Loaded and found by lookups; entering does nothing in M3.
     Inert,
 }
@@ -308,6 +318,7 @@ impl ZoneKind {
             "SwampZone" => Self::Swamp,
             "DamageZone" => Self::Damage,
             "BossZone" => Self::Boss,
+            "WaterZone" => Self::Water,
             _ => Self::Inert,
         }
     }
@@ -389,6 +400,9 @@ impl World {
         }
         player.zones.last_validate = (x, y, z);
         self.revalidate_zones_in_cell(id, x, y);
+        if self.settings.zones.allow_water {
+            self.check_water_state(id);
+        }
         self.update_compass(id);
     }
 
@@ -573,6 +587,7 @@ impl World {
             ZoneKind::Swamp => self.swamp_zone_enter(id, zone),
             ZoneKind::Damage => self.damage_zone_enter(id, zone),
             ZoneKind::Boss => self.boss_zone_enter(id, zone.id),
+            ZoneKind::Water => self.water_zone_enter(id),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on enter", zone.id, zone.zone_type),
         }
     }
@@ -672,6 +687,7 @@ impl World {
             ZoneKind::Swamp => self.swamp_zone_exit(id, zone),
             ZoneKind::Damage => self.damage_zone_exit(zone),
             ZoneKind::Boss => self.boss_zone_exit(id, zone.id, true),
+            ZoneKind::Water => self.water_zone_exit(id),
             ZoneKind::Inert => debug!("zone {} ({}): nothing to do on exit", zone.id, zone.zone_type),
         }
     }
