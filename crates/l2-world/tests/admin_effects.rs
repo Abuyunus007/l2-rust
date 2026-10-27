@@ -141,10 +141,13 @@ const REGISTERED: &[&str] = &[
     "admin_pccafepoints",
     "admin_commands",
     "admin_switch_gm_buffs",
+    // M8-INST-01 (`admin/instance.rs`).
+    "admin_instancezones",
 ];
 
-/// The words of the card that stay out (M8), each answered like an unknown command.
-const LEFT_OUT: &[&str] = &["admin_instancezones"];
+/// The words of the card that stay out, each answered like an unknown command (none since
+/// `admin_instancezones` came with M8-INST-01).
+const LEFT_OUT: &[&str] = &[];
 
 fn rights() -> AdminRights {
     let mut rights = AdminRights::default();

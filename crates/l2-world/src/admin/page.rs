@@ -2,7 +2,7 @@
 //! of the datapack by its full path, and `//help` the help page.
 //!
 //! `//commands [page=N]` lists every admin command of the rights table with its description, five
-//! per page. `//instancezones` is left out (instances are not ported; M8).
+//! per page. `//instancezones` is in `admin/instance.rs` (M8-INST-01).
 // Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminHtml,AdminHelp}.java
 
 use l2_protocol_game::server::NpcHtmlMessage;

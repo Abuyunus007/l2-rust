@@ -151,6 +151,10 @@ pub enum ClientInput {
     Henna(crate::henna::HennaInput),
     /// The item auction packets (L-05): `RequestInfoItemAuction`, `RequestBidItemAuction`.
     ItemAuction(crate::item_auction::ItemAuctionInput),
+    /// The teleport bookmark packets (L-04): `RequestBookMarkSlotInfo`, `RequestSaveBookMarkSlot`, ...
+    Bookmark(crate::bookmarks::BookmarkInput),
+    /// The mail contact list packets (L-04): `RequestExShowContactList`, ...
+    Contacts(crate::contacts::ContactsInput),
     /// `RequestCursedWeaponList` and `RequestCursedWeaponLocation` (M8-CURSED-01), see `cursed/`.
     Cursed(crate::cursed::CursedInput),
     /// Java `RequestVoteNew`: recommend the selected player (`target_id` is the object id the
@@ -410,6 +414,13 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::FriendSummariesRequest`: the `characters` rows of the
+    /// friends who are not in the world (L-04, `contacts.rs`). A friend whose read failed is
+    /// missing.
+    FriendSummariesLoaded {
+        requester: l2_util::ObjectId,
+        rows: Vec<crate::contacts::FriendSummary>,
+    },
     /// The answer to `PersistCommand::Announcement(Insert)`: the id the database gave the row, or
     /// `Err` when the INSERT failed (`//announces add`, see `admin/announce.rs`).
     AnnouncementStored {
@@ -525,6 +536,9 @@ impl fmt::Debug for WorldCommand {
                 "OfflinePetRowsLoaded({owner}, {control_object_id}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::FriendSummariesLoaded { requester, rows } => {
+                write!(f, "FriendSummariesLoaded({requester}, {} rows)", rows.len())
+            }
             Self::BlockListLoaded {
                 sender,
                 owner,

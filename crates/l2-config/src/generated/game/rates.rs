@@ -110,12 +110,12 @@ pub struct RatesConfig {
     pub rate_herb_drop_chance_multiplier: f32,
     /// Key: `RaidDropChanceMultiplier`, default 1.0.
     pub rate_raid_drop_chance_multiplier: f32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Float>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.rates.rate_drop_amount_by_id` (Java type `Map<Integer, Float>`); the unit type keeps this field from being used by mistake.
     /// Java (line 171): `final String[] dropAmountMultiplier = config.getString("DropAmountMultiplierByItemId", "").split(";");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `DropAmountMultiplierByItemId`, Java default `""` (before the Java post-processing).
     pub rate_drop_amount_by_id: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Float>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.rates.rate_drop_chance_by_id` (Java type `Map<Integer, Float>`); the unit type keeps this field from being used by mistake.
     /// Java (line 171): `final String[] dropAmountMultiplier = config.getString("DropAmountMultiplierByItemId", "").split(";");`
     /// ... and 4 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `DropAmountMultiplierByItemId`, Java default `""` (before the Java post-processing).
@@ -145,7 +145,7 @@ pub struct RatesConfig {
     pub boss_drop_min_level: i32,
     /// Key: `BossDropMaxLevel`, default 999.
     pub boss_drop_max_level: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<DropHolder>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.core.rates.boss_drop_list` (Java type `List<DropHolder>`); the unit type keeps this field from being used by mistake.
     /// Java (line 237): `BOSS_DROP_LIST.clear();`
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `BossDropList`, Java default `""` (before the Java post-processing).

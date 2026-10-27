@@ -155,6 +155,8 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
     pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The instances, their script worlds and the re-entry times (M8-INST-01, `instance/`).
+    pub(crate) instances: crate::instance::InstanceManager,
     /// The cursed weapons: Zariche and Akamanah (M8-CURSED-01, `cursed/`).
     pub(crate) cursed: crate::cursed::CursedWorld,
     /// The NPC walking routes and who walks them (M8-MISC-01, `walking.rs`).
@@ -237,6 +239,7 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
@@ -427,6 +430,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::FriendSummariesLoaded { requester, rows } => {
+                self.on_friend_summaries_loaded(requester, rows)
+            }
             WorldCommand::AnnouncementStored { ticket, result } => {
                 self.on_announcement_stored(ticket, result)
             }
@@ -674,6 +680,10 @@ impl World {
             ClientInput::Henna(input) => self.on_henna_input(id, input),
             // Java: RequestInfoItemAuction, RequestBidItemAuction
             ClientInput::ItemAuction(input) => self.on_item_auction_input(id, input),
+            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, ... (L-04)
+            ClientInput::Bookmark(input) => self.on_bookmark_input(id, input),
+            // Java: RequestExShowContactList, RequestExAddContactToContactList, ... (L-04)
+            ClientInput::Contacts(input) => self.on_contacts_input(id, input),
             // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
             ClientInput::AcquireSkillInfo {
@@ -946,6 +956,8 @@ impl World {
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
             // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
             TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
+            // Java: Instance.CheckTimeUp, TimeUp and notifyDeath's eject task
+            TimerKind::Instance(timer) => self.on_instance_timer(timer),
             // Java: WalkingManager's start, repeat and arrival tasks
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer

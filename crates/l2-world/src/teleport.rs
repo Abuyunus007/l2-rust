@@ -338,25 +338,7 @@ impl World {
         self.revalidate_zone(id, true);
     }
 
-    /// Java `WorldObject.setInstanceId`: negative keeps the instance. Instance worlds are not
-    /// modelled, so only the normal world (0) can be entered; Java ignores an id with no
-    /// instance behind it the same way.
-    fn set_instance_id(&mut self, id: ObjectId, instance_id: i32) {
-        let Some(entry) = self.objects.get_mut(&id) else {
-            return;
-        };
-        if instance_id < 0 || entry.instance_id == instance_id {
-            return;
-        }
-        if instance_id == 0 {
-            entry.instance_id = 0;
-        } else {
-            debug!(
-                "{id}: instance {instance_id} does not exist; staying in instance {}",
-                entry.instance_id
-            );
-        }
-    }
+    // Java `WorldObject.setInstanceId` is `World::set_instance_id` (`instance/membership.rs`).
 
     /// Java `Appearing.runImpl`: the client has loaded the target of a teleport.
     pub(crate) fn on_appearing(&mut self, id: ObjectId) {
@@ -427,7 +409,8 @@ impl World {
     /// Java `MapRegionData.getTeleToLocation(player, where)`: the clan's hall, castle, fortress or
     /// siege headquarters (`siege/restart.rs`, M7-SIEGE-01), else outside the town for a karma
     /// player, far from a castle under siege for its participants while Dawn owns the Seal of
-    /// Strife, else the nearest town. The instance exit and the faction base are not modelled.
+    /// Strife, the exit point of the player's instance (M8-INST-01), else the nearest town. The
+    /// faction base is not modelled.
     pub fn get_tele_to_location(
         &mut self,
         id: ObjectId,
@@ -444,6 +427,14 @@ impl World {
         }
         // Respawn far from castle during siege if clan is participating.
         if let Some(location) = self.siege_strife_restart_point(id) {
+            return Some(location);
+        }
+        // Instance exit location.
+        if self.is_in_instance(id)
+            && let Some(location) = self
+                .instance(self.instance_id_of(id))
+                .and_then(|i| i.exit_location)
+        {
             return Some(location);
         }
         self.nearest_town_respawn(id)

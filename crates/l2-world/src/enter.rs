@@ -15,7 +15,8 @@
 // - zones: `ExSetCompassZoneCode` and the zone messages
 // - clans, sieges, Seven Signs (the period message), the server news HTML
 // - quests and scripts: `QuestList` is empty, the tutorial packets of `Quest.playerEnter`
-// - contacts, teleport bookmarks, the mail check, premium items (the friend list is in `friends.rs`)
+// - the mail check, premium items (the friend list is in `friends.rs`, the contacts in
+//   `contacts.rs`, the teleport bookmarks in `bookmarks.rs`)
 // - effects (`AbnormalStatusUpdate`), skill reuse (`SkillCoolTime` is empty)
 // - GM startup, birthday gifts, over-enchant protection, HWID checks, offline traders
 
@@ -23,13 +24,12 @@ use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::charscreen::paperdoll;
 use l2_protocol_game::server::enterworld::{
-    EtcStatusUpdate, ExBasicActionList, ExGetBookMarkInfoPacket, ExStorageMaxCount, ExUiSetting,
-    ExVoteSystemInfo, HennaInfo, OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList,
-    SkillListEntry, ValidateLocation,
+    EtcStatusUpdate, ExBasicActionList, ExStorageMaxCount, ExUiSetting, ExVoteSystemInfo, HennaInfo,
+    OtherShortcut, QuestList, ShortcutEntry, ShortcutInit, SkillList, SkillListEntry, ValidateLocation,
 };
 use l2_protocol_game::server::{
-    ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ExShowContactList, ItemInfo, ItemList,
-    MacroCommandEntry, MacroEntry, MacroList, SystemMessage, UserInfo,
+    ActionFailed, ExBrExtraUserInfo, ExQuestItemList, ExRotation, ItemInfo, ItemList, MacroCommandEntry,
+    MacroEntry, MacroList, SystemMessage, UserInfo,
 };
 use l2_util::ObjectId;
 use tracing::debug;
@@ -489,6 +489,9 @@ impl World {
         if let Some(info) = self.user_info(id) {
             self.send(id, &info);
         }
+        // "Restore to instanced area if enabled." (`RestorePlayerInstance`), before the spawn
+        // (M8-INST-01).
+        self.instance_on_enter_world(id);
         // "Clan related checks are here." (PledgeSkillList, the other members, the member list,
         // PledgeStatusChanged).
         self.clan_on_enter_world(id);
@@ -543,8 +546,8 @@ impl World {
             // `player.sendPacket(new ExVoteSystemInfo(player))`
             self.send_vote_system_info(id);
         }
-        // ExShowContactList: the contacts are not loaded.
-        self.send(id, &ExShowContactList::default());
+        // ExShowContactList (`contacts.rs`)
+        self.send(id, &self.contact_list_packet(id));
         if self.settings.nevit_enabled {
             // Nevit.onPlayerLogin: the hunting points and time are player variables.
             self.nevit_on_player_login(id);
@@ -663,14 +666,8 @@ impl World {
         // player.sendPacket(new ItemList(player, false)), then ItemList.runImpl: ExQuestItemList
         packets.push(item_list(data, st, now_ms).to_bytes());
         packets.push(quest_item_list(data, st, now_ms).to_bytes());
-        // ExGetBookMarkInfoPacket. NOTE: the bookmarks (`character_tpbookmark`) are not loaded.
-        packets.push(
-            ExGetBookMarkInfoPacket {
-                slot: data.profile.bookmark_slot,
-                bookmarks: Vec::new(),
-            }
-            .to_bytes(),
-        );
+        // ExGetBookMarkInfoPacket (the bookmarks of `character_tpbookmark`, `bookmarks.rs`)
+        packets.push(self.bookmark_info_packet(id).to_bytes());
         packets.push(shortcut_init(data, st).to_bytes());
         packets.push(ExBasicActionList::default_list().to_bytes());
         // HennaInfo, then QuestList: not loaded (no quest system yet).

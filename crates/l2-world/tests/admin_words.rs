@@ -172,8 +172,7 @@ const LEFT_OUT: &[&str] = &[
     // edit_char
     // change access level and repair
     // admin page flags and configuration
-    // M8: Olympiad, heroes, instances
-    "instance_spawns",
+    // M8: Olympiad, heroes (`instance_spawns` came with M8-INST-01, `tests/admin_instance.rs`)
     "checkolympiad",
     "saveolymp",
     "sethero",

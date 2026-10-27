@@ -663,10 +663,7 @@ impl Server {
         );
 
         // Java: ServerConfig.DATAPACK_ROOT, then the data loaders ("Data", "Characters", ...)
-        let datapack_root = resolve_datapack_root(
-            &paths.root,
-            &IniFile::load(paths.config_dir.join(SERVER_CONFIG_FILE))?.get_string("DatapackRoot", "."),
-        );
+        let datapack_root = resolve_datapack_root(&paths.root, &config.manual.core.server.datapack_root);
         let datapack = {
             let root = datapack_root.clone();
             let options = options_from_config(&config, &paths.config_dir);
@@ -690,6 +687,7 @@ impl Server {
         let summon_settings = world_data::summon_settings(&config);
         let pc_cafe_settings = world_data::pc_cafe_settings(&config);
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
+        let instance_settings = world_data::instance_settings(&config, &paths.config_dir);
         // Java: PetNameTable (the names of the pets that exist), read only.
         let pet_names = persist::load_pet_names(&pool).await;
         // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
@@ -742,7 +740,7 @@ impl Server {
             Vec::new()
         };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
-        let flood_settings = world_data::flood_settings(&paths.config_dir);
+        let flood_settings = world_data::flood_settings_from_config(&config);
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -829,7 +827,7 @@ impl Server {
 
         // Java: World.init, PlayerAutoSaveTaskManager. The outbox consumer is the persistence
         // task; it stores in order and reports logouts (after the store) on `ls_notices`.
-        let autosave = persist::autosave_interval(&paths.config_dir);
+        let autosave = persist::autosave_interval_from_config(&config);
         let (notices_tx, ls_notices) = mpsc::unbounded_channel();
         let left_acks = persist::LeftAcks::default();
         let world = {
@@ -929,6 +927,9 @@ impl Server {
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {
                         tracing::error!("Doors, fences and static objects could not all be spawned: {e}");
                     }
+                    // Java: InstanceManager.getInstance (the names and templates; M8-INST-01).
+                    world.set_instance_settings(instance_settings);
+                    world.set_instance_data(Arc::clone(&datapack.instances));
                     // Java: WalkingManager.getInstance (GameServer, before the spawns: a spawn asks
                     // `isTargeted` and starts its route).
                     world.set_walking_routes(Arc::clone(&datapack.routes));

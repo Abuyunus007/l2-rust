@@ -133,6 +133,14 @@ pub enum PersistCommand {
     /// A `character_hennas` row change with Java's statement (L-01, see `henna.rs`). Applied in
     /// order with the other commands.
     Henna(crate::henna::HennaWrite),
+    /// A `character_tpbookmark` row change with Java's statement (L-04, see `bookmarks.rs`).
+    Bookmark(crate::bookmarks::BookmarkWrite),
+    /// A `character_contacts` row change with Java's statement (L-04, see `contacts.rs`).
+    Contact(crate::contacts::ContactWrite),
+    /// Asks the persistence task to read the `characters` rows (name, online, class, level) of
+    /// friends who are not in the world for `FriendListExtended` (L-04). The answer comes back
+    /// as `WorldCommand::FriendSummariesLoaded`.
+    FriendSummariesRequest { requester: ObjectId, friends: Vec<i32> },
     /// A `character_friends` row change of the friend list or the block list (M6-FRIEND-01, see
     /// `friends.rs`). Applied in order with the other commands.
     Friend(crate::friends::FriendWrite),
@@ -207,6 +215,9 @@ pub enum PersistCommand {
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
+    /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
+    /// `instance/times.rs`). Applied in order with the other commands.
+    InstanceTime(crate::instance::InstanceTimeWrite),
     /// Java `RequestPetitionFeedback`: `INSERT INTO petition_feedback VALUES (?,?,?,?,?)`.
     PetitionFeedback {
         character: String,

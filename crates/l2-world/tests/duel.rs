@@ -20,7 +20,8 @@ use l2_data::{MapRegions, SkillLoadOptions, SkillTemplate, SkillTemplates, Zones
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ExDuelAskStart, ExDuelUpdateUserInfo, SocialAction, SystemMessage, SystemMessageParam, UserInfo,
+    ExDuelAskStart, ExDuelUpdateUserInfo, SocialAction, SystemMessage, SystemMessageParam,
+    TeleportToLocation, UserInfo,
 };
 use l2_world::duel::DuelState;
 use l2_world::skills::TargetContext;
@@ -893,6 +894,8 @@ fn a_duelist_cannot_cast_at_somebody_outside_the_duel() {
 /// Alpha leads Bravo (party A), Charlie leads Delta (party B).
 fn two_parties() -> Scene {
     let mut s = scene();
+    // Party duels are fought in an Olympiad arena instance (M8-INST-01).
+    install_arena(&mut s);
     s.enter(P1, "Alpha");
     s.enter(P2, "Bravo");
     s.enter(P3, "Charlie");
@@ -1022,8 +1025,30 @@ fn a_party_duel_from_the_answer_to_the_end() {
         );
     }
 
-    // 3 s, then 20 s of waiting before the "3": nothing is said, nobody is in the duel.
-    s.ticks(60 + 399);
+    // 3 s, then everybody is moved to the arena instance (M8-INST-01): the challenger's party
+    // to a spawn of the west half of the stadium, the other one to the east half.
+    s.ticks(60);
+    let moved = s.log.take();
+    let arena = s.world.instance_id_of(id(P1));
+    assert!(arena >= FIRST_DYNAMIC_INSTANCE_ID, "{arena}");
+    for who in [P1, P2, P3, P4] {
+        let own = of(&moved, who, "TELEPORT_TO_LOCATION")
+            .iter()
+            .filter(|raw| decode::<TeleportToLocation>(raw).object_id == who)
+            .count();
+        assert_eq!(own, 1, "{who:#x}");
+        assert_eq!(s.world.instance_id_of(id(who)), arena);
+        let (x, _, _) = s.world.position_of(id(who)).unwrap();
+        let west = x < X;
+        assert_eq!(west, who == P1 || who == P2, "{who:#x} at {x}");
+    }
+    // The clients load the arena.
+    for who in [P1, P2, P3, P4] {
+        s.input(who, ClientInput::Appearing);
+    }
+    s.log.take();
+    // 20 s of waiting before the "3": nothing is said, nobody is in the duel.
+    s.ticks(399);
     // (The party's own periodic packets and the character infos of the joins are not the duel.)
     let quiet = s.log.take();
     assert!(

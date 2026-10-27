@@ -721,10 +721,8 @@ impl World {
 
     /// `JailHandler.applyToPlayer(task, player)`; `task` is `None` for the login hook.
     fn jail_apply(&mut self, task: Option<&PunishmentTask>, player: ObjectId) {
-        // `player.setInstanceId(0)`.
-        if let Some(entry) = self.objects.get_mut(&player) {
-            entry.instance_id = 0;
-        }
+        // `player.setInstanceId(0)`: out of the instance's list too (M8-INST-01).
+        self.set_instance_id(player, 0);
         self.schedule_teleport(player, JAIL_IN);
 
         // Show the jail reason html message.
