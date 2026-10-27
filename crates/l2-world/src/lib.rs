@@ -80,6 +80,7 @@ pub mod transform;
 pub mod user_command;
 mod visibility;
 pub mod warehouse;
+pub mod water;
 pub mod world;
 pub mod zone_trap;
 pub mod zones;

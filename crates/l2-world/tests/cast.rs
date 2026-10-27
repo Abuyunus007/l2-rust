@@ -735,6 +735,39 @@ fn break_cast_interrupts_a_spell() {
     assert_eq!(s.mp(), mp);
 }
 
+/// `RequestTargetCanceld` with `unselect == 0` (Escape): the running cast aborts and the target
+/// stays; with nothing cast the target goes; any other value only drops the target.
+#[test]
+fn escape_aborts_the_cast_before_it_drops_the_target() {
+    let mut s = Scene::new();
+    s.select(P2);
+    s.use_skill(SHIELD, false, false);
+    s.me.take();
+    s.p2.take();
+    assert!(s.world.is_casting_now(ME));
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(1),
+        input: ClientInput::TargetCanceled { unselect: 0 },
+    });
+    assert!(!s.world.is_casting_now(ME));
+    assert_eq!(s.world.target_of(ME), Some(P2));
+    let canceled: MagicSkillCanceled = decode(of(&s.p2.take(), "MAGIC_SKILL_CANCELED")[0]);
+    assert_eq!(canceled.object_id, ME.0);
+    // The second Escape has nothing to abort: the target goes.
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(1),
+        input: ClientInput::TargetCanceled { unselect: 0 },
+    });
+    assert_eq!(s.world.target_of(ME), None);
+    // Another value only drops the target (`setTarget(null)`).
+    s.select(P2);
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(1),
+        input: ClientInput::TargetCanceled { unselect: 1 },
+    });
+    assert_eq!(s.world.target_of(ME), None);
+}
+
 /// Damage only breaks magic and static skills, and only before the interrupt time
 /// (`skillTime / 100 - 2` game ticks after the start).
 #[test]

@@ -863,6 +863,8 @@ impl World {
             TimerKind::Siege(timer) => self.on_siege_timer(timer),
             // Java: DamageZone.ApplyDamage
             TimerKind::Zone(timer) => self.on_zone_timer(timer),
+            // Java: WaterTask, the falling damage task of Player.isFalling
+            TimerKind::Water(timer) => self.on_water_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),

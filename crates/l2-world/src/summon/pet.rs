@@ -1656,6 +1656,13 @@ impl World {
     /// first action. Spawn protection, its message and the servitor restore are not modelled.
     pub(crate) fn on_action_request(&mut self, player: ObjectId) {
         self.pet_on_action_request(player);
+        // The teleport protection ends with the first action.
+        if self.is_teleport_protected(player) {
+            self.set_teleport_protection(player, false);
+            if !self.is_inside_zone(player, crate::zones::ZoneId::Peace) {
+                self.send_message(player, "Teleport spawn protection ended.");
+            }
+        }
     }
 
     // ------------------------------------------------------------------ the owner

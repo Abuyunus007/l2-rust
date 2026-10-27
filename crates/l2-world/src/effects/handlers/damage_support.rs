@@ -73,7 +73,7 @@ impl World {
     /// `Attackable.reduceCurrentHp(.., awake, isDOT, ..)` / `Player.reduceCurrentHp` down to
     /// `CreatureStatus.reduceHp` / `PlayerStatus.reduceHp`, for the cases `status.rs` does not
     /// cover: `is_dot` and `is_hp_consumption`.
-    fn reduce_hp_special(
+    pub(crate) fn reduce_hp_special(
         &mut self,
         id: ObjectId,
         amount: f64,

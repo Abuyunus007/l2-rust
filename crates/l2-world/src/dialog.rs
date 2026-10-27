@@ -241,6 +241,8 @@ pub(crate) struct TalkWorld {
     /// Java `SkillLearnData`: the classes each trainer teaches.
     pub skill_learn: Option<Arc<l2_data::SkillLearnData>>,
     pub bypass_handlers: crate::bypass::BypassHandlers,
+    /// Java `Npc._isBusy` and `_busyMessage` by NPC (set by scripts).
+    pub busy: std::collections::HashMap<ObjectId, (bool, String)>,
 }
 
 /// Java: which `entity/actor/instance/*` classes are a `Merchant`.

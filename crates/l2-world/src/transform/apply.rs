@@ -305,8 +305,20 @@ impl World {
                 put(holder.id, holder.level);
             }
         }
-        // FOLLOW-UP(flying): a flying form adds the skills of the collect skill tree the player
-        // knows (`SkillTreeData.getCollectSkillTree`); that tree is not loaded.
+        // "Add collection skills." A flying form adds the collect skills the player knows, at the
+        // level of the tree line.
+        if form.is_flying() {
+            let known: Vec<i32> = self
+                .players
+                .get(&id)
+                .map(|p| p.core.skills.iter().map(|&(skill_id, _)| skill_id).collect())
+                .unwrap_or_default();
+            for learn in self.rewards.skill_trees.collect_skills() {
+                if known.contains(&learn.skill_id) {
+                    put(learn.skill_id, learn.skill_level);
+                }
+            }
+        }
         let Some(data) = self.data.stat_data() else {
             return Vec::new();
         };
