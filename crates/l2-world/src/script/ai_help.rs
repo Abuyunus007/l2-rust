@@ -16,6 +16,49 @@ use crate::script::ScriptNpc;
 /// Java `Player.getExpertiseLevel()` reads this skill.
 const EXPERTISE_SKILL: i32 = 239;
 
+/// Java `Npc.getVariables()` (`NpcVariables`) and `Npc.getScriptValue()` for the scripts that
+/// keep a few flags and counters on a monster: a script's [`ScriptCtx::state`] holds one of
+/// these, keyed by the NPC's object id (a script holds no state of its own, D-10).
+// NOTE(java-quirk): Java's variables live in the `Npc` object, which a respawn of the same spawn
+// reuses, so they survive a respawn there; here they belong to the object id, which a respawn
+// keeps too (`respawn.rs`). Entries of NPCs that are gone for good (minions, summoned bosses) are
+// dropped by [`ScriptCtx::clear_npc_vars`] where a script knows it.
+#[derive(Debug, Default)]
+pub struct NpcVars(std::collections::HashMap<ObjectId, std::collections::HashMap<&'static str, i64>>);
+
+impl NpcVars {
+    fn get(&self, npc: ScriptNpc, key: &'static str) -> i64 {
+        self.0
+            .get(&npc.object_id)
+            .and_then(|v| v.get(key))
+            .copied()
+            .unwrap_or(0)
+    }
+
+    fn set(&mut self, npc: ScriptNpc, key: &'static str, value: i64) {
+        self.0.entry(npc.object_id).or_default().insert(key, value);
+    }
+}
+
+/// The key of Java `Npc.getScriptValue()` in [`NpcVars`].
+const SCRIPT_VALUE: &str = "@scriptValue";
+
+impl crate::world::World {
+    /// The value of an NPC variable of a script whose state is an [`NpcVars`] (0 when unset):
+    /// for tests and admin views. Flags read 0 or 1; the script value has the key
+    /// `"@scriptValue"`.
+    pub fn script_npc_var(&self, script: &str, npc: ObjectId, key: &str) -> i64 {
+        self.scripts
+            .by_name(script)
+            .and_then(|id| self.scripts.script_state.get(&id))
+            .and_then(|state| state.downcast_ref::<NpcVars>())
+            .and_then(|vars| vars.0.get(&npc))
+            .and_then(|vars| vars.get(key))
+            .copied()
+            .unwrap_or(0)
+    }
+}
+
 impl ScriptCtx<'_> {
     /// The `Feature.ini` points the scripts read (`FeatureConfig.BLOODOATH_POINTS`, ...).
     pub fn script_settings(&self) -> &super::ScriptSettings {
@@ -125,6 +168,87 @@ impl ScriptCtx<'_> {
         if clan_id != 0 {
             self.world_mut().add_reputation_score(clan_id, value);
         }
+    }
+
+    /// Java `npc.getVariables().getBoolean(key, false)` (the state of the script must be an
+    /// [`NpcVars`]).
+    pub fn npc_flag(&mut self, npc: ScriptNpc, key: &'static str) -> bool {
+        self.state::<NpcVars>().get(npc, key) != 0
+    }
+
+    /// Java `npc.getVariables().set(key, value)` for a boolean.
+    pub fn set_npc_flag(&mut self, npc: ScriptNpc, key: &'static str, value: bool) {
+        self.state::<NpcVars>().set(npc, key, i64::from(value));
+    }
+
+    /// Java `npc.getVariables().getInt(key)`.
+    pub fn npc_int(&mut self, npc: ScriptNpc, key: &'static str) -> i32 {
+        i32::try_from(self.state::<NpcVars>().get(npc, key)).unwrap_or(0)
+    }
+
+    /// Java `npc.getVariables().set(key, value)` for an int.
+    pub fn set_npc_int(&mut self, npc: ScriptNpc, key: &'static str, value: i32) {
+        self.state::<NpcVars>().set(npc, key, i64::from(value));
+    }
+
+    /// Java `npc.isScriptValue(value)`.
+    pub fn is_script_value(&mut self, npc: ScriptNpc, value: i32) -> bool {
+        self.state::<NpcVars>().get(npc, SCRIPT_VALUE) == i64::from(value)
+    }
+
+    /// Java `npc.setScriptValue(value)`.
+    pub fn set_script_value(&mut self, npc: ScriptNpc, value: i32) {
+        self.state::<NpcVars>().set(npc, SCRIPT_VALUE, i64::from(value));
+    }
+
+    /// Forgets the variables of an NPC that is gone.
+    pub fn clear_npc_vars(&mut self, npc: ScriptNpc) {
+        self.state::<NpcVars>().0.remove(&npc.object_id);
+    }
+
+    /// Java `LocationUtil.calculateDistance(npc, npc.getSpawn(), false, false)`: the flat distance
+    /// to the spawn point; 0 for an NPC without a spawn (Java throws).
+    pub fn npc_distance_from_spawn(&self, npc: ScriptNpc) -> f64 {
+        // An NPC made by `addSpawn` or an admin command has no entry in the spawn list here.
+        if self.world().npc(npc.object_id).is_none_or(|n| n.spawn.is_none()) {
+            return 0.0;
+        }
+        let (Some((sx, sy, _)), Some((x, y, _))) = (
+            self.npc_spawn_point(npc),
+            self.world().position_of(npc.object_id),
+        ) else {
+            return 0.0;
+        };
+        let (dx, dy) = (f64::from(x - sx), f64::from(y - sy));
+        (dx * dx + dy * dy).sqrt()
+    }
+
+    /// Java `npc.asAttackable().getMostHated()`.
+    pub fn most_hated(&mut self, npc: ScriptNpc) -> Option<ObjectId> {
+        self.world_mut().aggro_most_hated(npc.object_id)
+    }
+
+    /// Java `npc.asAttackable().stopHating(target)`: the hate goes to 0.
+    pub fn stop_hating(&mut self, npc: ScriptNpc, target: ObjectId) {
+        if let Some(state) = self.world_mut().combat.creatures.get_mut(&npc.object_id) {
+            for info in &mut state.aggro {
+                if info.attacker == target {
+                    info.hate = 0;
+                }
+            }
+        }
+    }
+
+    /// Java `npc.getAI().setIntentionAttack(target)`.
+    pub fn set_intention_attack(&mut self, npc: ScriptNpc, target: ObjectId) {
+        self.world_mut().set_intention_attack(npc.object_id, target);
+    }
+
+    /// Java `npc.setTarget(target)` + `npc.doCast(skill)`: [`ScriptCtx::cast_skill`] for a target
+    /// that may be none.
+    pub fn cast_skill_at(&mut self, npc: ScriptNpc, target: Option<ObjectId>, skill: SkillKey) {
+        self.world_mut().set_npc_target(npc.object_id, target);
+        self.world_mut().do_cast(npc.object_id, skill);
     }
 
     /// Java `npc.getCurrentHp()`.
