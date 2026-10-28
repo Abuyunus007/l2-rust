@@ -50,7 +50,7 @@ impl World {
             warn!("Could not spawn NPC #{npc_id}; error: no such template");
             return None;
         };
-        let index = self.add_runtime_spawn(l2_data::spawn::NpcSpawn {
+        let index = self.alloc_script_spawn(l2_data::spawn::NpcSpawn {
             npc_id,
             amount: 1,
             location: l2_data::Location { x, y, z },
@@ -89,5 +89,57 @@ impl World {
             self.schedule_script_despawn(npc, despawn_delay_ms);
         }
         Some(npc)
+    }
+
+    /// A slot for the spawn of `addSpawn`: a freed one when there is one, else a new one.
+    fn alloc_script_spawn(&mut self, spawn: l2_data::spawn::NpcSpawn) -> usize {
+        while let Some(index) = self.scripts.free_spawns.pop() {
+            if let Some(slot) = self
+                .death
+                .runtime_spawns
+                .get_mut(index.wrapping_sub(crate::respawn::RUNTIME_SPAWN_BASE))
+            {
+                *slot = spawn;
+                return index;
+            }
+        }
+        self.add_runtime_spawn(spawn)
+    }
+
+    /// Java lets the garbage collector take the `Spawn` of `addSpawn` once its NPC is gone. Here
+    /// the slot goes back to the free list when the spawn is a script's, does not respawn and
+    /// has no NPC left (S-API-03). The slot stays in the table with no units until it is reused.
+    pub(crate) fn script_free_spawn(&mut self, index: usize) {
+        let Some(spawn) = self.spawn_def(index) else {
+            return;
+        };
+        if index < crate::respawn::RUNTIME_SPAWN_BASE || spawn.source != "script" || spawn.respawn_enabled {
+            return;
+        }
+        if self
+            .death
+            .spawns
+            .get(&index)
+            .is_some_and(|rt| rt.current_count > 0 || rt.do_respawn || rt.scheduled_count > 0)
+        {
+            return;
+        }
+        self.death.spawns.remove(&index);
+        self.instances.spawns.remove(&index);
+        if let Some(slot) = self
+            .death
+            .runtime_spawns
+            .get_mut(index - crate::respawn::RUNTIME_SPAWN_BASE)
+        {
+            slot.amount = 0;
+        }
+        if !self.scripts.free_spawns.contains(&index) {
+            self.scripts.free_spawns.push(index);
+        }
+    }
+
+    /// The number of runtime spawn slots (tests).
+    pub fn runtime_spawn_slots(&self) -> usize {
+        self.death.runtime_spawns.len()
     }
 }

@@ -311,6 +311,8 @@ impl World {
                 .map_or_else(|| "?".to_owned(), |s| format!("{s:?}"));
             warn!("{session} sent not handled RequestBypassToServer: [{command}]");
         }
+        // Java: `ON_PLAYER_BYPASS` for the script listeners of the player (S-API-03).
+        self.script_on_player_bypass(id, command);
     }
 
     /// The `npc_` branch: `npc_<objectId>_<command for the npc>`.

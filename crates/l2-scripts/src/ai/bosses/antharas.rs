@@ -10,9 +10,7 @@
 // boss only from an alive row (a dead row still waits for its respawn time), and `CLEAR_STATUS`
 // reads the row again and brings Antharas back only when the row says alive.
 //
-// Not modelled by the engine (the Java lines are ported, they do nothing yet): the skill of a hit
-// in `on_attack` is always `None` (so the hate is always `damage * 1000`), `unload` (D-16: no
-// reload).
+// Not ported: `unload` (D-16: no reload).
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{Earthquake, ExShowScreenMessage, PlaySound, SocialAction, SpecialCamera};

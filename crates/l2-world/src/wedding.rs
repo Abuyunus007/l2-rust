@@ -22,8 +22,8 @@
 // - The voiced commands are the `ChatGeneral` dispatch for text that starts with `.`
 //   ([`World::wedding_voiced_command`]); the general voiced command registry is a script
 //   concern (D-05), only the three wedding commands exist.
-// - The priest is built in like `ClanMaster` and `ManorManager`: `Script Wedding <event>` goes to
-//   [`World::wedding_script_event`], the first click to [`World::wedding_first_talk`].
+// - The priest (NPC 50007) is the `Wedding` script of the engine (S-API-02); the `wedding_*` methods
+//   at the end are the steps it takes.
 // - `.gotolove` waits for its timer on the wheel (the Java `EscapeFinalizer`), and takes the
 //   cast slot like `forceIsCasting` does, so a hit or a movement order aborts it.
 //
@@ -37,27 +37,21 @@ use l2_data::ClassId;
 use l2_data::skill::AbnormalVisualEffect;
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ActionFailed, ConfirmDlg, MagicSkillUse, NpcHtmlMessage, SetupGauge, SkillPosition, SystemMessageParam,
+    ConfirmDlg, MagicSkillUse, NpcHtmlMessage, SetupGauge, SkillPosition, SystemMessageParam,
 };
 use l2_util::ObjectId;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
-use crate::dialog::INTERACTION_DISTANCE;
 use crate::effects::SkillKey;
 use crate::punishments::format_duration;
-use crate::target::distance_2d;
 use crate::teleport::TeleportTarget;
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::World;
 use crate::zones::ZoneId;
 use l2_protocol_game::server::charscreen::paperdoll;
 
-/// `Wedding.MANAGER_ID`: the wedding priest.
-pub const WEDDING_MANAGER_ID: i32 = 50007;
 /// `Wedding.FORMAL_WEAR`: the item the chest slot must hold.
 const FORMAL_WEAR: i32 = 6408;
-/// The script folder below `data/scripts` (`Quest.getPath()`).
-const WEDDING_PATH: &str = "custom/events/Wedding";
 /// The wedding march, cast on both partners (`MagicSkillUse(player, player, 2230, 1, 1, 0)`).
 const WEDDING_MARCH: i32 = 2230;
 /// `CommonSkill.LARGE_FIREWORK`.
@@ -802,219 +796,64 @@ impl World {
         self.tele_to_location(player, TeleportTarget::at(x, y, z));
     }
 
-    // ------------------------------------------------------------------ the priest
+    // ------------------------------------------------------------------ the priest (script API)
+    //
+    // The priest NPC (50007) is the `Wedding` script of the engine (S-API-02,
+    // `l2-scripts/src/custom/events/wedding.rs`). It decides; these are the steps it takes on the
+    // player flags and the couple, each one a line of Java's `Wedding.onEvent`.
 
-    /// `Quest.getHtm(player, fileName)` of the `Wedding` script.
-    fn wedding_html(&self, player: ObjectId, file: &str) -> String {
-        self.get_htm(player, &format!("data/scripts/{WEDDING_PATH}/{file}"))
-            .unwrap_or_default()
+    /// Java `WeddingConfig.WEDDING_PRICE`.
+    pub fn wedding_price(&self) -> i32 {
+        self.wedding.settings.wedding_price
     }
 
-    /// `Wedding.sendHtml(player, fileName, regex, replacement)`: the page goes to `player` and is
-    /// returned.
-    fn wedding_send_html(&mut self, player: ObjectId, file: &str, replace: Option<(&str, &str)>) -> String {
-        let mut html = self.wedding_html(player, file);
-        if let Some((from, to)) = replace {
-            html = html.replace(from, to);
-        }
-        if let Some(message) = NpcHtmlMessage::new(0, &html) {
+    /// Java `Wedding.isWearingFormalWear(player)`: without `WeddingFormalWear` always true, else
+    /// the chest slot holds the formal wear (6408).
+    pub fn wedding_is_wearing_formal_wear(&self, player: ObjectId) -> bool {
+        self.is_wearing_formal_wear(player)
+    }
+
+    /// Java `player.setMarryRequest(value)`.
+    pub fn wedding_set_marry_request(&mut self, player: ObjectId, value: bool) {
+        self.wedding_mut(player).marry_request = value;
+    }
+
+    /// Java `player.setMarryAccepted(value)`.
+    pub fn wedding_set_marry_accepted(&mut self, player: ObjectId, value: bool) {
+        self.wedding_mut(player).marry_accepted = value;
+    }
+
+    /// Java `player.setMarried(value)`.
+    pub fn wedding_set_married(&mut self, player: ObjectId, value: bool) {
+        self.wedding_mut(player).married = value;
+    }
+
+    /// Java `CoupleManager.getInstance().getCouple(coupleId).marry()`.
+    pub fn wedding_marry_couple(&mut self, couple_id: i32) {
+        self.marry_couple(couple_id);
+    }
+
+    /// Java `player.sendPacket(new NpcHtmlMessage(html))`: a page without an NPC.
+    pub fn wedding_send_page(&mut self, player: ObjectId, html: &str) {
+        if let Some(message) = NpcHtmlMessage::new(0, html) {
             self.send_html(player, &message);
         }
-        html
     }
 
-    /// Whether the NPC is the wedding priest.
-    pub(crate) fn is_wedding_manager(&self, npc: ObjectId) -> bool {
-        self.npcs
-            .get(&npc)
-            .is_some_and(|n| n.npc_id == WEDDING_MANAGER_ID)
-    }
-
-    /// Java `Wedding.onFirstTalk`, then `Quest.showResult`. `true` when the NPC is the priest.
-    pub(crate) fn wedding_first_talk(&mut self, npc: ObjectId, player: ObjectId, start: bool) -> bool {
-        if !self.is_wedding_manager(npc) {
-            return false;
-        }
-        if start {
-            // `addStartNpc`: `ON_NPC_QUEST_START` makes the NPC the quest NPC of the player.
-            if let Some(p) = self.players.get_mut(&player) {
-                p.talk.last_quest_npc_object = npc.0;
-            }
-        }
-        let html = self
-            .wedding_html(player, "Start.html")
-            .replace("%fee%", &self.wedding.settings.wedding_price.to_string());
-        self.wedding_show_result(player, npc, &html);
-        true
-    }
-
-    /// Java `Player.processScriptEvent("Wedding", event)`. `true` when the script name is ours.
-    pub(crate) fn wedding_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) -> bool {
-        if script_name != "Wedding" {
-            return false;
-        }
-        if event.is_empty() {
-            return true;
-        }
-        let Some(talk) = self.players.get(&player).map(|p| &p.talk) else {
-            return true;
-        };
-        let (folk, quest_npc) = (talk.last_folk_npc, talk.last_quest_npc_object);
-        let in_range = |world: &Self, npc: ObjectId| match (world.position_of(player), world.position_of(npc))
-        {
-            (Some(me), Some(pos)) => distance_2d(me, pos) < f64::from(INTERACTION_DISTANCE),
-            _ => false,
-        };
-        let npc = match folk.filter(|n| self.npcs.contains_key(n)) {
-            Some(target) if in_range(self, target) => target,
-            _ if quest_npc > 0 => match self
-                .find_object(ObjectId(quest_npc))
-                .filter(|o| self.npcs.contains_key(o))
-            {
-                Some(npc) if in_range(self, npc) => npc,
-                _ => return true,
-            },
-            _ => return true,
-        };
-        if let Some(result) = self.wedding_on_event(player, event) {
-            self.wedding_show_result(player, npc, &result);
-        }
-        true
-    }
-
-    /// Java `Quest.showResult(player, res, npc)` of the `Wedding` script.
-    fn wedding_show_result(&mut self, player: ObjectId, npc: ObjectId, res: &str) {
-        if res.is_empty() {
-            return;
-        }
-        if res.ends_with(".htm") || res.ends_with(".html") {
-            let content = self.wedding_html(player, res);
-            if content.is_empty() {
-                debug!("{player}: page {res} of Wedding not found.");
-            } else {
-                self.wedding_send_npc_html(player, npc, &content);
-            }
-        } else if res.starts_with("<html") {
-            self.wedding_send_npc_html(player, npc, res);
-        } else {
-            self.send_message(player, res);
+    /// The wedding march: `player.broadcastPacket(new MagicSkillUse(player, player, 2230, 1, 1, 0))`.
+    pub fn wedding_march(&mut self, player: ObjectId) {
+        if let Some(packet) = self.wedding_skill_use(player, WEDDING_MARCH, 1, 1) {
+            self.broadcast_creature_packet(player, &packet);
         }
     }
 
-    /// `showHtmlFile`'s send: `%objectId%` and `%playername%` replaced, then `ActionFailed`.
-    fn wedding_send_npc_html(&mut self, player: ObjectId, npc: ObjectId, content: &str) {
-        let name = self.wedding_name(player);
-        let html = content
-            .replace("%objectId%", &npc.0.to_string())
-            .replace("%playername%", &name);
-        if let Some(message) = NpcHtmlMessage::new(npc.0, &html) {
-            self.send_html(player, &message);
-        }
-        self.send(player, &ActionFailed);
+    /// The fireworks: `player.doCast(CommonSkill.LARGE_FIREWORK.getSkill())`.
+    pub fn wedding_fireworks(&mut self, player: ObjectId) {
+        self.do_cast(player, LARGE_FIREWORK);
     }
 
-    /// Java `Wedding.onEvent(event, npc, player)`.
-    fn wedding_on_event(&mut self, player: ObjectId, event: &str) -> Option<String> {
-        let state = self.wedding_of(player);
-        if state.partner_id == 0 {
-            return Some("NoPartner.html".to_owned());
-        }
-        let partner = ObjectId(state.partner_id);
-        if !self.players.contains_key(&partner) {
-            return Some("NotFound.html".to_owned());
-        }
-        if state.married {
-            return Some("Already.html".to_owned());
-        }
-        if state.marry_accepted {
-            return Some("WaitForPartner.html".to_owned());
-        }
-
-        // NOTE(java-quirk): whatever the click was (accept or decline), the first one of the
-        // player who was asked only clears the requests and shows the question again.
-        if state.marry_request {
-            if !self.is_wearing_formal_wear(player) || !self.is_wearing_formal_wear(partner) {
-                return Some(self.wedding_send_html(partner, "NoFormal.html", None));
-            }
-            self.wedding_mut(player).marry_request = false;
-            self.wedding_mut(partner).marry_request = false;
-            let name = self.wedding_name(partner);
-            return Some(self.wedding_html(player, "Ask.html").replace("%player%", &name));
-        }
-
-        match event {
-            "ask" => {
-                if !self.is_wearing_formal_wear(player) || !self.is_wearing_formal_wear(partner) {
-                    Some(self.wedding_send_html(partner, "NoFormal.html", None))
-                } else {
-                    self.wedding_mut(player).marry_accepted = true;
-                    self.wedding_mut(partner).marry_request = true;
-
-                    let me = self.wedding_name(player);
-                    self.wedding_send_html(partner, "Ask.html", Some(("%player%", &me)));
-                    let other = self.wedding_name(partner);
-                    Some(
-                        self.wedding_html(player, "Requested.html")
-                            .replace("%player%", &other),
-                    )
-                }
-            }
-            "accept" => {
-                let price = i64::from(self.wedding.settings.wedding_price);
-                if !self.is_wearing_formal_wear(player) || !self.is_wearing_formal_wear(partner) {
-                    Some(self.wedding_send_html(partner, "NoFormal.html", None))
-                } else if self.adena_of(player) < price || self.adena_of(partner) < price {
-                    let fee = price.to_string();
-                    Some(self.wedding_send_html(partner, "Adena.html", Some(("%fee%", &fee))))
-                } else {
-                    self.reduce_adena(player, price, true);
-                    self.reduce_adena(partner, price, true);
-
-                    // Accept the wedding request.
-                    self.wedding_mut(player).marry_accepted = true;
-                    self.marry_couple(state.couple_id);
-
-                    // Messages to the couple.
-                    self.send_message(player, "Congratulations you are married!");
-                    let me = self.wedding_mut(player);
-                    me.married = true;
-                    me.marry_request = false;
-                    self.send_message(partner, "Congratulations you are married!");
-                    let other = self.wedding_mut(partner);
-                    other.married = true;
-                    other.marry_request = false;
-
-                    // Wedding march.
-                    for id in [player, partner] {
-                        if let Some(packet) = self.wedding_skill_use(id, WEDDING_MARCH, 1, 1) {
-                            self.broadcast_creature_packet(id, &packet);
-                        }
-                    }
-
-                    // Fireworks.
-                    self.do_cast(player, LARGE_FIREWORK);
-                    self.do_cast(partner, LARGE_FIREWORK);
-
-                    let text = format!(
-                        "Congratulations to {} and {}! They have been married.",
-                        self.wedding_name(player),
-                        self.wedding_name(partner)
-                    );
-                    self.broadcast_announcement(&text, false);
-                    Some(self.wedding_send_html(partner, "Accepted.html", None))
-                }
-            }
-            "decline" => {
-                for id in [player, partner] {
-                    let s = self.wedding_mut(id);
-                    s.marry_request = false;
-                    s.marry_accepted = false;
-                }
-                self.send_message(player, "You declined your partner's marriage request.");
-                self.send_message(partner, "Your partner declined your marriage request.");
-                Some(self.wedding_send_html(partner, "Declined.html", None))
-            }
-            _ => None,
-        }
+    /// Java `World.broadcastToAllOnlinePlayers(text)`.
+    pub fn wedding_announce(&mut self, text: &str) {
+        self.broadcast_announcement(text, false);
     }
 }

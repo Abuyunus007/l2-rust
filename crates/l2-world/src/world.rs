@@ -543,6 +543,8 @@ impl World {
         self.update_vehicles();
         // Java: AttackableThinkTaskManager.
         self.think_attackables();
+        // Java: CreatureSeeTaskManager (S-API-03).
+        self.update_seen_creatures();
         // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
         if self.tick % 2 == 0 {
             self.update_game_clock();
@@ -569,6 +571,8 @@ impl World {
             // Java also adds or removes the Dark Elves' Shadow Sense skill here (with a system
             // message): skills and their effects are M5.
             self.set_night(night);
+            // Java: `ON_DAY_NIGHT_CHANGE` (S-API-03).
+            self.script_on_day_night_change(night);
         }
     }
 

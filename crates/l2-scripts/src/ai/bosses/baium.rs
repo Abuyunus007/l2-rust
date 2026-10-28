@@ -12,9 +12,7 @@
 // boss only from an alive row (a dead row still waits for its respawn time), and `CLEAR_STATUS`
 // reads the row again and brings the statue back only when the row says alive.
 //
-// Not modelled by the engine (the Java lines are ported, they do nothing yet): `onCreatureSee`
-// is never fired (`CreatureSeeTaskManager`), the skill of a hit in `on_attack` is always `None`
-// (so the hate is always `damage * 1000`), `isSummonSpawn` of the archangels, `unload` (D-16).
+// Not modelled: `isSummonSpawn` of the archangels (the spawn animation), `unload` (D-16).
 
 use std::collections::HashMap;
 
