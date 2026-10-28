@@ -73,6 +73,7 @@ pub mod q00109_in_search_of_the_nest;
 pub mod q00110_to_the_primeval_isle;
 pub mod q00113_status_of_the_beacon_tower;
 pub mod q00116_beyond_the_hills_of_winter;
+pub mod q00117_the_ocean_of_distant_stars;
 pub mod q00119_last_imperial_prince;
 pub mod q00112_walk_of_fate;
 pub mod q00121_pavel_the_giant;
@@ -160,6 +161,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00110_to_the_primeval_isle::Q00110ToThePrimevalIsle);
     r.add(q00113_status_of_the_beacon_tower::Q00113StatusOfTheBeaconTower);
     r.add(q00116_beyond_the_hills_of_winter::Q00116BeyondTheHillsOfWinter);
+    r.add(q00117_the_ocean_of_distant_stars::Q00117TheOceanOfDistantStars);
     r.add(q00119_last_imperial_prince::Q00119LastImperialPrince);
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
