@@ -242,6 +242,18 @@ impl World {
         Some((to.x, to.y, to.z))
     }
 
+    /// Java `npc.getFort().getOwnerClan().getId()`; 0 without a fortress or an owner.
+    pub fn npc_fort_owner_clan_id(&self, npc: ObjectId) -> i32 {
+        self.npc_fort(npc)
+            .and_then(|f| self.fort(f))
+            .map_or(0, |f| f.owner_id)
+    }
+
+    /// Java `player.getAllActiveQuests().size()`.
+    pub fn active_quest_count(&self, player: ObjectId) -> usize {
+        self.all_active_quests(player).len()
+    }
+
     /// Java `Creature.setMortal(value)`.
     pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
         self.npc_extra_mut(id).immortal = !value;
