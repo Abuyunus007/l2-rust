@@ -4,6 +4,7 @@
 pub mod ai;
 pub mod data;
 pub mod engine;
+pub mod instances;
 
 use l2_world::ScriptRegistry;
 
@@ -11,6 +12,7 @@ use l2_world::ScriptRegistry;
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(engine::HellboundEngine);
     ai::register(r);
+    instances::register(r);
 }
 
 /// Helpers of the Hellbound script tests.

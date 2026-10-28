@@ -184,6 +184,48 @@ impl World {
         self.schedule_script_despawn(npc, delay_ms);
     }
 
+    /// Java `creature.stopSkillEffects(SkillFinishType.SILENT, skillId)`.
+    pub fn script_stop_skill_effects_silent(&mut self, owner: ObjectId, skill_id: i32) {
+        self.stop_skill_effects(owner, crate::effects::SkillFinishType::Silent, skill_id);
+    }
+
+    /// Java `npc.getBusyMessage()`: empty when none was set.
+    pub fn script_npc_busy_message(&self, npc: ObjectId) -> String {
+        self.talk
+            .busy
+            .get(&npc)
+            .map(|(_, message)| message.clone())
+            .unwrap_or_default()
+    }
+
+    /// Java `npc.broadcastSay(chatType, npcStringId, radius)`: `NpcSay` to the players within
+    /// `range` of the NPC.
+    pub fn script_broadcast_npc_say_in_range(
+        &self,
+        npc: ObjectId,
+        chat: l2_protocol_game::server::ChatType,
+        npc_string: l2_protocol_game::NpcStringId,
+        range: i32,
+    ) {
+        let Some(npc_id) = self.npc(npc).map(|n| n.npc_id) else {
+            return;
+        };
+        let packet = l2_protocol_game::server::NpcSay {
+            object_id: npc.0,
+            text_type: chat.client_id(),
+            npc_id: self.npc_world.template(npc_id).map_or(npc_id, |t| t.display_id),
+            npc_string: npc_string.id(),
+            text: String::new(),
+            parameters: Vec::new(),
+        };
+        self.broadcast_packet_in_range(npc, &packet, range);
+    }
+
+    /// Java `player.isGM()` for the closures of `enter_instance`, which get a `World`.
+    pub fn script_is_gm(&self, player: ObjectId) -> bool {
+        self.is_gm(player)
+    }
+
     /// Java `Monster.getLeader()`: the master of a minion.
     pub fn script_leader_of(&self, npc: ObjectId) -> Option<ObjectId> {
         self.leader_of(npc)
