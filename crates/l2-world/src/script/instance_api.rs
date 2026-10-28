@@ -26,6 +26,54 @@ impl World {
         self.heading_of(id)
     }
 
+    /// Java `object.isSpawned()` (in the world and not decayed).
+    pub fn is_object_spawned(&self, id: ObjectId) -> bool {
+        self.objects.get(&id).is_some_and(|e| e.spawned)
+    }
+
+    /// Java `SkillData.getSkill(id, level).getHitTime()` (a level above the highest gives the
+    /// highest); 0 for an unknown skill.
+    pub fn skill_hit_time(&self, skill_id: i32, level: i32) -> i32 {
+        let Some(skills) = self.data.stat_data().map(|d| &d.skills) else {
+            return 0;
+        };
+        skills
+            .get(skill_id, level)
+            .or_else(|| {
+                let max = skills.max_level(skill_id);
+                (max > 0 && level > max)
+                    .then(|| skills.get(skill_id, max))
+                    .flatten()
+            })
+            .map_or(0, |s| s.hit_time)
+    }
+
+    /// Java `npc.getAI().notifyActionAggression(target, aggro)`.
+    pub fn npc_notify_aggression(&mut self, npc: ObjectId, target: ObjectId, aggro: i64) {
+        self.notify_action_aggression(npc, target, aggro);
+    }
+
+    /// Java `creature.getAI().setIntentionIdle()`.
+    pub fn script_set_intention_idle(&mut self, id: ObjectId) {
+        self.set_intention_idle(id);
+    }
+
+    /// Java `npc.getSpawn().getHeading()`.
+    pub fn npc_spawn_heading(&self, npc: ObjectId) -> Option<i32> {
+        let spawn = self.npcs.get(&npc)?.spawn?;
+        self.spawn_def(spawn).map(|s| s.heading)
+    }
+
+    /// Java `InstanceWorld.getNpc(templateId)`: the first NPC of the instance with that template
+    /// (the lowest object id; Java's list is in the order the NPCs entered).
+    pub fn instance_npc_by_template(&self, instance_id: i32, template_id: i32) -> Option<ObjectId> {
+        self.instance(instance_id)?
+            .npcs
+            .keys()
+            .copied()
+            .find(|n| self.npcs.get(n).is_some_and(|npc| npc.npc_id == template_id))
+    }
+
     /// Java `Attackable.clearAggroList()`.
     pub fn clear_aggro_list(&mut self, npc: ObjectId) {
         self.aggro_clear(npc);
