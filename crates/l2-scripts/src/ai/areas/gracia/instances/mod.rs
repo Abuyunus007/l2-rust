@@ -7,6 +7,7 @@ pub mod hall_of_suffering;
 pub mod hall_of_suffering_attack;
 pub mod hall_of_suffering_defence;
 pub mod heart_infinity_attack;
+pub mod heart_infinity_defence;
 pub mod secret_area;
 pub mod seed_of_destruction;
 
@@ -19,6 +20,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(hall_of_suffering_attack::HallOfSufferingAttack);
     r.add(hall_of_suffering_defence::HallOfSufferingDefence);
     r.add(heart_infinity_attack::HeartInfinityAttack);
+    r.add(heart_infinity_defence::HeartInfinityDefence);
     r.add(secret_area::SecretArea);
     seed_of_destruction::register(r);
 }
