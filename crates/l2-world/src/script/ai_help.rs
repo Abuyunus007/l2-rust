@@ -40,9 +40,6 @@ impl NpcVars {
     }
 }
 
-/// The key of Java `Npc.getScriptValue()` in [`NpcVars`].
-const SCRIPT_VALUE: &str = "@scriptValue";
-
 impl crate::world::World {
     /// `true` once a script called `setCanReturnToSpawnPoint(false)` on the NPC (tests).
     pub fn npc_cannot_return_to_spawn_point(&self, npc: ObjectId) -> bool {
@@ -75,11 +72,6 @@ impl crate::world::World {
 }
 
 impl ScriptCtx<'_> {
-    /// The `Feature.ini` points the scripts read (`FeatureConfig.BLOODOATH_POINTS`, ...).
-    pub fn script_settings(&self) -> &super::ScriptSettings {
-        &self.world().scripts.settings
-    }
-
     /// `player.sendPacket(SystemMessageId)`.
     pub fn send_system_message(&mut self, player: ObjectId, id: SystemMessageId) {
         self.world().send(player, &SystemMessage::new(id));
@@ -208,16 +200,6 @@ impl ScriptCtx<'_> {
         self.state::<NpcVars>().set(npc, key, i64::from(value));
     }
 
-    /// Java `npc.isScriptValue(value)`.
-    pub fn is_script_value(&mut self, npc: ScriptNpc, value: i32) -> bool {
-        self.state::<NpcVars>().get(npc, SCRIPT_VALUE) == i64::from(value)
-    }
-
-    /// Java `npc.setScriptValue(value)`.
-    pub fn set_script_value(&mut self, npc: ScriptNpc, value: i32) {
-        self.state::<NpcVars>().set(npc, SCRIPT_VALUE, i64::from(value));
-    }
-
     /// Forgets the variables of an NPC that is gone.
     pub fn clear_npc_vars(&mut self, npc: ScriptNpc) {
         self.state::<NpcVars>().0.remove(&npc.object_id);
@@ -286,11 +268,6 @@ impl ScriptCtx<'_> {
     pub fn npc_position(&self, npc: ScriptNpc) -> Option<(i32, i32, i32, i32)> {
         let (x, y, z) = self.world().position_of(npc.object_id)?;
         Some((x, y, z, self.world().heading_of(npc.object_id)))
-    }
-
-    /// Java `npc.isDead()`.
-    pub fn is_dead(&self, creature: ObjectId) -> bool {
-        self.world().is_dead(creature)
     }
 
     /// Java `npc.teleToLocation(x, y, z)`.
@@ -432,11 +409,6 @@ impl ScriptCtx<'_> {
         let (bx, by, bz) = self.world().position_of(b)?;
         let (dx, dy, dz) = (f64::from(ax - bx), f64::from(ay - by), f64::from(az - bz));
         Some((dx * dx + dy * dy + dz * dz).sqrt())
-    }
-
-    /// Java `npc.deleteMe()`.
-    pub fn delete_npc(&mut self, npc: ScriptNpc) {
-        self.world_mut().delete_npc(npc.object_id);
     }
 
     /// Java `Quest.addSkillCastDesire(npc, target, skill, desire)`.
