@@ -44,6 +44,16 @@ impl NpcVars {
 const SCRIPT_VALUE: &str = "@scriptValue";
 
 impl crate::world::World {
+    /// `true` once a script called `setCanReturnToSpawnPoint(false)` on the NPC (tests).
+    pub fn npc_cannot_return_to_spawn_point(&self, npc: ObjectId) -> bool {
+        self.npc_world.no_return_to_spawn.contains(&npc)
+    }
+
+    /// `true` once a script called `setRandomWalking(false)` on the NPC (tests).
+    pub fn npc_random_walking_forbidden(&self, npc: ObjectId) -> bool {
+        self.npc_world.random_walk_off.contains(&npc)
+    }
+
     /// The value of an NPC variable of a script whose state is an [`NpcVars`] (0 when unset):
     /// for tests and admin views. Flags read 0 or 1; the script value has the key
     /// `"@scriptValue"`.
@@ -283,6 +293,50 @@ impl ScriptCtx<'_> {
             .tele_to_location(npc.object_id, crate::teleport::TeleportTarget::at(x, y, z));
     }
 
+    /// Java `npc.setRandomWalking(value)`: only `false` is kept (the template decides again at
+    /// the next spawn, as `Npc.onSpawn` does, which the script then sets again).
+    pub fn set_random_walking(&mut self, npc: ScriptNpc, value: bool) {
+        let off = &mut self.world_mut().npc_world.random_walk_off;
+        if value {
+            off.remove(&npc.object_id);
+        } else {
+            off.insert(npc.object_id);
+        }
+    }
+
+    /// Java `npc.asAttackable().setCanReturnToSpawnPoint(value)`.
+    pub fn set_can_return_to_spawn_point(&mut self, npc: ScriptNpc, value: bool) {
+        let set = &mut self.world_mut().npc_world.no_return_to_spawn;
+        if value {
+            set.remove(&npc.object_id);
+        } else {
+            set.insert(npc.object_id);
+        }
+    }
+
+    /// Java `npc.setImmobilized(value)`.
+    pub fn set_immobilized(&mut self, npc: ScriptNpc, value: bool) {
+        self.world_mut().set_immobilized(npc.object_id, value);
+    }
+
+    /// Java `creature.isCursedWeaponEquipped()`.
+    pub fn is_cursed_weapon_equipped(&self, player: ObjectId) -> bool {
+        self.world().is_cursed_weapon_equipped(player)
+    }
+
+    /// Java `owner.getSummon()`: the servitor or pet of a player.
+    pub fn summon_of(&self, owner: ObjectId) -> Option<ObjectId> {
+        self.world().summon_of(owner)
+    }
+
+    /// Java `a.calculateDistance3D(b)`.
+    pub fn distance_3d(&self, a: ObjectId, b: ObjectId) -> Option<f64> {
+        let (ax, ay, az) = self.world().position_of(a)?;
+        let (bx, by, bz) = self.world().position_of(b)?;
+        let (dx, dy, dz) = (f64::from(ax - bx), f64::from(ay - by), f64::from(az - bz));
+        Some((dx * dx + dy * dy + dz * dz).sqrt())
+    }
+
     /// Java `npc.deleteMe()`.
     pub fn delete_npc(&mut self, npc: ScriptNpc) {
         self.world_mut().delete_npc(npc.object_id);
@@ -343,6 +397,11 @@ impl ScriptCtx<'_> {
     /// Java `GeoEngine.getInstance().getHeight(x, y, z)`.
     pub fn geo_height(&self, x: i32, y: i32, z: i32) -> i32 {
         self.world().geo_height(x, y, z)
+    }
+
+    /// Java `Rnd.nextDouble()`: `[0, 1)`.
+    pub fn next_double(&mut self) -> f64 {
+        crate::formulas::rng::Rnd::next_double(self.world_mut().rng())
     }
 
     /// Java `creature.isInCombat()`.

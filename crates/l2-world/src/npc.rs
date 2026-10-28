@@ -250,6 +250,10 @@ pub(crate) struct NpcWorld {
     /// (`//spawn_misc`). A territory ward is always one, by its type, see
     /// [`World::is_core_ai_disabled`].
     pub(crate) core_ai_disabled: HashSet<ObjectId>,
+    /// NPCs a script called `setRandomWalking(false)` on (S-AI-05, `script/ai_help.rs`).
+    pub(crate) random_walk_off: HashSet<ObjectId>,
+    /// NPCs a script called `setCanReturnToSpawnPoint(false)` on (S-AI-05).
+    pub(crate) no_return_to_spawn: HashSet<ObjectId>,
 }
 
 impl NpcWorld {

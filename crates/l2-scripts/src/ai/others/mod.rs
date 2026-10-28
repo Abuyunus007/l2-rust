@@ -4,6 +4,7 @@
 //! same order (Java's load order is the folder listing).
 
 pub mod abercrombie;
+pub mod altars_of_sacrifice;
 pub mod arena_manager;
 pub mod asamah;
 pub mod asher;
@@ -17,8 +18,10 @@ pub mod delusion_teleport;
 pub mod dorian;
 pub mod dust_rider;
 pub mod emerald_horn;
+pub mod fairy_trees;
 pub mod fame_manager;
 pub mod gatekeeper_spirit;
+pub mod gordon;
 pub mod hunting_grounds_teleport;
 pub mod kier;
 pub mod muscle_bomber;
@@ -28,6 +31,7 @@ use l2_world::ScriptRegistry;
 /// Registers every script of the folder.
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(abercrombie::Abercrombie);
+    r.add(altars_of_sacrifice::AltarsOfSacrifice);
     r.add(arena_manager::ArenaManager);
     r.add(asamah::Asamah);
     r.add(asher::Asher);
@@ -41,8 +45,10 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(dorian::Dorian);
     r.add(dust_rider::DustRider);
     r.add(emerald_horn::EmeraldHorn);
+    r.add(fairy_trees::FairyTrees);
     r.add(fame_manager::FameManager);
     r.add(gatekeeper_spirit::GatekeeperSpirit);
+    r.add(gordon::Gordon);
     r.add(hunting_grounds_teleport::HuntingGroundsTeleport);
     r.add(kier::Kier);
     r.add(muscle_bomber::MuscleBomber);
