@@ -36,6 +36,7 @@ pub mod events;
 #[cfg(test)]
 mod events_tests;
 pub mod globals;
+mod gracia_api;
 mod instance_api;
 pub mod link;
 mod movie;
