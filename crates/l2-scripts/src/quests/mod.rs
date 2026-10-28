@@ -53,6 +53,7 @@ pub mod q00147_path_to_becoming_an_elite_mercenary;
 pub mod q00148_path_to_becoming_an_exalted_mercenary;
 pub mod q00153_deliver_goods;
 pub mod q00155_find_sir_windawood;
+pub mod q00157_recover_smuggled_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00164_blood_fiend;
 pub mod q00182_new_recruits;
@@ -115,6 +116,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00148_path_to_becoming_an_exalted_mercenary::Q00148PathToBecomingAnExaltedMercenary);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00155_find_sir_windawood::Q00155FindSirWindawood);
+    r.add(q00157_recover_smuggled_goods::Q00157RecoverSmuggledGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00164_blood_fiend::Q00164BloodFiend);
     r.add(q00182_new_recruits::Q00182NewRecruits);
