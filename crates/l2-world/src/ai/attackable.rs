@@ -315,9 +315,17 @@ impl World {
     }
 
     /// Java `Attackable.isRaidMinion()`: set on spawn for a minion of a raid boss.
-    pub(crate) fn is_raid_minion(&self, id: ObjectId) -> bool {
-        self.leader_of(id)
+    pub fn is_raid_minion(&self, id: ObjectId) -> bool {
+        self.npcs.get(&id).is_some_and(|n| n.raid_minion)
+            || self.leader_of(id)
             .is_some_and(|leader| self.npcs.get(&leader).is_some_and(|n| n.class.is_raid()))
+    }
+
+    /// Java `Attackable.setIsRaidMinion(value)` (a script marks the monsters it spawned).
+    pub fn set_is_raid_minion(&mut self, id: ObjectId, value: bool) {
+        if let Some(n) = self.npcs.get_mut(&id) {
+            n.raid_minion = value;
+        }
     }
 
     /// Java `Attackable.isRaid()`: a raid boss, and a raid boss's minions (`setIsRaidMinion`).

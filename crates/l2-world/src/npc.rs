@@ -975,6 +975,7 @@ impl World {
             spawn,
             leader,
             decayed: false,
+            raid_minion: false,
             in_water,
             right_hand: template.rhand_id,
             left_hand: template.lhand_id,
