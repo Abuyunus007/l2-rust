@@ -119,7 +119,8 @@ mod tests {
     use crate::testing::{ScriptTest, item, names_to, pages_to};
 
     const NPCS: &str = r#"<npc id="31225" type="Folk" level="70" name="Arena Manager"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/others/ArenaManager";
 
     fn setup(adena: i64) -> (ScriptTest, ObjectId) {
@@ -169,7 +170,10 @@ mod tests {
         for event in ["CPrecovery", "HPrecovery", "Buff"] {
             t.bypass(1, &format!("Script ArenaManager {event}"));
             let out = t.take();
-            assert!(names_to(&out, 1).contains(&"SYSTEM_MESSAGE".to_owned()), "{event}");
+            assert!(
+                names_to(&out, 1).contains(&"SYSTEM_MESSAGE".to_owned()),
+                "{event}"
+            );
         }
         assert_eq!(t.count(1, ADENA_ID), 999);
         assert_eq!(t.world.quest_timer_count(), 0);

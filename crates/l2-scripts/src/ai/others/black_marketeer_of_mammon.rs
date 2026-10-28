@@ -49,7 +49,14 @@ impl Script for BlackMarketeerOfMammon {
     }
 
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, _talker: ObjectId) -> Option<String> {
-        Some(if exchange_available(ctx) { "31092-01.html" } else { "31092-02.html" }.to_owned())
+        Some(
+            if exchange_available(ctx) {
+                "31092-01.html"
+            } else {
+                "31092-02.html"
+            }
+            .to_owned(),
+        )
     }
 
     fn on_event(
@@ -123,7 +130,8 @@ mod tests {
         pages.push((
             // The Black Marketeer is a built-in `Folk` of the Seven Signs pages; its first page links here.
             "data/html/seven_signs/blkmrkt_1.htm".to_owned(),
-            r#"<html><body>npc <a action="bypass Script BlackMarketeerOfMammon">Talk</a></body></html>"#.to_owned(),
+            r#"<html><body>npc <a action="bypass Script BlackMarketeerOfMammon">Talk</a></body></html>"#
+                .to_owned(),
         ));
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);

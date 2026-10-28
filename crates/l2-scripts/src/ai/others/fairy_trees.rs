@@ -38,12 +38,19 @@ impl Script for FairyTrees {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, is_summon: bool) {
-        if ctx.distance_3d(npc.object_id, killer).is_some_and(|d| d <= MIN_DISTANCE) {
+        if ctx
+            .distance_3d(npc.object_id, killer)
+            .is_some_and(|d| d <= MIN_DISTANCE)
+        {
             for _ in 0..20 {
                 let guardian = ctx.add_spawn_at(SOUL_GUARDIAN, npc.object_id, false, 30000);
                 // NOTE(java-quirk): a summon's kill with the summon gone gives Java a null attacker
                 // and a NullPointerException that ends the loop.
-                let attacker = if is_summon { ctx.summon_of(killer) } else { Some(killer) };
+                let attacker = if is_summon {
+                    ctx.summon_of(killer)
+                } else {
+                    Some(killer)
+                };
                 let (Some(guardian), Some(attacker)) = (guardian, attacker) else {
                     return;
                 };

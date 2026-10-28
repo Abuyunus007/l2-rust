@@ -36,7 +36,14 @@ impl Script for HuntingGroundsTeleport {
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
         let player_cabal = ctx.ss_player_cabal(player);
         if player_cabal == CABAL_NULL {
-            return Some(if DAWN_NPCS.contains(&npc.id) { "dawn_tele-no.htm" } else { "dusk_tele-no.htm" }.to_owned());
+            return Some(
+                if DAWN_NPCS.contains(&npc.id) {
+                    "dawn_tele-no.htm"
+                } else {
+                    "dusk_tele-no.htm"
+                }
+                .to_owned(),
+            );
         }
 
         let mut htmltext = "";

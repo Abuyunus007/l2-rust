@@ -47,7 +47,8 @@ mod tests {
     use crate::testing::{ScriptTest, item, pages_to};
 
     const NPCS: &str = r#"<npc id="31555" type="Folk" level="70" name="Abercrombie"/>"#;
-    const ITEMS: &str = r#"<item id="7246" type="EtcItem" name="Recruit"/><item id="7247" type="EtcItem" name="Soldier"/>"#;
+    const ITEMS: &str =
+        r#"<item id="7246" type="EtcItem" name="Recruit"/><item id="7247" type="EtcItem" name="Soldier"/>"#;
     const DIR: &str = "data/scripts/ai/others/Abercrombie";
 
     #[test]
@@ -56,7 +57,12 @@ mod tests {
         registry.add(Abercrombie);
         let pages: Vec<(String, String)> = ["31555-01", "31555-07", "31555-09"]
             .iter()
-            .map(|n| (format!("{DIR}/{n}.html"), format!("<html><body>{n}</body></html>")))
+            .map(|n| {
+                (
+                    format!("{DIR}/{n}.html"),
+                    format!("<html><body>{n}</body></html>"),
+                )
+            })
             .collect();
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
@@ -66,12 +72,18 @@ mod tests {
         t.enter(
             3,
             60,
-            vec![item(901, GOLDEN_RAM_BADGE_RECRUIT, 1), item(902, GOLDEN_RAM_BADGE_SOLDIER, 1)],
+            vec![
+                item(901, GOLDEN_RAM_BADGE_RECRUIT, 1),
+                item(902, GOLDEN_RAM_BADGE_SOLDIER, 1),
+            ],
         );
         t.take();
         for (player, page) in [(1, "31555-09"), (2, "31555-01"), (3, "31555-07")] {
             t.talk(player, npc);
-            assert!(pages_to(&t.take(), player).pop().unwrap().contains(page), "{page}");
+            assert!(
+                pages_to(&t.take(), player).pop().unwrap().contains(page),
+                "{page}"
+            );
         }
     }
 }

@@ -23,7 +23,14 @@ const KNIGHTS_EPAULETTE_COUNT: i64 = 100; // Knight's Epaulette Count
 pub struct ClanTrader;
 
 /// Java `ClanTrader.giveReputation(npc, player, count, itemId, itemCount)`.
-fn give_reputation(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, count: i32, item_id: i32, item_count: i64) -> String {
+fn give_reputation(
+    ctx: &mut ScriptCtx<'_>,
+    npc: ScriptNpc,
+    player: ObjectId,
+    count: i32,
+    item_id: i32,
+    item_count: i64,
+) -> String {
     if ctx.get_quest_items_count(player, item_id) >= item_count {
         ctx.take_items(player, item_id, item_count);
         ctx.add_clan_reputation_score(player, count);
@@ -80,13 +87,27 @@ impl Script for ClanTrader {
                 let (player, npc) = (player?, npc?);
                 ctx.clan_level_of(player)?;
                 let points = ctx.script_settings().bloodalliance_points;
-                htmltext = Some(give_reputation(ctx, npc, player, points, BLOOD_ALLIANCE, BLOOD_ALLIANCE_COUNT));
+                htmltext = Some(give_reputation(
+                    ctx,
+                    npc,
+                    player,
+                    points,
+                    BLOOD_ALLIANCE,
+                    BLOOD_ALLIANCE_COUNT,
+                ));
             }
             "exchange-bo" => {
                 let (player, npc) = (player?, npc?);
                 ctx.clan_level_of(player)?;
                 let points = ctx.script_settings().bloodoath_points;
-                htmltext = Some(give_reputation(ctx, npc, player, points, BLOOD_OATH, BLOOD_OATH_COUNT));
+                htmltext = Some(give_reputation(
+                    ctx,
+                    npc,
+                    player,
+                    points,
+                    BLOOD_OATH,
+                    BLOOD_OATH_COUNT,
+                ));
             }
             "exchange-ke" => {
                 let (player, npc) = (player?, npc?);
@@ -133,7 +154,9 @@ mod tests {
         for n in ["", "-01", "-02", "-03", "-04", "-05"] {
             pages.push((
                 format!("{DIR}/32024{n}.html"),
-                format!("<html><body>page{n}<a action=\"bypass -h Script ClanTrader repinfo\">r</a></body></html>"),
+                format!(
+                    "<html><body>page{n}<a action=\"bypass -h Script ClanTrader repinfo\">r</a></body></html>"
+                ),
             ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();

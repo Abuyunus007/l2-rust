@@ -4,7 +4,6 @@
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
-
 const EVT_SPAWN_BOSS_PRE: &str = "spawnboss";
 const EVT_DESPAWN_BOSS_PRE: &str = "despawnboss";
 const BOSS_MIN_SPAWN_RADIUS: i32 = 250;
@@ -21,41 +20,95 @@ struct Altar {
 
 const ALTARS: [Altar; 18] = [
     // TalkingIsland
-    Altar { middle_point: (-92481, 244812, -3505), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (-92481, 244812, -3505),
+        boss_npc_ids: &[],
+    },
     // Elven
-    Altar { middle_point: (40241, 53974, -3262), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (40241, 53974, -3262),
+        boss_npc_ids: &[],
+    },
     // DarkElven
-    Altar { middle_point: (1851, 21697, -3305), boss_npc_ids: &[25750] },
+    Altar {
+        middle_point: (1851, 21697, -3305),
+        boss_npc_ids: &[25750],
+    },
     // Dwarven
-    Altar { middle_point: (130133, -180968, -3271), boss_npc_ids: &[25800, 25782] },
+    Altar {
+        middle_point: (130133, -180968, -3271),
+        boss_npc_ids: &[25800, 25782],
+    },
     // Orc
-    Altar { middle_point: (-45329, -118327, -166), boss_npc_ids: &[25779] },
+    Altar {
+        middle_point: (-45329, -118327, -166),
+        boss_npc_ids: &[25779],
+    },
     // Kamael
-    Altar { middle_point: (-104031, 45059, -1417), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (-104031, 45059, -1417),
+        boss_npc_ids: &[],
+    },
     // Oren
-    Altar { middle_point: (80188, 47037, -3109), boss_npc_ids: &[25767, 25770] },
+    Altar {
+        middle_point: (80188, 47037, -3109),
+        boss_npc_ids: &[25767, 25770],
+    },
     // Gludin
-    Altar { middle_point: (-86620, 151536, -3018), boss_npc_ids: &[25735, 25738, 25741] },
+    Altar {
+        middle_point: (-86620, 151536, -3018),
+        boss_npc_ids: &[25735, 25738, 25741],
+    },
     // Gludio
-    Altar { middle_point: (-14152, 120674, -2935), boss_npc_ids: &[25744, 25747] },
+    Altar {
+        middle_point: (-14152, 120674, -2935),
+        boss_npc_ids: &[25744, 25747],
+    },
     // Dion
-    Altar { middle_point: (16715, 148320, -3210), boss_npc_ids: &[25753, 25754, 25757] },
+    Altar {
+        middle_point: (16715, 148320, -3210),
+        boss_npc_ids: &[25753, 25754, 25757],
+    },
     // Heine
-    Altar { middle_point: (120123, 219164, -3319), boss_npc_ids: &[25773, 25776] },
+    Altar {
+        middle_point: (120123, 219164, -3319),
+        boss_npc_ids: &[25773, 25776],
+    },
     // Giran
-    Altar { middle_point: (80712, 142538, -3487), boss_npc_ids: &[25760, 25763, 25766] },
+    Altar {
+        middle_point: (80712, 142538, -3487),
+        boss_npc_ids: &[25760, 25763, 25766],
+    },
     // Aden
-    Altar { middle_point: (152720, 24714, -2083), boss_npc_ids: &[25793, 25794, 25797] },
+    Altar {
+        middle_point: (152720, 24714, -2083),
+        boss_npc_ids: &[25793, 25794, 25797],
+    },
     // Rune
-    Altar { middle_point: (28010, -49175, -1278), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (28010, -49175, -1278),
+        boss_npc_ids: &[],
+    },
     // Goddard
-    Altar { middle_point: (152274, -57706, -3383), boss_npc_ids: &[25787, 25790] },
+    Altar {
+        middle_point: (152274, -57706, -3383),
+        boss_npc_ids: &[25787, 25790],
+    },
     // Schutgart
-    Altar { middle_point: (82066, -139418, -2220), boss_npc_ids: &[25784] },
+    Altar {
+        middle_point: (82066, -139418, -2220),
+        boss_npc_ids: &[25784],
+    },
     // Primeval
-    Altar { middle_point: (10998, -24068, -3603), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (10998, -24068, -3603),
+        boss_npc_ids: &[],
+    },
     // Dragon Valley
-    Altar { middle_point: (69592, 118694, -3417), boss_npc_ids: &[] },
+    Altar {
+        middle_point: (69592, 118694, -3417),
+        boss_npc_ids: &[],
+    },
 ];
 
 fn altar(index: usize) -> Option<&'static Altar> {
@@ -223,7 +276,12 @@ mod tests {
         assert_eq!(altar(17).unwrap().middle_point, (69592, 118694, -3417));
         assert!(altar(18).is_none());
         // Twelve altars have bosses and start a timer.
-        assert_eq!((0..ALTAR_COUNT).filter(|i| altar(*i).unwrap().has_bosses()).count(), 12);
+        assert_eq!(
+            (0..ALTAR_COUNT)
+                .filter(|i| altar(*i).unwrap().has_bosses())
+                .count(),
+            12
+        );
         assert_eq!(index_of("spawnboss12", EVT_SPAWN_BOSS_PRE), Some(12));
         assert_eq!(index_of("spawnbossx", EVT_SPAWN_BOSS_PRE), None);
     }

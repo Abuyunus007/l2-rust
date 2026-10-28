@@ -67,7 +67,8 @@ mod tests {
     use crate::testing::{ScriptTest, item, pages_to};
 
     const NPCS: &str = r#"<npc id="32714" type="Folk" level="70" name="Asher"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/others/Asher";
 
     fn setup(adena: i64) -> (ScriptTest, ObjectId) {
@@ -76,8 +77,14 @@ mod tests {
         let main = r#"<html><body><a action="bypass -h Script Asher teleport">T</a><a action="bypass Script Asher 32714-01.html">I</a></body></html>"#;
         let pages = [
             (format!("{DIR}/32714.html"), main.to_owned()),
-            (format!("{DIR}/32714-01.html"), "<html><body>01</body></html>".to_owned()),
-            (format!("{DIR}/32714-02.html"), "<html><body>02</body></html>".to_owned()),
+            (
+                format!("{DIR}/32714-01.html"),
+                "<html><body>01</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32714-02.html"),
+                "<html><body>02</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);

@@ -68,12 +68,26 @@ impl Script for GatekeeperSpirit {
                     && player_cabal == CABAL_DUSK
                     && seal_of_avarice_owner == CABAL_DUSK
                 {
-                    ctx.teleport_player(player, TELEPORT_DUSK.0, TELEPORT_DUSK.1, TELEPORT_DUSK.2, 0, false);
+                    ctx.teleport_player(
+                        player,
+                        TELEPORT_DUSK.0,
+                        TELEPORT_DUSK.1,
+                        TELEPORT_DUSK.2,
+                        0,
+                        false,
+                    );
                 } else if comp_winner == CABAL_DAWN
                     && player_cabal == CABAL_DAWN
                     && seal_of_avarice_owner == CABAL_DAWN
                 {
-                    ctx.teleport_player(player, TELEPORT_DAWN.0, TELEPORT_DAWN.1, TELEPORT_DAWN.2, 0, false);
+                    ctx.teleport_player(
+                        player,
+                        TELEPORT_DAWN.0,
+                        TELEPORT_DAWN.1,
+                        TELEPORT_DAWN.2,
+                        0,
+                        false,
+                    );
                 } else {
                     htmltext = Some("31111-no.html".to_owned());
                 }
@@ -125,7 +139,10 @@ mod tests {
 <a action="bypass -h Script GatekeeperSpirit EXIT">x</a></body></html>"#;
         let pages = [
             (format!("{DIR}/31111.html"), main.to_owned()),
-            (format!("{DIR}/31111-no.html"), "<html><body>no</body></html>".to_owned()),
+            (
+                format!("{DIR}/31111-no.html"),
+                "<html><body>no</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);
@@ -204,14 +221,24 @@ mod tests {
     #[test]
     fn the_kill_of_lilith_opens_the_exit_ten_seconds_later() {
         let (mut t, _) = setup(PERIOD_COMPETITION, false, 0, "dusk");
-        let lilith = t.world.spawn_npc_at(LILITH, crate::testing::X + 30, crate::testing::Y, crate::testing::Z, 0);
+        let lilith = t.world.spawn_npc_at(
+            LILITH,
+            crate::testing::X + 30,
+            crate::testing::Y,
+            crate::testing::Z,
+            0,
+        );
         let lilith = lilith.unwrap();
         let before = t.world.npc_count();
         t.world.script_on_attackable_kill(lilith, Some(ObjectId(1)));
         // 2.5 s of `onKillDelay`, then the 10 s timer: 12.5 s = 250 ticks.
         t.ticks(260);
         assert_eq!(t.world.npc_count(), before + 1);
-        let spawned = t.world.npc_ids().into_iter().find(|id| t.world.npc(*id).unwrap().npc_id == GATEKEEPER_SPIRIT_EXIT);
+        let spawned = t
+            .world
+            .npc_ids()
+            .into_iter()
+            .find(|id| t.world.npc(*id).unwrap().npc_id == GATEKEEPER_SPIRIT_EXIT);
         assert!(spawned.is_some());
     }
 }

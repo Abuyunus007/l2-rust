@@ -86,7 +86,11 @@ mod tests {
         assert_eq!(t.world.script_npc_var("DustRider", boss, CAST_FLAG), 0);
         t.world.npc_mut(boss).unwrap().core.cur_hp = 310.0;
         hit(&mut t, boss);
-        assert_eq!(t.world.script_npc_var("DustRider", boss, CAST_FLAG), 0, "30% of 1000 is 300");
+        assert_eq!(
+            t.world.script_npc_var("DustRider", boss, CAST_FLAG),
+            0,
+            "30% of 1000 is 300"
+        );
 
         t.world.npc_mut(boss).unwrap().core.cur_hp = 290.0;
         hit(&mut t, boss);

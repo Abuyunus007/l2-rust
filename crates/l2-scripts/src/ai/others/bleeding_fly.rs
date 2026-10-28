@@ -168,8 +168,14 @@ mod tests {
     #[test]
     fn spawn_sets_the_minion_counts() {
         let (t, boss) = setup();
-        assert_eq!(t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT), 5);
-        assert_eq!(t.world.script_npc_var("BleedingFly", boss, LOW_HP_MINION_COUNT), 10);
+        assert_eq!(
+            t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT),
+            5
+        );
+        assert_eq!(
+            t.world.script_npc_var("BleedingFly", boss, LOW_HP_MINION_COUNT),
+            10
+        );
     }
 
     #[test]
@@ -181,7 +187,10 @@ mod tests {
         assert_eq!(leeches(&t), 0);
         t.ticks(25); // 1 s
         assert_eq!(leeches(&t), 2);
-        assert_eq!(t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT), 4);
+        assert_eq!(
+            t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT),
+            4
+        );
         // 140 s later the next two.
         t.ticks(2810);
         assert_eq!(leeches(&t), 4);
@@ -197,8 +206,14 @@ mod tests {
         assert_eq!(t.world.script_npc_var("BleedingFly", boss, MID_HP_FLAG), 0);
         assert_eq!(t.world.script_npc_var("BleedingFly", boss, LOW_HP_FLAG), 1);
         t.ticks(25);
-        assert_eq!(t.world.script_npc_var("BleedingFly", boss, LOW_HP_MINION_COUNT), 9);
-        assert_eq!(t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT), 4);
+        assert_eq!(
+            t.world.script_npc_var("BleedingFly", boss, LOW_HP_MINION_COUNT),
+            9
+        );
+        assert_eq!(
+            t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT),
+            4
+        );
         // NOTE(java-quirk): the mid timer still fired once (1 s), spawning its two leeches too.
         assert_eq!(leeches(&t), 4);
     }

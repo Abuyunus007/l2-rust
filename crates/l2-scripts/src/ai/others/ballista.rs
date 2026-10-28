@@ -62,7 +62,8 @@ impl Script for Ballista {
         _is_summon: bool,
     ) {
         if ctx.target_of(caster) == Some(npc.object_id) && ctx.get_random(100) < 40 && skill == BOMB {
-            if ctx.npc_fort_siege_in_progress(npc) && ctx.clan_level_of(caster).is_some_and(|l| l >= MIN_CLAN_LV)
+            if ctx.npc_fort_siege_in_progress(npc)
+                && ctx.clan_level_of(caster).is_some_and(|l| l >= MIN_CLAN_LV)
             {
                 let points = ctx.script_settings().ballista_points;
                 ctx.add_clan_reputation_score(caster, points);

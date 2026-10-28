@@ -138,7 +138,8 @@ mod tests {
     }
 
     fn hit(t: &mut ScriptTest, boss: ObjectId, damage: i32) {
-        t.world.script_on_attackable_attack(boss, ObjectId(1), damage, None);
+        t.world
+            .script_on_attackable_attack(boss, ObjectId(1), damage, None);
         t.world.script_drain();
     }
 

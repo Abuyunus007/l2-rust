@@ -87,8 +87,10 @@ impl ScriptCtx<'_> {
 
     /// `new SystemMessage(id)` + `addInt(value)` + `player.sendPacket(sm)`.
     pub fn send_system_message_int(&mut self, player: ObjectId, id: SystemMessageId, value: i32) {
-        self.world()
-            .send(player, &SystemMessage::new(id).with(SystemMessageParam::IntNumber(value)));
+        self.world().send(
+            player,
+            &SystemMessage::new(id).with(SystemMessageParam::IntNumber(value)),
+        );
     }
 
     /// Java `player.getAdena()`.
@@ -228,10 +230,9 @@ impl ScriptCtx<'_> {
         if self.world().npc(npc.object_id).is_none_or(|n| n.spawn.is_none()) {
             return 0.0;
         }
-        let (Some((sx, sy, _)), Some((x, y, _))) = (
-            self.npc_spawn_point(npc),
-            self.world().position_of(npc.object_id),
-        ) else {
+        let (Some((sx, sy, _)), Some((x, y, _))) =
+            (self.npc_spawn_point(npc), self.world().position_of(npc.object_id))
+        else {
             return 0.0;
         };
         let (dx, dy) = (f64::from(x - sx), f64::from(y - sy));
@@ -355,8 +356,12 @@ impl ScriptCtx<'_> {
             l2_geo::Location::new(pos_x, pos_y, z),
             instance,
         );
-        self.world_mut()
-            .npc_set_intention_move_to(npc.object_id, destination.x, destination.y, destination.z);
+        self.world_mut().npc_set_intention_move_to(
+            npc.object_id,
+            destination.x,
+            destination.y,
+            destination.z,
+        );
     }
 
     /// Java `MinionList.spawnMinion(master, minionId)`.
@@ -376,10 +381,12 @@ impl ScriptCtx<'_> {
 
     /// Java `npc.isInsideRadius3D(x, y, z, radius)`.
     pub fn is_inside_radius_3d(&self, npc: ScriptNpc, x: i32, y: i32, z: i32, radius: i32) -> bool {
-        self.world().position_of(npc.object_id).is_some_and(|(nx, ny, nz)| {
-            let (dx, dy, dz) = (i64::from(nx - x), i64::from(ny - y), i64::from(nz - z));
-            dx * dx + dy * dy + dz * dz <= i64::from(radius) * i64::from(radius)
-        })
+        self.world()
+            .position_of(npc.object_id)
+            .is_some_and(|(nx, ny, nz)| {
+                let (dx, dy, dz) = (i64::from(nx - x), i64::from(ny - y), i64::from(nz - z));
+                dx * dx + dy * dy + dz * dz <= i64::from(radius) * i64::from(radius)
+            })
     }
 
     /// Java `npc.getAI().getIntention() == Intention.ACTIVE`.

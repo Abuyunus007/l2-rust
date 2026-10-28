@@ -596,12 +596,7 @@ impl World {
     }
 
     /// Java `Npc.notifyQuestEventSkillFinished` (`ON_NPC_SKILL_FINISHED`).
-    pub fn script_on_spell_finished(
-        &mut self,
-        npc: ObjectId,
-        target: Option<ObjectId>,
-        skill: SkillKey,
-    ) {
+    pub fn script_on_spell_finished(&mut self, npc: ObjectId, target: Option<ObjectId>, skill: SkillKey) {
         if let Some(n) = self.has_npc_listener(EventKind::NpcSkillFinished, npc) {
             let player = target.filter(|t| self.players.contains_key(t));
             self.queue_script_event(PendingEvent::SpellFinished {

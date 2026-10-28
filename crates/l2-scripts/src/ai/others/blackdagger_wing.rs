@@ -68,7 +68,8 @@ impl Script for BlackdaggerWing {
         if ctx.npc_flag(npc, MID_HP_FLAG) {
             let most_hated = ctx.most_hated(npc);
             if let Some(most_hated) = most_hated {
-                if ctx.world().player(most_hated).is_some() && most_hated != creature && ctx.get_random(5) < 1 {
+                if ctx.world().player(most_hated).is_some() && most_hated != creature && ctx.get_random(5) < 1
+                {
                     ctx.add_skill_cast_desire(npc, creature, RANGE_MAGIC_ATTACK, 99999);
                 }
             }
@@ -166,17 +167,33 @@ mod tests {
             t.world.script_on_spell_finished(boss, Some(ObjectId(1)), skill);
             t.world.script_drain();
         }
-        assert_eq!(t.world.script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT), 3);
+        assert_eq!(
+            t.world
+                .script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT),
+            3
+        );
         assert!(t.world.aggro_list(boss).is_empty());
         t.world.script_on_spell_finished(boss, Some(ObjectId(1)), skill);
         t.world.script_drain();
-        assert_eq!(t.world.script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT), 0);
-        assert_eq!(t.world.aggro_list(boss).len(), 1, "the cast desire hates the player");
+        assert_eq!(
+            t.world
+                .script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT),
+            0
+        );
+        assert_eq!(
+            t.world.aggro_list(boss).len(),
+            1,
+            "the cast desire hates the player"
+        );
         // Another skill does not count.
         t.world
             .script_on_spell_finished(boss, Some(ObjectId(1)), SkillKey { id: 1, level: 1 });
         t.world.script_drain();
-        assert_eq!(t.world.script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT), 0);
+        assert_eq!(
+            t.world
+                .script_npc_var("BlackdaggerWing", boss, POWER_STRIKE_CAST_COUNT),
+            0
+        );
     }
 
     #[test]
@@ -187,7 +204,10 @@ mod tests {
         t.world.add_damage_hate(boss, ObjectId(1), 10, 100);
         t.world.script_on_creature_see(boss, ObjectId(2));
         t.world.script_drain();
-        assert!(!t.world.aggro_contains(boss, ObjectId(2)), "not yet below half HP");
+        assert!(
+            !t.world.aggro_contains(boss, ObjectId(2)),
+            "not yet below half HP"
+        );
 
         t.world.npc_mut(boss).unwrap().core.cur_hp = 400.0;
         hit(&mut t, boss);

@@ -84,7 +84,8 @@ mod tests {
     use crate::testing::{ScriptTest, item, names_to, pages_to, player_data};
 
     const NPCS: &str = r#"<npc id="30981" type="Folk" level="70" name="Black Judge"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/others/BlackJudge";
 
     fn setup(adena: i64, penalty: i32) -> ScriptTest {
@@ -95,7 +96,10 @@ mod tests {
 <a action="bypass -h Script BlackJudge remove_dp">d</a></body></html>"#;
         let mut pages = vec![(format!("{DIR}/30981.html"), main.to_owned())];
         for n in 1..=8 {
-            pages.push((format!("{DIR}/30981-0{n}.html"), format!("<html><body>page0{n}</body></html>")));
+            pages.push((
+                format!("{DIR}/30981-0{n}.html"),
+                format!("<html><body>page0{n}</body></html>"),
+            ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
@@ -121,7 +125,15 @@ mod tests {
         let mut t = setup(5000, 2);
         t.bypass(1, "Script BlackJudge remove_dp");
         assert_eq!(t.count(1, ADENA_ID), 5000 - COSTS[0]);
-        assert_eq!(t.world.player(ObjectId(1)).unwrap().data.profile.death_penalty_level, 1);
+        assert_eq!(
+            t.world
+                .player(ObjectId(1))
+                .unwrap()
+                .data
+                .profile
+                .death_penalty_level,
+            1
+        );
         let out = names_to(&t.take(), 1);
         assert!(out.contains(&"SYSTEM_MESSAGE".to_owned()));
         assert!(out.contains(&"ETC_STATUS_UPDATE".to_owned()));
@@ -132,7 +144,15 @@ mod tests {
         let mut t = setup(100, 1);
         t.bypass(1, "Script BlackJudge remove_dp");
         assert!(pages_to(&t.take(), 1).pop().unwrap().contains("page07"));
-        assert_eq!(t.world.player(ObjectId(1)).unwrap().data.profile.death_penalty_level, 1);
+        assert_eq!(
+            t.world
+                .player(ObjectId(1))
+                .unwrap()
+                .data
+                .profile
+                .death_penalty_level,
+            1
+        );
 
         let mut t = setup(9999, 0);
         t.bypass(1, "Script BlackJudge remove_dp");

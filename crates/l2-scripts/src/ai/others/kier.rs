@@ -83,7 +83,12 @@ mod tests {
         registry.add(Quest(Q10283_REQUEST_OF_ICE_MERCHANT, 10283));
         let pages: Vec<(String, String)> = ["01", "02", "03", "04"]
             .iter()
-            .map(|n| (format!("{DIR}/32022-{n}.html"), format!("<html><body>p{n}</body></html>")))
+            .map(|n| {
+                (
+                    format!("{DIR}/32022-{n}.html"),
+                    format!("<html><body>p{n}</body></html>"),
+                )
+            })
             .collect();
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);
@@ -104,14 +109,32 @@ mod tests {
         // No quest 115 at all.
         assert!(page_for(vec![]).contains("p02"));
         // Quest 115 started.
-        assert!(page_for(vec![(Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(), Some("Started".to_owned()))]).contains("p01"));
+        assert!(
+            page_for(vec![(
+                Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(),
+                Some("Started".to_owned())
+            )])
+            .contains("p01")
+        );
         // Quest 115 completed and nothing of 10283: Java leaves the page null, so the NPC's own
         // window opens (no script page).
-        assert!(!page_for(vec![(Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(), Some("Completed".to_owned()))]).contains("p0"));
+        assert!(
+            !page_for(vec![(
+                Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(),
+                Some("Completed".to_owned())
+            )])
+            .contains("p0")
+        );
         // Quest 10283 completed wins over the first answer.
         let rows = vec![
-            (Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(), Some("Started".to_owned())),
-            (Q10283_REQUEST_OF_ICE_MERCHANT.to_owned(), Some("Completed".to_owned())),
+            (
+                Q00115_THE_OTHER_SIDE_OF_TRUTH.to_owned(),
+                Some("Started".to_owned()),
+            ),
+            (
+                Q10283_REQUEST_OF_ICE_MERCHANT.to_owned(),
+                Some("Completed".to_owned()),
+            ),
         ];
         assert!(page_for(rows).contains("p04"));
     }

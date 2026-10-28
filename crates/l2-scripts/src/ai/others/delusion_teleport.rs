@@ -24,13 +24,13 @@ const DELUSION_RETURN: &str = "DELUSION_RETURN";
 /// Java `RETURN_LOCATIONS.get(townId)`.
 fn return_location(town_id: i32) -> Option<(i32, i32, i32)> {
     match town_id {
-        0 => Some((43835, -47749, -792)),     // Undefined origin, return to Rune
-        7 => Some((-14023, 123677, -3112)),   // Gludio
-        8 => Some((18101, 145936, -3088)),    // Dion
-        10 => Some((80905, 56361, -1552)),    // Oren
-        14 => Some((42772, -48062, -792)),    // Rune
-        15 => Some((108469, 221690, -3592)),  // Heine
-        17 => Some((85991, -142234, -1336)),  // Schuttgart
+        0 => Some((43835, -47749, -792)),    // Undefined origin, return to Rune
+        7 => Some((-14023, 123677, -3112)),  // Gludio
+        8 => Some((18101, 145936, -3088)),   // Dion
+        10 => Some((80905, 56361, -1552)),   // Oren
+        14 => Some((42772, -48062, -792)),   // Rune
+        15 => Some((108469, 221690, -3592)), // Heine
+        17 => Some((85991, -142234, -1336)), // Schuttgart
         _ => None,
     }
 }
@@ -67,9 +67,7 @@ impl Script for DelusionTeleport {
             let town_id = ctx.player_variable_int(player, DELUSION_RETURN, 0);
             // NOTE(java-quirk): `RETURN_LOCATIONS.get(townId)` is null for a town that is not in the
             // map and `teleToLocation(null, true)` throws; the player stays and the variable stays.
-            let Some((x, y, z)) = return_location(town_id) else {
-                return None;
-            };
+            let (x, y, z) = return_location(town_id)?;
             ctx.teleport_player(player, x, y, z, 0, true);
             ctx.remove_player_variable(player, DELUSION_RETURN);
         }
@@ -119,10 +117,21 @@ mod tests {
         let (mut t, worker, _) = setup();
         go(&mut t, worker);
         let at = position(&t);
-        assert!(HALL_LOCATIONS.iter().any(|&(x, y, _)| (x, y) == (at.0, at.1)), "{at:?}");
+        assert!(
+            HALL_LOCATIONS.iter().any(|&(x, y, _)| (x, y) == (at.0, at.1)),
+            "{at:?}"
+        );
         // The test world has no town zone: Java's `town == null` gives 0.
         let player = t.world.player(ObjectId(1)).unwrap();
-        assert_eq!(player.data.profile.variables.get(DELUSION_RETURN).map(String::as_str), Some("0"));
+        assert_eq!(
+            player
+                .data
+                .profile
+                .variables
+                .get(DELUSION_RETURN)
+                .map(String::as_str),
+            Some("0")
+        );
     }
 
     #[test]
@@ -148,7 +157,13 @@ mod tests {
     #[test]
     fn an_unknown_town_leaves_the_player_where_he_is() {
         let (mut t, _, guardian) = setup();
-        t.world.player_mut(ObjectId(1)).unwrap().data.profile.variables.insert(DELUSION_RETURN.to_owned(), "99".to_owned());
+        t.world
+            .player_mut(ObjectId(1))
+            .unwrap()
+            .data
+            .profile
+            .variables
+            .insert(DELUSION_RETURN.to_owned(), "99".to_owned());
         go(&mut t, guardian);
         assert_eq!(position(&t), (X, Y, Z));
     }

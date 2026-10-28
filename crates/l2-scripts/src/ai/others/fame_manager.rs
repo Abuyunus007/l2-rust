@@ -71,7 +71,10 @@ impl Script for FameManager {
             }
             "clanRep" => {
                 let (player, npc) = (player?, npc?);
-                if ctx.clan_level_of(player).is_some_and(|level| level >= MIN_CLAN_LEVEL) {
+                if ctx
+                    .clan_level_of(player)
+                    .is_some_and(|level| level >= MIN_CLAN_LEVEL)
+                {
                     if ctx.fame_of(player) >= REPUTATION_COST
                         && ctx.player_level(player) >= MIN_LEVEL
                         && ctx.class_level_of(player) >= CLASS_LEVEL
@@ -131,7 +134,10 @@ mod tests {
 <a action="bypass Script FameManager 36479-02.html">x</a></body></html>"#;
         let mut pages = vec![(format!("{DIR}/36479.html"), main.to_owned())];
         for n in 1..=7 {
-            pages.push((format!("{DIR}/36479-0{n}.html"), format!("<html><body>page0{n}</body></html>")));
+            pages.push((
+                format!("{DIR}/36479-0{n}.html"),
+                format!("<html><body>page0{n}</body></html>"),
+            ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);
