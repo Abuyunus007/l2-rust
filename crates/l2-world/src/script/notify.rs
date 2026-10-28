@@ -429,7 +429,7 @@ impl World {
     }
 
     /// Java `Npc.onSpawn`: `ON_NPC_SPAWN`.
-    pub(crate) fn script_on_npc_spawn(&mut self, npc: ObjectId) {
+    pub fn script_on_npc_spawn(&mut self, npc: ObjectId) {
         if let Some(n) = self.has_npc_listener(EventKind::NpcSpawn, npc) {
             self.queue_script_event(PendingEvent::Spawn(n));
         }
@@ -454,7 +454,7 @@ impl World {
 
     /// Java `Attackable.addDamage`: `ON_ATTACKABLE_ATTACK` for an attack by a player or a
     /// summon.
-    pub(crate) fn script_on_attackable_attack(
+    pub fn script_on_attackable_attack(
         &mut self,
         npc: ObjectId,
         attacker: ObjectId,
@@ -492,7 +492,7 @@ impl World {
 
     /// Java `Attackable.doDie`: `OnAttackableKill` `onKillDelay` after the death, for a killer
     /// that is a player or a summon.
-    pub(crate) fn script_on_attackable_kill(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
+    pub fn script_on_attackable_kill(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
         let Some((player, is_summon)) = killer.and_then(|k| self.player_and_summon(k)) else {
             return;
         };
@@ -620,7 +620,7 @@ impl World {
 
     /// Java `Creature.onMagicFinalizer` / `Weapon.castOnMagicSkill` (`ON_NPC_SKILL_SEE`): the
     /// NPC saw a player (or its summon) cast.
-    pub(crate) fn script_on_skill_see(
+    pub fn script_on_skill_see(
         &mut self,
         npc: ObjectId,
         caster: ObjectId,
@@ -643,12 +643,7 @@ impl World {
     }
 
     /// Java `Npc.notifyQuestEventSkillFinished` (`ON_NPC_SKILL_FINISHED`).
-    pub(crate) fn script_on_spell_finished(
-        &mut self,
-        npc: ObjectId,
-        target: Option<ObjectId>,
-        skill: SkillKey,
-    ) {
+    pub fn script_on_spell_finished(&mut self, npc: ObjectId, target: Option<ObjectId>, skill: SkillKey) {
         if let Some(n) = self.has_npc_listener(EventKind::NpcSkillFinished, npc) {
             let player = target.filter(|t| self.players.contains_key(t));
             self.queue_script_event(PendingEvent::SpellFinished {
@@ -661,7 +656,7 @@ impl World {
 
     /// Java `Creature.updateSeenCreatures` (`ON_CREATURE_SEE`): an NPC with the listener sees a
     /// creature (`see.rs` runs the task).
-    pub(crate) fn script_on_creature_see(&mut self, npc: ObjectId, creature: ObjectId) {
+    pub fn script_on_creature_see(&mut self, npc: ObjectId, creature: ObjectId) {
         if let Some(n) = self.has_npc_listener(EventKind::CreatureSee, npc) {
             self.queue_script_event(PendingEvent::CreatureSee { npc: n, creature });
         }
@@ -747,10 +742,12 @@ impl World {
         self.scripts.radar.remove(&player);
     }
 
-    /// `Npc.onDecay`: `stopQuestTimers()`.
+    /// `Npc.onDecay`: `stopQuestTimers()`, `_scriptValue = 0`.
     pub(crate) fn script_on_npc_decay(&mut self, npc: ObjectId) {
         self.script_cancel_timers_of(npc);
         self.scripts.kill_delays.remove(&npc);
+        // "Clear script value."
+        self.scripts.npc_script_values.remove(&npc);
         self.script_forget_all_seen(npc);
     }
 

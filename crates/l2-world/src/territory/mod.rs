@@ -50,8 +50,8 @@
 //   [`World::territory_give_quest_point`], [`World::territory_give_point`] and
 //   [`World::territory_catapult_destroyed`] are the API they will call. `setOnEnterWorld` of the
 //   quests and their `onEnterWorld` are marked `// D-05:` where Java calls them.
-// - `MakeMeNoble` of the Territory Managers completes the noblesse quests (D-05) and needs the
-//   `nobless` column to be stored (the character store keeps the row's value): marked.
+// - `MakeMeNoble` of the Territory Managers completes the noblesse quests the server has
+//   (S-VM-01); a quest that is not ported yet is skipped like Java skips one it does not know.
 // - The olympiad check of the ward skills is in (`ward.rs`, M8-OLY-01).
 
 mod admin;

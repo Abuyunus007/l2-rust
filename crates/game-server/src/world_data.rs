@@ -1103,6 +1103,12 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_subclass_without_quests: p.alt_game_subclass_without_quests,
             alt_game_subclass_everywhere: p.alt_game_subclass_everywhere,
             subclass_store_skill_cooltime: p.subclass_store_skill_cooltime,
+            // S-VM-01: Avant-Garde.
+            fee_delete_subclass_skills: p.fee_delete_subclass_skills,
+            allow_transform_without_quest: p.allow_transform_without_quest,
+            skill_check_enable: config.general.skill_check_enable,
+            skill_check_remove: config.general.skill_check_remove,
+            skill_check_gm: config.general.skill_check_gm,
         },
         effects: l2_world::EffectSettings {
             buffs_max_amount: i32::from(p.buffs_max_amount),

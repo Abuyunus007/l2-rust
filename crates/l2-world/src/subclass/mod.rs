@@ -29,19 +29,15 @@
 // rows, which is what the database already holds.
 //
 // # Left out, with the system that brings it
-// - The quest checks of `VillageMaster.checkQuests` (Fate's Whisper, Mimir's Elixir, Seeds of
-//   Chaos) and the `Q00422_RepentYourSins` exit of `setActiveClass`: the quest states are the
-//   script engine's (S-API-01). Until it lands a player has no quest state, so only a noble (or
-//   `AltSubClassWithoutQuests`) may add a subclass, which is what Java does for a player without
-//   those states. The class index of `character_quests` follows with S-API-01 too.
+// - The class index of `character_quests`: the H5 table has no class index column (the quest
+//   states belong to the character, whichever class is active), so there is nothing to keep.
 // - `ON_PLAYER_PROFESSION_CHANGE` / `ON_PLAYER_PROFESSION_CANCEL` (script events, D-05).
-// - The certification skills (`AcquireSkillType.SUBCLASS`): the trainers (`AvantGarde`,
-//   `SubclassCertification`) and the `SubClassSkills` quest are scripts (D-05), and the sub-class
-//   skill tree is not loaded (`skills/learn.rs`).
 // - `_autoUseSettings` (auto play is not ported).
 // - The passive skills of items that are not worn (`Item.giveSkillsToOwner` of
 //   `applyItemSkills` for `hasPassiveSkills` items in the bag) are not modelled anywhere.
 
+pub mod categories;
+mod script_api;
 mod switch;
 mod village_master;
 
@@ -52,6 +48,11 @@ use crate::player::{PlayerData, ShortcutData, SkillData};
 use crate::summon::servitor::SavedSummonEffect;
 
 pub use village_master::{SubclassRules, VillageMasterKind};
+
+// The class types the class change scripts of `l2-scripts` read (it reaches `l2-data` only
+// through the world, MODULE_MAP).
+pub use l2_data::stats::CategoryType;
+pub use l2_data::{ClassId, Race};
 
 /// The `Player.ini` values subclasses read.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +69,15 @@ pub struct SubclassSettings {
     pub alt_game_subclass_everywhere: bool,
     /// `SubclassStoreSkillCooltime`: whether the store of a switch keeps the buffs.
     pub subclass_store_skill_cooltime: bool,
+    /// `FeeDeleteSubClassSkills`: the adena Avant-Garde takes to cancel the certifications.
+    pub fee_delete_subclass_skills: i32,
+    /// `AltTransformationWithoutQuest` (Java `ALLOW_TRANSFORM_WITHOUT_QUEST`).
+    pub allow_transform_without_quest: bool,
+    /// `General.ini` `SkillCheckEnable`, `SkillCheckRemove`, `SkillCheckGM`: the certification
+    /// skill check of the `SubClassSkills` validator at login.
+    pub skill_check_enable: bool,
+    pub skill_check_remove: bool,
+    pub skill_check_gm: bool,
 }
 
 impl Default for SubclassSettings {
@@ -79,6 +89,11 @@ impl Default for SubclassSettings {
             alt_game_subclass_without_quests: false,
             alt_game_subclass_everywhere: false,
             subclass_store_skill_cooltime: false,
+            fee_delete_subclass_skills: 10_000_000,
+            allow_transform_without_quest: false,
+            skill_check_enable: false,
+            skill_check_remove: false,
+            skill_check_gm: true,
         }
     }
 }

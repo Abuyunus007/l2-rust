@@ -316,7 +316,7 @@ impl World {
     }
 
     /// Java `Clan.broadcastClanStatus()`: every online member gets the member list again.
-    pub(crate) fn broadcast_clan_status(&mut self, clan_id: i32) {
+    pub fn broadcast_clan_status(&mut self, clan_id: i32) {
         for id in self.clan_online_members(clan_id, 0) {
             self.send(id, &PledgeShowMemberListDeleteAll);
             self.send_pledge_show_member_list_all(clan_id, id);

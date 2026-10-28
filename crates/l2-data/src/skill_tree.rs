@@ -1,7 +1,8 @@
 //! Class skill trees, reduced to what character creation needs: skill id, skill level, the level a
 //! skill is learned at and its auto-learn flags. Skill definitions and effects are not loaded here.
 //! The clan trees (`pledgeSkillTree`, `subPledgeSkillTree`) are kept too (M6-CLAN-03), and the
-//! fishing tree (`fishingSkillTree`, M6-FU-10).
+//! fishing tree (`fishingSkillTree`, M6-FU-10) and the certification tree (`subClassSkillTree`,
+//! S-VM-01).
 //!
 //! Java: `gameserver/data/xml/SkillTreeData.java` (`classSkillTree` parsing, the parent class chain,
 //! `getCompleteClassSkillTree`, `getAvailableSkills`) and `network/clientpackets/CharacterCreate.java`
@@ -64,6 +65,9 @@ pub struct SkillLearn {
     pub residence_skill: bool,
     /// Java `getResidenceIds()`.
     pub residence_ids: Vec<i32>,
+    /// Java `getSubClassConditions()`: `(slot, lvl)` of each `subClassConditions` element of a
+    /// sub-class tree line, in file order (S-VM-01).
+    pub sub_class_conditions: Vec<(i32, i32)>,
 }
 
 /// Java `SocialClass`: the pledge classes a clan skill asks for. The order is the Java ordinal.
@@ -140,6 +144,9 @@ pub struct SkillTrees {
     /// order of Java's `ConcurrentHashMap`.
     game_master: Vec<SkillLearn>,
     game_master_aura: Vec<SkillLearn>,
+    /// Java `_subClassSkillTree` (the certification skills), in the order of Java's
+    /// `ConcurrentHashMap`.
+    sub_class: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -172,6 +179,7 @@ impl SkillTrees {
             ),
         );
         log_loaded(Self::LOADER, gathered.sub_pledge.len(), "sub-pledge skills");
+        log_loaded(Self::LOADER, gathered.sub_class.len(), "sub-class skills");
         let dwarven_only = gathered
             .fishing
             .values()
@@ -219,6 +227,8 @@ impl SkillTrees {
             game_master_order,
             game_master_aura,
             game_master_aura_order,
+            sub_class,
+            sub_class_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -263,6 +273,7 @@ impl SkillTrees {
             collect: in_java_order(collect, collect_order),
             game_master: in_java_order(game_master, game_master_order),
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
+            sub_class: in_java_order(sub_class, sub_class_order),
         }
     }
 
@@ -401,6 +412,19 @@ impl SkillTrees {
     /// Number of classes that have a complete tree.
     pub fn len(&self) -> usize {
         self.complete.len()
+    }
+
+    /// Java `getSubClassSkillTree().values()`: the certification skills, in the order of Java's
+    /// `ConcurrentHashMap`.
+    pub fn sub_class_skills(&self) -> &[SkillLearn] {
+        &self.sub_class
+    }
+
+    /// Java `getSubClassSkill(id, lvl)`.
+    pub fn sub_class_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.sub_class
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
     }
 
     /// True when no class tree was loaded.
@@ -559,6 +583,9 @@ struct Gathered {
     game_master_order: Vec<(i32, i32)>,
     game_master_aura: BTreeMap<(i32, i32), SkillLearn>,
     game_master_aura_order: Vec<(i32, i32)>,
+    /// Java `_subClassSkillTree` and the keys in the order they were first put.
+    sub_class: BTreeMap<(i32, i32), SkillLearn>,
+    sub_class_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -587,6 +614,7 @@ impl Gathered {
                     | "collectSkillTree"
                     | "gameMasterSkillTree"
                     | "gameMasterAuraSkillTree"
+                    | "subClassSkillTree"
             ) {
                 let (map, order) = match tree.kind.as_str() {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
@@ -598,6 +626,7 @@ impl Gathered {
                     "gameMasterAuraSkillTree" => {
                         (&mut self.game_master_aura, &mut self.game_master_aura_order)
                     }
+                    "subClassSkillTree" => (&mut self.sub_class, &mut self.sub_class_order),
                     _ => (&mut self.fishing, &mut self.fishing_order),
                 };
                 for skill in tree.skills {
@@ -694,6 +723,16 @@ struct RawSkill {
     residence_ids: Vec<i32>,
     #[serde(rename = "socialClass", default)]
     social_classes: Vec<String>,
+    #[serde(rename = "subClassConditions", default)]
+    sub_class_conditions: Vec<RawSubClassCondition>,
+}
+
+#[derive(Deserialize)]
+struct RawSubClassCondition {
+    #[serde(rename = "@slot")]
+    slot: i32,
+    #[serde(rename = "@lvl")]
+    lvl: i32,
 }
 
 #[derive(Deserialize)]
@@ -771,6 +810,11 @@ impl RawSkill {
             }),
             residence_skill: self.residence_skill,
             residence_ids: self.residence_ids,
+            sub_class_conditions: self
+                .sub_class_conditions
+                .into_iter()
+                .map(|c| (c.slot, c.lvl))
+                .collect(),
         }
     }
 }
@@ -1228,5 +1272,30 @@ mod tests {
         assert!(!trees.is_hero_skill(395, 2));
         assert!(!trees.is_hero_skill(1323, -1));
         assert!(trees.noble_skills().is_empty());
+    }
+
+    #[test]
+    fn the_sub_class_tree_keeps_its_slot_conditions() {
+        let trees = SkillTrees::from_xml(
+            r#"<list><skillTree type="subClassSkillTree">
+                <skill skillName="Emergent Ability - Attack" skillId="631" skillLevel="1" getLevel="1">
+                    <subClassConditions slot="1" lvl="65" />
+                    <subClassConditions slot="2" lvl="65" />
+                    <item id="10280" count="1" />
+                </skill>
+            </skillTree></list>"#,
+        )
+        .unwrap();
+        let line = trees.sub_class_skill(631, 1).unwrap();
+        assert_eq!(line.sub_class_conditions, [(1, 65), (2, 65)]);
+        assert_eq!(
+            line.required_items,
+            [SkillLearnItem {
+                item_id: 10280,
+                count: 1
+            }]
+        );
+        assert_eq!(trees.sub_class_skills().len(), 1);
+        assert!(trees.sub_class_skill(631, 2).is_none());
     }
 }

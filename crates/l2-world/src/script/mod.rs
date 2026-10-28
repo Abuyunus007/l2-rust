@@ -29,9 +29,11 @@
 // - Premium rates (`PremiumSystemConfig`) and the multilingual `NpcStringId` chooser: M9.
 
 pub mod admin;
+pub mod ai_help;
 pub mod api;
 pub mod ctx;
 pub mod globals;
+mod instance_api;
 pub mod link;
 mod movie;
 pub mod notify;
@@ -39,6 +41,7 @@ pub mod notify;
 mod notify_tests;
 pub mod packets;
 pub mod qs;
+pub mod quest_helpers;
 mod see;
 pub mod setup;
 pub mod sound;
@@ -59,6 +62,7 @@ pub use ctx::ScriptCtx;
 pub use globals::{GlobalVariables, GlobalVariablesWrite};
 pub use packets::QuestInput;
 pub use qs::Qs;
+pub use quest_helpers::{class_race, player_class, race};
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
 pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};
@@ -124,6 +128,17 @@ pub struct ScriptSettings {
     /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, D-54): the global variables are
     /// written only when this is on.
     pub cycle_database_writes: bool,
+    /// `FeatureConfig.BLOODALLIANCE_POINTS` (`BloodAlliancePoints`, ClanTrader; S-AI-05).
+    pub bloodalliance_points: i32,
+    /// `FeatureConfig.BLOODOATH_POINTS` (`BloodOathPoints`).
+    pub bloodoath_points: i32,
+    /// `FeatureConfig.KNIGHTSEPAULETTE_POINTS` (`KnightsEpaulettePoints`).
+    pub knightsepaulette_points: i32,
+    /// `FeatureConfig.BALLISTA_POINTS` (`KillBallistaPoints`, Ballista).
+    pub ballista_points: i32,
+    /// `PlayerConfig.DISABLE_TUTORIAL` (`DisableTutorial` of `Player.ini`): `Q00255_Tutorial`
+    /// does nothing.
+    pub disable_tutorial: bool,
 }
 
 impl Default for ScriptSettings {
@@ -141,6 +156,11 @@ impl Default for ScriptSettings {
             quest_item_drop_amount_multiplier: 1.0,
             autodelete_invalid_quest_data: false,
             cycle_database_writes: false,
+            bloodalliance_points: 500,
+            bloodoath_points: 200,
+            knightsepaulette_points: 20,
+            ballista_points: 30,
+            disable_tutorial: false,
         }
     }
 }
@@ -176,6 +196,10 @@ pub(crate) struct ScriptWorld {
     pub(crate) settings: ScriptSettings,
     /// Java `Attackable._onKillDelay` where a script changed it.
     pub(crate) kill_delays: HashMap<ObjectId, i32>,
+    /// Java `Npc._scriptValue` where it is not 0.
+    pub(crate) npc_script_values: HashMap<ObjectId, i32>,
+    /// Java `static` fields shared by a family of scripts ([`ScriptCtx::shared_state`]).
+    pub(crate) shared_states: quest_helpers::SharedStates,
     /// Slots of `death.runtime_spawns` whose script spawn ended, for the next `add_spawn`
     /// (S-API-03).
     pub(crate) free_spawns: Vec<usize>,
