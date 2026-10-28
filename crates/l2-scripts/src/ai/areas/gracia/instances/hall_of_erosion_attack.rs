@@ -35,7 +35,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22522, -180459, 212322, -12018, 0, 60, 1],
     [22524, -180428, 211180, -12014, 0, 60, 1],
     [22524, -180718, 212162, -12028, 0, 60, 1],
-
     [22532, -183114, 209397, -11923, 0, 60, 1],
     [22532, -182917, 210495, -11925, 0, 60, 1],
     [22516, -183918, 210225, -11934, 0, 60, 1],
@@ -43,7 +42,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22532, -183246, 210631, -11923, 0, 60, 1],
     [22522, -182971, 210522, -11924, 0, 60, 1],
     [22522, -183485, 209406, -11921, 0, 60, 1],
-
     [22516, -183032, 208822, -11923, 0, 60, 1],
     [22516, -182709, 207817, -11929, 0, 60, 1],
     [22520, -182964, 207746, -11924, 0, 60, 1],
@@ -52,7 +50,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22526, -183530, 208725, -11926, 0, 60, 1],
     [22532, -183968, 207603, -11928, 0, 60, 1],
     [22532, -183608, 208567, -11926, 0, 60, 1],
-
     [22526, -181471, 207159, -12020, 0, 60, 1],
     [22526, -180213, 207042, -12013, 0, 60, 1],
     [22532, -180213, 206506, -12010, 0, 60, 1],
@@ -60,7 +57,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22516, -181743, 206643, -12018, 0, 60, 1],
     [22516, -181028, 205739, -12030, 0, 60, 1],
     [22520, -181431, 205980, -12040, 0, 60, 1],
-
     [22524, -178964, 207168, -12014, 0, 60, 1],
     [22524, -177658, 207037, -12019, 0, 60, 1],
     [22522, -177730, 206558, -12016, 0, 60, 1],
@@ -68,7 +64,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22526, -179132, 206155, -12017, 0, 60, 1],
     [22526, -178277, 205754, -12031, 0, 60, 1],
     [22516, -178716, 205802, -12020, 0, 60, 1],
-
     [22532, -176565, 207839, -11929, 0, 60, 1],
     [22532, -176281, 208822, -11923, 0, 60, 1],
     [22520, -175791, 208804, -11923, 0, 60, 1],
@@ -76,7 +71,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22526, -175849, 207508, -11929, 0, 60, 1],
     [22526, -175453, 208250, -11930, 0, 60, 1],
     [22524, -175738, 207914, -11946, 0, 60, 1],
-
     [22526, -176339, 209425, -11923, 0, 60, 1],
     [22526, -176586, 210424, -11928, 0, 60, 1],
     [22516, -176586, 210546, -11923, 0, 60, 1],
@@ -84,7 +78,6 @@ const ROOMS_MOBS: [[i32; 7]; 57] = [
     [22520, -175496, 209498, -11924, 0, 60, 1],
     [22520, -175538, 210252, -11940, 0, 60, 1],
     [22524, -175527, 209744, -11928, 0, 60, 1],
-
     [22520, -177940, 210876, -12005, 0, 60, 1],
     [22520, -178935, 210903, -12018, 0, 60, 1],
     [22522, -179331, 211365, -12013, 0, 60, 1],
@@ -168,7 +161,10 @@ fn hea<'a>(ctx: &'a mut ScriptCtx<'_>, instance_id: i32) -> &'a mut HeaWorld {
 /// `InstanceManager.getWorld(object) instanceof HEAWorld`.
 fn world_of(ctx: &mut ScriptCtx<'_>, object: ObjectId) -> Option<i32> {
     let instance_id = common::world_of(ctx, object)?;
-    state(ctx).worlds.contains_key(&instance_id).then_some(instance_id)
+    state(ctx)
+        .worlds
+        .contains_key(&instance_id)
+        .then_some(instance_id)
 }
 
 /// Java `ai.areas.Gracia.instances.HallOfErosionAttack.HallOfErosionAttack`.
@@ -181,7 +177,10 @@ impl HallOfErosionAttack {
         }
 
         if ctx.world().party_of(player).is_none() {
-            ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+            );
             return false;
         }
 
@@ -404,7 +403,13 @@ impl Script for HallOfErosionAttack {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         if let Some(instance_id) = world_of(ctx, npc.object_id)
             && npc.id == 18668
         {
@@ -484,7 +489,13 @@ impl Script for HallOfErosionAttack {
             if let Some(dead) = dead_tumor {
                 let respawn = state(ctx).tumor_respawn_time;
                 let id = dead.npc.object_id.0;
-                ctx.start_quest_timer(&format!("TumorRevival {instance_id} {id}"), respawn, None, None, false);
+                ctx.start_quest_timer(
+                    &format!("TumorRevival {instance_id} {id}"),
+                    respawn,
+                    None,
+                    None,
+                    false,
+                );
                 ctx.start_quest_timer(
                     &format!("RegenerationCoffinSpawn {instance_id} {id}"),
                     20000,
@@ -515,7 +526,16 @@ impl Script for HallOfErosionAttack {
                 );
                 let index = ctx.get_random_range(0, COHEMENES_SPAWN.len() as i32 - 1);
                 let spawn = COHEMENES_SPAWN[usize::try_from(index).unwrap_or(0)];
-                if let Some(n) = ctx.add_spawn(spawn[0], spawn[1], spawn[2], spawn[3], spawn[4], false, 0, instance_id) {
+                if let Some(n) = ctx.add_spawn(
+                    spawn[0],
+                    spawn[1],
+                    spawn[2],
+                    spawn[3],
+                    spawn[4],
+                    false,
+                    0,
+                    instance_id,
+                ) {
                     ctx.broadcast_npc_say(
                         n,
                         ChatType::Shout,
@@ -675,7 +695,12 @@ mod tests {
         }
         assert_eq!(t.npcs_of(TUMOR_DEAD).len(), 4);
         assert_eq!(
-            t.world.instance_world(instance).unwrap().parameters.get("tag").map(String::as_str),
+            t.world
+                .instance_world(instance)
+                .unwrap()
+                .parameters
+                .get("tag")
+                .map(String::as_str),
             Some("3")
         );
         // All four down: Cohemenes comes.

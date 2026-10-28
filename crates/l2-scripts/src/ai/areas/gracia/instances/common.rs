@@ -48,7 +48,12 @@ pub fn location_of(ctx: &ScriptCtx<'_>, object: ObjectId) -> Option<(i32, i32, i
 }
 
 /// Java `addSpawn(npcId, x, y, z, heading, false, 0, false, instanceId)`, remembering the place.
-pub fn spawn(ctx: &mut ScriptCtx<'_>, npc_id: i32, (x, y, z, heading): (i32, i32, i32, i32), instance_id: i32) -> Option<NpcAt> {
+pub fn spawn(
+    ctx: &mut ScriptCtx<'_>,
+    npc_id: i32,
+    (x, y, z, heading): (i32, i32, i32, i32),
+    instance_id: i32,
+) -> Option<NpcAt> {
     ctx.add_spawn(npc_id, x, y, z, heading, false, 0, instance_id)
         .map(|npc| NpcAt {
             npc,
@@ -80,13 +85,23 @@ pub fn spawn_with_respawn(ctx: &mut ScriptCtx<'_>, row: &[i32; 7], instance_id: 
 
 /// The script's `teleportPlayer(player, coords, instanceId)`: `setInstanceId` and
 /// `teleToLocation(x, y, z)`.
-pub fn teleport_into(ctx: &mut ScriptCtx<'_>, player: ObjectId, (x, y, z): (i32, i32, i32), instance_id: i32) {
+pub fn teleport_into(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    (x, y, z): (i32, i32, i32),
+    instance_id: i32,
+) {
     ctx.world_mut()
         .tele_to_location(player, TeleportTarget::at(x, y, z).with_instance(instance_id));
 }
 
 /// `teleToLocation(loc, true)`: the place (with its heading and instance) and the random offset.
-pub fn teleport_to_location(ctx: &mut ScriptCtx<'_>, player: ObjectId, (x, y, z, heading): (i32, i32, i32, i32), instance_id: i32) {
+pub fn teleport_to_location(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    (x, y, z, heading): (i32, i32, i32, i32),
+    instance_id: i32,
+) {
     let offset = ctx.world().max_offset_on_teleport();
     ctx.world_mut().tele_to_location(
         player,
@@ -180,7 +195,14 @@ pub fn is_channel_leader(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
 /// The entry checks of the Halls of Erosion and the Heart of Infinity (one command channel led
 /// by the player, `min..=max` members of level 75 to 85 within 1000 of him, none restricted):
 /// the members' part, after the party and channel checks of each script.
-pub fn check_channel_members(ctx: &mut ScriptCtx<'_>, player: ObjectId, template_id: i32, min: i32, max: i32, quest: Option<&str>) -> bool {
+pub fn check_channel_members(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    template_id: i32,
+    min: i32,
+    max: i32,
+    quest: Option<&str>,
+) -> bool {
     let members = channel_members(ctx, player);
     let count = i32::try_from(members.len()).unwrap_or(i32::MAX);
     if count < min || count > max {
@@ -239,7 +261,13 @@ pub fn check_channel_members(ctx: &mut ScriptCtx<'_>, player: ObjectId, template
 
 /// The `isBossAttacked` block of `onAttack`: every allowed player (online ones only with
 /// `online_only`) may enter again in `hours` hours and is told so.
-pub fn restrict_entry(ctx: &mut ScriptCtx<'_>, instance_id: i32, template_id: i32, hours: i64, online_only: bool) {
+pub fn restrict_entry(
+    ctx: &mut ScriptCtx<'_>,
+    instance_id: i32,
+    template_id: i32,
+    hours: i64,
+    online_only: bool,
+) {
     // `Calendar.getInstance(); reenter.add(Calendar.HOUR, INSTANCEPENALTY)`.
     let reenter = ctx.now_ms() + hours * 3_600_000;
     let sm = SystemMessage::new(
@@ -278,14 +306,21 @@ pub fn conclude(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
         ctx.world_mut().set_instance_duration(instance_id, 5 * 60000);
     } else {
         ctx.world_mut().set_instance_duration(instance_id, 5 * 60000);
-        ctx.world_mut().set_instance_empty_destroy_time(instance_id, 5 * 60000);
+        ctx.world_mut()
+            .set_instance_empty_destroy_time(instance_id, 5 * 60000);
     }
 }
 
 /// The `warp` event of the Halls of Erosion and the Heart of Infinity: the leader pays a Soul
 /// Stone Fragment (13797) and his party members within 500 go to a destroyed tumor at random.
 /// `dead_tumors` is the world's list, with `dead_tumor` (the last one) added once more.
-pub fn warp(ctx: &mut ScriptCtx<'_>, instance_id: i32, player: ObjectId, dead_tumors: &mut Vec<NpcAt>, dead_tumor: Option<NpcAt>) {
+pub fn warp(
+    ctx: &mut ScriptCtx<'_>,
+    instance_id: i32,
+    player: ObjectId,
+    dead_tumors: &mut Vec<NpcAt>,
+    dead_tumor: Option<NpcAt>,
+) {
     if let Some(victim) = dead_tumor {
         dead_tumors.push(victim);
     }
@@ -316,7 +351,12 @@ pub fn warp(ctx: &mut ScriptCtx<'_>, instance_id: i32, player: ObjectId, dead_tu
 
 /// `partyMember.teleToLocation(x, y, z, true)` for the members of the player's party within
 /// `radius` of him.
-pub fn teleport_party_near(ctx: &mut ScriptCtx<'_>, player: ObjectId, radius: f64, (x, y, z): (i32, i32, i32)) {
+pub fn teleport_party_near(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    radius: f64,
+    (x, y, z): (i32, i32, i32),
+) {
     let offset = ctx.world().max_offset_on_teleport();
     for member in ctx.world().party_members_of(player) {
         if ctx.distance_3d(member, player).is_some_and(|d| d <= radius) {
@@ -379,9 +419,7 @@ pub fn set_parameter(ctx: &mut ScriptCtx<'_>, instance_id: i32, name: &str, valu
 
 /// The status of an instance world (`world.getStatus()`).
 pub fn status(ctx: &ScriptCtx<'_>, instance_id: i32) -> i32 {
-    ctx.world()
-        .instance_world(instance_id)
-        .map_or(0, |w| w.status())
+    ctx.world().instance_world(instance_id).map_or(0, |w| w.status())
 }
 
 /// `world.setStatus(value)`.

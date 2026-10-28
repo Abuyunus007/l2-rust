@@ -167,7 +167,10 @@ fn hed<'a>(ctx: &'a mut ScriptCtx<'_>, instance_id: i32) -> &'a mut HedWorld {
 
 fn world_of(ctx: &mut ScriptCtx<'_>, object: ObjectId) -> Option<i32> {
     let instance_id = common::world_of(ctx, object)?;
-    state(ctx).worlds.contains_key(&instance_id).then_some(instance_id)
+    state(ctx)
+        .worlds
+        .contains_key(&instance_id)
+        .then_some(instance_id)
 }
 
 /// Java `ai.areas.Gracia.instances.HallOfErosionDefence.HallOfErosionDefence`.
@@ -180,7 +183,10 @@ impl HallOfErosionDefence {
         }
 
         if ctx.world().party_of(player).is_none() {
-            ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+            );
             return false;
         }
 
@@ -251,7 +257,13 @@ impl HallOfErosionDefence {
             }
 
             // `finishTask = ThreadPool.schedule(new FinishTask(world), 20 * 60000)`.
-            ctx.start_quest_timer(&format!("FinishTask {instance_id}"), 20 * 60000, None, None, false);
+            ctx.start_quest_timer(
+                &format!("FinishTask {instance_id}"),
+                20 * 60000,
+                None,
+                None,
+                false,
+            );
             Self::run_tumors(ctx, instance_id);
         }
     }
@@ -265,7 +277,12 @@ impl HallOfErosionDefence {
 
         for spawn in &TUMOR_DEAD_SPAWN {
             for _ in 0..spawn[6] {
-                if let Some(npc) = common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id) {
+                if let Some(npc) = common::spawn(
+                    ctx,
+                    spawn[0],
+                    (spawn[1], spawn[2], spawn[3], spawn[4]),
+                    instance_id,
+                ) {
                     hed(ctx, instance_id).dead_tumors.push(npc);
                     let name = format!("RegenerationCoffinSpawn {instance_id} {}", npc.npc.object_id.0);
                     ctx.start_quest_timer(&name, 1000, None, None, false);
@@ -275,11 +292,22 @@ impl HallOfErosionDefence {
 
         for spawn in &SEEDS_SPAWN {
             for _ in 0..spawn[6] {
-                common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id);
+                common::spawn(
+                    ctx,
+                    spawn[0],
+                    (spawn[1], spawn[2], spawn[3], spawn[4]),
+                    instance_id,
+                );
             }
         }
 
-        ctx.start_quest_timer(&format!("AliveTumors {instance_id}"), 180 * 1000, None, None, false);
+        ctx.start_quest_timer(
+            &format!("AliveTumors {instance_id}"),
+            180 * 1000,
+            None,
+            None,
+            false,
+        );
     }
 
     fn stop_dead_tumors(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
@@ -340,9 +368,12 @@ impl HallOfErosionDefence {
                     Self::stop_dead_tumors(ctx, instance_id);
                     for spawn in &TUMOR_ALIVE_SPAWN {
                         for _ in 0..spawn[6] {
-                            if let Some(npc) =
-                                common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id)
-                            {
+                            if let Some(npc) = common::spawn(
+                                ctx,
+                                spawn[0],
+                                (spawn[1], spawn[2], spawn[3], spawn[4]),
+                                instance_id,
+                            ) {
                                 hed(ctx, instance_id).alivetumor.push(npc);
                             }
                         }
@@ -459,7 +490,13 @@ impl Script for HallOfErosionDefence {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         if let Some(instance_id) = world_of(ctx, npc.object_id)
             && npc.id == 18668
         {

@@ -186,7 +186,10 @@ fn hia<'a>(ctx: &'a mut ScriptCtx<'_>, instance_id: i32) -> &'a mut HiaWorld {
 
 fn world_of(ctx: &mut ScriptCtx<'_>, object: ObjectId) -> Option<i32> {
     let instance_id = common::world_of(ctx, object)?;
-    state(ctx).worlds.contains_key(&instance_id).then_some(instance_id)
+    state(ctx)
+        .worlds
+        .contains_key(&instance_id)
+        .then_some(instance_id)
 }
 
 /// Java `playMovie(world, movie)`: the allowed players inside.
@@ -204,7 +207,10 @@ pub struct HeartInfinityAttack;
 impl HeartInfinityAttack {
     fn check_conditions(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> bool {
         if ctx.world().party_of(player).is_none() {
-            ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+            );
             return false;
         }
 
@@ -295,7 +301,12 @@ impl HeartInfinityAttack {
 
         for spawn in &ROOMS_TUMORS {
             for _ in 0..spawn[6] {
-                if let Some(npc) = common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id) {
+                if let Some(npc) = common::spawn(
+                    ctx,
+                    spawn[0],
+                    (spawn[1], spawn[2], spawn[3], spawn[4]),
+                    instance_id,
+                ) {
                     common::set_hp_ratio(ctx, npc.npc.object_id, 0.5);
                     hia(ctx, instance_id).npc_list.push(npc);
                 }
@@ -352,13 +363,24 @@ impl HeartInfinityAttack {
         } else {
             for spawn in &ROOMS_BOSSES {
                 for _ in 0..spawn[6] {
-                    common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id);
+                    common::spawn(
+                        ctx,
+                        spawn[0],
+                        (spawn[1], spawn[2], spawn[3], spawn[4]),
+                        instance_id,
+                    );
                 }
             }
         }
         // NOTE(java-quirk): the task runs on after the failure until the instance is gone.
         if hia(ctx, instance_id).timer_task && ctx.world().instance(instance_id).is_some() {
-            ctx.start_quest_timer(&format!("TimerTask {instance_id}"), 5 * 60 * 1000, None, None, false);
+            ctx.start_quest_timer(
+                &format!("TimerTask {instance_id}"),
+                5 * 60 * 1000,
+                None,
+                None,
+                false,
+            );
         }
     }
 
@@ -394,7 +416,8 @@ impl HeartInfinityAttack {
                 let offset = ctx.world().max_offset_on_teleport();
                 ctx.world_mut().tele_to_location(
                     player,
-                    l2_world::teleport::TeleportTarget::at(-179537, 211233, -15472).with_random_offset(offset),
+                    l2_world::teleport::TeleportTarget::at(-179537, 211233, -15472)
+                        .with_random_offset(offset),
                 );
             }
         }
@@ -562,7 +585,13 @@ impl Script for HeartInfinityAttack {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         if let Some(instance_id) = world_of(ctx, npc.object_id)
             && npc.id == 18668
         {
@@ -635,7 +664,13 @@ impl Script for HeartInfinityAttack {
             if let Some(dead) = dead_tumor {
                 let respawn = state(ctx).tumor_respawn_time;
                 let id = dead.npc.object_id.0;
-                ctx.start_quest_timer(&format!("TumorRevival {instance_id} {id}"), respawn, None, None, false);
+                ctx.start_quest_timer(
+                    &format!("TumorRevival {instance_id} {id}"),
+                    respawn,
+                    None,
+                    None,
+                    false,
+                );
                 ctx.start_quest_timer(
                     &format!("RegenerationCoffinSpawn {instance_id} {id}"),
                     20000,

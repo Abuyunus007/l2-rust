@@ -27,7 +27,8 @@ pub(crate) const TUMOR_DEAD: i32 = 32531;
 
 pub(crate) const TUMOR_MOBIDS: [i32; 7] = [22509, 22510, 22511, 22512, 22513, 22514, 22515];
 const TWIN_MOBIDS: [i32; 5] = [22509, 22510, 22511, 22512, 22513];
-const TWIN_SPAWNS: [(i32, i32, i32, i32); 2] = [(25665, -173727, 218169, -9536), (25666, -173727, 218049, -9536)];
+const TWIN_SPAWNS: [(i32, i32, i32, i32); 2] =
+    [(25665, -173727, 218169, -9536), (25666, -173727, 218049, -9536)];
 const TEPIOS_SPAWN: (i32, i32, i32) = (-173727, 218109, -9536);
 
 const BOSS_INVUL_TIME: i64 = 30000;
@@ -95,7 +96,10 @@ fn check_conditions(data: &HallData, ctx: &mut ScriptCtx<'_>, player: ObjectId) 
     }
 
     if ctx.world().party_of(player).is_none() {
-        ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+        ctx.send_system_message(
+            player,
+            SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+        );
         return false;
     }
 
@@ -341,18 +345,18 @@ pub(crate) fn on_event(ctx: &mut ScriptCtx<'_>, event: &str, npc: Option<ScriptN
     } else if event.eq_ignore_ascii_case("ressurectTwin") {
         let skill = SkillKey::new(5824, 1);
         let alive_twin = if klanikus == Some(npc) { klodekus } else { klanikus };
-        let Some(alive_twin) = alive_twin else {
-            return None;
-        };
+        let alive_twin = alive_twin?;
         ctx.world_mut().do_revive(npc.object_id);
         ctx.world_mut().do_cast(npc.object_id, skill);
-        let alive_hp = ctx.world().creature_hp(alive_twin.object_id).map_or(0.0, |(hp, _)| hp);
+        let alive_hp = ctx
+            .world()
+            .creature_hp(alive_twin.object_id)
+            .map_or(0.0, |(hp, _)| hp);
         ctx.world_mut().set_current_hp(npc.object_id, alive_hp, true);
 
         // get most hated of other boss
         if let Some(hated) = ctx.most_hated(alive_twin) {
-            ctx.world_mut()
-                .npc_notify_aggression(npc.object_id, hated, 1000);
+            ctx.world_mut().npc_notify_aggression(npc.object_id, hated, 1000);
         }
 
         ctx.world_mut().set_invul(alive_twin.object_id, true); // make other boss invul
@@ -364,7 +368,13 @@ pub(crate) fn on_event(ctx: &mut ScriptCtx<'_>, event: &str, npc: Option<ScriptN
     None
 }
 
-pub(crate) fn on_attack(data: &HallData, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, attacker: ObjectId, damage: i32) {
+pub(crate) fn on_attack(
+    data: &HallData,
+    ctx: &mut ScriptCtx<'_>,
+    npc: ScriptNpc,
+    attacker: ObjectId,
+    damage: i32,
+) {
     let Some(instance_id) = world_of(ctx, npc.object_id) else {
         return;
     };
@@ -491,7 +501,12 @@ pub(crate) fn on_kill(data: &HallData, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) 
     }
 }
 
-pub(crate) fn on_talk(data: &HallData, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
+pub(crate) fn on_talk(
+    data: &HallData,
+    ctx: &mut ScriptCtx<'_>,
+    npc: ScriptNpc,
+    player: ObjectId,
+) -> Option<String> {
     if npc.id == MOUTHOFEKIMUS {
         enter_instance(data, ctx, player);
         return None;
@@ -525,7 +540,9 @@ macro_rules! hall_of_suffering {
                 _targets: &[l2_util::ObjectId],
                 _is_summon: bool,
             ) {
-                $crate::ai::areas::gracia::instances::hall_of_suffering::on_skill_see(ctx, npc, caster, skill);
+                $crate::ai::areas::gracia::instances::hall_of_suffering::on_skill_see(
+                    ctx, npc, caster, skill,
+                );
             }
 
             fn on_event(
@@ -547,7 +564,9 @@ macro_rules! hall_of_suffering {
                 _is_summon: bool,
                 _skill: Option<l2_world::SkillKey>,
             ) {
-                $crate::ai::areas::gracia::instances::hall_of_suffering::on_attack(&$data, ctx, npc, attacker, damage);
+                $crate::ai::areas::gracia::instances::hall_of_suffering::on_attack(
+                    &$data, ctx, npc, attacker, damage,
+                );
             }
 
             fn on_kill(

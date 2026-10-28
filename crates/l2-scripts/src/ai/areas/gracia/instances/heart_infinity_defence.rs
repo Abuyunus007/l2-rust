@@ -94,7 +94,10 @@ fn hid<'a>(ctx: &'a mut ScriptCtx<'_>, instance_id: i32) -> &'a mut HidWorld {
 
 fn world_of(ctx: &mut ScriptCtx<'_>, object: ObjectId) -> Option<i32> {
     let instance_id = common::world_of(ctx, object)?;
-    state(ctx).worlds.contains_key(&instance_id).then_some(instance_id)
+    state(ctx)
+        .worlds
+        .contains_key(&instance_id)
+        .then_some(instance_id)
 }
 
 /// Java `ai.areas.Gracia.instances.HeartInfinityDefence.HeartInfinityDefence`.
@@ -107,7 +110,10 @@ impl HeartInfinityDefence {
         }
 
         if ctx.world().party_of(player).is_none() {
-            ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+            );
             return false;
         }
 
@@ -177,7 +183,13 @@ impl HeartInfinityDefence {
             world.start_time = now;
             world.finish_task = true;
             world.timer_task = true;
-            ctx.start_quest_timer(&format!("FinishTask {instance_id}"), 30 * 60000, None, None, false);
+            ctx.start_quest_timer(
+                &format!("FinishTask {instance_id}"),
+                30 * 60000,
+                None,
+                None,
+                false,
+            );
             // `scheduleAtFixedRate(new TimerTask(world), 298 * 1000, 5 * 60 * 1000)`.
             ctx.start_quest_timer(&format!("TimerTask {instance_id}"), 298 * 1000, None, None, false);
             // `conquestBegins(world)`: everything starts 20 seconds later.
@@ -199,7 +211,12 @@ impl HeartInfinityDefence {
 
         for spawn2 in &ROOMS_TUMORS {
             for _ in 0..spawn2[6] {
-                if let Some(npc2) = common::spawn(ctx, spawn2[0], (spawn2[1], spawn2[2], spawn2[3], spawn2[4]), instance_id) {
+                if let Some(npc2) = common::spawn(
+                    ctx,
+                    spawn2[0],
+                    (spawn2[1], spawn2[2], spawn2[3], spawn2[4]),
+                    instance_id,
+                ) {
                     hid(ctx, instance_id).dead_tumors.push(npc2);
                 }
             }
@@ -217,7 +234,13 @@ impl HeartInfinityDefence {
         // value of now; later changes of `wagonRespawnTime` do not reach the running task.
         let period = state(ctx).wagon_respawn_time;
         hid(ctx, instance_id).wagon_spawn_task = true;
-        ctx.start_quest_timer(&format!("WagonSpawn {instance_id} {period}"), 1000, None, None, false);
+        ctx.start_quest_timer(
+            &format!("WagonSpawn {instance_id} {period}"),
+            1000,
+            None,
+            None,
+            false,
+        );
     }
 
     /// Java `notifyWagonArrived(npc, world)`.
@@ -308,12 +331,23 @@ impl HeartInfinityDefence {
                 } else if time == 15 {
                     for spawn in &ROOMS_BOSSES {
                         for _ in 0..spawn[6] {
-                            common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id);
+                            common::spawn(
+                                ctx,
+                                spawn[0],
+                                (spawn[1], spawn[2], spawn[3], spawn[4]),
+                                instance_id,
+                            );
                         }
                     }
                 }
                 if hid(ctx, instance_id).timer_task && ctx.world().instance(instance_id).is_some() {
-                    ctx.start_quest_timer(&format!("TimerTask {instance_id}"), 5 * 60 * 1000, None, None, false);
+                    ctx.start_quest_timer(
+                        &format!("TimerTask {instance_id}"),
+                        5 * 60 * 1000,
+                        None,
+                        None,
+                        false,
+                    );
                 }
             }
             "SpawnCoffins" => {
@@ -334,9 +368,12 @@ impl HeartInfinityDefence {
 
                     for spawn in &ROOMS_ALIVE_TUMORS {
                         for _ in 0..spawn[6] {
-                            if let Some(npc4) =
-                                common::spawn(ctx, spawn[0], (spawn[1], spawn[2], spawn[3], spawn[4]), instance_id)
-                            {
+                            if let Some(npc4) = common::spawn(
+                                ctx,
+                                spawn[0],
+                                (spawn[1], spawn[2], spawn[3], spawn[4]),
+                                instance_id,
+                            ) {
                                 common::set_hp_ratio(ctx, npc4.npc.object_id, 0.5);
                                 hid(ctx, instance_id).dead_tumors.push(npc4);
                             }
@@ -357,15 +394,17 @@ impl HeartInfinityDefence {
                 }
                 ctx.add_spawn(SOULWAGON, -179544, 207400, -15496, 0, false, 0, instance_id);
                 let period = arg.unwrap_or(60000);
-                ctx.start_quest_timer(&format!("WagonSpawn {instance_id} {period}"), period, None, None, false);
+                ctx.start_quest_timer(
+                    &format!("WagonSpawn {instance_id} {period}"),
+                    period,
+                    None,
+                    None,
+                    false,
+                );
             }
             "TumorRevival" => {
                 // The arguments: the place of the tumor that died.
-                let loc: Vec<i32> = event
-                    .split(' ')
-                    .skip(2)
-                    .filter_map(|v| v.parse().ok())
-                    .collect();
+                let loc: Vec<i32> = event.split(' ').skip(2).filter_map(|v| v.parse().ok()).collect();
                 let [x, y, z, heading] = loc[..] else {
                     return true;
                 };
@@ -472,7 +511,13 @@ impl Script for HeartInfinityDefence {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         if let Some(instance_id) = world_of(ctx, npc.object_id)
             && npc.id == 18668
         {
@@ -650,7 +695,8 @@ mod tests {
         // Thirty minutes after the entry the defence held.
         t.take_writes();
         let finish = format!("FinishTask {instance}");
-        t.world.run_as_script(QN, |ctx| ctx.notify_event(&finish, None, None));
+        t.world
+            .run_as_script(QN, |ctx| ctx.notify_event(&finish, None, None));
         let writes = t.take_writes();
         assert!(
             writes.iter().any(|w| matches!(w,

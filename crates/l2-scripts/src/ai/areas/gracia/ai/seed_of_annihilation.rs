@@ -335,12 +335,19 @@ mod tests {
         )]);
         let mut registry = ScriptRegistry::new();
         registry.add(SeedOfAnnihilation);
-        let mut t = ScriptTest::new_with(registry, NPCS, "", &[("data/zones/soa.xml", &zones)], |world, root| {
-            load_zones(world, root);
-            set_items_and_skills(world, "", &skills);
-        });
+        let mut t = ScriptTest::new_with(
+            registry,
+            NPCS,
+            "",
+            &[("data/zones/soa.xml", &zones)],
+            |world, root| {
+                load_zones(world, root);
+                set_items_and_skills(world, "", &skills);
+            },
+        );
         // `startEffectZonesControl` put the drawn buff of the region into its zone.
-        let row = ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
+        let row =
+            ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
         let buff = ZONE_BUFFS[usize::try_from(row[0]).unwrap()];
         assert_eq!(t.world.effect_zone_skill_level(60006, buff), 1);
         // A player inside gets it after the initial delay, and not before.
@@ -352,7 +359,8 @@ mod tests {
         t.world.run_as_script("SeedOfAnnihilation", |ctx| {
             ctx.notify_event("ChangeSeedsStatus", None, None);
         });
-        let row = ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
+        let row =
+            ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
         let new_buff = ZONE_BUFFS[usize::try_from(row[0]).unwrap()];
         for other in ZONE_BUFFS[1..].iter().filter(|b| **b != new_buff) {
             assert_eq!(t.world.effect_zone_skill_level(60006, *other), 0);

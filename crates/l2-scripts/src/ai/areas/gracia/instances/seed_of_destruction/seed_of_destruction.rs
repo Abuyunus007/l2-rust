@@ -46,8 +46,9 @@ const SC_BOSS_TIAT_ENDING_SUCCES: i32 = 6;
 
 // Doors/Walls/Zones
 const ATTACKABLE_DOORS: [i32; 21] = [
-    12240005, 12240006, 12240007, 12240008, 12240009, 12240010, 12240013, 12240014, 12240015, 12240016, 12240017,
-    12240018, 12240021, 12240022, 12240023, 12240024, 12240025, 12240026, 12240028, 12240029, 12240030,
+    12240005, 12240006, 12240007, 12240008, 12240009, 12240010, 12240013, 12240014, 12240015, 12240016,
+    12240017, 12240018, 12240021, 12240022, 12240023, 12240024, 12240025, 12240026, 12240028, 12240029,
+    12240030,
 ];
 const ENTRANCE_ROOM_DOORS: [i32; 2] = [12240001, 12240002];
 const SQUARE_DOORS: [i32; 6] = [12240003, 12240004, 12240011, 12240012, 12240019, 12240020];
@@ -767,7 +768,10 @@ fn sod<'a>(ctx: &'a mut ScriptCtx<'_>, instance_id: i32) -> &'a mut SodWorld {
 /// `InstanceManager.getWorld(object) instanceof SODWorld`.
 fn world_of(ctx: &mut ScriptCtx<'_>, object: ObjectId) -> Option<i32> {
     let instance_id = common::world_of(ctx, object)?;
-    state(ctx).worlds.contains_key(&instance_id).then_some(instance_id)
+    state(ctx)
+        .worlds
+        .contains_key(&instance_id)
+        .then_some(instance_id)
 }
 
 /// Java `ai.areas.Gracia.instances.SeedOfDestruction.SeedOfDestruction`.
@@ -781,7 +785,10 @@ impl SeedOfDestruction {
         }
 
         if ctx.world().party_of(player).is_none() {
-            ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+            );
             return false;
         }
 
@@ -798,7 +805,10 @@ impl SeedOfDestruction {
             ctx.send_system_message(player, SystemMessageId::OnlyAPartyLeaderCanMakeTheRequestToEnter);
             return false;
         } else if count < seeds.min_tiat_players || count > seeds.max_tiat_players {
-            ctx.send_system_message(player, SystemMessageId::YouCannotEnterDueToThePartyHavingExceededTheLimit);
+            ctx.send_system_message(
+                player,
+                SystemMessageId::YouCannotEnterDueToThePartyHavingExceededTheLimit,
+            );
             return false;
         }
 
@@ -891,8 +901,10 @@ impl SeedOfDestruction {
         let now = ctx.now_ms();
         // NOTE(java-quirk): the welcome goes to the leader once per member.
         for member in members.unwrap_or_else(|| vec![player]) {
-            ctx.world()
-                .send_message(player, "Welcome to Seed of Destruction. Time to finish the instance is 130 minutes.");
+            ctx.world().send_message(
+                player,
+                "Welcome to Seed of Destruction. Time to finish the instance is 130 minutes.",
+            );
             ctx.world_mut().set_instance_time(member, INSTANCE_ID, now);
             Self::teleportplayer(ctx, member, teleto, instance_id);
             if remove_buffs {
@@ -915,14 +927,24 @@ impl SeedOfDestruction {
     }
 
     /// Java `teleportplayerEnergy(player, teleto)`.
-    fn teleportplayer_energy(ctx: &mut ScriptCtx<'_>, player: ObjectId, (x, y, z): (i32, i32, i32), instance_id: i32) {
+    fn teleportplayer_energy(
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        (x, y, z): (i32, i32, i32),
+        instance_id: i32,
+    ) {
         ctx.world_mut().script_set_intention_idle(player);
         ctx.world_mut()
             .tele_to_location(player, TeleportTarget::at(x, y, z).with_instance(instance_id));
     }
 
     /// Java `teleportplayer(player, teleto, world)`: the summon comes along.
-    fn teleportplayer(ctx: &mut ScriptCtx<'_>, player: ObjectId, (x, y, z): (i32, i32, i32), instance_id: i32) {
+    fn teleportplayer(
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        (x, y, z): (i32, i32, i32),
+        instance_id: i32,
+    ) {
         Self::teleportplayer_energy(ctx, player, (x, y, z), instance_id);
         if let Some(pet) = ctx.summon_of(player) {
             ctx.world_mut()
@@ -960,7 +982,11 @@ impl SeedOfDestruction {
                 ctx.close_door(THRONE_DOOR, instance_id);
             }
             1 => {
-                Self::send_screen_message(ctx, instance_id, NpcStringId::TheEnemiesHaveAttackedEveryoneComeOutAndFightUrgh);
+                Self::send_screen_message(
+                    ctx,
+                    instance_id,
+                    NpcStringId::TheEnemiesHaveAttackedEveryoneComeOutAndFightUrgh,
+                );
                 for i in ENTRANCE_ROOM_DOORS {
                     ctx.open_door(i, instance_id);
                 }
@@ -1008,14 +1034,21 @@ impl SeedOfDestruction {
     }
 
     /// Java `spawn(world, spawnTable, addToKillTable, isImmobilized)`.
-    fn spawn(ctx: &mut ScriptCtx<'_>, instance_id: i32, spawn_table: &[[i32; 5]], add_to_kill_table: bool, is_immobilized: bool) {
+    fn spawn(
+        ctx: &mut ScriptCtx<'_>,
+        instance_id: i32,
+        spawn_table: &[[i32; 5]],
+        add_to_kill_table: bool,
+        is_immobilized: bool,
+    ) {
         for mob in spawn_table {
             // traps: the world has no trap NPC (see the top)
             if (18720..=18774).contains(&mob[0]) {
                 continue;
             }
 
-            let Some(npc) = ctx.add_spawn(mob[0], mob[1], mob[2], mob[3], mob[4], false, 0, instance_id) else {
+            let Some(npc) = ctx.add_spawn(mob[0], mob[1], mob[2], mob[3], mob[4], false, 0, instance_id)
+            else {
                 continue;
             };
             if add_to_kill_table {
@@ -1140,7 +1173,11 @@ impl Script for SeedOfDestruction {
         } else if status <= 8 && npc.id == TIAT {
             let (hp, max) = ctx.world().creature_hp(npc.object_id).unwrap_or((0.0, 0.0));
             if hp < (max / 2.0).floor() && state(ctx).num_atk < 1 {
-                Self::send_screen_message(ctx, instance_id, NpcStringId::ComeOutWarriorsProtectSeedOfDestruction);
+                Self::send_screen_message(
+                    ctx,
+                    instance_id,
+                    NpcStringId::ComeOutWarriorsProtectSeedOfDestruction,
+                );
                 if let Some(tiat) = sod(ctx, instance_id).tiat {
                     ctx.world_mut().do_cast(tiat.object_id, SkillKey::new(5818, 1));
                     ctx.world_mut().do_cast(tiat.object_id, SkillKey::new(181, 1));
@@ -1286,7 +1323,12 @@ impl Script for SeedOfDestruction {
         }
 
         if npc.id == ALENOS {
-            ctx.reread_global_variables(&["SoDState", "SoDTiatKilled", "SoDLSCDate"], "alenos", Some(npc), Some(player));
+            ctx.reread_global_variables(
+                &["SoDState", "SoDTiatKilled", "SoDLSCDate"],
+                "alenos",
+                Some(npc),
+                Some(player),
+            );
         } else if npc.id == TELEPORT {
             if let Some(instance_id) = world_of(ctx, npc.object_id) {
                 let into = ctx.world().instance_id_of(player);
@@ -1439,8 +1481,13 @@ mod tests {
         assert_eq!(alive(&t, OBELISK).len(), 1);
         // The Instant Moving Device tells where the fight is.
         let device = t.world.run_as_script(NAME, |ctx| {
-            let device = ctx.add_spawn(TELEPORT, -245820, 220921, -12091, 0, false, 0, instance).unwrap();
-            assert_eq!(SeedOfDestruction.on_first_talk(ctx, device, Oid(1)).as_deref(), Some("32601-1.htm"));
+            let device = ctx
+                .add_spawn(TELEPORT, -245820, 220921, -12091, 0, false, 0, instance)
+                .unwrap();
+            assert_eq!(
+                SeedOfDestruction.on_first_talk(ctx, device, Oid(1)).as_deref(),
+                Some("32601-1.htm")
+            );
         });
         assert!(device);
 

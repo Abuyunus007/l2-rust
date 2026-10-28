@@ -68,7 +68,15 @@ pub fn load_zones(world: &mut World, root: &std::path::Path) {
 }
 
 /// A square `NPoly` zone around `(x, y)` (half side `r`) between `min_z` and `max_z`.
-pub fn square_zone(name: &str, id: i32, ty: &str, (x, y): (i32, i32), r: i32, z: (i32, i32), stats: &str) -> String {
+pub fn square_zone(
+    name: &str,
+    id: i32,
+    ty: &str,
+    (x, y): (i32, i32),
+    r: i32,
+    z: (i32, i32),
+    stats: &str,
+) -> String {
     format!(
         r#"<zone name="{name}" id="{id}" type="{ty}" shape="NPoly" minZ="{}" maxZ="{}">{stats}
             <node X="{}" Y="{}" /><node X="{}" Y="{}" /><node X="{}" Y="{}" /><node X="{}" Y="{}" /></zone>"#,
@@ -87,7 +95,10 @@ pub fn square_zone(name: &str, id: i32, ty: &str, (x, y): (i32, i32), r: i32, z:
 
 /// A zone file of the test datapack with these `<zone>` elements.
 pub fn zone_file(zones: &[String]) -> String {
-    format!(r#"<?xml version="1.0" encoding="UTF-8"?><list enabled="true">{}</list>"#, zones.concat())
+    format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?><list enabled="true">{}</list>"#,
+        zones.concat()
+    )
 }
 
 /// Makes the players of `parties` (each a list of player ids, the first one its leader) a

@@ -12,32 +12,59 @@ const ENTER_TELEPORT: (i32, i32, i32) = (-187567, 205570, -9538);
 
 // Doors/Walls/Zones
 const ROOM_1_MOBS: [(i32, i32, i32, i32); 5] = [
-    (22509, -186296, 208200, -9544), (22509, -186161, 208345, -9544), (22509, -186296, 208403, -9544),
-    (22510, -186107, 208113, -9528), (22510, -186350, 208200, -9544),
+    (22509, -186296, 208200, -9544),
+    (22509, -186161, 208345, -9544),
+    (22509, -186296, 208403, -9544),
+    (22510, -186107, 208113, -9528),
+    (22510, -186350, 208200, -9544),
 ];
 const ROOM_2_MOBS: [(i32, i32, i32, i32); 6] = [
-    (22511, -184433, 210953, -9536), (22511, -184406, 211301, -9536), (22509, -184541, 211272, -9544),
-    (22510, -184244, 211098, -9536), (22510, -184352, 211243, -9536), (22510, -184298, 211330, -9528),
+    (22511, -184433, 210953, -9536),
+    (22511, -184406, 211301, -9536),
+    (22509, -184541, 211272, -9544),
+    (22510, -184244, 211098, -9536),
+    (22510, -184352, 211243, -9536),
+    (22510, -184298, 211330, -9528),
 ];
 const ROOM_3_MOBS: [(i32, i32, i32, i32); 8] = [
-    (22512, -182611, 213984, -9520), (22512, -182908, 214071, -9520), (22512, -182962, 213868, -9512),
-    (22509, -182881, 213955, -9512), (22511, -182827, 213781, -9504), (22511, -182530, 213984, -9528),
-    (22510, -182935, 213723, -9512), (22510, -182557, 213868, -9520),
+    (22512, -182611, 213984, -9520),
+    (22512, -182908, 214071, -9520),
+    (22512, -182962, 213868, -9512),
+    (22509, -182881, 213955, -9512),
+    (22511, -182827, 213781, -9504),
+    (22511, -182530, 213984, -9528),
+    (22510, -182935, 213723, -9512),
+    (22510, -182557, 213868, -9520),
 ];
 const ROOM_4_MOBS: [(i32, i32, i32, i32); 9] = [
-    (22514, -180958, 216860, -9544), (22514, -181012, 216628, -9536), (22514, -181120, 216715, -9536),
-    (22513, -180661, 216599, -9536), (22513, -181039, 216599, -9536), (22511, -180715, 216599, -9536),
-    (22511, -181012, 216889, -9536), (22512, -180931, 216918, -9536), (22512, -180742, 216628, -9536),
+    (22514, -180958, 216860, -9544),
+    (22514, -181012, 216628, -9536),
+    (22514, -181120, 216715, -9536),
+    (22513, -180661, 216599, -9536),
+    (22513, -181039, 216599, -9536),
+    (22511, -180715, 216599, -9536),
+    (22511, -181012, 216889, -9536),
+    (22512, -180931, 216918, -9536),
+    (22512, -180742, 216628, -9536),
 ];
 const ROOM_5_MOBS: [(i32, i32, i32, i32); 10] = [
-    (22512, -177372, 217854, -9536), (22512, -177237, 218140, -9536), (22512, -177021, 217647, -9528),
-    (22513, -177372, 217792, -9544), (22513, -177372, 218053, -9536), (22514, -177291, 217734, -9544),
-    (22514, -177264, 217792, -9544), (22514, -177264, 218053, -9536), (22515, -177156, 217792, -9536),
+    (22512, -177372, 217854, -9536),
+    (22512, -177237, 218140, -9536),
+    (22512, -177021, 217647, -9528),
+    (22513, -177372, 217792, -9544),
+    (22513, -177372, 218053, -9536),
+    (22514, -177291, 217734, -9544),
+    (22514, -177264, 217792, -9544),
+    (22514, -177264, 218053, -9536),
+    (22515, -177156, 217792, -9536),
     (22515, -177075, 217647, -9528),
 ];
 const TUMOR_SPAWNS: [(i32, i32, i32); 5] = [
-    (-186327, 208286, -9544), (-184429, 211155, -9544), (-182811, 213871, -9496),
-    (-181039, 216633, -9528), (-177264, 217760, -9544),
+    (-186327, 208286, -9544),
+    (-184429, 211155, -9544),
+    (-182811, 213871, -9496),
+    (-181039, 216633, -9528),
+    (-177264, 217760, -9544),
 ];
 // @formatter:on
 
@@ -47,7 +74,13 @@ const DATA: HallData = HallData {
     instance_id: INSTANCEID,
     quest: "Q00694_BreakThroughTheHallOfSuffering",
     enter_teleport: ENTER_TELEPORT,
-    rooms: [&ROOM_1_MOBS, &ROOM_2_MOBS, &ROOM_3_MOBS, &ROOM_4_MOBS, &ROOM_5_MOBS],
+    rooms: [
+        &ROOM_1_MOBS,
+        &ROOM_2_MOBS,
+        &ROOM_3_MOBS,
+        &ROOM_4_MOBS,
+        &ROOM_5_MOBS,
+    ],
     tumor_spawns: TUMOR_SPAWNS,
 };
 
@@ -128,9 +161,10 @@ mod tests {
     }
 
     fn talk(t: &mut ScriptTest, player: i32, mouth: ScriptNpc) {
-        t.world.run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
-            HallOfSufferingAttack.on_talk(ctx, mouth, Oid(player));
-        });
+        t.world
+            .run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
+                HallOfSufferingAttack.on_talk(ctx, mouth, Oid(player));
+            });
     }
 
     fn alive(t: &ScriptTest, npc_id: i32) -> Vec<Oid> {
@@ -200,16 +234,18 @@ mod tests {
             id: KLODEKUS,
         };
         // The first hit restricts the entry for a day.
-        t.world.run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
-            HallOfSufferingAttack.on_attack(ctx, npc, Oid(1), 10, false, None);
-        });
+        t.world
+            .run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
+                HallOfSufferingAttack.on_attack(ctx, npc, Oid(1), 10, false, None);
+            });
         assert!(t.world.instance_time(Oid(1), INSTANCEID) > 0);
         assert!(t.world.instance_time(Oid(2), INSTANCEID) > 0);
         // A killing blow on one twin only makes him look dead, to rise again.
         t.world.set_current_hp(klodekus, 5.0, false);
-        t.world.run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
-            HallOfSufferingAttack.on_attack(ctx, npc, Oid(1), 10, false, None);
-        });
+        t.world
+            .run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
+                HallOfSufferingAttack.on_attack(ctx, npc, Oid(1), 10, false, None);
+            });
         assert!(t.world.is_dead(klodekus));
         assert!(t.world.run_as_script("HallOfSufferingAttack", |ctx| {
             assert!(ctx.has_quest_timer("ressurectTwin", Some(npc), None));
@@ -220,9 +256,10 @@ mod tests {
             id: KLANIKUS,
         };
         t.world.set_current_hp(klanikus, 5.0, false);
-        t.world.run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
-            HallOfSufferingAttack.on_attack(ctx, other, Oid(1), 10, false, None);
-        });
+        t.world
+            .run_as_script("HallOfSufferingAttack", |ctx: &mut ScriptCtx<'_>| {
+                HallOfSufferingAttack.on_attack(ctx, other, Oid(1), 10, false, None);
+            });
         t.wait_ms(2_600);
 
         // Finished: status 7, Tepios, a reward tag of the fast run, five minutes left.
@@ -243,8 +280,10 @@ mod tests {
         t.party(1, 2);
         talk(&mut t, 1, mouth);
         let instance = t.world.instance_id_of(Oid(2));
-        t.world
-            .tele_to_location(Oid(2), l2_world::teleport::TeleportTarget::at(0, 1, 0).with_instance(0));
+        t.world.tele_to_location(
+            Oid(2),
+            l2_world::teleport::TeleportTarget::at(0, 1, 0).with_instance(0),
+        );
         assert_eq!(t.world.instance_id_of(Oid(2)), 0);
         talk(&mut t, 2, mouth);
         assert_eq!(t.world.instance_id_of(Oid(2)), instance);

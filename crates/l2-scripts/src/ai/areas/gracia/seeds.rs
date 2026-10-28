@@ -256,7 +256,10 @@ impl Script for SeedOfDestructionManager {
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         Self::load_data(ctx);
         Self::handle_sod_stages(ctx);
-        info!("Seed of Destruction Manager: Loaded. Current stage is: {}", sod_state(ctx));
+        info!(
+            "Seed of Destruction Manager: Loaded. Current stage is: {}",
+            sod_state(ctx)
+        );
     }
 
     fn on_event(
@@ -280,7 +283,10 @@ impl Script for SeedOfDestructionManager {
             return None;
         }
         // Every decision first sees the rows of the other server (D-54).
-        if event == SOD_INCREASE_TIAT_KILLED || event.starts_with("stage2End") || event.starts_with("setSoDState ") {
+        if event == SOD_INCREASE_TIAT_KILLED
+            || event.starts_with("stage2End")
+            || event.starts_with("setSoDState ")
+        {
             ctx.reread_global_variables(&SOD_VARIABLES, &format!("{REREAD}{event}"), None, None);
         }
         None
@@ -443,7 +449,10 @@ impl Script for SeedOfInfinityManager {
             let time = soi_opened_time(ctx, now);
             Self::open_seed(ctx, time);
         }
-        info!("Seed of Infinity Manager: Loaded. Current stage is: {}", soi_current_stage(ctx));
+        info!(
+            "Seed of Infinity Manager: Loaded. Current stage is: {}",
+            soi_current_stage(ctx)
+        );
     }
 
     fn on_event(
@@ -527,9 +536,7 @@ mod tests {
 
     fn var(t: &ScriptTest, name: &str) -> Option<String> {
         let globals = t.world.global_variables();
-        globals
-            .has_variable(name)
-            .then(|| globals.get_string(name, ""))
+        globals.has_variable(name).then(|| globals.get_string(name, ""))
     }
 
     fn notify(t: &mut ScriptTest, manager: &str, event: &str) {
@@ -565,7 +572,10 @@ mod tests {
 
     #[test]
     fn with_the_switch_off_the_tiat_kill_decides_on_the_rows_read_again() {
-        let mut t = world(false, vec![("SoDState", "1"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "0")]);
+        let mut t = world(
+            false,
+            vec![("SoDState", "1"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "0")],
+        );
         notify(&mut t, SOD_MANAGER, SOD_INCREASE_TIAT_KILLED);
         // The decision waits for the rows.
         assert_eq!(t.world.script_rereads_waiting(), 1);
@@ -669,7 +679,10 @@ mod tests {
 
     #[test]
     fn the_time_to_the_next_state_change_is_known_in_stage_2_only() {
-        let mut t = world(true, vec![("SoDState", "2"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "1000")]);
+        let mut t = world(
+            true,
+            vec![("SoDState", "2"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "1000")],
+        );
         t.world.run_as_script(SOD_MANAGER, |ctx| {
             // The stage ended long ago: the start moved it back to 1.
             assert_eq!(sod_state(ctx), 1);
