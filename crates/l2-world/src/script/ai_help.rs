@@ -359,6 +359,34 @@ impl ScriptCtx<'_> {
             .npc_set_intention_move_to(npc.object_id, destination.x, destination.y, destination.z);
     }
 
+    /// Java `MinionList.spawnMinion(master, minionId)`.
+    pub fn spawn_minion(&mut self, master: ScriptNpc, minion_npc_id: i32) -> Option<ScriptNpc> {
+        self.world_mut()
+            .spawn_minion_by_id(master.object_id, minion_npc_id)
+            .map(|object_id| ScriptNpc {
+                object_id,
+                id: minion_npc_id,
+            })
+    }
+
+    /// Java `master.getMinionList().getSpawnedMinionCount()`.
+    pub fn spawned_minion_count(&self, master: ScriptNpc) -> usize {
+        self.world().spawned_minion_count(master.object_id)
+    }
+
+    /// Java `npc.isInsideRadius3D(x, y, z, radius)`.
+    pub fn is_inside_radius_3d(&self, npc: ScriptNpc, x: i32, y: i32, z: i32, radius: i32) -> bool {
+        self.world().position_of(npc.object_id).is_some_and(|(nx, ny, nz)| {
+            let (dx, dy, dz) = (i64::from(nx - x), i64::from(ny - y), i64::from(nz - z));
+            dx * dx + dy * dy + dz * dz <= i64::from(radius) * i64::from(radius)
+        })
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.ACTIVE`.
+    pub fn is_intention_active(&self, npc: ScriptNpc) -> bool {
+        self.world().intention_of(npc.object_id) == crate::movement::Intention::Active
+    }
+
     /// Java `npc.setImmobilized(value)`.
     pub fn set_immobilized(&mut self, npc: ScriptNpc, value: bool) {
         self.world_mut().set_immobilized(npc.object_id, value);

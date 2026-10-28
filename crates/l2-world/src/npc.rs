@@ -752,6 +752,20 @@ impl World {
         Some(id)
     }
 
+    /// Java `MinionList.spawnMinion(master, minionTemplateId)` (S-AI-05): one more minion near a
+    /// master that is in the world; `None` for an unknown template or master.
+    pub fn spawn_minion_by_id(&mut self, master: ObjectId, minion_npc_id: i32) -> Option<ObjectId> {
+        let templates = self.npc_world.templates.clone()?;
+        let master_template = self.npcs.get(&master).and_then(|n| templates.get(n.npc_id))?;
+        let minion_template = templates.get(minion_npc_id)?;
+        self.spawn_minion(master, master_template, minion_template)
+    }
+
+    /// Java `master.getMinionList().getSpawnedMinionCount()` (S-AI-05).
+    pub fn spawned_minion_count(&self, master: ObjectId) -> usize {
+        self.minions_of(master).len()
+    }
+
     /// Java `master.getMinionList().spawnMinions(template.getParameters().getMinionList("Privates"))`
     /// for a master that is in the world: the missing minions are made. Returns how many were
     /// created. (`Spawn.initializeNpc` calls this for a spawn; this is the entry for the rest of

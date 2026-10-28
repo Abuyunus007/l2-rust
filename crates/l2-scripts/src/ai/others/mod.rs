@@ -18,6 +18,7 @@ pub mod delusion_teleport;
 pub mod dorian;
 pub mod dust_rider;
 pub mod emerald_horn;
+pub mod epidos;
 pub mod fairy_trees;
 pub mod fame_manager;
 pub mod flee_monsters;
@@ -46,6 +47,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(dorian::Dorian);
     r.add(dust_rider::DustRider);
     r.add(emerald_horn::EmeraldHorn);
+    r.add(epidos::Epidos);
     r.add(fairy_trees::FairyTrees);
     r.add(fame_manager::FameManager);
     r.add(flee_monsters::FleeMonsters);
