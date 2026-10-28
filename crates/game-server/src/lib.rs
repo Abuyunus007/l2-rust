@@ -558,6 +558,7 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         bloodoath_points: config.feature.bloodoath_points,
         knightsepaulette_points: config.feature.knightsepaulette_points,
         ballista_points: config.feature.ballista_points,
+        disable_tutorial: config.player.disable_tutorial,
     }
 }
 
