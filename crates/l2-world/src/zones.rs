@@ -364,6 +364,81 @@ impl World {
         self.players.get(&id).is_some_and(|p| p.zones.is_inside(zone))
     }
 
+    // ------------------------------------------------------------------ one zone (S-BOSS-01)
+    //
+    // Java's `ZoneManager.getZoneById(id, Class)` and the `ZoneType` methods the boss scripts use.
+    // Only players keep zone state in the world, so a zone holds a player by its `_characterList`
+    // (the membership of `revalidateZone`) and an NPC by its position.
+
+    /// Java `ZoneManager.getZoneById(id, Class)`.
+    pub fn zone_by_id(&self, zone_id: i32, zone_type: &str) -> Option<&Zone> {
+        self.zoning.zones.as_ref()?.get_of_type(zone_id, zone_type)
+    }
+
+    /// Java `ZoneType.getPlayersInside()`.
+    pub fn zone_players_inside(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
+        let Some(zone) = self.zone_by_id(zone_id, zone_type) else {
+            return Vec::new();
+        };
+        self.players
+            .values()
+            .filter(|p| p.zones.is_member(zone))
+            .map(|p| p.core.object_id)
+            .collect()
+    }
+
+    /// Java `ZoneType.getCharactersInside()`: the players inside, then the NPCs whose position is
+    /// in the zone.
+    // NOTE: Java's NPCs join a zone's `_characterList` when they move (`revalidateZone`); an NPC
+    // here is in the zone where it stands, which is the same once it stopped.
+    pub fn zone_characters_inside(&self, zone_id: i32, zone_type: &str) -> Vec<ObjectId> {
+        let Some(zone) = self.zone_by_id(zone_id, zone_type) else {
+            return Vec::new();
+        };
+        let mut inside = self.zone_players_inside(zone_id, zone_type);
+        let mut npcs: Vec<ObjectId> = self
+            .npcs
+            .keys()
+            .copied()
+            .filter(|id| {
+                self.objects.get(id).is_some_and(|e| e.spawned)
+                    && self
+                        .position_of(*id)
+                        .is_some_and(|(x, y, z)| zone.is_inside_zone(x, y, z))
+            })
+            .collect();
+        npcs.sort_by_key(|id| id.0);
+        inside.extend(npcs);
+        inside
+    }
+
+    /// Java `ZoneType.isCharacterInZone(creature)`.
+    pub fn is_character_in_zone(&self, zone_id: i32, zone_type: &str, id: ObjectId) -> bool {
+        let Some(zone) = self.zone_by_id(zone_id, zone_type) else {
+            return false;
+        };
+        match self.players.get(&id) {
+            Some(player) => player.zones.is_member(zone),
+            None => self.is_npc(id) && self.is_inside_zone_by_position(zone_id, zone_type, id),
+        }
+    }
+
+    /// Java `ZoneType.isInsideZone(object)`: by the object's position.
+    pub fn is_inside_zone_by_position(&self, zone_id: i32, zone_type: &str, id: ObjectId) -> bool {
+        let Some(zone) = self.zone_by_id(zone_id, zone_type) else {
+            return false;
+        };
+        self.position_of(id)
+            .is_some_and(|(x, y, z)| zone.is_inside_zone(x, y, z))
+    }
+
+    /// Java `ZoneType.broadcastPacket(packet)`: to every player inside.
+    pub fn broadcast_to_zone(&self, zone_id: i32, zone_type: &str, packet: &impl l2_net::Encode) {
+        for player in self.zone_players_inside(zone_id, zone_type) {
+            self.send(player, packet);
+        }
+    }
+
     /// The first half of `Creature.setXYZ`, before the position changes. `false` means Java
     /// returns without moving the creature: "(0, 0) is not a valid location", and a position
     /// outside the zone grid ("Prevent moving to nonexistent regions"). When the creature

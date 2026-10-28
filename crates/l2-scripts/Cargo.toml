@@ -12,10 +12,13 @@ repository.workspace = true
 l2-world.workspace = true
 l2-util.workspace = true
 l2-protocol-game.workspace = true
+# The `Encode` bound of the packets a boss script sends to a zone (S-BOSS-01).
+l2-net.workspace = true
+# The log lines of the boss scripts (Java `LOGGER`).
+tracing.workspace = true
 
 [dev-dependencies]
 l2-data.workspace = true
-l2-net.workspace = true
 tempfile.workspace = true
 
 [lints]

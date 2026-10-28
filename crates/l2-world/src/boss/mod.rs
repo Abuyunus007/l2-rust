@@ -79,6 +79,54 @@ pub struct BossSettings {
     pub raid_ranking_up_to_50th: i32,
     /// `FeatureConfig.RAID_RANKING_UP_TO_100TH`.
     pub raid_ranking_up_to_100th: i32,
+    /// The `GrandBoss.ini` values the boss scripts read (S-BOSS-01).
+    pub grand_boss: GrandBossSettings,
+}
+
+/// Java `GrandBossConfig`: the keys of `config/GrandBoss.ini` the Antharas, Valakas and Baium
+/// scripts read. `Default` is Java's default of each key.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GrandBossSettings {
+    /// `ANTHARAS_WAIT_TIME` (`AntharasWaitTime`), minutes.
+    pub antharas_wait_time: i32,
+    /// `ANTHARAS_SPAWN_INTERVAL` (`IntervalOfAntharasSpawn`), hours.
+    pub antharas_spawn_interval: i32,
+    /// `ANTHARAS_SPAWN_RANDOM` (`RandomOfAntharasSpawn`), hours.
+    pub antharas_spawn_random: i32,
+    /// `ANTHARAS_RECOGNIZE_HERO` (`AntharasRecognizeHero`).
+    pub antharas_recognize_hero: bool,
+    /// `VALAKAS_WAIT_TIME` (`ValakasWaitTime`), minutes.
+    pub valakas_wait_time: i32,
+    /// `VALAKAS_SPAWN_INTERVAL` (`IntervalOfValakasSpawn`), hours.
+    pub valakas_spawn_interval: i32,
+    /// `VALAKAS_SPAWN_RANDOM` (`RandomOfValakasSpawn`), hours.
+    pub valakas_spawn_random: i32,
+    /// `VALAKAS_RECOGNIZE_HERO` (`ValakasRecognizeHero`).
+    pub valakas_recognize_hero: bool,
+    /// `BAIUM_SPAWN_INTERVAL` (`IntervalOfBaiumSpawn`), hours.
+    pub baium_spawn_interval: i32,
+    /// `BAIUM_SPAWN_RANDOM` (`RandomOfBaiumSpawn`), hours.
+    pub baium_spawn_random: i32,
+    /// `BAIUM_RECOGNIZE_HERO` (`BaiumRecognizeHero`).
+    pub baium_recognize_hero: bool,
+}
+
+impl Default for GrandBossSettings {
+    fn default() -> Self {
+        Self {
+            antharas_wait_time: 30,
+            antharas_spawn_interval: 264,
+            antharas_spawn_random: 72,
+            antharas_recognize_hero: true,
+            valakas_wait_time: 30,
+            valakas_spawn_interval: 264,
+            valakas_spawn_random: 72,
+            valakas_recognize_hero: true,
+            baium_spawn_interval: 168,
+            baium_spawn_random: 48,
+            baium_recognize_hero: true,
+        }
+    }
 }
 
 impl Default for BossSettings {
@@ -90,6 +138,7 @@ impl Default for BossSettings {
             raid_ranking: [1250, 900, 700, 600, 450, 350, 300, 200, 150, 100],
             raid_ranking_up_to_50th: 25,
             raid_ranking_up_to_100th: 12,
+            grand_boss: GrandBossSettings::default(),
         }
     }
 }
@@ -176,6 +225,9 @@ pub enum BossReadThen {
     Nothing,
     /// `AdminGrandBoss.manageHtml`: show the state page to this GM.
     ShowGrandBoss { gm: l2_util::ObjectId, boss_id: i32 },
+    /// A boss script decides on the row (D-54): `notifyEvent(event, null, null)` of the script
+    /// once the row is in memory. A failed read sends nothing.
+    ScriptEvent { script: &'static str, event: &'static str },
 }
 
 /// The answer of a read (`WorldCommand::BossReread`).
@@ -258,8 +310,22 @@ impl World {
         info!("Boss managers: all boss info saved.");
     }
 
+    /// The configuration of the managers and the boss scripts.
+    pub fn boss_settings(&self) -> &BossSettings {
+        &self.boss.settings
+    }
+
+    /// Asks for the `grandboss_data` row of `boss_id` again (D-50, D-54); when it is in memory the
+    /// script `script` gets `event` (`notifyEvent(event, null, null)`).
+    pub fn reread_grand_boss_for_script(&mut self, boss_id: i32, script: &'static str, event: &'static str) {
+        self.outbox.persist(crate::outbox::PersistCommand::BossRereadRequest {
+            kind: BossReadKind::GrandBoss(boss_id),
+            then: BossReadThen::ScriptEvent { script, event },
+        });
+    }
+
     /// Whether the D-53 switch lets this server write the global boss rows.
-    pub(crate) fn boss_writes_enabled(&self) -> bool {
+    pub fn boss_writes_enabled(&self) -> bool {
         self.boss.settings.cycle_database_writes
     }
 
@@ -278,12 +344,24 @@ impl World {
             }
             Err(()) => false,
         };
-        if let BossReadThen::ShowGrandBoss { gm, boss_id } = then {
-            if ok {
-                self.show_grand_boss_page(gm, boss_id);
-            } else {
-                self.send_sys_message(gm, "The boss state could not be read from the database.");
+        match then {
+            BossReadThen::ShowGrandBoss { gm, boss_id } => {
+                if ok {
+                    self.show_grand_boss_page(gm, boss_id);
+                } else {
+                    self.send_sys_message(gm, "The boss state could not be read from the database.");
+                }
             }
+            BossReadThen::ScriptEvent { script, event } => {
+                if ok {
+                    if let Some(id) = self.scripts.by_name(script) {
+                        self.script_notify_event(id, event, None, None);
+                    }
+                } else {
+                    tracing::warn!("{script}: the boss row could not be read; {event} is not run.");
+                }
+            }
+            BossReadThen::Nothing => {}
         }
     }
 

@@ -1256,6 +1256,24 @@ pub fn boss_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BossSe
         ],
         raid_ranking_up_to_50th: f.raid_ranking_up_to_50th,
         raid_ranking_up_to_100th: f.raid_ranking_up_to_100th,
+        grand_boss: grand_boss_settings(&config.grand_boss),
+    }
+}
+
+/// The `GrandBoss.ini` values the Antharas, Valakas and Baium scripts read (S-BOSS-01).
+fn grand_boss_settings(g: &l2_config::generated::game::GrandBossConfig) -> l2_world::GrandBossSettings {
+    l2_world::GrandBossSettings {
+        antharas_wait_time: g.antharas_wait_time,
+        antharas_spawn_interval: g.antharas_spawn_interval,
+        antharas_spawn_random: g.antharas_spawn_random,
+        antharas_recognize_hero: g.antharas_recognize_hero,
+        valakas_wait_time: g.valakas_wait_time,
+        valakas_spawn_interval: g.valakas_spawn_interval,
+        valakas_spawn_random: g.valakas_spawn_random,
+        valakas_recognize_hero: g.valakas_recognize_hero,
+        baium_spawn_interval: g.baium_spawn_interval,
+        baium_spawn_random: g.baium_spawn_random,
+        baium_recognize_hero: g.baium_recognize_hero,
     }
 }
 

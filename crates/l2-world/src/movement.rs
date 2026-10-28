@@ -1875,6 +1875,24 @@ impl World {
         }
     }
 
+    /// Java `GeoEngine.canMoveToTarget(x, y, z, tx, ty, tz, instanceId)` for the scripts
+    /// (S-BOSS-01); `true` without geodata.
+    pub fn can_move_to_target(&self, from: (i32, i32, i32), to: (i32, i32, i32), instance: i32) -> bool {
+        self.geo_can_move_to_target(
+            Location {
+                x: from.0,
+                y: from.1,
+                z: from.2,
+            },
+            Location {
+                x: to.0,
+                y: to.1,
+                z: to.2,
+            },
+            instance,
+        )
+    }
+
     pub(crate) fn geo_can_move_to_target(&self, from: Location, to: Location, instance: i32) -> bool {
         match &self.geo {
             Some(geo) => geo.can_move_to_target_with(&self.obstacles(), from, to, instance),

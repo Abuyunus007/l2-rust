@@ -34,12 +34,21 @@ impl PacketSink for Sink {
 #[derive(Clone, Default)]
 struct Writes(Arc<Mutex<Vec<QuestWrite>>>);
 
-struct RecordingOutbox(Writes);
+/// The grand boss writes and re-read requests (S-BOSS-01).
+#[derive(Clone, Default)]
+struct BossCommands(Arc<Mutex<Vec<PersistCommand>>>);
+
+struct RecordingOutbox(Writes, BossCommands);
 
 impl Outbox for RecordingOutbox {
     fn persist(&mut self, command: PersistCommand) {
         if let PersistCommand::Quest(write) = command {
             self.0.0.lock().unwrap().push(write);
+        } else if matches!(
+            command,
+            PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }
+        ) {
+            self.1.0.lock().unwrap().push(command);
         }
     }
 
@@ -92,6 +101,7 @@ pub struct ScriptTest {
     pub world: World,
     log: Log,
     writes: Writes,
+    boss: BossCommands,
     _root: tempfile::TempDir,
 }
 
@@ -99,6 +109,18 @@ impl ScriptTest {
     /// `npcs` and `items` are `<npc>` and `<item>` elements in the datapack's XML format;
     /// `pages` are `(datapack path, text)` html files.
     pub fn new(scripts: ScriptRegistry, npcs: &str, items: &str, pages: &[(&str, &str)]) -> Self {
+        Self::new_with(scripts, npcs, items, pages, |_, _| {})
+    }
+
+    /// [`ScriptTest::new`] with `prepare` run on the world (and the datapack folder) before the
+    /// scripts are installed: zones, boss rows, settings the scripts read when they load.
+    pub fn new_with(
+        scripts: ScriptRegistry,
+        npcs: &str,
+        items: &str,
+        pages: &[(&str, &str)],
+        prepare: impl FnOnce(&mut World, &std::path::Path),
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -114,7 +136,11 @@ impl ScriptTest {
         }
         let log = Log::default();
         let writes = Writes::default();
-        let mut world = World::new(WorldRng::from_seed(7), Box::new(RecordingOutbox(writes.clone())));
+        let boss = BossCommands::default();
+        let mut world = World::new(
+            WorldRng::from_seed(7),
+            Box::new(RecordingOutbox(writes.clone(), boss.clone())),
+        );
         let items = Arc::new(ItemTemplates::from_xml(&format!("<list>{items}</list>")).unwrap());
         world.set_static_data(Box::new(Data(StatData {
             items,
@@ -127,11 +153,13 @@ impl ScriptTest {
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+        prepare(&mut world, root.path());
         world.install_scripts(scripts);
         Self {
             world,
             log,
             writes,
+            boss,
             _root: root,
         }
     }
@@ -199,6 +227,11 @@ impl ScriptTest {
     /// The `character_quests` writes since the last call.
     pub fn take_writes(&self) -> Vec<QuestWrite> {
         std::mem::take(&mut self.writes.0.lock().unwrap())
+    }
+
+    /// The grand boss writes and re-read requests since the last call.
+    pub fn take_boss(&self) -> Vec<PersistCommand> {
+        std::mem::take(&mut self.boss.0.lock().unwrap())
     }
 
     /// How many of `item_id` the player has (Java `getQuestItemsCount`).

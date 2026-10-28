@@ -1069,6 +1069,16 @@ impl<'w> ScriptCtx<'w> {
         self.world.do_cast(npc.object_id, skill);
     }
 
+    /// Java `addSkillCastDesire(npc, target, skill, desire)`: an attackable hates the target by
+    /// `desire`, targets it and casts.
+    pub fn add_skill_cast_desire(&mut self, npc: ScriptNpc, target: ObjectId, skill: SkillKey, desire: i64) {
+        if self.world.is_attackable_npc(npc.object_id) {
+            self.world.add_damage_hate(npc.object_id, target, 0, desire);
+        }
+        self.world.set_npc_target(npc.object_id, Some(target));
+        self.world.set_intention_cast(npc.object_id, skill, Some(target));
+    }
+
     /// Java `playMovie(player, movie)` as far as `Player.playMovie` goes: the player stops and
     /// the client plays the scene (the movie holder waiting for `EndScenePlayer` is not
     /// modelled, as in `vehicle/controller.rs`).

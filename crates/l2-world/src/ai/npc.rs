@@ -16,8 +16,38 @@ impl World {
         }
     }
 
+    /// Java `CreatureAI.setIntentionFollow(target)` of an NPC (`AttackableAI` starts its task
+    /// after), for the scripts (S-BOSS-01).
+    pub fn npc_set_intention_follow(&mut self, id: ObjectId, target: ObjectId) {
+        if !self.is_npc(id) {
+            return;
+        }
+        self.wake_ai(id);
+        let blocked = !self.objects.get(&target).is_some_and(|e| e.kind.is_creature())
+            || self.intention_of(id) == Intention::Rest
+            || self.is_all_skills_disabled(id)
+            || self.is_casting_now(id)
+            || self.is_movement_disabled(id)
+            || self.is_dead(id)
+            || id == target;
+        if blocked {
+            self.client_action_failed(id);
+        } else {
+            // Stop the actor auto-attack client side by sending Server->Client packet
+            // AutoAttackStop (broadcast).
+            self.client_stop_auto_attack(id);
+            // Set the Intention of this AbstractAI to FOLLOW.
+            self.set_intention_value(id, Intention::Follow);
+            // Create and Launch an AI Follow Task to execute every 1s.
+            self.start_follow(id, target, crate::interact::NORMAL_FOLLOW_RANGE);
+        }
+        if self.is_attackable_npc(id) {
+            self.start_ai_task(id);
+        }
+    }
+
     /// Java `getAI().setIntentionIdle()` of an NPC (players: `World::set_intention_idle`).
-    pub(crate) fn npc_set_intention_idle(&mut self, id: ObjectId) {
+    pub fn npc_set_intention_idle(&mut self, id: ObjectId) {
         // `SummonAI.setIntentionIdle()`.
         if self.is_summon(id) {
             self.summon_set_intention_idle(id);

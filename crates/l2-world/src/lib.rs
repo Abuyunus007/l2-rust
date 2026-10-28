@@ -118,7 +118,7 @@ pub use augment::{AugmentInput, AugmentSettings, AugmentWorld};
 pub use bookmarks::{BookmarkData, BookmarkInput, BookmarkWrite};
 pub use boss::{
     BossLoad, BossReadKind, BossReadThen, BossRereadRows, BossSettings, BossTimer, BossWrite, GrandBossData,
-    GrandBossInfo, GrandBossStoreRow, RaidBossData, RaidBossStatus, RaidBossUpdateRow, RaidPointsRecord,
+    GrandBossInfo, GrandBossSettings, GrandBossStoreRow, RaidBossData, RaidBossStatus, RaidBossUpdateRow, RaidPointsRecord,
 };
 pub use bot_report::{BotPunishment, BotReportRow, BotReportSettings};
 pub use bypass::{BypassHandler, BypassHandlers};

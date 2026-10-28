@@ -7,7 +7,7 @@
 // read goes out through the outbox; its answer (`WorldCommand::BossReread`) shows the page.
 //
 // `skip`, `respawn`, `minions` and `abort` send an event to the Antharas or Baium script
-// (`notifyEvent`); the scripts are D-05, so the event is not delivered and the GM is told.
+// (`notifyEvent`, S-BOSS-01). Java throws when the script is not loaded; here the GM is told.
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;
@@ -72,8 +72,7 @@ fn admin_grandboss(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             if st.has_more() {
                 let boss_id = parse_int(st.next_token().unwrap_or(""))?;
                 if boss_id == ANTHARAS {
-                    // FOLLOW-UP(D-05): `antharasAi().notifyEvent("SKIP_WAITING", null, activeChar)`.
-                    script_not_ported(world, gm);
+                    notify_boss_script(world, gm, ANTHARAS_AI, "SKIP_WAITING");
                     manage_html(world, gm, boss_id);
                 } else {
                     world.send_sys_message(gm, "Wrong ID!");
@@ -86,9 +85,12 @@ fn admin_grandboss(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             if st.has_more() {
                 let boss_id = parse_int(st.next_token().unwrap_or(""))?;
                 match boss_id {
-                    // FOLLOW-UP(D-05): `notifyEvent("RESPAWN_ANTHARAS" / "RESPAWN_BAIUM", ..)`.
-                    ANTHARAS | BAIUM => {
-                        script_not_ported(world, gm);
+                    ANTHARAS => {
+                        notify_boss_script(world, gm, ANTHARAS_AI, "RESPAWN_ANTHARAS");
+                        manage_html(world, gm, boss_id);
+                    }
+                    BAIUM => {
+                        notify_boss_script(world, gm, BAIUM_AI, "RESPAWN_BAIUM");
                         manage_html(world, gm, boss_id);
                     }
                     _ => world.send_sys_message(gm, "Wrong ID!"),
@@ -101,8 +103,8 @@ fn admin_grandboss(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             if st.has_more() {
                 let boss_id = parse_int(st.next_token().unwrap_or(""))?;
                 match boss_id {
-                    // FOLLOW-UP(D-05): `notifyEvent("DESPAWN_MINIONS", ..)`.
-                    ANTHARAS | BAIUM => script_not_ported(world, gm),
+                    ANTHARAS => notify_boss_script(world, gm, ANTHARAS_AI, "DESPAWN_MINIONS"),
+                    BAIUM => notify_boss_script(world, gm, BAIUM_AI, "DESPAWN_MINIONS"),
                     _ => world.send_sys_message(gm, "Wrong ID!"),
                 }
             } else {
@@ -113,9 +115,12 @@ fn admin_grandboss(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             if st.has_more() {
                 let boss_id = parse_int(st.next_token().unwrap_or(""))?;
                 match boss_id {
-                    // FOLLOW-UP(D-05): `notifyEvent("ABORT_FIGHT", ..)`.
-                    ANTHARAS | BAIUM => {
-                        script_not_ported(world, gm);
+                    ANTHARAS => {
+                        notify_boss_script(world, gm, ANTHARAS_AI, "ABORT_FIGHT");
+                        manage_html(world, gm, boss_id);
+                    }
+                    BAIUM => {
+                        notify_boss_script(world, gm, BAIUM_AI, "ABORT_FIGHT");
                         manage_html(world, gm, boss_id);
                     }
                     _ => world.send_sys_message(gm, "Wrong ID!"),
@@ -129,8 +134,17 @@ fn admin_grandboss(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     Ok(())
 }
 
-fn script_not_ported(world: &World, gm: ObjectId) {
-    world.send_sys_message(gm, "The boss scripts are not ported yet; the event was not sent.");
+/// `antharasAi()` / `baiumAi()`: `ScriptManager.getScript(Antharas.class.getSimpleName())`.
+const ANTHARAS_AI: &str = "Antharas";
+const BAIUM_AI: &str = "Baium";
+
+/// `xxxAi().notifyEvent(event, null, activeChar)`.
+fn notify_boss_script(world: &mut World, gm: ObjectId, script: &str, event: &str) {
+    match world.scripts.by_name(script) {
+        Some(id) => world.script_notify_event(id, event, None, Some(gm)),
+        // Java: `getScript` answers null and `notifyEvent` throws a NullPointerException.
+        None => world.send_sys_message(gm, "The boss scripts are not ported yet; the event was not sent."),
+    }
 }
 
 /// `new NpcHtmlMessage(0, 1)` + `setHtml`.

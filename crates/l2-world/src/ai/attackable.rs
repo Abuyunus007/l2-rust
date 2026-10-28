@@ -206,7 +206,7 @@ impl World {
     }
 
     /// Java `Creature.disableCoreAI(value)`.
-    pub(crate) fn disable_core_ai(&mut self, id: ObjectId, value: bool) {
+    pub fn disable_core_ai(&mut self, id: ObjectId, value: bool) {
         if value {
             self.npc_world.core_ai_disabled.insert(id);
         } else {
@@ -216,9 +216,23 @@ impl World {
 
     /// Java `Creature.isCoreAIDisabled()`: the AI does not pick targets or start fights. A
     /// territory ward is disabled by its constructor.
-    pub(crate) fn is_core_ai_disabled(&self, id: ObjectId) -> bool {
+    pub fn is_core_ai_disabled(&self, id: ObjectId) -> bool {
         self.npc_world.core_ai_disabled.contains(&id)
             || self.npc_template(id).is_some_and(|t| t.is_type("TerritoryWard"))
+    }
+
+    /// Java `Npc.setRandomWalking(enabled)`: the NPC wanders around its spawn or not, until it
+    /// decays (Java's `onSpawn` sets the flag again).
+    pub fn set_random_walking(&mut self, id: ObjectId, enabled: bool) {
+        if self.npcs.contains_key(&id) {
+            self.npc_world.random_walking.insert(id, enabled);
+        }
+    }
+
+    /// Java `npc.getTemplate().getParameters().getInt(name)`; `None` when the template has no such
+    /// parameter (Java throws).
+    pub fn npc_template_param_int(&self, id: ObjectId, name: &str) -> Option<i32> {
+        self.npc_template(id).and_then(|t| t.param_int(name))
     }
 
     /// Java `Npc.getSpawn()`.
@@ -240,7 +254,7 @@ impl World {
         }
     }
 
-    pub(crate) fn dist_3d(&self, a: ObjectId, b: ObjectId) -> f64 {
+    pub fn dist_3d(&self, a: ObjectId, b: ObjectId) -> f64 {
         match (self.position_of(a), self.position_of(b)) {
             (Some(a), Some(b)) => distance_3d(a, b),
             _ => f64::MAX,
@@ -272,6 +286,10 @@ impl World {
     /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
     /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
     fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
+        // `Npc.setRandomWalking(value)` of a script (S-BOSS-01).
+        if let Some(value) = self.npc_world.random_walking.get(&id) {
+            return *value;
+        }
         // `Npc.onSpawn`: `!WalkingManager.isTargeted(this) && ...` (a route walker never wanders).
         if self
             .npcs
@@ -451,6 +469,7 @@ impl World {
     /// Forgets everything the AI keeps about an NPC that leaves the world.
     pub(crate) fn forget_npc_ai(&mut self, id: ObjectId) {
         self.stop_ai_task(id);
+        self.npc_world.random_walking.remove(&id);
         self.ai.creatures.remove(&id);
         self.ai.siege_guards.remove(&id);
         self.combat.creatures.remove(&id);
@@ -1518,7 +1537,7 @@ impl World {
     }
 
     /// Java `CreatureAI.setIntentionMoveTo(loc)` of an NPC (`AttackableAI` starts its task after).
-    pub(crate) fn npc_set_intention_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
+    pub fn npc_set_intention_move_to(&mut self, id: ObjectId, x: i32, y: i32, z: i32) {
         self.wake_ai(id);
         self.stop_follow(id);
         if self.intention_of(id) != Intention::Rest
@@ -1572,7 +1591,7 @@ impl World {
 
     /// Java `Creature.setRunning(value)` of an NPC: `ChangeMoveType` to those who see it, then
     /// their `NpcInfo` again.
-    pub(crate) fn set_running(&mut self, id: ObjectId, value: bool) {
+    pub fn set_running(&mut self, id: ObjectId, value: bool) {
         let Some(npc) = self.npcs.get_mut(&id) else {
             return;
         };
@@ -2114,7 +2133,7 @@ impl World {
     }
 
     /// Java `Attackable.clearAggroList()`.
-    pub(crate) fn aggro_clear(&mut self, id: ObjectId) {
+    pub fn aggro_clear(&mut self, id: ObjectId) {
         if let Some(state) = self.combat.creatures.get_mut(&id) {
             state.aggro.clear();
         }
