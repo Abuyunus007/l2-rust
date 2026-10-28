@@ -81,10 +81,17 @@ mod tests {
         t.take();
         t.talk(1, manager);
         let out = t.take();
-        assert!(names_to(&out, 1).contains(&"EX_BLOCK_UP_SET_LIST".to_owned()), "{:?}", names_to(&out, 1));
+        assert!(
+            names_to(&out, 1).contains(&"EX_BLOCK_UP_SET_LIST".to_owned()),
+            "{:?}",
+            names_to(&out, 1)
+        );
         // The script answers with packets, never with a page.
         assert!(pages_to(&out, 1).is_empty());
-        assert_eq!(t.world.block_arena(0).map(|a| a.red.len() + a.blue.len()), Some(1));
+        assert_eq!(
+            t.world.block_arena(0).map(|a| a.red.len() + a.blue.len()),
+            Some(1)
+        );
     }
 
     #[test]

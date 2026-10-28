@@ -161,12 +161,18 @@ mod tests {
         // The circlet comes without a page, the second request says so.
         assert!(click(&mut t, npc, "HeroCirclet").is_empty());
         assert_eq!(t.count(1, WINGS_OF_DESTINY_CIRCLET), 1);
-        assert_eq!(click(&mut t, npc, "HeroCirclet"), [page("already_have_circlet.htm")]);
+        assert_eq!(
+            click(&mut t, npc, "HeroCirclet"),
+            [page("already_have_circlet.htm")]
+        );
         assert_eq!(t.count(1, WINGS_OF_DESTINY_CIRCLET), 1);
 
         assert_eq!(click(&mut t, npc, "HeroWeapon"), [page("weapon_list.htm")]);
         assert!(click(&mut t, npc, "6611").is_empty());
         assert_eq!(t.count(1, 6611), 1);
-        assert_eq!(click(&mut t, npc, "HeroWeapon"), [page("already_have_weapon.htm")]);
+        assert_eq!(
+            click(&mut t, npc, "HeroWeapon"),
+            [page("already_have_weapon.htm")]
+        );
     }
 }

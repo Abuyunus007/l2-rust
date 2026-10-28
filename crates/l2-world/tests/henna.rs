@@ -14,7 +14,7 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::henna::{HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaRemoveList};
-use l2_protocol_game::server::{HennaInfo, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{HennaInfo, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
 use l2_world::stats::{BaseStatBonus, StatData};

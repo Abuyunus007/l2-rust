@@ -25,8 +25,8 @@ use l2_protocol_game::client::{
 use l2_protocol_game::server::{
     BuyListSeed, CropOffer, CropProcureInfo, ExSendManorList, ExShowCropInfo, ExShowCropSetting,
     ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
-    ManorDefaultCrop, NpcHtmlMessage, ProcureCastle, SeedForSale, SeedProductionInfo, SellCropItem,
-    SystemMessage, SystemMessageParam,
+    ManorDefaultCrop, ProcureCastle, SeedForSale, SeedProductionInfo, SellCropItem, SystemMessage,
+    SystemMessageParam,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanPrivilegesRef, PlayerClanState};
@@ -668,10 +668,6 @@ fn procure(
         reward_type: reward,
         next_period: next,
     }
-}
-
-fn html_to(out: &[Out], to: i32) -> Vec<NpcHtmlMessage> {
-    decoded::<NpcHtmlMessage>(out, to, "NPC_HTML_MESSAGE")
 }
 
 // ---------------------------------------------------------------------------------- loading

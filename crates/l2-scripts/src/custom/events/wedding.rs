@@ -101,10 +101,12 @@ impl Script for Wedding {
                     ctx.world_mut().wedding_marry_couple(state.couple_id);
 
                     // Messages to the couple
-                    ctx.world().send_message(player, "Congratulations you are married!");
+                    ctx.world()
+                        .send_message(player, "Congratulations you are married!");
                     ctx.world_mut().wedding_set_married(player, true);
                     ctx.world_mut().wedding_set_marry_request(player, false);
-                    ctx.world().send_message(partner, "Congratulations you are married!");
+                    ctx.world()
+                        .send_message(partner, "Congratulations you are married!");
                     ctx.world_mut().wedding_set_married(partner, true);
                     ctx.world_mut().wedding_set_marry_request(partner, false);
 
@@ -131,8 +133,10 @@ impl Script for Wedding {
                 ctx.world_mut().wedding_set_marry_accepted(player, false);
                 ctx.world_mut().wedding_set_marry_accepted(partner, false);
 
-                ctx.world().send_message(player, "You declined your partner's marriage request.");
-                ctx.world().send_message(partner, "Your partner declined your marriage request.");
+                ctx.world()
+                    .send_message(player, "You declined your partner's marriage request.");
+                ctx.world()
+                    .send_message(partner, "Your partner declined your marriage request.");
                 htmltext = Some(send_html(ctx, partner, "Declined.html", None));
             }
             _ => {}
@@ -149,7 +153,12 @@ impl Script for Wedding {
 
 /// Java `Wedding.sendHtml(player, fileName, regex, replacement)`: the page goes to `player` and is
 /// returned.
-fn send_html(ctx: &mut ScriptCtx<'_>, player: ObjectId, file_name: &str, replace: Option<(&str, &str)>) -> String {
+fn send_html(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    file_name: &str,
+    replace: Option<(&str, &str)>,
+) -> String {
     let mut html = ctx.get_htm(player, file_name).unwrap_or_default();
     if let Some((from, to)) = replace {
         html = html.replace(from, to);
@@ -263,12 +272,24 @@ mod tests {
         t.talk(BOB, priest);
         let out = t.take();
         // The first talk: Start.html with the fee.
-        assert!(pages_to(&out, ALICE)[0].contains("Fee 1000"), "{:?}", pages_to(&out, ALICE));
+        assert!(
+            pages_to(&out, ALICE)[0].contains("Fee 1000"),
+            "{:?}",
+            pages_to(&out, ALICE)
+        );
 
         t.bypass(ALICE, "Script Wedding ask");
         let out = t.take();
-        assert!(pages_to(&out, BOB).iter().any(|p| p.contains("P1 asks")), "{:?}", pages_to(&out, BOB));
-        assert!(pages_to(&out, ALICE).iter().any(|p| p.contains("You requested P2")));
+        assert!(
+            pages_to(&out, BOB).iter().any(|p| p.contains("P1 asks")),
+            "{:?}",
+            pages_to(&out, BOB)
+        );
+        assert!(
+            pages_to(&out, ALICE)
+                .iter()
+                .any(|p| p.contains("You requested P2"))
+        );
         let wedding = |id: i32| t.world.player_wedding(ObjectId(id)).cloned().unwrap();
         assert!(wedding(ALICE).marry_accepted);
         assert!(wedding(BOB).marry_request);
@@ -341,7 +362,11 @@ mod tests {
         t.take();
         t.bypass(BOB, "Script Wedding accept");
         let out = t.take();
-        assert!(pages_to(&out, BOB).iter().any(|p| p.contains("You need 1000 Adena.")));
+        assert!(
+            pages_to(&out, BOB)
+                .iter()
+                .any(|p| p.contains("You need 1000 Adena."))
+        );
         assert_eq!(t.world.adena_of(ObjectId(ALICE)), 10_000);
         assert!(!t.world.couples()[0].married);
     }

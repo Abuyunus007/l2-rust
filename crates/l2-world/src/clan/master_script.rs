@@ -9,9 +9,9 @@
 // the air ship controllers) follow in `process_script_event`; any other name gets the "no quest"
 // page Java shows when the script does not exist.
 
+use crate::world::World;
 use l2_protocol_game::server::ActionFailed;
 use l2_util::ObjectId;
-use crate::world::World;
 
 /// Java `Quest.DEFAULT_NO_QUEST_MSG`.
 const DEFAULT_NO_QUEST_MSG: &str = "<html><body>You are either not on a quest that involves this NPC, or you don't meet this NPC's minimum quest requirements.</body></html>";
@@ -86,8 +86,6 @@ impl World {
             return;
         }
         // The air ship controllers (M8-VEHICLE-01, `vehicle/controller.rs`).
-        if self.air_ship_script_event(player, script_name, event) {
-            return;
-        }
+        self.air_ship_script_event(player, script_name, event);
     }
 }
