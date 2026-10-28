@@ -115,6 +115,8 @@ pub(crate) struct NpcExtra {
     script_value: i32,
     /// `!_lethalable` (Java's default is lethalable, so the default here is false).
     not_lethalable: bool,
+    /// `!_isMortal` (Java's default is mortal).
+    immortal: bool,
     overhit: Overhit,
 }
 
@@ -183,6 +185,69 @@ impl World {
             .by_npc
             .get(&id)
             .is_some_and(|e| e.not_lethalable)
+    }
+
+    /// Java `Creature.setMortal(value)` (S-BOSS-02): an immortal creature does not die when its
+    /// HP reaches 0.
+    pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).immortal = !value;
+    }
+
+    /// Java `Creature.isMortal()`.
+    pub fn is_mortal(&self, id: ObjectId) -> bool {
+        !self.scripts.npc_extras.by_npc.get(&id).is_some_and(|e| e.immortal)
+    }
+
+    /// Java `NpcConfig.RAID_DISABLE_CURSE` (`DisableRaidCurse`).
+    pub fn raid_curse_disabled(&self) -> bool {
+        self.settings.cast.raid_disable_curse
+    }
+
+    /// Java `Monster.getLeader()`: the master of a minion.
+    pub fn npc_leader(&self, npc: ObjectId) -> Option<ObjectId> {
+        self.leader_of(npc)
+    }
+
+    /// Java `master.getMinionList().onMinionDie(minion, respawnDelay)`: the minion leaves the
+    /// list and comes back after `respawn_ms` (`-1` the default, `0` never).
+    pub fn minion_died(&mut self, master: ObjectId, minion: ObjectId, respawn_ms: i32) {
+        self.minion_list_on_minion_die(master, minion, respawn_ms);
+    }
+
+    /// Java `Attackable.useMagic(skill)` (S-BOSS-02): the checks, then `setIntentionCast(skill,
+    /// target)` at what the NPC has targeted (`getFirstOfTargetList` of a single-target skill).
+    pub fn attackable_use_magic(&mut self, npc: ObjectId, key: crate::effects::SkillKey) {
+        let Some(table) = self.skill_table() else {
+            return;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return;
+        };
+        if self.is_alike_dead(npc)
+            || skill.is_passive()
+            || self.is_casting_now(npc)
+            || self.is_skill_disabled(npc, skill)
+        {
+            return;
+        }
+        let (hp, mp) = self.core_of(npc).map_or((0.0, 0.0), |c| (c.cur_hp, c.cur_mp));
+        if mp < f64::from(self.mp_consume(npc, skill) + self.mp_initial_consume(npc, skill))
+            || hp <= f64::from(skill.hp_consume)
+        {
+            return;
+        }
+        if !skill.is_static() {
+            if skill.is_magic() {
+                if self.is_muted(npc) {
+                    return;
+                }
+            } else if self.is_physical_muted(npc) {
+                return;
+            }
+        }
+        if let Some(target) = self.creature_target(npc) {
+            self.set_intention_cast(npc, key, Some(target));
+        }
     }
 
     /// Java `Attackable.overhitEnabled(status)`.
