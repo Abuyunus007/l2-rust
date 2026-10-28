@@ -230,7 +230,7 @@ impl World {
     }
 
     /// `getHeading()` of a player or NPC (0 for anything else).
-    pub(crate) fn heading_of(&self, id: ObjectId) -> i32 {
+    pub fn heading_of(&self, id: ObjectId) -> i32 {
         if let Some(p) = self.players.get(&id) {
             return p.core.heading;
         }
@@ -246,14 +246,14 @@ impl World {
     }
 
     /// Java `isNpc()`: a summon's creature is in `npcs` too, but it is no `Npc`.
-    pub(crate) fn is_npc(&self, id: ObjectId) -> bool {
+    pub fn is_npc(&self, id: ObjectId) -> bool {
         self.npcs
             .get(&id)
             .is_some_and(|n| n.class != crate::npc::NpcClass::Summon)
     }
 
     /// Java `isAttackable()` of an NPC (monsters, guards, ...; see `StatView::is_attackable`).
-    pub(crate) fn is_attackable_npc(&self, id: ObjectId) -> bool {
+    pub fn is_attackable_npc(&self, id: ObjectId) -> bool {
         self.stats(id).is_some_and(|s| s.is_attackable())
     }
 

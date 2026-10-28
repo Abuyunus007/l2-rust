@@ -615,7 +615,7 @@ impl World {
     }
 
     /// Java `World.broadcastToAllOnlinePlayers(packet)`.
-    pub(crate) fn broadcast_to_all_online_players(&self, packet: &impl l2_net::Encode) {
+    pub fn broadcast_to_all_online_players(&self, packet: &impl l2_net::Encode) {
         let bytes = packet.to_bytes();
         let mut ids: Vec<ObjectId> = self.sinks.keys().copied().collect();
         ids.sort_unstable();
