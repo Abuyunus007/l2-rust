@@ -55,13 +55,10 @@ impl Script for Chimeras {
             let Some((x, y, z)) = ctx.get_random_entry(&LOCATIONS) else {
                 return;
             };
-            let near = ctx
-                .world()
-                .position_of(npc.object_id)
-                .is_some_and(|(nx, ny, _)| {
-                    let (dx, dy) = (i64::from(nx - x), i64::from(ny - y));
-                    dx * dx + dy * dy <= 200 * 200
-                });
+            let near = ctx.world().position_of(npc.object_id).is_some_and(|(nx, ny, _)| {
+                let (dx, dy) = (i64::from(nx - x), i64::from(ny - y));
+                dx * dx + dy * dy <= 200 * 200
+            });
             if !near {
                 ctx.world_mut().set_npc_spawn_point(npc.object_id, x, y, z);
                 // `ThreadPool.schedule(new Teleport(npc, loc), 100)`.

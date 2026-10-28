@@ -150,7 +150,14 @@ mod tests {
         let pages = Pages::of(&Hude)
             .page("32298-03.htm", &["scertif"])
             .page("32298-05.htm", &["pcertif", "multisell1"])
-            .plain(&["32298-01.htm", "32298-04a.htm", "32298-04b.htm", "32298-06a.htm", "32298-06b.htm", "32298-07.htm"]);
+            .plain(&[
+                "32298-01.htm",
+                "32298-04a.htm",
+                "32298-04b.htm",
+                "32298-06a.htm",
+                "32298-06b.htm",
+                "32298-07.htm",
+            ]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let npc = t.spawn(HUDE, 20);
         t.enter(1, 80, items);

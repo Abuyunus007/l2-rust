@@ -47,7 +47,12 @@ fn admin_hellbound_setlevel(world: &mut World, gm: ObjectId, command: &str) -> R
 fn admin_hellbound(world: &mut World, gm: ObjectId, _command: &str) -> Result<(), JavaException> {
     let level = world.scripts.globals.get_int("HBLevel", 0);
     let trust = world.scripts.globals.get_int("HBTrust", 0);
-    let at = |l: i32| usize::try_from(l).ok().and_then(|i| HELLBOUND_MAX_TRUST.get(i)).copied();
+    let at = |l: i32| {
+        usize::try_from(l)
+            .ok()
+            .and_then(|i| HELLBOUND_MAX_TRUST.get(i))
+            .copied()
+    };
     let (max, min) = match (at(level), at(level - 1)) {
         (Some(max), Some(min)) => (max, min),
         _ => (0, 0),
@@ -115,7 +120,10 @@ impl World {
 
     /// Java `Player.isMinimapAllowed()`.
     pub fn is_minimap_allowed(&self, player: ObjectId) -> bool {
-        self.scripts.players.get(&player).is_some_and(|q| q.minimap_allowed)
+        self.scripts
+            .players
+            .get(&player)
+            .is_some_and(|q| q.minimap_allowed)
     }
 
     /// Java `Player.setMinimapAllowed(value)`; the client hears of it with the next `UserInfo`.

@@ -36,7 +36,9 @@ const SPORE_WIND: i32 = 25607;
 const SPORE_EARTH: i32 = 25608;
 const DWARVEN_GHOST: i32 = 32370;
 const EPIDOSES: [i32; 4] = [25610, 25609, 25612, 25611]; // Order is important!
-const TOWER_MONSTERS: [i32; 11] = [18490, 22393, 22394, 22395, 22411, 22412, 22413, 22439, 22440, 22441, 22442];
+const TOWER_MONSTERS: [i32; 11] = [
+    18490, 22393, 22394, 22395, 22411, 22412, 22413, 22439, 22440, 22441, 22442,
+];
 const ELEMENTS: [i32; 4] = [25605, 25606, 25607, 25608];
 const OPPOSITE_ELEMENTS: [i32; 4] = [25606, 25605, 25608, 25607];
 const ELEMENTS_NAME: [&str; 4] = ["Fire", "Water", "Wind", "Earth"];
@@ -141,7 +143,10 @@ fn room_spawns(manager_id: i32) -> &'static [RoomSpawn] {
             (22393, -46490, 245871, -9984, 0),
             (22394, -45877, 246309, -9984, 0),
         ],
-        18499 => &[(22395, -48730, 248067, -9984, 0), (22395, -49112, 248250, -9984, 0)],
+        18499 => &[
+            (22395, -48730, 248067, -9984, 0),
+            (22395, -49112, 248250, -9984, 0),
+        ],
         18500 => &[
             (22393, -51954, 246475, -10848, 0),
             (22394, -51421, 246512, -10848, 0),
@@ -151,7 +156,10 @@ fn room_spawns(manager_id: i32) -> &'static [RoomSpawn] {
             (22394, -51969, 245809, -10848, 0),
             (22412, -51259, 246357, -10848, 0),
         ],
-        18501 => &[(22395, -48856, 243949, -10848, 0), (22395, -49144, 244190, -10848, 0)],
+        18501 => &[
+            (22395, -48856, 243949, -10848, 0),
+            (22395, -49144, 244190, -10848, 0),
+        ],
         18502 => &[
             (22441, -46471, 246135, -11704, 0),
             (22441, -46449, 245997, -11704, 0),
@@ -159,7 +167,10 @@ fn room_spawns(manager_id: i32) -> &'static [RoomSpawn] {
             (22441, -46513, 246326, -11704, 0),
             (22441, -45889, 246313, -11704, 0),
         ],
-        18503 => &[(22395, -49067, 248050, -11712, 0), (22395, -48957, 248223, -11712, 0)],
+        18503 => &[
+            (22395, -49067, 248050, -11712, 0),
+            (22395, -48957, 248223, -11712, 0),
+        ],
         18504 => &[
             (22413, -51748, 246138, -12568, 0),
             (22413, -51279, 246200, -12568, 0),
@@ -442,7 +453,10 @@ impl Script for TowerOfNaia {
             && state(ctx).active_rooms.get(&npc_id) == Some(&false)
         {
             if ctx.world().party_of(player).is_none() {
-                ctx.send_system_message(player, SystemMessageId::YouMustBeInAPartyInOrderToOperateTheMachine);
+                ctx.send_system_message(
+                    player,
+                    SystemMessageId::YouMustBeInAPartyInOrderToOperateTheMachine,
+                );
                 return None;
             }
 
@@ -512,7 +526,16 @@ impl Script for TowerOfNaia {
                     remove_spores(ctx);
                     state(ctx).despawned_spores_count = 0;
                     let coords = SPORES_MERGE_POSITION[win_index as usize];
-                    ctx.add_spawn(EPIDOSES[win_index as usize], coords.0, coords.1, coords.2, 0, false, 0, 0);
+                    ctx.add_spawn(
+                        EPIDOSES[win_index as usize],
+                        coords.0,
+                        coords.1,
+                        coords.2,
+                        0,
+                        false,
+                        0,
+                        0,
+                    );
                     init_spore_challenge(ctx);
                 }
                 // Requirements aren't met, despawn reached spores
@@ -521,9 +544,11 @@ impl Script for TowerOfNaia {
                     for spore in spores {
                         let reached = live(ctx, spore)
                             && !ctx.is_dead(spore)
-                            && ctx.world().position_of(spore).zip(ctx.world().npc(spore).map(|n| n.spawn_point)).is_some_and(
-                                |(here, home)| here.0 == home.0 && here.1 == home.1,
-                            );
+                            && ctx
+                                .world()
+                                .position_of(spore)
+                                .zip(ctx.world().npc(spore).map(|n| n.spawn_point))
+                                .is_some_and(|(here, home)| here.0 == home.0 && here.1 == home.1);
                         if reached {
                             ctx.world_mut().delete_npc(spore);
                             let s = state(ctx);
@@ -608,7 +633,10 @@ impl Script for TowerOfNaia {
                 start_room(ctx, npc_id);
                 ctx.start_quest_timer(&format!("stop_room {npc_id}"), 300_000, None, None, false);
             } else {
-                ctx.send_system_message(player, SystemMessageId::YouMustBeInAPartyInOrderToOperateTheMachine);
+                ctx.send_system_message(
+                    player,
+                    SystemMessageId::YouMustBeInAPartyInOrderToOperateTheMachine,
+                );
             }
         }
 

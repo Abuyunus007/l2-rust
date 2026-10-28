@@ -21,9 +21,20 @@ const STINGER: i32 = 10012; // Scorpion Poison Stinger
 pub struct Kief;
 
 /// The three life force cases of `onEvent`: all of one item go for `points` each.
-fn hand_in(ctx: &mut ScriptCtx<'_>, player: ObjectId, item: i32, points: i64, yes: &str, no: &str) -> Option<String> {
+fn hand_in(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    item: i32,
+    points: i64,
+    yes: &str,
+    no: &str,
+) -> Option<String> {
     if ctx.has_quest_items(player, item) {
-        engine::update_trust(ctx, (ctx.get_quest_items_count(player, item) * points) as i32, true);
+        engine::update_trust(
+            ctx,
+            (ctx.get_quest_items_count(player, item) * points) as i32,
+            true,
+        );
         ctx.take_items(player, item, -1);
         Some(yes.to_owned())
     } else {
@@ -63,7 +74,8 @@ impl Script for Kief {
                 2 | 3 => {
                     if ctx.has_quest_items(player, DARION_BADGE) {
                         // `(int) getQuestItemsCount(...) * 10`: the cast binds first.
-                        let points = (ctx.get_quest_items_count(player, DARION_BADGE) as i32).wrapping_mul(10);
+                        let points =
+                            (ctx.get_quest_items_count(player, DARION_BADGE) as i32).wrapping_mul(10);
                         engine::update_trust(ctx, points, true);
                         ctx.take_items(player, DARION_BADGE, -1);
                         return Some("32354-10.htm".to_owned());
@@ -96,7 +108,14 @@ impl Script for Kief {
             }
             "clf" => {
                 if engine::level(ctx) == 7 {
-                    htmltext = hand_in(ctx, player, CONTAINED_LIFE_FORCE, 200, "32354-11e.htm", "32354-11f.htm");
+                    htmltext = hand_in(
+                        ctx,
+                        player,
+                        CONTAINED_LIFE_FORCE,
+                        200,
+                        "32354-11e.htm",
+                        "32354-11f.htm",
+                    );
                 }
             }
             _ => {}

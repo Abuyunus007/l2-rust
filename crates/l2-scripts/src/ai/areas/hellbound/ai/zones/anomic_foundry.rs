@@ -75,7 +75,13 @@ fn add_group_spawn(ctx: &mut ScriptCtx<'_>, i: usize) {
 // Zoey76: TODO: This should be done with onFactionCall(..)
 /// Java `requestHelp(requester, aggressor, range, helperId)`: Java walks the spawns of the id
 /// and takes the last NPC of each; here every live monster of the id counts.
-fn request_help(ctx: &mut ScriptCtx<'_>, requester: ScriptNpc, aggressor: ObjectId, range: i32, helper_id: i32) {
+fn request_help(
+    ctx: &mut ScriptCtx<'_>,
+    requester: ScriptNpc,
+    aggressor: ObjectId,
+    range: i32,
+    helper_id: i32,
+) {
     let Some((x, y, z)) = ctx.world().position_of(requester.object_id) else {
         return;
     };
@@ -95,7 +101,8 @@ fn request_help(ctx: &mut ScriptCtx<'_>, requester: ScriptNpc, aggressor: Object
             && ctx.is_inside_radius_3d(monster, x, y, z, range)
             && !ctx.is_dead(aggressor)
         {
-            ctx.world_mut().add_damage_hate(monster.object_id, aggressor, 0, 1000);
+            ctx.world_mut()
+                .add_damage_hate(monster.object_id, aggressor, 0, 1000);
         }
     }
 }
@@ -160,7 +167,13 @@ impl Script for AnomicFoundry {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if ctx.get_random(10000) < 2000 {
             request_help(ctx, npc, player, 500, FOREMAN);
             request_help(ctx, npc, player, 500, LESSER_EVIL);
@@ -197,7 +210,9 @@ impl Script for AnomicFoundry {
 
         if ctx.get_random(10000) < 2000 {
             atk_index += 1;
-            ctx.state::<AnomicFoundryState>().atk_index.insert(npc.object_id, atk_index);
+            ctx.state::<AnomicFoundryState>()
+                .atk_index
+                .insert(npc.object_id, atk_index);
             request_help(ctx, npc, attacker, 1000 * atk_index, FOREMAN);
             request_help(ctx, npc, attacker, 1000 * atk_index, LESSER_EVIL);
             request_help(ctx, npc, attacker, 1000 * atk_index, GREATER_EVIL);
@@ -227,7 +242,9 @@ impl Script for AnomicFoundry {
                 let respawn_time = ctx.state::<AnomicFoundryState>().respawn_time;
                 if respawn_time < RESPAWN_MAX {
                     ctx.state::<AnomicFoundryState>().respawn_time += 10000;
-                } else if respawn_time >= RESPAWN_MAX && !ctx.has_quest_timer("reset_respawn_time", None, None) {
+                } else if respawn_time >= RESPAWN_MAX
+                    && !ctx.has_quest_timer("reset_respawn_time", None, None)
+                {
                     ctx.start_quest_timer("reset_respawn_time", 600000, None, None, false);
                 }
             }

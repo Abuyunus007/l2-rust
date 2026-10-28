@@ -62,7 +62,8 @@ impl Script for Amaskari {
             ctx.world_mut().set_intention_active(npc.object_id);
             ctx.world_mut().set_invul(npc.object_id, false);
             // npc.doCast(INVINCIBILITY.getSkill())
-        } else if event.eq_ignore_ascii_case("onspawn_msg") && npc.is_some_and(|n| !ctx.is_dead(n.object_id)) {
+        } else if event.eq_ignore_ascii_case("onspawn_msg") && npc.is_some_and(|n| !ctx.is_dead(n.object_id))
+        {
             let npc = npc?;
             if ctx.get_random(100) > 20 {
                 ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, MINIONS_NPCSTRING_ID[2], &[]);
@@ -97,7 +98,8 @@ impl Script for Amaskari {
                     ctx.broadcast_npc_say(minion, ChatType::NpcGeneral, MINIONS_NPCSTRING_ID[0], &[]);
                     let hp = ctx.npc_current_hp(minion);
                     // `minion.setCurrentHp(hp - (hp / 5))`: `double / int`.
-                    ctx.world_mut().set_current_hp(minion.object_id, hp - (hp / 5.0), true);
+                    ctx.world_mut()
+                        .set_current_hp(minion.object_id, hp - (hp / 5.0), true);
                 }
             }
         }
@@ -112,22 +114,32 @@ impl Script for Amaskari {
                 .and_then(|m| ctx.script_npc(m));
             if let Some(master) = master {
                 ctx.broadcast_npc_say(master, ChatType::NpcGeneral, AMASKARI_NPCSTRING_ID[1], &[]);
-                let info = ctx.world().script_buff_abnormal_level_of_skill(master.object_id, BUFF_ID);
+                let info = ctx
+                    .world()
+                    .script_buff_abnormal_level_of_skill(master.object_id, BUFF_ID);
                 if info == Some(3) && ctx.world().is_invul(master.object_id) {
                     let hp = ctx.npc_current_hp(master);
-                    ctx.world_mut().set_current_hp(master.object_id, hp + (hp / 5.0), true);
+                    ctx.world_mut()
+                        .set_current_hp(master.object_id, hp + (hp / 5.0), true);
                 } else {
                     ctx.world_mut().clear_aggro_list(master.object_id);
                     ctx.world_mut().set_intention_active(master.object_id);
                     match info {
-                        None => ctx.world_mut().do_cast(master.object_id, SkillKey::new(BUFF_ID, 1)),
+                        None => ctx
+                            .world_mut()
+                            .do_cast(master.object_id, SkillKey::new(BUFF_ID, 1)),
                         Some(level) if level < 3 => {
                             // `BUFF[level]` is the skill one level above the one on the master.
                             ctx.world_mut()
                                 .do_cast(master.object_id, SkillKey::new(BUFF_ID, level + 1));
                         }
                         Some(_) => {
-                            ctx.broadcast_npc_say(master, ChatType::NpcGeneral, AMASKARI_NPCSTRING_ID[3], &[]);
+                            ctx.broadcast_npc_say(
+                                master,
+                                ChatType::NpcGeneral,
+                                AMASKARI_NPCSTRING_ID[3],
+                                &[],
+                            );
                             // master.doCast(INVINCIBILITY.getSkill())
                             ctx.world_mut().set_invul(master.object_id, true);
                             ctx.start_quest_timer("stop_toggle", 10000, Some(master), None, false);

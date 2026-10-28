@@ -171,7 +171,10 @@ fn do_spawn(ctx: &mut ScriptCtx<'_>) {
                 ctx.world_mut().script_do_spawn(index);
                 added += 1;
             } else if let Some(npc) = alive {
-                let stats = ctx.world().stats(npc).map(|s| (f64::from(s.max_hp()), f64::from(s.max_mp())));
+                let stats = ctx
+                    .world()
+                    .stats(npc)
+                    .map(|s| (f64::from(s.max_hp()), f64::from(s.max_mp())));
                 if let Some((hp, mp)) = stats
                     && !ctx.is_dead(npc)
                 {
@@ -309,7 +312,9 @@ impl Script for HellboundEngine {
             TRUST_POINTS.iter().find(|row| row.0 == npc_id)
         {
             let lvl = level(ctx);
-            if lvl >= min_hb_lvl && lvl <= max_hb_lvl && (lowest_trust_limit == 0 || trust(ctx) > lowest_trust_limit)
+            if lvl >= min_hb_lvl
+                && lvl <= max_hb_lvl
+                && (lowest_trust_limit == 0 || trust(ctx) > lowest_trust_limit)
             {
                 update_trust(ctx, points, true);
             }

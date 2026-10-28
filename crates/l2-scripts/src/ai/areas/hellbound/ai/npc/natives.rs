@@ -50,10 +50,18 @@ impl Script for Natives {
         let hellbound_level = engine::level(ctx);
         match npc.id {
             NATIVE => {
-                htmltext = Some(if hellbound_level > 5 { "32362-01.htm" } else { "32362.htm" });
+                htmltext = Some(if hellbound_level > 5 {
+                    "32362-01.htm"
+                } else {
+                    "32362.htm"
+                });
             }
             INSURGENT => {
-                htmltext = Some(if hellbound_level > 5 { "32363-01.htm" } else { "32363.htm" });
+                htmltext = Some(if hellbound_level > 5 {
+                    "32363-01.htm"
+                } else {
+                    "32363.htm"
+                });
             }
             INCASTLE => {
                 htmltext = Some(if hellbound_level < 9 {
@@ -88,7 +96,12 @@ impl Script for Natives {
                 let player = player?;
                 if ctx.get_quest_items_count(player, MARK_OF_BETRAYAL) >= 10 {
                     ctx.take_items(player, MARK_OF_BETRAYAL, 10);
-                    ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::AlrightNowLeodasIsYours, &[]);
+                    ctx.broadcast_npc_say(
+                        npc,
+                        ChatType::NpcGeneral,
+                        NpcStringId::AlrightNowLeodasIsYours,
+                        &[],
+                    );
                     engine::update_trust(ctx, -50, true);
 
                     for door_id in DOORS {
@@ -167,7 +180,14 @@ mod tests {
             .page("32364-01.htm", &[])
             .page("32357-01.htm", &["FreeSlaves"])
             .page("32364-00.htm", &["open_door"])
-            .plain(&["32362.htm", "32362-01.htm", "32357-01a.htm", "32357-02.htm", "32357-02a.htm", "32364-02.htm"]);
+            .plain(&[
+                "32362.htm",
+                "32362-01.htm",
+                "32357-01a.htm",
+                "32357-02.htm",
+                "32357-02a.htm",
+                "32364-02.htm",
+            ]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         t.enter(1, 80, items);
         t
@@ -225,11 +245,16 @@ mod tests {
         t.world.run_as_script("Natives", |ctx| {
             let npc = ctx.script_npc(traitor).unwrap();
             // No door in the test world: the call only takes the marks and the trust.
-            assert_eq!(Natives.on_event(ctx, "open_door", Some(npc), Some(ObjectId(1))), None);
+            assert_eq!(
+                Natives.on_event(ctx, "open_door", Some(npc), Some(ObjectId(1))),
+                None
+            );
             assert!(ctx.has_quest_timer("close_doors", Some(npc), Some(ObjectId(1))));
             // Two marks are left: the other page.
             assert_eq!(
-                Natives.on_event(ctx, "open_door", Some(npc), Some(ObjectId(1))).as_deref(),
+                Natives
+                    .on_event(ctx, "open_door", Some(npc), Some(ObjectId(1)))
+                    .as_deref(),
                 Some("32364-01.htm")
             );
         });

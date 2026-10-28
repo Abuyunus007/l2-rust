@@ -37,7 +37,10 @@ fn can_enter(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
         return true;
     }
 
-    let completed = |name: &str| ctx.player_quest_state(player, name).is_some_and(|qs| qs.is_completed());
+    let completed = |name: &str| {
+        ctx.player_quest_state(player, name)
+            .is_some_and(|qs| qs.is_completed())
+    };
     completed(Q00130_PATH_TO_HELLBOUND) || completed(Q00133_THATS_BLOODY_HOT)
 }
 
@@ -95,7 +98,9 @@ impl Script for Warpgate {
             // `player.isOnEvent()` is not modelled (no event is ported that sets it).
             if !can_enter(ctx, player) && !ctx.is_gm(player) {
                 ctx.start_quest_timer("TELEPORT", 1000, None, Some(player), false);
-            } else if !ctx.world().is_minimap_allowed(player) && ctx.has_at_least_one_quest_item(player, &[MAP]) {
+            } else if !ctx.world().is_minimap_allowed(player)
+                && ctx.has_at_least_one_quest_item(player, &[MAP])
+            {
                 ctx.world_mut().set_minimap_allowed(player, true);
             }
         }
@@ -177,7 +182,10 @@ mod tests {
         t.bypass(2, "Script Warpgate enter");
         t.ticks(100);
         let (x, y, _) = t.world.position_of(ObjectId(2)).unwrap();
-        assert!((x - ENTER_LOC.0).abs() <= 200 && (y - ENTER_LOC.1).abs() <= 200, "{x} {y}");
+        assert!(
+            (x - ENTER_LOC.0).abs() <= 200 && (y - ENTER_LOC.1).abs() <= 200,
+            "{x} {y}"
+        );
     }
 
     #[test]

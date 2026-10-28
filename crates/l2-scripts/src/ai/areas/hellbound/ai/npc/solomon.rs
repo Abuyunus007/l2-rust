@@ -51,7 +51,9 @@ mod tests {
     fn the_page_follows_the_level() {
         let mut registry = ScriptRegistry::new();
         registry.add(Solomon);
-        let pages = Pages::of(&Solomon).plain(&["32355-01.htm", "32355-01a.htm"]).npcs(&[SOLOMON]);
+        let pages = Pages::of(&Solomon)
+            .plain(&["32355-01.htm", "32355-01a.htm"])
+            .npcs(&[SOLOMON]);
         let mut t = ScriptTest::with_pages(registry, NPCS, "", pages);
         let npc = t.spawn(SOLOMON, 20);
         t.enter(1, 80, vec![]);

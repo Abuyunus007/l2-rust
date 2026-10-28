@@ -79,7 +79,14 @@ impl Script for TowerOfInfinitum {
                     }
 
                     for member in members {
-                        ctx.teleport_player(member, ENTER_LOCATION.0, ENTER_LOCATION.1, ENTER_LOCATION.2, 0, true);
+                        ctx.teleport_player(
+                            member,
+                            ENTER_LOCATION.0,
+                            ENTER_LOCATION.1,
+                            ENTER_LOCATION.2,
+                            0,
+                            true,
+                        );
                     }
 
                     htmltext = None;
@@ -157,10 +164,16 @@ mod tests {
     fn jerian_wants_level_eleven_and_a_party_leader() {
         let mut t = setup();
         let jerian = t.spawn(JERIAN, 20);
-        assert_eq!(event(&mut t, "enter", jerian, 1).as_deref(), Some("32302-02b.htm"));
+        assert_eq!(
+            event(&mut t, "enter", jerian, 1).as_deref(),
+            Some("32302-02b.htm")
+        );
         set_level(&mut t, "TowerOfInfinitum", 11);
         // Level eleven, but no party: the player is not a leader.
-        assert_eq!(event(&mut t, "enter", jerian, 1).as_deref(), Some("32302-02a.htm"));
+        assert_eq!(
+            event(&mut t, "enter", jerian, 1).as_deref(),
+            Some("32302-02a.htm")
+        );
         // A party whose members lack the Pass skill.
         t.enter(2, 80, vec![]);
         t.party(1, 2);

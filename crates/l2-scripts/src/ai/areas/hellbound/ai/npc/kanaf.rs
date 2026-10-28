@@ -58,17 +58,21 @@ mod tests {
     fn the_first_page_is_the_npc_id_and_info_tells_a_story() {
         let mut registry = ScriptRegistry::new();
         registry.add(Kanaf);
-        let pages = Pages::of(&Kanaf)
-            .page("32346.html", &["info"])
-            .plain(&["32346-01.htm", "32346-02.htm", "32346-03.htm"]);
+        let pages = Pages::of(&Kanaf).page("32346.html", &["info"]).plain(&[
+            "32346-01.htm",
+            "32346-02.htm",
+            "32346-03.htm",
+        ]);
         let mut t = ScriptTest::with_pages(registry, NPCS, "", pages);
         let npc = t.spawn(KANAF, 20);
         t.enter(1, 80, vec![]);
         t.talk(1, npc);
         assert!(last_page(&t.take(), 1).contains("32346.html"));
         let story = t.event(1, "Kanaf", "info");
-        assert!(["32346-01.htm", "32346-02.htm", "32346-03.htm"]
-            .iter()
-            .any(|p| story.contains(p)));
+        assert!(
+            ["32346-01.htm", "32346-02.htm", "32346-03.htm"]
+                .iter()
+                .any(|p| story.contains(p))
+        );
     }
 }

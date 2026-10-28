@@ -145,7 +145,11 @@ mod tests {
             let npc = ctx.script_npc(ranku).unwrap();
             Ranku.on_attack(ctx, npc, ObjectId(1), 5, false, None);
             assert!(ctx.has_quest_timer("checkup", Some(npc), None));
-            assert!(ctx.state::<RankuState>().my_tracking_set.contains(&minion.object_id));
+            assert!(
+                ctx.state::<RankuState>()
+                    .my_tracking_set
+                    .contains(&minion.object_id)
+            );
         });
         t.kill(1, minion.object_id);
         assert_eq!(t.npcs_of(MINION_2).len(), 1);

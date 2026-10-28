@@ -83,7 +83,9 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Deltuva);
         registry.add(MatrasCuriosity);
-        let pages = Pages::of(&Deltuva).page("32313-01.htm", &["teleport"]).plain(&["32313-02.htm"]);
+        let pages = Pages::of(&Deltuva)
+            .page("32313-01.htm", &["teleport"])
+            .plain(&["32313-02.htm"]);
         let mut t = ScriptTest::with_pages(registry, NPCS, "", pages);
         t.enter(1, 80, vec![]);
         // The quest list entry is not completed: the refusal page.

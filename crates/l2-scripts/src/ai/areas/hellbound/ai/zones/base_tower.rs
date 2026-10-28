@@ -66,8 +66,18 @@ impl Script for BaseTower {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
-        if !ctx.state::<BaseTowerState>().body_destroyer_target_list.contains_key(&npc.object_id) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
+        if !ctx
+            .state::<BaseTowerState>()
+            .body_destroyer_target_list
+            .contains_key(&npc.object_id)
+        {
             ctx.state::<BaseTowerState>()
                 .body_destroyer_target_list
                 .insert(npc.object_id, player);
@@ -98,7 +108,8 @@ impl Script for BaseTower {
                     && ctx.world().player(pl).is_some()
                     && !ctx.is_dead(pl)
                 {
-                    ctx.world_mut().script_stop_skill_effects_removed(pl, DEATH_WORD.0);
+                    ctx.world_mut()
+                        .script_stop_skill_effects_removed(pl, DEATH_WORD.0);
                 }
             }
             _ => {}
@@ -167,11 +178,18 @@ mod tests {
             BaseTower.on_aggro_range_enter(ctx, npc, ObjectId(1), false);
             BaseTower.on_aggro_range_enter(ctx, npc, ObjectId(2), false);
             let state = ctx.state::<BaseTowerState>();
-            assert_eq!(state.body_destroyer_target_list.get(&destroyer), Some(&ObjectId(1)));
+            assert_eq!(
+                state.body_destroyer_target_list.get(&destroyer),
+                Some(&ObjectId(1))
+            );
         });
         t.kill(1, destroyer);
         t.world.run_as_script("BaseTower", |ctx| {
-            assert!(ctx.state::<BaseTowerState>().body_destroyer_target_list.is_empty());
+            assert!(
+                ctx.state::<BaseTowerState>()
+                    .body_destroyer_target_list
+                    .is_empty()
+            );
         });
     }
 }

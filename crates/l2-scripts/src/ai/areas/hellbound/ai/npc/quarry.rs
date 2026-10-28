@@ -13,12 +13,12 @@ const SLAVE: i32 = 32299;
 
 // Items: `(item id, chance out of 10000)`, each one item.
 const DROP_LIST: [(i32, i32); 6] = [
-    (9628, 261),   // Leonard
-    (9630, 175),   // Orichalcum
-    (9629, 145),   // Adamantine
-    (1876, 6667),  // Mithril ore
-    (1877, 1333),  // Adamantine nugget
-    (1874, 2222),  // Oriharukon ore
+    (9628, 261),  // Leonard
+    (9630, 175),  // Orichalcum
+    (9629, 145),  // Adamantine
+    (1876, 6667), // Mithril ore
+    (1877, 1333), // Adamantine nugget
+    (1874, 2222), // Oriharukon ore
 ];
 
 // Zone
@@ -63,7 +63,8 @@ impl Script for Quarry {
                 let (npc, player) = (npc?, player?);
                 ctx.world_mut().script_start_follow(npc.object_id, player);
                 ctx.world_mut().set_npc_target(npc.object_id, Some(player));
-                ctx.world_mut().set_quest_guard_auto_attackable(npc.object_id, true);
+                ctx.world_mut()
+                    .set_quest_guard_auto_attackable(npc.object_id, true);
                 // `npc.setRHandId(9136)`: the weapon it holds is not shown (cosmetic, not modelled).
                 // `npc.setWalking()`.
                 ctx.world_mut().set_running(npc.object_id, false);
@@ -79,11 +80,13 @@ impl Script for Quarry {
                 if ctx.world().is_inside_zone_id(npc.object_id, QUARRY_ZONE) {
                     ctx.world_mut().set_npc_target(npc.object_id, None);
                     ctx.world_mut().set_intention_active(npc.object_id);
-                    ctx.world_mut().set_quest_guard_auto_attackable(npc.object_id, false);
+                    ctx.world_mut()
+                        .set_quest_guard_auto_attackable(npc.object_id, false);
                     // `npc.setRHandId(0)`.
-                    if let Some((x, y, z)) = ctx.npc_spawn_point(npc).filter(|_| {
-                        ctx.world().npc(npc.object_id).is_some_and(|n| n.spawn.is_some())
-                    }) {
+                    if let Some((x, y, z)) = ctx
+                        .npc_spawn_point(npc)
+                        .filter(|_| ctx.world().npc(npc.object_id).is_some_and(|n| n.spawn.is_some()))
+                    {
                         ctx.tele_npc_to(npc, x, y, z);
                     }
                     return None;
@@ -108,7 +111,8 @@ impl Script for Quarry {
                         }
                     }
 
-                    ctx.world_mut().set_quest_guard_auto_attackable(npc.object_id, false);
+                    ctx.world_mut()
+                        .set_quest_guard_auto_attackable(npc.object_id, false);
                     engine::update_trust(ctx, TRUST, true);
                     ctx.delete_npc(npc);
                 }
@@ -120,7 +124,8 @@ impl Script for Quarry {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        ctx.world_mut().set_quest_guard_auto_attackable(npc.object_id, false);
+        ctx.world_mut()
+            .set_quest_guard_auto_attackable(npc.object_id, false);
         // `npc instanceof QuestGuard`
         if ctx
             .world()
@@ -140,7 +145,8 @@ impl Script for Quarry {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _killer: ObjectId, _is_summon: bool) {
-        ctx.world_mut().set_quest_guard_auto_attackable(npc.object_id, false);
+        ctx.world_mut()
+            .set_quest_guard_auto_attackable(npc.object_id, false);
     }
 
     fn on_enter_zone(&self, ctx: &mut ScriptCtx<'_>, creature: ObjectId, _zone_id: i32) {
@@ -223,7 +229,8 @@ mod tests {
         t.talk(1, slave);
         t.take();
         t.event(1, "Quarry", "FollowMe");
-        t.world.run_as_script("Quarry", |ctx| Quarry.on_enter_zone(ctx, slave, ZONE));
+        t.world
+            .run_as_script("Quarry", |ctx| Quarry.on_enter_zone(ctx, slave, ZONE));
         t.wait_ms(1_100);
         assert!(!t.in_world(slave));
         assert_eq!(t.world.global_variables().get_int("HBTrust", 0), TRUST);

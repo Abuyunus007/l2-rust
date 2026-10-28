@@ -88,15 +88,23 @@ impl Script for DemonPrince {
         if !ctx.is_dead(npc.object_id) {
             let hp = ctx.npc_current_hp(npc);
             let max_hp = f64::from(ctx.npc_max_hp(npc));
-            let state = ctx.state::<DemonPrinceState>().attack_state.get(&npc.object_id).copied();
+            let state = ctx
+                .state::<DemonPrinceState>()
+                .attack_state
+                .get(&npc.object_id)
+                .copied();
             if state.is_none() && hp < max_hp * 0.5 {
                 ctx.world_mut().do_cast(npc.object_id, SkillKey::new(UD.0, UD.1));
                 Self::spawn_minions(ctx, npc);
-                ctx.state::<DemonPrinceState>().attack_state.insert(npc.object_id, false);
+                ctx.state::<DemonPrinceState>()
+                    .attack_state
+                    .insert(npc.object_id, false);
             } else if hp < max_hp * 0.1 && state == Some(false) {
                 ctx.world_mut().do_cast(npc.object_id, SkillKey::new(UD.0, UD.1));
                 Self::spawn_minions(ctx, npc);
-                ctx.state::<DemonPrinceState>().attack_state.insert(npc.object_id, true);
+                ctx.state::<DemonPrinceState>()
+                    .attack_state
+                    .insert(npc.object_id, true);
             }
 
             if ctx.get_random(1000) < 10 {
@@ -106,7 +114,9 @@ impl Script for DemonPrince {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _killer: ObjectId, _is_summon: bool) {
-        ctx.state::<DemonPrinceState>().attack_state.remove(&npc.object_id);
+        ctx.state::<DemonPrinceState>()
+            .attack_state
+            .remove(&npc.object_id);
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {

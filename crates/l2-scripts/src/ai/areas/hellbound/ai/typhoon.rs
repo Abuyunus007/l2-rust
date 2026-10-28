@@ -33,7 +33,11 @@ impl Script for Typhoon {
             .world()
             .npc_ids()
             .into_iter()
-            .find(|id| ctx.world().npc(*id).is_some_and(|n| n.npc_id == TYPHOON && !n.decayed))
+            .find(|id| {
+                ctx.world()
+                    .npc(*id)
+                    .is_some_and(|n| n.npc_id == TYPHOON && !n.decayed)
+            })
             .and_then(|id| ctx.script_npc(id));
         if let Some(boss) = boss {
             self.on_spawn(ctx, boss);
@@ -59,7 +63,13 @@ impl Script for Typhoon {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         ctx.world_mut()
             .do_simultaneous_cast(npc.object_id, SkillKey::new(STORM.0, STORM.1));
     }
