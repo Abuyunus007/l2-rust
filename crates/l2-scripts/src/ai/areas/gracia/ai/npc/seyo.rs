@@ -196,8 +196,7 @@ mod tests {
     use crate::testing::{ScriptTest, item, names_to, pages_to};
 
     const NPCS: &str = r#"<npc id="32737" type="Folk" level="70" name="Seyo"/>"#;
-    const ITEMS: &str =
-        r#"<item id="15486" type="EtcItem" name="Spirit Stone Fragment"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str = r#"<item id="15486" type="EtcItem" name="Spirit Stone Fragment"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/areas/Gracia/AI/NPC/Seyo";
 
     fn setup(fragments: i64) -> (ScriptTest, ObjectId) {
@@ -207,7 +206,10 @@ mod tests {
             .iter()
             .map(|e| format!(r#"<a action="bypass -h Script Seyo {e}">x</a>"#))
             .collect();
-        let mut pages = vec![(format!("{DIR}/32737.html"), format!("<html><body>32737 {links}</body></html>"))];
+        let mut pages = vec![(
+            format!("{DIR}/32737.html"),
+            format!("<html><body>32737 {links}</body></html>"),
+        )];
         for n in 1..=4 {
             pages.push((
                 format!("{DIR}/32737-0{n}.html"),
@@ -217,7 +219,11 @@ mod tests {
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
         let npc = t.spawn(SEYO, 20);
-        let items = if fragments > 0 { vec![item(1000, STONE_FRAGMENT, fragments)] } else { vec![] };
+        let items = if fragments > 0 {
+            vec![item(1000, STONE_FRAGMENT, fragments)]
+        } else {
+            vec![]
+        };
         t.enter(1, 80, items);
         t.talk(1, npc);
         assert!(pages_to(&t.take(), 1).pop().unwrap().contains("32737 "));

@@ -76,10 +76,22 @@ mod tests {
         registry.add(AbyssGaze);
         let link = r#"<a action="bypass -h Script AbyssGaze request_permission">x</a>"#;
         let pages = [
-            (format!("{DIR}/32539.htm"), format!("<html><body>32539 {link}</body></html>")),
-            (format!("{DIR}/32539-1.htm"), "<html><body>32539-1</body></html>".to_owned()),
-            (format!("{DIR}/32539-2.htm"), "<html><body>32539-2</body></html>".to_owned()),
-            (format!("{DIR}/32539-3.htm"), "<html><body>32539-3</body></html>".to_owned()),
+            (
+                format!("{DIR}/32539.htm"),
+                format!("<html><body>32539 {link}</body></html>"),
+            ),
+            (
+                format!("{DIR}/32539-1.htm"),
+                "<html><body>32539-1</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32539-2.htm"),
+                "<html><body>32539-2</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32539-3.htm"),
+                "<html><body>32539-3</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);

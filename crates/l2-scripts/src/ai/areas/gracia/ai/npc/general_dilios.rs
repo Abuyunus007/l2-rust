@@ -56,7 +56,12 @@ impl Script for GeneralDilios {
             let general = general.and_then(|g| ctx.script_npc(g));
             if value < 6 {
                 if let Some(general) = general {
-                    ctx.broadcast_npc_say(general, ChatType::NpcGeneral, NpcStringId::StabbingThreeTimes, &[]);
+                    ctx.broadcast_npc_say(
+                        general,
+                        ChatType::NpcGeneral,
+                        NpcStringId::StabbingThreeTimes,
+                        &[],
+                    );
                 }
                 ctx.start_quest_timer("guard_animation_0", 3400, None, None, false);
             } else {
@@ -70,7 +75,12 @@ impl Script for GeneralDilios {
             ctx.start_quest_timer(&format!("command_{}", value + 1), 60000, None, None, false);
         } else if let Some(rest) = event.strip_prefix("guard_animation_") {
             let value: i32 = rest.parse().ok()?;
-            let guards: Vec<ObjectId> = ctx.state::<DiliosState>().guards.iter().map(|(_, g)| *g).collect();
+            let guards: Vec<ObjectId> = ctx
+                .state::<DiliosState>()
+                .guards
+                .iter()
+                .map(|(_, g)| *g)
+                .collect();
             for guard in guards {
                 broadcast_social_action(ctx, guard, 4);
             }

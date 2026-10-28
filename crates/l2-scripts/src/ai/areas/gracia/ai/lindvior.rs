@@ -105,7 +105,12 @@ impl Script for Lindvior {
     ) -> Option<String> {
         match event {
             "tomaris_shout1" => {
-                ctx.broadcast_npc_say(npc?, ChatType::NpcShout, NpcStringId::HuhTheSkyLooksFunnyWhatSThat, &[]);
+                ctx.broadcast_npc_say(
+                    npc?,
+                    ChatType::NpcShout,
+                    NpcStringId::HuhTheSkyLooksFunnyWhatSThat,
+                    &[],
+                );
             }
             "artius_shout" => {
                 ctx.broadcast_npc_say(
@@ -116,7 +121,12 @@ impl Script for Lindvior {
                 );
             }
             "tomaris_shout2" => {
-                ctx.broadcast_npc_say(npc?, ChatType::NpcShout, NpcStringId::BeCarefulSomethingSComing, &[]);
+                ctx.broadcast_npc_say(
+                    npc?,
+                    ChatType::NpcShout,
+                    NpcStringId::BeCarefulSomethingSComing,
+                    &[],
+                );
             }
             "lindvior_scene" => {
                 if let Some(npc) = npc {
@@ -180,9 +190,15 @@ mod tests {
     fn the_next_visit_is_the_coming_tuesday_or_friday_at_18_58() {
         let hours = 3_600_000;
         // Monday noon: Tuesday 18:58 is 1 day 6 h 58 min away.
-        assert_eq!(schedule_next_lindvior_date(monday_noon(0)), DAY_MS + 6 * hours + 58 * 60_000);
+        assert_eq!(
+            schedule_next_lindvior_date(monday_noon(0)),
+            DAY_MS + 6 * hours + 58 * 60_000
+        );
         // Tuesday noon: the same day, 6 h 58 min.
-        assert_eq!(schedule_next_lindvior_date(monday_noon(1)), 6 * hours + 58 * 60_000);
+        assert_eq!(
+            schedule_next_lindvior_date(monday_noon(1)),
+            6 * hours + 58 * 60_000
+        );
         // Tuesday 19:00 (after the time): the Friday.
         let tuesday_evening = monday_noon(1) + 7 * hours;
         assert_eq!(
@@ -220,7 +236,8 @@ mod tests {
             assert!(ctx.has_quest_timer("start", None, None));
         });
         // Without the three NPCs nothing happens.
-        t.world.run_as_script("Lindvior", |ctx| ctx.notify_event("start", None, None));
+        t.world
+            .run_as_script("Lindvior", |ctx| ctx.notify_event("start", None, None));
         t.ticks(10);
         assert!(names_to(&t.take(), 1).iter().all(|n| n != "NPC_SAY"));
 
@@ -228,13 +245,23 @@ mod tests {
         t.spawn(TOMARIS, 20);
         t.spawn(ARTIUS, 30);
         t.take();
-        t.world.run_as_script("Lindvior", |ctx| ctx.notify_event("start", None, None));
+        t.world
+            .run_as_script("Lindvior", |ctx| ctx.notify_event("start", None, None));
         // Tomaris after a second, Artius after a minute, Tomaris again after 90 s.
         t.ticks(25);
-        assert_eq!(names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(), 1);
+        assert_eq!(
+            names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(),
+            1
+        );
         t.ticks(1200);
-        assert_eq!(names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(), 1);
+        assert_eq!(
+            names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(),
+            1
+        );
         t.ticks(600);
-        assert_eq!(names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(), 1);
+        assert_eq!(
+            names_to(&t.take(), 1).iter().filter(|n| *n == "NPC_SAY").count(),
+            1
+        );
     }
 }

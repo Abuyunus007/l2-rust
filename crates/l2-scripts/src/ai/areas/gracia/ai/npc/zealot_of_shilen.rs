@@ -76,13 +76,11 @@ impl Script for ZealotOfShilen {
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId) -> Option<String> {
         // NOTE(java-quirk): the page of the fighting guard is always "32628-01.html", for 32629 too.
-        Some(
-            if ctx.world().is_attacking_now(npc.object_id) {
-                "32628-01.html".to_owned()
-            } else {
-                format!("{}.html", npc.id)
-            },
-        )
+        Some(if ctx.world().is_attacking_now(npc.object_id) {
+            "32628-01.html".to_owned()
+        } else {
+            format!("{}.html", npc.id)
+        })
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
@@ -135,8 +133,14 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(ZealotOfShilen);
         let pages = [
-            (format!("{DIR}/32628.html"), "<html><body>32628</body></html>".to_owned()),
-            (format!("{DIR}/32629.html"), "<html><body>32629</body></html>".to_owned()),
+            (
+                format!("{DIR}/32628.html"),
+                "<html><body>32628</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32629.html"),
+                "<html><body>32629</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);

@@ -79,7 +79,11 @@ pub struct Maguen;
 impl Maguen {
     /// The `b`, `c`, `r` plasma levels of a player (0 without the buff).
     fn plasma_levels(ctx: &ScriptCtx<'_>, player: ObjectId) -> (i32, i32, i32) {
-        let level = |abnormal| ctx.world().script_buff_abnormal_level(player, abnormal).unwrap_or(0);
+        let level = |abnormal| {
+            ctx.world()
+                .script_buff_abnormal_level(player, abnormal)
+                .unwrap_or(0)
+        };
         (level(B_ABNORMAL), level(C_ABNORMAL), level(R_ABNORMAL))
     }
 
@@ -106,7 +110,13 @@ impl Maguen {
     }
 
     /// `npc.setTarget(player); npc.doCast(70% skill1 : skill2)`.
-    fn cast_buff(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, first: SkillKey, second: SkillKey) {
+    fn cast_buff(
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        first: SkillKey,
+        second: SkillKey,
+    ) {
         let skill = if ctx.get_random(100) < 70 { first } else { second };
         ctx.cast_skill(npc, player, skill);
     }
@@ -223,25 +233,49 @@ impl Script for Maguen {
         None
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: Option<ObjectId>, _skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: Option<ObjectId>,
+        _skill: SkillKey,
+    ) {
         let Some(player) = player else {
             return;
         };
         let (b, c, r) = Self::plasma_levels(ctx, player);
         if b == 3 && c == 0 && r == 0 {
-            ctx.show_on_screen_npc_string(player, NpcStringId::EnoughMaguenPlasmaBistakonHaveGathered, 2, 4000, &[]);
+            ctx.show_on_screen_npc_string(
+                player,
+                NpcStringId::EnoughMaguenPlasmaBistakonHaveGathered,
+                2,
+                4000,
+                &[],
+            );
             Self::stop_plasmas(ctx, player, true, false, false);
             Self::cast_buff(ctx, npc, player, B_BUFF_1, B_BUFF_2);
             Self::maguen_pet_chance(ctx, player);
             ctx.start_quest_timer("END_TIMER", 3000, Some(npc), Some(player), false);
         } else if b == 0 && c == 3 && r == 0 {
-            ctx.show_on_screen_npc_string(player, NpcStringId::EnoughMaguenPlasmaCokrakonHaveGathered, 2, 4000, &[]);
+            ctx.show_on_screen_npc_string(
+                player,
+                NpcStringId::EnoughMaguenPlasmaCokrakonHaveGathered,
+                2,
+                4000,
+                &[],
+            );
             Self::stop_plasmas(ctx, player, false, true, false);
             Self::cast_buff(ctx, npc, player, C_BUFF_1, C_BUFF_2);
             Self::maguen_pet_chance(ctx, player);
             ctx.start_quest_timer("END_TIMER", 3000, Some(npc), Some(player), false);
         } else if b == 0 && c == 0 && r == 3 {
-            ctx.show_on_screen_npc_string(player, NpcStringId::EnoughMaguenPlasmaLeptilikonHaveGathered, 2, 4000, &[]);
+            ctx.show_on_screen_npc_string(
+                player,
+                NpcStringId::EnoughMaguenPlasmaLeptilikonHaveGathered,
+                2,
+                4000,
+                &[],
+            );
             Self::stop_plasmas(ctx, player, false, false, true);
             Self::cast_buff(ctx, npc, player, R_BUFF_1, R_BUFF_2);
             Self::maguen_pet_chance(ctx, player);

@@ -73,9 +73,13 @@ mod tests {
         let pages = [
             (
                 format!("{DIR}/32734.html"),
-                r#"<html><body>32734 <a action="bypass -h Script Klemis portInside">x</a></body></html>"#.to_owned(),
+                r#"<html><body>32734 <a action="bypass -h Script Klemis portInside">x</a></body></html>"#
+                    .to_owned(),
             ),
-            (format!("{DIR}/32734-01.html"), "<html><body>32734-01</body></html>".to_owned()),
+            (
+                format!("{DIR}/32734-01.html"),
+                "<html><body>32734-01</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);

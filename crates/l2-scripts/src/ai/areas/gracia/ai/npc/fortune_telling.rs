@@ -56,7 +56,8 @@ mod tests {
     use crate::testing::{ScriptTest, item};
 
     const NPCS: &str = r#"<npc id="32616" type="Folk" level="70" name="Mine"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/areas/Gracia/AI/NPC/FortuneTelling";
 
     fn setup(adena: i64) -> (ScriptTest, ObjectId) {
@@ -67,7 +68,10 @@ mod tests {
                 format!("{DIR}/fortune.htm"),
                 "<html><body>fortune <fstring>%fortune%</fstring></body></html>".to_owned(),
             ),
-            (format!("{DIR}/lowadena.htm"), "<html><body>lowadena</body></html>".to_owned()),
+            (
+                format!("{DIR}/lowadena.htm"),
+                "<html><body>lowadena</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);

@@ -16,7 +16,13 @@ pub struct DestroyedTumors;
 
 impl DestroyedTumors {
     /// The `showcheckpage` branch the three instances share, with their last page.
-    fn show_check_page(ctx: &mut ScriptCtx<'_>, player: ObjectId, tag: i32, warp_timer: i64, last: &str) -> String {
+    fn show_check_page(
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        tag: i32,
+        warp_timer: i64,
+        last: &str,
+    ) -> String {
         let has_item = ctx.has_quest_items(player, 13797);
         if !has_item {
             "32535-6.htm".to_owned()
@@ -68,10 +74,15 @@ impl Script for DestroyedTumors {
 
         let warp_timer = ctx.state::<TumorsState>().warp_timer;
         // `InstanceManager.getInstance().getPlayerWorld(player)`: the template and the "tag".
-        let world = ctx
-            .world()
-            .player_instance_world(player)
-            .map(|w| (w.template_id, w.parameters.get("tag").and_then(|v| v.parse::<i32>().ok()).unwrap_or(0)));
+        let world = ctx.world().player_instance_world(player).map(|w| {
+            (
+                w.template_id,
+                w.parameters
+                    .get("tag")
+                    .and_then(|v| v.parse::<i32>().ok())
+                    .unwrap_or(0),
+            )
+        });
         let is_leader = {
             let party = ctx.world().party_of(player);
             party.is_some() && ctx.world().is_party_leader(player)
@@ -100,12 +111,14 @@ impl Script for DestroyedTumors {
                 htmltext = Some(Self::show_check_page(ctx, player, tag, warp_timer, last));
             } else if template_id == 121 && event.eq_ignore_ascii_case("reenter") {
                 let count = ctx.get_quest_items_count(player, 13797);
-                htmltext = Some(if !ctx.has_quest_items(player, 13797) || count < 3 {
-                    "32535-6.htm"
-                } else {
-                    "32535-8.htm"
-                }
-                .to_owned());
+                htmltext = Some(
+                    if !ctx.has_quest_items(player, 13797) || count < 3 {
+                        "32535-6.htm"
+                    } else {
+                        "32535-8.htm"
+                    }
+                    .to_owned(),
+                );
             }
         } else if let Some((122, _)) = world {
             if event.eq_ignore_ascii_case("examine_tumor") && npc_id == Some(32535) {
@@ -141,7 +154,8 @@ mod tests {
 
     const NPCS: &str = r#"<npc id="32535" type="Folk" level="70" name="Tumor"/>
         <npc id="32536" type="Folk" level="70" name="Tumor2"/>"#;
-    const ITEMS: &str = r#"<item id="13797" type="EtcItem" name="Tumor item"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="13797" type="EtcItem" name="Tumor item"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/ai/areas/Gracia/AI/NPC/DestroyedTumors";
 
     fn setup(template: i32, tag: i32, items: Vec<l2_world::ItemData>) -> (ScriptTest, ObjectId, ObjectId) {
@@ -152,14 +166,23 @@ mod tests {
             .map(|e| format!(r#"<a action="bypass -h Script DestroyedTumors {e}">x</a>"#))
             .collect();
         let mut pages = vec![
-            (format!("{DIR}/32535.htm"), format!("<html><body>32535 {links}</body></html>")),
-            (format!("{DIR}/32536.htm"), format!("<html><body>32536 {links}</body></html>")),
+            (
+                format!("{DIR}/32535.htm"),
+                format!("<html><body>32535 {links}</body></html>"),
+            ),
+            (
+                format!("{DIR}/32536.htm"),
+                format!("<html><body>32536 {links}</body></html>"),
+            ),
         ];
         for page in [
             "32535-1", "32535-2", "32535-3", "32535-4", "32535-5", "32535-5a", "32535-5b", "32535-6",
             "32535-7", "32535-8", "32536-1", "32536-2",
         ] {
-            pages.push((format!("{DIR}/{page}.htm"), format!("<html><body>{page} {links}</body></html>")));
+            pages.push((
+                format!("{DIR}/{page}.htm"),
+                format!("<html><body>{page} {links}</body></html>"),
+            ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
@@ -199,10 +222,17 @@ mod tests {
 
     #[test]
     fn after_a_minute_the_check_page_goes_by_the_tag_and_the_instance() {
-        for (template, tag, page) in [(119, 1, "32535-5a"), (120, 1, "32535-5b"), (121, 1, "32535-5"), (119, 0, "32535-3")] {
+        for (template, tag, page) in [
+            (119, 1, "32535-5a"),
+            (120, 1, "32535-5b"),
+            (121, 1, "32535-5"),
+            (119, 0, "32535-3"),
+        ] {
             let (mut t, _, _) = setup(template, tag, vec![item(1000, 13797, 3)]);
             // The script was made more than a minute ago.
-            t.world.run_as_script("DestroyedTumors", |ctx| ctx.state::<TumorsState>().warp_timer -= 120_000);
+            t.world.run_as_script("DestroyedTumors", |ctx| {
+                ctx.state::<TumorsState>().warp_timer -= 120_000
+            });
             let shown = ask(&mut t, "showcheckpage");
             assert!(shown.contains(&format!("{page} ")), "{template} {tag}: {shown}");
         }

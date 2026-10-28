@@ -66,8 +66,10 @@ impl Script for StarStones {
                 let count = ctx.get_random_range(1, COLLECTION_RATE);
                 ctx.give_items(caster, item_id, i64::from(count));
             } else {
-                ctx.world()
-                    .send(caster, &SystemMessage::new(SystemMessageId::TheCollectionHasFailed));
+                ctx.world().send(
+                    caster,
+                    &SystemMessage::new(SystemMessageId::TheCollectionHasFailed),
+                );
             }
 
             ctx.world_mut().delete_npc(npc.object_id);
@@ -98,8 +100,16 @@ mod tests {
             let n = ctx.script_npc(stone).unwrap();
             StarStones.on_skill_see(ctx, n, ObjectId(1), skill, &[], false);
         });
-        let messages = names_to(&t.take(), 1).iter().filter(|n| *n == "SYSTEM_MESSAGE").count();
-        (t.count(1, 14009), t.count(1, 14011), t.world.npc(stone).is_none(), messages)
+        let messages = names_to(&t.take(), 1)
+            .iter()
+            .filter(|n| *n == "SYSTEM_MESSAGE")
+            .count();
+        (
+            t.count(1, 14009),
+            t.count(1, 14011),
+            t.world.npc(stone).is_none(),
+            messages,
+        )
     }
 
     #[test]

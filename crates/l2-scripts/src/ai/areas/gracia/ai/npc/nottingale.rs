@@ -165,8 +165,15 @@ mod tests {
                     format!(r#"<a action="bypass Script Nottingale {page}">x</a>"#)
                 })
                 .collect();
-            let name = if n < 10 { format!("32627-0{n}.html") } else { format!("32627-{n}.html") };
-            pages.push((format!("{DIR}/{name}"), format!("<html><body>{name}{links}</body></html>")));
+            let name = if n < 10 {
+                format!("32627-0{n}.html")
+            } else {
+                format!("32627-{n}.html")
+            };
+            pages.push((
+                format!("{DIR}/{name}"),
+                format!("<html><body>{name}{links}</body></html>"),
+            ));
         }
         pages[0].1 = format!("<html><body>32627{}</body></html>", pages[0].1);
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();

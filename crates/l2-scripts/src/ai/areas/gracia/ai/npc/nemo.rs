@@ -142,9 +142,15 @@ mod tests {
             .iter()
             .map(|e| format!(r#"<a action="bypass -h Script Nemo {e}">x</a>"#))
             .collect();
-        let mut pages = vec![(format!("{DIR}/32735.html"), format!("<html><body>32735 {links}</body></html>"))];
+        let mut pages = vec![(
+            format!("{DIR}/32735.html"),
+            format!("<html><body>32735 {links}</body></html>"),
+        )];
         for n in 1..=6 {
-            pages.push((format!("{DIR}/32735-0{n}.html"), format!("<html><body>32735-0{n} {links}</body></html>")));
+            pages.push((
+                format!("{DIR}/32735-0{n}.html"),
+                format!("<html><body>32735-0{n} {links}</body></html>"),
+            ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);

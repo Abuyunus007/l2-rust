@@ -76,11 +76,26 @@ mod tests {
         registry.add(EkimusMouth);
         let first = r#"<a action="bypass -h Script EkimusMouth hos_enter">a</a><a action="bypass -h Script EkimusMouth hoe_enter">b</a>"#;
         let pages = [
-            (format!("{DIR}/32537.htm"), format!("<html><body>32537 {first}</body></html>")),
-            (format!("{DIR}/32537-1.htm"), "<html><body>32537-1</body></html>".to_owned()),
-            (format!("{DIR}/32537-2.htm"), "<html><body>32537-2</body></html>".to_owned()),
-            (format!("{DIR}/32537-3.htm"), "<html><body>32537-3</body></html>".to_owned()),
-            (format!("{DIR}/32537-4.htm"), "<html><body>32537-4</body></html>".to_owned()),
+            (
+                format!("{DIR}/32537.htm"),
+                format!("<html><body>32537 {first}</body></html>"),
+            ),
+            (
+                format!("{DIR}/32537-1.htm"),
+                "<html><body>32537-1</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32537-2.htm"),
+                "<html><body>32537-2</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32537-3.htm"),
+                "<html><body>32537-3</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32537-4.htm"),
+                "<html><body>32537-4</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, "", &pages);

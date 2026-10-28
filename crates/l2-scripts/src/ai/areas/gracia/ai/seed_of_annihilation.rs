@@ -132,7 +132,16 @@ impl SeedOfAnnihilation {
     fn start_effect_zones_control(ctx: &mut ScriptCtx<'_>) {
         for (i, region) in REGIONS.iter().enumerate() {
             for (j, spawn) in region.af_spawns.iter().enumerate() {
-                let furnace = ctx.add_spawn(ANNIHILATION_FURNACE, spawn.0, spawn.1, spawn.2, spawn.3, false, 0, 0);
+                let furnace = ctx.add_spawn(
+                    ANNIHILATION_FURNACE,
+                    spawn.0,
+                    spawn.1,
+                    spawn.2,
+                    spawn.3,
+                    false,
+                    0,
+                    0,
+                );
                 let active = ctx.state::<SeedState>().active_buff[i];
                 ctx.state::<SeedState>().af_npcs[i][j] = furnace.map(|f| f.object_id);
                 if let Some(furnace) = furnace {

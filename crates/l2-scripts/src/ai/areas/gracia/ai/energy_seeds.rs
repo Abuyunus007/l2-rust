@@ -27,12 +27,16 @@ const RANDOM_RESPAWN_OFFSET: i32 = 180_000;
 const TEMPORARY_TELEPORTER: i32 = 32602;
 const SEED_IDS: [i32; 6] = [18678, 18679, 18680, 18681, 18682, 18683];
 
-const ANNIHILATION_SUPRISE_MOB_IDS: [&[i32]; 3] = [&[22746, 22747, 22748, 22749], &[22754, 22755, 22756], &[22760, 22761, 22762]];
+const ANNIHILATION_SUPRISE_MOB_IDS: [&[i32]; 3] = [
+    &[22746, 22747, 22748, 22749],
+    &[22754, 22755, 22756],
+    &[22760, 22761, 22762],
+];
 
 const SEED_OF_DESTRUCTION_DOORS: [i32; 29] = [
-    12240003, 12240004, 12240005, 12240006, 12240007, 12240008, 12240009, 12240010, 12240011, 12240012, 12240013,
-    12240014, 12240015, 12240016, 12240017, 12240018, 12240019, 12240020, 12240021, 12240022, 12240023, 12240024,
-    12240025, 12240026, 12240027, 12240028, 12240029, 12240030, 12240031,
+    12240003, 12240004, 12240005, 12240006, 12240007, 12240008, 12240009, 12240010, 12240011, 12240012,
+    12240013, 12240014, 12240015, 12240016, 12240017, 12240018, 12240019, 12240020, 12240021, 12240022,
+    12240023, 12240024, 12240025, 12240026, 12240027, 12240028, 12240029, 12240030, 12240031,
 ];
 const SOI_EXIT_POINT: (i32, i32, i32) = (-183285, 205996, -12896);
 const SOD_EXIT_POINT: (i32, i32, i32) = (-248717, 250260, 4337);
@@ -409,7 +413,9 @@ impl EnergySeeds {
                 return;
             };
             if let Some(npc) = ctx.add_spawn(npc_id, x, y, z, 0, false, 0, 0) {
-                ctx.state::<EnergySeedsState>().spawned_npcs.insert(npc.object_id, spawn_id);
+                ctx.state::<EnergySeedsState>()
+                    .spawned_npcs
+                    .insert(npc.object_id, spawn_id);
             }
         }
     }
@@ -469,7 +475,16 @@ impl EnergySeeds {
             return;
         };
         // `new Monster(template)`, full HP/MP, the energy's heading and instance, `spawnMe(x, y, z)`.
-        let Some(mob) = ctx.add_spawn(npc_id, spot.x, spot.y, spot.z, spot.heading, false, 0, spot.instance_id) else {
+        let Some(mob) = ctx.add_spawn(
+            npc_id,
+            spot.x,
+            spot.y,
+            spot.z,
+            spot.heading,
+            false,
+            0,
+            spot.instance_id,
+        ) else {
             return;
         };
         ctx.start_quest_timer("DeSpawnTask", 30000, Some(mob), None, false);
@@ -478,7 +493,12 @@ impl EnergySeeds {
     }
 
     /// Java `seedCollectEvent(player, seedEnergy, seedType)`.
-    fn seed_collect_event(ctx: &mut ScriptCtx<'_>, player: ObjectId, spot: &SeedSpot, seed_type: GraciaSeeds) {
+    fn seed_collect_event(
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        spot: &SeedSpot,
+        seed_type: GraciaSeeds,
+    ) {
         let cond_3 = ctx
             .player_quest_state(player, HOW_TO_OPPOSE_EVIL)
             .is_some_and(|qs| qs.is_cond(3));
@@ -493,7 +513,9 @@ impl EnergySeeds {
                     Self::handle_quest_drop(ctx, player, 13867);
                 }
             }
-            GraciaSeeds::AnnihilationBistakon | GraciaSeeds::AnnihilationReptilikon | GraciaSeeds::AnnihilationCokrakon => {
+            GraciaSeeds::AnnihilationBistakon
+            | GraciaSeeds::AnnihilationReptilikon
+            | GraciaSeeds::AnnihilationCokrakon => {
                 if cond_3 {
                     Self::handle_quest_drop(ctx, player, 15535);
                 }
@@ -573,7 +595,14 @@ impl Script for EnergySeeds {
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
         if npc.id == TEMPORARY_TELEPORTER {
-            ctx.teleport_player(player, SOD_EXIT_POINT.0, SOD_EXIT_POINT.1, SOD_EXIT_POINT.2, 0, false);
+            ctx.teleport_player(
+                player,
+                SOD_EXIT_POINT.0,
+                SOD_EXIT_POINT.1,
+                SOD_EXIT_POINT.2,
+                0,
+                false,
+            );
         }
 
         ctx.world().send(player, &ActionFailed);
@@ -607,11 +636,17 @@ impl Script for EnergySeeds {
         };
         ctx.world_mut().delete_npc(npc.object_id);
 
-        let spawn_id = ctx.state::<EnergySeedsState>().spawned_npcs.get(&npc.object_id).copied();
+        let spawn_id = ctx
+            .state::<EnergySeedsState>()
+            .spawned_npcs
+            .get(&npc.object_id)
+            .copied();
         if let Some((spawn_id, spawn)) = spawn_id.and_then(|id| spawn_of(id).map(|s| (id, s))) {
             let wait = RESPAWN + i64::from(ctx.get_random(RANDOM_RESPAWN_OFFSET));
             Self::schedule_respawn(ctx, spawn_id, wait);
-            ctx.state::<EnergySeedsState>().spawned_npcs.remove(&npc.object_id);
+            ctx.state::<EnergySeedsState>()
+                .spawned_npcs
+                .remove(&npc.object_id);
             if Self::is_seed_active(ctx, spawn.1) {
                 let item_id = match npc.id {
                     18678 => 14016, // Water
@@ -653,14 +688,28 @@ impl Script for EnergySeeds {
             match zone_id {
                 SOD_ZONE => {
                     if !Self::is_seed_active(ctx, GraciaSeeds::Destruction) && !ctx.is_gm(creature) {
-                        ctx.teleport_player(creature, SOD_EXIT_POINT.0, SOD_EXIT_POINT.1, SOD_EXIT_POINT.2, 0, false);
+                        ctx.teleport_player(
+                            creature,
+                            SOD_EXIT_POINT.0,
+                            SOD_EXIT_POINT.1,
+                            SOD_EXIT_POINT.2,
+                            0,
+                            false,
+                        );
                     }
                 }
                 SOI_ZONE => {
                     // NOTE(java-quirk): outside stage 3 the seed counts as closed only when it is
                     // not open either; `getOpenedTime()` is 0 outside stage 3, so both say the same.
                     if soi_current_stage(ctx) != 3 && soi_opened_time(ctx, ctx.now_ms()) <= 0 {
-                        ctx.teleport_player(creature, SOI_EXIT_POINT.0, SOI_EXIT_POINT.1, SOI_EXIT_POINT.2, 0, false);
+                        ctx.teleport_player(
+                            creature,
+                            SOI_EXIT_POINT.0,
+                            SOI_EXIT_POINT.1,
+                            SOI_EXIT_POINT.2,
+                            0,
+                            false,
+                        );
                     }
                 }
                 _ => {}
@@ -669,11 +718,17 @@ impl Script for EnergySeeds {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
-        let spawn_id = ctx.state::<EnergySeedsState>().spawned_npcs.get(&npc.object_id).copied();
+        let spawn_id = ctx
+            .state::<EnergySeedsState>()
+            .spawned_npcs
+            .get(&npc.object_id)
+            .copied();
         if let Some(spawn_id) = spawn_id.filter(|id| spawn_of(*id).is_some()) {
             let wait = RESPAWN + i64::from(ctx.get_random(RANDOM_RESPAWN_OFFSET));
             Self::schedule_respawn(ctx, spawn_id, wait);
-            ctx.state::<EnergySeedsState>().spawned_npcs.remove(&npc.object_id);
+            ctx.state::<EnergySeedsState>()
+                .spawned_npcs
+                .remove(&npc.object_id);
         }
     }
 }
@@ -711,7 +766,9 @@ mod tests {
             .filter(|s| {
                 matches!(
                     s.1,
-                    GraciaSeeds::AnnihilationBistakon | GraciaSeeds::AnnihilationReptilikon | GraciaSeeds::AnnihilationCokrakon
+                    GraciaSeeds::AnnihilationBistakon
+                        | GraciaSeeds::AnnihilationReptilikon
+                        | GraciaSeeds::AnnihilationCokrakon
                 )
             })
             .count()
@@ -750,7 +807,8 @@ mod tests {
         assert_eq!(t.world.npc_count() - before, annihilation_spawns());
 
         // State 2 of the Seed of Destruction: `StartSoDAi` spawns its energy.
-        t.world.set_global_variables(vec![("SoDState".to_owned(), Some("2".to_owned()))]);
+        t.world
+            .set_global_variables(vec![("SoDState".to_owned(), Some("2".to_owned()))]);
         let before = t.world.npc_count();
         t.world
             .run_as_script("EnergySeeds", |ctx| ctx.notify_event("StartSoDAi", None, None));

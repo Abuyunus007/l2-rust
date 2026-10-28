@@ -95,15 +95,26 @@ mod tests {
         let pages = [
             (
                 format!("{DIR}/32557.html"),
-                r#"<html><body>32557 <a action="bypass Script Lekon 32557-01.html">x</a></body></html>"#.to_owned(),
+                r#"<html><body>32557 <a action="bypass Script Lekon 32557-01.html">x</a></body></html>"#
+                    .to_owned(),
             ),
             (
                 format!("{DIR}/32557-01.html"),
-                r#"<html><body>32557-01 <a action="bypass -h Script Lekon licence">y</a></body></html>"#.to_owned(),
+                r#"<html><body>32557-01 <a action="bypass -h Script Lekon licence">y</a></body></html>"#
+                    .to_owned(),
             ),
-            (format!("{DIR}/32557-02.html"), "<html><body>32557-02</body></html>".to_owned()),
-            (format!("{DIR}/32557-03.html"), "<html><body>32557-03</body></html>".to_owned()),
-            (format!("{DIR}/32557-04.html"), "<html><body>32557-04</body></html>".to_owned()),
+            (
+                format!("{DIR}/32557-02.html"),
+                "<html><body>32557-02</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32557-03.html"),
+                "<html><body>32557-03</body></html>".to_owned(),
+            ),
+            (
+                format!("{DIR}/32557-04.html"),
+                "<html><body>32557-04</body></html>".to_owned(),
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
