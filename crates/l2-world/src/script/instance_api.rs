@@ -214,4 +214,159 @@ impl World {
             }
         }
     }
+
+    /// Crystal Caverns `Throw(effector, effected)`: the effected creature is thrown (`THROW_UP`)
+    /// along the line from the effected through the effector, at most 1400 units, to the farthest
+    /// point the geodata lets it reach, and everybody around gets `ValidateLocation`.
+    // Java: instances/CrystalCaverns/CrystalCaverns.java (Throw)
+    pub fn throw_creature(&mut self, effector: ObjectId, effected: ObjectId) {
+        let (Some((ex, ey, ez)), Some((cx, cy, cz))) =
+            (self.position_of(effector), self.position_of(effected))
+        else {
+            return;
+        };
+        let dx = f64::from(ex - cx);
+        let dy = f64::from(ey - cy);
+        let dz = f64::from(ez - cz);
+        let distance = (dx * dx + dy * dy).sqrt();
+        let mut offset = ((distance as i32) + 300).min(1400);
+
+        // approximation for moving futher when z coordinates are different
+        // TODO: handle Z axis movement better
+        offset += (dz.abs()) as i32;
+        if offset < 5 {
+            offset = 5;
+        }
+
+        if distance < 1.0 {
+            return;
+        }
+
+        let sin = dy / distance;
+        let cos = dx / distance;
+        let x = ex - (f64::from(offset) * cos) as i32;
+        let y = ey - (f64::from(offset) * sin) as i32;
+        let instance = self.stats(effected).map_or(0, |v| v.instance_id());
+        let destination = self.geo_valid_location(
+            l2_geo::Location::new(cx, cy, cz),
+            l2_geo::Location::new(x, y, cz),
+            instance,
+        );
+        self.fly_to_location(
+            effected,
+            destination.x,
+            destination.y,
+            destination.z,
+            l2_data::skill::FlyType::ThrowUp,
+        );
+        // `effected.setXYZ(destination)` and `broadcastPacket(new ValidateLocation(effected))`.
+        self.set_xyz(effected, destination.x, destination.y, destination.z);
+        let packet = l2_protocol_game::server::ValidateLocation {
+            object_id: effected.0,
+            x: destination.x,
+            y: destination.y,
+            z: destination.z,
+            heading: self.heading_of(effected),
+        };
+        self.broadcast_with_self(effected, &packet);
+    }
+
+    /// Java `creature.setParalyzed(value)`.
+    pub fn set_creature_paralyzed(&mut self, id: ObjectId, value: bool) {
+        if let Some(control) = self.control_mut(id) {
+            control.paralyzed = value;
+        }
+    }
+
+    /// Java `World.getNearestVisibleObjectInRange(npc, Item.class, range, item -> item.getId() ==
+    /// itemId)`: the nearest item of that id lying on the ground within `range` (3D).
+    pub fn nearest_ground_item(&self, near: ObjectId, item_id: i32, range: i32) -> Option<ObjectId> {
+        let (x, y, z) = self.position_of(near)?;
+        let mut best: Option<(f64, ObjectId)> = None;
+        for id in self.ground_item_ids() {
+            let Some(item) = self.ground_item(id) else {
+                continue;
+            };
+            if item.data.item_id != item_id {
+                continue;
+            }
+            let (dx, dy, dz) = (
+                f64::from(item.x - x),
+                f64::from(item.y - y),
+                f64::from(item.z - z),
+            );
+            let distance = (dx * dx + dy * dy + dz * dz).sqrt();
+            if distance <= f64::from(range) && best.is_none_or(|(d, _)| distance < d) {
+                best = Some((distance, id));
+            }
+        }
+        best.map(|(_, id)| id)
+    }
+
+    /// Java `World.removeVisibleObject(item, region); World.removeObject(item)`: the ground item
+    /// is gone (`false` when it is not lying there).
+    pub fn remove_ground_item(&mut self, id: ObjectId) -> bool {
+        self.decay_ground_item(id)
+    }
+
+    /// `RatesConfig.RATE_DEATH_DROP_CHANCE_MULTIPLIER`.
+    pub fn death_drop_chance_multiplier(&self) -> f32 {
+        self.settings.drops.rate_death_drop_chance_multiplier
+    }
+
+    /// Java `skill.getTargetType()` is `AREA`, `FRONT_AREA`, `BEHIND_AREA`, `AURA`, `FRONT_AURA`
+    /// or `BEHIND_AURA`.
+    pub fn skill_target_is_area(&self, skill: crate::effects::SkillKey) -> bool {
+        use l2_data::skill::TargetType;
+        self.data
+            .stat_data()
+            .and_then(|d| d.skills.get(skill.id, skill.level))
+            .is_some_and(|s| {
+                matches!(
+                    s.target_type,
+                    TargetType::Area
+                        | TargetType::FrontArea
+                        | TargetType::BehindArea
+                        | TargetType::Aura
+                        | TargetType::FrontAura
+                        | TargetType::BehindAura
+                )
+            })
+    }
+
+    /// Java `npc.getName()`: the name of the NPC's template.
+    pub fn npc_template_name(&self, npc: ObjectId) -> String {
+        self.npcs
+            .get(&npc)
+            .and_then(|n| self.npc_world.template(n.npc_id))
+            .map(|t| t.name.clone())
+            .unwrap_or_default()
+    }
+
+    /// Java `door.isOpen()` of the door of an instance.
+    pub fn is_instance_door_open(&self, instance_id: i32, door_id: i32) -> bool {
+        self.instance_door(instance_id, door_id)
+            .and_then(|d| self.door(d))
+            .is_some_and(|d| d.open)
+    }
+
+    /// Crystal Caverns `stopAttack(player)` for one creature: `setTarget(null)`, `abortAttack`,
+    /// `abortCast`, `breakAttack`, `breakCast` (the last two only abort what runs, so the first
+    /// two did it) and `getAI().setIntentionIdle()`.
+    pub fn stop_creature_attack(&mut self, id: ObjectId) {
+        self.set_creature_target(id, None);
+        self.abort_attack(id);
+        self.abort_cast(id);
+        self.set_intention_idle(id);
+    }
+
+    /// `if (instance.getReenterType() == InstanceReenterType.ON_ENTER) handleReenterTime(world)`.
+    pub fn handle_reenter_time_on_enter(&mut self, instance_id: i32) {
+        if self
+            .instance(instance_id)
+            .is_some_and(|i| i.reenter_type == l2_data::InstanceReenterType::OnEnter)
+        {
+            self.handle_reenter_time(instance_id);
+        }
+    }
 }
