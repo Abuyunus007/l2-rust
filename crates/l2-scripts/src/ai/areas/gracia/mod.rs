@@ -5,6 +5,8 @@
 pub mod ai;
 pub mod instances;
 pub mod seeds;
+#[cfg(test)]
+pub(crate) mod testing;
 pub mod util;
 
 use l2_world::ScriptRegistry;
