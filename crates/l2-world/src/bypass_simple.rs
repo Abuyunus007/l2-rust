@@ -1,7 +1,7 @@
 //! The small NPC bypass handlers: `PlayerHelp`, `TutorialClose` and `QuestList`.
 // Java: dist/game/data/scripts/handlers/bypass/npc/{PlayerHelp,TutorialClose,QuestList}.java
 
-use l2_protocol_game::server::{ExShowQuestInfo, NpcHtmlMessage, TutorialCloseHtml};
+use l2_protocol_game::server::{ExShowQuestInfo, NpcHtmlMessage};
 use l2_util::ObjectId;
 use tracing::warn;
 
@@ -95,7 +95,9 @@ fn tutorial_close_handler(
     _command: &str,
     _target: Option<ObjectId>,
 ) -> bool {
-    world.send(player, &TutorialCloseHtml);
+    // `player.sendPacket(TutorialCloseHtml.STATIC_PACKET)`, whose `runImpl` also clears the
+    // tutorial actions (S-API-01's `send_tutorial_close_html`).
+    world.send_tutorial_close_html(player);
     false
 }
 
