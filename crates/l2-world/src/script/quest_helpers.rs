@@ -247,16 +247,26 @@ impl ScriptCtx<'_> {
         self.world.is_subclass_active(player)
     }
 
+    /// Java `player.setLastQuestNpcObject(npc.getObjectId())`: the NPC the quest window and
+    /// `bypass Script` events are checked against.
+    pub fn set_last_quest_npc_object(&mut self, player: ObjectId, npc: ScriptNpc) {
+        if let Some(p) = self.world.players.get_mut(&player) {
+            p.talk.last_quest_npc_object = npc.object_id.0;
+        }
+    }
+
     /// Java `player.broadcastUserInfo()`.
     pub fn broadcast_user_info(&mut self, player: ObjectId) {
         self.world.broadcast_user_info(player);
     }
 
-    /// Java `creature.broadcastSkillPacket(new MagicSkillUse(caster, target, skillId, level,
-    /// hitTime, reuseDelay), ...)`: the animation to whoever sees `caster` (and `caster` itself
-    /// when it is a player).
+    /// Java `from.broadcastSkillPacket(new MagicSkillUse(caster, target, skillId, level,
+    /// hitTime, reuseDelay), ...)`: the animation to whoever sees `from` (and `from` itself when
+    /// it is a player). `from` is usually the caster.
+    #[allow(clippy::too_many_arguments)]
     pub fn broadcast_magic_skill_use(
         &mut self,
+        from: ObjectId,
         caster: ObjectId,
         target: ObjectId,
         skill_id: i32,
@@ -286,7 +296,7 @@ impl ScriptCtx<'_> {
                 z: t.2,
             },
         };
-        self.world.broadcast_creature_packet(caster, &packet);
+        self.world.broadcast_creature_packet(from, &packet);
     }
 
     // ------------------------------------------------------------------ npc
