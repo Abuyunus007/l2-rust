@@ -142,7 +142,7 @@ mod tests {
     const DIR: &str = "data/scripts/village_master/OrcChange1";
 
     fn setup() -> Vm {
-        let mut vm = Vm::new(OrcChange1, DIR, "OrcChange1", &[(30508, "VillageMasterOrc")]);
+        let mut vm = Vm::builder(OrcChange1, DIR, "OrcChange1", &[(30508, "VillageMasterOrc")]);
         vm.page("30508-01.htm", &["45", "47"]);
         vm.page("30508-06.htm", &["50"]);
         for n in [9, 11, 12, 13, 14, 18, 22, 23] {

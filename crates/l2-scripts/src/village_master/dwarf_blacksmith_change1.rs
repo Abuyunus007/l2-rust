@@ -118,7 +118,7 @@ mod tests {
     const DIR: &str = "data/scripts/village_master/DwarfBlacksmithChange1";
 
     fn setup() -> Vm {
-        let mut vm = Vm::new(
+        let mut vm = Vm::builder(
             DwarfBlacksmithChange1,
             DIR,
             "DwarfBlacksmithChange1",

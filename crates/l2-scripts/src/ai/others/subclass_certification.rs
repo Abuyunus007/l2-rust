@@ -114,11 +114,10 @@ impl SubclassCertification {
             .world()
             .player_variable_text(player, &var)
             .is_some_and(|v| v != "0");
-        let htmltext;
-        if received {
-            htmltext = "AlreadyReceived.html".to_owned();
+        let htmltext = if received {
+            "AlreadyReceived.html".to_owned()
         } else if ctx.player_level(player) < level {
-            htmltext = Self::replace_html(ctx, player, "LowLevel.html", false, Some(&level.to_string()))?;
+            Self::replace_html(ctx, player, "LowLevel.html", false, Some(&level.to_string()))?
         } else {
             // Add items to player's inventory
             let item = ctx.world_mut().inventory_add_item_id(player, item_id, 1)?;
@@ -129,8 +128,8 @@ impl SubclassCertification {
             );
             ctx.world_mut()
                 .set_player_variable_text(player, &var, item.0.to_string());
-            htmltext = "GetAbility.html".to_owned();
-        }
+            "GetAbility.html".to_owned()
+        };
         Some(htmltext)
     }
 }

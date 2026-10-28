@@ -37,7 +37,7 @@ pub struct Vm {
 
 impl Vm {
     /// `npcs` are `(npc id, NPC type)` of the masters to spawn.
-    pub fn new(script: impl Script, dir: &str, name: &str, npcs: &[(i32, &str)]) -> VmBuilder {
+    pub fn builder(script: impl Script, dir: &str, name: &str, npcs: &[(i32, &str)]) -> VmBuilder {
         let mut registry = ScriptRegistry::new();
         registry.add(script);
         VmBuilder {

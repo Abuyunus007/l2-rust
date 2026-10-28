@@ -123,7 +123,7 @@ mod tests {
     const DIR: &str = "data/scripts/village_master/FirstClassTransferTalk";
 
     fn setup() -> Vm {
-        let mut vm = Vm::new(
+        let mut vm = Vm::builder(
             FirstClassTransferTalk,
             DIR,
             "FirstClassTransferTalk",

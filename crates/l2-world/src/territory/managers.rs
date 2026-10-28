@@ -162,7 +162,9 @@ impl World {
         // Virgil's Letter (1239), Arkenia's Letter (1246).
         for delete in [7678, 7679, 5011, 1239, 1246] {
             // `deleteIfExist`: `destroyItem(DESTROY, item, npc, true)`, the whole stack.
-            let item = self.inventory_item_by_item_id(player, delete).map(|i| (i.object_id, i.count));
+            let item = self
+                .inventory_item_by_item_id(player, delete)
+                .map(|i| (i.object_id, i.count));
             if let Some((object_id, count)) = item {
                 self.destroy_item_by_object_id(player, object_id, count, true);
             }

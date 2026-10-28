@@ -308,7 +308,7 @@ mod tests {
     }
 
     fn setup() -> Vm {
-        let mut vm = Vm::new(
+        let mut vm = Vm::builder(
             KamaelChange2,
             DIR,
             "KamaelChange2",

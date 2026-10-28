@@ -160,7 +160,7 @@ mod tests {
     const DIR: &str = "data/scripts/village_master/ElfHumanFighterChange1";
 
     fn setup() -> Vm {
-        let mut vm = Vm::new(
+        let mut vm = Vm::builder(
             ElfHumanFighterChange1,
             DIR,
             "ElfHumanFighterChange1",
