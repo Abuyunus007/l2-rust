@@ -1,0 +1,39 @@
+# S-BOSS-03: Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed
+
+| Field | Value |
+|---|---|
+| Milestone | Scripts |
+| Model | sonnet |
+| Review | full |
+| Reference | `docs/design/scripts.md`, `crates/l2-scripts/src/quests/q00001_letters_of_love.rs`, `crates/l2-scripts/src/ai/others/asamah.rs` |
+| Depends on | API-01 |
+| Size | L |
+
+## Goal
+These boss AIs on the same rules as S-BOSS-01.
+
+## Java source (the spec)
+- `C:\l2-rust\l2jmobius\dist\game\data\scripts\ai\bosses\{Sailren,SeerUgoros,DrChaos,Anais,QueenShyeed}\**`
+
+## Files
+- `crates/l2-scripts/src/ai/bosses/*`
+- tests in the same files
+
+## Requirements
+1. Follow `docs/design/scripts.md` exactly: one Rust file per Java script under `crates/l2-scripts/src/<java folder>/`, one `pub mod` and one `r.add(..)` line in that folder's `mod.rs`, tests at the end of the same file with `crate::testing::ScriptTest`.
+2. Java behaviour, messages, html (the same page files), drops, rewards and rows exactly (D-39); `global_variables` only under D-54.
+3. Scripts hold no state (`ctx.state::<T>()`); timers on the wheel; world RNG; no DB, no threads.
+4. If a script needs world behaviour that is not `pub` yet, add a small `pub` method in the world module that owns it (add your lines only) and list it. If the engine lacks a hook, list it and port the rest.
+5. Keep Java quirks with `// NOTE(java-quirk):`.
+
+## Tests (must exist and pass)
+- Each boss: spawn rules, phases, death, rows.
+
+## Done when
+- [ ] fmt, clippy -D warnings, test pass (`CARGO_INCREMENTAL=0`, `-j 4`); `git merge main` before the final checks
+- [ ] committed as `S-BOSS-03: <summary>`
+- [ ] report delivered: every script ported, every script or part left and why, every world method added, every guess
+
+## Notes from the orchestrator
+- Read CLAUDE.md (safety rules), DECISIONS (D-05, D-15, D-16, D-39, D-53, D-54) and `docs/design/scripts.md` first.
+- Up to eight script workers run at the same time, each in its own folder. Shared files (`l2-scripts/src/lib.rs`, the world modules) take only your added lines; run `git merge main` every hour or so.
