@@ -113,6 +113,18 @@ impl World {
         self.broadcast_announcement(text, false);
     }
 
+    /// Java `Player.isMinimapAllowed()`.
+    pub fn is_minimap_allowed(&self, player: ObjectId) -> bool {
+        self.scripts.players.get(&player).is_some_and(|q| q.minimap_allowed)
+    }
+
+    /// Java `Player.setMinimapAllowed(value)`; the client hears of it with the next `UserInfo`.
+    pub fn set_minimap_allowed(&mut self, player: ObjectId, value: bool) {
+        if let Some(quests) = self.scripts.players.get_mut(&player) {
+            quests.minimap_allowed = value;
+        }
+    }
+
     /// Java `Monster.getLeader()`: the master of a minion.
     pub fn script_leader_of(&self, npc: ObjectId) -> Option<ObjectId> {
         self.leader_of(npc)
