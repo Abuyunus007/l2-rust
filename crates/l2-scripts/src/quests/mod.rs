@@ -55,6 +55,7 @@ pub mod q00153_deliver_goods;
 pub mod q00155_find_sir_windawood;
 pub mod q00157_recover_smuggled_goods;
 pub mod q00158_seed_of_evil;
+pub mod q00161_fruit_of_the_mother_tree;
 pub mod q00164_blood_fiend;
 pub mod q00165_shilens_hunt;
 pub mod q00182_new_recruits;
@@ -119,6 +120,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00155_find_sir_windawood::Q00155FindSirWindawood);
     r.add(q00157_recover_smuggled_goods::Q00157RecoverSmuggledGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
+    r.add(q00161_fruit_of_the_mother_tree::Q00161FruitOfTheMotherTree);
     r.add(q00164_blood_fiend::Q00164BloodFiend);
     r.add(q00165_shilens_hunt::Q00165ShilensHunt);
     r.add(q00182_new_recruits::Q00182NewRecruits);
