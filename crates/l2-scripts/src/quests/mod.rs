@@ -10,6 +10,8 @@ pub mod q00002_what_women_want;
 pub mod q00003_will_the_seal_be_broken;
 pub mod q00004_long_live_the_paagrio_lord;
 pub mod q00005_miners_favor;
+pub mod q00006_step_into_the_future;
+pub mod q00007_a_trip_begins;
 pub mod q00070_saga_of_the_phoenix_knight;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
@@ -30,6 +32,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00003_will_the_seal_be_broken::Q00003WillTheSealBeBroken);
     r.add(q00004_long_live_the_paagrio_lord::Q00004LongLiveThePaagrioLord);
     r.add(q00005_miners_favor::Q00005MinersFavor);
+    r.add(q00006_step_into_the_future::Q00006StepIntoTheFuture);
+    r.add(q00007_a_trip_begins::Q00007ATripBegins);
     r.add(q00070_saga_of_the_phoenix_knight::Q00070SagaOfThePhoenixKnight);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
