@@ -192,4 +192,26 @@ impl World {
         self.decay(summon);
         self.set_pet(owner, None);
     }
+
+    /// Java `System.currentTimeMillis()` as the instances see it (`Instance.getInstanceEndTime()`
+    /// is on this clock).
+    pub fn instance_clock_ms(&self) -> i64 {
+        self.instance_now_ms()
+    }
+
+    /// Java `npc.broadcastEvent(eventName, radius, reference)`: every other NPC in sight within
+    /// `radius` that listens for `ON_NPC_EVENT_RECEIVED` gets the event (queued).
+    pub fn broadcast_npc_event(
+        &mut self,
+        npc: ObjectId,
+        event: &str,
+        radius: i32,
+        reference: Option<ObjectId>,
+    ) {
+        for receiver in self.visible_objects_in_range(npc, radius) {
+            if self.npcs.contains_key(&receiver) {
+                self.script_send_event(event, npc, receiver, reference);
+            }
+        }
+    }
 }
