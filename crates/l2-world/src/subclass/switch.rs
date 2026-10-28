@@ -446,7 +446,8 @@ impl World {
         self.apply_saved_effect_rows(id, load.effects);
         self.install_servitor_effects(id, &load.summon_effects);
         self.send_etc_status_update(id);
-        // The `Q00422_RepentYourSins` exit is the script engine's (S-API-01).
+        // If player has quest 422: Repent Your Sins, remove it.
+        self.exit_repent_your_sins(id);
 
         // 6. Restore henna data for the class.
         if let Some(player) = self.players.get_mut(&id) {
@@ -503,6 +504,21 @@ impl World {
             let packet = crate::enter::storage_max_count(&player.data, is_gm, &self.settings);
             self.send(id, &packet);
         }
+    }
+
+    /// `setActiveClass`'s `getQuestState("Q00422_RepentYourSins")` and `st.exitQuest(true)`: the
+    /// quest ends (its items go, its rows are deleted). A server without the script has no state
+    /// of it, like Java.
+    fn exit_repent_your_sins(&mut self, id: ObjectId) {
+        const REPENT_YOUR_SINS: &str = "Q00422_RepentYourSins";
+        let Some(script) = self.scripts.by_name(REPENT_YOUR_SINS) else {
+            return;
+        };
+        self.with_script(script, |_, ctx| {
+            if let Some(qs) = ctx.get_quest_state(id, false) {
+                qs.exit_quest(ctx, true, false);
+            }
+        });
     }
 
     /// Java `restoreRecipeBook(false)`: the dwarven book becomes the recipes of the class index.

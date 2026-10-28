@@ -21,11 +21,11 @@
 //
 // # What is left out, with the system that brings it
 // - The class tree (`AcquireSkillType.CLASS`) is learned here, the clan trees at the clan
-//   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03) and the fishing tree at the
-//   fisherman (`FISHING`, `fishing/skills.rs`, M6-FU-10). The collect, transform, transfer and
-//   sub-class trees are not loaded (the card names them out of scope), so those requests find no
-//   `SkillLearn` and are ignored, which is what Java does for a skill that is not in a tree.
-//   Tolonis (collect skills) is therefore silent too.
+//   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03), the fishing tree at the
+//   fisherman (`FISHING`, `fishing/skills.rs`, M6-FU-10) and the certification skills of the
+//   sub-class tree at Avant-Garde (`SUBCLASS`, S-VM-01). The transform and transfer trees are not
+//   loaded, so those requests find no `SkillLearn` and are ignored, which is what Java does for a
+//   skill that is not in a tree.
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
 // - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
@@ -53,6 +53,25 @@ use crate::world::World;
 const ONYX_BEAST_TRANSFORMATION_ID: i32 = 617;
 /// `Folk.showSkillList` shows the collect skills of this NPC (Tolonis) instead of a class list.
 const TOLONIS_NPC_ID: i32 = 32611;
+/// The script whose quest state `RequestAcquireSkill` needs for a certification skill.
+const SUB_CLASS_SKILLS: &str = "SubClassSkills";
+/// `RequestAcquireSkill.QUEST_VAR_NAMES`: the player variables of the certificates, followed by
+/// the class index (1 to `MaxSubclass`).
+const CERTIFICATION_VARS: [&str; 4] = [
+    "EmergentAbility65-",
+    "EmergentAbility70-",
+    "ClassAbility75-",
+    "ClassAbility80-",
+];
+
+/// Java `StringUtil.isNumeric(text)` then `Integer.parseInt(text)`: digits only, within `int`.
+fn java_parse_int(text: &str) -> Option<i32> {
+    if text.is_empty() || !text.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    text.parse().ok()
+}
+
 /// `ShortcutType.SKILL` ordinal (NONE, ITEM, SKILL, ...).
 const SHORTCUT_TYPE_SKILL: i32 = 2;
 /// Java `Shortcut`'s bar width: the wire slot is `slot + page * 12`.
@@ -210,7 +229,7 @@ impl World {
     }
 
     /// `SkillData.getSkill(id, level) != null`.
-    pub(crate) fn skill_template_exists(&self, skill_id: i32, level: i32) -> bool {
+    pub fn skill_template_exists(&self, skill_id: i32, level: i32) -> bool {
         self.data
             .stat_data()
             .is_some_and(|d| d.skills.get_skill(skill_id, level).is_some())
@@ -714,6 +733,13 @@ impl World {
             self.send_plain_acquire_skill_info(player, skill_type, &learn);
             return;
         }
+        if skill_type == AcquireSkillType::Subclass {
+            let Some(learn) = self.rewards.skill_trees.sub_class_skill(skill_id, level).cloned() else {
+                return;
+            };
+            self.send_plain_acquire_skill_info(player, skill_type, &learn);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
@@ -892,6 +918,13 @@ impl World {
             }
             return;
         }
+        if skill_type == AcquireSkillType::Subclass {
+            let Some(learn) = self.rewards.skill_trees.sub_class_skill(skill_id, level).cloned() else {
+                return;
+            };
+            self.acquire_sub_class_skill(player, trainer, &learn, prev_skill_level);
+            return;
+        }
         // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
         // nothing for the other types.
         if skill_type != AcquireSkillType::Class {
@@ -912,6 +945,175 @@ impl World {
 
         if self.check_player_skill(player, trainer, &learn, skill_type) {
             self.give_skill(player, trainer, skill_id, level, skill_type);
+        }
+    }
+
+    /// The `SUBCLASS` case of `RequestAcquireSkill.runImpl`: a certification skill is learned on
+    /// the base class with a certificate whose object id one of the certification variables
+    /// (`EmergentAbility65-<n>`, ..., written by `SubclassCertification`) holds; the variable then
+    /// names the skill (`<skill id>;`).
+    fn acquire_sub_class_skill(
+        &mut self,
+        player: ObjectId,
+        trainer: ObjectId,
+        learn: &SkillLearn,
+        prev_skill_level: i32,
+    ) {
+        let (skill_id, level) = (learn.skill_id, learn.skill_level);
+        // Hack check.
+        if self.is_subclass_active(player) {
+            self.send(
+                player,
+                &SystemMessage::new(
+                    SystemMessageId::ThisSkillCannotBeLearnedWhileInTheSubClassStatePleaseTryAgainAfterChangingToTheMainClass,
+                ),
+            );
+            let text = self.player_text(player);
+            self.handle_illegal_player_action(
+                player,
+                &format!(
+                    "{text} is requesting skill Id: {skill_id} level {level} while Sub-Class is active!"
+                ),
+                IllegalActionPunishment::None,
+            );
+            return;
+        }
+
+        // Certification Skills - Exploit fix
+        // NOTE(java-quirk): `getSkillLevel` is 0 (never -1) for an unknown skill, so this check
+        // never fires.
+        if prev_skill_level == -1 && level > 1 {
+            // The previous level skill has not been learned.
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::ThePreviousLevelSkillHasNotBeenLearned),
+            );
+            let text = self.player_text(player);
+            self.handle_illegal_player_action(
+                player,
+                &format!(
+                    "{text} is requesting skill Id: {skill_id} level {level} without knowing it's previous level!"
+                ),
+                IllegalActionPunishment::None,
+            );
+            return;
+        }
+
+        // `player.getQuestState("SubClassSkills")`, else the script's `newQuestState(player)`.
+        let Some(script) = self.scripts.by_name(SUB_CLASS_SKILLS) else {
+            warn!(
+                "Null SubClassSkills quest, for Sub-Class skill Id: {skill_id} level: {level} for {player}!"
+            );
+            return;
+        };
+        crate::script::ctx::quest_state(self, script, player, true);
+
+        let max_subclass = self.settings.subclass.max_subclass;
+        for var_name in CERTIFICATION_VARS {
+            for i in 1..=max_subclass {
+                let name = format!("{var_name}{i}");
+                let item_oid = self.player_variable_text(player, &name).unwrap_or("").to_owned();
+                if item_oid.is_empty() || item_oid.ends_with(';') || item_oid == "0" {
+                    continue;
+                }
+                let Some(item_obj_id) = java_parse_int(&item_oid) else {
+                    warn!(
+                        "Invalid item object Id {item_oid}, for Sub-Class skill Id: {skill_id} level: {level} for {player}!"
+                    );
+                    continue;
+                };
+                // `player.getInventory().getItemByObjectId(itemObjId)`.
+                let item_id = self.players.get(&player).and_then(|p| {
+                    p.data
+                        .items
+                        .iter()
+                        .find(|it| {
+                            it.object_id.0 == item_obj_id && (it.loc == "INVENTORY" || it.loc == "PAPERDOLL")
+                        })
+                        .map(|it| it.item_id)
+                });
+                let Some(item_id) = item_id else {
+                    warn!(
+                        "Inexistent item for object Id {item_obj_id}, for Sub-Class skill Id: {skill_id} level: {level} for {player}!"
+                    );
+                    continue;
+                };
+                if learn.required_items.iter().any(|req| req.item_id == item_id) {
+                    if self.check_player_skill(player, trainer, learn, AcquireSkillType::Subclass) {
+                        self.give_skill(player, trainer, skill_id, level, AcquireSkillType::Subclass);
+                        // Logging the given skill.
+                        self.set_player_variable_text(player, &name, format!("{skill_id};"));
+                    }
+                    return;
+                }
+            }
+        }
+
+        // Player doesn't have required item.
+        self.send(
+            player,
+            &SystemMessage::new(
+                SystemMessageId::YouDoNotHaveTheNecessaryMaterialsOrPrerequisitesToLearnThisSkill,
+            ),
+        );
+        self.show_skill_list_again(player, trainer, AcquireSkillType::Subclass);
+    }
+
+    /// Java `SkillTreeData.getAvailableSubClassSkills(player)`: the certification skills of the
+    /// tree the subclasses qualify for (slot and level), at the next level the player lacks.
+    // NOTE(java-quirk): a line is added once per subclass that qualifies, so it can be listed twice.
+    pub fn available_sub_class_skills(&self, player: ObjectId) -> Vec<SkillLearn> {
+        let Some(p) = self.players.get(&player) else {
+            return Vec::new();
+        };
+        let player_level = p.core.level;
+        let subs: Vec<crate::subclass::SubClassHolder> =
+            p.data.profile.subclasses.subs.values().copied().collect();
+        let mut result = Vec::new();
+        for skill in self.rewards.skill_trees.sub_class_skills() {
+            if player_level < skill.get_level {
+                continue;
+            }
+            for sub in &subs {
+                let conds = &skill.sub_class_conditions;
+                let index = usize::try_from(sub.class_index - 1).ok();
+                let qualifies = index
+                    .and_then(|i| conds.get(i))
+                    .is_some_and(|&(slot, lvl)| sub.class_index == slot && lvl <= sub.level);
+                if !conds.is_empty() && qualifies {
+                    let old = self.known_skill_level(player, skill.skill_id);
+                    if old != 0 {
+                        if old == skill.skill_level - 1 {
+                            result.push(skill.clone());
+                        }
+                    } else if skill.skill_level == 1 {
+                        result.push(skill.clone());
+                    }
+                }
+            }
+        }
+        result
+    }
+
+    /// Java `AvantGarde.showSubClassSkillList(player)` (a static helper of the script): the
+    /// certification skills as an `AcquireSkillList` of type `SUBCLASS`, or "There are no other
+    /// skills to learn."
+    pub fn show_sub_class_skill_list(&mut self, player: ObjectId) {
+        let mut list = AcquireSkillList::new(AcquireSkillType::Subclass);
+        let mut count = 0;
+        for s in self.available_sub_class_skills(player) {
+            if self.skill_template_exists(s.skill_id, s.skill_level) {
+                count += 1;
+                list.add_skill(s.skill_id, s.skill_level, s.skill_level, 0, 0);
+            }
+        }
+        if count > 0 {
+            self.send(player, &list);
+        } else {
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::ThereAreNoOtherSkillsToLearn),
+            );
         }
     }
 

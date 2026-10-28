@@ -24,7 +24,7 @@ const ITEM_LIST_DELAY_MS: u64 = 250;
 impl World {
     /// Java `Player.broadcastUserInfo()`: `UserInfo` and `ExBrExtraUserInfo` to the player now, the
     /// `CharInfo` of everybody who sees the player 100 ms later (one pending broadcast at a time).
-    pub(crate) fn broadcast_user_info(&mut self, id: ObjectId) {
+    pub fn broadcast_user_info(&mut self, id: ObjectId) {
         // Send user info to the current player.
         self.send_user_info(id);
         // Broadcast char info to known players.
@@ -108,7 +108,7 @@ impl World {
 
     /// Java `Player.sendSkillList()`: `SkillList` of everything the player knows, 300 ms later.
     /// A request while one is waiting changes nothing.
-    pub(crate) fn send_skill_list(&mut self, id: ObjectId) {
+    pub fn send_skill_list(&mut self, id: ObjectId) {
         let due = self.tick + TimerWheel::ms_to_ticks(SKILL_LIST_DELAY_MS);
         let Some(player) = self.players.get(&id) else {
             return;

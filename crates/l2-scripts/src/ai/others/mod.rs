@@ -8,12 +8,14 @@ pub mod altars_of_sacrifice;
 pub mod arena_manager;
 pub mod asamah;
 pub mod asher;
+pub mod avant_garde;
 pub mod ballista;
 pub mod black_judge;
 pub mod black_marketeer_of_mammon;
 pub mod blackdagger_wing;
 pub mod bleeding_fly;
 pub mod clan_trader;
+pub mod class_master;
 pub mod crimson_hatu_otis;
 pub mod delusion_teleport;
 pub mod dorian;
@@ -30,6 +32,7 @@ pub mod kier;
 pub mod manor_manager;
 pub mod monument_of_heroes;
 pub mod muscle_bomber;
+pub mod subclass_certification;
 pub mod symbol_maker;
 
 use l2_world::ScriptRegistry;
@@ -63,5 +66,10 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(manor_manager::ManorManager);
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(muscle_bomber::MuscleBomber);
+    r.add(avant_garde::AvantGarde);
+    r.add(class_master::ClassMaster::default());
+    r.add(manor_manager::ManorManager);
+    r.add(monument_of_heroes::MonumentOfHeroes);
+    r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
 }

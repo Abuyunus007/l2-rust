@@ -1024,7 +1024,7 @@ fn admin_changename(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 }
 
 /// Java `Player.storeMe()`: the whole character is written with the next outbox turn.
-fn store_me(world: &mut World, id: ObjectId) {
+pub(crate) fn store_me(world: &mut World, id: ObjectId) {
     if let Some(snapshot) = world.store_snapshot(id) {
         world
             .outbox
@@ -1083,7 +1083,7 @@ fn admin_setnoble(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 
 /// Java `Player.setNoble(value)`: the skills of the noble skill tree are given or taken (not
 /// stored), the flag, and the new skill list.
-fn set_noble(world: &mut World, id: ObjectId, value: bool) {
+pub(crate) fn set_noble(world: &mut World, id: ObjectId, value: bool) {
     let trees = std::sync::Arc::clone(&world.rewards.skill_trees);
     for skill in trees.noble_skills() {
         if value {

@@ -1667,13 +1667,16 @@ fn the_territory_managers_answer_like_java() {
     s.world.add_item(ObjectId(P2), GLUDIO_BADGE, 100, false);
     s.script(P2, "MakeMeNoble");
     assert_eq!(last_page(&s.take(), P2), "LEVEL 75");
-    // The noblesse itself needs the noblesse quests (D-05): nothing is taken.
+    // The noblesse (S-VM-01): the badges go, the noblesse is set; no page follows (the
+    // noblesse quests are not installed in this world, so none is completed).
     s.talk(P1, manager);
     s.world.add_item(ObjectId(P1), GLUDIO_BADGE, 100, false);
     s.take();
+    assert!(!s.world.is_noble(ObjectId(P1)));
     s.script(P1, "MakeMeNoble");
     assert!(packets_to(&s.take(), P1, "NPC_HTML_MESSAGE").is_empty());
-    assert_eq!(s.item_count(P1, GLUDIO_BADGE), 100);
+    assert_eq!(s.item_count(P1, GLUDIO_BADGE), 0);
+    assert!(s.world.is_noble(ObjectId(P1)));
     // `TerritoryStatus`: the castle's owner and its kingdom.
     s.talk(P1, manager);
     s.take();

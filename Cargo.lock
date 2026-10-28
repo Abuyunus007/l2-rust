@@ -2547,6 +2547,7 @@ dependencies = [
  "l2-util",
  "l2-world",
  "tempfile",
+ "tracing",
 ]
 
 [[package]]
