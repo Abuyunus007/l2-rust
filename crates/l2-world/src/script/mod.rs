@@ -35,6 +35,7 @@ pub mod link;
 pub mod notify;
 pub mod packets;
 pub mod qs;
+pub mod quest_helpers;
 pub mod setup;
 pub mod sound;
 mod spawn;
@@ -53,6 +54,7 @@ pub use ctx::ScriptCtx;
 pub use globals::{GlobalVariables, GlobalVariablesWrite};
 pub use packets::QuestInput;
 pub use qs::Qs;
+pub use quest_helpers::{class_race, player_class, race};
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
 pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};
@@ -167,6 +169,10 @@ pub(crate) struct ScriptWorld {
     pub(crate) settings: ScriptSettings,
     /// Java `Attackable._onKillDelay` where a script changed it.
     pub(crate) kill_delays: HashMap<ObjectId, i32>,
+    /// Java `Npc._scriptValue` where it is not 0.
+    pub(crate) npc_script_values: HashMap<ObjectId, i32>,
+    /// Java `static` fields shared by a family of scripts ([`ScriptCtx::shared_state`]).
+    pub(crate) shared_states: quest_helpers::SharedStates,
 }
 
 impl ScriptWorld {

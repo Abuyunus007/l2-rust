@@ -87,6 +87,11 @@ pub const X: i32 = -71_338;
 pub const Y: i32 = 258_271;
 pub const Z: i32 = -3_104;
 
+/// One world tick in milliseconds (`l2_world::world::TICK`).
+const TICK_MS: u32 = 50;
+/// Java `Attackable._onKillDelay` default, plus a tick.
+const KILL_DELAY_MS: u32 = 2_550;
+
 /// A world with the scripts installed.
 pub struct ScriptTest {
     pub world: World,
@@ -191,6 +196,60 @@ impl ScriptTest {
         }
     }
 
+    /// Lets `ms` milliseconds of world time pass (quest timers, despawns).
+    pub fn wait_ms(&mut self, ms: u32) {
+        self.ticks(ms.div_ceil(TICK_MS));
+    }
+
+    /// A character of `level` with Java's `race` (`Race.ordinal()`) and class
+    /// (`PlayerClass.getId()`), which is also the base class, enters the world.
+    pub fn enter_as(&mut self, id: i32, level: i32, race: i32, class_id: i32, items: Vec<ItemData>) {
+        let mut data = player_data(id, level, items);
+        data.race = race;
+        data.class_id = class_id;
+        data.base_class = class_id;
+        self.enter_with(data);
+    }
+
+    /// `killer` kills `npc` (Java `doDie(killer)`), then the kill delay passes: `on_kill` runs
+    /// `onKillDelay` (2.5 s) after the death, like Java.
+    pub fn kill(&mut self, killer: i32, npc: ObjectId) {
+        self.world.do_die(npc, Some(ObjectId(killer)));
+        self.wait_ms(KILL_DELAY_MS);
+    }
+
+    /// `leader` invites `member` (both entered) into a party and `member` accepts.
+    pub fn party(&mut self, leader: i32, member: i32) {
+        let name = self.world.player(ObjectId(member)).unwrap().data.name.clone();
+        self.input(
+            leader,
+            ClientInput::JoinParty {
+                name,
+                distribution_type_id: 0,
+            },
+        );
+        self.input(member, ClientInput::AnswerJoinParty { response: 1 });
+        assert!(
+            self.world.is_in_party_with(ObjectId(leader), ObjectId(member)),
+            "the party was not made"
+        );
+    }
+
+    /// The NPCs of `npc_id` in the world (a script's `add_spawn`s), not deleted.
+    pub fn npcs_of(&self, npc_id: i32) -> Vec<ObjectId> {
+        self.world
+            .npc_ids()
+            .into_iter()
+            .filter(|id| self.in_world(*id) && self.world.npc(*id).is_some_and(|n| n.npc_id == npc_id))
+            .collect()
+    }
+
+    /// The NPC is in the world: spawned and not deleted (`deleteMe`) or decayed. A deleted NPC
+    /// keeps its entry (and object id) for its next life.
+    pub fn in_world(&self, npc: ObjectId) -> bool {
+        self.world.npc(npc).is_some_and(|n| !n.decayed)
+    }
+
     /// Everything sent since the last call.
     pub fn take(&self) -> Sent {
         std::mem::take(&mut self.log.0.lock().unwrap())
@@ -211,6 +270,147 @@ impl ScriptTest {
                 .map(|i| i.count)
                 .sum()
         })
+    }
+}
+
+/// Stand-in html pages for a script's test: each page holds its file name (so a test can see
+/// which one came) and the `bypass Script <name> <event>` links the real page has (the world
+/// only takes a bypass that the last page offered, like Java's html action cache).
+pub struct Pages {
+    name: &'static str,
+    dir: String,
+    pages: Vec<(String, String)>,
+}
+
+impl Pages {
+    /// The pages of `script` (its `name()` and `path()`).
+    pub fn of(script: &dyn Script) -> Self {
+        Self {
+            name: script.name(),
+            dir: format!("data/scripts/{}", script.path()),
+            pages: Vec::new(),
+        }
+    }
+
+    /// A page of the script folder with links to `events` (`bypass Script <name> <event>`).
+    pub fn page(mut self, file: &str, events: &[&str]) -> Self {
+        let links: String = events
+            .iter()
+            .map(|e| format!(r#"<a action="bypass Script {} {e}">{e}</a>"#, self.name))
+            .collect();
+        self.pages.push((
+            format!("{}/{file}", self.dir),
+            format!("<html><body>{file}{links}</body></html>"),
+        ));
+        self
+    }
+
+    /// Pages without links.
+    pub fn plain(mut self, files: &[&str]) -> Self {
+        for file in files {
+            self = self.page(file, &[]);
+        }
+        self
+    }
+
+    /// The default page of each NPC (`data/html/default/<id>.htm`) with the quest link
+    /// (`bypass Script`), and the "already completed" page.
+    pub fn npcs(mut self, npc_ids: &[i32]) -> Self {
+        for npc in npc_ids {
+            self.pages.push((
+                format!("data/html/default/{npc}.htm"),
+                format!(r#"<html><body>npc {npc} <a action="bypass Script">Quest</a></body></html>"#),
+            ));
+        }
+        self.pages.push((
+            "data/html/alreadycompleted.htm".to_owned(),
+            "<html><body>This quest has already been completed.</body></html>".to_owned(),
+        ));
+        self
+    }
+
+    /// Any other file of the datapack.
+    pub fn file(mut self, path: &str, text: &str) -> Self {
+        self.pages.push((path.to_owned(), text.to_owned()));
+        self
+    }
+}
+
+impl ScriptTest {
+    /// [`ScriptTest::new`] with [`Pages`].
+    pub fn with_pages(scripts: ScriptRegistry, npcs: &str, items: &str, pages: Pages) -> Self {
+        let pages: Vec<(&str, &str)> = pages
+            .pages
+            .iter()
+            .map(|(a, b)| (a.as_str(), b.as_str()))
+            .collect();
+        Self::new(scripts, npcs, items, &pages)
+    }
+
+    /// Talks to the NPC (two clicks), opens its quest link (`bypass Script`) and returns the
+    /// last page it shows (empty when none came).
+    pub fn quest_page(&mut self, player: i32, npc: ObjectId) -> String {
+        self.talk(player, npc);
+        self.bypass(player, "Script");
+        pages_to(&self.take(), player).pop().unwrap_or_default()
+    }
+
+    /// Clicks a link of the script's last page (`bypass Script <name> <event>`) and returns
+    /// the last page it shows (empty when none came).
+    pub fn event(&mut self, player: i32, script_name: &str, event: &str) -> String {
+        self.bypass(player, &format!("Script {script_name} {event}"));
+        pages_to(&self.take(), player).pop().unwrap_or_default()
+    }
+}
+
+/// `character_quests` rows as the outbox gets them.
+pub mod rows {
+    use l2_world::QuestWrite;
+
+    pub fn insert(name: &str, var: &str, value: &str) -> QuestWrite {
+        QuestWrite::InsertVar {
+            char_id: 1,
+            name: name.to_owned(),
+            var: var.to_owned(),
+            value: value.to_owned(),
+        }
+    }
+
+    pub fn update(name: &str, var: &str, value: &str) -> QuestWrite {
+        QuestWrite::UpdateVar {
+            char_id: 1,
+            name: name.to_owned(),
+            var: var.to_owned(),
+            value: value.to_owned(),
+        }
+    }
+
+    pub fn delete_var(name: &str, var: &str) -> QuestWrite {
+        QuestWrite::DeleteVar {
+            char_id: 1,
+            name: name.to_owned(),
+            var: var.to_owned(),
+        }
+    }
+
+    /// `exitQuest(repeatable)`: `deleteQuestInDb`.
+    pub fn delete(name: &str, repeatable: bool) -> QuestWrite {
+        QuestWrite::DeleteQuest {
+            char_id: 1,
+            name: name.to_owned(),
+            repeatable,
+        }
+    }
+
+    /// The same rows of another character.
+    pub fn of(char_id: i32, mut write: QuestWrite) -> QuestWrite {
+        match &mut write {
+            QuestWrite::InsertVar { char_id: c, .. }
+            | QuestWrite::UpdateVar { char_id: c, .. }
+            | QuestWrite::DeleteVar { char_id: c, .. }
+            | QuestWrite::DeleteQuest { char_id: c, .. } => *c = char_id,
+        }
+        write
     }
 }
 

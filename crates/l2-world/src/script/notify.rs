@@ -700,9 +700,11 @@ impl World {
         self.scripts.radar.remove(&player);
     }
 
-    /// `Npc.onDecay`: `stopQuestTimers()`.
+    /// `Npc.onDecay`: `stopQuestTimers()`, `_scriptValue = 0`.
     pub(crate) fn script_on_npc_decay(&mut self, npc: ObjectId) {
         self.script_cancel_timers_of(npc);
         self.scripts.kill_delays.remove(&npc);
+        // "Clear script value."
+        self.scripts.npc_script_values.remove(&npc);
     }
 }
