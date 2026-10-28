@@ -351,18 +351,28 @@ test loops "kill until the count is reached" instead of guessing the number of k
 - Boss and event scripts that decide on a global row follow D-53/D-54 (re-read, no writes with the
   switch off); their cards bring the re-read requests.
 
+## Added by S-API-03
+
+- `getTimers()` (`TimerExecutor`): `ctx.add_timer(event, Some(TimerParams::new().set("Name", x)), ms, npc, player)`,
+  `add_repeating_timer`, `has_timer`, `cancel_timer(s)`, `cancel_timers_of`, `cancel_all_timers`; hooks `on_timer_event`,
+  `on_timer_cancel` (params: `TimerParams::get_string/get_int/get_long/get_bool`).
+- `on_creature_see` fires (`CreatureSeeTaskManager`, once a second, aggro range or `AltPartyRange`).
+- Global listeners: `s.set_on_player_bypass()`, `set_on_player_press_tutorial_mark()`, `set_on_player_logout()`,
+  `set_on_day_night_change()` (hooks `on_player_bypass`, `on_player_press_tutorial_mark`, `on_player_logout`,
+  `on_day_night_change`, all queued) and `s.add_creature_death_id(&[..])` (`on_creature_death`, at once).
+- `on_attack` gets the skill of a skill hit; `ctx.play_movie` keeps the movie until `EndScenePlayer`
+  (`ctx.play_movie_for(&players, id)`, `World::is_playing_movie`); `add_spawn` slots are reused once the NPC is gone;
+  `//show_quests` and `//quest_info` exist (`script/admin.rs`).
+
 ## Not in the engine yet (follow-ups)
 
-`TimerExecutor` (`getTimers()`, seven scripts), annotation listeners, `ON_PLAYER_BYPASS` /
-`ON_PLAYER_PRESS_TUTORIAL_MARK`, `CreatureSeeTaskManager` (so `on_creature_see` is never fired),
-summon spawn/talk, trap actions, olympiad/castle/fortress listener types, the skill of a hit in
-`on_attack` (always `None`), `GmViewQuestInfo` contents, the movie holder (`EndScenePlayer`),
-champion bonuses in `give_item_randomly` (champions are not rolled), premium rates (M9), the
-multilingual chooser strings (M9).
+Annotation listeners with per-player registration (`player.addListener(..)` of the event scripts), the other
+`EventType`s (`ON_CREATURE_ATTACKED/SKILL_USE/DAMAGE_*`, `ON_PLAYER_SIT/LEVEL_CHANGED/ITEM_*`, clan, siege, olympiad,
+trap, `ON_DAILY_RESET`), the D-50 re-read of `global_variables` (needs the game server DB task), summon spawn/talk,
+premium rates (M9), the multilingual chooser strings (M9).
 
-Found by S-PILOT-01: the player listeners scripts add at run time (`player.addListener(...)`:
-`ON_PLAYER_LEVEL_CHANGED`, `ON_PLAYER_ITEM_PICKUP`, `ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`; the
-tutorial keeps them in its state and has `pub` entry points for them); `setup` cannot read the
+Found by S-PILOT-01: the tutorial's player listeners (`ON_PLAYER_LEVEL_CHANGED`, `ON_PLAYER_ITEM_PICKUP`,
+`ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`: kept in its state, with `pub` entry points for the engine); `setup` cannot read the
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
 scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
 `MagicSkillUse` in `broadcast_magic_skill_use` (always none).

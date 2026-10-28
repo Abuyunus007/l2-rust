@@ -28,18 +28,24 @@
 //   castle / fortress / olympiad listener types: the cards of the scripts that use them.
 // - Premium rates (`PremiumSystemConfig`) and the multilingual `NpcStringId` chooser: M9.
 
+pub mod admin;
 pub mod api;
 pub mod ctx;
 pub mod globals;
 pub mod link;
+mod movie;
 pub mod notify;
+#[cfg(test)]
+mod notify_tests;
 pub mod packets;
 pub mod qs;
 pub mod quest_helpers;
+mod see;
 pub mod setup;
 pub mod sound;
 mod spawn;
 pub mod state;
+pub mod timer_executor;
 pub mod timers;
 
 use std::any::Any;
@@ -58,6 +64,7 @@ pub use quest_helpers::{class_race, player_class, race};
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
 pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};
+pub use timer_executor::TimerParams;
 
 use crate::world::World;
 
@@ -161,6 +168,8 @@ pub(crate) struct ScriptWorld {
     /// The quest states of every online player (Java `Player._quests`).
     pub(crate) players: HashMap<ObjectId, PlayerQuests>,
     pub(crate) timers: timers::QuestTimers,
+    /// The `TimerExecutor`s of the scripts (S-API-03).
+    pub(crate) exec: timer_executor::ExecTimers,
     /// The events Java sends with `notifyEventAsync`, waiting for the end of the command.
     pub(crate) pending: VecDeque<notify::PendingEvent>,
     /// True while the queue runs (an event that queues more is drained in the same loop).
@@ -177,6 +186,16 @@ pub(crate) struct ScriptWorld {
     pub(crate) npc_script_values: HashMap<ObjectId, i32>,
     /// Java `static` fields shared by a family of scripts ([`ScriptCtx::shared_state`]).
     pub(crate) shared_states: quest_helpers::SharedStates,
+    /// Slots of `death.runtime_spawns` whose script spawn ended, for the next `add_spawn`
+    /// (S-API-03).
+    pub(crate) free_spawns: Vec<usize>,
+    /// The skill whose damage is being applied (Java passes it down `reduceCurrentHp`), read by
+    /// `Attackable.addDamage` for `on_attack` (S-API-03).
+    /// `CreatureSeeTaskManager`'s NPCs (S-API-03).
+    pub(crate) see: see::CreatureSee,
+    /// `Player._movieHolder`: the movie (client id) each player is watching (S-API-03).
+    pub(crate) movies: HashMap<ObjectId, i32>,
+    pub(crate) hit_skill: Option<crate::effects::SkillKey>,
 }
 
 impl ScriptWorld {

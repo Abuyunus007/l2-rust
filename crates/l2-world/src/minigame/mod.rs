@@ -39,9 +39,9 @@
 // - `cron.rs`: `SchedulingPattern`, for `BattleStartTime`.
 //
 // # Left to the script milestone (D-05)
-// `HandysBlockCheckerEvent` (the arena managers' first talk: [`World::block_checker_first_talk`]
-// is its body), `KrateisCube` (the monster kill: [`World::krateis_add_points`]),
-// `TeleportToUndergroundColiseum` and the `EventItem` / `FlipBlock` handlers (the effect and the
+// `HandysBlockCheckerEvent` and `KrateisCube` are scripts now (S-API-02,
+// `l2-scripts/src/ai/areas/fantasy_isle/`; they call [`World::block_checker_first_talk`] and
+// [`World::krateis_add_points`]). Still to do: `TeleportToUndergroundColiseum` and the `EventItem` / `FlipBlock` handlers (the effect and the
 // item call [`World::block_checker_flip_block`] and the arena holders).
 
 mod block_checker;
@@ -236,6 +236,12 @@ impl World {
         }
         self.start_krateis_cube();
         self.start_underground_coliseum(load);
+    }
+
+    /// Java `GeneralConfig.ENABLE_BLOCK_CHECKER_EVENT`: the `HandysBlockCheckerEvent` script only
+    /// registers its listeners with it.
+    pub fn block_checker_event_enabled(&self) -> bool {
+        self.minigames.settings.enable_block_checker_event
     }
 
     /// The wall clock (Java `System.currentTimeMillis()`) the minigame schedules read.

@@ -2334,120 +2334,25 @@ fn html_to(out: &Sent, to: i32) -> Vec<String> {
         .collect()
 }
 
+// The pages of `ClanMaster` and `AllianceMaster` are scripts of `l2-scripts` (S-API-02); their
+// tests are in `crates/l2-scripts/src/village_master/`. Without a script installed the world
+// answers `bypass Script ...` with the "no quest" page.
 #[test]
-fn the_clan_master_script_shows_its_pages() {
+fn an_unknown_script_has_no_quest() {
     let mut s = clan_scene(ClanSettings::default(), |_| {});
-    let npc = s.talk(P1);
-    s.take();
-    // `bypass -h Script ClanMaster`: `onTalk`.
-    s.input(
-        P1,
-        ClientInput::Bypass {
-            command: "Script ClanMaster".to_owned(),
-        },
-    );
-    let out = s.take();
-    let pages = html_to(&out, P1);
-    assert_eq!(pages.len(), 1);
-    assert!(pages[0].starts_with("<html><body>CM "));
-    // `%objectId%` and `%playername%` are filled in.
-    assert!(pages[0].contains(&format!("{} P1", npc.0)), "{}", pages[0]);
-    assert!(names_to(&out, P1).contains(&"ACTION_FAIL".to_owned()));
-
-    // A page that needs a leader: the leader gets it, a member gets the "no" page.
-    s.input(
-        P1,
-        ClientInput::Bypass {
-            command: "Script ClanMaster 9000-03.htm".to_owned(),
-        },
-    );
-    assert_eq!(html_to(&s.take(), P1), ["<html><body>PAGE 9000-03</body></html>"]);
-    s.talk(P2);
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster".to_owned(),
-        },
-    );
-    s.take();
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster 9000-03.htm".to_owned(),
-        },
-    );
-    assert_eq!(
-        html_to(&s.take(), P2),
-        ["<html><body>PAGE 9000-03-no</body></html>"]
-    );
-    // (A page replaces the actions the player may send: back to the NPC's page first.)
-    s.talk(P2);
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster".to_owned(),
-        },
-    );
-    s.take();
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster 9000-12a.htm".to_owned(),
-        },
-    );
-    assert_eq!(
-        html_to(&s.take(), P2),
-        ["<html><body>PAGE 9000-07-no</body></html>"]
-    );
-    // A page nobody needs a leader for.
-    s.talk(P2);
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster".to_owned(),
-        },
-    );
-    s.take();
-    s.input(
-        P2,
-        ClientInput::Bypass {
-            command: "Script ClanMaster 9000-02.htm".to_owned(),
-        },
-    );
-    assert_eq!(html_to(&s.take(), P2), ["<html><body>PAGE 9000-02</body></html>"]);
-}
-
-#[test]
-fn the_alliance_master_needs_a_clan_and_unknown_scripts_have_no_quest() {
-    let mut s = clan_scene(ClanSettings::default(), |_| {});
-    // The page of the village master lists both scripts and the quest link.
-    for who in [P1, P7] {
-        s.talk(who);
+    for command in ["Script ClanMaster", "Script AllianceMaster"] {
+        s.talk(P1);
         s.take();
         s.input(
-            who,
+            P1,
             ClientInput::Bypass {
-                command: "Script AllianceMaster".to_owned(),
+                command: command.to_owned(),
             },
         );
-        let pages = html_to(&s.take(), who);
-        assert!(pages[0].starts_with("<html><body>AM "), "{who}");
+        let pages = html_to(&s.take(), P1);
+        assert_eq!(pages.len(), 1);
+        assert!(pages[0].contains("not on a quest that involves this NPC"));
     }
-    // Without a clan the "no clan" page: there is none in the test folder, so nothing is shown.
-    s.input(
-        P7,
-        ClientInput::Bypass {
-            command: "Script AllianceMaster 9001-02.htm".to_owned(),
-        },
-    );
-    assert!(html_to(&s.take(), P7).is_empty());
-    s.input(
-        P1,
-        ClientInput::Bypass {
-            command: "Script AllianceMaster 9001-02.htm".to_owned(),
-        },
-    );
-    assert_eq!(html_to(&s.take(), P1), ["<html><body>PAGE 9001-02</body></html>"]);
 
     // `bypass Script` alone is the quest list: no quests yet, the "no quest" page.
     s.talk(P1);

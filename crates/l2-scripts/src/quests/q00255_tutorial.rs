@@ -10,7 +10,7 @@
 // (RequestTutorialClientEvent); numeric events are the helper NPCs' links and the quest timers.
 //
 // The player listeners Java adds (`ON_PLAYER_LEVEL_CHANGED`, `ON_PLAYER_ITEM_PICKUP`,
-// `ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`) are not engine hooks yet (S-API-03): the script
+// `ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`) are not engine hooks yet (follow-up): the script
 // keeps them in its state as Java registers them, and their bodies are the `pub` methods
 // `on_player_level_changed`, `on_player_item_pickup`, `on_player_sit` and
 // `on_creature_attacked` for the engine to call.

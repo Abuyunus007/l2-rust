@@ -253,7 +253,7 @@ mod tests {
             object_id: tracker,
             id: VARANGKAS_TRACKER,
         };
-        // `on_creature_see` is not fired by the world yet (CreatureSeeTaskManager, S-API-03).
+        // The hook itself (the world fires it once a second from `CreatureSeeTaskManager`).
         t.world.run_as_script(NAME, |ctx| {
             Q00275DarkWingedSpies.on_creature_see(ctx, npc, Oid(1));
         });

@@ -232,7 +232,7 @@ pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
 pub use script::{
     PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite, Script, ScriptCtx,
-    ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup,
+    ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup, TimerParams,
 };
 pub use script_handlers::unstuck::{ScriptHandlerSettings, ScriptHandlerTimer};
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
