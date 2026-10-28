@@ -25,6 +25,7 @@ pub mod q00050_lanoscos_special_bait;
 pub mod q00051_ofulles_special_bait;
 pub mod q00052_willies_special_bait;
 pub mod q00053_linnaeus_special_bait;
+pub mod q00061_law_enforcement;
 pub mod q00070_saga_of_the_phoenix_knight;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
@@ -60,6 +61,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00051_ofulles_special_bait::Q00051OFullesSpecialBait);
     r.add(q00052_willies_special_bait::Q00052WilliesSpecialBait);
     r.add(q00053_linnaeus_special_bait::Q00053LinnaeusSpecialBait);
+    r.add(q00061_law_enforcement::Q00061LawEnforcement);
     r.add(q00070_saga_of_the_phoenix_knight::Q00070SagaOfThePhoenixKnight);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
