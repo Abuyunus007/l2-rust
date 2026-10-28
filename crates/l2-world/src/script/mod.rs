@@ -38,6 +38,7 @@ pub mod qs;
 pub mod setup;
 pub mod sound;
 mod spawn;
+mod instance_api;
 pub mod state;
 pub mod timers;
 
