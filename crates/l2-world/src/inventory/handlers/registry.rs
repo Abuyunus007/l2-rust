@@ -59,6 +59,12 @@ pub(crate) enum ItemHandlerKind {
     SpecialXMas,
     /// `TeleportBookmark`: three more "My Teleports" slots (S-HAND-01).
     TeleportBookmark,
+    /// `CharmOfCourage`: resurrection on the spot in a siege (S-HAND-02).
+    CharmOfCourage,
+    /// `RollingDice`: throws a dice (S-HAND-02).
+    RollingDice,
+    /// `EventItem`: Handy's Block Checker Bond and Land Mine (S-HAND-02).
+    EventItem,
 }
 
 impl ItemHandlerKind {
@@ -87,6 +93,9 @@ impl ItemHandlerKind {
             "SevenSignsRecord" => Self::SevenSignsRecord,
             "SpecialXMas" => Self::SpecialXMas,
             "TeleportBookmark" => Self::TeleportBookmark,
+            "CharmOfCourage" => Self::CharmOfCourage,
+            "RollingDice" => Self::RollingDice,
+            "EventItem" => Self::EventItem,
             _ => return None,
         })
     }
@@ -146,6 +155,9 @@ impl World {
             ItemHandlerKind::SevenSignsRecord => self.seven_signs_record_on_use(id),
             ItemHandlerKind::SpecialXMas => self.special_xmas_on_use(id, item),
             ItemHandlerKind::TeleportBookmark => self.teleport_bookmark_item_on_use(id, item),
+            ItemHandlerKind::CharmOfCourage => self.charm_of_courage_on_use(id, item, template),
+            ItemHandlerKind::RollingDice => self.rolling_dice_on_use(id, item),
+            ItemHandlerKind::EventItem => self.event_item_on_use(id, item, template),
         }
     }
 
