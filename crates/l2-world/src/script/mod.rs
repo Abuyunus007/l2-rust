@@ -32,6 +32,7 @@ pub mod admin;
 pub mod api;
 pub mod ctx;
 pub mod globals;
+mod gracia_api;
 pub mod link;
 mod movie;
 pub mod notify;

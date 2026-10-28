@@ -4,6 +4,7 @@
 
 pub mod ai;
 pub mod seeds;
+pub mod util;
 
 use l2_world::ScriptRegistry;
 
