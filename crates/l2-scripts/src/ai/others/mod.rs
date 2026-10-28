@@ -8,6 +8,7 @@ pub mod altars_of_sacrifice;
 pub mod arena_manager;
 pub mod asamah;
 pub mod asher;
+pub mod ballista;
 pub mod black_judge;
 pub mod black_marketeer_of_mammon;
 pub mod blackdagger_wing;
@@ -37,6 +38,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(arena_manager::ArenaManager);
     r.add(asamah::Asamah);
     r.add(asher::Asher);
+    r.add(ballista::Ballista);
     r.add(black_judge::BlackJudge);
     r.add(black_marketeer_of_mammon::BlackMarketeerOfMammon);
     r.add(blackdagger_wing::BlackdaggerWing);

@@ -387,6 +387,23 @@ impl ScriptCtx<'_> {
         self.world().intention_of(npc.object_id) == crate::movement::Intention::Active
     }
 
+    /// Java `npc.getFort().getSiege().isInProgress()`; `false` for an NPC without a fortress.
+    pub fn npc_fort_siege_in_progress(&self, npc: ScriptNpc) -> bool {
+        self.world()
+            .npc_fort(npc.object_id)
+            .is_some_and(|fort| self.world().fort_siege_in_progress(fort))
+    }
+
+    /// Java `player.getTarget()`.
+    pub fn target_of(&self, creature: ObjectId) -> Option<ObjectId> {
+        self.world().target_of(creature)
+    }
+
+    /// Java `npc.doDie(killer)`.
+    pub fn do_die(&mut self, npc: ScriptNpc, killer: ObjectId) {
+        self.world_mut().do_die(npc.object_id, Some(killer));
+    }
+
     /// Java `npc.setImmobilized(value)`.
     pub fn set_immobilized(&mut self, npc: ScriptNpc, value: bool) {
         self.world_mut().set_immobilized(npc.object_id, value);

@@ -573,7 +573,7 @@ impl World {
 
     /// Java `Creature.onMagicFinalizer` / `Weapon.castOnMagicSkill` (`ON_NPC_SKILL_SEE`): the
     /// NPC saw a player (or its summon) cast.
-    pub(crate) fn script_on_skill_see(
+    pub fn script_on_skill_see(
         &mut self,
         npc: ObjectId,
         caster: ObjectId,
