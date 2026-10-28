@@ -254,6 +254,21 @@ impl World {
         self.all_active_quests(player).len()
     }
 
+    /// Java `npc.getRace()` as the `Race` ordinal of the six player races (`script::race`);
+    /// -1 for any other race.
+    pub fn npc_race_ordinal(&self, npc: ObjectId) -> i32 {
+        use l2_data::npc::NpcRace;
+        match self.npc_template(npc).map(|t| t.race) {
+            Some(NpcRace::Human) => 0,
+            Some(NpcRace::Elf) => 1,
+            Some(NpcRace::DarkElf) => 2,
+            Some(NpcRace::Orc) => 3,
+            Some(NpcRace::Dwarf) => 4,
+            Some(NpcRace::Kamael) => 5,
+            _ => -1,
+        }
+    }
+
     /// Java `Creature.setMortal(value)`.
     pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
         self.npc_extra_mut(id).immortal = !value;
