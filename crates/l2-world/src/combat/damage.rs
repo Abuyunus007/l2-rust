@@ -409,9 +409,10 @@ impl World {
         // `addDamageHate(attacker, damage, (int) hateValue)`: the int cast keeps the low 32 bits.
         self.add_damage_hate(npc, attacker, i64::from(damage), i64::from(hate_value as i32));
         // ON_ATTACKABLE_ATTACK: the clan hall scripts (M7-CHSIEGE-01) and the script engine
-        // (S-API-01; the skill of the hit is not passed down here yet).
+        // (S-API-01); the skill of the hit is the one the skill damage path set (S-API-03).
         self.hall_script_on_attack(npc, attacker, damage);
-        self.script_on_attackable_attack(npc, attacker, damage, None);
+        let skill = self.script_hit_skill();
+        self.script_on_attackable_attack(npc, attacker, damage, skill);
         // `Guard.addDamage` goes on from here: the guards near it come too.
         self.guard_add_damage(npc, attacker);
     }

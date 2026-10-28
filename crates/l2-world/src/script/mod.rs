@@ -28,18 +28,24 @@
 //   castle / fortress / olympiad listener types: the cards of the scripts that use them.
 // - Premium rates (`PremiumSystemConfig`) and the multilingual `NpcStringId` chooser: M9.
 
+pub mod admin;
 pub mod ai_help;
 pub mod api;
 pub mod ctx;
 pub mod globals;
 pub mod link;
+mod movie;
 pub mod notify;
+#[cfg(test)]
+mod notify_tests;
 pub mod packets;
 pub mod qs;
+mod see;
 pub mod setup;
 pub mod sound;
 mod spawn;
 pub mod state;
+pub mod timer_executor;
 pub mod timers;
 
 use std::any::Any;
@@ -57,6 +63,7 @@ pub use qs::Qs;
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
 pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};
+pub use timer_executor::TimerParams;
 
 use crate::world::World;
 
@@ -168,6 +175,8 @@ pub(crate) struct ScriptWorld {
     /// The quest states of every online player (Java `Player._quests`).
     pub(crate) players: HashMap<ObjectId, PlayerQuests>,
     pub(crate) timers: timers::QuestTimers,
+    /// The `TimerExecutor`s of the scripts (S-API-03).
+    pub(crate) exec: timer_executor::ExecTimers,
     /// The events Java sends with `notifyEventAsync`, waiting for the end of the command.
     pub(crate) pending: VecDeque<notify::PendingEvent>,
     /// True while the queue runs (an event that queues more is drained in the same loop).
@@ -180,6 +189,16 @@ pub(crate) struct ScriptWorld {
     pub(crate) settings: ScriptSettings,
     /// Java `Attackable._onKillDelay` where a script changed it.
     pub(crate) kill_delays: HashMap<ObjectId, i32>,
+    /// Slots of `death.runtime_spawns` whose script spawn ended, for the next `add_spawn`
+    /// (S-API-03).
+    pub(crate) free_spawns: Vec<usize>,
+    /// The skill whose damage is being applied (Java passes it down `reduceCurrentHp`), read by
+    /// `Attackable.addDamage` for `on_attack` (S-API-03).
+    /// `CreatureSeeTaskManager`'s NPCs (S-API-03).
+    pub(crate) see: see::CreatureSee,
+    /// `Player._movieHolder`: the movie (client id) each player is watching (S-API-03).
+    pub(crate) movies: HashMap<ObjectId, i32>,
+    pub(crate) hit_skill: Option<crate::effects::SkillKey>,
 }
 
 impl ScriptWorld {

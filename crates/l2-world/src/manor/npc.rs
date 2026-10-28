@@ -1,4 +1,4 @@
-//! The `ManorManager` script (the merchants of the castle towns that sell seeds and buy crops) and
+//! The `ManorManager` NPCs (the merchants of the castle towns that sell seeds and buy crops) and
 //! the `manor_menu_select` bypass, Java's `OnNpcManorBypass` event, of it and of the castle
 //! chamberlains.
 // Java: dist/game/data/scripts/ai/others/ManorManager/ManorManager.java (and its pages)
@@ -9,18 +9,16 @@
 //       (the `ON_NPC_FIRST_TALK` and `ON_NPC_QUEST_START` listeners)
 // Java: entity/actor/Player.java (processScriptEvent)
 //
-// D-05: the script API comes last; this is built in like `ClanMaster` (`clan/master_script.rs`).
-// `Script ManorManager <page>` shows a help page, the first talk shows the menu (the lord's page
-// for the leader of the clan that owns the castle of the town), and `manor_menu_select?ask=..`
-// opens the packets of the menu.
+// The first talk and the help pages of `ManorManager` are a script of the engine (S-API-02,
+// `l2-scripts/src/ai/others/manor_manager.rs`). What is left here is its `OnNpcManorBypass`
+// listener: the engine has no annotation listeners yet, so `manor_menu_select?ask=..` opens the
+// packets of the menu from here.
 
 use l2_protocol_game::SystemMessageId;
-use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
-use crate::dialog::INTERACTION_DISTANCE;
-use crate::target::distance_2d;
 use crate::world::World;
 
 /// The ids of the `ManorManager` NPCs (`ManorManager.NPC`).
@@ -30,16 +28,6 @@ const MANOR_MANAGERS: [i32; 14] = [
 
 /// The castle chamberlains (`CastleChamberlain.NPC`), which also listen for `manor_menu_select`.
 const CHAMBERLAINS: [i32; 9] = [35100, 35142, 35184, 35226, 35274, 35316, 35363, 35509, 35555];
-
-/// The script folder below `data/scripts` (`Quest.getPath()`).
-const MANOR_MANAGER_PATH: &str = "ai/others/ManorManager";
-
-/// The help pages `ManorManager.onEvent` answers with the page itself.
-const HELP_PAGES: [&str; 3] = [
-    "manager-help-01.htm",
-    "manager-help-02.htm",
-    "manager-help-03.htm",
-];
 
 impl World {
     /// Whether the NPC is one of the `ManorManager` NPCs.
@@ -74,27 +62,11 @@ impl World {
         if self.residence_npc_on_click(npc, player) {
             return true;
         }
-        // `SymbolMaker` (L-01, `henna.rs`).
-        if self.symbol_maker_first_talk(npc, player, true) {
-            return true;
-        }
-        // The wedding priest (M8-MISC-01).
-        if self.wedding_first_talk(npc, player, true) {
-            return true;
-        }
         // The air ship controllers (M8-VEHICLE-01, `vehicle/controller.rs`).
         if self.air_ship_first_talk(npc, player, true) {
             return true;
         }
-        if !self.is_manor_manager(npc) {
-            return false;
-        }
-        // `addStartNpc`: `ON_NPC_QUEST_START` makes the NPC the quest NPC of the player.
-        if let Some(p) = self.players.get_mut(&player) {
-            p.talk.last_quest_npc_object = npc.0;
-        }
-        self.manor_manager_first_talk(npc, player);
-        true
+        false
     }
 
     /// `ChatLink` for `Chat 0`: the first talk when the NPC has a listener for it. `true` when a
@@ -111,119 +83,11 @@ impl World {
         if self.residence_npc_first_talk(npc, player, false) {
             return true;
         }
-        // `SymbolMaker` (L-01, `henna.rs`).
-        if self.symbol_maker_first_talk(npc, player, false) {
-            return true;
-        }
-        // The wedding priest (M8-MISC-01).
-        if self.wedding_first_talk(npc, player, false) {
-            return true;
-        }
         // The air ship controllers (M8-VEHICLE-01).
         if self.air_ship_first_talk(npc, player, false) {
             return true;
         }
-        if !self.is_manor_manager(npc) {
-            return false;
-        }
-        self.manor_manager_first_talk(npc, player);
-        true
-    }
-
-    /// Java `ManorManager.onFirstTalk`, then `Quest.showResult`.
-    fn manor_manager_first_talk(&mut self, npc: ObjectId, player: ObjectId) {
-        let result = if self.manor.settings.allow_manor {
-            let castle_id = self.npc_manor_id(npc);
-            let is_lord = !self.is_gm(player)
-                && self.is_clan_leader(player)
-                && self.clan_of(player).is_some_and(|c| c.castle_id == castle_id);
-            if is_lord {
-                "manager-lord.htm".to_owned()
-            } else {
-                "manager.htm".to_owned()
-            }
-        } else {
-            // `getHtm(player, "data/html/npcdefault.htm")`: the text itself.
-            match self.get_htm(player, "data/html/npcdefault.htm") {
-                Some(content) => content,
-                None => return,
-            }
-        };
-        self.manor_manager_show_result(player, npc, &result);
-    }
-
-    /// Java `Quest.showResult(player, res, npc)` of the `ManorManager` script.
-    fn manor_manager_show_result(&mut self, player: ObjectId, npc: ObjectId, res: &str) {
-        if res.is_empty() {
-            return;
-        }
-        if res.ends_with(".htm") || res.ends_with(".html") {
-            // `Quest.getHtm`: the script's folder, then `data/scripts/quests/<name>`.
-            let found = [
-                format!("data/scripts/{MANOR_MANAGER_PATH}/{res}"),
-                format!("data/scripts/quests/ManorManager/{res}"),
-            ]
-            .iter()
-            .find_map(|path| self.get_htm(player, path));
-            match found {
-                Some(content) => self.manor_manager_send_html(player, npc, &content),
-                None => debug!("{player}: page {res} of ManorManager not found."),
-            }
-        } else if res.starts_with("<html") {
-            self.manor_manager_send_html(player, npc, res);
-        } else {
-            self.send_message(player, res);
-        }
-    }
-
-    /// `showHtmlFile`'s send: `%objectId%` and `%playername%` replaced, then `ActionFailed`.
-    fn manor_manager_send_html(&mut self, player: ObjectId, npc: ObjectId, content: &str) {
-        let name = self
-            .players
-            .get(&player)
-            .map(|p| p.data.name.clone())
-            .unwrap_or_default();
-        let html = content
-            .replace("%objectId%", &npc.0.to_string())
-            .replace("%playername%", &name);
-        if let Some(message) = NpcHtmlMessage::new(npc.0, &html) {
-            self.send_html(player, &message);
-        }
-        self.send(player, &ActionFailed);
-    }
-
-    // ------------------------------------------------------------------ Script ManorManager <page>
-
-    /// Java `Player.processScriptEvent("ManorManager", event)`: the NPC the player talked to
-    /// within reach, else the quest NPC, answers the event (`ManorManager.onEvent`).
-    pub(crate) fn manor_process_script_event(&mut self, player: ObjectId, event: &str) {
-        if event.is_empty() {
-            return;
-        }
-        let Some(talk) = self.players.get(&player).map(|p| &p.talk) else {
-            return;
-        };
-        let (folk, quest_npc) = (talk.last_folk_npc, talk.last_quest_npc_object);
-        let in_range = |world: &Self, npc: ObjectId| match (world.position_of(player), world.position_of(npc))
-        {
-            (Some(me), Some(pos)) => distance_2d(me, pos) < f64::from(INTERACTION_DISTANCE),
-            _ => false,
-        };
-        let npc = match folk.filter(|n| self.npcs.contains_key(n)) {
-            Some(target) if in_range(self, target) => target,
-            _ if quest_npc > 0 => match self
-                .find_object(ObjectId(quest_npc))
-                .filter(|o| self.npcs.contains_key(o))
-            {
-                Some(npc) if in_range(self, npc) => npc,
-                _ => return,
-            },
-            _ => return,
-        };
-        // `ManorManager.onEvent`: the three help pages answer with themselves.
-        if HELP_PAGES.contains(&event) {
-            self.manor_manager_show_result(player, npc, event);
-        }
+        false
     }
 
     // ------------------------------------------------------------------ manor_menu_select

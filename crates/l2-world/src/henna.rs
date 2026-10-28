@@ -19,9 +19,8 @@
 // character store does not touch the table, like Java.
 //
 // # The script
-// D-05: the script API comes last, so `SymbolMaker` is built in like `ManorManager`
-// (`manor/npc.rs`): the first click shows `symbol_maker.htm`, the `Script SymbolMaker <event>`
-// bypass shows a page or opens the draw and remove lists.
+// `SymbolMaker` is a script of the engine (S-API-02, `l2-scripts/src/ai/others/symbol_maker.rs`);
+// it opens the lists with [`World::send_henna_equip_list`] and [`World::send_henna_remove_list`].
 //
 // # Left out
 // - `OnPlayerHennaAdd` / `OnPlayerHennaRemove` for scripts (no script listens yet).
@@ -32,13 +31,11 @@ use l2_protocol_game::server::henna::{
     HennaEquipEntry, HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveEntry,
     HennaRemoveList, HennaStatPreview,
 };
-use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{ActionFailed, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
-use tracing::{debug, warn};
+use tracing::warn;
 
-use crate::dialog::INTERACTION_DISTANCE;
 use crate::flood::FloodKind;
-use crate::target::distance_2d;
 use crate::world::World;
 
 /// A client request of the symbol maker windows, with the raw wire values.
@@ -76,22 +73,6 @@ pub enum HennaWrite {
         class_index: i32,
     },
 }
-
-/// The NPCs of `SymbolMaker.NPCS`.
-const SYMBOL_MAKERS: [i32; 11] = [
-    31046, 31047, 31048, 31049, 31050, 31051, 31052, 31053, 31264, 31308, 31953,
-];
-
-/// The script folder (`Quest.getPath()`), below the datapack root.
-const SCRIPT_PATH: &str = "data/scripts/ai/others/SymbolMaker";
-
-/// The pages `SymbolMaker.onEvent` answers with the page itself.
-const PAGES: [&str; 4] = [
-    "symbol_maker.htm",
-    "symbol_maker-1.htm",
-    "symbol_maker-2.htm",
-    "symbol_maker-3.htm",
-];
 
 /// `(byte) value`, what Java's `writeByte(int)` puts on the wire.
 fn low_byte(value: i32) -> i8 {
@@ -308,10 +289,17 @@ impl World {
         }
     }
 
-    fn send_henna_equip_list(&mut self, id: ObjectId) {
+    /// Java `player.sendPacket(new HennaEquipList(player))` (the `SymbolMaker` script's `Draw`).
+    pub fn send_henna_equip_list(&mut self, id: ObjectId) {
         if let Some(packet) = self.henna_equip_list(id) {
             self.send(id, &packet);
         }
+    }
+
+    /// Java `player.sendPacket(new HennaRemoveList(player))` (the `SymbolMaker` script's `Remove`).
+    pub fn send_henna_remove_list(&mut self, id: ObjectId) {
+        let packet = self.henna_remove_list(id);
+        self.send(id, &packet);
     }
 
     /// Java `RequestHennaItemInfo.runImpl`.
@@ -421,102 +409,5 @@ impl World {
             self.player_text(id)
         );
         self.send(id, &ActionFailed);
-    }
-
-    // ------------------------------------------------------------------ SymbolMaker
-
-    fn is_symbol_maker(&self, npc: ObjectId) -> bool {
-        self.npcs
-            .get(&npc)
-            .is_some_and(|n| SYMBOL_MAKERS.contains(&n.npc_id))
-    }
-
-    /// `SymbolMaker.onFirstTalk` (`addFirstTalkId`, `addStartNpc`), then `Quest.showResult`.
-    /// `false` when the NPC is not a symbol maker. `start_npc` is set for the click, which makes
-    /// the NPC the quest NPC of the player (`ON_NPC_QUEST_START`).
-    pub(crate) fn symbol_maker_first_talk(
-        &mut self,
-        npc: ObjectId,
-        player: ObjectId,
-        start_npc: bool,
-    ) -> bool {
-        if !self.is_symbol_maker(npc) {
-            return false;
-        }
-        if start_npc && let Some(p) = self.players.get_mut(&player) {
-            p.talk.last_quest_npc_object = npc.0;
-        }
-        self.symbol_maker_show_page(player, npc, PAGES[0]);
-        true
-    }
-
-    /// `Quest.showHtmlFile`: the page of the script, `%objectId%` and `%playername%` replaced, then
-    /// `ActionFailed`.
-    fn symbol_maker_show_page(&mut self, player: ObjectId, npc: ObjectId, page: &str) {
-        let Some(content) = self.get_htm(player, &format!("{SCRIPT_PATH}/{page}")) else {
-            debug!("{player}: page {page} of SymbolMaker not found.");
-            return;
-        };
-        let name = self
-            .players
-            .get(&player)
-            .map(|p| p.data.name.clone())
-            .unwrap_or_default();
-        let html = content
-            .replace("%objectId%", &npc.0.to_string())
-            .replace("%playername%", &name);
-        if let Some(message) = NpcHtmlMessage::new(npc.0, &html) {
-            self.send_html(player, &message);
-        }
-        self.send(player, &ActionFailed);
-    }
-
-    /// Java `Player.processScriptEvent("SymbolMaker", event)`. `false` when the script is another one.
-    pub(crate) fn symbol_maker_script_event(
-        &mut self,
-        player: ObjectId,
-        script_name: &str,
-        event: &str,
-    ) -> bool {
-        if script_name != "SymbolMaker" {
-            return false;
-        }
-        if event.is_empty() {
-            return true;
-        }
-        // The NPC the player talks to: the last folk, else the last quest NPC, in reach.
-        let Some(talk) = self.players.get(&player).map(|p| &p.talk) else {
-            return true;
-        };
-        let (folk, quest_npc) = (talk.last_folk_npc, talk.last_quest_npc_object);
-        let in_range = |world: &Self, npc: ObjectId| match (world.position_of(player), world.position_of(npc))
-        {
-            (Some(me), Some(pos)) => distance_2d(me, pos) < f64::from(INTERACTION_DISTANCE),
-            _ => false,
-        };
-        let npc = match folk.filter(|n| self.npcs.contains_key(n)) {
-            Some(target) if in_range(self, target) => target,
-            _ if quest_npc > 0 => {
-                match self
-                    .find_object(ObjectId(quest_npc))
-                    .filter(|o| self.npcs.contains_key(o))
-                {
-                    Some(npc) if in_range(self, npc) => npc,
-                    _ => return true,
-                }
-            }
-            _ => return true,
-        };
-        // `SymbolMaker.onEvent`
-        match event {
-            e if PAGES.contains(&e) => self.symbol_maker_show_page(player, npc, e),
-            "Draw" => self.send_henna_equip_list(player),
-            "Remove" => {
-                let packet = self.henna_remove_list(player);
-                self.send(player, &packet);
-            }
-            _ => {}
-        }
-        true
     }
 }

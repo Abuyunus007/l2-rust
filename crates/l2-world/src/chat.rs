@@ -277,7 +277,7 @@ impl World {
     }
 
     /// Java `Player.sendMessage(String)`.
-    pub(crate) fn send_message(&self, to: ObjectId, text: &str) {
+    pub fn send_message(&self, to: ObjectId, text: &str) {
         self.send(to, &SystemMessage::text(text));
     }
 

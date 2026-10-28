@@ -27,7 +27,10 @@ pub mod gatekeeper_spirit;
 pub mod gordon;
 pub mod hunting_grounds_teleport;
 pub mod kier;
+pub mod manor_manager;
+pub mod monument_of_heroes;
 pub mod muscle_bomber;
+pub mod symbol_maker;
 
 use l2_world::ScriptRegistry;
 
@@ -57,5 +60,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(gordon::Gordon);
     r.add(hunting_grounds_teleport::HuntingGroundsTeleport);
     r.add(kier::Kier);
+    r.add(manor_manager::ManorManager);
+    r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(muscle_bomber::MuscleBomber);
+    r.add(symbol_maker::SymbolMaker);
 }

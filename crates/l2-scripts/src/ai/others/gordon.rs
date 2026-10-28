@@ -23,7 +23,7 @@ impl Script for Gordon {
         s.add_creature_see_id(&[GORDON]);
     }
 
-    // The engine does not fire `on_creature_see` yet (`CreatureSeeTaskManager`).
+    // Fired by the engine's `CreatureSeeTaskManager` (`see.rs`).
     fn on_creature_see(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, creature: ObjectId) {
         if ctx.world().player(creature).is_some() && ctx.is_cursed_weapon_equipped(creature) {
             ctx.add_attack_desire(npc, creature, 999);

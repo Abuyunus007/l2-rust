@@ -21,6 +21,8 @@ pub const DEFAULT_ON_KILL_DELAY_MS: i32 = 2500;
 pub enum ScriptTimer {
     /// A quest timer (its id in [`QuestTimers`]).
     Quest(u64),
+    /// A holder of a script's `TimerExecutor` (its id in `timer_executor.rs`).
+    Exec(u64),
     /// `OnAttackableKill`, `onKillDelay` after the death.
     Kill {
         npc: ScriptNpc,
@@ -173,6 +175,8 @@ impl World {
         for id in ids {
             self.remove_quest_timer(id);
         }
+        // `Npc.stopTimerHolders()` / `Player.stopAllTasks()` of the `TimerExecutor` holders.
+        self.exec_stop_tasks_of(object);
     }
 
     fn remove_quest_timer(&mut self, id: u64) {
@@ -185,6 +189,7 @@ impl World {
     pub(crate) fn on_script_timer(&mut self, timer: ScriptTimer) {
         match timer {
             ScriptTimer::Quest(id) => self.on_quest_timer(id),
+            ScriptTimer::Exec(id) => self.on_exec_timer(id),
             ScriptTimer::Kill {
                 npc,
                 killer,
@@ -224,6 +229,25 @@ impl World {
         let ticks = TimerWheel::ms_to_ticks(u64::try_from(delay_ms).unwrap_or(0));
         self.timers
             .schedule_at(self.tick + ticks, TimerKind::Script(ScriptTimer::Despawn(npc)));
+    }
+
+    /// The running quest timers of a script, for `//quest_info`: name, NPC, player, repeating.
+    pub(crate) fn quest_timers_of(
+        &self,
+        script: ScriptId,
+    ) -> Vec<(String, Option<ScriptNpc>, Option<ObjectId>, bool)> {
+        self.scripts
+            .timers
+            .timers
+            .values()
+            .filter(|t| t.script == script)
+            .map(|t| (t.name.clone(), t.npc, t.player, t.repeat_ticks.is_some()))
+            .collect()
+    }
+
+    /// The folder of a script's pages (`Script::path`).
+    pub(crate) fn script_path_of(&self, script: ScriptId) -> &'static str {
+        self.scripts.script(script).map_or("", |s| s.path())
     }
 
     /// The number of running quest timers (tests and admin views).

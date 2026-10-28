@@ -63,7 +63,7 @@ impl Script for BlackdaggerWing {
         }
     }
 
-    // The engine does not fire `on_creature_see` yet (`CreatureSeeTaskManager`).
+    // Fired by the engine's `CreatureSeeTaskManager` (`see.rs`).
     fn on_creature_see(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, creature: ObjectId) {
         if ctx.npc_flag(npc, MID_HP_FLAG) {
             let most_hated = ctx.most_hated(npc);
