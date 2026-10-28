@@ -41,6 +41,7 @@ pub mod q00098_saga_of_the_shillien_saint;
 pub mod q00099_saga_of_the_fortune_seeker;
 pub mod q00100_saga_of_the_maestro;
 pub mod q00104_spirit_of_mirrors;
+pub mod q00105_skirmish_with_orcs;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
@@ -91,6 +92,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00099_saga_of_the_fortune_seeker::Q00099SagaOfTheFortuneSeeker);
     r.add(q00100_saga_of_the_maestro::Q00100SagaOfTheMaestro);
     r.add(q00104_spirit_of_mirrors::Q00104SpiritOfMirrors);
+    r.add(q00105_skirmish_with_orcs::Q00105SkirmishWithOrcs);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
