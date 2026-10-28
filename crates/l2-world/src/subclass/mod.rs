@@ -69,6 +69,15 @@ pub struct SubclassSettings {
     pub alt_game_subclass_everywhere: bool,
     /// `SubclassStoreSkillCooltime`: whether the store of a switch keeps the buffs.
     pub subclass_store_skill_cooltime: bool,
+    /// `FeeDeleteSubClassSkills`: the adena Avant-Garde takes to cancel the certifications.
+    pub fee_delete_subclass_skills: i32,
+    /// `AltTransformationWithoutQuest` (Java `ALLOW_TRANSFORM_WITHOUT_QUEST`).
+    pub allow_transform_without_quest: bool,
+    /// `General.ini` `SkillCheckEnable`, `SkillCheckRemove`, `SkillCheckGM`: the certification
+    /// skill check of the `SubClassSkills` validator at login.
+    pub skill_check_enable: bool,
+    pub skill_check_remove: bool,
+    pub skill_check_gm: bool,
 }
 
 impl Default for SubclassSettings {
@@ -80,6 +89,11 @@ impl Default for SubclassSettings {
             alt_game_subclass_without_quests: false,
             alt_game_subclass_everywhere: false,
             subclass_store_skill_cooltime: false,
+            fee_delete_subclass_skills: 10_000_000,
+            allow_transform_without_quest: false,
+            skill_check_enable: false,
+            skill_check_remove: false,
+            skill_check_gm: true,
         }
     }
 }

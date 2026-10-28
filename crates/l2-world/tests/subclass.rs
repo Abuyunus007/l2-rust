@@ -186,6 +186,12 @@ const TREES: &str = r#"<list>
 <skillTree type="classSkillTree" classId="17">
 <skill skillName="C" skillId="1013" skillLevel="1" getLevel="20" learnedByNpc="true" />
 </skillTree>
+<skillTree type="subClassSkillTree">
+<skill skillName="Emergent Ability - Attack" skillId="631" skillLevel="1" getLevel="1">
+<subClassConditions slot="1" lvl="65" /><subClassConditions slot="2" lvl="65" />
+<item id="10280" count="1" />
+</skill>
+</skillTree>
 </list>"#;
 
 fn passive(id: i32, levels: i32) -> String {
@@ -197,7 +203,7 @@ fn passive(id: i32, levels: i32) -> String {
 
 fn skills_xml() -> String {
     format!(
-        r#"<list>{}{}{}{}
+        r#"<list>{}{}{}{}{}
 <skill id="9001" levels="1" name="Might"><operateType>A2</operateType><targetType>SELF</targetType>
 <hitTime>1500</hitTime><isMagic>1</isMagic><mpConsume>5</mpConsume><reuseDelay>60000</reuseDelay>
 <abnormalTime>60</abnormalTime><abnormalType>PA_UP</abnormalType><abnormalLevel>1</abnormalLevel>
@@ -211,6 +217,7 @@ fn skills_xml() -> String {
         passive(1011, 3),
         passive(1012, 1),
         passive(1013, 1),
+        passive(631, 1),
     )
 }
 
@@ -257,6 +264,9 @@ struct Me {
     /// `(quest name, state)` rows of `character_quests`; each quest is installed as a stand-in
     /// script of that name.
     quests: Vec<(&'static str, &'static str)>,
+    /// Bag items and `character_variables` rows.
+    items: Vec<ItemData>,
+    variables: Vec<(&'static str, String)>,
 }
 
 /// A quest the subclass code reads by name (`Q00234_FatesWhisper`, ...), nothing more.
@@ -288,6 +298,8 @@ impl Default for Me {
                 skill_level: 1,
             }],
             quests: Vec::new(),
+            items: Vec::new(),
+            variables: Vec::new(),
         }
     }
 }
@@ -347,7 +359,12 @@ impl Scene {
             ..WorldSettings::default()
         });
         world.set_static_data(Box::new(Data(StatData {
-            items: Arc::new(ItemTemplates::from_xml("<list></list>").unwrap()),
+            items: Arc::new(
+                ItemTemplates::from_xml(
+                    r#"<list><item id="10280" type="EtcItem" name="Certificate - Emergent Ability"/></list>"#,
+                )
+                .unwrap(),
+            ),
             player_templates: Arc::new(PlayerTemplates::load(root.path(), 85)),
             armor_sets: Arc::new(ArmorSets::from_xml("<list></list>").unwrap()),
             enchant_hp_bonus: Arc::new(EnchantHpBonus::default()),
@@ -378,7 +395,7 @@ impl Scene {
         if !me.quests.is_empty() {
             let mut scripts = ScriptRegistry::new();
             for (name, _) in &me.quests {
-                let id = name[1..6].parse().unwrap();
+                let id = name.get(1..6).and_then(|n| n.parse().ok()).unwrap_or(-1);
                 scripts.add(StandInQuest(name, id));
             }
             world.install_scripts(scripts);
@@ -391,6 +408,9 @@ impl Scene {
         };
         for sub in &me.subs {
             profile.subclasses.subs.insert(sub.class_index, *sub);
+        }
+        for (name, value) in &me.variables {
+            profile.variables.insert((*name).to_owned(), value.clone());
         }
         profile.quests = QuestLoad {
             states: me
@@ -437,7 +457,7 @@ impl Scene {
             cur_cp: 20.0,
             max_cp: 20.0,
             online_time: 0,
-            items: vec![],
+            items: me.items,
             skills: me.skills,
             shortcuts: vec![],
             profile,
@@ -868,6 +888,75 @@ fn a_class_switch_ends_repent_your_sins() {
             .player_quests(ME)
             .is_none_or(|q| !q.contains("Q00422_RepentYourSins"))
     );
+}
+
+/// A certification skill at a trainer (`RequestAcquireSkill`, `SUBCLASS`): the book whose object
+/// id the variable holds is taken, the skill learned, the variable names the skill.
+#[test]
+fn a_certification_skill_is_learned_with_the_book_of_the_variable() {
+    let book = ObjectId(0x3000_0001);
+    let me = Me {
+        subs: vec![holder(BISHOP, 1, 75)],
+        quests: vec![("SubClassSkills", "Created")],
+        items: vec![ItemData {
+            object_id: book,
+            item_id: 10280,
+            count: 1,
+            loc: "INVENTORY".to_owned(),
+            ..Default::default()
+        }],
+        variables: vec![("EmergentAbility65-1", book.0.to_string())],
+        ..Me::default()
+    };
+    let mut s = Scene::new(me, SubclassSettings::default());
+    assert_eq!(
+        s.world
+            .available_sub_class_skills(ME)
+            .iter()
+            .map(|l| (l.skill_id, l.skill_level))
+            .collect::<Vec<_>>(),
+        [(631, 1)]
+    );
+    // Talk to the master, who is the trainer of the request.
+    s.subclass("0");
+    let out = s.input(ClientInput::AcquireSkill {
+        id: 631,
+        level: 1,
+        skill_type: l2_protocol_game::server::AcquireSkillType::Subclass,
+        sub_type: 0,
+    });
+    assert!(names(&out).contains(&"ACQUIRE_SKILL_DONE".to_owned()));
+    assert!(s.skill_ids().contains(&631));
+    assert!(!s.me().data.items.iter().any(|i| i.object_id == book));
+    assert_eq!(
+        s.world.player_variable_text(ME, "EmergentAbility65-1"),
+        Some("631;")
+    );
+    // Learned: the tree offers nothing more.
+    assert!(s.world.available_sub_class_skills(ME).is_empty());
+}
+
+/// Without the book of a variable: the materials message, nothing learned.
+#[test]
+fn a_certification_skill_needs_the_book() {
+    let me = Me {
+        subs: vec![holder(BISHOP, 1, 75)],
+        quests: vec![("SubClassSkills", "Created")],
+        ..Me::default()
+    };
+    let mut s = Scene::new(me, SubclassSettings::default());
+    s.subclass("0");
+    let out = s.input(ClientInput::AcquireSkill {
+        id: 631,
+        level: 1,
+        skill_type: l2_protocol_game::server::AcquireSkillType::Subclass,
+        sub_type: 0,
+    });
+    assert!(
+        message_ids(&out)
+            .contains(&SystemMessageId::YouDoNotHaveTheNecessaryMaterialsOrPrerequisitesToLearnThisSkill)
+    );
+    assert!(!s.skill_ids().contains(&631));
 }
 
 /// `MaxSubclass` subclasses are the limit: the add page is the fail page.

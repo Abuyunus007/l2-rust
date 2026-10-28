@@ -91,6 +91,46 @@ impl World {
         )
     }
 
+    /// `Player.ini` `FeeDeleteSubClassSkills` and `AltTransformationWithoutQuest`.
+    pub fn avant_garde_settings(&self) -> (i32, bool) {
+        let s = &self.settings.subclass;
+        (s.fee_delete_subclass_skills, s.allow_transform_without_quest)
+    }
+
+    /// `General.ini` `SkillCheckEnable`, `SkillCheckRemove`, `SkillCheckGM`.
+    pub fn skill_check_settings(&self) -> (bool, bool, bool) {
+        let s = &self.settings.subclass;
+        (s.skill_check_enable, s.skill_check_remove, s.skill_check_gm)
+    }
+
+    /// Java `player.removeSkill(skill)` (store = true): the skill, its effects, shortcuts and its
+    /// `character_skills` row go.
+    pub fn player_remove_skill(&mut self, id: ObjectId, skill_id: i32) {
+        let mut writes = SkillWrites::default();
+        self.forget_skill(id, skill_id, &mut writes);
+        self.flush_skill_writes(id, writes);
+    }
+
+    /// Java `skill.getName()` of a known skill template, empty for an unknown one.
+    pub fn skill_name(&self, skill_id: i32, level: i32) -> String {
+        self.data
+            .stat_data()
+            .and_then(|d| d.skills.get(skill_id, level))
+            .map(|s| s.name.clone())
+            .unwrap_or_default()
+    }
+
+    /// Java `player.destroyItem(process, objectId, count, reference, sendMessage)`.
+    pub fn destroy_item_object(
+        &mut self,
+        id: ObjectId,
+        object_id: ObjectId,
+        count: i64,
+        send_message: bool,
+    ) -> bool {
+        self.destroy_item_by_object_id(id, object_id, count, send_message)
+    }
+
     /// `Player.ini` `MaxSubclass` (Java `PlayerConfig.MAX_SUBCLASS`).
     pub fn max_subclass(&self) -> i32 {
         self.settings.subclass.max_subclass
