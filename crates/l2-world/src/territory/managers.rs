@@ -5,7 +5,7 @@
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;
-use tracing::{info, warn};
+use tracing::warn;
 
 use super::{TERRITORY_ID_BASE, territory_badge};
 use crate::residence::CastleId;
@@ -13,6 +13,14 @@ use crate::residence::npc::{CastleScript, Reply, ScriptFailed};
 use crate::world::World;
 
 const SCRIPT: CastleScript = CastleScript::TerritoryManagers;
+
+/// `preciousSoul1ItemIds`, `preciousSoul2ItemIds`, `preciousSoul3ItemIds`: the items the
+/// noblesse quests 241, 242 and 246 lose when `MakeMeNoble` completes them.
+const PRECIOUS_SOUL_1_ITEM_IDS: [i32; 6] = [7587, 7588, 7589, 7597, 7598, 7599];
+const PRECIOUS_SOUL_2_ITEM_IDS: [i32; 1] = [7595];
+const PRECIOUS_SOUL_3_ITEM_IDS: [i32; 4] = [7678, 7591, 7592, 7593];
+/// The Noblesse Tiara.
+const NOBLESSE_TIARA: i32 = 7694;
 
 /// The first Territory Manager (Gludio's).
 pub(crate) const FIRST_MANAGER: i32 = 36490;
@@ -68,10 +76,7 @@ impl World {
                     // If the player is not level 75 or greater, it cannot continue.
                     Ok(Some("36490-06.html".to_owned()))
                 } else {
-                    // D-05: the rest completes the noblesse quests (241, 242, 246, 247 and 235 or
-                    // 236) and stores the noblesse, which needs the quests and the `nobless`
-                    // column of the character store; until then nothing is taken or given.
-                    info!("TerritoryManagers: MakeMeNoble for {player} needs the noblesse quests (D-05).");
+                    self.territory_make_me_noble(player, item_id, min_nobless);
                     Ok(None)
                 }
             }
@@ -112,6 +117,81 @@ impl World {
             }
             _ => Ok(Some(event.to_owned())),
         }
+    }
+
+    /// `MakeMeNoble` once the checks passed: the noblesse quests are completed (those the server
+    /// has, S-VM-01), the badges go, the tiara comes, the noblesse is set and the sub-class quest
+    /// (Seeds of Chaos for a Kamael, Mimir's Elixir for the others) is completed too.
+    fn territory_make_me_noble(&mut self, player: ObjectId, item_id: i32, min_nobless: i32) {
+        // Complete the Noblesse related quests.
+        // Possessor of a Precious Soul - 1 (241)
+        self.process_noblesse_quest(player, 241, &PRECIOUS_SOUL_1_ITEM_IDS);
+        // Possessor of a Precious Soul - 2 (242)
+        self.process_noblesse_quest(player, 242, &PRECIOUS_SOUL_2_ITEM_IDS);
+        // Possessor of a Precious Soul - 3 (246)
+        self.process_noblesse_quest(player, 246, &PRECIOUS_SOUL_3_ITEM_IDS);
+        // Possessor of a Precious Soul - 4 (247)
+        self.process_noblesse_quest(player, 247, &[]);
+
+        // Take the Territory Badges.
+        self.destroy_item_by_item_id(player, item_id, i64::from(min_nobless), true);
+        // Give Noblesse Tiara to the player.
+        self.add_item(player, NOBLESSE_TIARA, 1, true);
+        // Set Noblesse status to the player.
+        self.set_noble(player, true);
+        self.send_user_info(player);
+
+        // Complete the sub-class related quest.
+        // Complete quest Seeds of Chaos (236) for Kamael characters.
+        // Complete quest Mimir's Elixir (235) for other races characters.
+        let kamael = self.player_race(player) == Some(l2_data::Race::Kamael);
+        if let Some(quest) = self.scripts.by_quest_id(if kamael { 236 } else { 235 }) {
+            self.with_script(quest, |_, ctx| {
+                let had = ctx.has_quest_state(player);
+                if let Some(qs) = ctx.get_quest_state(player, true) {
+                    if !had {
+                        qs.set_state(ctx, crate::script::STARTED);
+                    }
+                    // Completes the quest.
+                    qs.exit_quest(ctx, false, false);
+                }
+            });
+        }
+
+        // Remove the following items: Caradine's Letter (7678, 7679), Star of Destiny (5011),
+        // Virgil's Letter (1239), Arkenia's Letter (1246).
+        for delete in [7678, 7679, 5011, 1239, 1246] {
+            // `deleteIfExist`: `destroyItem(DESTROY, item, npc, true)`, the whole stack.
+            let item = self.inventory_item_by_item_id(player, delete).map(|i| (i.object_id, i.count));
+            if let Some((object_id, count)) = item {
+                self.destroy_item_by_object_id(player, object_id, count, true);
+            }
+        }
+    }
+
+    /// `processNoblesseQuest(player, questId, itemIds)`: a quest the server has is started when
+    /// the player has no state of it, and completed (its items taken first) unless it is already.
+    fn process_noblesse_quest(&mut self, player: ObjectId, quest_id: i32, item_ids: &[i32]) {
+        let Some(quest) = self.scripts.by_quest_id(quest_id) else {
+            return;
+        };
+        self.with_script(quest, |_, ctx| {
+            let had = ctx.has_quest_state(player);
+            let Some(qs) = ctx.get_quest_state(player, true) else {
+                return;
+            };
+            if !had {
+                qs.set_state(ctx, crate::script::STARTED);
+            }
+            if !qs.is_completed(ctx) {
+                // Take the quest specific items.
+                for &item_id in item_ids {
+                    ctx.take_items(player, item_id, -1);
+                }
+                // Completes the quest.
+                qs.exit_quest(ctx, false, false);
+            }
+        });
     }
 
     /// The page of `CalcRewards` / `ReceiveRewards` and the castle name it names: nothing during
