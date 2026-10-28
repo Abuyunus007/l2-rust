@@ -47,6 +47,7 @@ pub mod q00104_spirit_of_mirrors;
 pub mod q00105_skirmish_with_orcs;
 pub mod q00106_forgotten_truth;
 pub mod q00107_merciless_punishment;
+pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
@@ -103,6 +104,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00105_skirmish_with_orcs::Q00105SkirmishWithOrcs);
     r.add(q00106_forgotten_truth::Q00106ForgottenTruth);
     r.add(q00107_merciless_punishment::Q00107MercilessPunishment);
+    r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
