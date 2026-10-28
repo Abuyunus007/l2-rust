@@ -29,6 +29,7 @@
 // - Premium rates (`PremiumSystemConfig`) and the multilingual `NpcStringId` chooser: M9.
 
 pub mod admin;
+pub mod ai_help;
 pub mod api;
 pub mod ctx;
 pub mod globals;
@@ -125,6 +126,14 @@ pub struct ScriptSettings {
     /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, D-54): the global variables are
     /// written only when this is on.
     pub cycle_database_writes: bool,
+    /// `FeatureConfig.BLOODALLIANCE_POINTS` (`BloodAlliancePoints`, ClanTrader; S-AI-05).
+    pub bloodalliance_points: i32,
+    /// `FeatureConfig.BLOODOATH_POINTS` (`BloodOathPoints`).
+    pub bloodoath_points: i32,
+    /// `FeatureConfig.KNIGHTSEPAULETTE_POINTS` (`KnightsEpaulettePoints`).
+    pub knightsepaulette_points: i32,
+    /// `FeatureConfig.BALLISTA_POINTS` (`KillBallistaPoints`, Ballista).
+    pub ballista_points: i32,
 }
 
 impl Default for ScriptSettings {
@@ -142,6 +151,10 @@ impl Default for ScriptSettings {
             quest_item_drop_amount_multiplier: 1.0,
             autodelete_invalid_quest_data: false,
             cycle_database_writes: false,
+            bloodalliance_points: 500,
+            bloodoath_points: 200,
+            knightsepaulette_points: 20,
+            ballista_points: 30,
         }
     }
 }
