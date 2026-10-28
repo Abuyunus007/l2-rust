@@ -10,6 +10,7 @@ pub mod chamber_of_delusion_south;
 pub mod chamber_of_delusion_square;
 pub mod chamber_of_delusion_tower;
 pub mod chamber_of_delusion_west;
+pub mod dark_cloud_mansion;
 pub mod kamaloka;
 pub mod pailaka_devils_legacy;
 pub mod pailaka_injured_dragon;
@@ -165,6 +166,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(chamber_of_delusion_square::ChamberOfDelusionSquare);
     r.add(chamber_of_delusion_tower::ChamberOfDelusionTower);
     r.add(chamber_of_delusion_west::ChamberOfDelusionWest);
+    r.add(dark_cloud_mansion::DarkCloudMansion);
     r.add(kamaloka::Kamaloka);
     r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
     r.add(pailaka_injured_dragon::PailakaInjuredDragon);
