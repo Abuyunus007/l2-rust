@@ -16,6 +16,7 @@ pub mod antharas;
 pub mod baium;
 pub mod beleth;
 pub mod core;
+pub mod frintezza;
 pub mod orfen;
 pub mod queen_ant;
 pub mod valakas;
@@ -28,6 +29,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(baium::Baium);
     r.add(beleth::Beleth);
     r.add(core::Core);
+    frintezza::register(r);
     r.add(orfen::Orfen);
     r.add(queen_ant::QueenAnt);
     r.add(valakas::Valakas);

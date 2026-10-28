@@ -210,6 +210,28 @@ impl World {
         self.skill_has_effect_type(skill, &[crate::effects::EffectType::Heal])
     }
 
+    /// Java `skill.isSuicideAttack()` of a skill a script names by id and level; `false` for a
+    /// skill the table does not have (S-BOSS-02).
+    pub fn skill_is_suicide_attack(&self, key: crate::effects::SkillKey) -> bool {
+        self.skill_table()
+            .and_then(|table| table.get(key.id, key.level).map(|s| s.is_suicide_attack))
+            .unwrap_or(false)
+    }
+
+    /// Java `npc.setRHandId(itemId)` (S-BOSS-02).
+    pub fn set_npc_right_hand(&mut self, npc: ObjectId, item_id: i32) {
+        if let Some(n) = self.npcs.get_mut(&npc) {
+            n.right_hand = item_id;
+        }
+    }
+
+    /// Java `npc.setLHandId(itemId)` (S-BOSS-02).
+    pub fn set_npc_left_hand(&mut self, npc: ObjectId, item_id: i32) {
+        if let Some(n) = self.npcs.get_mut(&npc) {
+            n.left_hand = item_id;
+        }
+    }
+
     /// Java `NpcConfig.RAID_DISABLE_CURSE` (`DisableRaidCurse`).
     pub fn raid_curse_disabled(&self) -> bool {
         self.settings.cast.raid_disable_curse
