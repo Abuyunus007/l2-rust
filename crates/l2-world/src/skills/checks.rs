@@ -267,6 +267,11 @@ impl World {
         self.skill_table()?.get(key.id, key.level).map(|s| s.cast_range)
     }
 
+    /// Java `skill.getEffectPoint()`; `None` for a skill the table does not have (S-BOSS-02).
+    pub fn skill_effect_point(&self, key: crate::effects::SkillKey) -> Option<i32> {
+        self.skill_table()?.get(key.id, key.level).map(|s| s.effect_point)
+    }
+
     /// Java `Creature.checkDoCastConditions(skill)`.
     pub(crate) fn check_do_cast_conditions(&mut self, id: ObjectId, skill: &SkillTemplate) -> bool {
         if self.is_skill_disabled(id, skill)

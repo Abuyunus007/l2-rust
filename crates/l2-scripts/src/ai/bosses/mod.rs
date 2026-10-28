@@ -15,6 +15,7 @@
 pub mod antharas;
 pub mod baium;
 pub mod core;
+pub mod orfen;
 pub mod valakas;
 
 use l2_world::{ScriptCtx, ScriptRegistry};
@@ -24,6 +25,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(antharas::Antharas);
     r.add(baium::Baium);
     r.add(core::Core);
+    r.add(orfen::Orfen);
     r.add(valakas::Valakas);
 }
 
