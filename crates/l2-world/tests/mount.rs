@@ -875,9 +875,14 @@ fn pet_food_is_refused_without_a_mount() {
         ctrl_pressed: false,
     });
     let sent = s.me.take();
+    // The scene logs in with `PlayerSpawnProtection` 600: the first action ends it and says so
+    // (`Player.onActionRequest`, S-HAND-03).
     assert_eq!(
         message_ids(&sent),
-        [SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms]
+        [
+            SystemMessageId::YouAreNoLongerProtectedFromAggressiveMonsters,
+            SystemMessageId::S1CannotBeUsedDueToUnsuitableTerms
+        ]
     );
 }
 
