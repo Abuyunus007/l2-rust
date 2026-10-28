@@ -254,6 +254,25 @@ struct Me {
     class_index: i32,
     subs: Vec<SubClassHolder>,
     skills: Vec<SkillData>,
+    /// `(quest name, state)` rows of `character_quests`; each quest is installed as a stand-in
+    /// script of that name.
+    quests: Vec<(&'static str, &'static str)>,
+}
+
+/// A quest the subclass code reads by name (`Q00234_FatesWhisper`, ...), nothing more.
+struct StandInQuest(&'static str, i32);
+
+impl Script for StandInQuest {
+    fn name(&self) -> &'static str {
+        self.0
+    }
+    fn path(&self) -> &'static str {
+        "quests/StandIn"
+    }
+    fn id(&self) -> i32 {
+        self.1
+    }
+    fn setup(&self, _setup: &mut ScriptSetup) {}
 }
 
 impl Default for Me {
@@ -268,6 +287,7 @@ impl Default for Me {
                 skill_id: 1001,
                 skill_level: 1,
             }],
+            quests: Vec::new(),
         }
     }
 }
@@ -355,6 +375,14 @@ impl Scene {
             Arc::new(Zones::load(root.path())),
             Arc::new(MapRegions::load(root.path())),
         );
+        if !me.quests.is_empty() {
+            let mut scripts = ScriptRegistry::new();
+            for (name, _) in &me.quests {
+                let id = name[1..6].parse().unwrap();
+                scripts.add(StandInQuest(name, id));
+            }
+            world.install_scripts(scripts);
+        }
 
         let mut profile = PlayerProfile {
             noble: me.noble,
@@ -364,6 +392,14 @@ impl Scene {
         for sub in &me.subs {
             profile.subclasses.subs.insert(sub.class_index, *sub);
         }
+        profile.quests = QuestLoad {
+            states: me
+                .quests
+                .iter()
+                .map(|(name, state)| ((*name).to_owned(), Some((*state).to_owned())))
+                .collect(),
+            variables: Vec::new(),
+        };
         if me.class_index > 0 {
             profile.subclasses.base = Some(ClassStats {
                 level: 76,
@@ -767,6 +803,53 @@ fn the_add_rules() {
         persisted(&s.subclass("4 16"))[0],
         PersistCommand::Subclass(SubclassWrite::Add { .. })
     ));
+}
+
+/// `checkQuests`: a commoner needs Fate's Whisper and Mimir's Elixir completed (Seeds of Chaos
+/// instead of Mimir's Elixir at a Kamael master).
+#[test]
+fn a_commoner_adds_a_subclass_with_the_two_quests_completed() {
+    let with = |quests: Vec<(&'static str, &'static str)>| Me {
+        noble: false,
+        quests,
+        ..Me::default()
+    };
+    let added = |s: &mut Scene| {
+        persisted(&s.subclass("4 16"))
+            .iter()
+            .any(|c| matches!(c, PersistCommand::Subclass(SubclassWrite::Add { .. })))
+    };
+    let both = vec![("Q00234_FatesWhisper", "Completed"), ("Q00235_MimirsElixir", "Completed")];
+    let mut s = Scene::new(with(both), SubclassSettings::default());
+    assert!(added(&mut s));
+    // Fate's Whisper only, or Mimir's Elixir still started.
+    let mut s = Scene::new(with(vec![("Q00234_FatesWhisper", "Completed")]), SubclassSettings::default());
+    assert!(!added(&mut s));
+    let started = vec![("Q00234_FatesWhisper", "Completed"), ("Q00235_MimirsElixir", "Started")];
+    let mut s = Scene::new(with(started), SubclassSettings::default());
+    assert!(!added(&mut s));
+    // Seeds of Chaos counts at a Kamael master only.
+    let seeds = vec![("Q00234_FatesWhisper", "Completed"), ("Q00236_SeedsOfChaos", "Completed")];
+    let mut s = Scene::new(with(seeds), SubclassSettings::default());
+    assert!(!added(&mut s));
+}
+
+/// `setActiveClass` ends `Q00422_RepentYourSins` (`exitQuest(true)`: its rows are deleted).
+#[test]
+fn a_class_switch_ends_repent_your_sins() {
+    let me = Me {
+        quests: vec![("Q00422_RepentYourSins", "Started")],
+        ..Me::default()
+    };
+    let mut s = Scene::new(me, SubclassSettings::default());
+    s.subclass("4 16");
+    let out = s.answer(1, ClassIndexLoad::default());
+    assert!(persisted(&out).contains(&PersistCommand::Quest(QuestWrite::DeleteQuest {
+        char_id: ME.0,
+        name: "Q00422_RepentYourSins".to_owned(),
+        repeatable: true,
+    })));
+    assert!(s.world.player_quests(ME).is_none_or(|q| !q.contains("Q00422_RepentYourSins")));
 }
 
 /// `MaxSubclass` subclasses are the limit: the add page is the fail page.

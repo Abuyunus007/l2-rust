@@ -135,6 +135,16 @@ impl World {
             .unwrap_or_default()
     }
 
+    /// Java `ItemData.getInstance().getTemplate(id).getName()`, `None` for an unknown item.
+    pub fn item_template_name(&self, item_id: i32) -> Option<String> {
+        self.data.item_name(item_id)
+    }
+
+    /// Java `player.sendPacket(new TutorialShowQuestionMark(markId))`.
+    pub fn send_tutorial_question_mark(&mut self, id: ObjectId, mark_id: i32) {
+        self.send(id, &l2_protocol_game::server::TutorialShowQuestionMark { mark_id });
+    }
+
     /// Java `player.getVariables().getString(name, null)`.
     pub fn player_variable_text(&self, id: ObjectId, name: &str) -> Option<&str> {
         self.players

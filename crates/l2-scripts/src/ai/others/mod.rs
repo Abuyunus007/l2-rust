@@ -4,10 +4,12 @@
 //! same order (Java's load order is the folder listing).
 
 pub mod asamah;
+pub mod class_master;
 
 use l2_world::ScriptRegistry;
 
 /// Registers every script of the folder.
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(asamah::Asamah);
+    r.add(class_master::ClassMaster::default());
 }
