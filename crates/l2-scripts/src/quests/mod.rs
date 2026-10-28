@@ -54,6 +54,7 @@ pub mod q00147_path_to_becoming_an_elite_mercenary;
 pub mod q00148_path_to_becoming_an_exalted_mercenary;
 pub mod q00153_deliver_goods;
 pub mod q00155_find_sir_windawood;
+pub mod q00156_millennium_love;
 pub mod q00157_recover_smuggled_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00161_fruit_of_the_mother_tree;
@@ -123,6 +124,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00148_path_to_becoming_an_exalted_mercenary::Q00148PathToBecomingAnExaltedMercenary);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00155_find_sir_windawood::Q00155FindSirWindawood);
+    r.add(q00156_millennium_love::Q00156MillenniumLove);
     r.add(q00157_recover_smuggled_goods::Q00157RecoverSmuggledGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00161_fruit_of_the_mother_tree::Q00161FruitOfTheMotherTree);
