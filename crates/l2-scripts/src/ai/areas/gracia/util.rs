@@ -32,6 +32,15 @@ pub fn distance_3d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId) -> f64 {
     (dx * dx + dy * dy + dz * dz).sqrt()
 }
 
+/// Java `ZoneManager.getInstance().getZoneById(zoneId).getPlayersInside()`.
+pub fn players_in_zone(ctx: &ScriptCtx<'_>, zone_id: i32) -> Vec<ObjectId> {
+    ctx.world()
+        .players()
+        .filter(|p| p.zones.members().iter().any(|(id, _)| *id == zone_id))
+        .map(|p| p.data.object_id)
+        .collect()
+}
+
 /// Java `Creature.broadcastSocialAction(id)`.
 pub fn broadcast_social_action(ctx: &ScriptCtx<'_>, creature: ObjectId, action_id: i32) {
     ctx.world().broadcast_packet(
