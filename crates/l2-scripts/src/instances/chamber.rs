@@ -210,11 +210,12 @@ fn change_room(d: &ChamberData, ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     let current = ctx.state::<ChamberState>().current_room(instance_id);
     let mut new_room = current;
     // Teleport to raid room 10 min or lesser before instance end time for Tower and Square Chambers
-    if is_big_chamber(d) && (end_time - ctx.world().instance_clock_ms()) < 600_000 {
-        new_room = last;
-    }
-    // 10% chance for teleport to raid room if not here already for Northern, Southern, Western and Eastern Chambers
-    else if !is_big_chamber(d) && !is_boss_room(d, ctx, instance_id) && ctx.get_random(100) < 10 {
+    // ... or, 10% chance for teleport to raid room if not here already for the four small
+    // chambers. Java's two branches both pick the raid room, so they are one condition here; the
+    // random roll happens only when the first part is false, as in Java.
+    if (is_big_chamber(d) && (end_time - ctx.world().instance_clock_ms()) < 600_000)
+        || (!is_big_chamber(d) && !is_boss_room(d, ctx, instance_id) && ctx.get_random(100) < 10)
+    {
         new_room = last;
     } else {
         // otherwise teleport to another room, except current

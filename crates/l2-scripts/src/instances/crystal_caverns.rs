@@ -739,9 +739,7 @@ impl Script for CrystalCaverns {
             }
         } else if is("spawnGuards") {
             let spawned = {
-                let Some(w) = ctx.state::<State>().worlds.get_mut(&id) else {
-                    return None;
-                };
+                let w = ctx.state::<State>().worlds.get_mut(&id)?;
                 w.kechis_henchman_spawn += 1;
                 w.kechis_henchman_spawn
             };
@@ -832,9 +830,7 @@ impl Script for CrystalCaverns {
             }
 
             let mobs = {
-                let Some(w) = ctx.state::<State>().worlds.get_mut(&id) else {
-                    return None;
-                };
+                let w = ctx.state::<State>().worlds.get_mut(&id)?;
                 w.raid_status = 0;
                 std::mem::take(&mut w.animation_mobs)
             };
@@ -940,9 +936,7 @@ impl Script for CrystalCaverns {
         } else if !event.ends_with("Food") {
             return None;
         } else if is("autoFood") {
-            let Some(w) = ctx.state::<State>().worlds.get_mut(&id) else {
-                return None;
-            };
+            let w = ctx.state::<State>().worlds.get_mut(&id)?;
             w.crystal_golems.entry(npc.object_id).or_default();
             let golem = &w.crystal_golems[&npc.object_id];
             let busy = golem.food_item.is_some() || golem.is_at_destination;
@@ -1008,9 +1002,7 @@ impl Script for CrystalCaverns {
                         g.is_at_destination = true;
                     }
                     let correct = {
-                        let Some(w) = ctx.state::<State>().worlds.get_mut(&id) else {
-                            return None;
-                        };
+                        let w = ctx.state::<State>().worlds.get_mut(&id)?;
                         w.correct_golems += 1;
                         w.correct_golems
                     };
@@ -2247,8 +2239,7 @@ mod tests {
                 .npcs
                 .keys()
                 .copied()
-                .filter(|n| t.in_world(*n) && t.world.npc(*n).is_some_and(|n| n.npc_id == template))
-                .next_back()
+                .rfind(|n| t.in_world(*n) && t.world.npc(*n).is_some_and(|n| n.npc_id == template))
                 .unwrap();
             kill(&mut t, boss);
             assert_eq!(status(&t, id), next);
@@ -2293,10 +2284,7 @@ mod tests {
         t.world.instance_world_mut(id).unwrap().set_status(4);
         kill(&mut t, tears);
         assert_eq!(count_of(&t, id, 32280), 1);
-        assert_eq!(
-            t.world.instance(id).unwrap().end_time_ms - t.world.instance_clock_ms() < 301_000,
-            true
-        );
+        assert!(t.world.instance(id).unwrap().end_time_ms - t.world.instance_clock_ms() < 301_000);
         // Player 1 is in the instance: the contaminated crystal turned into the clear one.
         assert_eq!(t.count(1, CONTAMINATED_CRYSTAL), 0);
         assert_eq!(t.count(1, CLEAR_CRYSTAL), 1);

@@ -686,10 +686,11 @@ fn run_hall2(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
 }
 
 fn run_second_room(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
-    let mut second_room = DmcRoom::default();
-
     // TODO: find a better way to initialize to [1,0,0,0,0,0,0]
-    second_room.order = [1, 0, 0, 0, 0, 0, 0];
+    let mut second_room = DmcRoom {
+        order: [1, 0, 0, 0, 0, 0, 0],
+        ..DmcRoom::default()
+    };
 
     let i = usize::try_from(ctx.get_random(MONOLITH_ORDER.len() as i32)).unwrap_or(0);
     for (index, (x, y)) in [
@@ -1300,7 +1301,7 @@ mod tests {
         // Forth room: 35 columns; one of every row of seven in turn opens a wall.
         let columns = room_npcs(&mut t, id, Slot::ForthRoom);
         assert_eq!(columns.len(), 35);
-        assert_eq!(columns.iter().filter(|c| c.3 == 0).count() > 0, true);
+        assert!(columns.iter().any(|c| c.3 == 0));
         for order in 0..7 {
             let column = columns.iter().find(|c| c.2 == order).unwrap();
             kill(&mut t, column.0);
