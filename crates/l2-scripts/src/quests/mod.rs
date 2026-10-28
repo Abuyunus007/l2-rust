@@ -61,6 +61,7 @@ pub mod q00164_blood_fiend;
 pub mod q00165_shilens_hunt;
 pub mod q00166_mass_of_darkness;
 pub mod q00167_dwarven_kinship;
+pub mod q00168_deliver_supplies;
 pub mod q00182_new_recruits;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
@@ -129,6 +130,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00165_shilens_hunt::Q00165ShilensHunt);
     r.add(q00166_mass_of_darkness::Q00166MassOfDarkness);
     r.add(q00167_dwarven_kinship::Q00167DwarvenKinship);
+    r.add(q00168_deliver_supplies::Q00168DeliverSupplies);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
