@@ -18,65 +18,44 @@ mod tests {
     const CLICK_LEFT: &[(&str, &str)] = &[
         (
             "DecoyClick",
-            "no Decoy creature exists: the decoy skill effect is not a world object yet",
+            "no Decoy creature exists: the decoy skill effect is not a world object yet (own card: a creature kind, the effect, its AI)",
         ),
-        ("TrapClick", "no skill trap creature exists (only zone traps)"),
+        (
+            "TrapClick",
+            "no skill trap creature exists (only zone traps): own card with the SummonTrap effect and the trap AI",
+        ),
     ];
 
     /// `bypass/npc` classes that are left. The ported ones are found by their command words.
     const NPC_LEFT: &[(&str, &str)] = &[
         (
-            "BuyShadowItem",
-            "needs the shadow item buy list window (own card with Wear)",
-        ),
-        (
-            "FindPvP",
-            "needs the PvP flagged player search and radar (custom NPC)",
-        ),
-        (
             "Loto",
-            "lottery NPC script: needs the lottery state (script, D-05)",
+            "needs LotteryManager (the `games` table, its timers, the ticket items' custom types): own card",
         ),
         (
             "NpcViewMod",
-            "needs drop rates with player bonuses and premium rates; AltGameViewNpc is off",
+            "needs the shared drop-rate code with player bonuses and the aggro/skill views; AltGameViewNpc is off: own card",
         ),
         ("Rebirth", "custom feature (M9)"),
-        ("ReceivePremium", "premium (M9)"),
-        ("RentPet", "needs mount/rent timers: own card"),
-        (
-            "SupportBlessing",
-            "NPC cast of a skill on a player: own card with SupportMagic",
-        ),
-        ("SupportMagic", "NPC casts of the newbie buffs: own card"),
-        ("VoiceCommand", "voiced command registry (customs, config gated)"),
-        ("Wear", "needs ShopPreviewList and the inventory blocking status"),
     ];
 
-    /// `chat/commands/user` classes that are left.
-    const USER_LEFT: &[(&str, &str)] = &[
-        (
-            "MyBirthday",
-            "characters.createDate is not loaded into the player",
-        ),
-        ("Unstuck", "needs the long escape cast and its animation timer"),
+    /// `chat/commands/user` classes that are left (none: `Unstuck` and `MyBirthday` are ported).
+    const USER_LEFT: &[(&str, &str)] = &[];
+
+    /// `chat/commands/user` classes ported by S-HAND-02 with the command id they answer.
+    const USER_PORTED: &[(&str, i32)] = &[
+        ("Unstuck", crate::script_handlers::unstuck::UNSTUCK_COMMAND),
+        ("MyBirthday", crate::script_handlers::unstuck::MY_BIRTHDAY_COMMAND),
     ];
 
-    /// `chat/commands/voiced` classes that are ported (`Wedding`); the others are left.
-    const VOICED_PORTED: &[&str] = &["Wedding"];
+    /// `chat/commands/voiced` classes that are ported (`Wedding`, `ExperienceGain`); the others
+    /// are registered by `MasterHandler` only when their config switch is on (all off by default),
+    /// so without the switch the text is plain chat, as it is here.
+    const VOICED_PORTED: &[&str] = &["Wedding", "ExperienceGain"];
 
-    /// `items` classes that are left.
-    const ITEMS_LEFT: &[(&str, &str)] = &[
-        (
-            "CharmOfCourage",
-            "the charm flag and EtcStatusUpdate icon are not modelled",
-        ),
-        ("EventItem", "Block Checker arena items: events are scripts"),
-        (
-            "RollingDice",
-            "needs the Dice packet and the dice flood protector",
-        ),
-    ];
+    /// `items` classes that are left (none: S-HAND-02 ported `CharmOfCourage`, `RollingDice` and
+    /// `EventItem`).
+    const ITEMS_LEFT: &[(&str, &str)] = &[];
 
     fn root() -> Option<&'static Path> {
         let path = Path::new(ROOT);
@@ -199,9 +178,17 @@ mod tests {
     #[test]
     fn user_voiced_and_click_lists_match_the_java_folders() {
         let Some(root) = root() else { return };
-        let user = java_classes(&root.join("chat").join("commands").join("user"));
+        let user_dir = root.join("chat").join("commands").join("user");
+        let user = java_classes(&user_dir);
         for (name, _) in USER_LEFT {
             assert!(user.contains(*name), "{name}");
+        }
+        for (name, command) in USER_PORTED {
+            let source = std::fs::read_to_string(user_dir.join(format!("{name}.java"))).unwrap();
+            assert!(
+                source.lines().any(|l| l.trim() == command.to_string()),
+                "{name} answers command {command}"
+            );
         }
         let voiced = java_classes(&root.join("chat").join("commands").join("voiced"));
         for name in VOICED_PORTED {

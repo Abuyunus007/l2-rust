@@ -131,11 +131,22 @@ Quest states: `get_quest_state`, `quest_state_of`, `player_quest_state`, `has_qu
 - Boss and event scripts that decide on a global row follow D-53/D-54 (re-read, no writes with the
   switch off); their cards bring the re-read requests.
 
+## Added by S-API-03
+
+- `getTimers()` (`TimerExecutor`): `ctx.add_timer(event, Some(TimerParams::new().set("Name", x)), ms, npc, player)`,
+  `add_repeating_timer`, `has_timer`, `cancel_timer(s)`, `cancel_timers_of`, `cancel_all_timers`; hooks `on_timer_event`,
+  `on_timer_cancel` (params: `TimerParams::get_string/get_int/get_long/get_bool`).
+- `on_creature_see` fires (`CreatureSeeTaskManager`, once a second, aggro range or `AltPartyRange`).
+- Global listeners: `s.set_on_player_bypass()`, `set_on_player_press_tutorial_mark()`, `set_on_player_logout()`,
+  `set_on_day_night_change()` (hooks `on_player_bypass`, `on_player_press_tutorial_mark`, `on_player_logout`,
+  `on_day_night_change`, all queued) and `s.add_creature_death_id(&[..])` (`on_creature_death`, at once).
+- `on_attack` gets the skill of a skill hit; `ctx.play_movie` keeps the movie until `EndScenePlayer`
+  (`ctx.play_movie_for(&players, id)`, `World::is_playing_movie`); `add_spawn` slots are reused once the NPC is gone;
+  `//show_quests` and `//quest_info` exist (`script/admin.rs`).
+
 ## Not in the engine yet (follow-ups)
 
-`TimerExecutor` (`getTimers()`, seven scripts), annotation listeners, `ON_PLAYER_BYPASS` /
-`ON_PLAYER_PRESS_TUTORIAL_MARK`, `CreatureSeeTaskManager` (so `on_creature_see` is never fired),
-summon spawn/talk, trap actions, olympiad/castle/fortress listener types, the skill of a hit in
-`on_attack` (always `None`), `GmViewQuestInfo` contents, the movie holder (`EndScenePlayer`),
-champion bonuses in `give_item_randomly` (champions are not rolled), premium rates (M9), the
-multilingual chooser strings (M9).
+Annotation listeners with per-player registration (`player.addListener(..)` of the event scripts), the other
+`EventType`s (`ON_CREATURE_ATTACKED/SKILL_USE/DAMAGE_*`, `ON_PLAYER_SIT/LEVEL_CHANGED/ITEM_*`, clan, siege, olympiad,
+trap, `ON_DAILY_RESET`), the D-50 re-read of `global_variables` (needs the game server DB task), summon spawn/talk,
+premium rates (M9), the multilingual chooser strings (M9).

@@ -146,6 +146,8 @@ impl World {
         } else {
             self.script_on_npc_spawn(id);
         }
+        // `Npc.onSpawn`: `initSeenCreatures()` for the `addCreatureSeeId` NPCs (S-API-03).
+        self.script_init_seen_creatures(id);
         // The `onSpawn` listeners of the castle scripts (M7-NPC-01).
         self.residence_npc_on_spawn(id);
         // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.

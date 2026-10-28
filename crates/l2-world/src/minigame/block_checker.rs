@@ -249,6 +249,18 @@ impl World {
         map.get(&player).copied().unwrap_or(0)
     }
 
+    /// `holder.getPlayerTeam(player)` of an arena: 0 red, 1 blue, -1 none (or no such arena). Used
+    /// by the `EventItem` handler (S-HAND-02).
+    pub(crate) fn block_checker_team_of(&self, arena: i32, player: ObjectId) -> Option<i32> {
+        let holder = arena_index(arena).and_then(|a| self.minigames.block.arenas.get(a))?;
+        Some(holder.team_of(player))
+    }
+
+    /// Whether `id` is a `Block` of a running match (`getTarget() instanceof Block`).
+    pub(crate) fn is_block_checker_block(&self, id: ObjectId) -> bool {
+        self.minigames.block_color.contains_key(&id)
+    }
+
     /// `broadCastPacketToTeam(packet)`: red, then blue.
     fn block_broadcast(&self, arena: usize, packet: &impl l2_net::Encode) {
         let Some(holder) = self.minigames.block.arenas.get(arena) else {

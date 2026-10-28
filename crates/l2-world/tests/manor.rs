@@ -25,8 +25,8 @@ use l2_protocol_game::client::{
 use l2_protocol_game::server::{
     BuyListSeed, CropOffer, CropProcureInfo, ExSendManorList, ExShowCropInfo, ExShowCropSetting,
     ExShowManorDefaultInfo, ExShowProcureCropDetail, ExShowSeedInfo, ExShowSeedSetting, ExShowSellCropList,
-    ManorDefaultCrop, NpcHtmlMessage, ProcureCastle, SeedForSale, SeedProductionInfo, SellCropItem,
-    SystemMessage, SystemMessageParam,
+    ManorDefaultCrop, ProcureCastle, SeedForSale, SeedProductionInfo, SellCropItem, SystemMessage,
+    SystemMessageParam,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord, ClanPrivilegesRef, PlayerClanState};
@@ -668,10 +668,6 @@ fn procure(
         reward_type: reward,
         next_period: next,
     }
-}
-
-fn html_to(out: &[Out], to: i32) -> Vec<NpcHtmlMessage> {
-    decoded::<NpcHtmlMessage>(out, to, "NPC_HTML_MESSAGE")
 }
 
 // ---------------------------------------------------------------------------------- loading
@@ -1657,77 +1653,9 @@ fn bypass(s: &mut Scene, player: i32, command: &str) {
     );
 }
 
-/// `ManorManager.onFirstTalk`: `manager.htm`, and `manager-lord.htm` for the leader of the clan
-/// that owns the castle of the manager (not for a GM).
-#[test]
-fn the_manager_shows_its_menu_and_the_lord_page() {
-    let mut s = Scene::standard();
-    s.enter(FARMER, 10, vec![]);
-    s.enter(LORD, 40, vec![]);
-    let manager = s.npc(35644, 20);
-    s.talk_to(FARMER, manager);
-    let page = html_to(&s.take(), FARMER);
-    assert_eq!(page.len(), 1);
-    assert_eq!(page[0].npc_obj_id, manager.0);
-    assert!(
-        page[0]
-            .html
-            .starts_with(&format!("<html><body>Manor {} P3 ", manager.0)),
-        "{}",
-        page[0].html
-    );
-
-    s.talk_to(LORD, manager);
-    let page = html_to(&s.take(), LORD);
-    assert_eq!(page.len(), 1);
-    assert_eq!(
-        page[0].html,
-        format!("<html><body>My Lord {}</body></html>", manager.0)
-    );
-
-    // The leader of another castle's clan gets the plain menu.
-    s.enter(DION_LORD, 40, vec![]);
-    s.talk_to(DION_LORD, manager);
-    let page = html_to(&s.take(), DION_LORD);
-    assert!(page[0].html.starts_with("<html><body>Manor "));
-}
-
-/// The link of the page opens a help page: `Script ManorManager <page>` is the script's `onEvent`
-/// (`processScriptEvent`), answered with the page itself.
-#[test]
-fn the_help_pages_are_script_events() {
-    let mut s = Scene::standard();
-    s.enter(FARMER, 10, vec![]);
-    let manager = s.npc(35644, 20);
-    s.talk_to(FARMER, manager);
-    s.take();
-    bypass(&mut s, FARMER, "Script ManorManager manager-help-01.htm");
-    let page = html_to(&s.take(), FARMER);
-    assert_eq!(page.len(), 1);
-    assert_eq!(
-        page[0].html,
-        format!("<html><body>Help 1 {}</body></html>", manager.0)
-    );
-}
-
-/// Without the manor (`AllowManor = False`) the manager shows `npcdefault.htm`.
-#[test]
-fn a_disabled_manor_shows_the_default_page() {
-    let mut s = Scene::new(Options {
-        manor: ManorSettings {
-            allow_manor: false,
-            ..ManorSettings::default()
-        },
-        ..Options::default()
-    });
-    s.load_at(ManorLoad::default(), at(12, 0));
-    s.enter(FARMER, 10, vec![]);
-    let manager = s.npc(35644, 20);
-    s.talk_to(FARMER, manager);
-    let page = html_to(&s.take(), FARMER);
-    assert_eq!(page.len(), 1);
-    assert_eq!(page[0].html, PAGE_DEFAULT);
-}
+// `ManorManager.onFirstTalk` and the help pages are a script of `l2-scripts` (S-API-02); their
+// tests are in `crates/l2-scripts/src/ai/others/manor_manager.rs`. The menu below is what is left
+// of the script here: its `OnNpcManorBypass` listener.
 
 #[test]
 fn the_menu_opens_the_seed_purchase_and_refuses_another_castles_seeds() {

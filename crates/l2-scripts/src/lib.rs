@@ -14,8 +14,10 @@
 )]
 
 pub mod ai;
+pub mod custom;
 pub mod instances;
 pub mod quests;
+pub mod village_master;
 
 #[cfg(test)]
 pub(crate) mod testing;
@@ -25,8 +27,10 @@ use l2_world::ScriptRegistry;
 /// Every script, in Java's load order.
 pub fn register_all(r: &mut ScriptRegistry) {
     ai::register(r);
+    custom::register(r);
     instances::register(r);
     quests::register(r);
+    village_master::register(r);
 }
 
 /// A registry with every script.

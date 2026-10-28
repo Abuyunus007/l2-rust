@@ -52,8 +52,13 @@ impl World {
         self.send(id, &packet);
     }
 
+    /// Java `GeneralConfig.ALLOW_MANOR`.
+    pub fn manor_allowed(&self) -> bool {
+        self.manor.settings.allow_manor
+    }
+
     /// Java `NpcTemplate.getParameters().getInt("manor_id", -1)` of an NPC.
-    pub(crate) fn npc_manor_id(&self, npc: ObjectId) -> i32 {
+    pub fn npc_manor_id(&self, npc: ObjectId) -> i32 {
         self.npcs
             .get(&npc)
             .and_then(|n| self.npc_world.template(n.npc_id))

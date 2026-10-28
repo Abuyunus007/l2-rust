@@ -35,6 +35,8 @@ pub enum QuestInput {
     TutorialQuestionMark { number: i32 },
     /// Java `RequestTutorialClientEvent`.
     TutorialClientEvent { event_id: i32 },
+    /// Java `EndScenePlayer` (S-API-03).
+    EndScene { movie_id: i32 },
 }
 
 impl World {
@@ -167,16 +169,19 @@ impl World {
                 self.tutorial_bypass(id, &bypass, "TL:");
             }
             QuestInput::TutorialPassCmd { bypass } => {
-                // `ON_PLAYER_BYPASS` (a listener of the player) is the tutorial card's.
                 self.tutorial_bypass(id, &bypass, "TC:");
+                // "Notify scripts." (S-API-03)
+                self.script_on_player_bypass(id, &bypass);
             }
             QuestInput::TutorialQuestionMark { number } => {
-                // `ON_PLAYER_PRESS_TUTORIAL_MARK` is the tutorial card's.
                 self.tutorial_event(id, &format!("QM:{number}"));
+                // "Notify scripts." (S-API-03)
+                self.script_on_tutorial_mark(id, number);
             }
             QuestInput::TutorialClientEvent { event_id } => {
                 self.tutorial_event(id, &format!("CE:{event_id}"));
             }
+            QuestInput::EndScene { movie_id } => self.on_end_scene_player(id, movie_id),
         }
     }
 

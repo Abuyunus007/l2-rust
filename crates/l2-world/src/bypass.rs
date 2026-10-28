@@ -99,6 +99,13 @@ impl Default for BypassHandlers {
         handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
         // dist/game/data/scripts/handlers/bypass/npc/{PlayerHelp,TutorialClose,QuestList}.java (S-HAND-01)
         crate::bypass_simple::register(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/{SupportMagic,SupportBlessing}.java (S-HAND-02)
+        crate::script_handlers::support::register(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/{BuyShadowItem,Wear,ReceivePremium,VoiceCommand}.java
+        crate::script_handlers::npc::register(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/{RentPet,FindPvP}.java
+        crate::script_handlers::rent::register(&mut handlers);
+        crate::script_handlers::find_pvp::register(&mut handlers);
         handlers
     }
 }
@@ -304,6 +311,8 @@ impl World {
                 .map_or_else(|| "?".to_owned(), |s| format!("{s:?}"));
             warn!("{session} sent not handled RequestBypassToServer: [{command}]");
         }
+        // Java: `ON_PLAYER_BYPASS` for the script listeners of the player (S-API-03).
+        self.script_on_player_bypass(id, command);
     }
 
     /// The `npc_` branch: `npc_<objectId>_<command for the npc>`.

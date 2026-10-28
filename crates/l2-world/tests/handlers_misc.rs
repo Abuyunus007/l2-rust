@@ -378,11 +378,11 @@ fn siege_status_is_refused_without_a_siege() {
     }
 }
 
-/// The user commands that are still not ported do nothing (`/mybirthday`, `/unstuck`).
+/// The user commands that are not ported do nothing (`/mybirthday` and `/unstuck` are ported by S-HAND-02).
 #[test]
 fn the_unported_user_commands_stay_quiet() {
     let mut s = Scene::new();
-    assert!(s.user_command(ME, 126).is_empty());
+    assert!(s.user_command(ME, 999).is_empty());
 }
 
 /// `PlayerHelp`: `player_help <page>[#<itemId>]` shows `data/html/help/<page>` as a page of the item.
