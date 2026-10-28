@@ -398,6 +398,13 @@ impl ScriptCtx<'_> {
     }
 }
 
+impl crate::world::World {
+    /// Java `npc.getScriptValue()` read from outside a script (tests, GM pages).
+    pub fn npc_script_value(&self, npc: ObjectId) -> i32 {
+        self.scripts.npc_script_values.get(&npc).copied().unwrap_or(0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -412,12 +419,5 @@ mod tests {
         assert_eq!(class_race(player_class::MAESTRO), race::DWARF);
         assert_eq!(class_race(player_class::JUDICATOR), race::KAMAEL);
         assert_eq!(class_race(119), -1);
-    }
-}
-
-impl crate::world::World {
-    /// Java `npc.getScriptValue()` read from outside a script (tests, GM pages).
-    pub fn npc_script_value(&self, npc: ObjectId) -> i32 {
-        self.scripts.npc_script_values.get(&npc).copied().unwrap_or(0)
     }
 }

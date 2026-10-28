@@ -133,6 +133,14 @@ impl World {
         self.grand_boss_update_db(boss_id, false);
     }
 
+    /// Java `getStatSet(bossId).set("respawn_time", value)`: the info in memory changes, no row is
+    /// written (the next store writes it).
+    pub fn set_grand_boss_respawn_time(&mut self, boss_id: i32, respawn_time: i64) {
+        if let Some(info) = self.boss.grand.stored.get_mut(&boss_id) {
+            info.respawn_time = respawn_time;
+        }
+    }
+
     /// Java `addBoss(boss)`: the NPC of the boss id (a script spawned it).
     pub fn add_grand_boss(&mut self, boss_id: i32, npc: ObjectId) {
         self.boss.grand.bosses.insert(boss_id, npc);

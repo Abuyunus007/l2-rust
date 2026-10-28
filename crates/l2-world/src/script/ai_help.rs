@@ -60,6 +60,10 @@ impl crate::world::World {
     /// for tests and admin views. Flags read 0 or 1; the script value has the key
     /// `"@scriptValue"`.
     pub fn script_npc_var(&self, script: &str, npc: ObjectId, key: &str) -> i64 {
+        // The script value is the NPC's own (`quest_helpers.rs`), shared by every script as in Java.
+        if key == "@scriptValue" {
+            return i64::from(self.scripts.npc_script_values.get(&npc).copied().unwrap_or(0));
+        }
         self.scripts
             .by_name(script)
             .and_then(|id| self.scripts.script_state.get(&id))

@@ -238,6 +238,35 @@ impl World {
             .is_some_and(|me| distance_3d(me, to) < f64::from(radius))
     }
 
+    /// Java `checkDoCastConditions(skill)` of a skill a script names by id and level; `false` for
+    /// a skill the table does not have (S-BOSS-01).
+    pub fn check_do_cast_conditions_of(&mut self, id: ObjectId, key: crate::effects::SkillKey) -> bool {
+        let Some(table) = self.skill_table() else {
+            return false;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return false;
+        };
+        self.check_do_cast_conditions(id, skill)
+    }
+
+    /// Java `isSkillDisabled(skill)` of a skill a script names by id and level; `false` for a
+    /// skill the table does not have (S-BOSS-01).
+    pub fn is_skill_disabled_of(&mut self, id: ObjectId, key: crate::effects::SkillKey) -> bool {
+        let Some(table) = self.skill_table() else {
+            return false;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return false;
+        };
+        self.is_skill_disabled(id, skill)
+    }
+
+    /// Java `skill.getCastRange()`; `None` for a skill the table does not have (S-BOSS-01).
+    pub fn skill_cast_range(&self, key: crate::effects::SkillKey) -> Option<i32> {
+        self.skill_table()?.get(key.id, key.level).map(|s| s.cast_range)
+    }
+
     /// Java `Creature.checkDoCastConditions(skill)`.
     pub(crate) fn check_do_cast_conditions(&mut self, id: ObjectId, skill: &SkillTemplate) -> bool {
         if self.is_skill_disabled(id, skill)
