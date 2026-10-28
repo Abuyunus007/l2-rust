@@ -406,20 +406,20 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-SUB-01](S/S-SUB-01.md) | Subclasses and the class switch | opus | full | none | merged |
 | [S-HAND-01](S/S-HAND-01.md) | Shift-click GM windows and the community board | sonnet | full | none | merged |
 | [S-HAND-02](S/S-HAND-02.md) | The handlers S-HAND-01 left | sonnet | full | HAND-01 | in-progress |
-| [S-API-02](S/S-API-02.md) | Move the built-ins onto the engine | sonnet | full | API-01 | ready |
-| [S-API-03](S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | ready |
-| [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | ready |
-| [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | ready |
+| [S-API-02](S/S-API-02.md) | Move the built-ins onto the engine | sonnet | full | API-01 | in-progress |
+| [S-API-03](S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | in-progress |
+| [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | in-progress |
+| [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | in-progress |
 | [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | ready |
 | [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | ready |
 | [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | ready |
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
-| [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | ready |
+| [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | in-progress |
 | [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | ready |
-| [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | ready |
+| [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | in-progress |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | ready |
 | [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
-| [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | ready |
+| [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | in-progress |
 | [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | ready |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | ready |
