@@ -431,9 +431,9 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | ready |
 | [S-Q-01](S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-02](S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-04](S/S-Q-04.md) | Quests Q00109..Q00128 (19 quests) | haiku | spot | PILOT-01 | ready |
-| [S-Q-05](S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-04](S/S-Q-04.md) | Quests Q00109..Q00128 (19 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-05](S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-06](S/S-Q-06.md) | Quests Q00169..Q00211 (27 quests) | haiku | spot | PILOT-01 | ready |
 | [S-Q-07](S/S-Q-07.md) | Quests Q00212..Q00221 (10 quests) | haiku | spot | PILOT-01 | ready |
 | [S-Q-08](S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | ready |
