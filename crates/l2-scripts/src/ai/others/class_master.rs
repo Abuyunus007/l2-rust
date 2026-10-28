@@ -117,58 +117,58 @@ pub struct ClassMaster {
 
 /// Java `load()`'s spawns: `addSpawn(npcId, x, y, z, heading)`.
 const SPAWNS: [(i32, i32, i32, i32, i32); 52] = [
-    (31756, -116948, 46841, 360, 3355),     // Aden
-    (31756, -84336, 242156, -3725, 24500),  // Gludio
-    (31756, -84119, 243254, -3725, 8000),   // Gludio
-    (31756, -82032, 150160, -3122, 16500),  // Gludio
-    (31756, -44979, -113508, -194, 32000),  // Rune
-    (31756, -14048, 123184, -3115, 32000),  // Gludio
-    (31756, 10968, 17540, -4567, 55000),    // Oren
-    (31756, 11340, 15972, -4577, 14000),    // Oren
-    (31756, 15584, 142784, -2699, 16500),   // Dion
-    (31756, 17956, 170536, -3499, 48000),   // Dion
-    (31756, 44176, -48732, -800, 33000),    // Rune
-    (31756, 44319, -47640, -792, 50000),    // Rune
-    (31756, 45472, 49312, -3067, 53000),    // Oren
-    (31756, 47648, 51296, -2989, 38500),    // Oren
-    (31756, 81136, 54576, -1517, 32000),    // Oren
-    (31756, 83076, 147912, -3467, 32000),   // Giran
-    (31756, 87596, -140674, -1536, 16500),  // Schuttgart
-    (31756, 87824, -142256, -1336, 7342),   // Schuttgart
-    (31756, 110592, 220400, -3667, 0),      // Innadril
-    (31756, 114880, -178144, -827, 0),      // Schuttgart
-    (31756, 116224, -181728, -1373, 0),     // Schuttgart
-    (31756, 117200, 75824, -2725, 25000),   // Aden
-    (31756, 147262, -56450, -2776, 33000),  // Goddard
-    (31756, 147728, 27408, -2198, 16500),   // Aden
-    (31756, 147888, -58048, -2979, 49000),  // Goddard
-    (31756, 148560, -57952, -2974, 53000),  // Goddard
-    (31757, -116902, 46841, 360, 49151),    // Aden
-    (31757, -84294, 242204, -3725, 24500),  // Gludio
-    (31757, -84047, 243193, -3725, 8000),   // Gludio
-    (31757, -81967, 150160, -3122, 16500),  // Gludio
-    (31757, -44983, -113554, -194, 32000),  // Rune
-    (31757, -14050, 123229, -3115, 32000),  // Gludio
-    (31757, 10918, 17511, -4567, 55000),    // Oren
-    (31757, 11353, 16022, -4577, 14000),    // Oren
-    (31757, 15631, 142778, -2699, 16500),   // Dion
-    (31757, 17913, 170536, -3499, 48000),   // Dion
-    (31757, 44176, -48688, -800, 33000),    // Rune
-    (31757, 44294, -47642, -792, 50000),    // Rune
-    (31757, 45414, 49296, -3067, 53000),    // Oren
-    (31757, 47680, 51255, -2989, 38500),    // Oren
-    (31757, 81126, 54519, -1517, 32000),    // Oren
-    (31757, 83082, 147845, -3467, 32000),   // Giran
-    (31757, 87644, -140674, -1536, 16500),  // Schuttgart
-    (31757, 87856, -142272, -1336, 44000),  // Schuttgart
-    (31757, 110592, 220443, -3667, 0),      // Innadril
-    (31757, 114880, -178196, -827, 0),      // Schuttgart
-    (31757, 116218, -181793, -1379, 0),     // Schuttgart
-    (31757, 117160, 75784, -2725, 25000),   // Aden
-    (31757, 147285, -56461, -2776, 11500),  // Goddard
-    (31757, 147761, 27408, -2198, 16500),   // Aden
-    (31757, 147924, -58052, -2979, 49000),  // Goddard
-    (31757, 148514, -57972, -2974, 53000),  // Goddard
+    (31756, -116948, 46841, 360, 3355),    // Aden
+    (31756, -84336, 242156, -3725, 24500), // Gludio
+    (31756, -84119, 243254, -3725, 8000),  // Gludio
+    (31756, -82032, 150160, -3122, 16500), // Gludio
+    (31756, -44979, -113508, -194, 32000), // Rune
+    (31756, -14048, 123184, -3115, 32000), // Gludio
+    (31756, 10968, 17540, -4567, 55000),   // Oren
+    (31756, 11340, 15972, -4577, 14000),   // Oren
+    (31756, 15584, 142784, -2699, 16500),  // Dion
+    (31756, 17956, 170536, -3499, 48000),  // Dion
+    (31756, 44176, -48732, -800, 33000),   // Rune
+    (31756, 44319, -47640, -792, 50000),   // Rune
+    (31756, 45472, 49312, -3067, 53000),   // Oren
+    (31756, 47648, 51296, -2989, 38500),   // Oren
+    (31756, 81136, 54576, -1517, 32000),   // Oren
+    (31756, 83076, 147912, -3467, 32000),  // Giran
+    (31756, 87596, -140674, -1536, 16500), // Schuttgart
+    (31756, 87824, -142256, -1336, 7342),  // Schuttgart
+    (31756, 110592, 220400, -3667, 0),     // Innadril
+    (31756, 114880, -178144, -827, 0),     // Schuttgart
+    (31756, 116224, -181728, -1373, 0),    // Schuttgart
+    (31756, 117200, 75824, -2725, 25000),  // Aden
+    (31756, 147262, -56450, -2776, 33000), // Goddard
+    (31756, 147728, 27408, -2198, 16500),  // Aden
+    (31756, 147888, -58048, -2979, 49000), // Goddard
+    (31756, 148560, -57952, -2974, 53000), // Goddard
+    (31757, -116902, 46841, 360, 49151),   // Aden
+    (31757, -84294, 242204, -3725, 24500), // Gludio
+    (31757, -84047, 243193, -3725, 8000),  // Gludio
+    (31757, -81967, 150160, -3122, 16500), // Gludio
+    (31757, -44983, -113554, -194, 32000), // Rune
+    (31757, -14050, 123229, -3115, 32000), // Gludio
+    (31757, 10918, 17511, -4567, 55000),   // Oren
+    (31757, 11353, 16022, -4577, 14000),   // Oren
+    (31757, 15631, 142778, -2699, 16500),  // Dion
+    (31757, 17913, 170536, -3499, 48000),  // Dion
+    (31757, 44176, -48688, -800, 33000),   // Rune
+    (31757, 44294, -47642, -792, 50000),   // Rune
+    (31757, 45414, 49296, -3067, 53000),   // Oren
+    (31757, 47680, 51255, -2989, 38500),   // Oren
+    (31757, 81126, 54519, -1517, 32000),   // Oren
+    (31757, 83082, 147845, -3467, 32000),  // Giran
+    (31757, 87644, -140674, -1536, 16500), // Schuttgart
+    (31757, 87856, -142272, -1336, 44000), // Schuttgart
+    (31757, 110592, 220443, -3667, 0),     // Innadril
+    (31757, 114880, -178196, -827, 0),     // Schuttgart
+    (31757, 116218, -181793, -1379, 0),    // Schuttgart
+    (31757, 117160, 75784, -2725, 25000),  // Aden
+    (31757, 147285, -56461, -2776, 11500), // Goddard
+    (31757, 147761, 27408, -2198, 16500),  // Aden
+    (31757, 147924, -58052, -2979, 49000), // Goddard
+    (31757, 148514, -57972, -2974, 53000), // Goddard
 ];
 
 fn level_of(ctx: &ScriptCtx<'_>, player: ObjectId) -> i32 {
@@ -307,7 +307,12 @@ impl ClassMaster {
     }
 
     /// Java `getClassChangeOptions(player, selectedClassId)`: the rows of `%options%`.
-    fn get_class_change_options(&self, ctx: &ScriptCtx<'_>, player: ObjectId, selected_class_id: i32) -> String {
+    fn get_class_change_options(
+        &self,
+        ctx: &ScriptCtx<'_>,
+        player: ObjectId,
+        selected_class_id: i32,
+    ) -> String {
         let item_name = |id: i32| ctx.world().item_template_name(id).unwrap_or_default();
         let mut sb = String::new();
         for (i, option) in self.config.class_change_data.iter().enumerate() {
@@ -390,7 +395,8 @@ impl ClassMaster {
                 }
             }
             for ri in &data.items_required {
-                ctx.world_mut().destroy_item_by_item_id(player, ri.id, ri.count, true);
+                ctx.world_mut()
+                    .destroy_item_by_item_id(player, ri.id, ri.count, true);
             }
         }
         // Give possible rewards.
@@ -504,7 +510,12 @@ impl ClassMaster {
     }
 
     /// The `setclass <classId> [option]` event.
-    fn set_class(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, args: &mut std::str::SplitWhitespace<'_>) -> Option<String> {
+    fn set_class(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        args: &mut std::str::SplitWhitespace<'_>,
+    ) -> Option<String> {
         if !self.any_option_applies(ctx, player) {
             return None;
         }
@@ -655,7 +666,8 @@ impl Script for ClassMaster {
                 });
             }
             "learnskills" => {
-                ctx.world_mut().give_available_skills_now(player, true, true, true);
+                ctx.world_mut()
+                    .give_available_skills_now(player, true, true, true);
             }
             "clanlevelup" => {
                 let clan = ctx.world().clan_of(player).map(|c| (c.id, c.level));
@@ -724,7 +736,10 @@ mod tests {
                     applied_categories: vec![CategoryType::SecondClassGroup],
                     reward_noblesse: false,
                     reward_hero: false,
-                    items_required: vec![ItemHolder { id: 57, count: 1_000_000 }],
+                    items_required: vec![ItemHolder {
+                        id: 57,
+                        count: 1_000_000,
+                    }],
                     items_rewarded: vec![],
                 },
             ],
@@ -748,7 +763,11 @@ mod tests {
         )];
         pages.push((
             format!("{DIR}/test_server_helper026a.html"),
-            format!("<html><body>helper026a {}{}</body></html>", link("setclass 1"), link("setclass 2")),
+            format!(
+                "<html><body>helper026a {}{}</body></html>",
+                link("setclass 1"),
+                link("setclass 2")
+            ),
         ));
         pages.push((
             format!("{DIR}/test_server_helper012a.html"),
@@ -758,8 +777,17 @@ mod tests {
             format!("{DIR}/cc_options.html"),
             "<html><body>cc_options %name% <table>%options%</table></body></html>".to_owned(),
         ));
-        for page in ["test_server_helper021.html", "test_server_helper024.html", "test_server_helper025.html", "test_server_helper025a.html", "test_server_helper001a.html"] {
-            pages.push((format!("{DIR}/{page}"), format!("<html><body>{page}</body></html>")));
+        for page in [
+            "test_server_helper021.html",
+            "test_server_helper024.html",
+            "test_server_helper025.html",
+            "test_server_helper025a.html",
+            "test_server_helper001a.html",
+        ] {
+            pages.push((
+                format!("{DIR}/{page}"),
+                format!("<html><body>{page}</body></html>"),
+            ));
         }
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);
@@ -790,7 +818,12 @@ mod tests {
         // The free option has no price and no reward: no options page.
         t.bypass(1, "Script ClassMaster setclass 1");
         let out = t.take();
-        assert!(pages_to(&out, 1).pop().unwrap().contains("test_server_helper021.html"));
+        assert!(
+            pages_to(&out, 1)
+                .pop()
+                .unwrap()
+                .contains("test_server_helper021.html")
+        );
         assert!(names_to(&out, 1).contains(&"PLAY_SOUND".to_owned()));
         let p = t.world.player(Oid(1)).unwrap();
         assert_eq!((p.data.class_id, p.data.base_class), (1, 1));

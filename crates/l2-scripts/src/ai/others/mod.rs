@@ -5,6 +5,7 @@
 
 pub mod asamah;
 pub mod class_master;
+pub mod subclass_certification;
 
 use l2_world::ScriptRegistry;
 
@@ -12,4 +13,5 @@ use l2_world::ScriptRegistry;
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(asamah::Asamah);
     r.add(class_master::ClassMaster::default());
+    r.add(subclass_certification::SubclassCertification);
 }

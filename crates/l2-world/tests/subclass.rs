@@ -819,17 +819,29 @@ fn a_commoner_adds_a_subclass_with_the_two_quests_completed() {
             .iter()
             .any(|c| matches!(c, PersistCommand::Subclass(SubclassWrite::Add { .. })))
     };
-    let both = vec![("Q00234_FatesWhisper", "Completed"), ("Q00235_MimirsElixir", "Completed")];
+    let both = vec![
+        ("Q00234_FatesWhisper", "Completed"),
+        ("Q00235_MimirsElixir", "Completed"),
+    ];
     let mut s = Scene::new(with(both), SubclassSettings::default());
     assert!(added(&mut s));
     // Fate's Whisper only, or Mimir's Elixir still started.
-    let mut s = Scene::new(with(vec![("Q00234_FatesWhisper", "Completed")]), SubclassSettings::default());
+    let mut s = Scene::new(
+        with(vec![("Q00234_FatesWhisper", "Completed")]),
+        SubclassSettings::default(),
+    );
     assert!(!added(&mut s));
-    let started = vec![("Q00234_FatesWhisper", "Completed"), ("Q00235_MimirsElixir", "Started")];
+    let started = vec![
+        ("Q00234_FatesWhisper", "Completed"),
+        ("Q00235_MimirsElixir", "Started"),
+    ];
     let mut s = Scene::new(with(started), SubclassSettings::default());
     assert!(!added(&mut s));
     // Seeds of Chaos counts at a Kamael master only.
-    let seeds = vec![("Q00234_FatesWhisper", "Completed"), ("Q00236_SeedsOfChaos", "Completed")];
+    let seeds = vec![
+        ("Q00234_FatesWhisper", "Completed"),
+        ("Q00236_SeedsOfChaos", "Completed"),
+    ];
     let mut s = Scene::new(with(seeds), SubclassSettings::default());
     assert!(!added(&mut s));
 }
@@ -844,12 +856,18 @@ fn a_class_switch_ends_repent_your_sins() {
     let mut s = Scene::new(me, SubclassSettings::default());
     s.subclass("4 16");
     let out = s.answer(1, ClassIndexLoad::default());
-    assert!(persisted(&out).contains(&PersistCommand::Quest(QuestWrite::DeleteQuest {
-        char_id: ME.0,
-        name: "Q00422_RepentYourSins".to_owned(),
-        repeatable: true,
-    })));
-    assert!(s.world.player_quests(ME).is_none_or(|q| !q.contains("Q00422_RepentYourSins")));
+    assert!(
+        persisted(&out).contains(&PersistCommand::Quest(QuestWrite::DeleteQuest {
+            char_id: ME.0,
+            name: "Q00422_RepentYourSins".to_owned(),
+            repeatable: true,
+        }))
+    );
+    assert!(
+        s.world
+            .player_quests(ME)
+            .is_none_or(|q| !q.contains("Q00422_RepentYourSins"))
+    );
 }
 
 /// `MaxSubclass` subclasses are the limit: the add page is the fail page.

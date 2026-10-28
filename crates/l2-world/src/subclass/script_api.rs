@@ -135,14 +135,31 @@ impl World {
             .unwrap_or_default()
     }
 
+    /// Java `player.getInventory().addItem(process, itemId, count, actor, reference)`: the items
+    /// are created without the "You have obtained" message (the client gets the
+    /// `InventoryUpdate`, see `inventory/add.rs`). Returns the object id of the item.
+    pub fn inventory_add_item_id(&mut self, id: ObjectId, item_id: i32, count: i64) -> Option<ObjectId> {
+        self.inventory_add_item_by_id(id, item_id, count)
+            .map(|added| added.item.object_id)
+    }
+
     /// Java `ItemData.getInstance().getTemplate(id).getName()`, `None` for an unknown item.
     pub fn item_template_name(&self, item_id: i32) -> Option<String> {
         self.data.item_name(item_id)
     }
 
+    /// Java `SystemMessage.addItemName(item)`: the item's id, or its name when the client shows
+    /// another id.
+    pub fn item_message_param(&self, item_id: i32) -> l2_protocol_game::server::SystemMessageParam {
+        crate::inventory::item_name_param(self.item_templates().as_deref(), item_id)
+    }
+
     /// Java `player.sendPacket(new TutorialShowQuestionMark(markId))`.
     pub fn send_tutorial_question_mark(&mut self, id: ObjectId, mark_id: i32) {
-        self.send(id, &l2_protocol_game::server::TutorialShowQuestionMark { mark_id });
+        self.send(
+            id,
+            &l2_protocol_game::server::TutorialShowQuestionMark { mark_id },
+        );
     }
 
     /// Java `player.getVariables().getString(name, null)`.
