@@ -11,9 +11,7 @@
 // bypass (`process_script_event`) and the first click (`npc_first_talk_on_click`).
 
 use l2_data::Zones;
-use l2_protocol_game::server::{
-    ActionFailed, ChatType, ExStartScenePlayer, NpcSay, SystemMessage, SystemMessageParam,
-};
+use l2_protocol_game::server::{ActionFailed, ChatType, NpcSay, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
 use tracing::warn;
@@ -553,20 +551,9 @@ impl World {
         }
     }
 
-    /// `Quest.playMovie(players, movie)` as far as `Player.playMovie` goes: the players stop and
-    /// the client is told to play the scene. (The movie holder that waits for `EndScenePlayer`
-    /// is not modelled.)
+    /// `Quest.playMovie(players, movie)` (the movie holder: `script/movie.rs`).
     fn play_movie(&mut self, players: &[ObjectId], movie_id: i32) {
-        for player in players {
-            if !self.players.contains_key(player) {
-                continue;
-            }
-            self.abort_attack(*player);
-            self.stop_move(*player, None);
-            if !self.is_teleporting(*player) {
-                self.send(*player, &ExStartScenePlayer { movie_id });
-            }
-        }
+        self.script_play_movie(players, movie_id);
     }
 
     // ------------------------------------------------------------------ the dialogs

@@ -139,7 +139,8 @@ impl World {
         if !self.kill(id) {
             return false;
         }
-        // ON_CREATURE_DEATH / ON_CREATURE_KILLED: script events (D-05).
+        // ON_CREATURE_DEATH (S-API-03); ON_CREATURE_KILLED is not fired yet.
+        self.script_on_creature_death(id, killer);
 
         // Calculate rewards for main damage dealer.
         let main_damage_dealer = if self.is_monster(id) {
@@ -184,10 +185,12 @@ impl World {
 
     /// Java `Playable.doDie(killer)` for a player.
     fn playable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
-        // ON_CREATURE_DEATH: script event (D-05).
+        // ON_CREATURE_DEATH (S-API-03): Java asks before the "already dead" check, a dead
+        // playable cannot die again here, so the order only matters for a double death.
         if !self.kill(id) {
             return false;
         }
+        self.script_on_creature_death(id, killer);
 
         // Set target to null and cancel Attack or Cast.
         self.set_creature_target(id, None);

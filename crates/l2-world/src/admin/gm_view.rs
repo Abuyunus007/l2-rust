@@ -5,9 +5,6 @@
 //       GmViewQuestInfo,GMViewItemList,GMViewWarehouseWithdrawList}.java
 //
 // # Left out
-// - `GmViewQuestInfo` lists the active quests; quests are the script milestone (D-05) and the
-//   world has no quest state, so the window is the empty list Java sends for a player without
-//   quests.
 // - The clan warehouse is shown as the world holds it. D-50 asks for a fresh read before items
 //   leave a clan warehouse; this window only shows them, and the fresh read needs a player of
 //   the clan, which a GM is not.
@@ -69,11 +66,13 @@ impl World {
                     .get(&player)
                     .map(|p| p.data.name.clone())
                     .unwrap_or_default();
+                // `player.getAllActiveQuests()` and `qs.getCond()` (S-API-03).
+                let quests = self.gm_view_quests(player);
                 self.send(
                     id,
                     &GmViewQuestInfo {
                         player_name: name,
-                        quests: Vec::new(),
+                        quests,
                     },
                 );
             }

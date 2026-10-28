@@ -71,6 +71,16 @@ pub enum EventKind {
     CreatureZoneExit,
     /// `ON_PLAYER_LOGIN` (`setOnEnterWorld(true)`), global.
     PlayerLogin,
+    /// `ON_PLAYER_BYPASS` of `ListenerRegisterType.GLOBAL_PLAYERS` (S-API-03), global.
+    PlayerBypass,
+    /// `ON_PLAYER_PRESS_TUTORIAL_MARK` of `GLOBAL_PLAYERS` (S-API-03), global.
+    PlayerPressTutorialMark,
+    /// `ON_PLAYER_LOGOUT` of `GLOBAL_PLAYERS` (S-API-03), global.
+    PlayerLogout,
+    /// `ON_DAY_NIGHT_CHANGE` (S-API-03), global.
+    DayNightChange,
+    /// `ON_CREATURE_DEATH` of `ListenerRegisterType.NPC` (`@Id`, S-API-03), by NPC id.
+    CreatureDeath,
 }
 
 impl EventKind {
@@ -79,8 +89,46 @@ impl EventKind {
         match self {
             Self::ItemTalk | Self::ItemBypassEvent => RegisterType::Item,
             Self::CreatureZoneEnter | Self::CreatureZoneExit => RegisterType::Zone,
-            Self::PlayerLogin => RegisterType::Global,
+            Self::PlayerLogin
+            | Self::PlayerBypass
+            | Self::PlayerPressTutorialMark
+            | Self::PlayerLogout
+            | Self::DayNightChange => RegisterType::Global,
             _ => RegisterType::Npc,
+        }
+    }
+
+    /// Java `EventType` of the listener the kind registers, with its position in the enum
+    /// (its line in `EventType.java`, which keeps the order): `//quest_info` prints it.
+    pub(crate) fn java_event_type(self) -> (u32, &'static str) {
+        match self {
+            Self::AttackableAggroRangeEnter => (121, "ON_ATTACKABLE_AGGRO_RANGE_ENTER"),
+            Self::AttackableAttack => (122, "ON_ATTACKABLE_ATTACK"),
+            Self::AttackableFactionCall => (123, "ON_ATTACKABLE_FACTION_CALL"),
+            Self::AttackableKill => (124, "ON_ATTACKABLE_KILL"),
+            Self::CreatureDeath => (141, "ON_CREATURE_DEATH"),
+            Self::CreatureSee => (143, "ON_CREATURE_SEE"),
+            Self::CreatureZoneEnter => (146, "ON_CREATURE_ZONE_ENTER"),
+            Self::CreatureZoneExit => (147, "ON_CREATURE_ZONE_EXIT"),
+            Self::ItemBypassEvent => (154, "ON_ITEM_BYPASS_EVENT"),
+            Self::ItemTalk => (156, "ON_ITEM_TALK"),
+            Self::NpcEventReceived => (160, "ON_NPC_EVENT_RECEIVED"),
+            Self::NpcFirstTalk => (161, "ON_NPC_FIRST_TALK"),
+            Self::NpcHate | Self::NpcHateCanSeeMe => (162, "ON_NPC_HATE"),
+            Self::NpcMoveFinished => (163, "ON_NPC_MOVE_FINISHED"),
+            Self::NpcMoveNodeArrived => (164, "ON_NPC_MOVE_NODE_ARRIVED"),
+            Self::NpcMoveRouteFinished => (165, "ON_NPC_MOVE_ROUTE_FINISHED"),
+            Self::NpcQuestStart => (166, "ON_NPC_QUEST_START"),
+            Self::NpcSkillFinished => (167, "ON_NPC_SKILL_FINISHED"),
+            Self::NpcSkillSee => (168, "ON_NPC_SKILL_SEE"),
+            Self::NpcSpawn => (169, "ON_NPC_SPAWN"),
+            Self::NpcTalk => (170, "ON_NPC_TALK"),
+            Self::NpcTeleport => (171, "ON_NPC_TELEPORT"),
+            Self::PlayerBypass => (182, "ON_PLAYER_BYPASS"),
+            Self::PlayerLogin => (218, "ON_PLAYER_LOGIN"),
+            Self::PlayerLogout => (219, "ON_PLAYER_LOGOUT"),
+            Self::PlayerPressTutorialMark => (221, "ON_PLAYER_PRESS_TUTORIAL_MARK"),
+            Self::DayNightChange => (240, "ON_DAY_NIGHT_CHANGE"),
         }
     }
 
@@ -244,6 +292,32 @@ impl ScriptSetup {
         self.add(EventKind::PlayerLogin, &[]);
     }
 
+    /// `@RegisterEvent(ON_PLAYER_BYPASS)` + `@RegisterType(GLOBAL_PLAYERS)`: `on_player_bypass`
+    /// for the bypass of every player.
+    pub fn set_on_player_bypass(&mut self) {
+        self.add(EventKind::PlayerBypass, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_PRESS_TUTORIAL_MARK)` + `GLOBAL_PLAYERS`.
+    pub fn set_on_player_press_tutorial_mark(&mut self) {
+        self.add(EventKind::PlayerPressTutorialMark, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_LOGOUT)` + `GLOBAL_PLAYERS`.
+    pub fn set_on_player_logout(&mut self) {
+        self.add(EventKind::PlayerLogout, &[]);
+    }
+
+    /// `@RegisterEvent(ON_DAY_NIGHT_CHANGE)` (a global listener).
+    pub fn set_on_day_night_change(&mut self) {
+        self.add(EventKind::DayNightChange, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_DEATH)` + `@RegisterType(NPC)` + `@Id(..)`.
+    pub fn add_creature_death_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::CreatureDeath, npc_ids);
+    }
+
     /// Java `registerQuestItems(items)`: the items `exitQuest` takes away. A second call
     /// replaces the first, like Java's assignment.
     pub fn register_quest_items(&mut self, item_ids: &[i32]) {
@@ -328,6 +402,32 @@ impl Listeners {
     /// Java `hasListener(type)` for an id.
     pub(crate) fn has(&self, kind: EventKind, id: i32) -> bool {
         !self.of(kind, id).is_empty()
+    }
+
+    /// Every kind the script registered (the ids and the global ones), without repeats.
+    pub(crate) fn registered_kinds(&self, script: ScriptId) -> Vec<EventKind> {
+        let mut kinds: Vec<EventKind> = Vec::new();
+        let mut add = |kind: EventKind| {
+            if !kinds.contains(&kind) {
+                kinds.push(kind);
+            }
+        };
+        if let Some(ids) = self.registered.get(&script) {
+            for (kind, _) in ids {
+                add(*kind);
+            }
+        }
+        for (kind, scripts) in &self.global {
+            if scripts.contains(&script) {
+                add(*kind);
+            }
+        }
+        kinds
+    }
+
+    /// Every `(kind, id)` the script registered for ids.
+    pub(crate) fn registered_all(&self, script: ScriptId) -> Vec<(EventKind, i32)> {
+        self.registered.get(&script).cloned().unwrap_or_default()
     }
 
     /// Java `getRegisteredIds(type)` of one script.

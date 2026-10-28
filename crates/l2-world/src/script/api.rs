@@ -17,6 +17,7 @@ use l2_util::ObjectId;
 use super::ctx::ScriptCtx;
 use super::qs::Qs;
 use super::setup::ScriptSetup;
+use super::timer_executor::TimerParams;
 use crate::effects::SkillKey;
 
 /// An NPC as a script sees it: Java `npc.getObjectId()` and `npc.getId()` (the template id).
@@ -171,6 +172,54 @@ pub trait Script: Send + Sync + 'static {
 
     /// Java `onCreatureSee(npc, creature)` (`addCreatureSeeId`).
     fn on_creature_see(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, creature: ObjectId) {}
+
+    /// Java `onTimerEvent(event, params, npc, player)`: a timer of [`ScriptCtx::add_timer`]
+    /// (`getTimers()`) fired. The default logs the unhandled event like Java.
+    fn on_timer_event(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        event: &str,
+        params: Option<&TimerParams>,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+        tracing::warn!(
+            "[{}]: Timer event arrived at non overriden onTimerEvent method event: {event} npc: {npc:?} player: {player:?}",
+            ctx.script_name()
+        );
+    }
+
+    /// Java `onTimerCancel(event, params, npc, player)`: a timer of `getTimers()` was cancelled.
+    fn on_timer_cancel(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        event: &str,
+        params: Option<&TimerParams>,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+    }
+
+    /// `ON_PLAYER_BYPASS` (`set_on_player_bypass`): the player sent a bypass or a tutorial
+    /// command (Java `OnPlayerBypass`, queued).
+    fn on_player_bypass(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, command: &str) {}
+
+    /// `ON_PLAYER_PRESS_TUTORIAL_MARK` (`set_on_player_press_tutorial_mark`): the player clicked
+    /// a tutorial question mark (Java `OnPlayerPressTutorialMark`, queued).
+    fn on_player_press_tutorial_mark(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, mark_id: i32) {}
+
+    /// `ON_PLAYER_LOGOUT` (`set_on_player_logout`): the player is leaving the world (Java
+    /// `OnPlayerLogout`, queued: it runs after the player left, so only ids can be used).
+    fn on_player_logout(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId) {}
+
+    /// `ON_DAY_NIGHT_CHANGE` (`set_on_day_night_change`): the game clock crossed dawn or dusk
+    /// (Java `OnDayNightChange`, queued).
+    fn on_day_night_change(&self, ctx: &mut ScriptCtx<'_>, is_night: bool) {}
+
+    /// `ON_CREATURE_DEATH` (`add_creature_death_id`): a registered NPC died (Java
+    /// `OnCreatureDeath`, synchronous: the creature is dead, the rest of the death did not
+    /// happen yet). `killer` is `None` for a death without a killer.
+    fn on_creature_death(&self, ctx: &mut ScriptCtx<'_>, killer: Option<ObjectId>, victim: ObjectId) {}
 
     /// Java `onEnterWorld(player)` (`setOnEnterWorld(true)`).
     fn on_enter_world(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId) {}
