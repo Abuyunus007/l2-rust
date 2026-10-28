@@ -811,7 +811,7 @@ impl World {
     }
 
     /// Java `MinionList.spawnMinion` / `initializeNpc`: a `Monster` near its master.
-    fn spawn_minion(
+    pub(crate) fn spawn_minion(
         &mut self,
         master: ObjectId,
         master_template: &NpcTemplate,

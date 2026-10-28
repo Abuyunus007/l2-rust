@@ -72,6 +72,16 @@ impl World {
         }
     }
 
+    /// Java `Quest.addMinion(master, minionId)` (`MinionList.spawnMinion`): a monster of that id
+    /// next to its master, with the master as its leader. `None` for an unknown template.
+    pub fn script_add_minion(&mut self, master: ObjectId, minion_id: i32) -> Option<ObjectId> {
+        let templates = self.npc_world.templates_arc()?;
+        let master_npc_id = self.npcs.get(&master)?.npc_id;
+        let master_template = templates.get(master_npc_id)?;
+        let template = templates.get(minion_id)?;
+        self.spawn_minion(master, master_template, template)
+    }
+
     /// Java `Player.isInventoryUnder90(includeQuestInv)`.
     pub fn script_is_inventory_under_90(&self, player: ObjectId, include_quest: bool) -> bool {
         self.is_inventory_under_90(player, include_quest)
