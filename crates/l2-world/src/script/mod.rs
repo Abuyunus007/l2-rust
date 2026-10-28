@@ -37,6 +37,7 @@ pub mod events;
 mod events_tests;
 pub mod globals;
 mod gracia_api;
+pub mod hellbound_api;
 mod instance_api;
 pub mod link;
 mod movie;
@@ -147,6 +148,14 @@ pub struct ScriptSettings {
     /// `PlayerConfig.DISABLE_TUTORIAL` (`DisableTutorial` of `Player.ini`): `Q00255_Tutorial`
     /// does nothing.
     pub disable_tutorial: bool,
+    /// `RatesConfig.RATE_HB_TRUST_INCREASE` (`RateHellboundTrustIncrease`; Hellbound engine).
+    pub rate_hb_trust_increase: f32,
+    /// `RatesConfig.RATE_HB_TRUST_DECREASE` (`RateHellboundTrustDecrease`).
+    pub rate_hb_trust_decrease: f32,
+    /// `RatesConfig.RATE_DEATH_DROP_AMOUNT_MULTIPLIER` (`DeathDropAmountMultiplier`).
+    pub rate_death_drop_amount_multiplier: f32,
+    /// `GeneralConfig.HELLBOUND_WITHOUT_QUEST` (`HellboundWithoutQuest`).
+    pub hellbound_without_quest: bool,
 }
 
 impl Default for ScriptSettings {
@@ -169,6 +178,10 @@ impl Default for ScriptSettings {
             knightsepaulette_points: 20,
             ballista_points: 30,
             disable_tutorial: false,
+            rate_hb_trust_increase: 1.0,
+            rate_hb_trust_decrease: 1.0,
+            rate_death_drop_amount_multiplier: 1.0,
+            hellbound_without_quest: false,
         }
     }
 }
