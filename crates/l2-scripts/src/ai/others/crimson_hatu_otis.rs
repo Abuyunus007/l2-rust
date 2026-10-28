@@ -123,7 +123,7 @@ mod tests {
     fn the_first_hit_starts_the_slash_timer_which_repeats_every_minute() {
         let (mut t, boss) = setup();
         hit(&mut t, boss);
-        assert_eq!(t.world.script_npc_var("CrimsonHatuOtis", boss, "@scriptValue"), 1);
+        assert_eq!(i64::from(t.world.npc_script_value(boss)), 1);
         assert_eq!(t.world.quest_timer_count(), 1);
         t.ticks(110); // 5 s: the slash, and the next one in 60 s.
         assert_eq!(t.world.quest_timer_count(), 1);
@@ -136,11 +136,11 @@ mod tests {
         let (mut t, boss) = setup();
         hit(&mut t, boss);
         hit(&mut t, boss);
-        assert_eq!(t.world.script_npc_var("CrimsonHatuOtis", boss, "@scriptValue"), 1);
+        assert_eq!(i64::from(t.world.npc_script_value(boss)), 1);
         t.world.npc_mut(boss).unwrap().core.cur_hp = 290.0;
         t.take();
         hit(&mut t, boss);
-        assert_eq!(t.world.script_npc_var("CrimsonHatuOtis", boss, "@scriptValue"), 2);
+        assert_eq!(i64::from(t.world.npc_script_value(boss)), 2);
         assert!(names_to(&t.take(), 1).contains(&"NPC_SAY".to_owned()));
         // Not again.
         hit(&mut t, boss);
@@ -155,6 +155,6 @@ mod tests {
         t.world.script_on_attackable_kill(boss, Some(ObjectId(1)));
         t.ticks(60); // onKillDelay 2.5 s
         assert_eq!(t.world.quest_timer_count(), 0);
-        assert_eq!(t.world.script_npc_var("CrimsonHatuOtis", boss, "@scriptValue"), 1);
+        assert_eq!(i64::from(t.world.npc_script_value(boss)), 1);
     }
 }
