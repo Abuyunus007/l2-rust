@@ -116,6 +116,10 @@ pub(crate) struct NpcExtra {
     /// `!_lethalable` (Java's default is lethalable, so the default here is false).
     not_lethalable: bool,
     overhit: Overhit,
+    /// `Attackable.setSeeThroughSilentMove(true)`.
+    see_through_silent_move: bool,
+    /// `!_isMortal` (the default is mortal).
+    immortal: bool,
 }
 
 /// The extras of every NPC that has some.
@@ -167,6 +171,73 @@ impl World {
     /// Java `Npc.isScriptValue(value)`.
     pub fn is_npc_script_value(&self, npc: ObjectId, value: i32) -> bool {
         self.npc_script_value(npc) == value
+    }
+
+    /// Java `Monster.getLeader()`: the master of a minion.
+    pub fn npc_leader(&self, npc: ObjectId) -> Option<ObjectId> {
+        self.leader_of(npc)
+    }
+
+    /// Java `npc.getTemplate().getParameters().getMinionList(name)`: the ids of the minions.
+    pub fn npc_template_minion_ids(&self, npc: ObjectId, name: &str) -> Vec<i32> {
+        self.npc_template(npc)
+            .map_or_else(Vec::new, |t| t.minion_list(name).iter().map(|m| m.id).collect())
+    }
+
+    /// Java `Npc.getAIValue(name)` for `hasAIValue(name)`: the `AIData` value of the NPC's
+    /// spawn; `None` when the spawn has none.
+    pub fn npc_ai_value(&self, npc: ObjectId, name: &str) -> Option<i32> {
+        self.spawn_ai_value(npc, name)
+    }
+
+    /// Java `Npc.staysInSpawnLoc()`: the spawn point's x and y are the NPC's.
+    pub fn npc_stays_in_spawn_loc(&self, npc: ObjectId) -> bool {
+        let Some(n) = self.npcs.get(&npc) else {
+            return false;
+        };
+        n.spawn.is_some()
+            && self
+                .position_of(npc)
+                .is_some_and(|(x, y, _)| n.spawn_point.0 == x && n.spawn_point.1 == y)
+    }
+
+    /// Java `Npc.broadcastEvent(eventName, radius, reference)`: `ON_NPC_EVENT_RECEIVED` to every
+    /// NPC with the listener within `radius` of the sender.
+    pub fn broadcast_event(&mut self, sender: ObjectId, event: &str, radius: i32, reference: Option<ObjectId>) {
+        for obj in self.visible_objects_in_range(sender, radius) {
+            if self.npcs.contains_key(&obj) {
+                self.script_send_event(event, sender, obj, reference);
+            }
+        }
+    }
+
+    /// Java `Npc.addAttackerToAttackByList(attacker)`.
+    pub fn add_attacker_to_attack_by(&mut self, npc: ObjectId, attacker: ObjectId) {
+        self.add_attacker_to_attack_by_list(npc, attacker);
+    }
+
+    /// Java `Creature.setMortal(value)`.
+    pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).immortal = !value;
+    }
+
+    /// Java `Creature.isMortal()`.
+    pub fn is_mortal(&self, id: ObjectId) -> bool {
+        !self.scripts.npc_extras.by_npc.get(&id).is_some_and(|e| e.immortal)
+    }
+
+    /// Java `Attackable.setSeeThroughSilentMove(value)`.
+    pub fn set_see_through_silent_move(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).see_through_silent_move = value;
+    }
+
+    /// Java `Attackable.canSeeThroughSilentMove()`.
+    pub fn can_see_through_silent_move(&self, id: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.see_through_silent_move)
     }
 
     /// Java `Creature.setLethalable(value)`.

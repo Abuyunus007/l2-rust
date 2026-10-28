@@ -34,6 +34,20 @@ pub mod monument_of_heroes;
 pub mod muscle_bomber;
 pub mod subclass_certification;
 pub mod symbol_maker;
+pub mod warrior_fishing_block;
+pub mod turek_orcs;
+pub mod timak_orc_troop_leader;
+pub mod sin_wardens;
+pub mod shadow_summoner;
+pub mod remnants;
+pub mod random_spawn;
+pub mod prison_guards;
+pub mod wasted_corpse;
+pub mod see_through_silent_move;
+pub mod sandstorms;
+pub mod polymorphing_on_attack;
+pub mod polymorphing_angel;
+pub mod non_lethalable_npcs;
 
 use l2_world::ScriptRegistry;
 
@@ -72,4 +86,18 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
+    r.add(warrior_fishing_block::WarriorFishingBlock);
+    r.add(turek_orcs::TurekOrcs);
+    r.add(timak_orc_troop_leader::TimakOrcTroopLeader);
+    r.add(sin_wardens::SinWardens);
+    r.add(shadow_summoner::ShadowSummoner);
+    r.add(remnants::Remnants);
+    r.add(random_spawn::RandomSpawn);
+    r.add(prison_guards::PrisonGuards);
+    r.add(wasted_corpse::WastedCorpse);
+    r.add(see_through_silent_move::SeeThroughSilentMove);
+    r.add(sandstorms::Sandstorms);
+    r.add(polymorphing_on_attack::PolymorphingOnAttack);
+    r.add(polymorphing_angel::PolymorphingAngel);
+    r.add(non_lethalable_npcs::NonLethalableNpcs);
 }
