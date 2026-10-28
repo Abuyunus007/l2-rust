@@ -89,7 +89,7 @@ impl World {
     }
 
     /// The `AIData` value of the NPC's spawn for `key` (Java `Npc.getAIValue`), if it has one.
-    fn spawn_ai_value(&self, id: ObjectId, key: &str) -> Option<i32> {
+    pub(crate) fn spawn_ai_value(&self, id: ObjectId, key: &str) -> Option<i32> {
         let index = self.npcs.get(&id)?.spawn?;
         let spawn = self.npc_world.spawn_data()?.spawns().get(index)?;
         spawn.ai_data.as_ref()?.get(key).copied()

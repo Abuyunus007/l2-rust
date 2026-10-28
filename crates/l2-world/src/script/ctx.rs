@@ -713,6 +713,23 @@ impl<'w> ScriptCtx<'w> {
             .start_quest_timer(self.script, name, time_ms, npc, player, repeating);
     }
 
+    /// Java `ScriptManager.getScript(name).startQuestTimer(...)`: the timer of another script (its
+    /// `on_event` runs). Nothing when the script is not installed.
+    pub fn start_quest_timer_of(
+        &mut self,
+        script_name: &str,
+        name: &str,
+        time_ms: i64,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+        repeating: bool,
+    ) {
+        if let Some(script) = self.world.scripts.by_name(script_name) {
+            self.world
+                .start_quest_timer(script, name, time_ms, npc, player, repeating);
+        }
+    }
+
     /// Java `getQuestTimer(name, npc, player) != null`.
     pub fn has_quest_timer(&self, name: &str, npc: Option<ScriptNpc>, player: Option<ObjectId>) -> bool {
         self.world
