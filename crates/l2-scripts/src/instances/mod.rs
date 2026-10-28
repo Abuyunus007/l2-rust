@@ -4,7 +4,7 @@
 //! order (Java's load order is the folder listing).
 
 //pub mod kamaloka;
-//pub mod pailaka_devils_legacy;
+pub mod pailaka_devils_legacy;
 //pub mod pailaka_injured_dragon;
 pub mod pailaka_song_of_ice_and_fire;
 //pub mod rim_kamaloka;
@@ -44,7 +44,7 @@ impl ScriptValues {
 /// Registers every instance script, folder by folder in Java's order.
 pub(crate) fn register(r: &mut ScriptRegistry) {
     //r.add(kamaloka::Kamaloka);
-    //r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
+    r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
     //r.add(pailaka_injured_dragon::PailakaInjuredDragon);
     r.add(pailaka_song_of_ice_and_fire::PailakaSongOfIceAndFire);
     //r.add(rim_kamaloka::RimKamaloka);

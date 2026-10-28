@@ -465,7 +465,7 @@ impl World {
     }
 
     /// Java `Instance.removeNpcs()`.
-    fn remove_instance_npcs(&mut self, id: i32) {
+    pub fn remove_instance_npcs(&mut self, id: i32) {
         let npcs: Vec<(ObjectId, Option<usize>)> = self
             .instances
             .instances
