@@ -117,9 +117,18 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Selina);
         let pages = [
-            (format!("{DIR}/31556-01.html"), "<html><body>recruit</body></html>"),
-            (format!("{DIR}/31556-02.html"), "<html><body>no coins</body></html>"),
-            (format!("{DIR}/31556-08.html"), "<html><body>soldier</body></html>"),
+            (
+                format!("{DIR}/31556-01.html"),
+                "<html><body>recruit</body></html>",
+            ),
+            (
+                format!("{DIR}/31556-02.html"),
+                "<html><body>no coins</body></html>",
+            ),
+            (
+                format!("{DIR}/31556-08.html"),
+                "<html><body>soldier</body></html>",
+            ),
             (format!("{DIR}/31556-09.html"), "<html><body>nobody</body></html>"),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), *b)).collect();
@@ -133,7 +142,14 @@ mod tests {
         let (mut t, selina) = setup();
         t.enter(1, 60, vec![]);
         t.enter(2, 60, vec![item(5000, GOLDEN_RAM_BADGE_RECRUIT, 1)]);
-        t.enter(3, 60, vec![item(5001, GOLDEN_RAM_BADGE_RECRUIT, 1), item(5002, GOLDEN_RAM_BADGE_SOLDIER, 1)]);
+        t.enter(
+            3,
+            60,
+            vec![
+                item(5001, GOLDEN_RAM_BADGE_RECRUIT, 1),
+                item(5002, GOLDEN_RAM_BADGE_SOLDIER, 1),
+            ],
+        );
         t.take();
         for (p, text) in [(1, "nobody"), (2, "recruit"), (3, "soldier")] {
             t.talk(p, selina);
@@ -155,7 +171,11 @@ mod tests {
         });
         assert_eq!(
             answers,
-            [Some("31556-02.html".to_owned()), Some("31556-02.html".to_owned()), Some("31556-02.html".to_owned())]
+            [
+                Some("31556-02.html".to_owned()),
+                Some("31556-02.html".to_owned()),
+                Some("31556-02.html".to_owned())
+            ]
         );
         assert_eq!(t.count(1, GOLDEN_RAM_COIN), 1);
     }

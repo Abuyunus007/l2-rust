@@ -13,18 +13,18 @@ const RACE_TRACK_TELEPORT: (i32, i32, i32) = (12661, 181687, -3540);
 /// Java `TELEPORTER_LOCATIONS.get(id)`.
 fn teleporter_location(npc_id: i32) -> Option<(i32, i32, i32)> {
     match npc_id {
-        30320 => Some((-80826, 149775, -3043)),  // Richlin
-        30256 => Some((-12672, 122776, -3116)),  // Bella
-        30059 => Some((15670, 142983, -2705)),   // Trisha
-        30080 => Some((83400, 147943, -3404)),   // Clarissa
-        30899 => Some((111409, 219364, -3545)),  // Flauen
-        30177 => Some((82956, 53162, -1495)),    // Valentina
-        30848 => Some((146331, 25762, -2018)),   // Elisa
-        30233 => Some((116819, 76994, -2714)),   // Esmeralda
-        31320 => Some((43835, -47749, -792)),    // Ilyana
-        31275 => Some((147930, -55281, -2728)),  // Tatiana
-        31964 => Some((87386, -143246, -1293)),  // Bilia
-        31210 => Some((12882, 181053, -3560)),   // Race Track Gatekeeper
+        30320 => Some((-80826, 149775, -3043)), // Richlin
+        30256 => Some((-12672, 122776, -3116)), // Bella
+        30059 => Some((15670, 142983, -2705)),  // Trisha
+        30080 => Some((83400, 147943, -3404)),  // Clarissa
+        30899 => Some((111409, 219364, -3545)), // Flauen
+        30177 => Some((82956, 53162, -1495)),   // Valentina
+        30848 => Some((146331, 25762, -2018)),  // Elisa
+        30233 => Some((116819, 76994, -2714)),  // Esmeralda
+        31320 => Some((43835, -47749, -792)),   // Ilyana
+        31275 => Some((147930, -55281, -2728)), // Tatiana
+        31964 => Some((87386, -143246, -1293)), // Bilia
+        31210 => Some((12882, 181053, -3560)),  // Race Track Gatekeeper
         _ => None,
     }
 }
@@ -119,7 +119,14 @@ mod tests {
     }
 
     fn var(t: &ScriptTest, name: &str) -> Option<String> {
-        t.world.player(ObjectId(1)).unwrap().data.profile.variables.get(name).cloned()
+        t.world
+            .player(ObjectId(1))
+            .unwrap()
+            .data
+            .profile
+            .variables
+            .get(name)
+            .cloned()
     }
 
     fn at(t: &ScriptTest) -> (i32, i32) {

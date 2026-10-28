@@ -95,7 +95,9 @@ impl Script for RandomSpawn {
             let (x, y, z, instance) = ctx.state::<Pending>().0.remove(&npc.object_id)?;
             ctx.world_mut().tele_to_location(
                 npc.object_id,
-                TeleportTarget::at(x, y, z).with_heading(0).with_instance(instance),
+                TeleportTarget::at(x, y, z)
+                    .with_heading(0)
+                    .with_instance(instance),
             );
         }
         None
@@ -114,7 +116,9 @@ impl Script for RandomSpawn {
         });
         if !inside {
             ctx.world_mut().set_npc_spawn_point(npc.object_id, x, y, z);
-            ctx.state::<Pending>().0.insert(npc.object_id, (x, y, z, instance));
+            ctx.state::<Pending>()
+                .0
+                .insert(npc.object_id, (x, y, z, instance));
             ctx.start_quest_timer("TELEPORT", 100, Some(npc), None, false);
         }
     }

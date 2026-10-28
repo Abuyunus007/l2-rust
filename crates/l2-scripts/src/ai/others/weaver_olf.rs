@@ -79,7 +79,10 @@ impl Script for WeaverOlf {
             } else if event.ends_with("_pouch") {
                 (*UNSEAL_PRICE.get(grade)?, POUCHS.get(grade)?)
             } else if event.ends_with("_clip") {
-                (*UNSEAL_PRICE.get(grade)?, CLIPS_ORNAMENTS.get(grade.checked_sub(2)?)?)
+                (
+                    *UNSEAL_PRICE.get(grade)?,
+                    CLIPS_ORNAMENTS.get(grade.checked_sub(2)?)?,
+                )
             } else if event.ends_with("_ornament") {
                 (*UNSEAL_PRICE.get(grade)?, CLIPS_ORNAMENTS.get(grade)?)
             } else {

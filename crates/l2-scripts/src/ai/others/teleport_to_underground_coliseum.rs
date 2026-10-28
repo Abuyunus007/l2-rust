@@ -73,7 +73,10 @@ impl Script for TeleportToUndergroundColiseum {
             // Java `StringUtil.isNumeric` and `Integer.parseInt`.
             // NOTE(java-quirk): an index outside the managers throws in Java; nothing happens here.
             let val = event.parse::<i32>().ok().map(|v| v - 1);
-            if let Some(locs) = val.and_then(|v| usize::try_from(v).ok()).and_then(|v| MANAGERS_LOCS.get(v)) {
+            if let Some(locs) = val
+                .and_then(|v| usize::try_from(v).ok())
+                .and_then(|v| MANAGERS_LOCS.get(v))
+            {
                 if let Some((x, y, z)) = ctx.get_random_entry(locs) {
                     ctx.teleport_player(player, x, y, z, 0, false);
                 }

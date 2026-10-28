@@ -26,7 +26,13 @@ impl Script for Sandstorms {
         s.add_aggro_range_enter_id(&[SANDSTORM]); // Sandstorm
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         ctx.cast_skill(npc, player, GUST);
     }
 }

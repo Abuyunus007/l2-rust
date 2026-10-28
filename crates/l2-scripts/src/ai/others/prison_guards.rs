@@ -127,7 +127,13 @@ impl Script for PrisonGuards {
         }
     }
 
-    fn on_npc_hate(&self, ctx: &mut ScriptCtx<'_>, _mob: ScriptNpc, player: ObjectId, _is_summon: bool) -> bool {
+    fn on_npc_hate(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        _mob: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) -> bool {
         ctx.is_affected_by_skill(player, TIMER)
     }
 

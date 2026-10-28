@@ -58,9 +58,15 @@ impl Script for TurekOrcs {
             && ctx.world().intention_of(npc.object_id) != Intention::Attack
         {
             if ctx.npc_current_hp(npc) > f64::from(ctx.npc_max_hp(npc)) * 0.7
-                && ctx.world_mut().npc_variables_mut(npc.object_id).get_int("state", 0) == 2
+                && ctx
+                    .world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .get_int("state", 0)
+                    == 2
             {
-                ctx.world_mut().npc_variables_mut(npc.object_id).set_int("state", 3);
+                ctx.world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .set_int("state", 3);
                 ctx.world_mut().return_home(npc.object_id);
             } else {
                 ctx.world_mut().npc_variables_mut(npc.object_id).remove("state");
@@ -79,8 +85,14 @@ impl Script for TurekOrcs {
         _is_summon: bool,
         _skill: Option<SkillKey>,
     ) {
-        if !ctx.world_mut().npc_variables_mut(npc.object_id).has_variable("isHit") {
-            ctx.world_mut().npc_variables_mut(npc.object_id).set_int("isHit", 1);
+        if !ctx
+            .world_mut()
+            .npc_variables_mut(npc.object_id)
+            .has_variable("isHit")
+        {
+            ctx.world_mut()
+                .npc_variables_mut(npc.object_id)
+                .set_int("isHit", 1);
         } else if ctx.npc_current_hp(npc) < f64::from(ctx.npc_max_hp(npc)) * 0.5
             && ctx.npc_current_hp(npc) > f64::from(ctx.npc_max_hp(npc)) * 0.3
             && ctx
@@ -88,7 +100,11 @@ impl Script for TurekOrcs {
                 .creature_hp(attacker)
                 .is_some_and(|(hp, max)| hp > max * 0.25)
             && let Some((fx, fy, fz)) = flee_point(ctx, npc)
-            && ctx.world_mut().npc_variables_mut(npc.object_id).get_int("state", 0) == 0
+            && ctx
+                .world_mut()
+                .npc_variables_mut(npc.object_id)
+                .get_int("state", 0)
+                == 0
             && ctx.get_random(100) < 10
         {
             // Say and flee
@@ -132,7 +148,10 @@ impl Script for TurekOrcs {
     }
 
     fn on_move_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        let state = ctx.world_mut().npc_variables_mut(npc.object_id).get_int("state", 0);
+        let state = ctx
+            .world_mut()
+            .npc_variables_mut(npc.object_id)
+            .get_int("state", 0);
         // NPC reaches flee point
         if state == 1 {
             let flee = flee_point(ctx, npc);
@@ -143,7 +162,9 @@ impl Script for TurekOrcs {
             if at.is_some_and(|(x, y, _)| x == fx && y == fy) {
                 ctx.disable_core_ai(npc, false);
                 ctx.start_quest_timer("checkState", 15000, Some(npc), None, false);
-                ctx.world_mut().npc_variables_mut(npc.object_id).set_int("state", 2);
+                ctx.world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .set_int("state", 2);
                 let attacker = ctx
                     .world_mut()
                     .npc_variables_mut(npc.object_id)
@@ -151,7 +172,8 @@ impl Script for TurekOrcs {
                 // `World.getPlayer(id)`: null for an unknown id.
                 let reference = ObjectId(attacker);
                 let reference = ctx.world().player(reference).map(|_| reference);
-                ctx.world_mut().broadcast_event(npc.object_id, "WARNING", 400, reference);
+                ctx.world_mut()
+                    .broadcast_event(npc.object_id, "WARNING", 400, reference);
             } else {
                 ctx.npc_move_to(npc, fx, fy, fz);
             }
@@ -198,7 +220,8 @@ mod tests {
     fn a_warning_makes_a_quiet_orc_attack_the_player() {
         let (mut t, orc) = setup();
         let sender = t.spawn(20494, 120);
-        t.world.script_send_event("WARNING", sender, orc, Some(ObjectId(1)));
+        t.world
+            .script_send_event("WARNING", sender, orc, Some(ObjectId(1)));
         t.world.script_drain();
         assert_eq!(state(&mut t, orc), 3);
         t.world.delete_npc(sender);

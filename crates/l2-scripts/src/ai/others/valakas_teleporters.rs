@@ -72,12 +72,24 @@ fn enter_lair(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> String {
                         .grand_boss_npc(VALAKAS_ID)
                         .and_then(|boss| ctx.script_npc(boss));
                     let wait = i64::from(ctx.world().boss_settings().grand_boss.valakas_wait_time) * 60000;
-                    ctx.start_quest_timer_of("Valakas", "VALAKAS_START_ENCOUNTER", wait, valakas, None, false);
+                    ctx.start_quest_timer_of(
+                        "Valakas",
+                        "VALAKAS_START_ENCOUNTER",
+                        wait,
+                        valakas,
+                        None,
+                        false,
+                    );
                     ctx.world_mut().set_grand_boss_status(VALAKAS_ID, 1);
                 }
             }
         } else {
-            htmltext = if status == 2 { "31385-02.htm" } else { "31385-04.htm" }.to_owned();
+            htmltext = if status == 2 {
+                "31385-02.htm"
+            } else {
+                "31385-04.htm"
+            }
+            .to_owned();
         }
     } else {
         htmltext = "31385-01.htm".to_owned();
@@ -141,8 +153,11 @@ impl Script for ValakasTeleporters {
                     // D-54: the row decides; read it again first.
                     ctx.state::<Entries>().waiting.retain(|(p, _)| *p != player);
                     ctx.state::<Entries>().waiting.push((player, npc));
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(VALAKAS_ID, "ValakasTeleporters", ENTER_LAIR_READ);
+                    ctx.world_mut().reread_grand_boss_for_script(
+                        VALAKAS_ID,
+                        "ValakasTeleporters",
+                        ENTER_LAIR_READ,
+                    );
                     return None;
                 }
             }
@@ -218,7 +233,13 @@ mod tests {
         let mut t = ScriptTest::new(registry, NPCS_XML, ITEMS, &[]);
         let klein = t.spawn(31540, 20);
         t.enter(1, 80, vec![item(5000, VACUALITE_FLOATING_STONE, 1)]);
-        (t, ScriptNpc { object_id: klein, id: 31540 })
+        (
+            t,
+            ScriptNpc {
+                object_id: klein,
+                id: 31540,
+            },
+        )
     }
 
     fn event(t: &mut ScriptTest, npc: ScriptNpc, name: &str) -> Option<String> {
@@ -257,7 +278,10 @@ mod tests {
         let mut pages = Vec::new();
         t.world.run_as_script("ValakasTeleporters", |ctx| {
             pages.push(ValakasTeleporters.on_talk(ctx, npc, ObjectId(1)));
-            let other = ScriptNpc { object_id: npc.object_id, id: 31385 };
+            let other = ScriptNpc {
+                object_id: npc.object_id,
+                id: 31385,
+            };
             pages.push(ValakasTeleporters.on_talk(ctx, other, ObjectId(1)));
             ctx.state::<Entries>().player_count = 120;
             pages.push(ValakasTeleporters.on_talk(ctx, npc, ObjectId(1)));
@@ -298,7 +322,9 @@ mod tests {
             ctx.state::<Entries>().waiting.push((ObjectId(1), npc));
         });
         let mut page = None;
-        t.world.run_as_script("ValakasTeleporters", |ctx| page = Some(enter_lair(ctx, ObjectId(1))));
+        t.world.run_as_script("ValakasTeleporters", |ctx| {
+            page = Some(enter_lair(ctx, ObjectId(1)))
+        });
         assert_eq!(page.as_deref(), Some("31385-01.htm"));
     }
 }

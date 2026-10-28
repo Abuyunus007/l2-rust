@@ -52,8 +52,14 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(SoulTrader);
         let pages = [
-            (format!("{DIR}/32546-01.html"), "<html><body>no mark</body></html>"),
-            (format!("{DIR}/32546-02.html"), "<html><body>with mark</body></html>"),
+            (
+                format!("{DIR}/32546-01.html"),
+                "<html><body>no mark</body></html>",
+            ),
+            (
+                format!("{DIR}/32546-02.html"),
+                "<html><body>with mark</body></html>",
+            ),
         ];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), *b)).collect();
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &pages);

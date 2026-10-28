@@ -8,30 +8,24 @@ use l2_world::script::{CREATED, QuestSound, STARTED};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 const TOWN_DAWN: [i32; 11] = [
-    31078, 31079, 31080, 31081, 31083, 31084, 31082, 31692, 31694, 31997,
-    31168,
+    31078, 31079, 31080, 31081, 31083, 31084, 31082, 31692, 31694, 31997, 31168,
 ];
 
 const TOWN_DUSK: [i32; 11] = [
-    31085, 31086, 31087, 31088, 31090, 31091, 31089, 31693, 31695, 31998,
-    31169,
+    31085, 31086, 31087, 31088, 31090, 31091, 31089, 31693, 31695, 31998, 31169,
 ];
 
 const TEMPLE_PRIEST: [i32; 10] = [
     31127, 31128, 31129, 31130, 31131, 31137, 31138, 31139, 31140, 31141,
 ];
 
-const RIFT_POSTERS: [i32; 6] = [
-    31488, 31489, 31490, 31491, 31492, 31493,
-];
+const RIFT_POSTERS: [i32; 6] = [31488, 31489, 31490, 31491, 31492, 31493];
 
 const TELEPORTERS: [i32; 64] = [
-    31078, 31079, 31080, 31081, 31082, 31083, 31084, 31692, 31694, 31997,
-    31168, 31085, 31086, 31087, 31088, 31089, 31090, 31091, 31693, 31695,
-    31998, 31169, 31494, 31495, 31496, 31497, 31498, 31499, 31500, 31501,
-    31502, 31503, 31504, 31505, 31506, 31507, 31095, 31096, 31097, 31098,
-    31099, 31100, 31101, 31102, 31103, 31104, 31105, 31106, 31107, 31108,
-    31109, 31110, 31114, 31115, 31116, 31117, 31118, 31119, 31120, 31121,
+    31078, 31079, 31080, 31081, 31082, 31083, 31084, 31692, 31694, 31997, 31168, 31085, 31086, 31087, 31088,
+    31089, 31090, 31091, 31693, 31695, 31998, 31169, 31494, 31495, 31496, 31497, 31498, 31499, 31500, 31501,
+    31502, 31503, 31504, 31505, 31506, 31507, 31095, 31096, 31097, 31098, 31099, 31100, 31101, 31102, 31103,
+    31104, 31105, 31106, 31107, 31108, 31109, 31110, 31114, 31115, 31116, 31117, 31118, 31119, 31120, 31121,
     31122, 31123, 31124, 31125,
 ];
 
@@ -110,13 +104,19 @@ const ADENA_ID: i32 = 57;
 
 /// Java `RETURN_LOCS[index]`: the index outside the table throws in Java.
 fn return_location(index: i32) -> Option<(i32, i32, i32)> {
-    usize::try_from(index).ok().and_then(|i| RETURN_LOCS.get(i)).copied()
+    usize::try_from(index)
+        .ok()
+        .and_then(|i| RETURN_LOCS.get(i))
+        .copied()
 }
 
 /// Java's `for (int id1 : TELEPORTERS) { if (id1 == npcId) break; i++; }`: the index of the NPC,
 /// or the table size when it is not in it.
 fn teleporter_index(npc_id: i32) -> usize {
-    TELEPORTERS.iter().position(|&t| t == npc_id).unwrap_or(TELEPORTERS.len())
+    TELEPORTERS
+        .iter()
+        .position(|&t| t == npc_id)
+        .unwrap_or(TELEPORTERS.len())
 }
 
 /// The adena a ziggurat teleport costs by level (Java's `if` chain in `onEvent`).
@@ -318,13 +318,18 @@ mod tests {
 
     fn npc(t: &ScriptTest, id: i32) -> ScriptNpc {
         let object = t.npcs_of(id)[0];
-        ScriptNpc { object_id: object, id }
+        ScriptNpc {
+            object_id: object,
+            id,
+        }
     }
 
     fn talk(t: &mut ScriptTest, id: i32) -> Option<String> {
         let n = npc(t, id);
         let mut out = None;
-        t.world.run_as_script("OracleTeleport", |ctx| out = OracleTeleport.on_talk(ctx, n, ObjectId(1)));
+        t.world.run_as_script("OracleTeleport", |ctx| {
+            out = OracleTeleport.on_talk(ctx, n, ObjectId(1))
+        });
         out
     }
 
@@ -380,7 +385,10 @@ mod tests {
         assert_eq!(talk(&mut t, 31095).as_deref(), Some("ziggurat_noadena.htm"));
         let mut t = setup(25, vec![item(5000, 7079, 1), item(5001, 57, 5000)]);
         assert_eq!(talk(&mut t, 31095).as_deref(), Some("ziggurat.htm"));
-        assert_eq!(event(&mut t, 31095, "zigurratDimensional").as_deref(), Some("ziggurat_rift.htm"));
+        assert_eq!(
+            event(&mut t, 31095, "zigurratDimensional").as_deref(),
+            Some("ziggurat_rift.htm")
+        );
         assert_eq!(t.count(1, 57), 3000);
         assert_eq!(at(&t), (-114755, -179466));
     }
@@ -389,7 +397,10 @@ mod tests {
     fn return_sends_the_player_back_from_the_dimension() {
         let mut t = setup(25, vec![]);
         // A priest whose player has no state: the unknown-origin branch.
-        assert_eq!(event(&mut t, 31127, "Return").as_deref(), Some("rift_back_unknown.htm"));
+        assert_eq!(
+            event(&mut t, 31127, "Return").as_deref(),
+            Some("rift_back_unknown.htm")
+        );
         assert!(RETURN_LOCS.iter().any(|&(x, y, _)| (x, y) == at(&t)));
         assert_eq!(event(&mut t, 31078, "Festival").as_deref(), Some("oracle1.htm"));
         assert_eq!(event(&mut t, 31078, "Dimensional").as_deref(), Some("oracle.htm"));

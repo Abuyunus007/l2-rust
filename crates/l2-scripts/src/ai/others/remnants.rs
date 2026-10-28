@@ -69,8 +69,15 @@ mod tests {
     }
 
     fn see(t: &mut ScriptTest, ghost: ObjectId, skill_id: i32) {
-        t.world
-            .script_on_skill_see(ghost, ObjectId(1), SkillKey { id: skill_id, level: 1 }, vec![ghost]);
+        t.world.script_on_skill_see(
+            ghost,
+            ObjectId(1),
+            SkillKey {
+                id: skill_id,
+                level: 1,
+            },
+            vec![ghost],
+        );
         t.world.script_drain();
     }
 

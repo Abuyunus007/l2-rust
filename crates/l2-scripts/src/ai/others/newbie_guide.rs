@@ -78,12 +78,48 @@ const KAMAEL_VILLAGE: Loc = (-119697, 44532, 380);
 /// Java `TELEPORT_MAP.get(npcId)`.
 fn teleport_list(npc_id: i32) -> Option<[Loc; 5]> {
     match npc_id {
-        NEWBIE_GUIDE_HUMAN => Some([DARK_ELF_VILLAGE, DWARVEN_VILLAGE, ELVEN_VILLAGE, ORC_VILLAGE, KAMAEL_VILLAGE]),
-        NEWBIE_GUIDE_ELF => Some([DARK_ELF_VILLAGE, DWARVEN_VILLAGE, TALKING_ISLAND_VILLAGE, ORC_VILLAGE, KAMAEL_VILLAGE]),
-        NEWBIE_GUIDE_DARK_ELF => Some([DWARVEN_VILLAGE, TALKING_ISLAND_VILLAGE, ELVEN_VILLAGE, ORC_VILLAGE, KAMAEL_VILLAGE]),
-        NEWBIE_GUIDE_DWARF => Some([DARK_ELF_VILLAGE, TALKING_ISLAND_VILLAGE, ELVEN_VILLAGE, ORC_VILLAGE, KAMAEL_VILLAGE]),
-        NEWBIE_GUIDE_ORC => Some([DARK_ELF_VILLAGE, DWARVEN_VILLAGE, TALKING_ISLAND_VILLAGE, ELVEN_VILLAGE, KAMAEL_VILLAGE]),
-        NEWBIE_GUIDE_KAMAEL => Some([TALKING_ISLAND_VILLAGE, DARK_ELF_VILLAGE, ELVEN_VILLAGE, DWARVEN_VILLAGE, ORC_VILLAGE]),
+        NEWBIE_GUIDE_HUMAN => Some([
+            DARK_ELF_VILLAGE,
+            DWARVEN_VILLAGE,
+            ELVEN_VILLAGE,
+            ORC_VILLAGE,
+            KAMAEL_VILLAGE,
+        ]),
+        NEWBIE_GUIDE_ELF => Some([
+            DARK_ELF_VILLAGE,
+            DWARVEN_VILLAGE,
+            TALKING_ISLAND_VILLAGE,
+            ORC_VILLAGE,
+            KAMAEL_VILLAGE,
+        ]),
+        NEWBIE_GUIDE_DARK_ELF => Some([
+            DWARVEN_VILLAGE,
+            TALKING_ISLAND_VILLAGE,
+            ELVEN_VILLAGE,
+            ORC_VILLAGE,
+            KAMAEL_VILLAGE,
+        ]),
+        NEWBIE_GUIDE_DWARF => Some([
+            DARK_ELF_VILLAGE,
+            TALKING_ISLAND_VILLAGE,
+            ELVEN_VILLAGE,
+            ORC_VILLAGE,
+            KAMAEL_VILLAGE,
+        ]),
+        NEWBIE_GUIDE_ORC => Some([
+            DARK_ELF_VILLAGE,
+            DWARVEN_VILLAGE,
+            TALKING_ISLAND_VILLAGE,
+            ELVEN_VILLAGE,
+            KAMAEL_VILLAGE,
+        ]),
+        NEWBIE_GUIDE_KAMAEL => Some([
+            TALKING_ISLAND_VILLAGE,
+            DARK_ELF_VILLAGE,
+            ELVEN_VILLAGE,
+            DWARVEN_VILLAGE,
+            ORC_VILLAGE,
+        ]),
         _ => None,
     }
 }
@@ -494,11 +530,20 @@ fn reward_15_to_17(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 
 /// Java `switch (npc.getRace())`: the radar of the NPC's race and the page `newbie-guide-<prefix>a..f`
 /// (human, elf, dark elf, orc, dwarf, kamael); no page for any other race.
-fn npc_race_radar(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc, table: [Loc; 6], prefix: &str) -> Option<String> {
+fn npc_race_radar(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    npc: ScriptNpc,
+    table: [Loc; 6],
+    prefix: &str,
+) -> Option<String> {
     let race = usize::try_from(ctx.world().npc_race_ordinal(npc.object_id)).ok()?;
     let (x, y, z) = *table.get(race)?;
     ctx.add_radar(player, x, y, z);
-    Some(format!("newbie-guide-{prefix}{}.htm", ['a', 'b', 'c', 'd', 'e', 'f'][race]))
+    Some(format!(
+        "newbie-guide-{prefix}{}.htm",
+        ['a', 'b', 'c', 'd', 'e', 'f'][race]
+    ))
 }
 
 /// Table A of Java: the village of the first lessons (`01x` and `07x`).
@@ -532,7 +577,13 @@ const RADAR_D: [Loc; 6] = [
 /// Java `switch (talker.getRace())` with the mage splits of the humans and the dark elves
 /// (`05x` / `10x`). `orc` and `kamael` are the two places where the first and the second copy of
 /// the Java `switch` differ.
-fn talker_race_radar(ctx: &mut ScriptCtx<'_>, player: ObjectId, prefix: &str, orc: Loc, kamael: Loc) -> Option<String> {
+fn talker_race_radar(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    prefix: &str,
+    orc: Loc,
+    kamael: Loc,
+) -> Option<String> {
     let mage = ctx.is_mage_class(player);
     let (loc, letter) = match ctx.player_race(player) {
         0 if !mage => ((-71384, 258304, -3109), 'a'),
@@ -703,7 +754,8 @@ impl Script for NewbieGuide {
                             }
 
                             if (16..=34).contains(&level) {
-                                ctx.world_mut().do_simultaneous_cast(talker, LIFE_CUBIC_FOR_BEGINNERS);
+                                ctx.world_mut()
+                                    .do_simultaneous_cast(talker, LIFE_CUBIC_FOR_BEGINNERS);
                             }
                         } else if mage && class_level < 3 {
                             ctx.cast_skill(npc, talker, WIND_WALK_FOR_BEGINNERS);
@@ -714,7 +766,8 @@ impl Script for NewbieGuide {
                             ctx.cast_skill(npc, talker, CONCENTRATION_FOR_BEGINNERS);
                             ctx.cast_skill(npc, talker, EMPOWER_FOR_BEGINNERS);
                             if (16..=34).contains(&level) {
-                                ctx.world_mut().do_simultaneous_cast(talker, LIFE_CUBIC_FOR_BEGINNERS);
+                                ctx.world_mut()
+                                    .do_simultaneous_cast(talker, LIFE_CUBIC_FOR_BEGINNERS);
                             }
                         }
                     } else {
@@ -764,7 +817,11 @@ impl Script for NewbieGuide {
                     if ctx.player_level(talker) > 5 {
                         if ctx.player_level(talker) < 20 && ctx.player_class_level(talker) == 0 {
                             if ctx.get_one_time_quest_flag(talker, 207) == 0 {
-                                ctx.give_items(talker, APPRENTICE_ADVENTURERS_WEAPON_EXCHANGE_COUPON, FIRST_COUPON_SIZE);
+                                ctx.give_items(
+                                    talker,
+                                    APPRENTICE_ADVENTURERS_WEAPON_EXCHANGE_COUPON,
+                                    FIRST_COUPON_SIZE,
+                                );
                                 ctx.set_one_time_quest_flag(talker, 207, 1);
                                 htmltext = Some("newbie-guide-002.htm".to_owned());
                                 let state = ctx.get_nr_memo_state(qs, GUIDE_MISSION);
@@ -793,7 +850,11 @@ impl Script for NewbieGuide {
                     if ctx.player_class_level(talker) == 1 {
                         if ctx.player_level(talker) < 40 {
                             if ctx.get_one_time_quest_flag(talker, 208) == 0 {
-                                ctx.give_items(talker, ADVENTURERS_MAGIC_ACCESSORY_EXCHANGE_COUPON, SECOND_COUPON_SIZE);
+                                ctx.give_items(
+                                    talker,
+                                    ADVENTURERS_MAGIC_ACCESSORY_EXCHANGE_COUPON,
+                                    SECOND_COUPON_SIZE,
+                                );
                                 ctx.set_one_time_quest_flag(talker, 208, 1);
                                 htmltext = Some("newbie-guide-011.htm".to_owned());
                             } else {
@@ -876,7 +937,12 @@ impl Script for NewbieGuide {
 }
 
 /// Java `teleportRequest(talker, npc, teleportId)`.
-fn teleport_request(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, teleport_id: i32) -> Option<String> {
+fn teleport_request(
+    ctx: &mut ScriptCtx<'_>,
+    talker: ObjectId,
+    npc: ScriptNpc,
+    teleport_id: i32,
+) -> Option<String> {
     let mut htmltext = None;
     let transformation = ctx.world().transformation_id(talker);
     if ctx.player_level(talker) >= 20 {
@@ -945,7 +1011,13 @@ fn talk_guide(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, tutoria
             if (memo % 1000) / 100 == 1 && (memo % 10000) / 100 == 1 {
                 // NOTE(java-quirk): the Orc radar of this copy has a positive x, and the Kamael
                 // radar is the Dwarf's.
-                hmltext = talker_race_radar(ctx, talker, "05", (46808, -113184, -112), (115717, -183488, -1483));
+                hmltext = talker_race_radar(
+                    ctx,
+                    talker,
+                    "05",
+                    (46808, -113184, -112),
+                    (115717, -183488, -1483),
+                );
                 reward_6_to_9(ctx, talker);
                 memo_add(ctx, qs, 10000);
             } else if (memo % 1000) / 100 == 1 && (memo % 10000) / 100 != 1 {
@@ -960,7 +1032,9 @@ fn talk_guide(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, tutoria
             memo_init(ctx, qs);
             hmltext = Some("newbie-guide-06.htm".to_owned());
         }
-    } else if tutorial_qs.get_memo_state_ex(ctx, 1) >= 5 && ctx.get_one_time_quest_flag(talker, GUIDE_MISSION) == 0 {
+    } else if tutorial_qs.get_memo_state_ex(ctx, 1) >= 5
+        && ctx.get_one_time_quest_flag(talker, GUIDE_MISSION) == 0
+    {
         let level = ctx.player_level(talker);
         if level < 6 {
             if ctx.get_nr_memo_state(qs, GUIDE_MISSION) % 10 == 1 {
@@ -976,7 +1050,8 @@ fn talk_guide(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, tutoria
             if (memo % 100000) / 10000 == 1 {
                 hmltext = Some("newbie-guide-09g.htm".to_owned());
             } else if (memo % 1000) / 100 == 1 && (memo % 10000) / 1000 == 1 && (memo % 100000) / 10000 != 1 {
-                hmltext = talker_race_radar(ctx, talker, "10", (-46808, -113184, -112), (-118080, 42835, 720));
+                hmltext =
+                    talker_race_radar(ctx, talker, "10", (-46808, -113184, -112), (-118080, 42835, 720));
                 reward_6_to_9(ctx, talker);
                 memo_add(ctx, qs, 10000);
             } else if (memo % 1000) / 100 == 1 && (memo % 10000) / 1000 != 1 {
@@ -995,7 +1070,8 @@ fn talk_guide(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, tutoria
                 reward_10_to_14(ctx, talker);
                 memo_add(ctx, qs, 1000000);
             } else if (memo % 1000000) / 100000 != 1 {
-                hmltext = talker_race_radar(ctx, talker, "10", (-46808, -113184, -112), (-118080, 42835, 720));
+                hmltext =
+                    talker_race_radar(ctx, talker, "10", (-46808, -113184, -112), (-118080, 42835, 720));
                 memo_init(ctx, qs);
             }
         } else if level < 18 {
@@ -1084,7 +1160,10 @@ mod tests {
         let mut t = ScriptTest::new(registry, NPCS, ITEMS, &[]);
         let guide = t.spawn(30598, 20);
         t.enter_as(1, 3, race::HUMAN, player_class::FIGHTER, vec![]);
-        let npc = ScriptNpc { object_id: guide, id: 30598 };
+        let npc = ScriptNpc {
+            object_id: guide,
+            id: 30598,
+        };
         (t, npc)
     }
 
@@ -1099,7 +1178,10 @@ mod tests {
     #[test]
     fn a_page_event_is_echoed_and_the_guide_tables_answer_their_cases() {
         let (mut t, npc) = setup();
-        assert_eq!(event(&mut t, npc, "30598-001.htm").as_deref(), Some("30598-001.htm"));
+        assert_eq!(
+            event(&mut t, npc, "30598-001.htm").as_deref(),
+            Some("30598-001.htm")
+        );
         assert_eq!(event(&mut t, npc, "0;10").as_deref(), Some("30598-04.htm"));
         assert_eq!(event(&mut t, npc, "0;31").as_deref(), Some("30598-05.htm"));
         assert_eq!(event(&mut t, npc, "0;9999"), None);
@@ -1134,12 +1216,21 @@ mod tests {
         let (mut t, npc) = setup();
         t.enter_as(2, 8, race::HUMAN, player_class::FIGHTER, vec![]);
         t.take_writes();
-        assert_eq!(event_as(&mut t, 2, npc, "-1000;1").as_deref(), Some("newbie-guide-002.htm"));
+        assert_eq!(
+            event_as(&mut t, 2, npc, "-1000;1").as_deref(),
+            Some("newbie-guide-002.htm")
+        );
         assert_eq!(t.count(2, 7832), 5);
-        assert_eq!(event_as(&mut t, 2, npc, "-1000;1").as_deref(), Some("newbie-guide-004.htm"));
+        assert_eq!(
+            event_as(&mut t, 2, npc, "-1000;1").as_deref(),
+            Some("newbie-guide-004.htm")
+        );
         assert_eq!(t.count(2, 7832), 5);
         // A level 3 player gets the refusal page.
-        assert_eq!(event_as(&mut t, 1, npc, "-1000;1").as_deref(), Some("newbie-guide-003.htm"));
+        assert_eq!(
+            event_as(&mut t, 1, npc, "-1000;1").as_deref(),
+            Some("newbie-guide-003.htm")
+        );
         assert!(!t.take_writes().is_empty());
     }
 
@@ -1175,17 +1266,26 @@ mod tests {
     fn the_table_sizes_are_javas() {
         assert_eq!(HUMAN_CNACELOT.len(), 45);
         assert_eq!(KAMAEL_KRENISK.len(), 56);
-        assert_eq!(teleport_list(NEWBIE_GUIDE_KAMAEL).unwrap()[0], TALKING_ISLAND_VILLAGE);
+        assert_eq!(
+            teleport_list(NEWBIE_GUIDE_KAMAEL).unwrap()[0],
+            TALKING_ISLAND_VILLAGE
+        );
     }
 
     #[test]
     fn teleports_refuse_the_experienced_and_send_the_rest() {
         let (mut t, npc) = setup();
-        assert_eq!(event(&mut t, npc, "teleport_9").as_deref(), Some("30598-teleport.htm"));
+        assert_eq!(
+            event(&mut t, npc, "teleport_9").as_deref(),
+            Some("30598-teleport.htm")
+        );
         assert_eq!(event(&mut t, npc, "teleport_0"), None);
         let at = t.world.position_of(ObjectId(1)).unwrap();
         assert_eq!((at.0, at.1), (DARK_ELF_VILLAGE.0, DARK_ELF_VILLAGE.1));
         t.enter_as(2, 20, race::HUMAN, player_class::FIGHTER, vec![]);
-        assert_eq!(event_as(&mut t, 2, npc, "teleport_0").as_deref(), Some("teleport-big-level.htm"));
+        assert_eq!(
+            event_as(&mut t, 2, npc, "teleport_0").as_deref(),
+            Some("teleport-big-level.htm")
+        );
     }
 }

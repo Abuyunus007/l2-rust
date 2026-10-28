@@ -55,7 +55,8 @@ impl Script for TownPets {
                 if let Some((sx, sy, _)) = ctx.npc_spawn_point(npc) {
                     let loc_x = sx + ctx.get_random_range(-50, 50);
                     let loc_y = sy + ctx.get_random_range(-50, 50);
-                    if let Some((mx, my, mz)) = ctx.world().npc_valid_location_toward(npc.object_id, loc_x, loc_y)
+                    if let Some((mx, my, mz)) =
+                        ctx.world().npc_valid_location_toward(npc.object_id, loc_x, loc_y)
                         && !ctx.is_inside_radius_3d(npc, mx, my, mz, 20)
                     {
                         ctx.npc_move_to(npc, mx, my, mz);

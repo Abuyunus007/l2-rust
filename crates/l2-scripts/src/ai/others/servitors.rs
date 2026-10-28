@@ -64,13 +64,13 @@ impl Script for Servitors {
         let Some(killer) = killer.and_then(|k| ctx.script_npc(k)) else {
             return;
         };
-        if ctx.world().is_servitor(victim)
-            && ctx.check_if_in_range(1500, killer.object_id, victim, true)
-        {
+        if ctx.world().is_servitor(victim) && ctx.check_if_in_range(1500, killer.object_id, victim, true) {
             let Some(master) = ctx.world().summon_owner(victim) else {
                 return;
             };
-            if ctx.player_quest_state(master, Q00230_TEST_OF_THE_SUMMONER).is_some()
+            if ctx
+                .player_quest_state(master, Q00230_TEST_OF_THE_SUMMONER)
+                .is_some()
                 && ctx.has_quest_items(master, CRYSTAL_OF_INPROGRESS_3RD)
             {
                 // NOTE(java-quirk): `MONSTERS.get(killer.getId())` is null for any other NPC and

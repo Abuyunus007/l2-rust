@@ -59,7 +59,11 @@ fn format_adena(amount: i64) -> String {
         }
         grouped.push(c);
     }
-    if amount < 0 { format!("-{grouped}") } else { grouped }
+    if amount < 0 {
+        format!("-{grouped}")
+    } else {
+        grouped
+    }
 }
 
 /// Java `getHGIndex(level)`.

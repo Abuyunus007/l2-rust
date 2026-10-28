@@ -68,7 +68,8 @@ mod tests {
     use crate::testing::{ScriptTest, item};
 
     const NPCS: &str = r#"<npc id="32632" type="Folk" level="70" name="Survivor"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
 
     fn event(t: &mut ScriptTest, player: i32, event: &str) -> Option<String> {
         let mut out = None;

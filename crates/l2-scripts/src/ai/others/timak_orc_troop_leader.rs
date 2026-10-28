@@ -40,7 +40,9 @@ impl Script for TimakOrcTroopLeader {
         _skill: Option<SkillKey>,
     ) {
         if ctx.world().is_monster_npc(npc.object_id) {
-            let rate = ctx.world().npc_template_param_int(npc.object_id, "SummonPrivateRate");
+            let rate = ctx
+                .world()
+                .npc_template_param_int(npc.object_id, "SummonPrivateRate");
             if !ctx.world().is_teleporting(npc.object_id)
                 && ctx.get_random_range(1, 100) <= rate.unwrap_or(0)
                 && ctx.spawned_minion_count(npc) < 3

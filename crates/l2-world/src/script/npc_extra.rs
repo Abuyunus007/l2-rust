@@ -203,7 +203,13 @@ impl World {
 
     /// Java `Npc.broadcastEvent(eventName, radius, reference)`: `ON_NPC_EVENT_RECEIVED` to every
     /// NPC with the listener within `radius` of the sender.
-    pub fn broadcast_event(&mut self, sender: ObjectId, event: &str, radius: i32, reference: Option<ObjectId>) {
+    pub fn broadcast_event(
+        &mut self,
+        sender: ObjectId,
+        event: &str,
+        radius: i32,
+        reference: Option<ObjectId>,
+    ) {
         for obj in self.visible_objects_in_range(sender, radius) {
             if self.npcs.contains_key(&obj) {
                 self.script_send_event(event, sender, obj, reference);
@@ -276,7 +282,12 @@ impl World {
 
     /// Java `Creature.isMortal()`.
     pub fn is_mortal(&self, id: ObjectId) -> bool {
-        !self.scripts.npc_extras.by_npc.get(&id).is_some_and(|e| e.immortal)
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.immortal)
     }
 
     /// Java `Attackable.setSeeThroughSilentMove(value)`.

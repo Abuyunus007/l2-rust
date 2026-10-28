@@ -259,8 +259,14 @@ mod tests {
     #[test]
     fn a_player_without_the_owner_clan_gets_the_stranger_page_everywhere() {
         let mut t = setup(vec![item(5000, 9912, 10)]);
-        assert_eq!(event(&mut t, "giveTalisman").as_deref(), Some("unitcaptain-04.html"));
-        assert_eq!(event(&mut t, "squadSkill").as_deref(), Some("unitcaptain-04.html"));
+        assert_eq!(
+            event(&mut t, "giveTalisman").as_deref(),
+            Some("unitcaptain-04.html")
+        );
+        assert_eq!(
+            event(&mut t, "squadSkill").as_deref(),
+            Some("unitcaptain-04.html")
+        );
         assert_eq!(t.count(1, 9912), 10);
         let mut page = None;
         t.world.run_as_script("SupportUnitCaptain", |ctx| {

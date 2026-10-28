@@ -111,7 +111,10 @@ fn decrease_alliance(ctx: &mut ScriptCtx<'_>, player: ObjectId, marks: &[i32]) {
 /// Java `exitQuests(player, quests)`.
 fn exit_quests(ctx: &mut ScriptCtx<'_>, player: ObjectId, quests: &[&str]) {
     for quest in quests {
-        if ctx.player_quest_state(player, quest).is_some_and(|qs| qs.is_started()) {
+        if ctx
+            .player_quest_state(player, quest)
+            .is_some_and(|qs| qs.is_started())
+        {
             if let Some(qs) = ctx.quest_state_of(quest, player, false) {
                 qs.exit_quest(ctx, true, false);
             }
@@ -138,7 +141,13 @@ impl Script for VarkaKetra {
         s.add_npc_hate_id(&VARKA);
     }
 
-    fn action_for_each_player(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc, _is_summon: bool) {
+    fn action_for_each_player(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        npc: ScriptNpc,
+        _is_summon: bool,
+    ) {
         if ctx.check_if_in_range(1500, player, npc.object_id, false) {
             if KETRA.contains(&npc.id) && ctx.has_at_least_one_quest_item(player, &KETRA_MARKS) {
                 decrease_alliance(ctx, player, &KETRA_MARKS);
@@ -154,7 +163,13 @@ impl Script for VarkaKetra {
         ctx.execute_for_each_player(killer, npc, is_summon, true, false);
     }
 
-    fn on_npc_hate(&self, ctx: &mut ScriptCtx<'_>, mob: ScriptNpc, player: ObjectId, _is_summon: bool) -> bool {
+    fn on_npc_hate(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        mob: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) -> bool {
         if KETRA.contains(&mob.id) {
             return !ctx.has_at_least_one_quest_item(player, &KETRA_MARKS);
         }
@@ -205,7 +220,16 @@ mod tests {
     #[test]
     fn the_monsters_hate_only_those_without_a_mark_of_their_side() {
         let mut t = setup(vec![item(5000, 7221, 1)]);
-        let (ketra, varka) = (ScriptNpc { object_id: ObjectId(1), id: 21324 }, ScriptNpc { object_id: ObjectId(2), id: 21350 });
+        let (ketra, varka) = (
+            ScriptNpc {
+                object_id: ObjectId(1),
+                id: 21324,
+            },
+            ScriptNpc {
+                object_id: ObjectId(2),
+                id: 21350,
+            },
+        );
         let mut answers = Vec::new();
         t.world.run_as_script("VarkaKetra", |ctx| {
             answers.push(VarkaKetra.on_npc_hate(ctx, ketra, ObjectId(1), false));
