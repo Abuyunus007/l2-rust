@@ -1271,7 +1271,7 @@ fn refresh_textures(world: &mut World, id: ObjectId) {
 /// Java `Player.setPlayerClass(id)` for a character who is not changing sub class: the academy
 /// graduation, the effect, the class, the messages, the party and clan icons, the skills.
 // NOTE: `applyItemSkills()` is not ported, see the module note.
-fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
+pub(crate) fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
     // `if (_subclassLock) return;` (S-SUB-01).
     if world.is_changing_class(id) {
         return;

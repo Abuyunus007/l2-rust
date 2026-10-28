@@ -250,11 +250,9 @@ pub(crate) struct NpcWorld {
     /// (`//spawn_misc`). A territory ward is always one, by its type, see
     /// [`World::is_core_ai_disabled`].
     pub(crate) core_ai_disabled: HashSet<ObjectId>,
-    /// Java `Npc._isRandomWalking` where a script called `setRandomWalking` (S-BOSS-01); the NPC
-    /// forgets it when it decays, as Java's `onSpawn` sets the flag again.
-    pub(crate) random_walking: HashMap<ObjectId, bool>,
-    /// Java `Attackable._canReturnToSpawnPoint` turned off by a script
-    /// (`setCanReturnToSpawnPoint(false)`, S-BOSS-01).
+    /// NPCs a script called `setRandomWalking(false)` on (S-AI-05, `script/ai_help.rs`).
+    pub(crate) random_walk_off: HashSet<ObjectId>,
+    /// NPCs a script called `setCanReturnToSpawnPoint(false)` on (S-AI-05).
     pub(crate) no_return_to_spawn: HashSet<ObjectId>,
 }
 
@@ -752,6 +750,20 @@ impl World {
             self.spawn_minions(id, template, &templates, report);
         }
         Some(id)
+    }
+
+    /// Java `MinionList.spawnMinion(master, minionTemplateId)` (S-AI-05): one more minion near a
+    /// master that is in the world; `None` for an unknown template or master.
+    pub fn spawn_minion_by_id(&mut self, master: ObjectId, minion_npc_id: i32) -> Option<ObjectId> {
+        let templates = self.npc_world.templates.clone()?;
+        let master_template = self.npcs.get(&master).and_then(|n| templates.get(n.npc_id))?;
+        let minion_template = templates.get(minion_npc_id)?;
+        self.spawn_minion(master, master_template, minion_template)
+    }
+
+    /// Java `master.getMinionList().getSpawnedMinionCount()` (S-AI-05).
+    pub fn spawned_minion_count(&self, master: ObjectId) -> usize {
+        self.minions_of(master).len()
     }
 
     /// Java `master.getMinionList().spawnMinions(template.getParameters().getMinionList("Privates"))`

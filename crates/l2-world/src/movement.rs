@@ -1900,7 +1900,7 @@ impl World {
         }
     }
 
-    fn geo_height(&self, x: i32, y: i32, z: i32) -> i32 {
+    pub(crate) fn geo_height(&self, x: i32, y: i32, z: i32) -> i32 {
         match &self.geo {
             Some(geo) => geo.height(x, y, z),
             None => z,

@@ -263,7 +263,7 @@ impl Script for Baium {
                     ctx.state::<BaiumState>().baium_instance = baium.map(|b| b.object_id);
                     if let Some(baium) = baium {
                         ctx.world_mut().disable_core_ai(baium.object_id, true);
-                        ctx.world_mut().set_random_walking(baium.object_id, false);
+                        ctx.set_random_walking(baium, false);
                         ctx.world_mut().add_grand_boss(BAIUM_NPC_ID, baium.object_id);
                     }
                     let now = ctx.now_ms();
@@ -400,7 +400,10 @@ impl Script for Baium {
                     return None;
                 }
                 ctx.world_mut().disable_core_ai(baium, false);
-                ctx.world_mut().set_random_walking(baium, true);
+                // `setRandomWalking(true)`: the template decides again (`ScriptCtx::set_random_walking`).
+                if let Some(npc) = ctx.script_npc(baium) {
+                    ctx.set_random_walking(npc, true);
+                }
                 spawn_archangels(ctx);
                 // NOTE(java-quirk): `npc` is the timer's NPC; a timer without one makes Java's
                 // `addAttackDesire(null, ..)` throw.

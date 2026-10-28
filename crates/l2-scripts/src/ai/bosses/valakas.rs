@@ -299,9 +299,8 @@ impl Script for Valakas {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        ctx.world_mut()
-            .set_can_return_to_spawn_point(npc.object_id, false);
-        ctx.world_mut().set_random_walking(npc.object_id, false);
+        ctx.set_can_return_to_spawn_point(npc, false);
+        ctx.set_random_walking(npc, false);
     }
 
     fn on_attack(

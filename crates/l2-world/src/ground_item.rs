@@ -535,7 +535,7 @@ impl World {
     /// Java `Npc.dropItem(creature, itemId, itemCount)`: the monster's drop lands within 70 of it
     /// (`RANDOM_ITEM_DROP_LIMIT`) and is protected for `creature` for 15 seconds. Returns the
     /// last item dropped.
-    pub(crate) fn npc_drop_item(
+    pub fn npc_drop_item(
         &mut self,
         npc: ObjectId,
         creature: Option<ObjectId>,

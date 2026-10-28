@@ -350,7 +350,7 @@ impl Script for Antharas {
                 let boss = ctx.state::<AntharasState>().antharas_boss?;
                 let boss = ctx.script_npc(boss)?;
                 ctx.world_mut().disable_core_ai(boss.object_id, true);
-                ctx.world_mut().set_random_walking(boss.object_id, false);
+                ctx.set_random_walking(boss, false);
                 let (x, y, z, heading) = ANTHARAS_SPAWN_LOCATION;
                 tele_npc(ctx, boss.object_id, (x, y, z), heading);
                 set_status(ctx, STATUS_IN_FIGHT);
@@ -393,7 +393,7 @@ impl Script for Antharas {
             EVENT_START_MOVE => {
                 let npc = npc?;
                 ctx.world_mut().disable_core_ai(npc.object_id, false);
-                ctx.world_mut().set_random_walking(npc.object_id, true);
+                ctx.set_random_walking(npc, true);
 
                 // `World.forFirstVisibleObjectInRange(npc, Player.class, 4000, isHero && config, ..)`.
                 if ctx.world().boss_settings().grand_boss.antharas_recognize_hero {
@@ -891,9 +891,8 @@ impl Script for Antharas {
     /// Handles spawn initialization for Antharas and the invisible fear-phase triggers.
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         if npc.id == ANTHARAS_NPC_ID {
-            ctx.world_mut()
-                .set_can_return_to_spawn_point(npc.object_id, false);
-            ctx.world_mut().set_random_walking(npc.object_id, false);
+            ctx.set_can_return_to_spawn_point(npc, false);
+            ctx.set_random_walking(npc, false);
 
             ctx.cancel_quest_timer(EVENT_SET_REGEN, Some(npc), None);
             ctx.start_quest_timer(EVENT_SET_REGEN, REGEN_INTERVAL, Some(npc), None, false);

@@ -52,15 +52,6 @@ impl World {
         self.npc_class(id) != Some(NpcClass::QuestGuard) && !self.npc_world.no_return_to_spawn.contains(&id)
     }
 
-    /// Java `Attackable.setCanReturnToSpawnPoint(value)` (the boss scripts turn it off).
-    pub fn set_can_return_to_spawn_point(&mut self, id: ObjectId, value: bool) {
-        if value {
-            self.npc_world.no_return_to_spawn.remove(&id);
-        } else if self.npcs.contains_key(&id) {
-            self.npc_world.no_return_to_spawn.insert(id);
-        }
-    }
-
     /// Java `Guard.onSpawn()` after `Attackable.onSpawn()`: "getAI().setIntentionActive()". The
     /// commented-out region check of Java is not there either, so a guard thinks from its spawn
     /// whether a player is near or not (its think returns at once while its region sleeps).

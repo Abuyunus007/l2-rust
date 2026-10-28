@@ -221,14 +221,6 @@ impl World {
             || self.npc_template(id).is_some_and(|t| t.is_type("TerritoryWard"))
     }
 
-    /// Java `Npc.setRandomWalking(enabled)`: the NPC wanders around its spawn or not, until it
-    /// decays (Java's `onSpawn` sets the flag again).
-    pub fn set_random_walking(&mut self, id: ObjectId, enabled: bool) {
-        if self.npcs.contains_key(&id) {
-            self.npc_world.random_walking.insert(id, enabled);
-        }
-    }
-
     /// Java `npc.getTemplate().getParameters().getInt(name)`; `None` when the template has no such
     /// parameter (Java throws).
     pub fn npc_template_param_int(&self, id: ObjectId, name: &str) -> Option<i32> {
@@ -286,9 +278,9 @@ impl World {
     /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
     /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
     fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
-        // `Npc.setRandomWalking(value)` of a script (S-BOSS-01).
-        if let Some(value) = self.npc_world.random_walking.get(&id) {
-            return *value;
+        // `setRandomWalking(false)` of a script (S-AI-05).
+        if self.npc_world.random_walk_off.contains(&id) {
+            return false;
         }
         // `Npc.onSpawn`: `!WalkingManager.isTargeted(this) && ...` (a route walker never wanders).
         if self
@@ -469,7 +461,6 @@ impl World {
     /// Forgets everything the AI keeps about an NPC that leaves the world.
     pub(crate) fn forget_npc_ai(&mut self, id: ObjectId) {
         self.stop_ai_task(id);
-        self.npc_world.random_walking.remove(&id);
         self.ai.creatures.remove(&id);
         self.ai.siege_guards.remove(&id);
         self.combat.creatures.remove(&id);
