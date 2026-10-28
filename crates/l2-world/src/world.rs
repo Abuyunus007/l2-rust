@@ -146,6 +146,8 @@ pub struct World {
     pub(crate) community_board: crate::community_board::CommunityBoardWorld,
     /// `/time` and the other information user commands (S-HAND-01, `user_command_info.rs`).
     pub(crate) user_command_info: crate::user_command_info::UserCommandInfoWorld,
+    /// The script handlers of S-HAND-02 (`script_handlers/`).
+    pub(crate) script_handlers: crate::script_handlers::unstuck::ScriptHandlerWorld,
     /// The players in offline mode and the offline trade settings (M6-FU-14, `trade/offline.rs`).
     pub(crate) offline: crate::trade::OfflineWorld,
     /// The flood protector settings and the state of every player (M6-FU-06, `flood.rs`).
@@ -251,6 +253,7 @@ impl World {
             bot_report: crate::bot_report::BotReportWorld::default(),
             community_board: crate::community_board::CommunityBoardWorld::default(),
             user_command_info: crate::user_command_info::UserCommandInfoWorld::default(),
+            script_handlers: crate::script_handlers::unstuck::ScriptHandlerWorld::default(),
             offline: crate::trade::OfflineWorld::default(),
             flood: crate::flood::FloodWorld::default(),
             fort: crate::fort::FortWorld::default(),
@@ -1018,6 +1021,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: Unstuck.EscapeFinalizer (S-HAND-02)
+            TimerKind::Script(timer) => self.on_script_timer(timer),
             // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
             TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
             // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner

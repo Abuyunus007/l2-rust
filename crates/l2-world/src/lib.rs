@@ -77,6 +77,7 @@ pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod script_handlers;
 pub mod sevensigns;
 pub mod shiftclick;
 pub mod shop;
@@ -253,6 +254,7 @@ pub use trade::{
     OfflineTrader, PrivateStoreType, StoreInput, StoreSettings, TradeItem, TradeList, TradeState,
     restorable_store_type,
 };
+pub use script_handlers::unstuck::{ScriptHandlerSettings, ScriptTimer};
 pub use user_command_info::UserCommandInfoSettings;
 pub use vehicle::{
     AirshipRow, PathPoint, Rider, ShipState, Vehicle, VehicleInput, VehicleKind, VehicleLoad,

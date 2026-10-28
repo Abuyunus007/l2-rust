@@ -27,9 +27,8 @@ impl World {
     }
 
     /// Java `Player.hasCharmOfCourage()`.
-    // NOTE: the charm of courage item handler (`CharmOfCourage`) is not ported, so nobody has one.
-    pub fn has_charm_of_courage(&self, _id: ObjectId) -> bool {
-        false
+    pub fn has_charm_of_courage(&self, id: ObjectId) -> bool {
+        self.control(id).is_some_and(|c| c.charm_of_courage)
     }
 
     /// Java `Player.isReviveRequested()`.

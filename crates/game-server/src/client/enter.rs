@@ -374,6 +374,13 @@ impl DbPlayerLoader {
             None => data.profile.recom_time_left_ms = DEFAULT_RECO_TIME_LEFT_MS,
         }
 
+        // Java: Player.restore (`createDate`, for `/mybirthday`). A failed read keeps Java's
+        // default (the creation of the object).
+        match self.characters.create_date_of(char_id).await {
+            Ok(date) => data.profile.create_date = date.map(|d| (d.year, d.month, d.day)),
+            Err(e) => warn!("Could not read the create date of {}: {e}", data.name),
+        }
+
         // Java: PlayerVariables.restoreMe
         data.profile.variables = self.variables.variables_of(char_id).await?.into_iter().collect();
 

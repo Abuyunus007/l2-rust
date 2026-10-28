@@ -170,6 +170,10 @@ pub struct PlayerProfile {
     pub hennas: [i32; 3],
     /// `characters.lastAccess` as loaded (Java `_lastAccess`): milliseconds of the last logout.
     pub last_access: i64,
+    /// `characters.createDate` as loaded (Java `_createDate`): year, month (1 to 12), day. `None`
+    /// when it was not read; Java's default is the time the object was made (S-HAND-02,
+    /// `/mybirthday`).
+    pub create_date: Option<(i32, u8, u8)>,
     /// The variables the world set since the character was loaded (Java `AbstractVariables`
     /// `_added` and `_modified`): the persistence task upserts them with every store. Idempotent,
     /// so they are never cleared.
@@ -279,6 +283,7 @@ impl Default for PlayerProfile {
             contacts: Vec::new(),
             hennas: [0; 3],
             last_access: 0,
+            create_date: None,
             variables_changed: std::collections::BTreeSet::new(),
             variables_removed: std::collections::BTreeSet::new(),
             reco_store: false,

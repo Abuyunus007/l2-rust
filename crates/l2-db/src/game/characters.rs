@@ -27,6 +27,8 @@ const INSERT_CHARACTER: &str = "INSERT INTO characters (account_name,charId,char
 const UPDATE_CHARACTER: &str = "UPDATE characters SET level=?,maxHp=?,curHp=?,maxCp=?,curCp=?,maxMp=?,curMp=?,face=?,hairStyle=?,hairColor=?,sex=?,heading=?,x=?,y=?,z=?,exp=?,expBeforeDeath=?,sp=?,karma=?,fame=?,pvpkills=?,pkkills=?,clanid=?,race=?,classid=?,deletetime=?,title=?,title_color=?,accesslevel=?,online=?,isin7sdungeon=?,clan_privs=?,wantspeace=?,base_class=?,onlinetime=?,newbie=?,nobless=?,power_grade=?,subpledge=?,lvl_joined_academy=?,apprentice=?,sponsor=?,clan_join_expiry_time=?,clan_create_expiry_time=?,char_name=?,death_penalty_level=?,bookmarkslot=?,vitality_points=?,language=?,faction=?,pccafe_points=? WHERE charId=?";
 // Java: Player.RESTORE_CHARACTER
 const RESTORE_CHARACTER: &str = "SELECT * FROM characters WHERE charId=?";
+// Java: Player.RESTORE_CHARACTER's `createDate` column (S-HAND-02: read as text)
+const SELECT_CREATE_DATE: &str = "SELECT CAST(createDate AS CHAR) FROM characters WHERE charId=?";
 // Java: Player.restore (other characters of the account)
 const SELECT_OTHER_CHARACTERS: &str =
     "SELECT charId, char_name FROM characters WHERE account_name=? AND charId<>?";
@@ -153,6 +155,22 @@ impl CalendarDate {
             month: month as u8,
             day: day as u8,
         }
+    }
+}
+
+impl CalendarDate {
+    /// Parses the `YYYY-MM-DD` text MySQL gives for a `DATE` (a time part after a space is
+    /// ignored). `None` for anything else, including the zero date.
+    pub fn parse(text: &str) -> Option<Self> {
+        let date = text.split([' ', 'T']).next()?;
+        let mut parts = date.split('-');
+        let year: i32 = parts.next()?.parse().ok()?;
+        let month: u8 = parts.next()?.parse().ok()?;
+        let day: u8 = parts.next()?.parse().ok()?;
+        if parts.next().is_some() || !(1..=12).contains(&month) || !(1..=31).contains(&day) {
+            return None;
+        }
+        Some(Self { year, month, day })
     }
 }
 
@@ -703,6 +721,18 @@ impl CharacterRepository {
         Ok(times)
     }
 
+    /// `characters.createDate` of a character (a `DATE`, read as text because decoding a `DATE`
+    /// needs a dependency D-28 does not allow yet). `None` when the row is missing or the
+    /// column is NULL or not a date.
+    // Java: Player.restore (`getCreateDate().setTimeInMillis(rset.getTimestamp("createDate")...)`)
+    pub async fn create_date_of(&self, char_id: i32) -> Result<Option<CalendarDate>> {
+        let text = sqlx::query_scalar::<_, Option<String>>(SELECT_CREATE_DATE)
+            .bind(char_id)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(text.flatten().and_then(|t| CalendarDate::parse(&t)))
+    }
+
     /// The character's clan id; 0 when the row is missing or the column is NULL, like
     /// `rs.next() ? rs.getInt(1) : 0`.
     // Java: GameClient.markToDeleteChar
@@ -864,6 +894,17 @@ mod tests {
 
     fn placeholders(sql: &str) -> usize {
         sql.matches('?').count()
+    }
+
+    #[test]
+    fn a_date_text_is_parsed() {
+        let date = |y, m, d| Some(CalendarDate { year: y, month: m, day: d });
+        assert_eq!(CalendarDate::parse("2024-03-07"), date(2024, 3, 7));
+        assert_eq!(CalendarDate::parse("2024-03-07 00:00:00"), date(2024, 3, 7));
+        assert_eq!(CalendarDate::parse("0000-00-00"), None);
+        assert_eq!(CalendarDate::parse("2024-13-01"), None);
+        assert_eq!(CalendarDate::parse("nonsense"), None);
+        assert_eq!(placeholders(SELECT_CREATE_DATE), 1);
     }
 
     // The statements are copied from Java; these checks catch a slip while copying.

@@ -597,6 +597,10 @@ impl World {
     /// Java `PlayableStat.addExp(amount)`: the exp (never past the last level), then the level it
     /// makes. `false` only without an experience table.
     fn playable_add_exp(&mut self, id: ObjectId, amount: i64) -> bool {
+        // ON_PLAYABLE_EXP_CHANGED: the `.expoff` listener ends the gain (S-HAND-02).
+        if self.exp_gain_blocked(id) {
+            return false;
+        }
         // ON_PLAYABLE_EXP_CHANGED: the `SoulEating` listeners hear the gain first.
         self.soul_eating_on_exp_changed(id, amount);
         let (Some(max_level), Some(player)) = (self.java_max_level(), self.players.get(&id)) else {

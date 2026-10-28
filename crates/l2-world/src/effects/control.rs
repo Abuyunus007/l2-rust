@@ -130,6 +130,8 @@ pub(crate) struct CreatureControl {
     pub revive_requested: bool,
     pub revive_power: f64,
     pub revive_pet: bool,
+    /// `Player._hasCharmOfCourage` (S-HAND-02, `script_handlers/charm.rs`).
+    pub charm_of_courage: bool,
     /// `DoorRequestHolder`: the door the open/close `ConfirmDlg` of a clan hall or fortress door
     /// was sent for (M7-FU-03, `target.rs`); `DlgAnswer` takes it.
     pub door_request: Option<ObjectId>,

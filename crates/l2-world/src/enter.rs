@@ -584,6 +584,9 @@ impl World {
         // "Remove demonic weapon if character is not cursed weapon equipped."
         self.cursed_enter_world_cleanup(id);
 
+        // "Check if expoff is enabled." (S-HAND-02)
+        self.exp_gain_on_enter(id);
+
         // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
         // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
         // only in the first one (the Java capture shows exactly that).
@@ -776,6 +779,7 @@ impl World {
                 )
             },
             charges: self.charges_of(id),
+            charm_of_courage: self.has_charm_of_courage(id),
             charged_souls: self.charged_souls_of(id),
             // `getMessageRefusal() || isChatBanned() || isSilenceMode()`
             chat_blocked: self.is_chat_banned(id) || self.message_refusal(id) || player.gm.silence,

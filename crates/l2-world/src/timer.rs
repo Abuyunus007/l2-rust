@@ -188,6 +188,8 @@ pub enum TimerKind {
     Walking(crate::walking::WalkingTimer),
     /// The `.gotolove` wait of a married player, see `wedding.rs`.
     Wedding(crate::wedding::WeddingTimer),
+    /// The escape of `/unstuck`, see `script_handlers/unstuck.rs`.
+    Script(crate::script_handlers::unstuck::ScriptTimer),
     /// The tasks of Handy's Block Checker, Kratei's Cube and the Underground Coliseum, see
     /// `minigame/`.
     Minigame(crate::minigame::MinigameTimer),
