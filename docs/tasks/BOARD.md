@@ -408,7 +408,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-HAND-02](S/S-HAND-02.md) | The handlers S-HAND-01 left | sonnet | full | HAND-01 | merged |
 | [S-API-02](S/S-API-02.md) | Move the built-ins onto the engine | sonnet | full | API-01 | merged |
 | [S-API-03](S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | merged |
-| [S-API-04](S/S-API-04.md) | Engine: global variable re-read, per-object listeners, the remaining events | sonnet | full | API-03 | ready |
+| [S-API-04](S/S-API-04.md) | Engine: global variable re-read, per-object listeners, the remaining events | sonnet | full | API-03 | merged |
 | [S-HAND-03](S/S-HAND-03.md) | Lottery, NPC view and drop search, decoys and traps, spawn protection | sonnet | full | HAND-02 | ready |
 | [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | in-progress |
 | [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
