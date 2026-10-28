@@ -410,24 +410,45 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-API-03](S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | merged |
 | [S-API-04](S/S-API-04.md) | Engine: global variable re-read, per-object listeners, the remaining events | sonnet | full | API-03 | merged |
 | [S-HAND-03](S/S-HAND-03.md) | Lottery, NPC view and drop search, decoys and traps, spawn protection | sonnet | full | HAND-02 | merged |
-| [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | in-progress |
+| [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | merged |
 | [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
 | [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
-| [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | ready |
+| [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | in-progress |
 | [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | ready |
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
 | [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
-| [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | ready |
+| [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | in-progress |
+| [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | in-progress |
+| [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
-| [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | ready |
+| [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | in-progress |
 | [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
 | [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
-| [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | ready |
+| [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | in-progress |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | ready |
 | [S-TW-01](S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | ready |
 | [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | ready |
-| S-Q-01..20 | Quests in batches of ~25 by id | haiku | review | PILOT-01 | ready (card written when API-01 merges) |
+| [S-Q-01](S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-02](S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-04](S/S-Q-04.md) | Quests Q00109..Q00128 (19 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-05](S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-06](S/S-Q-06.md) | Quests Q00169..Q00211 (27 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-07](S/S-Q-07.md) | Quests Q00212..Q00221 (10 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-08](S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-09](S/S-Q-09.md) | Quests Q00233..Q00260 (21 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-10](S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-11](S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-12](S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-14](S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-15](S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-17](S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | ready |
 | S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
 | S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
 | S-RUN-01 | Runbook and milestone checks | opus | review | E2E-01 | ready (card written when API-01 merges) |
