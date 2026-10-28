@@ -15,7 +15,7 @@ impl World {
     ///
     /// The summoner and `isSummonSpawn` (the spawn animation) are not modelled; Java's
     /// `RandomSpawnsConfig.ENABLE_RANDOM_MONSTER_SPAWNS` branch is a custom that is off by default.
-    pub(crate) fn script_add_spawn(
+    pub fn script_add_spawn(
         &mut self,
         npc_id: i32,
         (x, y, z): (i32, i32, i32),

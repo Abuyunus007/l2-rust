@@ -49,7 +49,7 @@ impl World {
 
     /// Java `Attackable.canReturnToSpawnPoint()`: `QuestGuard` turns it off.
     pub(crate) fn can_return_to_spawn_point(&self, id: ObjectId) -> bool {
-        self.npc_class(id) != Some(NpcClass::QuestGuard)
+        self.npc_class(id) != Some(NpcClass::QuestGuard) && !self.npc_world.no_return_to_spawn.contains(&id)
     }
 
     /// Java `Guard.onSpawn()` after `Attackable.onSpawn()`: "getAI().setIntentionActive()". The
