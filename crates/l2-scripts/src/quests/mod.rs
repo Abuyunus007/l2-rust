@@ -49,6 +49,7 @@ pub mod q00106_forgotten_truth;
 pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
+pub mod q00155_find_sir_windawood;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
 pub mod q00255_tutorial;
@@ -106,6 +107,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00107_merciless_punishment::Q00107MercilessPunishment);
     r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
+    r.add(q00155_find_sir_windawood::Q00155FindSirWindawood);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00255_tutorial::Q00255Tutorial);
