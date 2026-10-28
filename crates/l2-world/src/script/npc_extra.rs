@@ -216,6 +216,32 @@ impl World {
         self.add_attacker_to_attack_by_list(npc, attacker);
     }
 
+    /// Java `Npc.scheduleDespawn(delay)`.
+    pub fn schedule_npc_despawn(&mut self, npc: ObjectId, delay_ms: i64) {
+        self.schedule_script_despawn(npc, delay_ms);
+    }
+
+    /// Java `npc.getWorldRegion().isActive()`.
+    pub fn npc_region_is_active(&self, npc: ObjectId) -> bool {
+        self.objects
+            .get(&npc)
+            .and_then(|e| e.region)
+            .is_some_and(|r| self.is_region_active(r))
+    }
+
+    /// Java `GeoEngine.getValidLocation(npc.getX(), npc.getY(), npc.getZ(), x, y, npc.getZ(), 0)`:
+    /// how far toward (x, y) the NPC can go.
+    pub fn npc_valid_location_toward(&self, npc: ObjectId, x: i32, y: i32) -> Option<(i32, i32, i32)> {
+        let (nx, ny, nz) = self.position_of(npc)?;
+        let instance = self.instance_id_of(npc);
+        let to = self.geo_valid_location(
+            l2_geo::Location::new(nx, ny, nz),
+            l2_geo::Location::new(x, y, nz),
+            instance,
+        );
+        Some((to.x, to.y, to.z))
+    }
+
     /// Java `Creature.setMortal(value)`.
     pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
         self.npc_extra_mut(id).immortal = !value;
