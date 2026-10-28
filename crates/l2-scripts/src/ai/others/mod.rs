@@ -32,6 +32,7 @@ pub mod kier;
 pub mod manor_manager;
 pub mod monument_of_heroes;
 pub mod muscle_bomber;
+pub mod steel_citadel_teleport;
 pub mod subclass_certification;
 pub mod symbol_maker;
 
@@ -70,6 +71,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(class_master::ClassMaster::default());
     r.add(manor_manager::ManorManager);
     r.add(monument_of_heroes::MonumentOfHeroes);
+    r.add(steel_citadel_teleport::SteelCitadelTeleport);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
 }
