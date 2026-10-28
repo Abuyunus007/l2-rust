@@ -38,7 +38,14 @@ impl World {
             info!("ClanTable: storeClanWars of unknown clans {clan_id1} and {clan_id2}.");
             return;
         };
-        // ON_CLAN_WAR_START: script event (D-05).
+        // ON_CLAN_WAR_START (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::ClanWarStart {
+                clan1: clan_id1,
+                clan2: clan_id2,
+            },
+            None,
+        );
         if let Some(c) = self.clan_mut(clan_id1)
             && !c.at_war_with.contains(&clan_id2)
         {
@@ -79,7 +86,14 @@ impl World {
             info!("ClanTable: deleteClanWars of unknown clans {clan_id1} and {clan_id2}.");
             return;
         };
-        // ON_CLAN_WAR_FINISH: script event (D-05).
+        // ON_CLAN_WAR_FINISH (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::ClanWarFinish {
+                clan1: clan_id1,
+                clan2: clan_id2,
+            },
+            None,
+        );
         if let Some(c) = self.clan_mut(clan_id1) {
             c.at_war_with.retain(|id| *id != clan_id2);
         }

@@ -481,7 +481,11 @@ impl World {
             "Siege of {} fort started.",
             self.residence_name(crate::residence::ResidenceRef::Fort(fort))
         );
-        // `ON_FORT_SIEGE_START` listeners are scripts (D-05).
+        // `ON_FORT_SIEGE_START` (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::FortSiegeStart { fort_id: fort.0 },
+            None,
+        );
     }
 
     /// Java `endSiege()`.
@@ -533,7 +537,11 @@ impl World {
             "Siege of {} fort finished.",
             self.residence_name(crate::residence::ResidenceRef::Fort(fort))
         );
-        // `ON_FORT_SIEGE_FINISH` listeners are scripts (D-05).
+        // `ON_FORT_SIEGE_FINISH` (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::FortSiegeFinish { fort_id: fort.0 },
+            None,
+        );
     }
 
     /// Java `Fort.endOfSiege(clan)` (`endFortressSiege.run`): the fortress changes hands.

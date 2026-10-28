@@ -775,6 +775,23 @@ impl World {
         let key = SkillKey::of(skill);
         // ON_CREATURE_SKILL_USE: the `TriggerSkillBySkill` listeners (scripts: D-05).
         self.notify_skill_use(caster, key, target);
+        // The script listeners (S-API-04): a `terminate` answer refuses the cast like Java's
+        // `setCastingNow(false)`, `ActionFailed` and the active intention.
+        if self
+            .script_fire(
+                crate::script::ScriptEvent::CreatureSkillUse {
+                    caster,
+                    skill: key,
+                    simultaneously,
+                    target,
+                },
+                Some(caster),
+            )
+            .is_some_and(|r| r.terminate)
+        {
+            self.refuse_cast(caster, simultaneously, true);
+            return;
+        }
 
         // TODO (Java): Unhardcode using event listeners!
         if self.skill_has_effect_type(skill, &[EffectType::Resurrection])
@@ -1698,7 +1715,10 @@ impl World {
                 }
                 return;
             }
-            // M5: over-hit (`overhitEnabled(true)` on an attackable) is not modelled.
+            // Check if over-hit is possible.
+            if skill.overhit && self.is_attackable_npc(target) {
+                self.overhit_enabled(target, true);
+            }
             // Static skills not trigger any chance skills; the weapon's `castOnMagicSkill` and the
             // `_triggerSkills` of the options.
             self.trigger_skills_on_call_skill(caster, target, skill);

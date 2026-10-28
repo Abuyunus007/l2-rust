@@ -386,6 +386,8 @@ impl World {
         // Daily tasks.
         self.reset_nevit();
         self.reset_recommends();
+        // Trigger daily reset event (`notifyEvent`, S-API-04).
+        self.script_fire(crate::script::ScriptEvent::DailyReset, None);
         // Store player variables.
         for id in self.sorted_player_ids() {
             self.store_player_variables(id);

@@ -154,7 +154,22 @@ impl World {
             }
         };
         self.refresh_weight(player);
+        self.script_item_added(player, &result.item);
         Some(result)
+    }
+
+    /// `ON_PLAYER_ITEM_ADD` (S-API-04, queued).
+    fn script_item_added(&mut self, player: ObjectId, item: &ItemData) {
+        self.script_fire_async(
+            crate::script::ScriptEvent::PlayerItemAdd {
+                player,
+                item: crate::script::ScriptItem {
+                    object_id: item.object_id,
+                    id: item.item_id,
+                },
+            },
+            Some(player),
+        );
     }
 
     /// Java `Inventory.addItem(process, itemId, count, actor, reference)` with
@@ -233,6 +248,7 @@ impl World {
         let entry = self.update_entry(&added.item, change);
         self.send_inventory_update(player, entry);
         self.send_cur_load(player);
+        self.script_item_added(player, &added.item);
         Some(added)
     }
 

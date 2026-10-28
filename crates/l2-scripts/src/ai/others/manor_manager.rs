@@ -1,9 +1,8 @@
-//! The manor managers of the castle towns: the menu page and the help pages.
+//! The manor managers of the castle towns: the menu page, the help pages and the
+//! `manor_menu_select` buttons (`ON_NPC_MANOR_BYPASS`).
 // Java: dist/game/data/scripts/ai/others/ManorManager/ManorManager.java
 //
-// Left in the world (`manor/npc.rs`): `onNpcManorBypass`, an `ON_NPC_MANOR_BYPASS` annotation
-// listener. The engine has no annotation listeners yet (`docs/design/scripts.md`, "Not in the
-// engine yet"), so the `manor_menu_select` bypass still reaches those buttons from the world.
+// The buttons' packets are `World::manor_manager_bypass` (`manor/npc.rs`, the manor logic).
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -28,6 +27,20 @@ impl Script for ManorManager {
         s.add_start_npc(&NPC);
         s.add_first_talk_id(&NPC);
         s.add_talk_id(&NPC);
+        s.add_npc_manor_bypass_id(&NPC);
+    }
+
+    fn on_npc_manor_bypass(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        npc: ScriptNpc,
+        request: i32,
+        manor_id: i32,
+        next_period: bool,
+    ) {
+        ctx.world_mut()
+            .manor_manager_bypass(player, npc.object_id, request, manor_id, next_period);
     }
 
     fn on_event(

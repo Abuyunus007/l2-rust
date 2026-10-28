@@ -42,10 +42,12 @@ impl Script for MonumentOfHeroes {
         "ai/others/MonumentOfHeroes"
     }
 
+    /// Java registers the NPCs only `if (OlympiadConfig.OLYMPIAD_ENABLED)`.
+    fn enabled(&self, world: &l2_world::World) -> bool {
+        world.olympiad_settings().enabled
+    }
+
     fn setup(&self, s: &mut ScriptSetup) {
-        // NOTE(java-quirk): Java registers the NPCs only `if (OlympiadConfig.OLYMPIAD_ENABLED)`.
-        // The script has no `onTalk` and its id is -1, so the registration changes nothing a
-        // player can see; `setup` cannot read the config, so it always registers.
         s.add_start_npc(&MONUMENTS);
         s.add_talk_id(&MONUMENTS);
     }

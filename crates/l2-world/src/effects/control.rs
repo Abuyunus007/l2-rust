@@ -901,6 +901,8 @@ impl World {
             c.sitting = true;
             c.sitting_in_progress = true;
         }
+        // `setSitting(true)`: ON_PLAYER_SIT (S-API-04, queued).
+        self.script_fire_async(crate::script::ScriptEvent::PlayerSit { player: id }, Some(id));
         // `PlayerAI.setIntentionRest()`.
         self.set_intention_rest(id);
         self.broadcast_wait_type(id, ChangeWaitType::WT_SITTING);

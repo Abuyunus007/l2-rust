@@ -2118,6 +2118,8 @@ impl World {
         if let Some(state) = self.combat.creatures.get_mut(&id) {
             state.aggro.clear();
         }
+        // "Clear overhit values."
+        self.clear_overhit(id);
     }
 
     /// Java `Attackable.isInAggroList(creature)`.

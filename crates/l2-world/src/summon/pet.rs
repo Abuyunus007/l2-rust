@@ -1637,7 +1637,11 @@ impl World {
                             summon_type: SummonKind::Pet.summon_type(),
                         },
                     );
-                    // ON_PLAYER_SUMMON_TALK: script event (D-05).
+                    // ON_PLAYER_SUMMON_TALK (S-API-04, queued).
+                    self.script_fire_async(
+                        crate::script::ScriptEvent::PlayerSummonTalk { summon: pet },
+                        Some(pet),
+                    );
                 }
                 self.update_not_move_until(player);
             }

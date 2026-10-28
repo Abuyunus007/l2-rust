@@ -1309,6 +1309,16 @@ fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
     if let Some(player) = world.players.get_mut(&id) {
         player.data.class_id = new_class;
     }
+    // ON_PLAYER_PROFESSION_CHANGE (S-API-04, queued).
+    let is_sub_class = world.is_subclass_active(id);
+    world.script_fire_async(
+        crate::script::ScriptEvent::PlayerProfessionChange {
+            player: id,
+            class_id: new_class,
+            is_sub_class,
+        },
+        Some(id),
+    );
     let third = ClassId(u16::try_from(new_class).unwrap_or(0)).class_level() == 3;
     world.send(
         id,

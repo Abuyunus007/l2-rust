@@ -1155,6 +1155,11 @@ impl Server {
                     // skipped with `NoQuests`) comes before `SpawnData` (S-API-01).
                     world.set_script_settings(script_settings);
                     world.set_global_variables(global_variables);
+                    // The scripts that Java creates only with a config key (`Script::enabled`) read
+                    // these two sets of settings when they are installed; they are set again in
+                    // their own sections below (S-API-04).
+                    world.set_olympiad_settings(olympiad_settings.clone());
+                    world.set_minigame_settings(minigame_settings.clone());
                     let scripts = (!config.development.no_quests).then(l2_scripts::all);
                     npcs::spawn_npcs_with_scripts(world, &datapack, ids, &config, &config_dir, scripts);
                     // Java: RaidBossPointsManager (GameServer, early), GrandBossManager.initZones (after

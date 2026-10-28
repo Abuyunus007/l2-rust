@@ -81,6 +81,56 @@ pub enum EventKind {
     DayNightChange,
     /// `ON_CREATURE_DEATH` of `ListenerRegisterType.NPC` (`@Id`, S-API-03), by NPC id.
     CreatureDeath,
+    /// `ON_CREATURE_ATTACK` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureAttack,
+    /// `ON_CREATURE_ATTACK_AVOID` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureAttackAvoid,
+    /// `ON_CREATURE_ATTACKED` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureAttacked,
+    /// `ON_CREATURE_DAMAGE_RECEIVED` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureDamageReceived,
+    /// `ON_CREATURE_DAMAGE_DEALT` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureDamageDealt,
+    /// `ON_CREATURE_KILLED` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureKilled,
+    /// `ON_CREATURE_SKILL_USE` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CreatureSkillUse,
+    /// `ON_PLAYER_SIT` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerSit,
+    /// `ON_PLAYER_LEVEL_CHANGED` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerLevelChanged,
+    /// `ON_PLAYER_ITEM_ADD` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerItemAdd,
+    /// `ON_PLAYER_ITEM_PICKUP` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerItemPickup,
+    /// `ON_PLAYER_PROFESSION_CHANGE` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerProfessionChange,
+    /// `ON_PLAYER_SUMMON_TALK` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayerSummonTalk,
+    /// `ON_PLAYABLE_EXP_CHANGED` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    PlayableExpChanged,
+    /// `ON_NPC_MANOR_BYPASS` (`add_npc_manor_bypass_id`, S-API-04), by NPC id.
+    NpcManorBypass,
+    /// `ON_TRAP_ACTION` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    TrapAction,
+    /// `ON_DAILY_RESET` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    DailyReset,
+    /// `ON_CLAN_WAR_FINISH` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    ClanWarFinish,
+    /// `ON_CLAN_WAR_START` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    ClanWarStart,
+    /// `ON_CASTLE_SIEGE_FINISH` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CastleSiegeFinish,
+    /// `ON_CASTLE_SIEGE_OWNER_CHANGE` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CastleSiegeOwnerChange,
+    /// `ON_CASTLE_SIEGE_START` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    CastleSiegeStart,
+    /// `ON_FORT_SIEGE_FINISH` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    FortSiegeFinish,
+    /// `ON_FORT_SIEGE_START` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    FortSiegeStart,
+    /// `ON_OLYMPIAD_MATCH_RESULT` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
+    OlympiadMatchResult,
 }
 
 impl EventKind {
@@ -94,6 +144,31 @@ impl EventKind {
             | Self::PlayerPressTutorialMark
             | Self::PlayerLogout
             | Self::DayNightChange => RegisterType::Global,
+            Self::NpcManorBypass => RegisterType::Npc,
+            Self::CreatureAttack
+            | Self::CreatureAttackAvoid
+            | Self::CreatureAttacked
+            | Self::CreatureDamageReceived
+            | Self::CreatureDamageDealt
+            | Self::CreatureKilled
+            | Self::CreatureSkillUse
+            | Self::PlayerSit
+            | Self::PlayerLevelChanged
+            | Self::PlayerItemAdd
+            | Self::PlayerItemPickup
+            | Self::PlayerProfessionChange
+            | Self::PlayerSummonTalk
+            | Self::PlayableExpChanged
+            | Self::TrapAction
+            | Self::DailyReset
+            | Self::ClanWarFinish
+            | Self::ClanWarStart
+            | Self::CastleSiegeFinish
+            | Self::CastleSiegeOwnerChange
+            | Self::CastleSiegeStart
+            | Self::FortSiegeFinish
+            | Self::FortSiegeStart
+            | Self::OlympiadMatchResult => RegisterType::Global,
             _ => RegisterType::Npc,
         }
     }
@@ -129,6 +204,31 @@ impl EventKind {
             Self::PlayerLogout => (219, "ON_PLAYER_LOGOUT"),
             Self::PlayerPressTutorialMark => (221, "ON_PLAYER_PRESS_TUTORIAL_MARK"),
             Self::DayNightChange => (240, "ON_DAY_NIGHT_CHANGE"),
+            Self::CreatureAttack => (136, "ON_CREATURE_ATTACK"),
+            Self::CreatureAttackAvoid => (137, "ON_CREATURE_ATTACK_AVOID"),
+            Self::CreatureAttacked => (138, "ON_CREATURE_ATTACKED"),
+            Self::CreatureDamageReceived => (139, "ON_CREATURE_DAMAGE_RECEIVED"),
+            Self::CreatureDamageDealt => (140, "ON_CREATURE_DAMAGE_DEALT"),
+            Self::CreatureKilled => (142, "ON_CREATURE_KILLED"),
+            Self::CreatureSkillUse => (144, "ON_CREATURE_SKILL_USE"),
+            Self::PlayerSit => (229, "ON_PLAYER_SIT"),
+            Self::PlayerLevelChanged => (217, "ON_PLAYER_LEVEL_CHANGED"),
+            Self::PlayerItemAdd => (207, "ON_PLAYER_ITEM_ADD"),
+            Self::PlayerItemPickup => (210, "ON_PLAYER_ITEM_PICKUP"),
+            Self::PlayerProfessionChange => (223, "ON_PLAYER_PROFESSION_CHANGE"),
+            Self::PlayerSummonTalk => (232, "ON_PLAYER_SUMMON_TALK"),
+            Self::PlayableExpChanged => (178, "ON_PLAYABLE_EXP_CHANGED"),
+            Self::NpcManorBypass => (172, "ON_NPC_MANOR_BYPASS"),
+            Self::TrapAction => (236, "ON_TRAP_ACTION"),
+            Self::DailyReset => (241, "ON_DAILY_RESET"),
+            Self::ClanWarFinish => (132, "ON_CLAN_WAR_FINISH"),
+            Self::ClanWarStart => (133, "ON_CLAN_WAR_START"),
+            Self::CastleSiegeFinish => (127, "ON_CASTLE_SIEGE_FINISH"),
+            Self::CastleSiegeOwnerChange => (128, "ON_CASTLE_SIEGE_OWNER_CHANGE"),
+            Self::CastleSiegeStart => (129, "ON_CASTLE_SIEGE_START"),
+            Self::FortSiegeFinish => (150, "ON_FORT_SIEGE_FINISH"),
+            Self::FortSiegeStart => (151, "ON_FORT_SIEGE_START"),
+            Self::OlympiadMatchResult => (175, "ON_OLYMPIAD_MATCH_RESULT"),
         }
     }
 
@@ -316,6 +416,155 @@ impl ScriptSetup {
     /// `@RegisterEvent(ON_CREATURE_DEATH)` + `@RegisterType(NPC)` + `@Id(..)`.
     pub fn add_creature_death_id(&mut self, npc_ids: &[i32]) {
         self.add(EventKind::CreatureDeath, npc_ids);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_ATTACK)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_attack(&mut self) {
+        self.add(EventKind::CreatureAttack, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_ATTACKED)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_attacked(&mut self) {
+        self.add(EventKind::CreatureAttacked, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_ATTACK_AVOID)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_attack_avoid(&mut self) {
+        self.add(EventKind::CreatureAttackAvoid, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_SKILL_USE)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_skill_use(&mut self) {
+        self.add(EventKind::CreatureSkillUse, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_DAMAGE_DEALT)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_damage_dealt(&mut self) {
+        self.add(EventKind::CreatureDamageDealt, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_DAMAGE_RECEIVED)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_damage_received(&mut self) {
+        self.add(EventKind::CreatureDamageReceived, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CREATURE_KILLED)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_creature_killed(&mut self) {
+        self.add(EventKind::CreatureKilled, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_SIT)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_sit(&mut self) {
+        self.add(EventKind::PlayerSit, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_LEVEL_CHANGED)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_level_changed(&mut self) {
+        self.add(EventKind::PlayerLevelChanged, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_ITEM_ADD)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_item_add(&mut self) {
+        self.add(EventKind::PlayerItemAdd, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_ITEM_PICKUP)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_item_pickup(&mut self) {
+        self.add(EventKind::PlayerItemPickup, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_PROFESSION_CHANGE)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_profession_change(&mut self) {
+        self.add(EventKind::PlayerProfessionChange, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYER_SUMMON_TALK)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_player_summon_talk(&mut self) {
+        self.add(EventKind::PlayerSummonTalk, &[]);
+    }
+
+    /// `@RegisterEvent(ON_PLAYABLE_EXP_CHANGED)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_playable_exp_changed(&mut self) {
+        self.add(EventKind::PlayableExpChanged, &[]);
+    }
+
+    /// `@RegisterEvent(ON_TRAP_ACTION)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_trap_action(&mut self) {
+        self.add(EventKind::TrapAction, &[]);
+    }
+
+    /// `@RegisterEvent(ON_DAILY_RESET)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_daily_reset(&mut self) {
+        self.add(EventKind::DailyReset, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CLAN_WAR_START)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_clan_war_start(&mut self) {
+        self.add(EventKind::ClanWarStart, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CLAN_WAR_FINISH)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_clan_war_finish(&mut self) {
+        self.add(EventKind::ClanWarFinish, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CASTLE_SIEGE_START)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_castle_siege_start(&mut self) {
+        self.add(EventKind::CastleSiegeStart, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CASTLE_SIEGE_FINISH)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_castle_siege_finish(&mut self) {
+        self.add(EventKind::CastleSiegeFinish, &[]);
+    }
+
+    /// `@RegisterEvent(ON_CASTLE_SIEGE_OWNER_CHANGE)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_castle_siege_owner_change(&mut self) {
+        self.add(EventKind::CastleSiegeOwnerChange, &[]);
+    }
+
+    /// `@RegisterEvent(ON_FORT_SIEGE_START)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_fort_siege_start(&mut self) {
+        self.add(EventKind::FortSiegeStart, &[]);
+    }
+
+    /// `@RegisterEvent(ON_FORT_SIEGE_FINISH)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_fort_siege_finish(&mut self) {
+        self.add(EventKind::FortSiegeFinish, &[]);
+    }
+
+    /// `@RegisterEvent(ON_OLYMPIAD_MATCH_RESULT)` (a global listener, S-API-04): the script hears the event for
+    /// every object. The hook is the typed one of the event (see `Script::on_listener_event`).
+    pub fn set_on_olympiad_match_result(&mut self) {
+        self.add(EventKind::OlympiadMatchResult, &[]);
+    }
+
+    /// `@RegisterEvent(ON_NPC_MANOR_BYPASS)` + `@RegisterType(NPC)` + `@Id(..)` (S-API-04).
+    pub fn add_npc_manor_bypass_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::NpcManorBypass, npc_ids);
     }
 
     /// Java `registerQuestItems(items)`: the items `exitQuest` takes away. A second call

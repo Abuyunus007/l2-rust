@@ -231,8 +231,9 @@ pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
 pub use script::{
-    PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite, Script, ScriptCtx,
-    ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup, TimerParams,
+    DamageInfo, EventKind, PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite,
+    Script, ScriptCtx, ScriptEvent, ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup,
+    TerminateReturn, TimerParams, TrapAction,
 };
 pub use script_handlers::unstuck::{ScriptHandlerSettings, ScriptHandlerTimer};
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};

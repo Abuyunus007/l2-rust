@@ -452,6 +452,9 @@ impl World {
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OlympiadReread { result, then } => self.on_olympiad_reread(result, then),
             WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
+            WorldCommand::GlobalVariablesReread { token, result } => {
+                self.on_global_variables_reread(token, result)
+            }
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,

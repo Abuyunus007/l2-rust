@@ -430,6 +430,12 @@ pub enum WorldCommand {
         result: Result<crate::boss::BossRereadRows, ()>,
         then: crate::boss::BossReadThen,
     },
+    /// The answer to `PersistCommand::GlobalVariablesRereadRequest`: the `(var, value)` rows that
+    /// exist (a NULL value is `None`), or `Err` when the read failed (S-API-04).
+    GlobalVariablesReread {
+        token: u64,
+        result: Result<Vec<(String, Option<String>)>, ()>,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -585,6 +591,11 @@ impl fmt::Debug for WorldCommand {
             Self::BossReread { result, then } => write!(
                 f,
                 "BossReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::GlobalVariablesReread { token, result } => write!(
+                f,
+                "GlobalVariablesReread({token}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

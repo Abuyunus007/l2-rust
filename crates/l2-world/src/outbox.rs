@@ -241,6 +241,10 @@ pub enum PersistCommand {
         kind: crate::boss::BossReadKind,
         then: crate::boss::BossReadThen,
     },
+    /// Asks the persistence task to read `global_variables` rows again (D-50, D-54, S-API-04):
+    /// the rows named, by `SELECT * FROM global_variables WHERE var = ?`. The answer comes back
+    /// as `WorldCommand::GlobalVariablesReread` with the same `token`.
+    GlobalVariablesRereadRequest { token: u64, names: Vec<String> },
     /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
     /// `instance/times.rs`). Applied in order with the other commands.
     InstanceTime(crate::instance::InstanceTimeWrite),

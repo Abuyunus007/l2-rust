@@ -111,6 +111,19 @@ pub(crate) enum PendingEvent {
     },
     Logout(ObjectId),
     DayNight(bool),
+    /// An event of `events.rs` (`notifyEventAsync`).
+    Fire {
+        event: super::events::ScriptEvent,
+        container: Option<ObjectId>,
+    },
+    /// A global variable re-read came back (`reread.rs`).
+    RereadDone {
+        script: ScriptId,
+        event: String,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+        ok: bool,
+    },
 }
 
 impl World {
@@ -119,6 +132,11 @@ impl World {
             object_id: npc,
             id: n.npc_id,
         })
+    }
+
+    /// The NPC as a script sees it when a template listener of `kind` exists for it.
+    pub(crate) fn script_npc_with_listener(&self, kind: EventKind, npc: ObjectId) -> Option<ScriptNpc> {
+        self.has_npc_listener(kind, npc)
     }
 
     fn has_npc_listener(&self, kind: EventKind, npc: ObjectId) -> Option<ScriptNpc> {
@@ -313,6 +331,14 @@ impl World {
                     self.with_script(script, |s, ctx| s.on_player_logout(ctx, player));
                 }
             }
+            PendingEvent::Fire { event, container } => self.dispatch_fired_event(event, container),
+            PendingEvent::RereadDone {
+                script,
+                event,
+                npc,
+                player,
+                ok,
+            } => self.dispatch_reread_done(script, &event, npc, player, ok),
             PendingEvent::DayNight(is_night) => {
                 for script in self.scripts.listeners.global(EventKind::DayNightChange).to_vec() {
                     self.with_script(script, |s, ctx| s.on_day_night_change(ctx, is_night));
@@ -745,6 +771,7 @@ impl World {
         self.script_cancel_timers_of(player);
         self.scripts.players.remove(&player);
         self.scripts.radar.remove(&player);
+        self.script_forget_listeners(player);
     }
 
     /// `Npc.onDecay`: `stopQuestTimers()`.
@@ -752,6 +779,8 @@ impl World {
         self.script_cancel_timers_of(npc);
         self.scripts.kill_delays.remove(&npc);
         self.script_forget_all_seen(npc);
+        self.script_forget_listeners(npc);
+        self.script_forget_npc_extras(npc);
     }
 
     // ------------------------------------------------------------------ S-API-03 hooks
@@ -800,14 +829,13 @@ impl World {
     /// Java `Creature.doDie` / `Playable.doDie`: `ON_CREATURE_DEATH`, a synchronous
     /// `notifyEvent` right after the creature is dead.
     // NOTE(java-quirk): `Playable.doDie` asks for a `TerminateReturn` that can keep the playable
-    // alive (the first listener's answer); `Creature.doDie` ignores it. The hooks return
-    // nothing, so a summon always dies here.
-    pub(crate) fn script_on_creature_death(&mut self, victim: ObjectId, killer: Option<ObjectId>) {
-        let Some(n) = self.has_npc_listener(EventKind::CreatureDeath, victim) else {
-            return;
-        };
-        for script in self.listeners_of(EventKind::CreatureDeath, n.id) {
-            self.with_script(script, |s, ctx| s.on_creature_death(ctx, killer, victim));
-        }
+    // alive (the first listener's answer); `Creature.doDie` ignores it. The answer is returned
+    // here and `death.rs` reads it for the playable only (S-API-04).
+    pub(crate) fn script_on_creature_death(
+        &mut self,
+        victim: ObjectId,
+        killer: Option<ObjectId>,
+    ) -> Option<super::TerminateReturn> {
+        self.script_fire(super::ScriptEvent::CreatureDeath { killer, victim }, Some(victim))
     }
 }

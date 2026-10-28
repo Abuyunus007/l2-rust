@@ -397,7 +397,15 @@ impl World {
         player.core.level = next.level;
         // `setLearningClass(getPlayerClass())`.
         player.talk.learning_class = u16::try_from(class_id).ok().map(ClassId);
-        // ON_PLAYER_PROFESSION_CHANGE: script event (D-05).
+        // `setClassTemplate`: ON_PLAYER_PROFESSION_CHANGE (S-API-04, queued).
+        self.script_fire_async(
+            crate::script::ScriptEvent::PlayerProfessionChange {
+                player: id,
+                class_id,
+                is_sub_class: class_index != 0,
+            },
+            Some(id),
+        );
         if self.party_of(id).is_some() {
             self.recalculate_party_level_of(id);
         }

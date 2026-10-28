@@ -88,7 +88,20 @@ impl World {
         if !self.objects.contains_key(&target) || self.is_attack_disabled(id) || !self.is_targetable(target) {
             return;
         }
-        // Java: the ON_CREATURE_ATTACK / ON_CREATURE_ATTACKED script listeners (D-05).
+        // The ON_CREATURE_ATTACK / ON_CREATURE_ATTACKED script listeners (S-API-04): a `terminate`
+        // answer ends the attack.
+        let attack = crate::script::ScriptEvent::CreatureAttack { attacker: id, target };
+        let attacked = crate::script::ScriptEvent::CreatureAttacked { attacker: id, target };
+        for (event, container) in [(attack, id), (attacked, target)] {
+            if self
+                .script_fire(event, Some(container))
+                .is_some_and(|r| r.terminate)
+            {
+                self.set_intention_active(id);
+                self.send(id, &ActionFailed);
+                return;
+            }
+        }
 
         // An NPC does not hit a corpse, nobody hits outside the surrounding regions, and a player
         // does not hit the dead (Java's two branches, which end the same way).

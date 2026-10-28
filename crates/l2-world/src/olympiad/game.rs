@@ -1285,6 +1285,23 @@ impl World {
         }
     }
 
+    /// `ON_OLYMPIAD_MATCH_RESULT` (S-API-04): `notifyEventAsync(new OnOlympiadMatchResult(..))`.
+    fn script_match_result(
+        &mut self,
+        kind: CompetitionType,
+        winner: Option<&Participant>,
+        loser: &Participant,
+    ) {
+        self.script_fire_async(
+            crate::script::ScriptEvent::OlympiadMatchResult {
+                winner: winner.map(|p| p.object_id),
+                loser: loser.object_id,
+                competition_type: kind as i32,
+            },
+            None,
+        );
+    }
+
     /// `OlympiadGameNormal.validateWinner`.
     fn validate_winner_normal(&mut self, index: usize, game: &OlympiadGame) {
         let max_points = self.olympiad.settings.max_points;
@@ -1346,6 +1363,7 @@ impl World {
                 list2.push(self.result_entry(&two, damage_two, two_points - point_diff, -point_diff));
                 winside = 1;
                 self.reward_participant(one.player, &reward);
+                self.script_match_result(game.kind, Some(&one), &two);
             } else if one_crash && !two_crash {
                 self.win_message(index, &two.name);
                 self.update_noble_stat(two.object_id, NobleStat::Won, 1);
@@ -1356,6 +1374,7 @@ impl World {
                 list1.push(self.result_entry(&one, damage_one, one_points - point_diff, -point_diff));
                 winside = 2;
                 self.reward_participant(two.player, &reward);
+                self.script_match_result(game.kind, Some(&two), &one);
             } else {
                 self.tie_message(index);
                 self.update_noble_stat(one.object_id, NobleStat::Lost, 1);
@@ -1372,6 +1391,10 @@ impl World {
                 self.update_noble_stat(par.object_id, weekly, 1);
             }
             self.broadcast_result(index, tie, winside, list1, list2);
+            // NOTE(java-quirk): every crash result, a win included, ends with one more event per
+            // fighter that names no winner.
+            self.script_match_result(game.kind, None, &one);
+            self.script_match_result(game.kind, None, &two);
             return;
         }
 
@@ -1416,6 +1439,7 @@ impl World {
             winside = 1;
             self.save_results(&one, &two, 1, game.start_time, fight_time, game.kind);
             self.reward_participant(one_player, &reward);
+            self.script_match_result(game.kind, Some(&one), &two);
         } else if !one_online
             || (one_hp == 0.0 && two_hp != 0.0)
             || (damage_two > damage_one && one_hp != 0.0 && two_hp != 0.0)
@@ -1430,6 +1454,7 @@ impl World {
             winside = 2;
             self.save_results(&one, &two, 2, game.start_time, fight_time, game.kind);
             self.reward_participant(two_player, &reward);
+            self.script_match_result(game.kind, Some(&two), &one);
         } else {
             self.save_results(&one, &two, 0, game.start_time, fight_time, game.kind);
             self.tie_message(index);

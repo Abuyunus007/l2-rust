@@ -85,7 +85,11 @@ impl World {
             &SystemMessage::new(SystemMessageId::TheS1SiegeHasStarted)
                 .with(SystemMessageParam::CastleName(id.0)),
         );
-        // Scripts: `OnCastleSiegeStart` (D-05).
+        // `ON_CASTLE_SIEGE_START` (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::CastleSiegeStart { castle_id: id.0 },
+            None,
+        );
     }
 
     // ------------------------------------------------------------------ end
@@ -174,7 +178,11 @@ impl World {
             castle.first_mid_victory = false;
         }
         self.castle_siege_zone_set_active(id, false);
-        // Scripts: `OnCastleSiegeFinish` (D-05).
+        // `ON_CASTLE_SIEGE_FINISH` (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::CastleSiegeFinish { castle_id: id.0 },
+            None,
+        );
     }
 
     // ------------------------------------------------------------------ midVictory
@@ -262,7 +270,11 @@ impl World {
         self.siege_spawn_control_tower(id);
         self.siege_spawn_flame_tower(id);
         self.siege_update_player_siege_state_flags(id, false);
-        // Scripts: `OnCastleSiegeOwnerChange` (D-05).
+        // `ON_CASTLE_SIEGE_OWNER_CHANGE` (S-API-04).
+        self.script_fire_async(
+            crate::script::ScriptEvent::CastleSiegeOwnerChange { castle_id: id.0 },
+            None,
+        );
     }
 
     /// `removeAttacker(getAttackerClan(owner)); addDefender(sc, OWNER)`.

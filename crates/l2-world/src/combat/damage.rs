@@ -383,10 +383,23 @@ impl World {
                 self.minions_assist(target, attacker);
             }
             // Champions are not rolled (`ChampionMonstersConfig`), so the HP is not divided.
-            // AttackableStatus.reduceHp: over-hit is a skill effect (M5).
+        }
+        // `AttackableStatus.reduceHp`: the over-hit values of a hit that kills (S-API-04).
+        let attackable = self.is_attackable_npc(target) && !self.is_dead(target);
+        if attackable {
+            match attacker {
+                Some(attacker) if amount > 0.0 && self.is_overhit(target) => {
+                    self.set_overhit_values(target, attacker, amount);
+                }
+                _ => self.overhit_enabled(target, false),
+            }
         }
         // `CreatureStatus` / `NpcStatus` / `AttackableStatus.reduceHp` (`status.rs`).
         self.reduce_hp(target, amount, attacker);
+        // And the attacker's hit didn't kill the mob, clear the over-hit flag.
+        if attackable && !self.is_dead(target) {
+            self.overhit_enabled(target, false);
+        }
     }
 
     /// Java `Attackable.addDamage(attacker, damage, skill)` and `addDamageHate`: the AI hears
