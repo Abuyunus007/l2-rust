@@ -2198,9 +2198,11 @@ impl World {
         let AggroInfo { hate, .. } = info;
         let invisible = self.objects.get(&target).is_some_and(|e| e.invisible);
         let spawned = self.objects.get(&target).is_some_and(|e| e.spawned);
-        // Players: `isInvul()` joins the invisible check (`isSpawnProtected()` is the teleport
-        // protection, which is not modelled).
-        if invisible || !spawned || (self.is_player(target) && self.is_invul(target)) {
+        // Players: `isInvul() || isSpawnProtected()` join the invisible check.
+        if invisible
+            || !spawned
+            || (self.is_player(target) && (self.is_invul(target) || self.is_spawn_protected(target)))
+        {
             // Remove Object Should Use This Method and Can be Blocked While Interacting.
             if let Some(state) = self.combat.creatures.get_mut(&id) {
                 state.aggro.retain(|a| a.attacker != target);

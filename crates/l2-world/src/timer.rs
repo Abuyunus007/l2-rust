@@ -178,6 +178,8 @@ pub enum TimerKind {
     ClassChangeSkillList(ObjectId),
     /// The state timer of an item auction instance (start, extension, end), see `item_auction/`.
     ItemAuction(crate::item_auction::ItemAuctionTimer),
+    /// The lottery's start, stop-selling and finish tasks, see `lottery/`.
+    Lottery(crate::lottery::LotteryTimer),
     /// The shutdown countdown, the automatic announcements and the `//debug` tasks, see
     /// `admin/control.rs`.
     Admin(crate::admin::control::AdminTimer),

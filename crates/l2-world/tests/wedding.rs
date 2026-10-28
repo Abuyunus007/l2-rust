@@ -718,3 +718,32 @@ fn an_aborted_gotolove_stays_put() {
     s.ticks(60);
     assert_eq!(s.world.position_of(ObjectId(ALICE)), Some((X, Y, Z)));
 }
+
+/// `VoiceCommand` (`voice .gotolove` on an NPC page) returns what `Wedding.onCommand` returns:
+/// `false` for an unmarried player and for a word nobody handles, `true` when the partner is
+/// reached (S-HAND-03).
+#[test]
+fn a_voice_bypass_returns_the_wedding_result() {
+    let mut s = Scene::new();
+    s.world.load_couples(vec![Couple {
+        id: 0x6000_0012,
+        player1_id: ALICE,
+        player2_id: BOB,
+        married: true,
+        affiance_date: 1,
+        wedding_date: 2,
+    }]);
+    s.enter(Who::new(ALICE, "Alice", 1));
+    s.enter(Who {
+        pos: (X + 1500, Y, Z),
+        ..Who::new(BOB, "Bob", 0)
+    });
+    s.enter(Who::new(CAROL, "Carol", 1));
+    s.take();
+    let handler = BypassHandlers::default().get("voice .gotolove").unwrap();
+    assert!(!handler(&mut s.world, ObjectId(CAROL), "voice .gotolove", None));
+    assert_eq!(texts(&s.take(), CAROL), ["You're not married."]);
+    assert!(handler(&mut s.world, ObjectId(ALICE), "voice .gotolove", None));
+    assert!(s.world.is_casting_now(ObjectId(ALICE)));
+    assert!(!handler(&mut s.world, ObjectId(ALICE), "voice .nothing", None));
+}

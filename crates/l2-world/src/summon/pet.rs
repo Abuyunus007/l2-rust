@@ -30,8 +30,8 @@
 //
 // # Left out, with the system that brings it
 // - Mounts are `mount.rs` (`Player.mount` unsummons the pet through [`World::pet_unsummon`]).
-// - The spawn protection that delays `CharSummonTable.restorePet` until the first action: the
-//   pet comes back at the first `on_action_request` (see `World::pet_on_action_request`).
+// - The spawn protection (`World::set_spawn_protection`) delays `CharSummonTable.restorePet` until
+//   the first action: the pet comes back at the first `on_action_request`.
 // - The flood protector of the pet packets, `PunishmentManager.handleIllegalPlayerAction` for a
 //   wrong amount (logged, see `pet_items.rs`).
 
@@ -231,9 +231,6 @@ pub struct PetWorld {
     pub(crate) no_row: HashSet<ObjectId>,
     /// Owners waiting for the answer to a row request, with the collar.
     pub(crate) row_pending: HashMap<ObjectId, ObjectId>,
-    /// Owners whose stored pet comes back at their first action, with the tick the spawn
-    /// protection ends (`isSpawnProtected` in Java).
-    pub(crate) restore_due: HashMap<ObjectId, u64>,
 }
 
 impl World {
@@ -1657,9 +1654,20 @@ impl World {
     }
 
     /// Java `Player.onActionRequest()`: the pet that was stored for a restore comes back at the
-    /// first action. Spawn protection, its message and the servitor restore are not modelled.
+    /// first action. The servitor restore is not modelled.
     pub(crate) fn on_action_request(&mut self, player: ObjectId) {
-        self.pet_on_action_request(player);
+        if self.is_spawn_protected(player) {
+            self.pet_on_action_request(player);
+            self.set_spawn_protection(player, false);
+            if !self.is_inside_zone(player, crate::zones::ZoneId::Peace) {
+                self.send(
+                    player,
+                    &l2_protocol_game::server::SystemMessage::new(
+                        l2_protocol_game::SystemMessageId::YouAreNoLongerProtectedFromAggressiveMonsters,
+                    ),
+                );
+            }
+        }
         // The teleport protection ends with the first action.
         if self.is_teleport_protected(player) {
             self.set_teleport_protection(player, false);
@@ -1740,14 +1748,12 @@ impl World {
             && let Some(control) = restore
         {
             self.summons.pet_world.saved.insert(owner, control);
-            // `EnterWorld`: `if (PLAYER_SPAWN_PROTECTION > 0) player.setSpawnProtection(true)`.
-            let seconds = u64::try_from(self.summons.pet_world.settings.player_spawn_protection).unwrap_or(0);
-            if seconds > 0 {
-                let deadline = self.tick + TimerWheel::ms_to_ticks(seconds * 1000);
-                self.summons.pet_world.restore_due.insert(owner, deadline);
-            }
         } else {
             self.summons.pet_world.saved.remove(&owner);
+        }
+        // `EnterWorld`: `if (PLAYER_SPAWN_PROTECTION > 0) player.setSpawnProtection(true)`.
+        if self.summons.pet_world.settings.player_spawn_protection > 0 {
+            self.set_spawn_protection(owner, true);
         }
     }
 
@@ -1755,10 +1761,7 @@ impl World {
     /// (`CharSummonTable.restorePet`).
     pub fn pet_on_action_request(&mut self, owner: ObjectId) {
         // `isSpawnProtected()`: the protection ends with the first action or its time.
-        let Some(deadline) = self.summons.pet_world.restore_due.remove(&owner) else {
-            return;
-        };
-        if self.tick > deadline {
+        if !self.is_spawn_protected(owner) {
             return;
         }
         if self.summon_of(owner).is_some() {
@@ -1793,7 +1796,6 @@ impl World {
     pub(crate) fn pet_forget_owner(&mut self, owner: ObjectId) {
         self.summons.pet_world.pending_collar.remove(&owner);
         self.summons.pet_world.row_pending.remove(&owner);
-        self.summons.pet_world.restore_due.remove(&owner);
         self.summons.pet_world.have_inv_items.remove(&owner);
         self.summons.pet_world.saved.remove(&owner);
     }

@@ -32,6 +32,7 @@ mod instance_times;
 mod item_auctions;
 mod item_reuse;
 mod items;
+mod lottery;
 mod macros;
 mod manor;
 mod messages;
@@ -99,6 +100,7 @@ pub use items::{
     ItemElementalRow, ItemLocation, ItemRepository, ItemRow, ItemUpdate, NewItem, OwnerAugmentationRow,
     OwnerElementalRow, PaperdollItemRow,
 };
+pub use lottery::{LotteryDbRow, LotteryRepository, LotteryResultRow};
 pub use macros::{MacroRepository, MacroRow, NewMacro};
 pub use manor::{ManorRepository, ProcureRow, ProductionRow};
 pub use messages::{MessageRepository, MessageRow};

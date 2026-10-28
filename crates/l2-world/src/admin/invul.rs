@@ -5,8 +5,6 @@
 // is Java's `isInvul()`, so a teleporting character is invulnerable as well.
 //
 // # Left out, with the system that brings it
-// - `Player.isTeleportProtected()` (spawn protection) is part of Java's `Player.isInvul()`; it is
-//   not modelled yet, so it is not part of the answer here either.
 
 use l2_util::ObjectId;
 

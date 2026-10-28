@@ -64,6 +64,7 @@ pub use game::{
     OwnerElementalRow, PaperdollItemRow,
 };
 pub use game::{ItemReuseRepository, ItemReuseRow, NewItemReuse};
+pub use game::{LotteryDbRow, LotteryRepository, LotteryResultRow};
 pub use game::{ManorRepository, ProcureRow, ProductionRow};
 pub use game::{MessageRepository, MessageRow};
 pub use game::{

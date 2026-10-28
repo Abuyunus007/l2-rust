@@ -2815,3 +2815,18 @@ mod siege_tests {
         assert_eq!(s.castles[&2].max_mercenaries, 150);
     }
 }
+
+/// The values the lottery reads (`General.ini`, and `SideBySide.ini` for the D-53 switch).
+pub fn lottery_settings(config: &GameConfig, config_dir: &std::path::Path) -> l2_world::LotterySettings {
+    let g = &config.general;
+    l2_world::LotterySettings {
+        allow_lottery: g.allow_lottery,
+        prize: g.alt_lottery_prize,
+        ticket_price: g.alt_lottery_ticket_price,
+        rate_5: g.alt_lottery_5_number_rate,
+        rate_4: g.alt_lottery_4_number_rate,
+        rate_3: g.alt_lottery_3_number_rate,
+        two_and_one_prize: g.alt_lottery_2_and_1_number_prize,
+        cycle_database_writes: crate::cycle_database_writes(config_dir),
+    }
+}

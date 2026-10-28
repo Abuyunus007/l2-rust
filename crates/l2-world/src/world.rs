@@ -161,6 +161,8 @@ pub struct World {
     pub(crate) territory: crate::territory::TerritoryWorld,
     /// The item auction instances, their auctions and state timers (L-05, `item_auction/`).
     pub(crate) item_auctions: crate::item_auction::ItemAuctionWorld,
+    /// The Lucky Lottery (S-HAND-03, `lottery/`).
+    pub(crate) lottery: crate::lottery::LotteryWorld,
     /// The grand and raid boss managers and the raid points (M8-BOSS-01, `boss/`).
     pub(crate) boss: crate::boss::BossWorld,
     /// The instances, their script worlds and the re-entry times (M8-INST-01, `instance/`).
@@ -263,6 +265,7 @@ impl World {
             residence_npc: crate::residence::npc::ResidenceNpcWorld::default(),
             territory: crate::territory::TerritoryWorld::default(),
             item_auctions: crate::item_auction::ItemAuctionWorld::default(),
+            lottery: crate::lottery::LotteryWorld::default(),
             boss: crate::boss::BossWorld::default(),
             instances: crate::instance::InstanceManager::default(),
             cursed: crate::cursed::CursedWorld::default(),
@@ -444,6 +447,7 @@ impl World {
             } => self.on_clan_warehouse_loaded(player, clan_id, result),
             WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
             WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
+            WorldCommand::LotteryReread { result, then } => self.on_lottery_reread(result, then),
             WorldCommand::ItemAuctionReread {
                 instance_id,
                 result,
@@ -1042,6 +1046,8 @@ impl World {
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
             // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
             TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
+            // Java: LotteryManager's tasks (S-HAND-03)
+            TimerKind::Lottery(timer) => self.on_lottery_timer(timer),
             // Java: Instance.CheckTimeUp, TimeUp and notifyDeath's eject task
             TimerKind::Instance(timer) => self.on_instance_timer(timer),
             // Java: WalkingManager's start, repeat and arrival tasks

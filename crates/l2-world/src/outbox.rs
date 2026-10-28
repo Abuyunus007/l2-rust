@@ -228,6 +228,13 @@ pub enum PersistCommand {
         instance_id: i32,
         then: crate::item_auction::ItemAuctionThen,
     },
+    /// A `lottery` write with Java's statement (`LotteryManager`, S-HAND-03, see `lottery/`). Sent
+    /// only while this server runs the lottery (`CycleDatabaseWrites`, D-53).
+    Lottery(crate::lottery::LotteryWrite),
+    /// Asks the persistence task to read the tickets of a draw (`items`) or the rows of `lottery`
+    /// (D-50). The answer comes back as `WorldCommand::LotteryReread`; it includes every write sent
+    /// before it.
+    LotteryRequest { then: crate::lottery::LotteryThen },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),

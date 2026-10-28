@@ -1,8 +1,5 @@
 //! The `FindPvP` NPC bypass: the NPC sends the player to the busiest flagged player.
 // Java: dist/game/data/scripts/handlers/bypass/npc/FindPvP.java
-//
-// Not modelled: `player.setSpawnProtection(true)` (the world has no spawn protection yet, see
-// `status.rs`).
 
 use std::collections::BTreeMap;
 
@@ -115,6 +112,7 @@ fn find_pvp_handler(world: &mut World, player: ObjectId, _command: &str, target:
     let dx = world.rng().below(300);
     let dy = world.rng().below(300);
     world.tele_to_location(player, TeleportTarget::at(x + dx - 150, y + dy - 150, z));
+    world.set_spawn_protection(player, true);
     if !world.is_gm(player) {
         let lasts = world.world_ms() + i64::from(world.settings.pvp.pvp_pvp_time_ms);
         world.set_pvp_flag_lasts(player, lasts);
