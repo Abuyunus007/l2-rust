@@ -209,15 +209,13 @@ fn broadcast_to_party(ctx: &ScriptCtx<'_>, members: &[ObjectId], message: System
 fn first_entrance(spec: &Spec, ctx: &mut ScriptCtx<'_>, player: ObjectId, instance_id: i32) {
     let (x, y, z, heading) = DOORMAN_SPAWN_LOC;
     if let Some(door_man) = ctx.add_spawn(spec.doorman, x, y, z, heading, false, 0, instance_id) {
-        ctx.world_mut()
-            .script_set_random_walking(door_man.object_id, true);
+        ctx.set_random_walking(door_man, true);
         set_parameter(ctx, instance_id, "doorMan", door_man.object_id);
     }
 
     let (x, y, z, heading) = REMNANT_MACHINE_LOC;
     if let Some(remnant_machine) = ctx.add_spawn(REMNANT_MACHINE, x, y, z, heading, false, 0, instance_id) {
-        ctx.world_mut()
-            .script_disable_core_ai(remnant_machine.object_id, true);
+        ctx.disable_core_ai(remnant_machine, true);
         ctx.world_mut().set_immobilized(remnant_machine.object_id, true);
         set_parameter(ctx, instance_id, "remnantMachine", remnant_machine.object_id);
     }
@@ -282,7 +280,7 @@ fn spawn_hall(
             };
             let heading = ctx.get_random(65536);
             if let Some(spawn) = ctx.add_spawn(npc_id, x, y, z, heading, false, 0, instance_id) {
-                ctx.world_mut().script_set_random_walking(spawn.object_id, true);
+                ctx.set_random_walking(spawn, true);
             }
         }
     }

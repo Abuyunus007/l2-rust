@@ -210,8 +210,8 @@ impl Script for SeedOfAnnihilation {
             let next = next_seeds_status_change_time(ctx.now_ms());
             ctx.state::<SeedState>().seeds_next_status_change = next;
             ctx.set_global_variable("SeedNextStatusChange", &next.to_string());
-            for i in 0..REGIONS.len() {
-                let active = ZONE_BUFFS_LIST[usize::try_from(buffs_now).unwrap_or(0)][i];
+            let row = ZONE_BUFFS_LIST[usize::try_from(buffs_now).unwrap_or(0) % ZONE_BUFFS_LIST.len()];
+            for (i, active) in row.into_iter().enumerate() {
                 ctx.state::<SeedState>().active_buff[i] = active;
 
                 let furnaces = ctx.state::<SeedState>().af_npcs[i];

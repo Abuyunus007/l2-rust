@@ -55,9 +55,12 @@ enum GraciaSeeds {
     AnnihilationCokrakon,
 }
 
-/// Java `SPAWNS`: `(spawn id, seed, location, the NPC ids one of which spawns there)`.
+/// One `ESSpawn`: `(spawn id, seed, location, the NPC ids one of which spawns there)`.
+type EsSpawn = (i32, GraciaSeeds, (i32, i32, i32), &'static [i32]);
+
+/// Java `SPAWNS`.
 #[rustfmt::skip]
-const SPAWNS: &[(i32, GraciaSeeds, (i32, i32, i32), &[i32])] = &[
+const SPAWNS: &[EsSpawn] = &[
     (1, GraciaSeeds::Destruction, (-245790, 220320, -12104), &[TEMPORARY_TELEPORTER]),
     (2, GraciaSeeds::Destruction, (-249770, 207300, -11952), &[TEMPORARY_TELEPORTER]),
     (3, GraciaSeeds::Destruction, (-248360, 219272, -12448), &[18678, 18679, 18680]),
@@ -377,7 +380,7 @@ struct SeedSpot {
 }
 
 /// Java `SPAWNS.get(spawnId)`.
-fn spawn_of(spawn_id: i32) -> Option<&'static (i32, GraciaSeeds, (i32, i32, i32), &'static [i32])> {
+fn spawn_of(spawn_id: i32) -> Option<&'static EsSpawn> {
     SPAWNS.iter().find(|s| s.0 == spawn_id)
 }
 

@@ -116,7 +116,7 @@ mod tests {
         let guard = t.spawn(32628, 20);
         t.ticks(1);
         assert!(t.world.is_invul(guard));
-        assert!(t.world.is_attacking_now(guard) == false);
+        assert!(!t.world.is_attacking_now(guard));
         // Nothing to fight: the timer finds no monster.
         t.ticks(210);
         assert!(!format!("{:?}", t.world.intention_of(guard)).contains("Attack"));

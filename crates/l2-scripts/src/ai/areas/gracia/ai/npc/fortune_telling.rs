@@ -32,19 +32,15 @@ impl Script for FortuneTelling {
     // NOTE(java-quirk): `onTalk` is only reached through the quest window, which lists the quests of
     // ids 1 to 19999; this script has id -1, so no click of a player gets here. Ported as it is.
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        let htmltext;
         if ctx.world().adena_of(player) < COST {
-            htmltext = Some("lowadena.htm".to_owned());
+            Some("lowadena.htm".to_owned())
         } else {
             ctx.take_items(player, ADENA_ID, COST);
             let fortune = ctx.get_random_range(1800309, 1800695);
             // `getHtm(..)` is null when the page is missing and Java throws.
-            htmltext = ctx
-                .get_htm(player, "fortune.htm")
-                .map(|page| page.replace("%fortune%", &fortune.to_string()));
+            ctx.get_htm(player, "fortune.htm")
+                .map(|page| page.replace("%fortune%", &fortune.to_string()))
         }
-
-        htmltext
     }
 }
 
