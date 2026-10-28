@@ -392,7 +392,7 @@ impl World {
     }
 
     /// Java `Npc.onSpawn`: `ON_NPC_SPAWN`.
-    pub(crate) fn script_on_npc_spawn(&mut self, npc: ObjectId) {
+    pub fn script_on_npc_spawn(&mut self, npc: ObjectId) {
         if let Some(n) = self.has_npc_listener(EventKind::NpcSpawn, npc) {
             self.queue_script_event(PendingEvent::Spawn(n));
         }
@@ -407,7 +407,7 @@ impl World {
 
     /// Java `Attackable.addDamage`: `ON_ATTACKABLE_ATTACK` for an attack by a player or a
     /// summon.
-    pub(crate) fn script_on_attackable_attack(
+    pub fn script_on_attackable_attack(
         &mut self,
         npc: ObjectId,
         attacker: ObjectId,
@@ -445,7 +445,7 @@ impl World {
 
     /// Java `Attackable.doDie`: `OnAttackableKill` `onKillDelay` after the death, for a killer
     /// that is a player or a summon.
-    pub(crate) fn script_on_attackable_kill(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
+    pub fn script_on_attackable_kill(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
         let Some((player, is_summon)) = killer.and_then(|k| self.player_and_summon(k)) else {
             return;
         };
@@ -596,7 +596,7 @@ impl World {
     }
 
     /// Java `Npc.notifyQuestEventSkillFinished` (`ON_NPC_SKILL_FINISHED`).
-    pub(crate) fn script_on_spell_finished(
+    pub fn script_on_spell_finished(
         &mut self,
         npc: ObjectId,
         target: Option<ObjectId>,
@@ -616,7 +616,7 @@ impl World {
     /// creature. Nothing calls it yet: `CreatureSeeTaskManager` is not ported (a follow-up of
     /// the script cards that use `addCreatureSeeId`).
     #[allow(dead_code)]
-    pub(crate) fn script_on_creature_see(&mut self, npc: ObjectId, creature: ObjectId) {
+    pub fn script_on_creature_see(&mut self, npc: ObjectId, creature: ObjectId) {
         if let Some(n) = self.has_npc_listener(EventKind::CreatureSee, npc) {
             self.queue_script_event(PendingEvent::CreatureSee { npc: n, creature });
         }
