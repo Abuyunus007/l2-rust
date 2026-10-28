@@ -25,6 +25,7 @@ pub mod q00017_light_and_darkness;
 pub mod q00018_meeting_with_the_golden_ram;
 pub mod q00019_go_to_the_pastureland;
 pub mod q00020_bring_up_with_love;
+pub mod q00021_hidden_truth;
 pub mod q00026_tired_of_waiting;
 pub mod q00027_chest_caught_with_a_bait_of_wind;
 pub mod q00028_chest_caught_with_a_bait_of_icy_air;
@@ -68,6 +69,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00018_meeting_with_the_golden_ram::Q00018MeetingWithTheGoldenRam);
     r.add(q00019_go_to_the_pastureland::Q00019GoToThePastureland);
     r.add(q00020_bring_up_with_love::Q00020BringUpWithLove);
+    r.add(q00021_hidden_truth::Q00021HiddenTruth);
     r.add(q00026_tired_of_waiting::Q00026TiredOfWaiting);
     r.add(q00027_chest_caught_with_a_bait_of_wind::Q00027ChestCaughtWithABaitOfWind);
     r.add(q00028_chest_caught_with_a_bait_of_icy_air::Q00028ChestCaughtWithABaitOfIcyAir);
