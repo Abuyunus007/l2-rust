@@ -168,9 +168,15 @@ impl ScriptTest {
         });
     }
 
-    /// The first click on an object (target), then the second (talk).
+    /// Clicks the NPC until the player talks to it: the first click targets, the next talks
+    /// (one click when it is the target already, so the NPC talks once).
     pub fn talk(&mut self, player: i32, npc: ObjectId) {
-        for _ in 0..2 {
+        let clicks = if self.world.target_of(ObjectId(player)) == Some(npc) {
+            1
+        } else {
+            2
+        };
+        for _ in 0..clicks {
             self.input(
                 player,
                 ClientInput::Action {

@@ -119,6 +119,9 @@ pub struct ScriptSettings {
     /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, D-54): the global variables are
     /// written only when this is on.
     pub cycle_database_writes: bool,
+    /// `PlayerConfig.DISABLE_TUTORIAL` (`DisableTutorial` of `Player.ini`): `Q00255_Tutorial`
+    /// does nothing.
+    pub disable_tutorial: bool,
 }
 
 impl Default for ScriptSettings {
@@ -136,6 +139,7 @@ impl Default for ScriptSettings {
             quest_item_drop_amount_multiplier: 1.0,
             autodelete_invalid_quest_data: false,
             cycle_database_writes: false,
+            disable_tutorial: false,
         }
     }
 }

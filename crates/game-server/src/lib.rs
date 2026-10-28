@@ -554,6 +554,7 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         quest_item_drop_amount_multiplier: rates.quest_item_drop_amount_multiplier,
         autodelete_invalid_quest_data: config.general.autodelete_invalid_quest_data,
         cycle_database_writes: cycle_database_writes(config_dir),
+        disable_tutorial: config.player.disable_tutorial,
     }
 }
 

@@ -160,6 +160,11 @@ fn class_of(class_id: i32) -> ClassId {
 pub(crate) struct SharedStates(std::collections::HashMap<TypeId, Box<dyn Any + Send>>);
 
 impl ScriptCtx<'_> {
+    /// The `.ini` values of the script engine (`Rates.ini`, `DisableTutorial`, ...).
+    pub fn script_settings(&self) -> &super::ScriptSettings {
+        &self.world.scripts.settings
+    }
+
     // ------------------------------------------------------------------ player
 
     /// Java `player.getRace().ordinal()` ([`race`]); -1 for no player.
