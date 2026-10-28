@@ -359,6 +359,8 @@ impl World {
             && !self.raid_boss_defined(template_id)
         {
             self.decrease_count(index, id, enchant);
+            // The spawn a script made for this NPC is not needed any more (S-API-03).
+            self.script_free_spawn(index);
         }
         // `WalkingManager.onDeath` (M8-MISC-01).
         self.walking_forget_npc(id);

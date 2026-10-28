@@ -14,7 +14,7 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::henna::{HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaRemoveList};
-use l2_protocol_game::server::{HennaInfo, NpcHtmlMessage, SystemMessage, SystemMessageParam};
+use l2_protocol_game::server::{HennaInfo, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
 use l2_world::stats::{BaseStatBonus, StatData};
@@ -626,57 +626,5 @@ fn the_previews_show_the_stats_with_the_dye_added_or_taken_off() {
     assert_eq!(names(&out), ["ACTION_FAIL"]);
 }
 
-// ---- the symbol maker ---------------------------------------------------------------------------
-
-fn html_of(out: &[Out]) -> Vec<NpcHtmlMessage> {
-    decoded::<NpcHtmlMessage>(out, "NPC_HTML_MESSAGE")
-}
-
-/// `SymbolMaker.onFirstTalk` shows `symbol_maker.htm`; the `Script SymbolMaker` links open a page
-/// or the draw and remove lists.
-#[test]
-fn the_symbol_maker_pages_and_lists() {
-    let mut s = Scene::new(2, [2, 0, 0]);
-    let npc = s.world.spawn_npc_at(31046, X + 20, Y, Z, 0).unwrap();
-    let talk = |s: &mut Scene| {
-        let mut all = Vec::new();
-        for _ in 0..2 {
-            all.extend(s.input(ClientInput::Action {
-                object_id: npc.0,
-                action_id: 0,
-            }));
-        }
-        all
-    };
-    let out = talk(&mut s);
-    let pages = html_of(&out);
-    assert_eq!(pages.len(), 1, "{:?}", names(&out));
-    assert!(
-        pages[0]
-            .html
-            .starts_with(&format!("<html><body>Symbols {} Hero ", npc.0))
-    );
-
-    s.wait();
-    let out = s.input(ClientInput::Bypass {
-        command: "Script SymbolMaker Draw".to_owned(),
-    });
-    assert_eq!(names(&out), ["HENNA_EQUIP_LIST"]);
-
-    s.wait();
-    let out = s.input(ClientInput::Bypass {
-        command: "Script SymbolMaker Remove".to_owned(),
-    });
-    let list = &decoded::<HennaRemoveList>(&out, "HENNA_UNEQUIP_LIST")[0];
-    assert_eq!(list.entries.len(), 1);
-
-    // The page replaces the links of the first one, so it comes last.
-    s.wait();
-    let out = s.input(ClientInput::Bypass {
-        command: "Script SymbolMaker symbol_maker-1.htm".to_owned(),
-    });
-    assert_eq!(
-        html_of(&out)[0].html,
-        format!("<html><body>More about symbols {}</body></html>", npc.0)
-    );
-}
+// The symbol maker NPC script (`SymbolMaker`) is a script of `l2-scripts` (S-API-02); its test is in
+// `crates/l2-scripts/src/ai/others/symbol_maker.rs`.

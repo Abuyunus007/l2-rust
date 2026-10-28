@@ -57,7 +57,7 @@
 // # Left out, with the system that brings it
 // - `Hero` is `hero.rs` (M8-HERO-01): the hero choice at the period end, `isHero`, `claimHero`,
 //   the hero list and the diary and history pages, the hero skills, the hero items, the diary
-//   writes and the hero words. `monument.rs` is the Monument of Heroes script and `tower.rs` the
+//   writes and the hero words. The Monument of Heroes is a script (`l2-scripts`); `tower.rs` is the
 //   castle observation towers (`Player.enterObserverMode`).
 // - The admin words (`//checkolympiad`, `//saveolymp`, `//endolympiad`): M8-ADMIN-07, on
 //   [`World::olympiad_millis_to_olympiad_end`], [`World::save_olympiad_status`] and
@@ -69,7 +69,6 @@
 
 mod game;
 mod hero;
-mod monument;
 mod npc;
 mod observer;
 mod period;

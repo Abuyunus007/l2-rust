@@ -305,6 +305,8 @@ impl World {
             // `ai.notifyActionForgetObject(other)`; an NPC's own `_target` is only set by its
             // skills (M5).
             self.npc_notify_forget_object(creature, other);
+            // `removeSeenCreature(object)` (S-API-03).
+            self.script_forget_seen(creature, other);
             // A summon's target is the one its owner ordered.
             if self.is_summon(creature) && self.creature_target(creature) == Some(other) {
                 self.set_creature_target(creature, None);

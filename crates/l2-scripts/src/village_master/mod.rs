@@ -1,9 +1,11 @@
-//! `data/scripts/village_master`: the class change scripts of the village masters.
+//! `data/scripts/village_master`: the village masters' scripts (clan, alliance, class change).
 //!
 //! One module per script, sorted by name; one `add` line per script in [`register`], in the
 //! same order (Java's load order is the folder listing). `class_change` holds what the
 //! `*Change1/2` scripts share.
 
+pub mod alliance_master;
+pub mod clan_master;
 pub(crate) mod class_change;
 pub mod dark_elf_change1;
 pub mod dark_elf_change2;
@@ -29,6 +31,8 @@ use l2_world::ScriptRegistry;
 
 /// Registers every script of the folder.
 pub(crate) fn register(r: &mut ScriptRegistry) {
+    r.add(alliance_master::AllianceMaster);
+    r.add(clan_master::ClanMaster);
     r.add(dark_elf_change1::DarkElfChange1);
     r.add(dark_elf_change2::DarkElfChange2);
     r.add(dwarf_blacksmith_change1::DwarfBlacksmithChange1);

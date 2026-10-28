@@ -16,8 +16,8 @@ use l2_data::item::ADENA_ID;
 use l2_data::stats::Stat;
 use l2_protocol_game::server::visibility::status;
 use l2_protocol_game::server::{
-    ActionFailed, ChatType, ExShowScreenMessage, ExStartScenePlayer, NpcHtmlMessage, NpcSay, RadarControl,
-    StatusUpdate, SystemMessage, SystemMessageParam,
+    ActionFailed, ChatType, ExShowScreenMessage, NpcHtmlMessage, NpcSay, RadarControl, StatusUpdate,
+    SystemMessage, SystemMessageParam,
 };
 use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
@@ -1069,18 +1069,15 @@ impl<'w> ScriptCtx<'w> {
         self.world.do_cast(npc.object_id, skill);
     }
 
-    /// Java `playMovie(player, movie)` as far as `Player.playMovie` goes: the player stops and
-    /// the client plays the scene (the movie holder waiting for `EndScenePlayer` is not
-    /// modelled, as in `vehicle/controller.rs`).
+    /// Java `playMovie(player, movie)`: a `MovieHolder`; the player holds the movie until the
+    /// client answers with `EndScenePlayer` (S-API-03).
     pub fn play_movie(&mut self, player: ObjectId, movie_id: i32) {
-        if !self.world.players.contains_key(&player) {
-            return;
-        }
-        self.world.abort_attack(player);
-        self.world.stop_move(player, None);
-        if !self.world.is_teleporting(player) {
-            self.world.send(player, &ExStartScenePlayer { movie_id });
-        }
+        self.world.script_play_movie(&[player], movie_id);
+    }
+
+    /// Java `playMovie(players, movie)`: a `MovieHolder` for several players.
+    pub fn play_movie_for(&mut self, players: &[ObjectId], movie_id: i32) {
+        self.world.script_play_movie(players, movie_id);
     }
 
     /// Java `openDoor(doorId, instanceId)`.

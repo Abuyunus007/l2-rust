@@ -14,7 +14,7 @@ use l2_data::{
 use l2_net::Encode;
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    ChatType, ConfirmDlg, CreatureSay, MagicSkillUse, NpcHtmlMessage, SayBody, SenderField, SystemMessage,
+    ChatType, ConfirmDlg, CreatureSay, MagicSkillUse, SayBody, SenderField, SystemMessage,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::wedding::{Couple, WeddingSettings, WeddingWrite};
@@ -82,30 +82,6 @@ const STATS: &str = r#"<stats str="40" int="21" dex="30" wit="20" con="43" men="
       <speed><walk ground="20" /><run ground="50" /></speed>
     </stats>
     <collision><radius normal="10"/><height normal="20"/></collision>"#;
-
-/// The priest and the pages he shows, with the bypass links of the real ones.
-const PAGES: [(&str, &str); 11] = [
-    (
-        "Start",
-        "<html><body>Fee %fee% <a action=\"bypass -h Script Wedding ask\">I want to marry</a></body></html>",
-    ),
-    (
-        "Ask",
-        "<html><body>%player% asks <a action=\"bypass -h Script Wedding accept\">Accept</a><a action=\"bypass -h Script Wedding decline\">Decline</a></body></html>",
-    ),
-    ("Requested", "<html><body>You requested %player%</body></html>"),
-    (
-        "Accepted",
-        "<html><body>Congratulations you are married!</body></html>",
-    ),
-    ("Declined", "<html><body>Declined</body></html>"),
-    ("Adena", "<html><body>You need %fee% Adena.</body></html>"),
-    ("NoFormal", "<html><body>No formal wear</body></html>"),
-    ("WaitForPartner", "<html><body>Wait</body></html>"),
-    ("NoPartner", "<html><body>No partner</body></html>"),
-    ("NotFound", "<html><body>Not found</body></html>"),
-    ("Already", "<html><body>Already</body></html>"),
-];
 
 const X: i32 = -71_338;
 const Y: i32 = 258_271;
@@ -203,9 +179,6 @@ impl Scene {
             "data/spawns/none.xml",
             r#"<?xml version="1.0"?><list enabled="true"></list>"#,
         );
-        for (name, text) in PAGES {
-            write(&format!("data/scripts/custom/events/Wedding/{name}.html"), text);
-        }
         let log = Log::default();
         let mut world = World::new(WorldRng::from_seed(5), Box::new(Recorder(log.clone())));
         let stats = StatData {
@@ -330,29 +303,6 @@ impl Scene {
         self.world.set_target(ObjectId(id), Some(ObjectId(target)));
     }
 
-    fn bypass(&mut self, id: i32, command: &str) {
-        self.input(
-            id,
-            ClientInput::Bypass {
-                command: command.into(),
-            },
-        );
-    }
-
-    /// Clicks the NPC twice: the first selects it, the second talks.
-    fn talk_to(&mut self, id: i32, npc: ObjectId) {
-        for _ in 0..2 {
-            self.input(
-                id,
-                ClientInput::Action {
-                    object_id: npc.0,
-                    action_id: 0,
-                },
-            );
-            self.ticks(2);
-        }
-    }
-
     fn ticks(&mut self, n: u32) {
         for _ in 0..n {
             self.world.tick();
@@ -423,13 +373,6 @@ fn texts(out: &[Out], to: i32) -> Vec<String> {
                 _ => None,
             }
         })
-        .collect()
-}
-
-fn pages(out: &[Out], to: i32) -> Vec<String> {
-    of(out, to, "NPC_HTML_MESSAGE")
-        .iter()
-        .map(|raw| decode::<NpcHtmlMessage>(raw).html)
         .collect()
 }
 
@@ -612,147 +555,8 @@ fn a_no_is_reported_and_makes_no_couple() {
 
 // ---------------------------------------------------------------------------------- marriage
 
-/// The priest: ask, the partner's page, the two accepts (the first only shows the page again, as
-/// the script does), the fee from both, the announcement, the row.
-#[test]
-fn a_wedding_at_the_priest() {
-    let mut s = Scene::engaged_couple();
-    let priest = s.world.spawn_npc_at(50007, X + 20, Y, Z, 0).unwrap();
-    s.world.set_wedding_settings(WeddingSettings {
-        wedding_price: i32::try_from(PRICE).unwrap(),
-        ..settings()
-    });
-    s.talk_to(ALICE, priest);
-    s.talk_to(BOB, priest);
-    let out = s.take();
-    // The first talk: Start.html with the fee.
-    assert!(
-        pages(&out, ALICE)[0].contains("Fee 1000"),
-        "{:?}",
-        pages(&out, ALICE)
-    );
-
-    s.bypass(ALICE, "Script Wedding ask");
-    let out = s.take();
-    assert!(
-        pages(&out, BOB).iter().any(|p| p.contains("Alice asks")),
-        "{:?}",
-        pages(&out, BOB)
-    );
-    assert!(pages(&out, ALICE).iter().any(|p| p.contains("You requested Bob")));
-    assert!(state(&s, ALICE).marry_accepted);
-    assert!(state(&s, BOB).marry_request);
-    // Asking again waits for the partner (the page with the link is shown again first).
-    s.talk_to(ALICE, priest);
-    s.take();
-    s.bypass(ALICE, "Script Wedding ask");
-    assert!(pages(&s.take(), ALICE).iter().any(|p| p.contains("Wait")));
-
-    // Bob's first click only clears the requests and shows the page again.
-    s.bypass(BOB, "Script Wedding accept");
-    let out = s.take();
-    assert!(pages(&out, BOB).iter().any(|p| p.contains("Alice asks")));
-    assert!(!state(&s, BOB).married);
-    assert!(!state(&s, BOB).marry_request);
-    // The second one marries.
-    s.bypass(BOB, "Script Wedding accept");
-    let out = s.take();
-    assert!(
-        pages(&out, BOB)
-            .iter()
-            .any(|p| p.contains("Congratulations you are married!"))
-    );
-    assert!(state(&s, ALICE).married && state(&s, BOB).married);
-    assert_eq!(s.world.adena_of(ObjectId(ALICE)), 10_000 - PRICE);
-    assert_eq!(s.world.adena_of(ObjectId(BOB)), 10_000 - PRICE);
-    for id in [ALICE, BOB] {
-        assert!(texts(&out, id).contains(&"Congratulations you are married!".to_owned()));
-    }
-    // The announcement goes to everybody.
-    let announcement = CreatureSay {
-        sender_object_id: 0,
-        chat_type: ChatType::Announcement,
-        sender: SenderField::Name(String::new()),
-        message_id: -1,
-        body: SayBody::Text("Congratulations to Bob and Alice! They have been married.".into()),
-    };
-    assert_eq!(of(&out, ALICE, "SAY2"), [announcement.to_bytes().as_slice()]);
-    // The wedding march plays on both.
-    let marches: Vec<MagicSkillUse> = of(&out, ALICE, "MAGIC_SKILL_USE")
-        .iter()
-        .map(|raw| decode(raw))
-        .filter(|m: &MagicSkillUse| m.skill_id == 2230)
-        .collect();
-    assert_eq!(marches.len(), 2);
-    let writes = persisted(&out);
-    assert!(matches!(writes[..], [WeddingWrite::Marry { .. }]), "{writes:?}");
-    assert!(s.world.couples()[0].married);
-
-    // A married player is sent away.
-    s.talk_to(ALICE, priest);
-    s.take();
-    s.bypass(ALICE, "Script Wedding ask");
-    assert!(pages(&s.take(), ALICE).iter().any(|p| p.contains("Already")));
-}
-
-/// Without formal wear the priest sends the partner and the player the page, and nothing is paid.
-#[test]
-fn no_formal_wear_no_wedding() {
-    let mut s = Scene::new();
-    s.enter(Who {
-        friends: vec![(BOB, "Bob")],
-        wear: false,
-        ..Who::new(ALICE, "Alice", 1)
-    });
-    s.enter(Who {
-        friends: vec![(ALICE, "Alice")],
-        ..Who::new(BOB, "Bob", 0)
-    });
-    s.target(ALICE, BOB);
-    s.say(ALICE, ".engage");
-    s.input(
-        BOB,
-        ClientInput::DlgAnswer {
-            message_id: SystemMessageId::S13.id(),
-            answer: 1,
-            requester_id: ALICE,
-        },
-    );
-    let priest = s.world.spawn_npc_at(50007, X + 20, Y, Z, 0).unwrap();
-    s.talk_to(ALICE, priest);
-    s.take();
-    s.bypass(ALICE, "Script Wedding ask");
-    let out = s.take();
-    assert!(pages(&out, ALICE).iter().any(|p| p.contains("No formal wear")));
-    assert!(pages(&out, BOB).iter().any(|p| p.contains("No formal wear")));
-    assert!(!state(&s, ALICE).marry_accepted);
-    assert_eq!(s.world.adena_of(ObjectId(ALICE)), 10_000);
-}
-
-/// A decline clears the requests on both and tells both.
-#[test]
-fn a_decline_ends_the_request() {
-    let mut s = Scene::engaged_couple();
-    let priest = s.world.spawn_npc_at(50007, X + 20, Y, Z, 0).unwrap();
-    s.talk_to(ALICE, priest);
-    s.talk_to(BOB, priest);
-    s.bypass(ALICE, "Script Wedding ask");
-    s.take();
-    // NOTE(java-quirk): the first click only clears the request and shows the page again.
-    s.bypass(BOB, "Script Wedding decline");
-    assert!(texts(&s.take(), BOB).is_empty());
-    s.bypass(BOB, "Script Wedding decline");
-    let out = s.take();
-    assert_eq!(
-        texts(&out, BOB),
-        ["You declined your partner's marriage request."]
-    );
-    assert_eq!(
-        texts(&out, ALICE),
-        ["Your partner declined your marriage request."]
-    );
-    assert!(!state(&s, ALICE).marry_accepted && !state(&s, BOB).marry_request);
-}
+// The priest (`Wedding`, NPC 50007) is a script of `l2-scripts` (S-API-02); the tests of the
+// ceremony are in `crates/l2-scripts/src/custom/events/wedding.rs`.
 
 // ---------------------------------------------------------------------------------- divorce
 

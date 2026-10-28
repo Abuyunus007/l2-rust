@@ -250,6 +250,20 @@ impl World {
         self.insert_object_id_and_show_chat_window(npc, player, &sb);
     }
 
+    /// The rows of `GmViewQuestInfo`: the id and the cond of each active quest of the player.
+    pub fn gm_view_quests(&self, player: ObjectId) -> Vec<(i32, i32)> {
+        let Some(quests) = self.scripts.players.get(&player) else {
+            return Vec::new();
+        };
+        self.all_active_quests(player)
+            .into_iter()
+            .map(|script| {
+                let cond = quests.get(self.scripts.name_of(script)).map_or(0, |qs| qs.cond());
+                (self.scripts.quest_id_of(script), cond)
+            })
+            .collect()
+    }
+
     /// Java `Player.getAllActiveQuests()`: the started quests with a journal id, in the order of
     /// the player's quest map.
     pub(crate) fn all_active_quests(&self, player: ObjectId) -> Vec<ScriptId> {
