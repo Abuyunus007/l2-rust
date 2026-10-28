@@ -3,7 +3,8 @@
 Binding for every script card (S-Q-*, S-AI-*, S-BOSS-*, S-INST-*, S-EVENT-*, ...). The engine is
 `crates/l2-world/src/script/`; the scripts live in `crates/l2-scripts/`. Reference ports:
 `l2-scripts/src/quests/q00001_letters_of_love.rs` (a quest) and
-`l2-scripts/src/ai/others/asamah.rs` (an NPC script). Copy them.
+`l2-scripts/src/ai/others/asamah.rs` (an NPC script). Copy them. Quest ports start from the
+"Quest patterns" section below: ten reference quests, one per pattern, with snippets and pitfalls.
 
 ## The model in one page
 
@@ -118,6 +119,225 @@ Quest states: `get_quest_state`, `quest_state_of`, `player_quest_state`, `has_qu
 `exit_quest_type` (daily: `restartTime`), `set_state(_with)`, `show_question_mark`,
 `add_notify_of_death`, `set_restart_time`, `is_now_available`.
 
+Player, NPC and family calls (`quest_helpers.rs`, S-PILOT-01): `player_race` (against
+`script::race::*`), `player_class_id` (against `script::player_class::*`, Java's `PlayerClass`
+names), `player_base_class`, `player_class_level` (`getPlayerClass().level()`),
+`player_class_race`, `is_mage_class`, `is_dead`, `is_in_party`, `is_inside_radius_2d`,
+`alt_party_range`, `check_if_in_range`, `script_settings`; NPCs: `get/set/is_script_value`,
+`is_npc_busy`, `set_npc_busy`, `npc_move_to`, `delete_npc`, `heading_of`, `drop_item`,
+`show_chat_window`, `set_last_quest_npc_object`; class change: `set_player_class`,
+`set_base_class`, `is_sub_class_active`, `broadcast_user_info`, `broadcast_magic_skill_use`;
+Java `static` fields shared by several scripts: `shared_state::<T>()`.
+
+## Quest patterns (S-PILOT-01): which file to copy
+
+Ten quests cover what the ~500 quests do. Find the pattern of your quest below, open the
+reference file next to its Java file, and copy its shape. All are in `crates/l2-scripts/src/quests/`.
+
+| Pattern | Reference | Java calls it shows |
+|---|---|---|
+| Delivery chain, start NPC hands out, others swap | `q00001_letters_of_love.rs`, `q00153_deliver_goods.rs` | `giveItems`/`takeItems`/`hasQuestItems`, `setCond(n, true)`, `exitQuest(false)` |
+| Kill count with a drop chance up to a limit | `q00295_dreaming_of_the_skies.rs` | `giveItemRandomly(.., limit, chance, true)`, `checkIfInRange(ALT_PARTY_RANGE, ..)` |
+| Party kill, a random member at cond N | `q00303_collect_arrowheads.rs` | `getRandomPartyMember(player, 1)` |
+| Repeatable with "go on / quit" | `q00317_catch_the_wind.rs` | `getRandomPartyMemberState(killer, -1, 3, npc)`, `exitQuest(true, true)` in `onEvent` |
+| One-time, items + exp + adena, a monster that talks | `q00158_seed_of_evil.rs` | `exitQuest(false, true)`, `onAttack` + `isScriptValue`/`setScriptValue`, `NpcSay` |
+| Race / class / level-range restricted, reward choice | `q00182_new_recruits.rs` | `getRace()`, `getPlayerClass().level()` |
+| Timer, busy NPC, NPC turns into a monster, daily | `q00450_grave_robber_rescue.rs` | `startQuestTimer("despawn", ..)`, `setBusy`, `deleteMe`, `addSpawn` + `addDamageHate`, `exitQuest(QuestType.DAILY)` |
+| Spawns a monster at the killer, race-only | `q00275_dark_winged_spies.rs` | `addSpawn(npcId, killer)`, `onCreatureSee` |
+| Saga (third class), the shared base | `abstract_saga_quest.rs` + `q00070_saga_of_the_phoenix_knight.rs` | `AbstractSagaQuest`, `static SPAWN_LIST`, `setPlayerClass` |
+| Tutorial (no journal page, packets as events) | `q00255_tutorial.rs` | `setOnEnterWorld`, `TL:`/`TC:`/`QM:`/`CE:` events, memo bit fields, player listeners |
+
+### Java to Rust, the lines every quest has
+
+```rust
+use l2_protocol_game::NpcStringId;              // NpcStringId.HOW_DARE_YOU -> NpcStringId::HowDareYou
+use l2_protocol_game::server::ChatType;         // ChatType.NPC_GENERAL -> ChatType::NpcGeneral
+use l2_util::ObjectId;
+use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED, player_class, race};
+use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
+
+// final QuestState qs = getQuestState(player, false); if (qs == null) return null;
+let player = player?;
+let qs = ctx.get_quest_state(player, false)?;
+
+// if ((qs != null) && qs.isCreated() && event.equals("30536-03.htm")) { qs.startQuest(); return event; } return null;
+let qs = ctx.get_quest_state(player, false);
+if let Some(qs) = qs
+    && qs.is_created(ctx)
+    && event == "30536-03.htm"
+{
+    qs.start_quest(ctx);
+    return Some(event.to_owned());
+}
+None
+
+// String htmltext = event; ... return htmltext;   (a quest that echoes every event)
+let mut htmltext = Some(event.to_owned());
+// case "despawn": ... htmltext = null;
+htmltext = None;
+
+// switch (qs.getState()) { case State.CREATED: ... }
+match qs.state(ctx) {
+    CREATED => {}
+    STARTED => match qs.get_cond(ctx) { 1 => {}, _ => {} },
+    COMPLETED => htmltext = ctx.get_already_completed_msg(player),
+    _ => {}
+}
+
+// case State.COMPLETED: if (!qs.isNowAvailable()) { ...; break; } qs.setState(State.CREATED); // fall through
+let mut state = qs.state(ctx);
+if state == COMPLETED {
+    if !qs.is_now_available(ctx) {
+        return Some("32650-03.html".to_owned());
+    }
+    qs.set_state(ctx, CREATED);
+    state = CREATED;
+}
+
+// qs.setCond(2);  qs.setCond(2, true);
+qs.set_cond(ctx, 2, false);
+qs.set_cond(ctx, 2, true);
+// qs.exitQuest(true, true);  qs.exitQuest(false);  qs.exitQuest(QuestType.DAILY, true);
+qs.exit_quest(ctx, true, true);
+qs.exit_quest(ctx, false, false);
+qs.exit_quest_type(ctx, QuestType::Daily, true);
+
+// player.getRace() == Race.ORC   getPlayerClass() == PlayerClass.ORC_MAGE   getPlayerClass().level() == 0
+ctx.player_race(player) == race::ORC;
+ctx.player_class_id(player) == player_class::ORC_MAGE;
+ctx.player_class_level(player) == 0;
+```
+
+### Kills, drops and parties
+
+```rust
+// LocationUtil.checkIfInRange(PlayerConfig.ALT_PARTY_RANGE, npc, killer, true)
+ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true)
+
+// giveItemRandomly(killer, npc, ITEM, amount, limit, chance, true)   (one amount: min = max)
+ctx.give_item_randomly(killer, Some(npc), ITEM, amount, amount, limit, chance, true)
+// giveItemRandomly(killer, ITEM, 1, 70, 1, true)   (the overload without the NPC)
+ctx.give_item_randomly(killer, None, ITEM, 1, 1, 70, 1.0, true)
+// giveItemRandomly(.., minAmount, maxAmount, ..): the same with min and max; limit 0 = no limit.
+
+// final Player member = getRandomPartyMember(player, 1);
+let member = ctx.get_random_party_member_cond(player, 1);
+// final QuestState qs = getRandomPartyMemberState(killer, -1, 3, npc);  (-1 = any started)
+let qs = ctx.random_party_member_state(killer, -1, 3, Some(npc));   // qs.player() is the member
+
+// final ItemHolder ITEM = new ItemHolder(9746, 80); hasItem(player, ITEM) / takeItem(player, ITEM)
+ctx.get_quest_items_count(player, 9746) >= 80;
+ctx.take_items(player, 9746, 80);
+```
+
+`on_kill` runs 2.5 s after the death (Java's `onKillDelay`); the NPC is dead but still in the
+world, so its position is there. `killer` is the player also when a summon killed
+(`is_summon`).
+
+### Timers, spawns and NPCs
+
+```rust
+// startQuestTimer("despawn", 3000, npc, player);  (on_event gets "despawn" with that npc/player)
+ctx.start_quest_timer("despawn", 3000, Some(npc), Some(player), false);
+// case "despawn": npc.setBusy(false); npc.deleteMe();
+if let Some(npc) = npc { ctx.set_npc_busy(npc, false); ctx.delete_npc(npc); }
+
+// addSpawn(MOB, npc.getX(), npc.getY(), npc.getZ(), npc.getHeading(), true, 600000)
+let at = ctx.world().position_of(npc.object_id);   // read BEFORE delete_npc: a deleted NPC has no place
+let heading = ctx.heading_of(npc.object_id);
+if let Some((x, y, z)) = at && let Some(mob) = ctx.add_spawn(MOB, x, y, z, heading, true, 600_000, 0) {
+    // monster.setRunning(); monster.addDamageHate(player, 0, 999); monster.getAI().setIntentionAttack(player);
+    ctx.add_attack_desire(mob, player, 999);
+}
+// addSpawn(MOB, killer)   (at the killer's place and heading, no offset, no despawn)
+ctx.add_spawn_at(MOB, killer, false, 0);
+
+// npc.broadcastPacket(new NpcSay(npc, ChatType.NPC_GENERAL, NpcStringId.HOW_DARE_YOU_CHALLENGE_ME));
+ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::HowDareYouChallengeMe, &[]);
+// showOnScreenMsg(player, NpcStringId.X, 5, 5000);
+ctx.show_on_screen_npc_string(player, NpcStringId::X, 5, 5000, &[]);
+// if (npc.isScriptValue(0)) { ...; npc.setScriptValue(1); }   (back to 0 when the NPC decays)
+if ctx.is_script_value(npc, 0) { ctx.set_script_value(npc, 1); }
+```
+
+### A family of scripts with a Java base class
+
+Java's `abstract class X extends Quest` with protected fields becomes a data struct, free
+functions that take it, and a `macro_rules!` that writes the `impl Script` (see
+`abstract_saga_quest.rs`). A saga is then a constant and one line:
+
+```rust
+const DATA: SagaData = SagaData { quest_id: 70, npc: [..], items: [..], mob: [..], class_id: &[90],
+    prev_class: &[0x05], npc_spawn_locations: [..], text: [..] };
+saga_quest!(Q00070SagaOfThePhoenixKnight, "Q00070_SagaOfThePhoenixKnight", DATA);
+```
+
+A `static` field of the base (shared by every script of the family) is
+`ctx.shared_state::<MyType>()`; a field of one script is `ctx.state::<MyType>()`.
+
+### Testing a quest
+
+Every quest gets, at the end of its file, a test from the start to the reward with the
+`character_quests` rows, and one test per branch that writes something. Copy the `tests` module
+of the closest reference. The harness (`crate::testing`):
+
+```rust
+let mut registry = ScriptRegistry::new();
+registry.add(Q00295DreamingOfTheSkies);
+let pages = Pages::of(&Q00295DreamingOfTheSkies)
+    .page("30536-02.htm", &["30536-03.htm"])          // a page and the events its links send
+    .plain(&["30536-01.htm", "30536-03.htm"])           // pages without links
+    .npcs(&[ARIN]);                                    // NPC default pages + "already completed"
+let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
+let arin = t.spawn(ARIN, 20);                          // 20 steps east of the players
+t.enter(1, 11, vec![]);                                // or t.enter_as(1, lvl, race::ORC, player_class::ORC_FIGHTER, items)
+assert!(t.quest_page(1, arin).contains("30536-02.htm"));   // talk + "bypass Script"
+assert!(t.event(1, NAME, "30536-03.htm").contains("30536-03.htm"));
+assert_eq!(t.take_writes(), [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]);
+let mob = t.spawn(MAGICAL_WEAVER, 60);
+t.kill(1, mob);                                        // do_die + the 2.5 s kill delay
+t.party(1, 2);                                         // 1 invites 2, 2 accepts
+t.wait_ms(3_000);                                      // quest timers, despawns
+assert!(!t.in_world(robber));                          // deleted NPCs keep their entry
+t.npcs_of(MOB);                                        // the NPCs of an id in the world (add_spawn)
+t.world.run_as_script(NAME, |ctx| { /* call a hook the world does not fire yet */ });
+```
+
+Stand-in pages carry the file name and the links of the real page (look at the real `.htm` in
+`dist/game/data/scripts/quests/<Quest>/`): the world takes a `bypass Script <name> <event>` only
+when the last page offered it. Item templates of quest items need `is_questitem`, stack counts
+need `is_stackable`. The world RNG is seeded (7), so drops and rolls are the same every run: a
+test loops "kill until the count is reached" instead of guessing the number of kills.
+
+### Pitfalls (each one cost a test run)
+
+- **Rows**: the first `set` of a variable is `InsertVar`, every later one `UpdateVar` (also across
+  steps: the saga's `spawned` is inserted at step 6, updated at 15). `exit_quest(ctx, true, _)` is
+  one `DeleteQuest { repeatable: true }`; `exit_quest(ctx, false, _)` is `DeleteQuest { repeatable:
+  false }` then `UpdateVar <state> Completed`. Java's name of `CREATED` is `"Start"`.
+- **`setCond` / `exitQuest` overloads**: `setCond(n)` has no sound (`false`), `exitQuest(b)` has no
+  finish sound (`false`). `set_cond` does nothing on a state that is not started.
+- **RNG order**: call `get_random` where and as often as Java does (`getRandom(100) > 25 ? 1 : 2`
+  before `giveItemRandomly`; `getRandom(2) <= 1` is always true but still rolls).
+- **`npc` in `on_event`** is `None` for a timer started without one; where Java calls
+  `npc.getId()` without a check use `let npc = npc?;`, where it compares use
+  `npc.is_some_and(|n| n.id == X)`.
+- **Deleted NPCs**: `delete_npc` takes the NPC out of the world but keeps the entry (Java keeps
+  the object for the next life), so `world.npc(id)` is still `Some`: test with `t.in_world`. Read
+  position and heading before deleting.
+- **Hostile spawns** keep attacking the test character during `wait_ms`/`kill` and can kill it
+  (100 HP): delete them (`t.world.delete_npc`) once the test checked them.
+- **Clicks**: `t.talk` clicks once when the NPC is the target already (two clicks would talk twice
+  and fire `on_first_talk` twice).
+- **Quirks**: port them and mark them (`// NOTE(java-quirk):`): Q00303 and Q00320 give the item to
+  the killer, not to the member drawn; Q00275 shows page 05 at the reward; Q00153 and Q00182 echo
+  any event; Q00255's listeners are added again on every call.
+- **Hooks the world does not fire yet** (list below): port them anyway and test them by calling
+  the hook through `t.world.run_as_script(NAME, |ctx| Script.on_x(ctx, ..))`.
+- **Test HP**: the test world has no stat tables, so max HP is 0.
+- **`Pages`**: an event not linked from the last page is refused silently (`t.event` returns
+  an empty string).
+
 ## Persistence and side by side (D-15, D-39, D-54)
 
 - `character_quests`: read at `CharacterSelect` (`PlayerProfile::quests`, the two queries of
@@ -139,3 +359,10 @@ summon spawn/talk, trap actions, olympiad/castle/fortress listener types, the sk
 `on_attack` (always `None`), `GmViewQuestInfo` contents, the movie holder (`EndScenePlayer`),
 champion bonuses in `give_item_randomly` (champions are not rolled), premium rates (M9), the
 multilingual chooser strings (M9).
+
+Found by S-PILOT-01: the player listeners scripts add at run time (`player.addListener(...)`:
+`ON_PLAYER_LEVEL_CHANGED`, `ON_PLAYER_ITEM_PICKUP`, `ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`; the
+tutorial keeps them in its state and has `pub` entry points for them); `setup` cannot read the
+configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
+scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
+`MagicSkillUse` in `broadcast_magic_skill_use` (always none).
