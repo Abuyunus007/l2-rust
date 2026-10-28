@@ -198,6 +198,18 @@ impl World {
         !self.scripts.npc_extras.by_npc.get(&id).is_some_and(|e| e.immortal)
     }
 
+    /// Java `skill.hasEffectType(EffectType.HEAL)` of a skill a script names by id and level;
+    /// `false` for a skill the table does not have (S-BOSS-02).
+    pub fn skill_has_heal_effect(&mut self, key: crate::effects::SkillKey) -> bool {
+        let Some(table) = self.skill_table() else {
+            return false;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return false;
+        };
+        self.skill_has_effect_type(skill, &[crate::effects::EffectType::Heal])
+    }
+
     /// Java `NpcConfig.RAID_DISABLE_CURSE` (`DisableRaidCurse`).
     pub fn raid_curse_disabled(&self) -> bool {
         self.settings.cast.raid_disable_curse
