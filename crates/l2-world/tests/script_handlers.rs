@@ -13,8 +13,7 @@ use l2_data::{
 };
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{
-    Dice, EtcStatusUpdate, NpcHtmlMessage, SetupGauge, ShopPreviewList, SystemMessage,
-    SystemMessageParam,
+    Dice, EtcStatusUpdate, NpcHtmlMessage, SetupGauge, ShopPreviewList, SystemMessage, SystemMessageParam,
 };
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
@@ -536,7 +535,11 @@ fn give_blessing_is_refused_to_a_high_level() {
     let mut s = Scene::new(41, 0, vec![]);
     let npc = s.npc(30003, 50);
     assert_eq!(s.bypass("GiveBlessing", Some(npc)), Some(true));
-    assert!(html(&s.me.take())[0].html.contains("SupportBlessingHighLevel.htm"));
+    assert!(
+        html(&s.me.take())[0]
+            .html
+            .contains("SupportBlessingHighLevel.htm")
+    );
     s.advance(2000);
     assert!(!s.world.is_affected_by_skill(ME, 5182));
 
@@ -639,7 +642,10 @@ fn expoff_and_expon_switch_the_variable() {
     assert_eq!(sent_texts(&out), ["Experience gain is disabled."]);
     assert!(!names(&out).contains(&"SAY2".to_owned()), "{:?}", names(&out));
     let player = s.world.player(ME).unwrap();
-    assert_eq!(player.data.profile.variables.get("EXPOFF").map(String::as_str), Some("true"));
+    assert_eq!(
+        player.data.profile.variables.get("EXPOFF").map(String::as_str),
+        Some("true")
+    );
     assert!(player.data.profile.variables_changed.contains("EXPOFF"));
 
     s.say(".expoff");
@@ -648,7 +654,14 @@ fn expoff_and_expon_switch_the_variable() {
     s.say(".expon");
     assert_eq!(sent_texts(&s.me.take()), ["Experience gain is enabled."]);
     assert_eq!(
-        s.world.player(ME).unwrap().data.profile.variables.get("EXPOFF").map(String::as_str),
+        s.world
+            .player(ME)
+            .unwrap()
+            .data
+            .profile
+            .variables
+            .get("EXPOFF")
+            .map(String::as_str),
         Some("false")
     );
     s.say(".expon");
@@ -672,7 +685,9 @@ fn expoff_stops_the_exp() {
 #[test]
 fn expoff_is_restored_at_login() {
     let mut data = player_data(ME, 20, 0, vec![]);
-    data.profile.variables.insert("EXPOFF".to_owned(), "true".to_owned());
+    data.profile
+        .variables
+        .insert("EXPOFF".to_owned(), "true".to_owned());
     let root_log = Log::default();
     let mut world = World::new(WorldRng::from_seed(5), Box::new(NullOutbox));
     world.set_static_data(Box::new(self::data()));

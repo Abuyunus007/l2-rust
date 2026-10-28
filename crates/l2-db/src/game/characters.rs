@@ -898,7 +898,13 @@ mod tests {
 
     #[test]
     fn a_date_text_is_parsed() {
-        let date = |y, m, d| Some(CalendarDate { year: y, month: m, day: d });
+        let date = |y, m, d| {
+            Some(CalendarDate {
+                year: y,
+                month: m,
+                day: d,
+            })
+        };
         assert_eq!(CalendarDate::parse("2024-03-07"), date(2024, 3, 7));
         assert_eq!(CalendarDate::parse("2024-03-07 00:00:00"), date(2024, 3, 7));
         assert_eq!(CalendarDate::parse("0000-00-00"), None);

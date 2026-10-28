@@ -77,7 +77,12 @@ fn class_level(class_id: i32) -> i32 {
 }
 
 /// Java `SupportMagic.onCommand`.
-fn support_magic_handler(world: &mut World, player: ObjectId, command: &str, target: Option<ObjectId>) -> bool {
+fn support_magic_handler(
+    world: &mut World,
+    player: ObjectId,
+    command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     let Some(npc) = target.filter(|t| world.npcs.contains_key(t)) else {
         return false;
     };
@@ -98,7 +103,11 @@ fn make_support_magic(world: &mut World, player: ObjectId, npc: ObjectId, is_sum
         world.npc_show_chat_window_file(npc, player, "data/html/default/SupportMagicNoSummon.htm");
         return;
     }
-    let Some((level, class_id)) = world.players.get(&player).map(|p| (p.core.level, p.data.class_id)) else {
+    let Some((level, class_id)) = world
+        .players
+        .get(&player)
+        .map(|p| (p.core.level, p.data.class_id))
+    else {
         return;
     };
     if level > HIGHEST_LEVEL {
@@ -145,11 +154,20 @@ fn make_support_magic(world: &mut World, player: ObjectId, npc: ObjectId, is_sum
 }
 
 /// Java `SupportBlessing.onCommand`.
-fn support_blessing_handler(world: &mut World, player: ObjectId, _command: &str, target: Option<ObjectId>) -> bool {
+fn support_blessing_handler(
+    world: &mut World,
+    player: ObjectId,
+    _command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     let Some(npc) = target.filter(|t| world.npcs.contains_key(t)) else {
         return false;
     };
-    let Some((level, class_id)) = world.players.get(&player).map(|p| (p.core.level, p.data.class_id)) else {
+    let Some((level, class_id)) = world
+        .players
+        .get(&player)
+        .map(|p| (p.core.level, p.data.class_id))
+    else {
         return false;
     };
     // If the player is too high level, display a message and return.
@@ -181,7 +199,9 @@ mod tests {
     fn class_levels() {
         assert_eq!(class_level(0), 0);
         assert_eq!(class_level(1), 1);
-        assert_eq!(class_level(88), 2);
-        assert_eq!(class_level(112), 3);
+        assert_eq!(class_level(2), 2);
+        // The third class transfer (Duelist, Archmage).
+        assert_eq!(class_level(88), 3);
+        assert_eq!(class_level(94), 3);
     }
 }

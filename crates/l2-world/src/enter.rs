@@ -793,7 +793,6 @@ impl World {
             expertise_weapon_penalty: player.expertise_weapon_penalty,
             expertise_armor_penalty: player.expertise_armor_penalty,
             death_penalty_level: data.profile.death_penalty_level,
-            ..EtcStatusUpdate::default()
         })
     }
 

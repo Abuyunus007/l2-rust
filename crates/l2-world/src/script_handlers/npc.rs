@@ -27,7 +27,12 @@ pub(crate) fn register(handlers: &mut BypassHandlers) {
 }
 
 /// Java `BuyShadowItem.onCommand`: the page of the shadow items the player's level may buy.
-fn buy_shadow_item_handler(world: &mut World, player: ObjectId, _command: &str, target: Option<ObjectId>) -> bool {
+fn buy_shadow_item_handler(
+    world: &mut World,
+    player: ObjectId,
+    _command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     let Some(npc) = target.filter(|t| world.npc_is_merchant(*t)) else {
         return false;
     };
@@ -104,7 +109,7 @@ impl World {
                 products.push(ShopPreviewProduct {
                     item_id: def.item_id,
                     type2: template.type2 as i16,
-                    body_part: if template.type1 as i32 != TYPE1_ITEM_QUESTITEM_ADENA {
+                    body_part: if template.type1 != TYPE1_ITEM_QUESTITEM_ADENA {
                         template.body_part.mask() as i16
                     } else {
                         0
@@ -124,7 +129,12 @@ impl World {
 /// Java `ReceivePremium.onCommand`. The premium item list (`character_premium_items`, a premium
 /// system feature) is not modelled, so the list is always empty and the answer is Java's for an
 /// empty list.
-fn receive_premium_handler(world: &mut World, player: ObjectId, _command: &str, target: Option<ObjectId>) -> bool {
+fn receive_premium_handler(
+    world: &mut World,
+    player: ObjectId,
+    _command: &str,
+    target: Option<ObjectId>,
+) -> bool {
     if !target.is_some_and(|t| world.npcs.contains_key(&t)) {
         return false;
     }

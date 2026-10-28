@@ -34,23 +34,15 @@ const MILLIS_IN_TICK: i32 = 100;
 
 /// The timers of the script handlers.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ScriptTimer {
+pub enum ScriptHandlerTimer {
     /// Java `Unstuck.EscapeFinalizer.run()`.
     UnstuckEscape { player: ObjectId },
 }
 
 /// What the script handlers keep in the world.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ScriptHandlerWorld {
     pub(crate) settings: ScriptHandlerSettings,
-}
-
-impl Default for ScriptHandlerWorld {
-    fn default() -> Self {
-        Self {
-            settings: ScriptHandlerSettings::default(),
-        }
-    }
 }
 
 /// The config values the script handlers read. `Default` is the Java default.
@@ -120,7 +112,7 @@ impl World {
         };
         let name = player.data.name.clone();
         let (year, month, day) = player.data.profile.create_date.unwrap_or_else(|| {
-            let now = i64::try_from(self.world_ms()).unwrap_or(0);
+            let now = self.world_ms();
             civil_from_millis(now.wrapping_add(l2_util::time::local_offset_millis(now)))
         });
         let message = SystemMessage::new(SystemMessageId::C1SBirthdayIsS3S4S2)
@@ -187,14 +179,19 @@ impl World {
             // If unstuck is default (5min), send retail system message.
             self.send(
                 id,
-                &SystemMessage::new(SystemMessageId::YouAreStuckYouWillBeTransportedToTheNearestVillageInFiveMinutes),
+                &SystemMessage::new(
+                    SystemMessageId::YouAreStuckYouWillBeTransportedToTheNearestVillageInFiveMinutes,
+                ),
             );
             self.stop_move(id, None);
             self.abort_cast(id);
             self.do_cast(id, ESCAPE_SKILL);
             return true;
         } else if interval > 100 {
-            self.send_message(id, &format!("You use Escape: {} minutes.", unstuck_timer / 60_000));
+            self.send_message(
+                id,
+                &format!("You use Escape: {} minutes.", unstuck_timer / 60_000),
+            );
         } else {
             self.send_message(id, &format!("You use Escape: {} seconds.", unstuck_timer / 1000));
         }
@@ -227,17 +224,18 @@ impl World {
         // Continue execution later: `setSkillCast(ThreadPool.schedule(new EscapeFinalizer(player),
         // unstuckTimer))`.
         let due = self.tick + TimerWheel::ms_to_ticks(u64::try_from(unstuck_timer).unwrap_or(0));
-        let timer = self
-            .timers
-            .schedule_at(due, TimerKind::Script(ScriptTimer::UnstuckEscape { player: id }));
+        let timer = self.timers.schedule_at(
+            due,
+            TimerKind::ScriptHandler(ScriptHandlerTimer::UnstuckEscape { player: id }),
+        );
         self.cast_state_mut(id).skill_cast = Some(timer);
         true
     }
 
     /// The timers of this module.
-    pub(crate) fn on_script_timer(&mut self, timer: ScriptTimer) {
+    pub(crate) fn on_script_handler_timer(&mut self, timer: ScriptHandlerTimer) {
         match timer {
-            ScriptTimer::UnstuckEscape { player } => self.unstuck_escape_finalizer(player),
+            ScriptHandlerTimer::UnstuckEscape { player } => self.unstuck_escape_finalizer(player),
         }
     }
 

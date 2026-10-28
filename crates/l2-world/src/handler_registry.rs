@@ -186,8 +186,7 @@ mod tests {
         for (name, command) in USER_PORTED {
             let source = std::fs::read_to_string(user_dir.join(format!("{name}.java"))).unwrap();
             assert!(
-                source.contains(&format!("{command}
-")),
+                source.lines().any(|l| l.trim() == command.to_string()),
                 "{name} answers command {command}"
             );
         }

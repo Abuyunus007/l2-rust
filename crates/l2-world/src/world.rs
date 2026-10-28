@@ -1042,7 +1042,7 @@ impl World {
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
             // Java: Unstuck.EscapeFinalizer (S-HAND-02)
-            TimerKind::Script(timer) => self.on_script_timer(timer),
+            TimerKind::ScriptHandler(timer) => self.on_script_handler_timer(timer),
             // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
             TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
             // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner

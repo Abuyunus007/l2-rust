@@ -18,10 +18,18 @@ const LAND_MINE: i32 = 13788;
 
 impl World {
     /// Java `EventItem.onItemUse`.
-    pub(crate) fn event_item_on_use(&mut self, id: ObjectId, item: &ItemData, template: &ItemTemplate) -> bool {
+    pub(crate) fn event_item_on_use(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        template: &ItemTemplate,
+    ) -> bool {
         if !self.players.contains_key(&id) {
             if let Some(owner) = self.acting_player(id) {
-                self.send(owner, &SystemMessage::new(SystemMessageId::YourPetCannotCarryThisItem));
+                self.send(
+                    owner,
+                    &SystemMessage::new(SystemMessageId::YourPetCannotCarryThisItem),
+                );
             }
             return false;
         }

@@ -18,7 +18,10 @@ impl World {
         if !self.players.contains_key(&id) {
             // A pet's `sendPacket` goes to its owner.
             if let Some(owner) = self.acting_player(id) {
-                self.send(owner, &SystemMessage::new(SystemMessageId::YourPetCannotCarryThisItem));
+                self.send(
+                    owner,
+                    &SystemMessage::new(SystemMessageId::YourPetCannotCarryThisItem),
+                );
             }
             return false;
         }
@@ -72,7 +75,11 @@ impl World {
             self.send(viewer, &dice);
         }
 
-        let name = self.players.get(&id).map(|p| p.data.name.clone()).unwrap_or_default();
+        let name = self
+            .players
+            .get(&id)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
         let message = SystemMessage::new(SystemMessageId::C1HasRolledAS2)
             .with(SystemMessageParam::Text(name))
             .with(SystemMessageParam::IntNumber(number));

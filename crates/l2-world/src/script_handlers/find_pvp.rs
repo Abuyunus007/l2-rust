@@ -10,10 +10,10 @@ use l2_protocol_game::server::{CreatureSay, SayBody, SenderField};
 use l2_util::ObjectId;
 
 use crate::bypass::BypassHandlers;
-use l2_protocol_game::server::ChatType;
 use crate::teleport::TeleportTarget;
 use crate::world::World;
 use crate::zones::ZoneId;
+use l2_protocol_game::server::ChatType;
 
 /// Registers the handler of this module (called by `BypassHandlers::default`).
 pub(crate) fn register(handlers: &mut BypassHandlers) {
@@ -103,9 +103,7 @@ fn find_pvp_handler(world: &mut World, player: ObjectId, _command: &str, target:
         if biggest_ally_id == own {
             world.send(
                 player,
-                &whisper(
-                    "Sorry, your clan/ally is outnumbering the place already so you can't move there.",
-                ),
+                &whisper("Sorry, your clan/ally is outnumbering the place already so you can't move there."),
             );
             return true;
         }

@@ -37,7 +37,12 @@ impl World {
     }
 
     /// Java `CharmOfCourage.onItemUse`.
-    pub(crate) fn charm_of_courage_on_use(&mut self, id: ObjectId, item: &ItemData, template: &ItemTemplate) -> bool {
+    pub(crate) fn charm_of_courage_on_use(
+        &mut self,
+        id: ObjectId,
+        item: &ItemData,
+        template: &ItemTemplate,
+    ) -> bool {
         if !self.players.contains_key(&id) {
             return false;
         }
