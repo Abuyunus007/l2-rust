@@ -3,7 +3,7 @@
 //!
 //! The folders follow Java's `data/scripts`; each has a `register` function and the game server
 //! calls [`register_all`] once at startup. The order is Java's load order (the folder listing:
-//! `ai` before `quests`), which is the order listeners of the same NPC hear an event.
+//! `ai`, `instances`, `quests`), which is the order listeners of the same NPC hear an event.
 
 // The ports keep Java's `switch` / `if` shape line by line, so a reviewer can lay them next to the
 // Java file; folding an `if` into a match guard would hide that.
@@ -15,6 +15,7 @@
 
 pub mod ai;
 pub mod custom;
+pub mod instances;
 pub mod quests;
 pub mod village_master;
 
@@ -27,6 +28,7 @@ use l2_world::ScriptRegistry;
 pub fn register_all(r: &mut ScriptRegistry) {
     ai::register(r);
     custom::register(r);
+    instances::register(r);
     quests::register(r);
     village_master::register(r);
 }
