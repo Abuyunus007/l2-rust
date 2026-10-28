@@ -213,6 +213,7 @@ impl Default for AdminWorld {
         skill_test::register(&mut handlers);
         admin_page::register(&mut handlers);
         spawn_admin::register(&mut handlers);
+        crate::script::admin::register(&mut handlers);
         instance::register(&mut handlers);
         olympiad::register(&mut handlers);
         sevensigns::register(&mut handlers);

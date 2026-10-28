@@ -46,7 +46,11 @@ impl World {
             self.reduce_hp_special(target, amount, attacker, true, false, true);
             return;
         }
+        // `Attackable.addDamage(attacker, damage, skill)`: the script event gets the skill
+        // (S-API-03).
+        self.set_script_hit_skill(Some(crate::effects::SkillKey::new(skill.id, skill.level)));
         self.reduce_current_hp(target, amount, attacker);
+        self.set_script_hit_skill(None);
     }
 
     /// Java `Creature.reduceCurrentHpByDOT(amount, attacker, skill)`:
@@ -67,7 +71,9 @@ impl World {
             return;
         }
         let consumption = self.is_player(target) && skill.is_toggle();
+        self.set_script_hit_skill(Some(crate::effects::SkillKey::new(skill.id, skill.level)));
         self.reduce_hp_special(target, amount, attacker, !skill.is_toggle(), true, consumption);
+        self.set_script_hit_skill(None);
     }
 
     /// `Attackable.reduceCurrentHp(.., awake, isDOT, ..)` / `Player.reduceCurrentHp` down to

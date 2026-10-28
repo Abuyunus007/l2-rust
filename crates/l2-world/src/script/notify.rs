@@ -101,6 +101,16 @@ pub(crate) enum PendingEvent {
     MoveFinished(ScriptNpc),
     NodeArrived(ScriptNpc),
     RouteFinished(ScriptNpc),
+    PlayerBypass {
+        player: ObjectId,
+        command: String,
+    },
+    TutorialMark {
+        player: ObjectId,
+        mark_id: i32,
+    },
+    Logout(ObjectId),
+    DayNight(bool),
 }
 
 impl World {
@@ -281,6 +291,33 @@ impl World {
                     self.with_script(script, |s, ctx| s.on_route_finished(ctx, npc));
                 }
             }
+            PendingEvent::PlayerBypass { player, command } => {
+                for script in self.scripts.listeners.global(EventKind::PlayerBypass).to_vec() {
+                    self.with_script(script, |s, ctx| s.on_player_bypass(ctx, player, &command));
+                }
+            }
+            PendingEvent::TutorialMark { player, mark_id } => {
+                for script in self
+                    .scripts
+                    .listeners
+                    .global(EventKind::PlayerPressTutorialMark)
+                    .to_vec()
+                {
+                    self.with_script(script, |s, ctx| {
+                        s.on_player_press_tutorial_mark(ctx, player, mark_id)
+                    });
+                }
+            }
+            PendingEvent::Logout(player) => {
+                for script in self.scripts.listeners.global(EventKind::PlayerLogout).to_vec() {
+                    self.with_script(script, |s, ctx| s.on_player_logout(ctx, player));
+                }
+            }
+            PendingEvent::DayNight(is_night) => {
+                for script in self.scripts.listeners.global(EventKind::DayNightChange).to_vec() {
+                    self.with_script(script, |s, ctx| s.on_day_night_change(ctx, is_night));
+                }
+            }
         }
     }
 
@@ -403,6 +440,16 @@ impl World {
         if let Some(n) = self.has_npc_listener(EventKind::NpcTeleport, npc) {
             self.queue_script_event(PendingEvent::Teleport(n));
         }
+    }
+
+    /// The skill of the damage being applied, `None` for a plain hit.
+    pub(crate) fn script_hit_skill(&self) -> Option<SkillKey> {
+        self.scripts.hit_skill
+    }
+
+    #[doc(hidden)]
+    pub fn set_script_hit_skill(&mut self, skill: Option<SkillKey>) {
+        self.scripts.hit_skill = skill;
     }
 
     /// Java `Attackable.addDamage`: `ON_ATTACKABLE_ATTACK` for an attack by a player or a
@@ -613,9 +660,7 @@ impl World {
     }
 
     /// Java `Creature.updateSeenCreatures` (`ON_CREATURE_SEE`): an NPC with the listener sees a
-    /// creature. Nothing calls it yet: `CreatureSeeTaskManager` is not ported (a follow-up of
-    /// the script cards that use `addCreatureSeeId`).
-    #[allow(dead_code)]
+    /// creature (`see.rs` runs the task).
     pub(crate) fn script_on_creature_see(&mut self, npc: ObjectId, creature: ObjectId) {
         if let Some(n) = self.has_npc_listener(EventKind::CreatureSee, npc) {
             self.queue_script_event(PendingEvent::CreatureSee { npc: n, creature });
@@ -695,6 +740,8 @@ impl World {
     /// The script part of a player leaving: `Player.stopAllTasks` stops its quest timers; the
     /// quest states and radar markers go with the object.
     pub(crate) fn script_on_player_leave(&mut self, player: ObjectId) {
+        self.script_on_player_logout(player);
+        self.script_forget_movie(player);
         self.script_cancel_timers_of(player);
         self.scripts.players.remove(&player);
         self.scripts.radar.remove(&player);
@@ -704,5 +751,63 @@ impl World {
     pub(crate) fn script_on_npc_decay(&mut self, npc: ObjectId) {
         self.script_cancel_timers_of(npc);
         self.scripts.kill_delays.remove(&npc);
+        self.script_forget_all_seen(npc);
+    }
+
+    // ------------------------------------------------------------------ S-API-03 hooks
+
+    /// Java `RequestBypassToServer` / `RequestTutorialPassCmdToServer`: `ON_PLAYER_BYPASS`.
+    pub(crate) fn script_on_player_bypass(&mut self, player: ObjectId, command: &str) {
+        if !self.scripts.listeners.global(EventKind::PlayerBypass).is_empty() {
+            self.queue_script_event(PendingEvent::PlayerBypass {
+                player,
+                command: command.to_owned(),
+            });
+        }
+    }
+
+    /// Java `RequestTutorialQuestionMark`: `ON_PLAYER_PRESS_TUTORIAL_MARK`.
+    pub(crate) fn script_on_tutorial_mark(&mut self, player: ObjectId, mark_id: i32) {
+        if !self
+            .scripts
+            .listeners
+            .global(EventKind::PlayerPressTutorialMark)
+            .is_empty()
+        {
+            self.queue_script_event(PendingEvent::TutorialMark { player, mark_id });
+        }
+    }
+
+    /// Java `Player.deleteMe`: `ON_PLAYER_LOGOUT`.
+    pub(crate) fn script_on_player_logout(&mut self, player: ObjectId) {
+        if !self.scripts.listeners.global(EventKind::PlayerLogout).is_empty() {
+            self.queue_script_event(PendingEvent::Logout(player));
+        }
+    }
+
+    /// Java `GameTimeTaskManager`: `ON_DAY_NIGHT_CHANGE`.
+    pub(crate) fn script_on_day_night_change(&mut self, is_night: bool) {
+        if !self
+            .scripts
+            .listeners
+            .global(EventKind::DayNightChange)
+            .is_empty()
+        {
+            self.queue_script_event(PendingEvent::DayNight(is_night));
+        }
+    }
+
+    /// Java `Creature.doDie` / `Playable.doDie`: `ON_CREATURE_DEATH`, a synchronous
+    /// `notifyEvent` right after the creature is dead.
+    // NOTE(java-quirk): `Playable.doDie` asks for a `TerminateReturn` that can keep the playable
+    // alive (the first listener's answer); `Creature.doDie` ignores it. The hooks return
+    // nothing, so a summon always dies here.
+    pub(crate) fn script_on_creature_death(&mut self, victim: ObjectId, killer: Option<ObjectId>) {
+        let Some(n) = self.has_npc_listener(EventKind::CreatureDeath, victim) else {
+            return;
+        };
+        for script in self.listeners_of(EventKind::CreatureDeath, n.id) {
+            self.with_script(script, |s, ctx| s.on_creature_death(ctx, killer, victim));
+        }
     }
 }
