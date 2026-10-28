@@ -59,6 +59,7 @@ pub mod q00158_seed_of_evil;
 pub mod q00161_fruit_of_the_mother_tree;
 pub mod q00164_blood_fiend;
 pub mod q00165_shilens_hunt;
+pub mod q00166_mass_of_darkness;
 pub mod q00182_new_recruits;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
@@ -125,6 +126,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00161_fruit_of_the_mother_tree::Q00161FruitOfTheMotherTree);
     r.add(q00164_blood_fiend::Q00164BloodFiend);
     r.add(q00165_shilens_hunt::Q00165ShilensHunt);
+    r.add(q00166_mass_of_darkness::Q00166MassOfDarkness);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
