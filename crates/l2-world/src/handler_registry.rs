@@ -26,18 +26,9 @@ mod tests {
         ),
     ];
 
-    /// `bypass/npc` classes that are left. The ported ones are found by their command words.
-    const NPC_LEFT: &[(&str, &str)] = &[
-        (
-            "Loto",
-            "needs LotteryManager (the `games` table, its timers, the ticket items' custom types): own card",
-        ),
-        (
-            "NpcViewMod",
-            "needs the shared drop-rate code with player bonuses and the aggro/skill views; AltGameViewNpc is off: own card",
-        ),
-        ("Rebirth", "custom feature (M9)"),
-    ];
+    /// `bypass/npc` classes that are left. The ported ones are found by their command words
+    /// (S-HAND-03 ported `Loto` and `NpcViewMod`).
+    const NPC_LEFT: &[(&str, &str)] = &[("Rebirth", "custom feature (M9)")];
 
     /// `chat/commands/user` classes that are left (none: `Unstuck` and `MyBirthday` are ported).
     const USER_LEFT: &[(&str, &str)] = &[];

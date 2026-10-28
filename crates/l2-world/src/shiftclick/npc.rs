@@ -18,7 +18,7 @@ use crate::world::World;
 const NO_SPAWN: &str = "<font color=FF0000>--</font>";
 
 /// Java `Elementals.getElementName(element)`.
-fn element_name(element: i32) -> &'static str {
+pub(crate) fn element_name(element: i32) -> &'static str {
     match element {
         0 => "Fire",
         1 => "Water",
@@ -76,6 +76,10 @@ impl World {
     /// Java `NpcShiftClick.onAction` for a GM.
     pub(super) fn npc_shift_click(&mut self, gm: ObjectId, target: ObjectId) {
         if !self.is_gm(gm) {
+            // `else if (NpcConfig.ALT_GAME_VIEWNPC)`: the page of `NpcViewMod`.
+            if self.script_handlers.settings.alt_game_viewnpc {
+                self.npc_view_shift_click(gm, target);
+            }
             return;
         }
         // Set the target of the GM.

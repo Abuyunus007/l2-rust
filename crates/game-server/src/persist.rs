@@ -68,7 +68,7 @@ use l2_db::UndergroundColiseumRepository;
 use l2_db::{AirshipRepository, CursedWeaponRepository, CursedWeaponRow};
 use l2_db::{AnnouncementRepository, AutoColumns, HennaRepository, PetitionFeedbackRepository};
 use l2_db::{AuctionRepository, FunctionTable, ResidenceRepository};
-use l2_db::{BbsFavoriteRepository, BookmarkRepository, BookmarkRow, ContactRepository};
+use l2_db::{BbsFavoriteRepository, BookmarkRepository, BookmarkRow, ContactRepository, LotteryRepository};
 use l2_db::{BossRepository, GrandBossListRow, GrandBossStore, GrandBossUpdate, RaidBossRow};
 use l2_db::{
     BotReportRepository, BuyListRepository, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -646,6 +646,28 @@ pub trait PlayerStore: Send + 'static {
         _time: i64,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// A `lottery` write of the lottery manager (S-HAND-03).
+    fn store_lottery(
+        &mut self,
+        _write: &l2_world::LotteryWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A read of the lottery (S-HAND-03): the tickets of a draw, or the draws' rows. A store without
+    /// a database has none.
+    fn load_lottery_reply(
+        &mut self,
+        then: l2_world::LotteryThen,
+    ) -> impl Future<Output = Result<l2_world::LotteryReply, PersistError>> + Send {
+        async move {
+            Ok(match then {
+                l2_world::LotteryThen::Draw { .. } => l2_world::LotteryReply::Tickets(Vec::new()),
+                _ => l2_world::LotteryReply::Results(Vec::new()),
+            })
+        }
     }
 
     /// A `bbs_favorites` write of the community board (S-HAND-01).
@@ -1231,6 +1253,25 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed bookmark statement and goes on (no retry).
                 if let Err(e) = store.store_bookmark_write(&write).await {
                     error!("Teleport bookmark data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Lottery(write)) => {
+                // Java logs a failed lottery statement and goes on (no retry).
+                if let Err(e) = store.store_lottery(&write).await {
+                    error!("Lottery row could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::LotteryRequest { then }) => {
+                // A read the world asked for, answered in order with the writes before it.
+                let result = match store.load_lottery_reply(then).await {
+                    Ok(reply) => Ok(reply),
+                    Err(e) => {
+                        warn!("Could not read the lottery ({then:?}): {e}");
+                        Err(())
+                    }
+                };
+                if !acks.send_to_world(l2_world::WorldCommand::LotteryReread { result, then }) {
+                    warn!("The lottery answer ({then:?}) could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::BbsFavorite(write)) => {
@@ -2146,6 +2187,24 @@ pub async fn load_couples(pool: &Pool) -> Vec<l2_world::wedding::Couple> {
         Err(e) => {
             warn!("Exception: CoupleManager.load(): {e}");
             Vec::new()
+        }
+    }
+}
+
+/// Java `LotteryManager` constructor, the database half (`SELECT_LAST_LOTTERY`): the newest row.
+/// A database that cannot be read gives none, like Java ("Could not restore lottery data").
+pub async fn load_lottery(pool: &Pool) -> Option<l2_world::LotteryRow> {
+    match LotteryRepository::new(pool.clone()).last().await {
+        Ok(row) => row.map(|row| l2_world::LotteryRow {
+            idnr: row.idnr,
+            prize: i64::from(row.prize),
+            newprize: i64::from(row.newprize),
+            enddate: i64::try_from(row.enddate).unwrap_or(i64::MAX),
+            finished: row.finished == 1,
+        }),
+        Err(e) => {
+            warn!("Lottery: Could not restore lottery data: {e}");
+            None
         }
     }
 }
@@ -3786,6 +3845,7 @@ pub struct DbStore {
     /// `character_subclasses` (S-SUB-01).
     subclasses: SubclassRepository,
     bbs_favorites: BbsFavoriteRepository,
+    lottery: LotteryRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
     baselines: HashMap<ObjectId, Baseline>,
@@ -3881,6 +3941,7 @@ impl DbStore {
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             bbs_favorites: BbsFavoriteRepository::new(pool.clone()),
+            lottery: LotteryRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
@@ -5667,6 +5728,62 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_lottery(&mut self, write: &l2_world::LotteryWrite) -> Result<(), PersistError> {
+        use l2_world::LotteryWrite;
+        match write {
+            LotteryWrite::Insert {
+                idnr,
+                enddate,
+                prize,
+                newprize,
+            } => self.lottery.insert(*idnr, *enddate, *prize, *newprize).await?,
+            LotteryWrite::UpdatePrice { idnr, prize } => self.lottery.update_price(*idnr, *prize).await?,
+            LotteryWrite::Finish {
+                idnr,
+                prize,
+                newprize,
+                number1,
+                number2,
+                prize1,
+                prize2,
+                prize3,
+            } => {
+                self.lottery
+                    .finish(
+                        *idnr, *prize, *newprize, *number1, *number2, *prize1, *prize2, *prize3,
+                    )
+                    .await?
+            }
+        }
+        Ok(())
+    }
+
+    async fn load_lottery_reply(
+        &mut self,
+        then: l2_world::LotteryThen,
+    ) -> Result<l2_world::LotteryReply, PersistError> {
+        Ok(match then {
+            l2_world::LotteryThen::Draw { number } => {
+                l2_world::LotteryReply::Tickets(self.lottery.tickets(number).await?)
+            }
+            _ => l2_world::LotteryReply::Results(
+                self.lottery
+                    .results()
+                    .await?
+                    .into_iter()
+                    .map(|row| l2_world::LotteryResult {
+                        idnr: row.idnr,
+                        number1: row.number1,
+                        number2: row.number2,
+                        prize1: i64::from(row.prize1),
+                        prize2: i64::from(row.prize2),
+                        prize3: i64::from(row.prize3),
+                    })
+                    .collect(),
+            ),
+        })
+    }
+
     async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
         match write {
             FavoriteWrite::Add {
@@ -6436,6 +6553,10 @@ mod tests {
         Vehicle(VehicleWrite),
         /// A `petition_feedback` row: character, GM, rate, message, time (M7-ADMIN-10).
         PetitionFeedback(String, String, i32, String, i64),
+        /// A `lottery` write (S-HAND-03).
+        Lottery(l2_world::LotteryWrite),
+        /// A lottery read (S-HAND-03).
+        LotteryRead(l2_world::LotteryThen),
         /// A `bbs_favorites` write (S-HAND-01).
         BbsFavorite(FavoriteWrite),
         /// A `bbs_favorites` read (S-HAND-01).
@@ -6755,6 +6876,19 @@ mod tests {
                 time,
             ));
             Ok(())
+        }
+
+        async fn store_lottery(&mut self, write: &l2_world::LotteryWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Lottery(write.clone()));
+            Ok(())
+        }
+
+        async fn load_lottery_reply(
+            &mut self,
+            then: l2_world::LotteryThen,
+        ) -> Result<l2_world::LotteryReply, PersistError> {
+            self.calls.lock().unwrap().push(Call::LotteryRead(then));
+            Ok(l2_world::LotteryReply::Tickets(vec![(1, 0)]))
         }
 
         async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {

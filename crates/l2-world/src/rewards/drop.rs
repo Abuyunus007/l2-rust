@@ -348,7 +348,7 @@ fn amount(rng: &mut impl Rnd, entry: &DropEntry, rate: f64) -> i64 {
 /// The ungrouped drop list of one type, as `NpcData` leaves it: items that do not exist dropped,
 /// sorted by chance from high to low (a stable sort), the boss drops of `Rates.ini` added before
 /// sorting.
-fn ungrouped_list(
+pub(crate) fn ungrouped_list(
     s: &DropSettings,
     items: &ItemTemplates,
     template: &NpcTemplate,
@@ -380,7 +380,7 @@ fn ungrouped_list(
 
 /// The drop groups of the template, as `NpcData` leaves them: items that do not exist dropped, each
 /// group sorted by chance from low to high.
-fn group_list(items: &ItemTemplates, template: &NpcTemplate) -> Vec<DropGroup> {
+pub(crate) fn group_list(items: &ItemTemplates, template: &NpcTemplate) -> Vec<DropGroup> {
     template
         .drop_groups
         .iter()

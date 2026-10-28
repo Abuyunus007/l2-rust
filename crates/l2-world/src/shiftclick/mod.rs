@@ -12,13 +12,13 @@
 //
 // # Left out
 // - `AltGameViewNpc` (a player shift clicks an NPC and gets `NpcViewMod`'s page): the page is
-//   `bypass/npc/NpcViewMod.java`, left for its own card (see the registry test of
-//   `tests/handler_registry.rs`). `target.rs` therefore lets only GMs shift click.
+//   `script_handlers/npc_view.rs` (S-HAND-03); `target.rs` lets a player shift click an NPC
+//   only with that setting.
 // - The "Fake Player - " class prefix needs `isFakePlayer()` of the NPC: it comes from the
 //   template's `fake_player` flag, which exists only with fake players on (not ported).
 
 mod door;
-mod npc;
+pub(crate) mod npc;
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;

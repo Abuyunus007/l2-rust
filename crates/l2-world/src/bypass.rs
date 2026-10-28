@@ -97,6 +97,8 @@ impl Default for BypassHandlers {
         handlers.register("ExitRift", crate::sevensigns::rift_bypass_handler);
         // dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java (L-05)
         handlers.register("ItemAuction", crate::item_auction::item_auction_link_handler);
+        // dist/game/data/scripts/handlers/bypass/npc/Loto.java (S-HAND-03)
+        handlers.register("Loto", crate::lottery::loto_handler);
         // dist/game/data/scripts/handlers/bypass/npc/{PlayerHelp,TutorialClose,QuestList}.java (S-HAND-01)
         crate::bypass_simple::register(&mut handlers);
         // dist/game/data/scripts/handlers/bypass/npc/{SupportMagic,SupportBlessing}.java (S-HAND-02)
@@ -106,6 +108,7 @@ impl Default for BypassHandlers {
         // dist/game/data/scripts/handlers/bypass/npc/{RentPet,FindPvP}.java
         crate::script_handlers::rent::register(&mut handlers);
         crate::script_handlers::find_pvp::register(&mut handlers);
+        crate::script_handlers::npc_view::register(&mut handlers);
         handlers
     }
 }

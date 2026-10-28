@@ -349,21 +349,25 @@ impl World {
         } else {
             text.get(1..).unwrap_or("")
         };
-        // `VoicedCommandHandler.getHandler`: the text up to the first space.
+        // `VoicedCommandHandler.getHandler`: the text up to the first space. The answer of the
+        // handler is dropped here: the chat only needs to know that one took the text.
         let word = command.split(' ').next().unwrap_or(command);
-        match word {
-            "engage" => {
-                self.engage(player);
-            }
-            "divorce" => {
-                self.divorce(player);
-            }
-            "gotolove" => {
-                self.go_to_love(player);
-            }
-            _ => return false,
+        self.wedding_voiced_handler(player, word).is_some()
+    }
+
+    /// `Wedding.onCommand` through `VoicedCommandHandler.getHandler(word)`: `None` when no
+    /// handler is registered for the word (the wedding is off, or it is not one of the three),
+    /// else what the handler returns (`voice .engage` from an NPC page hands it on).
+    pub(crate) fn wedding_voiced_handler(&mut self, player: ObjectId, word: &str) -> Option<bool> {
+        if !self.wedding.settings.allow_wedding {
+            return None;
         }
-        true
+        match word {
+            "engage" => Some(self.engage(player)),
+            "divorce" => Some(self.divorce(player)),
+            "gotolove" => Some(self.go_to_love(player)),
+            _ => None,
+        }
     }
 
     /// Java `Wedding.divorce(activeChar)`.
@@ -729,8 +733,12 @@ impl World {
                 to_7s_dungeon,
             }),
         );
-        // `setSkillCast(task)` and `forceIsCasting(ticks + teleportTimer / MILLIS_IN_TICK)`.
-        let interrupt = self.game_ticks().wrapping_add(teleport_timer / 100);
+        // `setSkillCast(task)` and `forceIsCasting(ticks + teleportTimer / MILLIS_IN_TICK)`, which
+        // stores the end tick minus 4 ("for interrupt -400 ms").
+        let interrupt = self
+            .game_ticks()
+            .wrapping_add(teleport_timer / 100)
+            .wrapping_sub(4);
         self.set_casting_now(player, true);
         let cast = self.cast_state_mut(player);
         cast.skill_cast = Some(timer);

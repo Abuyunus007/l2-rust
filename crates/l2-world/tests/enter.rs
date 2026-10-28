@@ -1085,6 +1085,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::BbsFavorite(_) | PersistCommand::BbsFavoriteRequest { .. }) => {
                     "community board"
                 }
+                Out::Persist(PersistCommand::Lottery(_) | PersistCommand::LotteryRequest { .. }) => "lottery",
                 Out::Persist(PersistCommand::Contact(_)) => "contact",
                 Out::Persist(PersistCommand::FriendSummariesRequest { .. }) => "sync read",
                 Out::Persist(PersistCommand::Mail(_)) => "mail",

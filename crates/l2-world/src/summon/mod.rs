@@ -22,9 +22,8 @@
 // - Sieges and territory wars (`isSiegeFriend`) are M7; the Olympiad (`isInOlympiadMode`) is
 //   read from `olympiad/` since M8-OLY-01.
 // - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
-//   protection, `CharSummonTable.restoreServitor`): spawn protection is not modelled. The
+//   protection, `CharSummonTable.restoreServitor`): not ported. The
 //   `character_summons` row is written and removed exactly like Java, so the Java GS restores it.
-//   For the same reason `Summon.isInvul()` has no `_owner.isSpawnProtected()` part.
 // - The `PathFinding.findPath` refusals of `SummonAI` and `Summon.useMagic` (see `ai.rs`).
 // - Transfer pain (`SummonStatus.reduceHp`'s `TRANSFER_DAMAGE_TO_PLAYER`), `TamedBeast`, mounts,
 //   the Mobius auto play.
@@ -315,11 +314,14 @@ impl World {
 
     /// Java `ConditionPlayerCanSummon`'s test: the player (`effector.asPlayer()`) may call a
     /// summon now. Tells the player why not.
-    // Spawn and teleport protection are not modelled.
     pub(crate) fn player_can_summon(&self, id: ObjectId) -> bool {
         let Some(player) = self.acting_player(id) else {
             return false;
         };
+        // `player.isSpawnProtected() || player.isTeleportProtected()`: no message.
+        if self.is_spawn_protected(player) || self.is_teleport_protected(player) {
+            return false;
+        }
         let refused = (self.summons.settings.restore_servitor_on_reconnect
             && self.summons.saved_servitors.contains_key(&player))
             || (self.summons.pet_world.settings.restore_pet_on_reconnect

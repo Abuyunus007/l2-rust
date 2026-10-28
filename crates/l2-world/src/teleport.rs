@@ -70,6 +70,8 @@ pub struct TeleportState {
     watchdog: Option<TimerId>,
     /// Java `_teleportProtectEndTime` in world milliseconds (0 = none).
     pub protect_end_ms: i64,
+    /// Java `Player._spawnProtectEndTime` in world milliseconds (0 = none).
+    pub spawn_protect_end_ms: i64,
 }
 
 /// Where a teleport goes: the arguments of Java's `teleToLocation` overloads.
@@ -466,6 +468,24 @@ impl World {
         self.players
             .get(&id)
             .is_some_and(|p| p.tele.protect_end_ms != 0 && p.tele.protect_end_ms > now)
+    }
+
+    /// Java `Player.setSpawnProtection(protect)`: `PLAYER_SPAWN_PROTECTION` seconds from now, or
+    /// none. The setting lives with the pet restore ([`crate::summon::pet::PetSettings`]).
+    pub fn set_spawn_protection(&mut self, id: ObjectId, protect: bool) {
+        let seconds = i64::from(self.summons.pet_world.settings.player_spawn_protection);
+        let end = self.world_ms() + seconds * 1000;
+        if let Some(p) = self.players.get_mut(&id) {
+            p.tele.spawn_protect_end_ms = if protect { end } else { 0 };
+        }
+    }
+
+    /// Java `Player.isSpawnProtected()`.
+    pub fn is_spawn_protected(&self, id: ObjectId) -> bool {
+        let now = self.world_ms();
+        self.players
+            .get(&id)
+            .is_some_and(|p| p.tele.spawn_protect_end_ms != 0 && p.tele.spawn_protect_end_ms > now)
     }
 
     /// Java `teleToLocation(TeleportWhereType)`: `teleToLocation(getTeleToLocation(this, where),

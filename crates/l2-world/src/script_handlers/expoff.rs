@@ -66,6 +66,11 @@ impl World {
     pub(crate) fn script_voiced_handler(&mut self, player: ObjectId, command: &str) -> bool {
         // `VoicedCommandHandler.getHandler`: the text up to the first space.
         let word = command.split(' ').next().unwrap_or(command);
+        // `Wedding` registers `engage`, `divorce` and `gotolove` (with `AllowWedding`) and answers
+        // with its own result.
+        if let Some(result) = self.wedding_voiced_handler(player, word) {
+            return result;
+        }
         if !matches!(word, "expoff" | "expon") {
             return false;
         }

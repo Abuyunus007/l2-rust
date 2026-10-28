@@ -8,6 +8,7 @@ pub(crate) mod event_item;
 pub(crate) mod expoff;
 pub(crate) mod find_pvp;
 pub(crate) mod npc;
+pub(crate) mod npc_view;
 pub(crate) mod rent;
 pub(crate) mod support;
 pub mod unstuck;

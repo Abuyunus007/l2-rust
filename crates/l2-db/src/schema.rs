@@ -73,6 +73,7 @@ pub const GAME_SCHEMA: &[&str] = &[
     include_str!("../sql/game/item_variables.sql"),
     include_str!("../sql/game/items.sql"),
     include_str!("../sql/game/itemsonground.sql"),
+    include_str!("../sql/game/lottery.sql"),
     include_str!("../sql/game/merchant_lease.sql"),
     include_str!("../sql/game/messages.sql"),
     include_str!("../sql/game/mods_wedding.sql"),

@@ -417,6 +417,12 @@ pub enum WorldCommand {
         result: Result<crate::olympiad::OlympiadRereadRows, ()>,
         then: crate::olympiad::OlympiadRereadThen,
     },
+    /// The answer to `PersistCommand::LotteryRequest`: the tickets of a draw or the draws' rows, or
+    /// `Err` when the read failed (S-HAND-03).
+    LotteryReread {
+        result: Result<crate::lottery::LotteryReply, ()>,
+        then: crate::lottery::LotteryThen,
+    },
     /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
     /// the read failed (the request is then refused, L-05, D-50).
     ItemAuctionReread {
@@ -571,6 +577,11 @@ impl fmt::Debug for WorldCommand {
             Self::OlympiadReread { result, then } => write!(
                 f,
                 "OlympiadReread({then:?}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::LotteryReread { result, then } => write!(
+                f,
+                "LotteryReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::ItemAuctionReread {

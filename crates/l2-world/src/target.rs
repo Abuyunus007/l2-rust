@@ -14,7 +14,7 @@
 //   attacked only keeps the target. Attacking (`setIntentionAttack`) is `ai/` and `combat/`
 //   (M4-COMBAT-01); doors are attacked in sieges (M5).
 // - `AltGameViewNpc` (a player's shift click on an NPC opens `NpcViewMod`): the GM shift click
-//   is `shiftclick/` (S-HAND-01), the player's one is left with `NpcViewMod`.
+//   is `shiftclick/` (S-HAND-01), the player's one is `script_handlers/npc_view.rs` (S-HAND-03).
 // - `isOutOfControl`, parties: M4/M5. (Locked targets, `TargetMe`, are in `npc_click` and
 //   `on_target_canceled`.)
 
@@ -388,9 +388,11 @@ impl World {
         match action_id {
             0 => self.on_action_object(id, obj, true),
             1 => {
-                // `AltGameViewNpc` is off and fake players are not ported, so only a GM gets the
-                // shift click.
-                if !self.is_gm(id) {
+                // Fake players are not ported: a GM, or any player on an NPC with
+                // `AltGameViewNpc`, gets the shift click.
+                if !self.is_gm(id)
+                    && !(self.script_handlers.settings.alt_game_viewnpc && self.is_plain_npc(obj))
+                {
                     self.on_action_object(id, obj, false);
                 } else {
                     self.on_action_shift(id, obj);

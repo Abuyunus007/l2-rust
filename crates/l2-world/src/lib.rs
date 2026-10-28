@@ -53,6 +53,7 @@ pub mod item_auction;
 pub mod item_ops;
 pub mod leave;
 pub mod leftover;
+pub mod lottery;
 pub mod macros;
 pub mod mail;
 pub mod manor;
@@ -180,6 +181,10 @@ pub use item_auction::{
 };
 pub use l2_util::{ObjectId, WorldRng};
 pub use leftover::{LeftoverInput, LeftoverSettings, LeftoverState, LeftoverTimer};
+pub use lottery::{
+    LotteryReply, LotteryResult, LotteryRow, LotterySettings, LotteryThen, LotteryTimer, LotteryWorld,
+    LotteryWrite,
+};
 pub use mail::{MailCharacter, MailInput, MailLoad, MailMessage, MailRefresh, MailSettings, MailWrite};
 pub use manor::{
     CropProcure, ManorInput, ManorLoad, ManorMode, ManorProcureRow, ManorProductionRow, ManorSettings,

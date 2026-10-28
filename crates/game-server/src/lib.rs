@@ -872,6 +872,10 @@ impl Server {
         // here; the scripts write them only with `CycleDatabaseWrites` (D-54, S-API-01).
         let global_variables = persist::load_global_variables(&pool).await;
         let script_settings = script_settings(&config, &paths.config_dir);
+        // Java: LotteryManager.getInstance (GameServer): the newest `lottery` row, read only here;
+        // the world writes it only with `CycleDatabaseWrites` (D-53, S-HAND-03).
+        let lottery_settings = world_data::lottery_settings(&config, &paths.config_dir);
+        let lottery_row = persist::load_lottery(&pool).await;
         // Java: CoupleManager.getInstance (GameServer, only with AllowWedding): the couples of
         // `mods_wedding`, read only here.
         let wedding_settings = world_data::wedding_settings(&config);
@@ -921,6 +925,7 @@ impl Server {
             allow_wear: config.general.allow_wear,
             allow_rentpet: config.general.allow_rentpet,
             enable_find_pvp: config.find_pvp.enable_find_pvp,
+            alt_game_viewnpc: config.npc.alt_game_viewnpc,
         };
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
@@ -1262,6 +1267,9 @@ impl Server {
                     world.load_buy_list_stock(buy_list_stock);
                     // Java: CrestTable (after ClanTable: it clears the crests clans lost).
                     world.load_crests(crests);
+                    // Java: LotteryManager (GameServer): sells and draws only with the switch.
+                    world.set_lottery_settings(lottery_settings);
+                    world.load_lottery(lottery_row);
                     // Java: CoupleManager (GameServer, only with AllowWedding).
                     let wedding_on = wedding_settings.allow_wedding;
                     world.set_wedding_settings(wedding_settings);

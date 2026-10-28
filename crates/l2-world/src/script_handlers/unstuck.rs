@@ -56,6 +56,9 @@ pub struct ScriptHandlerSettings {
     pub allow_rentpet: bool,
     /// `FindPvpConfig.ENABLE_FIND_PVP` (`EnableFindPvP`).
     pub enable_find_pvp: bool,
+    /// `NpcConfig.ALT_GAME_VIEWNPC` (`AltGameViewNpc`): a player's shift click on an NPC opens
+    /// `NpcViewMod`'s page.
+    pub alt_game_viewnpc: bool,
 }
 
 impl Default for ScriptHandlerSettings {
@@ -65,6 +68,7 @@ impl Default for ScriptHandlerSettings {
             allow_wear: true,
             allow_rentpet: false,
             enable_find_pvp: false,
+            alt_game_viewnpc: false,
         }
     }
 }
