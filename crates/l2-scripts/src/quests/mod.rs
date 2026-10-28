@@ -48,6 +48,7 @@ pub mod q00105_skirmish_with_orcs;
 pub mod q00106_forgotten_truth;
 pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
+pub mod q00132_matras_curiosity;
 pub mod q00146_the_zero_hour;
 pub mod q00147_path_to_becoming_an_elite_mercenary;
 pub mod q00148_path_to_becoming_an_exalted_mercenary;
@@ -113,6 +114,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00106_forgotten_truth::Q00106ForgottenTruth);
     r.add(q00107_merciless_punishment::Q00107MercilessPunishment);
     r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
+    r.add(q00132_matras_curiosity::Q00132MatrasCuriosity);
     r.add(q00146_the_zero_hour::Q00146TheZeroHour);
     r.add(q00147_path_to_becoming_an_elite_mercenary::Q00147PathToBecomingAnEliteMercenary);
     r.add(q00148_path_to_becoming_an_exalted_mercenary::Q00148PathToBecomingAnExaltedMercenary);
