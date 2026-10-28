@@ -99,6 +99,18 @@ impl ScriptTest {
     /// `npcs` and `items` are `<npc>` and `<item>` elements in the datapack's XML format;
     /// `pages` are `(datapack path, text)` html files.
     pub fn new(scripts: ScriptRegistry, npcs: &str, items: &str, pages: &[(&str, &str)]) -> Self {
+        Self::new_with(scripts, npcs, items, pages, |_| {})
+    }
+
+    /// [`ScriptTest::new`] with `settings` run on the world before the scripts are installed: for
+    /// the scripts whose `Script::enabled` reads a config key.
+    pub fn new_with(
+        scripts: ScriptRegistry,
+        npcs: &str,
+        items: &str,
+        pages: &[(&str, &str)],
+        settings: impl FnOnce(&mut World),
+    ) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -127,6 +139,7 @@ impl ScriptTest {
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+        settings(&mut world);
         world.install_scripts(scripts);
         Self {
             world,

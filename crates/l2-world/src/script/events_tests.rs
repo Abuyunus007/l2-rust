@@ -18,8 +18,10 @@ fn lines(log: &Log) -> Vec<String> {
 }
 
 /// Keeps the global variable re-read requests.
+type Request = (u64, Vec<String>);
+
 #[derive(Clone, Default)]
-struct Capture(Arc<Mutex<Vec<(u64, Vec<String>)>>>);
+struct Capture(Arc<Mutex<Vec<Request>>>);
 
 impl Outbox for Capture {
     fn persist(&mut self, command: PersistCommand) {

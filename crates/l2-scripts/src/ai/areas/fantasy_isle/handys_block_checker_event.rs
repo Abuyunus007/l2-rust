@@ -61,10 +61,12 @@ mod tests {
             "<html><body>Own page</body></html>".to_owned(),
         )];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
-        let mut t = ScriptTest::new(registry, NPCS_XML, "", &pages);
-        t.world.set_minigame_settings(MinigameSettings {
-            enable_block_checker_event: enabled,
-            ..MinigameSettings::default()
+        // The settings come first: the script is created only with the event (`Script::enabled`).
+        let mut t = ScriptTest::new_with(registry, NPCS_XML, "", &pages, |world| {
+            world.set_minigame_settings(MinigameSettings {
+                enable_block_checker_event: enabled,
+                ..MinigameSettings::default()
+            });
         });
         t.world.start_minigames(MinigameLoad::default());
         t
