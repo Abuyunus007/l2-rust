@@ -349,12 +349,30 @@ impl World {
             .unwrap_or_default()
     }
 
-    /// `checkQuests(player)`: a noble may add a subclass without the quests.
-    // The quest states (`Q00234_FatesWhisper` and `Q00235_MimirsElixir`, or `Q00236_SeedsOfChaos`
-    // at a Kamael master) are the script engine's (S-API-01): without it a player has none, which
-    // Java answers with false.
-    fn vm_check_quests(&self, id: ObjectId, _kind: VillageMasterKind) -> bool {
-        self.is_noble(id)
+    /// `checkQuests(player)`: a noble may add a subclass without the quests; anybody else needs
+    /// `Q00234_FatesWhisper` and `Q00235_MimirsElixir` completed, or `Q00236_SeedsOfChaos` instead
+    /// of Mimir's Elixir at a Kamael master (`VillageMasterKamael.checkQuests`).
+    fn vm_check_quests(&self, id: ObjectId, kind: VillageMasterKind) -> bool {
+        // Noble players can add Sub-Classes without quests.
+        if self.is_noble(id) {
+            return true;
+        }
+        let completed = |name: &str| {
+            self.scripts
+                .players
+                .get(&id)
+                .and_then(|q| q.get(name))
+                .is_some_and(|qs| qs.is_completed())
+        };
+        if !completed("Q00234_FatesWhisper") {
+            return false;
+        }
+        let second = if kind == VillageMasterKind::Kamael {
+            "Q00236_SeedsOfChaos"
+        } else {
+            "Q00235_MimirsElixir"
+        };
+        completed(second)
     }
 
     /// A page of the village master (`html.setFile(player, path)`).
