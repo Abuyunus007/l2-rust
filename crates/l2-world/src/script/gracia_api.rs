@@ -27,13 +27,32 @@ impl World {
         self.disable_core_ai(npc, value);
     }
 
-    /// Java `Npc.setRandomWalking(value)`; a value `true` goes back to the template's rule.
+    /// Java `Npc.setRandomWalking(value)`.
     pub fn script_set_random_walking(&mut self, npc: ObjectId, value: bool) {
-        if value {
-            self.npc_world.script_no_random_walk.remove(&npc);
-        } else {
-            self.npc_world.script_no_random_walk.insert(npc);
-        }
+        self.npc_world.script_random_walking.insert(npc, value);
+    }
+
+    /// Java `GeneralConfig.INSTANCE_FINISH_TIME` (`DefaultFinishTime`), in milliseconds.
+    pub fn script_instance_finish_time_ms(&self) -> i32 {
+        self.instances.settings.instance_finish_time_ms
+    }
+
+    /// Java `instance.getAliveNpcs(Monster.class)`: the monsters of an instance that are not dead.
+    pub fn script_alive_monsters_of_instance(&self, instance_id: i32) -> Vec<ObjectId> {
+        let Some(instance) = self.instance(instance_id) else {
+            return Vec::new();
+        };
+        instance
+            .npcs
+            .keys()
+            .copied()
+            .filter(|id| self.npc(*id).is_some_and(|n| n.class.is_monster()) && !self.is_dead(*id))
+            .collect()
+    }
+
+    /// Java `Player.isFlyingMounted()`.
+    pub fn script_is_flying_mounted(&self, player: ObjectId) -> bool {
+        self.stats(player).is_some_and(|view| view.is_flying_mounted())
     }
 
     /// Java `Attackable.setCanReturnToSpawnPoint(value)`.
