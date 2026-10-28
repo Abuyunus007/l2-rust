@@ -85,10 +85,6 @@ impl World {
         if self.residence_script_event(player, script_name, event) {
             return;
         }
-        // The wedding priest (M8-MISC-01, `wedding.rs`).
-        if self.wedding_script_event(player, script_name, event) {
-            return;
-        }
         // The air ship controllers (M8-VEHICLE-01, `vehicle/controller.rs`).
         if self.air_ship_script_event(player, script_name, event) {
             return;

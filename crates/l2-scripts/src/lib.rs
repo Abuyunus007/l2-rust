@@ -14,6 +14,7 @@
 )]
 
 pub mod ai;
+pub mod custom;
 pub mod quests;
 pub mod village_master;
 
@@ -25,6 +26,7 @@ use l2_world::ScriptRegistry;
 /// Every script, in Java's load order.
 pub fn register_all(r: &mut ScriptRegistry) {
     ai::register(r);
+    custom::register(r);
     quests::register(r);
     village_master::register(r);
 }
