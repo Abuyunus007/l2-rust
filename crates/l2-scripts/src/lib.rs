@@ -15,6 +15,7 @@
 
 pub mod ai;
 pub mod quests;
+pub mod village_master;
 
 #[cfg(test)]
 pub(crate) mod testing;
@@ -25,6 +26,7 @@ use l2_world::ScriptRegistry;
 pub fn register_all(r: &mut ScriptRegistry) {
     ai::register(r);
     quests::register(r);
+    village_master::register(r);
 }
 
 /// A registry with every script.
