@@ -85,11 +85,10 @@ impl Script for ZealotOfShilen {
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         if npc.id == ZEALOT {
-            ctx.world_mut().script_set_random_walking(npc.object_id, false);
+            ctx.set_random_walking(npc, false);
         } else {
             ctx.world_mut().set_invul(npc.object_id, true);
-            ctx.world_mut()
-                .script_set_can_return_to_spawn_point(npc.object_id, false);
+            ctx.set_can_return_to_spawn_point(npc, false);
             ctx.cancel_quest_timer("WATCHING", Some(npc), None);
             ctx.start_quest_timer("WATCHING", 10000, Some(npc), None, true);
         }

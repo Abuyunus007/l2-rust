@@ -1024,7 +1024,7 @@ fn admin_changename(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 }
 
 /// Java `Player.storeMe()`: the whole character is written with the next outbox turn.
-fn store_me(world: &mut World, id: ObjectId) {
+pub(crate) fn store_me(world: &mut World, id: ObjectId) {
     if let Some(snapshot) = world.store_snapshot(id) {
         world
             .outbox
@@ -1083,7 +1083,7 @@ fn admin_setnoble(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 
 /// Java `Player.setNoble(value)`: the skills of the noble skill tree are given or taken (not
 /// stored), the flag, and the new skill list.
-fn set_noble(world: &mut World, id: ObjectId, value: bool) {
+pub(crate) fn set_noble(world: &mut World, id: ObjectId, value: bool) {
     let trees = std::sync::Arc::clone(&world.rewards.skill_trees);
     for skill in trees.noble_skills() {
         if value {
@@ -1271,7 +1271,7 @@ fn refresh_textures(world: &mut World, id: ObjectId) {
 /// Java `Player.setPlayerClass(id)` for a character who is not changing sub class: the academy
 /// graduation, the effect, the class, the messages, the party and clan icons, the skills.
 // NOTE: `applyItemSkills()` is not ported, see the module note.
-fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
+pub(crate) fn set_player_class(world: &mut World, id: ObjectId, new_class: i32) {
     // `if (_subclassLock) return;` (S-SUB-01).
     if world.is_changing_class(id) {
         return;

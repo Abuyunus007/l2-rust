@@ -85,9 +85,9 @@ impl Script for Nemo {
                     state.practicing.insert(player);
                     state.script_value.insert(npc.object_id, value + 1);
                     let name = ctx.player_name(player);
+                    ctx.set_running(maguen);
                     let world = ctx.world_mut();
                     world.script_set_npc_title(maguen.object_id, &name);
-                    world.script_set_running(maguen.object_id, true);
                     world.script_start_follow(maguen.object_id, player);
                     world.broadcast_status_update(maguen.object_id);
                     ctx.show_on_screen_npc_string(player, NpcStringId::MaguenAppearance, 2, 4000, &[]);

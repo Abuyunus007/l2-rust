@@ -177,7 +177,7 @@ impl World {
 
     /// Java `PlayerVariables.set(name, String)`: the value is stored with the next store of the
     /// character (`character_variables`).
-    pub(crate) fn set_player_variable_text(&mut self, id: ObjectId, name: &str, value: String) {
+    pub fn set_player_variable_text(&mut self, id: ObjectId, name: &str, value: String) {
         if let Some(player) = self.players.get_mut(&id) {
             let profile = &mut player.data.profile;
             profile.variables.insert(name.to_owned(), value);

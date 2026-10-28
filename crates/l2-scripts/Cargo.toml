@@ -12,6 +12,7 @@ repository.workspace = true
 l2-world.workspace = true
 l2-util.workspace = true
 l2-protocol-game.workspace = true
+tracing.workspace = true
 
 [dev-dependencies]
 l2-data.workspace = true

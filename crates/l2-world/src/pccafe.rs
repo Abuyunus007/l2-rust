@@ -99,6 +99,11 @@ impl World {
         self.pccafe.settings.max_points
     }
 
+    /// Java `PremiumSystemConfig.PC_CAFE_ENABLED` (`PcCafeEnabled`).
+    pub fn pc_cafe_enabled(&self) -> bool {
+        self.pccafe.settings.enabled
+    }
+
     /// Java `Player.getPcCafePoints()`.
     pub fn pc_cafe_points(&self, id: ObjectId) -> i32 {
         self.players.get(&id).map_or(0, |p| p.data.profile.pccafe_points)

@@ -944,7 +944,7 @@ impl World {
     }
 
     /// Java `Player.toString()` (`WorldObject.toString`): `Player:name[objectId]`.
-    pub(crate) fn player_text(&self, id: ObjectId) -> String {
+    pub fn player_text(&self, id: ObjectId) -> String {
         self.players.get(&id).map_or_else(
             || format!("Player:?[{}]", id.0),
             |p| format!("Player:{}[{}]", p.data.name, id.0),

@@ -190,7 +190,7 @@ impl Script for SeedOfAnnihilation {
                 let index = ctx.get_random(region.minion_lists.len() as i32);
                 if let Some(list) = region.minion_lists.get(usize::try_from(index).unwrap_or(0)) {
                     for mob_id in *list {
-                        ctx.world_mut().script_add_minion(npc.object_id, *mob_id);
+                        ctx.spawn_minion(npc, *mob_id);
                     }
                 }
             }

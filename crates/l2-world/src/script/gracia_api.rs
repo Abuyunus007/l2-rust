@@ -1,8 +1,7 @@
 //! Small `pub` entry points to NPC behaviour that the scripts of `ai/areas/Gracia` need and the
 //! `pub` world API did not offer (S-AI-01). Each is a thin call into the module that owns the rule.
-// Java: entity/actor/Creature.java (setRunning, disableCoreAI), entity/actor/Npc.java
-//       (setRandomWalking, setTitle), entity/actor/instance/Attackable.java
-//       (setCanReturnToSpawnPoint), ai/AbstractAI.java (setIntentionFollow, stopFollow)
+// Java: entity/actor/Npc.java (setTitle), ai/AbstractAI.java (setIntentionFollow, stopFollow),
+//       mechanics/skill/BuffInfo.java, entity/instancezone/Instance.java
 
 use l2_data::stats::AbnormalType;
 use l2_util::ObjectId;
@@ -12,26 +11,6 @@ use crate::interact::NORMAL_FOLLOW_RANGE;
 use crate::world::World;
 
 impl World {
-    /// Java `Creature.setRunning()` / `setWalking()` of an NPC.
-    pub fn script_set_running(&mut self, npc: ObjectId, value: bool) {
-        self.set_running(npc, value);
-    }
-
-    /// Java `WorldObject.setHeading(heading)` of an NPC.
-    pub fn script_set_heading(&mut self, npc: ObjectId, heading: i32) {
-        self.set_heading(npc, heading);
-    }
-
-    /// Java `Creature.disableCoreAI(value)`.
-    pub fn script_disable_core_ai(&mut self, npc: ObjectId, value: bool) {
-        self.disable_core_ai(npc, value);
-    }
-
-    /// Java `Npc.setRandomWalking(value)`.
-    pub fn script_set_random_walking(&mut self, npc: ObjectId, value: bool) {
-        self.npc_world.script_random_walking.insert(npc, value);
-    }
-
     /// Java `GeneralConfig.INSTANCE_FINISH_TIME` (`DefaultFinishTime`), in milliseconds.
     pub fn script_instance_finish_time_ms(&self) -> i32 {
         self.instances.settings.instance_finish_time_ms
@@ -53,15 +32,6 @@ impl World {
     /// Java `Player.isFlyingMounted()`.
     pub fn script_is_flying_mounted(&self, player: ObjectId) -> bool {
         self.stats(player).is_some_and(|view| view.is_flying_mounted())
-    }
-
-    /// Java `Attackable.setCanReturnToSpawnPoint(value)`.
-    pub fn script_set_can_return_to_spawn_point(&mut self, npc: ObjectId, value: bool) {
-        if value {
-            self.npc_world.script_no_return_home.remove(&npc);
-        } else {
-            self.npc_world.script_no_return_home.insert(npc);
-        }
     }
 
     /// Java `getAI().setIntentionFollow(target)` of an NPC.
@@ -89,16 +59,6 @@ impl World {
         if let Some(abnormal_type) = AbnormalType::from_name(abnormal_type) {
             self.stop_skill_effects_by_abnormal(owner, SkillFinishType::Removed, abnormal_type);
         }
-    }
-
-    /// Java `Quest.addMinion(master, minionId)` (`MinionList.spawnMinion`): a monster of that id
-    /// next to its master, with the master as its leader. `None` for an unknown template.
-    pub fn script_add_minion(&mut self, master: ObjectId, minion_id: i32) -> Option<ObjectId> {
-        let templates = self.npc_world.templates_arc()?;
-        let master_npc_id = self.npcs.get(&master)?.npc_id;
-        let master_template = templates.get(master_npc_id)?;
-        let template = templates.get(minion_id)?;
-        self.spawn_minion(master, master_template, template)
     }
 
     /// Java `Player.isInventoryUnder90(includeQuestInv)`.

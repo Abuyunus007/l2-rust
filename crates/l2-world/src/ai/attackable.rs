@@ -272,9 +272,9 @@ impl World {
     /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
     /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
     fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
-        // A script's `setRandomWalking(value)` (`script/gracia_api.rs`).
-        if let Some(value) = self.npc_world.script_random_walking.get(&id) {
-            return *value;
+        // `setRandomWalking(false)` of a script (S-AI-05).
+        if self.npc_world.random_walk_off.contains(&id) {
+            return false;
         }
         // `Npc.onSpawn`: `!WalkingManager.isTargeted(this) && ...` (a route walker never wanders).
         if self

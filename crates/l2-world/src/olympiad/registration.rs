@@ -34,7 +34,7 @@ impl World {
     }
 
     /// Java `isNoble()`.
-    pub(crate) fn is_noble(&self, id: ObjectId) -> bool {
+    pub fn is_noble(&self, id: ObjectId) -> bool {
         self.players.get(&id).is_some_and(|p| p.data.profile.noble)
     }
 
