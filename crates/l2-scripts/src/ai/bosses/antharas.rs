@@ -286,9 +286,7 @@ impl Script for Antharas {
             EVENT_ENTER => {
                 let mut html_text = None;
                 let status = get_status(ctx);
-                let Some(player) = player else {
-                    return None;
-                };
+                let player = player?;
                 if status == STATUS_DEAD {
                     html_text = Some("13001-01.html");
                 } else if status == STATUS_IN_FIGHT {
@@ -296,8 +294,8 @@ impl Script for Antharas {
                 } else if nest_players_inside(ctx) >= MAX_PEOPLE {
                     html_text = Some("13001-04.html");
                 } else if let Some(party) = ctx.world().party_of(player) {
+                    // `isInCC ? party.getCommandChannel()... : party...`.
                     let channel = ctx.world().command_channel_of(player);
-                    let is_in_cc = channel.is_some();
                     let members = match channel {
                         Some(channel) => ctx.world().command_channel_members(channel),
                         None => ctx.world().party_members_of(player),
@@ -306,7 +304,6 @@ impl Script for Antharas {
                         Some(channel) => ctx.world().is_command_channel_leader(channel, player),
                         None => ctx.world().party_leader(party) == Some(player),
                     };
-                    let _ = is_in_cc;
                     if !is_party_leader {
                         html_text = Some("13001-05.html");
                     } else if !ctx.has_quest_items(player, ANTHARAS_STONE_ITEM_ID) {
@@ -315,7 +312,8 @@ impl Script for Antharas {
                         html_text = Some("13001-04.html");
                     } else {
                         for member in members {
-                            let near = npc.is_some_and(|npc| inside_radius_3d(ctx, member, npc.object_id, 1000.0));
+                            let near =
+                                npc.is_some_and(|npc| inside_radius_3d(ctx, member, npc.object_id, 1000.0));
                             if near {
                                 let x = 179700 + ctx.get_random(700);
                                 let y = 113800 + ctx.get_random(2100);
@@ -351,12 +349,8 @@ impl Script for Antharas {
                 }
             }
             EVENT_SPAWN_ANTHARAS => {
-                let Some(boss) = ctx.state::<AntharasState>().antharas_boss else {
-                    return None;
-                };
-                let Some(boss) = ctx.script_npc(boss) else {
-                    return None;
-                };
+                let boss = ctx.state::<AntharasState>().antharas_boss?;
+                let boss = ctx.script_npc(boss)?;
                 ctx.world_mut().disable_core_ai(boss.object_id, true);
                 ctx.world_mut().set_random_walking(boss.object_id, false);
                 let (x, y, z, heading) = ANTHARAS_SPAWN_LOCATION;
@@ -368,52 +362,38 @@ impl Script for Antharas {
                 ctx.start_quest_timer(EVENT_CAMERA_1, 23, Some(boss), None, false);
             }
             EVENT_CAMERA_1 => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &camera(npc, 700, 13, -19, 0, 20000, 0, 0, 0, 0, 0));
                 ctx.start_quest_timer(EVENT_CAMERA_2, 3000, Some(npc), None, false);
             }
             EVENT_CAMERA_2 => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &camera(npc, 700, 13, 0, 6000, 20000, 0, 0, 0, 0, 0));
                 ctx.start_quest_timer(EVENT_CAMERA_3, 10000, Some(npc), None, false);
             }
             EVENT_CAMERA_3 => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &camera(npc, 3700, 0, -3, 0, 10000, 0, 0, 0, 0, 0));
                 broadcast_nest(ctx, &social(npc, 1));
                 ctx.start_quest_timer(EVENT_CAMERA_4, 200, Some(npc), None, false);
                 ctx.start_quest_timer(EVENT_SOCIAL, 5200, Some(npc), None, false);
             }
             EVENT_CAMERA_4 => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &camera(npc, 1100, 0, -3, 22000, 30000, 0, 0, 0, 0, 0));
                 ctx.start_quest_timer(EVENT_CAMERA_5, 10800, Some(npc), None, false);
             }
             EVENT_CAMERA_5 => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &camera(npc, 1100, 0, -3, 300, 7000, 0, 0, 0, 0, 0));
                 ctx.start_quest_timer(EVENT_START_MOVE, 1900, Some(npc), None, false);
             }
             EVENT_SOCIAL => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 broadcast_nest(ctx, &social(npc, 2));
             }
             EVENT_START_MOVE => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 ctx.world_mut().disable_core_ai(npc.object_id, false);
                 ctx.world_mut().set_random_walking(npc.object_id, true);
 
@@ -444,9 +424,7 @@ impl Script for Antharas {
                 ctx.start_quest_timer(EVENT_SPAWN_MINION, MINION_SPAWN_INTERVAL, Some(npc), None, false);
             }
             EVENT_SET_REGEN => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 let (hp, max_hp) = hp_of(ctx, npc.object_id);
                 let regen = if hp < max_hp * 0.25 {
                     ANTHARAS_REGEN_PHASE_4
@@ -465,9 +443,7 @@ impl Script for Antharas {
                 ctx.start_quest_timer(EVENT_SET_REGEN, REGEN_INTERVAL, Some(npc), None, false);
             }
             EVENT_CHECK_ATTACK => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 let last_attack_time = ctx.state::<AntharasState>().last_attack_time;
                 if (last_attack_time + INACTIVITY_LIMIT) < ctx.now_ms() {
                     set_status(ctx, STATUS_ALIVE);
@@ -511,9 +487,7 @@ impl Script for Antharas {
                 }
             }
             EVENT_SPAWN_MINION => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 let (minion_count, minion_multiplier) = {
                     let st = ctx.state::<AntharasState>();
                     (st.minion_count, st.minion_multiplier)
@@ -566,7 +540,13 @@ impl Script for Antharas {
                         ANTHARAS_FEAR_MOVE_Y,
                         ANTHARAS_FEAR_MOVE_Z,
                     );
-                    ctx.start_quest_timer(EVENT_TID_FEAR_MOVE_TIMEOVER, FEAR_MOVE_FIRST_CHECK, Some(npc), None, false);
+                    ctx.start_quest_timer(
+                        EVENT_TID_FEAR_MOVE_TIMEOVER,
+                        FEAR_MOVE_FIRST_CHECK,
+                        Some(npc),
+                        None,
+                        false,
+                    );
                     ctx.start_quest_timer(EVENT_TID_FEAR_COOLTIME, FEAR_COOLDOWN, Some(npc), None, false);
                 }
             }
@@ -574,9 +554,7 @@ impl Script for Antharas {
                 ctx.state::<AntharasState>().sand_storm_state = 0;
             }
             EVENT_TID_FEAR_MOVE_TIMEOVER => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 let (x, y) = ctx
                     .world()
                     .position_of(npc.object_id)
@@ -609,8 +587,12 @@ impl Script for Antharas {
                         let heading = ctx.world().heading_of(npc.object_id);
                         ctx.world_mut().tele_to_location(
                             npc.object_id,
-                            TeleportTarget::at(ANTHARAS_FEAR_MOVE_X, ANTHARAS_FEAR_MOVE_Y, ANTHARAS_FEAR_MOVE_Z)
-                                .with_heading(heading),
+                            TeleportTarget::at(
+                                ANTHARAS_FEAR_MOVE_X,
+                                ANTHARAS_FEAR_MOVE_Y,
+                                ANTHARAS_FEAR_MOVE_Z,
+                            )
+                            .with_heading(heading),
                         );
                         ctx.start_quest_timer(
                             EVENT_TID_FEAR_MOVE_TIMEOVER,
@@ -692,7 +674,9 @@ impl Script for Antharas {
                     ctx.state::<AntharasState>().minion_count = 0;
                     for creature in nest_characters_inside(ctx) {
                         let minion = ctx.script_npc(creature).is_some_and(|n| {
-                            n.id == ANTHARAS_BEHEMOTH_ID || n.id == ANTHARAS_TERASQUE_ID || n.id == ANTHARAS_BOMBER_ID
+                            n.id == ANTHARAS_BEHEMOTH_ID
+                                || n.id == ANTHARAS_TERASQUE_ID
+                                || n.id == ANTHARAS_BOMBER_ID
                         });
                         if minion {
                             ctx.world_mut().delete_npc(creature);
@@ -700,8 +684,10 @@ impl Script for Antharas {
                     }
 
                     if let Some(player) = player {
-                        ctx.world()
-                            .send_message(player, &format!("{}: All minions have been deleted!", self.name()));
+                        ctx.world().send_message(
+                            player,
+                            &format!("{}: All minions have been deleted!", self.name()),
+                        );
                     }
                 } else if let Some(player) = player {
                     ctx.world().send_message(
@@ -766,7 +752,13 @@ impl Script for Antharas {
     }
 
     /// Handles bomber aggro: the bomber blows up when a player comes near.
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if npc.id != ANTHARAS_BOMBER_ID {
             return;
         }
@@ -795,7 +787,9 @@ impl Script for Antharas {
             ctx.state::<AntharasState>().last_attack_time = now;
 
             let (zone_id, zone_type) = ANTHARAS_NEST_ZONE;
-            if !ctx.world().is_character_in_zone(zone_id, zone_type, attacker) || (get_status(ctx) != STATUS_IN_FIGHT) {
+            if !ctx.world().is_character_in_zone(zone_id, zone_type, attacker)
+                || (get_status(ctx) != STATUS_IN_FIGHT)
+            {
                 warn!(
                     "{}: Player {} attacked Antharas in invalid conditions!",
                     self.name(),
@@ -877,10 +871,15 @@ impl Script for Antharas {
             set_status(ctx, STATUS_DEAD);
 
             let next_respawn_time = ctx.now_ms() + respawn_delay;
-            info!("Antharas will respawn at: {}", date_time_string(next_respawn_time));
+            info!(
+                "Antharas will respawn at: {}",
+                date_time_string(next_respawn_time)
+            );
 
             reset_fight_state(ctx);
-        } else if (npc_id == ANTHARAS_BEHEMOTH_ID) && ctx.world().is_character_in_zone(zone_id, zone_type, killer) {
+        } else if (npc_id == ANTHARAS_BEHEMOTH_ID)
+            && ctx.world().is_character_in_zone(zone_id, zone_type, killer)
+        {
             ctx.state::<AntharasState>().minion_count -= 1;
         }
     }
@@ -894,7 +893,8 @@ impl Script for Antharas {
     /// Handles spawn initialization for Antharas and the invisible fear-phase triggers.
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         if npc.id == ANTHARAS_NPC_ID {
-            ctx.world_mut().set_can_return_to_spawn_point(npc.object_id, false);
+            ctx.world_mut()
+                .set_can_return_to_spawn_point(npc.object_id, false);
             ctx.world_mut().set_random_walking(npc.object_id, false);
 
             ctx.cancel_quest_timer(EVENT_SET_REGEN, Some(npc), None);
@@ -925,7 +925,13 @@ impl Script for Antharas {
     }
 
     /// Chains the follow-up AI events of Antharas' spells.
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: Option<ObjectId>, skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: Option<ObjectId>,
+        skill: SkillKey,
+    ) {
         let skill_id = skill.id;
         if (skill_id == ANTHARAS_FEAR.id) || (skill_id == ANTHARAS_FEAR_SHORT.id) {
             ctx.start_quest_timer(EVENT_TID_USED_FEAR, FEAR_USED_DELAY, Some(npc), None, false);
@@ -974,7 +980,8 @@ fn get_status(ctx: &ScriptCtx<'_>) -> i32 {
 }
 
 fn add_boss(ctx: &mut ScriptCtx<'_>, grand_boss: ScriptNpc) {
-    ctx.world_mut().add_grand_boss(ANTHARAS_NPC_ID, grand_boss.object_id);
+    ctx.world_mut()
+        .add_grand_boss(ANTHARAS_NPC_ID, grand_boss.object_id);
 }
 
 fn set_status(ctx: &mut ScriptCtx<'_>, status: i32) {
@@ -997,8 +1004,11 @@ fn reset_fight_state(ctx: &mut ScriptCtx<'_>) {
 fn refresh_ai_params(ctx: &mut ScriptCtx<'_>, attacker: ObjectId, damage: i32) {
     let st = ctx.state::<AntharasState>();
     let (primary, secondary, tertiary) = (st.primary_attacker, st.secondary_attacker, st.tertiary_attacker);
-    let (primary_hate, secondary_hate, tertiary_hate) =
-        (st.primary_attacker_hate, st.secondary_attacker_hate, st.tertiary_attacker_hate);
+    let (primary_hate, secondary_hate, tertiary_hate) = (
+        st.primary_attacker_hate,
+        st.secondary_attacker_hate,
+        st.tertiary_attacker_hate,
+    );
     if primary == Some(attacker) {
         if primary_hate < damage.wrapping_add(1000) {
             let hate = damage.wrapping_add(ctx.get_random(3000));
@@ -1039,7 +1049,9 @@ fn refresh_ai_params(ctx: &mut ScriptCtx<'_>, attacker: ObjectId, damage: i32) {
 fn attacker_lost(ctx: &ScriptCtx<'_>, npc: ObjectId, attacker: Option<ObjectId>) -> bool {
     match attacker {
         None => true,
-        Some(attacker) => distance_between(ctx, npc, attacker) > MAX_THREAT_DISTANCE || ctx.world().is_dead(attacker),
+        Some(attacker) => {
+            distance_between(ctx, npc, attacker) > MAX_THREAT_DISTANCE || ctx.world().is_dead(attacker)
+        }
     }
 }
 
@@ -1056,7 +1068,8 @@ fn debuff_range(distance: f64, direction: f64) -> bool {
 
 fn manage_skills(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     let id = npc.object_id;
-    if ctx.world().is_casting_now(id) || ctx.world().is_core_ai_disabled(id) || !ctx.world().is_in_combat(id) {
+    if ctx.world().is_casting_now(id) || ctx.world().is_core_ai_disabled(id) || !ctx.world().is_in_combat(id)
+    {
         return;
     }
 
@@ -1082,7 +1095,11 @@ fn manage_skills(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
 
     let (primary_hate, secondary_hate, tertiary_hate) = {
         let st = ctx.state::<AntharasState>();
-        (st.primary_attacker_hate, st.secondary_attacker_hate, st.tertiary_attacker_hate)
+        (
+            st.primary_attacker_hate,
+            st.secondary_attacker_hate,
+            st.tertiary_attacker_hate,
+        )
     };
     if primary_hate > secondary_hate {
         selected_slot = 2;
@@ -1116,7 +1133,10 @@ fn manage_skills(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
             return;
         };
         let distance_to_target = distance_between(ctx, id, selected_target);
-        let direction_to_target = match (ctx.world().position_of(id), ctx.world().position_of(selected_target)) {
+        let direction_to_target = match (
+            ctx.world().position_of(id),
+            ctx.world().position_of(selected_target),
+        ) {
             (Some(me), Some(target)) => angle_from(me, target),
             _ => 0.0,
         };
@@ -1340,7 +1360,8 @@ mod tests {
     use crate::testing::{ScriptTest, item, names_to, pages_to};
 
     const DIR: &str = "data/scripts/ai/bosses/Antharas";
-    const ITEMS: &str = r#"<item id="3865" type="EtcItem" name="Portal Stone"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="3865" type="EtcItem" name="Portal Stone"><set name="is_stackable" val="true"/></item>"#;
 
     fn creature_xml(id: i32, kind: &str, name: &str, params: &str) -> String {
         format!(
@@ -1478,7 +1499,11 @@ mod tests {
         assert!((179700..179700 + 700).contains(&x) && (113800..113800 + 2100).contains(&y));
         // `teleToLocation` lifts the player a few units (no geodata here).
         assert!((-7709..-7699).contains(&z));
-        assert!(t.world.zone_players_inside(70050, "NoRestartZone").contains(&Oid(2)));
+        assert!(
+            t.world
+                .zone_players_inside(70050, "NoRestartZone")
+                .contains(&Oid(2))
+        );
         // The stone stays with the player (Java only checks it).
         assert_eq!(t.count(2, ANTHARAS_STONE_ITEM_ID), 1);
     }

@@ -72,11 +72,7 @@ pub(crate) fn angle_from(origin: (i32, i32, i32), target: (i32, i32, i32)) -> f6
 
 /// Java `calculateDistance3D`.
 pub(crate) fn distance_3d(a: (i32, i32, i32), b: (i32, i32, i32)) -> f64 {
-    let (dx, dy, dz) = (
-        f64::from(a.0 - b.0),
-        f64::from(a.1 - b.1),
-        f64::from(a.2 - b.2),
-    );
+    let (dx, dy, dz) = (f64::from(a.0 - b.0), f64::from(a.1 - b.1), f64::from(a.2 - b.2));
     (dx * dx + dy * dy + dz * dz).sqrt()
 }
 
@@ -186,7 +182,9 @@ pub(crate) mod test_support {
             .iter()
             .filter_map(|c| match c {
                 PersistCommand::Boss(
-                    w @ (BossWrite::GrandBossStatus { .. } | BossWrite::GrandBoss(_) | BossWrite::GrandBossStoreAll { .. }),
+                    w @ (BossWrite::GrandBossStatus { .. }
+                    | BossWrite::GrandBoss(_)
+                    | BossWrite::GrandBossStoreAll { .. }),
                 ) => Some(w.clone()),
                 _ => None,
             })

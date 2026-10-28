@@ -218,7 +218,8 @@ impl Script for Valakas {
                 ctx.world_mut().set_invul(valakas.object_id, true);
                 ctx.world_mut().npc_set_intention_idle(valakas.object_id);
                 if status == STATUS_WAITING {
-                    let wait_millis = i64::from(ctx.world().boss_settings().grand_boss.valakas_wait_time) * 60000;
+                    let wait_millis =
+                        i64::from(ctx.world().boss_settings().grand_boss.valakas_wait_time) * 60000;
                     ctx.start_quest_timer(EVT_START, wait_millis, Some(valakas), None, false);
                 }
             }
@@ -283,7 +284,9 @@ impl Script for Valakas {
                             }
                         }
                         status => {
-                            info!("Valakas: the shared state row says {status:?}; Valakas stays away (D-54).");
+                            info!(
+                                "Valakas: the shared state row says {status:?}; Valakas stays away (D-54)."
+                            );
                         }
                     }
                 }
@@ -296,7 +299,8 @@ impl Script for Valakas {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        ctx.world_mut().set_can_return_to_spawn_point(npc.object_id, false);
+        ctx.world_mut()
+            .set_can_return_to_spawn_point(npc.object_id, false);
         ctx.world_mut().set_random_walking(npc.object_id, false);
     }
 
@@ -384,13 +388,21 @@ impl Script for Valakas {
         }
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: Option<ObjectId>, _skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: Option<ObjectId>,
+        _skill: SkillKey,
+    ) {
         ctx.start_quest_timer(EVT_SKILL_TICK, 1000, Some(npc), None, false);
 
         let (zone_id, zone_type) = ZONE_GROUND;
         let valakas = ctx.state::<ValakasState>().valakas;
         if ctx.world().zone_by_id(zone_id, zone_type).is_some()
-            && !ctx.world().is_character_in_zone(zone_id, zone_type, npc.object_id)
+            && !ctx
+                .world()
+                .is_character_in_zone(zone_id, zone_type, npc.object_id)
             && let Some(valakas) = valakas
         {
             tele_npc(ctx, valakas, LOC_VALAKAS_LAIR);
@@ -509,7 +521,8 @@ fn handle_spawn_step_10(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     ctx.start_quest_timer(EVT_SKILL_TICK, SKILL_TICK_DELAY, Some(npc), None, true);
 
     let (zone_id, zone_type) = ZONE_LAIR;
-    if ctx.world().zone_by_id(zone_id, zone_type).is_some() && ctx.world().boss_settings().grand_boss.valakas_recognize_hero
+    if ctx.world().zone_by_id(zone_id, zone_type).is_some()
+        && ctx.world().boss_settings().grand_boss.valakas_recognize_hero
     {
         for player in ctx.world().zone_players_inside(zone_id, zone_type) {
             if ctx.world().is_hero(player) {
@@ -563,7 +576,9 @@ fn broadcast_camera(
 
     broadcast_lair(
         ctx,
-        &camera(npc, distance, yaw, pitch, time, duration, rel_yaw, rel_pitch, is_wide, rel_angle, unk),
+        &camera(
+            npc, distance, yaw, pitch, time, duration, rel_yaw, rel_pitch, is_wide, rel_angle, unk,
+        ),
     );
 }
 
@@ -639,7 +654,10 @@ fn get_random_skill(ctx: &mut ScriptCtx<'_>, id: ObjectId) -> Option<SkillKey> {
     let (current_hp, max_hp) = ctx.world().hp_and_max(id)?;
     let hp_ratio = current_hp / max_hp;
     let hp_percent = (hp_ratio * 100.0) as i32;
-    if (hp_percent < 75) && (ctx.get_random(150) == 0) && !ctx.world().is_affected_by_skill(id, SKILL_LAVA_SKIN.id) {
+    if (hp_percent < 75)
+        && (ctx.get_random(150) == 0)
+        && !ctx.world().is_affected_by_skill(id, SKILL_LAVA_SKIN.id)
+    {
         return Some(SKILL_LAVA_SKIN);
     }
 
@@ -875,7 +893,10 @@ mod tests {
         assert_eq!(status, STATUS_DEAD);
         let hour = 3_600_000;
         assert!(respawn_time >= before + 192 * hour && respawn_time <= now_ms() + 336 * hour);
-        assert_eq!(t.world.grand_boss_info(VALAKAS).unwrap().respawn_time, respawn_time);
+        assert_eq!(
+            t.world.grand_boss_info(VALAKAS).unwrap().respawn_time,
+            respawn_time
+        );
 
         run_ms(&mut t, 17_000);
         let names = names_to(&t.take(), 1);
@@ -899,7 +920,10 @@ mod tests {
             script: "Valakas",
             event: EVENT_ROW_READ,
         };
-        assert_eq!(rereads(&t.take_boss()), [(BossReadKind::GrandBoss(VALAKAS), then)]);
+        assert_eq!(
+            rereads(&t.take_boss()),
+            [(BossReadKind::GrandBoss(VALAKAS), then)]
+        );
         assert!(npcs_of(&t, VALAKAS).is_empty());
         answer(&mut t, then, VALAKAS, row(VALAKAS, STATUS_DORMANT, 0, (1, 2, 3)));
         assert_eq!(status(&t), Some(STATUS_DORMANT));
@@ -943,7 +967,10 @@ mod tests {
         assert!(t.world.is_dead(Oid(2)));
         attack(&mut t, 3);
         assert!(!t.world.is_dead(Oid(3)));
-        assert_eq!(t.world.position_of(Oid(3)).map(|(x, y, _)| (x, y)), Some((IN_LAIR.0, IN_LAIR.1)));
+        assert_eq!(
+            t.world.position_of(Oid(3)).map(|(x, y, _)| (x, y)),
+            Some((IN_LAIR.0, IN_LAIR.1))
+        );
         // Not invulnerable but not fighting: the attacker is sent away.
         t.world.set_invul(valakas, false);
         attack(&mut t, 3);

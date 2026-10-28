@@ -34,7 +34,9 @@
 //
 // # Left out, with the reason
 // - The boss AIs and the instance scripts (D-05) call [`World::set_grand_boss_status`],
-//   [`World::add_grand_boss`], [`World::allow_boss_zone_entry`] and friends; nobody calls them yet.
+//   [`World::add_grand_boss`], [`World::allow_boss_zone_entry`] and friends; Antharas, Valakas and
+//   Baium do (`l2-scripts/src/ai/bosses`, S-BOSS-01), with [`World::reread_grand_boss_for_script`]
+//   before a respawn on the shared database (D-54).
 // - `Hero.setRBkilled` is `olympiad/hero.rs` (M8-HERO-01); a kill by a noble writes the diary.
 // - `ConditionPlayerCanEscape` (`GrandBossManager.getZone(player) != null`): the condition is not
 //   modelled by the stat engine; [`World::grand_boss_zone_of`] is the lookup it will use.
@@ -227,7 +229,10 @@ pub enum BossReadThen {
     ShowGrandBoss { gm: l2_util::ObjectId, boss_id: i32 },
     /// A boss script decides on the row (D-54): `notifyEvent(event, null, null)` of the script
     /// once the row is in memory. A failed read sends nothing.
-    ScriptEvent { script: &'static str, event: &'static str },
+    ScriptEvent {
+        script: &'static str,
+        event: &'static str,
+    },
 }
 
 /// The answer of a read (`WorldCommand::BossReread`).
@@ -318,10 +323,11 @@ impl World {
     /// Asks for the `grandboss_data` row of `boss_id` again (D-50, D-54); when it is in memory the
     /// script `script` gets `event` (`notifyEvent(event, null, null)`).
     pub fn reread_grand_boss_for_script(&mut self, boss_id: i32, script: &'static str, event: &'static str) {
-        self.outbox.persist(crate::outbox::PersistCommand::BossRereadRequest {
-            kind: BossReadKind::GrandBoss(boss_id),
-            then: BossReadThen::ScriptEvent { script, event },
-        });
+        self.outbox
+            .persist(crate::outbox::PersistCommand::BossRereadRequest {
+                kind: BossReadKind::GrandBoss(boss_id),
+                then: BossReadThen::ScriptEvent { script, event },
+            });
     }
 
     /// Whether the D-53 switch lets this server write the global boss rows.

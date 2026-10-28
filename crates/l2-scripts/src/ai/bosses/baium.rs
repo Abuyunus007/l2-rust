@@ -192,7 +192,13 @@ impl Script for Baium {
                     ctx.world_mut().add_grand_boss(BAIUM_NPC_ID, restored.object_id);
                 }
                 spawn_archangels(ctx);
-                ctx.start_quest_timer(EVENT_CHECK_ATTACK, CHECK_ATTACK_INTERVAL_MILLIS, restored, None, false);
+                ctx.start_quest_timer(
+                    EVENT_CHECK_ATTACK,
+                    CHECK_ATTACK_INTERVAL_MILLIS,
+                    restored,
+                    None,
+                    false,
+                );
             }
             STATUS_DEAD => {
                 let remaining_delay = stored_respawn_time - ctx.now_ms();
@@ -267,7 +273,13 @@ impl Script for Baium {
                     ctx.start_quest_timer(EVENT_WAKEUP_ACTION, 50, baium, None, false);
                     ctx.start_quest_timer(EVENT_MANAGE_EARTHQUAKE, 2000, baium, None, false);
                     ctx.start_quest_timer(EVENT_SOCIAL_ACTION, 10000, baium, player, false);
-                    ctx.start_quest_timer(EVENT_CHECK_ATTACK, CHECK_ATTACK_INTERVAL_MILLIS, baium, None, false);
+                    ctx.start_quest_timer(
+                        EVENT_CHECK_ATTACK,
+                        CHECK_ATTACK_INTERVAL_MILLIS,
+                        baium,
+                        None,
+                        false,
+                    );
                     if let Some(npc) = npc {
                         ctx.world_mut().delete_npc(npc.object_id);
                     }
@@ -328,7 +340,13 @@ impl Script for Baium {
                         if let Some(random_player) = random_player {
                             let (x, y, z) = LOCATION_BAIUM_GIFT;
                             tele_location(ctx, random_player, x, y, z);
-                            ctx.start_quest_timer(EVENT_PLAYER_KILL, 3000, Some(npc), Some(random_player), false);
+                            ctx.start_quest_timer(
+                                EVENT_PLAYER_KILL,
+                                3000,
+                                Some(npc),
+                                Some(random_player),
+                                false,
+                            );
                         } else {
                             ctx.start_quest_timer(EVENT_PLAYER_KILL, 3000, Some(npc), None, false);
                         }
@@ -359,7 +377,9 @@ impl Script for Baium {
                 }
                 let (zone_id, zone_type) = BAIUM_RIM_ZONE;
                 for inside_player in ctx.world().zone_players_inside(zone_id, zone_type) {
-                    if ctx.world().is_hero(inside_player) && ctx.world().boss_settings().grand_boss.baium_recognize_hero {
+                    if ctx.world().is_hero(inside_player)
+                        && ctx.world().boss_settings().grand_boss.baium_recognize_hero
+                    {
                         let name = ctx.player_name(inside_player);
                         broadcast_rim(
                             ctx,
@@ -377,9 +397,7 @@ impl Script for Baium {
             }
             // Archangel minion management.
             EVENT_SPAWN_ARCHANGELS => {
-                let Some(baium) = alive_baium(ctx) else {
-                    return None;
-                };
+                let baium = alive_baium(ctx)?;
                 if get_status(ctx) != STATUS_IN_FIGHT {
                     return None;
                 }
@@ -388,9 +406,7 @@ impl Script for Baium {
                 spawn_archangels(ctx);
                 // NOTE(java-quirk): `npc` is the timer's NPC; a timer without one makes Java's
                 // `addAttackDesire(null, ..)` throw.
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 if let Some(player) = player
                     && !ctx.world().is_dead(player)
                 {
@@ -446,7 +462,13 @@ impl Script for Baium {
                             ctx.world_mut().npc_set_intention_follow(archangel, baium);
                         }
                     }
-                    ctx.start_quest_timer(EVENT_SELECT_TARGET, SELECT_TARGET_INTERVAL_MILLIS, Some(npc), None, false);
+                    ctx.start_quest_timer(
+                        EVENT_SELECT_TARGET,
+                        SELECT_TARGET_INTERVAL_MILLIS,
+                        Some(npc),
+                        None,
+                        false,
+                    );
                 }
             }
             // Inactivity handling, self-heal checks and status reset.
@@ -561,8 +583,10 @@ impl Script for Baium {
                         }
                     }
                     if let Some(player) = player {
-                        ctx.world()
-                            .send_message(player, &format!("{}: All archangels has been deleted!", self.name()));
+                        ctx.world().send_message(
+                            player,
+                            &format!("{}: All archangels has been deleted!", self.name()),
+                        );
                     }
                 } else if let Some(player) = player {
                     ctx.world().send_message(
@@ -723,7 +747,13 @@ impl Script for Baium {
         manage_skills(ctx, npc);
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: Option<ObjectId>, _skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: Option<ObjectId>,
+        _skill: SkillKey,
+    ) {
         ctx.start_quest_timer(EVENT_MANAGE_SKILLS, 1000, Some(npc), None, false);
         let (zone_id, zone_type) = BAIUM_RIM_ZONE;
         if let Some(baium) = alive_baium(ctx)
@@ -778,7 +808,13 @@ fn refresh_ai_params(ctx: &mut ScriptCtx<'_>, attacker: ObjectId, npc: ScriptNpc
 
 /// Updates Baium aggro table using separate damage and aggro scores: three tracked attackers, the
 /// one with the lowest weight is replaced.
-fn refresh_ai_params_with(ctx: &mut ScriptCtx<'_>, attacker: ObjectId, npc: ScriptNpc, damage: i32, aggro: i32) {
+fn refresh_ai_params_with(
+    ctx: &mut ScriptCtx<'_>,
+    attacker: ObjectId,
+    npc: ScriptNpc,
+    damage: i32,
+    aggro: i32,
+) {
     let new_aggro_value = damage.wrapping_add(ctx.get_random(3000));
     let aggro_threshold = aggro.wrapping_add(1000);
     let variables = ctx
@@ -836,7 +872,8 @@ fn set_respawn(ctx: &mut ScriptCtx<'_>, respawn_delay_millis: i64) {
 /// Selects and casts Baium skills based on HP ratio and aggro slots.
 fn manage_skills(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     let id = npc.object_id;
-    if ctx.world().is_casting_now(id) || ctx.world().is_core_ai_disabled(id) || !ctx.world().is_in_combat(id) {
+    if ctx.world().is_casting_now(id) || ctx.world().is_core_ai_disabled(id) || !ctx.world().is_in_combat(id)
+    {
         return;
     }
     let mut variables = ctx
@@ -1007,8 +1044,14 @@ mod tests {
         let pages: Vec<(String, String)> = [
             ("31862.html", vortex.to_owned()),
             ("31862-01.html", "<html><body>31862-01</body></html>".to_owned()),
-            ("31862-02.html", format!("<html><body>31862-02{ask}</body></html>")),
-            ("31862-03.html", format!("<html><body>31862-03{ask}</body></html>")),
+            (
+                "31862-02.html",
+                format!("<html><body>31862-02{ask}</body></html>"),
+            ),
+            (
+                "31862-03.html",
+                format!("<html><body>31862-03{ask}</body></html>"),
+            ),
             ("31862-04.html", "<html><body>31862-04</body></html>".to_owned()),
         ]
         .into_iter()
@@ -1089,7 +1132,11 @@ mod tests {
         assert_eq!(t.count(2, BLOODED_FABRIC_ITEM_ID), 1);
         let (x, y, _) = t.world.position_of(Oid(2)).unwrap();
         assert_eq!((x, y), (LOCATION_TELEPORT_IN.0, LOCATION_TELEPORT_IN.1));
-        assert!(t.world.zone_players_inside(70051, "NoRestartZone").contains(&Oid(2)));
+        assert!(
+            t.world
+                .zone_players_inside(70051, "NoRestartZone")
+                .contains(&Oid(2))
+        );
         // Nothing changes in the boss state.
         assert_eq!(status(&t), Some(STATUS_ALIVE));
         assert!(status_writes(&t).is_empty());
