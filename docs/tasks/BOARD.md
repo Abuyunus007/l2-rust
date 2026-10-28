@@ -402,7 +402,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [S-API-01](S/S-API-01.md) | Script engine | opus | full | none | in-progress |
+| [S-API-01](S/S-API-01.md) | Script engine | opus | full | none | merged |
 | [S-SUB-01](S/S-SUB-01.md) | Subclasses and the class switch | opus | full | none | merged |
 | [S-HAND-01](S/S-HAND-01.md) | Shift-click GM windows and the community board | sonnet | full | none | merged |
 | [S-HAND-02](S/S-HAND-02.md) | The handlers S-HAND-01 left | sonnet | full | HAND-01 | in-progress |
