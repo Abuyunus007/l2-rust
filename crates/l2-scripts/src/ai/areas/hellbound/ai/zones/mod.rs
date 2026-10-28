@@ -4,6 +4,7 @@ pub mod anomic_foundry;
 pub mod base_tower;
 pub mod tower_of_infinitum;
 pub mod tower_of_naia;
+pub mod tully_workshop;
 
 use l2_world::ScriptRegistry;
 
@@ -13,4 +14,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(base_tower::BaseTower);
     r.add(tower_of_infinitum::TowerOfInfinitum);
     r.add(tower_of_naia::TowerOfNaia);
+    r.add(tully_workshop::TullyWorkshop);
 }

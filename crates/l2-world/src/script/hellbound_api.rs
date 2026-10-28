@@ -226,6 +226,28 @@ impl World {
         self.is_gm(player)
     }
 
+    /// Java `npc.getAI().getIntention()` is `ATTACK` or `CAST`.
+    pub fn script_is_attacking_or_casting(&self, npc: ObjectId) -> bool {
+        matches!(
+            self.intention_of(npc),
+            crate::movement::Intention::Attack | crate::movement::Intention::Cast
+        )
+    }
+
+    /// Java `ZoneManager.getZones(x, y, z)` contains the zone `zone_id`.
+    pub fn script_point_in_zone_id(&self, (x, y, z): (i32, i32, i32), zone_id: i32) -> bool {
+        self.zoning
+            .zones
+            .as_ref()
+            .is_some_and(|zones| zones.zones_at(x, y, z).iter().any(|zone| zone.id == zone_id))
+    }
+
+    /// Java `zone.setEnabled(value)` of a `DamageZone` or `SwampZone` (the switch the flame towers
+    /// of the castle sieges use).
+    pub fn script_set_trap_zone_enabled(&mut self, zone_id: i32, value: bool) {
+        self.sieges.trap_zones.insert(zone_id, value);
+    }
+
     /// Java `Monster.getLeader()`: the master of a minion.
     pub fn script_leader_of(&self, npc: ObjectId) -> Option<ObjectId> {
         self.leader_of(npc)
