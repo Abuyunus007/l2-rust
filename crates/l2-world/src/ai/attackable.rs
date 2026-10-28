@@ -317,8 +317,9 @@ impl World {
     /// Java `Attackable.isRaidMinion()`: set on spawn for a minion of a raid boss.
     pub fn is_raid_minion(&self, id: ObjectId) -> bool {
         self.npcs.get(&id).is_some_and(|n| n.raid_minion)
-            || self.leader_of(id)
-            .is_some_and(|leader| self.npcs.get(&leader).is_some_and(|n| n.class.is_raid()))
+            || self
+                .leader_of(id)
+                .is_some_and(|leader| self.npcs.get(&leader).is_some_and(|n| n.class.is_raid()))
     }
 
     /// Java `Attackable.setIsRaidMinion(value)` (a script marks the monsters it spawned).

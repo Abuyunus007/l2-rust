@@ -195,7 +195,12 @@ impl World {
 
     /// Java `Creature.isMortal()`.
     pub fn is_mortal(&self, id: ObjectId) -> bool {
-        !self.scripts.npc_extras.by_npc.get(&id).is_some_and(|e| e.immortal)
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.immortal)
     }
 
     /// Java `skill.hasEffectType(EffectType.HEAL)` of a skill a script names by id and level;

@@ -257,7 +257,10 @@ mod tests {
             .set_instance_data(instance_data(&[(136, "Last Imperial Tomb")], &[(136, "")]));
         let instance_id = t.world.create_dynamic_instance(136);
         t.world.add_instance_world(InstanceWorld::new(instance_id, 136));
-        t.world.instance_world_mut(instance_id).unwrap().add_allowed(Oid(1));
+        t.world
+            .instance_world_mut(instance_id)
+            .unwrap()
+            .add_allowed(Oid(1));
         t.enter_with(player_data(1, 80, vec![]));
         let (x, y, z) = t.world.position_of(Oid(1)).unwrap();
         let scarlet = t
@@ -269,8 +272,9 @@ mod tests {
 
     fn state<R>(t: &mut ScriptTest, f: impl FnOnce(&mut ScarletState) -> R) -> R {
         let mut result = None;
-        t.world
-            .run_as_script("ScarletVanHalisha", |ctx| result = Some(f(ctx.state::<ScarletState>())));
+        t.world.run_as_script("ScarletVanHalisha", |ctx| {
+            result = Some(f(ctx.state::<ScarletState>()))
+        });
         result.unwrap()
     }
 

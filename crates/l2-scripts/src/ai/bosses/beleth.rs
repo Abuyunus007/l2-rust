@@ -118,7 +118,9 @@ impl Script for Beleth {
                 let status = ctx.world().grand_boss_status(REAL_BELETH).unwrap_or(-1);
                 if !row_lets_boss_run(ctx, REAL_BELETH) && status != DEAD {
                     // D-54: the row is the other server's fight; Java would write ALIVE over it.
-                    info!("Beleth: the shared state row says {status}; the AI waits for an alive row (D-54).");
+                    info!(
+                        "Beleth: the shared state row says {status}; the AI waits for an alive row (D-54)."
+                    );
                 } else if status == DEAD {
                     let time = info.respawn_time - ctx.now_ms();
                     if time > 0 {
@@ -164,7 +166,10 @@ impl Script for Beleth {
                         ctx.open_door(DOOR1, 0);
                     }
                     Some(DEAD) => {
-                        let respawn = ctx.world().grand_boss_info(REAL_BELETH).map_or(0, |i| i.respawn_time);
+                        let respawn = ctx
+                            .world()
+                            .grand_boss_info(REAL_BELETH)
+                            .map_or(0, |i| i.respawn_time);
                         let remaining = respawn - ctx.now_ms();
                         if remaining > 0 {
                             ctx.start_quest_timer("BELETH_UNLOCK", remaining, None, None, false);
@@ -172,7 +177,9 @@ impl Script for Beleth {
                             info!("Beleth: the shared state row says dead; the chamber stays shut (D-54).");
                         }
                     }
-                    status => info!("Beleth: the shared state row says {status:?}; the chamber stays shut (D-54)."),
+                    status => {
+                        info!("Beleth: the shared state row says {status:?}; the chamber stays shut (D-54).")
+                    }
                 }
             }
             "CAST" => {
@@ -473,7 +480,8 @@ impl Script for Beleth {
     }
 
     fn on_enter_zone(&self, ctx: &mut ScriptCtx<'_>, creature: ObjectId, _zone_id: i32) {
-        if ctx.world().player(creature).is_some() && ctx.world().grand_boss_status(REAL_BELETH) == Some(INIT) {
+        if ctx.world().player(creature).is_some() && ctx.world().grand_boss_status(REAL_BELETH) == Some(INIT)
+        {
             let (priest, stone) = {
                 let state = ctx.state::<BelethState>();
                 (state.priest, state.stone)
@@ -511,7 +519,13 @@ impl Script for Beleth {
         }
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if !ctx.world().is_dead(npc.object_id) && !ctx.world().is_casting_now(npc.object_id) {
             if (ctx.get_random(100) < 40) && player_in_range(ctx, npc.object_id, 200) {
                 ctx.world_mut().do_cast(npc.object_id, BLEED);
@@ -584,14 +598,13 @@ impl Script for Beleth {
     }
 
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        let html;
-        if ctx.state::<BelethState>().killer == Some(player) {
+        let html = if ctx.state::<BelethState>().killer == Some(player) {
             ctx.state::<BelethState>().killer = None;
             ctx.give_items(player, RING, 1);
-            html = "32470a.htm";
+            "32470a.htm"
         } else {
-            html = "32470b.htm";
-        }
+            "32470b.htm"
+        };
 
         ctx.world().get_htm(player, &format!("data/html/default/{html}"))
     }
@@ -899,7 +912,16 @@ fn spawn_fakes(ctx: &mut ScriptCtx<'_>) {
         let angle = (f64::from(i) * 1.57) + 0.78;
         xm[i as usize] = ((1700.0 * angle.cos()) + 16323.0) as i32;
         ym[i as usize] = ((1700.0 * angle.sin()) + 213170.0) as i32;
-        if let Some(spawn) = ctx.add_spawn(FAKE_BELETH, xm[i as usize], ym[i as usize], -9357, 49152, false, 0, 0) {
+        if let Some(spawn) = ctx.add_spawn(
+            FAKE_BELETH,
+            xm[i as usize],
+            ym[i as usize],
+            -9357,
+            49152,
+            false,
+            0,
+            0,
+        ) {
             ctx.world_mut().set_immobilized(spawn.object_id, true);
             ctx.state::<BelethState>().minions.push(spawn.object_id);
         }
@@ -1044,7 +1066,7 @@ mod tests {
     #[test]
     fn with_the_switch_off_the_row_decides() {
         // The other server's fight stays as it is.
-        let mut t = setup_row(FIGHT, 0, false);
+        let t = setup_row(FIGHT, 0, false);
         assert_eq!(status(&t), Some(FIGHT));
         assert!(grand_writes(&t.take_boss()).is_empty());
         // A dead row whose time is over asks the database.
@@ -1098,7 +1120,8 @@ mod tests {
         assert_eq!(fakes.len(), 16 + 4 + 12);
         let allowed = {
             let mut id = 0;
-            t.world.run_as_script("Beleth", |ctx| id = ctx.state::<BelethState>().allowed_obj_id);
+            t.world
+                .run_as_script("Beleth", |ctx| id = ctx.state::<BelethState>().allowed_obj_id);
             id
         };
         assert!(fakes.iter().any(|f| f.0 == allowed));
@@ -1112,7 +1135,8 @@ mod tests {
         for wave in 1..=5 {
             let allowed = {
                 let mut id = 0;
-                t.world.run_as_script("Beleth", |ctx| id = ctx.state::<BelethState>().allowed_obj_id);
+                t.world
+                    .run_as_script("Beleth", |ctx| id = ctx.state::<BelethState>().allowed_obj_id);
                 Oid(id)
             };
             assert!(t.world.do_die(allowed, Some(Oid(1))), "wave {wave}");
@@ -1122,7 +1146,8 @@ mod tests {
             if wave < 5 {
                 assert!(has_timer(&mut t, "SPAWN25"));
                 fire(&mut t, "SPAWN25");
-                t.world.run_as_script("Beleth", |ctx| ctx.cancel_quest_timers("SPAWN25"));
+                t.world
+                    .run_as_script("Beleth", |ctx| ctx.cancel_quest_timers("SPAWN25"));
             } else {
                 assert!(has_timer(&mut t, "SPAWN_REAL"));
             }

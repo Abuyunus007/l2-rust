@@ -53,10 +53,12 @@ const LOCATION_CRUMA_CORE_FLOOR3: (i32, i32, i32) = (17719, 115590, -6584); // C
 // Core spawn position.
 const CORE_DEFAULT_SPAWN: (i32, i32, i32) = (17726, 108915, -6480);
 
+type Place = (i32, i32, i32);
+
 /// Java `MINION_SPAWN_POINTS` in the order a `HashMap<Integer, ..>` iterates the three keys
 /// (bucket = id mod 16 of a 16-slot table: 29008 -> 0, 29011 -> 3, 29007 -> 15).
 // NOTE(java-quirk): the minions spawn in that hash order, not in the order they are added.
-const MINION_SPAWN_POINTS: [(i32, &[(i32, i32, i32)]); 3] = [
+const MINION_SPAWN_POINTS: [(i32, &[Place]); 3] = [
     (
         MINION_DOOM_WRAITH_ID,
         &[
@@ -170,9 +172,16 @@ impl Script for Core {
                 ctx.state::<CoreState>().first_attacked = true;
             }
 
-            let Some(core) =
-                ctx.add_spawn(CORE_NPC_ID, info.loc_x, info.loc_y, info.loc_z, info.heading, false, 0, 0)
-            else {
+            let Some(core) = ctx.add_spawn(
+                CORE_NPC_ID,
+                info.loc_x,
+                info.loc_y,
+                info.loc_z,
+                info.heading,
+                false,
+                0,
+                0,
+            ) else {
                 return;
             };
             ctx.world_mut()
@@ -226,7 +235,10 @@ impl Script for Core {
             match ctx.world().grand_boss_status(CORE_NPC_ID) {
                 Some(STATUS_ALIVE) => spawn_core_at_default(ctx),
                 Some(STATUS_DEAD) => {
-                    let respawn = ctx.world().grand_boss_info(CORE_NPC_ID).map_or(0, |i| i.respawn_time);
+                    let respawn = ctx
+                        .world()
+                        .grand_boss_info(CORE_NPC_ID)
+                        .map_or(0, |i| i.respawn_time);
                     let remaining = respawn - ctx.now_ms();
                     if remaining > 0 {
                         ctx.start_quest_timer(EVENT_CORE_UNLOCK, remaining, None, None, false);
@@ -310,14 +322,37 @@ impl Script for Core {
             let (x, y, z) = ctx.world().position_of(npc.object_id).unwrap_or((0, 0, 0));
             ctx.world()
                 .broadcast_packet(npc.object_id, &npc_sound("BS02_D", npc.object_id, (x, y, z)));
-            ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::AFatalErrorHasOccurred, &[]);
+            ctx.broadcast_npc_say(
+                npc,
+                ChatType::NpcGeneral,
+                NpcStringId::AFatalErrorHasOccurred,
+                &[],
+            );
             ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::SystemIsBeingShutDown, &[]);
             ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::Empty, &[]);
 
             ctx.state::<CoreState>().first_attacked = false;
 
-            ctx.add_spawn(TELEPORT_CUBE_NPC_ID, 16502, 110165, -6394, 0, false, TELEPORT_CUBE_DESPAWN_MS, 0);
-            ctx.add_spawn(TELEPORT_CUBE_NPC_ID, 18948, 110166, -6397, 0, false, TELEPORT_CUBE_DESPAWN_MS, 0);
+            ctx.add_spawn(
+                TELEPORT_CUBE_NPC_ID,
+                16502,
+                110165,
+                -6394,
+                0,
+                false,
+                TELEPORT_CUBE_DESPAWN_MS,
+                0,
+            );
+            ctx.add_spawn(
+                TELEPORT_CUBE_NPC_ID,
+                18948,
+                110166,
+                -6397,
+                0,
+                false,
+                TELEPORT_CUBE_DESPAWN_MS,
+                0,
+            );
 
             ctx.world_mut().set_grand_boss_status(CORE_NPC_ID, STATUS_DEAD);
 
@@ -472,7 +507,10 @@ mod tests {
             registry,
             NPCS,
             "",
-            &[("ai/bosses/Core/899099.html", "<html><body>Teleportation Cubic</body></html>")],
+            &[(
+                "ai/bosses/Core/899099.html",
+                "<html><body>Teleportation Cubic</body></html>",
+            )],
             vec![row(CORE_NPC_ID, status, respawn_time, CORE_AT)],
             writes,
         )
@@ -504,7 +542,7 @@ mod tests {
 
     #[test]
     fn an_alive_row_brings_core_and_nineteen_minions_back() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let t = setup_row(STATUS_ALIVE, 0, true);
         let core = t.world.grand_boss_npc(CORE_NPC_ID).unwrap();
         let (x, y, _) = t.world.position_of(core).unwrap();
         assert_eq!((x, y), (CORE_AT.0, CORE_AT.1));
@@ -545,7 +583,12 @@ mod tests {
             rereads(&t.take_boss()),
             [(BossReadKind::GrandBoss(CORE_NPC_ID), then)]
         );
-        answer(&mut t, then, CORE_NPC_ID, row(CORE_NPC_ID, STATUS_ALIVE, 0, CORE_AT));
+        answer(
+            &mut t,
+            then,
+            CORE_NPC_ID,
+            row(CORE_NPC_ID, STATUS_ALIVE, 0, CORE_AT),
+        );
         assert_eq!(status(&t), Some(STATUS_ALIVE));
         assert_eq!(npcs_of(&t, CORE_NPC_ID).len(), 1);
         assert_eq!(minion_count(&t), 19);
@@ -640,7 +683,8 @@ mod tests {
         run_ms(&mut t, 2_600);
         let state_minions = {
             let mut n = 0;
-            t.world.run_as_script("Core", |ctx| n = ctx.state::<CoreState>().minions.len());
+            t.world
+                .run_as_script("Core", |ctx| n = ctx.state::<CoreState>().minions.len());
             n
         };
         assert_eq!(state_minions, 18, "{:?}", t.world.is_dead(minion));
@@ -680,7 +724,10 @@ mod tests {
         });
         let (x, y, z) = t.world.position_of(Oid(1)).unwrap();
         // The ground height follows the geodata.
-        assert_eq!((x, y), (LOCATION_CRUMA_CORE_FLOOR3.0, LOCATION_CRUMA_CORE_FLOOR3.1));
+        assert_eq!(
+            (x, y),
+            (LOCATION_CRUMA_CORE_FLOOR3.0, LOCATION_CRUMA_CORE_FLOOR3.1)
+        );
         let _ = z;
         t.world.run_as_script("Core", |ctx| {
             Core.on_event(ctx, "TELEPORT ground", None, Some(Oid(1)));

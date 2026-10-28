@@ -144,9 +144,16 @@ impl Script for Orfen {
                 info!("Orfen: the shared state row says {status}; the AI waits for an alive row (D-54).");
                 return;
             }
-            let Some(orfen) =
-                ctx.add_spawn(ORFEN_NPC_ID, info.loc_x, info.loc_y, info.loc_z, info.heading, false, 0, 0)
-            else {
+            let Some(orfen) = ctx.add_spawn(
+                ORFEN_NPC_ID,
+                info.loc_x,
+                info.loc_y,
+                info.loc_z,
+                info.heading,
+                false,
+                0,
+                0,
+            ) else {
                 return;
             };
             ctx.world_mut()
@@ -177,7 +184,10 @@ impl Script for Orfen {
                 match ctx.world().grand_boss_status(ORFEN_NPC_ID) {
                     Some(STATUS_ALIVE) => spawn_orfen_at_random_nest(ctx),
                     Some(STATUS_DEAD) => {
-                        let respawn = ctx.world().grand_boss_info(ORFEN_NPC_ID).map_or(0, |i| i.respawn_time);
+                        let respawn = ctx
+                            .world()
+                            .grand_boss_info(ORFEN_NPC_ID)
+                            .map_or(0, |i| i.respawn_time);
                         let remaining = respawn - ctx.now_ms();
                         if remaining > 0 {
                             ctx.start_quest_timer(EVENT_ORFEN_UNLOCK, remaining, None, None, false);
@@ -263,7 +273,10 @@ impl Script for Orfen {
         } else {
             caster
         };
-        if ctx.world().skill_effect_point(skill).is_some_and(|point| point > 0)
+        if ctx
+            .world()
+            .skill_effect_point(skill)
+            .is_some_and(|point| point > 0)
             && (ctx.get_random(SKILL_SEE_REACTION_CHANCE) == 0)
             && ctx.is_inside_radius_2d(npc.object_id, original_caster, TELEPORT_SKILL_MAX_RANGE)
         {
@@ -277,7 +290,8 @@ impl Script for Orfen {
             );
 
             tele_to_npc(ctx, npc, original_caster);
-            ctx.world_mut().set_npc_target(npc.object_id, Some(original_caster));
+            ctx.world_mut()
+                .set_npc_target(npc.object_id, Some(original_caster));
             ctx.world_mut().do_cast(npc.object_id, PARALYSIS);
         }
     }
@@ -312,7 +326,8 @@ impl Script for Orfen {
                 && (ctx.get_random(RIBA_IREN_BASE_HEAL_CHANCE) < heal_chance)
             {
                 ctx.world_mut().npc_set_intention_idle(npc.object_id);
-                ctx.world_mut().set_npc_target(npc.object_id, Some(caller.object_id));
+                ctx.world_mut()
+                    .set_npc_target(npc.object_id, Some(caller.object_id));
                 ctx.world_mut().do_cast(npc.object_id, ORFEN_HEAL);
             }
         }
@@ -402,7 +417,13 @@ impl Script for Orfen {
             // never runs; and its timer would be bound to the corpse, which `Npc.onDecay()` stops
             // long before the six minutes. Ported as it is.
             ctx.state::<OrfenState>().minions.retain(|m| *m != npc.object_id);
-            ctx.start_quest_timer(EVENT_SPAWN_MINION, MINION_RESPAWN_DELAY_MS, Some(npc), None, false);
+            ctx.start_quest_timer(
+                EVENT_SPAWN_MINION,
+                MINION_RESPAWN_DELAY_MS,
+                Some(npc),
+                None,
+                false,
+            );
         }
     }
 }
@@ -475,7 +496,16 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     // Spawn minions.
     let (boss_x, boss_y, boss_z) = at;
     for (dx, dy) in [(100, 100), (100, -100), (-100, 100), (-100, -100)] {
-        if let Some(minion) = ctx.add_spawn(RAIKEL_LEOS_NPC_ID, boss_x + dx, boss_y + dy, boss_z, 0, false, 0, 0) {
+        if let Some(minion) = ctx.add_spawn(
+            RAIKEL_LEOS_NPC_ID,
+            boss_x + dx,
+            boss_y + dy,
+            boss_z,
+            0,
+            false,
+            0,
+            0,
+        ) {
             ctx.world_mut().set_is_raid_minion(minion.object_id, true);
             ctx.state::<OrfenState>().minions.push(minion.object_id);
         }
@@ -578,7 +608,10 @@ mod tests {
     fn an_alive_row_restores_orfen_and_four_minions() {
         let mut t = setup_row(STATUS_ALIVE, 0, true);
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
-        assert_eq!(xy(&t, orfen), (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1));
+        assert_eq!(
+            xy(&t, orfen),
+            (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1)
+        );
         let (ox, oy) = xy(&t, orfen);
         let mut places: Vec<(i32, i32)> = live_minions(&t).into_iter().map(|m| xy(&t, m)).collect();
         places.sort_unstable();
@@ -608,9 +641,7 @@ mod tests {
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         let at = xy(&t, orfen);
         assert!(
-            ORFEN_SPAWN_LOCATIONS[1..]
-                .iter()
-                .any(|(x, y, _)| (*x, *y) == at),
+            ORFEN_SPAWN_LOCATIONS[1..].iter().any(|(x, y, _)| (*x, *y) == at),
             "{at:?}"
         );
         assert_eq!(status(&t), Some(STATUS_ALIVE));
@@ -664,7 +695,10 @@ mod tests {
         assert_eq!(t.world.hp_and_max(orfen).unwrap().1, 1000.0);
         attack(&mut t, orfen, 1, 20);
         assert!(has_teleported(&mut t));
-        assert_eq!(xy(&t, orfen), (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1));
+        assert_eq!(
+            xy(&t, orfen),
+            (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1)
+        );
         // Inside the nest and hurt: nothing moves it.
         fire(&mut t, EVENT_CHECK_ORFEN_POSITION, Some(orfen));
         assert!(has_teleported(&mut t));
@@ -673,25 +707,37 @@ mod tests {
         fire(&mut t, EVENT_CHECK_ORFEN_POSITION, Some(orfen));
         assert!(!has_teleported(&mut t));
         let at = xy(&t, orfen);
-        assert!(ORFEN_SPAWN_LOCATIONS[1..].iter().any(|(x, y, _)| (*x, *y) == at), "{at:?}");
+        assert!(
+            ORFEN_SPAWN_LOCATIONS[1..].iter().any(|(x, y, _)| (*x, *y) == at),
+            "{at:?}"
+        );
 
         // Teleported, hurt and outside the nest: back to the lair (location 0).
         t.world.set_current_hp_mp(orfen, 400.0, 500.0);
-        t.world.run_as_script("Orfen", |ctx| ctx.state::<OrfenState>().has_teleported = true);
+        t.world
+            .run_as_script("Orfen", |ctx| ctx.state::<OrfenState>().has_teleported = true);
         fire(&mut t, EVENT_CHECK_ORFEN_POSITION, Some(orfen));
-        assert_eq!(xy(&t, orfen), (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1));
+        assert_eq!(
+            xy(&t, orfen),
+            (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1)
+        );
         // Not teleported and outside the nest: a roaming nest and `_hasTeleported` stays false.
-        t.world.run_as_script("Orfen", |ctx| ctx.state::<OrfenState>().has_teleported = false);
+        t.world
+            .run_as_script("Orfen", |ctx| ctx.state::<OrfenState>().has_teleported = false);
         t.world
             .tele_to_location(orfen, TeleportTarget::at(50000, 17220, -4342).with_instance(0));
         fire(&mut t, EVENT_CHECK_ORFEN_POSITION, Some(orfen));
         let at = xy(&t, orfen);
-        assert!(ORFEN_SPAWN_LOCATIONS[1..].iter().any(|(x, y, _)| (*x, *y) == at), "{at:?}");
+        assert!(
+            ORFEN_SPAWN_LOCATIONS[1..].iter().any(|(x, y, _)| (*x, *y) == at),
+            "{at:?}"
+        );
     }
 
     fn has_teleported(t: &mut ScriptTest) -> bool {
         let mut value = false;
-        t.world.run_as_script("Orfen", |ctx| value = ctx.state::<OrfenState>().has_teleported);
+        t.world
+            .run_as_script("Orfen", |ctx| value = ctx.state::<OrfenState>().has_teleported);
         value
     }
 
@@ -710,7 +756,10 @@ mod tests {
             }
         }
         assert!(pulled);
-        assert_eq!(xy(&t, Oid(1)), (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1));
+        assert_eq!(
+            xy(&t, Oid(1)),
+            (ORFEN_SPAWN_LOCATIONS[0].0, ORFEN_SPAWN_LOCATIONS[0].1)
+        );
         let names = names_to(&t.take(), 1);
         assert!(names.contains(&"NPC_SAY".to_owned()));
         assert!(!has_teleported(&mut t));
@@ -798,8 +847,10 @@ mod tests {
         let mut t = setup_row(STATUS_ALIVE, 0, true);
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         let minion = live_minions(&t)[0];
-        t.world
-            .tele_to_location(minion, TeleportTarget::at(43728 + 5000, 17220, -4342).with_instance(0));
+        t.world.tele_to_location(
+            minion,
+            TeleportTarget::at(43728 + 5000, 17220, -4342).with_instance(0),
+        );
         assert_eq!(xy(&t, minion).0, 43728 + 5000);
         fire(&mut t, EVENT_CHECK_MINION_LOCATION, Some(orfen));
         assert_eq!(xy(&t, minion), xy(&t, orfen));

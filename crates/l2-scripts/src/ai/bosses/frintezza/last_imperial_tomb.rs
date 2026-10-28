@@ -100,9 +100,15 @@ const SECOND_ROOM_CENTER: (i32, i32, i32) = (-87919, -147013, -9214);
 // Spawns: the portrait id, its place and heading, then the place and heading of its demons.
 const PORTRAIT_SPAWNS: [[i32; 9]; 4] = [
     [29048, -89381, -153981, -9168, 3368, -89378, -153968, -9168, 3368],
-    [29048, -86234, -152467, -9168, 37656, -86261, -152492, -9168, 37656],
-    [29049, -89342, -152479, -9168, -5152, -89311, -152491, -9168, -5152],
-    [29049, -86189, -153968, -9168, 29456, -86217, -153956, -9168, 29456],
+    [
+        29048, -86234, -152467, -9168, 37656, -86261, -152492, -9168, 37656,
+    ],
+    [
+        29049, -89342, -152479, -9168, -5152, -89311, -152491, -9168, -5152,
+    ],
+    [
+        29049, -86189, -153968, -9168, 29456, -86217, -153956, -9168, 29456,
+    ],
 ];
 
 // Misc
@@ -277,12 +283,22 @@ impl Script for LastImperialTomb {
             }
             "FRINTEZZA_INTRO_3" => {
                 let frintezza_dummy = tomb(ctx, iid).frintezza_dummy;
-                camera(ctx, iid, frintezza_dummy, [1800, 90, 8, 6500, 7000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    frintezza_dummy,
+                    [1800, 90, 8, 6500, 7000, 0, 0, 1, 0, 0],
+                );
                 ctx.start_quest_timer("FRINTEZZA_INTRO_4", 900, None, player, false);
             }
             "FRINTEZZA_INTRO_4" => {
                 let frintezza_dummy = tomb(ctx, iid).frintezza_dummy;
-                camera(ctx, iid, frintezza_dummy, [140, 90, 10, 2500, 4500, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    frintezza_dummy,
+                    [140, 90, 10, 2500, 4500, 0, 0, 1, 0, 0],
+                );
                 ctx.start_quest_timer("FRINTEZZA_INTRO_5", 4000, None, player, false);
             }
             "FRINTEZZA_INTRO_5" => {
@@ -390,13 +406,19 @@ impl Script for LastImperialTomb {
                 let active_scarlet = spawn_id(ctx, SCARLET1, (-87789, -153295, -9176), 16384, iid);
                 tomb(ctx, iid).active_scarlet = active_scarlet;
                 if let Some(active_scarlet) = active_scarlet {
-                    ctx.world_mut().set_npc_right_hand(active_scarlet, FIRST_SCARLET_WEAPON);
+                    ctx.world_mut()
+                        .set_npc_right_hand(active_scarlet, FIRST_SCARLET_WEAPON);
                     ctx.world_mut().set_invul(active_scarlet, true);
                     ctx.world_mut().set_immobilized(active_scarlet, true);
                     ctx.world_mut().disable_all_skills(active_scarlet);
                 }
                 social(ctx, iid, active_scarlet, 3);
-                camera(ctx, iid, scarlet_dummy, [800, 180, 10, 1000, 10000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    scarlet_dummy,
+                    [800, 180, 10, 1000, 10000, 0, 0, 1, 0, 0],
+                );
                 ctx.start_quest_timer("FRINTEZZA_INTRO_17", 2100, None, player, false);
             }
             "FRINTEZZA_INTRO_17" => {
@@ -458,8 +480,20 @@ impl Script for LastImperialTomb {
                 }
                 enable_players(ctx, iid);
                 let frintezza = frintezza.and_then(|f| ctx.script_npc(f));
-                ctx.start_quest_timer("PLAY_RANDOM_SONG", RANDOM_SONG_INTERVAL * 1000, frintezza, None, false);
-                ctx.start_quest_timer("SPAWN_DEMONS", TIME_BETWEEN_DEMON_SPAWNS * 1000, None, player, false);
+                ctx.start_quest_timer(
+                    "PLAY_RANDOM_SONG",
+                    RANDOM_SONG_INTERVAL * 1000,
+                    frintezza,
+                    None,
+                    false,
+                );
+                ctx.start_quest_timer(
+                    "SPAWN_DEMONS",
+                    TIME_BETWEEN_DEMON_SPAWNS * 1000,
+                    None,
+                    player,
+                    false,
+                );
             }
             "SPAWN_DEMONS" => {
                 let (portraits, mut demons) = {
@@ -500,7 +534,13 @@ impl Script for LastImperialTomb {
                 if let Some(frintezza) = frintezza {
                     play_random_song(ctx, iid);
                     let frintezza = ctx.script_npc(frintezza);
-                    ctx.start_quest_timer("PLAY_RANDOM_SONG", RANDOM_SONG_INTERVAL * 1000, frintezza, None, false);
+                    ctx.start_quest_timer(
+                        "PLAY_RANDOM_SONG",
+                        RANDOM_SONG_INTERVAL * 1000,
+                        frintezza,
+                        None,
+                        false,
+                    );
                 }
             }
             "SCARLET_FIRST_MORPH" => {
@@ -527,9 +567,21 @@ impl Script for LastImperialTomb {
                 let frintezza_npc = frintezza.and_then(|f| ctx.script_npc(f));
                 ctx.cancel_quest_timer("PLAY_RANDOM_SONG", frintezza_npc, None);
                 if let Some(frintezza) = frintezza {
-                    broadcast(ctx, iid, &MagicSkillCanceled { object_id: frintezza.0 });
+                    broadcast(
+                        ctx,
+                        iid,
+                        &MagicSkillCanceled {
+                            object_id: frintezza.0,
+                        },
+                    );
                 }
-                ctx.start_quest_timer("PLAY_RANDOM_SONG", RANDOM_SONG_INTERVAL * 1000, frintezza_npc, None, false);
+                ctx.start_quest_timer(
+                    "PLAY_RANDOM_SONG",
+                    RANDOM_SONG_INTERVAL * 1000,
+                    frintezza_npc,
+                    None,
+                    false,
+                );
                 ctx.start_quest_timer("SCARLET_SECOND_MORPH_CAMERA_1", 2000, None, player, false);
             }
             "SCARLET_SECOND_MORPH_CAMERA_1" => {
@@ -573,8 +625,18 @@ impl Script for LastImperialTomb {
                 let world = tomb(ctx, iid);
                 world.scarlet_location = scarlet_location;
                 world.new_heading = new_heading;
-                camera(ctx, iid, active_scarlet, [250, new_heading, 12, 0, 1000, 0, 0, 1, 0, 0]);
-                camera(ctx, iid, active_scarlet, [250, new_heading, 12, 0, 10000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [250, new_heading, 12, 0, 1000, 0, 0, 1, 0, 0],
+                );
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [250, new_heading, 12, 0, 10000, 0, 0, 1, 0, 0],
+                );
                 ctx.start_quest_timer("SCARLET_SECOND_MORPH_CAMERA_5", 500, None, player, false);
             }
             "SCARLET_SECOND_MORPH_CAMERA_5" => {
@@ -585,7 +647,12 @@ impl Script for LastImperialTomb {
                 if let Some(active_scarlet) = active_scarlet {
                     ctx.world_mut().do_die(active_scarlet, Some(active_scarlet));
                 }
-                camera(ctx, iid, active_scarlet, [450, new_heading, 14, 8000, 8000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [450, new_heading, 14, 8000, 8000, 0, 0, 1, 0, 0],
+                );
                 ctx.start_quest_timer("SCARLET_SECOND_MORPH_CAMERA_6", 6250, None, player, false);
                 ctx.start_quest_timer("SCARLET_SECOND_MORPH_CAMERA_7", 7200, None, player, false);
             }
@@ -602,12 +669,18 @@ impl Script for LastImperialTomb {
                 let active_scarlet = spawn_id(ctx, SCARLET2, (x, y, z), heading, iid);
                 tomb(ctx, iid).active_scarlet = active_scarlet;
                 if let Some(active_scarlet) = active_scarlet {
-                    ctx.world_mut().set_npc_left_hand(active_scarlet, SECOND_SCARLET_WEAPON);
+                    ctx.world_mut()
+                        .set_npc_left_hand(active_scarlet, SECOND_SCARLET_WEAPON);
                     ctx.world_mut().set_invul(active_scarlet, true);
                     ctx.world_mut().set_immobilized(active_scarlet, true);
                     ctx.world_mut().disable_all_skills(active_scarlet);
                 }
-                camera(ctx, iid, active_scarlet, [450, new_heading, 12, 500, 14000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [450, new_heading, 12, 500, 14000, 0, 0, 1, 0, 0],
+                );
                 let scarlet = active_scarlet.and_then(|s| ctx.script_npc(s));
                 ctx.start_quest_timer("SCARLET_SECOND_MORPH_CAMERA_8", 8100, scarlet, None, false);
             }
@@ -630,8 +703,18 @@ impl Script for LastImperialTomb {
                     let world = tomb(ctx, iid);
                     (world.active_scarlet, world.frintezza, world.new_heading)
                 };
-                camera(ctx, iid, active_scarlet, [300, new_heading - 180, 5, 0, 7000, 0, 0, 1, 0, 0]);
-                camera(ctx, iid, active_scarlet, [200, new_heading, 85, 4000, 10000, 0, 0, 1, 0, 0]);
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [300, new_heading - 180, 5, 0, 7000, 0, 0, 1, 0, 0],
+                );
+                camera(
+                    ctx,
+                    iid,
+                    active_scarlet,
+                    [200, new_heading, 85, 4000, 10000, 0, 0, 1, 0, 0],
+                );
                 let frintezza = frintezza.and_then(|f| ctx.script_npc(f));
                 ctx.start_quest_timer("FINISH_CAMERA_2", 7400, frintezza, player, false);
                 ctx.start_quest_timer("FINISH_CAMERA_3", 7500, None, player, false);
@@ -781,7 +864,13 @@ fn kill(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: Option<ObjectId>) {
         let frintezza_npc = frintezza.and_then(|f| ctx.script_npc(f));
         ctx.cancel_quest_timer("PLAY_RANDOM_SONG", frintezza_npc, None);
         if let Some(frintezza) = frintezza {
-            broadcast(ctx, iid, &MagicSkillCanceled { object_id: frintezza.0 });
+            broadcast(
+                ctx,
+                iid,
+                &MagicSkillCanceled {
+                    object_id: frintezza.0,
+                },
+            );
         }
         ctx.start_quest_timer("FINISH_CAMERA_1", 500, Some(npc), killer, false);
         kill_portraits_and_demons(ctx, iid);
@@ -865,8 +954,15 @@ fn instance_of_player(ctx: &ScriptCtx<'_>, player: ObjectId) -> Option<i32> {
     ctx.world().player_instance_world(player).map(|w| w.instance_id)
 }
 
-fn spawn_id(ctx: &mut ScriptCtx<'_>, npc_id: i32, (x, y, z): (i32, i32, i32), heading: i32, iid: i32) -> Option<ObjectId> {
-    ctx.add_spawn(npc_id, x, y, z, heading, false, 0, iid).map(|n| n.object_id)
+fn spawn_id(
+    ctx: &mut ScriptCtx<'_>,
+    npc_id: i32,
+    (x, y, z): (i32, i32, i32),
+    heading: i32,
+    iid: i32,
+) -> Option<ObjectId> {
+    ctx.add_spawn(npc_id, x, y, z, heading, false, 0, iid)
+        .map(|n| n.object_id)
 }
 
 /// `world.getAliveNpcs(ids)`.
@@ -954,9 +1050,17 @@ fn skill_use(
             skill_level,
             hit_time,
             reuse_delay: 0,
-            creature: SkillPosition { x: c.0, y: c.1, z: c.2 },
+            creature: SkillPosition {
+                x: c.0,
+                y: c.1,
+                z: c.2,
+            },
             ground_location: None,
-            target: SkillPosition { x: t.0, y: t.1, z: t.2 },
+            target: SkillPosition {
+                x: t.0,
+                y: t.1,
+                z: t.2,
+            },
         },
     );
 }
@@ -999,7 +1103,15 @@ fn play_random_song(ctx: &mut ScriptCtx<'_>, iid: i32) {
         broadcast(ctx, iid, &packet);
     }
     let hit_time = ctx.world().skill_hit_time(skill.id, skill.level);
-    skill_use(ctx, iid, Some(frintezza), Some(frintezza), skill.id, skill.level, hit_time);
+    skill_use(
+        ctx,
+        iid,
+        Some(frintezza),
+        Some(frintezza),
+        skill.id,
+        skill.level,
+        hit_time,
+    );
     for player in online_allowed(ctx, iid) {
         ctx.world_mut().set_npc_target(frintezza, Some(player));
         ctx.world_mut().do_cast(frintezza, skill_effect);
@@ -1101,7 +1213,10 @@ fn pc_message(world: &World, to: ObjectId, id: SystemMessageId, name: &str) -> S
 }
 
 fn player_name(world: &World, player: ObjectId) -> String {
-    world.player(player).map(|p| p.data.name.clone()).unwrap_or_default()
+    world
+        .player(player)
+        .map(|p| p.data.name.clone())
+        .unwrap_or_default()
 }
 
 fn check_conditions(world: &mut World, player: ObjectId, gm: bool, has_scroll: bool) -> bool {
@@ -1110,7 +1225,11 @@ fn check_conditions(world: &mut World, player: ObjectId, gm: bool, has_scroll: b
     }
 
     if world.party_of(player).is_none() {
-        message(world, player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+        message(
+            world,
+            player,
+            SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+        );
         return false;
     }
 
@@ -1124,13 +1243,22 @@ fn check_conditions(world: &mut World, player: ObjectId, gm: bool, has_scroll: b
         return false;
     };
     if world.command_channel_leader(channel) != Some(player) {
-        message(world, player, SystemMessageId::OnlyAPartyLeaderCanMakeTheRequestToEnter);
+        message(
+            world,
+            player,
+            SystemMessageId::OnlyAPartyLeaderCanMakeTheRequestToEnter,
+        );
         return false;
     } else if !has_scroll {
         let name = player_name(world, player);
         world.send(
             player,
-            &pc_message(world, player, SystemMessageId::C1SItemRequirementIsNotSufficientAndCannotBeEntered, &name),
+            &pc_message(
+                world,
+                player,
+                SystemMessageId::C1SItemRequirementIsNotSufficientAndCannotBeEntered,
+                &name,
+            ),
         );
         return false;
     } else if !(MIN_PLAYERS..=MAX_PLAYERS).contains(&world.command_channel_member_count(channel)) {
@@ -1210,7 +1338,12 @@ fn on_enter_instance(world: &mut World, player: ObjectId, instance_id: i32, firs
                     if world.inventory_item_count(player, DEWDROP_OF_DESTRUCTION_ITEM_ID) > 0
                         && world.inventory_item_count(channel_member, DEWDROP_OF_DESTRUCTION_ITEM_ID) > 0
                     {
-                        world.destroy_item_by_item_id(channel_member, DEWDROP_OF_DESTRUCTION_ITEM_ID, -1, true);
+                        world.destroy_item_by_item_id(
+                            channel_member,
+                            DEWDROP_OF_DESTRUCTION_ITEM_ID,
+                            -1,
+                            true,
+                        );
                     }
 
                     if let Some(w) = world.instance_world_mut(instance_id) {
@@ -1235,6 +1368,14 @@ fn on_enter_instance(world: &mut World, player: ObjectId, instance_id: i32, firs
     }
 }
 
+/// `System.currentTimeMillis()` for the checks that run inside `enterInstance`'s closure (no
+/// `ScriptCtx` there).
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(0))
+}
+
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
@@ -1256,7 +1397,9 @@ mod tests {
             ));
         }
         for id in [29052, 29053, 29061, 32011] {
-            out.push_str(&format!(r#"<npc id="{id}" type="Folk" level="80" name="Tomb {id}"/>"#));
+            out.push_str(&format!(
+                r#"<npc id="{id}" type="Folk" level="80" name="Tomb {id}"/>"#
+            ));
         }
         out
     }
@@ -1308,9 +1451,7 @@ mod tests {
             .npcs
             .keys()
             .copied()
-            .filter(|n| {
-                t.world.npc(*n).is_some_and(|npc| npc.npc_id == id) && !t.world.is_dead(*n)
-            })
+            .filter(|n| t.world.npc(*n).is_some_and(|npc| npc.npc_id == id) && !t.world.is_dead(*n))
             .collect()
     }
 
@@ -1528,12 +1669,4 @@ mod tests {
         let after = alive(&t, iid, 29050).len() + alive(&t, iid, 29051).len();
         assert_eq!(after, before + 4);
     }
-}
-
-/// `System.currentTimeMillis()` for the checks that run inside `enterInstance`'s closure (no
-/// `ScriptCtx` there).
-fn now_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(0))
 }

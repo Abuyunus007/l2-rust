@@ -146,7 +146,8 @@ impl Script for QueenAnt {
                 loc_z = QUEEN_NEST_Z;
             }
 
-            let Some(queen) = ctx.add_spawn(QUEEN_ANT_ID, loc_x, loc_y, loc_z, boss_info.heading, false, 0, 0)
+            let Some(queen) =
+                ctx.add_spawn(QUEEN_ANT_ID, loc_x, loc_y, loc_z, boss_info.heading, false, 0, 0)
             else {
                 return;
             };
@@ -194,7 +195,10 @@ impl Script for QueenAnt {
                 match ctx.world().grand_boss_status(QUEEN_ANT_ID) {
                     Some(STATUS_ALIVE) => spawn_queen_at_nest(ctx),
                     Some(STATUS_DEAD) => {
-                        let respawn = ctx.world().grand_boss_info(QUEEN_ANT_ID).map_or(0, |i| i.respawn_time);
+                        let respawn = ctx
+                            .world()
+                            .grand_boss_info(QUEEN_ANT_ID)
+                            .map_or(0, |i| i.respawn_time);
                         let remaining = respawn - ctx.now_ms();
                         if remaining > 0 {
                             ctx.start_quest_timer(EVENT_QUEEN_UNLOCK, remaining, None, None, false);
@@ -202,22 +206,30 @@ impl Script for QueenAnt {
                             info!("QueenAnt: the shared state row says dead; the Queen stays away (D-54).");
                         }
                     }
-                    status => info!("QueenAnt: the shared state row says {status:?}; the Queen stays away (D-54)."),
+                    status => {
+                        info!("QueenAnt: the shared state row says {status:?}; the Queen stays away (D-54).")
+                    }
                 }
             }
             EVENT_DISTANCE_CHECK => {
                 let queen = ctx.state::<QueenAntState>().queen;
                 match queen {
                     None => ctx.cancel_quest_timers(EVENT_DISTANCE_CHECK),
-                    Some(queen) if ctx.world().is_dead(queen) => ctx.cancel_quest_timers(EVENT_DISTANCE_CHECK),
+                    Some(queen) if ctx.world().is_dead(queen) => {
+                        ctx.cancel_quest_timers(EVENT_DISTANCE_CHECK)
+                    }
                     Some(queen) => {
                         let (zone_id, zone_type) = QUEEN_NEST_ZONE;
                         if ctx.world().zone_by_id(zone_id, zone_type).is_some()
                             && !ctx.world().is_inside_zone_by_position(zone_id, zone_type, queen)
                         {
                             ctx.world_mut().clear_aggro_list(queen);
-                            ctx.world_mut()
-                                .npc_set_intention_move_to(queen, QUEEN_NEST_X, QUEEN_NEST_Y, QUEEN_NEST_Z);
+                            ctx.world_mut().npc_set_intention_move_to(
+                                queen,
+                                QUEEN_NEST_X,
+                                QUEEN_NEST_Y,
+                                QUEEN_NEST_Z,
+                            );
                         }
                     }
                 }
@@ -272,27 +284,30 @@ impl Script for QueenAnt {
             && (ctx.world().intention_of(npc.object_id) != Intention::Cast)
             && (caller_hp < caller_max_hp)
         {
-            ctx.world_mut().set_npc_target(npc.object_id, Some(caller.object_id));
+            ctx.world_mut()
+                .set_npc_target(npc.object_id, Some(caller.object_id));
             ctx.world_mut()
                 .attackable_use_magic(npc.object_id, NURSE_HEAL_SKILL_ONE);
         }
     }
 
     /// Handles raid curse logic when a player or summon enters aggro range.
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        is_summon: bool,
+    ) {
         if ctx.is_gm(player) && ctx.world().object(player).is_some_and(|e| e.invisible) {
             return;
         }
 
-        let attacker_is_mage;
-        let attacker_character;
-        if is_summon {
-            attacker_is_mage = false;
-            attacker_character = ctx.summon_of(player);
+        let (attacker_is_mage, attacker_character) = if is_summon {
+            (false, ctx.summon_of(player))
         } else {
-            attacker_is_mage = ctx.is_mage_class(player);
-            attacker_character = Some(player);
-        }
+            (ctx.is_mage_class(player), Some(player))
+        };
 
         let Some(attacker_character) = attacker_character else {
             return;
@@ -300,7 +315,8 @@ impl Script for QueenAnt {
 
         let attacker_level = ctx.world().stats(attacker_character).map_or(0, |s| s.level());
         let npc_level = ctx.world().stats(npc.object_id).map_or(0, |s| s.level());
-        if !ctx.world().raid_curse_disabled() && ((attacker_level - npc_level) > RAID_CURSE_LEVEL_DIFFERENCE) {
+        if !ctx.world().raid_curse_disabled() && ((attacker_level - npc_level) > RAID_CURSE_LEVEL_DIFFERENCE)
+        {
             let mut curse = None;
 
             if attacker_is_mage {
@@ -321,7 +337,8 @@ impl Script for QueenAnt {
                     RAID_CURSE_CAST_TIME_MILLIS,
                     0,
                 );
-                ctx.world_mut().apply_effects(npc.object_id, attacker_character, curse);
+                ctx.world_mut()
+                    .apply_effects(npc.object_id, attacker_character, curse);
             }
 
             ctx.stop_hating(npc, attacker_character);
@@ -347,7 +364,10 @@ impl Script for QueenAnt {
                     .get_i64(-random_range_millis, random_range_millis);
 
             let next_respawn_time = ctx.now_ms() + respawn_delay;
-            info!("Queen Ant will respawn at: {}", date_time_string(next_respawn_time));
+            info!(
+                "Queen Ant will respawn at: {}",
+                date_time_string(next_respawn_time)
+            );
 
             ctx.start_quest_timer(EVENT_QUEEN_UNLOCK, respawn_delay, None, None, false);
             ctx.cancel_quest_timer(EVENT_ACTION, Some(npc), None);
@@ -379,7 +399,9 @@ impl Script for QueenAnt {
                         ctx.world_mut().minion_died(leader, npc.object_id, respawn_delay);
                     }
                 } else if npc_id == NURSE_ID {
-                    ctx.state::<QueenAntState>().nurses.retain(|n| *n != npc.object_id);
+                    ctx.state::<QueenAntState>()
+                        .nurses
+                        .retain(|n| *n != npc.object_id);
 
                     if let Some(leader) = ctx.world().npc_leader(npc.object_id) {
                         ctx.world_mut()
@@ -415,7 +437,16 @@ fn inside_nest(ctx: &ScriptCtx<'_>, x: i32, y: i32, z: i32) -> bool {
 
 /// `queen_unlock` and the constructor of a dead row whose time is over: the Queen at the nest.
 fn spawn_queen_at_nest(ctx: &mut ScriptCtx<'_>) {
-    let queen = ctx.add_spawn(QUEEN_ANT_ID, QUEEN_NEST_X, QUEEN_NEST_Y, QUEEN_NEST_Z, 0, false, 0, 0);
+    let queen = ctx.add_spawn(
+        QUEEN_ANT_ID,
+        QUEEN_NEST_X,
+        QUEEN_NEST_Y,
+        QUEEN_NEST_Z,
+        0,
+        false,
+        0,
+        0,
+    );
     ctx.world_mut().set_grand_boss_status(QUEEN_ANT_ID, STATUS_ALIVE);
     if let Some(queen) = queen {
         spawn_boss(ctx, queen);
@@ -438,10 +469,8 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, boss: ScriptNpc) {
         };
         // `movePlayersTo(loc)`: every online player inside.
         for player in ctx.world().zone_players_inside(zone_id, zone_type) {
-            ctx.world_mut().tele_to_location(
-                player,
-                l2_world::TeleportTarget::at(x, y, z).with_instance(0),
-            );
+            ctx.world_mut()
+                .tele_to_location(player, l2_world::TeleportTarget::at(x, y, z).with_instance(0));
         }
     }
 
@@ -662,9 +691,13 @@ mod tests {
         fire(&mut t, EVENT_QUEEN_UNLOCK, None);
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         assert!(
-            [TELEPORT_LOCATION_ONE, TELEPORT_LOCATION_TWO, TELEPORT_LOCATION_THREE]
-                .iter()
-                .any(|(tx, ty, _)| (*tx, *ty) == (x, y)),
+            [
+                TELEPORT_LOCATION_ONE,
+                TELEPORT_LOCATION_TWO,
+                TELEPORT_LOCATION_THREE
+            ]
+            .iter()
+            .any(|(tx, ty, _)| (*tx, *ty) == (x, y)),
             "{x} {y}"
         );
         assert_eq!(status(&t), Some(STATUS_ALIVE));
@@ -682,7 +715,12 @@ mod tests {
             rereads(&t.take_boss()),
             [(BossReadKind::GrandBoss(QUEEN_ANT_ID), then)]
         );
-        answer(&mut t, then, QUEEN_ANT_ID, row(QUEEN_ANT_ID, STATUS_ALIVE, 0, NEST));
+        answer(
+            &mut t,
+            then,
+            QUEEN_ANT_ID,
+            row(QUEEN_ANT_ID, STATUS_ALIVE, 0, NEST),
+        );
         assert_eq!(status(&t), Some(STATUS_ALIVE));
         assert_eq!(npcs_of(&t, QUEEN_ANT_ID).len(), 1);
         assert!(grand_writes(&t.take_boss()).is_empty());
@@ -767,7 +805,8 @@ mod tests {
         assert!(t.world.is_moving(queen));
         // A dead queen stops the check.
         assert!(has_timer(&mut t, EVENT_DISTANCE_CHECK, Some(queen)));
-        t.world.run_as_script("QueenAnt", |ctx| ctx.state::<QueenAntState>().queen = None);
+        t.world
+            .run_as_script("QueenAnt", |ctx| ctx.state::<QueenAntState>().queen = None);
         fire(&mut t, EVENT_DISTANCE_CHECK, Some(queen));
         assert!(!has_timer(&mut t, EVENT_DISTANCE_CHECK, Some(queen)));
     }
