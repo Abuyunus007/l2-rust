@@ -38,11 +38,10 @@ impl Script for Buron {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        let htmltext;
         if event.eq_ignore_ascii_case("Rumor") {
-            htmltext = Some(format!("32345-{}r.htm", engine::level(ctx)));
+            Some(format!("32345-{}r.htm", engine::level(ctx)))
         } else if engine::level(ctx) < 2 {
-            htmltext = Some("32345-lowlvl.htm".to_owned());
+            Some("32345-lowlvl.htm".to_owned())
         } else if ctx.get_quest_items_count(player, DARION_BADGE) >= 10 {
             ctx.take_items(player, DARION_BADGE, 10);
             // `player.addItem(QUEST, item, 1, npc, true)`.
@@ -54,12 +53,10 @@ impl Script for Buron {
                 ctx.give_items(player, PANTS, 1);
             }
 
-            htmltext = None;
+            None
         } else {
-            htmltext = Some("32345-noitems.htm".to_owned());
+            Some("32345-noitems.htm".to_owned())
         }
-
-        htmltext
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {

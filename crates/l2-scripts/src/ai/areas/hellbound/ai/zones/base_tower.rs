@@ -73,14 +73,16 @@ impl Script for BaseTower {
         player: ObjectId,
         _is_summon: bool,
     ) {
-        if !ctx
-            .state::<BaseTowerState>()
-            .body_destroyer_target_list
-            .contains_key(&npc.object_id)
-        {
-            ctx.state::<BaseTowerState>()
-                .body_destroyer_target_list
-                .insert(npc.object_id, player);
+        let first = {
+            let list = &mut ctx.state::<BaseTowerState>().body_destroyer_target_list;
+            if let std::collections::hash_map::Entry::Vacant(e) = list.entry(npc.object_id) {
+                e.insert(player);
+                true
+            } else {
+                false
+            }
+        };
+        if first {
             ctx.world_mut().set_npc_target(npc.object_id, Some(player));
             ctx.world_mut()
                 .do_simultaneous_cast(npc.object_id, SkillKey::new(DEATH_WORD.0, DEATH_WORD.1));
