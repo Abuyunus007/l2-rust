@@ -69,6 +69,7 @@ pub mod q00105_skirmish_with_orcs;
 pub mod q00106_forgotten_truth;
 pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
+pub mod q00110_to_the_primeval_isle;
 pub mod q00112_walk_of_fate;
 pub mod q00121_pavel_the_giant;
 pub mod q00122_ominous_news;
@@ -150,6 +151,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00106_forgotten_truth::Q00106ForgottenTruth);
     r.add(q00107_merciless_punishment::Q00107MercilessPunishment);
     r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
+    r.add(q00110_to_the_primeval_isle::Q00110ToThePrimevalIsle);
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
     r.add(q00122_ominous_news::Q00122OminousNews);
