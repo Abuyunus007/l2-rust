@@ -78,6 +78,7 @@ pub mod respawn;
 pub mod rewards;
 pub mod runner;
 pub mod script;
+pub mod script_handlers;
 pub mod sevensigns;
 pub mod shiftclick;
 pub mod shop;
@@ -233,6 +234,7 @@ pub use script::{
     PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite, Script, ScriptCtx,
     ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup, TimerParams,
 };
+pub use script_handlers::unstuck::{ScriptHandlerSettings, ScriptHandlerTimer};
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
 pub use siege::{
     CastleSiegeConfig, Siege, SiegeClan, SiegeClanRecord, SiegeClanType, SiegeGuardRecord, SiegeInput,

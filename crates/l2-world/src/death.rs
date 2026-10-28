@@ -212,6 +212,8 @@ impl World {
             self.stop_effects(id, crate::effects::EffectType::ResurrectionSpecial);
             delete_buffs = false;
         }
+        // The charm of courage: used up by the death (S-HAND-02, `script_handlers/charm.rs`).
+        self.charm_of_courage_on_death(id);
         if delete_buffs {
             self.stop_all_effects_except_those_that_last_through_death(id);
         }
