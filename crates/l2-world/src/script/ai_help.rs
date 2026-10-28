@@ -49,6 +49,11 @@ impl crate::world::World {
         self.npc_world.no_return_to_spawn.contains(&npc)
     }
 
+    /// `isCoreAIDisabled()` of an NPC (tests).
+    pub fn npc_core_ai_disabled(&self, npc: ObjectId) -> bool {
+        self.is_core_ai_disabled(npc)
+    }
+
     /// `true` once a script called `setRandomWalking(false)` on the NPC (tests).
     pub fn npc_random_walking_forbidden(&self, npc: ObjectId) -> bool {
         self.npc_world.random_walk_off.contains(&npc)
@@ -312,6 +317,46 @@ impl ScriptCtx<'_> {
         } else {
             set.insert(npc.object_id);
         }
+    }
+
+    /// Java `npc.disableCoreAI(value)`.
+    pub fn disable_core_ai(&mut self, npc: ScriptNpc, value: bool) {
+        self.world_mut().disable_core_ai(npc.object_id, value);
+    }
+
+    /// Java `npc.setRunning()`.
+    pub fn set_running(&mut self, npc: ScriptNpc) {
+        self.world_mut().set_running(npc.object_id, true);
+    }
+
+    /// Java `npc.getAI().setIntentionMoveTo(GeoEngine.getValidLocation(npc, npc + distance away
+    /// from `from`))`, the flight of `FleeMonsters`: the point `distance` from the NPC on the
+    /// line from `from` through it, as far as the geodata lets the NPC go.
+    pub fn flee_from(&mut self, npc: ScriptNpc, from: ObjectId, distance: i32) {
+        let (Some((fx, fy, _)), Some((x, y, z))) = (
+            self.world().position_of(from),
+            self.world().position_of(npc.object_id),
+        ) else {
+            return;
+        };
+        // `LocationUtil.calculateAngleFrom(from, npc)`, in degrees [0, 360).
+        let mut angle = f64::from(y.wrapping_sub(fy))
+            .atan2(f64::from(x.wrapping_sub(fx)))
+            .to_degrees();
+        if angle < 0.0 {
+            angle += 360.0;
+        }
+        let radians = angle.to_radians();
+        let pos_x = (f64::from(x) + f64::from(distance) * radians.cos()) as i32;
+        let pos_y = (f64::from(y) + f64::from(distance) * radians.sin()) as i32;
+        let instance = self.world().instance_id_of(npc.object_id);
+        let destination = self.world().geo_valid_location(
+            l2_geo::Location::new(x, y, z),
+            l2_geo::Location::new(pos_x, pos_y, z),
+            instance,
+        );
+        self.world_mut()
+            .npc_set_intention_move_to(npc.object_id, destination.x, destination.y, destination.z);
     }
 
     /// Java `npc.setImmobilized(value)`.

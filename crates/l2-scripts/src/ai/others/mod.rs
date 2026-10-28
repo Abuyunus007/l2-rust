@@ -20,6 +20,7 @@ pub mod dust_rider;
 pub mod emerald_horn;
 pub mod fairy_trees;
 pub mod fame_manager;
+pub mod flee_monsters;
 pub mod gatekeeper_spirit;
 pub mod gordon;
 pub mod hunting_grounds_teleport;
@@ -47,6 +48,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(emerald_horn::EmeraldHorn);
     r.add(fairy_trees::FairyTrees);
     r.add(fame_manager::FameManager);
+    r.add(flee_monsters::FleeMonsters);
     r.add(gatekeeper_spirit::GatekeeperSpirit);
     r.add(gordon::Gordon);
     r.add(hunting_grounds_teleport::HuntingGroundsTeleport);
