@@ -79,6 +79,7 @@ pub mod q00112_walk_of_fate;
 pub mod q00121_pavel_the_giant;
 pub mod q00122_ominous_news;
 pub mod q00124_meeting_the_elroki;
+pub mod q00128_pailaka_song_of_ice_and_fire;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
@@ -167,6 +168,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
     r.add(q00122_ominous_news::Q00122OminousNews);
     r.add(q00124_meeting_the_elroki::Q00124MeetingTheElroki);
+    r.add(q00128_pailaka_song_of_ice_and_fire::Q00128PailakaSongOfIceAndFire);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
