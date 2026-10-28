@@ -69,6 +69,7 @@ pub mod q00105_skirmish_with_orcs;
 pub mod q00106_forgotten_truth;
 pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
+pub mod q00109_in_search_of_the_nest;
 pub mod q00110_to_the_primeval_isle;
 pub mod q00113_status_of_the_beacon_tower;
 pub mod q00112_walk_of_fate;
@@ -152,6 +153,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00106_forgotten_truth::Q00106ForgottenTruth);
     r.add(q00107_merciless_punishment::Q00107MercilessPunishment);
     r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
+    r.add(q00109_in_search_of_the_nest::Q00109InSearchOfTheNest);
     r.add(q00110_to_the_primeval_isle::Q00110ToThePrimevalIsle);
     r.add(q00113_status_of_the_beacon_tower::Q00113StatusOfTheBeaconTower);
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
