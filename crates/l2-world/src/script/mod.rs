@@ -147,6 +147,59 @@ pub struct ScriptSettings {
     /// `PlayerConfig.DISABLE_TUTORIAL` (`DisableTutorial` of `Player.ini`): `Q00255_Tutorial`
     /// does nothing.
     pub disable_tutorial: bool,
+    /// `config/GraciaSeeds.ini` (Java `GraciaSeedsConfig`, S-AI-07).
+    pub gracia_seeds: GraciaSeedsSettings,
+}
+
+/// The values of `config/GraciaSeeds.ini` the seed managers and the Gracia instances read (Java
+/// `GraciaSeedsConfig`). `Default` is Java's default of each key.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GraciaSeedsSettings {
+    /// `SOD_TIAT_KILL_COUNT` (`TiatKillCountForNextState`).
+    pub sod_tiat_kill_count: i32,
+    /// `SOD_STAGE_2_LENGTH` (`Stage2Length` in minutes, here in milliseconds).
+    pub sod_stage_2_length: i64,
+    /// `MIN_TIAT_PLAYERS` (`MinPlayers`).
+    pub min_tiat_players: i32,
+    /// `MAX_TIAT_PLAYERS` (`MaxPlayers`).
+    pub max_tiat_players: i32,
+    /// `MIN_TIAT_LEVEL` (`MinLevel`).
+    pub min_tiat_level: i32,
+    /// `SOI_EKIMUS_KILL_COUNT` (`EkimusKillCount`).
+    pub soi_ekimus_kill_count: i32,
+    /// `EROSION_ATTACK_MIN_PLAYERS` / `MAX` (`MinEroAttPlayers`, `MaxEroAttPlayers`).
+    pub erosion_attack_min_players: i32,
+    pub erosion_attack_max_players: i32,
+    /// `EROSION_DEFENCE_MIN_PLAYERS` / `MAX` (`MinEroDefPlayers`, `MaxEroDefPlayers`).
+    pub erosion_defence_min_players: i32,
+    pub erosion_defence_max_players: i32,
+    /// `HEART_ATTACK_MIN_PLAYERS` / `MAX` (`MinHeaAttPlayers`, `MaxHeaAttPlayers`).
+    pub heart_attack_min_players: i32,
+    pub heart_attack_max_players: i32,
+    /// `HEART_DEFENCE_MIN_PLAYERS` / `MAX` (`MinHeaDefPlayers`, `MaxHeaDefPlayers`).
+    pub heart_defence_min_players: i32,
+    pub heart_defence_max_players: i32,
+}
+
+impl Default for GraciaSeedsSettings {
+    fn default() -> Self {
+        Self {
+            sod_tiat_kill_count: 10,
+            sod_stage_2_length: 720 * 60_000,
+            min_tiat_players: 36,
+            max_tiat_players: 45,
+            min_tiat_level: 75,
+            soi_ekimus_kill_count: 5,
+            erosion_attack_min_players: 18,
+            erosion_attack_max_players: 27,
+            erosion_defence_min_players: 18,
+            erosion_defence_max_players: 27,
+            heart_attack_min_players: 18,
+            heart_attack_max_players: 27,
+            heart_defence_min_players: 18,
+            heart_defence_max_players: 27,
+        }
+    }
 }
 
 impl Default for ScriptSettings {
@@ -169,6 +222,7 @@ impl Default for ScriptSettings {
             knightsepaulette_points: 20,
             ballista_points: 30,
             disable_tutorial: false,
+            gracia_seeds: GraciaSeedsSettings::default(),
         }
     }
 }
