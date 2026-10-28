@@ -139,7 +139,7 @@ impl Script for Q00105SkirmishWithOrcs {
             return;
         };
         match npc.id {
-            27059 | 27060 | 27061 | 27062 => {
+            27059..=27062 => {
                 if qs.is_cond(ctx, 1) && ctx.has_quest_items(killer, order) {
                     ctx.give_items(killer, KABOO_CHIEFS_1ST_TORQUE, 1);
                     qs.set_cond(ctx, 2, true);
