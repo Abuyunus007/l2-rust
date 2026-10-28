@@ -34,6 +34,7 @@ pub mod monument_of_heroes;
 pub mod muscle_bomber;
 pub mod subclass_certification;
 pub mod symbol_maker;
+pub mod varka_ketra;
 pub mod support_unit_captain;
 pub mod oracle_teleport;
 pub mod nevits_herald;
@@ -103,6 +104,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
+    r.add(varka_ketra::VarkaKetra);
     r.add(support_unit_captain::SupportUnitCaptain);
     r.add(oracle_teleport::OracleTeleport);
     r.add(nevits_herald::NevitsHerald);
