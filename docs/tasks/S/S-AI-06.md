@@ -10,7 +10,7 @@
 | Size | L |
 
 ## Goal
-Every script in `ai/others` whose folder or file name starts with N to Z, except NewbieGuide (S-API-02) and SubclassCertification (S-VM-01).
+Every script in `ai/others` whose folder or file name starts with N to Z, except SubclassCertification (S-VM-01); NewbieGuide is yours (2934 lines, the newbie guides and the Q00001 guide block).
 
 ## Java source (the spec)
 - `C:\l2-rust\l2jmobius\dist\game\data\scripts\ai\others\[N-Z]*`
