@@ -421,7 +421,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | in-progress |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | ready |
 | [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
-| [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | in-progress |
+| [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
 | [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | ready |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | ready |
