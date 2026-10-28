@@ -160,18 +160,18 @@ fn class_name(summon: &Summon) -> &'static str {
     }
 }
 
-/// Java `CtrlIntention.name()`, which is `AI_INTENTION_` and the Java constant name.
+/// Java `Intention.name()`: the constant name (`IDLE`; the old `CtrlIntention` had `AI_INTENTION_`).
 fn intention_name(intention: Intention) -> &'static str {
     match intention {
-        Intention::Idle => "AI_INTENTION_IDLE",
-        Intention::Active => "AI_INTENTION_ACTIVE",
-        Intention::Rest => "AI_INTENTION_REST",
-        Intention::Attack => "AI_INTENTION_ATTACK",
-        Intention::Cast => "AI_INTENTION_CAST",
-        Intention::MoveTo => "AI_INTENTION_MOVE_TO",
-        Intention::Follow => "AI_INTENTION_FOLLOW",
-        Intention::PickUp => "AI_INTENTION_PICK_UP",
-        Intention::Interact => "AI_INTENTION_INTERACT",
+        Intention::Idle => "IDLE",
+        Intention::Active => "ACTIVE",
+        Intention::Rest => "REST",
+        Intention::Attack => "ATTACK",
+        Intention::Cast => "CAST",
+        Intention::MoveTo => "MOVE_TO",
+        Intention::Follow => "FOLLOW",
+        Intention::PickUp => "PICK_UP",
+        Intention::Interact => "INTERACT",
     }
 }
 

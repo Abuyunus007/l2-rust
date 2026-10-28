@@ -915,6 +915,13 @@ impl Server {
         let user_command_info_settings = l2_world::UserCommandInfoSettings {
             display_server_time: config.server_time.display_server_time,
         };
+        // Java: PlayerConfig.UNSTUCK_INTERVAL (`/unstuck`, S-HAND-02).
+        let script_handler_settings = l2_world::ScriptHandlerSettings {
+            unstuck_interval: config.player.unstuck_interval,
+            allow_wear: config.general.allow_wear,
+            allow_rentpet: config.general.allow_rentpet,
+            enable_find_pvp: config.find_pvp.enable_find_pvp,
+        };
         // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
@@ -1242,6 +1249,7 @@ impl Server {
                     world.set_flood_settings(flood_settings);
                     world.set_community_board_settings(community_board_settings);
                     world.set_user_command_info_settings(user_command_info_settings);
+                    world.set_script_handler_settings(script_handler_settings);
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
                     // Java: BotReportTable (after the skills: a punishment needs its skill).
