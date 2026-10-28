@@ -41,6 +41,7 @@ pub mod q00098_saga_of_the_shillien_saint;
 pub mod q00099_saga_of_the_fortune_seeker;
 pub mod q00100_saga_of_the_maestro;
 pub mod q00101_sword_of_solidarity;
+pub mod q00102_sea_of_spores_fever;
 pub mod q00104_spirit_of_mirrors;
 pub mod q00105_skirmish_with_orcs;
 pub mod q00106_forgotten_truth;
@@ -94,6 +95,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00099_saga_of_the_fortune_seeker::Q00099SagaOfTheFortuneSeeker);
     r.add(q00100_saga_of_the_maestro::Q00100SagaOfTheMaestro);
     r.add(q00101_sword_of_solidarity::Q00101SwordOfSolidarity);
+    r.add(q00102_sea_of_spores_fever::Q00102SeaOfSporesFever);
     r.add(q00104_spirit_of_mirrors::Q00104SpiritOfMirrors);
     r.add(q00105_skirmish_with_orcs::Q00105SkirmishWithOrcs);
     r.add(q00106_forgotten_truth::Q00106ForgottenTruth);
