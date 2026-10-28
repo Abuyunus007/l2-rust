@@ -412,7 +412,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-HAND-03](S/S-HAND-03.md) | Lottery, NPC view and drop search, decoys and traps, spawn protection | sonnet | full | HAND-02 | merged |
 | [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | in-progress |
 | [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
-| [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | ready |
+| [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
 | [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | ready |
 | [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | ready |
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
