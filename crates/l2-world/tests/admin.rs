@@ -1309,8 +1309,8 @@ fn loc_without_map_regions_prints_the_coordinates() {
         [SystemMessageParam::Text(format!("{X}, {Y}, {Z}"))]
     );
 
-    // Another user command is not ported: silence.
-    s.input(USER, ClientInput::UserCommand { id: 52 });
+    // Another user command is not ported (52 is `/unstuck` since S-HAND-02): silence.
+    s.input(USER, ClientInput::UserCommand { id: 999 });
     assert!(s.log.take().is_empty());
 }
 
