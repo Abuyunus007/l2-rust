@@ -34,6 +34,7 @@ pub mod monument_of_heroes;
 pub mod muscle_bomber;
 pub mod subclass_certification;
 pub mod symbol_maker;
+pub mod valakas_teleporters;
 pub mod newbie_guide;
 pub mod varka_ketra;
 pub mod support_unit_captain;
@@ -105,6 +106,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
+    r.add(valakas_teleporters::ValakasTeleporters);
     r.add(newbie_guide::NewbieGuide);
     r.add(varka_ketra::VarkaKetra);
     r.add(support_unit_captain::SupportUnitCaptain);
