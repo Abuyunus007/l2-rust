@@ -21,6 +21,11 @@ impl World {
         self.settings.teleport.max_offset_on_teleport
     }
 
+    /// Java `getHeading()` of a player or NPC.
+    pub fn object_heading(&self, id: ObjectId) -> i32 {
+        self.heading_of(id)
+    }
+
     /// Java `Attackable.clearAggroList()`.
     pub fn clear_aggro_list(&mut self, npc: ObjectId) {
         self.aggro_clear(npc);

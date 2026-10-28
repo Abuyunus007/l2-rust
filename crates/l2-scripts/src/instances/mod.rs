@@ -7,7 +7,7 @@ pub mod kamaloka;
 pub mod pailaka_devils_legacy;
 //pub mod pailaka_injured_dragon;
 pub mod pailaka_song_of_ice_and_fire;
-//pub mod rim_kamaloka;
+pub mod rim_kamaloka;
 
 use std::collections::HashMap;
 
@@ -153,7 +153,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
     //r.add(pailaka_injured_dragon::PailakaInjuredDragon);
     r.add(pailaka_song_of_ice_and_fire::PailakaSongOfIceAndFire);
-    //r.add(rim_kamaloka::RimKamaloka);
+    r.add(rim_kamaloka::RimKamaloka);
 }
 
 /// Helpers of the instance script tests.
